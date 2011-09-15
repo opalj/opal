@@ -1,0 +1,9 @@
+DEVELOPING_OPAL/demos/src/main/scala/org/opalj/tac/fpcf/analyses/wala.json filter=lfs diff=lfs merge=lfs -text
+OPAL/ai/src/it/resources/org/opalj/fpcf/analyses/ExtensivePurityTest-lecturedoc_2.10-0.0.0-one-jar.jar.txt filter=lfs diff=lfs merge=lfs -text
+OPAL/ai/src/it/resources/org/opalj/fpcf/analyses/ExtensivePurityTest-scala-2.12.4.txt filter=lfs diff=lfs merge=lfs -text
+OPAL/ai/src/it/resources/org/opalj/fpcf/analyses/SimplePurityTest-lecturedoc_2.10-0.0.0-one-jar.jar.txt filter=lfs diff=lfs merge=lfs -text
+OPAL/ai/src/it/resources/org/opalj/fpcf/analyses/SimplePurityTest-scala-2.12.4.txt filter=lfs diff=lfs merge=lfs -text
+OPAL/ai/src/it/resources/org/opalj/fpcf/analyses/ExtensivePurityTest-OPAL-MultiJar-SNAPSHOT-01-04-2018-dependencies.txt filter=lfs diff=lfs merge=lfs -text
+OPAL/ai/src/it/resources/org/opalj/fpcf/analyses/SimplePurityTest-OPAL-MultiJar-SNAPSHOT-01-04-2018-dependencies.txt filter=lfs diff=lfs merge=lfs -text
+*.json !text !filter !merge !diff
+*.txt !text !filter !merge !diff

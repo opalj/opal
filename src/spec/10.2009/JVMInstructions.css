@@ -1,0 +1,285 @@
+/*
+	License (BSD Style License)
+	Copyright (c) 2009, 2011
+	Software Technology Group
+	Department of Computer Science
+	Technische Universität Darmstadt
+	All rights reserved.   
+
+	Redistribution and use in source and binary forms, with or without
+	modification, are permitted provided that the following conditions are met:
+
+	- Redistributions of source code must retain the above copyright notice,
+	  this list of conditions and the following disclaimer.
+	- Redistributions in binary form must reproduce the above copyright notice,
+	  this list of conditions and the following disclaimer in the documentation
+	  and/or other materials provided with the distribution. 
+	- Neither the name of the Software Technology Group or Technische 
+	  Universität Darmstadt nor the names of its contributors may be used to 
+	  endorse or promote products derived from this software without specific 
+	  prior written permission. 
+
+	THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+	AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+	IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+	ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+	LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+	CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+	SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+	INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+	CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+	ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+	POSSIBILITY OF SUCH DAMAGE.
+	
+	(c) Michael Eichberg
+*/
+
+@namespace "http://www.opal-project.de/BAT/10.2009/JVMInstructions";
+@namespace xhtml "http://www.w3.org/1999/xhtml"
+
+
+xhtml|div#title
+{
+    display:block;
+    font-size:20px;
+}
+
+
+instructions
+{
+    display:block;
+    background-color:#FFFFFF;
+    font-family:"Helvetica Neue","Helvetica","Arial";    
+    font-size:12px;
+}
+
+
+documentation
+{
+    display:block;
+    color:#333333;
+    background-color:#EFEFEF;
+    margin:12px;
+    padding:12px;
+    font-weight:lighter;
+    border-bottom:thick solid #999999;
+}
+documentation:before{
+    content:"A Formalization of the Java Virtual Machine Specification";
+    font-family:"Times New Roman";    
+    font-variant:small-caps;
+    display:block;
+    margin-bottom:12px;
+    font-size:24px;
+}
+
+
+instruction
+{
+    display:block;
+    margin:12px;
+    font-family:"Helvetica Neue","Helvetica","Arial";
+    color:#000000;
+    text-align:left;
+    border-bottom:thin solid #999999;
+    font-size:12px;
+}
+instruction[deprecated="1.6"]
+{
+    display:block;
+    background:#F0F0F0;
+    margin:12px;
+    font-family:"Helvetica Neue","Helvetica","Arial";
+    color:#000000;
+    text-align:left;
+    border-bottom:thin solid #999999;
+    font-size:12px;
+}
+instruction:before
+{
+    text-shadow:#344322;
+    font-size:15px;
+    font-weight:normal;
+    content: attr(name) " / opcode = " attr(opcode) " ";
+}
+instruction[deprecated="1.6"]:after
+{
+	 display:block;
+    text-align:center;
+    color:gray;
+    content:"D E P R E C A T E D (since Java " attr(deprecated)")";
+}
+
+
+
+operation
+{
+    color:#777777;
+    display: block;
+    margin-top:6px;
+    margin-bottom:6px;
+}
+
+
+parameterized
+{
+    display:block;
+    font-weight:bold;
+    background-color:#EEEEFF;
+    margin:12px;
+    padding:12px;
+}
+parameterized:before
+{
+    content: "\25B2 \20 Category: " attr(base);
+}
+parameterized:hover:before
+{
+    content: "\25BC \20 Category: " attr(base);
+}
+parameterized:hover type,
+parameterized:hover operator,
+parameterized:hover classifier
+{
+    display:list-item;
+    list-style-type:none; /* upper-roman or something similar does not work in FireFox*/
+    font-weight:normal;
+    border-left:thick solid #999999;
+    margin-left:4px;
+    padding-left:6px;
+    margin-top:8px;
+}
+parameterized:hover type:before
+{
+    content: "Type = " attr(name); 
+}
+parameterized:hover type[value]:before
+{   /* this one overrides the previous definition if a value exists */
+    content: "Type = " attr(name) " Value = " attr(value);
+}
+parameterized:hover classifier:before
+{
+    content: "Classifier = " attr(name);
+}
+parameterized:hover operator:before
+{
+    content: "Operator = " attr(name);
+}
+
+
+specialized
+{
+    display:block;
+    font-weight:bold;
+    background-color:#EEFFEE;
+    margin:12px;
+    padding:12px;
+}
+specialized:before
+{
+    content: "\25B2 \20 Base: " attr(base);
+}
+specialized:hover:before
+{
+    content: "\25BC \20 Base: " attr(base);
+}
+specialized:hover parameter
+{
+    display:list-item;
+    list-style-type:none;
+    font-weight:normal;
+    margin-left:24px;
+    margin-top:8px;
+}
+specialized:hover parameter:before
+{
+    content: "id: " attr(id) " = " attr(value);
+}
+
+
+
+exceptions
+{
+    display:block;
+    font-weight:bold;
+    background-color:#FFEEEE;
+    margin:12px;
+    padding:12px;
+}
+exceptions:before
+{
+    content: "\25B2 \20 Exceptions";
+}
+exceptions:hover:before
+{
+    content: "\25BC \20 Exceptions";
+}
+exceptions:hover exception
+{
+    font-weight:normal;
+    color:#555555;
+    display:list-item;
+    margin-left:24px;
+    margin-top:8px;
+}
+exceptions:hover exception:before
+{
+    content: attr(type);
+}
+
+
+format
+{
+    display:table;
+    width:100%;
+    margin:12px;
+}
+format std,
+format wide
+{
+    display:table-cell;
+    width:50%;
+    list-style-type:none;
+}
+format std:before
+{
+    display:block;
+    font-weight:bold;
+    content:"Standard Format"
+}
+format wide:before
+{
+    display:block;
+    font-weight:bold;
+    content:"Wide Format";
+}
+format list
+{
+    display:list-item;
+    font-weight:normal;
+    margin-left:24px;
+    margin-top:8px;
+}
+format list:before
+{
+    font-style:italic;
+    color:gray;
+    content: "List[count = (" attr(count) "); id = " attr(id) "]";
+}
+format el{
+    display:list-item;
+    font-weight:normal;
+    margin-left:2px;
+    padding-left:12px;
+    border-left:thick solid #999999;
+    margin-top:8px;
+}
+format el:before
+{
+    content: attr(type);
+}
+format el[id]:after
+{
+    color:gray;
+    content: " \2026 \20 id = " attr(id);
+}
