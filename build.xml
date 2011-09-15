@@ -71,6 +71,7 @@ Author 		Michael Eichberg (mail@michael-eichberg.de)
 	<condition property="scala.home" value="/opt/local/share/scala-2.9/">
 		<not><isset property="scala.home" /></not>
 	</condition>
+	<echo message="The Scala Home directory is set to: ${scala.home}"/>
 	<property name="scala-compiler.jar" value="${scala.home}/lib/scala-compiler.jar"/>
 	<property name="scala-library.jar" value="${scala.home}/lib/scala-library.jar"/>
 

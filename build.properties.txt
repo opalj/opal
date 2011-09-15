@@ -2,7 +2,7 @@
 # Author: 	Ralf Mitschke
 #			Michael Eichberg
 #
-# To customize BAT to your setup:
+# To customize BAT's built settings to your setup:
 # (1) 	make a copy of this file named "build.properties" which
 # 	is stored in BAT's root directory.
 # (2) 	Specify the parameters mentioned below.
