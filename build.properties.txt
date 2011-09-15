@@ -10,9 +10,3 @@
 # The home of your Scala installation (Scala 2.9 is required).
 # E.g.,
 # scala.home=/opt/scala-2.9.final
-
-# If the Scala libraries are not stored in the lib
-# directory below your "scala.home" directory, then
-# you have to set the "scala.lib" property.
-# E.g.,
-# scala.lib=opt/scala-2.9.final/lib
