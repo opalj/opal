@@ -57,6 +57,9 @@ case class Method_Info (
 	import de.tud.cs.st.bat.native.AccessFlagsContext.METHOD
 	import de.tud.cs.st.bat.native.AccessFlagsIterator
 
+//	def getCode : Option[Code_Attribute] = {
+		
+//	}
 
 	def toXML = 
 		<method 

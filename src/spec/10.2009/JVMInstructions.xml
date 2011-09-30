@@ -40,11 +40,12 @@
 	<documentation>
 		<xhtml:div id="title">
 			List of all Java bytecode instructions as defined in the Java Virtual Machine Specification
-			3rd Edition (Java5 / Java 6). 
+			4th Edition (Java 1.1 … Java 7). 
 		</xhtml:div>
 		This list is compiled by Michael Eichberg (mail@michael-eichberg.de)
 		<xhtml:br />
-		Created October 2009.
+		Created October 2009
+		Updated September 2011 - Java 7
 	</documentation>
 
 	<instruction name="aaload" opcode="50">
