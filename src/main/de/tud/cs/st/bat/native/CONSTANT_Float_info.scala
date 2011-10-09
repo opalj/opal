@@ -32,11 +32,12 @@
 */
 package de.tud.cs.st.bat.native
 
-import java.io.DataInput
+//import java.io.DataInput
 
 
 /**
-
+ * Abstract representation of a CONSTANT_Float_info constant pool entry.
+ *
  * @author Michael Eichberg
  */
 trait CONSTANT_Float_info extends Constant_Pool_Entry {
@@ -55,11 +56,3 @@ trait CONSTANT_Float_info extends Constant_Pool_Entry {
   	def Constant_Type_Value = Constant_Pool_Entry.CONSTANT_Float
   
 }
-
-/* TODO Remove....
-object CONSTANT_Float_info {
-	
-	def unapply (i : CONSTANT_Float_info) : Option[Float] = Some(i.value)
-	
-}
-*/

@@ -35,7 +35,7 @@
   Author: Michael Eichberg (www.michael-eichberg.de)
 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="2.0"
-    xmlns:opal="http://www.opal-project.de/BAT/10.2009/JVMInstructions">
+    xmlns:opal="http://www.opal-project.de/BAT/10.2011/JVMInstructions">
 
 	
     <xsl:output media-type="text/plain" encoding="UTF-8" method="text"/>
@@ -72,7 +72,7 @@ import de.tud.cs.st.bat.resolved.InstructionExceptions._
 /**
  * <xsl:value-of select="opal:operation/text()" />.
  *
- * @version Generator: 0.9.0
+ * @version Generator: 0.9.1
  */   
 <xsl:choose>
 	<xsl:when test="count(opal:format/opal:std/opal:el) eq 1">
@@ -242,7 +242,8 @@ extends Instruction {
 				fieldType.toProlog(factory)</xsl:when>
 			
 	
-			<xsl:when test="$fet eq 'ushort_cp_index→name_and_methoddescriptor'">
+			<xsl:when test="$fet eq 'ushort_cp_index→call_site_specifier'">
+				// TODO valid index into the bootstrap_methods array of the bootstrap method table 
 				TextAtom(name),		
 				methodDescriptor.toProlog(factory)</xsl:when>			
 		
@@ -303,7 +304,8 @@ extends Instruction {
 			<xsl:when test="$fet eq 'ushort_cp_index→fieldref'"><!-- used by get/put field/static -->
 			&lt;fieldref declaring_class={ declaringClass.toJava } name={ name } type={ fieldType.toJava }/&gt;</xsl:when>				
 	
-			<xsl:when test="$fet eq 'ushort_cp_index→name_and_methoddescriptor'">
+			<xsl:when test="$fet eq 'ushort_cp_index→call_site_specifier'">
+			// TODO valid index into the bootstrap_methods array of the bootstrap method table ?
 			&lt;methodref name={ name } &gt;
 				{ methodDescriptor.toXML }
 			&lt;/methodref&gt;</xsl:when>			
@@ -346,7 +348,8 @@ extends Instruction {
 	val declaringClass : ObjectType, // Recall, if we have "Object[] os = ...; os.length" then os.length is translated to the special arraylength instruction 
 	val name : String,
 	val fieldType : FieldType</xsl:when>				
-		<xsl:when test="$fet eq 'ushort_cp_index→name_and_methoddescriptor'">
+		<xsl:when test="$fet eq 'ushort_cp_index→call_site_specifier'">
+	// TODO.... valid index into the bootstrap_methods array of the bootstrap method table 
 	val name : String,
 	val methodDescriptor : MethodDescriptor // an interface or class type to be precise</xsl:when>			
 		<xsl:when test="$fet eq 'ushort_cp_index→methodref' or $fet eq 'ushort_cp_index→interface_methodref'">

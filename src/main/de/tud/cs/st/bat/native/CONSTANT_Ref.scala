@@ -54,31 +54,3 @@ trait CONSTANT_Ref extends Constant_Pool_Entry {
 	val name_and_type_index : Int
 
 }
-
-/* TODO Remove....
-object CONSTANT_Ref {
-		
-	type Constant_Pool = IndexedSeq[Constant_Pool_Entry]
-
-	**
-	 * @return a tuple where the first value is the class name, the second value is the field- or
-	 * 	method name and the third value is the descriptor. 
-	 *
-	def unapply (cr_cp : (CONSTANT_Ref,Constant_Pool)) : Option[(String,String,Descriptor)] = {
-		val (cr,cp) = cr_cp
-		val nti = cp(cr.name_and_type_index) match { case nti : CONSTANT_NameAndType_info => nti}
-		val descriptor = cp(nti.descriptor_index) match { case CONSTANT_Utf8_info(v) => v}
-		
-		Some(
-			(
-				cp(cr.class_index) match { case CONSTANT_Utf8_info(v) => v},
-				cp(nti.name_index) match { case CONSTANT_Utf8_info(v) => v},
-				cr match {
-					case fri : CONSTANT_Fieldref_info => FieldDescriptor(descriptor)
-					case _ => MethodDescriptor(descriptor)
-				}
-			)
-		)
-	}
-	
-}*/

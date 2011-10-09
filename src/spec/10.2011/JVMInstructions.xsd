@@ -34,10 +34,10 @@
 -->
 <schema xmlns="http://www.w3.org/2001/XMLSchema"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xmlns:opal="http://www.opal-project.de/BAT/10.2009/JVMInstructions"
+    xmlns:opal="http://www.opal-project.de/BAT/10.2011/JVMInstructions"
     xmlns:xhtml="http://www.w3.org/1999/xhtml"
     xsi:schemaLocation="http://www.w3.org/2001/XMLSchema http://www.w3.org/2001/XMLSchema.xsd"
-    targetNamespace="http://www.opal-project.de/BAT/10.2009/JVMInstructions"
+    targetNamespace="http://www.opal-project.de/BAT/10.2011/JVMInstructions"
 	elementFormDefault="qualified"  attributeFormDefault="unqualified" >
 
     <annotation>
@@ -403,16 +403,15 @@
         </restriction>
     </simpleType>
     
-    <simpleType name="FormatElement-ushort_cp_index-to-name_and_methoddescriptor">
+    <simpleType name="FormatElement-ushort_cp_index-to-call_site_specifier">
         <annotation>
             <documentation>
             An index in the constant pool (an unsigned short value) 
-            refering to an name and type info structure where the descriptor is
-            a method descriptor.
+            referring to a CONSTANT_InvokeDynamic_info structure. (Java 7)
             </documentation>
         </annotation>
         <restriction base="opal:AbstractFormatElement">
-            <enumeration value="ushort_cp_index→name_and_methoddescriptor"/>
+            <enumeration value="ushort_cp_index→call_site_specifier"/>
         </restriction>
     </simpleType>
 
@@ -420,7 +419,7 @@
         <annotation>
             <documentation>
             An index in the constant pool (an unsigned short value)
-            refering to a methodref info structure.
+            referring to a methodref info structure.
             </documentation>
         </annotation>
         <restriction base="opal:AbstractFormatElement">
@@ -431,8 +430,8 @@
      <simpleType name="FormatElement-ushort_cp_index-to-interface_methodref">
         <annotation>
             <documentation>
-            An index in the constant pool (an unsigned short value).
-            Refering to an interface methodref structure. Actually, an
+            An index in the constant pool (an unsigned short value)
+            referring to an interface methodref structure. Actually, an
             interface methodref and a "simple" methodref structure are
             structurally equal.            
             </documentation>
@@ -537,7 +536,6 @@
         <annotation>
             <documentation>The next byte value always has a fixed value or no meaningful value; 
             	hence, it is not necessary to store the value.<xhtml:br/>
-                By today's standards this element is no longer meaningful.
             </documentation>
         </annotation>
         <restriction base="opal:AbstractFormatElement">

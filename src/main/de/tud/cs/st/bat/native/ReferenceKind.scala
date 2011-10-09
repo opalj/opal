@@ -34,23 +34,31 @@ package de.tud.cs.st.bat.native
 
 
 /**
-
+ * Represents the different "reference_kind" values as used by the 
+ * CONSTANT_MethodHandle_info.
+ *
  * @author Michael Eichberg
  */
-trait CONSTANT_String_info extends Constant_Pool_Entry {
+object ReferenceKind extends Enumeration {
 	
-	//
-	// ABSTRACT DEFINITIONS
-	//
-	
-	val string_index:Int
+	type ReferenceKind = Value // this enables us to use the type "ReferenceKind" in our code!
 
+	val REF_getField = Value(1,"REF_getField")
 
-	//
-	// IMPLEMENTATION
-	//
+	val REF_getStatic = Value(2,"REF_getStatic")
 
-	def Constant_Type_Value = Constant_Pool_Entry.CONSTANT_String
-  
+	val REF_putField = Value(3,"REF_putField")
+
+	val REF_putStatic = Value(4,"REF_putStatic")
+
+	val REF_invokeVirtual = Value(5,"REF_invokeVirtual")
+
+	val REF_invokeStatic = Value(6,"REF_invokeStatic")
+
+	val REF_invokeSpecial = Value(7,"REF_invokeSpecial")
+
+	val REF_newInvokeSpecial = Value(8,"REF_newInvokeSpecial")
+
+	val REF_invokeInterface = Value(9,"REF_invokeInterface")
+
 }
-

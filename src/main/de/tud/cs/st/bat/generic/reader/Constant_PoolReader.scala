@@ -30,7 +30,8 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.generic.reader
+package de.tud.cs.st.bat.generic
+package reader
 
 import java.io.DataInputStream
 
@@ -61,6 +62,10 @@ trait Constant_PoolReader{
  	type CONSTANT_NameAndType_info <: Constant_Pool_Entry
 	private type T  = { def value : String } // a structural type
 	type CONSTANT_Utf8_info <: Constant_Pool_Entry with T
+	// Defined by Java 7:
+	type CONSTANT_MethodHandle_info  <: Constant_Pool_Entry
+	type CONSTANT_MethodType_info <: Constant_Pool_Entry
+	type CONSTANT_InvokeDynamic_info <: Constant_Pool_Entry
 	
 	
 	// FACTORY METHODS
@@ -76,51 +81,63 @@ trait Constant_PoolReader{
 	def CONSTANT_Double_info(d : Double) : CONSTANT_Double_info
 	def CONSTANT_NameAndType_info(name_index : Int, descriptor_index : Int) : CONSTANT_NameAndType_info
 	def CONSTANT_Utf8_info(s : String) : CONSTANT_Utf8_info
+	// Defined by Java 7:	
+	def CONSTANT_MethodHandle_info(reference_kind : Int, reference_index : Int) : CONSTANT_MethodHandle_info
+	def CONSTANT_MethodType_info(descriptor_index : Int) : CONSTANT_MethodType_info
+	def CONSTANT_InvokeDynamic_info(bootstrap_method_attr_index : Int, name_and_type_index : Int) : CONSTANT_InvokeDynamic_info
 	
 
 	//
 	// IMPLEMENTATION
 	//	
 	
-	import de.tud.cs.st.bat.native.Constant_Pool_Entry._ // CONSTANT_Class ... CONSTANT_Utf8
+	import de.tud.cs.st.bat.native.Constant_Pool_Entry._ // CONSTANT_Class ... CONSTANT_Utf8 ... CONSTANT_InvokeDynamic
 	
 	type Constant_Pool = IndexedSeq[Constant_Pool_Entry]
 
-	private val reader : Array[(DataInputStream)=>Constant_Pool_Entry] = new Array(13)
+	private val reader = new Array[(DataInputStream)=>Constant_Pool_Entry](de.tud.cs.st.bat.native.Constant_Pool_Entry.maxId+1)
 	
-	reader(CONSTANT_Class) = (in : DataInputStream) 
+	reader(CONSTANT_Class.id) = (in : DataInputStream) 
 			=> CONSTANT_Class_info(in.readUnsignedShort)
 	
-	reader(CONSTANT_Fieldref) = (in : DataInputStream) 
+	reader(CONSTANT_Fieldref.id) = (in : DataInputStream) 
 			=> CONSTANT_Fieldref_info(in.readUnsignedShort, in.readUnsignedShort)
   
-	reader(CONSTANT_Methodref) = (in : DataInputStream) 
+	reader(CONSTANT_Methodref.id) = (in : DataInputStream) 
 			=> CONSTANT_Methodref_info(in.readUnsignedShort, in.readUnsignedShort)
 
-	reader(CONSTANT_InterfaceMethodref) = (in : DataInputStream) 
+	reader(CONSTANT_InterfaceMethodref.id) = (in : DataInputStream) 
 			=> CONSTANT_InterfaceMethodref_info(in.readUnsignedShort, in.readUnsignedShort)
 
-	reader(CONSTANT_String) = (in : DataInputStream) 
+	reader(CONSTANT_String.id) = (in : DataInputStream) 
 			=> CONSTANT_String_info(in.readUnsignedShort)
 
-	reader(CONSTANT_Integer) = (in : DataInputStream) 
+	reader(CONSTANT_Integer.id) = (in : DataInputStream) 
 			=> CONSTANT_Integer_info(in.readInt)
 
-	reader(CONSTANT_Float) = (in : DataInputStream) 
+	reader(CONSTANT_Float.id) = (in : DataInputStream) 
 			=> CONSTANT_Float_info(in.readFloat)
 
-	reader(CONSTANT_Long) = (in : DataInputStream)
+	reader(CONSTANT_Long.id) = (in : DataInputStream)
 	 		=> CONSTANT_Long_info(in.readLong)
 
-	reader(CONSTANT_Double) = (in : DataInputStream) 
+	reader(CONSTANT_Double.id) = (in : DataInputStream) 
 			=> CONSTANT_Double_info(in.readDouble)
 
-	reader(CONSTANT_NameAndType) = (in : DataInputStream) 
+	reader(CONSTANT_NameAndType.id) = (in : DataInputStream) 
 			=> CONSTANT_NameAndType_info(in.readUnsignedShort, in.readUnsignedShort)
 
-	reader(CONSTANT_Utf8) = (in : DataInputStream) 
+	reader(CONSTANT_Utf8.id) = (in : DataInputStream) 
 			=> CONSTANT_Utf8_info(in.readUTF)
 
+	reader(CONSTANT_MethodHandle.id) = (in : DataInputStream) 
+			=> CONSTANT_MethodHandle_info(in.readUnsignedByte, in.readUnsignedShort)
+				
+	reader(CONSTANT_MethodType.id) = (in : DataInputStream) 
+			=> CONSTANT_MethodType_info(in.readUnsignedShort)
+				
+	reader(CONSTANT_InvokeDynamic.id) = (in : DataInputStream) 
+			=> CONSTANT_InvokeDynamic_info(in.readUnsignedShort, in.readUnsignedShort)
 
 	def Constant_Pool (in : DataInputStream) : Constant_Pool = {
 		/*
@@ -140,11 +157,11 @@ trait Constant_PoolReader{
 		while (i < constant_pool_count) {
 			val tag = in.readUnsignedByte 
 			val constantReader = reader(tag)
-			val constantPoolEntry = reader(tag)(in)
+			val constantPoolEntry = constantReader(in)
 			constant_pool_entries(i) = constantPoolEntry
 			tag match { 
-				case CONSTANT_Long => i += 2
-				case CONSTANT_Double => i += 2
+				case CONSTANT_Long_ID => i += 2
+				case CONSTANT_Double_ID => i += 2
 				case _ => i += 1
 			}
     	}

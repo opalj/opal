@@ -34,23 +34,40 @@ package de.tud.cs.st.bat.native
 
 
 /**
-
+ * <pre>
+ * CONSTANT_InvokeDynamic_info { 
+ *   u1 tag;
+ *   u2 bootstrap_method_attr_index;
+ *   u2 name_and_type_index;
+ * }
+ * </pre>
  * @author Michael Eichberg
  */
-trait CONSTANT_String_info extends Constant_Pool_Entry {
-	
+trait CONSTANT_InvokeDynamic_info extends Constant_Pool_Entry {
+
 	//
 	// ABSTRACT DEFINITIONS
 	//
-	
-	val string_index:Int
+
+   /** 
+	 * From the JVM specification: The value of the bootstrap_method_attr_index 
+	 * item must be a valid index into the bootstrap_methods array of the 
+	 * bootstrap method table of this class file.
+	 */
+	val bootstrap_method_attr_index : Int
+		
+	val name_and_type_index : Int
 
 
 	//
 	// IMPLEMENTATION
 	//
 
-	def Constant_Type_Value = Constant_Pool_Entry.CONSTANT_String
-  
+ 	def Constant_Type_Value = Constant_Pool_Entry.CONSTANT_InvokeDynamic
 }
+
+
+
+
+
 

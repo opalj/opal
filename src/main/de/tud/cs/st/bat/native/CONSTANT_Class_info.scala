@@ -56,15 +56,3 @@ trait CONSTANT_Class_info extends Constant_Pool_Entry {
   
 }
 
-/* TODO Remove....
-object CONSTANT_Class_info {
-	
-	type Constant_Pool = Seq[Constant_Pool_Entry]
-	
-	def unapply (ci_cp : (CONSTANT_Class_info,Constant_Pool)) : Option[String] = {
-		val (ci,cp) = ci_cp
-		Some(
-			cp(ci.name_index) match { case CONSTANT_Utf8_info(v) => v }
-		)
-	}
-}*/

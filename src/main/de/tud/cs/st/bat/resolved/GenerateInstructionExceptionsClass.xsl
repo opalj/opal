@@ -35,7 +35,7 @@
   Author: Michael Eichberg (www.michael-eichberg.de)
 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="2.0"
-	xmlns:opal="http://www.opal-project.de/BAT/10.2009/JVMInstructions">
+	xmlns:opal="http://www.opal-project.de/BAT/10.2011/JVMInstructions">
 
 	<xsl:output media-type="text/plain" encoding="UTF-8" method="text" />
 

@@ -38,11 +38,11 @@ import de.tud.cs.st.util.ControlAbstractions.repeat
 
 
 /**
- * Reads for the StackMapTable attribute.
+ * Template method to read the (Java 7) BootstrapMethods attribute.
  *
  * @author Michael Eichberg
  */
-trait StackMapTable_attributeReader  {
+trait BootstrapMethods_attributeReader  {
  
 
 	//
@@ -51,34 +51,63 @@ trait StackMapTable_attributeReader  {
 
 
 	type Constant_Pool
-	type Attribute >: Null
-	type StackMapTable_attribute <: Attribute
-	type StackMapFrame
-	implicit val StackMapFrameManifest: ClassManifest[StackMapFrame]
-		
-		
-	type StackMapFrames = IndexedSeq[StackMapFrame]
 	
+	type Attribute >: Null
+	type BootstrapMethods_attribute <: Attribute
+	
+	
+	type BootstrapMethod
+	implicit val BootstrapMethodManifest: ClassManifest[BootstrapMethod]
+	type BootstrapArgument
+	implicit val BootstrapArgumentManifest : ClassManifest[BootstrapArgument]
 	
 	def register(r : (String,(DataInputStream, Constant_Pool, Int) => Attribute)) : Unit	
-	
-	
-	def StackMapFrame(in : DataInputStream, cp : Constant_Pool) : StackMapFrame
-	
-			
+						
 	// Factory methods
-	def StackMapTable_attribute (
-		attribute_name_index : Int, attribute_length : Int, stack_map_frames : StackMapFrames
-	)( implicit constant_pool : Constant_Pool) : StackMapTable_attribute
 	
+	def BootstrapMethods_attribute (
+		attribute_name_index : Int, attribute_length : Int, bootstrap_methods : BootstrapMethods
+	)( implicit constant_pool : Constant_Pool) : BootstrapMethods_attribute
+		
+	def BootstrapMethod(
+		bootstrap_method_ref : Int, bootstrap_arguments : BootstrapArguments
+	)( implicit constant_pool : Constant_Pool) :  BootstrapMethod	
 
+	def BootstrapArgument(
+		constant_pool_ref : Int
+	)( implicit constant_pool : Constant_Pool) :  BootstrapArgument
+
+
+	// 
+	// IMPLEMENTATION
+	//
+
+	val ATTRIBUTE_NAME = "BootstrapMethods"
+
+	type BootstrapMethods = IndexedSeq[BootstrapMethod]
+	
+	type BootstrapArguments = IndexedSeq[BootstrapArgument]
+	
+	def BootstrapArgument(in : DataInputStream, cp : Constant_Pool) : BootstrapArgument = {
+		BootstrapArgument(in.readUnsignedShort)( cp )
+	}
+	
+	def BootstrapMethod(in : DataInputStream, cp : Constant_Pool) : BootstrapMethod = {
+		BootstrapMethod(
+			in.readUnsignedShort,
+			repeat(in.readUnsignedShort){
+				BootstrapArgument(in,cp)
+			}
+		)( cp )
+	}
+	
 	private lazy val reader = ( 
-		de.tud.cs.st.bat.native.StackMapTable_attribute.name -> 
+		ATTRIBUTE_NAME -> 
 		((in : DataInputStream, cp : Constant_Pool, attribute_name_index : Int) => {
-			StackMapTable_attribute(
+			BootstrapMethods_attribute(
 				attribute_name_index, in.readInt, // attribute_length
 				repeat (in.readUnsignedShort) {
-					StackMapFrame(in,cp)
+					BootstrapMethod(in,cp)
 				}
 			)( cp )
 		})

@@ -40,10 +40,9 @@ import de.tud.cs.st.bat.generic.reader.CodeReader
 
 
 /**
- * <p>
- * This class is currently not intended to be directly (re-)used; it is rather a template how to construct a 
- * special reader.
- * </p>
+ * This "framework" can be used to read in Java 6 (vesion 50) class files. All
+ * standard information (as defined in the Java Virtual Machine Specification)
+ * is represented.
  *
  * @author Michael Eichberg
  */
@@ -53,7 +52,7 @@ object Java6Framework
 		with MethodsReader
 		with FieldsReader
 		with AttributesReader
-		//with Unknown_attributeBinding
+		//with Unknown_attributeBinding // If this entire line is commented out: unknown attributes are completely ignored
 		with SkipUnknown_attributeReader
 		with AnnotationsBinding	
 		with StackMapTable_attributeBinding 

@@ -36,8 +36,8 @@ import de.tud.cs.st.bat.generic.reader.Unknown_attributeReader
 
 
 /**
- * This class is not intended to be directly reused; it is rather a template that should be 
- * specialized to one's own needs.
+ * Creates a one:to:one representation of Java bytecode. I.e., all references 
+ * in, e.g., the constant pool are not resolved.
  *
  * @author Michael Eichberg
  */

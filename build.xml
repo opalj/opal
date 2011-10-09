@@ -45,7 +45,7 @@ Author 		Michael Eichberg (mail@michael-eichberg.de)
     <property file="build.properties"  />
 
 	<!-- General properties -->
-	<property name="version" value="0.7.0.final" />
+	<property name="version" value="0.7.1.alpha" />
 
 
 	<!-- Directories which contain the project's source files. -->
@@ -142,13 +142,13 @@ Author 		Michael Eichberg (mail@michael-eichberg.de)
 	<target name="check-instructions-specification"
 			description="Checks the instructions specification document.">
 			
-		<schemavalidate failonerror="true" file="${src.spec.dir}/10.2009/JVMInstructions.xml">
+		<schemavalidate failonerror="true" file="${src.spec.dir}/10.2011/JVMInstructions.xml">
 			<!--EXAMPLE IF WE NEED TO MAKE THE BINDING (namespace to schema) EXPLICIT
 	        	<schema namespace="http://schemas.xmlsoap.org/ws/2003/03/addressing"
 	          			file="${soap.dir}/ws-addressing.xsd" />
 			-->
 		</schemavalidate>
-		<echo>Schema validation of "10.2009/JVMInstructions.xml" succeeded.</echo>			
+		<echo>Schema validation of "10.2011/JVMInstructions.xml" succeeded.</echo>			
 	</target>
 	
 	<target 
@@ -159,14 +159,14 @@ Author 		Michael Eichberg (mail@michael-eichberg.de)
 		<mkdir dir="${scala.generated.dir}/de/tud/cs/st/bat/resolved/reader"/>
 	
 	<!-- Does not work - we need an XSLT 2.0 processor
-		<xslt in="${src.spec.dir}/10.2009/JVMInstructions.xml" out="${scala.generated.dir}/de/tud/cs/st/bat/resolved/InstructionExceptions.scala"
+		<xslt in="${src.spec.dir}/10.2011/JVMInstructions.xml" out="${scala.generated.dir}/de/tud/cs/st/bat/resolved/InstructionExceptions.scala"
 		      style="${src.main.dir}/de/tud/cs/st/bat/resolved/GenerateInstructionExceptionsClass.xsl">
 		</xslt>		
 	-->
 				
 		<saxon-xslt 
 			style="${src.main.dir}/de/tud/cs/st/bat/resolved/GenerateInstructionExceptionsClass.xsl"
-			in="${src.spec.dir}/10.2009/JVMInstructions.xml"
+			in="${src.spec.dir}/10.2011/JVMInstructions.xml"
 			out="${scala.generated.dir}/de/tud/cs/st/bat/resolved/InstructionExceptions.scala">
 		</saxon-xslt>
 
@@ -174,7 +174,7 @@ Author 		Michael Eichberg (mail@michael-eichberg.de)
 			We want to run the XSLT task only when the JVMInstructions file has changed.
 		-->
 		<saxon-xslt 
-			basedir="${src.spec.dir}/10.2009"
+			basedir="${src.spec.dir}/10.2011"
 			destdir="${scala.generated.dir}/de/tud/cs/st/bat/resolved"
 			style="${src.main.dir}/de/tud/cs/st/bat/resolved/GenerateInstructionClasses.xsl"
 			includes="JVMInstructions.xml">
@@ -183,7 +183,7 @@ Author 		Michael Eichberg (mail@michael-eichberg.de)
 
 		<saxon-xslt 
 			style="${src.main.dir}/de/tud/cs/st/bat/resolved/reader/GenerateBytecodeReaderAndBindingClass.xsl"
-			in="${src.spec.dir}/10.2009/JVMInstructions.xml"
+			in="${src.spec.dir}/10.2011/JVMInstructions.xml"
 			out="${scala.generated.dir}/de/tud/cs/st/bat/resolved/reader/BytecodeReaderAndBinding.scala">
 		</saxon-xslt>
 	</target>
@@ -355,7 +355,7 @@ Author 		Michael Eichberg (mail@michael-eichberg.de)
 		<xslt 	basedir="${src.spec.dir}" 
 				destdir="${doc.dir}" 
 				style="${lib.dir}/xs3p.xsl" 
-				includes="10.2009/JVMInstructions.xsd"/>
+				includes="10.2011/JVMInstructions.xsd"/>
 	</target>
 	
 	<target name="doc" depends="api-doc,instructions-schema-doc" description="Generates all documentation." />

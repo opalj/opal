@@ -32,11 +32,11 @@
 */
 package de.tud.cs.st.bat.native
 
-import java.io.DataInput
+//import java.io.DataInput
 
 
 /**
-
+ *
  * @author Michael Eichberg
  */
 trait CONSTANT_Fieldref_info extends CONSTANT_Ref {

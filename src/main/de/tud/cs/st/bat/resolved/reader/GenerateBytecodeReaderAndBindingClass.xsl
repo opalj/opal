@@ -35,7 +35,7 @@
   Author: Michael Eichberg (www.michael-eichberg.de)
 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="2.0"
-	xmlns:opal="http://www.opal-project.de/BAT/10.2009/JVMInstructions">
+	xmlns:opal="http://www.opal-project.de/BAT/10.2011/JVMInstructions">
 
 	<xsl:param name="debug" select="'false'" />
 
@@ -173,7 +173,6 @@ trait BytecodeReaderAndBinding extends Constant_PoolResolver with CodeBinding{
 				<xsl:with-param name="parameterId" select="$parameterId"/>
 			</xsl:call-template>
 		</xsl:when>		
-		
 		<!--  STANDARD VALUES -->
 		<xsl:when test="$fet eq 'atype'">
 			<xsl:if test="$fe/@id">// <xsl:value-of select="$fe/@id"/>: </xsl:if>	
@@ -224,7 +223,8 @@ trait BytecodeReaderAndBinding extends Constant_PoolResolver with CodeBinding{
 			</xsl:call-template>
 		</xsl:when>	
 		<!-- CONSTANT POOL ENTRIES -->
-		<xsl:when test="$fet eq 'ushort_cp_index→name_and_methoddescriptor'">
+		<xsl:when test="$fet eq 'ushort_cp_index→call_site_specifier'">
+			// TODO index into bootstrap method attribute table
 			val (name,methodDescriptor) /*: (String, MethodDescriptor)*/  = CONSTANT_NameAndType_info_IndexToNameAndMethodDescriptor(in.readUnsignedShort) <xsl:if test="$fe/@id">// <xsl:value-of select="$fe/@id"/></xsl:if> 
 			val p<xsl:value-of select="$parameterId"/> : String = name
 			val p<xsl:value-of select="$parameterId+1"/> : MethodDescriptor = methodDescriptor	
@@ -310,7 +310,7 @@ trait BytecodeReaderAndBinding extends Constant_PoolResolver with CodeBinding{
 		</xsl:when>			
 						
 		<xsl:otherwise>
-			<xsl:message terminate="no">Unsupported format element (type): <xsl:value-of select="$fe"/> (<xsl:value-of select="$fe/@type"/>)</xsl:message>	
+			<xsl:message terminate="yes">Unsupported format element (type): <xsl:value-of select="$fe"/> (<xsl:value-of select="$fe/@type"/>)</xsl:message>	
 		</xsl:otherwise>
 	</xsl:choose>
 	</xsl:if>
@@ -345,7 +345,7 @@ trait BytecodeReaderAndBinding extends Constant_PoolResolver with CodeBinding{
 			</xsl:call-template>
 		</xsl:when>
 		<xsl:when test="$fet eq 'ubyte' or $fet eq 'byte' or $fet eq 'atype' or $fet eq 'ushort' or $fet eq 'short' or $fet eq 'int' or $fet eq 'branchoffset' or $fet eq 'branchoffset_wide' or $fet eq 'ushort_cp_index→referenceType' or $fet eq 'ushort_cp_index→objectType' or $fet eq 'ubyte_cp_index→constant_value' or $fet eq 'ushort_cp_index→constant_value' or name($fe) eq 'list'">p<xsl:value-of select="$parameterId"/><xsl:if test="$fes[2] and not($fes[2]/@type eq 'IGNORE')">, </xsl:if><xsl:call-template name="create_constructor_parameters"><xsl:with-param name="fes" select="$fes[position() > 1]"/><xsl:with-param name="parameterId" select="$parameterId + 1"/></xsl:call-template></xsl:when>
-		<xsl:when test="$fet eq 'ushort_cp_index→name_and_methoddescriptor'">p<xsl:value-of select="$parameterId"/>, p<xsl:value-of select="$parameterId + 1"/><xsl:if test="$fes[2] and not($fes[2]/@type eq 'IGNORE')">, </xsl:if><xsl:call-template name="create_constructor_parameters"><xsl:with-param name="fes" select="$fes[position() > 1]"/><xsl:with-param name="parameterId" select="$parameterId + 2"/></xsl:call-template></xsl:when>
+		<xsl:when test="$fet eq 'ushort_cp_index→call_site_specifier'">/*TODO valid index into the bootstrap_methods array of the bootstrap method table */ p<xsl:value-of select="$parameterId"/>, p<xsl:value-of select="$parameterId + 1"/><xsl:if test="$fes[2] and not($fes[2]/@type eq 'IGNORE')">, </xsl:if><xsl:call-template name="create_constructor_parameters"><xsl:with-param name="fes" select="$fes[position() > 1]"/><xsl:with-param name="parameterId" select="$parameterId + 2"/></xsl:call-template></xsl:when>
 		<xsl:when test="$fet eq 'ushort_cp_index→fieldref' or $fet eq 'ushort_cp_index→methodref' or $fet eq 'ushort_cp_index→interface_methodref'">p<xsl:value-of select="$parameterId"/>, p<xsl:value-of select="$parameterId + 1"/>, p<xsl:value-of select="$parameterId + 2"/><xsl:if test="$fes[2] and not($fes[2]/@type eq 'IGNORE')">, </xsl:if><xsl:call-template name="create_constructor_parameters"><xsl:with-param name="fes" select="$fes[position() > 1]"/><xsl:with-param name="parameterId" select="$parameterId + 3"/></xsl:call-template></xsl:when>
 		<xsl:otherwise><xsl:message terminate="yes">Unsupported format type encountered while creating constructor parameters.</xsl:message></xsl:otherwise>
 	</xsl:choose>

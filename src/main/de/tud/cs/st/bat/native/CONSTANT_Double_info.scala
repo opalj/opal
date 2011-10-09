@@ -55,11 +55,3 @@ trait CONSTANT_Double_info extends Constant_Pool_Entry {
   	def Constant_Type_Value = Constant_Pool_Entry.CONSTANT_Double
   
 }
-
-/* TODO Remove....
-object CONSTANT_Double_info {
-	
-	def unapply (i : CONSTANT_Double_info) : Option[Double] = Some(i.value)
-	
-}
-*/

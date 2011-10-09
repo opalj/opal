@@ -32,7 +32,7 @@
 */
 package de.tud.cs.st.bat.native
 
-import java.io.DataInput
+//import java.io.DataInput
 
 
 /**

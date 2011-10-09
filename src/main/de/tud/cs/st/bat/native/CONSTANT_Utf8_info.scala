@@ -56,10 +56,3 @@ trait CONSTANT_Utf8_info extends Constant_Pool_Entry {
 	def Constant_Type_Value = Constant_Pool_Entry.CONSTANT_Utf8
   
 }
-
-/* TODO Remove....
-object CONSTANT_Utf8_info {
-	
-	def unapply (i : CONSTANT_Utf8_info) : Option[String] = Some(i.value)
-	
-}*/

@@ -34,23 +34,26 @@ package de.tud.cs.st.bat.native
 
 
 /**
-
  * @author Michael Eichberg
  */
-trait CONSTANT_String_info extends Constant_Pool_Entry {
-	
+trait CONSTANT_MethodType_info extends Constant_Pool_Entry {
+
 	//
 	// ABSTRACT DEFINITIONS
 	//
-	
-	val string_index:Int
+		
+	val descriptor_index : Int
 
 
 	//
 	// IMPLEMENTATION
 	//
 
-	def Constant_Type_Value = Constant_Pool_Entry.CONSTANT_String
-  
+ 	def Constant_Type_Value = Constant_Pool_Entry.CONSTANT_MethodType
 }
+
+
+
+
+
 

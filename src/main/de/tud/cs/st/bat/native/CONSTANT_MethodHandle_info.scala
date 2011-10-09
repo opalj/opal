@@ -34,23 +34,30 @@ package de.tud.cs.st.bat.native
 
 
 /**
-
  * @author Michael Eichberg
  */
-trait CONSTANT_String_info extends Constant_Pool_Entry {
+trait CONSTANT_MethodHandle_info extends Constant_Pool_Entry {
+	
+	import ReferenceKind._
 	
 	//
 	// ABSTRACT DEFINITIONS
 	//
 	
-	val string_index:Int
+	val reference_kind : ReferenceKind
+	
+	/**
+	 * The value of the reference_index item must be a valid index
+	 * into the constant_pool table.
+	 */
+	val reference_index : Int
 
 
 	//
 	// IMPLEMENTATION
 	//
 
-	def Constant_Type_Value = Constant_Pool_Entry.CONSTANT_String
+	def Constant_Type_Value = Constant_Pool_Entry.CONSTANT_MethodHandle
   
 }
 

@@ -117,7 +117,7 @@ trait ClassFileReader extends Constant_PoolAbstractions{ 	// TODO Split up the C
 		// let's make sure that we support this class file's version
 		require (major_version >= 45 && // at least JDK 1.1.
 					(major_version < 51 || 
-					 (major_version == 51 && minor_version == 0))) // Java 6		
+					 (major_version == 51 && minor_version == 0))) // Java 6 = 50.0; Java 7 == 51.0		
 		
 		implicit val cp = Constant_Pool(in) 
 		val access_flags = in.readUnsignedShort // access_flags

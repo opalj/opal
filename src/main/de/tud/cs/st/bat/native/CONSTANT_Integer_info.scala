@@ -32,7 +32,7 @@
 */
 package de.tud.cs.st.bat.native
 
-import java.io.DataInput
+//import java.io.DataInput
 
 
 /**
@@ -56,11 +56,3 @@ trait CONSTANT_Integer_info extends Constant_Pool_Entry  {
  	def Constant_Type_Value = Constant_Pool_Entry.CONSTANT_Integer
   
 }
-
-/* TODO Remove....
-object CONSTANT_Integer_info {
-	
-	def unapply (i : CONSTANT_Integer_info) : Option[Int] = Some(i.value)
-	
-}
-*/

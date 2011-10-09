@@ -32,7 +32,7 @@
 */
 package de.tud.cs.st.bat.native
 
-import java.io.DataInput
+//import java.io.DataInput
 
 
 /**
@@ -46,6 +46,7 @@ trait CONSTANT_NameAndType_info extends Constant_Pool_Entry {
 	//
 	
 	/**
+	 * From the JVM specification: 
 	 * The value of the name_index item must be a valid index into the 
 	 * constant_pool table. The constant_pool entry at that index 
 	 * must be a CONSTANT_Utf8_info (§4.5.7) structure representing 
