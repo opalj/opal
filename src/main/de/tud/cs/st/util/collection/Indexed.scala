@@ -37,7 +37,6 @@ package de.tud.cs.st.util.collection
  * A stripped down variant of scala's default "IndexedSeq" trait that
  * does not specify / implement operations that are (potentially) expensive.
  * 
-
  * @author Michael Eichberg
  */
 trait Indexed[A] {

@@ -46,11 +46,13 @@ object ControlAbstractions {
 	/**
 	 * This function takes care of the correct handling of input streams.
 	 * The function takes a function <code>f</code> that creates a new <code>InputStream</code> 
-	 * and a function <code>r</code> that processes an input stream.
+	 * and a function <code>r</code> that processes an input stream. If f returns
+	 * <code>null</code>, <code>null</code> is passed to r.
 	 */
 	def read [I <: InputStream,T](f : => I) (r : I => T) : T = {
 		
 		val in = f // this calls the function f
+		
 		try {
 			
 			r(in)
@@ -62,7 +64,6 @@ object ControlAbstractions {
 
 
 	def repeat[T : ClassManifest](times:Int)(f: => T): WrappedArray[T] = {
-	// 2.7 def repeat[T](times:Int)(f: => T): Array[T] = {
 		val array = new Array[T](times)
 		var i = 0
 		while (i < times) {
@@ -74,7 +75,6 @@ object ControlAbstractions {
 	
 	
 	def repeat[T : ClassManifest](f:() => T)(times : Int) : WrappedArray[T] = {
-	// 2.7 def repeat[T](f:() => T)(times : Int) : Array[T] = {
 		repeat(times)(f())
   	}
 
@@ -85,7 +85,6 @@ object ControlAbstractions {
 	 * in an array of size times.
     */	
 	def repeatResultOfEvaluation[T : ClassManifest](f: => T)(times : Int) : WrappedArray[T] = {
-	// 2.7 def repeatResultOfEvaluation[T](f: => T)(times : Int) : Array[T] = {
 		repeat(times)(f)
 	}
 }

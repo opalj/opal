@@ -47,8 +47,10 @@ trait Constant_Pool_Entry {
 }
 
 // TODO Move to the generic package because the following information is required, when reading a class file
+// TODO Rename to Constant_Pool_Tags
 object Constant_Pool_Entry extends Enumeration {
 
+	// the following order, is the order as used in JVM Spec:
 	val CONSTANT_Class_ID					= 7
 	val CONSTANT_Fieldref_ID 					= 9
 	val CONSTANT_Methodref_ID 					= 10
@@ -85,7 +87,5 @@ object Constant_Pool_Entry extends Enumeration {
 	val CONSTANT_MethodHandle				= Value(15,"CONSTANT_MethodHandle")
 	val CONSTANT_MethodType					= Value(16,"CONSTANT_MethodType")
 	val CONSTANT_InvokeDynamic				= Value(18,"CONSTANT_InvokeDynamic")
-	
-	
-	
+		
 }
