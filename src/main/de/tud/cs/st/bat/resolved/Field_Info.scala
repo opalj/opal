@@ -53,8 +53,8 @@ case class Field_Info (
   	val attributes : Attributes
 ) { 
 
-	import de.tud.cs.st.bat.native.AccessFlagsContext.FIELD
-	import de.tud.cs.st.bat.native.AccessFlagsIterator
+	import de.tud.cs.st.bat.canonical.AccessFlagsContext.FIELD
+	import de.tud.cs.st.bat.canonical.AccessFlagsIterator
 		
 	def toXML = 
 		<field 		

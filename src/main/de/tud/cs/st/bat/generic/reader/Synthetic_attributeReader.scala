@@ -56,7 +56,7 @@ trait Synthetic_attributeReader {
 
 
 	private lazy val reader = ( 
-			de.tud.cs.st.bat.native.Synthetic_attribute.name -> 
+			de.tud.cs.st.bat.canonical.Synthetic_attribute.name -> 
 			((in : DataInputStream, cp : Constant_Pool, attribute_name_index : Int) => {
 				val attribute_length = in.readInt
 				Synthetic_attribute(attribute_name_index)(cp)

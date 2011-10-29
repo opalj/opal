@@ -85,7 +85,7 @@ trait Code_attributeReader {
 	
 	
 	private lazy val reader = ( 
-		de.tud.cs.st.bat.native.Code_attribute.name -> 
+		de.tud.cs.st.bat.canonical.Code_attribute.name -> 
 		((in : DataInputStream, cp : Constant_Pool, attribute_name_index : Int) => {
 				
 			Code_attribute(

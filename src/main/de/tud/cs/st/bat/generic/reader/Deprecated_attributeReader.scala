@@ -60,7 +60,7 @@ trait Deprecated_attributeReader {
 	
 
 	private lazy val deprecated_attribute_reader = ( 
-			de.tud.cs.st.bat.native.Deprecated_attribute.name -> 
+			de.tud.cs.st.bat.canonical.Deprecated_attribute.name -> 
 			((in : DataInputStream, cp : Constant_Pool, attribute_name_index : Int) => {
 				val attribute_length = in.readInt
 				Deprecated_attribute(attribute_name_index)(cp)

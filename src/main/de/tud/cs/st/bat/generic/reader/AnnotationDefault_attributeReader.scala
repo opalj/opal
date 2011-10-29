@@ -72,7 +72,7 @@ trait AnnotationDefault_attributeReader  {
 	
 
 	private lazy val reader = ( 
-			de.tud.cs.st.bat.native.AnnotationDefault_attribute.name -> 
+			de.tud.cs.st.bat.canonical.AnnotationDefault_attribute.name -> 
 			((in : DataInputStream, cp : Constant_Pool, attribute_name_index : Int) => {
 				val attribute_length = in.readInt()
 				AnnotationDefault_attribute(

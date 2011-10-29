@@ -63,7 +63,7 @@ trait EnclosingMethod_attributeReader {
 
 
 	private lazy val reader = ( 
-			de.tud.cs.st.bat.native.EnclosingMethod_attribute.name -> 
+			de.tud.cs.st.bat.canonical.EnclosingMethod_attribute.name -> 
 			((in : DataInputStream, cp : Constant_Pool, attribute_name_index : Int) => {
 				val attribute_length = in.readInt
 				EnclosingMethod_attribute(

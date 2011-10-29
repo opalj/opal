@@ -76,8 +76,8 @@ case class InnerClassesEntry(
 	val innerClassAccessFlags : Int
 ) {
 	
-	import de.tud.cs.st.bat.native.AccessFlagsContext.INNER_CLASS
-	import de.tud.cs.st.bat.native.AccessFlags
+	import de.tud.cs.st.bat.canonical.AccessFlagsContext.INNER_CLASS
+	import de.tud.cs.st.bat.canonical.AccessFlags
 	
 	def toXML = 
 		<class innerName={ innerName }>

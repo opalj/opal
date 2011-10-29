@@ -73,7 +73,7 @@ trait StackMapTable_attributeReader  {
 	
 
 	private lazy val reader = ( 
-		de.tud.cs.st.bat.native.StackMapTable_attribute.name -> 
+		de.tud.cs.st.bat.canonical.StackMapTable_attribute.name -> 
 		((in : DataInputStream, cp : Constant_Pool, attribute_name_index : Int) => {
 			StackMapTable_attribute(
 				attribute_name_index, in.readInt, // attribute_length

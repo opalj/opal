@@ -61,7 +61,7 @@ trait ConstantValue_attributeReader  {
 
 
 	private lazy val reader = ( 
-			de.tud.cs.st.bat.native.ConstantValue_attribute.name -> 
+			de.tud.cs.st.bat.canonical.ConstantValue_attribute.name -> 
 			((in : DataInputStream, cp : Constant_Pool, attribute_name_index : Int) => {
 				val attribute_length = in.readInt
 				ConstantValue_attribute(attribute_name_index, in.readUnsignedShort)(cp)

@@ -34,24 +34,24 @@ package de.tud.cs.st.bat.resolved
 
 import de.tud.cs.st.prolog.{GroundTerm,GroundTerms,Atom,Fact}
 
-import de.tud.cs.st.bat.native.AccessFlagsContext
-import de.tud.cs.st.bat.native.ACC_INTERFACE
-import de.tud.cs.st.bat.native.ACC_ANNOTATION
-import de.tud.cs.st.bat.native.ACC_ENUM
-import de.tud.cs.st.bat.native.ACC_PUBLIC
-import de.tud.cs.st.bat.native.ACC_PRIVATE
-import de.tud.cs.st.bat.native.ACC_PROTECTED
-import de.tud.cs.st.bat.native.ACC_BRIDGE
-import de.tud.cs.st.bat.native.ACC_NATIVE
-import de.tud.cs.st.bat.native.ACC_STATIC
-import de.tud.cs.st.bat.native.ACC_STRICT
-import de.tud.cs.st.bat.native.ACC_SYNCHRONIZED
-import de.tud.cs.st.bat.native.ACC_SYNTHETIC
-import de.tud.cs.st.bat.native.ACC_FINAL
-import de.tud.cs.st.bat.native.ACC_VOLATILE
-import de.tud.cs.st.bat.native.ACC_TRANSIENT
-import de.tud.cs.st.bat.native.ACC_VARARGS
-import de.tud.cs.st.bat.native.ACC_ABSTRACT
+import de.tud.cs.st.bat.canonical.AccessFlagsContext
+import de.tud.cs.st.bat.canonical.ACC_INTERFACE
+import de.tud.cs.st.bat.canonical.ACC_ANNOTATION
+import de.tud.cs.st.bat.canonical.ACC_ENUM
+import de.tud.cs.st.bat.canonical.ACC_PUBLIC
+import de.tud.cs.st.bat.canonical.ACC_PRIVATE
+import de.tud.cs.st.bat.canonical.ACC_PROTECTED
+import de.tud.cs.st.bat.canonical.ACC_BRIDGE
+import de.tud.cs.st.bat.canonical.ACC_NATIVE
+import de.tud.cs.st.bat.canonical.ACC_STATIC
+import de.tud.cs.st.bat.canonical.ACC_STRICT
+import de.tud.cs.st.bat.canonical.ACC_SYNCHRONIZED
+import de.tud.cs.st.bat.canonical.ACC_SYNTHETIC
+import de.tud.cs.st.bat.canonical.ACC_FINAL
+import de.tud.cs.st.bat.canonical.ACC_VOLATILE
+import de.tud.cs.st.bat.canonical.ACC_TRANSIENT
+import de.tud.cs.st.bat.canonical.ACC_VARARGS
+import de.tud.cs.st.bat.canonical.ACC_ABSTRACT
 
 import TypeAliases._
 

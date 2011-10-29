@@ -33,7 +33,7 @@
 package de.tud.cs.st.bat.resolved
 package reader
 
-import de.tud.cs.st.bat.native.reader.Constant_PoolBinding
+import de.tud.cs.st.bat.canonical.reader.Constant_PoolBinding
 
 import de.tud.cs.st.bat.resolved.FieldDescriptor
 import de.tud.cs.st.bat.resolved.MethodDescriptor

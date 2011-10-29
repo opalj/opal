@@ -61,7 +61,7 @@ trait RuntimeVisibleAnnotations_attributeReader {
 	
 
 	private lazy val reader = ( 
-		de.tud.cs.st.bat.native.RuntimeVisibleAnnotations_attribute.name -> 
+		de.tud.cs.st.bat.canonical.RuntimeVisibleAnnotations_attribute.name -> 
 		((in : DataInputStream, cp : Constant_Pool, attribute_name_index : Int) => {
 			val attribute_length = in.readInt()
 			RuntimeVisibleAnnotations_attribute(

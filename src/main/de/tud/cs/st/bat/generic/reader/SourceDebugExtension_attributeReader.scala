@@ -55,7 +55,7 @@ trait SourceDebugExtension_attributeReader {
 
 
 	private lazy val reader = ( 
-			de.tud.cs.st.bat.native.SourceDebugExtension_attribute.name -> 
+			de.tud.cs.st.bat.canonical.SourceDebugExtension_attribute.name -> 
 			((in : DataInputStream, cp : Constant_Pool, attribute_name_index : Int) => {
 				val attribute_length = in.readInt
 				SourceDebugExtension_attribute(

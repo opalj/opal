@@ -30,7 +30,7 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.native
+package de.tud.cs.st.bat.canonical
 
 
 /**
@@ -66,7 +66,7 @@ trait ClassFile {
 	// ABSTRACT DEFINITIONS
 	//
 
-	type Constant_Pool_Entry <: de.tud.cs.st.bat.native.Constant_Pool_Entry
+	type Constant_Pool_Entry <: de.tud.cs.st.bat.canonical.Constant_Pool_Entry
 	type Fields // = Seq[Field_Info]
 	type Methods // = Seq[Method_Info]
 	type Attributes // = Seq[Attribute]

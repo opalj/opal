@@ -36,7 +36,7 @@ import java.io.{InputStream,DataInputStream,BufferedInputStream}
 
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
-import de.tud.cs.st.bat.native.ClassFile.magic
+import de.tud.cs.st.bat.canonical.ClassFile.magic
 
 
 

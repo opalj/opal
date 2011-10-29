@@ -37,7 +37,7 @@ import java.util.zip.ZipFile
 import java.util.zip.ZipEntry
 import java.util.Enumeration
 
-import de.tud.cs.st.bat.native.reader.BasicJava6Framework
+import de.tud.cs.st.bat.canonical.reader.BasicJava6Framework
 import de.tud.cs.st.bat.resolved.reader.Java6Framework
 
 import org.scalatest.Suite

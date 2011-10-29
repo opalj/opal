@@ -66,7 +66,7 @@ trait LocalVariableTable_attributeReader  {
 
 
 	private lazy val reader = ( 
-			de.tud.cs.st.bat.native.LocalVariableTable_attribute.name -> 
+			de.tud.cs.st.bat.canonical.LocalVariableTable_attribute.name -> 
 			((in : DataInputStream, cp : Constant_Pool, attribute_name_index : Int) => {
 				val attribute_length = in.readInt()
 				LocalVariableTable_attribute(

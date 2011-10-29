@@ -91,11 +91,11 @@ trait Constant_PoolReader{
 	// IMPLEMENTATION
 	//	
 	
-	import de.tud.cs.st.bat.native.Constant_Pool_Entry._ // CONSTANT_Class ... CONSTANT_Utf8 ... CONSTANT_InvokeDynamic
+	import de.tud.cs.st.bat.canonical.Constant_Pool_Entry._ // CONSTANT_Class ... CONSTANT_Utf8 ... CONSTANT_InvokeDynamic
 	
 	type Constant_Pool = IndexedSeq[Constant_Pool_Entry]
 
-	private val reader = new Array[(DataInputStream)=>Constant_Pool_Entry](de.tud.cs.st.bat.native.Constant_Pool_Entry.maxId+1)
+	private val reader = new Array[(DataInputStream)=>Constant_Pool_Entry](de.tud.cs.st.bat.canonical.Constant_Pool_Entry.maxId+1)
 	
 	reader(CONSTANT_Class.id) = (in : DataInputStream) 
 			=> CONSTANT_Class_info(in.readUnsignedShort)

@@ -33,7 +33,7 @@
 package de.tud.cs.st.bat
 package interop
 
-import native._
+import canonical._
 import resolved.TypeAliases._
 
 /**

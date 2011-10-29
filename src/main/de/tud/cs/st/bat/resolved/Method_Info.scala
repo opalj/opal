@@ -54,8 +54,8 @@ case class Method_Info (
 ) {
 
 
-	import de.tud.cs.st.bat.native.AccessFlagsContext.METHOD
-	import de.tud.cs.st.bat.native.AccessFlagsIterator
+	import de.tud.cs.st.bat.canonical.AccessFlagsContext.METHOD
+	import de.tud.cs.st.bat.canonical.AccessFlagsIterator
 
 //	def getCode : Option[Code_Attribute] = {
 		

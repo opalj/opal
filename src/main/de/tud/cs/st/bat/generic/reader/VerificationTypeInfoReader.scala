@@ -104,7 +104,7 @@ trait VerificationTypeInfoReader {
 	
 	private val verification_type_info_reader = {
 		
-		import de.tud.cs.st.bat.native.VerificationTypeInfo._
+		import de.tud.cs.st.bat.canonical.VerificationTypeInfo._
 		
 		val r = new Array[(DataInputStream, Constant_Pool) => VerificationTypeInfo](9)
 				

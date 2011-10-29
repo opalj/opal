@@ -30,7 +30,7 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.native.reader
+package de.tud.cs.st.bat.canonical.reader
 
 import de.tud.cs.st.bat.generic.reader.Unknown_attributeReader
 
@@ -52,25 +52,25 @@ object BasicJava6Framework
 	//
 
 
-	type Attribute = de.tud.cs.st.bat.native.Attribute
+	type Attribute = de.tud.cs.st.bat.canonical.Attribute
 
 
-	type ElementValue = de.tud.cs.st.bat.native.ElementValue
+	type ElementValue = de.tud.cs.st.bat.canonical.ElementValue
 
-	val VerificationTypeInfoManifest : ClassManifest[de.tud.cs.st.bat.native.reader.BasicJava6Framework.VerificationTypeInfo] = implicitly
-	val StackMapFrameManifest : ClassManifest[de.tud.cs.st.bat.native.reader.BasicJava6Framework.StackMapFrame]= implicitly
-	val ElementValuePairManifest : ClassManifest[de.tud.cs.st.bat.native.reader.BasicJava6Framework.ElementValuePair]= implicitly
-	val ElementValueManifest : ClassManifest[de.tud.cs.st.bat.native.reader.BasicJava6Framework.ElementValue]= implicitly
-	val AnnotationManifest : ClassManifest[de.tud.cs.st.bat.native.reader.BasicJava6Framework.Annotation]= implicitly
-	val ExceptionTableEntryManifest : ClassManifest[de.tud.cs.st.bat.native.reader.BasicJava6Framework.ExceptionTableEntry]= implicitly
-	val LocalVariableTypeTableEntryManifest : ClassManifest[de.tud.cs.st.bat.native.reader.BasicJava6Framework.LocalVariableTypeTableEntry]= implicitly
-	val LocalVariableTableEntryManifest : ClassManifest[de.tud.cs.st.bat.native.reader.BasicJava6Framework.LocalVariableTableEntry]= implicitly
-	val LineNumberTableEntryManifest : ClassManifest[de.tud.cs.st.bat.native.reader.BasicJava6Framework.LineNumberTableEntry]= implicitly
-	val InnerClassesEntryManifest : ClassManifest[de.tud.cs.st.bat.native.reader.BasicJava6Framework.InnerClassesEntry]= implicitly
-	val Exceptions_attributeManifest : ClassManifest[de.tud.cs.st.bat.native.reader.BasicJava6Framework.Exceptions_attribute]= implicitly
-	val AttributeManifest : ClassManifest[de.tud.cs.st.bat.native.reader.BasicJava6Framework.Attribute]= implicitly
-	val Method_InfoManifest : ClassManifest[de.tud.cs.st.bat.native.reader.BasicJava6Framework.Method_Info]= implicitly
-	val Field_InfoManifest : ClassManifest[de.tud.cs.st.bat.native.reader.BasicJava6Framework.Field_Info]= implicitly
+	val VerificationTypeInfoManifest : ClassManifest[de.tud.cs.st.bat.canonical.reader.BasicJava6Framework.VerificationTypeInfo] = implicitly
+	val StackMapFrameManifest : ClassManifest[de.tud.cs.st.bat.canonical.reader.BasicJava6Framework.StackMapFrame]= implicitly
+	val ElementValuePairManifest : ClassManifest[de.tud.cs.st.bat.canonical.reader.BasicJava6Framework.ElementValuePair]= implicitly
+	val ElementValueManifest : ClassManifest[de.tud.cs.st.bat.canonical.reader.BasicJava6Framework.ElementValue]= implicitly
+	val AnnotationManifest : ClassManifest[de.tud.cs.st.bat.canonical.reader.BasicJava6Framework.Annotation]= implicitly
+	val ExceptionTableEntryManifest : ClassManifest[de.tud.cs.st.bat.canonical.reader.BasicJava6Framework.ExceptionTableEntry]= implicitly
+	val LocalVariableTypeTableEntryManifest : ClassManifest[de.tud.cs.st.bat.canonical.reader.BasicJava6Framework.LocalVariableTypeTableEntry]= implicitly
+	val LocalVariableTableEntryManifest : ClassManifest[de.tud.cs.st.bat.canonical.reader.BasicJava6Framework.LocalVariableTableEntry]= implicitly
+	val LineNumberTableEntryManifest : ClassManifest[de.tud.cs.st.bat.canonical.reader.BasicJava6Framework.LineNumberTableEntry]= implicitly
+	val InnerClassesEntryManifest : ClassManifest[de.tud.cs.st.bat.canonical.reader.BasicJava6Framework.InnerClassesEntry]= implicitly
+	val Exceptions_attributeManifest : ClassManifest[de.tud.cs.st.bat.canonical.reader.BasicJava6Framework.Exceptions_attribute]= implicitly
+	val AttributeManifest : ClassManifest[de.tud.cs.st.bat.canonical.reader.BasicJava6Framework.Attribute]= implicitly
+	val Method_InfoManifest : ClassManifest[de.tud.cs.st.bat.canonical.reader.BasicJava6Framework.Method_Info]= implicitly
+	val Field_InfoManifest : ClassManifest[de.tud.cs.st.bat.canonical.reader.BasicJava6Framework.Field_Info]= implicitly
 
 
 	case class ClassFile (
@@ -84,7 +84,7 @@ object BasicJava6Framework
 	  	val fields : Fields,
 	  	val methods : Methods,
 	  	val attributes : Attributes
-	) extends de.tud.cs.st.bat.native.ClassFile{
+	) extends de.tud.cs.st.bat.canonical.ClassFile{
 
 		type Constant_Pool_Entry = BasicJava6Framework.Constant_Pool_Entry
 		type Fields = BasicJava6Framework.Fields
@@ -109,7 +109,7 @@ object BasicJava6Framework
 	  	val name_index : Int,
 	  	val descriptor_index : Int,
 	  	val attributes : Attributes
-	) extends de.tud.cs.st.bat.native.Field_Info {
+	) extends de.tud.cs.st.bat.canonical.Field_Info {
 
 		type Attributes = BasicJava6Framework.Attributes
 	}	
@@ -127,7 +127,7 @@ object BasicJava6Framework
 		val name_index : Int,
 		val descriptor_index : Int,
 		val attributes : Attributes
-	) extends de.tud.cs.st.bat.native.Method_Info {
+	) extends de.tud.cs.st.bat.canonical.Method_Info {
 
 		type Attributes = BasicJava6Framework.Attributes
 	}
@@ -143,7 +143,7 @@ object BasicJava6Framework
 	case class Unknown_attribute(
 		val attribute_name_index : Int,
 		val info : Array[Byte]
-	) extends de.tud.cs.st.bat.native.Unknown_attribute 
+	) extends de.tud.cs.st.bat.canonical.Unknown_attribute 
 
 	def Unknown_attribute(
 		attribute_name_index : Int,
@@ -156,7 +156,7 @@ object BasicJava6Framework
 	case class SourceFile_attribute(
 		val attribute_name_index : Int,
 		val sourceFile_index : Int
-	) extends de.tud.cs.st.bat.native.SourceFile_attribute 
+	) extends de.tud.cs.st.bat.canonical.SourceFile_attribute 
 
 	def SourceFile_attribute(
 		attribute_name_index : Int, sourceFile_index : Int
@@ -166,7 +166,7 @@ object BasicJava6Framework
 	case class InnerClasses_attribute(
 		val attribute_name_index : Int,
 		val classes : InnerClassesEntries
-	) extends de.tud.cs.st.bat.native.InnerClasses_attribute	{
+	) extends de.tud.cs.st.bat.canonical.InnerClasses_attribute	{
 
 		type Class = BasicJava6Framework.InnerClassesEntry
 
@@ -183,7 +183,7 @@ object BasicJava6Framework
 		val outer_class_info_index : Int,
 		val inner_name_index : Int,
 		val inner_class_access_flags : Int
-	) extends de.tud.cs.st.bat.native.InnerClassesEntry	
+	) extends de.tud.cs.st.bat.canonical.InnerClassesEntry	
 
 	def InnerClassesEntry(
 		inner_class_info_index : Int, outer_class_info_index : Int,
@@ -199,7 +199,7 @@ object BasicJava6Framework
 	case class Signature_attribute(
 		val attribute_name_index : Int,
 		val signature_index : Int
-	) extends de.tud.cs.st.bat.native.Signature_attribute 
+	) extends de.tud.cs.st.bat.canonical.Signature_attribute 
 
 	def Signature_attribute (
 		attribute_name_index : Int,signature_index : Int
@@ -210,7 +210,7 @@ object BasicJava6Framework
 	case class ConstantValue_attribute (
 		val attribute_name_index : Int,
 		val constantvalue_index : Int 
-	) extends de.tud.cs.st.bat.native.ConstantValue_attribute
+	) extends de.tud.cs.st.bat.canonical.ConstantValue_attribute
 
 	def ConstantValue_attribute (
 		attribute_name_index : Int, constantvalue_index : Int 
@@ -219,7 +219,7 @@ object BasicJava6Framework
 
 	case class Deprecated_attribute (
 		val attribute_name_index : Int
-	) extends de.tud.cs.st.bat.native.Deprecated_attribute
+	) extends de.tud.cs.st.bat.canonical.Deprecated_attribute
 
 	def Deprecated_attribute(attribute_name_index: Int)(implicit constant_pool : Constant_Pool) =
 		new Deprecated_attribute(attribute_name_index)
@@ -227,7 +227,7 @@ object BasicJava6Framework
 
 	case class Synthetic_attribute (
 		val attribute_name_index : Int
-	) extends de.tud.cs.st.bat.native.Synthetic_attribute
+	) extends de.tud.cs.st.bat.canonical.Synthetic_attribute
 
 	def Synthetic_attribute (attribute_name_index : Int)( implicit constant_pool : Constant_Pool) =
  		new Synthetic_attribute (attribute_name_index)
@@ -236,7 +236,7 @@ object BasicJava6Framework
 	case class SourceDebugExtension_attribute (
 		val attribute_name_index : Int,
 		val debug_extension : String
-	) extends de.tud.cs.st.bat.native.SourceDebugExtension_attribute 
+	) extends de.tud.cs.st.bat.canonical.SourceDebugExtension_attribute 
 
 	def SourceDebugExtension_attribute (
 		attribute_name_index : Int, attribute_length : Int, debug_extension : String
@@ -249,7 +249,7 @@ object BasicJava6Framework
 	case class Exceptions_attribute (
 		val attribute_name_index : Int,
 		val exception_index_table : ExceptionIndexTable
-	) extends de.tud.cs.st.bat.native.Exceptions_attribute
+	) extends de.tud.cs.st.bat.canonical.Exceptions_attribute
 
 	def Exceptions_attribute (
 		attribute_name_index : Int, attribute_length : Int,
@@ -262,7 +262,7 @@ object BasicJava6Framework
 		val attribute_name_index : Int,
 		val class_index : Int,
 		val method_index : Int
-	) extends de.tud.cs.st.bat.native.EnclosingMethod_attribute
+	) extends de.tud.cs.st.bat.canonical.EnclosingMethod_attribute
 
 	def EnclosingMethod_attribute(
 		attribute_name_index : Int, class_index : Int, method_index : Int
@@ -275,7 +275,7 @@ object BasicJava6Framework
 	case class LineNumberTable_attribute(
 		val attribute_name_index : Int,
 		val line_number_table : LineNumberTable		
-	) extends de.tud.cs.st.bat.native.LineNumberTable_attribute {
+	) extends de.tud.cs.st.bat.canonical.LineNumberTable_attribute {
 
 		type LineNumberTableEntry = BasicJava6Framework.LineNumberTableEntry
 
@@ -292,7 +292,7 @@ object BasicJava6Framework
  	case class LineNumberTableEntry (
 		val start_pc : Int,
 		val line_number : Int
-	) extends de.tud.cs.st.bat.native.LineNumberTableEntry 
+	) extends de.tud.cs.st.bat.canonical.LineNumberTableEntry 
 
 	def LineNumberTableEntry (start_pc : Int, line_number : Int)( implicit constant_pool : Constant_Pool) = 
 		new LineNumberTableEntry (start_pc, line_number)
@@ -304,7 +304,7 @@ object BasicJava6Framework
 		val name_index : Int,
 		val descriptor_index : Int,
 		val index : Int
-	) extends de.tud.cs.st.bat.native.LocalVariableTableEntry
+	) extends de.tud.cs.st.bat.canonical.LocalVariableTableEntry
 
 	def LocalVariableTableEntry (
 		start_pc : Int, length : Int,	name_index : Int,	descriptor_index : Int,	index : Int
@@ -317,7 +317,7 @@ object BasicJava6Framework
 	case class LocalVariableTable_attribute (
 		val attribute_name_index : Int,
 		val local_variable_table : LocalVariableTable
-	) extends de.tud.cs.st.bat.native.LocalVariableTable_attribute {
+	) extends de.tud.cs.st.bat.canonical.LocalVariableTable_attribute {
 
 		type LocalVariableTableEntry = BasicJava6Framework.LocalVariableTableEntry
 
@@ -337,7 +337,7 @@ object BasicJava6Framework
 		val name_index : Int,
 		val signature_index : Int,
 		val index : Int
-	) extends de.tud.cs.st.bat.native.LocalVariableTypeTableEntry
+	) extends de.tud.cs.st.bat.canonical.LocalVariableTypeTableEntry
 
 	def LocalVariableTypeTableEntry (
 		start_pc : Int, length : Int,	name_index : Int,	signature_index : Int,	index : Int
@@ -350,7 +350,7 @@ object BasicJava6Framework
 	case class LocalVariableTypeTable_attribute (
 		val attribute_name_index : Int,
 		val local_variable_type_table : LocalVariableTypeTable
-	) extends de.tud.cs.st.bat.native.LocalVariableTypeTable_attribute {
+	) extends de.tud.cs.st.bat.canonical.LocalVariableTypeTable_attribute {
 
 		type LocalVariableTypeTableEntry = BasicJava6Framework.LocalVariableTypeTableEntry
 
@@ -378,7 +378,7 @@ object BasicJava6Framework
 		val code : Code,
 		val exception_table : ExceptionTable,
 		val attributes : Attributes
-	) extends de.tud.cs.st.bat.native.Code_attribute {
+	) extends de.tud.cs.st.bat.canonical.Code_attribute {
 
 		//
 		// ABSTRACT DEFINITIONS
@@ -405,7 +405,7 @@ object BasicJava6Framework
 		val end_pc: Int,
 		val handler_pc : Int,
 		val catch_type : Int
-	) extends de.tud.cs.st.bat.native.ExceptionTableEntry		
+	) extends de.tud.cs.st.bat.canonical.ExceptionTableEntry		
 
 	def ExceptionTableEntry ( 
 		start_pc: Int, end_pc: Int, handler_pc : Int, catch_type : Int
@@ -416,7 +416,7 @@ object BasicJava6Framework
 	case class ElementValuePair (
 		val element_name_index : Int,
 		val element_value : ElementValue
-	) extends de.tud.cs.st.bat.native.ElementValuePair {
+	) extends de.tud.cs.st.bat.canonical.ElementValuePair {
 
 		type ElementValue = BasicJava6Framework.ElementValue
 	}
@@ -428,52 +428,52 @@ object BasicJava6Framework
 
 
 
-	case class ByteValue(val const_value_index : Int) extends de.tud.cs.st.bat.native.ByteValue
+	case class ByteValue(val const_value_index : Int) extends de.tud.cs.st.bat.canonical.ByteValue
 	def ByteValue(const_value_index : Int)(implicit constant_pool : Constant_Pool) : ElementValue = 
 		new ByteValue(const_value_index)
 
 
-	case class CharValue(val const_value_index : Int) extends de.tud.cs.st.bat.native.CharValue
+	case class CharValue(val const_value_index : Int) extends de.tud.cs.st.bat.canonical.CharValue
 	def CharValue(const_value_index : Int)(implicit constant_pool : Constant_Pool) : ElementValue = 
 		new CharValue(const_value_index)
 
 
-	case class DoubleValue(val const_value_index : Int) extends de.tud.cs.st.bat.native.DoubleValue
+	case class DoubleValue(val const_value_index : Int) extends de.tud.cs.st.bat.canonical.DoubleValue
 	def DoubleValue(const_value_index : Int)(implicit constant_pool : Constant_Pool) : ElementValue = 
 		new DoubleValue(const_value_index)	
 
 
-	case class FloatValue(val const_value_index : Int) extends de.tud.cs.st.bat.native.FloatValue
+	case class FloatValue(val const_value_index : Int) extends de.tud.cs.st.bat.canonical.FloatValue
 	def FloatValue(const_value_index : Int)(implicit constant_pool : Constant_Pool) : ElementValue = 
 		new FloatValue(const_value_index)
 
 
-	case class IntValue(val const_value_index : Int) extends de.tud.cs.st.bat.native.IntValue
+	case class IntValue(val const_value_index : Int) extends de.tud.cs.st.bat.canonical.IntValue
 	def IntValue(const_value_index : Int)(implicit constant_pool : Constant_Pool) : ElementValue = 
 		new IntValue(const_value_index)
 
 
-	case class LongValue(val const_value_index : Int) extends de.tud.cs.st.bat.native.LongValue
+	case class LongValue(val const_value_index : Int) extends de.tud.cs.st.bat.canonical.LongValue
 	def LongValue(const_value_index : Int)(implicit constant_pool : Constant_Pool) : ElementValue = 
 		new LongValue(const_value_index)
 
 
-	case class ShortValue(val const_value_index : Int) extends de.tud.cs.st.bat.native.ShortValue
+	case class ShortValue(val const_value_index : Int) extends de.tud.cs.st.bat.canonical.ShortValue
 	def ShortValue(const_value_index : Int)(implicit constant_pool : Constant_Pool) : ElementValue = 
 		new ShortValue(const_value_index)
 
 
-	case class BooleanValue(val const_value_index : Int) extends de.tud.cs.st.bat.native.BooleanValue
+	case class BooleanValue(val const_value_index : Int) extends de.tud.cs.st.bat.canonical.BooleanValue
 	def BooleanValue(const_value_index : Int)(implicit constant_pool : Constant_Pool) : ElementValue = 
 		new BooleanValue(const_value_index)
 
 
-	case class StringValue(val const_value_index : Int) extends de.tud.cs.st.bat.native.StringValue
+	case class StringValue(val const_value_index : Int) extends de.tud.cs.st.bat.canonical.StringValue
 	def StringValue(const_value_index : Int)(implicit constant_pool : Constant_Pool) : ElementValue = 
 		new StringValue(const_value_index)
 
 
-	case class ClassValue(val const_value_index : Int) extends de.tud.cs.st.bat.native.ClassValue
+	case class ClassValue(val const_value_index : Int) extends de.tud.cs.st.bat.canonical.ClassValue
 	def ClassValue(const_value_index : Int)(implicit constant_pool : Constant_Pool) : ElementValue = 
 		new ClassValue(const_value_index)
 
@@ -481,7 +481,7 @@ object BasicJava6Framework
 	case class EnumValue(
 		val type_name_index : Int,
 		val const_name_index : Int
-	) extends de.tud.cs.st.bat.native.EnumValue
+	) extends de.tud.cs.st.bat.canonical.EnumValue
 
 	def EnumValue(
 		type_name_index : Int,const_name_index : Int
@@ -491,7 +491,7 @@ object BasicJava6Framework
 
 	case class AnnotationValue (
 		val annotation : Annotation
-	) extends de.tud.cs.st.bat.native.AnnotationValue {
+	) extends de.tud.cs.st.bat.canonical.AnnotationValue {
 
 		type Annotation = BasicJava6Framework.Annotation
 
@@ -501,13 +501,13 @@ object BasicJava6Framework
 		new AnnotationValue(annotation)
 
 
-	case class ArrayValue (val values : Seq[ElementValue]) extends de.tud.cs.st.bat.native.ArrayValue
+	case class ArrayValue (val values : Seq[ElementValue]) extends de.tud.cs.st.bat.canonical.ArrayValue
 	def ArrayValue(values : ElementValues)( implicit constant_pool : Constant_Pool) : ElementValue = 
 		new ArrayValue(values)
 
 
 	case class Annotation ( val type_index : Int, val element_value_pairs : ElementValuePairs ) 
-	extends de.tud.cs.st.bat.native.Annotation {
+	extends de.tud.cs.st.bat.canonical.Annotation {
 
 		type ElementValuePairs = BasicJava6Framework.ElementValuePairs
 
@@ -523,7 +523,7 @@ object BasicJava6Framework
 		val attribute_name_index : Int,
 		val attribute_length : Int,
 		val element_value : ElementValue	
-	) extends de.tud.cs.st.bat.native.AnnotationDefault_attribute {
+	) extends de.tud.cs.st.bat.canonical.AnnotationDefault_attribute {
 
 		type ElementValue = BasicJava6Framework.ElementValue
 
@@ -541,7 +541,7 @@ object BasicJava6Framework
 		val attribute_name_index : Int,
 		val attribute_length : Int,
 		val annotations : Annotations
-	) extends de.tud.cs.st.bat.native.RuntimeVisibleAnnotations_attribute {
+	) extends de.tud.cs.st.bat.canonical.RuntimeVisibleAnnotations_attribute {
 
 		type Annotations = BasicJava6Framework.Annotations
 	}
@@ -558,7 +558,7 @@ object BasicJava6Framework
 		val attribute_name_index : Int,
 		val attribute_length : Int,
 		val annotations : Annotations
-	) extends de.tud.cs.st.bat.native.RuntimeInvisibleAnnotations_attribute {
+	) extends de.tud.cs.st.bat.canonical.RuntimeInvisibleAnnotations_attribute {
 
 		type Annotations = BasicJava6Framework.Annotations
 	}
@@ -575,7 +575,7 @@ object BasicJava6Framework
 		val attribute_name_index : Int, val attribute_length : Int,
 		val parameter_annotations : ParameterAnnotations
 	)
-	extends de.tud.cs.st.bat.native.RuntimeVisibleParameterAnnotations_attribute  {
+	extends de.tud.cs.st.bat.canonical.RuntimeVisibleParameterAnnotations_attribute  {
 
 		type ParameterAnnotations = BasicJava6Framework.ParameterAnnotations
 
@@ -593,7 +593,7 @@ object BasicJava6Framework
 		val attribute_name_index : Int, val attribute_length : Int,
 		val parameter_annotations : ParameterAnnotations
 	)
-	extends de.tud.cs.st.bat.native.RuntimeInvisibleParameterAnnotations_attribute  {
+	extends de.tud.cs.st.bat.canonical.RuntimeInvisibleParameterAnnotations_attribute  {
 
 		type ParameterAnnotations = BasicJava6Framework.ParameterAnnotations
 
@@ -611,7 +611,7 @@ object BasicJava6Framework
 		val attribute_name_index : Int,
 		val attribute_length : Int,
 		val stack_map_frames : StackMapFrames
-	) extends de.tud.cs.st.bat.native.StackMapTable_attribute {
+	) extends de.tud.cs.st.bat.canonical.StackMapTable_attribute {
 
 		type StackMapFrames = BasicJava6Framework.StackMapFrames
 
@@ -623,22 +623,22 @@ object BasicJava6Framework
 		new StackMapTable_attribute (attribute_name_index, attribute_length, stack_map_frames )
 
 
-	trait StackMapFrame extends de.tud.cs.st.bat.native.StackMapFrame {
+	trait StackMapFrame extends de.tud.cs.st.bat.canonical.StackMapFrame {
 		type VerificationTypeInfo = BasicJava6Framework.VerificationTypeInfo
 	}
 
 
-	case class SameFrame(val frame_type : Int) extends de.tud.cs.st.bat.native.SameFrame with StackMapFrame
+	case class SameFrame(val frame_type : Int) extends de.tud.cs.st.bat.canonical.SameFrame with StackMapFrame
 	def SameFrame(frame_type : Int) : StackMapFrame = new SameFrame(frame_type)
 
 
-	case class SameLocals1StackItemFrame(val frame_type : Int, val verification_type_info_stack : VerificationTypeInfo) extends de.tud.cs.st.bat.native.SameLocals1StackItemFrame with StackMapFrame
+	case class SameLocals1StackItemFrame(val frame_type : Int, val verification_type_info_stack : VerificationTypeInfo) extends de.tud.cs.st.bat.canonical.SameLocals1StackItemFrame with StackMapFrame
 	def SameLocals1StackItemFrame(
 		frame_type: Int,verification_type_info_stack : VerificationTypeInfo
 	) : StackMapFrame = new SameLocals1StackItemFrame(frame_type,verification_type_info_stack)
 
 
-	case class SameLocals1StackItemFrameExtended(val frame_type : Int, val offset_delta : Int, val verification_type_info_stack : VerificationTypeInfo) extends de.tud.cs.st.bat.native.SameLocals1StackItemFrameExtended with StackMapFrame
+	case class SameLocals1StackItemFrameExtended(val frame_type : Int, val offset_delta : Int, val verification_type_info_stack : VerificationTypeInfo) extends de.tud.cs.st.bat.canonical.SameLocals1StackItemFrameExtended with StackMapFrame
 	def SameLocals1StackItemFrameExtended(
 		frame_type: Int,
 		offset_delta: Int,
@@ -646,22 +646,22 @@ object BasicJava6Framework
 	) : StackMapFrame = new SameLocals1StackItemFrameExtended(frame_type,offset_delta,verification_type_info_stack)
 
 
-	case class ChopFrame(val frame_type : Int, val offset_delta : Int) extends de.tud.cs.st.bat.native.ChopFrame with StackMapFrame
+	case class ChopFrame(val frame_type : Int, val offset_delta : Int) extends de.tud.cs.st.bat.canonical.ChopFrame with StackMapFrame
 	def ChopFrame(frame_type: Int, offset_delta : Int ) : StackMapFrame = new ChopFrame(frame_type,offset_delta)
 
 
-	case class SameFrameExtended(val frame_type : Int, val offset_delta : Int) extends de.tud.cs.st.bat.native.SameFrameExtended with StackMapFrame
+	case class SameFrameExtended(val frame_type : Int, val offset_delta : Int) extends de.tud.cs.st.bat.canonical.SameFrameExtended with StackMapFrame
 	def SameFrameExtended( frame_type: Int, offset_delta : Int) : StackMapFrame = new SameFrameExtended(frame_type,offset_delta)
 
 
-	case class AppendFrame(val frame_type : Int, val offset_delta : Int, val verification_type_info_locals : VerificationTypeInfoLocals) extends de.tud.cs.st.bat.native.AppendFrame with StackMapFrame	
+	case class AppendFrame(val frame_type : Int, val offset_delta : Int, val verification_type_info_locals : VerificationTypeInfoLocals) extends de.tud.cs.st.bat.canonical.AppendFrame with StackMapFrame	
 	def AppendFrame(
 		frame_type: Int,	
 		offset_delta: Int, verification_type_info_locals : VerificationTypeInfoLocals
 	) : StackMapFrame = new AppendFrame(frame_type,offset_delta,verification_type_info_locals)
 
 
-	case class FullFrame(val frame_type : Int, val offset_delta : Int, val verification_type_info_locals : VerificationTypeInfoLocals, val verification_type_info_stack : VerificationTypeInfoStack) extends de.tud.cs.st.bat.native.FullFrame with StackMapFrame		
+	case class FullFrame(val frame_type : Int, val offset_delta : Int, val verification_type_info_locals : VerificationTypeInfoLocals, val verification_type_info_stack : VerificationTypeInfoStack) extends de.tud.cs.st.bat.canonical.FullFrame with StackMapFrame		
 	def FullFrame(
 		frame_type: Int,	
 		offset_delta: Int,
@@ -670,34 +670,34 @@ object BasicJava6Framework
 	) : StackMapFrame = new FullFrame(frame_type,offset_delta,verification_type_info_locals,verification_type_info_stack)
 
 
-	type VerificationTypeInfo = de.tud.cs.st.bat.native.VerificationTypeInfo
+	type VerificationTypeInfo = de.tud.cs.st.bat.canonical.VerificationTypeInfo
 
-	case object TopVariableInfo extends de.tud.cs.st.bat.native.TopVariableInfo 
+	case object TopVariableInfo extends de.tud.cs.st.bat.canonical.TopVariableInfo 
 	def TopVariableInfo () : VerificationTypeInfo = TopVariableInfo
 
-	case object IntegerVariableInfo extends de.tud.cs.st.bat.native.IntegerVariableInfo
+	case object IntegerVariableInfo extends de.tud.cs.st.bat.canonical.IntegerVariableInfo
 	def IntegerVariableInfo () : VerificationTypeInfo = IntegerVariableInfo
 
-	case object FloatVariableInfo extends de.tud.cs.st.bat.native.FloatVariableInfo
+	case object FloatVariableInfo extends de.tud.cs.st.bat.canonical.FloatVariableInfo
 	def FloatVariableInfo () : VerificationTypeInfo = FloatVariableInfo
 
-	case object LongVariableInfo extends de.tud.cs.st.bat.native.LongVariableInfo
+	case object LongVariableInfo extends de.tud.cs.st.bat.canonical.LongVariableInfo
 	def LongVariableInfo () : VerificationTypeInfo = LongVariableInfo
 
-	case object DoubleVariableInfo extends de.tud.cs.st.bat.native.DoubleVariableInfo
+	case object DoubleVariableInfo extends de.tud.cs.st.bat.canonical.DoubleVariableInfo
 	def DoubleVariableInfo () : VerificationTypeInfo = DoubleVariableInfo
 
-	case object NullVariableInfo extends de.tud.cs.st.bat.native.NullVariableInfo
+	case object NullVariableInfo extends de.tud.cs.st.bat.canonical.NullVariableInfo
 	def NullVariableInfo () : VerificationTypeInfo = NullVariableInfo
 
-	case object UninitializedThisVariableInfo extends de.tud.cs.st.bat.native.UninitializedThisVariableInfo
+	case object UninitializedThisVariableInfo extends de.tud.cs.st.bat.canonical.UninitializedThisVariableInfo
 	def UninitializedThisVariableInfo () : VerificationTypeInfo = UninitializedThisVariableInfo
 
-	case class UninitializedVariableInfo(val offset : Int) extends de.tud.cs.st.bat.native.UninitializedVariableInfo 
+	case class UninitializedVariableInfo(val offset : Int) extends de.tud.cs.st.bat.canonical.UninitializedVariableInfo 
 	def UninitializedVariableInfo(offset : Int) : VerificationTypeInfo = 
 		new UninitializedVariableInfo(offset)
 		
-	case class ObjectVariableInfo(val cpool_index : Int) extends de.tud.cs.st.bat.native.ObjectVariableInfo
+	case class ObjectVariableInfo(val cpool_index : Int) extends de.tud.cs.st.bat.canonical.ObjectVariableInfo
 	def ObjectVariableInfo(cpool_index : Int)(implicit constant_pool : Constant_Pool) : VerificationTypeInfo = 
 		new ObjectVariableInfo(cpool_index)		
 }

@@ -64,7 +64,7 @@ trait Exceptions_attributeReader extends Constant_PoolAbstractions {
 
 
 	private lazy val reader = ( 
-			de.tud.cs.st.bat.native.Exceptions_attribute.name -> 
+			de.tud.cs.st.bat.canonical.Exceptions_attribute.name -> 
 			((in : DataInputStream, cp : Constant_Pool, attribute_name_index : Constant_Pool_Index ) => {
 				val attribute_length = in.readInt()
 				Exceptions_attribute(

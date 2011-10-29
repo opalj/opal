@@ -66,7 +66,7 @@ trait SourceFile_attributeReader {
 	
 
 	private lazy val reader = (
-		de.tud.cs.st.bat.native.SourceFile_attribute.name -> 
+		de.tud.cs.st.bat.canonical.SourceFile_attribute.name -> 
 		((in : DataInputStream, cp : Constant_Pool, attribute_name_index : Int) => {
 				val attribute_length = in.readInt
 				SourceFile_attribute(attribute_name_index, in.readUnsignedShort)(cp)

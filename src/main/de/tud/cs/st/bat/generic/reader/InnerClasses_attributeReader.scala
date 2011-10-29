@@ -72,7 +72,7 @@ trait InnerClasses_attributeReader {
 	
 
 	private lazy val reader = ( 
-			de.tud.cs.st.bat.native.InnerClasses_attribute.name -> 
+			de.tud.cs.st.bat.canonical.InnerClasses_attribute.name -> 
 			((in : DataInputStream, cp : Constant_Pool, attribute_name_index : Int) => {
 				val attribute_length = in.readInt()
 				InnerClasses_attribute(

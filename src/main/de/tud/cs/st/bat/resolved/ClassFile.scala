@@ -37,10 +37,10 @@ import scala.xml.Null
 import scala.xml.Text
 import scala.xml.TopScope
 
-import de.tud.cs.st.bat.native.AccessFlagsContext
-import de.tud.cs.st.bat.native.ACC_INTERFACE
-import de.tud.cs.st.bat.native.ACC_ANNOTATION
-import de.tud.cs.st.bat.native.ACC_ENUM
+import de.tud.cs.st.bat.canonical.AccessFlagsContext
+import de.tud.cs.st.bat.canonical.ACC_INTERFACE
+import de.tud.cs.st.bat.canonical.ACC_ANNOTATION
+import de.tud.cs.st.bat.canonical.ACC_ENUM
 
 import TypeAliases._
 
@@ -63,8 +63,8 @@ case class ClassFile (
 ) {
 	
 	
-	import de.tud.cs.st.bat.native.AccessFlagsContext.CLASS
-	import de.tud.cs.st.bat.native.AccessFlagsIterator
+	import de.tud.cs.st.bat.canonical.AccessFlagsContext.CLASS
+	import de.tud.cs.st.bat.canonical.AccessFlagsIterator
 
 	
 	def toXML = {
