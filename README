@@ -1,6 +1,9 @@
+# Overview
 BAT is a Java Bytecode library written in Scala 2.9.x that facilitates generating
 representations of Java Bytecode that suit your needs. You can think of a BAT
-as a software product line for bytecode representations. 
+as a software product line for bytecode representations. BAT fully supports Java 6 
+class files and contains preliminary support for Java 7 as of Okt. 2011.
+
 
 Currently, four representations are provided.
 
@@ -29,7 +32,7 @@ Currently, BAT does not support manipulating existing Java class files and we ha
 no intentions to add this feature in the near future.
 
 
-BAT fully supports Java 6 class files and contains preliminary support for Java 7 as of Okt. 2011.
+# Using BAT
 
 To compile BAT just call the corresponding ANT target. If you just want to use, 
 but not otherwise extend BAT, it is recommended that you call "ant package" and 
