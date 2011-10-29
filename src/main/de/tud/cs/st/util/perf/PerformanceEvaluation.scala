@@ -46,8 +46,8 @@ trait PerformanceEvaluation extends BasicPerformanceEvaluation {
 
 	/**
 	 * Times the execution of a given method (function literal) / code block.
-	 * @param s a string that identifies the code that is measured. <br/>
-	 * E.g. <i>"clause evaluation".</i>
+	 * @param s a string that identifies the code/the method that is measured. <br/>
+	 * E.g. <i>"calculation of the fibonacci number".</i>
 	 */
 	def time[T](s : String)(f : => T ) : T
 

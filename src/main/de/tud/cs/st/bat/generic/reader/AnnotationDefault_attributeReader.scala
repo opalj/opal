@@ -38,7 +38,9 @@ import de.tud.cs.st.util.ControlAbstractions.repeat
 
 
 /**
-
+ * Reads in an annotation default attributes data and passes it to a factory 
+ * method that needs to be implemented by the user.
+ *
  * @author Michael Eichberg
  */
 trait AnnotationDefault_attributeReader  {
@@ -54,12 +56,9 @@ trait AnnotationDefault_attributeReader  {
 	type AnnotationDefault_attribute <: Attribute
 	type ElementValue
 			
-	// a flavor of structural typing... when we mixin this trait this method needs to be available.
 	def register(r : (String,(DataInputStream, Constant_Pool, Int) => Attribute)) : Unit 
 	
-	
 	def ElementValue(in : DataInputStream, cp : Constant_Pool) : ElementValue 
-	
 	
 	def AnnotationDefault_attribute (
 		attribute_name_index : Int, attribute_length : Int,element_value : ElementValue

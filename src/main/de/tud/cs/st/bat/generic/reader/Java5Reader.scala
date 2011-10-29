@@ -35,7 +35,7 @@ package de.tud.cs.st.bat.generic.reader
 
 /**
  * <p>
- * Framework to align all readers to one specific representations per class file entity. E.g. 
+ * Framework to align all readers to one specific representation per class file entity. E.g. 
  * all readers use the same type for Constant_Pool_Entry, Attribute, etc.. However, this class
  * does not prescribe the concrete representation e.g. of a field or method.
  * </p>

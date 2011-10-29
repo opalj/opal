@@ -37,7 +37,7 @@ import scala.collection.mutable.Map
 
 
 /**
- * "Empty"Implementation of the <code>PerformanceEvaluation</code> trait. If 
+ * "Empty" implementation of the <code>PerformanceEvaluation</code> trait. If 
  * this trait is mixed in no performance evaluation at all will be done. 
  * It can be assumed that the optimizations of a reasonable JVM will totally 
  * remove this code during execution and that no performance penalties occur.

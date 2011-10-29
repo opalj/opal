@@ -36,7 +36,7 @@ import de.tud.cs.st.util.Println
 
 
 /**
- * Counts how often some piece of code is executed.
+ * Counts how often some piece of code is executed. 
  *
  * @author Michael Eichberg
  */

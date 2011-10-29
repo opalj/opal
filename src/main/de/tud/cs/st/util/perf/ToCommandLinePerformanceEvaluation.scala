@@ -38,7 +38,8 @@ import scala.collection.mutable.Map
 
 
 /**
- * Prints the result of the performance evaluation to the command line.
+ * Prints the result of the runtime performance evaluation of some function to 
+ * the command line. This trait can be used as a very simple drop-in replacement
  *
  * @author Michael Eichberg
  */
