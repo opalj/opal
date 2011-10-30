@@ -5,23 +5,19 @@ as a software product line for bytecode representations. BAT fully supports Java
 class files and contains preliminary support for Java 7 as of Okt. 2011.
 
 
-Currently, four representations are provided.
-
-1) Native
+Currently, four representations are provided/are supported:
+1. Native
 Basically, a one to one representation of the class file; Java Bytecode's constant pool is 
 not resolved and instructions are not made explicit.
-
-2) Resolved
+2. Resolved
 An object-oriented representation that facilitates writing analysis against the
 bytecode. The constant pool is completely resolved and all instructions are 
 explicitly represented; most standard Java Bytecode annotations are represented.
-
-3) Prolog 
+3. Prolog 
 A representation of Java Bytecode as a set of Prolog facts. This representation
 builds upon the resolved representation and basically represents all information
 that are represented by the resolved representation.
-
-4) XML
+4. XML
 A representation of Java Bytecode as XML. Currently, instructions are not 
 represented.
 
