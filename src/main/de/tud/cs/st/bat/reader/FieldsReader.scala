@@ -30,38 +30,64 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved.reader
+package de.tud.cs.st.bat.reader
 
-import de.tud.cs.st.bat.reader.LineNumberTable_attributeReader
+import java.io.DataInputStream
+
+import de.tud.cs.st.util.ControlAbstractions.repeat
 
 
 /**
- * 
- *
+
  * @author Michael Eichberg
  */
-trait LineNumberTable_attributeBinding 
-	extends LineNumberTable_attributeReader
-		with Constant_PoolResolver
-		with AttributeBinding	
-{
-	
-	type LineNumberTableEntry = de.tud.cs.st.bat.resolved.LineNumberTableEntry		
-	val LineNumberTableEntryManifest : ClassManifest[LineNumberTableEntry] = implicitly
-	
-	type LineNumberTable_attribute = de.tud.cs.st.bat.resolved.LineNumberTable_attribute		
+trait FieldsReader {
+
+ 
+	//
+	// ABSTRACT DEFINITIONS
+	//
 
 
-	def LineNumberTable_attribute (
-		attribute_name_index : Int, attribute_length : Int, line_number_table : LineNumberTable
-	)( implicit constant_pool : Constant_Pool) : LineNumberTable_attribute = 
-		new LineNumberTable_attribute(line_number_table) 
+	type Field_Info
+	implicit val Field_InfoManifest : ClassManifest[Field_Info]
+	type Attributes
+	type Constant_Pool
 
 
-	def LineNumberTableEntry (start_pc : Int, line_number : Int)( implicit constant_pool : Constant_Pool) = 
-		new LineNumberTableEntry(start_pc, line_number)
+	def Attributes(in : DataInputStream, cp : Constant_Pool) : Attributes
+
+	// FACTORY METHODS
+	//
+		
+	def Field_Info(
+		access_flags : Int, name_index : Int, descriptor_index : Int, attributes : Attributes
+	)( implicit constant_pool : Constant_Pool) : Field_Info
+ 
+
+	//
+	// IMPLEMENTATION
+	//
 
 
+	type Fields = IndexedSeq[Field_Info]
+
+
+	// We need the constant pool to look up the attributes' names and other information.
+	def Fields(in : DataInputStream, cp : Constant_Pool) : Fields = {
+		val fields_count = in.readUnsignedShort
+		repeat(fields_count){
+			Field_Info(in,cp)
+		}
+	}
+  
+
+	private def Field_Info(in : DataInputStream, cp : Constant_Pool) : Field_Info = {
+		Field_Info(
+			in.readUnsignedShort,
+      	in.readUnsignedShort,
+      	in.readUnsignedShort,
+      	Attributes(in,cp) 
+    	)( cp )
+  	}
 }
-
-

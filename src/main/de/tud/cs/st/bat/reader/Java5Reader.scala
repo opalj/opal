@@ -30,38 +30,45 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved.reader
-
-import de.tud.cs.st.bat.reader.LineNumberTable_attributeReader
+package de.tud.cs.st.bat.reader
 
 
 /**
+ * <p>
+ * Framework to align all readers to one specific representation per class file entity. E.g. 
+ * all readers use the same type for Constant_Pool_Entry, Attribute, etc.. However, this class
+ * does not prescribe the concrete representation e.g. of a field or method.
+ * </p>
+ * <p>
+ * We do want to have a concrete framework for reading class files that can be tailored
+ * w.r.t. the OO representation that is generated while parsing the class files. <br />
  * 
+ * To enable this flexibility the class (traits) to read in various parts of a Java class file call 
+ * factory methods to create objects that 
+ * represents each "significant (read: all entitities described in the JVM Spec.)" class file entry.
+ * Since each reader of a class file entity should be independently reusable, abstract types and factory methods are used to 
+ * specify dependencies of a reader on entities read by other readers; readers do not have direct
+ * dependencies on other readers or the created classes.
+ * However, some readers do make some (minimal) assumptions about the constant pool and, hence, 
+ * specify this dependency by refering to an interface that represents the constant_pool and 
+ * which declares the required method.
+ * </p>
  *
  * @author Michael Eichberg
  */
-trait LineNumberTable_attributeBinding 
-	extends LineNumberTable_attributeReader
-		with Constant_PoolResolver
-		with AttributeBinding	
+trait Java5Reader 
+	extends Java2Reader 
+		with Signature_attributeReader
+		with SourceDebugExtension_attributeReader
+		with AnnotationsReader
+			with RuntimeInvisibleAnnotations_attributeReader
+			with RuntimeVisibleAnnotations_attributeReader			
+			with RuntimeInvisibleParameterAnnotations_attributeReader
+			with RuntimeVisibleParameterAnnotations_attributeReader			
+			with ParameterAnnotationsReader
+			with ElementValuePairsReader
+			with AnnotationDefault_attributeReader 
 {
-	
-	type LineNumberTableEntry = de.tud.cs.st.bat.resolved.LineNumberTableEntry		
-	val LineNumberTableEntryManifest : ClassManifest[LineNumberTableEntry] = implicitly
-	
-	type LineNumberTable_attribute = de.tud.cs.st.bat.resolved.LineNumberTable_attribute		
-
-
-	def LineNumberTable_attribute (
-		attribute_name_index : Int, attribute_length : Int, line_number_table : LineNumberTable
-	)( implicit constant_pool : Constant_Pool) : LineNumberTable_attribute = 
-		new LineNumberTable_attribute(line_number_table) 
-
-
-	def LineNumberTableEntry (start_pc : Int, line_number : Int)( implicit constant_pool : Constant_Pool) = 
-		new LineNumberTableEntry(start_pc, line_number)
 
 
 }
-
-

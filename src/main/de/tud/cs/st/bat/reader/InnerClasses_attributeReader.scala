@@ -30,38 +30,62 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved.reader
+package de.tud.cs.st.bat.reader
 
-import de.tud.cs.st.bat.reader.LineNumberTable_attributeReader
+import java.io.DataInputStream
+
+import de.tud.cs.st.util.ControlAbstractions.repeat
+
 
 
 /**
- * 
- *
+
  * @author Michael Eichberg
  */
-trait LineNumberTable_attributeBinding 
-	extends LineNumberTable_attributeReader
-		with Constant_PoolResolver
-		with AttributeBinding	
-{
+trait InnerClasses_attributeReader {
+ 
+
+	type Constant_Pool
+	type InnerClassesEntry
+	implicit val InnerClassesEntryManifest : ClassManifest[InnerClassesEntry]
+	type Attribute >: Null
+	type InnerClasses_attribute <: Attribute
+		
+	type InnerClassesEntries = IndexedSeq[InnerClassesEntry]
 	
-	type LineNumberTableEntry = de.tud.cs.st.bat.resolved.LineNumberTableEntry		
-	val LineNumberTableEntryManifest : ClassManifest[LineNumberTableEntry] = implicitly
 	
-	type LineNumberTable_attribute = de.tud.cs.st.bat.resolved.LineNumberTable_attribute		
+	// a flavor of structural typing... when we mixin this trait this method needs to be available.
+	def register(r : (String,(DataInputStream, Constant_Pool, Int) => Attribute)) : Unit
+		
+		
+	def InnerClasses_attribute (
+ 		attribute_name_index : Int,classes : InnerClassesEntries
+	)( implicit constant_pool : Constant_Pool) : InnerClasses_attribute
+	
+	
+	def InnerClassesEntry (
+		inner_class_info_index : Int,
+		outer_class_info_index : Int,
+		inner_name_index : Int,
+		inner_class_access_flags : Int	
+	)( implicit constant_pool : Constant_Pool) : InnerClassesEntry
+	
 
-
-	def LineNumberTable_attribute (
-		attribute_name_index : Int, attribute_length : Int, line_number_table : LineNumberTable
-	)( implicit constant_pool : Constant_Pool) : LineNumberTable_attribute = 
-		new LineNumberTable_attribute(line_number_table) 
-
-
-	def LineNumberTableEntry (start_pc : Int, line_number : Int)( implicit constant_pool : Constant_Pool) = 
-		new LineNumberTableEntry(start_pc, line_number)
-
-
+	private lazy val reader = ( 
+			de.tud.cs.st.bat.canonical.InnerClasses_attribute.name -> 
+			((in : DataInputStream, cp : Constant_Pool, attribute_name_index : Int) => {
+				val attribute_length = in.readInt()
+				InnerClasses_attribute(
+					attribute_name_index, 
+					repeat(in.readUnsignedShort){
+						InnerClassesEntry(
+							in.readUnsignedShort, in.readUnsignedShort, 
+							in.readUnsignedShort, in.readUnsignedShort
+						)( cp )
+					}
+				)( cp )
+			})
+	);
+	
+	register(reader)
 }
-
-

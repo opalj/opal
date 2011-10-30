@@ -32,7 +32,7 @@
 */
 package de.tud.cs.st.bat.canonical.reader
 
-import de.tud.cs.st.bat.generic.reader.Unknown_attributeReader
+import de.tud.cs.st.bat.reader.Unknown_attributeReader
 
 
 /**
@@ -42,7 +42,7 @@ import de.tud.cs.st.bat.generic.reader.Unknown_attributeReader
  * @author Michael Eichberg
  */
 object BasicJava6Framework 
-	extends de.tud.cs.st.bat.generic.reader.Java6Reader 
+	extends de.tud.cs.st.bat.reader.Java6Reader 
 		with Constant_PoolBinding
 		with Unknown_attributeReader {
 

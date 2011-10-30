@@ -32,9 +32,9 @@
 */
 package de.tud.cs.st.bat.resolved.reader
 
-import de.tud.cs.st.bat.generic.reader.StackMapTable_attributeReader
-import de.tud.cs.st.bat.generic.reader.StackMapFrameReader
-import de.tud.cs.st.bat.generic.reader.VerificationTypeInfoReader
+import de.tud.cs.st.bat.reader.StackMapTable_attributeReader
+import de.tud.cs.st.bat.reader.StackMapFrameReader
+import de.tud.cs.st.bat.reader.VerificationTypeInfoReader
 
 
 /**

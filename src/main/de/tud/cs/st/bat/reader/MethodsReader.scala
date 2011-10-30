@@ -1,4 +1,4 @@
-/* License (BSD Style License):
+ /* License (BSD Style License):
 *  Copyright (c) 2009, 2011
 *  Software Technology Group
 *  Department of Computer Science
@@ -30,38 +30,63 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved.reader
+package de.tud.cs.st.bat.reader
 
-import de.tud.cs.st.bat.reader.LineNumberTable_attributeReader
+import java.io.DataInputStream
+import de.tud.cs.st.util.ControlAbstractions.repeat
 
 
 /**
- * 
- *
+
  * @author Michael Eichberg
  */
-trait LineNumberTable_attributeBinding 
-	extends LineNumberTable_attributeReader
-		with Constant_PoolResolver
-		with AttributeBinding	
-{
+trait MethodsReader {
+
+
+	//
+	// ABSTRACT DEFINITIONS
+	//
 	
-	type LineNumberTableEntry = de.tud.cs.st.bat.resolved.LineNumberTableEntry		
-	val LineNumberTableEntryManifest : ClassManifest[LineNumberTableEntry] = implicitly
+
+	type Method_Info
+	implicit val Method_InfoManifest : ClassManifest[Method_Info]
+	type Attributes
+	type Constant_Pool
 	
-	type LineNumberTable_attribute = de.tud.cs.st.bat.resolved.LineNumberTable_attribute		
+	
+	def Attributes (in : DataInputStream, cp : Constant_Pool): Attributes
+	
+	
+	// FACTORY METHOD
+	def Method_Info (
+		accessFlags : Int,
+		name_index : Int,
+		descriptor_index : Int,
+		attributes : Attributes
+	)( implicit constant_pool : Constant_Pool) : Method_Info
+	
+	
+	//
+	// IMPLEMENTATION
+	//
+		
+	
+	type Methods = IndexedSeq[Method_Info]
+ 
+	def Methods(in : DataInputStream, cp : Constant_Pool) : Methods = {
+		val methods_count = in.readUnsignedShort
+		repeat(methods_count){
+			Method_Info(in,cp)
+		}
+	}
 
-
-	def LineNumberTable_attribute (
-		attribute_name_index : Int, attribute_length : Int, line_number_table : LineNumberTable
-	)( implicit constant_pool : Constant_Pool) : LineNumberTable_attribute = 
-		new LineNumberTable_attribute(line_number_table) 
-
-
-	def LineNumberTableEntry (start_pc : Int, line_number : Int)( implicit constant_pool : Constant_Pool) = 
-		new LineNumberTableEntry(start_pc, line_number)
-
-
+	private def Method_Info(in : DataInputStream, cp : Constant_Pool) : Method_Info = {
+		val m = Method_Info (
+			in.readUnsignedShort,
+			in.readUnsignedShort,
+			in.readUnsignedShort,
+			Attributes(in,cp) 
+		)( cp )
+		m
+	}
 }
-
-

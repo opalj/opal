@@ -32,7 +32,7 @@
 */
 package de.tud.cs.st.bat.resolved.reader
 
-import de.tud.cs.st.bat.generic.reader.Unknown_attributeReader
+import de.tud.cs.st.bat.reader.Unknown_attributeReader
 
 
 /**

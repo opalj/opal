@@ -30,38 +30,42 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved.reader
+package de.tud.cs.st.bat.reader
 
-import de.tud.cs.st.bat.reader.LineNumberTable_attributeReader
+import java.io.DataInputStream
 
 
 /**
- * 
- *
+
  * @author Michael Eichberg
  */
-trait LineNumberTable_attributeBinding 
-	extends LineNumberTable_attributeReader
-		with Constant_PoolResolver
-		with AttributeBinding	
-{
+trait Deprecated_attributeReader {
+ 
+	type Constant_Pool
+	type Attribute >: Null
+	type Deprecated_attribute <: Attribute
+
 	
-	type LineNumberTableEntry = de.tud.cs.st.bat.resolved.LineNumberTableEntry		
-	val LineNumberTableEntryManifest : ClassManifest[LineNumberTableEntry] = implicitly
+	def register(r : (String,(DataInputStream, Constant_Pool, Int) => Attribute)) : Unit
 	
-	type LineNumberTable_attribute = de.tud.cs.st.bat.resolved.LineNumberTable_attribute		
+	
+	def Deprecated_attribute(
+		attribute_name_index: Int
+	)(	implicit constant_pool : Constant_Pool) : Deprecated_attribute
 
 
-	def LineNumberTable_attribute (
-		attribute_name_index : Int, attribute_length : Int, line_number_table : LineNumberTable
-	)( implicit constant_pool : Constant_Pool) : LineNumberTable_attribute = 
-		new LineNumberTable_attribute(line_number_table) 
+	//
+	// IMPLEMENTATION
+	//
+	
 
-
-	def LineNumberTableEntry (start_pc : Int, line_number : Int)( implicit constant_pool : Constant_Pool) = 
-		new LineNumberTableEntry(start_pc, line_number)
-
-
+	private lazy val deprecated_attribute_reader = ( 
+			de.tud.cs.st.bat.canonical.Deprecated_attribute.name -> 
+			((in : DataInputStream, cp : Constant_Pool, attribute_name_index : Int) => {
+				val attribute_length = in.readInt
+				Deprecated_attribute(attribute_name_index)(cp)
+			})
+	);
+	
+	register(deprecated_attribute_reader)
 }
-
-

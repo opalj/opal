@@ -30,38 +30,53 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved.reader
+package de.tud.cs.st.bat.reader
 
-import de.tud.cs.st.bat.reader.LineNumberTable_attributeReader
+import java.io.DataInputStream
+
+import de.tud.cs.st.util.ControlAbstractions.repeat
 
 
 /**
- * 
- *
+
  * @author Michael Eichberg
  */
-trait LineNumberTable_attributeBinding 
-	extends LineNumberTable_attributeReader
-		with Constant_PoolResolver
-		with AttributeBinding	
-{
+trait LineNumberTable_attributeReader {
+
+	type Constant_Pool
+	type Attribute >: Null
+	type LineNumberTable_attribute <: Attribute
+	type LineNumberTableEntry
+	implicit val LineNumberTableEntryManifest : ClassManifest[LineNumberTableEntry]
 	
-	type LineNumberTableEntry = de.tud.cs.st.bat.resolved.LineNumberTableEntry		
-	val LineNumberTableEntryManifest : ClassManifest[LineNumberTableEntry] = implicitly
-	
-	type LineNumberTable_attribute = de.tud.cs.st.bat.resolved.LineNumberTable_attribute		
+	type LineNumberTable = IndexedSeq[LineNumberTableEntry]
 
 
+	def register(r : (String,(DataInputStream, Constant_Pool, Int) => Attribute)) : Unit
+
+	
 	def LineNumberTable_attribute (
 		attribute_name_index : Int, attribute_length : Int, line_number_table : LineNumberTable
-	)( implicit constant_pool : Constant_Pool) : LineNumberTable_attribute = 
-		new LineNumberTable_attribute(line_number_table) 
-
-
-	def LineNumberTableEntry (start_pc : Int, line_number : Int)( implicit constant_pool : Constant_Pool) = 
-		new LineNumberTableEntry(start_pc, line_number)
-
-
+	)( implicit constant_pool : Constant_Pool) : LineNumberTable_attribute
+	
+	
+	def LineNumberTableEntry (
+		start_pc : Int,line_number : Int
+	)( implicit constant_pool : Constant_Pool) : LineNumberTableEntry 
+	
+	
+	private lazy val reader = ( 
+			de.tud.cs.st.bat.canonical.LineNumberTable_attribute.name -> 
+			((in : DataInputStream, cp : Constant_Pool, attribute_name_index : Int) => {
+				val attribute_length = in.readInt()
+				LineNumberTable_attribute(
+					attribute_name_index, attribute_length,
+					repeat(in.readUnsignedShort){
+						LineNumberTableEntry(in.readUnsignedShort, in.readUnsignedShort)(cp)
+					}
+				)( cp )
+			})
+	);
+	
+	register(reader)
 }
-
-

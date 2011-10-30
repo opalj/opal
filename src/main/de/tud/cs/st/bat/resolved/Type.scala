@@ -35,7 +35,8 @@ package de.tud.cs.st.bat.resolved
 import de.tud.cs.st.prolog.{GroundTerm,Atom,Fact}
 
 /**
-
+ * Representation of 
+ * 
  * @author Michael Eichberg
  */
 sealed trait Type {
@@ -393,7 +394,8 @@ object ArrayType {
 	private val cache : scala.collection.mutable.Map[FieldType,ArrayType] = scala.collection.mutable.Map()
 
 	/**
- 	 * Factory method to create objects of type <code>ArrayType</code>.<br />
+ 	 * Factory method to create objects of type <code>ArrayType</code>.
+ 	 * 
 	 * This method makes sure that every array type is represented by exactly one ArrayType object.
 	 */	
 	def apply (componentType : FieldType) = {

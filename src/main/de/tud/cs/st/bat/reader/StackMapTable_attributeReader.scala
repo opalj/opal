@@ -30,38 +30,63 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved.reader
+package de.tud.cs.st.bat.reader
 
-import de.tud.cs.st.bat.reader.LineNumberTable_attributeReader
+import java.io.DataInputStream
+
+import de.tud.cs.st.util.ControlAbstractions.repeat
 
 
 /**
- * 
+ * Reads for the StackMapTable attribute.
  *
  * @author Michael Eichberg
  */
-trait LineNumberTable_attributeBinding 
-	extends LineNumberTable_attributeReader
-		with Constant_PoolResolver
-		with AttributeBinding	
-{
+trait StackMapTable_attributeReader  {
+ 
+
+	//
+	// ABSTRACT DEFINITIONS
+	//
+
+
+	type Constant_Pool
+	type Attribute >: Null
+	type StackMapTable_attribute <: Attribute
+	type StackMapFrame
+	implicit val StackMapFrameManifest: ClassManifest[StackMapFrame]
+		
+		
+	type StackMapFrames = IndexedSeq[StackMapFrame]
 	
-	type LineNumberTableEntry = de.tud.cs.st.bat.resolved.LineNumberTableEntry		
-	val LineNumberTableEntryManifest : ClassManifest[LineNumberTableEntry] = implicitly
 	
-	type LineNumberTable_attribute = de.tud.cs.st.bat.resolved.LineNumberTable_attribute		
+	def register(r : (String,(DataInputStream, Constant_Pool, Int) => Attribute)) : Unit	
+	
+	
+	def StackMapFrame(in : DataInputStream, cp : Constant_Pool) : StackMapFrame
+	
+			
+	// Factory methods
+	def StackMapTable_attribute (
+		attribute_name_index : Int, attribute_length : Int, stack_map_frames : StackMapFrames
+	)( implicit constant_pool : Constant_Pool) : StackMapTable_attribute
+	
 
-
-	def LineNumberTable_attribute (
-		attribute_name_index : Int, attribute_length : Int, line_number_table : LineNumberTable
-	)( implicit constant_pool : Constant_Pool) : LineNumberTable_attribute = 
-		new LineNumberTable_attribute(line_number_table) 
-
-
-	def LineNumberTableEntry (start_pc : Int, line_number : Int)( implicit constant_pool : Constant_Pool) = 
-		new LineNumberTableEntry(start_pc, line_number)
-
-
+	private lazy val reader = ( 
+		de.tud.cs.st.bat.canonical.StackMapTable_attribute.name -> 
+		((in : DataInputStream, cp : Constant_Pool, attribute_name_index : Int) => {
+			StackMapTable_attribute(
+				attribute_name_index, in.readInt, // attribute_length
+				repeat (in.readUnsignedShort) {
+					StackMapFrame(in,cp)
+				}
+			)( cp )
+		})
+	)	
+	
+	register(reader)
 }
+
+
 
 

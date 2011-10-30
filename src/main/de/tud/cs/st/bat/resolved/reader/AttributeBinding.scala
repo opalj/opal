@@ -32,7 +32,7 @@
 */
 package de.tud.cs.st.bat.resolved.reader
 
-import de.tud.cs.st.bat.generic.reader.AttributesAbstraction
+import de.tud.cs.st.bat.reader.AttributesAbstraction
 import de.tud.cs.st.bat.resolved.TypeAliases._
 
 

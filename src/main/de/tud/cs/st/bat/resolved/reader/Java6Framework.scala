@@ -32,11 +32,11 @@
 */
 package de.tud.cs.st.bat.resolved.reader
 
-import de.tud.cs.st.bat.generic.reader.MethodsReader
-import de.tud.cs.st.bat.generic.reader.FieldsReader
-import de.tud.cs.st.bat.generic.reader.AttributesReader
-import de.tud.cs.st.bat.generic.reader.SkipUnknown_attributeReader
-import de.tud.cs.st.bat.generic.reader.CodeReader
+import de.tud.cs.st.bat.reader.MethodsReader
+import de.tud.cs.st.bat.reader.FieldsReader
+import de.tud.cs.st.bat.reader.AttributesReader
+import de.tud.cs.st.bat.reader.SkipUnknown_attributeReader
+import de.tud.cs.st.bat.reader.CodeReader
 
 
 /**

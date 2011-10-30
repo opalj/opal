@@ -33,7 +33,7 @@
 package de.tud.cs.st.bat.resolved
 package reader
 
-import de.tud.cs.st.bat.generic.reader.LocalVariableTable_attributeReader
+import de.tud.cs.st.bat.reader.LocalVariableTable_attributeReader
 
 
 /**

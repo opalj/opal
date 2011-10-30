@@ -33,7 +33,7 @@
 package de.tud.cs.st.bat.canonical
 package reader
 
-import de.tud.cs.st.bat.generic.reader.Constant_PoolReader
+import de.tud.cs.st.bat.reader.Constant_PoolReader
 
 
 /**

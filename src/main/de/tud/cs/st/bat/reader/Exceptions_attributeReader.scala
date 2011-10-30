@@ -30,38 +30,51 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved.reader
+package de.tud.cs.st.bat.reader
 
-import de.tud.cs.st.bat.reader.LineNumberTable_attributeReader
+import java.io.DataInputStream
+
+import de.tud.cs.st.util.ControlAbstractions.repeat
 
 
 /**
- * 
- *
+
  * @author Michael Eichberg
  */
-trait LineNumberTable_attributeBinding 
-	extends LineNumberTable_attributeReader
-		with Constant_PoolResolver
-		with AttributeBinding	
-{
+trait Exceptions_attributeReader extends Constant_PoolAbstractions {
+ 
+	type Attribute >: Null
+	type Exceptions_attribute <: Attribute
+	implicit val Exceptions_attributeManifest: ClassManifest[Exceptions_attribute]
 	
-	type LineNumberTableEntry = de.tud.cs.st.bat.resolved.LineNumberTableEntry		
-	val LineNumberTableEntryManifest : ClassManifest[LineNumberTableEntry] = implicitly
+	// a flavor of structural typing... when we mixin this trait this method needs to be available.
+	def register(r : (String,(DataInputStream, Constant_Pool, Constant_Pool_Index ) => Attribute)) : Unit
+
+	type ExceptionIndexTable = IndexedSeq[Constant_Pool_Index]
 	
-	type LineNumberTable_attribute = de.tud.cs.st.bat.resolved.LineNumberTable_attribute		
+	
+	def Exceptions_attribute (
+		attribute_name_index : Constant_Pool_Index, attribute_length : Int, exception_index_table : ExceptionIndexTable
+	)( implicit constant_pool : Constant_Pool) : Exceptions_attribute
+	
+	
+	//
+	// IMPLEMENTATION
+	//
 
 
-	def LineNumberTable_attribute (
-		attribute_name_index : Int, attribute_length : Int, line_number_table : LineNumberTable
-	)( implicit constant_pool : Constant_Pool) : LineNumberTable_attribute = 
-		new LineNumberTable_attribute(line_number_table) 
-
-
-	def LineNumberTableEntry (start_pc : Int, line_number : Int)( implicit constant_pool : Constant_Pool) = 
-		new LineNumberTableEntry(start_pc, line_number)
-
-
+	private lazy val reader = ( 
+			de.tud.cs.st.bat.canonical.Exceptions_attribute.name -> 
+			((in : DataInputStream, cp : Constant_Pool, attribute_name_index : Constant_Pool_Index ) => {
+				val attribute_length = in.readInt()
+				Exceptions_attribute(
+					attribute_name_index,attribute_length,
+					repeat(in.readUnsignedShort){
+						in.readUnsignedShort
+					}
+				)( cp )
+			})
+	);
+	
+	register(reader)
 }
-
-

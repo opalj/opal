@@ -32,7 +32,7 @@
 */
 package de.tud.cs.st.bat.resolved.reader
 
-import de.tud.cs.st.bat.generic.reader.Exceptions_attributeReader
+import de.tud.cs.st.bat.reader.Exceptions_attributeReader
 
 
 /**

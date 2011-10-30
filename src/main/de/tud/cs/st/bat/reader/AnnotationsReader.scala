@@ -30,38 +30,66 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved.reader
+package de.tud.cs.st.bat.reader
 
-import de.tud.cs.st.bat.reader.LineNumberTable_attributeReader
+import java.io.DataInputStream
+
+import de.tud.cs.st.util.ControlAbstractions.repeat
 
 
 /**
- * 
- *
+
  * @author Michael Eichberg
  */
-trait LineNumberTable_attributeBinding 
-	extends LineNumberTable_attributeReader
-		with Constant_PoolResolver
-		with AttributeBinding	
-{
+trait AnnotationsReader {
+
+
+	//
+	// ABSTRACT DEFINITIONS
+	//
+
+	type Constant_Pool
+	type Annotation
+	implicit val AnnotationManifest: ClassManifest[Annotation]
 	
-	type LineNumberTableEntry = de.tud.cs.st.bat.resolved.LineNumberTableEntry		
-	val LineNumberTableEntryManifest : ClassManifest[LineNumberTableEntry] = implicitly
-	
-	type LineNumberTable_attribute = de.tud.cs.st.bat.resolved.LineNumberTable_attribute		
+	type Annotations = IndexedSeq[Annotation]
+	type ElementValuePairs //type ElementValuePair; type ElementValuePairs = Seq[ElementValuePair]
 
 
-	def LineNumberTable_attribute (
-		attribute_name_index : Int, attribute_length : Int, line_number_table : LineNumberTable
-	)( implicit constant_pool : Constant_Pool) : LineNumberTable_attribute = 
-		new LineNumberTable_attribute(line_number_table) 
+	def ElementValuePairs (in : DataInputStream, cp : Constant_Pool) : ElementValuePairs
 
 
-	def LineNumberTableEntry (start_pc : Int, line_number : Int)( implicit constant_pool : Constant_Pool) = 
-		new LineNumberTableEntry(start_pc, line_number)
+	def Annotation (
+		type_index : Int, element_value_pairs : ElementValuePairs
+	)( implicit constant_pool : Constant_Pool) : Annotation
 
 
+	//
+	// IMPLEMENTATION
+	//	
+
+
+	def Annotations(in : DataInputStream, cp : Constant_Pool) : Annotations = {
+		/*
+		repeat(in.readUnsignedShort) { 
+			Annotation(in,cp) 
+		}
+		
+		The code given below is much faster than the code seen above,
+		if we have a loop with few repetitions.		
+		*/
+		val count = in.readUnsignedShort
+		val annotations = new Array[Annotation](count)
+		var i = 0
+		while (i < count) {
+			annotations(i) = Annotation(in,cp)
+			i += 1
+		}
+		annotations
+	}
+
+
+	def Annotation(in : DataInputStream, cp : Constant_Pool) : Annotation = {
+		Annotation(in.readUnsignedShort, ElementValuePairs(in,cp))(cp)
+	}
 }
-
-

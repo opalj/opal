@@ -33,7 +33,7 @@
 package de.tud.cs.st.bat.resolved
 package reader
 
-import de.tud.cs.st.bat.generic.reader.EnclosingMethod_attributeReader
+import de.tud.cs.st.bat.reader.EnclosingMethod_attributeReader
 
 
 /**

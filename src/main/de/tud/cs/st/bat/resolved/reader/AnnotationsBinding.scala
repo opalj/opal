@@ -33,14 +33,14 @@
 package de.tud.cs.st.bat.resolved
 package reader
 
-import de.tud.cs.st.bat.generic.reader.AnnotationsReader
-import de.tud.cs.st.bat.generic.reader.RuntimeInvisibleAnnotations_attributeReader
-import de.tud.cs.st.bat.generic.reader.RuntimeVisibleAnnotations_attributeReader
-import de.tud.cs.st.bat.generic.reader.RuntimeInvisibleParameterAnnotations_attributeReader
-import de.tud.cs.st.bat.generic.reader.RuntimeVisibleParameterAnnotations_attributeReader
-import de.tud.cs.st.bat.generic.reader.ParameterAnnotationsReader
-import de.tud.cs.st.bat.generic.reader.AnnotationDefault_attributeReader
-import de.tud.cs.st.bat.generic.reader.ElementValuePairsReader
+import de.tud.cs.st.bat.reader.AnnotationsReader
+import de.tud.cs.st.bat.reader.RuntimeInvisibleAnnotations_attributeReader
+import de.tud.cs.st.bat.reader.RuntimeVisibleAnnotations_attributeReader
+import de.tud.cs.st.bat.reader.RuntimeInvisibleParameterAnnotations_attributeReader
+import de.tud.cs.st.bat.reader.RuntimeVisibleParameterAnnotations_attributeReader
+import de.tud.cs.st.bat.reader.ParameterAnnotationsReader
+import de.tud.cs.st.bat.reader.AnnotationDefault_attributeReader
+import de.tud.cs.st.bat.reader.ElementValuePairsReader
 
 
 /**

@@ -1,0 +1,119 @@
+/* License (BSD Style License):
+*  Copyright (c) 2009, 2011
+*  Software Technology Group
+*  Department of Computer Science
+*  Technische Universität Darmstadt
+*  All rights reserved.
+*
+*  Redistribution and use in source and binary forms, with or without
+*  modification, are permitted provided that the following conditions are met:
+*
+*  - Redistributions of source code must retain the above copyright notice,
+*    this list of conditions and the following disclaimer.
+*  - Redistributions in binary form must reproduce the above copyright notice,
+*    this list of conditions and the following disclaimer in the documentation
+*    and/or other materials provided with the distribution.
+*  - Neither the name of the Software Technology Group or Technische 
+*    Universität Darmstadt nor the names of its contributors may be used to 
+*    endorse or promote products derived from this software without specific 
+*    prior written permission.
+*
+*  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+*  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+*  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+*  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+*  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+*  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+*  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+*  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+*  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+*  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+*  POSSIBILITY OF SUCH DAMAGE.
+*/
+package de.tud.cs.st.bat.reader
+
+import java.io.DataInputStream
+
+import de.tud.cs.st.util.ControlAbstractions.repeat
+
+
+/**
+
+ * @author Michael Eichberg
+ */
+trait ElementValuePairsReader {
+	
+	type Constant_Pool
+	type ElementValue
+	implicit val ElementValueManifest : ClassManifest[ElementValue]
+	type ElementValuePair
+	implicit val ElementValuePairManifest : ClassManifest[ElementValuePair]
+	type Annotation
+
+	
+	type ElementValues = IndexedSeq[ElementValue]
+	type ElementValuePairs = IndexedSeq[ElementValuePair]
+
+
+
+	def Annotation(in : DataInputStream,cp : Constant_Pool) : Annotation
+
+
+	//FACTORY METHODS
+	//
+	
+	def ElementValuePair(
+		element_name_index : Int,element_value : ElementValue
+	)( implicit constant_pool : Constant_Pool) : ElementValuePair
+	
+	def ByteValue(const_value_index : Int)( implicit constant_pool : Constant_Pool) : ElementValue
+	def CharValue(const_value_index : Int)( implicit constant_pool : Constant_Pool) : ElementValue
+	def DoubleValue(const_value_index : Int)( implicit constant_pool : Constant_Pool) : ElementValue
+	def FloatValue(const_value_index : Int)( implicit constant_pool : Constant_Pool) : ElementValue
+	def IntValue(const_value_index : Int)( implicit constant_pool : Constant_Pool) : ElementValue
+	def LongValue(const_value_index : Int)( implicit constant_pool : Constant_Pool) : ElementValue
+	def ShortValue(const_value_index : Int)( implicit constant_pool : Constant_Pool) : ElementValue
+	def BooleanValue(const_value_index : Int)( implicit constant_pool : Constant_Pool) : ElementValue
+	def StringValue(const_value_index : Int)( implicit constant_pool : Constant_Pool) : ElementValue
+	def ClassValue(const_value_index : Int)( implicit constant_pool : Constant_Pool) : ElementValue	
+	def EnumValue(type_name_index : Int,const_name_index : Int)( implicit constant_pool : Constant_Pool) : ElementValue
+	def AnnotationValue(annotation : Annotation)( implicit constant_pool : Constant_Pool) : ElementValue
+	def ArrayValue(values : ElementValues)( implicit constant_pool : Constant_Pool) : ElementValue
+
+
+	//
+	// IMPLEMENTATION
+	//
+	
+	
+	def ElementValuePairs(in : DataInputStream, cp : Constant_Pool) : ElementValuePairs = {
+		repeat(in.readUnsignedShort) { 
+			ElementValuePair(in,cp) 
+		}
+	}
+
+
+	def ElementValuePair(in : DataInputStream, cp : Constant_Pool) : ElementValuePair = 
+		ElementValuePair(in.readUnsignedShort, ElementValue(in,cp))(cp)
+		
+	
+	def ElementValue(in : DataInputStream, cp : Constant_Pool) : ElementValue = {
+		val tag = in.readByte
+		tag match {
+			case 'B' => ByteValue(in.readUnsignedShort)(cp)
+			case 'C' => CharValue(in.readUnsignedShort)(cp)
+			case 'D' => DoubleValue(in.readUnsignedShort)(cp)
+			case 'F' => FloatValue(in.readUnsignedShort)(cp)
+			case 'I' => IntValue(in.readUnsignedShort)(cp)
+			case 'J' => LongValue(in.readUnsignedShort)(cp)
+			case 'S' => ShortValue(in.readUnsignedShort)(cp)
+			case 'Z' => BooleanValue(in.readUnsignedShort)(cp)
+			case 's' => StringValue(in.readUnsignedShort)(cp)
+			case 'e' => EnumValue(in.readUnsignedShort,in.readUnsignedShort)(cp)
+			case 'c' => ClassValue(in.readUnsignedShort)(cp)
+			case '@' => AnnotationValue(Annotation(in, cp))(cp)
+			case '[' => ArrayValue(repeat(in.readUnsignedShort){ ElementValue(in, cp) } )(cp)
+			case _ => sys.error("Unknown element value")
+		}
+	}
+}

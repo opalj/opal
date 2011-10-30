@@ -30,38 +30,35 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved.reader
+package de.tud.cs.st.bat.reader
 
-import de.tud.cs.st.bat.reader.LineNumberTable_attributeReader
+import java.io.DataInputStream
 
 
 /**
- * 
- *
+
  * @author Michael Eichberg
  */
-trait LineNumberTable_attributeBinding 
-	extends LineNumberTable_attributeReader
-		with Constant_PoolResolver
-		with AttributeBinding	
-{
+trait SkipUnknown_attributeReader extends Constant_PoolAbstractions with Unknown_attributeAbstractions {
+
+
+	type Unknown_attribute = Null
+
+
+	//
+	// IMPLEMENTATION
+	//
 	
-	type LineNumberTableEntry = de.tud.cs.st.bat.resolved.LineNumberTableEntry		
-	val LineNumberTableEntryManifest : ClassManifest[LineNumberTableEntry] = implicitly
-	
-	type LineNumberTable_attribute = de.tud.cs.st.bat.resolved.LineNumberTable_attribute		
 
-
-	def LineNumberTable_attribute (
-		attribute_name_index : Int, attribute_length : Int, line_number_table : LineNumberTable
-	)( implicit constant_pool : Constant_Pool) : LineNumberTable_attribute = 
-		new LineNumberTable_attribute(line_number_table) 
-
-
-	def LineNumberTableEntry (start_pc : Int, line_number : Int)( implicit constant_pool : Constant_Pool) = 
-		new LineNumberTableEntry(start_pc, line_number)
-
-
+	def Unknown_attribute(
+		in : DataInputStream, cp : Constant_Pool, attribute_name_index : Constant_Pool_Index
+	) : Null = {
+		val size : Long = in.readInt
+		var skipped : Long = 0
+		while (skipped < size) {
+			val t : Long = in skip (size-skipped) // skip returns a long value...
+			if (t > 0) skipped = skipped + t			
+		}
+		null
+  }
 }
-
-

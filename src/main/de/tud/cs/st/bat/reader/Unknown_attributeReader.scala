@@ -30,38 +30,41 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved.reader
+package de.tud.cs.st.bat.reader
 
-import de.tud.cs.st.bat.reader.LineNumberTable_attributeReader
+import java.io.DataInputStream
 
 
 /**
- * 
- *
+
  * @author Michael Eichberg
  */
-trait LineNumberTable_attributeBinding 
-	extends LineNumberTable_attributeReader
-		with Constant_PoolResolver
-		with AttributeBinding	
-{
+trait Unknown_attributeReader extends Constant_PoolAbstractions with Unknown_attributeAbstractions  {
+
+
+	//
+	// ABSTRACT DEFINITIONS
+	//
+
 	
-	type LineNumberTableEntry = de.tud.cs.st.bat.resolved.LineNumberTableEntry		
-	val LineNumberTableEntryManifest : ClassManifest[LineNumberTableEntry] = implicitly
+	// FACTORY METHOD
+	def Unknown_attribute(
+		attribute_name_index : Constant_Pool_Index,
+		info : Array[Byte]
+	)( implicit constant_pool : Constant_Pool) : Unknown_attribute
+
+
+	//
+	// IMPLEMENTATION
+	//
 	
-	type LineNumberTable_attribute = de.tud.cs.st.bat.resolved.LineNumberTable_attribute		
 
+	def Unknown_attribute(
+		in : DataInputStream, cp : Constant_Pool, attribute_name_index : Constant_Pool_Index
+	) : Unknown_attribute = {
+		val info = new Array[Byte](in.readInt)
+		in.readFully(info)
 
-	def LineNumberTable_attribute (
-		attribute_name_index : Int, attribute_length : Int, line_number_table : LineNumberTable
-	)( implicit constant_pool : Constant_Pool) : LineNumberTable_attribute = 
-		new LineNumberTable_attribute(line_number_table) 
-
-
-	def LineNumberTableEntry (start_pc : Int, line_number : Int)( implicit constant_pool : Constant_Pool) = 
-		new LineNumberTableEntry(start_pc, line_number)
-
-
+		Unknown_attribute(attribute_name_index, info)( cp )
+  }
 }
-
-

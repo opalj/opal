@@ -30,38 +30,39 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved.reader
+package de.tud.cs.st.bat.reader
 
-import de.tud.cs.st.bat.reader.LineNumberTable_attributeReader
+import java.io.DataInputStream
+
 
 
 /**
- * 
- *
+
  * @author Michael Eichberg
  */
-trait LineNumberTable_attributeBinding 
-	extends LineNumberTable_attributeReader
-		with Constant_PoolResolver
-		with AttributeBinding	
-{
+trait SourceDebugExtension_attributeReader {
+ 
+
+	type Constant_Pool
+	type Attribute >: Null
+	type SourceDebugExtension_attribute <: Attribute
 	
-	type LineNumberTableEntry = de.tud.cs.st.bat.resolved.LineNumberTableEntry		
-	val LineNumberTableEntryManifest : ClassManifest[LineNumberTableEntry] = implicitly
+	def register(r : (String,(DataInputStream, Constant_Pool, Int) => Attribute)) : Unit
 	
-	type LineNumberTable_attribute = de.tud.cs.st.bat.resolved.LineNumberTable_attribute		
+	def SourceDebugExtension_attribute (
+		attribute_name_index : Int, attribute_length : Int, debug_extension : String
+	)( implicit constant_pool : Constant_Pool) : SourceDebugExtension_attribute
 
 
-	def LineNumberTable_attribute (
-		attribute_name_index : Int, attribute_length : Int, line_number_table : LineNumberTable
-	)( implicit constant_pool : Constant_Pool) : LineNumberTable_attribute = 
-		new LineNumberTable_attribute(line_number_table) 
-
-
-	def LineNumberTableEntry (start_pc : Int, line_number : Int)( implicit constant_pool : Constant_Pool) = 
-		new LineNumberTableEntry(start_pc, line_number)
-
-
+	private lazy val reader = ( 
+			de.tud.cs.st.bat.canonical.SourceDebugExtension_attribute.name -> 
+			((in : DataInputStream, cp : Constant_Pool, attribute_name_index : Int) => {
+				val attribute_length = in.readInt
+				SourceDebugExtension_attribute(
+					attribute_name_index, attribute_length, in.readUTF
+				)( cp )
+			})
+	);
+	
+	register(reader)
 }
-
-
