@@ -34,6 +34,7 @@
 
   Author: Michael Eichberg (www.michael-eichberg.de)
 -->
+<!-- This stylesheet was developed using the SAXON 9 XSLT 2.0 processor.  -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="2.0"
     xmlns:opal="http://www.opal-project.de/BAT/10.2011/JVMInstructions"
 	xmlns:myfn="http://www.opal-project.de/BAT/XSLT-functions"
@@ -62,7 +63,6 @@
 	    <xsl:param name="string" as="xs:string"/>
 		<xsl:param name="token" as="xs:string"/>
 		 <xsl:value-of select="string(tokenize($string,$token)[last()])"/>
-	 <!--   <xsl:value-of select="tokenize($string,$token)[last()]"/>-->
   	</xsl:function>
 
 	<!--

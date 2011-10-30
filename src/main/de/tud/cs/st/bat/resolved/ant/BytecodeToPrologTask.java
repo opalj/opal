@@ -30,7 +30,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st.bat.ant;
+package de.tud.cs.st.bat.resolved.ant;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;
@@ -47,9 +47,8 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * This class implements an ANT task that runs the BytecodeToProlog tool.
+ * This class implements the BytecodeToProlog ANT task.
  * 
- * @since 20.10.2009 11:47:50
  * @author Sebastian Harrte
  * @author Ralf Mitchke
  */

@@ -58,8 +58,8 @@ object BytecodeToXML extends UTF8Println {
 	def main(args : Array[String]) : Unit = {
 
 		println(""" |<!--
-						|	BytecodeToXML $Rev: 252 $; (c) 2009
-						|	Software Engineering
+						|	BytecodeToXML (c) 2009
+						|	Software Technology Group
 						|	Department of Computer Science,
 						|	Technische Universität Darmstadt
 						|	Michael Eichberg (eichberg@informatik.tu-darmstadt.de) 

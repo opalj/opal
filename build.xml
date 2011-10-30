@@ -245,7 +245,7 @@ Author 		Michael Eichberg (mail@michael-eichberg.de)
         <!--
             ByteCodeToProlog Task Definition
         -->
-        <taskdef name="bytecodeToProlog" classname="de.tud.cs.st.bat.ant.BytecodeToPrologTask">
+        <taskdef name="bytecodeToProlog" classname="de.tud.cs.st.bat.resolved.ant.BytecodeToPrologTask">
             <classpath>
                 <path refid="project.classpath"/>
             </classpath>

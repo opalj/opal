@@ -30,28 +30,25 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.interop
+package de.tud.cs.st.bat.resolved.javabridge
 
 /**
- * This class serves as an interopability layer for access to the bat from
- * within java.
+ * Facilitates the use of BAT in Java programs.
  *
- * @version $Date :$ $Rev: 983 $
- * @since 23.11.2009 11:12:17
  * @author Sebastian Harrte
  */
 import java.io.InputStream
 import java.util.Collection
 
-protected final class Java6FrameworkInterop[Fact, Term, Atom <: Term](factory : PrologTermFactory[Fact,Term,Atom]) {
+protected final class Java6FrameworkInterop[Fact, Term, Atom <: Term](factory: PrologTermFactory[Fact, Term, Atom]) {
 
     val factoryAdapter = new PrologTermFactoryAdapter(factory)
 
     def convert(in: InputStream, result: Collection[Fact]) = {
-      val classFile = de.tud.cs.st.bat.resolved.reader.Java6Framework.ClassFile(() => in)
-      val structs = classFile.toProlog(factoryAdapter)
-      for (ci <- structs) result.add(ci)
-      ()
+        val classFile = de.tud.cs.st.bat.resolved.reader.Java6Framework.ClassFile(() ⇒ in)
+        val structs = classFile.toProlog(factoryAdapter)
+        for (ci ← structs) result.add(ci)
+        ()
     }
 
 }
