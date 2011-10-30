@@ -15,8 +15,9 @@ If you need "your own" representation or if you miss a certain feature, just wri
 
 *Currently, BAT does not support manipulating existing Java class files and we have no intentions to add this feature in the near future.*
 
+** Using BAT **
 
-# Using BAT
+If you just want to use, but not otherwise extend BAT, it is recommended that you call "ant package" and use the generated jar file. At run time no further packages are required. 
 
-To compile BAT just call the corresponding ANT target. If you just want to use, but not otherwise extend BAT, it is recommended that you call "ant package" and use the generated jar further on. At run time no further packages are required.
+To compile BAT just call the corresponding ANT target. Please note, that BAT makes heavy use of code generation and some parts of the hand-written code depends on the generated code. The generated code is found under "build/src/" and if you want to edit BAT using your favorite IDE, make sure that you include the folder with the generated source files.
 
