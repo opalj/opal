@@ -15,7 +15,7 @@ If you need "your own" representation or if you miss a certain feature, just wri
 
 *Currently, BAT does not support manipulating existing Java class files and we have no intentions to add this feature in the near future.*
 
-** Using BAT **
+**Using BAT**
 
 If you just want to use, but not otherwise extend BAT, it is recommended that you call "ant package" and use the generated jar file. At run time no further packages are required. 
 
