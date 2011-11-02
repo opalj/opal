@@ -68,6 +68,12 @@ package de.tud.cs.st.bat.resolved
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
 import de.tud.cs.st.bat.resolved.InstructionExceptions._
+import de.tud.cs.st.bat.dependency.EdgeType
+import de.tud.cs.st.bat.dependency.FIELD_READ
+import de.tud.cs.st.bat.dependency.FIELD_WRITE
+import de.tud.cs.st.bat.dependency.USED_TYPE
+import de.tud.cs.st.bat.dependency.METHOD_CALL
+import de.tud.cs.st.bat.dependency.CustomType
 
 /**
  * <xsl:value-of select="opal:operation/text()" />.
@@ -141,7 +147,11 @@ extends Instruction {
 		</xsl:otherwise>
 	</xsl:choose>			
 		)
-	}		
+	}
+	
+	def dependencies : List[(Type,String,MethodDescriptor,EdgeType)] =
+		List(<xsl:call-template name="generate_dependencies"/>)
+		
 }
 </xsl:template>    
 
@@ -278,6 +288,13 @@ extends Instruction {
 	</xsl:for-each>	
 </xsl:template>
 
+<xsl:template name="generate_dependencies">
+	<!-- current context: an opal:instruction -->
+	<xsl:for-each select="opal:stdInstructionParameters(.)">
+		<xsl:call-template name="formatElement_to_dependency"><xsl:with-param name="fe" select="."/></xsl:call-template>
+	</xsl:for-each>	
+</xsl:template>
+
 <!-- 
     
     
@@ -366,6 +383,42 @@ extends Instruction {
 		</xsl:otherwise>
 	</xsl:choose>
 </xsl:template>    
+
+
+
+<xsl:template name="formatElement_to_dependency">
+	<!-- (Type, String, MethodDescriptor, EdgeType) -->
+	<xsl:param name="fe" required="yes"/>
+	<xsl:variable name="fet" select="$fe/@type"/>
+	<xsl:variable name="id" select="$fe/@id"/>
+	<xsl:choose>
+		<xsl:when test="$fet eq 'ubyte' or $fet eq 'atype' or $fet eq 'byte' or $fet eq 'ushort' or $fet eq 'short' or $fet eq 'int' or $fet eq 'branchoffset' or $fet eq 'branchoffset_wide'">
+			</xsl:when>
+		<xsl:when test="$fet eq 'ushort_cp_index→referenceType'">
+			(<xsl:value-of select="$id"/>, null, null, USED_TYPE)</xsl:when>
+		<xsl:when test="$fet eq 'ushort_cp_index→objectType'">
+			(<xsl:value-of select="$id"/>, null, null, USED_TYPE)</xsl:when>	
+		<xsl:when test="$fet eq 'ubyte_cp_index→constant_value' or $fet eq 'ushort_cp_index→constant_value'"><!-- used by ldc, ldc_w, ldc2 -->
+			(<xsl:value-of select="$id"/>.valueType, null, null, USED_TYPE)</xsl:when>			
+		<xsl:when test="$fet eq 'ushort_cp_index→fieldref'"><!-- used by get/put field/static -->
+			(declaringClass, name, null, <xsl:choose>
+			<xsl:when test="starts-with(../../../@name,'get')">FIELD_READ</xsl:when>
+			<xsl:when test="starts-with(../../../@name,'put')">FIELD_WRITE</xsl:when>
+			<xsl:otherwise>new CustomType(1001,"<xsl:value-of select="../../../@name"/>")</xsl:otherwise>
+			</xsl:choose>),(fieldType, null, null, USED_TYPE)</xsl:when>
+		<xsl:when test="$fet eq 'ushort_cp_index→call_site_specifier'">
+		// TODO.... valid index into the bootstrap_methods array of the bootstrap method table
+			(null, name, methodDescriptor, METHOD_CALL)</xsl:when> 
+		<xsl:when test="$fet eq 'ushort_cp_index→methodref' or $fet eq 'ushort_cp_index→interface_methodref'">
+			(declaringClass, name, methodDescriptor, METHOD_CALL)</xsl:when>
+		<xsl:when test="name($fe) eq 'list'">
+			</xsl:when>
+	<!-- If we would be able to use schema validation, then we would not require the following check. -->
+		<xsl:otherwise>
+			<xsl:message terminate="yes">Unsupported format element: <xsl:value-of select="$fe"/></xsl:message>
+		</xsl:otherwise>
+	</xsl:choose>
+</xsl:template>
 
 
 
