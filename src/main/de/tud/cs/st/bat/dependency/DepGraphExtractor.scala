@@ -1,4 +1,5 @@
 package de.tud.cs.st.bat.dependency
+import java.lang.Integer
 import de.tud.cs.st.bat.resolved.ClassFile
 import de.tud.cs.st.bat.resolved.ObjectType
 import de.tud.cs.st.bat.resolved.Field_Info
@@ -12,7 +13,7 @@ import de.tud.cs.st.bat.resolved.AnnotationDefault_attribute
 import de.tud.cs.st.bat.resolved.Code_attribute
 import de.tud.cs.st.bat.resolved.MethodDescriptor
 
-class DepGraphGenerator(gBuilder: DepGraphBuilder) {
+class DepGraphExtractor(gBuilder: DepGraphBuilder) extends ClassFileProcessor {
 
   private val FIELD_AND_METHOD_SEPARATOR = "."
 

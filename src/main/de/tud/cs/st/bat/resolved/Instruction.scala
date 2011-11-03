@@ -33,7 +33,6 @@
 package de.tud.cs.st.bat.resolved
 
 import TypeAliases._
-import de.tud.cs.st.bat.dependency.EdgeType
 
 /**
  * Common superclass of all instructions.
@@ -41,6 +40,8 @@ import de.tud.cs.st.bat.dependency.EdgeType
  * @author Michael Eichberg
  */
 trait Instruction {
+
+  type EdgeType = { val id: Int; val descr: String }
 
   def opcode: Int
 

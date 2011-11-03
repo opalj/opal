@@ -14,7 +14,7 @@ import org.scalatest.events.TestFailed
 import org.scalatest.junit.JUnitRunner
 
 //@RunWith(classOf[JUnitRunner])
-class DepGraphGeneratorTest extends Suite with de.tud.cs.st.util.perf.BasicPerformanceEvaluation {
+class DepGraphExtractorTest extends Suite with de.tud.cs.st.util.perf.BasicPerformanceEvaluation {
 
   /*
 	 * Registry of all class files stored in the zip files found in the test data directory.
@@ -77,7 +77,7 @@ class DepGraphGeneratorTest extends Suite with de.tud.cs.st.util.perf.BasicPerfo
           println("addEdge: " + src + "--[" + eType + "]-->" + trgt)
         }
       }
-      val depGraphGen = new DepGraphGenerator(depGraphBuilder)
+      val cfProcessor: ClassFileProcessor = new DepGraphExtractor(depGraphBuilder)
 
       val (file, entry) = testCases(testName)
 
@@ -85,7 +85,7 @@ class DepGraphGeneratorTest extends Suite with de.tud.cs.st.util.perf.BasicPerfo
       classFile = Java6Framework.ClassFile(() => file.getInputStream(entry))
 
       // process classFile using dependency graph generator
-      depGraphGen.process(classFile)
+      cfProcessor.process(classFile)
 
       reporter(TestSucceeded(ordinal, "BATTests", None, testName))
     } catch {
