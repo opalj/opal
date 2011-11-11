@@ -33,28 +33,28 @@
 package de.tud.cs.st
 
 import org.scalatest.Suites
-
+import de.tud.cs.st.bat.resolved.dependency.BasicDepExtractorTest
 
 /**
  * Runs all tests related to BAT.
  *
- * @author Michael Eichberg 
+ * @author Michael Eichberg
  * @author Sebastian Hartte
  */
-class BATSuite extends Suites (
-	
+class BATSuite extends Suites(
 
-		// UTIL...
-		new util.collection.ArraysTest,
-		
-		// BAT...
-		new bat.resolved.ObjectTypeTest,
-		new bat.resolved.ArrayTypeTest,
-		new bat.resolved.FieldTypeTest,
-		new bat.resolved.MethodDescriptorTest,
+  // UTIL...
+  new util.collection.ArraysTest,
 
-		// REGRESSION tests
-		new bat.RegressionSuite
+  // BAT...
+  new bat.resolved.ObjectTypeTest,
+  new bat.resolved.ArrayTypeTest,
+  new bat.resolved.FieldTypeTest,
+  new bat.resolved.MethodDescriptorTest,
 
+  // REGRESSION tests
+  new bat.RegressionSuite,
 
-)
+  // Dependency Extractor tests
+  new bat.resolved.dependency.BasicDepExtractorTest,
+  new bat.resolved.dependency.DepExtractorTest)

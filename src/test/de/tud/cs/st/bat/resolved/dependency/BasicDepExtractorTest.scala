@@ -1,4 +1,5 @@
-package de.tud.cs.st.bat.dependency
+package de.tud.cs.st.bat.resolved
+package dependency
 import org.scalatest.Suite
 import java.io.File
 import java.util.zip.ZipFile
@@ -10,15 +11,16 @@ import org.scalatest.events.TestStarting
 import de.tud.cs.st.bat.resolved.reader.Java6Framework
 import org.scalatest.events.TestSucceeded
 import org.scalatest.events.TestFailed
-//import org.junit.runner.RunWith
+import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
+import DependencyType._
 
-//@RunWith(classOf[JUnitRunner])
-class DepGraphExtractorTest extends Suite with de.tud.cs.st.util.perf.BasicPerformanceEvaluation {
+@RunWith(classOf[JUnitRunner])
+class BasicDepExtractorTest extends Suite with de.tud.cs.st.util.perf.BasicPerformanceEvaluation {
 
   /*
-	 * Registry of all class files stored in the zip files found in the test data directory.
-	 */
+   * Registry of all class files stored in the zip files found in the test data directory.
+   */
   private val testCases = {
 
     var tcs = scala.collection.immutable.Map[String, (ZipFile, ZipEntry)]()
@@ -38,7 +40,7 @@ class DepGraphExtractorTest extends Suite with de.tud.cs.st.util.perf.BasicPerfo
       while (zipentries.hasMoreElements) {
         val zipentry = zipentries.nextElement
         if (!zipentry.isDirectory && zipentry.getName.endsWith(".class")) {
-          val testCase = ("Read class file: " + zipfile.getName + " - " + zipentry.getName -> (zipfile, zipentry))
+          val testCase = ("Extract dependencies of class file: " + zipfile.getName + " - " + zipentry.getName -> (zipfile, zipentry))
           tcs = tcs + testCase
         }
       }
@@ -62,10 +64,10 @@ class DepGraphExtractorTest extends Suite with de.tud.cs.st.util.perf.BasicPerfo
     tracker: Tracker) {
 
     val ordinal = tracker.nextOrdinal
-    reporter(TestStarting(ordinal, "BATTests", None, testName))
+    reporter(TestStarting(ordinal, "BasicDependencyExtractorTests", None, testName))
     try {
-      // create dependency graph builder that only outputs the added edges directly
-      val depGraphBuilder: DepGraphBuilder = new DepGraphBuilder {
+      // create dependency builder that only outputs the added dependencies directly
+      val depBuilder: DepBuilder = new DepBuilder {
         var cnt = 0
 
         def getID(identifier: String): Int = {
@@ -73,11 +75,12 @@ class DepGraphExtractorTest extends Suite with de.tud.cs.st.util.perf.BasicPerfo
           cnt
         }
 
-        def addEdge(src: Int, trgt: Int, eType: EdgeType) = {
-          println("addEdge: " + src + "--[" + eType + "]-->" + trgt)
+        def addDep(src: Int, trgt: Int, dType: DependencyType) = {
+          //The next line was uncommented to speed up the test runs
+          //println("addDep: " + src + "--[" + dType + "]-->" + trgt)
         }
       }
-      val cfProcessor: ClassFileProcessor = new DepGraphExtractor(depGraphBuilder)
+      val dependencyExtractor = new DepExtractor(depBuilder)
 
       val (file, entry) = testCases(testName)
 
@@ -85,11 +88,11 @@ class DepGraphExtractorTest extends Suite with de.tud.cs.st.util.perf.BasicPerfo
       classFile = Java6Framework.ClassFile(() => file.getInputStream(entry))
 
       // process classFile using dependency graph generator
-      cfProcessor.process(classFile)
+      dependencyExtractor.process(classFile)
 
-      reporter(TestSucceeded(ordinal, "BATTests", None, testName))
+      reporter(TestSucceeded(ordinal, "BasicDependencyExtractorTests", None, testName))
     } catch {
-      case t: Throwable => reporter(TestFailed(ordinal, "Failure", "BATDependencyGraphTests", None, testName, Some(t)))
+      case t: Throwable => reporter(TestFailed(ordinal, "Failure", "BasicDependencyExtractorTests", None, testName, Some(t)))
     }
   }
 }

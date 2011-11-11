@@ -32,7 +32,9 @@
 */
 package de.tud.cs.st.bat.resolved
 
+
 import TypeAliases._
+
 
 /**
  * Common superclass of all instructions.
@@ -40,23 +42,22 @@ import TypeAliases._
  * @author Michael Eichberg
  */
 trait Instruction {
-
-  type EdgeType = { val id: Int; val descr: String }
-
-  def opcode: Int
-
-  def mnemonic: String
-
-  def exceptions: List[ObjectType]
-
-  def toXML(pc: Int): scala.xml.Node
-
-  def toProlog[F, T, A <: T](
-    factory: PrologTermFactory[F, T, A],
-    declaringEntityKey: A,
-    pc: Int,
-    pc_to_seqNo: Array[Int]): F
-  /*= {
+	
+	def opcode : Int
+	
+	def mnemonic : String 
+	
+	def exceptions : List[ObjectType]
+				
+	def toXML(pc: Int) : scala.xml.Node	
+	
+	def toProlog[F,T,A <: T](
+		factory : PrologTermFactory[F,T,A],
+		declaringEntityKey : A,
+		pc : Int,
+		pc_to_seqNo : Array[Int]
+	) : F 
+	/*= {
 		
 		import factory._
 		
@@ -67,6 +68,4 @@ trait Instruction {
 			// ...
 		)
 	}*/
-
-  def dependencies: List[(Type, String, MethodDescriptor, EdgeType)]
 }
