@@ -30,51 +30,34 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved.reader
+package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.bat.reader.MethodsReader
-import de.tud.cs.st.bat.reader.FieldsReader
-import de.tud.cs.st.bat.reader.AttributesReader
-import de.tud.cs.st.bat.reader.SkipUnknown_attributeReader
-import de.tud.cs.st.bat.reader.CodeReader
+import de.tud.cs.st.bat.canonical.reader.BasicJava6Framework
+import de.tud.cs.st.bat.resolved.reader.Java6Framework
 
+import java.io.File
+import java.util.zip.ZipFile
+import java.util.zip.ZipEntry
+import java.util.Enumeration
 
+import org.scalatest.FunSuite
+import org.scalatest.Suite
+import org.scalatest.Reporter
+import org.scalatest.Stopper
+import org.scalatest.Tracker
+import org.scalatest.Filter
+import org.scalatest.Distributor
+import org.scalatest.events._
 
 /**
- * This "framework" can be used to read in Java 6 (vesion 50) class files. All
- * standard information (as defined in the Java Virtual Machine Specification)
- * is represented.
- *
  * @author Michael Eichberg
  */
-object Java6Framework
-	extends Constant_PoolResolver
-		with ClassFileBinding	
-		with MethodsReader
-		with FieldsReader
-		with AttributesReader
-		//with Unknown_attributeBinding // If this entire line is commented out: unknown attributes are completely ignored
-		with SkipUnknown_attributeReader
-		with AnnotationsBinding	
-		with StackMapTable_attributeBinding 
-		with InnerClasses_attributeBinding
-		with EnclosingMethod_attributeBinding
-		with SourceFile_attributeBinding 
-		with SourceDebugExtension_attributeBinding
-		with Deprecated_attributeBinding
-		with Signature_attributeBinding
-		with Synthetic_attributeBinding
-		with LineNumberTable_attributeBinding
-		with LocalVariableTable_attributeBinding
-		with LocalVariableTypeTable_attributeBinding
-		with Exceptions_attributeBinding
-		with ConstantValue_attributeBinding
-		with BytecodeReaderAndBinding
-		with Code_attributeBinding
-			with CodeReader
-{
+class AttributesTest extends FunSuite {
+
+	test("all standard attributes are existing") {
+		val classFile = Java6Framework.ClassFileFromZipFile("test/classfiles/Multithreaded RPN Calculator 2008_10_17 - Java 6 all debug info.zip","src/de/michaeleichberg/multihtreadedprogramming/v2Beta4Thread/Calculator.class")
+		//classFile.attributes.find(_ == "")
+	}
 
 
 }
-
-

@@ -62,10 +62,10 @@ case class ClassFile (
   	val attributes : Attributes
 ) {
 	
-	
 	import de.tud.cs.st.bat.canonical.AccessFlagsContext.CLASS
 	import de.tud.cs.st.bat.canonical.AccessFlagsIterator
 
+	// def sourceFile : Option[String] = attributes.find()
 	
 	def toXML = {
 		<class 
@@ -83,9 +83,9 @@ case class ClassFile (
 	
 	
 	/**
-	 * Converts this class file to a list of facts.
+	 * Converts this object-oriented representation of a class file to a list of Prolog facts.
 	 *	<br/>
-	 * Structure of a class_file fact (representing only the class declaration)
+	 * Structure of a class_file fact (representing only the class declaration):
 	 * <pre>
 	 * class_file(
 	 *		classFileKey : Atom
@@ -100,7 +100,7 @@ case class ClassFile (
 	 * 	deprecated : Term
 	 * )
 	 * </pre>
-	 * Remark: we do not model the "super" access_flag since it is a legacy flag that is always set.
+	 * The "super" access_flag is not modeled since it is a legacy flag that is always set.
 	 * <br />	
 	 * <i>
 	 * The modeling of the facts is inspired by the representation used in: 
