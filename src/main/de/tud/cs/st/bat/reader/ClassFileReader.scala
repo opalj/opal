@@ -33,6 +33,9 @@
 package de.tud.cs.st.bat.reader
 
 import java.io.{InputStream,DataInputStream,BufferedInputStream}
+import java.util.zip.ZipFile
+import java.util.zip.ZipEntry
+
 
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
@@ -136,5 +139,21 @@ trait ClassFileReader extends Constant_PoolAbstractions{ 	// TODO Split up the C
 			access_flags, this_class, super_class,
 			interfaces, fields, methods, attributes 
 		)
+	}
+	
+	
+	def ClassFileFromZipFile(zipFileName : String, zipFileEntryName : String) : ClassFile = {
+			val zipfile = new ZipFile(zipFileName) 
+			try {
+				ClassFile(
+					() => { 
+						val zipentry = zipfile.getEntry(zipFileEntryName)			
+						zipfile.getInputStream(zipentry)
+					}
+				)
+			}
+			finally {
+				zipfile.close
+			}
 	}
 }

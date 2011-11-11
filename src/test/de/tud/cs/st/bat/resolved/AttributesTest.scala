@@ -30,32 +30,34 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st
+package de.tud.cs.st.bat.resolved
 
-import org.scalatest.Suites
+import de.tud.cs.st.bat.canonical.reader.BasicJava6Framework
+import de.tud.cs.st.bat.resolved.reader.Java6Framework
 
+import java.io.File
+import java.util.zip.ZipFile
+import java.util.zip.ZipEntry
+import java.util.Enumeration
+
+import org.scalatest.FunSuite
+import org.scalatest.Suite
+import org.scalatest.Reporter
+import org.scalatest.Stopper
+import org.scalatest.Tracker
+import org.scalatest.Filter
+import org.scalatest.Distributor
+import org.scalatest.events._
 
 /**
- * Runs all tests related to BAT.
- *
- * @author Michael Eichberg 
- * @author Sebastian Hartte
+ * @author Michael Eichberg
  */
-class BATSuite extends Suites (
-	
+class AttributesTest extends FunSuite {
 
-		// UTIL...
-		new util.collection.ArraysTest,
-		
-		// BAT...
-		new bat.resolved.ObjectTypeTest,
-		new bat.resolved.ArrayTypeTest,
-		new bat.resolved.FieldTypeTest,
-		new bat.resolved.MethodDescriptorTest,
-		new bat.resolved.AttributesTest,
-
-		// REGRESSION tests
-		new bat.RegressionSuite
+	test("all standard attributes are existing") {
+		val classFile = Java6Framework.ClassFileFromZipFile("test/classfiles/Multithreaded RPN Calculator 2008_10_17 - Java 6 all debug info.zip","src/de/michaeleichberg/multihtreadedprogramming/v2Beta4Thread/Calculator.class")
+		//classFile.attributes.find(_ == "")
+	}
 
 
-)
+}

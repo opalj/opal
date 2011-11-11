@@ -321,6 +321,7 @@ Author 		Michael Eichberg (mail@michael-eichberg.de)
 		 	<suite classname="de.tud.cs.st.bat.resolved.FieldTypeTest"/>
 		 	<suite classname="de.tud.cs.st.bat.resolved.MethodDescriptorTest"/>		
 		 	<suite classname="de.tud.cs.st.bat.resolved.ObjectTypeTest"/>
+			<suite classname="de.tud.cs.st.bat.resolved.AttributesTest"/>
 			<suite classname="de.tud.cs.st.bat.RegressionSuite"/>
 		</scalatest> 
  	</target>

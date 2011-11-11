@@ -39,6 +39,7 @@ import de.tud.cs.st.bat.reader.SkipUnknown_attributeReader
 import de.tud.cs.st.bat.reader.CodeReader
 
 
+
 /**
  * This "framework" can be used to read in Java 6 (vesion 50) class files. All
  * standard information (as defined in the Java Virtual Machine Specification)
@@ -72,6 +73,7 @@ object Java6Framework
 		with Code_attributeBinding
 			with CodeReader
 {
+
 
 }
 
