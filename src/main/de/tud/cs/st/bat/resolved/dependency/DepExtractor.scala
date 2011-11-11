@@ -109,10 +109,15 @@ class DepExtractor(val builder: DepBuilder) extends InstructionDepExtractor {
               builder.addDep(methodID, getID(exception.catchType), CATCHED_EXCEPTION_TYPE)
             }
           }
-        //TODO: add tests for this attribute (first, the issue that states that this attribute is not transformed into the BAT model has to be solved)
-        case lvta: LocalVariableTable_attribute =>
-          for (lvte <- lvta.localVariableTable) {
-            builder.addDep(methodID, getID(lvte.fieldType), LOCAL_VARIABLE_TYPE)
+          for (attr <- ca.attributes) {
+            attr match {
+              //TODO: add tests for this attribute (first, the issue that states that this attribute is not transformed into the BAT model has to be solved)
+              case lvta: LocalVariableTable_attribute =>
+                for (lvte <- lvta.localVariableTable) {
+                  builder.addDep(methodID, getID(lvte.fieldType), LOCAL_VARIABLE_TYPE)
+                }
+              case _ => Nil
+            }
           }
         case _ => Nil
       }
