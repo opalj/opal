@@ -60,7 +60,7 @@ import DependencyType._
  *
  * @version [Generated] <xsl:value-of select="current-dateTime()"/>
  */
-trait InstructionDepExtractor extends DependencyBinding with CodeBinding{
+trait InstructionDepExtractor extends CodeBinding{
 
   val FIELD_AND_METHOD_SEPARATOR : String
 
