@@ -88,8 +88,8 @@ class DepExtractorTest extends FunSuite with de.tud.cs.st.util.perf.BasicPerform
     assertExceptionTestClass
     assertTestAnnotation
     assertAnnotationDefaultAttributeTestClass
+    assertInstructionsTestClass
     //TODO: generics have also to be considered
-    //TODO: add tests for the now more fine-grained  dependency types used in InstructionDepExtractor
 
     assert(aDeps.deps.isEmpty, "Too many [" + aDeps.deps.size + "] dependencies have been extracted:\n" + aDeps.deps.mkString("\n"))
   }
@@ -466,6 +466,92 @@ class DepExtractorTest extends FunSuite with de.tud.cs.st.util.perf.BasicPerform
     aDeps.assertDependency("test.AnnotationDefaultAttributeTestClass.testMethod()", "java.lang.SuppressWarnings", USES_DEFAULT_ANNOTATION_VALUE_TYPE)
     aDeps.assertDependency("test.AnnotationDefaultAttributeTestClass.testMethod()", "java.lang.Long", USES_DEFAULT_CLASS_VALUE_TYPE)
     aDeps.assertDependency("test.AnnotationDefaultAttributeTestClass.testMethod()", "java.lang.Boolean", USES_DEFAULT_CLASS_VALUE_TYPE)
+    //        }
+    //    }
+  }
+
+  private def assertInstructionsTestClass(implicit aDeps: AssertableDependencies) {
+    //    package test;
+    //    
+    //    import java.io.FilterInputStream;
+    //    import java.io.InputStream;
+    //    import java.util.zip.InflaterInputStream;
+    //    import java.util.zip.ZipInputStream;
+    //    
+    //    public class InstructionsTestClass {
+    aDeps.assertDependency("test.InstructionsTestClass", "java.lang.Object", EXTENDS)
+    assertImplicitDefaultConstructor("test.InstructionsTestClass")
+    //        public Object field;
+    aDeps.assertDependency("test.InstructionsTestClass.field", "test.InstructionsTestClass", IS_DEFINED_IN)
+    aDeps.assertDependency("test.InstructionsTestClass.field", "java.lang.Object", IS_OF_TYPE)
+    //        public static InputStream staticField;
+    aDeps.assertDependency("test.InstructionsTestClass.staticField", "test.InstructionsTestClass", IS_DEFINED_IN)
+    aDeps.assertDependency("test.InstructionsTestClass.staticField", "java.io.InputStream", IS_OF_TYPE)
+    //    
+    //        public void method() {
+    aDeps.assertDependency("test.InstructionsTestClass.method()", "test.InstructionsTestClass", IS_DEFINED_IN)
+    //    	// NEW and INVOKESPECIAL (constructor call)
+    //    	Object obj = new Object();
+    aDeps.assertDependency("test.InstructionsTestClass.method()", "java.lang.Object", CREATES)
+    aDeps.assertDependency("test.InstructionsTestClass.method()", "java.lang.Object.<init>()", CALLS_METHOD)
+    aDeps.assertDependency("test.InstructionsTestClass.method()", "java.lang.Object", USES_METHOD_DECLARING_TYPE)
+    //    	FilterInputStream stream = null;
+    //    	// ANEWARRAY
+    //    	obj = new Long[1];
+    aDeps.assertDependency("test.InstructionsTestClass.method()", "java.lang.Long", CREATES_ARRAY_OF_TYPE)
+    //    	// MULTIANEWARRAY
+    //    	obj = new Integer[1][];
+    aDeps.assertDependency("test.InstructionsTestClass.method()", "java.lang.Integer", CREATES_ARRAY_OF_TYPE)
+    //    
+    //    	// PUTFIELD
+    //    	field = obj;
+    aDeps.assertDependency("test.InstructionsTestClass.method()", "test.InstructionsTestClass", USES_FIELD_DECLARING_TYPE)
+    aDeps.assertDependency("test.InstructionsTestClass.method()", "test.InstructionsTestClass.field", WRITES_FIELD)
+    aDeps.assertDependency("test.InstructionsTestClass.method()", "java.lang.Object", USES_FIELD_WRITE_TYPE)
+    //    	// GETFIELD
+    //    	obj = field;
+    aDeps.assertDependency("test.InstructionsTestClass.method()", "test.InstructionsTestClass", USES_FIELD_DECLARING_TYPE)
+    aDeps.assertDependency("test.InstructionsTestClass.method()", "test.InstructionsTestClass.field", READS_FIELD)
+    aDeps.assertDependency("test.InstructionsTestClass.method()", "java.lang.Object", USES_FIELD_READ_TYPE)
+    //    	// INSTANCEOF
+    //    	if (obj instanceof ZipInputStream) {
+    aDeps.assertDependency("test.InstructionsTestClass.method()", "java.util.zip.ZipInputStream", CHECKS_INSTANCEOF)
+    //    	    // CHECKCAST
+    //    	    stream = (InflaterInputStream) obj;
+    aDeps.assertDependency("test.InstructionsTestClass.method()", "java.util.zip.InflaterInputStream", CASTS_INTO)
+    //    	    // PUTSTATIC
+    //    	    staticField = stream;
+    aDeps.assertDependency("test.InstructionsTestClass.method()", "test.InstructionsTestClass", USES_FIELD_DECLARING_TYPE)
+    aDeps.assertDependency("test.InstructionsTestClass.method()", "test.InstructionsTestClass.staticField", WRITES_FIELD)
+    aDeps.assertDependency("test.InstructionsTestClass.method()", "java.io.InputStream", USES_FIELD_WRITE_TYPE)
+    //    	    // GETSTATIC
+    //    	    obj = staticField;
+    aDeps.assertDependency("test.InstructionsTestClass.method()", "test.InstructionsTestClass", USES_FIELD_DECLARING_TYPE)
+    aDeps.assertDependency("test.InstructionsTestClass.method()", "test.InstructionsTestClass.staticField", READS_FIELD)
+    aDeps.assertDependency("test.InstructionsTestClass.method()", "java.io.InputStream", USES_FIELD_READ_TYPE)
+    //    	}
+    //    
+    //    	// INVOKESTATIC
+    //    	System.currentTimeMillis();
+    aDeps.assertDependency("test.InstructionsTestClass.method()", "java.lang.System", USES_METHOD_DECLARING_TYPE)
+    aDeps.assertDependency("test.InstructionsTestClass.method()", "java.lang.System.currentTimeMillis()", CALLS_METHOD)
+    //    
+    //    	TestInterface ti = new TestClass();
+    aDeps.assertDependency("test.InstructionsTestClass.method()", "test.TestClass", CREATES)
+    aDeps.assertDependency("test.InstructionsTestClass.method()", "test.TestClass", USES_METHOD_DECLARING_TYPE)
+    aDeps.assertDependency("test.InstructionsTestClass.method()", "test.TestClass.<init>()", CALLS_METHOD)
+    //    	// INVOKEINTERFACE
+    //    	ti.testMethod();
+    aDeps.assertDependency("test.InstructionsTestClass.method()", "test.TestInterface", USES_METHOD_DECLARING_TYPE)
+    aDeps.assertDependency("test.InstructionsTestClass.method()", "test.TestInterface.testMethod()", CALLS_INTERFACE_METHOD)
+    //    
+    //    	// INVOKEVIRTUAL
+    //    	obj.equals(stream);
+    aDeps.assertDependency("test.InstructionsTestClass.method()", "java.lang.Object", USES_METHOD_DECLARING_TYPE)
+    aDeps.assertDependency("test.InstructionsTestClass.method()", "java.lang.Object.equals(java.lang.Object)", CALLS_METHOD)
+    aDeps.assertDependency("test.InstructionsTestClass.method()", "java.lang.Object", USES_PARAMETER_TYPE)
+    //    
+    //    	// TODO: add test for INVOKEDYNAMIC
     //        }
     //    }
   }
