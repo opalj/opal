@@ -41,7 +41,7 @@ import de.tud.cs.st.util.ControlAbstractions.repeat
 
  * @author Michael Eichberg
  */
-trait FieldsReader {
+trait FieldsReader extends Constant_PoolAbstractions {
 
  
 	//
@@ -52,7 +52,6 @@ trait FieldsReader {
 	type Field_Info
 	implicit val Field_InfoManifest : ClassManifest[Field_Info]
 	type Attributes
-	type Constant_Pool
 
 
 	def Attributes(in : DataInputStream, cp : Constant_Pool) : Attributes

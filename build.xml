@@ -52,6 +52,7 @@ Author 		Michael Eichberg (mail@michael-eichberg.de)
 	<property name="src.main.dir" value="src/main"/>
 	<property name="src.spec.dir" value="src/spec"/>
 	<property name="src.test.dir" value="src/test"/>
+	<property name="src.demo.dir" value="src/demo"/>
 
 
 	<!-- Directories where the generated code is stored. -->
@@ -230,7 +231,8 @@ Author 		Michael Eichberg (mail@michael-eichberg.de)
 				unchecked="yes"
 				force="changed">
 			<src path="${src.main.dir}"/>
-		    <src path="${scala.generated.dir}"/>
+			<src path="${src.demo.dir}"/>
+			<src path="${scala.generated.dir}"/>
 	    	<include name="**/*.scala"/>
 	    	<include name="**/*.java"/>
 	  	</scalac>

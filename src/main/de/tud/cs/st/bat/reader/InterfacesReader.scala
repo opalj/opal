@@ -30,39 +30,41 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.canonical
+package de.tud.cs.st.bat.reader
 
+import java.io.DataInputStream
+
+import de.tud.cs.st.util.ControlAbstractions.repeat
 
 /**
+ * Implements a template method to read in the interfaces implemented by a
+ * class.
  *
  * @author Michael Eichberg
  */
-trait ClassFile {
+trait InterfacesReader extends Constant_PoolAbstractions {
 
-	//
-	// ABSTRACT DEFINITIONS
-	//
+  //
+  // ABSTRACT DEFINITIONS
+  //
 
-	type Constant_Pool_Entry <: de.tud.cs.st.bat.canonical.Constant_Pool_Entry
-	type Fields 
-	type Methods 
-	type Attributes
-	type Interfaces 
+  type Interface
+  implicit val InterfaceManifest: ClassManifest[Interface]
 
+  def Interface(
+    interface_index: Constant_Pool_Index)(implicit constant_pool: Constant_Pool): Interface
 
-	type Constant_Pool_Index = Int
-	type Constant_Pool = IndexedSeq[Constant_Pool_Entry]
+  //
+  // IMPLEMENTATION
+  //
 
-	
-  	val minor_version : Int
-  	val major_version : Int
-  	val constant_pool : Constant_Pool
-  	val access_flags : Int
-  	val this_class : Int
-  	val super_class : Int
-  	val interfaces: Interfaces 
-  	val fields : Fields
-  	val methods : Methods
-  	val attributes : Attributes
+  type Interfaces = IndexedSeq[Interface]
+
+  def Interfaces(in: DataInputStream, cp: Constant_Pool): Interfaces = {
+    val interfaces_count = in.readUnsignedShort;
+    repeat(interfaces_count) {
+      Interface(in.readUnsignedShort)(cp)
+    }
+  }
+
 }
-

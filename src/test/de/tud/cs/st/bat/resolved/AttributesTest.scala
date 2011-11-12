@@ -32,32 +32,17 @@
 */
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.bat.canonical.reader.BasicJava6Framework
 import de.tud.cs.st.bat.resolved.reader.Java6Framework
 
-import java.io.File
-import java.util.zip.ZipFile
-import java.util.zip.ZipEntry
-import java.util.Enumeration
-
 import org.scalatest.FunSuite
-import org.scalatest.Suite
-import org.scalatest.Reporter
-import org.scalatest.Stopper
-import org.scalatest.Tracker
-import org.scalatest.Filter
-import org.scalatest.Distributor
-import org.scalatest.events._
 
 /**
  * @author Michael Eichberg
  */
 class AttributesTest extends FunSuite {
 
-	test("all standard attributes are existing") {
-		val classFile = Java6Framework.ClassFileFromZipFile("test/classfiles/Multithreaded RPN Calculator 2008_10_17 - Java 6 all debug info.zip","src/de/michaeleichberg/multihtreadedprogramming/v2Beta4Thread/Calculator.class")
-		//classFile.attributes.find(_ == "")
-	}
-
+  test("all standard attributes are existing") {
+    val classFile = Java6Framework.ClassFile("test/classfiles/Multithreaded RPN Calculator 2008_10_17 - Java 6 all debug info.zip", "src/de/michaeleichberg/multihtreadedprogramming/v2Beta4Thread/Calculator.class")
+  }
 
 }

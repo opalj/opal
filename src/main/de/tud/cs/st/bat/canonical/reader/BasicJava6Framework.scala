@@ -36,8 +36,9 @@ import de.tud.cs.st.bat.reader.Unknown_attributeReader
 
 
 /**
- * Creates a one:to:one representation of Java bytecode. I.e., all references 
- * in, e.g., the constant pool are not resolved.
+ * Creates a one to one representation of a Java class files. I.e., the 
+ * constant pool is represented as is and all references into the constant pool
+ * are left as is.
  *
  * @author Michael Eichberg
  */
@@ -69,6 +70,7 @@ object BasicJava6Framework
 	val InnerClassesEntryManifest : ClassManifest[de.tud.cs.st.bat.canonical.reader.BasicJava6Framework.InnerClassesEntry]= implicitly
 	val Exceptions_attributeManifest : ClassManifest[de.tud.cs.st.bat.canonical.reader.BasicJava6Framework.Exceptions_attribute]= implicitly
 	val AttributeManifest : ClassManifest[de.tud.cs.st.bat.canonical.reader.BasicJava6Framework.Attribute]= implicitly
+	val InterfaceManifest : ClassManifest[de.tud.cs.st.bat.canonical.reader.BasicJava6Framework.Interface] = implicitly
 	val Method_InfoManifest : ClassManifest[de.tud.cs.st.bat.canonical.reader.BasicJava6Framework.Method_Info]= implicitly
 	val Field_InfoManifest : ClassManifest[de.tud.cs.st.bat.canonical.reader.BasicJava6Framework.Field_Info]= implicitly
 
@@ -80,7 +82,7 @@ object BasicJava6Framework
 	  	val access_flags : Int,
 	  	val this_class : Int,
 	  	val super_class : Int,
-	  	val interfaces: Interfaces,//Seq[Constant_Pool_Index], // references (int values) to constant pool entries
+	  	val interfaces: Interfaces, // TODO DELETE ME IndexedSeq[Constant_Pool_Index],//Seq[Constant_Pool_Index], // references (int values) to constant pool entries
 	  	val fields : Fields,
 	  	val methods : Methods,
 	  	val attributes : Attributes
@@ -90,7 +92,7 @@ object BasicJava6Framework
 		type Fields = BasicJava6Framework.Fields
 		type Methods = BasicJava6Framework.Methods
 		type Attributes = BasicJava6Framework.Attributes
-		type Interfaces = BasicJava6Framework.Interfaces	
+		type Interfaces = BasicJava6Framework.Interfaces
 	}	
 
 	def ClassFile(
@@ -104,6 +106,10 @@ object BasicJava6Framework
 		) 
 
 
+	type Interface = Constant_Pool_Index
+	def Interface(interface_index : Constant_Pool_Index ) ( implicit constant_pool : Constant_Pool) : Interface =  interface_index
+	
+	
 	case class Field_Info (
 		val access_flags : Int,
 	  	val name_index : Int,
