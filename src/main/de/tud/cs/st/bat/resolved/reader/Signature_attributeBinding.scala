@@ -34,26 +34,21 @@ package de.tud.cs.st.bat.resolved.reader
 
 import de.tud.cs.st.bat.reader.Signature_attributeReader
 
-
 /**
  *
  * @author Michael Eichberg
  */
-trait Signature_attributeBinding 
-	extends Signature_attributeReader
-		with Constant_PoolResolver
-		with AttributeBinding		
-{
-	
-	
-	type Signature_attribute = de.tud.cs.st.bat.resolved.Signature_attribute	
-	
+trait Signature_attributeBinding
+        extends Signature_attributeReader
+        with Constant_PoolResolver
+        with AttributeBinding {
 
-	def Signature_attribute (
-		attribute_name_index : Int, signature_index : Int
-	)( implicit constant_pool : Constant_Pool) = {
-		new Signature_attribute(signature_index)
-	}	
+    type Signature_attribute = de.tud.cs.st.bat.resolved.Signature_attribute
+
+    def Signature_attribute(
+        attribute_name_index: Int, signature_index: Int)(implicit constant_pool: Constant_Pool) = {
+        new Signature_attribute(signature_index)
+    }
 
 }
 
