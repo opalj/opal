@@ -59,6 +59,7 @@ package de.tud.cs.st.bat.reader
 trait Java2Reader 
 	extends Constant_PoolReader 
 		with ClassFileReader	
+		with InterfacesReader
 		with FieldsReader
 		with MethodsReader
 		with AttributesReader // the attributes reader has to come before the attributes!

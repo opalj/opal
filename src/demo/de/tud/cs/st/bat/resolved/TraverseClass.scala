@@ -30,39 +30,13 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.canonical
+package de.tud.cs.st.bat.resolved
 
+import reader.Java6Framework
 
-/**
- *
- * @author Michael Eichberg
- */
-trait ClassFile {
+object TraverseClass extends Application {
 
-	//
-	// ABSTRACT DEFINITIONS
-	//
+  val classFile = Java6Framework.ClassFile("test/classfiles/Multithreaded RPN Calculator 2008_10_17 - Java 6 all debug info.zip", "src/de/michaeleichberg/multihtreadedprogramming/v2Beta4Thread/Calculator.class")
+  println(classFile)
 
-	type Constant_Pool_Entry <: de.tud.cs.st.bat.canonical.Constant_Pool_Entry
-	type Fields 
-	type Methods 
-	type Attributes
-	type Interfaces 
-
-
-	type Constant_Pool_Index = Int
-	type Constant_Pool = IndexedSeq[Constant_Pool_Entry]
-
-	
-  	val minor_version : Int
-  	val major_version : Int
-  	val constant_pool : Constant_Pool
-  	val access_flags : Int
-  	val this_class : Int
-  	val super_class : Int
-  	val interfaces: Interfaces 
-  	val fields : Fields
-  	val methods : Methods
-  	val attributes : Attributes
 }
-

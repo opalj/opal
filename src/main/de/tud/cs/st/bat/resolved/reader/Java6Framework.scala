@@ -30,10 +30,12 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved.reader
+package de.tud.cs.st.bat.resolved
+package reader
 
-import de.tud.cs.st.bat.reader.MethodsReader
+import de.tud.cs.st.bat.reader.InterfacesReader
 import de.tud.cs.st.bat.reader.FieldsReader
+import de.tud.cs.st.bat.reader.MethodsReader
 import de.tud.cs.st.bat.reader.AttributesReader
 import de.tud.cs.st.bat.reader.SkipUnknown_attributeReader
 import de.tud.cs.st.bat.reader.CodeReader
@@ -49,9 +51,10 @@ import de.tud.cs.st.bat.reader.CodeReader
  */
 object Java6Framework
 	extends Constant_PoolResolver
-		with ClassFileBinding	
-		with MethodsReader
+		with ClassFileBinding
+		with InterfacesReader
 		with FieldsReader
+		with MethodsReader
 		with AttributesReader
 		//with Unknown_attributeBinding // If this entire line is commented out: unknown attributes are completely ignored
 		with SkipUnknown_attributeReader
