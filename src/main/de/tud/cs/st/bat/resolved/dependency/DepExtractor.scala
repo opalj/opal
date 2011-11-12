@@ -41,6 +41,11 @@ class DepExtractor(val builder: DepBuilder) extends InstructionDepExtractor {
               builder.addDep(getID(c.innerClassType), thisClassID, IS_DEFINED_IN)
             }
           }
+        //TODO: make use of Signature_attribute and LocalVariableTypeTable_attribute
+        case sa: Signature_attribute =>
+          println(sa)
+        case lvtta: LocalVariableTypeTable_attribute =>
+          println(lvtta)
         case _ => Nil
       }
     }
@@ -59,7 +64,7 @@ class DepExtractor(val builder: DepBuilder) extends InstructionDepExtractor {
   private def process(field: Field_Info)(implicit thisClassName: String, thisClassID: Option[Int]) {
     implicit val fieldID = getID(thisClassName, field)
     builder.addDep(fieldID, thisClassID, IS_DEFINED_IN)
-    builder.addDep(fieldID, getID(field.descriptor), FIELD_TYPE)
+    builder.addDep(fieldID, getID(field.descriptor.fieldType), IS_OF_TYPE)
     //process attributes
     for (attribute <- field.attributes) {
       attribute match {
@@ -68,7 +73,12 @@ class DepExtractor(val builder: DepBuilder) extends InstructionDepExtractor {
             process(annotation)(fieldID)
           }
         case cva: ConstantValue_attribute =>
-          builder.addDep(fieldID, getID(cva.constantValue.valueType), CONSTANT_VALUE_TYPE)
+          builder.addDep(fieldID, getID(cva.constantValue.valueType), USES_CONSTANT_VALUE_OF_TYPE)
+        //TODO: make use of Signature_attribute and LocalVariableTypeTable_attribute
+        case sa: Signature_attribute =>
+          println(sa)
+        case lvtta: LocalVariableTypeTable_attribute =>
+          println(lvtta)
         case _ => Nil
       }
     }
@@ -77,9 +87,9 @@ class DepExtractor(val builder: DepBuilder) extends InstructionDepExtractor {
   private def process(method: Method_Info)(implicit thisClassName: String, thisClassID: Option[Int]) {
     implicit val methodID = getID(thisClassName, method)
     builder.addDep(methodID, thisClassID, IS_DEFINED_IN)
-    builder.addDep(methodID, getID(method.descriptor.returnType), RETURN_TYPE)
+    builder.addDep(methodID, getID(method.descriptor.returnType), RETURNS)
     for (paramType <- method.descriptor.parameterTypes) {
-      builder.addDep(methodID, getID(paramType), PARAMETER_TYPE)
+      builder.addDep(methodID, getID(paramType), HAS_PARAMETER_OF_TYPE)
     }
 
     //process attributes
@@ -92,12 +102,12 @@ class DepExtractor(val builder: DepBuilder) extends InstructionDepExtractor {
         case paa: ParameterAnnotations_attribute =>
           for (annotations <- paa.parameterAnnotations) {
             for (annotation <- annotations) {
-              process(annotation)(methodID, PARAMETER_ANNOTATION_TYPE)
+              process(annotation)(methodID, PARAMETER_ANNOTATED_WITH)
             }
           }
         case ea: Exceptions_attribute =>
           for (exception <- ea.exceptionTable) {
-            builder.addDep(methodID, getID(exception), THROWS_EXCEPTION_TYPE)
+            builder.addDep(methodID, getID(exception), THROWS)
           }
         case ada: AnnotationDefault_attribute => {
           processElementValue(ada.elementValue)(methodID)
@@ -106,7 +116,7 @@ class DepExtractor(val builder: DepBuilder) extends InstructionDepExtractor {
           process(methodID, ca.code)
           for (exception <- ca.exceptionTable) {
             if (!isFinallyBlock(exception.catchType)) {
-              builder.addDep(methodID, getID(exception.catchType), CATCHED_EXCEPTION_TYPE)
+              builder.addDep(methodID, getID(exception.catchType), CATCHES)
             }
           }
           for (attr <- ca.attributes) {
@@ -114,34 +124,39 @@ class DepExtractor(val builder: DepBuilder) extends InstructionDepExtractor {
               //TODO: add tests for this attribute (first, the issue that states that this attribute is not transformed into the BAT model has to be solved)
               case lvta: LocalVariableTable_attribute =>
                 for (lvte <- lvta.localVariableTable) {
-                  builder.addDep(methodID, getID(lvte.fieldType), LOCAL_VARIABLE_TYPE)
+                  builder.addDep(methodID, getID(lvte.fieldType), HAS_LOCAL_VARIABLE_OF_TYPE)
                 }
               case _ => Nil
             }
           }
+        //TODO: make use of Signature_attribute and LocalVariableTypeTable_attribute
+        case sa: Signature_attribute =>
+          println(sa)
+        case lvtta: LocalVariableTypeTable_attribute =>
+          println(lvtta)
         case _ => Nil
       }
     }
   }
 
-  private def processElementValue(elementValue: ElementValue)(implicit srcID: Option[Int], annotationDepType: DependencyType = ANNOTATION_TYPE) {
+  private def processElementValue(elementValue: ElementValue)(implicit srcID: Option[Int], annotationDepType: DependencyType = ANNOTATED_WITH) {
     elementValue match {
       case ClassValue(returnType) =>
-        builder.addDep(srcID, getID(returnType), USED_DEFAULT_CLASS_VALUE_TYPE)
+        builder.addDep(srcID, getID(returnType), USES_DEFAULT_CLASS_VALUE_TYPE)
       case EnumValue(enumType, constName) =>
-        builder.addDep(srcID, getID(enumType), USED_DEFAULT_ENUM_VALUE_TYPE)
-        builder.addDep(srcID, getID(enumType, constName), USED_ENUM_VALUE)
+        builder.addDep(srcID, getID(enumType), USES_DEFAULT_ENUM_VALUE_TYPE)
+        builder.addDep(srcID, getID(enumType, constName), USES_ENUM_VALUE)
       case ArrayValue(values) =>
         for (value <- values) {
           processElementValue(value)
         }
       case AnnotationValue(annotation) =>
-        process(annotation)(srcID, USED_DEFAULT_ANNOTATION_VALUE_TYPE)
+        process(annotation)(srcID, USES_DEFAULT_ANNOTATION_VALUE_TYPE)
       case _ => Nil
     }
   }
 
-  private def process(annotation: Annotation)(implicit srcID: Option[Int], depType: DependencyType = ANNOTATION_TYPE) {
+  private def process(annotation: Annotation)(implicit srcID: Option[Int], depType: DependencyType = ANNOTATED_WITH) {
     builder.addDep(srcID, getID(annotation.annotationType), depType)
     for (elemValuePair <- annotation.elementValuePairs) {
       processElementValue(elemValuePair.elementValue)

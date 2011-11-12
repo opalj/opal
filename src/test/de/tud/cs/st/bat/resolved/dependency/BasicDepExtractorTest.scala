@@ -27,7 +27,7 @@ class BasicDepExtractorTest extends Suite with de.tud.cs.st.util.perf.BasicPerfo
 
     // The location of the "test/data" directory depends on the current directory used for 
     // running this test suite... i.e. whether the current directory is the directory where
-    // this class / this source file is stored or the OPAL root directory. 
+    // this class / this source file is stored or the BAT's root directory. 
     var files = new File("../../../../../../../test/classfiles").listFiles()
     if (files == null) files = new File("test/classfiles").listFiles()
 
