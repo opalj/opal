@@ -142,8 +142,9 @@ class DepExtractorTest extends FunSuite with de.tud.cs.st.util.perf.BasicPerform
     assertImplicitDefaultConstructor("test.TestClass")
     //        public void testMethod() {
     aDeps.assertDependency("test.TestClass.testMethod()", "test.TestClass", IS_DEFINED_IN)
+    assertImplicitThisLocalVariable("test.TestClass.testMethod()")
     //    	List<String> list = new ArrayList<String>();
-    //TODO: add: aDeps.assertDependency("test.TestClass.testMethod()", "java.util.List", USED_TYPE)
+    aDeps.assertDependency("test.TestClass.testMethod()", "java.util.List", HAS_LOCAL_VARIABLE_OF_TYPE)
     aDeps.assertDependency("test.TestClass.testMethod()", "java.util.ArrayList", CREATES)
     aDeps.assertDependency("test.TestClass.testMethod()", "java.util.ArrayList", USES_METHOD_DECLARING_TYPE)
     aDeps.assertDependency("test.TestClass.testMethod()", "java.util.ArrayList.<init>()", CALLS_METHOD)
@@ -158,7 +159,9 @@ class DepExtractorTest extends FunSuite with de.tud.cs.st.util.perf.BasicPerform
     //        public String testMethod(Integer i, int j) {
     aDeps.assertDependency("test.TestClass.testMethod(java.lang.Integer, int)", "test.TestClass", IS_DEFINED_IN)
     aDeps.assertDependency("test.TestClass.testMethod(java.lang.Integer, int)", "java.lang.Integer", HAS_PARAMETER_OF_TYPE)
+    aDeps.assertDependency("test.TestClass.testMethod(java.lang.Integer, int)", "java.lang.Integer", HAS_LOCAL_VARIABLE_OF_TYPE)
     aDeps.assertDependency("test.TestClass.testMethod(java.lang.Integer, int)", "java.lang.String", RETURNS)
+    assertImplicitThisLocalVariable("test.TestClass.testMethod(java.lang.Integer, int)")
     //    	if (i != null && i.intValue() > j) {
     aDeps.assertDependency("test.TestClass.testMethod(java.lang.Integer, int)", "java.lang.Integer", USES_METHOD_DECLARING_TYPE)
     aDeps.assertDependency("test.TestClass.testMethod(java.lang.Integer, int)", "java.lang.Integer.intValue()", CALLS_METHOD)
@@ -244,6 +247,7 @@ class DepExtractorTest extends FunSuite with de.tud.cs.st.util.perf.BasicPerform
     //        private Integer readField() {
     aDeps.assertDependency("test.FieldsClass.readField()", "test.FieldsClass", IS_DEFINED_IN)
     aDeps.assertDependency("test.FieldsClass.readField()", "java.lang.Integer", RETURNS)
+    assertImplicitThisLocalVariable("test.FieldsClass.readField()")
     //    	return i;
     aDeps.assertDependency("test.FieldsClass.readField()", "test.FieldsClass", USES_FIELD_DECLARING_TYPE)
     aDeps.assertDependency("test.FieldsClass.readField()", "test.FieldsClass.i", READS_FIELD)
@@ -253,6 +257,8 @@ class DepExtractorTest extends FunSuite with de.tud.cs.st.util.perf.BasicPerform
     //        private void writeField(Integer j) {
     aDeps.assertDependency("test.FieldsClass.writeField(java.lang.Integer)", "test.FieldsClass", IS_DEFINED_IN)
     aDeps.assertDependency("test.FieldsClass.writeField(java.lang.Integer)", "java.lang.Integer", HAS_PARAMETER_OF_TYPE)
+    aDeps.assertDependency("test.FieldsClass.writeField(java.lang.Integer)", "java.lang.Integer", HAS_LOCAL_VARIABLE_OF_TYPE)
+    assertImplicitThisLocalVariable("test.FieldsClass.writeField(java.lang.Integer)")
     //    	i = j;
     aDeps.assertDependency("test.FieldsClass.writeField(java.lang.Integer)", "test.FieldsClass", USES_FIELD_DECLARING_TYPE)
     aDeps.assertDependency("test.FieldsClass.writeField(java.lang.Integer)", "test.FieldsClass.i", WRITES_FIELD)
@@ -262,8 +268,11 @@ class DepExtractorTest extends FunSuite with de.tud.cs.st.util.perf.BasicPerform
     //        public Integer readWrite(Integer j) {
     aDeps.assertDependency("test.FieldsClass.readWrite(java.lang.Integer)", "test.FieldsClass", IS_DEFINED_IN)
     aDeps.assertDependency("test.FieldsClass.readWrite(java.lang.Integer)", "java.lang.Integer", HAS_PARAMETER_OF_TYPE)
+    aDeps.assertDependency("test.FieldsClass.readWrite(java.lang.Integer)", "java.lang.Integer", HAS_LOCAL_VARIABLE_OF_TYPE)
     aDeps.assertDependency("test.FieldsClass.readWrite(java.lang.Integer)", "java.lang.Integer", RETURNS)
+    assertImplicitThisLocalVariable("test.FieldsClass.readWrite(java.lang.Integer)")
     //    	Integer result = readField();
+    aDeps.assertDependency("test.FieldsClass.readWrite(java.lang.Integer)", "java.lang.Integer", HAS_LOCAL_VARIABLE_OF_TYPE)
     aDeps.assertDependency("test.FieldsClass.readWrite(java.lang.Integer)", "test.FieldsClass", USES_METHOD_DECLARING_TYPE)
     aDeps.assertDependency("test.FieldsClass.readWrite(java.lang.Integer)", "test.FieldsClass.readField()", CALLS_METHOD)
     aDeps.assertDependency("test.FieldsClass.readWrite(java.lang.Integer)", "java.lang.Integer", USES_RETURN_TYPE)
@@ -293,6 +302,9 @@ class DepExtractorTest extends FunSuite with de.tud.cs.st.util.perf.BasicPerform
     //	//implicit constructor parameter:
     aDeps.assertDependency("test.OuterClass$InnerClass.<init>(test.OuterClass, java.lang.Integer)", "test.OuterClass", HAS_PARAMETER_OF_TYPE)
     aDeps.assertDependency("test.OuterClass$InnerClass.<init>(test.OuterClass, java.lang.Integer)", "java.lang.Integer", HAS_PARAMETER_OF_TYPE)
+    aDeps.assertDependency("test.OuterClass$InnerClass.<init>(test.OuterClass, java.lang.Integer)", "java.lang.Integer", HAS_LOCAL_VARIABLE_OF_TYPE)
+    assertImplicitThisLocalVariable("test.OuterClass$InnerClass.<init>(test.OuterClass, java.lang.Integer)")
+
     aDeps.assertDependency("test.OuterClass$InnerClass.<init>(test.OuterClass, java.lang.Integer)", "java.lang.Object", USES_METHOD_DECLARING_TYPE)
     aDeps.assertDependency("test.OuterClass$InnerClass.<init>(test.OuterClass, java.lang.Integer)", "java.lang.Object.<init>()", CALLS_METHOD)
     //	// write to implicit field:
@@ -338,6 +350,7 @@ class DepExtractorTest extends FunSuite with de.tud.cs.st.util.perf.BasicPerform
     //	//implicit constructor:
     aDeps.assertDependency("test.EnclosingMethodClass$1.<init>(test.EnclosingMethodClass)", "test.EnclosingMethodClass$1", IS_DEFINED_IN)
     aDeps.assertDependency("test.EnclosingMethodClass$1.<init>(test.EnclosingMethodClass)", "test.EnclosingMethodClass", HAS_PARAMETER_OF_TYPE)
+    assertImplicitThisLocalVariable("test.EnclosingMethodClass$1.<init>(test.EnclosingMethodClass)")
     aDeps.assertDependency("test.EnclosingMethodClass$1.<init>(test.EnclosingMethodClass)", "java.lang.Object", USES_METHOD_DECLARING_TYPE)
     aDeps.assertDependency("test.EnclosingMethodClass$1.<init>(test.EnclosingMethodClass)", "java.lang.Object.<init>()", CALLS_METHOD)
     //	// write to implicit field:
@@ -352,11 +365,13 @@ class DepExtractorTest extends FunSuite with de.tud.cs.st.util.perf.BasicPerform
     aDeps.assertDependency("test.EnclosingMethodClass$2", "java.lang.Object", EXTENDS)
     //	//implicit constructor:
     aDeps.assertDependency("test.EnclosingMethodClass$2.<init>()", "test.EnclosingMethodClass$2", IS_DEFINED_IN)
+    assertImplicitThisLocalVariable("test.EnclosingMethodClass$2.<init>()")
     aDeps.assertDependency("test.EnclosingMethodClass$2.<init>()", "java.lang.Object", USES_METHOD_DECLARING_TYPE)
     aDeps.assertDependency("test.EnclosingMethodClass$2.<init>()", "java.lang.Object.<init>()", CALLS_METHOD)
     //
     //        public void enclosingMethod() {
     aDeps.assertDependency("test.EnclosingMethodClass.enclosingMethod()", "test.EnclosingMethodClass", IS_DEFINED_IN)
+    assertImplicitThisLocalVariable("test.EnclosingMethodClass.enclosingMethod()")
     //    	new Object() {
     aDeps.assertDependency("test.EnclosingMethodClass$3", "java.lang.Object", EXTENDS)
     aDeps.assertDependency("test.EnclosingMethodClass$3", "test.EnclosingMethodClass.enclosingMethod()", IS_DEFINED_IN)
@@ -366,6 +381,7 @@ class DepExtractorTest extends FunSuite with de.tud.cs.st.util.perf.BasicPerform
     //	//implicit constructor:
     aDeps.assertDependency("test.EnclosingMethodClass$3.<init>(test.EnclosingMethodClass)", "test.EnclosingMethodClass$3", IS_DEFINED_IN)
     aDeps.assertDependency("test.EnclosingMethodClass$3.<init>(test.EnclosingMethodClass)", "test.EnclosingMethodClass", HAS_PARAMETER_OF_TYPE)
+    assertImplicitThisLocalVariable("test.EnclosingMethodClass$3.<init>(test.EnclosingMethodClass)")
     aDeps.assertDependency("test.EnclosingMethodClass$3.<init>(test.EnclosingMethodClass)", "java.lang.Object", USES_METHOD_DECLARING_TYPE)
     aDeps.assertDependency("test.EnclosingMethodClass$3.<init>(test.EnclosingMethodClass)", "java.lang.Object.<init>()", CALLS_METHOD)
     //	// write to implicit field:
@@ -374,6 +390,7 @@ class DepExtractorTest extends FunSuite with de.tud.cs.st.util.perf.BasicPerform
     aDeps.assertDependency("test.EnclosingMethodClass$3.<init>(test.EnclosingMethodClass)", "test.EnclosingMethodClass", USES_FIELD_WRITE_TYPE)
     //    	    public void innerMethod() {
     aDeps.assertDependency("test.EnclosingMethodClass$3.innerMethod()", "test.EnclosingMethodClass$3", IS_DEFINED_IN)
+    assertImplicitThisLocalVariable("test.EnclosingMethodClass$3.innerMethod()")
     //    	    }
     //    	}.innerMethod();
     aDeps.assertDependency("test.EnclosingMethodClass.enclosingMethod()", "test.EnclosingMethodClass$3", CREATES)
@@ -403,6 +420,7 @@ class DepExtractorTest extends FunSuite with de.tud.cs.st.util.perf.BasicPerform
     aDeps.assertDependency("test.ExceptionTestClass.testMethod()", "test.ExceptionTestClass", IS_DEFINED_IN)
     aDeps.assertDependency("test.ExceptionTestClass.testMethod()", "java.lang.IllegalStateException", THROWS)
     aDeps.assertDependency("test.ExceptionTestClass.testMethod()", "javax.naming.OperationNotSupportedException", THROWS)
+    assertImplicitThisLocalVariable("test.ExceptionTestClass.testMethod()")
     //    	throw new FormatterClosedException();
     aDeps.assertDependency("test.ExceptionTestClass.testMethod()", "java.util.FormatterClosedException", CREATES)
     aDeps.assertDependency("test.ExceptionTestClass.testMethod()", "java.util.FormatterClosedException", USES_METHOD_DECLARING_TYPE)
@@ -411,6 +429,7 @@ class DepExtractorTest extends FunSuite with de.tud.cs.st.util.perf.BasicPerform
     //
     //        public void catchMethod() {
     aDeps.assertDependency("test.ExceptionTestClass.catchMethod()", "test.ExceptionTestClass", IS_DEFINED_IN)
+    assertImplicitThisLocalVariable("test.ExceptionTestClass.catchMethod()")
     //    	try {
     //    	    try {
     //    		testMethod();
@@ -418,9 +437,11 @@ class DepExtractorTest extends FunSuite with de.tud.cs.st.util.perf.BasicPerform
     aDeps.assertDependency("test.ExceptionTestClass.catchMethod()", "test.ExceptionTestClass.testMethod()", CALLS_METHOD)
     //    	    } catch (IllegalStateException e) {
     aDeps.assertDependency("test.ExceptionTestClass.catchMethod()", "java.lang.IllegalStateException", CATCHES)
+    aDeps.assertDependency("test.ExceptionTestClass.catchMethod()", "java.lang.IllegalStateException", HAS_LOCAL_VARIABLE_OF_TYPE)
     //    	    }
     //    	} catch (Exception e) {
     aDeps.assertDependency("test.ExceptionTestClass.catchMethod()", "java.lang.Exception", CATCHES)
+    aDeps.assertDependency("test.ExceptionTestClass.catchMethod()", "java.lang.Exception", HAS_LOCAL_VARIABLE_OF_TYPE)
     //    	} finally{
     //    	    Integer.valueOf(42);
     aDeps.assertDependency("test.ExceptionTestClass.catchMethod()", "java.lang.Integer", USES_METHOD_DECLARING_TYPE)
@@ -502,6 +523,7 @@ class DepExtractorTest extends FunSuite with de.tud.cs.st.util.perf.BasicPerform
     aDeps.assertDependency("test.AnnotationDefaultAttributeTestClass.testMethod()", "java.lang.SuppressWarnings", USES_DEFAULT_ANNOTATION_VALUE_TYPE)
     aDeps.assertDependency("test.AnnotationDefaultAttributeTestClass.testMethod()", "java.lang.Long", USES_DEFAULT_CLASS_VALUE_TYPE)
     aDeps.assertDependency("test.AnnotationDefaultAttributeTestClass.testMethod()", "java.lang.Boolean", USES_DEFAULT_CLASS_VALUE_TYPE)
+    assertImplicitThisLocalVariable("test.AnnotationDefaultAttributeTestClass.testMethod()")
     //        }
     //    }
   }
@@ -526,12 +548,15 @@ class DepExtractorTest extends FunSuite with de.tud.cs.st.util.perf.BasicPerform
     //    
     //        public void method() {
     aDeps.assertDependency("test.InstructionsTestClass.method()", "test.InstructionsTestClass", IS_DEFINED_IN)
+    assertImplicitThisLocalVariable("test.InstructionsTestClass.method()")
     //    	// NEW and INVOKESPECIAL (constructor call)
     //    	Object obj = new Object();
+    aDeps.assertDependency("test.InstructionsTestClass.method()", "java.lang.Object", HAS_LOCAL_VARIABLE_OF_TYPE)
     aDeps.assertDependency("test.InstructionsTestClass.method()", "java.lang.Object", CREATES)
     aDeps.assertDependency("test.InstructionsTestClass.method()", "java.lang.Object.<init>()", CALLS_METHOD)
     aDeps.assertDependency("test.InstructionsTestClass.method()", "java.lang.Object", USES_METHOD_DECLARING_TYPE)
     //    	FilterInputStream stream = null;
+    aDeps.assertDependency("test.InstructionsTestClass.method()", "java.io.FilterInputStream", HAS_LOCAL_VARIABLE_OF_TYPE)
     //    	// ANEWARRAY
     //    	obj = new Long[1];
     aDeps.assertDependency("test.InstructionsTestClass.method()", "java.lang.Long", CREATES_ARRAY_OF_TYPE)
@@ -573,6 +598,7 @@ class DepExtractorTest extends FunSuite with de.tud.cs.st.util.perf.BasicPerform
     aDeps.assertDependency("test.InstructionsTestClass.method()", "java.lang.System.currentTimeMillis()", CALLS_METHOD)
     //    
     //    	TestInterface ti = new TestClass();
+    aDeps.assertDependency("test.InstructionsTestClass.method()", "test.TestInterface", HAS_LOCAL_VARIABLE_OF_TYPE)
     aDeps.assertDependency("test.InstructionsTestClass.method()", "test.TestClass", CREATES)
     aDeps.assertDependency("test.InstructionsTestClass.method()", "test.TestClass", USES_METHOD_DECLARING_TYPE)
     aDeps.assertDependency("test.InstructionsTestClass.method()", "test.TestClass.<init>()", CALLS_METHOD)
@@ -594,9 +620,16 @@ class DepExtractorTest extends FunSuite with de.tud.cs.st.util.perf.BasicPerform
 
   private def assertImplicitDefaultConstructor(className: String)(implicit aDeps: AssertableDependencies) {
     //	//implicit constructor:
-    aDeps.assertDependency(className + ".<init>()", className, IS_DEFINED_IN)
-    aDeps.assertDependency(className + ".<init>()", "java.lang.Object", USES_METHOD_DECLARING_TYPE)
-    aDeps.assertDependency(className + ".<init>()", "java.lang.Object.<init>()", CALLS_METHOD)
+    val constructorName = className + ".<init>()"
+    aDeps.assertDependency(constructorName, className, IS_DEFINED_IN)
+    aDeps.assertDependency(constructorName, "java.lang.Object", USES_METHOD_DECLARING_TYPE)
+    aDeps.assertDependency(constructorName, "java.lang.Object.<init>()", CALLS_METHOD)
+    assertImplicitThisLocalVariable(constructorName)
+  }
+
+  private def assertImplicitThisLocalVariable(methodName: String)(implicit aDeps: AssertableDependencies) {
+    // //implicit local variable 'this'
+    aDeps.assertDependency(methodName, methodName.substring(0, methodName.substring(0, methodName.lastIndexOf('(')).lastIndexOf('.')), HAS_LOCAL_VARIABLE_OF_TYPE)
   }
 
   class AssertableDependencies(var deps: Dependencies) {
