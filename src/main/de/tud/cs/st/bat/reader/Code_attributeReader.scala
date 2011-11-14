@@ -37,74 +37,62 @@ import java.io.DataInputStream
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
 /**
-
+ *
  * @author Michael Eichberg
  */
-trait Code_attributeReader {
+trait Code_attributeReader extends AttributeReader {
 
+  type ExceptionTableEntry
+  implicit val ExceptionTableEntryManifest: ClassManifest[ExceptionTableEntry]
 
-	type ExceptionTableEntry
-	implicit val ExceptionTableEntryManifest : ClassManifest[ExceptionTableEntry]
-	type Constant_Pool
-	type Code 
-	type Attribute >: Null
-	type Code_attribute <: Attribute
-	type Attributes
+  type Code
 
-	type ExceptionTable = IndexedSeq[ExceptionTableEntry]
+  type Code_attribute <: Attribute
 
-			
-	// a flavor of structural typing... when we mixin this trait this method needs to be available.
-	def register(r : (String,(DataInputStream, Constant_Pool, Int) => Attribute)) : Unit
+  type Attributes
 
+  type ExceptionTable = IndexedSeq[ExceptionTableEntry]
 
-	def Code (in : DataInputStream, cp : Constant_Pool ) : Code
-	
-	def Attributes(in : DataInputStream, cp : Constant_Pool)	: Attributes
+  def Code(in: DataInputStream, cp: Constant_Pool): Code
 
+  def Attributes(in: DataInputStream, cp: Constant_Pool): Attributes
 
-	def Code_attribute (
-		attribute_name_index : Int,
-		attribute_length : Int,
-		max_stack : Int,
-		max_locals : Int,
-		code : Code,
-		exception_table : ExceptionTable,
-		attributes : Attributes
-	)( implicit constant_pool : Constant_Pool) : Code_attribute
-	
-	
-	def ExceptionTableEntry (
-		start_pc: Int, end_pc: Int, handler_pc : Int, catch_type : Int
-	)( implicit constant_pool : Constant_Pool) : ExceptionTableEntry
-	
-	
-	//
-	// IMPLEMENTATION
-	//
-	
-	
-	private lazy val reader = ( 
-		de.tud.cs.st.bat.canonical.Code_attribute.name -> 
-		((in : DataInputStream, cp : Constant_Pool, attribute_name_index : Int) => {
-				
-			Code_attribute(
-				attribute_name_index,
-				in.readInt(),
-				in.readUnsignedShort(),
-				in.readUnsignedShort(),
-				Code(in,cp),
-				repeat(in.readUnsignedShort()){ // "exception_table_length" times
-					ExceptionTableEntry(
-						in.readUnsignedShort,in.readUnsignedShort,
-						in.readUnsignedShort,in.readUnsignedShort
-					)( cp )
-				},
-				Attributes(in,cp) // read the code attribute's attributes 
-			)( cp )
-		}
-		)
-	)	
-	
-	register(reader)
+  def Code_attribute(attribute_name_index: Int,
+                     attribute_length: Int,
+                     max_stack: Int,
+                     max_locals: Int,
+                     code: Code,
+                     exception_table: ExceptionTable,
+                     attributes: Attributes)(implicit constant_pool: Constant_Pool): Code_attribute
+
+  def ExceptionTableEntry(start_pc: Int,
+                          end_pc: Int,
+                          handler_pc: Int,
+                          catch_type: Int)(
+                            implicit constant_pool: Constant_Pool): ExceptionTableEntry
+
+  //
+  // IMPLEMENTATION
+  //
+
+  register(de.tud.cs.st.bat.canonical.Code_attribute.name ->
+    ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Int) ⇒ {
+
+      Code_attribute(
+        attribute_name_index,
+        in.readInt(),
+        in.readUnsignedShort(),
+        in.readUnsignedShort(),
+        Code(in, cp),
+        repeat(in.readUnsignedShort()) { // "exception_table_length" times
+          ExceptionTableEntry(
+            in.readUnsignedShort, in.readUnsignedShort,
+            in.readUnsignedShort, in.readUnsignedShort
+          )(cp)
+        },
+        Attributes(in, cp) // read the code attribute's attributes 
+      )(cp)
+    }
+    )
+  )
 }

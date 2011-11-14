@@ -34,37 +34,39 @@ package de.tud.cs.st.bat.reader
 
 import java.io.DataInputStream
 
-
 /**
-
+ * Implements the template method to read a signature attribute.
+ *
  * @author Michael Eichberg
  */
-trait Signature_attributeReader {
- 
+trait Signature_attributeReader extends AttributeReader {
 
-	type Constant_Pool
-	type Attribute >: Null
-	type Signature_attribute <: Attribute
+  type Signature_attribute <: Attribute
 
-	
-	def register(r : (String,(DataInputStream, Constant_Pool, Int) => Attribute)) : Unit
+  /**
+   * '''From the Specification'''
+   *
+   * The constant pool entry at signature_index must be a CONSTANT_Utf8_info
+   * structure representing either a class signature, if this signature
+   * attribute is an attribute of a ClassFile structure, a method type
+   * signature, if this signature is an attribute of a method_info structure,
+   * or a field type signature otherwise.
+   */
+  def Signature_attribute(attribute_name_index: Int,
+                          signature_index: Int)(implicit constant_pool: Constant_Pool): Signature_attribute
 
-	
-	def Signature_attribute (
-		attribute_name_index : Int,
-		signature_index : Int
-	)( implicit constant_pool : Constant_Pool) : Signature_attribute
-	
+  register(Signature_attributeReader.ATTRIBUTE_NAME ->
+    ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Int) ⇒ {
+      val attribute_length = in.readInt
+      Signature_attribute(
+        attribute_name_index, in.readUnsignedShort
+      )(cp)
+    })
+  )
+}
 
-	private lazy val reader = ( 
-			de.tud.cs.st.bat.canonical.Signature_attribute.name -> 
-			((in : DataInputStream, cp : Constant_Pool, attribute_name_index : Int) => {
-				val attribute_length = in.readInt
-				Signature_attribute(
-					attribute_name_index, in.readUnsignedShort
-				)( cp )
-			})
-	)
-	
-	register(reader)
+object Signature_attributeReader {
+
+  val ATTRIBUTE_NAME = "Signature"
+
 }

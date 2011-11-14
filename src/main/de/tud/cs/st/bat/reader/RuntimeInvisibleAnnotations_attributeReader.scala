@@ -36,42 +36,31 @@ import java.io.DataInputStream
 
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
-
-
 /**
-
+ *
  * @author Michael Eichberg
  */
-trait RuntimeInvisibleAnnotations_attributeReader {
+trait RuntimeInvisibleAnnotations_attributeReader extends AttributeReader {
 
- 
-	type Constant_Pool
-	type Attribute >: Null
-	type RuntimeInvisibleAnnotations_attribute <: Attribute
-	type Annotations 
+  type RuntimeInvisibleAnnotations_attribute <: Attribute
+  type Annotations
 
+  def Annotations(in: DataInputStream, cp: Constant_Pool): Annotations
 
-	def register(r : (String,(DataInputStream, Constant_Pool, Int) => Attribute)) : Unit
+  def RuntimeInvisibleAnnotations_attribute(attribute_name_index: Int,
+                                            attribute_length: Int,
+                                            annotations: Annotations)(
+                                              implicit constant_pool: Constant_Pool): RuntimeInvisibleAnnotations_attribute
 
-	
-	def Annotations(in : DataInputStream, cp : Constant_Pool) : Annotations
+  register(
+    de.tud.cs.st.bat.canonical.RuntimeInvisibleAnnotations_attribute.name ->
+      ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Int) ⇒ {
+        val attribute_length = in.readInt()
+        RuntimeInvisibleAnnotations_attribute(
+          attribute_name_index, attribute_length, Annotations(in, cp)
+        )(cp)
+      })
+  )
 
-	
-	def RuntimeInvisibleAnnotations_attribute(
-		attribute_name_index : Int, attribute_length : Int, annotations : Annotations
-	)( implicit constant_pool : Constant_Pool) : RuntimeInvisibleAnnotations_attribute
-	
-
-	private lazy val reader = ( 
-		de.tud.cs.st.bat.canonical.RuntimeInvisibleAnnotations_attribute.name -> 
-		((in : DataInputStream, cp : Constant_Pool, attribute_name_index : Int) => {
-			val attribute_length = in.readInt()
-			RuntimeInvisibleAnnotations_attribute(
-				attribute_name_index, attribute_length, Annotations(in,cp) 
-			)( cp )
-		})
-	)
-	
-	register(reader)
 }
 

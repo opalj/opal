@@ -36,56 +36,44 @@ import java.io.DataInputStream
 
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
-
-
 /**
-
+ *
  * @author Michael Eichberg
  */
-trait InnerClasses_attributeReader {
- 
+trait InnerClasses_attributeReader extends AttributeReader {
 
-	type Constant_Pool
-	type InnerClassesEntry
-	implicit val InnerClassesEntryManifest : ClassManifest[InnerClassesEntry]
-	type Attribute >: Null
-	type InnerClasses_attribute <: Attribute
-		
-	type InnerClassesEntries = IndexedSeq[InnerClassesEntry]
-	
-	
-	// a flavor of structural typing... when we mixin this trait this method needs to be available.
-	def register(r : (String,(DataInputStream, Constant_Pool, Int) => Attribute)) : Unit
-		
-		
-	def InnerClasses_attribute (
- 		attribute_name_index : Int,classes : InnerClassesEntries
-	)( implicit constant_pool : Constant_Pool) : InnerClasses_attribute
-	
-	
-	def InnerClassesEntry (
-		inner_class_info_index : Int,
-		outer_class_info_index : Int,
-		inner_name_index : Int,
-		inner_class_access_flags : Int	
-	)( implicit constant_pool : Constant_Pool) : InnerClassesEntry
-	
+  type Constant_Pool
 
-	private lazy val reader = ( 
-			de.tud.cs.st.bat.canonical.InnerClasses_attribute.name -> 
-			((in : DataInputStream, cp : Constant_Pool, attribute_name_index : Int) => {
-				val attribute_length = in.readInt()
-				InnerClasses_attribute(
-					attribute_name_index, 
-					repeat(in.readUnsignedShort){
-						InnerClassesEntry(
-							in.readUnsignedShort, in.readUnsignedShort, 
-							in.readUnsignedShort, in.readUnsignedShort
-						)( cp )
-					}
-				)( cp )
-			})
-	);
-	
-	register(reader)
+  type InnerClassesEntry
+  implicit val InnerClassesEntryManifest: ClassManifest[InnerClassesEntry]
+
+  type InnerClasses_attribute <: Attribute
+
+  type InnerClassesEntries = IndexedSeq[InnerClassesEntry]
+
+  def InnerClasses_attribute(attribute_name_index: Int,
+                             classes: InnerClassesEntries)(
+                               implicit constant_pool: Constant_Pool): InnerClasses_attribute
+
+  def InnerClassesEntry(inner_class_info_index: Int,
+                        outer_class_info_index: Int,
+                        inner_name_index: Int,
+                        inner_class_access_flags: Int)(
+                          implicit constant_pool: Constant_Pool): InnerClassesEntry
+
+  register(
+    de.tud.cs.st.bat.canonical.InnerClasses_attribute.name ->
+      ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Int) ⇒ {
+        val attribute_length = in.readInt()
+        InnerClasses_attribute(
+          attribute_name_index,
+          repeat(in.readUnsignedShort) {
+            InnerClassesEntry(
+              in.readUnsignedShort, in.readUnsignedShort,
+              in.readUnsignedShort, in.readUnsignedShort
+            )(cp)
+          }
+        )(cp)
+      })
+  )
 }

@@ -30,45 +30,35 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package  de.tud.cs.st.bat.canonical
-
+package de.tud.cs.st.bat.canonical
 
 /**
  * <pre>
- * Deprecated_attribute { 
- * 	u2 attribute_name_index; 
- *		u4 attribute_length; 
- * } 
- * </pre> 
+ * Deprecated_attribute {
+ * 	u2 attribute_name_index;
+ * 	u4 attribute_length;
+ * }
+ * </pre>
  *
  * @author Michael Eichberg
  */
 trait Deprecated_attribute extends Attribute {
 
-	//
-	// ABSTRACT DEFINITIONS
-	//
-	
-	val attribute_name_index : Int
+  //
+  // ABSTRACT DEFINITIONS
+  //
 
+  val attribute_name_index: Int
 
-	//
-	// IMPLEMENTATION
-	//
+  //
+  // IMPLEMENTATION
+  //
 
+  /**
+   * The value of the attribute_length item is 0.
+   */
+  def attribute_length = 0
 
-	/**
-	 * The value of the attribute_length item is 0. 
-	 */
-	def attribute_length = 0
-	
-	def attribute_name = Deprecated_attribute.name
+  def attribute_name = de.tud.cs.st.bat.reader.Deprecated_attributeReader.ATTRIBUTE_NAME
 
-}
-
-
-object Deprecated_attribute {
-	
-	val name = "Deprecated"
-	
 }

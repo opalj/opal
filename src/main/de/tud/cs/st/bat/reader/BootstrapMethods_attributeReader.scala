@@ -36,84 +36,79 @@ import java.io.DataInputStream
 
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
-
 /**
  * Template method to read the (Java 7) BootstrapMethods attribute.
  *
+ * '''From the Specification'''
+ * The BootstrapMethods attribute is a variable-length attribute in the
+ * attributes table of a ClassFile structure. The BootstrapMethods attribute
+ * records bootstrap method specifiers referenced by invokedynamic instructions.
+ *
  * @author Michael Eichberg
  */
-trait BootstrapMethods_attributeReader  {
- 
+trait BootstrapMethods_attributeReader extends AttributeReader {
 
-	//
-	// ABSTRACT DEFINITIONS
-	//
+  //
+  // ABSTRACT DEFINITIONS
+  //
 
+  type BootstrapMethods_attribute <: Attribute
 
-	type Constant_Pool
-	
-	type Attribute >: Null
-	type BootstrapMethods_attribute <: Attribute
-	
-	
-	type BootstrapMethod
-	implicit val BootstrapMethodManifest: ClassManifest[BootstrapMethod]
-	type BootstrapArgument
-	implicit val BootstrapArgumentManifest : ClassManifest[BootstrapArgument]
-	
-	def register(r : (String,(DataInputStream, Constant_Pool, Int) => Attribute)) : Unit	
-						
-	// Factory methods
-	
-	def BootstrapMethods_attribute (
-		attribute_name_index : Int, attribute_length : Int, bootstrap_methods : BootstrapMethods
-	)( implicit constant_pool : Constant_Pool) : BootstrapMethods_attribute
-		
-	def BootstrapMethod(
-		bootstrap_method_ref : Int, bootstrap_arguments : BootstrapArguments
-	)( implicit constant_pool : Constant_Pool) :  BootstrapMethod	
+  type BootstrapMethod
+  implicit val BootstrapMethodManifest: ClassManifest[BootstrapMethod]
+  type BootstrapArgument
+  implicit val BootstrapArgumentManifest: ClassManifest[BootstrapArgument]
 
-	def BootstrapArgument(
-		constant_pool_ref : Int
-	)( implicit constant_pool : Constant_Pool) :  BootstrapArgument
+  // Factory methods
 
+  def BootstrapMethods_attribute(attribute_name_index: Int,
+                                 attribute_length: Int,
+                                 bootstrap_methods: BootstrapMethods)(
+                                   implicit constant_pool: Constant_Pool): BootstrapMethods_attribute
 
-	// 
-	// IMPLEMENTATION
-	//
+  def BootstrapMethod(bootstrap_method_ref: Int,
+                      bootstrap_arguments: BootstrapArguments)(
+                        implicit constant_pool: Constant_Pool): BootstrapMethod
 
-	val ATTRIBUTE_NAME = "BootstrapMethods"
+  def BootstrapArgument(constant_pool_ref: Int)(
+    implicit constant_pool: Constant_Pool): BootstrapArgument
 
-	type BootstrapMethods = IndexedSeq[BootstrapMethod]
-	
-	type BootstrapArguments = IndexedSeq[BootstrapArgument]
-	
-	def BootstrapArgument(in : DataInputStream, cp : Constant_Pool) : BootstrapArgument = {
-		BootstrapArgument(in.readUnsignedShort)( cp )
-	}
-	
-	def BootstrapMethod(in : DataInputStream, cp : Constant_Pool) : BootstrapMethod = {
-		BootstrapMethod(
-			in.readUnsignedShort,
-			repeat(in.readUnsignedShort){
-				BootstrapArgument(in,cp)
-			}
-		)( cp )
-	}
-	
-	private lazy val reader = ( 
-		ATTRIBUTE_NAME -> 
-		((in : DataInputStream, cp : Constant_Pool, attribute_name_index : Int) => {
-			BootstrapMethods_attribute(
-				attribute_name_index, in.readInt, // attribute_length
-				repeat (in.readUnsignedShort) {
-					BootstrapMethod(in,cp)
-				}
-			)( cp )
-		})
-	)	
-	
-	register(reader)
+  // 
+  // IMPLEMENTATION
+  //
+
+  type BootstrapMethods = IndexedSeq[BootstrapMethod]
+
+  type BootstrapArguments = IndexedSeq[BootstrapArgument]
+
+  def BootstrapArgument(in: DataInputStream, cp: Constant_Pool): BootstrapArgument = {
+    BootstrapArgument(in.readUnsignedShort)(cp)
+  }
+
+  def BootstrapMethod(in: DataInputStream, cp: Constant_Pool): BootstrapMethod = {
+    BootstrapMethod(
+      in.readUnsignedShort,
+      repeat(in.readUnsignedShort) {
+        BootstrapArgument(in, cp)
+      }
+    )(cp)
+  }
+
+  register(
+    BootstrapMethods_attributeReader.ATTRIBUTE_NAME ->
+      ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Int) ⇒ {
+        BootstrapMethods_attribute(
+          attribute_name_index, in.readInt, // attribute_length
+          repeat(in.readUnsignedShort) {
+            BootstrapMethod(in, cp)
+          }
+        )(cp)
+      })
+  )
+}
+
+object BootstrapMethods_attributeReader {
+  val ATTRIBUTE_NAME = "BootstrapMethods"
 }
 
 

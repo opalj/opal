@@ -34,44 +34,31 @@ package de.tud.cs.st.bat.reader
 
 import java.io.DataInputStream
 
-
 /**
-
+ *
  * @author Michael Eichberg
  */
-trait SourceFile_attributeReader {
- 
+trait SourceFile_attributeReader extends AttributeReader {
 
-	//
-	// ABSTRACT DEFINITIONS
-	//
-	
+  //
+  // ABSTRACT DEFINITIONS
+  //
 
-	type Constant_Pool
-	type Attribute >: Null
-	type SourceFile_attribute <: Attribute
-	
-	def register(r : (String,(DataInputStream, Constant_Pool, Int) => Attribute)) : Unit
+  type SourceFile_attribute <: Attribute
 
-	
-	// FACTORY METHOD
-	def SourceFile_attribute(
-		attribute_name_index : Int, sourceFile_index : Int
-	)( implicit constant_pool : Constant_Pool) : SourceFile_attribute
+  def SourceFile_attribute(attribute_name_index: Int,
+                           sourceFile_index: Int)(
+                             implicit constant_pool: Constant_Pool): SourceFile_attribute
 
+  //
+  // IMPLEMENTATION
+  //
 
-	//
-	// IMPLEMENTATION
-	//
-	
-
-	private lazy val reader = (
-		de.tud.cs.st.bat.canonical.SourceFile_attribute.name -> 
-		((in : DataInputStream, cp : Constant_Pool, attribute_name_index : Int) => {
-				val attribute_length = in.readInt
-				SourceFile_attribute(attribute_name_index, in.readUnsignedShort)(cp)
-		})
-	)
-	
-	register(reader)
+  register(
+    de.tud.cs.st.bat.canonical.SourceFile_attribute.name ->
+      ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Int) ⇒ {
+        val attribute_length = in.readInt
+        SourceFile_attribute(attribute_name_index, in.readUnsignedShort)(cp)
+      })
+  )
 }

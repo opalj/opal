@@ -36,51 +36,37 @@ import java.io.DataInputStream
 
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
-
-
 /**
-
  * @author Michael Eichberg
  */
-trait RuntimeInvisibleParameterAnnotations_attributeReader  {
- 
+trait RuntimeInvisibleParameterAnnotations_attributeReader extends AttributeReader {
 
-	type Constant_Pool
-	type Attribute >: Null
-	type RuntimeInvisibleParameterAnnotations_attribute <: Attribute
-	type ParameterAnnotations
+  type RuntimeInvisibleParameterAnnotations_attribute <: Attribute
+  type ParameterAnnotations
 
-	
-	def register(r : (String,(DataInputStream, Constant_Pool, Int) => Attribute)) : Unit
+  /**
+   * Method that delegates to another reader to read in the annotations of the parameters.
+   */
+  def ParameterAnnotations(in: DataInputStream, cp: Constant_Pool): ParameterAnnotations
 
-	
-	/**
-	 * Method that delegates to another reader to read in the annotations of the parameters.
-	 */
-	def ParameterAnnotations (in : DataInputStream, cp : Constant_Pool) : ParameterAnnotations
-	
-	
-	/**
-	 * Factory method to create a representation of a RuntimeInvisibleParameterAnnotations_attribute.
-	 */
-	def RuntimeInvisibleParameterAnnotations_attribute (
-		attribute_name_index : Int, attribute_length : Int, parameter_annotations : ParameterAnnotations
-	)( implicit constant_pool : Constant_Pool) : RuntimeInvisibleParameterAnnotations_attribute
-	
+  /**
+   * Factory method to create a representation of a RuntimeInvisibleParameterAnnotations_attribute.
+   */
+  def RuntimeInvisibleParameterAnnotations_attribute(attribute_name_index: Int,
+                                                     attribute_length: Int,
+                                                     parameter_annotations: ParameterAnnotations)(
+                                                       implicit constant_pool: Constant_Pool): RuntimeInvisibleParameterAnnotations_attribute
 
-	private lazy val reader = ( 
-			de.tud.cs.st.bat.canonical.RuntimeInvisibleParameterAnnotations_attribute.name -> 
-			((in : DataInputStream, cp : Constant_Pool, attribute_name_index : Int) => {
-				val attribute_length = in.readInt()
-				RuntimeInvisibleParameterAnnotations_attribute(
-				 	attribute_name_index, attribute_length, ParameterAnnotations(in,cp)
-				)( cp )
-			})
-	);
-	
-	register(reader)
-	
-	
+  register(
+    de.tud.cs.st.bat.canonical.RuntimeInvisibleParameterAnnotations_attribute.name ->
+      ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Int) ⇒ {
+        val attribute_length = in.readInt()
+        RuntimeInvisibleParameterAnnotations_attribute(
+          attribute_name_index, attribute_length, ParameterAnnotations(in, cp)
+        )(cp)
+      })
+  )
+
 }
 
 

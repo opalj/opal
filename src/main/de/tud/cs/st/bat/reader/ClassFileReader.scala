@@ -154,11 +154,20 @@ trait ClassFileReader extends Constant_PoolAbstractions {
   /**
    * Reads all attributes using the given stream and constant pool.
    *
+   * '''Implementation Notice'''
+   * 
    * The given stream is positioned
    * directly before a class file's "attributes_count" field. This method is called by the
    * template method that reads in a class file to delegate the reading of the
    * attributes.
-   */
+   * 
+   * '''From the Specification'''
+   * 
+   * The attributes [...] appearing in the attributes table of a ClassFile 
+   * structure are the InnerClasses, EnclosingMethod, Synthetic, Signature, 
+   * SourceFile, SourceDebugExtension, Deprecated, RuntimeVisibleAnnotations, 
+   * RuntimeInvisibleAnnotations, and BootstrapMethods attributes.
+I  */
   protected def Attributes(in: DataInputStream, cp: Constant_Pool): Attributes
 
   /**

@@ -35,28 +35,22 @@ package de.tud.cs.st.bat.reader
 import java.io.DataInputStream
 
 /**
- *
  * @author Michael Eichberg
  */
-trait Unknown_attributeReader extends Constant_PoolAbstractions with Unknown_attributeAbstractions {
+trait AttributeReader extends Constant_PoolAbstractions {
 
-  //
-  // ABSTRACT DEFINITIONS
-  //
+  type Attribute >: Null
 
-  def Unknown_attribute(attribute_name_index: Constant_Pool_Index,
-                        info: Array[Byte])(
-                          implicit constant_pool: Constant_Pool): Unknown_attribute
+  /**
+   * Register a reader for a concrete attribute. This function is intended to
+   * be provided/implemented by an AttributesReader that manages the attributes of a class,
+   * method_info, field_info or code_attribute structure.
+   *
+   * @param r a map where the key is the name of an attribute and the value is
+   *  a function that given a data input stream that is positioned directly
+   *  at the beginning of the attribute, the constant pool and the attribute
+   *  name index reads in the attribute and returns it.
+   */
+  def register(r: (String, (DataInputStream, Constant_Pool, Int) ⇒ Attribute)): Unit
 
-  //
-  // IMPLEMENTATION
-  //
-
-  def Unknown_attribute(
-    in: DataInputStream, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index): Unknown_attribute = {
-    val info = new Array[Byte](in.readInt)
-    in.readFully(info)
-
-    Unknown_attribute(attribute_name_index, info)(cp)
-  }
 }

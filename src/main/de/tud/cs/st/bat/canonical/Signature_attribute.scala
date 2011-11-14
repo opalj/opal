@@ -36,6 +36,11 @@ package  de.tud.cs.st.bat.canonical
 import java.io.DataInputStream
 
 /**
+ * '''From the Specification'''
+ * 
+ * The Signature attribute is an optional fixed-length attribute in the 
+ * attributes table of a ClassFile, field_info or method_info structure.
+ * 
  * <pre>
  * Signature_attribute { 
  * 	u2 attribute_name_index; 
@@ -48,7 +53,7 @@ import java.io.DataInputStream
  */
 trait Signature_attribute extends Attribute {
 
-
+  
 	//
 	// ABSTRACT DEFINITIONS
 	//
@@ -63,17 +68,13 @@ trait Signature_attribute extends Attribute {
 	//
 
 	/**
-	 * The value of the attribute_length item is fixed; it is always 4.
+	 * The value of the attribute_length item is fixed; it is always 2.
 	 */
 	def attribute_length = 2
 	
-	def attribute_name = Signature_attribute.name
+	def attribute_name = de.tud.cs.st.bat.reader.Signature_attributeReader.ATTRIBUTE_NAME
 
 }
 
 
-object Signature_attribute {
-	
-	val name = "Signature"
-	
-}
+

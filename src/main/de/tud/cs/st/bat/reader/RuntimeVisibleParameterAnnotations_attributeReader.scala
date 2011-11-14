@@ -36,40 +36,31 @@ import java.io.DataInputStream
 
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
-
 /**
-
+ *
  * @author Michael Eichberg
  */
-trait RuntimeVisibleParameterAnnotations_attributeReader  {
- 
+trait RuntimeVisibleParameterAnnotations_attributeReader extends AttributeReader {
 
-	type Constant_Pool
-	type Attribute >: Null
-	type RuntimeVisibleParameterAnnotations_attribute <: Attribute
-	type ParameterAnnotations
-	
-	def register(r : (String,(DataInputStream, Constant_Pool, Int) => Attribute)) : Unit
-	
-	def ParameterAnnotations (in : DataInputStream, cp : Constant_Pool) : ParameterAnnotations
-	
-	
-	def RuntimeVisibleParameterAnnotations_attribute (
-		attribute_name_index : Int, attribute_length : Int, parameter_annotations : ParameterAnnotations
-	)( implicit constant_pool : Constant_Pool) : RuntimeVisibleParameterAnnotations_attribute
-	
+  type RuntimeVisibleParameterAnnotations_attribute <: Attribute
+  type ParameterAnnotations
 
-	private lazy val reader = ( 
-			de.tud.cs.st.bat.canonical.RuntimeVisibleParameterAnnotations_attribute.name -> 
-			((in : DataInputStream, cp : Constant_Pool, attribute_name_index : Int) => {
-				val attribute_length = in.readInt()
-				RuntimeVisibleParameterAnnotations_attribute(
-					attribute_name_index, attribute_length, ParameterAnnotations(in, cp)
-				)( cp )
-			})
-	);
-	
-	register(reader)
+  def ParameterAnnotations(in: DataInputStream, cp: Constant_Pool): ParameterAnnotations
+
+  def RuntimeVisibleParameterAnnotations_attribute(attribute_name_index: Int,
+                                                   attribute_length: Int,
+                                                   parameter_annotations: ParameterAnnotations)(
+                                                     implicit constant_pool: Constant_Pool): RuntimeVisibleParameterAnnotations_attribute
+
+  register(
+    de.tud.cs.st.bat.canonical.RuntimeVisibleParameterAnnotations_attribute.name ->
+      ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Int) ⇒ {
+        val attribute_length = in.readInt()
+        RuntimeVisibleParameterAnnotations_attribute(
+          attribute_name_index, attribute_length, ParameterAnnotations(in, cp)
+        )(cp)
+      })
+  )
 }
 
 

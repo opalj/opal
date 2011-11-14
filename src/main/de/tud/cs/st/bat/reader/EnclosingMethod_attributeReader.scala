@@ -34,43 +34,29 @@ package de.tud.cs.st.bat.reader
 
 import java.io.DataInputStream
 
-
 /**
-
+ *
  * @author Michael Eichberg
  */
-trait EnclosingMethod_attributeReader {
+trait EnclosingMethod_attributeReader extends AttributeReader {
 
+  type EnclosingMethod_attribute <: Attribute
 
-	type Constant_Pool
-	type Attribute >: Null
-	type EnclosingMethod_attribute <: Attribute
+  def EnclosingMethod_attribute(attribute_name_index: Int,
+                                class_index: Int,
+                                method_index: Int)(implicit constant_pool: Constant_Pool): EnclosingMethod_attribute
 
-	// a flavor of structural typing... when we mixin this trait this method needs to be available.
-	def register(r : (String,(DataInputStream, Constant_Pool, Int) => Attribute)) : Unit 
-	
-	
-	def EnclosingMethod_attribute(
-		attribute_name_index : Int,
-		class_index : Int,
-		method_index : Int
-	)( implicit constant_pool : Constant_Pool): EnclosingMethod_attribute
+  //
+  // IMPLEMENTATION
+  //	
 
-
-	//
-	// IMPLEMENTATION
-	//	
-
-
-	private lazy val reader = ( 
-			de.tud.cs.st.bat.canonical.EnclosingMethod_attribute.name -> 
-			((in : DataInputStream, cp : Constant_Pool, attribute_name_index : Int) => {
-				val attribute_length = in.readInt
-				EnclosingMethod_attribute(
-					attribute_name_index,in.readUnsignedShort,in.readUnsignedShort
-				)( cp )
-			})
-	);
-	
-	register (reader)
+  register(
+    de.tud.cs.st.bat.canonical.EnclosingMethod_attribute.name ->
+      ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Int) ⇒ {
+        val attribute_length = in.readInt
+        EnclosingMethod_attribute(
+          attribute_name_index, in.readUnsignedShort, in.readUnsignedShort
+        )(cp)
+      })
+  )
 }

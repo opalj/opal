@@ -36,57 +36,51 @@ import java.io.DataInputStream
 
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
-
 /**
-
+ *
  * @author Michael Eichberg
  */
 trait FieldsReader extends Constant_PoolAbstractions {
 
- 
-	//
-	// ABSTRACT DEFINITIONS
-	//
+  //
+  // ABSTRACT DEFINITIONS
+  //
 
+  type Field_Info
+  implicit val Field_InfoManifest: ClassManifest[Field_Info]
+  type Attributes
 
-	type Field_Info
-	implicit val Field_InfoManifest : ClassManifest[Field_Info]
-	type Attributes
+  def Attributes(in: DataInputStream, cp: Constant_Pool): Attributes
 
+  // FACTORY METHODS
+  //
 
-	def Attributes(in : DataInputStream, cp : Constant_Pool) : Attributes
+  def Field_Info(access_flags: Int,
+                 name_index: Int,
+                 descriptor_index: Int,
+                 attributes: Attributes)(
+                   implicit constant_pool: Constant_Pool): Field_Info
 
-	// FACTORY METHODS
-	//
-		
-	def Field_Info(
-		access_flags : Int, name_index : Int, descriptor_index : Int, attributes : Attributes
-	)( implicit constant_pool : Constant_Pool) : Field_Info
- 
+  //
+  // IMPLEMENTATION
+  //
 
-	//
-	// IMPLEMENTATION
-	//
+  type Fields = IndexedSeq[Field_Info]
 
+  // We need the constant pool to look up the attributes' names and other information.
+  def Fields(in: DataInputStream, cp: Constant_Pool): Fields = {
+    val fields_count = in.readUnsignedShort
+    repeat(fields_count) {
+      Field_Info(in, cp)
+    }
+  }
 
-	type Fields = IndexedSeq[Field_Info]
-
-
-	// We need the constant pool to look up the attributes' names and other information.
-	def Fields(in : DataInputStream, cp : Constant_Pool) : Fields = {
-		val fields_count = in.readUnsignedShort
-		repeat(fields_count){
-			Field_Info(in,cp)
-		}
-	}
-  
-
-	private def Field_Info(in : DataInputStream, cp : Constant_Pool) : Field_Info = {
-		Field_Info(
-			in.readUnsignedShort,
-      	in.readUnsignedShort,
-      	in.readUnsignedShort,
-      	Attributes(in,cp) 
-    	)( cp )
-  	}
+  private def Field_Info(in: DataInputStream, cp: Constant_Pool): Field_Info = {
+    Field_Info(
+      in.readUnsignedShort,
+      in.readUnsignedShort,
+      in.readUnsignedShort,
+      Attributes(in, cp)
+    )(cp)
+  }
 }

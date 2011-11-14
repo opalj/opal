@@ -36,45 +36,36 @@ import java.io.DataInputStream
 
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
-
 /**
-
+ *
  * @author Michael Eichberg
  */
-trait Exceptions_attributeReader extends Constant_PoolAbstractions {
- 
-	type Attribute >: Null
-	type Exceptions_attribute <: Attribute
-	implicit val Exceptions_attributeManifest: ClassManifest[Exceptions_attribute]
-	
-	// a flavor of structural typing... when we mixin this trait this method needs to be available.
-	def register(r : (String,(DataInputStream, Constant_Pool, Constant_Pool_Index ) => Attribute)) : Unit
+trait Exceptions_attributeReader extends AttributeReader {
 
-	type ExceptionIndexTable = IndexedSeq[Constant_Pool_Index]
-	
-	
-	def Exceptions_attribute (
-		attribute_name_index : Constant_Pool_Index, attribute_length : Int, exception_index_table : ExceptionIndexTable
-	)( implicit constant_pool : Constant_Pool) : Exceptions_attribute
-	
-	
-	//
-	// IMPLEMENTATION
-	//
+  type Exceptions_attribute <: Attribute
+  implicit val Exceptions_attributeManifest: ClassManifest[Exceptions_attribute]
 
+  type ExceptionIndexTable = IndexedSeq[Constant_Pool_Index]
 
-	private lazy val reader = ( 
-			de.tud.cs.st.bat.canonical.Exceptions_attribute.name -> 
-			((in : DataInputStream, cp : Constant_Pool, attribute_name_index : Constant_Pool_Index ) => {
-				val attribute_length = in.readInt()
-				Exceptions_attribute(
-					attribute_name_index,attribute_length,
-					repeat(in.readUnsignedShort){
-						in.readUnsignedShort
-					}
-				)( cp )
-			})
-	);
-	
-	register(reader)
+  def Exceptions_attribute(attribute_name_index: Constant_Pool_Index,
+                           attribute_length: Int,
+                           exception_index_table: ExceptionIndexTable)(
+                             implicit constant_pool: Constant_Pool): Exceptions_attribute
+
+  //
+  // IMPLEMENTATION
+  //
+
+  register(
+    de.tud.cs.st.bat.canonical.Exceptions_attribute.name ->
+      ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index) ⇒ {
+        val attribute_length = in.readInt()
+        Exceptions_attribute(
+          attribute_name_index, attribute_length,
+          repeat(in.readUnsignedShort) {
+            in.readUnsignedShort
+          }
+        )(cp)
+      })
+  )
 }

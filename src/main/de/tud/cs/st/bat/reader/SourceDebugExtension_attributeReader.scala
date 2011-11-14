@@ -34,35 +34,27 @@ package de.tud.cs.st.bat.reader
 
 import java.io.DataInputStream
 
-
-
 /**
-
+ *
  * @author Michael Eichberg
  */
-trait SourceDebugExtension_attributeReader {
- 
+trait SourceDebugExtension_attributeReader extends AttributeReader {
 
-	type Constant_Pool
-	type Attribute >: Null
-	type SourceDebugExtension_attribute <: Attribute
-	
-	def register(r : (String,(DataInputStream, Constant_Pool, Int) => Attribute)) : Unit
-	
-	def SourceDebugExtension_attribute (
-		attribute_name_index : Int, attribute_length : Int, debug_extension : String
-	)( implicit constant_pool : Constant_Pool) : SourceDebugExtension_attribute
+  type SourceDebugExtension_attribute <: Attribute
 
+  def SourceDebugExtension_attribute(attribute_name_index: Int,
+                                     attribute_length: Int,
+                                     debug_extension: String)(
+                                       implicit constant_pool: Constant_Pool): SourceDebugExtension_attribute
 
-	private lazy val reader = ( 
-			de.tud.cs.st.bat.canonical.SourceDebugExtension_attribute.name -> 
-			((in : DataInputStream, cp : Constant_Pool, attribute_name_index : Int) => {
-				val attribute_length = in.readInt
-				SourceDebugExtension_attribute(
-					attribute_name_index, attribute_length, in.readUTF
-				)( cp )
-			})
-	);
-	
-	register(reader)
+  register(
+    de.tud.cs.st.bat.canonical.SourceDebugExtension_attribute.name ->
+      ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Int) ⇒ {
+        val attribute_length = in.readInt
+        SourceDebugExtension_attribute(
+          attribute_name_index, attribute_length, in.readUTF
+        )(cp)
+      })
+  )
+
 }

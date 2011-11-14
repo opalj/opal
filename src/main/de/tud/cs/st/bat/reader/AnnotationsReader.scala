@@ -36,41 +36,35 @@ import java.io.DataInputStream
 
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
-
 /**
-
+ *
  * @author Michael Eichberg
  */
 trait AnnotationsReader {
 
+  //
+  // ABSTRACT DEFINITIONS
+  //
 
-	//
-	// ABSTRACT DEFINITIONS
-	//
+  type Constant_Pool
+  type Annotation
+  implicit val AnnotationManifest: ClassManifest[Annotation]
 
-	type Constant_Pool
-	type Annotation
-	implicit val AnnotationManifest: ClassManifest[Annotation]
-	
-	type Annotations = IndexedSeq[Annotation]
-	type ElementValuePairs //type ElementValuePair; type ElementValuePairs = Seq[ElementValuePair]
+  type Annotations = IndexedSeq[Annotation]
+  type ElementValuePairs
 
+  def ElementValuePairs(in: DataInputStream, cp: Constant_Pool): ElementValuePairs
 
-	def ElementValuePairs (in : DataInputStream, cp : Constant_Pool) : ElementValuePairs
+  def Annotation(type_index: Int,
+                 element_value_pairs: ElementValuePairs)(
+                   implicit constant_pool: Constant_Pool): Annotation
 
+  //
+  // IMPLEMENTATION
+  //	
 
-	def Annotation (
-		type_index : Int, element_value_pairs : ElementValuePairs
-	)( implicit constant_pool : Constant_Pool) : Annotation
-
-
-	//
-	// IMPLEMENTATION
-	//	
-
-
-	def Annotations(in : DataInputStream, cp : Constant_Pool) : Annotations = {
-		/*
+  def Annotations(in: DataInputStream, cp: Constant_Pool): Annotations = {
+    /*
 		repeat(in.readUnsignedShort) { 
 			Annotation(in,cp) 
 		}
@@ -78,18 +72,17 @@ trait AnnotationsReader {
 		The code given below is much faster than the code seen above,
 		if we have a loop with few repetitions.		
 		*/
-		val count = in.readUnsignedShort
-		val annotations = new Array[Annotation](count)
-		var i = 0
-		while (i < count) {
-			annotations(i) = Annotation(in,cp)
-			i += 1
-		}
-		annotations
-	}
+    val count = in.readUnsignedShort
+    val annotations = new Array[Annotation](count)
+    var i = 0
+    while (i < count) {
+      annotations(i) = Annotation(in, cp)
+      i += 1
+    }
+    annotations
+  }
 
-
-	def Annotation(in : DataInputStream, cp : Constant_Pool) : Annotation = {
-		Annotation(in.readUnsignedShort, ElementValuePairs(in,cp))(cp)
-	}
+  def Annotation(in: DataInputStream, cp: Constant_Pool): Annotation = {
+    Annotation(in.readUnsignedShort, ElementValuePairs(in, cp))(cp)
+  }
 }

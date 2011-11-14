@@ -36,30 +36,25 @@ import java.io.DataInputStream
 
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
-
-
 /**
-
  * @author Michael Eichberg
  */
-trait ParameterAnnotationsReader {
-	
-	type Annotation
-	implicit val AnnotationManifest : ClassManifest[Annotation]
-	type Constant_Pool
-	
-	type ParameterAnnotations = IndexedSeq[IndexedSeq[Annotation]]
-	
-	def Annotation(in : DataInputStream,cp : Constant_Pool) : Annotation 
-	
-	
-	def ParameterAnnotations(in : DataInputStream, cp : Constant_Pool) : ParameterAnnotations = {
-		repeat(in.readUnsignedByte){
-			repeat(in.readUnsignedShort){
-				Annotation(in, cp)
-			}
-		}
-	}
+trait ParameterAnnotationsReader extends Constant_PoolAbstractions {
+
+  type Annotation
+  implicit val AnnotationManifest: ClassManifest[Annotation]
+
+  type ParameterAnnotations = IndexedSeq[IndexedSeq[Annotation]]
+
+  def Annotation(in: DataInputStream, cp: Constant_Pool): Annotation
+
+  def ParameterAnnotations(in: DataInputStream, cp: Constant_Pool): ParameterAnnotations = {
+    repeat(in.readUnsignedByte) {
+      repeat(in.readUnsignedShort) {
+        Annotation(in, cp)
+      }
+    }
+  }
 
 }
 

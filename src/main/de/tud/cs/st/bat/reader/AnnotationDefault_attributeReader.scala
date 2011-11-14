@@ -36,51 +36,37 @@ import java.io.DataInputStream
 
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
-
 /**
- * Reads in an annotation default attributes data and passes it to a factory 
- * method to create the attribute specific representation. 
+ * Reads in an annotation default attributes data and passes it to a factory
+ * method to create the attribute specific representation.
  * 
- * The factory method needs to be implemented by the user.
- *
  * @author Michael Eichberg
  */
-trait AnnotationDefault_attributeReader  {
- 
+trait AnnotationDefault_attributeReader extends AttributeReader {
 
-	//
-	// ABSTRACT DEFINITIONS
-	//
+  //
+  // ABSTRACT DEFINITIONS
+  //
 
-	type Constant_Pool
-	
-	type Attribute >: Null
-	type AnnotationDefault_attribute <: Attribute
-	type ElementValue
-			
-	def register(r : (String,(DataInputStream, Constant_Pool, Int) => Attribute)) : Unit 
-	
-	def ElementValue(in : DataInputStream, cp : Constant_Pool) : ElementValue 
-	
-	def AnnotationDefault_attribute (
-		attribute_name_index : Int, attribute_length : Int,element_value : ElementValue
-	)( implicit constant_pool : Constant_Pool) : AnnotationDefault_attribute
-	
-	
-	//
-	// IMPLEMENTATION
-	//	
-	
+  type AnnotationDefault_attribute <: Attribute
+  type ElementValue
 
-	private lazy val reader = ( 
-			de.tud.cs.st.bat.canonical.AnnotationDefault_attribute.name -> 
-			((in : DataInputStream, cp : Constant_Pool, attribute_name_index : Int) => {
-				val attribute_length = in.readInt()
-				AnnotationDefault_attribute(
-					attribute_name_index, attribute_length, ElementValue(in, cp)
-				)( cp )
-			})
-	);
-	
-	register(reader)
+  def ElementValue(in: DataInputStream, cp: Constant_Pool): ElementValue
+
+  def AnnotationDefault_attribute(attribute_name_index: Int,
+                                  attribute_length: Int,
+                                  element_value: ElementValue)(
+                                    implicit constant_pool: Constant_Pool): AnnotationDefault_attribute
+
+  //
+  // IMPLEMENTATION
+  //	
+
+  register(de.tud.cs.st.bat.canonical.AnnotationDefault_attribute.name ->
+    ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Int) ⇒ {
+      val attribute_length = in.readInt()
+      AnnotationDefault_attribute(
+        attribute_name_index, attribute_length, ElementValue(in, cp)
+      )(cp)
+    }))
 }

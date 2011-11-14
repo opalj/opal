@@ -34,34 +34,22 @@ package de.tud.cs.st.bat.reader
 
 import java.io.DataInputStream
 
-
-
 /**
-
+ *
  * @author Michael Eichberg
  */
-trait Synthetic_attributeReader {
- 
+trait Synthetic_attributeReader extends AttributeReader {
 
-	type Constant_Pool
-	type Attribute >: Null
-	type Synthetic_attribute <: Attribute
-	
-	def register(r : (String,(DataInputStream, Constant_Pool, Int) => Attribute)) : Unit
+  type Synthetic_attribute <: Attribute
 
-	
-	def Synthetic_attribute(
-		attribute_name_index : Int
-	)( implicit constant_pool : Constant_Pool) : Synthetic_attribute
+  def Synthetic_attribute(attribute_name_index: Int)(implicit constant_pool: Constant_Pool): Synthetic_attribute
 
+  register(
+    de.tud.cs.st.bat.canonical.Synthetic_attribute.name ->
+      ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Int) ⇒ {
+        val attribute_length = in.readInt
+        Synthetic_attribute(attribute_name_index)(cp)
+      })
+  )
 
-	private lazy val reader = ( 
-			de.tud.cs.st.bat.canonical.Synthetic_attribute.name -> 
-			((in : DataInputStream, cp : Constant_Pool, attribute_name_index : Int) => {
-				val attribute_length = in.readInt
-				Synthetic_attribute(attribute_name_index)(cp)
-			})
-	)
-	
-	register(reader)
 }

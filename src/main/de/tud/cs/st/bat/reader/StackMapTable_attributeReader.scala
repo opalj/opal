@@ -36,55 +36,43 @@ import java.io.DataInputStream
 
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
-
 /**
- * Reads for the StackMapTable attribute.
+ * Implementation of a template method to read in the StackMapTable attribute.
  *
  * @author Michael Eichberg
  */
-trait StackMapTable_attributeReader  {
- 
+trait StackMapTable_attributeReader extends AttributeReader {
 
-	//
-	// ABSTRACT DEFINITIONS
-	//
+  //
+  // ABSTRACT DEFINITIONS
+  //
 
+  type StackMapTable_attribute <: Attribute
+  type StackMapFrame
+  implicit val StackMapFrameManifest: ClassManifest[StackMapFrame]
 
-	type Constant_Pool
-	type Attribute >: Null
-	type StackMapTable_attribute <: Attribute
-	type StackMapFrame
-	implicit val StackMapFrameManifest: ClassManifest[StackMapFrame]
-		
-		
-	type StackMapFrames = IndexedSeq[StackMapFrame]
-	
-	
-	def register(r : (String,(DataInputStream, Constant_Pool, Int) => Attribute)) : Unit	
-	
-	
-	def StackMapFrame(in : DataInputStream, cp : Constant_Pool) : StackMapFrame
-	
-			
-	// Factory methods
-	def StackMapTable_attribute (
-		attribute_name_index : Int, attribute_length : Int, stack_map_frames : StackMapFrames
-	)( implicit constant_pool : Constant_Pool) : StackMapTable_attribute
-	
+  type StackMapFrames = IndexedSeq[StackMapFrame]
 
-	private lazy val reader = ( 
-		de.tud.cs.st.bat.canonical.StackMapTable_attribute.name -> 
-		((in : DataInputStream, cp : Constant_Pool, attribute_name_index : Int) => {
-			StackMapTable_attribute(
-				attribute_name_index, in.readInt, // attribute_length
-				repeat (in.readUnsignedShort) {
-					StackMapFrame(in,cp)
-				}
-			)( cp )
-		})
-	)	
-	
-	register(reader)
+  def StackMapFrame(in: DataInputStream, cp: Constant_Pool): StackMapFrame
+
+  // Factory methods
+  def StackMapTable_attribute(attribute_name_index: Int,
+                              attribute_length: Int,
+                              stack_map_frames: StackMapFrames)(
+                                implicit constant_pool: Constant_Pool): StackMapTable_attribute
+
+  register(
+    de.tud.cs.st.bat.canonical.StackMapTable_attribute.name ->
+      ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Int) ⇒ {
+        StackMapTable_attribute(
+          attribute_name_index, in.readInt, // attribute_length
+          repeat(in.readUnsignedShort) {
+            StackMapFrame(in, cp)
+          }
+        )(cp)
+      })
+  )
+
 }
 
 

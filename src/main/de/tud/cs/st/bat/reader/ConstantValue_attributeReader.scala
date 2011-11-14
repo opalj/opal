@@ -34,40 +34,27 @@ package de.tud.cs.st.bat.reader
 
 import java.io.DataInputStream
 
-
 /**
-
  * @author Michael Eichberg
  */
-trait ConstantValue_attributeReader  {
+trait ConstantValue_attributeReader extends AttributeReader {
 
- 
-	type Constant_Pool
-	type Attribute >: Null
-	type ConstantValue_attribute <: Attribute
+  type ConstantValue_attribute <: Attribute
 
-	
-	def register(r : (String,(DataInputStream, Constant_Pool, Int) => Attribute)) : Unit
+  def ConstantValue_attribute(attribute_name_index: Int,
+                              constantvalue_index: Int)(
+                                implicit constant_pool: Constant_Pool): ConstantValue_attribute
 
-	
-	def ConstantValue_attribute (
-		attribute_name_index : Int, constantvalue_index : Int 
-	)( implicit constant_pool : Constant_Pool) : ConstantValue_attribute
+  //
+  // IMPLEMENTATION
+  //
 
+  register(
+    de.tud.cs.st.bat.canonical.ConstantValue_attribute.name ->
+      ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Int) ⇒ {
+        val attribute_length = in.readInt
+        ConstantValue_attribute(attribute_name_index, in.readUnsignedShort)(cp)
+      })
+  )
 
-	//
-	// IMPLEMENTATION
-	//
-
-
-	private lazy val reader = ( 
-			de.tud.cs.st.bat.canonical.ConstantValue_attribute.name -> 
-			((in : DataInputStream, cp : Constant_Pool, attribute_name_index : Int) => {
-				val attribute_length = in.readInt
-				ConstantValue_attribute(attribute_name_index, in.readUnsignedShort)(cp)
-			})
-	);
-	
-	register(reader)
-	
 }

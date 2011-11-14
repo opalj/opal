@@ -36,56 +36,49 @@ import java.io.DataInputStream
 
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
-
 /**
-
+ *
  * @author Michael Eichberg
  */
-trait LocalVariableTable_attributeReader  {
+trait LocalVariableTable_attributeReader extends AttributeReader {
 
-	type Constant_Pool
-	type Attribute >: Null
-	type LocalVariableTable_attribute <: Attribute
-	type LocalVariableTableEntry
-	implicit val LocalVariableTableEntryManifest : ClassManifest[LocalVariableTableEntry]
+  type LocalVariableTable_attribute <: Attribute
+  type LocalVariableTableEntry
+  implicit val LocalVariableTableEntryManifest: ClassManifest[LocalVariableTableEntry]
 
-	type LocalVariableTable = IndexedSeq[LocalVariableTableEntry]
+  type LocalVariableTable = IndexedSeq[LocalVariableTableEntry]
 
+  def LocalVariableTableEntry(start_pc: Int,
+                              length: Int,
+                              name_index: Int,
+                              descriptor_index: Int,
+                              index: Int)(implicit constant_pool: Constant_Pool): LocalVariableTableEntry
 
-	def register(r : (String,(DataInputStream, Constant_Pool, Int) => Attribute)) : Unit
-	
+  def LocalVariableTable_attribute(attribute_name_index: Int,
+                                   attribute_length: Int,
+                                   local_variable_table: LocalVariableTable)(implicit constant_pool: Constant_Pool): LocalVariableTable_attribute
 
-	def LocalVariableTableEntry (
-		start_pc : Int, length : Int, name_index : Int, descriptor_index : Int, index : Int
-	)( implicit constant_pool : Constant_Pool) : LocalVariableTableEntry
-
- 
-	def LocalVariableTable_attribute (	
-		attribute_name_index : Int, attribute_length : Int, local_variable_table : LocalVariableTable
-	)( implicit constant_pool : Constant_Pool) : LocalVariableTable_attribute
-
-
-	private lazy val reader = ( 
-			de.tud.cs.st.bat.canonical.LocalVariableTable_attribute.name -> 
-			((in : DataInputStream, cp : Constant_Pool, attribute_name_index : Int) => {
-				val attribute_length = in.readInt()
-				LocalVariableTable_attribute(
-					attribute_name_index,
-					attribute_length,
-					repeat(in.readUnsignedShort){
-						LocalVariableTableEntry(
-							in.readUnsignedShort,
-							in.readUnsignedShort,
-							in.readUnsignedShort,
-							in.readUnsignedShort,
-							in.readUnsignedShort
-						)( cp )
-					}
-				)( cp )
-			})
-	);
-	
-	register (reader)
+  register(
+    de.tud.cs.st.bat.canonical.LocalVariableTable_attribute.name ->
+      (
+        (in: DataInputStream, cp: Constant_Pool, attribute_name_index: Int) ⇒ {
+          val attribute_length = in.readInt()
+          LocalVariableTable_attribute(
+            attribute_name_index,
+            attribute_length,
+            repeat(in.readUnsignedShort) {
+              LocalVariableTableEntry(
+                in.readUnsignedShort,
+                in.readUnsignedShort,
+                in.readUnsignedShort,
+                in.readUnsignedShort,
+                in.readUnsignedShort
+              )(cp)
+            }
+          )(cp)
+        }
+      )
+  )
 }
 
 

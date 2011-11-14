@@ -32,20 +32,16 @@
 */
 package de.tud.cs.st.bat.reader
 
-
-
 /**
  * Constant pool related type definitions.
- * 
+ *
  * @author Michael Eichberg
  */
 trait Constant_PoolAbstractions {
 
-	// TODO use this trait for other reader classes too (not just AttributesReader and Exceptions_attributeReader)
+  type Constant_Pool
 
-	type Constant_Pool
-	
-	type Constant_Pool_Index = Int // TODO use Constant_Pool_Index where appropriate
+  type Constant_Pool_Index = Int // TODO use Constant_Pool_Index where appropriate
 
 }
 

@@ -36,97 +36,79 @@ import java.io.DataInputStream
 
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
-
 /**
-
+ *
  * @author Michael Eichberg
  */
-trait VerificationTypeInfoReader {
+trait VerificationTypeInfoReader extends Constant_PoolAbstractions {
 
-		
-	//
-	// ABSTRACT DEFINITIONS
-	//
+  //
+  // ABSTRACT DEFINITIONS
+  //
 
-	
-	type Constant_Pool
+  type VerificationTypeInfo
 
-		
-	type VerificationTypeInfo
+  def TopVariableInfo(): VerificationTypeInfo
 
-		
-	def TopVariableInfo () : VerificationTypeInfo
-	
+  def IntegerVariableInfo(): VerificationTypeInfo
 
-	def IntegerVariableInfo () : VerificationTypeInfo
+  def FloatVariableInfo(): VerificationTypeInfo
 
-	
-	def FloatVariableInfo () : VerificationTypeInfo
+  def LongVariableInfo(): VerificationTypeInfo
 
-	
-	def LongVariableInfo () : VerificationTypeInfo
+  def DoubleVariableInfo(): VerificationTypeInfo
 
-	
-	def DoubleVariableInfo () : VerificationTypeInfo
+  def NullVariableInfo(): VerificationTypeInfo
 
-	
-	def NullVariableInfo () : VerificationTypeInfo
+  def UninitializedThisVariableInfo(): VerificationTypeInfo
 
-	
-	def UninitializedThisVariableInfo () : VerificationTypeInfo
+  /**
+   * The Uninitialized_variable_info indicates that the location contains the
+   * veriﬁcation type uninitialized(offset).The offset item indicates the offset of
+   * the new instruction that created the object being stored in the location.
+   */
+  def UninitializedVariableInfo(offset: Int): VerificationTypeInfo
 
-	
-	/**
-	 * The Uninitialized_variable_info indicates that the location contains the 
-	 * veriﬁcation type uninitialized(offset).The offset item indicates the offset of 
-	 * the new instruction that created the object being stored in the location. 
-	 */
-	def UninitializedVariableInfo(offset : Int) : VerificationTypeInfo
+  /**
+   * The Object_variable_info type indicates that the location contains an instance of the class
+   * referenced by the constant pool entry.
+   */
+  def ObjectVariableInfo(cpool_index: Int)(implicit constant_pool: Constant_Pool): VerificationTypeInfo
 
+  //
+  // IMPLEMENTATION
+  //
 
-	/**
-	 * The Object_variable_info type indicates that the location contains an instance of the class
-	 * referenced by the constant pool entry.
-	 */
-	def ObjectVariableInfo(cpool_index : Int)(implicit constant_pool : Constant_Pool) : VerificationTypeInfo	
-	
-	
-	//
-	// IMPLEMENTATION
-	//
-	
-		
-	def VerificationTypeInfo(in : DataInputStream, cp : Constant_Pool) : VerificationTypeInfo = {
-		val tag = in.readUnsignedByte
-		verification_type_info_reader(tag)(in,cp)
-	}
-	
-	
-	private val verification_type_info_reader = {
-		
-		import de.tud.cs.st.bat.canonical.VerificationTypeInfo._
-		
-		val r = new Array[(DataInputStream, Constant_Pool) => VerificationTypeInfo](9)
-				
-		r(ITEM_Top) = (in:DataInputStream, cp : Constant_Pool) => TopVariableInfo()
-				
-		r(ITEM_Integer) = (in:DataInputStream, cp : Constant_Pool) => IntegerVariableInfo()
-				
-		r(ITEM_Float) = (in:DataInputStream, cp : Constant_Pool) => FloatVariableInfo()
-				
-		r(ITEM_Long) = (in:DataInputStream, cp : Constant_Pool) => LongVariableInfo()
-				
-		r(ITEM_Double) = (in:DataInputStream, cp : Constant_Pool) => DoubleVariableInfo()
-				
-		r(ITEM_Null) = (in:DataInputStream, cp : Constant_Pool) => NullVariableInfo()
-				
-		r(ITEM_UninitializedThis) = (in:DataInputStream, cp : Constant_Pool) => UninitializedThisVariableInfo()
-					
-		r(ITEM_Object) = (in:DataInputStream, cp : Constant_Pool) => ObjectVariableInfo(in.readUnsignedShort)(cp)
-				
-		r(ITEM_Unitialized) = (in:DataInputStream, cp : Constant_Pool) => UninitializedVariableInfo(in.readUnsignedShort)
-		
-		r
-	}
+  def VerificationTypeInfo(in: DataInputStream, cp: Constant_Pool): VerificationTypeInfo = {
+    val tag = in.readUnsignedByte
+    verification_type_info_reader(tag)(in, cp)
+  }
+
+  private val verification_type_info_reader = {
+
+    import de.tud.cs.st.bat.canonical.VerificationTypeInfo._
+
+    val r = new Array[(DataInputStream, Constant_Pool) ⇒ VerificationTypeInfo](9)
+
+    r(ITEM_Top) = (in: DataInputStream, cp: Constant_Pool) ⇒ TopVariableInfo()
+
+    r(ITEM_Integer) = (in: DataInputStream, cp: Constant_Pool) ⇒ IntegerVariableInfo()
+
+    r(ITEM_Float) = (in: DataInputStream, cp: Constant_Pool) ⇒ FloatVariableInfo()
+
+    r(ITEM_Long) = (in: DataInputStream, cp: Constant_Pool) ⇒ LongVariableInfo()
+
+    r(ITEM_Double) = (in: DataInputStream, cp: Constant_Pool) ⇒ DoubleVariableInfo()
+
+    r(ITEM_Null) = (in: DataInputStream, cp: Constant_Pool) ⇒ NullVariableInfo()
+
+    r(ITEM_UninitializedThis) = (in: DataInputStream, cp: Constant_Pool) ⇒ UninitializedThisVariableInfo()
+
+    r(ITEM_Object) = (in: DataInputStream, cp: Constant_Pool) ⇒ ObjectVariableInfo(in.readUnsignedShort)(cp)
+
+    r(ITEM_Unitialized) = (in: DataInputStream, cp: Constant_Pool) ⇒ UninitializedVariableInfo(in.readUnsignedShort)
+
+    r
+  }
 }
 

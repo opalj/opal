@@ -36,47 +36,36 @@ import java.io.DataInputStream
 
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
-
 /**
-
  * @author Michael Eichberg
  */
-trait LineNumberTable_attributeReader {
+trait LineNumberTable_attributeReader extends AttributeReader {
 
-	type Constant_Pool
-	type Attribute >: Null
-	type LineNumberTable_attribute <: Attribute
-	type LineNumberTableEntry
-	implicit val LineNumberTableEntryManifest : ClassManifest[LineNumberTableEntry]
-	
-	type LineNumberTable = IndexedSeq[LineNumberTableEntry]
+  type LineNumberTable_attribute <: Attribute
+  type LineNumberTableEntry
+  implicit val LineNumberTableEntryManifest: ClassManifest[LineNumberTableEntry]
 
+  type LineNumberTable = IndexedSeq[LineNumberTableEntry]
 
-	def register(r : (String,(DataInputStream, Constant_Pool, Int) => Attribute)) : Unit
+  def LineNumberTable_attribute(attribute_name_index: Int,
+                                attribute_length: Int,
+                                line_number_table: LineNumberTable)(
+                                  implicit constant_pool: Constant_Pool): LineNumberTable_attribute
 
-	
-	def LineNumberTable_attribute (
-		attribute_name_index : Int, attribute_length : Int, line_number_table : LineNumberTable
-	)( implicit constant_pool : Constant_Pool) : LineNumberTable_attribute
-	
-	
-	def LineNumberTableEntry (
-		start_pc : Int,line_number : Int
-	)( implicit constant_pool : Constant_Pool) : LineNumberTableEntry 
-	
-	
-	private lazy val reader = ( 
-			de.tud.cs.st.bat.canonical.LineNumberTable_attribute.name -> 
-			((in : DataInputStream, cp : Constant_Pool, attribute_name_index : Int) => {
-				val attribute_length = in.readInt()
-				LineNumberTable_attribute(
-					attribute_name_index, attribute_length,
-					repeat(in.readUnsignedShort){
-						LineNumberTableEntry(in.readUnsignedShort, in.readUnsignedShort)(cp)
-					}
-				)( cp )
-			})
-	);
-	
-	register(reader)
+  def LineNumberTableEntry(start_pc: Int,
+                           line_number: Int)(
+                             implicit constant_pool: Constant_Pool): LineNumberTableEntry
+
+  register(
+    de.tud.cs.st.bat.canonical.LineNumberTable_attribute.name ->
+      ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Int) ⇒ {
+        val attribute_length = in.readInt()
+        LineNumberTable_attribute(
+          attribute_name_index, attribute_length,
+          repeat(in.readUnsignedShort) {
+            LineNumberTableEntry(in.readUnsignedShort, in.readUnsignedShort)(cp)
+          }
+        )(cp)
+      })
+  )
 }
