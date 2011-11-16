@@ -35,6 +35,9 @@ package dependency
 
 import java.lang.Integer
 import DependencyType._
+import de.tud.cs.st.bat.canonical.AccessFlagsContext._
+import de.tud.cs.st.bat.canonical.ACC_STATIC
+import de.tud.cs.st.bat.canonical.AccessFlagsIterator
 
 /**
  * DepExtractor can process a ClassFile and extract all dependencies between
@@ -70,21 +73,20 @@ class DepExtractor(val builder: DepBuilder) extends InstructionDepExtractor {
           }
         case ema: EnclosingMethod_attribute => {
           if (isEnclosedByMethod(ema)) {
-            builder.addDep(thisClassID, getID(ema.clazz, ema.name, ema.descriptor), IS_DEFINED_IN)
+            builder.addDep(thisClassID, getID(ema.clazz, ema.name, ema.descriptor), IS_INNER_CLASS_OF)
+          } else {
+            builder.addDep(thisClassID, getID(ema.clazz), IS_INNER_CLASS_OF)
           }
-          //TODO: where should the IS_DEFINED_IN dependency of the inner class refer to -- in the else case?
         }
         case ica: InnerClasses_attribute =>
           for (c <- ica.classes) {
             if (c.outerClassType != null && c.outerClassType.eq(clazz.thisClass)) {
-              builder.addDep(getID(c.innerClassType), thisClassID, IS_DEFINED_IN)
+              builder.addDep(getID(c.innerClassType), thisClassID, IS_INNER_CLASS_OF)
             }
           }
-        //TODO: make use of Signature_attribute and LocalVariableTypeTable_attribute
+        //TODO: make use of Signature_attribute
         case sa: Signature_attribute =>
           println(sa)
-        case lvtta: LocalVariableTypeTable_attribute =>
-          println(lvtta)
         case _ => Nil
       }
     }
@@ -102,7 +104,7 @@ class DepExtractor(val builder: DepBuilder) extends InstructionDepExtractor {
 
   private def process(field: Field_Info)(implicit thisClassName: String, thisClassID: Option[Int]) {
     implicit val fieldID = getID(thisClassName, field)
-    builder.addDep(fieldID, thisClassID, IS_DEFINED_IN)
+    builder.addDep(fieldID, thisClassID, if(isStaticField(field.accessFlags)) IS_CLASS_MEMBER_OF else IS_INSTANCE_MEMBER_OF)
     builder.addDep(fieldID, getID(field.descriptor.fieldType), IS_OF_TYPE)
     //process attributes
     for (attribute <- field.attributes) {
@@ -113,11 +115,9 @@ class DepExtractor(val builder: DepBuilder) extends InstructionDepExtractor {
           }
         case cva: ConstantValue_attribute =>
           builder.addDep(fieldID, getID(cva.constantValue.valueType), USES_CONSTANT_VALUE_OF_TYPE)
-        //TODO: make use of Signature_attribute and LocalVariableTypeTable_attribute
+        //TODO: make use of Signature_attribute
         case sa: Signature_attribute =>
           println(sa)
-        case lvtta: LocalVariableTypeTable_attribute =>
-          println(lvtta)
         case _ => Nil
       }
     }
@@ -125,7 +125,7 @@ class DepExtractor(val builder: DepBuilder) extends InstructionDepExtractor {
 
   private def process(method: Method_Info)(implicit thisClassName: String, thisClassID: Option[Int]) {
     implicit val methodID = getID(thisClassName, method)
-    builder.addDep(methodID, thisClassID, IS_DEFINED_IN)
+    builder.addDep(methodID, thisClassID, if(isStaticMethod(method.accessFlags)) IS_CLASS_MEMBER_OF else IS_INSTANCE_MEMBER_OF)
     builder.addDep(methodID, getID(method.descriptor.returnType), RETURNS)
     for (paramType <- method.descriptor.parameterTypes) {
       builder.addDep(methodID, getID(paramType), HAS_PARAMETER_OF_TYPE)
@@ -160,19 +160,19 @@ class DepExtractor(val builder: DepBuilder) extends InstructionDepExtractor {
           }
           for (attr <- ca.attributes) {
             attr match {
-              //TODO: add tests for this attribute (first, the issue that states that this attribute is not transformed into the BAT model has to be solved)
               case lvta: LocalVariableTable_attribute =>
                 for (lvte <- lvta.localVariableTable) {
                   builder.addDep(methodID, getID(lvte.fieldType), HAS_LOCAL_VARIABLE_OF_TYPE)
                 }
+              //TODO: make use of LocalVariableTypeTable_attribute
+              case lvtta: LocalVariableTypeTable_attribute =>
+                println(lvtta)
               case _ => Nil
             }
           }
-        //TODO: make use of Signature_attribute and LocalVariableTypeTable_attribute
+        //TODO: make use of Signature_attribute
         case sa: Signature_attribute =>
           println(sa)
-        case lvtta: LocalVariableTypeTable_attribute =>
-          println(lvtta)
         case _ => Nil
       }
     }
@@ -207,6 +207,11 @@ class DepExtractor(val builder: DepBuilder) extends InstructionDepExtractor {
 
   private def isEnclosedByMethod(ema: EnclosingMethod_attribute): Boolean =
     ema.name != null && ema.descriptor != null // otherwise the inner class is assigned to a field
+    
+  private def isStaticField(accessFlags: Int): Boolean =
+    AccessFlagsIterator(accessFlags,FIELD).contains(ACC_STATIC)
+  private def isStaticMethod(accessFlags: Int): Boolean =
+    AccessFlagsIterator(accessFlags,METHOD).contains(ACC_STATIC)
 
   protected def filter(name: String): Boolean = {
     for (swFilter <- Array("byte", "short", "int", "long", "float", "double", "char", "boolean", "void")) {

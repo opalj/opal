@@ -44,7 +44,9 @@ object DependencyType extends Enumeration {
   // class/method/field related dependency types
   val EXTENDS = Value("extends")
   val IMPLEMENTS = Value("implements")
-  val IS_DEFINED_IN = Value("is defined in")
+  val IS_INSTANCE_MEMBER_OF = Value("is instance member of")
+  val IS_CLASS_MEMBER_OF = Value("is class member of")
+  val IS_INNER_CLASS_OF = Value("is inner class of")
 
   // annotation related dependency types
   val ANNOTATED_WITH = Value("annotated with")
@@ -80,7 +82,7 @@ object DependencyType extends Enumeration {
   val USES_METHOD_DECLARING_TYPE = Value("uses method declaring type")
   val CALLS_METHOD = Value("calls method")
   val CALLS_INTERFACE_METHOD = Value("calls interface method")
-  val USES_TYPE = Value("uses type") // default uses dependency
+  val USES_TYPE = Value("uses type") // default 'uses' dependency
 
   val UNDEFINED = Value("undefined dependency")
 
