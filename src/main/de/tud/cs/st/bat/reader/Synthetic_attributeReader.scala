@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -35,21 +35,36 @@ package de.tud.cs.st.bat.reader
 import java.io.DataInputStream
 
 /**
+ * '''From the Specification'''
+ * The Synthetic attribute is a fixed-length attribute in the attributes table
+ * of a ClassFile, field_info or method_info structure.
  *
+ * <pre>
+ * Synthetic_attribute {
+ * 	u2 attribute_name_index;
+ * 	u4 attribute_length;
+ * }
+ * </pre>
  * @author Michael Eichberg
  */
 trait Synthetic_attributeReader extends AttributeReader {
 
-  type Synthetic_attribute <: Attribute
+    type Synthetic_attribute <: Attribute
 
-  def Synthetic_attribute(attribute_name_index: Int)(implicit constant_pool: Constant_Pool): Synthetic_attribute
+    def Synthetic_attribute(attribute_name_index: Constant_Pool_Index)(implicit constant_pool: Constant_Pool): Synthetic_attribute
 
-  register(
-    de.tud.cs.st.bat.canonical.Synthetic_attribute.name ->
-      ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Int) ⇒ {
-        val attribute_length = in.readInt
-        Synthetic_attribute(attribute_name_index)(cp)
-      })
-  )
+    register(
+        Synthetic_attributeReader.ATTRIBUTE_NAME ->
+            ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index) ⇒ {
+                val attribute_length = in.readInt
+                Synthetic_attribute(attribute_name_index)(cp)
+            })
+    )
+
+}
+
+object Synthetic_attributeReader {
+
+    val ATTRIBUTE_NAME = "Synthetic"
 
 }

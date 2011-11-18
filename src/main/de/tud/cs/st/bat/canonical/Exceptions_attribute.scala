@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -33,15 +33,7 @@
 package de.tud.cs.st.bat.canonical
 
 
-/** 
- * <pre>
- * Exceptions_attribute { 
- * 	u2 attribute_name_index; 
- * 	u4 attribute_length; 
- * 	u2 number_of_exceptions; 
- * 	u2 exception_index_table[number_of_exceptions]; 
- * } 
- * </pre>
+/**
  *
  * @author Michael Eichberg
  */
@@ -51,9 +43,9 @@ trait Exceptions_attribute extends Attribute{
 	//
 	// ABSTRACT DEFINITIONS
 	//
-	
+
 	val attribute_name_index : Int
-	
+
 	val exception_index_table : ExceptionIndexTable
 
 
@@ -63,21 +55,16 @@ trait Exceptions_attribute extends Attribute{
 
 
 	/**
-	 *	Each value in the exception_index_table array must be a 
-	 *	valid index into the constant_pool table. The constant_pool 
-	 *	entry referenced by each table item must be a 
-	 *	CONSTANT_Class_info structure representing a class 
+	 *	Each value in the exception_index_table array must be a
+	 *	valid index into the constant_pool table. The constant_pool
+	 *	entry referenced by each table item must be a
+	 *	CONSTANT_Class_info structure representing a class
 	 *	type that this method is declared to throw.
 	 */
 	type Constant_Pool_Index = Int
 	type ExceptionIndexTable = Seq[Constant_Pool_Index]
-	
+
 	def attribute_length : Int = 2 + exception_index_table.size*2
-	
-	def attribute_name = Exceptions_attribute.name
-}
-object Exceptions_attribute {
-	
-	val name = "Exceptions"
-	
+
+	def attribute_name = de.tud.cs.st.bat.reader.Exceptions_attributeReader.ATTRIBUTE_NAME
 }

@@ -32,19 +32,18 @@
 */
 package de.tud.cs.st.bat.canonical
 
-
 /**
-
+ *
  * @author Michael Eichberg
  */
 trait ElementValuePair {
-	
-	//
-	// ABSTRACT DEFINITIONS
-	//
-	
-	type ElementValue
-	
-	val element_name_index : Int
-	val element_value : ElementValue
+
+    //
+    // ABSTRACT DEFINITIONS
+    //
+
+    type ElementValue
+
+    val element_name_index: Int
+    val element_value: ElementValue
 }

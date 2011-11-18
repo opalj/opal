@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -51,6 +51,8 @@ import de.tud.cs.st.util.ControlAbstractions.repeat
  * delegated to special readers. This enables a very high-level of adaptability.
  *
  * For details see the JVM Specification: The ClassFile Structure.
+ *
+ * Format
  * {{{
  * ClassFile {
  * 	u4 magic;
@@ -155,17 +157,17 @@ trait ClassFileReader extends Constant_PoolAbstractions {
    * Reads all attributes using the given stream and constant pool.
    *
    * '''Implementation Notice'''
-   * 
+   *
    * The given stream is positioned
    * directly before a class file's "attributes_count" field. This method is called by the
    * template method that reads in a class file to delegate the reading of the
    * attributes.
-   * 
+   *
    * '''From the Specification'''
-   * 
-   * The attributes [...] appearing in the attributes table of a ClassFile 
-   * structure are the InnerClasses, EnclosingMethod, Synthetic, Signature, 
-   * SourceFile, SourceDebugExtension, Deprecated, RuntimeVisibleAnnotations, 
+   *
+   * The attributes [...] appearing in the attributes table of a ClassFile
+   * structure are the InnerClasses, EnclosingMethod, Synthetic, Signature,
+   * SourceFile, SourceDebugExtension, Deprecated, RuntimeVisibleAnnotations,
    * RuntimeInvisibleAnnotations, and BootstrapMethods attributes.
 I  */
   protected def Attributes(in: DataInputStream, cp: Constant_Pool): Attributes
@@ -187,7 +189,7 @@ I  */
 
   //
   // IMPLEMENTATION
-  //	
+  //
 
   /**
    * Reads in a class file.
@@ -246,7 +248,7 @@ I  */
    */
   def ClassFile(in: DataInputStream): ClassFile = {
     // magic
-    require(ClassFileReader.magic == in.readInt, "No class file.")
+    require(ClassFileReader.CLASS_FILE_MAGIC == in.readInt, "No class file.")
 
     val minor_version = in.readUnsignedShort // minor_version
     val major_version = in.readUnsignedShort // major_version
@@ -254,7 +256,7 @@ I  */
     // let's make sure that we support this class file's version
     require(major_version >= 45 && // at least JDK 1.1.
       (major_version < 51 ||
-        (major_version == 51 && minor_version == 0))) // Java 6 = 50.0; Java 7 == 51.0		
+        (major_version == 51 && minor_version == 0))) // Java 6 = 50.0; Java 7 == 51.0
 
     implicit val cp = Constant_Pool(in)
     val access_flags = in.readUnsignedShort
@@ -280,6 +282,6 @@ object ClassFileReader {
   /**
    * The magic code with which every Java class file starts.
    */
-  val magic = 0xCAFEBABE
+  val CLASS_FILE_MAGIC = 0xCAFEBABE
 
 }

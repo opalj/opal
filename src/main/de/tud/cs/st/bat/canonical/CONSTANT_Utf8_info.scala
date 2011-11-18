@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -34,25 +34,23 @@ package de.tud.cs.st.bat.canonical
 
 import java.io.DataInput
 
-
 /**
-
+ * A Utf8 constant pool entry.
+ *
  * @author Michael Eichberg
  */
 trait CONSTANT_Utf8_info extends Constant_Pool_Entry {
 
+    //
+    // ABSTRACT DEFINITIONS
+    //
 
-	//
-	// ABSTRACT DEFINITIONS
-	//
-	
-	val value : String
+    val value: String
 
+    //
+    // IMPLEMENTATION
+    //
 
-	//
-	// IMPLEMENTATION
-	//
+    def Constant_Type_Value = de.tud.cs.st.bat.reader.Constant_PoolTags.CONSTANT_Utf8
 
-	def Constant_Type_Value = Constant_Pool_Entry.CONSTANT_Utf8
-  
 }

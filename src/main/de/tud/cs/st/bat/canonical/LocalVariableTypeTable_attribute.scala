@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -32,63 +32,42 @@
 */
 package de.tud.cs.st.bat.canonical
 
-
-/** 
- * <pre>
-	LocalVariableTypeTable_attribute { 
-		u2 attribute_name_index; 
-		u4 attribute_length; 
-		u2 local_variable_type_table_length; 
-		{ u2 start_pc; 
-			u2 length; 
-			u2 name_index; 
-			u2 signature_index; 
-			u2 index; 
-		} local_variable_type_table[ 
-			local_variable_type_table_length]; 
-	} 
- * </pre>
+/**
+ *
  *
  * @author Michael Eichberg
  */
 trait LocalVariableTypeTable_attribute extends Attribute {
-	
-	//
-	// ABSTRACT DEFINITIONS
-	//
-	
-	type LocalVariableTypeTableEntry
-	
-	val attribute_name_index : Int
-	val local_variable_type_table : LocalVariableTypeTable
-	
-	
-	//
-	// IMPLEMENTATION
-	//
-	
-	type LocalVariableTypeTable = Seq[LocalVariableTypeTableEntry]
 
-	def attribute_length : Int = 2 + (local_variable_type_table.size * 10)
-		
-	def attribute_name = LocalVariableTypeTable_attribute.name
-}
-object LocalVariableTypeTable_attribute {
-	
-	val name = "LocalVariableTypeTable"
-	
-}
+    //
+    // ABSTRACT DEFINITIONS
+    //
 
+    type LocalVariableTypeTableEntry
+
+    val attribute_name_index: Int
+    val local_variable_type_table: LocalVariableTypeTable
+
+    //
+    // IMPLEMENTATION
+    //
+
+    type LocalVariableTypeTable = Seq[LocalVariableTypeTableEntry]
+
+    def attribute_length: Int = 2 + (local_variable_type_table.size * 10)
+
+    def attribute_name = de.tud.cs.st.bat.reader.LocalVariableTypeTable_attributeReader.ATTRIBUTE_NAME
+}
 
 trait LocalVariableTypeTableEntry {
-	
-	//
-	// ABSTRACT DEFINITIONS
-	//
-	
-	val start_pc : Int
-	val length : Int
-	val name_index : Int
-	val signature_index : Int
-	val index : Int
+
+    //
+    // ABSTRACT DEFINITIONS
+    //
+
+    val start_pc: Int
+    val length: Int
+    val name_index: Int
+    val signature_index: Int
+    val index: Int
 }

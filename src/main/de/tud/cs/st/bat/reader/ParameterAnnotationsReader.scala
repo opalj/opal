@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -41,20 +41,28 @@ import de.tud.cs.st.util.ControlAbstractions.repeat
  */
 trait ParameterAnnotationsReader extends Constant_PoolAbstractions {
 
-  type Annotation
-  implicit val AnnotationManifest: ClassManifest[Annotation]
+    //
+    // ABSTRACT DEFINITIONS
+    //
 
-  type ParameterAnnotations = IndexedSeq[IndexedSeq[Annotation]]
+    type Annotation
+    implicit val AnnotationManifest: ClassManifest[Annotation]
 
-  def Annotation(in: DataInputStream, cp: Constant_Pool): Annotation
+    def Annotation(in: DataInputStream, cp: Constant_Pool): Annotation
 
-  def ParameterAnnotations(in: DataInputStream, cp: Constant_Pool): ParameterAnnotations = {
-    repeat(in.readUnsignedByte) {
-      repeat(in.readUnsignedShort) {
-        Annotation(in, cp)
-      }
+    //
+    // IMPLEMENTATION
+    //
+
+    type ParameterAnnotations = IndexedSeq[IndexedSeq[Annotation]]
+
+    def ParameterAnnotations(in: DataInputStream, cp: Constant_Pool): ParameterAnnotations = {
+        repeat(in.readUnsignedByte) {
+            repeat(in.readUnsignedShort) {
+                Annotation(in, cp)
+            }
+        }
     }
-  }
 
 }
 

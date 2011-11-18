@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -37,36 +37,55 @@ import java.io.DataInputStream
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
 /**
- * Reads in an annotation default attributes data and passes it to a factory
+ * Reads in an annotation default attribute's data and passes it to a factory
  * method to create the attribute specific representation.
- * 
+ *
+ * '''From the Specification'''
+ * The AnnotationDefault attribute is a variable-length attribute in the
+ * attributes table of method_info structures representing elements of
+ * annotation types.
+ *
+ * <pre>
+ * 	 AnnotationDefault_attribute {
+ * 	     u2 attribute_name_index;
+ * 	     u4 attribute_length;
+ * 	     element_value default_value;
+ * 	 }
+ * </pre>
+ *
  * @author Michael Eichberg
  */
 trait AnnotationDefault_attributeReader extends AttributeReader {
 
-  //
-  // ABSTRACT DEFINITIONS
-  //
+    //
+    // ABSTRACT DEFINITIONS
+    //
 
-  type AnnotationDefault_attribute <: Attribute
-  type ElementValue
+    type AnnotationDefault_attribute <: Attribute
+    type ElementValue
 
-  def ElementValue(in: DataInputStream, cp: Constant_Pool): ElementValue
+    def ElementValue(in: DataInputStream, cp: Constant_Pool): ElementValue
 
-  def AnnotationDefault_attribute(attribute_name_index: Int,
-                                  attribute_length: Int,
-                                  element_value: ElementValue)(
-                                    implicit constant_pool: Constant_Pool): AnnotationDefault_attribute
+    def AnnotationDefault_attribute(attribute_name_index: Constant_Pool_Index,
+                                    attribute_length: Int,
+                                    element_value: ElementValue)(
+                                        implicit constant_pool: Constant_Pool): AnnotationDefault_attribute
 
-  //
-  // IMPLEMENTATION
-  //	
+    //
+    // IMPLEMENTATION
+    //
 
-  register(de.tud.cs.st.bat.canonical.AnnotationDefault_attribute.name ->
-    ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Int) ⇒ {
-      val attribute_length = in.readInt()
-      AnnotationDefault_attribute(
-        attribute_name_index, attribute_length, ElementValue(in, cp)
-      )(cp)
-    }))
+    register(AnnotationDefault_attributeReader.ATTRIBTUE_NAME ->
+        ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index) ⇒ {
+            val attribute_length = in.readInt()
+            AnnotationDefault_attribute(
+                attribute_name_index, attribute_length, ElementValue(in, cp)
+            )(cp)
+        }))
+}
+
+object AnnotationDefault_attributeReader {
+
+    val ATTRIBTUE_NAME = "AnnotationDefault"
+
 }

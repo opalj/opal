@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -32,37 +32,35 @@
 */
 package de.tud.cs.st.bat.canonical
 
-//import java.io.DataInput
-
-
 /**
-
+ * A name and type info entry in the constant pool.
+ *
  * @author Michael Eichberg
  */
 trait CONSTANT_NameAndType_info extends Constant_Pool_Entry {
 
-	//
-	// ABSTRACT DEFINITIONS
-	//
-	
-	/**
-	 * From the JVM specification: 
-	 * The value of the name_index item must be a valid index into the 
-	 * constant_pool table. The constant_pool entry at that index 
-	 * must be a CONSTANT_Utf8_info (§4.5.7) structure representing 
-	 * either the special method name <init> (§3.9) or a valid 
-	 * unqualiﬁed name (§4.3.2) denoting a ﬁeld or method. 
-	 */
-	val name_index : Int
-	
-	val descriptor_index : Int
+    //
+    // ABSTRACT DEFINITIONS
+    //
 
+    /**
+     * ''From the Specification'''
+     *
+     * The value of the name_index item must be a valid index into the
+     * constant_pool table. The constant_pool entry at that index
+     * must be a CONSTANT_Utf8_info structure representing
+     * either the special method name <init> or a valid
+     * unqualiﬁed name denoting a ﬁeld or method.
+     */
+    val name_index: Int
 
-	//
-	// IMPLEMENTATION
-	//
+    val descriptor_index: Int
 
- 	def Constant_Type_Value = Constant_Pool_Entry.CONSTANT_NameAndType
+    //
+    // IMPLEMENTATION
+    //
+
+    def Constant_Type_Value = de.tud.cs.st.bat.reader.Constant_PoolTags.CONSTANT_NameAndType
 }
 
 

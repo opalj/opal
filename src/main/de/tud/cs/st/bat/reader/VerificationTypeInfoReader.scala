@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -42,73 +42,87 @@ import de.tud.cs.st.util.ControlAbstractions.repeat
  */
 trait VerificationTypeInfoReader extends Constant_PoolAbstractions {
 
-  //
-  // ABSTRACT DEFINITIONS
-  //
+    //
+    // ABSTRACT DEFINITIONS
+    //
 
-  type VerificationTypeInfo
+    type VerificationTypeInfo
 
-  def TopVariableInfo(): VerificationTypeInfo
+    def TopVariableInfo(): VerificationTypeInfo
 
-  def IntegerVariableInfo(): VerificationTypeInfo
+    def IntegerVariableInfo(): VerificationTypeInfo
 
-  def FloatVariableInfo(): VerificationTypeInfo
+    def FloatVariableInfo(): VerificationTypeInfo
 
-  def LongVariableInfo(): VerificationTypeInfo
+    def LongVariableInfo(): VerificationTypeInfo
 
-  def DoubleVariableInfo(): VerificationTypeInfo
+    def DoubleVariableInfo(): VerificationTypeInfo
 
-  def NullVariableInfo(): VerificationTypeInfo
+    def NullVariableInfo(): VerificationTypeInfo
 
-  def UninitializedThisVariableInfo(): VerificationTypeInfo
+    def UninitializedThisVariableInfo(): VerificationTypeInfo
 
-  /**
-   * The Uninitialized_variable_info indicates that the location contains the
-   * veriﬁcation type uninitialized(offset).The offset item indicates the offset of
-   * the new instruction that created the object being stored in the location.
-   */
-  def UninitializedVariableInfo(offset: Int): VerificationTypeInfo
+    /**
+     * The Uninitialized_variable_info indicates that the location contains the
+     * veriﬁcation type uninitialized(offset).The offset item indicates the offset of
+     * the new instruction that created the object being stored in the location.
+     */
+    def UninitializedVariableInfo(offset: Int): VerificationTypeInfo
 
-  /**
-   * The Object_variable_info type indicates that the location contains an instance of the class
-   * referenced by the constant pool entry.
-   */
-  def ObjectVariableInfo(cpool_index: Int)(implicit constant_pool: Constant_Pool): VerificationTypeInfo
+    /**
+     * The Object_variable_info type indicates that the location contains an instance of the class
+     * referenced by the constant pool entry.
+     */
+    def ObjectVariableInfo(cpool_index: Constant_Pool_Index)(implicit constant_pool: Constant_Pool): VerificationTypeInfo
 
-  //
-  // IMPLEMENTATION
-  //
+    //
+    // IMPLEMENTATION
+    //
 
-  def VerificationTypeInfo(in: DataInputStream, cp: Constant_Pool): VerificationTypeInfo = {
-    val tag = in.readUnsignedByte
-    verification_type_info_reader(tag)(in, cp)
-  }
+    def VerificationTypeInfo(in: DataInputStream, cp: Constant_Pool): VerificationTypeInfo = {
+        val tag = in.readUnsignedByte
+        verification_type_info_reader(tag)(in, cp)
+    }
 
-  private val verification_type_info_reader = {
+    private val verification_type_info_reader = {
 
-    import de.tud.cs.st.bat.canonical.VerificationTypeInfo._
+        import VerificationTypeInfoItem._
 
-    val r = new Array[(DataInputStream, Constant_Pool) ⇒ VerificationTypeInfo](9)
+        val r = new Array[(DataInputStream, Constant_Pool) ⇒ VerificationTypeInfo](9)
 
-    r(ITEM_Top) = (in: DataInputStream, cp: Constant_Pool) ⇒ TopVariableInfo()
+        r(ITEM_Top.id) = (in: DataInputStream, cp: Constant_Pool) ⇒ TopVariableInfo()
 
-    r(ITEM_Integer) = (in: DataInputStream, cp: Constant_Pool) ⇒ IntegerVariableInfo()
+        r(ITEM_Integer.id) = (in: DataInputStream, cp: Constant_Pool) ⇒ IntegerVariableInfo()
 
-    r(ITEM_Float) = (in: DataInputStream, cp: Constant_Pool) ⇒ FloatVariableInfo()
+        r(ITEM_Float.id) = (in: DataInputStream, cp: Constant_Pool) ⇒ FloatVariableInfo()
 
-    r(ITEM_Long) = (in: DataInputStream, cp: Constant_Pool) ⇒ LongVariableInfo()
+        r(ITEM_Long.id) = (in: DataInputStream, cp: Constant_Pool) ⇒ LongVariableInfo()
 
-    r(ITEM_Double) = (in: DataInputStream, cp: Constant_Pool) ⇒ DoubleVariableInfo()
+        r(ITEM_Double.id) = (in: DataInputStream, cp: Constant_Pool) ⇒ DoubleVariableInfo()
 
-    r(ITEM_Null) = (in: DataInputStream, cp: Constant_Pool) ⇒ NullVariableInfo()
+        r(ITEM_Null.id) = (in: DataInputStream, cp: Constant_Pool) ⇒ NullVariableInfo()
 
-    r(ITEM_UninitializedThis) = (in: DataInputStream, cp: Constant_Pool) ⇒ UninitializedThisVariableInfo()
+        r(ITEM_UninitializedThis.id) = (in: DataInputStream, cp: Constant_Pool) ⇒ UninitializedThisVariableInfo()
 
-    r(ITEM_Object) = (in: DataInputStream, cp: Constant_Pool) ⇒ ObjectVariableInfo(in.readUnsignedShort)(cp)
+        r(ITEM_Object.id) = (in: DataInputStream, cp: Constant_Pool) ⇒ ObjectVariableInfo(in.readUnsignedShort)(cp)
 
-    r(ITEM_Unitialized) = (in: DataInputStream, cp: Constant_Pool) ⇒ UninitializedVariableInfo(in.readUnsignedShort)
+        r(ITEM_Unitialized.id) = (in: DataInputStream, cp: Constant_Pool) ⇒ UninitializedVariableInfo(in.readUnsignedShort)
 
-    r
-  }
+        r
+    }
 }
+
+object VerificationTypeInfoItem extends Enumeration {
+    val ITEM_Top = Value(0)
+    val ITEM_Integer = Value(1)
+    val ITEM_Float = Value(2)
+    val ITEM_Long = Value(4)
+    val ITEM_Double = Value(3)
+    val ITEM_Null = Value(5)
+    val ITEM_UninitializedThis = Value(6)
+    val ITEM_Object = Value(7)
+    val ITEM_Unitialized = Value(8)
+}
+
+
 

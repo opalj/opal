@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -42,87 +42,93 @@ import de.tud.cs.st.util.ControlAbstractions.repeat
  */
 trait StackMapFrameReader extends Constant_PoolAbstractions {
 
-  type StackMapFrame
-  type VerificationTypeInfo
-  implicit val VerificationTypeInfoManifest: ClassManifest[VerificationTypeInfo]
+    //
+    // ABSTRACT DEFINITIONS
+    //
 
-  type VerificationTypeInfoLocals = IndexedSeq[VerificationTypeInfo]
-  type VerificationTypeInfoStack = IndexedSeq[VerificationTypeInfo]
+    type StackMapFrame
+    type VerificationTypeInfo
+    implicit val VerificationTypeInfoManifest: ClassManifest[VerificationTypeInfo]
 
-  def VerificationTypeInfo(in: DataInputStream, cp: Constant_Pool): VerificationTypeInfo
+    def VerificationTypeInfo(in: DataInputStream, cp: Constant_Pool): VerificationTypeInfo
 
-  def SameFrame(frame_type: Int): StackMapFrame
+    def SameFrame(frame_type: Int): StackMapFrame
 
-  def SameLocals1StackItemFrame(
-    frame_type: Int, verification_type_info_stack: VerificationTypeInfo): StackMapFrame
+    def SameLocals1StackItemFrame(frame_type: Int,
+                                  verification_type_info_stack: VerificationTypeInfo): StackMapFrame
 
-  def SameLocals1StackItemFrameExtended(
-    frame_type: Int,
-    offset_delta: Int,
-    verification_type_info_stack: VerificationTypeInfo): StackMapFrame
+    def SameLocals1StackItemFrameExtended(frame_type: Int,
+                                          offset_delta: Int,
+                                          verification_type_info_stack: VerificationTypeInfo): StackMapFrame
 
-  def ChopFrame(frame_type: Int, offset_delta: Int): StackMapFrame
+    def ChopFrame(frame_type: Int, offset_delta: Int): StackMapFrame
 
-  def SameFrameExtended(frame_type: Int, offset_delta: Int): StackMapFrame
+    def SameFrameExtended(frame_type: Int, offset_delta: Int): StackMapFrame
 
-  def AppendFrame(
-    frame_type: Int,
-    offset_delta: Int, verification_type_info_locals: VerificationTypeInfoLocals): StackMapFrame
+    def AppendFrame(frame_type: Int,
+                    offset_delta: Int,
+                    verification_type_info_locals: VerificationTypeInfoLocals): StackMapFrame
 
-  def FullFrame(
-    frame_type: Int,
-    offset_delta: Int,
-    verification_type_info_locals: VerificationTypeInfoLocals,
-    verification_type_info_stack: VerificationTypeInfoStack): StackMapFrame
+    def FullFrame(frame_type: Int,
+                  offset_delta: Int,
+                  verification_type_info_locals: VerificationTypeInfoLocals,
+                  verification_type_info_stack: VerificationTypeInfoStack): StackMapFrame
 
-  def StackMapFrame(in: DataInputStream, cp: Constant_Pool): StackMapFrame = {
-    val frame_type = in.readUnsignedByte
-    frame_type match {
-      /*Same_Frame*/
-      case t if (t < 64) ⇒ SameFrame(t);
+    //
+    // IMPLEMENTATION
+    //
 
-      /*Same_Locals_1_Stack_Item_Frame*/
-      case t if (t < 128) ⇒
-        SameLocals1StackItemFrame(
-          t,
-          VerificationTypeInfo(in, cp));
+    type VerificationTypeInfoLocals = IndexedSeq[VerificationTypeInfo]
+    type VerificationTypeInfoStack = IndexedSeq[VerificationTypeInfo]
 
-      /*RESERVED FOR FUTURE USE*/
-      case t if (t < 247) ⇒ sys.error("Unknonwn frame type.");
+    def StackMapFrame(in: DataInputStream, cp: Constant_Pool): StackMapFrame = {
+        val frame_type = in.readUnsignedByte
+        frame_type match {
+            /*Same_Frame*/
+            case t if (t < 64) ⇒ SameFrame(t);
 
-      /*Same_Locals_1_Stack_Item_Frame_Extended*/
-      case 247 ⇒
-        SameLocals1StackItemFrameExtended(
-          247,
-          in.readUnsignedShort,
-          VerificationTypeInfo(in, cp));
+            /*Same_Locals_1_Stack_Item_Frame*/
+            case t if (t < 128) ⇒
+                SameLocals1StackItemFrame(
+                    t,
+                    VerificationTypeInfo(in, cp));
 
-      /*Chop_Frame*/
-      case t if (t < 251) ⇒ ChopFrame(t, in.readUnsignedShort)
+            /*RESERVED FOR FUTURE USE*/
+            case t if (t < 247) ⇒ sys.error("Unknonwn frame type.");
 
-      /*Same_Frame_Extended*/
-      case 251            ⇒ SameFrameExtended(251, in.readUnsignedShort)
+            /*Same_Locals_1_Stack_Item_Frame_Extended*/
+            case 247 ⇒
+                SameLocals1StackItemFrameExtended(
+                    247,
+                    in.readUnsignedShort,
+                    VerificationTypeInfo(in, cp));
 
-      /*Append_Frame*/
-      case t if (t < 255) ⇒ AppendFrame(
-        t,
-        in.readUnsignedShort,
-        repeat(t - 251 /*number of entries*/ ) {
-          VerificationTypeInfo(in, cp)
+            /*Chop_Frame*/
+            case t if (t < 251) ⇒ ChopFrame(t, in.readUnsignedShort)
+
+            /*Same_Frame_Extended*/
+            case 251            ⇒ SameFrameExtended(251, in.readUnsignedShort)
+
+            /*Append_Frame*/
+            case t if (t < 255) ⇒ AppendFrame(
+                t,
+                in.readUnsignedShort,
+                repeat(t - 251 /*number of entries*/ ) {
+                    VerificationTypeInfo(in, cp)
+                }
+            )
+
+            /*Full_Frame*/
+            case 255 ⇒ FullFrame(
+                255,
+                in.readUnsignedShort,
+                repeat(in.readUnsignedShort /*number of entries*/ ) {
+                    VerificationTypeInfo(in, cp) // ...locals
+                },
+                repeat(in.readUnsignedShort /*number of entries*/ ) {
+                    VerificationTypeInfo(in, cp) // ...stack items
+                }
+            )
         }
-      )
-
-      /*Full_Frame*/
-      case 255 ⇒ FullFrame(
-        255,
-        in.readUnsignedShort,
-        repeat(in.readUnsignedShort /*number of entries*/ ) {
-          VerificationTypeInfo(in, cp) // ...locals
-        },
-        repeat(in.readUnsignedShort /*number of entries*/ ) {
-          VerificationTypeInfo(in, cp) // ...stack items
-        }
-      )
     }
-  }
 }

@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -32,10 +32,11 @@
 */
 package de.tud.cs.st.bat.canonical
 
-
 /**
+ * '''From the Specification'''
+ *
  * <pre>
- * CONSTANT_InvokeDynamic_info { 
+ * CONSTANT_InvokeDynamic_info {
  *   u1 tag;
  *   u2 bootstrap_method_attr_index;
  *   u2 name_and_type_index;
@@ -45,25 +46,24 @@ package de.tud.cs.st.bat.canonical
  */
 trait CONSTANT_InvokeDynamic_info extends Constant_Pool_Entry {
 
-	//
-	// ABSTRACT DEFINITIONS
-	//
+    //
+    // ABSTRACT DEFINITIONS
+    //
 
-   /** 
-	 * From the JVM specification: The value of the bootstrap_method_attr_index 
-	 * item must be a valid index into the bootstrap_methods array of the 
-	 * bootstrap method table of this class file.
-	 */
-	val bootstrap_method_attr_index : Int
-		
-	val name_and_type_index : Int
+    /**
+     * From the JVM specification: The value of the bootstrap_method_attr_index
+     * item must be a valid index into the bootstrap_methods array of the
+     * bootstrap method table of this class file.
+     */
+    val bootstrap_method_attr_index: Int
 
+    val name_and_type_index: Int
 
-	//
-	// IMPLEMENTATION
-	//
+    //
+    // IMPLEMENTATION
+    //
 
- 	def Constant_Type_Value = Constant_Pool_Entry.CONSTANT_InvokeDynamic
+    def Constant_Type_Value = de.tud.cs.st.bat.reader.Constant_PoolTags.CONSTANT_InvokeDynamic
 }
 
 

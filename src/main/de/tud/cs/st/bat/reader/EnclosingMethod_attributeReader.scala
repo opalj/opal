@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -35,28 +35,44 @@ package de.tud.cs.st.bat.reader
 import java.io.DataInputStream
 
 /**
+ * <pre>
+ * EnclosingMethod_attribute {
+ * 	u2 attribute_name_index;
+ * 	u4 attribute_length;
+ * 	u2 class_index
+ * 	u2 method_index;
+ * }
+ * </pre>
  *
  * @author Michael Eichberg
  */
 trait EnclosingMethod_attributeReader extends AttributeReader {
 
-  type EnclosingMethod_attribute <: Attribute
+    type EnclosingMethod_attribute <: Attribute
 
-  def EnclosingMethod_attribute(attribute_name_index: Int,
-                                class_index: Int,
-                                method_index: Int)(implicit constant_pool: Constant_Pool): EnclosingMethod_attribute
+    def EnclosingMethod_attribute(attribute_name_index: Constant_Pool_Index,
+                                  class_index: Constant_Pool_Index,
+                                  method_index: Constant_Pool_Index)(
+                                      implicit constant_pool: Constant_Pool): EnclosingMethod_attribute
 
-  //
-  // IMPLEMENTATION
-  //	
+    //
+    // IMPLEMENTATION
+    //
 
-  register(
-    de.tud.cs.st.bat.canonical.EnclosingMethod_attribute.name ->
-      ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Int) ⇒ {
-        val attribute_length = in.readInt
-        EnclosingMethod_attribute(
-          attribute_name_index, in.readUnsignedShort, in.readUnsignedShort
-        )(cp)
-      })
-  )
+    register(
+        EnclosingMethod_attributeReader.ATTRIBUTE_NAME ->
+            ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index) ⇒ {
+                val attribute_length = in.readInt
+                EnclosingMethod_attribute(
+                    attribute_name_index,
+                    in.readUnsignedShort,
+                    in.readUnsignedShort
+                )(cp)
+            })
+    )
+}
+
+object EnclosingMethod_attributeReader {
+
+    val ATTRIBUTE_NAME = "EnclosingMethod"
 }

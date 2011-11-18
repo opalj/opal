@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -36,26 +36,18 @@ package  de.tud.cs.st.bat.canonical
 import java.io.DataInputStream
 
 /**
- * <pre>
- * EnclosingMethod_attribute { 
- * 	u2 attribute_name_index; 
- * 	u4 attribute_length; 
- * 	u2 class_index 
- * 	u2 method_index; 
- * } 
- * </pre> 
  *
  * @author Michael Eichberg
  */
 trait EnclosingMethod_attribute extends Attribute {
-	
+
 	//
 	// ABSTRACT DEFINITIONS
 	//
-	
+
 	val attribute_name_index : Int
 	val class_index : Int
-	val method_index : Int 
+	val method_index : Int
 
 
 	//
@@ -67,11 +59,8 @@ trait EnclosingMethod_attribute extends Attribute {
 	 * The value of the attribute_length item is fixed; it is 4.
 	 */
 	def attribute_length = 4
-	
-	def attribute_name = EnclosingMethod_attribute.name
+
+	def attribute_name = de.tud.cs.st.bat.reader.EnclosingMethod_attributeReader.ATTRIBUTE_NAME
 
 }
-object EnclosingMethod_attribute {
-	
-	val name = "EnclosingMethod"
-}
+

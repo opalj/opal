@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -47,7 +47,7 @@ trait SourceFile_attribute extends Attribute {
 	//
 
 	val attribute_name_index : Int
-	
+
 	val sourceFile_index : Int
 
 
@@ -59,14 +59,8 @@ trait SourceFile_attribute extends Attribute {
 	 * The value of the attribute_length item is fixed; it is 2.
 	 */
 	def attribute_length = 2
-	
-	def attribute_name = SourceFile_attribute.name
+
+	def attribute_name = de.tud.cs.st.bat.reader.SourceFile_attributeReader.ATTRIBUTE_NAME
 
 }
 
-
-object SourceFile_attribute {
-	
-	val name = "SourceFile"
-	
-}

@@ -48,67 +48,66 @@ import de.tud.cs.st.util.ControlAbstractions.repeat
  */
 trait BootstrapMethods_attributeReader extends AttributeReader {
 
-  //
-  // ABSTRACT DEFINITIONS
-  //
+    //
+    // ABSTRACT DEFINITIONS
+    //
 
-  type BootstrapMethods_attribute <: Attribute
+    type BootstrapMethods_attribute <: Attribute
 
-  type BootstrapMethod
-  implicit val BootstrapMethodManifest: ClassManifest[BootstrapMethod]
-  type BootstrapArgument
-  implicit val BootstrapArgumentManifest: ClassManifest[BootstrapArgument]
+    type BootstrapMethod
+    implicit val BootstrapMethodManifest: ClassManifest[BootstrapMethod]
 
-  // Factory methods
+    type BootstrapArgument
+    implicit val BootstrapArgumentManifest: ClassManifest[BootstrapArgument]
 
-  def BootstrapMethods_attribute(attribute_name_index: Int,
-                                 attribute_length: Int,
-                                 bootstrap_methods: BootstrapMethods)(
-                                   implicit constant_pool: Constant_Pool): BootstrapMethods_attribute
 
-  def BootstrapMethod(bootstrap_method_ref: Int,
-                      bootstrap_arguments: BootstrapArguments)(
-                        implicit constant_pool: Constant_Pool): BootstrapMethod
+    def BootstrapMethods_attribute(attribute_name_index: Int,
+                                   attribute_length: Int,
+                                   bootstrap_methods: BootstrapMethods)(
+                                       implicit constant_pool: Constant_Pool): BootstrapMethods_attribute
 
-  def BootstrapArgument(constant_pool_ref: Int)(
-    implicit constant_pool: Constant_Pool): BootstrapArgument
+    def BootstrapMethod(bootstrap_method_ref: Int,
+                        bootstrap_arguments: BootstrapArguments)(
+                            implicit constant_pool: Constant_Pool): BootstrapMethod
 
-  // 
-  // IMPLEMENTATION
-  //
+    def BootstrapArgument(constant_pool_ref: Int)(implicit constant_pool: Constant_Pool): BootstrapArgument
 
-  type BootstrapMethods = IndexedSeq[BootstrapMethod]
+    // 
+    // IMPLEMENTATION
+    //
 
-  type BootstrapArguments = IndexedSeq[BootstrapArgument]
+    type BootstrapMethods = IndexedSeq[BootstrapMethod]
 
-  def BootstrapArgument(in: DataInputStream, cp: Constant_Pool): BootstrapArgument = {
-    BootstrapArgument(in.readUnsignedShort)(cp)
-  }
+    type BootstrapArguments = IndexedSeq[BootstrapArgument]
 
-  def BootstrapMethod(in: DataInputStream, cp: Constant_Pool): BootstrapMethod = {
-    BootstrapMethod(
-      in.readUnsignedShort,
-      repeat(in.readUnsignedShort) {
-        BootstrapArgument(in, cp)
-      }
-    )(cp)
-  }
+    def BootstrapArgument(in: DataInputStream, cp: Constant_Pool): BootstrapArgument = {
+        BootstrapArgument(in.readUnsignedShort)(cp)
+    }
 
-  register(
-    BootstrapMethods_attributeReader.ATTRIBUTE_NAME ->
-      ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Int) ⇒ {
-        BootstrapMethods_attribute(
-          attribute_name_index, in.readInt, // attribute_length
-          repeat(in.readUnsignedShort) {
-            BootstrapMethod(in, cp)
-          }
+    def BootstrapMethod(in: DataInputStream, cp: Constant_Pool): BootstrapMethod = {
+        BootstrapMethod(
+            in.readUnsignedShort,
+            repeat(in.readUnsignedShort) {
+                BootstrapArgument(in, cp)
+            }
         )(cp)
-      })
-  )
+    }
+
+    register(
+        BootstrapMethods_attributeReader.ATTRIBUTE_NAME ->
+            ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Int) ⇒ {
+                BootstrapMethods_attribute(
+                    attribute_name_index, in.readInt, // attribute_length
+                    repeat(in.readUnsignedShort) {
+                        BootstrapMethod(in, cp)
+                    }
+                )(cp)
+            })
+    )
 }
 
 object BootstrapMethods_attributeReader {
-  val ATTRIBUTE_NAME = "BootstrapMethods"
+    val ATTRIBUTE_NAME = "BootstrapMethods"
 }
 
 

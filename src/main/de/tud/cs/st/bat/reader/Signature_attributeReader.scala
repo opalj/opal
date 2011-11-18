@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -37,36 +37,50 @@ import java.io.DataInputStream
 /**
  * Implements the template method to read a signature attribute.
  *
+ * '''From the Specification'''
+ *
+ * The Signature attribute is an optional fixed-length attribute in the
+ * attributes table of a ClassFile, field_info or method_info structure.
+ *
+ * {{{
+ *  Signature_attribute {
+ *             u2 attribute_name_index;
+ *             u4 attribute_length;
+ *             u2 signature_index;
+ *  }
+ * }}}
  * @author Michael Eichberg
  */
 trait Signature_attributeReader extends AttributeReader {
 
-  type Signature_attribute <: Attribute
+    type Signature_attribute <: Attribute
 
-  /**
-   * '''From the Specification'''
-   *
-   * The constant pool entry at signature_index must be a CONSTANT_Utf8_info
-   * structure representing either a class signature, if this signature
-   * attribute is an attribute of a ClassFile structure, a method type
-   * signature, if this signature is an attribute of a method_info structure,
-   * or a field type signature otherwise.
-   */
-  def Signature_attribute(attribute_name_index: Int,
-                          signature_index: Int)(implicit constant_pool: Constant_Pool): Signature_attribute
+    /**
+     * '''From the Specification'''
+     *
+     * The constant pool entry at signature_index must be a CONSTANT_Utf8_info
+     * structure representing either a class signature, if this signature
+     * attribute is an attribute of a ClassFile structure, a method type
+     * signature, if this signature is an attribute of a method_info structure,
+     * or a field type signature otherwise.
+     */
+    def Signature_attribute(attribute_name_index: Constant_Pool_Index,
+                            signature_index: Constant_Pool_Index)(
+                                implicit constant_pool: Constant_Pool): Signature_attribute
 
-  register(Signature_attributeReader.ATTRIBUTE_NAME ->
-    ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Int) ⇒ {
-      val attribute_length = in.readInt
-      Signature_attribute(
-        attribute_name_index, in.readUnsignedShort
-      )(cp)
-    })
-  )
+    register(Signature_attributeReader.ATTRIBUTE_NAME ->
+        ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index) ⇒ {
+            val attribute_length = in.readInt
+            Signature_attribute(
+                attribute_name_index,
+                in.readUnsignedShort
+            )(cp)
+        })
+    )
 }
 
 object Signature_attributeReader {
 
-  val ATTRIBUTE_NAME = "Signature"
+    val ATTRIBUTE_NAME = "Signature"
 
 }

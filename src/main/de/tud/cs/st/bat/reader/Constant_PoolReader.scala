@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -34,136 +34,152 @@ package de.tud.cs.st.bat.reader
 
 import java.io.DataInputStream
 
-
 /**
-
+ * Defines a template method to read in a class file's constant pool.
+ *
  * @author Michael Eichberg
  */
-trait Constant_PoolReader{
+trait Constant_PoolReader extends Constant_PoolAbstractions {
 
-		
-	//
-	// ABSTRACT DEFINITIONS
-	//
-		
-		
-	type Constant_Pool_Entry 
-	implicit val Constant_Pool_EntryManifest : ClassManifest[Constant_Pool_Entry]
-	type CONSTANT_Class_info <: Constant_Pool_Entry
-	type CONSTANT_Fieldref_info <: Constant_Pool_Entry
-   type CONSTANT_Methodref_info <: Constant_Pool_Entry
-  	type CONSTANT_InterfaceMethodref_info <: Constant_Pool_Entry
- 	type CONSTANT_String_info <: Constant_Pool_Entry
- 	type CONSTANT_Integer_info <: Constant_Pool_Entry
- 	type CONSTANT_Float_info <: Constant_Pool_Entry
-	type CONSTANT_Long_info <: Constant_Pool_Entry
- 	type CONSTANT_Double_info <: Constant_Pool_Entry
- 	type CONSTANT_NameAndType_info <: Constant_Pool_Entry
-	private type T  = { def value : String } // a structural type
-	type CONSTANT_Utf8_info <: Constant_Pool_Entry with T
-	// Defined by Java 7:
-	type CONSTANT_MethodHandle_info  <: Constant_Pool_Entry
-	type CONSTANT_MethodType_info <: Constant_Pool_Entry
-	type CONSTANT_InvokeDynamic_info <: Constant_Pool_Entry
-	
-	
-	// FACTORY METHODS
-	//
-	def CONSTANT_Class_info(i : Int) : CONSTANT_Class_info
-	def CONSTANT_Fieldref_info(class_index : Int, name_and_type_index : Int) : CONSTANT_Fieldref_info
-	def CONSTANT_Methodref_info(class_index : Int, name_and_type_index : Int) : CONSTANT_Methodref_info
-	def CONSTANT_InterfaceMethodref_info(class_index : Int, name_and_type_index : Int) : CONSTANT_InterfaceMethodref_info
-	def CONSTANT_String_info(i : Int) : CONSTANT_String_info
-	def CONSTANT_Integer_info(i : Int) : CONSTANT_Integer_info
-	def CONSTANT_Float_info(f : Float) : CONSTANT_Float_info
-	def CONSTANT_Long_info(l : Long) : CONSTANT_Long_info
-	def CONSTANT_Double_info(d : Double) : CONSTANT_Double_info
-	def CONSTANT_NameAndType_info(name_index : Int, descriptor_index : Int) : CONSTANT_NameAndType_info
-	def CONSTANT_Utf8_info(s : String) : CONSTANT_Utf8_info
-	// Defined by Java 7:	
-	def CONSTANT_MethodHandle_info(reference_kind : Int, reference_index : Int) : CONSTANT_MethodHandle_info
-	def CONSTANT_MethodType_info(descriptor_index : Int) : CONSTANT_MethodType_info
-	def CONSTANT_InvokeDynamic_info(bootstrap_method_attr_index : Int, name_and_type_index : Int) : CONSTANT_InvokeDynamic_info
-	
+    private type ValueAsString = { def value: String } // a structural type
 
-	//
-	// IMPLEMENTATION
-	//	
-	
-	import de.tud.cs.st.bat.canonical.Constant_Pool_Entry._ // CONSTANT_Class ... CONSTANT_Utf8 ... CONSTANT_InvokeDynamic
-	
-	type Constant_Pool = IndexedSeq[Constant_Pool_Entry]
+    //
+    // ABSTRACT DEFINITIONS
+    //
 
-	private val reader = new Array[(DataInputStream)=>Constant_Pool_Entry](de.tud.cs.st.bat.canonical.Constant_Pool_Entry.maxId+1)
-	
-	reader(CONSTANT_Class.id) = (in : DataInputStream) 
-			=> CONSTANT_Class_info(in.readUnsignedShort)
-	
-	reader(CONSTANT_Fieldref.id) = (in : DataInputStream) 
-			=> CONSTANT_Fieldref_info(in.readUnsignedShort, in.readUnsignedShort)
-  
-	reader(CONSTANT_Methodref.id) = (in : DataInputStream) 
-			=> CONSTANT_Methodref_info(in.readUnsignedShort, in.readUnsignedShort)
+    type Constant_Pool_Entry
+    implicit val Constant_Pool_EntryManifest: ClassManifest[Constant_Pool_Entry]
 
-	reader(CONSTANT_InterfaceMethodref.id) = (in : DataInputStream) 
-			=> CONSTANT_InterfaceMethodref_info(in.readUnsignedShort, in.readUnsignedShort)
+    type CONSTANT_Class_info <: Constant_Pool_Entry
 
-	reader(CONSTANT_String.id) = (in : DataInputStream) 
-			=> CONSTANT_String_info(in.readUnsignedShort)
+    type CONSTANT_Fieldref_info <: Constant_Pool_Entry
 
-	reader(CONSTANT_Integer.id) = (in : DataInputStream) 
-			=> CONSTANT_Integer_info(in.readInt)
+    type CONSTANT_Methodref_info <: Constant_Pool_Entry
 
-	reader(CONSTANT_Float.id) = (in : DataInputStream) 
-			=> CONSTANT_Float_info(in.readFloat)
+    type CONSTANT_InterfaceMethodref_info <: Constant_Pool_Entry
 
-	reader(CONSTANT_Long.id) = (in : DataInputStream)
-	 		=> CONSTANT_Long_info(in.readLong)
+    type CONSTANT_String_info <: Constant_Pool_Entry
 
-	reader(CONSTANT_Double.id) = (in : DataInputStream) 
-			=> CONSTANT_Double_info(in.readDouble)
+    type CONSTANT_Integer_info <: Constant_Pool_Entry
 
-	reader(CONSTANT_NameAndType.id) = (in : DataInputStream) 
-			=> CONSTANT_NameAndType_info(in.readUnsignedShort, in.readUnsignedShort)
+    type CONSTANT_Float_info <: Constant_Pool_Entry
 
-	reader(CONSTANT_Utf8.id) = (in : DataInputStream) 
-			=> CONSTANT_Utf8_info(in.readUTF)
+    type CONSTANT_Long_info <: Constant_Pool_Entry
 
-	reader(CONSTANT_MethodHandle.id) = (in : DataInputStream) 
-			=> CONSTANT_MethodHandle_info(in.readUnsignedByte, in.readUnsignedShort)
-				
-	reader(CONSTANT_MethodType.id) = (in : DataInputStream) 
-			=> CONSTANT_MethodType_info(in.readUnsignedShort)
-				
-	reader(CONSTANT_InvokeDynamic.id) = (in : DataInputStream) 
-			=> CONSTANT_InvokeDynamic_info(in.readUnsignedShort, in.readUnsignedShort)
+    type CONSTANT_Double_info <: Constant_Pool_Entry
 
-	def Constant_Pool (in : DataInputStream) : Constant_Pool = {
-		/*
-		 * The value of the constant_pool_count item is equal to the 
-		 * number of entries in the constant_pool table plus one. A 
-		 * constant_pool index is considered valid if it is greater than zero 
-		 * and less than constant_pool_count     
+    type CONSTANT_NameAndType_info <: Constant_Pool_Entry
+
+    type CONSTANT_Utf8_info <: Constant_Pool_Entry with ValueAsString
+
+    type CONSTANT_MethodHandle_info <: Constant_Pool_Entry
+
+    type CONSTANT_MethodType_info <: Constant_Pool_Entry
+
+    type CONSTANT_InvokeDynamic_info <: Constant_Pool_Entry
+
+    // FACTORY METHODS
+    //
+    protected def CONSTANT_Class_info(i: Int): CONSTANT_Class_info
+    protected def CONSTANT_Fieldref_info(class_index: Int, name_and_type_index: Int): CONSTANT_Fieldref_info
+    protected def CONSTANT_Methodref_info(class_index: Int, name_and_type_index: Int): CONSTANT_Methodref_info
+    protected def CONSTANT_InterfaceMethodref_info(class_index: Int, name_and_type_index: Int): CONSTANT_InterfaceMethodref_info
+    protected def CONSTANT_String_info(i: Int): CONSTANT_String_info
+    protected def CONSTANT_Integer_info(i: Int): CONSTANT_Integer_info
+    protected def CONSTANT_Float_info(f: Float): CONSTANT_Float_info
+    protected def CONSTANT_Long_info(l: Long): CONSTANT_Long_info
+    protected def CONSTANT_Double_info(d: Double): CONSTANT_Double_info
+    protected def CONSTANT_NameAndType_info(name_index: Int, descriptor_index: Int): CONSTANT_NameAndType_info
+    protected def CONSTANT_Utf8_info(s: String): CONSTANT_Utf8_info
+    protected def CONSTANT_MethodHandle_info(reference_kind: Int, reference_index: Int): CONSTANT_MethodHandle_info
+    protected def CONSTANT_MethodType_info(descriptor_index: Int): CONSTANT_MethodType_info
+    protected def CONSTANT_InvokeDynamic_info(bootstrap_method_attr_index: Int, name_and_type_index: Int): CONSTANT_InvokeDynamic_info
+
+    //
+    // IMPLEMENTATION
+    //
+
+    import Constant_PoolTags._
+
+    // TODO Replace IndexedSeq[Constant_Pool_Entry] by a structural type that defines an apply(i,value) method.
+    type Constant_Pool = IndexedSeq[Constant_Pool_Entry]
+
+    private val reader = new Array[(DataInputStream) ⇒ Constant_Pool_Entry](Constant_PoolTags.maxId + 1)
+
+    reader(CONSTANT_Class.id) = (in: DataInputStream) ⇒ CONSTANT_Class_info(in.readUnsignedShort)
+
+    reader(CONSTANT_Fieldref.id) = (in: DataInputStream) ⇒ CONSTANT_Fieldref_info(in.readUnsignedShort, in.readUnsignedShort)
+
+    reader(CONSTANT_Methodref.id) = (in: DataInputStream) ⇒ CONSTANT_Methodref_info(in.readUnsignedShort, in.readUnsignedShort)
+
+    reader(CONSTANT_InterfaceMethodref.id) = (in: DataInputStream) ⇒ CONSTANT_InterfaceMethodref_info(in.readUnsignedShort, in.readUnsignedShort)
+
+    reader(CONSTANT_String.id) = (in: DataInputStream) ⇒ CONSTANT_String_info(in.readUnsignedShort)
+
+    reader(CONSTANT_Integer.id) = (in: DataInputStream) ⇒ CONSTANT_Integer_info(in.readInt)
+
+    reader(CONSTANT_Float.id) = (in: DataInputStream) ⇒ CONSTANT_Float_info(in.readFloat)
+
+    reader(CONSTANT_Long.id) = (in: DataInputStream) ⇒ CONSTANT_Long_info(in.readLong)
+
+    reader(CONSTANT_Double.id) = (in: DataInputStream) ⇒ CONSTANT_Double_info(in.readDouble)
+
+    reader(CONSTANT_NameAndType.id) = (in: DataInputStream) ⇒ CONSTANT_NameAndType_info(in.readUnsignedShort, in.readUnsignedShort)
+
+    reader(CONSTANT_Utf8.id) = (in: DataInputStream) ⇒ CONSTANT_Utf8_info(in.readUTF)
+
+    reader(CONSTANT_MethodHandle.id) = (in: DataInputStream) ⇒ CONSTANT_MethodHandle_info(in.readUnsignedByte, in.readUnsignedShort)
+
+    reader(CONSTANT_MethodType.id) = (in: DataInputStream) ⇒ CONSTANT_MethodType_info(in.readUnsignedShort)
+
+    reader(CONSTANT_InvokeDynamic.id) = (in: DataInputStream) ⇒ CONSTANT_InvokeDynamic_info(in.readUnsignedShort, in.readUnsignedShort)
+
+    def Constant_Pool(in: DataInputStream): Constant_Pool = {
+        /*
+		 * The value of the constant_pool_count item is equal to the
+		 * number of entries in the constant_pool table plus one. A
+		 * constant_pool index is considered valid if it is greater than zero
+		 * and less than constant_pool_count
 		 */
-		val constant_pool_count = in.readUnsignedShort
-		/*
-		 * The format of each constant_pool 
-		 * table entry is indicated by its ﬁrst “tag” byte. 
+        val constant_pool_count = in.readUnsignedShort
+        /*
+		 * The format of each constant_pool
+		 * table entry is indicated by its ﬁrst “tag” byte.
 		 * The constant_pool table is indexed from 1 to constant_pool_count−1.
 		 */
-		val constant_pool_entries  = new Array[Constant_Pool_Entry](constant_pool_count)
-		var i = 1
-		while (i < constant_pool_count) {
-			val tag = in.readUnsignedByte 
-			val constantReader = reader(tag)
-			val constantPoolEntry = constantReader(in)
-			constant_pool_entries(i) = constantPoolEntry
-			tag match { 
-				case CONSTANT_Long_ID => i += 2
-				case CONSTANT_Double_ID => i += 2
-				case _ => i += 1
-			}
-    	}
-		constant_pool_entries
-	}
+        val constant_pool_entries = new Array[Constant_Pool_Entry](constant_pool_count)
+        var i = 1
+        while (i < constant_pool_count) {
+            val tag = in.readUnsignedByte
+            val constantReader = reader(tag)
+            val constantPoolEntry = constantReader(in)
+            constant_pool_entries(i) = constantPoolEntry
+            tag match {
+                case Constant_PoolReader.CONSTANT_Long_ID   ⇒ i += 2
+                case Constant_PoolReader.CONSTANT_Double_ID ⇒ i += 2
+                case _                                      ⇒ i += 1
+            }
+        }
+        constant_pool_entries
+    }
+}
+
+object Constant_PoolReader {
+
+    // the following order, is the order as used in the JVM Spec:
+    private val CONSTANT_Class_ID = 7
+    private val CONSTANT_Fieldref_ID = 9
+    private val CONSTANT_Methodref_ID = 10
+    private val CONSTANT_InterfaceMethodref_ID = 11
+    private val CONSTANT_String_ID = 8
+    private val CONSTANT_Integer_ID = 3
+    private val CONSTANT_Float_ID = 4
+    private val CONSTANT_Long_ID = 5
+    private val CONSTANT_Double_ID = 6
+    private val CONSTANT_NameAndType_ID = 12
+    private val CONSTANT_Utf8_ID = 1
+    private val CONSTANT_MethodHandle_ID = 15
+    private val CONSTANT_MethodType_ID = 16
+    private val CONSTANT_InvokeDynamic_ID = 18
+
 }

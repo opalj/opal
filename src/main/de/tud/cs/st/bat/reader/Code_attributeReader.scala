@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -37,62 +37,92 @@ import java.io.DataInputStream
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
 /**
+ * Defines a template method to read in the code attribute.
  *
+ * '''From the Specification'''
+ * The Code attribute is a variable-length attribute in the attributes table
+ * of a method_info structure.
+ *
+ * Format
+ * {{{
+ * Code_attribute {
+ * 	u2 attribute_name_index; u4 attribute_length;
+ * 	u2 max_stack;
+ * 	u2 max_locals;
+ * 	u4 code_length;
+ * 	u1 code[code_length];
+ * 	u2 exception_table_length;
+ * 	{	u2 start_pc;
+ * 		u2 end_pc;
+ * 		u2 handler_pc;
+ * 		u2 catch_type;
+ * 	} exception_table[exception_table_length];
+ * 	u2 attributes_count;
+ * 	attribute_info attributes[attributes_count];
+ * }
+ * }}}
  * @author Michael Eichberg
  */
 trait Code_attributeReader extends AttributeReader {
 
-  type ExceptionTableEntry
-  implicit val ExceptionTableEntryManifest: ClassManifest[ExceptionTableEntry]
+    type ExceptionTableEntry
+    implicit val ExceptionTableEntryManifest: ClassManifest[ExceptionTableEntry]
 
-  type Code
+    type Code
 
-  type Code_attribute <: Attribute
+    type Code_attribute <: Attribute
 
-  type Attributes
+    type Attributes
 
-  type ExceptionTable = IndexedSeq[ExceptionTableEntry]
+    def Code(in: DataInputStream, cp: Constant_Pool): Code
 
-  def Code(in: DataInputStream, cp: Constant_Pool): Code
+    def Attributes(in: DataInputStream, cp: Constant_Pool): Attributes
 
-  def Attributes(in: DataInputStream, cp: Constant_Pool): Attributes
+    def Code_attribute(attribute_name_index: Constant_Pool_Index,
+                       attribute_length: Int,
+                       max_stack: Int,
+                       max_locals: Int,
+                       code: Code,
+                       exception_table: ExceptionTable,
+                       attributes: Attributes)(implicit constant_pool: Constant_Pool): Code_attribute
 
-  def Code_attribute(attribute_name_index: Int,
-                     attribute_length: Int,
-                     max_stack: Int,
-                     max_locals: Int,
-                     code: Code,
-                     exception_table: ExceptionTable,
-                     attributes: Attributes)(implicit constant_pool: Constant_Pool): Code_attribute
+    def ExceptionTableEntry(start_pc: Int,
+                            end_pc: Int,
+                            handler_pc: Int,
+                            catch_type: Int)(
+                                implicit constant_pool: Constant_Pool): ExceptionTableEntry
 
-  def ExceptionTableEntry(start_pc: Int,
-                          end_pc: Int,
-                          handler_pc: Int,
-                          catch_type: Int)(
-                            implicit constant_pool: Constant_Pool): ExceptionTableEntry
+    //
+    // IMPLEMENTATION
+    //
 
-  //
-  // IMPLEMENTATION
-  //
+    type ExceptionTable = IndexedSeq[ExceptionTableEntry]
 
-  register(de.tud.cs.st.bat.canonical.Code_attribute.name ->
-    ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Int) ⇒ {
+    register(Code_attributeReader.ATTRIBUTE_NAME ->
+        ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index) ⇒ {
 
-      Code_attribute(
-        attribute_name_index,
-        in.readInt(),
-        in.readUnsignedShort(),
-        in.readUnsignedShort(),
-        Code(in, cp),
-        repeat(in.readUnsignedShort()) { // "exception_table_length" times
-          ExceptionTableEntry(
-            in.readUnsignedShort, in.readUnsignedShort,
-            in.readUnsignedShort, in.readUnsignedShort
-          )(cp)
-        },
-        Attributes(in, cp) // read the code attribute's attributes 
-      )(cp)
-    }
+            Code_attribute(
+                attribute_name_index,
+                in.readInt(),
+                in.readUnsignedShort(),
+                in.readUnsignedShort(),
+                Code(in, cp),
+                repeat(in.readUnsignedShort()) { // "exception_table_length" times
+                    ExceptionTableEntry(
+                        in.readUnsignedShort, in.readUnsignedShort,
+                        in.readUnsignedShort, in.readUnsignedShort
+                    )(cp)
+                },
+                Attributes(in, cp) // read the code attribute's attributes
+            )(cp)
+        }
+        )
     )
-  )
 }
+
+object Code_attributeReader{
+
+	val ATTRIBUTE_NAME = "Code"
+
+}
+

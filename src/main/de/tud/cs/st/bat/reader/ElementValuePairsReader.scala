@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -42,67 +42,71 @@ import de.tud.cs.st.util.ControlAbstractions.repeat
  */
 trait ElementValuePairsReader extends Constant_PoolAbstractions {
 
-  type ElementValue
-  implicit val ElementValueManifest: ClassManifest[ElementValue]
-  type ElementValuePair
-  implicit val ElementValuePairManifest: ClassManifest[ElementValuePair]
-  type Annotation
+    //
+    // ABSTRACT DEFINITIONS
+    //
 
-  def Annotation(in: DataInputStream, cp: Constant_Pool): Annotation
+    type ElementValue
+    implicit val ElementValueManifest: ClassManifest[ElementValue]
 
-  //FACTORY METHODS
-  //
+    type ElementValuePair
+    implicit val ElementValuePairManifest: ClassManifest[ElementValuePair]
 
-  def ElementValuePair(
-    element_name_index: Int, element_value: ElementValue)(implicit constant_pool: Constant_Pool): ElementValuePair
+    type Annotation
 
-  def ByteValue(const_value_index: Int)(implicit constant_pool: Constant_Pool): ElementValue
-  def CharValue(const_value_index: Int)(implicit constant_pool: Constant_Pool): ElementValue
-  def DoubleValue(const_value_index: Int)(implicit constant_pool: Constant_Pool): ElementValue
-  def FloatValue(const_value_index: Int)(implicit constant_pool: Constant_Pool): ElementValue
-  def IntValue(const_value_index: Int)(implicit constant_pool: Constant_Pool): ElementValue
-  def LongValue(const_value_index: Int)(implicit constant_pool: Constant_Pool): ElementValue
-  def ShortValue(const_value_index: Int)(implicit constant_pool: Constant_Pool): ElementValue
-  def BooleanValue(const_value_index: Int)(implicit constant_pool: Constant_Pool): ElementValue
-  def StringValue(const_value_index: Int)(implicit constant_pool: Constant_Pool): ElementValue
-  def ClassValue(const_value_index: Int)(implicit constant_pool: Constant_Pool): ElementValue
-  def EnumValue(type_name_index: Int, const_name_index: Int)(implicit constant_pool: Constant_Pool): ElementValue
-  def AnnotationValue(annotation: Annotation)(implicit constant_pool: Constant_Pool): ElementValue
-  def ArrayValue(values: ElementValues)(implicit constant_pool: Constant_Pool): ElementValue
+    def Annotation(in: DataInputStream, cp: Constant_Pool): Annotation
 
-  //
-  // IMPLEMENTATION
-  //
+    def ElementValuePair(element_name_index: Constant_Pool_Index,
+                         element_value: ElementValue)(
+                             implicit constant_pool: Constant_Pool): ElementValuePair
 
-  type ElementValues = IndexedSeq[ElementValue]
-  type ElementValuePairs = IndexedSeq[ElementValuePair]
+    def ByteValue(const_value_index: Constant_Pool_Index)(implicit constant_pool: Constant_Pool): ElementValue
+    def CharValue(const_value_index: Constant_Pool_Index)(implicit constant_pool: Constant_Pool): ElementValue
+    def DoubleValue(const_value_index: Constant_Pool_Index)(implicit constant_pool: Constant_Pool): ElementValue
+    def FloatValue(const_value_index: Constant_Pool_Index)(implicit constant_pool: Constant_Pool): ElementValue
+    def IntValue(const_value_index: Constant_Pool_Index)(implicit constant_pool: Constant_Pool): ElementValue
+    def LongValue(const_value_index: Constant_Pool_Index)(implicit constant_pool: Constant_Pool): ElementValue
+    def ShortValue(const_value_index: Constant_Pool_Index)(implicit constant_pool: Constant_Pool): ElementValue
+    def BooleanValue(const_value_index: Constant_Pool_Index)(implicit constant_pool: Constant_Pool): ElementValue
+    def StringValue(const_value_index: Constant_Pool_Index)(implicit constant_pool: Constant_Pool): ElementValue
+    def ClassValue(const_value_index: Constant_Pool_Index)(implicit constant_pool: Constant_Pool): ElementValue
+    def EnumValue(type_name_index: Constant_Pool_Index, const_name_index: Constant_Pool_Index)(implicit constant_pool: Constant_Pool): ElementValue
+    def AnnotationValue(annotation: Annotation)(implicit constant_pool: Constant_Pool): ElementValue
+    def ArrayValue(values: ElementValues)(implicit constant_pool: Constant_Pool): ElementValue
 
-  def ElementValuePairs(in: DataInputStream, cp: Constant_Pool): ElementValuePairs = {
-    repeat(in.readUnsignedShort) {
-      ElementValuePair(in, cp)
+    //
+    // IMPLEMENTATION
+    //
+
+    type ElementValues = IndexedSeq[ElementValue]
+    type ElementValuePairs = IndexedSeq[ElementValuePair]
+
+    def ElementValuePairs(in: DataInputStream, cp: Constant_Pool): ElementValuePairs = {
+        repeat(in.readUnsignedShort) {
+            ElementValuePair(in, cp)
+        }
     }
-  }
 
-  def ElementValuePair(in: DataInputStream, cp: Constant_Pool): ElementValuePair =
-    ElementValuePair(in.readUnsignedShort, ElementValue(in, cp))(cp)
+    def ElementValuePair(in: DataInputStream, cp: Constant_Pool): ElementValuePair =
+        ElementValuePair(in.readUnsignedShort, ElementValue(in, cp))(cp)
 
-  def ElementValue(in: DataInputStream, cp: Constant_Pool): ElementValue = {
-    val tag = in.readByte
-    tag match {
-      case 'B' ⇒ ByteValue(in.readUnsignedShort)(cp)
-      case 'C' ⇒ CharValue(in.readUnsignedShort)(cp)
-      case 'D' ⇒ DoubleValue(in.readUnsignedShort)(cp)
-      case 'F' ⇒ FloatValue(in.readUnsignedShort)(cp)
-      case 'I' ⇒ IntValue(in.readUnsignedShort)(cp)
-      case 'J' ⇒ LongValue(in.readUnsignedShort)(cp)
-      case 'S' ⇒ ShortValue(in.readUnsignedShort)(cp)
-      case 'Z' ⇒ BooleanValue(in.readUnsignedShort)(cp)
-      case 's' ⇒ StringValue(in.readUnsignedShort)(cp)
-      case 'e' ⇒ EnumValue(in.readUnsignedShort, in.readUnsignedShort)(cp)
-      case 'c' ⇒ ClassValue(in.readUnsignedShort)(cp)
-      case '@' ⇒ AnnotationValue(Annotation(in, cp))(cp)
-      case '[' ⇒ ArrayValue(repeat(in.readUnsignedShort) { ElementValue(in, cp) })(cp)
-      case _   ⇒ sys.error("Unknown element value")
+    def ElementValue(in: DataInputStream, cp: Constant_Pool): ElementValue = {
+        val tag = in.readByte
+        tag match {
+            case 'B' ⇒ ByteValue(in.readUnsignedShort)(cp)
+            case 'C' ⇒ CharValue(in.readUnsignedShort)(cp)
+            case 'D' ⇒ DoubleValue(in.readUnsignedShort)(cp)
+            case 'F' ⇒ FloatValue(in.readUnsignedShort)(cp)
+            case 'I' ⇒ IntValue(in.readUnsignedShort)(cp)
+            case 'J' ⇒ LongValue(in.readUnsignedShort)(cp)
+            case 'S' ⇒ ShortValue(in.readUnsignedShort)(cp)
+            case 'Z' ⇒ BooleanValue(in.readUnsignedShort)(cp)
+            case 's' ⇒ StringValue(in.readUnsignedShort)(cp)
+            case 'e' ⇒ EnumValue(in.readUnsignedShort, in.readUnsignedShort)(cp)
+            case 'c' ⇒ ClassValue(in.readUnsignedShort)(cp)
+            case '@' ⇒ AnnotationValue(Annotation(in, cp))(cp)
+            case '[' ⇒ ArrayValue(repeat(in.readUnsignedShort) { ElementValue(in, cp) })(cp)
+            case _   ⇒ sys.error("Unknown element value")
+        }
     }
-  }
 }

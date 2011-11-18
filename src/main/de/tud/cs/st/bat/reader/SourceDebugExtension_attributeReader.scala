@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -35,26 +35,45 @@ package de.tud.cs.st.bat.reader
 import java.io.DataInputStream
 
 /**
+ * Template method to read in the SourceDebugExtension attribute.
  *
+ * '''From the Specification'''
+ *
+ * The SourceDebugExtension attribute is an optional attribute in the
+ * attributes table of a ClassFile structure.
+ *
+ * {{{
+ * SourceDebugExtension_attribute {
+ * 	u2 attribute_name_index;
+ * 	u4 attribute_length;
+ * 	u1 debug_extension[attribute_length];
+ * }
+ * }}}
  * @author Michael Eichberg
  */
 trait SourceDebugExtension_attributeReader extends AttributeReader {
 
-  type SourceDebugExtension_attribute <: Attribute
+    type SourceDebugExtension_attribute <: Attribute
 
-  def SourceDebugExtension_attribute(attribute_name_index: Int,
-                                     attribute_length: Int,
-                                     debug_extension: String)(
-                                       implicit constant_pool: Constant_Pool): SourceDebugExtension_attribute
+    def SourceDebugExtension_attribute(attribute_name_index: Constant_Pool_Index,
+                                       attribute_length: Int,
+                                       debug_extension: String)(
+                                           implicit constant_pool: Constant_Pool): SourceDebugExtension_attribute
 
-  register(
-    de.tud.cs.st.bat.canonical.SourceDebugExtension_attribute.name ->
-      ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Int) ⇒ {
-        val attribute_length = in.readInt
-        SourceDebugExtension_attribute(
-          attribute_name_index, attribute_length, in.readUTF
-        )(cp)
-      })
-  )
+    register(
+        SourceDebugExtension_attributeReader.ATTRIBUTE_NAME ->
+            ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index) ⇒ {
+                val attribute_length = in.readInt
+                SourceDebugExtension_attribute(
+                    attribute_name_index, attribute_length, in.readUTF
+                )(cp)
+            })
+    )
+
+}
+
+object SourceDebugExtension_attributeReader {
+
+    val ATTRIBUTE_NAME = "SourceDebugExtension"
 
 }

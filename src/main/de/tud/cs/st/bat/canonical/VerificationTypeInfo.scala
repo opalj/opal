@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -32,82 +32,61 @@
 */
 package de.tud.cs.st.bat.canonical
 
-
 /**
-
+ *
  * @author Michael Eichberg
  */
 trait VerificationTypeInfo {
-	
-	//
-	// ABSTRACT DEFINITIONS
-	//
-	
-	val tag : Int
+
+    //
+    // ABSTRACT DEFINITIONS
+    //
+
+    def tag: Int
 }
 
-
-object VerificationTypeInfo {
-	val ITEM_Top = 0
-	val ITEM_Integer = 1
-	val ITEM_Float = 2
-	val ITEM_Long = 4
-	val ITEM_Double = 3
-	val ITEM_Null = 5
-	val ITEM_UninitializedThis = 6
-	val ITEM_Object = 7
-	val ITEM_Unitialized = 8
-}
-
+import de.tud.cs.st.bat.reader.VerificationTypeInfoItem._
 
 trait TopVariableInfo extends VerificationTypeInfo {
-	val tag = VerificationTypeInfo.ITEM_Top
+    def tag = ITEM_Top.id
 }
-
 
 trait IntegerVariableInfo extends VerificationTypeInfo {
-	val tag = VerificationTypeInfo.ITEM_Integer
-}	
-
+    def tag = ITEM_Integer.id
+}
 
 trait FloatVariableInfo extends VerificationTypeInfo {
-	val tag = VerificationTypeInfo.ITEM_Float
+    def tag = ITEM_Float.id
 }
-
 
 trait LongVariableInfo extends VerificationTypeInfo {
-	val tag = VerificationTypeInfo.ITEM_Long
+    def tag = ITEM_Long.id
 }
 
-
-trait DoubleVariableInfo extends VerificationTypeInfo{
-	val tag = VerificationTypeInfo.ITEM_Double
+trait DoubleVariableInfo extends VerificationTypeInfo {
+    def tag = ITEM_Double.id
 }
-
 
 trait NullVariableInfo extends VerificationTypeInfo {
-	val tag = VerificationTypeInfo.ITEM_Null
+    def tag = ITEM_Null.id
 }
-
 
 trait UninitializedThisVariableInfo extends VerificationTypeInfo {
-	val tag = VerificationTypeInfo.ITEM_UninitializedThis
+    def tag = ITEM_UninitializedThis.id
 }
 
+trait ObjectVariableInfo extends VerificationTypeInfo {
 
-trait ObjectVariableInfo extends VerificationTypeInfo{
+    val cpool_index: Int
 
-	val cpool_index : Int
-	
-	val tag = VerificationTypeInfo.ITEM_Null
+    def tag = ITEM_Object.id
 }
-
 
 trait UninitializedVariableInfo extends VerificationTypeInfo {
 
-	val offset : Int
-	
-	val tag = VerificationTypeInfo.ITEM_Null
+    val offset: Int
+
+    def tag = ITEM_Unitialized.id
 }
 
 

@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -35,28 +35,33 @@ package de.tud.cs.st.bat.reader
 import java.io.DataInputStream
 
 /**
+ * A generic reader that can read attributes that are neither defined by the
+ * specification nor by some additional user supplied code.
  *
  * @author Michael Eichberg
  */
-trait Unknown_attributeReader extends Constant_PoolAbstractions with Unknown_attributeAbstractions {
+trait Unknown_attributeReader
+        extends Constant_PoolAbstractions
+        with Unknown_attributeAbstractions {
 
-  //
-  // ABSTRACT DEFINITIONS
-  //
+    //
+    // ABSTRACT DEFINITIONS
+    //
 
-  def Unknown_attribute(attribute_name_index: Constant_Pool_Index,
-                        info: Array[Byte])(
-                          implicit constant_pool: Constant_Pool): Unknown_attribute
+    def Unknown_attribute(attribute_name_index: Constant_Pool_Index,
+                          info: Array[Byte])(
+                              implicit constant_pool: Constant_Pool): Unknown_attribute
 
-  //
-  // IMPLEMENTATION
-  //
+    //
+    // IMPLEMENTATION
+    //
 
-  def Unknown_attribute(
-    in: DataInputStream, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index): Unknown_attribute = {
-    val info = new Array[Byte](in.readInt)
-    in.readFully(info)
+    def Unknown_attribute(in: DataInputStream,
+                          cp: Constant_Pool,
+                          attribute_name_index: Constant_Pool_Index): Unknown_attribute = {
+        val info = new Array[Byte](in.readInt)
+        in.readFully(info)
 
-    Unknown_attribute(attribute_name_index, info)(cp)
-  }
+        Unknown_attribute(attribute_name_index, info)(cp)
+    }
 }

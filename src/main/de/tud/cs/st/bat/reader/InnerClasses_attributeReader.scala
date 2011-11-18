@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -37,43 +37,63 @@ import java.io.DataInputStream
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
 /**
- *
+ * '''From the Specification'''
+ * <pre>
+ * InnerClasses_attribute {
+ * u2 attribute_name_index;
+ * u4 attribute_length;
+ * u2 number_of_classes; // => Seq[InnerClasses_attribute.Class]
+ * {	u2 inner_class_info_index;
+ * 	u2 outer_class_info_index;
+ * 	u2 inner_name_index;
+ * 	u2 inner_class_access_flags;
+ * 	} classes[number_of_classes];
+ * }
+ * </pre>
  * @author Michael Eichberg
  */
 trait InnerClasses_attributeReader extends AttributeReader {
 
-  type Constant_Pool
+    type InnerClassesEntry
+    implicit val InnerClassesEntryManifest: ClassManifest[InnerClassesEntry]
 
-  type InnerClassesEntry
-  implicit val InnerClassesEntryManifest: ClassManifest[InnerClassesEntry]
+    type InnerClasses_attribute <: Attribute
 
-  type InnerClasses_attribute <: Attribute
+    def InnerClasses_attribute(attribute_name_index: Constant_Pool_Index,
+                               classes: InnerClassesEntries)(
+                                   implicit constant_pool: Constant_Pool): InnerClasses_attribute
 
-  type InnerClassesEntries = IndexedSeq[InnerClassesEntry]
+    def InnerClassesEntry(inner_class_info_index: Constant_Pool_Index,
+                          outer_class_info_index: Constant_Pool_Index,
+                          inner_name_index: Constant_Pool_Index,
+                          inner_class_access_flags: Int)(
+                              implicit constant_pool: Constant_Pool): InnerClassesEntry
 
-  def InnerClasses_attribute(attribute_name_index: Int,
-                             classes: InnerClassesEntries)(
-                               implicit constant_pool: Constant_Pool): InnerClasses_attribute
+    //
+    // IMPLEMENTATION
+    //
 
-  def InnerClassesEntry(inner_class_info_index: Int,
-                        outer_class_info_index: Int,
-                        inner_name_index: Int,
-                        inner_class_access_flags: Int)(
-                          implicit constant_pool: Constant_Pool): InnerClassesEntry
+    type InnerClassesEntries = IndexedSeq[InnerClassesEntry]
 
-  register(
-    de.tud.cs.st.bat.canonical.InnerClasses_attribute.name ->
-      ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Int) ⇒ {
-        val attribute_length = in.readInt()
-        InnerClasses_attribute(
-          attribute_name_index,
-          repeat(in.readUnsignedShort) {
-            InnerClassesEntry(
-              in.readUnsignedShort, in.readUnsignedShort,
-              in.readUnsignedShort, in.readUnsignedShort
-            )(cp)
-          }
-        )(cp)
-      })
-  )
+    register(
+        InnerClasses_attributeReader.ATTRIBUTE_NAME ->
+            ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index) ⇒ {
+                val attribute_length = in.readInt()
+                InnerClasses_attribute(
+                    attribute_name_index,
+                    repeat(in.readUnsignedShort) {
+                        InnerClassesEntry(
+                            in.readUnsignedShort, in.readUnsignedShort,
+                            in.readUnsignedShort, in.readUnsignedShort
+                        )(cp)
+                    }
+                )(cp)
+            })
+    )
 }
+
+object InnerClasses_attributeReader {
+    val ATTRIBUTE_NAME = "InnerClasses"
+}
+
+

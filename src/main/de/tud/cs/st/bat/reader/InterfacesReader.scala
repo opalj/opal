@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -44,27 +44,26 @@ import de.tud.cs.st.util.ControlAbstractions.repeat
  */
 trait InterfacesReader extends Constant_PoolAbstractions {
 
-  //
-  // ABSTRACT DEFINITIONS
-  //
+    //
+    // ABSTRACT DEFINITIONS
+    //
 
-  type Interface
-  implicit val InterfaceManifest: ClassManifest[Interface]
+    type Interface
+    implicit val InterfaceManifest: ClassManifest[Interface]
 
-  def Interface(
-    interface_index: Constant_Pool_Index)(implicit constant_pool: Constant_Pool): Interface
+    def Interface(interface_index: Constant_Pool_Index)(implicit constant_pool: Constant_Pool): Interface
 
-  //
-  // IMPLEMENTATION
-  //
+    //
+    // IMPLEMENTATION
+    //
 
-  type Interfaces = IndexedSeq[Interface]
+    type Interfaces = IndexedSeq[Interface]
 
-  def Interfaces(in: DataInputStream, cp: Constant_Pool): Interfaces = {
-    val interfaces_count = in.readUnsignedShort;
-    repeat(interfaces_count) {
-      Interface(in.readUnsignedShort)(cp)
+    def Interfaces(in: DataInputStream, cp: Constant_Pool): Interfaces = {
+        val interfaces_count = in.readUnsignedShort;
+        repeat(interfaces_count) {
+            Interface(in.readUnsignedShort)(cp)
+        }
     }
-  }
 
 }
