@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -40,56 +40,60 @@ import de.tud.cs.st.bat.reader.ClassFileReader
  * @author Michael Eichberg
  */
 trait ClassFileBinding
-    extends ClassFileReader
-    with Constant_PoolResolver
-    with AttributeBinding {
+        extends ClassFileReader
+        with Constant_PoolResolver
+        with AttributeBinding {
 
-  type ClassFile = de.tud.cs.st.bat.resolved.ClassFile
+    type ClassFile = de.tud.cs.st.bat.resolved.ClassFile
 
-  type Method_Info = de.tud.cs.st.bat.resolved.Method_Info
-  type Methods <: IndexedSeq[Method_Info]
-  val Method_InfoManifest: ClassManifest[Method_Info] = implicitly
+    type Method_Info = de.tud.cs.st.bat.resolved.Method_Info
+    type Methods <: IndexedSeq[Method_Info]
+    val Method_InfoManifest: ClassManifest[Method_Info] = implicitly
 
-  type Field_Info = de.tud.cs.st.bat.resolved.Field_Info
-  type Fields <: IndexedSeq[Field_Info]
-  val Field_InfoManifest: ClassManifest[Field_Info] = implicitly
+    type Field_Info = de.tud.cs.st.bat.resolved.Field_Info
+    type Fields <: IndexedSeq[Field_Info]
+    val Field_InfoManifest: ClassManifest[Field_Info] = implicitly
 
-  type Interface = ObjectType
-  type Interfaces <: IndexedSeq[ObjectType]
-  val InterfaceManifest: ClassManifest[Interface] = implicitly
+    type Interface = ObjectType
+    type Interfaces <: IndexedSeq[ObjectType]
+    val InterfaceManifest: ClassManifest[Interface] = implicitly
 
-  def Interface(interface_index: Constant_Pool_Index)(
-    implicit constant_pool: Constant_Pool): Interface = interface_index
+    def Interface(interface_index: Constant_Pool_Index)(
+        implicit constant_pool: Constant_Pool): Interface = interface_index
 
-  def Field_Info(access_flags: Int,
-                 name_index: Int,
-                 descriptor_index: Int,
-                 attributes: Attributes)(
-                   implicit constant_pool: Constant_Pool): Field_Info = {
-    new Field_Info(access_flags, name_index, descriptor_index, attributes)
-  }
+    def Field_Info(access_flags: Int,
+                   name_index: Int,
+                   descriptor_index: Int,
+                   attributes: Attributes)(
+                       implicit constant_pool: Constant_Pool): Field_Info = {
+        new Field_Info(access_flags, name_index, descriptor_index, attributes)
+    }
 
-  def Method_Info(accessFlags: Int,
-                  name_index: Int,
-                  descriptor_index: Int,
-                  attributes: Attributes)(implicit constant_pool: Constant_Pool): Method_Info = {
-    new Method_Info(accessFlags, name_index, descriptor_index, attributes)
-  }
+    def Method_Info(accessFlags: Int,
+                    name_index: Int,
+                    descriptor_index: Int,
+                    attributes: Attributes)(
+                        implicit constant_pool: Constant_Pool): Method_Info = {
+        new Method_Info(accessFlags, name_index, descriptor_index, attributes)
+    }
 
-  def ClassFile(minor_version: Int, major_version: Int,
-                access_flags: Int,
-                this_class: Int, super_class: Int, interfaces: Interfaces,
-                fields: Fields,
-                methods: Methods,
-                attributes: Attributes)(implicit constant_pool: Constant_Pool): ClassFile = {
-    new ClassFile(
-      minor_version, major_version, access_flags,
-      this_class,
-      // to handle the special case that this class file represents java.lang.Object
-      { if (super_class == 0) null else super_class },
-      interfaces, fields, methods, attributes
-    )
-  }
+    def ClassFile(minor_version: Int, major_version: Int,
+                  access_flags: Int,
+                  this_class: Int,
+                  super_class: Int,
+                  interfaces: Interfaces,
+                  fields: Fields,
+                  methods: Methods,
+                  attributes: Attributes)(
+                      implicit constant_pool: Constant_Pool): ClassFile = {
+        new ClassFile(
+            minor_version, major_version, access_flags,
+            this_class,
+            // to handle the special case that this class file represents java.lang.Object
+            { if (super_class == 0) null else super_class },
+            interfaces, fields, methods, attributes
+        )
+    }
 
 }
 

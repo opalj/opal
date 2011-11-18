@@ -42,7 +42,7 @@ import de.tud.cs.st.util.ControlAbstractions.repeat
  * @author Michael Eichberg
  */
 trait AttributesReader
-        extends AttributesAbstraction
+        extends AttributesAbstractions
         with Constant_PoolAbstractions
         with Unknown_attributeAbstractions {
 
@@ -64,9 +64,10 @@ trait AttributesReader
      * However, if no representation of the unknown attribute is needed this method can return null -
      * 	after reading (skipping) all bytes belonging to this attribute.
      */
-    def Unknown_attribute(in: DataInputStream,
+    def Unknown_attribute(ap: AttributeParent,
                           cp: Constant_Pool,
-                          attribute_name_index: Int): Unknown_attribute
+                          attribute_name_index: Int,
+                          in: DataInputStream): Unknown_attribute
 
     //
     // IMPLEMENTATION
@@ -108,16 +109,16 @@ trait AttributesReader
      * <li> BootstrapMethods_attribute </li>
      * </ul>
      */
-    private var attributeReaders: Map[String, (DataInputStream, Constant_Pool, Int) ⇒ Attribute] = Map()
+    private var attributeReaders: Map[String, (AttributeParent, Constant_Pool, Constant_Pool_Index, DataInputStream) ⇒ Attribute] = Map()
 
-    def register(r: (String, (DataInputStream, Constant_Pool, Int) ⇒ Attribute)): Unit = {
+    def register(r: (String, (AttributeParent, Constant_Pool, Constant_Pool_Index, DataInputStream) ⇒ Attribute)): Unit = {
         attributeReaders += r
     }
 
-    def Attributes(in: DataInputStream, cp: Constant_Pool): Attributes = {
+    def Attributes(ap: AttributesParent.Value, cp: Constant_Pool, in: DataInputStream): Attributes = {
         val attributes_count = in.readUnsignedShort
         val attributes = repeat(attributes_count) {
-            Attribute(in, cp)
+            Attribute(ap, cp, in)
         }
         // let's remove the attributes we do not understand or
         // which we do not need;
@@ -125,7 +126,7 @@ trait AttributesReader
         attributes filter (_ != null)
     }
 
-    def Attribute(in: DataInputStream, cp: Constant_Pool): Attribute = {
+    def Attribute(ap: AttributeParent, cp: Constant_Pool, in: DataInputStream): Attribute = {
         val attribute_name_index = in.readUnsignedShort()
         val attribute_name =
             (cp(attribute_name_index).asInstanceOf[CONSTANT_Utf8_info]).value
@@ -133,6 +134,6 @@ trait AttributesReader
         attributeReaders.getOrElse(
             attribute_name,
             Unknown_attribute _ // this is a factory method
-        )(in, cp, attribute_name_index)
+        )(ap, cp, attribute_name_index, in)
     }
 }

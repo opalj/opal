@@ -33,13 +33,23 @@
 package de.tud.cs.st.bat.reader
 
 import java.io.DataInputStream
+import de.tud.cs.st.util.ControlAbstractions.repeat
 
 /**
+ * Defines common abstractions over class file attributes.
  *
  * @author Michael Eichberg
  */
-trait Unknown_attributeAbstractions extends AttributesAbstractions {
+trait AttributesAbstractions {
 
-    type Unknown_attribute <: Attribute
+    /**
+     * Specifying a lower bound is necessary to implement a generic SkipAttributeMethod.
+     */
+    type Attribute >: Null
 
+    implicit val AttributeManifest: ClassManifest[Attribute]
+
+    type Attributes = Seq[Attribute]
+
+    type AttributeParent = AttributesParent.Value // The parent structure of the attributes strucuture is conceptually also the parent structure for each single attribute.
 }

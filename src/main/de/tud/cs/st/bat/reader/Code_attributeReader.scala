@@ -76,7 +76,7 @@ trait Code_attributeReader extends AttributeReader {
 
     def Code(in: DataInputStream, cp: Constant_Pool): Code
 
-    def Attributes(in: DataInputStream, cp: Constant_Pool): Attributes
+    protected def Attributes(ap: AttributesParent.Value, cp: Constant_Pool, in: DataInputStream): Attributes
 
     def Code_attribute(attribute_name_index: Constant_Pool_Index,
                        attribute_length: Int,
@@ -98,31 +98,31 @@ trait Code_attributeReader extends AttributeReader {
 
     type ExceptionTable = IndexedSeq[ExceptionTableEntry]
 
-    register(Code_attributeReader.ATTRIBUTE_NAME ->
-        ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index) ⇒ {
-
-            Code_attribute(
-                attribute_name_index,
-                in.readInt(),
-                in.readUnsignedShort(),
-                in.readUnsignedShort(),
-                Code(in, cp),
-                repeat(in.readUnsignedShort()) { // "exception_table_length" times
-                    ExceptionTableEntry(
-                        in.readUnsignedShort, in.readUnsignedShort,
-                        in.readUnsignedShort, in.readUnsignedShort
-                    )(cp)
-                },
-                Attributes(in, cp) // read the code attribute's attributes
-            )(cp)
-        }
-        )
+    register(
+        Code_attributeReader.ATTRIBUTE_NAME ->
+            ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
+                Code_attribute(
+                    attribute_name_index,
+                    in.readInt(),
+                    in.readUnsignedShort(),
+                    in.readUnsignedShort(),
+                    Code(in, cp),
+                    repeat(in.readUnsignedShort()) { // "exception_table_length" times
+                        ExceptionTableEntry(
+                            in.readUnsignedShort, in.readUnsignedShort,
+                            in.readUnsignedShort, in.readUnsignedShort
+                        )(cp)
+                    },
+                    Attributes(AttributesParent.Code_attribute, cp, in)
+                )(cp)
+            }
+            )
     )
 }
 
-object Code_attributeReader{
+object Code_attributeReader {
 
-	val ATTRIBUTE_NAME = "Code"
+    val ATTRIBUTE_NAME = "Code"
 
 }
 

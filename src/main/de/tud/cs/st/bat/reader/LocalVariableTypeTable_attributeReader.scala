@@ -59,7 +59,7 @@ trait LocalVariableTypeTable_attributeReader extends AttributeReader {
     // ABSTRACT DEFINITIONS
     //
     type LocalVariableTypeTable_attribute <: Attribute
-    
+
     type LocalVariableTypeTableEntry
     implicit val LocalVariableTypeTableEntryManifest: ClassManifest[LocalVariableTypeTableEntry]
 
@@ -83,22 +83,21 @@ trait LocalVariableTypeTable_attributeReader extends AttributeReader {
 
     register(
         LocalVariableTypeTable_attributeReader.ATTRIBUTE_NAME ->
-            (
-                (in: DataInputStream, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index) ⇒ {
-                    val attribute_length = in.readInt()
-                    LocalVariableTypeTable_attribute(
-                        attribute_name_index, attribute_length,
-                        repeat(in.readUnsignedShort) {
-                            LocalVariableTypeTableEntry(
-                                in.readUnsignedShort,
-                                in.readUnsignedShort,
-                                in.readUnsignedShort,
-                                in.readUnsignedShort,
-                                in.readUnsignedShort
-                            )(cp)
-                        }
-                    )(cp)
-                }
+            ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
+                val attribute_length = in.readInt()
+                LocalVariableTypeTable_attribute(
+                    attribute_name_index, attribute_length,
+                    repeat(in.readUnsignedShort) {
+                        LocalVariableTypeTableEntry(
+                            in.readUnsignedShort,
+                            in.readUnsignedShort,
+                            in.readUnsignedShort,
+                            in.readUnsignedShort,
+                            in.readUnsignedShort
+                        )(cp)
+                    }
+                )(cp)
+            }
             )
     )
 

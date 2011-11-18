@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -37,20 +37,22 @@ import java.io.DataInputStream
 /**
  * @author Michael Eichberg
  */
-trait AttributeReader extends Constant_PoolAbstractions {
+trait AttributeReader extends Constant_PoolAbstractions with AttributesAbstractions {
 
-  type Attribute >: Null
 
-  /**
-   * Register a reader for a concrete attribute. This function is intended to
-   * be provided/implemented by an AttributesReader that manages the attributes of a class,
-   * method_info, field_info or code_attribute structure.
-   *
-   * @param r a map where the key is the name of an attribute and the value is
-   *  a function that given a data input stream that is positioned directly
-   *  at the beginning of the attribute, the constant pool and the attribute
-   *  name index reads in the attribute and returns it.
-   */
-  def register(r: (String, (DataInputStream, Constant_Pool, Int) ⇒ Attribute)): Unit
+
+    type Attribute >: Null
+
+    /**
+     * Register a reader for a concrete attribute. This function is intended to
+     * be provided/implemented by an AttributesReader that manages the attributes of a class,
+     * method_info, field_info or code_attribute structure.
+     *
+     * @param r a map where the key is the name of an attribute and the value is
+     *  a function that given a data input stream that is positioned directly
+     *  at the beginning of the attribute, the constant pool and the attribute
+     *  name index reads in the attribute and returns it.
+     */
+    def register(reader: (String, (AttributeParent, Constant_Pool,  /* attribute name */ Constant_Pool_Index, DataInputStream) ⇒ Attribute)): Unit
 
 }

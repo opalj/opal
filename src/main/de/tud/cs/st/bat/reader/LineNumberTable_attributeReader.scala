@@ -52,7 +52,7 @@ import de.tud.cs.st.util.ControlAbstractions.repeat
 trait LineNumberTable_attributeReader extends AttributeReader {
 
     type LineNumberTable_attribute <: Attribute
-    
+
     type LineNumberTableEntry
     implicit val LineNumberTableEntryManifest: ClassManifest[LineNumberTableEntry]
 
@@ -73,7 +73,7 @@ trait LineNumberTable_attributeReader extends AttributeReader {
 
     register(
         LineNumberTable_attributeReader.ATTRIBUTE_NAME ->
-            ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index) ⇒ {
+            ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 val attribute_length = in.readInt()
                 LineNumberTable_attribute(
                     attribute_name_index, attribute_length,

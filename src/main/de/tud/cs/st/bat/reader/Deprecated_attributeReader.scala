@@ -58,7 +58,7 @@ trait Deprecated_attributeReader extends AttributeReader {
 
     register(
         Deprecated_attributeReader.ATTRIBUTE_NAME ->
-            ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index) ⇒ {
+            ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 val attribute_length = in.readInt
                 Deprecated_attribute(attribute_name_index)(cp)
             })

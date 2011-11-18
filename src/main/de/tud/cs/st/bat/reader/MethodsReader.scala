@@ -47,7 +47,7 @@ trait MethodsReader extends Constant_PoolAbstractions {
 
     type Attributes
 
-    def Attributes(in: DataInputStream, cp: Constant_Pool): Attributes
+    protected def Attributes(ap: AttributesParent.Value, cp: Constant_Pool, in: DataInputStream): Attributes
 
     type Method_Info
     implicit val Method_InfoManifest: ClassManifest[Method_Info]
@@ -76,7 +76,7 @@ trait MethodsReader extends Constant_PoolAbstractions {
             in.readUnsignedShort,
             in.readUnsignedShort,
             in.readUnsignedShort,
-            Attributes(in, cp)
+            Attributes(AttributesParent.Method_info, cp, in)
         )(cp)
     }
 }
