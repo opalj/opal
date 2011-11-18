@@ -66,7 +66,7 @@ trait RuntimeInvisibleAnnotations_attributeReader extends AttributeReader {
 
     register(
         RuntimeInvisibleAnnotations_attributeReader.ATTRIBUTE_NAME ->
-            ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index) ⇒ {
+            ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 val attribute_length = in.readInt()
                 RuntimeInvisibleAnnotations_attribute(
                     attribute_name_index, attribute_length, Annotations(in, cp)

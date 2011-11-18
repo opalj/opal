@@ -77,7 +77,7 @@ trait InnerClasses_attributeReader extends AttributeReader {
 
     register(
         InnerClasses_attributeReader.ATTRIBUTE_NAME ->
-            ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index) ⇒ {
+            ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 val attribute_length = in.readInt()
                 InnerClasses_attribute(
                     attribute_name_index,

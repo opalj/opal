@@ -56,9 +56,10 @@ trait Unknown_attributeReader
     // IMPLEMENTATION
     //
 
-    def Unknown_attribute(in: DataInputStream,
+    def Unknown_attribute(ap: AttributeParent,
                           cp: Constant_Pool,
-                          attribute_name_index: Constant_Pool_Index): Unknown_attribute = {
+                          attribute_name_index: Constant_Pool_Index,
+                          in: DataInputStream): Unknown_attribute = {
         val info = new Array[Byte](in.readInt)
         in.readFully(info)
 

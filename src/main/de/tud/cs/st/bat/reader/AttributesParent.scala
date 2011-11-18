@@ -36,19 +36,12 @@ import java.io.DataInputStream
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
 /**
- * Defines common abstractions over class file attributes.
- *
  * @author Michael Eichberg
  */
-trait AttributesAbstraction {
+object AttributesParent extends Enumeration {
 
-    /**
-     * Specifying a lower bound is necessary to implement a generic SkipAttributeMethod.
-     */
-    type Attribute >: Null
-
-    implicit val AttributeManifest: ClassManifest[Attribute]
-
-    type Attributes = Seq[Attribute]
-
+    val ClassFile = Value
+    val Field_info = Value
+    val Method_info = Value
+    val Code_attribute = Value
 }

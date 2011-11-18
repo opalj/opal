@@ -66,7 +66,7 @@ trait ConstantValue_attributeReader extends AttributeReader {
 
     register(
         ConstantValue_attributeReader.ATTRIBUTE_NAME ->
-            ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index) ⇒ {
+            ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 val attribute_length = in.readInt
                 ConstantValue_attribute(attribute_name_index, in.readUnsignedShort)(cp)
             })
