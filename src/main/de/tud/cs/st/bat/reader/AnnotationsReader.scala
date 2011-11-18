@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -36,60 +36,68 @@ import java.io.DataInputStream
 
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
-
 /**
-
+ * Defines a template method to read in a set of annotations. This
+ * reader is intended to be used in conjunction with the
+ * Runtime(In)Visible(Parameter)Annotations_attributeReaders.
+ *
+ * ''' From the Specification'''
+ *
+ * <pre>
+ * annotation {
+ * 	u2 type_index;
+ * 	u2 num_element_value_pairs;
+ * 	{	u2 element_name_index;
+ * 		element_value value;
+ * 	}	element_value_pairs[num_element_value_pairs]
+ * }
+ * </pre>
+ *
  * @author Michael Eichberg
  */
-trait AnnotationsReader {
+trait AnnotationsReader extends Constant_PoolAbstractions {
 
+    //
+    // ABSTRACT DEFINITIONS
+    //
 
-	//
-	// ABSTRACT DEFINITIONS
-	//
+    type Annotation
+    implicit val AnnotationManifest: ClassManifest[Annotation]
 
-	type Constant_Pool
-	type Annotation
-	implicit val AnnotationManifest: ClassManifest[Annotation]
-	
-	type Annotations = IndexedSeq[Annotation]
-	type ElementValuePairs //type ElementValuePair; type ElementValuePairs = Seq[ElementValuePair]
+    type ElementValuePairs
 
+    def ElementValuePairs(in: DataInputStream, cp: Constant_Pool): ElementValuePairs
 
-	def ElementValuePairs (in : DataInputStream, cp : Constant_Pool) : ElementValuePairs
+    def Annotation(type_index: Constant_Pool_Index,
+                   element_value_pairs: ElementValuePairs)(
+                       implicit constant_pool: Constant_Pool): Annotation
 
+    //
+    // IMPLEMENTATION
+    //
 
-	def Annotation (
-		type_index : Int, element_value_pairs : ElementValuePairs
-	)( implicit constant_pool : Constant_Pool) : Annotation
+    type Annotations = IndexedSeq[Annotation]
 
-
-	//
-	// IMPLEMENTATION
-	//	
-
-
-	def Annotations(in : DataInputStream, cp : Constant_Pool) : Annotations = {
-		/*
-		repeat(in.readUnsignedShort) { 
-			Annotation(in,cp) 
+    def Annotations(in: DataInputStream, cp: Constant_Pool): Annotations = {
+        /*
+		repeat(in.readUnsignedShort) {
+			Annotation(in,cp)
 		}
-		
-		The code given below is much faster than the code seen above,
-		if we have a loop with few repetitions.		
+
+		The code given below (Scala 2.8) is much faster than the code seen above,
+		if we have a loop with few repetitions.
 		*/
-		val count = in.readUnsignedShort
-		val annotations = new Array[Annotation](count)
-		var i = 0
-		while (i < count) {
-			annotations(i) = Annotation(in,cp)
-			i += 1
-		}
-		annotations
-	}
+        val count = in.readUnsignedShort
+        val annotations = new Array[Annotation](count)
+        var i = 0
+        while (i < count) {
+            annotations(i) = Annotation(in, cp)
+            i += 1
+        }
+        annotations
+    }
 
-
-	def Annotation(in : DataInputStream, cp : Constant_Pool) : Annotation = {
-		Annotation(in.readUnsignedShort, ElementValuePairs(in,cp))(cp)
-	}
+    def Annotation(in: DataInputStream, cp: Constant_Pool): Annotation = {
+        Annotation(in.readUnsignedShort, ElementValuePairs(in, cp))(cp)
+    }
 }

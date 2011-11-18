@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -36,57 +36,81 @@ import java.io.DataInputStream
 
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
-
 /**
-
+ * <pre>
+ * LocalVariableTable_attribute {
+ * 	u2 attribute_name_index;
+ * 	u4 attribute_length;
+ * 	u2 local_variable_table_length;
+ * 	{ 	u2 start_pc;
+ * 		u2 length;
+ * 		u2 name_index;
+ * 		u2 descriptor_index;
+ * 		u2 index;
+ * 	} local_variable_table[local_variable_table_length];
+ * }
+ * </pre>
+ *
  * @author Michael Eichberg
  */
-trait LocalVariableTable_attributeReader  {
+trait LocalVariableTable_attributeReader extends AttributeReader {
 
-	type Constant_Pool
-	type Attribute >: Null
-	type LocalVariableTable_attribute <: Attribute
-	type LocalVariableTableEntry
-	implicit val LocalVariableTableEntryManifest : ClassManifest[LocalVariableTableEntry]
+    //
+    // ABSTRACT DEFINITIONS
+    //
+    type LocalVariableTable_attribute <: Attribute
+    
+    type LocalVariableTableEntry
+    implicit val LocalVariableTableEntryManifest: ClassManifest[LocalVariableTableEntry]
 
-	type LocalVariableTable = IndexedSeq[LocalVariableTableEntry]
+    def LocalVariableTableEntry(start_pc: Int,
+                                length: Int,
+                                name_index: Int,
+                                descriptor_index: Constant_Pool_Index,
+                                index: Int)(
+                                    implicit constant_pool: Constant_Pool): LocalVariableTableEntry
 
+    def LocalVariableTable_attribute(attribute_name_index: Constant_Pool_Index,
+                                     attribute_length: Int,
+                                     local_variable_table: LocalVariableTable)(
+                                         implicit constant_pool: Constant_Pool): LocalVariableTable_attribute
 
-	def register(r : (String,(DataInputStream, Constant_Pool, Int) => Attribute)) : Unit
-	
+    //
+    // IMPLEMENTATION
+    //
 
-	def LocalVariableTableEntry (
-		start_pc : Int, length : Int, name_index : Int, descriptor_index : Int, index : Int
-	)( implicit constant_pool : Constant_Pool) : LocalVariableTableEntry
+    type LocalVariableTable = IndexedSeq[LocalVariableTableEntry]
 
- 
-	def LocalVariableTable_attribute (	
-		attribute_name_index : Int, attribute_length : Int, local_variable_table : LocalVariableTable
-	)( implicit constant_pool : Constant_Pool) : LocalVariableTable_attribute
-
-
-	private lazy val reader = ( 
-			de.tud.cs.st.bat.canonical.LocalVariableTable_attribute.name -> 
-			((in : DataInputStream, cp : Constant_Pool, attribute_name_index : Int) => {
-				val attribute_length = in.readInt()
-				LocalVariableTable_attribute(
-					attribute_name_index,
-					attribute_length,
-					repeat(in.readUnsignedShort){
-						LocalVariableTableEntry(
-							in.readUnsignedShort,
-							in.readUnsignedShort,
-							in.readUnsignedShort,
-							in.readUnsignedShort,
-							in.readUnsignedShort
-						)( cp )
-					}
-				)( cp )
-			})
-	);
-	
-	register (reader)
+    register(
+        LocalVariableTable_attributeReader.ATTRIBUTE_NAME ->
+            (
+                (in: DataInputStream, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index) ⇒ {
+                    val attribute_length = in.readInt()
+                    LocalVariableTable_attribute(
+                        attribute_name_index,
+                        attribute_length,
+                        repeat(in.readUnsignedShort) {
+                            LocalVariableTableEntry(
+                                in.readUnsignedShort,
+                                in.readUnsignedShort,
+                                in.readUnsignedShort,
+                                in.readUnsignedShort,
+                                in.readUnsignedShort
+                            )(cp)
+                        }
+                    )(cp)
+                }
+            )
+    )
 }
+
+object LocalVariableTable_attributeReader {
+
+    val ATTRIBUTE_NAME = "LocalVariableTable"
+
+}
+
+
 
 
 

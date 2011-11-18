@@ -1,4 +1,4 @@
- /* License (BSD Style License):
+/* License (BSD Style License):
 *  Copyright (c) 2009, 2011
 *  Software Technology Group
 *  Department of Computer Science
@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -35,58 +35,48 @@ package de.tud.cs.st.bat.reader
 import java.io.DataInputStream
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
-
 /**
-
+ *
  * @author Michael Eichberg
  */
-trait MethodsReader {
+trait MethodsReader extends Constant_PoolAbstractions {
 
+    //
+    // ABSTRACT DEFINITIONS
+    //
 
-	//
-	// ABSTRACT DEFINITIONS
-	//
-	
+    type Attributes
 
-	type Method_Info
-	implicit val Method_InfoManifest : ClassManifest[Method_Info]
-	type Attributes
-	type Constant_Pool
-	
-	
-	def Attributes (in : DataInputStream, cp : Constant_Pool): Attributes
-	
-	
-	// FACTORY METHOD
-	def Method_Info (
-		accessFlags : Int,
-		name_index : Int,
-		descriptor_index : Int,
-		attributes : Attributes
-	)( implicit constant_pool : Constant_Pool) : Method_Info
-	
-	
-	//
-	// IMPLEMENTATION
-	//
-		
-	
-	type Methods = IndexedSeq[Method_Info]
- 
-	def Methods(in : DataInputStream, cp : Constant_Pool) : Methods = {
-		val methods_count = in.readUnsignedShort
-		repeat(methods_count){
-			Method_Info(in,cp)
-		}
-	}
+    def Attributes(in: DataInputStream, cp: Constant_Pool): Attributes
 
-	private def Method_Info(in : DataInputStream, cp : Constant_Pool) : Method_Info = {
-		val m = Method_Info (
-			in.readUnsignedShort,
-			in.readUnsignedShort,
-			in.readUnsignedShort,
-			Attributes(in,cp) 
-		)( cp )
-		m
-	}
+    type Method_Info
+    implicit val Method_InfoManifest: ClassManifest[Method_Info]
+
+    def Method_Info(accessFlags: Int,
+                    name_index: Constant_Pool_Index,
+                    descriptor_index: Constant_Pool_Index,
+                    attributes: Attributes)(
+                        implicit constant_pool: Constant_Pool): Method_Info
+
+    //
+    // IMPLEMENTATION
+    //
+
+    type Methods = IndexedSeq[Method_Info]
+
+    def Methods(in: DataInputStream, cp: Constant_Pool): Methods = {
+        val methods_count = in.readUnsignedShort
+        repeat(methods_count) {
+            Method_Info(in, cp)
+        }
+    }
+
+    private def Method_Info(in: DataInputStream, cp: Constant_Pool): Method_Info = {
+        Method_Info(
+            in.readUnsignedShort,
+            in.readUnsignedShort,
+            in.readUnsignedShort,
+            Attributes(in, cp)
+        )(cp)
+    }
 }

@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -32,70 +32,44 @@
 */
 package de.tud.cs.st.bat.canonical
 
-
 /**
- * <pre>
- * Code_attribute { 
- * 	u2 attribute_name_index; 
- * 	u4 attribute_length; 
- * 	u2 max_stack; 
- * 	u2 max_locals; 
- * 	u4 code_length; 
- * 	u1 code[code_length]; 
- * 	u2 exception_table_length; 
- * 	{	u2 start_pc; 
- * 		u2 end_pc; 
- * 		u2 handler_pc; 
- * 		u2 catch_type; 
- * 	} exception_table[exception_table_length]; 
- * 	u2 attributes_count; 
- * 	attribute_info attributes[attributes_count]; 
- * } 
- * </pre>
  *
  * @author Michael Eichberg
  */
-trait Code_attribute extends Attribute{
+trait Code_attribute extends Attribute {
 
-	//
-	// ABSTRACT DEFINITIONS
-	// 
-	
-	type Code
-	type ExceptionTableEntry
-	type Attributes
-	
+    //
+    // ABSTRACT DEFINITIONS
+    //
 
-	val attribute_name_index : Int
-	val attribute_length : Int
-	val max_stack : Int
-	val max_locals : Int
-	val code :Code
-	val exception_table : ExceptionTable
-	val attributes : Attributes
+    type Code
+    type ExceptionTableEntry
+    type Attributes
 
-	//
-	// CONCRETE (FINAL) DEFINITIONS
-	// 
+    val attribute_name_index: Int
+    val attribute_length: Int
+    val max_stack: Int
+    val max_locals: Int
+    val code: Code
+    val exception_table: ExceptionTable
+    val attributes: Attributes
 
-	type ExceptionTable = Seq[ExceptionTableEntry]
+    //
+    // CONCRETE (FINAL) DEFINITIONS
+    //
 
-	def attribute_name = Code_attribute.name
+    type ExceptionTable = Seq[ExceptionTableEntry]
+
+    def attribute_name = de.tud.cs.st.bat.reader.Code_attributeReader.ATTRIBUTE_NAME
 }
-object Code_attribute{
-	
-	val name = "Code"
-	
-}
-
 
 trait ExceptionTableEntry {
 
-	val start_pc: Int
+    val start_pc: Int
 
-	val end_pc: Int
+    val end_pc: Int
 
-	val handler_pc : Int
+    val handler_pc: Int
 
-	val catch_type : Int
+    val catch_type: Int
 }

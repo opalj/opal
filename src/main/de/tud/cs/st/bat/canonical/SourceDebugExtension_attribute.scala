@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -30,43 +30,31 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package  de.tud.cs.st.bat.canonical
-
+package de.tud.cs.st.bat.canonical
 
 import java.io.DataInputStream
 
 /**
- * <pre>
- * ...
- * </pre> 
- *
  * @author Michael Eichberg
  */
 trait SourceDebugExtension_attribute extends Attribute {
 
-	//
-	// ABSTRACT DEFINITIONS
-	//
+    //
+    // ABSTRACT DEFINITIONS
+    //
 
-	val attribute_name_index : Int
-	
-	val debug_extension : String
+    val attribute_name_index: Int
 
+    val debug_extension: String
 
-	//
-	// IMPLEMENTATION
-	//
+    //
+    // IMPLEMENTATION
+    //
 
-	// from String's JavaDoc: [...] The length is the number of 16-bit chars in the sequence 
-	def attribute_length : Int = debug_extension.length*2 
-	
-	def attribute_name = SourceDebugExtension_attribute.name
+    // from String's JavaDoc: [...] The length is the number of 16-bit chars in the sequence
+    def attribute_length: Int = debug_extension.length * 2
+
+    def attribute_name = de.tud.cs.st.bat.reader.SourceDebugExtension_attributeReader.ATTRIBUTE_NAME
 
 }
 
-
-object SourceDebugExtension_attribute {
-	
-	val name = "SourceDebugExtension"
-	
-}

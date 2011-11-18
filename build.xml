@@ -15,9 +15,9 @@ modification, are permitted provided that the following conditions are met:
 - Redistributions in binary form must reproduce the above copyright notice,
   this list of conditions and the following disclaimer in the documentation
   and/or other materials provided with the distribution.
-- Neither the name of the Software Technology Group or Technische 
-  Universität Darmstadt nor the names of its contributors may be used to 
-  endorse or promote products derived from this software without specific 
+- Neither the name of the Software Technology Group or Technische
+  Universität Darmstadt nor the names of its contributors may be used to
+  endorse or promote products derived from this software without specific
   prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -30,7 +30,7 @@ SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
 INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.	
+POSSIBILITY OF SUCH DAMAGE.
 
 Author 		Michael Eichberg (mail@michael-eichberg.de)
 			Sebastian Harrte
@@ -45,7 +45,7 @@ Author 		Michael Eichberg (mail@michael-eichberg.de)
     <property file="build.properties"  />
 
 	<!-- General properties -->
-	<property name="version" value="0.7.1.alpha" />
+	<property name="version" value="0.7.2" />
 
 
 	<!-- Directories which contain the project's source files. -->
@@ -60,15 +60,15 @@ Author 		Michael Eichberg (mail@michael-eichberg.de)
 	<property name="class.dir" value="${build.dir}/class"/>
 	<property name="generated.dir" value="${build.dir}/src"/>
 	<property name="scala.generated.dir" value="${generated.dir}/scala"/>
-	<property name="prolog.generated.dir" value="${generated.dir}/prolog"/>	
+	<property name="prolog.generated.dir" value="${generated.dir}/prolog"/>
 	<property name="doc.dir" value="${build.dir}/doc"/>
 	<property name="scala.test.data.dir" value="test"/>
-	
-	
+
+
 	<!-- Libraries & tools used at compile- and or run-time. -->
 	<property name="lib.dir" value="lib"/>
-	
-	<!-- Sets "scala.home" to the default directory, if no "build.properties" file exists. --> 
+
+	<!-- Sets "scala.home" to the default directory, if no "build.properties" file exists. -->
 	<condition property="scala.home" value="/opt/local/share/scala-2.9/">
 		<not><isset property="scala.home" /></not>
 	</condition>
@@ -84,34 +84,34 @@ Author 		Michael Eichberg (mail@michael-eichberg.de)
 	<property name="scalatest.jar" value="${lib.dir}/scalatest-1.6.1.jar"/>
 	<property name="junit.jar" value="${lib.dir}/junit.jar"/>
 
-	<property name="saxon.jar" value="${lib.dir}/saxon9.jar" />	
+	<property name="saxon.jar" value="${lib.dir}/saxon9.jar" />
 	<property name="saxon-ant.jar" value="${lib.dir}/saxon9-ant.jar" />
-		
-	<!-- Configuration of the "path"s. -->    
+
+	<!-- Configuration of the "path"s. -->
 	<path id="saxon.classpath">
 		<pathelement location="${saxon.jar}" />
   		<pathelement location="${saxon-ant.jar}" />
-	</path>		
+	</path>
 	<path id="scala.classpath">
 	  <pathelement location="${scala-compiler.jar}"/>
 	  <pathelement location="${scala-library.jar}"/>
-	</path>	
+	</path>
 	<path id="project.classpath">
 	  <path refid="scala.classpath"/>
 	  <pathelement location="${class.dir}"/>
-	</path>	
+	</path>
 	<path id="test.classpath">
 		<path refid="project.classpath"/>
 	  	<pathelement location="${scalatest.jar}"/>
 		<pathelement location="${junit.jar}"/>
 	</path>
-	
+
 	<path id="scala.sourcepath">
 		<pathelement location="${src.main.dir}"/>
 		<pathelement location="${scala.generated.dir}"/>
 	</path>
-	
-	
+
+
 	<!-- Definition of additional tasks used to generate / compile BAT. -->
 	<taskdef resource="scala/tools/ant/antlib.xml">
 		<classpath refid="scala.classpath"/>
@@ -123,16 +123,16 @@ Author 		Michael Eichberg (mail@michael-eichberg.de)
 	<taskdef name="saxon-xslt" classname="net.sf.saxon.ant.AntTransform">
 		<classpath refid="saxon.classpath" />
 	</taskdef>
-	
+
 	<!-- Definition of all targets. -->
 
-	<target 
-			name="init" 
+	<target
+			name="init"
 			description="Creates the initial directory structure where the generated / compiled files are stored.">
 		<tstamp/>
 		<mkdir dir="${generated.dir}"/>
 		<mkdir dir="${class.dir}"/>
-		<mkdir dir="${doc.dir}"/>	
+		<mkdir dir="${doc.dir}"/>
 	</target>
 
 	<target name="clean" description="Cleans up all artifacts that can be regenerated." >
@@ -144,35 +144,35 @@ Author 		Michael Eichberg (mail@michael-eichberg.de)
 	<target name="clean-generated-scala-code" description="Clean up just the generated scala source files." >
 		<delete dir="${scala.generated.dir}"/>
 	</target>
-	<target name="clean-generated-code" depends="clean-generated-prolog-code,clean-generated-scala-code" />	
+	<target name="clean-generated-code" depends="clean-generated-prolog-code,clean-generated-scala-code" />
 
 
 	<target name="check-instructions-specification"
 			description="Checks the instructions specification document.">
-			
+
 		<schemavalidate failonerror="true" file="${src.spec.dir}/10.2011/JVMInstructions.xml">
 			<!--EXAMPLE IF WE NEED TO MAKE THE BINDING (namespace to schema) EXPLICIT
 	        	<schema namespace="http://schemas.xmlsoap.org/ws/2003/03/addressing"
 	          			file="${soap.dir}/ws-addressing.xsd" />
 			-->
 		</schemavalidate>
-		<echo>Schema validation of "10.2011/JVMInstructions.xml" succeeded.</echo>			
+		<echo>Schema validation of "10.2011/JVMInstructions.xml" succeeded.</echo>
 	</target>
-	
-	<target 
-			name="generate-code-for-resolved-representation" 
-			depends="init,check-instructions-specification" 
+
+	<target
+			name="generate-code-for-resolved-representation"
+			depends="init,check-instructions-specification"
 			description="Generates code necessary for the resolved representation of Java Bytecode.">
 
 		<mkdir dir="${scala.generated.dir}/de/tud/cs/st/bat/resolved/reader"/>
-	
+
 	<!-- Does not work - we need an XSLT 2.0 processor
 		<xslt in="${src.spec.dir}/10.2011/JVMInstructions.xml" out="${scala.generated.dir}/de/tud/cs/st/bat/resolved/InstructionExceptions.scala"
 		      style="${src.main.dir}/de/tud/cs/st/bat/resolved/GenerateInstructionExceptionsClass.xsl">
-		</xslt>		
+		</xslt>
 	-->
-				
-		<saxon-xslt 
+
+		<saxon-xslt
 			style="${src.main.dir}/de/tud/cs/st/bat/resolved/GenerateInstructionExceptionsClass.xsl"
 			in="${src.spec.dir}/10.2011/JVMInstructions.xml"
 			out="${scala.generated.dir}/de/tud/cs/st/bat/resolved/InstructionExceptions.scala">
@@ -181,15 +181,15 @@ Author 		Michael Eichberg (mail@michael-eichberg.de)
 		<!--
 			We want to run the XSLT task only when the JVMInstructions file has changed.
 		-->
-		<saxon-xslt 
+		<saxon-xslt
 			basedir="${src.spec.dir}/10.2011"
 			destdir="${scala.generated.dir}/de/tud/cs/st/bat/resolved"
 			style="${src.main.dir}/de/tud/cs/st/bat/resolved/GenerateInstructionClasses.xsl"
 			includes="JVMInstructions.xml">
 		</saxon-xslt>
-		<touch file="${scala.generated.dir}/de/tud/cs/st/bat/resolved/JVMInstructions.html"/><!-- TODO Can we omit "generating" these files just to prevent ant from recreating all files on every run? --> 
+		<touch file="${scala.generated.dir}/de/tud/cs/st/bat/resolved/JVMInstructions.html"/><!-- TODO Can we omit "generating" these files just to prevent ant from recreating all files on every run? -->
 
-		<saxon-xslt 
+		<saxon-xslt
 			style="${src.main.dir}/de/tud/cs/st/bat/resolved/reader/GenerateBytecodeReaderAndBindingClass.xsl"
 			in="${src.spec.dir}/10.2011/JVMInstructions.xml"
 			out="${scala.generated.dir}/de/tud/cs/st/bat/resolved/reader/BytecodeReaderAndBinding.scala">
@@ -201,32 +201,32 @@ Author 		Michael Eichberg (mail@michael-eichberg.de)
 			out="${scala.generated.dir}/de/tud/cs/st/bat/resolved/dependency/InstructionDepExtractor.scala">
 		</saxon-xslt>
 	</target>
-		
-	<target 
-			name="generate-code-for-prolog-representation" 
-			depends="generate-code-for-resolved-representation" 
+
+	<target
+			name="generate-code-for-prolog-representation"
+			depends="generate-code-for-resolved-representation"
 			description="Generates code (Scala and Prolog) related to the Prolog Based Representation of Java Bytecode.">
-			
-		<mkdir dir="${prolog.generated.dir}"/>			
-	</target>	
-	
-	<target name="compile" depends="generate-code-for-resolved-representation" description="Compiles the core Opal library."> 
+
+		<mkdir dir="${prolog.generated.dir}"/>
+	</target>
+
+	<target name="compile" depends="generate-code-for-resolved-representation" description="Compiles the core Opal library.">
 		<echo>
-		Note, if compilation fails due to a stack overflow error it is necessary 
-		to increase Java's heap and stack size. E.g. if you use Unix just set 
+		Note, if compilation fails due to a stack overflow error it is necessary
+		to increase Java's heap and stack size. E.g. if you use Unix just set
 		ANT_OPTS before calling "ant compile"; e.g.,
 			export ANT_OPTS="-Xmx1024m -Xss128m"
 		</echo>
-		
-    	<!-- The attribute "optimise='on'" is not very useful during development 
-			 since it requires to basically recompile the complete project after 
-			 every single (minor) source code change.  
+
+    	<!-- The attribute "optimise='on'" is not very useful during development
+			 since it requires to basically recompile the complete project after
+			 every single (minor) source code change.
 		-->
-		<scalac 
-				target="jvm-1.5" 
-				destdir="${class.dir}" 
-				classpathref="project.classpath" 
-				deprecation="on" 
+		<scalac
+				target="jvm-1.5"
+				destdir="${class.dir}"
+				classpathref="project.classpath"
+				deprecation="on"
 				scalacdebugging="on"
 				unchecked="yes"
 				force="changed">
@@ -236,26 +236,26 @@ Author 		Michael Eichberg (mail@michael-eichberg.de)
 	    	<include name="**/*.scala"/>
 	    	<include name="**/*.java"/>
 	  	</scalac>
-	
+
 		<javac srcdir="${src.main.dir}"
 	         destdir="${class.dir}"
              debug="on"
 	         source="1.5" />
 	</target>
-	
+
 	<target name="compile-tests" depends="compile" description="Compiles the code to test (some parts of) Opal.">
-		<scalac 
-				srcdir="${src.test.dir}" 
-				target="jvm-1.5" 
-				destdir="${class.dir}" 
-				classpathref="test.classpath" 
-				deprecation="on" 
+		<scalac
+				srcdir="${src.test.dir}"
+				target="jvm-1.5"
+				destdir="${class.dir}"
+				classpathref="test.classpath"
+				deprecation="on"
 				scalacdebugging="on"
 				force="changed">
 	    	<include name="**/*.scala"/>
 		</scalac>
  	</target>
-	
+
     <target name="test-bytecode-to-prolog" depends="compile">
         <!--
             ByteCodeToProlog Task Definition
@@ -272,61 +272,61 @@ Author 		Michael Eichberg (mail@michael-eichberg.de)
             <fileset dir="${scala.test.data.dir}" includes="**/*.zip" />
         </bytecodeToProlog>
     </target>
-	
+
 	<target name="generate-prolog-representations" depends="generate-code-for-prolog-representation,compile">
 		<echo>(Re-)Generating prolog representations - this may take several minutes!</echo>
-				
+
 		<echo>Generating prolog representation for: Apache ANT</echo>
-		<java classname="de.tud.cs.st.bat.resolved.BytecodeToProlog" fork="true" maxmemory="1024m" failonerror="true" logError="true" 
+		<java classname="de.tud.cs.st.bat.resolved.BytecodeToProlog" fork="true" maxmemory="1024m" failonerror="true" logError="true"
 			output="${prolog.generated.dir}/Apache ANT 1.7.1 - target 1.2.pl">
 			<classpath><path refid="project.classpath"/></classpath>
-			<arg value="${scala.test.data.dir}/classfiles/Apache ANT 1.7.1 - target 1.2.zip"/> 
+			<arg value="${scala.test.data.dir}/classfiles/Apache ANT 1.7.1 - target 1.2.zip"/>
 		</java>
-			
+
 		<echo>Generating prolog representation for: Columbus 2008_10_16 - target 1.6</echo>
-		<java classname="de.tud.cs.st.bat.resolved.BytecodeToProlog" fork="true" maxmemory="1024m" failonerror="true" logError="true" 
+		<java classname="de.tud.cs.st.bat.resolved.BytecodeToProlog" fork="true" maxmemory="1024m" failonerror="true" logError="true"
 			output="${prolog.generated.dir}/Columbus 2008_10_16 - target 1.6.pl">
 			<classpath><path refid="project.classpath"/></classpath>
-			<arg value="${scala.test.data.dir}/classfiles/Columbus 2008_10_16 - target 1.6.zip"/> 
-		</java>	
-			
+			<arg value="${scala.test.data.dir}/classfiles/Columbus 2008_10_16 - target 1.6.zip"/>
+		</java>
+
 		<echo>Generating prolog representation for: Multithreaded RPN Calculator 2008_10_17 - Java 6 all debug info</echo>
-		<java classname="de.tud.cs.st.bat.resolved.BytecodeToProlog" fork="true" maxmemory="1024m" failonerror="true" logError="true" 
+		<java classname="de.tud.cs.st.bat.resolved.BytecodeToProlog" fork="true" maxmemory="1024m" failonerror="true" logError="true"
 			output="${prolog.generated.dir}/Multithreaded RPN Calculator 2008_10_17 - Java 6 all debug info.pl">
 			<classpath><path refid="project.classpath"/></classpath>
-			<arg value="${scala.test.data.dir}/classfiles/Multithreaded RPN Calculator 2008_10_17 - Java 6 all debug info.zip"/> 
+			<arg value="${scala.test.data.dir}/classfiles/Multithreaded RPN Calculator 2008_10_17 - Java 6 all debug info.zip"/>
 		</java>
-		
+
 		<echo>Generating prolog representation for: Opal 0.3</echo>
-		<java classname="de.tud.cs.st.bat.resolved.BytecodeToProlog" fork="true" maxmemory="1024m" failonerror="true" logError="true" 
+		<java classname="de.tud.cs.st.bat.resolved.BytecodeToProlog" fork="true" maxmemory="1024m" failonerror="true" logError="true"
 			output="${prolog.generated.dir}/Opal 0.3.pl">
 			<classpath><path refid="project.classpath"/></classpath>
-			<arg value="${scala.test.data.dir}/classfiles/Opal 0.3.zip"/> 
+			<arg value="${scala.test.data.dir}/classfiles/Opal 0.3.zip"/>
 		</java>
 	</target>
-	
+
 	<target name="tests-common" depends="compile-tests">
 		<echo>
-		Note, if the execution of the test suites fails it might be necessary 
+		Note, if the execution of the test suites fails it might be necessary
 		to increase Java's heap and stack size before executing the tests.
 		To do so set ANT_OPTS before executing the tests.
 			export ANT_OPTS="-Xmx1024m -Xss128m"
-		</echo>		
+		</echo>
 	</target>
 
-	<target name="run-util-tests" 
-		depends="tests-common" 
+	<target name="run-util-tests"
+		depends="tests-common"
 		description="Executes all tests related to BAT's utility classes.">
 		<scalatest>
 			<runpath>
 				<path refid="test.classpath"/>
 			</runpath>
-			<reporter type="graphic" />	
+			<reporter type="graphic" />
 			<suite classname="de.tud.cs.st.util.collection.ArraysTest"/>
-		</scalatest> 
+		</scalatest>
  	</target>
 
-	<target name="run-bat-tests" 
+	<target name="run-bat-tests"
 		depends="tests-common"
 		description="Executes BAT's test suite.">
 		<scalatest>
@@ -334,7 +334,7 @@ Author 		Michael Eichberg (mail@michael-eichberg.de)
 			<reporter type="graphic" />
 		 	<suite classname="de.tud.cs.st.bat.resolved.ArrayTypeTest"/>
 		 	<suite classname="de.tud.cs.st.bat.resolved.FieldTypeTest"/>
-		 	<suite classname="de.tud.cs.st.bat.resolved.MethodDescriptorTest"/>		
+		 	<suite classname="de.tud.cs.st.bat.resolved.MethodDescriptorTest"/>
 		 	<suite classname="de.tud.cs.st.bat.resolved.ObjectTypeTest"/>
 			<suite classname="de.tud.cs.st.bat.resolved.AttributesTest"/>
 			<suite classname="de.tud.cs.st.bat.RegressionSuite"/>
@@ -343,7 +343,7 @@ Author 		Michael Eichberg (mail@michael-eichberg.de)
 		</scalatest> 
  	</target>
 
-	<target name="run-all-tests" 
+	<target name="run-all-tests"
 		depends="tests-common"
 		description="Runs all tests.">
 		<scalatest>
@@ -351,69 +351,69 @@ Author 		Michael Eichberg (mail@michael-eichberg.de)
 			<reporter type="stderr" />
 			<!-- <reporter type="stderr graphic" />	-->
 			<suite classname="de.tud.cs.st.BATSuite" />
-		</scalatest> 
+		</scalatest>
  	</target>
-	
+
 	<target name="api-doc" depends="compile" description="Generates Opal's API documentation.">
 		<!-- TODO java doc... -->
 		<scaladoc
 				destdir="${doc.dir}"
-				deprecation="yes" unchecked="yes"				
+				deprecation="yes" unchecked="yes"
 				doctitle="The Bytecode Library BAT - Version ${version}"
 				classpathref="project.classpath">
 			<src path="${src.main.dir}"/>
-		    <src path="${scala.generated.dir}"/>	
+		    <src path="${scala.generated.dir}"/>
 	        <include name="**/*.scala"  />
 	    </scaladoc>
 	</target>
-	
-	<target name="instructions-schema-doc" 
+
+	<target name="instructions-schema-doc"
 		depends="init"
 		description="Creates the documentation of the XML schema used for specifying Java's bytecode instructions.">
-		<xslt 	basedir="${src.spec.dir}" 
-				destdir="${doc.dir}" 
-				style="${lib.dir}/xs3p.xsl" 
+		<xslt 	basedir="${src.spec.dir}"
+				destdir="${doc.dir}"
+				style="${lib.dir}/xs3p.xsl"
 				includes="10.2011/JVMInstructions.xsd"/>
 	</target>
-	
+
 	<target name="doc" depends="api-doc,instructions-schema-doc" description="Generates all documentation." />
-		
+
 	<target name="demo" depends="compile" description="Demonstrates Opal.">
 		<echo>
-			_________________________________________________________________________			
+			_________________________________________________________________________
 
-			
+
 			Prolog based representation of a "java.lang.Object"
 
-			_________________________________________________________________________			
-			
+			_________________________________________________________________________
+
 		</echo>
 		<java classname="de.tud.cs.st.bat.resolved.BytecodeToProlog" fork="true">
 			<classpath><path refid="project.classpath"/></classpath>
-			<arg line="java.lang.Object"/> 
+			<arg line="java.lang.Object"/>
 		</java>
 		<echo>
-			_________________________________________________________________________			
-	
-			
+			_________________________________________________________________________
+
+
 			XML based representation of "java.lang.Object".
 
-			_________________________________________________________________________			
+			_________________________________________________________________________
 
 		</echo>
 		<java classname="de.tud.cs.st.bat.resolved.BytecodeToXML" fork="true">
 			<classpath><path refid="project.classpath"/></classpath>
-			<arg line="java.lang.Object"/> 
-		</java>	
+			<arg line="java.lang.Object"/>
+		</java>
 	</target>
-	
+
 	<target name="package" depends="compile,run-all-tests" description="Packages Opal.">
 		<jar destfile="${build.dir}/opal-${version}.jar" basedir="${class.dir}"/>
 	</target>
-	
-	<target 
-		name="default" 
-		depends="compile,run-all-tests,doc,package" 
+
+	<target
+		name="default"
+		depends="compile,run-all-tests,doc,package"
 		description="Compiles, tests, executes and packages Opal."/>
-	
+
 </project>

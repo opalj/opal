@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -36,42 +36,49 @@ import java.io.DataInputStream
 
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
-
-
 /**
-
+ *  '''From the Specification'''
+ * {{{
+ * RuntimeInvisibleAnnotations_attribute {
+ * 	u2 attribute_name_index;
+ * 	u4 attribute_length;
+ * 	u2 num_annotations;
+ * 	annotation annotations[num_annotations];
+ * }
+ * }}}
  * @author Michael Eichberg
  */
-trait RuntimeInvisibleAnnotations_attributeReader {
+trait RuntimeInvisibleAnnotations_attributeReader extends AttributeReader {
 
- 
-	type Constant_Pool
-	type Attribute >: Null
-	type RuntimeInvisibleAnnotations_attribute <: Attribute
-	type Annotations 
+    type RuntimeInvisibleAnnotations_attribute <: Attribute
+    type Annotations
 
+    protected def Annotations(in: DataInputStream, cp: Constant_Pool): Annotations
 
-	def register(r : (String,(DataInputStream, Constant_Pool, Int) => Attribute)) : Unit
+    protected def RuntimeInvisibleAnnotations_attribute(attribute_name_index: Constant_Pool_Index,
+                                                        attribute_length: Int,
+                                                        annotations: Annotations)(
+                                                            implicit constant_pool: Constant_Pool): RuntimeInvisibleAnnotations_attribute
 
-	
-	def Annotations(in : DataInputStream, cp : Constant_Pool) : Annotations
+    //
+    // IMPLEMENTATION
+    //
 
-	
-	def RuntimeInvisibleAnnotations_attribute(
-		attribute_name_index : Int, attribute_length : Int, annotations : Annotations
-	)( implicit constant_pool : Constant_Pool) : RuntimeInvisibleAnnotations_attribute
-	
+    register(
+        RuntimeInvisibleAnnotations_attributeReader.ATTRIBUTE_NAME ->
+            ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index) ⇒ {
+                val attribute_length = in.readInt()
+                RuntimeInvisibleAnnotations_attribute(
+                    attribute_name_index, attribute_length, Annotations(in, cp)
+                )(cp)
+            })
+    )
 
-	private lazy val reader = ( 
-		de.tud.cs.st.bat.canonical.RuntimeInvisibleAnnotations_attribute.name -> 
-		((in : DataInputStream, cp : Constant_Pool, attribute_name_index : Int) => {
-			val attribute_length = in.readInt()
-			RuntimeInvisibleAnnotations_attribute(
-				attribute_name_index, attribute_length, Annotations(in,cp) 
-			)( cp )
-		})
-	)
-	
-	register(reader)
+}
+
+object RuntimeInvisibleAnnotations_attributeReader {
+
+    val ATTRIBUTE_NAME = "RuntimeInvisibleAnnotations"
+
 }
 

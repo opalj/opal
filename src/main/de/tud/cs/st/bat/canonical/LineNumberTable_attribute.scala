@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -32,59 +32,40 @@
 */
 package de.tud.cs.st.bat.canonical
 
-
-/** 
- * <pre>
-	LineNumberTable_attribute { 
-		u2 attribute_name_index; 
-		u4 attribute_length; 
-		u2 line_number_table_length; 
-		{ u2 start_pc; 
-			u2 line_number; 
-		} line_number_table[line_number_table_length]; 
-	} 
- * </pre>
+/**
  *
  * @author Michael Eichberg
  */
 trait LineNumberTable_attribute extends Attribute {
-	
-	//
-	// ABSTRACT DEFINITIONS
-	//
-	
-	type LineNumberTableEntry
-	
-	val attribute_name_index : Int
-	val line_number_table : LineNumberTable
-	
-	
-	//
-	// IMPLEMENTATION
-	//
 
-	type LineNumberTable = Seq[LineNumberTableEntry]		
-	
-	def attribute_length : Int = 2 + line_number_table.size*4
-	
-	def attribute_name = LineNumberTable_attribute.name
-	
+    //
+    // ABSTRACT DEFINITIONS
+    //
+
+    type LineNumberTableEntry
+
+    val attribute_name_index: Int
+    val line_number_table: LineNumberTable
+
+    //
+    // IMPLEMENTATION
+    //
+
+    type LineNumberTable = Seq[LineNumberTableEntry]
+
+    def attribute_length: Int = 2 + line_number_table.size * 4
+
+    def attribute_name = de.tud.cs.st.bat.reader.LineNumberTable_attributeReader.ATTRIBUTE_NAME
+
 }
-object LineNumberTable_attribute {
-	
-	val name = "LineNumberTable"
-	
-}	
-
-
 
 trait LineNumberTableEntry {
-	
-	//
-	// ABSTRACT DEFINITIONS
-	//
-	
-	val start_pc : Int
-	val line_number : Int
+
+    //
+    // ABSTRACT DEFINITIONS
+    //
+
+    val start_pc: Int
+    val line_number: Int
 }
-	
+

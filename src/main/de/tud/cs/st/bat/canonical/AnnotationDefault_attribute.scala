@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -34,14 +34,6 @@ package  de.tud.cs.st.bat.canonical
 
 
 /**
- * <pre>
-	 AnnotationDefault_attribute { 
-	     u2 attribute_name_index; 
-	     u4 attribute_length; 
-	     element_value default_value; 
-	 } 
- * </pre> 
- *
  * @author Michael Eichberg
  */
 trait AnnotationDefault_attribute extends Attribute {
@@ -52,7 +44,6 @@ trait AnnotationDefault_attribute extends Attribute {
 	//
 
 	type ElementValue
-
 
 	val attribute_name_index : Int
 
@@ -65,12 +56,7 @@ trait AnnotationDefault_attribute extends Attribute {
 	// CONCRETE (FINAL) DEFINITIONS
 	//
 
-	def attribute_name = AnnotationDefault_attribute.name
+	def attribute_name = de.tud.cs.st.bat.reader.AnnotationDefault_attributeReader.ATTRIBTUE_NAME
 
 }
 
-object AnnotationDefault_attribute {
-	
-	val name = "AnnotationDefault"
-	
-}

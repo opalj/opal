@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -36,51 +36,55 @@ import java.io.DataInputStream
 
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
-
-
 /**
-
+ * '''From the Specification'''
+ * <pre>
+ * RuntimeInvisibleParameterAnnotations_attribute {
+ * 	u2 attribute_name_index;
+ * 	u4 attribute_length;
+ * 	u1 num_parameters;
+ * 	{
+ * 		u2 num_annotations;
+ * 		annotation annotations[num_annotations];
+ * 	} parameter_annotations[num_parameters];
+ * }
+ * </pre>
+ *
  * @author Michael Eichberg
  */
-trait RuntimeInvisibleParameterAnnotations_attributeReader  {
- 
+trait RuntimeInvisibleParameterAnnotations_attributeReader extends AttributeReader {
 
-	type Constant_Pool
-	type Attribute >: Null
-	type RuntimeInvisibleParameterAnnotations_attribute <: Attribute
-	type ParameterAnnotations
+    type RuntimeInvisibleParameterAnnotations_attribute <: Attribute
+    type ParameterAnnotations
 
-	
-	def register(r : (String,(DataInputStream, Constant_Pool, Int) => Attribute)) : Unit
+    /**
+     * Method that delegates to another reader to read in the annotations of the parameters.
+     */
+    protected def ParameterAnnotations(in: DataInputStream, cp: Constant_Pool): ParameterAnnotations
 
-	
-	/**
-	 * Method that delegates to another reader to read in the annotations of the parameters.
-	 */
-	def ParameterAnnotations (in : DataInputStream, cp : Constant_Pool) : ParameterAnnotations
-	
-	
-	/**
-	 * Factory method to create a representation of a RuntimeInvisibleParameterAnnotations_attribute.
-	 */
-	def RuntimeInvisibleParameterAnnotations_attribute (
-		attribute_name_index : Int, attribute_length : Int, parameter_annotations : ParameterAnnotations
-	)( implicit constant_pool : Constant_Pool) : RuntimeInvisibleParameterAnnotations_attribute
-	
+    /**
+     * Factory method to create a representation of a RuntimeInvisibleParameterAnnotations_attribute.
+     */
+    protected def RuntimeInvisibleParameterAnnotations_attribute(attribute_name_index: Constant_Pool_Index,
+                                                                 attribute_length: Int,
+                                                                 parameter_annotations: ParameterAnnotations)(
+                                                                     implicit constant_pool: Constant_Pool): RuntimeInvisibleParameterAnnotations_attribute
 
-	private lazy val reader = ( 
-			de.tud.cs.st.bat.canonical.RuntimeInvisibleParameterAnnotations_attribute.name -> 
-			((in : DataInputStream, cp : Constant_Pool, attribute_name_index : Int) => {
-				val attribute_length = in.readInt()
-				RuntimeInvisibleParameterAnnotations_attribute(
-				 	attribute_name_index, attribute_length, ParameterAnnotations(in,cp)
-				)( cp )
-			})
-	);
-	
-	register(reader)
-	
-	
+    register(
+        RuntimeInvisibleParameterAnnotations_attributeReader.ATTRIBUTE_NAME ->
+            ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index) ⇒ {
+                val attribute_length = in.readInt()
+                RuntimeInvisibleParameterAnnotations_attribute(
+                    attribute_name_index, attribute_length, ParameterAnnotations(in, cp)
+                )(cp)
+            })
+    )
+
 }
 
+object RuntimeInvisibleParameterAnnotations_attributeReader {
+
+    val ATTRIBUTE_NAME = "RuntimeInvisibleParameterAnnotations"
+
+}
 

@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -32,74 +32,65 @@
 */
 package de.tud.cs.st.bat.canonical
 
-
 /**
-
+ *
  * @author Michael Eichberg
  */
 trait StackMapFrame {
-	
-	type VerificationTypeInfo
-	
-	val frame_type : Int
- 
-}
 
+    type VerificationTypeInfo
+
+    val frame_type: Int
+
+}
 
 trait SameFrame extends StackMapFrame {
 
-	require (0 <= frame_type && frame_type < 64);
+    require(0 <= frame_type && frame_type < 64);
 }
-
 
 trait SameLocals1StackItemFrame extends StackMapFrame {
-	
-	val verification_type_info_stack : VerificationTypeInfo
-	
-	require (63 < frame_type && frame_type < 128);
-}
 
+    val verification_type_info_stack: VerificationTypeInfo
+
+    require(63 < frame_type && frame_type < 128);
+}
 
 trait SameLocals1StackItemFrameExtended extends StackMapFrame {
-	
 
-	val offset_delta : Int
-	val verification_type_info_stack : VerificationTypeInfo
+    val offset_delta: Int
+    val verification_type_info_stack: VerificationTypeInfo
 
-	require (frame_type == 247);
+    require(frame_type == 247);
 }
-
 
 trait ChopFrame extends StackMapFrame {
-	
-	val offset_delta : Int
-	
-	require (247 < frame_type && frame_type < 251);
-}
 
+    val offset_delta: Int
+
+    require(247 < frame_type && frame_type < 251);
+}
 
 trait SameFrameExtended extends StackMapFrame {
-	
-	val offset_delta : Int
-	
-	require (frame_type == 251);
-}
 
+    val offset_delta: Int
+
+    require(frame_type == 251);
+}
 
 trait AppendFrame extends StackMapFrame {
-	
-	val offset_delta : Int
-	val verification_type_info_locals : Seq[VerificationTypeInfo]
-	
-	require (251 < frame_type && frame_type < 255);
-}
 
+    val offset_delta: Int
+    val verification_type_info_locals: Seq[VerificationTypeInfo]
+
+    require(251 < frame_type && frame_type < 255);
+}
 
 trait FullFrame extends StackMapFrame {
 
-	val offset_delta : Int
-	val verification_type_info_locals : Seq[VerificationTypeInfo]
-	val verification_type_info_stack : Seq[VerificationTypeInfo]
-	
-	require (frame_type == 255);
+    val offset_delta: Int
+    val verification_type_info_locals: Seq[VerificationTypeInfo]
+    val verification_type_info_stack: Seq[VerificationTypeInfo]
+
+    require(frame_type == 255);
 }

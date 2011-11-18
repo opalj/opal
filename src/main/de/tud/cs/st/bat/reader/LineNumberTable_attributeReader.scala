@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -36,47 +36,58 @@ import java.io.DataInputStream
 
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
-
 /**
-
+ * <pre>
+ * LineNumberTable_attribute {
+ * 	u2 attribute_name_index;
+ * 	u4 attribute_length;
+ * 	u2 line_number_table_length;
+ * 	{	u2 start_pc;
+ * 		u2 line_number;
+ * 	}	line_number_table[line_number_table_length];
+ * }
+ * </pre>
  * @author Michael Eichberg
  */
-trait LineNumberTable_attributeReader {
+trait LineNumberTable_attributeReader extends AttributeReader {
 
-	type Constant_Pool
-	type Attribute >: Null
-	type LineNumberTable_attribute <: Attribute
-	type LineNumberTableEntry
-	implicit val LineNumberTableEntryManifest : ClassManifest[LineNumberTableEntry]
-	
-	type LineNumberTable = IndexedSeq[LineNumberTableEntry]
+    type LineNumberTable_attribute <: Attribute
+    
+    type LineNumberTableEntry
+    implicit val LineNumberTableEntryManifest: ClassManifest[LineNumberTableEntry]
 
+    def LineNumberTable_attribute(attribute_name_index: Constant_Pool_Index,
+                                  attribute_length: Int,
+                                  line_number_table: LineNumberTable)(
+                                      implicit constant_pool: Constant_Pool): LineNumberTable_attribute
 
-	def register(r : (String,(DataInputStream, Constant_Pool, Int) => Attribute)) : Unit
+    def LineNumberTableEntry(start_pc: Int,
+                             line_number: Int)(
+                                 implicit constant_pool: Constant_Pool): LineNumberTableEntry
 
-	
-	def LineNumberTable_attribute (
-		attribute_name_index : Int, attribute_length : Int, line_number_table : LineNumberTable
-	)( implicit constant_pool : Constant_Pool) : LineNumberTable_attribute
-	
-	
-	def LineNumberTableEntry (
-		start_pc : Int,line_number : Int
-	)( implicit constant_pool : Constant_Pool) : LineNumberTableEntry 
-	
-	
-	private lazy val reader = ( 
-			de.tud.cs.st.bat.canonical.LineNumberTable_attribute.name -> 
-			((in : DataInputStream, cp : Constant_Pool, attribute_name_index : Int) => {
-				val attribute_length = in.readInt()
-				LineNumberTable_attribute(
-					attribute_name_index, attribute_length,
-					repeat(in.readUnsignedShort){
-						LineNumberTableEntry(in.readUnsignedShort, in.readUnsignedShort)(cp)
-					}
-				)( cp )
-			})
-	);
-	
-	register(reader)
+    //
+    // IMPLEMENTATION
+    //
+
+    type LineNumberTable = IndexedSeq[LineNumberTableEntry]
+
+    register(
+        LineNumberTable_attributeReader.ATTRIBUTE_NAME ->
+            ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index) ⇒ {
+                val attribute_length = in.readInt()
+                LineNumberTable_attribute(
+                    attribute_name_index, attribute_length,
+                    repeat(in.readUnsignedShort) {
+                        LineNumberTableEntry(in.readUnsignedShort, in.readUnsignedShort)(cp)
+                    }
+                )(cp)
+            })
+    )
 }
+
+object LineNumberTable_attributeReader {
+
+    val ATTRIBUTE_NAME = "LineNumberTable"
+
+}
+

@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -36,45 +36,48 @@ import java.io.DataInputStream
 
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
-
 /**
-
+ * <pre>
+ * Exceptions_attribute {
+ * 	u2 attribute_name_index;
+ * 	u4 attribute_length;
+ * 	u2 number_of_exceptions;
+ * 	u2 exception_index_table[number_of_exceptions];
+ * }
+ * </pre>
  * @author Michael Eichberg
  */
-trait Exceptions_attributeReader extends Constant_PoolAbstractions {
- 
-	type Attribute >: Null
-	type Exceptions_attribute <: Attribute
-	implicit val Exceptions_attributeManifest: ClassManifest[Exceptions_attribute]
-	
-	// a flavor of structural typing... when we mixin this trait this method needs to be available.
-	def register(r : (String,(DataInputStream, Constant_Pool, Constant_Pool_Index ) => Attribute)) : Unit
+trait Exceptions_attributeReader extends AttributeReader {
 
-	type ExceptionIndexTable = IndexedSeq[Constant_Pool_Index]
-	
-	
-	def Exceptions_attribute (
-		attribute_name_index : Constant_Pool_Index, attribute_length : Int, exception_index_table : ExceptionIndexTable
-	)( implicit constant_pool : Constant_Pool) : Exceptions_attribute
-	
-	
-	//
-	// IMPLEMENTATION
-	//
+    type Exceptions_attribute <: Attribute
+    implicit val Exceptions_attributeManifest: ClassManifest[Exceptions_attribute]
 
+    def Exceptions_attribute(attribute_name_index: Constant_Pool_Index,
+                             attribute_length: Int,
+                             exception_index_table: ExceptionIndexTable)(
+                                 implicit constant_pool: Constant_Pool): Exceptions_attribute
 
-	private lazy val reader = ( 
-			de.tud.cs.st.bat.canonical.Exceptions_attribute.name -> 
-			((in : DataInputStream, cp : Constant_Pool, attribute_name_index : Constant_Pool_Index ) => {
-				val attribute_length = in.readInt()
-				Exceptions_attribute(
-					attribute_name_index,attribute_length,
-					repeat(in.readUnsignedShort){
-						in.readUnsignedShort
-					}
-				)( cp )
-			})
-	);
-	
-	register(reader)
+    //
+    // IMPLEMENTATION
+    //
+    type ExceptionIndexTable = IndexedSeq[Constant_Pool_Index]
+
+    register(
+        Exceptions_attributeReader.ATTRIBUTE_NAME ->
+            ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index) ⇒ {
+                val attribute_length = in.readInt()
+                Exceptions_attribute(
+                    attribute_name_index, attribute_length,
+                    repeat(in.readUnsignedShort) {
+                        in.readUnsignedShort
+                    }
+                )(cp)
+            })
+    )
+}
+
+object Exceptions_attributeReader {
+
+    val ATTRIBUTE_NAME = "Exceptions"
+
 }

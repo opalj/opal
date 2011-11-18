@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -34,40 +34,48 @@ package de.tud.cs.st.bat.reader
 
 import java.io.DataInputStream
 
-
 /**
-
+ * Defines a template method to read in a constant value attribute.
+ *
+ * '''From the Specification'''
+ *
+ * The ConstantValue attribute is a fixed-length attribute in the attributes
+ * table of a field_info structure.
+ *
+ * <pre>
+ * ConstantValue_attribute {
+ * 	u2 attribute_name_index;
+ * 	u4 attribute_length;
+ * 	u2 constantvalue_index;
+ * }
+ * </pre>
+ *
  * @author Michael Eichberg
  */
-trait ConstantValue_attributeReader  {
+trait ConstantValue_attributeReader extends AttributeReader {
 
- 
-	type Constant_Pool
-	type Attribute >: Null
-	type ConstantValue_attribute <: Attribute
+    type ConstantValue_attribute <: Attribute
 
-	
-	def register(r : (String,(DataInputStream, Constant_Pool, Int) => Attribute)) : Unit
+    def ConstantValue_attribute(attribute_name_index: Constant_Pool_Index,
+                                constantvalue_index: Constant_Pool_Index)(
+                                    implicit constant_pool: Constant_Pool): ConstantValue_attribute
 
-	
-	def ConstantValue_attribute (
-		attribute_name_index : Int, constantvalue_index : Int 
-	)( implicit constant_pool : Constant_Pool) : ConstantValue_attribute
+    //
+    // IMPLEMENTATION
+    //
 
+    register(
+        ConstantValue_attributeReader.ATTRIBUTE_NAME ->
+            ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index) ⇒ {
+                val attribute_length = in.readInt
+                ConstantValue_attribute(attribute_name_index, in.readUnsignedShort)(cp)
+            })
+    )
 
-	//
-	// IMPLEMENTATION
-	//
+}
 
+object ConstantValue_attributeReader {
 
-	private lazy val reader = ( 
-			de.tud.cs.st.bat.canonical.ConstantValue_attribute.name -> 
-			((in : DataInputStream, cp : Constant_Pool, attribute_name_index : Int) => {
-				val attribute_length = in.readInt
-				ConstantValue_attribute(attribute_name_index, in.readUnsignedShort)(cp)
-			})
-	);
-	
-	register(reader)
-	
+    val ATTRIBUTE_NAME = "ConstantValue"
+
 }

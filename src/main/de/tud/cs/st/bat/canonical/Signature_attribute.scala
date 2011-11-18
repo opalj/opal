@@ -30,50 +30,36 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package  de.tud.cs.st.bat.canonical
-
+package de.tud.cs.st.bat.canonical
 
 import java.io.DataInputStream
 
 /**
- * <pre>
- * Signature_attribute { 
- * 	u2 attribute_name_index; 
- * 	u4 attribute_length; 
- * 	u2 signature_index; 
- * } 
- * </pre> 
  *
  * @author Michael Eichberg
  */
 trait Signature_attribute extends Attribute {
 
+    //
+    // ABSTRACT DEFINITIONS
+    //
 
-	//
-	// ABSTRACT DEFINITIONS
-	//
+    val attribute_name_index: Int
 
-	val attribute_name_index : Int
-	
-	val signature_index : Int
+    val signature_index: Int
 
+    //
+    // IMPLEMENTATION
+    //
 
-	//
-	// IMPLEMENTATION
-	//
+    /**
+     * The value of the attribute_length item is fixed; it is always 2.
+     */
+    def attribute_length = 2
 
-	/**
-	 * The value of the attribute_length item is fixed; it is always 4.
-	 */
-	def attribute_length = 2
-	
-	def attribute_name = Signature_attribute.name
+    def attribute_name = de.tud.cs.st.bat.reader.Signature_attributeReader.ATTRIBUTE_NAME
 
 }
 
 
-object Signature_attribute {
-	
-	val name = "Signature"
-	
-}
+

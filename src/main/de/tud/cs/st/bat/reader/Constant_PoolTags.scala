@@ -32,58 +32,27 @@
 */
 package de.tud.cs.st.bat.reader
 
-import java.io.DataInputStream
-
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
 /**
- * Implementation of a template method to read in the StackMapTable attribute.
- *
  * @author Michael Eichberg
  */
-trait StackMapTable_attributeReader extends AttributeReader {
+object Constant_PoolTags extends Enumeration {
 
-    //
-    // ABSTRACT DEFINITIONS
-    //
+    /*
+	 * Cf. Constant_Pool_Tags in the Java Virtual Machine Specification
+	 */
 
-    type StackMapTable_attribute <: Attribute
-
-    type StackMapFrame
-    implicit val StackMapFrameManifest: ClassManifest[StackMapFrame]
-
-    def StackMapFrame(in: DataInputStream, cp: Constant_Pool): StackMapFrame
-
-    //
-    // IMPLEMENTATION
-    //
-
-    type StackMapFrames = IndexedSeq[StackMapFrame]
-
-    def StackMapTable_attribute(attribute_name_index: Constant_Pool_Index,
-                                attribute_length: Int,
-                                stack_map_frames: StackMapFrames)(
-                                    implicit constant_pool: Constant_Pool): StackMapTable_attribute
-
-    register(
-        StackMapTable_attributeReader.ATTRIBUTE_NAME ->
-            ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index) ⇒ {
-                StackMapTable_attribute(
-                    attribute_name_index,
-                    in.readInt, // attribute_length
-                    repeat(in.readUnsignedShort) {
-                        StackMapFrame(in, cp)
-                    }
-                )(cp)
-            })
-    )
-
+    val CONSTANT_Class = Value(7, "CONSTANT_Class")
+    val CONSTANT_Fieldref = Value(9, "CONSTANT_Fieldref")
+    val CONSTANT_Methodref = Value(10, "CONSTANT_Methodref")
+    val CONSTANT_InterfaceMethodref = Value(11, "CONSTANT_InterfaceMethodref")
+    val CONSTANT_String = Value(8, "CONSTANT_String")
+    val CONSTANT_Integer = Value(3, "CONSTANT_Integer")
+    val CONSTANT_Float = Value(4, "CONSTANT_Float")
+    val CONSTANT_Long = Value(5, "CONSTANT_Long")
+    val CONSTANT_Double = Value(6, "CONSTANT_Double")
+    val CONSTANT_NameAndType = Value(12, "CONSTANT_NameAndType")
+    val CONSTANT_Utf8 = Value(1, "CONSTANT_Utf8")
+    val CONSTANT_MethodHandle = Value(15, "CONSTANT_MethodHandle")
+    val CONSTANT_MethodType = Value(16, "CONSTANT_MethodType")
+    val CONSTANT_InvokeDynamic = Value(18, "CONSTANT_InvokeDynamic")
 }
-
-object StackMapTable_attributeReader {
-
-    val ATTRIBUTE_NAME = "StackMapTable"
-
-}
-
-

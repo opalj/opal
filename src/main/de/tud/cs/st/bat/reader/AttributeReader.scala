@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische
-*    Universität Darmstadt nor the names of its contributors may be used to
-*    endorse or promote products derived from this software without specific
+*  - Neither the name of the Software Technology Group or Technische 
+*    Universität Darmstadt nor the names of its contributors may be used to 
+*    endorse or promote products derived from this software without specific 
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -30,41 +30,27 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.canonical
+package de.tud.cs.st.bat.reader
 
+import java.io.DataInputStream
 
 /**
- *
  * @author Michael Eichberg
  */
-trait Exceptions_attribute extends Attribute{
+trait AttributeReader extends Constant_PoolAbstractions {
 
+  type Attribute >: Null
 
-	//
-	// ABSTRACT DEFINITIONS
-	//
+  /**
+   * Register a reader for a concrete attribute. This function is intended to
+   * be provided/implemented by an AttributesReader that manages the attributes of a class,
+   * method_info, field_info or code_attribute structure.
+   *
+   * @param r a map where the key is the name of an attribute and the value is
+   *  a function that given a data input stream that is positioned directly
+   *  at the beginning of the attribute, the constant pool and the attribute
+   *  name index reads in the attribute and returns it.
+   */
+  def register(r: (String, (DataInputStream, Constant_Pool, Int) ⇒ Attribute)): Unit
 
-	val attribute_name_index : Int
-
-	val exception_index_table : ExceptionIndexTable
-
-
-	//
-	// IMPLEMENTATION
-	//
-
-
-	/**
-	 *	Each value in the exception_index_table array must be a
-	 *	valid index into the constant_pool table. The constant_pool
-	 *	entry referenced by each table item must be a
-	 *	CONSTANT_Class_info structure representing a class
-	 *	type that this method is declared to throw.
-	 */
-	type Constant_Pool_Index = Int
-	type ExceptionIndexTable = Seq[Constant_Pool_Index]
-
-	def attribute_length : Int = 2 + exception_index_table.size*2
-
-	def attribute_name = de.tud.cs.st.bat.reader.Exceptions_attributeReader.ATTRIBUTE_NAME
 }

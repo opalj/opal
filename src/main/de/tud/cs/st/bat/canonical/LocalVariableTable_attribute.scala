@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -33,53 +33,33 @@
 package de.tud.cs.st.bat.canonical
 
 
-/** 
- * <pre>
-	LocalVariableTable_attribute { 
-		u2 attribute_name_index; 
-		u4 attribute_length; 
-		u2 local_variable_table_length; 
-		{ u2 start_pc; 
-			u2 length; 
-			u2 name_index; 
-			u2 descriptor_index; 
-			u2 index; 
-		} local_variable_table[local_variable_table_length]; 
-	} 
- * </pre>
- *
+/**
  * @author Michael Eichberg
  */
 trait LocalVariableTable_attribute extends Attribute {
-	
-	
+
+
 	//
 	// ABSTRACT DEFINITIONS
 	//
-	
+
 	type LocalVariableTableEntry
-	
+
 	val attribute_name_index : Int
 
 	val local_variable_table : LocalVariableTable
-	
-	
+
+
 	//
 	// IMPLEMENTATION
 	//
 
 
 	def attribute_length : Int = 2 + (local_variable_table.size * 10)
-	
-	def attribute_name = LocalVariableTable_attribute.name
- 
-	type LocalVariableTable = Seq[LocalVariableTableEntry]
-	
-}
-object LocalVariableTable_attribute {
-	
-	val name = "LocalVariableTable"
-	
-}
 
+	def attribute_name = de.tud.cs.st.bat.reader.LocalVariableTable_attributeReader.ATTRIBUTE_NAME
+
+	type LocalVariableTable = Seq[LocalVariableTableEntry]
+
+}
 

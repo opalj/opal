@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -32,33 +32,16 @@
 */
 package de.tud.cs.st.bat.canonical
 
-/** 
- * <pre>
-	 RuntimeInvisibleParameterAnnotations_attribute { 
-	     u2 attribute_name_index; 
-	     u4 attribute_length; 
-	     u1 num_parameters; 
-	     { 
-	         u2 num_annotations; 
-	         annotation annotations[num_annotations]; 
-	     } parameter_annotations[num_parameters]; 
-	 }
- * </pre>
+/**
  *
  * @author Michael Eichberg
  */
-trait RuntimeInvisibleParameterAnnotations_attribute extends Parameter_Annotations_attribute { 
+trait RuntimeInvisibleParameterAnnotations_attribute extends Parameter_Annotations_attribute {
 
-	
+
 	//
 	// IMPLEMENTATION
 	//
-	
-	def attribute_name = RuntimeInvisibleParameterAnnotations_attribute.name 
-}
 
-object RuntimeInvisibleParameterAnnotations_attribute {
-
-	val name = "RuntimeInvisibleParameterAnnotations"
-	
+	def attribute_name = de.tud.cs.st.bat.reader.RuntimeInvisibleParameterAnnotations_attributeReader.ATTRIBUTE_NAME
 }

@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -34,44 +34,49 @@ package de.tud.cs.st.bat.reader
 
 import java.io.DataInputStream
 
-
 /**
-
+ * '''From the Specification'''
+ *
+ * The SourceFile attribute is an optional fixed-length attribute in the
+ * attributes table of a ClassFile structure.
+ *
+ * {{{
+ *   SourceFile_attribute {
+ *              u2 attribute_name_index;
+ *              u4 attribute_length;
+ *              u2 sourcefile_index;
+ *   }
+ * }}}
+ *
  * @author Michael Eichberg
  */
-trait SourceFile_attributeReader {
- 
+trait SourceFile_attributeReader extends AttributeReader {
 
-	//
-	// ABSTRACT DEFINITIONS
-	//
-	
+    //
+    // ABSTRACT DEFINITIONS
+    //
 
-	type Constant_Pool
-	type Attribute >: Null
-	type SourceFile_attribute <: Attribute
-	
-	def register(r : (String,(DataInputStream, Constant_Pool, Int) => Attribute)) : Unit
+    type SourceFile_attribute <: Attribute
 
-	
-	// FACTORY METHOD
-	def SourceFile_attribute(
-		attribute_name_index : Int, sourceFile_index : Int
-	)( implicit constant_pool : Constant_Pool) : SourceFile_attribute
+    def SourceFile_attribute(attribute_name_index: Constant_Pool_Index,
+                             sourceFile_index: Constant_Pool_Index)(
+                                 implicit constant_pool: Constant_Pool): SourceFile_attribute
 
+    //
+    // IMPLEMENTATION
+    //
 
-	//
-	// IMPLEMENTATION
-	//
-	
+    register(
+        SourceFile_attributeReader.ATTRIBUTE_NAME ->
+            ((in: DataInputStream, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index) ⇒ {
+                val attribute_length = in.readInt
+                SourceFile_attribute(attribute_name_index, in.readUnsignedShort)(cp)
+            })
+    )
+}
 
-	private lazy val reader = (
-		de.tud.cs.st.bat.canonical.SourceFile_attribute.name -> 
-		((in : DataInputStream, cp : Constant_Pool, attribute_name_index : Int) => {
-				val attribute_length = in.readInt
-				SourceFile_attribute(attribute_name_index, in.readUnsignedShort)(cp)
-		})
-	)
-	
-	register(reader)
+object SourceFile_attributeReader {
+
+    val ATTRIBUTE_NAME = "SourceFile"
+
 }

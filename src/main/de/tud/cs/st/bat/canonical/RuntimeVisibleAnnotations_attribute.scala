@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -32,32 +32,16 @@
 */
 package de.tud.cs.st.bat.canonical
 
-
-/** 
- * <pre>
-	 RuntimeVisibleAnnotations_attribute { 
-	     u2 attribute_name_index; 
-	     u4 attribute_length; 
-	     u2 num_annotations; 
-	     annotation annotations[num_annotations]; 
-	 } 
- * </pre>
+/**
  *
  * @author Michael Eichberg
  */
 trait RuntimeVisibleAnnotations_attribute extends Annotations_attribute {
-	
-	
-	//
-	// IMPLEMENTATION
-	//
-	
-	def attribute_name = RuntimeVisibleAnnotations_attribute.name
- 
-}
 
-object RuntimeVisibleAnnotations_attribute {
+    //
+    // IMPLEMENTATION
+    //
 
-	val name = "RuntimeVisibleAnnotations"
-	
+    def attribute_name = de.tud.cs.st.bat.reader.RuntimeVisibleAnnotations_attributeReader.ATTRIBUTE_NAME
+
 }
