@@ -32,19 +32,18 @@
 */
 package de.tud.cs.st.bat.resolved
 
+import de.tud.cs.st.prolog.{ GroundTerm, Atom, Fact }
+
 /**
- * A class', method's or field's signature.
+ * Representation of a Signature.
  *
  * @author Michael Eichberg
  */
-case class Signature_attribute(val signature: Signature) extends Attribute {
-
-  // TODO handling of signatures...
-
-  def toXML = <signature>{ signature }</signature>
-
-  def toProlog[F, T, A <: T](
-    factory: PrologTermFactory[F, T, A],
-    declaringEntityKey: A): List[F] =
-    Nil // TODO	implement
+sealed trait Signature {
 }
+
+
+
+
+
+

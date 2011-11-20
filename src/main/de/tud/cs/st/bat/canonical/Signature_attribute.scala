@@ -35,7 +35,6 @@ package de.tud.cs.st.bat.canonical
 import java.io.DataInputStream
 
 /**
- *
  * @author Michael Eichberg
  */
 trait Signature_attribute extends Attribute {
