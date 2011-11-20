@@ -35,7 +35,7 @@ package de.tud.cs.st.bat.resolved
 import de.tud.cs.st.prolog.{GroundTerm,Atom,Fact}
 
 /**
- * Representation of 
+ * Representation of a JVM type.
  * 
  * @author Michael Eichberg
  */

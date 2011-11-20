@@ -41,6 +41,7 @@ import org.scalatest.FunSuite
  */
 class AttributesTest extends FunSuite {
 
+  // TODO implement this test...
   test("all standard attributes are existing") {
     val classFile = Java6Framework.ClassFile("test/classfiles/Multithreaded RPN Calculator 2008_10_17 - Java 6 all debug info.zip", "src/de/michaeleichberg/multihtreadedprogramming/v2Beta4Thread/Calculator.class")
   }

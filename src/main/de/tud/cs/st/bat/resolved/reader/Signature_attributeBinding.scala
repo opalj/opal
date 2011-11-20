@@ -39,16 +39,17 @@ import de.tud.cs.st.bat.reader.Signature_attributeReader
  * @author Michael Eichberg
  */
 trait Signature_attributeBinding
-        extends Signature_attributeReader
-        with Constant_PoolResolver
-        with AttributeBinding {
+    extends Signature_attributeReader
+    with Constant_PoolResolver
+    with AttributeBinding {
 
-    type Signature_attribute = de.tud.cs.st.bat.resolved.Signature_attribute
+  type Signature_attribute = de.tud.cs.st.bat.resolved.Signature_attribute
 
-    def Signature_attribute(
-        attribute_name_index: Int, signature_index: Int)(implicit constant_pool: Constant_Pool) = {
-        new Signature_attribute(signature_index)
-    }
+  def Signature_attribute(attribute_name_index: Constant_Pool_Index,
+                          signature_index: Constant_Pool_Index)(
+                            implicit constant_pool: Constant_Pool, ap: AttributeParent) = {
+    new Signature_attribute(signature_index)
+  }
 
 }
 

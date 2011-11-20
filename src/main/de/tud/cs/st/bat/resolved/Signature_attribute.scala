@@ -37,8 +37,7 @@ package de.tud.cs.st.bat.resolved
  *
  * @author Michael Eichberg
  */
-case class Signature_attribute(
-    val signature: String) extends Attribute {
+case class Signature_attribute(val signature: Signature) extends Attribute {
 
   // TODO handling of signatures...
 

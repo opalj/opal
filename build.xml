@@ -332,6 +332,7 @@ Author 		Michael Eichberg (mail@michael-eichberg.de)
 		<scalatest>
 			<runpath><path refid="test.classpath"/></runpath>
 			<reporter type="graphic" />
+			<suite classname="de.tud.cs.st.bat.resolved.SignaturesTest"/>
 		 	<suite classname="de.tud.cs.st.bat.resolved.ArrayTypeTest"/>
 		 	<suite classname="de.tud.cs.st.bat.resolved.FieldTypeTest"/>
 		 	<suite classname="de.tud.cs.st.bat.resolved.MethodDescriptorTest"/>

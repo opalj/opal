@@ -42,7 +42,7 @@ import de.tud.cs.st.bat.reader.Constant_PoolReader
  *
  * @author Michael Eichberg
  */
-trait Constant_PoolBinding extends Constant_PoolReader /*with Constant_PoolAbstractions*/ {
+trait Constant_PoolBinding extends Constant_PoolReader {
 
 
 
