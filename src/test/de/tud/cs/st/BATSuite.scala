@@ -48,6 +48,7 @@ class BATSuite extends Suites (
 		new util.collection.ArraysTest,
 		
 		// BAT...
+		new bat.resolved.SignaturesTest,
 		new bat.resolved.ObjectTypeTest,
 		new bat.resolved.ArrayTypeTest,
 		new bat.resolved.FieldTypeTest,

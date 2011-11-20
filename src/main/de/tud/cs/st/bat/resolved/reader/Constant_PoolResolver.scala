@@ -143,9 +143,16 @@ trait Constant_PoolResolver extends Constant_PoolBinding {
     )
 
   implicit def FieldDescriptorToFieldType(fd: FieldDescriptor): FieldType = fd.fieldType
-
+ 
+  
   implicit def CONSTANT_Utf8_info_IndexToSignature(cuii: Constant_Pool_Index)(implicit cp: Constant_Pool, ap: de.tud.cs.st.bat.reader.AttributesParent.Value): Signature = {
-    null
+    import de.tud.cs.st.bat.reader.AttributesParent
+	  ap match {
+	    case AttributesParent.Field_info => SignatureParser.FieldTypeSignature(cuii)
+	    case AttributesParent.ClassFile => SignatureParser.FieldTypeSignature(cuii)
+	    case AttributesParent.Method_info => SignatureParser.MethodTypeSignature(cuii)
+	    case AttributesParent.Code_attribute => sys.error("can't decode signatures of unknown type")
+	  }
   }
 }
 

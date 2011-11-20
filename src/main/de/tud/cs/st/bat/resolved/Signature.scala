@@ -34,6 +34,8 @@ package de.tud.cs.st.bat.resolved
 
 import de.tud.cs.st.prolog.{ GroundTerm, Atom, Fact }
 
+import scala.util.parsing.combinator._
+
 /**
  * Representation of a Signature.
  *
@@ -42,7 +44,118 @@ import de.tud.cs.st.prolog.{ GroundTerm, Atom, Fact }
 sealed trait Signature {
 }
 
+case class ClassSignature(
+    formalTypeParameters: Seq[FormalTypeParameter],
+    superClassSignature: ClassTypeSignature,
+    superInterfaceSignature: Seq[ClassTypeSignature]) extends Signature {
 
+}
+
+case class MethodTypeSignature extends Signature {
+
+}
+
+trait FieldTypeSignature extends Signature {
+
+}
+
+case class ClassTypeSignature extends FieldTypeSignature {
+
+}
+
+case class ArrayTypeSignature extends FieldTypeSignature {
+
+}
+
+case class TypeVariableSignature extends FieldTypeSignature {
+
+}
+
+case class FormalTypeParameter {
+
+}
+
+object SignatureParser extends RegexParsers {
+
+  def ClassSignature(signature: String): ClassSignature = {
+    // SignatureParser.parseAll(SignatureParser.ClassSignature, signature)
+    // new ClassSignature(null, null, null)
+    null
+  }
+
+  def FieldTypeSignature(signature: String): FieldTypeSignature = {
+    null
+  }
+
+  def MethodTypeSignature(signature: String): MethodTypeSignature = {
+    null
+  }
+
+  //
+  // The primary parser methods
+  //
+
+  def ClassSignature: Parser[Any] = opt(FormalTypeParameters) ~ SuperclassSignature ~ rep(SuperinterfaceSignature)
+
+  def FieldTypeSignature: Parser[Any] = ClassTypeSignature | ArrayTypeSignature | TypeVariableSignature
+
+  def MethodTypeSignature: Parser[Any] = opt(FormalTypeParameters) ~ "(" ~ rep(TypeSignature) ~ ")" ~ ReturnType ~ rep(ThrowsSignature)
+
+  //
+  // Helper methods
+  //
+
+  protected def Identifier: Parser[Any] = """[^.;\[\]\<>\:]*+""".r // e.g., """[a-zA-Z_]\w*""".r
+
+  protected def FormalTypeParameters: Parser[Any] = "<" ~ rep1(FormalTypeParameter) ~ ">"
+
+  protected def FormalTypeParameter: Parser[Any] = Identifier ~ ClassBound ~ opt(InterfaceBound)
+
+  protected def ClassBound: Parser[Any] = ":" ~ opt(FieldTypeSignature)
+
+  protected def InterfaceBound: Parser[Any] = ":" ~ FieldTypeSignature
+
+  protected def SuperclassSignature: Parser[Any] = ClassTypeSignature
+
+  protected def SuperinterfaceSignature: Parser[Any] = ClassTypeSignature
+
+  protected def ClassTypeSignature: Parser[Any] = "L" ~ opt(PackageSpecifier) ~ SimpleClassTypeSignature ~ rep(ClassTypeSignatureSuffix) ~ ";"
+
+  protected def PackageSpecifier: Parser[Any] = Identifier ~ "/" ~ rep(PackageSpecifier)
+
+  protected def SimpleClassTypeSignature: Parser[Any] = Identifier ~ opt(TypeArguments)
+
+  protected def ClassTypeSignatureSuffix: Parser[Any] = "." ~ SimpleClassTypeSignature
+
+  protected def TypeVariableSignature: Parser[Any] = "T" ~ Identifier ~ ";"
+
+  protected def TypeArguments: Parser[Any] = "<" ~ rep1(TypeArgument) ~ ">"
+
+  protected def TypeArgument: Parser[Any] = (opt(WildcardIndicator) ~ FieldTypeSignature) | "*"
+
+  protected def WildcardIndicator: Parser[Any] = "+" | "-"
+
+  protected def ArrayTypeSignature: Parser[Any] = "[" ~ TypeSignature
+
+  protected def TypeSignature: Parser[Any] = FieldTypeSignature | BaseType
+
+  protected def BaseType: Parser[Any] =
+    "B" /*=>ByteType()*/ |
+      "C" /*=>CharType()*/ |
+      "D" /*=>DoubleType()*/ |
+      "F" /*=>FloatType()*/ |
+      "I" /*=>IntegerType()*/ |
+      "J" /*=>LongType()*/ |
+      "S" /*=>ShortType()*/ |
+      "Z" /*=>BooleanType() */
+
+  protected def ReturnType: Parser[Any] = TypeSignature | VoidType
+
+  protected def VoidType: Parser[Any] = "V"
+
+  protected def ThrowsSignature: Parser[Any] = "^" ~ (ClassTypeSignature | TypeVariableSignature)
+
+}
 
 
 
