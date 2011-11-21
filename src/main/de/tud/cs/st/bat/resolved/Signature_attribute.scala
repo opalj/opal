@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -33,18 +33,20 @@
 package de.tud.cs.st.bat.resolved
 
 /**
- * A class', method's or field's signature.
+ * A class's, method's or field's signature.
  *
  * @author Michael Eichberg
  */
-case class Signature_attribute(val signature: Signature) extends Attribute {
+case class Signature_attribute(
+        val signature: Signature // TODO make the Signature an attribute itself (safe memory and time..)
+        ) extends Attribute {
 
-  // TODO handling of signatures...
+    // TODO Signature to XML...
+    def toXML = <signature>{ signature }</signature>
 
-  def toXML = <signature>{ signature }</signature>
-
-  def toProlog[F, T, A <: T](
-    factory: PrologTermFactory[F, T, A],
-    declaringEntityKey: A): List[F] =
-    Nil // TODO	implement
+    // TODO Signature to Prolog...
+    def toProlog[F, T, A <: T](
+        factory: PrologTermFactory[F, T, A],
+        declaringEntityKey: A): List[F] =
+        Nil // TODO	implement
 }

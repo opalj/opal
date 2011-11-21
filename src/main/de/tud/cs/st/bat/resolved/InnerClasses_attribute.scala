@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -43,21 +43,21 @@ import TypeAliases._
 case class InnerClasses_attribute(
 	val classes : InnerClassesEntries
 ) extends Attribute {
-	
-	def toXML = 
+
+	def toXML =
 		<inner_classes>
 			{ for (clazz <- classes) yield clazz.toXML}
 		</inner_classes>
 
-	
+
 	def toProlog[F,T,A <: T](
 		factory : PrologTermFactory[F,T,A],
 		declaringEntityKey : A
-	) : List[F] = 
+	) : List[F] =
 		Nil
 	/*	{
 		import factory._
-		
+
 		Fact(
 			"inner_classes",
 			declaringEntityKey,
@@ -65,21 +65,21 @@ case class InnerClasses_attribute(
 		) :: Nil
 	}
 	*/
-	
+
 }
 
 
-case class InnerClassesEntry( 
+case class InnerClassesEntry(
 	val innerClassType : ObjectType,
 	val outerClassType : ObjectType,
 	val innerName : String,
 	val innerClassAccessFlags : Int
 ) {
-	
+
 	import de.tud.cs.st.bat.canonical.AccessFlagsContext.INNER_CLASS
 	import de.tud.cs.st.bat.canonical.AccessFlags
-	
-	def toXML = 
+
+	def toXML =
 		<class innerName={ innerName }>
 			{	var nodes : List[scala.xml.Node] = Nil
 				nodes = AccessFlags.toXML(innerClassAccessFlags, INNER_CLASS) :: nodes
@@ -87,20 +87,17 @@ case class InnerClassesEntry(
 				nodes = <inner_class type={innerClassType.className}/> :: nodes
 				nodes
 			}
-		</class>	
+		</class>
 
-	/*
+	/* 			// TODO implement toProlog
 	def toProlog(
 		factory : PrologTermFactory,
 	) : GroundTerm = {
-
 		import factory._
-
 		Term(
 			"inner_class",
-			// TODO
 		)
-	}	
-	*/	
-	
+	}
+	*/
+
 }

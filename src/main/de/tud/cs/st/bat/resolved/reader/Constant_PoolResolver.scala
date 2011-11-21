@@ -13,9 +13,9 @@
  * - Redistributions in binary form must reproduce the above copyright notice,
  *   this list of conditions and the following disclaimer in the documentation
  *   and/or other materials provided with the distribution.
- * - Neither the name of the Software Technology Group or Technische 
- *   Universität Darmstadt nor the names of its contributors may be used to 
- *   endorse or promote products derived from this software without specific 
+ * - Neither the name of the Software Technology Group or Technische
+ *   Universität Darmstadt nor the names of its contributors may be used to
+ *   endorse or promote products derived from this software without specific
  *   prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -26,7 +26,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -51,19 +51,19 @@ trait Constant_PoolResolver extends Constant_PoolBinding {
   //
   // VARIOUS HELPER METHODS THAT ARE - IN GENERAL - IMPLICITLY USED TO RESOLVE THE CONSTANT POOL.
   //
-  // The following implicit method definitions use the target type (e.g. ObjectType, 
+  // The following implicit method definitions use the target type (e.g. ObjectType,
   // FieldDescriptor,...) to determine the type of the constant pool's entry with the specified
   // index.
-  // All references to the constant pool will be resolved while parsing the class file. After 
-  // the class file is read the constant pool can be / is deleted.	
-  // ______________________________________________________________________________________________	
+  // All references to the constant pool will be resolved while parsing the class file. After
+  // the class file is read the constant pool can be / is deleted.
+  // ______________________________________________________________________________________________
   //
 
   implicit def CONSTANT_NameAndType_info_IndexToNameAndMethodDescriptor(cntii: Constant_Pool_Index)(implicit cp: Constant_Pool): (String, MethodDescriptor) =
     cp(cntii) match {
       case cnti: CONSTANT_NameAndType_info ⇒ (
         cnti.name_index, // => implicitly converted
-        cnti.descriptor_index // => implicitly converted 
+        cnti.descriptor_index // => implicitly converted
       )
     }
 
@@ -143,15 +143,15 @@ trait Constant_PoolResolver extends Constant_PoolBinding {
     )
 
   implicit def FieldDescriptorToFieldType(fd: FieldDescriptor): FieldType = fd.fieldType
- 
-  
+
+
   implicit def CONSTANT_Utf8_info_IndexToSignature(cuii: Constant_Pool_Index)(implicit cp: Constant_Pool, ap: de.tud.cs.st.bat.reader.AttributesParent.Value): Signature = {
     import de.tud.cs.st.bat.reader.AttributesParent
 	  ap match {
-	    case AttributesParent.Field_info => SignatureParser.FieldTypeSignature(cuii)
-	    case AttributesParent.ClassFile => SignatureParser.FieldTypeSignature(cuii)
-	    case AttributesParent.Method_info => SignatureParser.MethodTypeSignature(cuii)
-	    case AttributesParent.Code_attribute => sys.error("can't decode signatures of unknown type")
+	    case AttributesParent.Field_info => SignatureParser.parseFieldTypeSignature(cuii)
+	    case AttributesParent.ClassFile => SignatureParser.parseClassSignature(cuii)
+	    case AttributesParent.Method_info => SignatureParser.parseMethodTypeSignature(cuii)
+	    case AttributesParent.Code_attribute => sys.error("signature attributes stored in a code_attribute's attributes table are non-standard")
 	  }
   }
 }
