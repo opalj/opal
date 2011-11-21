@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -41,44 +41,39 @@ import org.scalatest.FunSuite
  */
 class SignaturesTest extends FunSuite {
 
-  //
-  // BRUTE FORCE TESTS (WE ARE JUST TRYING TO PARSE A VERY LARGE NUMBER OF SIGNATURES)
-  //
+    //
+    // BRUTE FORCE TESTS (WE ARE JUST TRYING TO PARSE A VERY LARGE NUMBER OF SIGNATURES)
+    //
 
-  test("parse various class file signatures") {
-    def parse(s: String) {
-      print(s)
-      val r = SignatureParser.parseAll(SignatureParser.ClassSignature, s)
-      println(" => "+r)
+    test("parse various class file signatures") {
+        def parse(s: String) {
+            val r = SignatureParser.parseClassSignature(s)
+        }
+        ClassFileSignatures.foreach(parse _)
     }
-    ClassFileSignatures.foreach(parse _)
-  }
 
-  test("parse various field type signatures") {
-    def parse(s: String) {
-      print(s)
-      val r = SignatureParser.parseAll(SignatureParser.FieldTypeSignature, s)
-      println(" => "+r)
+    test("parse various field type signatures") {
+        def parse(s: String) {
+            val r = SignatureParser.parseFieldTypeSignature(s)
+        }
+        FieldTypeSignatures.foreach(parse _)
     }
-    FieldTypeSignatures.foreach(parse _)
-  }
 
-  test("parse various method type signatures") {
-    def parse(s: String) {
-      print(s)
-      val r = SignatureParser.parseAll(SignatureParser.MethodTypeSignature, s)
-      println(" => "+r)
+    test("parse various method type signatures") {
+        def parse(s: String) {
+            val r = SignatureParser.parseMethodTypeSignature(s)
+        }
+        MethodTypeSignatures.foreach(parse _)
     }
-    MethodTypeSignatures.foreach(parse _)
-  }
 
-  //
-  // DATA
-  //
-  // The following signatures are just thrown to the parser as is.
-  //
-  val ClassFileSignatures: Array[String] =
-    """
+    //
+    // DATA
+    //
+    // The following signatures are just thrown to the parser as is.
+    //
+
+    val ClassFileSignatures: Array[String] =
+        """
 	<A:Ljava/lang/Object;>Ljava/lang/Object;Lde/tud/cs/st/util/collection/Store<TA;>;Lscala/ScalaObject;
 	<A:Ljava/lang/Object;>Ljava/lang/Object;Lde/tud/cs/st/util/collection/WorkList<TA;>;Lscala/ScalaObject;
 	<A:Ljava/lang/Object;>Ljava/lang/Object;Lscala/Iterable<TA;>;Lscala/ScalaObject;
@@ -123,8 +118,8 @@ class SignaturesTest extends FunSuite {
 	Ljava/lang/Object;Lscala/Iterator<TA;>;
 	""".trim.split("\n").map(_.trim())
 
-  val FieldTypeSignatures: Array[String] =
-    """
+    val FieldTypeSignatures: Array[String] =
+        """
 	Lde/tud/bat/instruction/executiongraph/StackLayout$ShrinkableArrayList<Lde/tud/bat/type/ValueType;>;
 	Lde/tud/cs/st/bat/resolved/ConstantValue<*>;
 	Lde/tud/cs/st/sae/GroundTerms<Lde/tud/cs/st/bat/prolog/ElementValuePairTerm;>;
@@ -277,8 +272,8 @@ class SignaturesTest extends FunSuite {
 	[TE;
   	""".trim.split("\n").map(_.trim())
 
-  val MethodTypeSignatures: Array[String] =
-    """
+    val MethodTypeSignatures: Array[String] =
+        """
 	()Lde/tud/bat/util/BATIterator<Lde/tud/bat/classfile/structure/ParameterAnnotation;>;
 	()Lde/tud/bat/util/BATIterator<Lde/tud/bat/instruction/Instruction;>;
 	()Lde/tud/bat/util/BATIterator<Lde/tud/bat/type/FormalTypeParameter;>;
@@ -707,6 +702,6 @@ class SignaturesTest extends FunSuite {
 	<T:Ljava/lang/Object;>([TT;[TT;)[TT;
 	<T:Ljava/lang/Object;G::Lde/tud/cs/st/sae/GroundTerm;>(Lscala/RandomAccessSeq<TT;>;Lscala/Function1<TT;TG;>;)Lde/tud/cs/st/sae/GroundTerms<TG;>;
 	<T:Ljava/lang/Object;G::Lde/tud/cs/st/sae/GroundTerm;>(Lscala/Seq<TT;>;Lscala/Function1<TT;TG;>;)Lde/tud/cs/st/sae/GroundTerms<TG;>;
-	<X:Ljava/lang/Object;Y:Ljava/lang/Object;>(Lde/tud/cs/st/util/collection/Indexed<TX;>;Lde/tud/cs/st/util/collection/Indexed<TY;>;Lscala/Function2<TX;TY;Ljava/lang/Boolean;>;)Z  	  
+	<X:Ljava/lang/Object;Y:Ljava/lang/Object;>(Lde/tud/cs/st/util/collection/Indexed<TX;>;Lde/tud/cs/st/util/collection/Indexed<TY;>;Lscala/Function2<TX;TY;Ljava/lang/Boolean;>;)Z
   	""".trim.split("\n").map(_.trim())
 }

@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -34,129 +34,81 @@ package de.tud.cs.st.bat.resolved
 
 import de.tud.cs.st.prolog.{ GroundTerm, Atom, Fact }
 
-import scala.util.parsing.combinator._
-
 /**
- * Representation of a Signature.
+ * Represents a Java signature.
  *
  * @author Michael Eichberg
  */
-sealed trait Signature {
+sealed trait PrimarySignature {
 }
 
 case class ClassSignature(
-    formalTypeParameters: Seq[FormalTypeParameter],
-    superClassSignature: ClassTypeSignature,
-    superInterfaceSignature: Seq[ClassTypeSignature]) extends Signature {
+        formalTypeParameters: Option[List[FormalTypeParameter]],
+        superClassSignature: ClassTypeSignature,
+        superInterfaceSignature: List[ClassTypeSignature]) extends PrimarySignature {
 
 }
 
-case class MethodTypeSignature extends Signature {
+case class MethodTypeSignature(
+        formalTypeParameters: Option[List[FormalTypeParameter]],
+        parametersTypeSignatures: List[TypeSignature],
+        returnType: ReturnTypeSignature,
+        throwsSignature: List[ThrowsSignature]) extends PrimarySignature {
 
 }
 
-trait FieldTypeSignature extends Signature {
+sealed trait ReturnTypeSignature
+
+// TODO consider mixing in the trait "ReturnTypeSignature" in VoidTypeSignature
+case object VoidTypeSignature extends ReturnTypeSignature
+
+trait TypeSignature extends ReturnTypeSignature {
+
+}
+// TODO consider mixing in the TypeSignature trait in BaseType
+case class BaseTypeSignature(baseType: BaseType) extends TypeSignature {
+
+}
+// TODO Implement sharing - i.e., we do not create BaseTypeSignatures over and over again...
+
+trait FieldTypeSignature extends PrimarySignature with TypeSignature {
 
 }
 
-case class ClassTypeSignature extends FieldTypeSignature {
+case class ArrayTypeSignature(typeSignature: TypeSignature) extends FieldTypeSignature {
 
 }
 
-case class ArrayTypeSignature extends FieldTypeSignature {
+trait ThrowsSignature
+
+case class ClassTypeSignature(
+        packageIdentifier: Option[String],
+        simpleClassTypeSignature: SimpleClassTypeSignature,
+        classTypeSignatureSuffix: List[SimpleClassTypeSignature]) extends FieldTypeSignature with ThrowsSignature {
 
 }
 
-case class TypeVariableSignature extends FieldTypeSignature {
+case class SimpleClassTypeSignature(
+    simpleName: String,
+    typeArguments: Option[List[TypeArgument]])
+
+case class TypeVariableSignature(identifier: String) extends FieldTypeSignature with ThrowsSignature {
 
 }
 
-case class FormalTypeParameter {
+case class FormalTypeParameter(
+        identifier: String,
+        classBound: Option[FieldTypeSignature],
+        interfaceBound: Option[FieldTypeSignature]) {
 
 }
 
-object SignatureParser extends RegexParsers {
+trait TypeArgument
 
-  def ClassSignature(signature: String): ClassSignature = {
-    // SignatureParser.parseAll(SignatureParser.ClassSignature, signature)
-    // new ClassSignature(null, null, null)
-    null
-  }
+case class ProperTypeArgument(wildcardIndicator: Option[WildcardIndicator], fieldTypeSignature: FieldTypeSignature) extends TypeArgument
 
-  def FieldTypeSignature(signature: String): FieldTypeSignature = {
-    null
-  }
+sealed trait WildcardIndicator
+case object PlusWildcardIndicator extends WildcardIndicator // TODO find better name!
+case object MinusWildcardIndicator extends WildcardIndicator // TODO find better name
 
-  def MethodTypeSignature(signature: String): MethodTypeSignature = {
-    null
-  }
-
-  //
-  // The primary parser methods
-  //
-
-  def ClassSignature: Parser[Any] = opt(FormalTypeParameters) ~ SuperclassSignature ~ rep(SuperinterfaceSignature)
-
-  def FieldTypeSignature: Parser[Any] = ClassTypeSignature | ArrayTypeSignature | TypeVariableSignature
-
-  def MethodTypeSignature: Parser[Any] = opt(FormalTypeParameters) ~ "(" ~ rep(TypeSignature) ~ ")" ~ ReturnType ~ rep(ThrowsSignature)
-
-  //
-  // Helper methods
-  //
-
-  protected def Identifier: Parser[Any] = """[^.;\[\]\<>\:]*+""".r // e.g., """[a-zA-Z_]\w*""".r
-
-  protected def FormalTypeParameters: Parser[Any] = "<" ~ rep1(FormalTypeParameter) ~ ">"
-
-  protected def FormalTypeParameter: Parser[Any] = Identifier ~ ClassBound ~ opt(InterfaceBound)
-
-  protected def ClassBound: Parser[Any] = ":" ~ opt(FieldTypeSignature)
-
-  protected def InterfaceBound: Parser[Any] = ":" ~ FieldTypeSignature
-
-  protected def SuperclassSignature: Parser[Any] = ClassTypeSignature
-
-  protected def SuperinterfaceSignature: Parser[Any] = ClassTypeSignature
-
-  protected def ClassTypeSignature: Parser[Any] = "L" ~ opt(PackageSpecifier) ~ SimpleClassTypeSignature ~ rep(ClassTypeSignatureSuffix) ~ ";"
-
-  protected def PackageSpecifier: Parser[Any] = Identifier ~ "/" ~ rep(PackageSpecifier)
-
-  protected def SimpleClassTypeSignature: Parser[Any] = Identifier ~ opt(TypeArguments)
-
-  protected def ClassTypeSignatureSuffix: Parser[Any] = "." ~ SimpleClassTypeSignature
-
-  protected def TypeVariableSignature: Parser[Any] = "T" ~ Identifier ~ ";"
-
-  protected def TypeArguments: Parser[Any] = "<" ~ rep1(TypeArgument) ~ ">"
-
-  protected def TypeArgument: Parser[Any] = (opt(WildcardIndicator) ~ FieldTypeSignature) | "*"
-
-  protected def WildcardIndicator: Parser[Any] = "+" | "-"
-
-  protected def ArrayTypeSignature: Parser[Any] = "[" ~ TypeSignature
-
-  protected def TypeSignature: Parser[Any] = FieldTypeSignature | BaseType
-
-  protected def BaseType: Parser[Any] =
-    "B" /*=>ByteType()*/ |
-      "C" /*=>CharType()*/ |
-      "D" /*=>DoubleType()*/ |
-      "F" /*=>FloatType()*/ |
-      "I" /*=>IntegerType()*/ |
-      "J" /*=>LongType()*/ |
-      "S" /*=>ShortType()*/ |
-      "Z" /*=>BooleanType() */
-
-  protected def ReturnType: Parser[Any] = TypeSignature | VoidType
-
-  protected def VoidType: Parser[Any] = "V"
-
-  protected def ThrowsSignature: Parser[Any] = "^" ~ (ClassTypeSignature | TypeVariableSignature)
-
-}
-
-
-
-
+case object StarTypeArgument extends TypeArgument
