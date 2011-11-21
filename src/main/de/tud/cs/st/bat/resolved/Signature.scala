@@ -39,13 +39,26 @@ import de.tud.cs.st.prolog.{ GroundTerm, Atom, Fact }
  *
  * @author Michael Eichberg
  */
-sealed trait PrimarySignature {
+
+trait ReturnTypeSignature {
+
+}
+
+trait TypeSignature extends ReturnTypeSignature {
+
+}
+
+trait ThrowsSignature {
+
+}
+
+sealed trait Signature {
 }
 
 case class ClassSignature(
         formalTypeParameters: Option[List[FormalTypeParameter]],
         superClassSignature: ClassTypeSignature,
-        superInterfaceSignature: List[ClassTypeSignature]) extends PrimarySignature {
+        superInterfaceSignature: List[ClassTypeSignature]) extends Signature {
 
 }
 
@@ -53,28 +66,17 @@ case class MethodTypeSignature(
         formalTypeParameters: Option[List[FormalTypeParameter]],
         parametersTypeSignatures: List[TypeSignature],
         returnType: ReturnTypeSignature,
-        throwsSignature: List[ThrowsSignature]) extends PrimarySignature {
+        throwsSignature: List[ThrowsSignature]) extends Signature {
 
 }
 
-trait ReturnTypeSignature {
-
-}
-
-
-trait TypeSignature extends ReturnTypeSignature {
-
-}
-
-trait FieldTypeSignature extends PrimarySignature with TypeSignature {
+trait FieldTypeSignature extends Signature with TypeSignature {
 
 }
 
 case class ArrayTypeSignature(typeSignature: TypeSignature) extends FieldTypeSignature {
 
 }
-
-trait ThrowsSignature
 
 case class ClassTypeSignature(
         packageIdentifier: Option[String],
@@ -87,7 +89,8 @@ case class SimpleClassTypeSignature(
     simpleName: String,
     typeArguments: Option[List[TypeArgument]])
 
-case class TypeVariableSignature(identifier: String) extends FieldTypeSignature with ThrowsSignature {
+case class TypeVariableSignature(
+        identifier: String) extends FieldTypeSignature with ThrowsSignature {
 
 }
 
@@ -98,9 +101,13 @@ case class FormalTypeParameter(
 
 }
 
-trait TypeArgument
+trait TypeArgument {
 
-case class ProperTypeArgument(wildcardIndicator: Option[WildcardIndicator], fieldTypeSignature: FieldTypeSignature) extends TypeArgument
+}
+
+case class ProperTypeArgument(
+    wildcardIndicator: Option[WildcardIndicator],
+    fieldTypeSignature: FieldTypeSignature) extends TypeArgument
 
 sealed trait WildcardIndicator
 case object PlusWildcardIndicator extends WildcardIndicator // TODO find better name!
