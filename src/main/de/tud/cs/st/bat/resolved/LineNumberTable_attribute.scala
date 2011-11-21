@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -38,15 +38,15 @@ import TypeAliases._
 
 
 /**
- * A method's line number table. 
+ * A method's line number table.
  *
  * @author Michael Eichberg
  */
 case class LineNumberTable_attribute(
-	val lineNumberTable : LineNumberTable		
+	val lineNumberTable : LineNumberTable	// TODO make the LineNumberTable an attribute itself (safe memory and time..)
 ) extends Attribute {
 
-	def toXML = 
+	def toXML =
 		<line_number_table>
 			{ for (entry <- lineNumberTable) yield entry.toXML }
 		</line_number_table>
@@ -54,17 +54,17 @@ case class LineNumberTable_attribute(
 	def toProlog[F,T,A <: T](
 		factory : PrologTermFactory[F,T,A],
 		declaringEntityKey : A
-	) : List[F] = 
+	) : List[F] =
 		sys.error("Not supported; use toProlog(PrologTermFactory,Atom,Array[Int]) instead.")
-		
+
 	def toProlog[F,T,A <: T](
 		factory : PrologTermFactory[F,T,A],
 		declaringEntityKey : A,
 		pc_to_seqNo : Array[Int]
-	) : F = { 
-	
+	) : F = {
+
 		import factory._
-		
+
 		Fact(
 			"method_line_number_table",
 			declaringEntityKey,
@@ -77,18 +77,18 @@ case class LineNumberTableEntry (
 	val startPC : Int,
 	val lineNumber : Int
 ) {
-	
+
 	def toXML = <entry start_pc={ startPC.toString } lineNumber={ lineNumber.toString }/>
-	
+
 	def toProlog[F,T,A <: T](
 		factory : PrologTermFactory[F,T,A],
 		pc_to_seqNo : Array[Int]
-	) : T = { 
-	
+	) : T = {
+
 		import factory._
-		
+
 		Term(
-			"kv", 
+			"kv",
 			//Term("pc",
 				IntegerAtom(pc_to_seqNo(startPC)),
 			//),

@@ -37,12 +37,14 @@ package de.tud.cs.st.bat.resolved
  *
  * @author Michael Eichberg
  */
-case class Signature_attribute(val signature: Signature) extends Attribute {
+case class Signature_attribute(
+        val signature: Signature // TODO make the Signature an attribute itself (safe memory and time..)
+        ) extends Attribute {
 
-    // TODO handling of signatures...
-
+    // TODO Signature to XML...
     def toXML = <signature>{ signature }</signature>
 
+    // TODO Signature to Prolog...
     def toProlog[F, T, A <: T](
         factory: PrologTermFactory[F, T, A],
         declaringEntityKey: A): List[F] =

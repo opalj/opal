@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -41,10 +41,10 @@ import TypeAliases._
  * @author Michael Eichberg
  */
 case class LocalVariableTable_attribute (
-	val localVariableTable : LocalVariableTable
+	val localVariableTable : LocalVariableTable // TODO make the LocalVariableTable an attribute itself (safe memory and time..)
 ) extends Attribute {
 
-	def toXML = 
+	def toXML =
 		<local_variable_table>
 			{ for (entry <- localVariableTable) yield entry.toXML }
 		</local_variable_table>
@@ -53,7 +53,7 @@ case class LocalVariableTable_attribute (
 	def toProlog[F,T,A <: T](
 		factory : PrologTermFactory[F,T,A],
 		declaringEntityKey : A
-	) : List[F] = 
+	) : List[F] =
 		sys.error("Not supported; use toProlog(PrologTermFactory,Atom,Array[Int]) instead.")
 
 
@@ -61,10 +61,10 @@ case class LocalVariableTable_attribute (
 		factory : PrologTermFactory[F,T,A],
 		declaringEntityKey : A,
 		pc_to_seqNo : Array[Int]
-	) : F = {		
-		
+	) : F = {
+
 		import factory._
-		
+
 		Fact(
 			"method_local_variable_table",
 			declaringEntityKey,
@@ -74,7 +74,7 @@ case class LocalVariableTable_attribute (
 			)
 		)
 	}
-		
+
 }
 case class LocalVariableTableEntry(
 	val startPC : Int,
@@ -83,20 +83,20 @@ case class LocalVariableTableEntry(
 	val fieldType : FieldType,
 	val index : Int
 ) {
-	
-	def toXML = 
-		<entry 
-			type={fieldType.toJava} 
-			start_pc={ startPC.toString } 
-			length={ length.toString } 
+
+	def toXML =
+		<entry
+			type={fieldType.toJava}
+			start_pc={ startPC.toString }
+			length={ length.toString }
 			name={ name }
 			index={ index.toString }/>
-	
-	
+
+
 	def toProlog[F,T,A <: T](
 		factory : PrologTermFactory[F,T,A],
 		pc_to_seqNo : Array[Int]
-	) : T = {		
+	) : T = {
 
 		import factory._
 
@@ -119,5 +119,5 @@ case class LocalVariableTableEntry(
 				IntegerAtom(index)
 			)
 		)
-	}	
+	}
 }

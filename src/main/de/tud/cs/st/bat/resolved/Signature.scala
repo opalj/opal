@@ -111,6 +111,6 @@ case class ProperTypeArgument(
 
 sealed trait WildcardIndicator
 case object PlusWildcardIndicator extends WildcardIndicator // TODO find better name!
-case object MinusWildcardIndicator extends WildcardIndicator // TODO find better name
+case object MinusWildcardIndicator extends WildcardIndicator // TODO find better name!
 
-case object StarTypeArgument extends TypeArgument
+case object StarTypeArgument extends TypeArgument // TODO find better name!

@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -38,26 +38,26 @@ package de.tud.cs.st.bat.resolved
  * @author Michael Eichberg
  */
 case class ConstantValue_attribute (
-	val constantValue : ConstantValue[_] 
+	val constantValue : ConstantValue[_] // TODO make constant values attributes themselves
 ) extends Attribute{
-	
+
 	def toXML =
 		<constant type={ constantValue.valueType.toJava }>
 			{ constantValue.valueToString }
 		</constant>
-	
+
 	def toProlog[F,T,A <: T](
 		factory : PrologTermFactory[F,T,A],
 		declaringEntityKey : A
 	) : List[F] = {
-		
+
 		import factory._
-		
+
 		Fact(
 			"field_value",
 			declaringEntityKey,
 			constantValue.toProlog(factory)
 		) :: Nil
-		
+
 	}
 }

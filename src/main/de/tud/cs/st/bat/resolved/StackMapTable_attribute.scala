@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -44,17 +44,17 @@ import TypeAliases._
  * @author Michael Eichberg
  */
 case class StackMapTable_attribute (
-	val stackMapFrames : StackMapFrames
+	val stackMapFrames : StackMapFrames // TODO make the StackMapFrames an attribute on their own
 ) extends Attribute {
 
 	// type StackMapFrames = Seq[StackMapFrame]
 
-	def toXML = 
+	def toXML =
 		<stack_map_table>
 			{ for (frame <- stackMapFrames) yield frame.toXML }
 		</stack_map_table>
 
 
-	def toProlog[F,T,A <: T](factory : PrologTermFactory[F,T,A],declaringEntityKey : A) : List[F] = 
-		Nil // TODO	implement
+	def toProlog[F,T,A <: T](factory : PrologTermFactory[F,T,A],declaringEntityKey : A) : List[F] =
+		Nil // TODO	implement conversion of StackMapFrames to Prolog
 }
