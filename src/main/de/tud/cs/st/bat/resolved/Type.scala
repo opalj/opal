@@ -80,7 +80,7 @@ object ReturnType  {
 }
 
 
-final class VoidType extends ReturnType {
+final class VoidType extends ReturnType with ReturnTypeSignature {
 
 	// remark: the default implementation of equals and hashCode suits our needs!
 
@@ -136,7 +136,7 @@ object FieldType {
 
 
 
-trait BaseType extends FieldType {
+trait BaseType extends FieldType with TypeSignature {
 
 	override final def isBaseType = true
 }

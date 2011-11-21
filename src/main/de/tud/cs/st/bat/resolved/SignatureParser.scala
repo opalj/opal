@@ -144,8 +144,7 @@ object SignatureParser extends RegexParsers {
         }
 
     protected def _TypeSignature: Parser[TypeSignature] =
-        _FieldTypeSignature |
-            _BaseType ^^ { BaseTypeSignature(_) }
+        _FieldTypeSignature | _BaseType
 
     protected def _ThrowsSignature: Parser[ThrowsSignature] =
         "^" ~> (_ClassTypeSignature | _TypeVariableSignature)
@@ -162,7 +161,7 @@ object SignatureParser extends RegexParsers {
 
     protected def _ReturnType: Parser[ReturnTypeSignature] =
         _TypeSignature |
-            "V" ^^ (_ ⇒ VoidTypeSignature)
+            "V" ^^ (_ ⇒ VoidType())
 
 }
 

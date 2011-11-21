@@ -57,19 +57,14 @@ case class MethodTypeSignature(
 
 }
 
-sealed trait ReturnTypeSignature
+trait ReturnTypeSignature {
 
-// TODO consider mixing in the trait "ReturnTypeSignature" in VoidTypeSignature
-case object VoidTypeSignature extends ReturnTypeSignature
+}
+
 
 trait TypeSignature extends ReturnTypeSignature {
 
 }
-// TODO consider mixing in the TypeSignature trait in BaseType
-case class BaseTypeSignature(baseType: BaseType) extends TypeSignature {
-
-}
-// TODO Implement sharing - i.e., we do not create BaseTypeSignatures over and over again...
 
 trait FieldTypeSignature extends PrimarySignature with TypeSignature {
 
