@@ -36,15 +36,15 @@ import de.tud.cs.st.bat.reader.AttributesAbstractions
 import de.tud.cs.st.bat.resolved.TypeAliases._
 
 /**
- * Defines the common base type of all attributes.
+ * Defines the common base type of all "resolved" attributes.
  *
  * @author Michael Eichberg
  */
 trait AttributeBinding extends AttributesAbstractions {
 
-  type Attribute = de.tud.cs.st.bat.resolved.Attribute
+    type Attribute = de.tud.cs.st.bat.resolved.Attribute
 
-  val AttributeManifest: ClassManifest[Attribute] = implicitly
+    val AttributeManifest: ClassManifest[Attribute] = implicitly
 
 }
 

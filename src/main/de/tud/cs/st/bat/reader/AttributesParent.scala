@@ -36,10 +36,11 @@ import java.io.DataInputStream
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
 /**
+ * Enumeration of all primary class file elements that can have attributes.
+ *
  * @author Michael Eichberg
  */
 object AttributesParent extends Enumeration {
-
     val ClassFile = Value
     val Field_info = Value
     val Method_info = Value
