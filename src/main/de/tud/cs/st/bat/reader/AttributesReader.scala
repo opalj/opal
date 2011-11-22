@@ -117,6 +117,8 @@ trait AttributesReader
 
     def Attributes(ap: AttributesParent.Value, cp: Constant_Pool, in: DataInputStream): Attributes = {
         val attributes_count = in.readUnsignedShort
+        if (attributes_count == 0) return Nil
+
         val attributes = repeat(attributes_count) {
             Attribute(ap, cp, in)
         }
@@ -128,8 +130,7 @@ trait AttributesReader
 
     def Attribute(ap: AttributeParent, cp: Constant_Pool, in: DataInputStream): Attribute = {
         val attribute_name_index = in.readUnsignedShort()
-        val attribute_name =
-            (cp(attribute_name_index).asInstanceOf[CONSTANT_Utf8_info]).value
+        val attribute_name = (cp(attribute_name_index).asInstanceOf[CONSTANT_Utf8_info]).value
 
         attributeReaders.getOrElse(
             attribute_name,

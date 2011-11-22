@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -45,21 +45,21 @@ object ControlAbstractions {
 
 	/**
 	 * This function takes care of the correct handling of input streams.
-	 * The function takes a function <code>f</code> that creates a new <code>InputStream</code> 
+	 * The function takes a function <code>f</code> that creates a new <code>InputStream</code>
 	 * and a function <code>r</code> that processes an input stream. If f returns
 	 * <code>null</code>, <code>null</code> is passed to r.
 	 */
 	def read [I <: InputStream,T](f : => I) (r : I => T) : T = {
-		
+
 		val in = f // this calls the function f
-		
+
 		try {
-			
+
 			r(in)
-			
+
 		} finally {
 			in.close
-		}		
+		}
 	}
 
 
@@ -72,8 +72,8 @@ object ControlAbstractions {
 		}
 		WrappedArray.make[T](array)
 	}
-	
-	
+
+
 	def repeat[T : ClassManifest](f:() => T)(times : Int) : WrappedArray[T] = {
 		repeat(times)(f())
   	}
@@ -83,7 +83,7 @@ object ControlAbstractions {
     * @param f a function f that is evaluated
 	 * @param times the number of times the result of evaluating f <b>once</b> is stored
 	 * in an array of size times.
-    */	
+    */
 	def repeatResultOfEvaluation[T : ClassManifest](f: => T)(times : Int) : WrappedArray[T] = {
 		repeat(times)(f)
 	}

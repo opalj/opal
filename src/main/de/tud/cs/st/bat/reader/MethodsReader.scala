@@ -47,7 +47,9 @@ trait MethodsReader extends Constant_PoolAbstractions {
 
     type Attributes
 
-    protected def Attributes(ap: AttributesParent.Value, cp: Constant_Pool, in: DataInputStream): Attributes
+    protected def Attributes(ap: AttributesParent.Value,
+                             cp: Constant_Pool,
+                             in: DataInputStream): Attributes
 
     type Method_Info
     implicit val Method_InfoManifest: ClassManifest[Method_Info]
@@ -64,8 +66,12 @@ trait MethodsReader extends Constant_PoolAbstractions {
 
     type Methods = IndexedSeq[Method_Info]
 
+    private val NO_METHODS: Methods = Vector.empty
+
     def Methods(in: DataInputStream, cp: Constant_Pool): Methods = {
         val methods_count = in.readUnsignedShort
+        if (methods_count == 0) return NO_METHODS
+
         repeat(methods_count) {
             Method_Info(in, cp)
         }
