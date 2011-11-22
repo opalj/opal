@@ -42,10 +42,10 @@ trait Deprecated_attributeBinding
         with Constant_PoolResolver
         with AttributeBinding {
 
-    type Deprecated_attribute = de.tud.cs.st.bat.resolved.Deprecated_attribute
+    type Deprecated_attribute = de.tud.cs.st.bat.resolved.Attribute
 
     def Deprecated_attribute(attribute_name_index: Constant_Pool_Index)(implicit constant_pool: Constant_Pool) =
-        de.tud.cs.st.bat.resolved.Deprecated_attribute.instance
+        de.tud.cs.st.bat.resolved.Deprecated_attribute
 
 }
 

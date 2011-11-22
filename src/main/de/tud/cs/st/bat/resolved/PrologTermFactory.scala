@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -32,7 +32,7 @@
 */
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.prolog.{GroundTerm,GroundTerms,Atom,Fact}
+import de.tud.cs.st.prolog.{ GroundTerm, GroundTerms, Atom, Fact }
 
 import de.tud.cs.st.bat.canonical.AccessFlagsContext
 import de.tud.cs.st.bat.canonical.ACC_INTERFACE
@@ -55,86 +55,84 @@ import de.tud.cs.st.bat.canonical.ACC_ABSTRACT
 
 import TypeAliases._
 
-
 /**
  * A collection of helper methods to create atoms, terms and facts.
  *
  * @author Michael Eichberg
  */
-abstract class PrologTermFactory[Fact,Term,Atom <: Term] 
-extends de.tud.cs.st.prolog.PrologTermFactory[Fact,Term,Atom]
-{
-	
-	def KeyAtom(key : String) : Atom
-	
-	def NoneAtom : Atom = StringAtom("none")
-	
-	def YesAtom : Atom = StringAtom("yes")
-	
-	def NoAtom : Atom = StringAtom("no")
+abstract class PrologTermFactory[Fact, Term, Atom <: Term]
+        extends de.tud.cs.st.prolog.PrologTermFactory[Fact, Term, Atom] {
 
-	def VisibilityAtom(access_flags : Int, ctx : AccessFlagsContext.Value) : Atom = {
-		if (ACC_PUBLIC ∈ access_flags)
-			StringAtom("public")
-		else if ((ctx ne AccessFlagsContext.CLASS) && (ACC_PRIVATE ∈ access_flags))
-			StringAtom("private")
-		else if ((ctx ne AccessFlagsContext.CLASS) && (ACC_PROTECTED ∈ access_flags))
-			StringAtom("protected")
-		else
-			StringAtom("default")
-	}
-	
-	def VolatileTerm(access_flags : Int) = 
-		Term("volatile", if (ACC_VOLATILE ∈ access_flags) YesAtom else NoAtom)
+    def KeyAtom(key: String): Atom
 
-	def VarargsTerm(access_flags : Int) =
-		Term("varargs", if (ACC_VARARGS ∈ access_flags) YesAtom else NoAtom)
-	
-	def AbstractTerm(access_flags : Int) =
-		Term("abstract", if (ACC_ABSTRACT ∈ access_flags) YesAtom else NoAtom)
+    def NoneAtom: Atom = StringAtom("none")
 
-	def BridgeTerm(access_flags : Int) =
-		Term("bridge", if (ACC_BRIDGE ∈ access_flags) YesAtom else NoAtom)
+    def YesAtom: Atom = StringAtom("yes")
 
-	def NativeTerm(access_flags : Int) =
-		Term("native", if (ACC_NATIVE ∈ access_flags) YesAtom else NoAtom)
+    def NoAtom: Atom = StringAtom("no")
 
-	def StaticTerm(access_flags : Int) = 
-		Term("static", if (ACC_STATIC ∈ access_flags) YesAtom else NoAtom)
+    def VisibilityAtom(access_flags: Int, ctx: AccessFlagsContext.Value): Atom = {
+        if (ACC_PUBLIC ∈ access_flags)
+            StringAtom("public")
+        else if ((ctx ne AccessFlagsContext.CLASS) && (ACC_PRIVATE ∈ access_flags))
+            StringAtom("private")
+        else if ((ctx ne AccessFlagsContext.CLASS) && (ACC_PROTECTED ∈ access_flags))
+            StringAtom("protected")
+        else
+            StringAtom("default")
+    }
 
-	def FinalTerm(access_flags : Int) =
-		Term("final", if (ACC_FINAL ∈ access_flags) YesAtom else NoAtom)
+    def VolatileTerm(access_flags: Int) =
+        Term("volatile", if (ACC_VOLATILE ∈ access_flags) YesAtom else NoAtom)
 
-	def StrictTerm(access_flags : Int) =
-		Term("strict_fp", if (ACC_STRICT ∈ access_flags) YesAtom else NoAtom)
+    def VarargsTerm(access_flags: Int) =
+        Term("varargs", if (ACC_VARARGS ∈ access_flags) YesAtom else NoAtom)
 
-	def SynchronizedTerm(access_flags : Int) =
-		Term("synchronized", if (ACC_SYNCHRONIZED ∈ access_flags) YesAtom else NoAtom)
+    def AbstractTerm(access_flags: Int) =
+        Term("abstract", if (ACC_ABSTRACT ∈ access_flags) YesAtom else NoAtom)
 
-	def TransientTerm(access_flags : Int) =
-		Term("transient", if (ACC_TRANSIENT ∈ access_flags) YesAtom else NoAtom)
+    def BridgeTerm(access_flags: Int) =
+        Term("bridge", if (ACC_BRIDGE ∈ access_flags) YesAtom else NoAtom)
 
-	def SyntheticTerm(access_flags : Int, attributes : Attributes) = {
-		Term(
-			"synthetic", 
-			if ((ACC_SYNTHETIC ∈ access_flags) 
-				|| (attributes contains Synthetic_attribute.instance)) 
-				YesAtom 
-			else 
-				NoAtom
-		)
-	}
+    def NativeTerm(access_flags: Int) =
+        Term("native", if (ACC_NATIVE ∈ access_flags) YesAtom else NoAtom)
 
-	 def DeprecatedTerm(attributes : Attributes) = {
-		// TODO What happens if I use the Java annotation "@deprecated" ?
-		Term(
-			"deprecated",
-			if (attributes contains Deprecated_attribute.instance) 
-				YesAtom 
-			else 
-				NoAtom
-		)
-	}
+    def StaticTerm(access_flags: Int) =
+        Term("static", if (ACC_STATIC ∈ access_flags) YesAtom else NoAtom)
+
+    def FinalTerm(access_flags: Int) =
+        Term("final", if (ACC_FINAL ∈ access_flags) YesAtom else NoAtom)
+
+    def StrictTerm(access_flags: Int) =
+        Term("strict_fp", if (ACC_STRICT ∈ access_flags) YesAtom else NoAtom)
+
+    def SynchronizedTerm(access_flags: Int) =
+        Term("synchronized", if (ACC_SYNCHRONIZED ∈ access_flags) YesAtom else NoAtom)
+
+    def TransientTerm(access_flags: Int) =
+        Term("transient", if (ACC_TRANSIENT ∈ access_flags) YesAtom else NoAtom)
+
+    def SyntheticTerm(access_flags: Int, attributes: Attributes) = {
+        Term(
+            "synthetic",
+            if ((ACC_SYNTHETIC ∈ access_flags)
+                || (attributes contains Synthetic_attribute))
+                YesAtom
+            else
+                NoAtom
+        )
+    }
+
+    def DeprecatedTerm(attributes: Attributes) = {
+        // TODO What happens if I use the Java annotation "@deprecated" ?
+        Term(
+            "deprecated",
+            if (attributes contains Deprecated_attribute)
+                YesAtom
+            else
+                NoAtom
+        )
+    }
 
 }
 

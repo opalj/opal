@@ -35,7 +35,7 @@ package de.tud.cs.st.bat.resolved.reader
 import de.tud.cs.st.bat.reader.Signature_attributeReader
 
 /**
- * Implements the factory method defined by the generic signature attribute reader.
+ * Implements the factory method defined and used by the generic signature attribute reader.
  *
  * @author Michael Eichberg
  */
@@ -48,7 +48,7 @@ trait Signature_attributeBinding
 
     def Signature_attribute(attribute_name_index: Constant_Pool_Index,
                             signature_index: Constant_Pool_Index)(
-                                implicit constant_pool: Constant_Pool, ap: AttributeParent) = {
+                                implicit cp: Constant_Pool, ap: AttributeParent) = {
         new Signature_attribute(signature_index)
     }
 

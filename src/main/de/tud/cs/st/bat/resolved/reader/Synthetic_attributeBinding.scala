@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -34,23 +34,19 @@ package de.tud.cs.st.bat.resolved.reader
 
 import de.tud.cs.st.bat.reader.Synthetic_attributeReader
 
-
 /**
  * Represents Java's Synthetic attribute.
  *
  * @author Michael Eichberg
  */
-trait Synthetic_attributeBinding 
-	extends Synthetic_attributeReader
-		with Constant_PoolResolver
-		with AttributeBinding		
-{
-	
-	
-	type Synthetic_attribute = de.tud.cs.st.bat.resolved.Synthetic_attribute	
-	
-	
-	def Synthetic_attribute (attribute_name_index : Int)( implicit constant_pool : Constant_Pool) = de.tud.cs.st.bat.resolved.Synthetic_attribute.instance
+trait Synthetic_attributeBinding
+        extends Synthetic_attributeReader
+        with Constant_PoolResolver
+        with AttributeBinding {
+
+    type Synthetic_attribute = de.tud.cs.st.bat.resolved.Attribute
+
+    def Synthetic_attribute(attribute_name_index: Int)(implicit constant_pool: Constant_Pool) = de.tud.cs.st.bat.resolved.Synthetic_attribute
 
 }
 

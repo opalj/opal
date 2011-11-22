@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -32,25 +32,18 @@
 */
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.prolog.{GroundTerm,Atom,Fact}
-
+import de.tud.cs.st.prolog.{ GroundTerm, Atom, Fact }
 
 /**
  * The synthetic attribute.
  *
  * @author Michael Eichberg
  */
-final case class Synthetic_attribute private[Synthetic_attribute]() extends Attribute {
-	
-	def toXML = <synthetic/>
-	
-	def toProlog[F,T,A <: T](factory : PrologTermFactory[F,T,A],declaringEntityKey : A) : List[F] = 
-		Nil	// We do not represent the synthetic attribute as such, instead we
-				// consider it as another access flag.
-	
-}
-object Synthetic_attribute {
-	
-	val instance = new Synthetic_attribute()
+case object Synthetic_attribute extends Attribute {
+
+    def toXML = <synthetic/>
+
+    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] =
+        Nil // We do represent the synthetic as another access flag.
 
 }

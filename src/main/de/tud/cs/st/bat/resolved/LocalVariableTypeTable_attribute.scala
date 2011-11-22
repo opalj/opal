@@ -60,13 +60,13 @@ case class LocalVariableTypeTableEntry(
 	val startPC : Int,
 	val length : Int,
 	val name : String,
-	val signature : String,
+	val signature : FieldTypeSignature,
 	val index : Int
 ) {
 
-	def toXML =
+	def toXML = // TODO implement signature toXML
 		<entry
-			signature={ signature }
+			signature={ signature.toString }
 			start_pc={ startPC.toString }
 			length={ length.toString }
 			name={ name }
