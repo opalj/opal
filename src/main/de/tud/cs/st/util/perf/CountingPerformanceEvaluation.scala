@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -36,12 +36,12 @@ import de.tud.cs.st.util.Println
 
 
 /**
- * Counts how often some piece of code is executed. 
+ * Counts how often some piece of code is executed.
  *
  * @author Michael Eichberg
  */
 trait CountingPerformanceEvaluation extends PerformanceEvaluation with Println {
-	
+
 	import scala.collection.mutable.Map
 
 	private[this] val count : Map[Symbol,Int] = Map()
@@ -49,21 +49,21 @@ trait CountingPerformanceEvaluation extends PerformanceEvaluation with Println {
 
 	abstract override def aggregateTimes[T](s : Symbol)(f : => T) : T = {
 		count.update(s,count.getOrElseUpdate(s,0)+1)
-		
+
 		super.aggregateTimes(s)(f)
 	}
-	
-	
+
+
 	abstract override def printAggregatedTimes(sym:Symbol,s:String) {
 		print("["+count.getOrElseUpdate(sym,0)+"]")
-		
+
 		super.printAggregatedTimes(sym,s)
 	}
-	
-	
+
+
 	abstract override def resetAggregatedTimes(sym:Symbol) {
 		count.update(sym,0)
-		
+
 		super.resetAggregatedTimes(sym)
 	}
 }

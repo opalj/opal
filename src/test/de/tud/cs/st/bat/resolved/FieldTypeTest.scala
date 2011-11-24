@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -43,18 +43,19 @@ import java.util.Enumeration
 
  * @author Michael Eichberg
  */
+//@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class FieldTypeTest extends FunSuite {
 
 	test("Byte Field Descriptor") {
 		val fd = FieldDescriptor("B")
 		assert (fd.fieldType.isInstanceOf[ByteType])
 	}
-	
+
 	test("Char Field Descriptor") {
 		val fd = FieldDescriptor("C")
 		assert (fd.fieldType.isInstanceOf[CharType])
 	}
-	
+
 	test("Double Field Descriptor") {
 		val fd = FieldDescriptor("D")
 		assert (fd.fieldType.isInstanceOf[DoubleType])
@@ -74,7 +75,7 @@ class FieldTypeTest extends FunSuite {
 		val fd = FieldDescriptor("J")
 		assert (fd.fieldType.isInstanceOf[LongType])
 	}
-	
+
 	test("ObjectType Field Descriptor") {
 		val fd = FieldDescriptor("Ljava/lang/Object;")
 		assert (fd.fieldType.isInstanceOf[ObjectType])
@@ -95,11 +96,11 @@ class FieldTypeTest extends FunSuite {
 		val at : ArrayType = fd.fieldType.asInstanceOf[ArrayType]
 		assert (at.componentType === LongType())
 	}
-	
+
 	test("ArrayType (Array of Array of Primitives) Field Descriptor") {
 		val fd = FieldDescriptor("[[S")
 		fd.fieldType match {
 			case ArrayType(ArrayType(st : ShortType)) => /*OK*/
-		}	
+		}
 	}
 }

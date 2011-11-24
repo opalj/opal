@@ -34,21 +34,22 @@ package de.tud.cs.st.bat.resolved
 
 import scala.util.parsing.combinator._
 
+// TODO consider making the signature parser abstract and use the factory pattern as in the case of all other major structures
+
 /**
- * A parser to parse signature attributes.
+ * A parser for Java class file signatures.
  *
  * @author Michael Eichberg
  */
 object SignatureParser extends RegexParsers {
 
-    // TODO evaluate if the (fieldType/...)Signature parsers are created over and over again....
+    // TODO evaluate if the (fieldType/...)Signature parsers are created over and over again... and if we can do something about the performance....
 
     def parseClassSignature(signature: String): ClassSignature = {
         parseAll(_ClassSignature, signature).get
     }
 
     def parseFieldTypeSignature(signature: String): FieldTypeSignature = {
-
         parseAll(_FieldTypeSignature, signature).get
     }
 
@@ -57,39 +58,39 @@ object SignatureParser extends RegexParsers {
     }
 
     //
-    // The methods to parse the code. The methods which create the parsers
+    // The methods to parse signatures. The methods which create the parsers
     // start with an underscore to make them easily distinguishable from
     // the DataStructure they parse/create.
     //
 
     protected def _ClassSignature: Parser[ClassSignature] =
-        opt(_FormalTypeParameters) ~ _SuperclassSignature ~ rep(_SuperinterfaceSignature) ^^ {
+        opt(_FormalTypeParameters) ~! _SuperclassSignature ~! rep(_SuperinterfaceSignature) ^^ {
             case ftps ~ scs ~ siss ⇒ ClassSignature(ftps, scs, siss)
         }
 
     protected def _FieldTypeSignature: Parser[FieldTypeSignature] =
-        _ClassTypeSignature | _ArrayTypeSignature | _TypeVariableSignature
+        _ClassTypeSignature | _TypeVariableSignature | _ArrayTypeSignature
 
     protected def _MethodTypeSignature: Parser[MethodTypeSignature] =
-        opt(_FormalTypeParameters) ~ ("(" ~> rep(_TypeSignature) <~ ")") ~ _ReturnType ~ rep(_ThrowsSignature) ^^ {
+        opt(_FormalTypeParameters) ~! ('(' ~> rep(_TypeSignature) <~ ')') ~! _ReturnType ~! rep(_ThrowsSignature) ^^ {
             case ftps ~ psts ~ rt ~ tss ⇒ MethodTypeSignature(ftps, psts, rt, tss)
         }
 
-    protected def _Identifier: Parser[String] = """[^.;\[\]/\<>\:]*+""".r
+    protected val _Identifier: Parser[String] = """[^.;\[\]/\<>\:]*+""".r
 
     protected def _FormalTypeParameters: Parser[List[FormalTypeParameter]] =
-        "<" ~> rep1(_FormalTypeParameter) <~ ">"
+        '<' ~> rep1(_FormalTypeParameter) <~ '>'
 
     protected def _FormalTypeParameter: Parser[FormalTypeParameter] =
-        _Identifier ~ _ClassBound ~ opt(_InterfaceBound) ^^ {
+        _Identifier ~! _ClassBound ~! opt(_InterfaceBound) ^^ {
             case id ~ cb ~ ib ⇒ FormalTypeParameter(id, cb, ib)
         }
 
     protected def _ClassBound: Parser[Option[FieldTypeSignature]] =
-        ":" ~> opt(_FieldTypeSignature)
+        ':' ~> opt(_FieldTypeSignature)
 
     protected def _InterfaceBound: Parser[FieldTypeSignature] =
-        ":" ~> _FieldTypeSignature
+        ':' ~> _FieldTypeSignature
 
     protected def _SuperclassSignature: Parser[ClassTypeSignature] =
         _ClassTypeSignature
@@ -107,39 +108,38 @@ object SignatureParser extends RegexParsers {
      * the signature to a ‘$’ character.
      */
     protected def _ClassTypeSignature: Parser[ClassTypeSignature] =
-        "L" ~> opt(_PackageSpecifier) ~ _SimpleClassTypeSignature ~ rep(_ClassTypeSignatureSuffix) <~ ";" ^^ {
+        'L' ~> opt(_PackageSpecifier) ~ _SimpleClassTypeSignature ~! rep(_ClassTypeSignatureSuffix) <~ ';' ^^ {
             case ps ~ scts ~ ctsss ⇒ ClassTypeSignature(ps, scts, ctsss)
         }
 
-    //protected def _PackageSpecifier: Parser[String] = (_Identifier ~ ("/" ~> rep(_PackageSpecifier)))^^{case id ~ rest => id + "/"+ rest.toString}
-    protected def _PackageSpecifier: Parser[String] = """[^.;\[\]\<>\:]*+""".r // the same as an identifer, but "/" is treated as a normal symbol.
+    protected def _PackageSpecifier: Parser[String] = (_Identifier ~ ('/' ~> opt(_PackageSpecifier)))^^{case id ~ rest => id + "/"+ rest.getOrElse("")}
 
     protected def _SimpleClassTypeSignature: Parser[SimpleClassTypeSignature] =
-        _Identifier ~ opt(_TypeArguments) ^^ {
+        _Identifier ~! opt(_TypeArguments) ^^ {
             case id ~ tas ⇒ SimpleClassTypeSignature(id, tas)
         }
 
     protected def _ClassTypeSignatureSuffix: Parser[SimpleClassTypeSignature] =
-        "." ~> _SimpleClassTypeSignature
+        '.' ~> _SimpleClassTypeSignature
 
     protected def _TypeVariableSignature: Parser[TypeVariableSignature] =
-        ("T" ~> _Identifier <~ ";") ^^ {
+        ('T' ~> _Identifier <~ ';') ^^ {
             TypeVariableSignature(_)
         }
 
     protected def _TypeArguments: Parser[List[TypeArgument]] =
-        "<" ~> rep1(_TypeArgument) <~ ">"
+        '<' ~> rep1(_TypeArgument) <~ '>'
 
     protected def _TypeArgument: Parser[TypeArgument] =
         (opt(_WildcardIndicator) ~ _FieldTypeSignature) ^^ { case wi ~ fts ⇒ ProperTypeArgument(wi, fts) } |
-            ("*" ^^ { _ ⇒ StarTypeArgument })
+            ('*' ^^ { _ ⇒ Wildcard })
 
-    protected def _WildcardIndicator: Parser[WildcardIndicator] =
-        "+" ^^ { _ ⇒ PlusWildcardIndicator } |
-            "-" ^^ { _ ⇒ MinusWildcardIndicator }
+    protected def _WildcardIndicator: Parser[VarianceIndicator] =
+        '+' ^^ { _ ⇒ CovariantIndicator } |
+            '-' ^^ { _ ⇒ ContravariantIndicator }
 
     protected def _ArrayTypeSignature: Parser[ArrayTypeSignature] =
-        "[" ~> _TypeSignature ^^ {
+        '[' ~> _TypeSignature ^^ {
             ArrayTypeSignature(_)
         }
 
@@ -147,21 +147,22 @@ object SignatureParser extends RegexParsers {
         _FieldTypeSignature | _BaseType
 
     protected def _ThrowsSignature: Parser[ThrowsSignature] =
-        "^" ~> (_ClassTypeSignature | _TypeVariableSignature)
+        '^' ~> (_ClassTypeSignature | _TypeVariableSignature)
 
     protected def _BaseType: Parser[BaseType] =
-        "B" ^^ (_ ⇒ ByteType()) |
-            "C" ^^ (_ ⇒ CharType()) |
-            "D" ^^ (_ ⇒ DoubleType()) |
-            "F" ^^ (_ ⇒ FloatType()) |
-            "I" ^^ (_ ⇒ IntegerType()) |
-            "J" ^^ (_ ⇒ LongType()) |
-            "S" ^^ (_ ⇒ ShortType()) |
-            "Z" ^^ (_ ⇒ BooleanType())
+        // TODO [Performance & Learning] implement a special purpose parser that switches on the character
+        'B' ^^ (_ ⇒ ByteType()) |
+            'C' ^^ (_ ⇒ CharType()) |
+            'D' ^^ (_ ⇒ DoubleType()) |
+            'F' ^^ (_ ⇒ FloatType()) |
+            'I' ^^ (_ ⇒ IntegerType()) |
+            'J' ^^ (_ ⇒ LongType()) |
+            'S' ^^ (_ ⇒ ShortType()) |
+            'Z' ^^ (_ ⇒ BooleanType())
 
     protected def _ReturnType: Parser[ReturnTypeSignature] =
         _TypeSignature |
-            "V" ^^ (_ ⇒ VoidType())
+            'V' ^^ (_ ⇒ VoidType())
 
 }
 

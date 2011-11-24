@@ -154,9 +154,7 @@ trait Constant_PoolResolver extends Constant_PoolBinding {
         }
     }
 
-    def cpidxToFieldTypeSignature(
-        signature_index: Constant_Pool_Index)(
-            implicit cp: Constant_Pool): FieldTypeSignature = {
+    def cpidxToFieldTypeSignature(signature_index: Constant_Pool_Index)(implicit cp: Constant_Pool): FieldTypeSignature = {
         SignatureParser.parseFieldTypeSignature(signature_index)
     }
 }

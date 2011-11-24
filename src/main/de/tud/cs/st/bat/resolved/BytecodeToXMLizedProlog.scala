@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -51,46 +51,45 @@ import de.tud.cs.st.bat.resolved.reader.Java6Framework
  */
 object BytecodeToXMLizedProlog extends UTF8Println {
 
-	val pp = new PrettyPrinter(160,4)
+    val pp = new PrettyPrinter(160, 4)
 
-	def main(args : Array[String]) : Unit = {
-		
-		for (arg <- args) {
-			if (new File(arg).exists) {
-				if (arg.endsWith(".zip") || arg.endsWith(".jar")) {
-					val zipfile = new ZipFile(new File(arg))
-					val zipentries = (zipfile).entries
-					while (zipentries.hasMoreElements) {
-						val zipentry = zipentries.nextElement
-						if (!zipentry.isDirectory && zipentry.getName.endsWith(".class")) {
-							processStream(() => zipfile.getInputStream(zipentry))
-						}
-					}
-					
-				} else {
-					processStream(() => new FileInputStream(arg))
-				}
-			} else {
-				processStream(() => Class.forName(arg).getResourceAsStream(arg.substring(arg.lastIndexOf('.')+1)+".class"))
-			}	
-		}	
- 	}
+    def main(args: Array[String]): Unit = {
 
-	private def processStream(f : () => InputStream) {
-		val classFile = Java6Framework.ClassFile(f)
-		val facts = classFile.toProlog(XMLizedPrologFactory)
-		println("<?xml version='1.0' encoding='UTF-8'?>")
-		println("<?xml-stylesheet type='text/css' href='XMLizedProlog.css'?>")
-		println(
-			pp.format(
-				<representation>
+        for (arg ← args) {
+            if (new File(arg).exists) {
+                if (arg.endsWith(".zip") || arg.endsWith(".jar")) {
+                    val zipfile = new ZipFile(new File(arg))
+                    val zipentries = (zipfile).entries
+                    while (zipentries.hasMoreElements) {
+                        val zipentry = zipentries.nextElement
+                        if (!zipentry.isDirectory && zipentry.getName.endsWith(".class")) {
+                            processStream(() ⇒ zipfile.getInputStream(zipentry))
+                        }
+                    }
+
+                } else {
+                    processStream(() ⇒ new FileInputStream(arg))
+                }
+            } else {
+                processStream(() ⇒ Class.forName(arg).getResourceAsStream(arg.substring(arg.lastIndexOf('.') + 1) + ".class"))
+            }
+        }
+    }
+
+    private def processStream(f: () ⇒ InputStream) {
+        val classFile = Java6Framework.ClassFile(f)
+        val facts = classFile.toProlog(XMLizedPrologFactory)
+        println("<?xml version='1.0' encoding='UTF-8'?>")
+        println("<?xml-stylesheet type='text/css' href='XMLizedProlog.css'?>")
+        println(
+            pp.format(
+                <representation>
 				{ facts }
 				</representation>
-			)
-		)
-	}
+            )
+        )
+    }
 }
-
 
 import scala.xml.Elem
 import scala.xml.Node
@@ -98,35 +97,32 @@ import scala.xml.Null
 import scala.xml.Text
 import scala.xml.TopScope
 
-
 /**
  * Creates XML variants of Prolog terms.
  *
  * @author Michael Eichberg
  */
-object XMLizedPrologFactory 
-	extends PrologTermFactory[Node,Node,Elem] 
-{
+object XMLizedPrologFactory extends PrologTermFactory[Node, Node, Elem] {
 
-	private var factCounter : Int = 0
-	
-	def KeyAtom(prefix : String) = {
-		factCounter = factCounter + 1
-		<atom type="key">{ (prefix+"_"+factCounter).toString }</atom>
-	}
-	
-	def IntegerAtom(value : Long) = <atom type="literal">{ value.toString }</atom>
+    private var factCounter: Int = 0
 
-	def FloatAtom(value : Double) = <atom type="literal">{ value.toString }</atom>
-	
-	def StringAtom(value : String) = <atom type="literal">{ value.toString }</atom>
-	
-	def TextAtom(value : String) = <atom type="text">{ value.toString }</atom>
-			
-	def Terms[T](xs : Seq[T], f : (T) => Node) = <list>{for (x <- xs) yield f(x)}</list>
-			
-	def Term(functor : String, terms : Node*) = <term functor={functor}>{ terms }</term>
+    def KeyAtom(prefix: String) = {
+        factCounter = factCounter + 1
+        <atom type="key">{ (prefix + "_" + factCounter).toString }</atom>
+    }
 
-	def Fact(functor : String, terms : Node*) = <fact functor={functor}>{ terms }</fact>
-		
+    def IntegerAtom(value: Long) = <atom type="literal">{ value.toString }</atom>
+
+    def FloatAtom(value: Double) = <atom type="literal">{ value.toString }</atom>
+
+    def StringAtom(value: String) = <atom type="literal">{ value.toString }</atom>
+
+    def TextAtom(value: String) = <atom type="text">{ value.toString }</atom>
+
+    def Terms[T](xs: Seq[T], f: (T) ⇒ Node) = <list>{ for (x ← xs) yield f(x) }</list>
+
+    def Term(functor: String, terms: Node*) = <term functor={ functor }>{ terms }</term>
+
+    def Fact(functor: String, terms: Node*) = <fact functor={ functor }>{ terms }</fact>
+
 }

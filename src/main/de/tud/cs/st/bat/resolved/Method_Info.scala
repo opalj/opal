@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -32,7 +32,6 @@
 */
 package de.tud.cs.st.bat.resolved
 
-
 import scala.xml.Elem
 import scala.xml.Null
 import scala.xml.Text
@@ -40,99 +39,98 @@ import scala.xml.TopScope
 
 import TypeAliases._
 
-
 /**
  * Represents a single method.
  *
  * @author Michael Eichberg
  */
-case class Method_Info (
-	val accessFlags : Int, 
-	val name : String,
-	val descriptor : MethodDescriptor,
-	val attributes : Attributes
-) {
+case class Method_Info(
+        val accessFlags: Int,
+        val name: String,
+        val descriptor: MethodDescriptor,
+        val attributes: Attributes) {
 
+    def code: Option[Code_attribute] = {
+        attributes find {
+            case ca: Code_attribute ⇒ return Some(ca)
+            case _                  ⇒ false
+        }
+        None
+    }
 
-	import de.tud.cs.st.bat.canonical.AccessFlagsContext.METHOD
-	import de.tud.cs.st.bat.canonical.AccessFlagsIterator
+    import de.tud.cs.st.bat.canonical.AccessFlagsContext.METHOD
+    import de.tud.cs.st.bat.canonical.AccessFlagsIterator
 
-//	def getCode : Option[Code_Attribute] = {
-		
-//	}
-
-	def toXML = 
-		<method 
+    def toXML =
+        <method
 			name={ name }>
 			{ descriptor.toXML }
-			<flags>{ AccessFlagsIterator(accessFlags, METHOD) map ( (f) => Elem(null,f.toString,Null,TopScope) ) }</flags>
-			<attributes>{ for (attribute <- attributes) yield attribute.toXML }</attributes>
+			<flags>{ AccessFlagsIterator(accessFlags, METHOD) map((f) ⇒ Elem(null, f.toString, Null, TopScope)) }</flags>
+			<attributes>{ for (attribute ← attributes) yield attribute.toXML }</attributes>
 		</method>
 
+    /**
+     * Structure of a class fact:
+     * <pre>
+     * method(
+     * 		classFileKey : Atom  // FOREIGN KEY
+     * 		methodKey : Atom // PRIMARY KEY
+     * 		name : Atom
+     * 		methodDescriptor : Term
+     * 		visibility : Atom
+     * 		abstract : Term
+     * 		final : Term
+     * 		static : Term
+     * 		synchronized : Term
+     * 		strict : Term
+     * 		native : Term
+     * 		varargs : Term
+     * 		bridge : Term
+     * 		synthetic : Term
+     * 		deprecated : Term
+     * )
+     * </pre>
+     */
+    def toProlog[F, T, A <: T](
+        factory: PrologTermFactory[F, T, A],
+        classFileKeyAtom: A): List[F] = {
 
-	/**
-	 * Structure of a class fact:
-	 * <pre>
-	 * method(
-	 *		classFileKey : Atom  // FOREIGN KEY
-	 * 	methodKey : Atom // PRIMARY KEY
-	 *		name : Atom
-	 *		methodDescriptor : Term 
-	 *		visibility : Atom 
-	 *		abstract : Term 
-	 *		final : Term 
-	 *		static : Term
-	 *		synchronized : Term
-	 *		strict : Term 
-	 *		native : Term 
-	 *		varargs : Term
-	 *		bridge : Term 
-	 *		synthetic : Term 
-	 *		deprecated : Term
-	 * )
-	 * </pre>
-	 */
-	def toProlog[F,T,A <: T](
-		factory : PrologTermFactory[F,T,A],
-		classFileKeyAtom : A
-	) : List[F] = {
-		
-		import factory._
-		
-		var facts : List[F] = Nil
+        import factory._
 
-		val key = KeyAtom("m_")
+        var facts: List[F] = Nil
 
-		for (attribute <- attributes) { 
-			facts = (attribute match {
-				case aa : Annotations_Attribute => aa.toProlog(factory,key)
-				case paa : ParameterAnnotations_attribute => paa.toProlog(factory,key)			
-				case ea : Exceptions_attribute => ea.toProlog(factory,key)		
-				case ada : AnnotationDefault_attribute => ada.toProlog(factory,key)	
-				case ca : Code_attribute => ca.toProlog(factory,key)	
-				case _ => Nil
-			}) ::: facts
-		}
+        val key = KeyAtom("m_")
 
-		Fact(
-			"method",	// functor
-			classFileKeyAtom,
-			key,
-			TextAtom(name),
-			descriptor.toProlog(factory),
-			VisibilityAtom(accessFlags,METHOD),
-			AbstractTerm(accessFlags),
-			FinalTerm(accessFlags),
-			StaticTerm(accessFlags),
-			SynchronizedTerm(accessFlags),			
-			StrictTerm(accessFlags),
-			NativeTerm(accessFlags),
-			VarargsTerm(accessFlags),			
-			BridgeTerm(accessFlags),						
-			SyntheticTerm(accessFlags,attributes),
-			DeprecatedTerm(attributes)
-		) :: facts
+        for (attribute ← attributes) {
+            facts = (attribute match {
+                case aa: Annotations_Attribute           ⇒ aa.toProlog(factory, key)
+                case paa: ParameterAnnotations_attribute ⇒ paa.toProlog(factory, key)
+                case ea: Exceptions_attribute            ⇒ ea.toProlog(factory, key)
+                case ada: AnnotationDefault_attribute    ⇒ ada.toProlog(factory, key)
+                case ca: Code_attribute                  ⇒ ca.toProlog(factory, key)
+                case _                                   ⇒ Nil
+            }) ::: facts
+        }
 
-	}
+        Fact(
+            "method", // functor
+            classFileKeyAtom,
+            key,
+            TextAtom(name),
+            descriptor.toProlog(factory),
+            VisibilityAtom(accessFlags, METHOD),
+            AbstractTerm(accessFlags),
+            FinalTerm(accessFlags),
+            StaticTerm(accessFlags),
+            SynchronizedTerm(accessFlags),
+            StrictTerm(accessFlags),
+            NativeTerm(accessFlags),
+            VarargsTerm(accessFlags),
+            BridgeTerm(accessFlags),
+            SyntheticTerm(accessFlags, attributes),
+            DeprecatedTerm(attributes)
+        ) :: facts
+
+    }
 
 }

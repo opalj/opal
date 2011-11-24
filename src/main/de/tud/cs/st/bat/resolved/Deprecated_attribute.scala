@@ -44,7 +44,7 @@ case object Deprecated_attribute extends Attribute {
     def toProlog[F, T, A <: T](
         factory: PrologTermFactory[F, T, A],
         declaringEntityKey: A): List[F] =
-        Nil // The deprecated attribute is treated as another access_flag
+        Nil // The deprecated attribute is treated as another access_flag 
 
 }
 

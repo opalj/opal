@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -38,37 +38,37 @@ import scala.collection.mutable.Map
 
 
 /**
- * Prints the result of the runtime performance evaluation of some function to 
+ * Prints the result of the runtime performance evaluation of some function to
  * the command line. This trait can be used as a very simple drop-in replacement
  *
  * @author Michael Eichberg
  */
-trait ToCommandLinePerformanceEvaluation extends PerformanceEvaluation 
-//with Println 
+trait ToCommandLinePerformanceEvaluation extends PerformanceEvaluation
+//with Println
 {
-	
-	
+
+
 	def time[T](s : String)(f : => T ) : T = {
-		
-		time ((duration : Double) => println(s+": "+duration.toString+"secs."))(f)
+
+		time (duration => println(s+": "+duration +"secs."))(f)
 		/*
 		val startTime = System.nanoTime
 		val result = f
 		val endTime = System.nanoTime
-		
+
 		println(s+": "+asSeconds(startTime,endTime).toString+"secs.")
-		
+
 		result*/
 	}
-	
+
 	/*def time[T](d : (Double) => Unit)(f : => T ) : T = {
-		
+
 		val startTime = System.nanoTime
 		val result = f
 		val endTime = System.nanoTime
-		
+
 		d(asSeconds(startTime,endTime))
-		
+
 		result
 	}*/
 
@@ -79,19 +79,19 @@ trait ToCommandLinePerformanceEvaluation extends PerformanceEvaluation
 		val startTime = System.nanoTime
 		val result = f
 		val endTime = System.nanoTime
-		
+
 		val old = aggregatedTimes.getOrElseUpdate(s,0l)
 		aggregatedTimes.update(s,old+(endTime-startTime))
-		
+
 		result
 	}
-	
-	
+
+
 	def printAggregatedTimes(sym:Symbol,s:String) {
 		println(s+": "+nanoSecondsToSeconds(aggregatedTimes.getOrElseUpdate(sym,0l)).toString+"secs.")
 	}
-	
-	
+
+
 	def resetAggregatedTimes(s:Symbol) {
 		aggregatedTimes.update(s,0l)
 	}
