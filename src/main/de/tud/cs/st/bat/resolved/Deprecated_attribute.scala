@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -32,26 +32,19 @@
 */
 package de.tud.cs.st.bat.resolved
 
-
 /**
- * The deprecated attribute. 
+ * The deprecated attribute.
  *
  * @author Michael Eichberg
  */
-final case class Deprecated_attribute private[Deprecated_attribute]() extends Attribute {
-	
-	def toXML = <deprecated/>
-	
-	def toProlog[F,T,A <: T](
-		factory : PrologTermFactory[F,T,A],
-		declaringEntityKey : A
-	) : List[F] = 
-		Nil 	// We do not represent the deprecated attribute as such, we treat
-				// it as another access_flag
-		
+case object Deprecated_attribute extends Attribute {
+
+    def toXML = <deprecated/>
+
+    def toProlog[F, T, A <: T](
+        factory: PrologTermFactory[F, T, A],
+        declaringEntityKey: A): List[F] =
+        Nil // The deprecated attribute is treated as another access_flag 
+
 }
-object Deprecated_attribute {
-	
-	val instance : Deprecated_attribute = new Deprecated_attribute()
-	
-}
+

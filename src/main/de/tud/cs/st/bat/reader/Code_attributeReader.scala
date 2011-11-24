@@ -98,6 +98,8 @@ trait Code_attributeReader extends AttributeReader {
 
     type ExceptionTable = IndexedSeq[ExceptionTableEntry]
 
+    private val EMPTY_EXCEPTION_TABLE: ExceptionTable = Vector.empty
+
     register(
         Code_attributeReader.ATTRIBUTE_NAME ->
             ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
@@ -107,11 +109,17 @@ trait Code_attributeReader extends AttributeReader {
                     in.readUnsignedShort(),
                     in.readUnsignedShort(),
                     Code(in, cp),
-                    repeat(in.readUnsignedShort()) { // "exception_table_length" times
-                        ExceptionTableEntry(
-                            in.readUnsignedShort, in.readUnsignedShort,
-                            in.readUnsignedShort, in.readUnsignedShort
-                        )(cp)
+                    {
+                        val exception_table_length = in.readUnsignedShort()
+                        if (exception_table_length == 0)
+                            EMPTY_EXCEPTION_TABLE
+                        else
+                            repeat(exception_table_length) { // "exception_table_length" times
+                                ExceptionTableEntry(
+                                    in.readUnsignedShort, in.readUnsignedShort,
+                                    in.readUnsignedShort, in.readUnsignedShort
+                                )(cp)
+                            }
                     },
                     Attributes(AttributesParent.Code_attribute, cp, in)
                 )(cp)

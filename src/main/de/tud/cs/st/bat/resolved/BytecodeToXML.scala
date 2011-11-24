@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -32,7 +32,7 @@
 */
 package de.tud.cs.st.bat.resolved
 
-import java.io.{File,FileInputStream}
+import java.io.{ File, FileInputStream }
 import java.io.IOException
 
 import scala.xml._
@@ -41,49 +41,45 @@ import de.tud.cs.st.util.UTF8Println
 
 import de.tud.cs.st.bat.resolved.reader.Java6Framework
 
-
 /**
  * Creates an XML representation of each class file and pretty prints the
- * XML representation to the console. 
- * <p>
- * The main purpose of this class is to demonstrate how to use BAT's XML
- * facilities.
- * </p>
+ * XML representation to the console.
  *
  * @author Michael Eichberg
  */
 object BytecodeToXML extends UTF8Println {
 
+    def main(args: Array[String]): Unit = {
 
-	def main(args : Array[String]) : Unit = {
+        println("""
+                |<!--
+				|	BytecodeToXML (c) 2009, 2011
+				|	Software Technology Group
+				|	Department of Computer Science,
+				|	Technische Universität Darmstadt
+				|	Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+				|-->
+                """.stripMargin)
 
-		println(""" |<!--
-						|	BytecodeToXML (c) 2009
-						|	Software Technology Group
-						|	Department of Computer Science,
-						|	Technische Universität Darmstadt
-						|	Michael Eichberg (eichberg@informatik.tu-darmstadt.de) 
-				  		|-->""".stripMargin)
+        val pp = new PrettyPrinter(160, 4)
+        for (arg ← args) {
+            try {
+                println(
+                    pp.format(
+                        (
+                            if ((new File(arg)).exists)
+                                Java6Framework.ClassFile(() ⇒ new FileInputStream(arg))
+                            else
+                                Java6Framework.ClassFile(() ⇒ Class.forName(arg).getResourceAsStream(arg.substring(arg.lastIndexOf('.') + 1) + ".class"))
+                        ).toXML
+                    )
+                )
+            } catch {
+                case io: IOException ⇒ println("Error while reading the file: " + arg); io.getMessage();
+                case t: Throwable    ⇒ println("Unknown error while loading: " + arg + "\n"); t.getMessage;
+            }
+        }
 
-		val pp = new PrettyPrinter(160,4)
-		for (arg <- args) {
-			try {
-				println(
-					pp.format(
-						(
-							if ((new File(arg)).exists)
-								Java6Framework.ClassFile(() => new FileInputStream(arg))
-							else
- 								Java6Framework.ClassFile(() => Class.forName(arg).getResourceAsStream(arg.substring(arg.lastIndexOf('.')+1)+".class"))		
-						).toXML
-					)
-				)
-			} catch {
-				case io : IOException => println("Error while reading the file: "+arg) ; io.printStackTrace ; return
-				case t : Throwable => println("Unknown error while loading: "+arg+"\n") ; t.printStackTrace ; return
-			}
-		}
-
- 	}
+    }
 }
 

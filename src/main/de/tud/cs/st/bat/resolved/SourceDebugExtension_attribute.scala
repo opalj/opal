@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -43,15 +43,15 @@ import de.tud.cs.st.prolog.{GroundTerm,Atom,Fact}
 case class SourceDebugExtension_attribute (
 	val debug_extension : String
 ) extends Attribute {
-	
+
 	def toXML =
 		<source_debug_extension>
 			{ debug_extension }
 		</source_debug_extension>
-	
+
 	def toProlog[F,T,A <: T](
 		factory : PrologTermFactory[F,T,A],
 		declaringEntityKey : A
-	) : List[F] = 
-		Nil // TODO	implement	
+	) : List[F] =
+		Nil // TODO	implement to Prolog conversion
 }

@@ -32,6 +32,7 @@
 */
 package de.tud.cs.st.bat.resolved
 
+import reader._
 import org.scalatest.FunSuite
 
 /**
@@ -39,7 +40,38 @@ import org.scalatest.FunSuite
  *
  * @author Michael Eichberg
  */
+//@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class SignaturesTest extends FunSuite {
+
+    private val classA = Java6Framework.ClassFile("test/classfiles/Signatures.zip", "signatures/A.class")
+    assert(classA ne null)
+
+    private val classB = Java6Framework.ClassFile("test/classfiles/Signatures.zip", "signatures/B.class")
+    assert(classB ne null)
+
+    test("parsing the class signatures") {
+        val classASignature = classA.classSignature.get
+        println(classASignature)
+
+        val classBSignature = classB.classSignature.get
+        println(classBSignature)
+    }
+
+    test("parsing the field type signatures") {
+        classA.fields.foreach(x ⇒
+            x match {
+                case Field_Info(_, "b", _, _) ⇒ {
+                    val signature = x.fieldTypeSignature;
+                    println("B : " + signature)
+                }
+                case Field_Info(_, "bs", _, _) ⇒ {
+                    val signature = x.fieldTypeSignature
+                    println("Bs : " + signature)
+                }
+                case _ ⇒ ;
+            }
+        )
+    }
 
     //
     // BRUTE FORCE TESTS (WE ARE JUST TRYING TO PARSE A VERY LARGE NUMBER OF SIGNATURES)
@@ -48,6 +80,7 @@ class SignaturesTest extends FunSuite {
     test("parse various class file signatures") {
         def parse(s: String) {
             val r = SignatureParser.parseClassSignature(s)
+            assert(r ne null)
         }
         ClassFileSignatures.foreach(parse _)
     }
@@ -55,6 +88,7 @@ class SignaturesTest extends FunSuite {
     test("parse various field type signatures") {
         def parse(s: String) {
             val r = SignatureParser.parseFieldTypeSignature(s)
+            assert(r ne null)
         }
         FieldTypeSignatures.foreach(parse _)
     }
@@ -62,6 +96,7 @@ class SignaturesTest extends FunSuite {
     test("parse various method type signatures") {
         def parse(s: String) {
             val r = SignatureParser.parseMethodTypeSignature(s)
+            assert(r ne null)
         }
         MethodTypeSignatures.foreach(parse _)
     }

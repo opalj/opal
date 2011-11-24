@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -37,7 +37,7 @@ import TypeAliases._
 
 
 /**
- * Representation of a method's code.
+ * Representation of a method's code attribute.
  *
  * @author Michael Eichberg
  */
@@ -49,10 +49,10 @@ case class Code_attribute (
 	val attributes : Attributes
 ) extends Attribute {
 
-	def toXML = 
+	def toXML =
 		<code
 			max_stack={ maxStack.toString }
-			max_locals={ maxLocals.toString } > 
+			max_locals={ maxLocals.toString } >
 			<attributes>{ for (attribute <- attributes) yield attribute.toXML }</attributes>
 			<exception_handlers>{ for (entry <- exceptionTable) yield entry.toXML }</exception_handlers>
 			<instructions>
@@ -75,13 +75,13 @@ case class Code_attribute (
 		factory : PrologTermFactory[F,T,A],
 		declaringEntityKey : A
 	) : List[F] = {
-		
+
 		import factory._
-		
-		// 1. create a "map" that associates each instruction's PC with the 
+
+		// 1. create a "map" that associates each instruction's PC with the
 		// 	a logical number (ignoring wide)
 		val pc_to_seqNo : Array[Int] = new Array[Int](code.size)
-		
+
 		{	// the following two variables have only "local" scope
 			var pc = 0
 			var index = 0
@@ -117,14 +117,14 @@ case class Code_attribute (
 				pc -= 1
 			}
 		}
-		
+
 		// 3. get the prolog representation of all relevant attributes
-		for (attribute <- attributes) { 
+		for (attribute <- attributes) {
 			 attribute match {
 				case lnta : LineNumberTable_attribute =>
 				 	facts = lnta.toProlog(factory,declaringEntityKey,pc_to_seqNo) :: facts
 				case lvta : LocalVariableTable_attribute =>
-				 	facts = lvta.toProlog(factory,declaringEntityKey,pc_to_seqNo) :: facts	
+				 	facts = lvta.toProlog(factory,declaringEntityKey,pc_to_seqNo) :: facts
 				case _ => Nil
 			}
 		}
@@ -140,11 +140,11 @@ case class Code_attribute (
 				)
 			) :: facts
 		}
-		
+
 		facts
 	}
-		
-		
+
+
 	override def toString = {
 		"Code_attribute(maxStack="+
 			maxStack+", maxLocals="+
@@ -154,7 +154,7 @@ case class Code_attribute (
 			(attributes.toString)+
 		")"
 	}
-		
+
 }
 
 
@@ -164,9 +164,9 @@ case class ExceptionTableEntry  (
 	val handlerPC : Int,
 	val catchType : ObjectType
 ) {
-	
+
 	import scala.xml.Text
-	
+
 	def toXML =
 		<exception_handler
 			start_pc={ startPC.toString }
@@ -177,10 +177,10 @@ case class ExceptionTableEntry  (
 		def toProlog[F,T,A <: T](
 			factory : PrologTermFactory[F,T,A],
 			pc_to_seqNo : Array[Int]
-		) : T = { 
+		) : T = {
 
 			import factory._
-			
+
 			Term(
 				"handler", // an annonymous "pair"
 				IntegerAtom(pc_to_seqNo(startPC)),
@@ -188,5 +188,5 @@ case class ExceptionTableEntry  (
 				IntegerAtom(pc_to_seqNo(handlerPC)),
 				if (catchType != null) catchType.toProlog(factory) else StringAtom("any")
 			)
-		}			
+		}
 }

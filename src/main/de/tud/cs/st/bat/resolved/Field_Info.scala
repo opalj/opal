@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -32,7 +32,6 @@
 */
 package de.tud.cs.st.bat.resolved
 
-
 import scala.xml.Elem
 import scala.xml.Null
 import scala.xml.Text
@@ -40,64 +39,70 @@ import scala.xml.TopScope
 
 import TypeAliases._
 
-
 /**
  * Represents a single field declaration.
  *
  * @author Michael Eichberg
  */
-case class Field_Info (
-	val accessFlags : Int,
-  	val name : String,
-  	val descriptor : FieldDescriptor,
-  	val attributes : Attributes
-) { 
+case class Field_Info(
+        val accessFlags: Int,
+        val name: String,
+        val descriptor: FieldDescriptor,
+        val attributes: Attributes) {
 
-	import de.tud.cs.st.bat.canonical.AccessFlagsContext.FIELD
-	import de.tud.cs.st.bat.canonical.AccessFlagsIterator
-		
-	def toXML = 
-		<field 		
-			name={ name } 
+    def fieldTypeSignature: Option[FieldTypeSignature] = {
+        for (attribute ← attributes) {
+            attribute match {
+                case Signature_attribute(s: FieldTypeSignature) ⇒ return Some(s)
+                case _ ⇒ ;
+            }
+        }
+        None
+    }
+
+    import de.tud.cs.st.bat.canonical.AccessFlagsContext.FIELD
+    import de.tud.cs.st.bat.canonical.AccessFlagsIterator
+
+    def toXML =
+        <field
+			name={ name }
 			type={ descriptor.fieldType.toJava } >
-			<flags>{ AccessFlagsIterator(accessFlags, FIELD) map ( (f) => Elem(null,f.toString,Null,TopScope) ) }</flags>
-			<attributes>{ for (attribute <- attributes) yield attribute.toXML }</attributes>	
+			<flags>{ AccessFlagsIterator(accessFlags, FIELD) map((f) ⇒ Elem(null, f.toString, Null, TopScope)) }</flags>
+			<attributes>{ for (attribute ← attributes) yield attribute.toXML }</attributes>
 		</field>
-		
-		
-	def toProlog[F,T,A <: T](
-		factory : PrologTermFactory[F,T,A],
-		classFileKeyAtom : A
-	) : List[F] = {
 
-		import factory._
+    def toProlog[F, T, A <: T](
+        factory: PrologTermFactory[F, T, A],
+        classFileKeyAtom: A): List[F] = {
 
-		var facts : List[F] = Nil
+        import factory._
 
-		val key = KeyAtom("f_")
-		
-		for (attribute <- attributes) { 
-			facts = (attribute match {
-				case aa : Annotations_Attribute => aa.toProlog(factory,key)
-				case cva : ConstantValue_attribute => cva.toProlog(factory,key)
-				case _ => Nil
-			}) ::: facts
-		}
+        var facts: List[F] = Nil
 
-		Fact(
-			"field",	// functor
-			classFileKeyAtom,
-			key,
-			TextAtom(name),
-			descriptor.toProlog(factory),
-			VisibilityAtom(accessFlags,FIELD),
-			FinalTerm(accessFlags),
-			StaticTerm(accessFlags),
-			TransientTerm(accessFlags),
-			VolatileTerm(accessFlags),
-			SyntheticTerm(accessFlags,attributes),
-			DeprecatedTerm(attributes)
-		) :: facts
+        val key = KeyAtom("f_")
 
-	}		
+        for (attribute ← attributes) {
+            facts = (attribute match {
+                case aa: Annotations_Attribute    ⇒ aa.toProlog(factory, key)
+                case cva: ConstantValue_attribute ⇒ cva.toProlog(factory, key)
+                case _                            ⇒ Nil
+            }) ::: facts
+        }
+
+        Fact(
+            "field", // functor
+            classFileKeyAtom,
+            key,
+            TextAtom(name),
+            descriptor.toProlog(factory),
+            VisibilityAtom(accessFlags, FIELD),
+            FinalTerm(accessFlags),
+            StaticTerm(accessFlags),
+            TransientTerm(accessFlags),
+            VolatileTerm(accessFlags),
+            SyntheticTerm(accessFlags, attributes),
+            DeprecatedTerm(attributes)
+        ) :: facts
+
+    }
 }

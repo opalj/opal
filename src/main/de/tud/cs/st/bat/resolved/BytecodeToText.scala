@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -38,29 +38,26 @@ import de.tud.cs.st.util.UTF8Println
 
 import de.tud.cs.st.bat.resolved.reader.Java6Framework
 
-
 /**
  * Prints out the object graph using the compiler generated "toString" method.
- * <p> The main purpose of this class is to demonstrate how to use BAT. </p>
  *
  * @author Michael Eichberg
  */
 object BytecodeToText extends UTF8Println {
 
+    def main(args: Array[String]): Unit = {
 
-	def main(args : Array[String]) : Unit = {
+        println("""
+                |BytecodeToTxt (c) 2009, 2001
+                |Software Technology Group
+				|Department of Computer Science
+                |Technische Universität Darmstadt
+				|Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+        		""".stripMargin)
 
-		println(""" |BytecodeToTxt (c) 2009 
-						|Software Engineering, Technische Universität Darmstadt
-						|Michael Eichberg (eichberg@informatik.tu-darmstadt.de) """.stripMargin)
-
-		//	var classFile : Java6Framework.ClassFile = null
-		//	classFile = Java6Framework.ClassFile(() => new Object().getClass().getResourceAsStream("Object.class") )
-		// println(classFile.toString+"\n")
-
-		for (arg <- args) {
-			println(Java6Framework.ClassFile(() => new FileInputStream(arg)).toString)
-		}	
- 	}
+        for (arg ← args) {
+            println(Java6Framework.ClassFile(() ⇒ new FileInputStream(arg)).toString)
+        }
+    }
 }
 

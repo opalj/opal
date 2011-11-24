@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -30,40 +30,45 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved.reader
+package de.tud.cs.st.bat.resolved
+package reader
 
 import de.tud.cs.st.bat.reader.LocalVariableTypeTable_attributeReader
 
-
 /**
- * 
  *
  * @author Michael Eichberg
  */
-trait LocalVariableTypeTable_attributeBinding 
-	extends LocalVariableTypeTable_attributeReader
-		with Constant_PoolResolver
-		with AttributeBinding	
-{
+trait LocalVariableTypeTable_attributeBinding
+        extends LocalVariableTypeTable_attributeReader
+        with Constant_PoolResolver
+        with AttributeBinding {
 
+    type LocalVariableTypeTable_attribute = de.tud.cs.st.bat.resolved.LocalVariableTypeTable_attribute
 
-	type LocalVariableTypeTable_attribute = de.tud.cs.st.bat.resolved.LocalVariableTypeTable_attribute		
-	type LocalVariableTypeTableEntry = de.tud.cs.st.bat.resolved.LocalVariableTypeTableEntry	
-	val LocalVariableTypeTableEntryManifest : ClassManifest[LocalVariableTypeTableEntry] = implicitly
+    type LocalVariableTypeTableEntry = de.tud.cs.st.bat.resolved.LocalVariableTypeTableEntry
+    val LocalVariableTypeTableEntryManifest: ClassManifest[LocalVariableTypeTableEntry] = implicitly
 
+    def LocalVariableTypeTableEntry(start_pc: Int,
+                                    length: Int,
+                                    name_index: Int,
+                                    signature_index: Constant_Pool_Index,
+                                    index: Int)(
+                                        implicit constant_pool: Constant_Pool): LocalVariableTypeTableEntry = {
 
-	def LocalVariableTypeTableEntry (
-		start_pc : Int, length : Int,	name_index : Int,	signature_index : Int,	index : Int
-	)( implicit constant_pool : Constant_Pool) : LocalVariableTypeTableEntry = {
-		new LocalVariableTypeTableEntry(start_pc, length, name_index, signature_index, index)
-	} 
+        new LocalVariableTypeTableEntry(
+            start_pc,
+            length,
+            name_index,
+            cpidxToFieldTypeSignature(signature_index),
+            index)
+    }
 
-
-	def LocalVariableTypeTable_attribute (
-		attribute_name_index : Int, attribute_length : Int, 
-		local_variable_type_table : LocalVariableTypeTable
-	)( implicit constant_pool : Constant_Pool) =
-		new LocalVariableTypeTable_attribute (local_variable_type_table )
+    def LocalVariableTypeTable_attribute(attribute_name_index: Constant_Pool_Index,
+                                         attribute_length: Int,
+                                         local_variable_type_table: LocalVariableTypeTable)(
+                                             implicit constant_pool: Constant_Pool) =
+        new LocalVariableTypeTable_attribute(local_variable_type_table)
 }
 
 

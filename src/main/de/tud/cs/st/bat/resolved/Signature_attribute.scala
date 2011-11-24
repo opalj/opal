@@ -48,5 +48,5 @@ case class Signature_attribute(
     def toProlog[F, T, A <: T](
         factory: PrologTermFactory[F, T, A],
         declaringEntityKey: A): List[F] =
-        Nil // TODO	implement
+        Nil // TODO	implement toProlog
 }

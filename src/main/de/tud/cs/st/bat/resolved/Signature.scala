@@ -42,6 +42,8 @@ import de.tud.cs.st.prolog.{ GroundTerm, Atom, Fact }
 
 trait ReturnTypeSignature {
 
+    //getTypes
+
 }
 
 trait TypeSignature extends ReturnTypeSignature {
@@ -63,10 +65,11 @@ case class ClassSignature(
 }
 
 case class MethodTypeSignature(
-        formalTypeParameters: Option[List[FormalTypeParameter]],
-        parametersTypeSignatures: List[TypeSignature],
-        returnType: ReturnTypeSignature,
-        throwsSignature: List[ThrowsSignature]) extends Signature {
+    formalTypeParameters: Option[List[FormalTypeParameter]],
+    parametersTypeSignatures: List[TypeSignature],
+    returnType: ReturnTypeSignature,
+    throwsSignature: List[ThrowsSignature])
+        extends Signature {
 
 }
 
@@ -74,15 +77,26 @@ trait FieldTypeSignature extends Signature with TypeSignature {
 
 }
 
-case class ArrayTypeSignature(typeSignature: TypeSignature) extends FieldTypeSignature {
+case class ArrayTypeSignature(
+    typeSignature: TypeSignature)
+        extends FieldTypeSignature {
 
 }
 
 case class ClassTypeSignature(
-        packageIdentifier: Option[String],
-        simpleClassTypeSignature: SimpleClassTypeSignature,
-        classTypeSignatureSuffix: List[SimpleClassTypeSignature]) extends FieldTypeSignature with ThrowsSignature {
+    packageIdentifier: Option[String],
+    simpleClassTypeSignature: SimpleClassTypeSignature,
+    classTypeSignatureSuffix: List[SimpleClassTypeSignature])
+        extends FieldTypeSignature
+        with ThrowsSignature {
 
+    def referredTypes: Iterable[Type] = new Iterable[Type] {
+        // TODO implement
+        def iterator: Iterator[Type] = new Iterator[Type] {
+            def next: Type = null
+            def hasNext: Boolean = false
+        }
+    }
 }
 
 case class SimpleClassTypeSignature(
@@ -106,11 +120,28 @@ trait TypeArgument {
 }
 
 case class ProperTypeArgument(
-    wildcardIndicator: Option[WildcardIndicator],
-    fieldTypeSignature: FieldTypeSignature) extends TypeArgument
+    varianceIndicator: Option[VarianceIndicator],
+    fieldTypeSignature: FieldTypeSignature) extends TypeArgument {
 
-sealed trait WildcardIndicator
-case object PlusWildcardIndicator extends WildcardIndicator // TODO find better name!
-case object MinusWildcardIndicator extends WildcardIndicator // TODO find better name!
+}
 
-case object StarTypeArgument extends TypeArgument // TODO find better name!
+/**
+ * Indicates a TypeArgument's variance.
+ */
+sealed trait VarianceIndicator
+/**
+ * If you have declaration such as <? extends Entry> then the "? extends" part
+ * is represented by the CovariantIndicator.
+ */
+case object CovariantIndicator extends VarianceIndicator
+/**
+ * A declaration such as <? super Entry> is represented in class file signatures
+ * by the ContravariantIndicator ("? super") and a FieldTypeSignature.
+ */
+case object ContravariantIndicator extends VarianceIndicator
+
+/**
+ * If a type argument is not further specified (e.g. List<?> l = …) then the
+ * type argument "?" is represented by this object.
+ */
+case object Wildcard extends TypeArgument

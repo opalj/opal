@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -35,21 +35,22 @@ package de.tud.cs.st.bat.resolved.reader
 import de.tud.cs.st.bat.reader.Signature_attributeReader
 
 /**
+ * Implements the factory method defined and used by the generic signature attribute reader.
  *
  * @author Michael Eichberg
  */
 trait Signature_attributeBinding
-    extends Signature_attributeReader
-    with Constant_PoolResolver
-    with AttributeBinding {
+        extends Signature_attributeReader
+        with Constant_PoolResolver
+        with AttributeBinding {
 
-  type Signature_attribute = de.tud.cs.st.bat.resolved.Signature_attribute
+    type Signature_attribute = de.tud.cs.st.bat.resolved.Signature_attribute
 
-  def Signature_attribute(attribute_name_index: Constant_Pool_Index,
-                          signature_index: Constant_Pool_Index)(
-                            implicit constant_pool: Constant_Pool, ap: AttributeParent) = {
-    new Signature_attribute(signature_index)
-  }
+    def Signature_attribute(attribute_name_index: Constant_Pool_Index,
+                            signature_index: Constant_Pool_Index)(
+                                implicit cp: Constant_Pool, ap: AttributeParent) = {
+        new Signature_attribute(signature_index)
+    }
 
 }
 

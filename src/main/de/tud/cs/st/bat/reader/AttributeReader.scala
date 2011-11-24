@@ -35,11 +35,13 @@ package de.tud.cs.st.bat.reader
 import java.io.DataInputStream
 
 /**
+ * Supertrait of all attribute readers.
+ *
  * @author Michael Eichberg
  */
-trait AttributeReader extends Constant_PoolAbstractions with AttributesAbstractions {
-
-
+trait AttributeReader
+        extends Constant_PoolAbstractions
+        with AttributesAbstractions {
 
     type Attribute >: Null
 
@@ -53,6 +55,6 @@ trait AttributeReader extends Constant_PoolAbstractions with AttributesAbstracti
      *  at the beginning of the attribute, the constant pool and the attribute
      *  name index reads in the attribute and returns it.
      */
-    def register(reader: (String, (AttributeParent, Constant_Pool,  /* attribute name */ Constant_Pool_Index, DataInputStream) ⇒ Attribute)): Unit
+    def register(reader: (String, (AttributeParent, Constant_Pool, /* attribute name */ Constant_Pool_Index, DataInputStream) ⇒ Attribute)): Unit
 
 }
