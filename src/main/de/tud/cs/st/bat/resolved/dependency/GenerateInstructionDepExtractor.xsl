@@ -85,23 +85,37 @@ trait InstructionDepExtractor extends CodeBinding{
   }
 
   protected def getID(className: String, field: Field_Info): Option[Int] =
-    getID(className, field.name)
+    getID(className, field.name, Some(field))
   protected def getID(targetType: Type, fieldName: String): Option[Int] =
-    getID(getNameOfUnderlyingType(targetType), fieldName)
-  protected def getID(className: String, fieldName: String): Option[Int] =
-    getID(className + FIELD_AND_METHOD_SEPARATOR + fieldName)
+    getID(getNameOfUnderlyingType(targetType), fieldName, None)
+  protected def getID(className: String, fieldName: String, field: Option[Field_Info]): Option[Int] = {
+    val fullName = className + FIELD_AND_METHOD_SEPARATOR + fieldName
+    field match {
+      case Some(f) => Some(builder.getID(fullName,f))
+      case None => getID(fullName)
+    }
+  }
 
   protected def getID(className: String, method: Method_Info): Option[Int] =
-    getID(className, method.name, method.descriptor)
+    getID(className, method.name, method.descriptor, Some(method))
   protected def getID(targetType: Type, name: String, methodDescriptor: MethodDescriptor): Option[Int] =
-    getID(getNameOfUnderlyingType(targetType), name, methodDescriptor)
-  protected def getID(className: String, methodName: String, methodDescriptor: MethodDescriptor): Option[Int] =
-    getID(className + FIELD_AND_METHOD_SEPARATOR + getMethodAsName(methodName, methodDescriptor))
+    getID(getNameOfUnderlyingType(targetType), name, methodDescriptor, None)
+  protected def getID(className: String, methodName: String, methodDescriptor: MethodDescriptor, method : Option[Method_Info]): Option[Int] = {
+    val fullName = className + FIELD_AND_METHOD_SEPARATOR + getMethodAsName(methodName, methodDescriptor)
+    method match {
+      case Some(m) => Some(builder.getID(fullName,m))
+      case None => getID(fullName)
+    }
+  }
+
   protected def getID(methodName: String, methodDescriptor: MethodDescriptor): Option[Int] =
     getID(getMethodAsName(methodName, methodDescriptor))
   protected def getMethodAsName(methodName: String, methodDescriptor: MethodDescriptor): String = {
     methodName + "(" + methodDescriptor.parameterTypes.map(pT => getNameOfUnderlyingType(pT)).mkString(", ") + ")"
   }
+  
+  protected def getID(clazz: ClassFile): Option[Int] =
+    Some(builder.getID(getName(clazz.thisClass), clazz))
 
   protected def getID(obj: Type): Option[Int] =
     getID(getNameOfUnderlyingType(obj))

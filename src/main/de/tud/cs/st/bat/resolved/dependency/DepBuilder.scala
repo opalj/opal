@@ -46,6 +46,10 @@ import DependencyType._
 trait DepBuilder {
 
   def getID(identifier: String): Int
+  def getID(identifier: String, clazz: ClassFile): Int
+  def getID(identifier: String, field: Field_Info): Int
+  def getID(identifier: String, method: Method_Info): Int
+
   def addDep(src: Int, trgt: Int, dType: DependencyType)
 
   def addDep(src: Option[Int], trgt: Option[Int], dType: DependencyType) {

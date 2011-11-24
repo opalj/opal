@@ -52,7 +52,7 @@ class DepExtractor(val builder: DepBuilder) extends InstructionDepExtractor {
 
   def process(clazz: ClassFile) {
     implicit val thisClassName = getName(clazz.thisClass)
-    implicit val thisClassID = getID(clazz.thisClass)
+    implicit val thisClassID = getID(clazz)
 
     // process super class
     val superClassID = getID(clazz.superClass)
@@ -86,7 +86,7 @@ class DepExtractor(val builder: DepBuilder) extends InstructionDepExtractor {
           }
         //TODO: make use of Signature_attribute
         case sa: Signature_attribute =>
-          println(sa)
+        //          println(sa)
         case _ => Nil
       }
     }
@@ -104,7 +104,7 @@ class DepExtractor(val builder: DepBuilder) extends InstructionDepExtractor {
 
   private def process(field: Field_Info)(implicit thisClassName: String, thisClassID: Option[Int]) {
     implicit val fieldID = getID(thisClassName, field)
-    builder.addDep(fieldID, thisClassID, if(isStaticField(field.accessFlags)) IS_CLASS_MEMBER_OF else IS_INSTANCE_MEMBER_OF)
+    builder.addDep(fieldID, thisClassID, if (isStaticField(field.accessFlags)) IS_CLASS_MEMBER_OF else IS_INSTANCE_MEMBER_OF)
     builder.addDep(fieldID, getID(field.descriptor.fieldType), IS_OF_TYPE)
     //process attributes
     for (attribute <- field.attributes) {
@@ -117,7 +117,7 @@ class DepExtractor(val builder: DepBuilder) extends InstructionDepExtractor {
           builder.addDep(fieldID, getID(cva.constantValue.valueType), USES_CONSTANT_VALUE_OF_TYPE)
         //TODO: make use of Signature_attribute
         case sa: Signature_attribute =>
-          println(sa)
+        //          println(sa)
         case _ => Nil
       }
     }
@@ -125,7 +125,7 @@ class DepExtractor(val builder: DepBuilder) extends InstructionDepExtractor {
 
   private def process(method: Method_Info)(implicit thisClassName: String, thisClassID: Option[Int]) {
     implicit val methodID = getID(thisClassName, method)
-    builder.addDep(methodID, thisClassID, if(isStaticMethod(method.accessFlags)) IS_CLASS_MEMBER_OF else IS_INSTANCE_MEMBER_OF)
+    builder.addDep(methodID, thisClassID, if (isStaticMethod(method.accessFlags)) IS_CLASS_MEMBER_OF else IS_INSTANCE_MEMBER_OF)
     builder.addDep(methodID, getID(method.descriptor.returnType), RETURNS)
     for (paramType <- method.descriptor.parameterTypes) {
       builder.addDep(methodID, getID(paramType), HAS_PARAMETER_OF_TYPE)
@@ -166,13 +166,16 @@ class DepExtractor(val builder: DepBuilder) extends InstructionDepExtractor {
                 }
               //TODO: make use of LocalVariableTypeTable_attribute
               case lvtta: LocalVariableTypeTable_attribute =>
-                println(lvtta)
+                for (lvt <- lvtta.localVariableTypeTable) {
+                  //TODO: impl.
+                }
+              //                println(lvtta)
               case _ => Nil
             }
           }
         //TODO: make use of Signature_attribute
         case sa: Signature_attribute =>
-          println(sa)
+        //          println(sa)
         case _ => Nil
       }
     }
@@ -207,11 +210,11 @@ class DepExtractor(val builder: DepBuilder) extends InstructionDepExtractor {
 
   private def isEnclosedByMethod(ema: EnclosingMethod_attribute): Boolean =
     ema.name != null && ema.descriptor != null // otherwise the inner class is assigned to a field
-    
+
   private def isStaticField(accessFlags: Int): Boolean =
-    AccessFlagsIterator(accessFlags,FIELD).contains(ACC_STATIC)
+    AccessFlagsIterator(accessFlags, FIELD).contains(ACC_STATIC)
   private def isStaticMethod(accessFlags: Int): Boolean =
-    AccessFlagsIterator(accessFlags,METHOD).contains(ACC_STATIC)
+    AccessFlagsIterator(accessFlags, METHOD).contains(ACC_STATIC)
 
   protected def filter(name: String): Boolean = {
     for (swFilter <- Array("byte", "short", "int", "long", "float", "double", "char", "boolean", "void")) {

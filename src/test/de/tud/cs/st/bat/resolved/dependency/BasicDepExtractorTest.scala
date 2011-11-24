@@ -114,6 +114,15 @@ class BasicDepExtractorTest extends Suite with de.tud.cs.st.util.perf.BasicPerfo
           cnt
         }
 
+        def getID(identifier: String, clazz: ClassFile): Int =
+          getID(identifier)
+
+        def getID(identifier: String, field: Field_Info): Int =
+          getID(identifier)
+
+        def getID(identifier: String, method: Method_Info): Int =
+          getID(identifier)
+
         def addDep(src: Int, trgt: Int, dType: DependencyType) = {
           //The next line was uncommented to speed up the test runs
           //println("addDep: " + src + "--[" + dType + "]-->" + trgt)
