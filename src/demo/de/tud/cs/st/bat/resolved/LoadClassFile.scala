@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -30,57 +30,28 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.util.collection
+package de.tud.cs.st.bat.resolved
 
+import reader.Java6Framework
 
 /**
- * A stripped down variant of scala's default "IndexedSeq" trait that
- * does not specify / implement operations that are (potentially) expensive.
- * 
+ * Just a very small code snippet that shows how to load a class file
+ * and how to access the most basic information.
+ *
  * @author Michael Eichberg
  */
-trait Indexed[A] {
-	
-		
-	// ABSTRACT DEFINITIONS
-	
-	def size : Int
-	
-	def apply(i : Int) : A
-		
-	
-	// CONCRETE IMPLEMENTATIONS
-	
-	def mkString(f : A => String, separator : String) : String = {
-		if (size == 0) {
-			""
-		} else {
-			val s = new StringBuilder(f(this(0)))
-			var i = 1
-			while (i < size) {
-				s.append(separator)
-				s.append(f(this(i)))
-				i += 1
-			}
-			s.toString			
-		}		
-	}	
-}
+object LoadClassFile extends App {
 
-object Indexed {
-	
-	
-	/**
-	 * Combines the elements of two equally sized indexed data structures. Returns false if the combination of two 
-	 * entries fails or if the size of the structures is different.
-	 */
-	def combine[X,Y](i1 : Indexed[X], i2 : Indexed[Y], f : (X,Y) => Boolean) : Boolean = {
-		i1.size == i2.size && {
-			val max = i1.size
-			var i = 0
-			while (i < max && f(i1(i),i2(i))) { i+= 1 }
-			i == max
-		}
-	}
-	
+    val classFile = Java6Framework.ClassFile("test/classfiles/Multithreaded RPN Calculator 2008_10_17 - Java 6 all debug info.zip", "src/de/michaeleichberg/multihtreadedprogramming/v2Beta4Thread/Calculator.class")
+
+    println(classFile.thisClass.className)
+
+    println("extends " + classFile.superClass.className)
+
+    print("implements")
+    classFile.interfaces.foreach(interface ⇒ print(" " + interface.className))
+    println
+
+    println("<Sourcefile>: " + (classFile sourceFile match { case Some(s) ⇒ s; case _ ⇒ "<NONE>" }))
+    println("<Version>:    " + classFile.majorVersion + "." + classFile.minorVersion)
 }

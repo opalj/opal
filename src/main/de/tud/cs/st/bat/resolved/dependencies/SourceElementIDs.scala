@@ -31,12 +31,54 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 */
 package de.tud.cs.st.bat.resolved
+package dependencies
 
-import reader.Java6Framework
+/**
+ * Associates a source element with a unique id.
+ *
+ * Types are associated with ids larger than 0 and smaller than one billion.
+ *
+ * Fields are associated with ids > 1 000 000 000 and < 2 000 000 000
+ *
+ * Methods are associated with ids > 2 000 000 000
+ *
+ * @author Michael Eichberg
+ */
+object SourceElementIDs {
 
-object TraverseClass extends App {
+    import scala.collection.mutable.WeakHashMap
 
-  val classFile = Java6Framework.ClassFile("test/classfiles/Multithreaded RPN Calculator 2008_10_17 - Java 6 all debug info.zip", "src/de/michaeleichberg/multihtreadedprogramming/v2Beta4Thread/Calculator.class")
-  println(classFile)
+    private var nextTypeID = 0;
+
+    private val typeIDs = WeakHashMap[Type, Int]()
+
+    def sourceElementID(classFile: ClassFile): Int = sourceElementID(classFile.thisClass)
+
+    def sourceElementID(t: Type): Int = typeIDs.getOrElseUpdate(t, { nextTypeID += 1; nextTypeID })
+
+    //
+    // Associates each method with a unique ID
+    //
+
+    private var nextMethodID = 1000000000;
+
+    private val methodIDs = WeakHashMap[Int, WeakHashMap[(String, MethodDescriptor), Int]]()
+
+    /**
+     * '''Performance Hint'''
+     * If possible try to use the more specific method id(Int,Method_Info).
+     */
+    def sourceElementID(classFile: ClassFile, method: Method_Info): Int = sourceElementID(sourceElementID(classFile), method)
+
+    def sourceElementID(definingObjectTypeID: Int, method: Method_Info): Int = {
+        val Method_Info(_, methodName, methodDescriptor, _) = method
+        sourceElementID(definingObjectTypeID, methodName, methodDescriptor)
+    }
+
+    def sourceElementID(definingObjectTypeID: Int, methodName: String, methodDescriptor: MethodDescriptor): Int = {
+        methodIDs.
+            getOrElseUpdate(definingObjectTypeID, { WeakHashMap[(String, MethodDescriptor), Int]() }).
+            getOrElseUpdate((methodName, methodDescriptor), { nextMethodID += 1; nextMethodID })
+    }
 
 }

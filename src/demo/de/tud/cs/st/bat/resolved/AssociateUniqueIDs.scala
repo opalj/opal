@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -30,44 +30,33 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.util.collection
+package de.tud.cs.st.bat.resolved
 
-
+import reader.Java6Framework
 
 /**
- * Implementation of some convenience methods over Arrays.
+ * Just a very small code snippet that shows how to load all class files
+ * from a zip file and how to associate all top-level source elements with unique ids.
  *
  * @author Michael Eichberg
  */
-object Arrays {
-	
-	/**
-	 * Given a sorted array in ascending order and a value that should be 
-	 * inserted into the array, this method returns the index where to store 
-	 * the new value.<br />
-	 * If the given value is already stored in this sorted array, the index -1 is
-	 * returned. 
-	 * 
-	 * @param 	a a sorted array in ascending order in which to search for the given value.
-	 * @param 	upperBound if only the beginning of the array should be used it is possible
-	 * 			to specify an upper bound to limit the search to the range [0..upperBound).
-	 * 			Hence, if you want to search for a value in an entire Array upperBound
-	 *				has to be equal to <code>a.size</code>.
-	 */
-	def getInsertionIndex[T <% Int](a : Array[T],upperBound : Int,value : T) : Int = {
-		
-		// binary search method
-		
-		var max_index 	= upperBound
-		var min_index  = 0
-		while (min_index < max_index) { 
-			val index 		= (min_index + max_index) / 2
-			val v 			= a(index)
-			if (v == value) return -1
-			else if (value > v) min_index = index+1
-			else max_index = index
-		}
-		return min_index
-	}
+object AssociateUniqueIDs
+        extends App
+        with de.tud.cs.st.util.perf.ToCommandLinePerformanceEvaluation {
 
+    import dependencies.SourceElementIDs.{ sourceElementID ⇒ id }
+
+    val classFiles: Seq[ClassFile] = Java6Framework.ClassFiles("test/classfiles/BAT2XML - target 1.7.zip")
+
+    val loadAllClassFiles = () ⇒ {
+        for (classFile ← classFiles) {
+            val classID = id(classFile)
+
+            for (method ← classFile.methods) {
+                id(classID, method)
+            }
+        }
+    }
+
+    time("Loading all class files and associating unique ids") { loadAllClassFiles() }
 }

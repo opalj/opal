@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -32,9 +32,7 @@
 */
 package de.tud.cs.st.util.perf
 
-
 import scala.collection.mutable.Map
-
 
 /**
  * Trait that defines methods for measuring the execution time of some code.
@@ -43,32 +41,27 @@ import scala.collection.mutable.Map
  */
 trait BasicPerformanceEvaluation {
 
-	
-	def nanoSecondsToSeconds(value : Double) : Double = value/1000.0/1000.0/1000.0
+    def nanoSecondsToSeconds(value: Long): Double = value.toDouble / 1000.0d / 1000.0d / 1000.0d
 
+    def nanoSecondsToMilliseconds(value: Long): Double = value.toDouble / 1000.0d / 1000.0d
 
-	def nanoSecondsToMilliseconds(value : Double) : Double = value/1000.0/1000.0
+    def asSeconds(startTimeInNanoSeconds: Long, endTimeInNanoSeconds: Long): Double =
+        nanoSecondsToSeconds(endTimeInNanoSeconds - startTimeInNanoSeconds)
 
-	
-	def asSeconds(startTimeInNanoSeconds : Long, endTimeInNanoSeconds : Long) : Double = 
-		nanoSecondsToSeconds(endTimeInNanoSeconds - startTimeInNanoSeconds)
+    /**
+     * Times the execution of a given method (function literal) / code block.
+     *
+     * @param r a function that is passed the time (in nano seconds) required to execute the time method block.
+     */
+    def time[T](r: Long ⇒ Unit)(f: ⇒ T): T = {
 
+        val startTime: Long = System.nanoTime
+        val result = f
+        val endTime: Long = System.nanoTime
 
-	/**
-	 * Times the execution of a given method (function literal) / code block.
-	 *
-	 * @param r a function that is passed the time required to execute the time method block.
-	 */
-	def time[T](r : Double => Unit)(f : => T ) : T = {
-		
-		val startTime = System.nanoTime
-		val result = f
-		val endTime = System.nanoTime
-		
-		r(endTime-startTime)
-		
-		result
-	}
+        r(endTime - startTime)
 
+        result
+    }
 
 }

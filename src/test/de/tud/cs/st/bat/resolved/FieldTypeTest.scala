@@ -32,75 +32,71 @@
 */
 package de.tud.cs.st.bat.resolved
 
-
 import org.scalatest.FunSuite
 import java.io.File
 import java.util.zip.ZipFile
 import java.util.Enumeration
 
-
 /**
-
+ * Test the construction and analysis of types.
+ *
  * @author Michael Eichberg
  */
 //@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class FieldTypeTest extends FunSuite {
 
-	test("Byte Field Descriptor") {
-		val fd = FieldDescriptor("B")
-		assert (fd.fieldType.isInstanceOf[ByteType])
-	}
+    test("Byte Field Descriptor") {
+        val fd = FieldDescriptor("B")
+        assert(fd.fieldType == ByteType)
+    }
 
-	test("Char Field Descriptor") {
-		val fd = FieldDescriptor("C")
-		assert (fd.fieldType.isInstanceOf[CharType])
-	}
+    test("Char Field Descriptor") {
+        val fd = FieldDescriptor("C")
+        assert(fd.fieldType == CharType)
+    }
 
-	test("Double Field Descriptor") {
-		val fd = FieldDescriptor("D")
-		assert (fd.fieldType.isInstanceOf[DoubleType])
-	}
+    test("Double Field Descriptor") {
+        val fd = FieldDescriptor("D")
+        assert(fd.fieldType == DoubleType)
+    }
 
-	test("Float Field Descriptor") {
-		val fd = FieldDescriptor("F")
-		assert (fd.fieldType.isInstanceOf[FloatType])
-	}
+    test("Float Field Descriptor") {
+        val fd = FieldDescriptor("F")
+        assert(fd.fieldType == FloatType)
+    }
 
-	test("Integer Field Descriptor") {
-		val fd = FieldDescriptor("I")
-		assert (fd.fieldType.isInstanceOf[IntegerType])
-	}
+    test("Integer Field Descriptor") {
+        val fd = FieldDescriptor("I")
+        assert(fd.fieldType == IntegerType)
+    }
 
-	test("Long Field Descriptor") {
-		val fd = FieldDescriptor("J")
-		assert (fd.fieldType.isInstanceOf[LongType])
-	}
+    test("Long Field Descriptor") {
+        val fd = FieldDescriptor("J")
+        assert(fd.fieldType == LongType)
+    }
 
-	test("ObjectType Field Descriptor") {
-		val fd = FieldDescriptor("Ljava/lang/Object;")
-		assert (fd.fieldType.isInstanceOf[ObjectType])
-		val ot : ObjectType = fd.fieldType.asInstanceOf[ObjectType]
-		assert (ot.className === "java/lang/Object")
-	}
+    test("ObjectType Field Descriptor") {
+        val fd = FieldDescriptor("Ljava/lang/Object;")
+        val ObjectType(className) = fd.fieldType
+        assert(className === "java/lang/Object")
+    }
 
-	test("ArrayType (Array of References) Field Descriptor") {
-		val fd = FieldDescriptor("[Ljava/lang/Object;")
-		assert (fd.fieldType.isInstanceOf[ArrayType])
-		val at : ArrayType = fd.fieldType.asInstanceOf[ArrayType]
-		assert (at.componentType === FieldType("Ljava/lang/Object;"))
-	}
+    test("ArrayType (Array of References) Field Descriptor") {
+        val fd = FieldDescriptor("[Ljava/lang/Object;")
+        val ArrayType(componentType) = fd.fieldType
+        assert(componentType === FieldType("Ljava/lang/Object;"))
+    }
 
-	test("ArrayType (Array of Primitives) Field Descriptor") {
-		val fd = FieldDescriptor("[J")
-		assert (fd.fieldType.isInstanceOf[ArrayType])
-		val at : ArrayType = fd.fieldType.asInstanceOf[ArrayType]
-		assert (at.componentType === LongType())
-	}
+    test("ArrayType (Array of Primitives) Field Descriptor") {
+        val fd = FieldDescriptor("[J")
+        val ArrayType(componentType) = fd.fieldType
+        assert(componentType === LongType)
+    }
 
-	test("ArrayType (Array of Array of Primitives) Field Descriptor") {
-		val fd = FieldDescriptor("[[S")
-		fd.fieldType match {
-			case ArrayType(ArrayType(st : ShortType)) => /*OK*/
-		}
-	}
+    test("ArrayType (Array of Array of Primitives) Field Descriptor") {
+        val fd = FieldDescriptor("[[S")
+        fd.fieldType match {
+            case ArrayType(ArrayType(ShortType)) ⇒ /*OK*/
+        }
+    }
 }

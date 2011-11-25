@@ -72,13 +72,13 @@ object ReturnType {
 
     def apply(rt: String): ReturnType = {
         rt.charAt(0) match {
-            case 'V' ⇒ VoidType()
-            case _   ⇒ FieldType.apply(rt)
+            case 'V' ⇒ VoidType
+            case _   ⇒ FieldType(rt)
         }
     }
 }
 
-final class VoidType extends ReturnType with ReturnTypeSignature {
+final case object VoidType extends ReturnType with ReturnTypeSignature {
 
     // remark: the default implementation of equals and hashCode suits our needs!
 
@@ -90,12 +90,6 @@ final class VoidType extends ReturnType with ReturnTypeSignature {
 
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]) = factory.StringAtom("void")
 
-}
-object VoidType {
-
-    private val vt = new VoidType
-
-    def apply() = vt
 }
 
 trait FieldType extends ReturnType {
@@ -110,14 +104,14 @@ object FieldType {
     def apply(ft: String): FieldType = {
 
         ft.charAt(0) match {
-            case 'B' ⇒ ByteType()
-            case 'C' ⇒ CharType()
-            case 'D' ⇒ DoubleType()
-            case 'F' ⇒ FloatType()
-            case 'I' ⇒ IntegerType()
-            case 'J' ⇒ LongType()
-            case 'S' ⇒ ShortType()
-            case 'Z' ⇒ BooleanType()
+            case 'B' ⇒ ByteType
+            case 'C' ⇒ CharType
+            case 'D' ⇒ DoubleType
+            case 'F' ⇒ FloatType
+            case 'I' ⇒ IntegerType
+            case 'J' ⇒ LongType
+            case 'S' ⇒ ShortType
+            case 'Z' ⇒ BooleanType
             case 'L' ⇒ ObjectType(ft.substring(1, ft.length - 1))
             case '[' ⇒ ArrayType(FieldType(ft.substring(1)))
         }
@@ -134,7 +128,7 @@ trait ReferenceType extends FieldType {
     override final def isReferenceType = true
 }
 
-final class ByteType private () extends BaseType {
+final case object ByteType extends BaseType {
 
     override def isByteType = true
 
@@ -144,14 +138,8 @@ final class ByteType private () extends BaseType {
 
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]) = factory.StringAtom("byte")
 }
-object ByteType {
 
-    private val bt = new ByteType;
-
-    def apply() = bt
-}
-
-final class CharType private () extends BaseType {
+final case object CharType extends BaseType {
 
     override def isCharType = true
 
@@ -161,14 +149,8 @@ final class CharType private () extends BaseType {
 
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]) = factory.StringAtom("char")
 }
-object CharType {
 
-    private val ct = new CharType
-
-    def apply() = ct
-}
-
-final class DoubleType private () extends BaseType {
+final case object DoubleType extends BaseType {
 
     override def isDoubleType = true
 
@@ -178,14 +160,8 @@ final class DoubleType private () extends BaseType {
 
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]) = factory.StringAtom("double")
 }
-object DoubleType {
 
-    private val dt = new DoubleType
-
-    def apply() = dt
-}
-
-final class FloatType private () extends BaseType {
+final case object FloatType extends BaseType {
 
     override def isFloatType = true
 
@@ -195,14 +171,8 @@ final class FloatType private () extends BaseType {
 
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]) = factory.StringAtom("float")
 }
-object FloatType {
 
-    private val ft = new FloatType
-
-    def apply() = ft
-}
-
-final class ShortType private () extends BaseType {
+final case object ShortType extends BaseType {
 
     override def isShortType = true
 
@@ -212,14 +182,8 @@ final class ShortType private () extends BaseType {
 
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]) = factory.StringAtom("short")
 }
-object ShortType {
 
-    private val st = new ShortType
-
-    def apply() = st
-}
-
-final class IntegerType private () extends BaseType {
+final case object IntegerType extends BaseType {
 
     override def isIntegerType = true
 
@@ -229,14 +193,8 @@ final class IntegerType private () extends BaseType {
 
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]) = factory.StringAtom("int")
 }
-object IntegerType {
 
-    private val it = new IntegerType
-
-    def apply() = it
-}
-
-final class LongType private () extends BaseType {
+final case object LongType extends BaseType {
 
     override def isLongType = true
 
@@ -246,15 +204,8 @@ final class LongType private () extends BaseType {
 
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]) = factory.StringAtom("long")
 }
-object LongType {
 
-    private val lt = new LongType
-
-    def apply() = lt
-
-}
-
-final class BooleanType private () extends BaseType {
+final case object BooleanType extends BaseType {
 
     override def isBooleanType = true
 
@@ -263,12 +214,6 @@ final class BooleanType private () extends BaseType {
     override def toString() = "BooleanType"
 
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]) = factory.StringAtom("boolean")
-}
-object BooleanType {
-
-    private val bt = new BooleanType
-
-    def apply() = bt
 }
 
 class ObjectType private (

@@ -30,26 +30,57 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.util
+package de.tud.cs.st.bat.resolved
+package dependencies
 
-import java.io.PrintStream
+import org.scalatest.FunSuite
 
 /**
- * Overrides the default print and println methods provided by scala such that
- * always the UTF-8 charset is used and not the platform's (the JDK's) default.
+ * Tests that the association with IDs works as expected.
  *
  * @author Michael Eichberg
  */
-trait UTF8Println {
+//@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
+class SourceElementIDsTest extends FunSuite {
 
-    def println(s: String) { UTF8Println.out.println(s) }
+    import SourceElementIDs.{ sourceElementID ⇒ id }
 
-    def print(s: String) { UTF8Println.out.print(s) }
+    test("BaseType IDs") {
+        val it = id(IntegerType)
+        val lt = id(LongType)
+        assert(it != lt)
 
-}
+        assert(it == id(IntegerType))
+    }
 
-object UTF8Println {
+    test("ObjectType IDs") {
+        val ot1 = id(ObjectType("java/lang/Object"))
+        val ot2 = id(ObjectType("java/lang/Object"))
+        assert(ot1 == ot2)
 
-    val out = new PrintStream(System.out, true, "UTF-8")
+        val ot3 = id(ObjectType("java/lang/Integer"))
+        assert(ot1 != ot3)
+    }
 
+    test("MethodDescriptor IDs") {
+        val obj = id(ObjectType("java/lang/Object"))
+        val int = id(ObjectType("java/lang/Integer"))
+        val name = "foo"
+        val md1 = MethodDescriptor("(III)V")
+        val md2 = MethodDescriptor("(III)I")
+
+        val obj_md1_id = id(obj, name, md1)
+        assert(obj_md1_id == 1000000001)
+        assert(obj_md1_id == id(obj, name, md1))
+
+        val int_md1_id = id(int, name, md1)
+        assert(int_md1_id > 1000000001)
+        assert(int_md1_id == id(int, name, md1))
+        assert(obj_md1_id != int_md1_id)
+
+        val ind_md2_id = id(int, name, md2)
+        assert(ind_md2_id > 1000000002)
+        assert(ind_md2_id != int_md1_id)
+        assert(ind_md2_id != id(int, "bar", md2))
+    }
 }

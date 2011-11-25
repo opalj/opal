@@ -43,48 +43,42 @@ import scala.collection.mutable.WrappedArray
  */
 object ControlAbstractions {
 
-	/**
-	 * This function takes care of the correct handling of input streams.
-	 * The function takes a function <code>f</code> that creates a new <code>InputStream</code>
-	 * and a function <code>r</code> that processes an input stream. If f returns
-	 * <code>null</code>, <code>null</code> is passed to r.
-	 */
-	def read [I <: InputStream,T](f : => I) (r : I => T) : T = {
+    /**
+     * This function takes care of the correct handling of input streams.
+     * The function takes a function <code>f</code> that creates a new <code>InputStream</code>
+     * and a function <code>r</code> that processes an input stream. If f returns
+     * <code>null</code>, <code>null</code> is passed to r.
+     */
+    def read[I <: InputStream, T](f: ⇒ I)(r: I ⇒ T): T = {
+        val in = f // this calls the function f
 
-		val in = f // this calls the function f
+        try {
+            r(in)
+        } finally {
+            in.close
+        }
+    }
 
-		try {
+    def repeat[T: ClassManifest](times: Int)(f: ⇒ T): WrappedArray[T] = {
+        val array = new Array[T](times)
+        var i = 0
+        while (i < times) {
+            array(i) = f
+            i += 1
+        }
+        WrappedArray.make[T](array)
+    }
 
-			r(in)
+    def repeat[T: ClassManifest](f: () ⇒ T)(times: Int): WrappedArray[T] = {
+        repeat(times)(f())
+    }
 
-		} finally {
-			in.close
-		}
-	}
-
-
-	def repeat[T : ClassManifest](times:Int)(f: => T): WrappedArray[T] = {
-		val array = new Array[T](times)
-		var i = 0
-		while (i < times) {
-			array(i) = f
-			i += 1
-		}
-		WrappedArray.make[T](array)
-	}
-
-
-	def repeat[T : ClassManifest](f:() => T)(times : Int) : WrappedArray[T] = {
-		repeat(times)(f())
-  	}
-
-
-   /**
-    * @param f a function f that is evaluated
-	 * @param times the number of times the result of evaluating f <b>once</b> is stored
-	 * in an array of size times.
-    */
-	def repeatResultOfEvaluation[T : ClassManifest](f: => T)(times : Int) : WrappedArray[T] = {
-		repeat(times)(f)
-	}
+    /**
+     * @param f a function f that is evaluated
+     * @param times the number of times the result of evaluating f <b>once</b> is stored
+     * in an array of size times.
+     */
+    def repeatResultOfEvaluation[T: ClassManifest](f: ⇒ T)(times: Int): WrappedArray[T] = {
+        repeat(times)(f)
+    }
 }

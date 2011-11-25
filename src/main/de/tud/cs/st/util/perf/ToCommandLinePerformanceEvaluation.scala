@@ -32,10 +32,7 @@
 */
 package de.tud.cs.st.util.perf
 
-import de.tud.cs.st.util.Println
-
 import scala.collection.mutable.Map
-
 
 /**
  * Prints the result of the runtime performance evaluation of some function to
@@ -43,56 +40,34 @@ import scala.collection.mutable.Map
  *
  * @author Michael Eichberg
  */
-trait ToCommandLinePerformanceEvaluation extends PerformanceEvaluation
-//with Println
-{
+trait ToCommandLinePerformanceEvaluation extends PerformanceEvaluation {
 
+    def time[T](s: String)(f: ⇒ T): T = {
+        time(duration ⇒ println(s + ": " + nanoSecondsToMilliseconds(duration) + "msecs."))(f)
+    }
 
-	def time[T](s : String)(f : => T ) : T = {
+    private[this] val aggregatedTimes: Map[Symbol, Long] = Map()
 
-		time (duration => println(s+": "+duration +"secs."))(f)
-		/*
-		val startTime = System.nanoTime
-		val result = f
-		val endTime = System.nanoTime
+    def aggregateTimes[T](s: Symbol)(f: ⇒ T): T = {
+        val startTime = System.nanoTime
+        val result = f
+        val endTime = System.nanoTime
 
-		println(s+": "+asSeconds(startTime,endTime).toString+"secs.")
+        val old = aggregatedTimes.getOrElseUpdate(s, 0l)
+        aggregatedTimes.update(s, old + (endTime - startTime))
 
-		result*/
-	}
+        result
+    }
 
-	/*def time[T](d : (Double) => Unit)(f : => T ) : T = {
+    def printAggregatedTimes(sym: Symbol, s: String) {
+        println(s + ": " + nanoSecondsToSeconds(aggregatedTimes.getOrElseUpdate(sym, 0l)).toString + "secs.")
+    }
 
-		val startTime = System.nanoTime
-		val result = f
-		val endTime = System.nanoTime
+    def resetAggregatedTimes(s: Symbol) {
+        aggregatedTimes.remove(s)
+    }
 
-		d(asSeconds(startTime,endTime))
-
-		result
-	}*/
-
-
-	private[this] val aggregatedTimes : Map[Symbol,Long] = Map()
-
-	def aggregateTimes[T](s : Symbol)(f : => T) : T = {
-		val startTime = System.nanoTime
-		val result = f
-		val endTime = System.nanoTime
-
-		val old = aggregatedTimes.getOrElseUpdate(s,0l)
-		aggregatedTimes.update(s,old+(endTime-startTime))
-
-		result
-	}
-
-
-	def printAggregatedTimes(sym:Symbol,s:String) {
-		println(s+": "+nanoSecondsToSeconds(aggregatedTimes.getOrElseUpdate(sym,0l)).toString+"secs.")
-	}
-
-
-	def resetAggregatedTimes(s:Symbol) {
-		aggregatedTimes.update(s,0l)
-	}
+    def resetAll() {
+        aggregatedTimes.clear()
+    }
 }

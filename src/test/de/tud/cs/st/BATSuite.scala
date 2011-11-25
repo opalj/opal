@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -33,7 +33,6 @@
 package de.tud.cs.st
 
 import org.scalatest.Suites
-import de.tud.cs.st.bat.resolved.dependency.BasicDepExtractorTest
 
 /**
  * Runs all tests related to BAT.
@@ -43,9 +42,6 @@ import de.tud.cs.st.bat.resolved.dependency.BasicDepExtractorTest
  */
 class BATSuite extends Suites(
 
-  // UTIL...
-  new util.collection.ArraysTest,
-
   // BAT...
   new bat.resolved.SignaturesTest,
   new bat.resolved.ObjectTypeTest,
@@ -53,6 +49,8 @@ class BATSuite extends Suites(
   new bat.resolved.FieldTypeTest,
   new bat.resolved.MethodDescriptorTest,
   new bat.resolved.AttributesTest,
+
+  new bat.resolved.dependencies.SourceElementIDsTest,
 
   // REGRESSION tests
   new bat.RegressionSuite,

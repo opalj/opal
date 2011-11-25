@@ -171,7 +171,10 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      * RuntimeInvisibleAnnotations, and BootstrapMethods attributes.
      * I
      */
-    protected def Attributes(ap: AttributesParent.Value, cp: Constant_Pool, in: DataInputStream): Attributes
+    protected def Attributes(
+        ap: AttributesParent.Value,
+        cp: Constant_Pool,
+        in: DataInputStream): Attributes
 
     /**
      * Factory method to create the object that represents the class file
@@ -186,7 +189,8 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         interfaces: Interfaces,
         fields: Fields,
         methods: Methods,
-        attributes: Attributes)(implicit cp: Constant_Pool): ClassFile
+        attributes: Attributes)(
+            implicit cp: Constant_Pool): ClassFile
 
     //
     // IMPLEMENTATION
@@ -217,6 +221,15 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         }
     }
 
+    protected[this] def ClassFile(zipFile: ZipFile, zipEntry: ZipEntry): ClassFile = {
+        val in = new DataInputStream(zipFile.getInputStream(zipEntry))
+        try {
+            ClassFile(in)
+        } finally {
+            in.close
+        }
+    }
+
     /**
      * Reads in a single class file from a ZIP/Jar file.
      *
@@ -224,18 +237,29 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      * @param zipFileEntryName the name of a class file stored in the specified ZIP/JAR file.
      */
     def ClassFile(zipFileName: String, zipFileEntryName: String): ClassFile = {
-        val zipfile = new ZipFile(zipFileName)
+        val zipFile = new ZipFile(zipFileName)
         try {
-            val zipentry = zipfile.getEntry(zipFileEntryName)
-            val in = new DataInputStream(zipfile.getInputStream(zipentry))
-            try {
-                ClassFile(in)
-            } finally {
-                in.close
-            }
+            val zipEntry = zipFile.getEntry(zipFileEntryName)
+            ClassFile(zipFile, zipEntry)
         } finally {
-            zipfile.close
+            zipFile.close
         }
+    }
+
+    def ClassFiles(zipFile: ZipFile): Seq[ClassFile] = {
+        var classFileEntries: List[ZipEntry] = Nil
+        val zipEntries = (zipFile).entries
+        while (zipEntries.hasMoreElements) {
+            val zipEntry = zipEntries.nextElement
+            if (!zipEntry.isDirectory && zipEntry.getName.endsWith(".class")) {
+                classFileEntries = zipEntry :: classFileEntries
+            }
+        }
+        classFileEntries.view.map(ClassFile(zipFile, _))
+    }
+
+    def ClassFiles(zipFileName: String): Seq[ClassFile] = {
+        ClassFiles(new ZipFile(zipFileName))
     }
 
     /**

@@ -30,26 +30,44 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.util
+package de.tud.cs.st.bat.resolved
 
-import java.io.PrintStream
+import reader.Java6Framework
 
 /**
- * Overrides the default print and println methods provided by scala such that
- * always the UTF-8 charset is used and not the platform's (the JDK's) default.
+ * Demonstrates how to implement a very simple checker.
  *
  * @author Michael Eichberg
  */
-trait UTF8Println {
+object EqualsHashcodeChecker
+        extends App
+        with de.tud.cs.st.util.perf.ToCommandLinePerformanceEvaluation {
 
-    def println(s: String) { UTF8Println.out.println(s) }
+    val classFiles: Seq[ClassFile] = Java6Framework.ClassFiles("test/classfiles/BAT2XML - target 1.7.zip")
 
-    def print(s: String) { UTF8Println.out.print(s) }
+    var classFileCount = 0
+    var problemCount = 0
+    time("Equals-Hashcode checker") {
+        for (classFile ← classFiles) {
+            classFileCount += 1
 
-}
+            var definesEqualsMethod = false
+            var definesHashCodeMethod = false
+            for (method ← classFile.methods) method match {
+                case Method_Info(_, "equals", MethodDescriptor(Seq(ObjectType("java/lang/Object")), BooleanType), _) ⇒ definesEqualsMethod = true
+                case Method_Info(_, "hashCode", MethodDescriptor(Seq(), IntegerType), _) ⇒ definesHashCodeMethod = true
+                case _ ⇒
+            }
 
-object UTF8Println {
-
-    val out = new PrintStream(System.out, true, "UTF-8")
+            if (definesEqualsMethod != definesHashCodeMethod) {
+                problemCount += 1
+                println("the class: " +
+                    classFile.thisClass.className +
+                    " does not satisfy java.lang.Object's equals-hashCode contract.")
+            }
+        }
+    }
+    println("Number of class files: " + classFileCount )
+    println("Number of class files which violate the contract: " + problemCount)
 
 }

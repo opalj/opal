@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -37,43 +37,41 @@ import java.io.File
 import java.util.zip.ZipFile
 import java.util.Enumeration
 
-
 /**
-
+ * Tests that Array types are represented as specified.
+ *
  * @author Michael Eichberg
  */
+//@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class ArrayTypeTest extends FunSuite {
 
+    test("Equality") {
+        val at1 = FieldType("[Ljava/lang/Object;")
+        val at2 = FieldType("[Ljava/lang/Object;")
+        val at3: ArrayType = FieldType("[[Ljava/lang/Object;").asInstanceOf[ArrayType]
 
-	test("Equality") {
-		val at1 = FieldType("[Ljava/lang/Object;")
-		val at2 = FieldType("[Ljava/lang/Object;")
-		val at3 : ArrayType = FieldType("[[Ljava/lang/Object;").asInstanceOf[ArrayType]
-		
-		assert (at1 == at2)
-		assert (at3.componentType == at2)
-	}
-	
-	
-	test("Reference equality") {
-		val at1 = FieldType("[Ljava/lang/Object;")
-		val at2 = FieldType("[Ljava/lang/Object;")
-		val at3 = FieldType("[[Ljava/lang/Object;").asInstanceOf[ArrayType]
-		val at4 = FieldType("[Ljava/lang/String;").asInstanceOf[ArrayType]
-				
-		assert (at1 eq at2)
-		assert (at3.componentType eq at2)
-		assert (at4.componentType ne at2)		
-	}
+        assert(at1 == at2)
+        assert(at3.componentType == at2)
+    }
 
+    test("Reference equality") {
+        val at1 = FieldType("[Ljava/lang/Object;")
+        val at2 = FieldType("[Ljava/lang/Object;")
+        val at3 = FieldType("[[Ljava/lang/Object;").asInstanceOf[ArrayType]
+        val at4 = FieldType("[Ljava/lang/String;").asInstanceOf[ArrayType]
 
-	test("Pattern matching") {
-		val at1 : FieldType = FieldType("[[[Ljava/lang/Object;")
-		
-		at1 match { 
-			case ArrayType(ArrayType(ArrayType(ot : ObjectType))) =>
-			 	assert (ot.className === "java/lang/Object") }
-	}
+        assert(at1 eq at2)
+        assert(at3.componentType eq at2)
+        assert(at4.componentType ne at2)
+    }
 
+    test("Pattern matching") {
+        val at1: FieldType = FieldType("[[[Ljava/lang/Object;")
+
+        at1 match {
+            case ArrayType(ArrayType(ArrayType(ot: ObjectType))) ⇒
+                assert(ot.className === "java/lang/Object")
+        }
+    }
 
 }

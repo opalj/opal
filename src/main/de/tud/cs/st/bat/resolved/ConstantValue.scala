@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -38,33 +38,33 @@ package de.tud.cs.st.bat.resolved
  *
  * @author Michael Eichberg
  */
-sealed trait ConstantValue[T >: Nothing] { 
-	def value : T 
+sealed trait ConstantValue[T >: Nothing] {
+	def value : T
 	def toBoolean : Boolean = sys.error("This constant value ("+this+") cannot be converted to a boolean value")
 	def toByte : Byte = sys.error("This constant value ("+this+") cannot be converted to a byte value")
-	def toChar : Char = sys.error("This constant value ("+this+") cannot be converted to an char value")	
+	def toChar : Char = sys.error("This constant value ("+this+") cannot be converted to an char value")
 	def toShort : Short = sys.error("This constant value ("+this+") cannot be converted to a short value")
-	def toInt : Int = sys.error("This constant value ("+this+") cannot be converted to an int value")	
+	def toInt : Int = sys.error("This constant value ("+this+") cannot be converted to an int value")
 	def toLong : Long = sys.error("This constant value ("+this+") cannot be converted to a long value")
-	def toFloat : Float = sys.error("This constant value ("+this+") cannot be converted to a float value")	
+	def toFloat : Float = sys.error("This constant value ("+this+") cannot be converted to a float value")
 	def toDouble : Double = sys.error("This constant value ("+this+") cannot be converted to a double value")
-	def toUTF8 : String = sys.error("This constant value ("+this+") cannot be converted to a String(UTF8) value")		
-	def toClass : ReferenceType = sys.error("This constant value ("+this+") cannot be converted to a class value")			
-	
+	def toUTF8 : String = sys.error("This constant value ("+this+") cannot be converted to a String(UTF8) value")
+	def toClass : ReferenceType = sys.error("This constant value ("+this+") cannot be converted to a class value")
+
 	def valueToString : String
 	def valueType : Type
-	
-	def toProlog[F,T,A <: T](factory : PrologTermFactory[F,T,A]) : T 
+
+	def toProlog[F,T,A <: T](factory : PrologTermFactory[F,T,A]) : T
 }
 
 case class ConstantLong(val value : Long) extends ConstantValue[Long] {
 	override def toLong = value
 	def valueToString = value.toString
-	def valueType = LongType()
-	
+	def valueType = LongType
+
 	def toProlog[F,T,A <: T](factory : PrologTermFactory[F,T,A]) : T = {
 		import factory._
-		Term("long",IntegerAtom(value)) 
+		Term("long",IntegerAtom(value))
 	}
 }
 
@@ -73,10 +73,10 @@ case class ConstantInteger(val value : Int) extends ConstantValue[Int] {
 	override def toByte = value.toByte
 	override def toChar = value.toChar
 	override def toShort = value.toShort
-	override def toInt = value		
-	def valueToString = value.toString	
-	def valueType = IntegerType()
-	
+	override def toInt = value
+	def valueToString = value.toString
+	def valueType = IntegerType
+
 	def toProlog[F,T,A <: T](factory : PrologTermFactory[F,T,A]) : T = {
 		import factory._
 		Term("int",IntegerAtom(value))
@@ -86,37 +86,37 @@ case class ConstantInteger(val value : Int) extends ConstantValue[Int] {
 
 case class ConstantDouble(val value : Double) extends ConstantValue[Double] {
 	override def toDouble = value
-	def valueToString = value.toString	
-	def valueType = DoubleType()
-	
+	def valueToString = value.toString
+	def valueType = DoubleType
+
 	def toProlog[F,T,A <: T](factory : PrologTermFactory[F,T,A]) : T = {
 		import factory._
-		Term("double",FloatAtom(value)) 
+		Term("double",FloatAtom(value))
 	}
-	
+
 }
 
 case class ConstantFloat(val value : Float) extends ConstantValue[Float] {
 	override def toFloat = value
-	def valueToString = value.toString	
-	def valueType = FloatType()
-	
+	def valueToString = value.toString
+	def valueType = FloatType
+
 	def toProlog[F,T,A <: T](factory : PrologTermFactory[F,T,A]) : T = {
 		import factory._
-		Term("float",FloatAtom(value)) 
+		Term("float",FloatAtom(value))
 	}
-	
+
 }
 
 case class ConstantString(val value : String) extends ConstantValue[String]{
 	override def toUTF8 = value
 	def valueToString = value.toString
 	def valueType = ObjectType("java/lang/String")
-	
+
 	def toProlog[F,T,A <: T](factory : PrologTermFactory[F,T,A]) : T = {
 		import factory._
-		Term("string",TextAtom(value)) 
-	}	
+		Term("string",TextAtom(value))
+	}
 }
 
 // ConstantClass is used by anewarray and multianewarray
@@ -124,12 +124,12 @@ case class ConstantClass(val value : ReferenceType) extends ConstantValue[Refere
 	override def toClass = value
 	def valueToString = value.toJava
 	def valueType = ObjectType("java/lang/Class")
-	
+
 	def toProlog[F,T,A <: T](factory : PrologTermFactory[F,T,A]) : T = {
 		import factory._
-		value.toProlog(factory) 
+		value.toProlog(factory)
 	}
-	
+
 }
 
 
