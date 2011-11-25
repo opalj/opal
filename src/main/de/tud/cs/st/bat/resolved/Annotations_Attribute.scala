@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -32,9 +32,7 @@
 */
 package de.tud.cs.st.bat.resolved
 
-
 import TypeAliases._
-
 
 /**
  * A class, method, or field annotation.
@@ -43,50 +41,55 @@ import TypeAliases._
  */
 trait Annotations_Attribute extends Attribute { // TODO inconsistent naming: choose either AnnotationsAttribute or Annotations_attribute...
 
-	def annotations : Annotations
-	
-	def annotationsToXML = for (annotation <- annotations) yield annotation.toXML
-	
-	def isRuntimeVisible : Boolean
+    def annotations: Annotations
 
-	// FIXME Is the following correct? The key of an annotation fact is composed out of the (reference)keyAtom and the annotationTypeTerm. Every Annoation only allowed to appear once (in Java source code this is the case, but what does the JVM Spec say?)	
-	def toProlog[F,T,A <: T](
-		factory : PrologTermFactory[F,T,A],
-		declaringEntityKey : A
-	) : List[F] = {
-	
-		import factory._
-	
-		var facts : List[F] = Nil
-	
-		for (annotation <- annotations) {
-			facts = Fact(
-				"annotation",
-				declaringEntityKey,
-				if (isRuntimeVisible) 
-					StringAtom("runtime_visible")
-				else
-					StringAtom("runtime_invisible"),
-				annotation.annotationType.toProlog(factory),
-				factory.Terms(
-					annotation.elementValuePairs,
-					(_ : ElementValuePair).toProlog(factory)
-				)	
-			) :: facts
-		}
-		facts
-		
-		/*
+    def isRuntimeVisible: Boolean
+
+    def annotationsToXML = for (annotation ← annotations) yield annotation.toXML
+
+    // FIXME Is the following correct? The key of an annotation fact is composed out of the (reference)keyAtom and the annotationTypeTerm. Every Annoation only allowed to appear once (in Java source code this is the case, but what does the JVM Spec say?)
+    def toProlog[F, T, A <: T](
+        factory: PrologTermFactory[F, T, A],
+        declaringEntityKey: A): List[F] = {
+
+        import factory._
+
+        var facts: List[F] = Nil
+
+        for (annotation ← annotations) {
+            facts = Fact(
+                "annotation",
+                declaringEntityKey,
+                if (isRuntimeVisible)
+                    StringAtom("runtime_visible")
+                else
+                    StringAtom("runtime_invisible"),
+                annotation.annotationType.toProlog(factory),
+                factory.Terms(
+                    annotation.elementValuePairs,
+                    (_: ElementValuePair).toProlog(factory)
+                )
+            ) :: facts
+        }
+        facts
+
+        /*
 		Fact(
 			"annotations",
 			declaringEntityKey,
-			if (isRuntimeVisible) 
+			if (isRuntimeVisible)
 				StringAtom("runtime_visible")
 			else
 				StringAtom("runtime_invisible"),
 			Terms(annotations,(_ : Annotation).toProlog(factory))
-		) :: facts	
+		) :: facts
 		*/
-	}
-	
+    }
+
+}
+
+object Annotations_Attribute {
+
+    def unapply(aa: Annotations_Attribute): Option[(Boolean, Annotations)] =
+        Some(aa.isRuntimeVisible, aa.annotations)
 }
