@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -30,29 +30,38 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.util.perf
+package de.tud.cs.st.bat.resolved
 
-
-import scala.collection.mutable.Map
-
+import reader.Java6Framework
 
 /**
- * "Empty" implementation of the <code>PerformanceEvaluation</code> trait. If 
- * this trait is mixed in no performance evaluation at all will be done. 
- * It can be assumed that the optimizations of a reasonable JVM will totally 
- * remove this code during execution and that no performance penalties occur.
+ * Just a very small code snippet that shows how to load all class files
+ * from a zip file.
  *
  * @author Michael Eichberg
  */
-trait NoPerformanceEvaluation extends PerformanceEvaluation {
-	
-	
-	def time[T](s : String)(f : => T ) : T = f
+object LoadClassFiles
+        extends App
+        with de.tud.cs.st.util.perf.ToCommandLinePerformanceEvaluation {
 
+    val classFiles: Seq[ClassFile] = Java6Framework.ClassFiles("test/classfiles/BAT2XML - target 1.7.zip")
 
-	def aggregateTimes[T](s : Symbol)(f : => T) : T = f
-	
-	def printAggregatedTimes(sym:Symbol,s:String) : Unit = { /* Nop */ }
-	
-	def resetAggregatedTimes(s:Symbol) : Unit =  { /*Nop*/	}
+    val loadAllClassFiles = () ⇒ {
+        for (classFile ← classFiles) {
+            classFile
+
+            // just some small sanity check
+            require(classFile.thisClass.className.length > 0)
+        }
+    }
+
+    time("Loading all class files - initialization - 1. iteration") { loadAllClassFiles() }
+    time("Loading all class files - initialization - 2. iteration") { loadAllClassFiles() }
+
+    time("Overall execution time of all four iterations") {
+        time("Loading all class files 1. Iteration") { loadAllClassFiles() }
+        time("Loading all class files 2. Iteration") { loadAllClassFiles() }
+        time("Loading all class files 3. Iteration") { loadAllClassFiles() }
+        time("Loading all class files 4. Iteration") { loadAllClassFiles() }
+    }
 }

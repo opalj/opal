@@ -34,36 +34,34 @@ package de.tud.cs.st.util.perf
 
 import de.tud.cs.st.util.Println
 
-
 /**
  * Counts how often some piece of code is executed.
  *
  * @author Michael Eichberg
  */
-trait CountingPerformanceEvaluation extends PerformanceEvaluation with Println {
+trait CountingPerformanceEvaluation
+        extends PerformanceEvaluation
+        with Println {
 
-	import scala.collection.mutable.Map
+    import scala.collection.mutable.Map
 
-	private[this] val count : Map[Symbol,Int] = Map()
+    private[this] val count: Map[Symbol, Int] = Map()
 
+    abstract override def aggregateTimes[T](s: Symbol)(f: ⇒ T): T = {
+        count.update(s, count.getOrElseUpdate(s, 0) + 1)
 
-	abstract override def aggregateTimes[T](s : Symbol)(f : => T) : T = {
-		count.update(s,count.getOrElseUpdate(s,0)+1)
+        super.aggregateTimes(s)(f)
+    }
 
-		super.aggregateTimes(s)(f)
-	}
+    abstract override def printAggregatedTimes(sym: Symbol, s: String) {
+        print("[" + count.getOrElseUpdate(sym, 0) + "]")
 
+        super.printAggregatedTimes(sym, s)
+    }
 
-	abstract override def printAggregatedTimes(sym:Symbol,s:String) {
-		print("["+count.getOrElseUpdate(sym,0)+"]")
+    abstract override def resetAggregatedTimes(sym: Symbol) {
+        count.update(sym, 0)
 
-		super.printAggregatedTimes(sym,s)
-	}
-
-
-	abstract override def resetAggregatedTimes(sym:Symbol) {
-		count.update(sym,0)
-
-		super.resetAggregatedTimes(sym)
-	}
+        super.resetAggregatedTimes(sym)
+    }
 }

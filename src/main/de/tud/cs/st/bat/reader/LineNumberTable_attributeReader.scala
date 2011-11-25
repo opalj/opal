@@ -71,17 +71,19 @@ trait LineNumberTable_attributeReader extends AttributeReader {
 
     type LineNumberTable = IndexedSeq[LineNumberTableEntry]
 
-    register(
-        LineNumberTable_attributeReader.ATTRIBUTE_NAME ->
-            ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
-                val attribute_length = in.readInt()
-                LineNumberTable_attribute(
-                    attribute_name_index, attribute_length,
-                    repeat(in.readUnsignedShort) {
-                        LineNumberTableEntry(in.readUnsignedShort, in.readUnsignedShort)(cp)
-                    }
-                )(cp)
-            })
+    register(LineNumberTable_attributeReader.ATTRIBUTE_NAME ->
+        ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
+            val attribute_length = in.readInt()
+            LineNumberTable_attribute(
+                attribute_name_index,
+                attribute_length,
+                repeat(in.readUnsignedShort) {
+                    LineNumberTableEntry(
+                        in.readUnsignedShort,
+                        in.readUnsignedShort)(cp)
+                }
+            )(cp)
+        })
     )
 }
 

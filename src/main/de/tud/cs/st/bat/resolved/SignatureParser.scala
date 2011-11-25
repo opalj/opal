@@ -151,18 +151,18 @@ object SignatureParser extends RegexParsers {
 
     protected def _BaseType: Parser[BaseType] =
         // TODO [Performance & Learning] implement a special purpose parser that switches on the character
-        'B' ^^ (_ ⇒ ByteType()) |
-            'C' ^^ (_ ⇒ CharType()) |
-            'D' ^^ (_ ⇒ DoubleType()) |
-            'F' ^^ (_ ⇒ FloatType()) |
-            'I' ^^ (_ ⇒ IntegerType()) |
-            'J' ^^ (_ ⇒ LongType()) |
-            'S' ^^ (_ ⇒ ShortType()) |
-            'Z' ^^ (_ ⇒ BooleanType())
+        'B' ^^ (_ ⇒ ByteType) |
+            'C' ^^ (_ ⇒ CharType) |
+            'D' ^^ (_ ⇒ DoubleType) |
+            'F' ^^ (_ ⇒ FloatType) |
+            'I' ^^ (_ ⇒ IntegerType) |
+            'J' ^^ (_ ⇒ LongType) |
+            'S' ^^ (_ ⇒ ShortType) |
+            'Z' ^^ (_ ⇒ BooleanType)
 
     protected def _ReturnType: Parser[ReturnTypeSignature] =
         _TypeSignature |
-            'V' ^^ (_ ⇒ VoidType())
+            'V' ^^ (_ ⇒ VoidType)
 
 }
 

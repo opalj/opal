@@ -30,38 +30,44 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.util.perf
+package de.tud.cs.st.bat.resolved
 
-import scala.collection.mutable.Map
+import reader.Java6Framework
 
 /**
- * Trait that defines methods for measuring the execution time of some code.
+ * Demonstrates how to implement a very simple checker.
  *
  * @author Michael Eichberg
  */
-trait BasicPerformanceEvaluation {
+object EqualsHashcodeChecker
+        extends App
+        with de.tud.cs.st.util.perf.ToCommandLinePerformanceEvaluation {
 
-    def nanoSecondsToSeconds(value: Long): Double = value.toDouble / 1000.0d / 1000.0d / 1000.0d
+    val classFiles: Seq[ClassFile] = Java6Framework.ClassFiles("test/classfiles/BAT2XML - target 1.7.zip")
 
-    def nanoSecondsToMilliseconds(value: Long): Double = value.toDouble / 1000.0d / 1000.0d
+    var classFileCount = 0
+    var problemCount = 0
+    time("Equals-Hashcode checker") {
+        for (classFile ← classFiles) {
+            classFileCount += 1
 
-    def asSeconds(startTimeInNanoSeconds: Long, endTimeInNanoSeconds: Long): Double =
-        nanoSecondsToSeconds(endTimeInNanoSeconds - startTimeInNanoSeconds)
+            var definesEqualsMethod = false
+            var definesHashCodeMethod = false
+            for (method ← classFile.methods) method match {
+                case Method_Info(_, "equals", MethodDescriptor(Seq(ObjectType("java/lang/Object")), BooleanType), _) ⇒ definesEqualsMethod = true
+                case Method_Info(_, "hashCode", MethodDescriptor(Seq(), IntegerType), _) ⇒ definesHashCodeMethod = true
+                case _ ⇒
+            }
 
-    /**
-     * Times the execution of a given method (function literal) / code block.
-     *
-     * @param r a function that is passed the time (in nano seconds) required to execute the time method block.
-     */
-    def time[T](r: Long ⇒ Unit)(f: ⇒ T): T = {
-
-        val startTime: Long = System.nanoTime
-        val result = f
-        val endTime: Long = System.nanoTime
-
-        r(endTime - startTime)
-
-        result
+            if (definesEqualsMethod != definesHashCodeMethod) {
+                problemCount += 1
+                println("the class: " +
+                    classFile.thisClass.className +
+                    " does not satisfy java.lang.Object's equals-hashCode contract.")
+            }
+        }
     }
+    println("Number of class files: " + classFileCount )
+    println("Number of class files which violate the contract: " + problemCount)
 
 }

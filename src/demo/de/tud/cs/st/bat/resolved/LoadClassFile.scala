@@ -30,38 +30,28 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.util.perf
+package de.tud.cs.st.bat.resolved
 
-import scala.collection.mutable.Map
+import reader.Java6Framework
 
 /**
- * Trait that defines methods for measuring the execution time of some code.
+ * Just a very small code snippet that shows how to load a class file
+ * and how to access the most basic information.
  *
  * @author Michael Eichberg
  */
-trait BasicPerformanceEvaluation {
+object LoadClassFile extends App {
 
-    def nanoSecondsToSeconds(value: Long): Double = value.toDouble / 1000.0d / 1000.0d / 1000.0d
+    val classFile = Java6Framework.ClassFile("test/classfiles/Multithreaded RPN Calculator 2008_10_17 - Java 6 all debug info.zip", "src/de/michaeleichberg/multihtreadedprogramming/v2Beta4Thread/Calculator.class")
 
-    def nanoSecondsToMilliseconds(value: Long): Double = value.toDouble / 1000.0d / 1000.0d
+    println(classFile.thisClass.className)
 
-    def asSeconds(startTimeInNanoSeconds: Long, endTimeInNanoSeconds: Long): Double =
-        nanoSecondsToSeconds(endTimeInNanoSeconds - startTimeInNanoSeconds)
+    println("extends " + classFile.superClass.className)
 
-    /**
-     * Times the execution of a given method (function literal) / code block.
-     *
-     * @param r a function that is passed the time (in nano seconds) required to execute the time method block.
-     */
-    def time[T](r: Long ⇒ Unit)(f: ⇒ T): T = {
+    print("implements")
+    classFile.interfaces.foreach(interface ⇒ print(" " + interface.className))
+    println
 
-        val startTime: Long = System.nanoTime
-        val result = f
-        val endTime: Long = System.nanoTime
-
-        r(endTime - startTime)
-
-        result
-    }
-
+    println("<Sourcefile>: " + (classFile sourceFile match { case Some(s) ⇒ s; case _ ⇒ "<NONE>" }))
+    println("<Version>:    " + classFile.majorVersion + "." + classFile.minorVersion)
 }
