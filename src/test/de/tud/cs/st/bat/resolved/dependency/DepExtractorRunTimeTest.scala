@@ -105,8 +105,8 @@ class DepExtractorRunTimeTest extends FunSuite with de.tud.cs.st.util.perf.Basic
     val depExtractor = new DepExtractor(clusterBuilder)
 
     var testClasses = getTestClasses(zipFile)
-    var min = Double.MaxValue
-    var max = Double.MinValue
+    var min = Long.MaxValue
+    var max = Long.MinValue
     for (i <- 1 to 10)
       time(duration => { min = Math.min(duration, min); max = Math.max(duration, max) }) {
         for (classFile <- testClasses) {

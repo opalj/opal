@@ -55,6 +55,10 @@ object AssociateUniqueIDs
             for (method ← classFile.methods) {
                 id(classFile, method)
             }
+
+            for (field ← classFile.fields) {
+                id(classFile, field)
+            }
         }
     }
 
