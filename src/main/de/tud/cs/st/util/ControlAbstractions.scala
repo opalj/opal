@@ -50,13 +50,10 @@ object ControlAbstractions {
      * <code>null</code>, <code>null</code> is passed to r.
      */
     def read[I <: InputStream, T](f: ⇒ I)(r: I ⇒ T): T = {
-
         val in = f // this calls the function f
 
         try {
-
             r(in)
-
         } finally {
             in.close
         }

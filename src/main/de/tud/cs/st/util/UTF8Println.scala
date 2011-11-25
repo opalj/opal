@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -34,24 +34,22 @@ package de.tud.cs.st.util
 
 import java.io.PrintStream
 
-
 /**
- * Overrides the default print and println methods imported by scala such that
+ * Overrides the default print and println methods provided by scala such that
  * always the UTF-8 charset is used and not the platform's (the JDK's) default.
- * 
-
- * @author Michael Eichberg 
+ *
+ * @author Michael Eichberg
  */
-trait UTF8Println extends Println {
-	
-	def println(s: String) { UTF8Println.out.println(s) }
+trait UTF8Println {
 
-	def print(s: String) { UTF8Println.out.print(s) }
-	
+    def println(s: String) { UTF8Println.out.println(s) }
+
+    def print(s: String) { UTF8Println.out.print(s) }
+
 }
 
 object UTF8Println {
-	
-	val out = new PrintStream(System.out,true,"UTF-8")
-	
+
+    val out = new PrintStream(System.out, true, "UTF-8")
+
 }

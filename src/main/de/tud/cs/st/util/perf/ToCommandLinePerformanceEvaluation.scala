@@ -32,8 +32,6 @@
 */
 package de.tud.cs.st.util.perf
 
-import de.tud.cs.st.util.Println
-
 import scala.collection.mutable.Map
 
 /**
@@ -42,8 +40,7 @@ import scala.collection.mutable.Map
  *
  * @author Michael Eichberg
  */
-trait ToCommandLinePerformanceEvaluation extends PerformanceEvaluation //with Println
-{
+trait ToCommandLinePerformanceEvaluation extends PerformanceEvaluation {
 
     def time[T](s: String)(f: ⇒ T): T = {
         time(duration ⇒ println(s + ": " + nanoSecondsToMilliseconds(duration) + "msecs."))(f)
@@ -67,6 +64,10 @@ trait ToCommandLinePerformanceEvaluation extends PerformanceEvaluation //with Pr
     }
 
     def resetAggregatedTimes(s: Symbol) {
-        aggregatedTimes.update(s, 0l)
+        aggregatedTimes.remove(s)
+    }
+
+    def resetAll() {
+        aggregatedTimes.clear()
     }
 }

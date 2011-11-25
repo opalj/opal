@@ -32,16 +32,13 @@
 */
 package de.tud.cs.st.util.perf
 
-import de.tud.cs.st.util.Println
-
 /**
  * Counts how often some piece of code is executed.
  *
  * @author Michael Eichberg
  */
 trait CountingPerformanceEvaluation
-        extends PerformanceEvaluation
-        with Println {
+        extends PerformanceEvaluation {
 
     import scala.collection.mutable.Map
 
