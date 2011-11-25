@@ -36,7 +36,7 @@ import reader.Java6Framework
 
 /**
  * Just a very small code snippet that shows how to load all class files
- * from a zip file.
+ * from a zip file and how to associate all top-level source elements with unique ids.
  *
  * @author Michael Eichberg
  */
@@ -48,10 +48,7 @@ object LoadClassFiles
 
     val loadAllClassFiles = () ⇒ {
         for (classFile ← classFiles) {
-            classFile
-
-            // just some small sanity check
-            require(classFile.thisClass.className.length > 0)
+            require(classFile.thisClass ne null)
         }
     }
 

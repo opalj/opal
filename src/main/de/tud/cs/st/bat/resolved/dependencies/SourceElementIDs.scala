@@ -31,47 +31,54 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 */
 package de.tud.cs.st.bat.resolved
-
-import org.scalatest.FunSuite
-import java.io.File
-import java.util.zip.ZipFile
-import java.util.Enumeration
+package dependencies
 
 /**
- * Tests that Array types are represented as specified.
+ * Associates a source element with a unique id.
+ *
+ * Types are associated with ids larger than 0 and smaller than one billion.
+ *
+ * Fields are associated with ids > 1 000 000 000 and < 2 000 000 000
+ *
+ * Methods are associated with ids > 2 000 000 000
  *
  * @author Michael Eichberg
  */
-//@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
-class ArrayTypeTest extends FunSuite {
+object SourceElementIDs {
 
-    test("Equality") {
-        val at1 = FieldType("[Ljava/lang/Object;")
-        val at2 = FieldType("[Ljava/lang/Object;")
-        val at3: ArrayType = FieldType("[[Ljava/lang/Object;").asInstanceOf[ArrayType]
+    import scala.collection.mutable.WeakHashMap
 
-        assert(at1 == at2)
-        assert(at3.componentType == at2)
+    private var nextTypeID = 0;
+
+    private val typeIDs = WeakHashMap[Type, Int]()
+
+    def sourceElementID(classFile: ClassFile): Int = sourceElementID(classFile.thisClass)
+
+    def sourceElementID(t: Type): Int = typeIDs.getOrElseUpdate(t, { nextTypeID += 1; nextTypeID })
+
+    //
+    // Associates each method with a unique ID
+    //
+
+    private var nextMethodID = 1000000000;
+
+    private val methodIDs = WeakHashMap[Int, WeakHashMap[(String, MethodDescriptor), Int]]()
+
+    /**
+     * '''Performance Hint'''
+     * If possible try to use the more specific method id(Int,Method_Info).
+     */
+    def sourceElementID(classFile: ClassFile, method: Method_Info): Int = sourceElementID(sourceElementID(classFile), method)
+
+    def sourceElementID(definingObjectTypeID: Int, method: Method_Info): Int = {
+        val Method_Info(_, methodName, methodDescriptor, _) = method
+        sourceElementID(definingObjectTypeID, methodName, methodDescriptor)
     }
 
-    test("Reference equality") {
-        val at1 = FieldType("[Ljava/lang/Object;")
-        val at2 = FieldType("[Ljava/lang/Object;")
-        val at3 = FieldType("[[Ljava/lang/Object;").asInstanceOf[ArrayType]
-        val at4 = FieldType("[Ljava/lang/String;").asInstanceOf[ArrayType]
-
-        assert(at1 eq at2)
-        assert(at3.componentType eq at2)
-        assert(at4.componentType ne at2)
-    }
-
-    test("Pattern matching") {
-        val at1: FieldType = FieldType("[[[Ljava/lang/Object;")
-
-        at1 match {
-            case ArrayType(ArrayType(ArrayType(ot: ObjectType))) ⇒
-                assert(ot.className === "java/lang/Object")
-        }
+    def sourceElementID(definingObjectTypeID: Int, methodName: String, methodDescriptor: MethodDescriptor): Int = {
+        methodIDs.
+            getOrElseUpdate(definingObjectTypeID, { WeakHashMap[(String, MethodDescriptor), Int]() }).
+            getOrElseUpdate((methodName, methodDescriptor), { nextMethodID += 1; nextMethodID })
     }
 
 }

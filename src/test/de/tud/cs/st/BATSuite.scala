@@ -50,6 +50,8 @@ class BATSuite extends Suites(
     new bat.resolved.MethodDescriptorTest,
     new bat.resolved.AttributesTest,
 
+    new bat.resolved.dependencies.SourceElementIDsTest,
+
     // REGRESSION tests
     new bat.RegressionSuite
 

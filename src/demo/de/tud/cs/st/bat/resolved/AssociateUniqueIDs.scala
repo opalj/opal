@@ -32,46 +32,31 @@
 */
 package de.tud.cs.st.bat.resolved
 
-import org.scalatest.FunSuite
-import java.io.File
-import java.util.zip.ZipFile
-import java.util.Enumeration
+import reader.Java6Framework
 
 /**
- * Tests that Array types are represented as specified.
+ * Just a very small code snippet that shows how to load all class files
+ * from a zip file and how to associate all top-level source elements with unique ids.
  *
  * @author Michael Eichberg
  */
-//@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
-class ArrayTypeTest extends FunSuite {
+object AssociateUniqueIDs
+        extends App
+        with de.tud.cs.st.util.perf.ToCommandLinePerformanceEvaluation {
 
-    test("Equality") {
-        val at1 = FieldType("[Ljava/lang/Object;")
-        val at2 = FieldType("[Ljava/lang/Object;")
-        val at3: ArrayType = FieldType("[[Ljava/lang/Object;").asInstanceOf[ArrayType]
+    import dependencies.SourceElementIDs.{ sourceElementID ⇒ id }
 
-        assert(at1 == at2)
-        assert(at3.componentType == at2)
-    }
+    val classFiles: Seq[ClassFile] = Java6Framework.ClassFiles("test/classfiles/BAT2XML - target 1.7.zip")
 
-    test("Reference equality") {
-        val at1 = FieldType("[Ljava/lang/Object;")
-        val at2 = FieldType("[Ljava/lang/Object;")
-        val at3 = FieldType("[[Ljava/lang/Object;").asInstanceOf[ArrayType]
-        val at4 = FieldType("[Ljava/lang/String;").asInstanceOf[ArrayType]
+    val loadAllClassFiles = () ⇒ {
+        for (classFile ← classFiles) {
+            val classID = id(classFile)
 
-        assert(at1 eq at2)
-        assert(at3.componentType eq at2)
-        assert(at4.componentType ne at2)
-    }
-
-    test("Pattern matching") {
-        val at1: FieldType = FieldType("[[[Ljava/lang/Object;")
-
-        at1 match {
-            case ArrayType(ArrayType(ArrayType(ot: ObjectType))) ⇒
-                assert(ot.className === "java/lang/Object")
+            for (method ← classFile.methods) {
+                id(classID, method)
+            }
         }
     }
 
+    time("Loading all class files and associating unique ids") { loadAllClassFiles() }
 }

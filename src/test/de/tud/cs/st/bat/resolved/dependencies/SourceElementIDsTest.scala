@@ -31,47 +31,53 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 */
 package de.tud.cs.st.bat.resolved
+package dependencies
 
 import org.scalatest.FunSuite
-import java.io.File
-import java.util.zip.ZipFile
-import java.util.Enumeration
 
 /**
- * Tests that Array types are represented as specified.
+ * Tests that the association with IDs works as expected.
  *
  * @author Michael Eichberg
  */
 //@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
-class ArrayTypeTest extends FunSuite {
+class SourceElementIDsTest extends FunSuite {
 
-    test("Equality") {
-        val at1 = FieldType("[Ljava/lang/Object;")
-        val at2 = FieldType("[Ljava/lang/Object;")
-        val at3: ArrayType = FieldType("[[Ljava/lang/Object;").asInstanceOf[ArrayType]
+    import SourceElementIDs.{ sourceElementID ⇒ id }
 
-        assert(at1 == at2)
-        assert(at3.componentType == at2)
+    test("BaseType IDs") {
+        val it = id(IntegerType)
+        val lt = id(LongType)
+        assert(it != lt)
+
+        assert(it == id(IntegerType))
     }
 
-    test("Reference equality") {
-        val at1 = FieldType("[Ljava/lang/Object;")
-        val at2 = FieldType("[Ljava/lang/Object;")
-        val at3 = FieldType("[[Ljava/lang/Object;").asInstanceOf[ArrayType]
-        val at4 = FieldType("[Ljava/lang/String;").asInstanceOf[ArrayType]
+    test("ObjectType IDs") {
+        val ot1 = id(ObjectType("java/lang/Object"))
+        val ot2 = id(ObjectType("java/lang/Object"))
+        assert(ot1 == ot2)
 
-        assert(at1 eq at2)
-        assert(at3.componentType eq at2)
-        assert(at4.componentType ne at2)
+        val ot3 = id(ObjectType("java/lang/Integer"))
+        assert(ot1 != ot3)
     }
 
-    test("Pattern matching") {
-        val at1: FieldType = FieldType("[[[Ljava/lang/Object;")
+    test("MethodDescriptor IDs") {
+        val obj = id(ObjectType("java/lang/Object"))
+        val int = id(ObjectType("java/lang/Integer"))
+        val name = "foo"
+        val md1 = MethodDescriptor("(III)V")
+        val md2 = MethodDescriptor("(III)I")
 
-        at1 match {
-            case ArrayType(ArrayType(ArrayType(ot: ObjectType))) ⇒
-                assert(ot.className === "java/lang/Object")
-        }
+        val obj_md1_id = id(obj, name, md1)
+        assert(obj_md1_id == id(obj, name, md1))
+
+        val int_md1_id = id(int, name, md1)
+        assert(int_md1_id == id(int, name, md1))
+        assert(obj_md1_id != int_md1_id)
+
+        val ind_md2_id = id(int, name, md2)
+        assert(ind_md2_id != int_md1_id)
+        assert(ind_md2_id != id(int, "bar", md2))
     }
-
 }
