@@ -39,13 +39,12 @@ package de.tud.cs.st.bat.resolved
  */
 sealed trait Descriptor {}
 
-case class FieldDescriptor(val fieldType: FieldType) extends Descriptor {
+final case class FieldDescriptor(val fieldType: FieldType) extends Descriptor {
 
     def toJava: String = fieldType.toJava
 
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]) = fieldType.toProlog(factory)
 
-    override def toString() = "FieldDescriptor(fieldType=" + fieldType + ")"
 }
 object FieldDescriptor {
 
@@ -78,7 +77,7 @@ object FieldDescriptor {
  * 	V
  * </pre>
  */
-case class MethodDescriptor(
+final case class MethodDescriptor(
         val parameterTypes: Seq[FieldType],
         val returnType: Type) extends Descriptor {
 
@@ -87,9 +86,6 @@ case class MethodDescriptor(
 			{ for (pt ← parameterTypes) yield <parameter type={ pt.toJava } /> }
 			<return type={ returnType.toJava } />
 		</descriptor>
-
-    override def toString() =
-        "MethodDescriptor(parameterTypes=" + parameterTypes + "; returnType=" + returnType + ")"
 
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]) = {
         factory.Term(

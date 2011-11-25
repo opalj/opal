@@ -70,13 +70,16 @@ class SourceElementIDsTest extends FunSuite {
         val md2 = MethodDescriptor("(III)I")
 
         val obj_md1_id = id(obj, name, md1)
+        assert(obj_md1_id == 1000000001)
         assert(obj_md1_id == id(obj, name, md1))
 
         val int_md1_id = id(int, name, md1)
+        assert(int_md1_id > 1000000001)
         assert(int_md1_id == id(int, name, md1))
         assert(obj_md1_id != int_md1_id)
 
         val ind_md2_id = id(int, name, md2)
+        assert(ind_md2_id > 1000000002)
         assert(ind_md2_id != int_md1_id)
         assert(ind_md2_id != id(int, "bar", md2))
     }
