@@ -5,7 +5,7 @@
   Software Technology Group
   Department of Computer Science
   Technische Universität Darmstadt
-  All rights reserved.   
+  All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions are met:
@@ -14,11 +14,11 @@
     this list of conditions and the following disclaimer.
   - Redistributions in binary form must reproduce the above copyright notice,
     this list of conditions and the following disclaimer in the documentation
-    and/or other materials provided with the distribution. 
-  - Neither the name of the Software Technology Group or Technische 
-    Universität Darmstadt nor the names of its contributors may be used to 
-    endorse or promote products derived from this software without specific 
-    prior written permission. 
+    and/or other materials provided with the distribution.
+  - Neither the name of the Software Technology Group or Technische
+    Universität Darmstadt nor the names of its contributors may be used to
+    endorse or promote products derived from this software without specific
+    prior written permission.
 
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -40,14 +40,14 @@
 	<xsl:param name="debug" select="'false'" />
 
 	<xsl:output media-type="text/plain" encoding="UTF-8" method="text" />
-	
+
 	<xsl:include href="../../Common.xsl"/>
 
 <xsl:template match="/">
     <xsl:call-template name="copyright">
 		<xsl:with-param name="sourceFile">GenerateInstructionDepExtractor.xsl</xsl:with-param>
 	</xsl:call-template>
-		
+
 package de.tud.cs.st.bat.resolved
 package dependency
 
@@ -65,7 +65,7 @@ trait InstructionDepExtractor extends CodeBinding{
   val FIELD_AND_METHOD_SEPARATOR : String
 
   val builder: DepBuilder
-  
+
   /**
    * Factory method that transforms an array of instructions into an array of dependencies.
    */
@@ -78,7 +78,7 @@ trait InstructionDepExtractor extends CodeBinding{
         instr match{<xsl:for-each select="/opal:instructions/opal:instruction">
           				<xsl:call-template name="opal:instruction" />
         			</xsl:for-each>
-          case _ => Nil
+          case _ =>
         }
       }
     }
@@ -113,7 +113,7 @@ trait InstructionDepExtractor extends CodeBinding{
   protected def getMethodAsName(methodName: String, methodDescriptor: MethodDescriptor): String = {
     methodName + "(" + methodDescriptor.parameterTypes.map(pT => getNameOfUnderlyingType(pT)).mkString(", ") + ")"
   }
-  
+
   protected def getID(clazz: ClassFile): Option[Int] =
     Some(builder.getID(getName(clazz.thisClass), clazz))
 
@@ -126,9 +126,9 @@ trait InstructionDepExtractor extends CodeBinding{
     if(obj.isArrayType) getNameOfUnderlyingType(obj.asInstanceOf[ArrayType].componentType) else getName(obj)
   protected def getName(obj: Type): String =
     obj.toJava
-  
+
   protected def filter(name: String): Boolean
-} 
+}
 </xsl:template>
 
 <xsl:template name="opal:instruction">
@@ -158,7 +158,7 @@ trait InstructionDepExtractor extends CodeBinding{
 		<xsl:when test="$fet eq 'ushort_cp_index→call_site_specifier'">name, methodDescriptor</xsl:when>
 		<xsl:when test="$fet eq 'ushort_cp_index→methodref' or $fet eq 'ushort_cp_index→interface_methodref'">declaringClass, name, methodDescriptor</xsl:when>
 		<xsl:when test="name($fe) eq 'list'"><xsl:value-of select="$id"/></xsl:when>
-	
+
 	<!-- If we would be able to use schema validation, then we would not require the following check. -->
 		<xsl:otherwise>
 			<xsl:message terminate="yes">Unsupported format element: <xsl:value-of select="$fe"/></xsl:message>
@@ -194,8 +194,8 @@ trait InstructionDepExtractor extends CodeBinding{
             builder.addDep(methodId, getID(fieldType), <xsl:choose>
 				<xsl:when test="starts-with(../../../@name,'get')">USES_FIELD_READ_TYPE</xsl:when>
 				<xsl:when test="starts-with(../../../@name,'put')">USES_FIELD_WRITE_TYPE</xsl:when></xsl:choose>)</xsl:when>
-		<xsl:when test="$fet eq 'ushort_cp_index→call_site_specifier'"><!-- used by invokedynamic --><!-- 
-		 --><!--TODO: A call dependency to a method without declaring class makes not much sense 
+		<xsl:when test="$fet eq 'ushort_cp_index→call_site_specifier'"><!-- used by invokedynamic --><!--
+		 --><!--TODO: A call dependency to a method without declaring class makes not much sense
             builder.addDep(methodId, getID(name, methodDescriptor),METHOD_CALL)-->
             for (paramType &lt;- methodDescriptor.parameterTypes) {
               builder.addDep(methodId, getID(paramType), USES_PARAMETER_TYPE)
@@ -216,7 +216,7 @@ trait InstructionDepExtractor extends CodeBinding{
             }
             builder.addDep(methodId, getID(methodDescriptor.returnType), USES_RETURN_TYPE)</xsl:when>
 		<xsl:when test="name($fe) eq 'list'"></xsl:when>
-	
+
 	<!-- If we would be able to use schema validation, then we would not require the following check. -->
 		<xsl:otherwise>
 			<xsl:message terminate="yes">Unsupported format element: <xsl:value-of select="$fe"/></xsl:message>

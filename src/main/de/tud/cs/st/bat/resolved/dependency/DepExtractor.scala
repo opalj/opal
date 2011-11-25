@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -51,8 +51,8 @@ class DepExtractor(val builder: DepBuilder) extends InstructionDepExtractor {
   val FIELD_AND_METHOD_SEPARATOR = "."
 
   def process(clazz: ClassFile) {
-    implicit val thisClassName = getName(clazz.thisClass)
-    implicit val thisClassID = getID(clazz)
+    val thisClassName = getName(clazz.thisClass)
+    val thisClassID = getID(clazz)
 
     // process super class
     val superClassID = getID(clazz.superClass)
@@ -69,7 +69,7 @@ class DepExtractor(val builder: DepBuilder) extends InstructionDepExtractor {
       attribute match {
         case aa: Annotations_Attribute =>
           for (annotation <- aa.annotations) {
-            process(annotation)
+            process(annotation)(thisClassID)
           }
         case ema: EnclosingMethod_attribute => {
           if (isEnclosedByMethod(ema)) {
@@ -78,8 +78,8 @@ class DepExtractor(val builder: DepBuilder) extends InstructionDepExtractor {
             builder.addDep(thisClassID, getID(ema.clazz), IS_INNER_CLASS_OF)
           }
         }
-        case ica: InnerClasses_attribute =>
-          for (c <- ica.classes) {
+        case InnerClasses_attribute(innerClasses) =>
+          for (c <- innerClasses) {
             if (c.outerClassType != null && c.outerClassType.eq(clazz.thisClass)) {
               builder.addDep(getID(c.innerClassType), thisClassID, IS_INNER_CLASS_OF)
             }
@@ -87,45 +87,45 @@ class DepExtractor(val builder: DepBuilder) extends InstructionDepExtractor {
         //TODO: make use of Signature_attribute
         case sa: Signature_attribute =>
         //          println(sa)
-        case _ => Nil
+        case _ =>
       }
     }
 
     //process fields
     for (field <- clazz.fields) {
-      process(field)
+      process(field)(thisClassName,thisClassID)
     }
 
     //process methods
     for (method <- clazz.methods) {
-      process(method)
+      process(method)(thisClassName,thisClassID)
     }
   }
 
   private def process(field: Field_Info)(implicit thisClassName: String, thisClassID: Option[Int]) {
-    implicit val fieldID = getID(thisClassName, field)
-    builder.addDep(fieldID, thisClassID, if (isStaticField(field.accessFlags)) IS_CLASS_MEMBER_OF else IS_INSTANCE_MEMBER_OF)
+    val fieldID = getID(thisClassName, field)
+    builder.addDep(fieldID, thisClassID, if (ACC_STATIC ∈ field.accessFlags) IS_CLASS_MEMBER_OF else IS_INSTANCE_MEMBER_OF)
     builder.addDep(fieldID, getID(field.descriptor.fieldType), IS_OF_TYPE)
     //process attributes
     for (attribute <- field.attributes) {
       attribute match {
-        case aa: Annotations_Attribute =>
+        case aa: Annotations_Attribute => // TODO [Michael] add unapply method to attribute
           for (annotation <- aa.annotations) {
             process(annotation)(fieldID)
           }
-        case cva: ConstantValue_attribute =>
-          builder.addDep(fieldID, getID(cva.constantValue.valueType), USES_CONSTANT_VALUE_OF_TYPE)
+        case ConstantValue_attribute(constantValue) =>
+          builder.addDep(fieldID, getID(constantValue.valueType), USES_CONSTANT_VALUE_OF_TYPE)
         //TODO: make use of Signature_attribute
         case sa: Signature_attribute =>
         //          println(sa)
-        case _ => Nil
+        case _ =>
       }
     }
   }
 
   private def process(method: Method_Info)(implicit thisClassName: String, thisClassID: Option[Int]) {
     implicit val methodID = getID(thisClassName, method)
-    builder.addDep(methodID, thisClassID, if (isStaticMethod(method.accessFlags)) IS_CLASS_MEMBER_OF else IS_INSTANCE_MEMBER_OF)
+    builder.addDep(methodID, thisClassID, if (ACC_STATIC ∈ method.accessFlags) IS_CLASS_MEMBER_OF else IS_INSTANCE_MEMBER_OF)
     builder.addDep(methodID, getID(method.descriptor.returnType), RETURNS)
     for (paramType <- method.descriptor.parameterTypes) {
       builder.addDep(methodID, getID(paramType), HAS_PARAMETER_OF_TYPE)
@@ -144,39 +144,39 @@ class DepExtractor(val builder: DepBuilder) extends InstructionDepExtractor {
               process(annotation)(methodID, PARAMETER_ANNOTATED_WITH)
             }
           }
-        case ea: Exceptions_attribute =>
-          for (exception <- ea.exceptionTable) {
+        case Exceptions_attribute(exceptionTable) =>
+          for (exception <- exceptionTable) {
             builder.addDep(methodID, getID(exception), THROWS)
           }
         case ada: AnnotationDefault_attribute => {
           processElementValue(ada.elementValue)(methodID)
         }
-        case ca: Code_attribute =>
-          process(methodID, ca.code)
-          for (exception <- ca.exceptionTable) {
+        case Code_attribute(_,_,code , exceptionTable ,attributes ) =>
+          process(methodID, code)
+          for (exception <- exceptionTable) {
             if (!isFinallyBlock(exception.catchType)) {
               builder.addDep(methodID, getID(exception.catchType), CATCHES)
             }
           }
-          for (attr <- ca.attributes) {
+          for (attr <- attributes) {
             attr match {
-              case lvta: LocalVariableTable_attribute =>
-                for (lvte <- lvta.localVariableTable) {
-                  builder.addDep(methodID, getID(lvte.fieldType), HAS_LOCAL_VARIABLE_OF_TYPE)
+              case LocalVariableTable_attribute(localVariableTable) =>
+                for (lvt <- localVariableTable) {
+                  builder.addDep(methodID, getID(lvt.fieldType), HAS_LOCAL_VARIABLE_OF_TYPE)
                 }
               //TODO: make use of LocalVariableTypeTable_attribute
-              case lvtta: LocalVariableTypeTable_attribute =>
-                for (lvt <- lvtta.localVariableTypeTable) {
+              case LocalVariableTypeTable_attribute(localVariableTypeTable) =>
+                for (lvtt <- localVariableTypeTable) {
                   //TODO: impl.
                 }
               //                println(lvtta)
-              case _ => Nil
+              case _ =>
             }
           }
         //TODO: make use of Signature_attribute
         case sa: Signature_attribute =>
         //          println(sa)
-        case _ => Nil
+        case _ =>
       }
     }
   }
@@ -194,7 +194,7 @@ class DepExtractor(val builder: DepBuilder) extends InstructionDepExtractor {
         }
       case AnnotationValue(annotation) =>
         process(annotation)(srcID, USES_DEFAULT_ANNOTATION_VALUE_TYPE)
-      case _ => Nil
+      case _ =>
     }
   }
 
@@ -211,13 +211,11 @@ class DepExtractor(val builder: DepBuilder) extends InstructionDepExtractor {
   private def isEnclosedByMethod(ema: EnclosingMethod_attribute): Boolean =
     ema.name != null && ema.descriptor != null // otherwise the inner class is assigned to a field
 
-  private def isStaticField(accessFlags: Int): Boolean =
-    AccessFlagsIterator(accessFlags, FIELD).contains(ACC_STATIC)
-  private def isStaticMethod(accessFlags: Int): Boolean =
-    AccessFlagsIterator(accessFlags, METHOD).contains(ACC_STATIC)
 
+    // TODO the following code is very suspicious!
+    private val baseTypes = Array("byte", "short", "int", "long", "float", "double", "char", "boolean", "void")
   protected def filter(name: String): Boolean = {
-    for (swFilter <- Array("byte", "short", "int", "long", "float", "double", "char", "boolean", "void")) {
+    for (swFilter <- baseTypes) {
       if (name.startsWith(swFilter)) {
         return true
       }
