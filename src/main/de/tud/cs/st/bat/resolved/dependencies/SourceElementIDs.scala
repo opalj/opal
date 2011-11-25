@@ -44,7 +44,7 @@ package dependencies
  *
  * @author Michael Eichberg
  */
-object SourceElementIDs {
+trait SourceElementIDs {
 
     //
     // Associates each type with a unique ID
@@ -102,3 +102,5 @@ object SourceElementIDs {
     }
 
 }
+
+object SourceElementIDs extends SourceElementIDs
