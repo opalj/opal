@@ -313,23 +313,23 @@ Author 		Michael Eichberg (mail@michael-eichberg.de)
 		</scalatest>
  	</target>
 
-	<target name="run-bat-tests"
+	<target name="run-basic-tests"
 		depends="tests-common"
 		description="Executes BAT's test suite.">
 		<scalatest>
 			<runpath><path refid="test.classpath"/></runpath>
 			<reporter type="graphic" />
+			<suite classname="de.tud.cs.st.bat.resolved.dependencies.SourceElementIDsTest"/>
 			<suite classname="de.tud.cs.st.bat.resolved.SignaturesTest"/>
 		 	<suite classname="de.tud.cs.st.bat.resolved.ArrayTypeTest"/>
 		 	<suite classname="de.tud.cs.st.bat.resolved.FieldTypeTest"/>
 		 	<suite classname="de.tud.cs.st.bat.resolved.MethodDescriptorTest"/>
 		 	<suite classname="de.tud.cs.st.bat.resolved.ObjectTypeTest"/>
 			<suite classname="de.tud.cs.st.bat.resolved.AttributesTest"/>
-			<suite classname="de.tud.cs.st.bat.RegressionSuite"/>
 		</scalatest>
  	</target>
 
-	<target name="run-all-tests"
+	<target name="run-comprehensive-tests"
 		depends="tests-common"
 		description="Runs all tests.">
 		<scalatest>
@@ -393,13 +393,13 @@ Author 		Michael Eichberg (mail@michael-eichberg.de)
 		</java>
 	</target>
 
-	<target name="package" depends="compile,run-all-tests" description="Packages Opal.">
+	<target name="package" depends="compile,run-comprehensive-tests" description="Packages Opal.">
 		<jar destfile="${build.dir}/opal-${version}.jar" basedir="${class.dir}"/>
 	</target>
 
 	<target
 		name="default"
-		depends="compile,run-all-tests,doc,package"
+		depends="compile,run-basic-tests,doc,package"
 		description="Compiles, tests, executes and packages Opal."/>
 
 </project>

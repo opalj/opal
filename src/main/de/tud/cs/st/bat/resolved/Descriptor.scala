@@ -39,6 +39,7 @@ package de.tud.cs.st.bat.resolved
  */
 sealed trait Descriptor {}
 
+// TODO can we get rid of the FieldDescriptor?
 final case class FieldDescriptor(val fieldType: FieldType) extends Descriptor {
 
     def toJava: String = fieldType.toJava

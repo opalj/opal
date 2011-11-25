@@ -42,7 +42,6 @@ import org.scalatest.Suites
  */
 class BATSuite extends Suites(
 
-    // BAT...
     new bat.resolved.SignaturesTest,
     new bat.resolved.ObjectTypeTest,
     new bat.resolved.ArrayTypeTest,

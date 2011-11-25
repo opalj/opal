@@ -34,7 +34,7 @@ package de.tud.cs.st.bat.resolved
 package dependencies
 
 /**
- * Associates a source element with a unique id.
+ * Associates a source element (type, method or field declaration) with a unique id.
  *
  * Types are associated with ids larger than 0 and smaller than one billion.
  *
@@ -61,18 +61,34 @@ object SourceElementIDs {
     def sourceElementID(t: Type): Int = typeIDs.getOrElseUpdate(t, { nextTypeID += 1; nextTypeID })
 
     //
+    // Associates each field with a unique ID
+    //
+
+    private var nextFieldID = 1000000000;
+
+    private val fieldIDs = WeakHashMap[ObjectType, WeakHashMap[String, Int]]()
+
+    def sourceElementID(classFile: ClassFile, field: Field_Info): Int =
+        sourceElementID(classFile.thisClass, field.name)
+
+    def sourceElementID(definingObjectType: ObjectType, field: Field_Info): Int =
+        sourceElementID(definingObjectType, field.name)
+
+    def sourceElementID(definingObjectType: ObjectType, fieldName: String): Int =
+        fieldIDs.
+            getOrElseUpdate(definingObjectType, { WeakHashMap[String, Int]() }).
+            getOrElseUpdate(fieldName, { nextFieldID += 1; nextFieldID })
+
+    //
     // Associates each method with a unique ID
     //
 
-    private var nextMethodID = 1000000000;
+    private var nextMethodID = 2000000000;
 
     private val methodIDs = WeakHashMap[ObjectType, WeakHashMap[(String, MethodDescriptor), Int]]()
 
-    /**
-     * '''Performance Hint'''
-     * If possible try to use the more specific method id(Int,Method_Info).
-     */
-    def sourceElementID(classFile: ClassFile, method: Method_Info): Int = sourceElementID(classFile.thisClass, method)
+    def sourceElementID(classFile: ClassFile, method: Method_Info): Int =
+        sourceElementID(classFile.thisClass, method)
 
     def sourceElementID(definingObjectType: ObjectType, method: Method_Info): Int = {
         val Method_Info(_, methodName, methodDescriptor, _) = method
