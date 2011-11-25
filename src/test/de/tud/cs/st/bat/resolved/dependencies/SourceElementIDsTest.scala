@@ -40,7 +40,7 @@ import org.scalatest.FunSuite
  *
  * @author Michael Eichberg
  */
-//@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
+@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class SourceElementIDsTest extends FunSuite {
 
     import SourceElementIDs.{ sourceElementID ⇒ id }
@@ -63,8 +63,8 @@ class SourceElementIDsTest extends FunSuite {
     }
 
     test("MethodDescriptor IDs") {
-        val obj = id(ObjectType("java/lang/Object"))
-        val int = id(ObjectType("java/lang/Integer"))
+        val obj = ObjectType("java/lang/Object")
+        val int = ObjectType("java/lang/Integer")
         val name = "foo"
         val md1 = MethodDescriptor("(III)V")
         val md2 = MethodDescriptor("(III)I")
