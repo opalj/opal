@@ -331,7 +331,8 @@ Author 		Michael Eichberg (mail@michael-eichberg.de)
 		description="Executes BAT's test suite.">
 		<scalatest>
 			<runpath><path refid="test.classpath"/></runpath>
-			<reporter type="graphic" />
+			<reporter type="stderr" />
+			<!-- <reporter type="stderr graphic" />	-->
 			<suite classname="de.tud.cs.st.bat.resolved.dependencies.SourceElementIDsTest"/>
 			<suite classname="de.tud.cs.st.bat.resolved.SignaturesTest"/>
 		 	<suite classname="de.tud.cs.st.bat.resolved.ArrayTypeTest"/>

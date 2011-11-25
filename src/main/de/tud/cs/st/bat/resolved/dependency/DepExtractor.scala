@@ -67,8 +67,8 @@ class DepExtractor(val builder: DepBuilder) extends InstructionDepExtractor {
     //process attributes
     for (attribute <- clazz.attributes) {
       attribute match {
-        case aa: Annotations_Attribute =>
-          for (annotation <- aa.annotations) {
+        case Annotations_Attribute(_, annotations) =>
+          for (annotation <- annotations) {
             process(annotation)(thisClassID)
           }
         case ema: EnclosingMethod_attribute => {
@@ -93,12 +93,12 @@ class DepExtractor(val builder: DepBuilder) extends InstructionDepExtractor {
 
     //process fields
     for (field <- clazz.fields) {
-      process(field)(thisClassName,thisClassID)
+      process(field)(thisClassName, thisClassID)
     }
 
     //process methods
     for (method <- clazz.methods) {
-      process(method)(thisClassName,thisClassID)
+      process(method)(thisClassName, thisClassID)
     }
   }
 
@@ -109,8 +109,8 @@ class DepExtractor(val builder: DepBuilder) extends InstructionDepExtractor {
     //process attributes
     for (attribute <- field.attributes) {
       attribute match {
-        case aa: Annotations_Attribute => // TODO [Michael] add unapply method to attribute
-          for (annotation <- aa.annotations) {
+        case Annotations_Attribute(_, annotations) =>
+          for (annotation <- annotations) {
             process(annotation)(fieldID)
           }
         case ConstantValue_attribute(constantValue) =>
@@ -134,8 +134,8 @@ class DepExtractor(val builder: DepBuilder) extends InstructionDepExtractor {
     //process attributes
     for (attribute <- method.attributes) {
       attribute match {
-        case aa: Annotations_Attribute =>
-          for (annotation <- aa.annotations) {
+        case Annotations_Attribute(_, annotations) =>
+          for (annotation <- annotations) {
             process(annotation)(methodID)
           }
         case paa: ParameterAnnotations_attribute =>
@@ -151,7 +151,7 @@ class DepExtractor(val builder: DepBuilder) extends InstructionDepExtractor {
         case ada: AnnotationDefault_attribute => {
           processElementValue(ada.elementValue)(methodID)
         }
-        case Code_attribute(_,_,code , exceptionTable ,attributes ) =>
+        case Code_attribute(_, _, code, exceptionTable, attributes) =>
           process(methodID, code)
           for (exception <- exceptionTable) {
             if (!isFinallyBlock(exception.catchType)) {
@@ -211,9 +211,8 @@ class DepExtractor(val builder: DepBuilder) extends InstructionDepExtractor {
   private def isEnclosedByMethod(ema: EnclosingMethod_attribute): Boolean =
     ema.name != null && ema.descriptor != null // otherwise the inner class is assigned to a field
 
-
-    // TODO the following code is very suspicious!
-    private val baseTypes = Array("byte", "short", "int", "long", "float", "double", "char", "boolean", "void")
+  // TODO the following code is very suspicious!
+  private val baseTypes = Array("byte", "short", "int", "long", "float", "double", "char", "boolean", "void")
   protected def filter(name: String): Boolean = {
     for (swFilter <- baseTypes) {
       if (name.startsWith(swFilter)) {
