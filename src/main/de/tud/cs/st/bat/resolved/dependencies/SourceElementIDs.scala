@@ -46,6 +46,10 @@ package dependencies
  */
 object SourceElementIDs {
 
+    //
+    // Associates each type with a unique ID
+    //
+
     import scala.collection.mutable.WeakHashMap
 
     private var nextTypeID = 0;
@@ -62,22 +66,22 @@ object SourceElementIDs {
 
     private var nextMethodID = 1000000000;
 
-    private val methodIDs = WeakHashMap[Int, WeakHashMap[(String, MethodDescriptor), Int]]()
+    private val methodIDs = WeakHashMap[ObjectType, WeakHashMap[(String, MethodDescriptor), Int]]()
 
     /**
      * '''Performance Hint'''
      * If possible try to use the more specific method id(Int,Method_Info).
      */
-    def sourceElementID(classFile: ClassFile, method: Method_Info): Int = sourceElementID(sourceElementID(classFile), method)
+    def sourceElementID(classFile: ClassFile, method: Method_Info): Int = sourceElementID(classFile.thisClass, method)
 
-    def sourceElementID(definingObjectTypeID: Int, method: Method_Info): Int = {
+    def sourceElementID(definingObjectType: ObjectType, method: Method_Info): Int = {
         val Method_Info(_, methodName, methodDescriptor, _) = method
-        sourceElementID(definingObjectTypeID, methodName, methodDescriptor)
+        sourceElementID(definingObjectType, methodName, methodDescriptor)
     }
 
-    def sourceElementID(definingObjectTypeID: Int, methodName: String, methodDescriptor: MethodDescriptor): Int = {
+    def sourceElementID(definingObjectType: ObjectType, methodName: String, methodDescriptor: MethodDescriptor): Int = {
         methodIDs.
-            getOrElseUpdate(definingObjectTypeID, { WeakHashMap[(String, MethodDescriptor), Int]() }).
+            getOrElseUpdate(definingObjectType, { WeakHashMap[(String, MethodDescriptor), Int]() }).
             getOrElseUpdate((methodName, methodDescriptor), { nextMethodID += 1; nextMethodID })
     }
 

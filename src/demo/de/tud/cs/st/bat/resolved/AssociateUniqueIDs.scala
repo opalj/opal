@@ -53,7 +53,7 @@ object AssociateUniqueIDs
             val classID = id(classFile)
 
             for (method ← classFile.methods) {
-                id(classID, method)
+                id(classFile, method)
             }
         }
     }
