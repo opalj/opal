@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische
-*    Universität Darmstadt nor the names of its contributors may be used to
-*    endorse or promote products derived from this software without specific
+*  - Neither the name of the Software Technology Group or Technische 
+*    Universität Darmstadt nor the names of its contributors may be used to 
+*    endorse or promote products derived from this software without specific 
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -31,74 +31,42 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 */
 package de.tud.cs.st.bat
-package resolved
-
-import TypeAliases._
-
 
 /**
- * A class' inner classes.
+ * Enables iterating over a class( file member)'s access flags. I.e., given
+ * the access flags of a class file, a field or a method it is then possible
+ * to iterate over the flags that are set.
  *
  * @author Michael Eichberg
  */
-case class InnerClasses_attribute(
-	val classes : InnerClassesEntries
-) extends Attribute {
+final class AccessFlagsIterator(
+    accessFlags: Int,
+    ctx: AccessFlagsContext)
+    extends Iterator[AccessFlag] {
 
-	def toXML =
-		<inner_classes>
-			{ for (clazz <- classes) yield clazz.toXML}
-		</inner_classes>
+    private[this] var flags = accessFlags
 
+    private[this] val potentialAccessFlags = AccessFlagsContexts.potentialAccessFlags(ctx)
 
-	def toProlog[F,T,A <: T](
-		factory : PrologTermFactory[F,T,A],
-		declaringEntityKey : A
-	) : List[F] =
-		Nil
-	/*	{
-		import factory._
+    private[this] var index = -1
 
-		Fact(
-			"inner_classes",
-			declaringEntityKey,
-			Terms(classes,(_:InnerClassesEntry).toProlog(factory))
-		) :: Nil
-	}
-	*/
+    def hasNext = flags != 0
+
+    def next: AccessFlag = {
+        while ((index + 1) < potentialAccessFlags.size) {
+            index += 1
+            if ((flags & potentialAccessFlags(index).mask) != 0) {
+                flags = flags & (~potentialAccessFlags(index).mask)
+                return potentialAccessFlags(index)
+            }
+        }
+        sys.error("Unknown access flag(s): "+Integer.toHexString(flags))
+    }
+}
+object AccessFlagsIterator {
+
+    def apply(accessFlags: Int, ctx: AccessFlagsContext) =
+        new AccessFlagsIterator(accessFlags, ctx)
 
 }
 
-
-case class InnerClassesEntry(
-	val innerClassType : ObjectType,
-	val outerClassType : ObjectType,
-	val innerName : String,
-	val innerClassAccessFlags : Int
-) {
-
-	import AccessFlagsContexts.INNER_CLASS
-	
-
-	def toXML =
-		<class innerName={ innerName }>
-			{	var nodes : List[scala.xml.Node] = Nil
-				nodes = AccessFlags.toXML(innerClassAccessFlags, INNER_CLASS) :: nodes
-				if (outerClassType != null) nodes = <outer_class type={outerClassType.className}/> :: nodes
-				nodes = <inner_class type={innerClassType.className}/> :: nodes
-				nodes
-			}
-		</class>
-
-	/* 			// TODO implement toProlog
-	def toProlog(
-		factory : PrologTermFactory,
-	) : GroundTerm = {
-		import factory._
-		Term(
-			"inner_class",
-		)
-	}
-	*/
-
-}

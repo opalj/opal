@@ -44,7 +44,7 @@ import resolved.TypeAliases._
  * @author Sebastian Harrte
  */
 protected final class PrologTermFactoryAdapter[Fact, Term, Atom <: Term](
-        val adaptee: PrologTermFactory[Fact, Term, Atom]) extends resolved.PrologTermFactory[Fact, Term, Atom] {
+    val adaptee: PrologTermFactory[Fact, Term, Atom]) extends resolved.PrologTermFactory[Fact, Term, Atom] {
 
     def KeyAtom(s: String) = adaptee.KeyAtom(s)
 
@@ -93,12 +93,12 @@ protected final class PrologTermFactoryAdapter[Fact, Term, Atom <: Term](
 
     override def NoAtom: Atom = adaptee.NoAtom
 
-    override def VisibilityAtom(access_flags: Int, ctx: AccessFlagsContext.Value): Atom = {
+    override def VisibilityAtom(access_flags: Int, ctx: AccessFlagsContext): Atom = {
         if (ACC_PUBLIC element_of access_flags)
             adaptee.PublicAtom
-        else if ((ctx ne AccessFlagsContext.CLASS) && (ACC_PRIVATE element_of access_flags))
+        else if ((ctx ne AccessFlagsContexts.CLASS) && (ACC_PRIVATE element_of access_flags))
             adaptee.PrivateAtom
-        else if ((ctx ne AccessFlagsContext.CLASS) && (ACC_PROTECTED element_of access_flags))
+        else if ((ctx ne AccessFlagsContexts.CLASS) && (ACC_PROTECTED element_of access_flags))
             adaptee.ProtectedAtom
         else
             adaptee.DefaultAtom

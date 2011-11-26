@@ -30,7 +30,8 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved
+package de.tud.cs.st.bat
+package resolved
 
 import scala.xml.Elem
 import scala.xml.Null
@@ -60,14 +61,13 @@ case class Field_Info(
         None
     }
 
-    import de.tud.cs.st.bat.canonical.AccessFlagsContext.FIELD
-    import de.tud.cs.st.bat.canonical.AccessFlagsIterator
+    import AccessFlagsContexts.FIELD
 
     def toXML =
         <field
 			name={ name }
 			type={ descriptor.fieldType.toJava } >
-			<flags>{ AccessFlagsIterator(accessFlags, FIELD) map((f) ⇒ Elem(null, f.toString, Null, TopScope)) }</flags>
+			<flags>{ AccessFlagsIterator(accessFlags, FIELD) map(_.toXML) }</flags>
 			<attributes>{ for (attribute ← attributes) yield attribute.toXML }</attributes>
 		</field>
 

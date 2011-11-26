@@ -30,7 +30,8 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved
+package de.tud.cs.st.bat
+package resolved
 
 import scala.xml.Elem
 import scala.xml.Null
@@ -45,10 +46,10 @@ import TypeAliases._
  * @author Michael Eichberg
  */
 case class Method_Info(
-        val accessFlags: Int,
-        val name: String,
-        val descriptor: MethodDescriptor,
-        val attributes: Attributes) {
+    val accessFlags: Int,
+    val name: String,
+    val descriptor: MethodDescriptor,
+    val attributes: Attributes) {
 
     def code: Option[Code_attribute] = {
         attributes find {
@@ -58,14 +59,13 @@ case class Method_Info(
         None
     }
 
-    import de.tud.cs.st.bat.canonical.AccessFlagsContext.METHOD
-    import de.tud.cs.st.bat.canonical.AccessFlagsIterator
+    import AccessFlagsContexts.METHOD
 
     def toXML =
         <method
 			name={ name }>
 			{ descriptor.toXML }
-			<flags>{ AccessFlagsIterator(accessFlags, METHOD) map((f) ⇒ Elem(null, f.toString, Null, TopScope)) }</flags>
+			<flags>{ AccessFlagsIterator(accessFlags, METHOD) map(_.toXML) }</flags>
 			<attributes>{ for (attribute ← attributes) yield attribute.toXML }</attributes>
 		</method>
 

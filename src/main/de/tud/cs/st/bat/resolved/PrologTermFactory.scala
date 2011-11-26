@@ -30,28 +30,10 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved
+package de.tud.cs.st.bat
+package resolved
 
 import de.tud.cs.st.prolog.{ GroundTerm, GroundTerms, Atom, Fact }
-
-import de.tud.cs.st.bat.canonical.AccessFlagsContext
-import de.tud.cs.st.bat.canonical.ACC_INTERFACE
-import de.tud.cs.st.bat.canonical.ACC_ANNOTATION
-import de.tud.cs.st.bat.canonical.ACC_ENUM
-import de.tud.cs.st.bat.canonical.ACC_PUBLIC
-import de.tud.cs.st.bat.canonical.ACC_PRIVATE
-import de.tud.cs.st.bat.canonical.ACC_PROTECTED
-import de.tud.cs.st.bat.canonical.ACC_BRIDGE
-import de.tud.cs.st.bat.canonical.ACC_NATIVE
-import de.tud.cs.st.bat.canonical.ACC_STATIC
-import de.tud.cs.st.bat.canonical.ACC_STRICT
-import de.tud.cs.st.bat.canonical.ACC_SYNCHRONIZED
-import de.tud.cs.st.bat.canonical.ACC_SYNTHETIC
-import de.tud.cs.st.bat.canonical.ACC_FINAL
-import de.tud.cs.st.bat.canonical.ACC_VOLATILE
-import de.tud.cs.st.bat.canonical.ACC_TRANSIENT
-import de.tud.cs.st.bat.canonical.ACC_VARARGS
-import de.tud.cs.st.bat.canonical.ACC_ABSTRACT
 
 import TypeAliases._
 
@@ -61,7 +43,7 @@ import TypeAliases._
  * @author Michael Eichberg
  */
 abstract class PrologTermFactory[Fact, Term, Atom <: Term]
-        extends de.tud.cs.st.prolog.PrologTermFactory[Fact, Term, Atom] {
+    extends de.tud.cs.st.prolog.PrologTermFactory[Fact, Term, Atom] {
 
     def KeyAtom(key: String): Atom
 
@@ -71,12 +53,12 @@ abstract class PrologTermFactory[Fact, Term, Atom <: Term]
 
     def NoAtom: Atom = StringAtom("no")
 
-    def VisibilityAtom(access_flags: Int, ctx: AccessFlagsContext.Value): Atom = {
+    def VisibilityAtom(access_flags: Int, ctx: AccessFlagsContext): Atom = {
         if (ACC_PUBLIC ∈ access_flags)
             StringAtom("public")
-        else if ((ctx ne AccessFlagsContext.CLASS) && (ACC_PRIVATE ∈ access_flags))
+        else if ((ctx ne AccessFlagsContexts.CLASS) && (ACC_PRIVATE ∈ access_flags))
             StringAtom("private")
-        else if ((ctx ne AccessFlagsContext.CLASS) && (ACC_PROTECTED ∈ access_flags))
+        else if ((ctx ne AccessFlagsContexts.CLASS) && (ACC_PROTECTED ∈ access_flags))
             StringAtom("protected")
         else
             StringAtom("default")
