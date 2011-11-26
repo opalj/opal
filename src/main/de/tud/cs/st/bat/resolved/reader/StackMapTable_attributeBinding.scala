@@ -36,109 +36,91 @@ import de.tud.cs.st.bat.reader.StackMapTable_attributeReader
 import de.tud.cs.st.bat.reader.StackMapFrameReader
 import de.tud.cs.st.bat.reader.VerificationTypeInfoReader
 
-
 /**
- * 
+ *
  *
  * @author Michael Eichberg
  */
-trait StackMapTable_attributeBinding 
-	extends StackMapTable_attributeReader
-		with StackMapFrameReader
-		with VerificationTypeInfoReader	
-		with Constant_PoolResolver
-		with AttributeBinding		
-{
-	
-	type VerificationTypeInfo = de.tud.cs.st.bat.resolved.VerificationTypeInfo
-	val VerificationTypeInfoManifest : ClassManifest[VerificationTypeInfo] = implicitly
-	type StackMapTable_attribute = de.tud.cs.st.bat.resolved.StackMapTable_attribute
-	type StackMapFrame = de.tud.cs.st.bat.resolved.StackMapFrame	
-	type FullFrame  = de.tud.cs.st.bat.resolved.FullFrame
-	type SameFrame = de.tud.cs.st.bat.resolved.SameFrame
-	type AppendFrame = de.tud.cs.st.bat.resolved.AppendFrame
-	type SameFrameExtended = de.tud.cs.st.bat.resolved.SameFrameExtended
-	type ChopFrame = de.tud.cs.st.bat.resolved.ChopFrame
-	type SameLocals1StackItemFrame = de.tud.cs.st.bat.resolved.SameLocals1StackItemFrame
-	type SameLocals1StackItemFrameExtended = de.tud.cs.st.bat.resolved.SameLocals1StackItemFrameExtended
-	type ObjectVariableInfo = de.tud.cs.st.bat.resolved.ObjectVariableInfo
-	type UninitializedVariableInfo = de.tud.cs.st.bat.resolved.UninitializedVariableInfo
-	type TopVariableInfo = de.tud.cs.st.bat.resolved.TopVariableInfo
-	type IntegerVariableInfo = de.tud.cs.st.bat.resolved.IntegerVariableInfo
-	type FloatVariableInfo = de.tud.cs.st.bat.resolved.FloatVariableInfo
-	type LongVariableInfo = de.tud.cs.st.bat.resolved.LongVariableInfo
-	type DoubleVariableInfo = de.tud.cs.st.bat.resolved.DoubleVariableInfo
-	type NullVariableInfo = de.tud.cs.st.bat.resolved.NullVariableInfo
-	type UninitializedThisVariableInfo = de.tud.cs.st.bat.resolved.UninitializedThisVariableInfo
+trait StackMapTable_attributeBinding
+        extends StackMapTable_attributeReader
+        with StackMapFrameReader
+        with VerificationTypeInfoReader
+        with Constant_PoolResolver
+        with AttributeBinding {
 
-	val StackMapFrameManifest: ClassManifest[StackMapFrame] = implicitly
+    type VerificationTypeInfo = de.tud.cs.st.bat.resolved.VerificationTypeInfo
+    val VerificationTypeInfoManifest: ClassManifest[VerificationTypeInfo] = implicitly
+    type StackMapTable_attribute = de.tud.cs.st.bat.resolved.StackMapTable_attribute
+    type StackMapFrame = de.tud.cs.st.bat.resolved.StackMapFrame
+    type FullFrame = de.tud.cs.st.bat.resolved.FullFrame
+    type SameFrame = de.tud.cs.st.bat.resolved.SameFrame
+    type AppendFrame = de.tud.cs.st.bat.resolved.AppendFrame
+    type SameFrameExtended = de.tud.cs.st.bat.resolved.SameFrameExtended
+    type ChopFrame = de.tud.cs.st.bat.resolved.ChopFrame
+    type SameLocals1StackItemFrame = de.tud.cs.st.bat.resolved.SameLocals1StackItemFrame
+    type SameLocals1StackItemFrameExtended = de.tud.cs.st.bat.resolved.SameLocals1StackItemFrameExtended
 
+    type ObjectVariableInfo = de.tud.cs.st.bat.resolved.ObjectVariableInfo
+    type UninitializedVariableInfo = de.tud.cs.st.bat.resolved.UninitializedVariableInfo
+    type TopVariableInfo = de.tud.cs.st.bat.resolved.VerificationTypeInfo
+    type IntegerVariableInfo = de.tud.cs.st.bat.resolved.VerificationTypeInfo
+    type FloatVariableInfo = de.tud.cs.st.bat.resolved.VerificationTypeInfo
+    type LongVariableInfo = de.tud.cs.st.bat.resolved.VerificationTypeInfo
+    type DoubleVariableInfo = de.tud.cs.st.bat.resolved.VerificationTypeInfo
+    type NullVariableInfo = de.tud.cs.st.bat.resolved.VerificationTypeInfo
+    type UninitializedThisVariableInfo = de.tud.cs.st.bat.resolved.VerificationTypeInfo
 
-	def StackMapTable_attribute (
-		attribute_name_index : Int, attribute_length : Int, stack_map_frames : StackMapFrames
-	)( implicit constant_pool : Constant_Pool) = 
-		new StackMapTable_attribute (stack_map_frames)
+    val StackMapFrameManifest: ClassManifest[StackMapFrame] = implicitly
 
+    def StackMapTable_attribute(
+        attribute_name_index: Int, attribute_length: Int, stack_map_frames: StackMapFrames)(implicit constant_pool: Constant_Pool) =
+        new StackMapTable_attribute(stack_map_frames)
 
-	def SameFrame(frame_type : Int) : StackMapFrame = 
-		new SameFrame(frame_type)
+    def SameFrame(frame_type: Int): StackMapFrame =
+        new SameFrame(frame_type)
 
+    def SameLocals1StackItemFrame(
+        frame_type: Int, verification_type_info_stack: VerificationTypeInfo): StackMapFrame =
+        new SameLocals1StackItemFrame(frame_type, verification_type_info_stack)
 
-	def SameLocals1StackItemFrame(
-		frame_type: Int,verification_type_info_stack : VerificationTypeInfo
-	) : StackMapFrame = new SameLocals1StackItemFrame(frame_type,verification_type_info_stack)
+    def SameLocals1StackItemFrameExtended(
+        frame_type: Int, offset_delta: Int, verification_type_info_stack: VerificationTypeInfo): StackMapFrame =
+        new SameLocals1StackItemFrameExtended(frame_type, offset_delta, verification_type_info_stack)
 
+    def ChopFrame(frame_type: Int, offset_delta: Int): StackMapFrame =
+        new ChopFrame(frame_type, offset_delta)
 
-	def SameLocals1StackItemFrameExtended(
-		frame_type: Int, offset_delta: Int, verification_type_info_stack : VerificationTypeInfo
-	) : StackMapFrame = new SameLocals1StackItemFrameExtended(frame_type,offset_delta,verification_type_info_stack)
+    def SameFrameExtended(frame_type: Int, offset_delta: Int): StackMapFrame =
+        new SameFrameExtended(frame_type, offset_delta)
 
+    def AppendFrame(
+        frame_type: Int, offset_delta: Int, verification_type_info_locals: VerificationTypeInfoLocals): StackMapFrame = new AppendFrame(frame_type, offset_delta, verification_type_info_locals)
 
-	def ChopFrame(frame_type: Int, offset_delta : Int ) : StackMapFrame = new ChopFrame(frame_type,offset_delta)
+    def FullFrame(
+        frame_type: Int, offset_delta: Int,
+        verification_type_info_locals: VerificationTypeInfoLocals,
+        verification_type_info_stack: VerificationTypeInfoStack): StackMapFrame =
+        new FullFrame(frame_type, offset_delta, verification_type_info_locals, verification_type_info_stack)
 
+    def TopVariableInfo() = de.tud.cs.st.bat.resolved.TopVariableInfo
 
-	def SameFrameExtended(frame_type: Int, offset_delta : Int) : StackMapFrame = new SameFrameExtended(frame_type,offset_delta)
+    def IntegerVariableInfo() = de.tud.cs.st.bat.resolved.IntegerVariableInfo
 
+    def FloatVariableInfo() = de.tud.cs.st.bat.resolved.FloatVariableInfo
 
-	def AppendFrame(
-		frame_type: Int, offset_delta: Int, verification_type_info_locals : VerificationTypeInfoLocals
-	) : StackMapFrame = new AppendFrame(frame_type,offset_delta,verification_type_info_locals)
+    def LongVariableInfo() = de.tud.cs.st.bat.resolved.LongVariableInfo
 
+    def DoubleVariableInfo() = de.tud.cs.st.bat.resolved.DoubleVariableInfo
 
-	def FullFrame(
-		frame_type: Int, offset_delta: Int,
-		verification_type_info_locals : VerificationTypeInfoLocals,
-		verification_type_info_stack : VerificationTypeInfoStack
-	) : StackMapFrame = new FullFrame(frame_type,offset_delta,verification_type_info_locals,verification_type_info_stack)
+    def NullVariableInfo() = de.tud.cs.st.bat.resolved.NullVariableInfo
 
+    def UninitializedThisVariableInfo() = de.tud.cs.st.bat.resolved.UninitializedThisVariableInfo
 
-	def TopVariableInfo() = de.tud.cs.st.bat.resolved.TopVariableInfo.instance
+    def UninitializedVariableInfo(offset: Int) = new UninitializedVariableInfo(offset)
 
-
-	def IntegerVariableInfo() = de.tud.cs.st.bat.resolved.IntegerVariableInfo.instance
-
-
-	def FloatVariableInfo() = de.tud.cs.st.bat.resolved.FloatVariableInfo.instance
-
-
-	def LongVariableInfo() = de.tud.cs.st.bat.resolved.LongVariableInfo.instance
-
-
-	def DoubleVariableInfo() = de.tud.cs.st.bat.resolved.DoubleVariableInfo.instance
-
-
-	def NullVariableInfo() = de.tud.cs.st.bat.resolved.NullVariableInfo.instance
- 
-
-	def UninitializedThisVariableInfo () = de.tud.cs.st.bat.resolved.UninitializedThisVariableInfo.instance
-
-
-	def UninitializedVariableInfo(offset : Int) = new UninitializedVariableInfo(offset)
-
-
-	def ObjectVariableInfo(cpool_index : Int)(implicit constant_pool : Constant_Pool) = {
-		new ObjectVariableInfo(cpool_index)		
-	}
+    def ObjectVariableInfo(cpool_index: Int)(implicit constant_pool: Constant_Pool) = {
+        new ObjectVariableInfo(cpool_index)
+    }
 
 }
 

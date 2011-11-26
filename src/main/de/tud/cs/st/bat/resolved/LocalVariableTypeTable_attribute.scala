@@ -33,39 +33,33 @@
 package de.tud.cs.st.bat
 package resolved
 
-import de.tud.cs.st.prolog.{GroundTerm,Atom,Fact}
-
-
 /**
  * Representation of the local variable type table.
  *
  * @author Michael Eichberg
  */
-case class LocalVariableTypeTable_attribute (
-	val localVariableTypeTable : LocalVariableTypeTable // TODO make the LocalVariableTypeTable an attribute itself (safe memory and time..)
-) extends Attribute {
+case class LocalVariableTypeTable_attribute(val localVariableTypeTable: LocalVariableTypeTable)
+        extends Attribute {
 
-	def toXML =
-		<local_variable_type_table>
-			{ for (entry <- localVariableTypeTable) yield entry.toXML }
+    def toXML =
+        <local_variable_type_table>
+			{ for (entry ← localVariableTypeTable) yield entry.toXML }
 		</local_variable_type_table>
 
-	def toProlog[F,T,A <: T](factory : PrologTermFactory[F,T,A],declaringEntityKey : A) : List[F] =
-		sys.error("Not supported; use toProlog(PrologTermFactory,Atom,Array[Int]) instead.")
+    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] =
+        sys.error("Not supported; use toProlog(PrologTermFactory,Atom,Array[Int]) instead.")
 }
 
-
 case class LocalVariableTypeTableEntry(
-	val startPC : Int,
-	val length : Int,
-	val name : String,
-	val signature : FieldTypeSignature,
-	val index : Int
-) {
+        val startPC: Int,
+        val length: Int,
+        val name: String,
+        val signature: FieldTypeSignature,
+        val index: Int) {
 
-	def toXML = // TODO implement signature toXML
-		<entry
-			signature={ signature.toString }
+    def toXML =
+        <entry
+			signature={ signature.toXML }
 			start_pc={ startPC.toString }
 			length={ length.toString }
 			name={ name }

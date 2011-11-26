@@ -35,29 +35,26 @@ package reader
 
 import de.tud.cs.st.bat.reader.EnclosingMethod_attributeReader
 
-
 /**
  *
  * @author Michael Eichberg
  */
-trait EnclosingMethod_attributeBinding 
-	extends EnclosingMethod_attributeReader
-		with Constant_PoolResolver
-		with AttributeBinding
-{
-	
-	
-	type EnclosingMethod_attribute = de.tud.cs.st.bat.resolved.EnclosingMethod_attribute
-	
+trait EnclosingMethod_attributeBinding
+        extends EnclosingMethod_attributeReader
+        with Constant_PoolResolver
+        with AttributeBinding {
 
-	def EnclosingMethod_attribute(
-		attribute_name_index : Int, class_index : Int, method_index : Int
-	)( implicit constant_pool : Constant_Pool) : EnclosingMethod_attribute = {
-	val name_and_type : (String, MethodDescriptor) = if (method_index == 0) (null,null) else method_index
-		new EnclosingMethod_attribute(
-			class_index, name_and_type._1, name_and_type._2
-		)
-	}
+    type EnclosingMethod_attribute = de.tud.cs.st.bat.resolved.EnclosingMethod_attribute
+
+    def EnclosingMethod_attribute(attribute_name_index: Constant_Pool_Index,
+                                  class_index: Constant_Pool_Index,
+                                  method_index: Constant_Pool_Index)(
+                                      implicit constant_pool: Constant_Pool): EnclosingMethod_attribute = {
+        val name_and_type: (String, MethodDescriptor) = if (method_index == 0) (null, null) else method_index
+        new EnclosingMethod_attribute(
+            class_index, name_and_type._1, name_and_type._2
+        )
+    }
 }
 
 

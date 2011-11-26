@@ -30,20 +30,16 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved.reader
-
-import java.io.DataInputStream
-
-import de.tud.cs.st.bat.resolved._
-
+package de.tud.cs.st.bat.resolved
+package reader
 
 /**
-
+ *
  * @author Michael Eichberg
  */
 trait CodeBinding {
 
-	type Code = Array[de.tud.cs.st.bat.resolved.Instruction]
+    type Code = Array[Instruction]
 
 }
 
