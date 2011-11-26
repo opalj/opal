@@ -37,15 +37,15 @@ package dependencies
  * If you do not want to assign unique IDs to array types but instead want to use the
  * ID of the underlying base type, this trait can be mixed in.
  *
- * @Michael Eichberg
+ * @author Michael Eichberg
  */
 trait UseIDOfBaseTypeForArrayTypes extends SourceElementIDs {
 
-    abstract override def sourceElementID(t: Type): Int = {
-        t match {
-            case at: ArrayType ⇒ super.sourceElementID(at.baseType)
-            case _             ⇒ super.sourceElementID(t)
-        }
+  abstract override def sourceElementID(t: Type): Int = {
+    t match {
+      case at: ArrayType ⇒ super.sourceElementID(at.baseType)
+      case _ ⇒ super.sourceElementID(t)
     }
+  }
 
 }

@@ -32,20 +32,16 @@
 */
 package de.tud.cs.st.bat.resolved
 package dependency
-import org.scalatest.FunSuite
+
 import java.io.File
 import java.util.zip.ZipFile
 import java.util.zip.ZipEntry
-import org.scalatest.Reporter
-import org.scalatest.Stopper
-import org.scalatest.Tracker
-import org.scalatest.events.TestStarting
-import de.tud.cs.st.bat.resolved.reader.Java6Framework
-import org.scalatest.events.TestSucceeded
-import org.scalatest.events.TestFailed
 import org.junit.runner.RunWith
+import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
+import de.tud.cs.st.bat.resolved.reader.Java6Framework
 import DependencyType._
+import dependencies.UseIDOfBaseTypeForArrayTypes
 
 /**
  * Tests whether the DepExtractor extracts all dependencies correctly.
@@ -84,35 +80,7 @@ class DepExtractorTest extends FunSuite with de.tud.cs.st.util.perf.BasicPerform
 
   test("Dependency extraction") {
     // create dependency builder that collects all added dependencies
-    val depBuilder = new DepBuilder {
-      var nodes = Array.empty[String]
-      var deps: Dependencies = List()
-
-      def getID(identifier: String): Int = {
-        var index = nodes.indexOf(identifier)
-        if (index == -1) {
-          nodes :+= identifier
-          index = nodes.length - 1
-        }
-        index
-      }
-
-      def getID(identifier: String, clazz: ClassFile): Int =
-        getID(identifier)
-
-      def getID(identifier: String, field: Field_Info): Int =
-        getID(identifier)
-
-      def getID(identifier: String, method: Method_Info): Int =
-        getID(identifier)
-
-      def addDep(src: Int, trgt: Int, dType: DependencyType) = {
-        val srcNode = nodes(src)
-        val trgtNode = nodes(trgt)
-        //        println("addDep: " + srcNode + "--[" + dType + "]-->" + trgtNode)
-        deps :+= (srcNode, trgtNode, dType)
-      }
-    }
+    val depBuilder = new CollectorDepBuilder
     val dependencyExtractor = new DepExtractor(depBuilder)
 
     for (classFile <- testClasses) {
@@ -651,4 +619,66 @@ class DepExtractorTest extends FunSuite with de.tud.cs.st.util.perf.BasicPerform
     }
   }
 
+  class CollectorDepBuilder extends DepBuilder {
+
+    var nodes = Array.empty[String]
+    var deps: Dependencies = List()
+
+    val FIELD_AND_METHOD_SEPARATOR = "."
+
+    def getID(identifier: String): Int = {
+      var index = nodes.indexOf(identifier)
+      if (index == -1) {
+        nodes :+= identifier
+        index = nodes.length - 1
+      }
+      index
+    }
+
+    def getID(classFile: ClassFile): Int =
+      getID(classFile.thisClass)
+
+    def getID(t: Type): Int =
+      getID(getNameOfUnderlyingType(t))
+
+    def getID(classFile: ClassFile, field: Field_Info): Int =
+      getID(classFile.thisClass, field.name)
+
+    def getID(definingObjectType: ObjectType, field: Field_Info): Int =
+      getID(definingObjectType, field.name)
+
+    def getID(definingObjectType: ObjectType, fieldName: String): Int =
+      getID(getNameOfUnderlyingType(definingObjectType) + FIELD_AND_METHOD_SEPARATOR + fieldName)
+
+    def getID(classFile: ClassFile, method: Method_Info): Int =
+      getID(classFile.thisClass, method)
+
+    def getID(definingObjectType: ObjectType, method: Method_Info): Int =
+      getID(definingObjectType, method.name, method.descriptor)
+
+    def getID(definingObjectType: ObjectType, methodName: String, methodDescriptor: MethodDescriptor): Int =
+      getID(getNameOfUnderlyingType(definingObjectType) + FIELD_AND_METHOD_SEPARATOR + getMethodAsName(methodName, methodDescriptor))
+
+    def getMethodAsName(methodName: String, methodDescriptor: MethodDescriptor): String = {
+      methodName + "(" + methodDescriptor.parameterTypes.map(pT => getNameOfUnderlyingType(pT)).mkString(", ") + ")"
+    }
+
+    protected def getNameOfUnderlyingType(obj: Type): String =
+      if (obj.isArrayType) getNameOfUnderlyingType(obj.asInstanceOf[ArrayType].componentType) else getName(obj)
+    def getName(obj: Type): String =
+      obj.toJava
+
+    private val baseTypes = Array("byte", "short", "int", "long", "float", "double", "char", "boolean", "void")
+
+    def addDep(src: Int, trgt: Int, dType: DependencyType) {
+      val srcNode = nodes(src)
+      val trgtNode = nodes(trgt)
+      if (baseTypes.contains(srcNode) || baseTypes.contains(trgtNode)) {
+        return
+      }
+      //        println("addDep: " + srcNode + "--[" + dType + "]-->" + trgtNode)
+      deps :+= (srcNode, trgtNode, dType)
+    }
+  }
 }
+

@@ -105,27 +105,8 @@ class BasicDepExtractorTest extends Suite with de.tud.cs.st.util.perf.BasicPerfo
     val ordinal = tracker.nextOrdinal
     reporter(TestStarting(ordinal, "BasicDependencyExtractorTests", None, testName))
     try {
-      // create dependency builder that only outputs the added dependencies directly
-      val depBuilder: DepBuilder = new DepBuilder {
-        var cnt = 0
-
-        def getID(identifier: String): Int = {
-          cnt += 1
-          cnt
-        }
-
-        def getID(identifier: String, clazz: ClassFile): Int =
-          getID(identifier)
-
-        def getID(identifier: String, field: Field_Info): Int =
-          getID(identifier)
-
-        def getID(identifier: String, method: Method_Info): Int =
-          getID(identifier)
-
-        def addDep(src: Int, trgt: Int, dType: DependencyType) = {
-          //The next line was uncommented to speed up the test runs
-          //println("addDep: " + src + "--[" + dType + "]-->" + trgt)
+      val depBuilder: DepBuilder = new DepBuilder with DefaultIDMappingDepBuilder {
+        def addDep(src: Int, trgt: Int, dType: DependencyType) {
         }
       }
       val dependencyExtractor = new DepExtractor(depBuilder)
@@ -135,7 +116,7 @@ class BasicDepExtractorTest extends Suite with de.tud.cs.st.util.perf.BasicPerfo
       var classFile: de.tud.cs.st.bat.resolved.ClassFile = null
       classFile = Java6Framework.ClassFile(() => file.getInputStream(entry))
 
-      // process classFile using dependency graph generator
+      // process classFile using dependency extractor
       dependencyExtractor.process(classFile)
 
       reporter(TestSucceeded(ordinal, "BasicDependencyExtractorTests", None, testName))

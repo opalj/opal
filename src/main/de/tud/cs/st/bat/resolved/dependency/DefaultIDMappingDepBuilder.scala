@@ -30,50 +30,41 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat
-package resolved
+package de.tud.cs.st.bat.resolved
+package dependency
+
+import DependencyType._
+import dependencies.SourceElementIDsMap
+import dependencies.UseIDOfBaseTypeForArrayTypes
 
 /**
- * Parameter annotations.
  *
- * @author Michael Eichberg
+ * @author Thomas Schlosser
  */
-trait ParameterAnnotations_attribute extends Attribute { // TODO inconsistent naming: choose either ...AnnotationsAttribute or ...Annotations_attribute
+trait DefaultIDMappingDepBuilder extends SourceElementIDsMap with UseIDOfBaseTypeForArrayTypes {
 
-  def parameterAnnotations: ParameterAnnotations
+  def getID(classFile: ClassFile): Int =
+    sourceElementID(classFile)
 
-  def isRuntimeVisible: Boolean
+  def getID(t: Type): Int =
+    sourceElementID(t)
 
-  protected def parameterAnnotationsToXML =
-    for (parameter ← parameterAnnotations) yield {
-      <parameter>{ for (annotation ← parameter) yield annotation.toXML }</parameter>
-    }
+  def getID(classFile: ClassFile, field: Field_Info): Int =
+    sourceElementID(classFile, field)
 
-  final def toProlog[F, T, A <: T](
-    factory: PrologTermFactory[F, T, A],
-    declaringEntityKey: A): List[F] = {
+  def getID(definingObjectType: ObjectType, field: Field_Info): Int =
+    sourceElementID(definingObjectType, field)
 
-    import factory._
+  def getID(definingObjectType: ObjectType, fieldName: String): Int =
+    sourceElementID(definingObjectType, fieldName)
 
-    var facts: List[F] = Nil
+  def getID(classFile: ClassFile, method: Method_Info): Int =
+    sourceElementID(classFile, method)
 
-    Fact(
-      "parameter_annotations",
-      declaringEntityKey,
-      if (isRuntimeVisible)
-        StringAtom("runtime_visible")
-      else
-        StringAtom("runtime_invisible"),
-      Terms(
-        parameterAnnotations,
-        (parameterAnnotation: Seq[Annotation]) ⇒ {
-          Terms(parameterAnnotation, (_: Annotation).toProlog(factory))
-        })) :: facts
-  }
+  def getID(definingObjectType: ObjectType, method: Method_Info): Int =
+    sourceElementID(definingObjectType, method)
 
-}
+  def getID(definingObjectType: ObjectType, methodName: String, methodDescriptor: MethodDescriptor): Int =
+    sourceElementID(definingObjectType, methodName, methodDescriptor)
 
-object ParameterAnnotations_attribute {
-  def unapply(paa: ParameterAnnotations_attribute): Option[(Boolean, ParameterAnnotations)] =
-    Some(paa.isRuntimeVisible, paa.parameterAnnotations)
 }

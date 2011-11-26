@@ -32,16 +32,19 @@
 */
 package de.tud.cs.st.bat.resolved
 package dependency
-import org.scalatest.FunSuite
+
 import java.io.File
+import java.io.FileWriter
 import java.util.zip.ZipFile
 import java.util.zip.ZipEntry
-import de.tud.cs.st.bat.resolved.reader.Java6Framework
-import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
+import scala.math.Ordering
 import org.junit.Test
-import java.io.FileWriter
+import org.junit.runner.RunWith
+import org.scalatest.FunSuite
+import org.scalatest.junit.JUnitRunner
 import de.tud.cs.st.bat.resolved.DependencyType._
+import de.tud.cs.st.bat.resolved.reader.Java6Framework
+import scala.math.Ordering$Long$
 
 /**
  * @author Thomas Schlosser
@@ -101,14 +104,17 @@ class DepExtractorRunTimeTest extends FunSuite with de.tud.cs.st.util.perf.Basic
   private def testDepExtraction(zipFile: String) {
     println("testDepExtraction[" + zipFile + "]")
 
-    val clusterBuilder = new BasicDepBuilder
+    val clusterBuilder = new DepBuilder with DefaultIDMappingDepBuilder {
+      def addDep(src: Int, trgt: Int, dType: DependencyType) {
+      }
+    }
     val depExtractor = new DepExtractor(clusterBuilder)
 
     var testClasses = getTestClasses(zipFile)
     var min = Long.MaxValue
     var max = Long.MinValue
     for (i <- 1 to 10)
-      time(duration => { min = Math.min(duration, min); max = Math.max(duration, max) }) {
+      time(duration => { min = Ordering[Long].min(duration, min); max = Ordering[Long].max(duration, max) }) {
         for (classFile <- testClasses) {
           depExtractor.process(classFile)
         }
@@ -131,28 +137,5 @@ class DepExtractorRunTimeTest extends FunSuite with de.tud.cs.st.util.perf.Basic
       }
     }
     tcls
-  }
-}
-
-class BasicDepBuilder extends DepBuilder {
-  var cnt = 0
-
-  def getID(identifier: String): Int = {
-    cnt += 1
-    cnt
-  }
-
-  def getID(identifier: String, clazz: ClassFile): Int =
-    getID(identifier)
-
-  def getID(identifier: String, field: Field_Info): Int =
-    getID(identifier)
-
-  def getID(identifier: String, method: Method_Info): Int =
-    getID(identifier)
-
-  def addDep(src: Int, trgt: Int, dType: DependencyType) = {
-    //The next line was uncommented to speed up the test runs
-    //println("addDep: " + src + "--[" + dType + "]-->" + trgt)
   }
 }

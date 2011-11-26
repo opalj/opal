@@ -35,9 +35,9 @@ package dependency
 
 import java.lang.Integer
 import DependencyType._
-import de.tud.cs.st.bat.canonical.AccessFlagsContext._
-import de.tud.cs.st.bat.canonical.ACC_STATIC
-import de.tud.cs.st.bat.canonical.AccessFlagsIterator
+import de.tud.cs.st.bat.AccessFlagsContexts._
+import de.tud.cs.st.bat.ACC_STATIC
+import de.tud.cs.st.bat.AccessFlagsIterator
 
 /**
  * DepExtractor can process a ClassFile and extract all dependencies between
@@ -48,146 +48,145 @@ import de.tud.cs.st.bat.canonical.AccessFlagsIterator
  */
 class DepExtractor(val builder: DepBuilder) extends InstructionDepExtractor {
 
-  val FIELD_AND_METHOD_SEPARATOR = "."
+  import builder._
 
   def process(clazz: ClassFile) {
-    val thisClassName = getName(clazz.thisClass)
     val thisClassID = getID(clazz)
+    val ClassFile(_, _, _, thisClass, superClass, interfaces, fields, methods, attributes) = clazz
 
     // process super class
-    val superClassID = getID(clazz.superClass)
-    builder.addDep(thisClassID, superClassID, EXTENDS)
+    addDep(thisClassID, getID(superClass), EXTENDS)
 
     // process interfaces
-    for (interface <- clazz.interfaces) {
-      val interfaceID = getID(interface)
-      builder.addDep(thisClassID, interfaceID, IMPLEMENTS)
+    for (interface <- interfaces) {
+      addDep(thisClassID, getID(interface), IMPLEMENTS)
     }
 
     //process attributes
-    for (attribute <- clazz.attributes) {
+    for (attribute <- attributes) {
       attribute match {
         case Annotations_Attribute(_, annotations) =>
           for (annotation <- annotations) {
             process(annotation)(thisClassID)
           }
         case ema: EnclosingMethod_attribute => {
+          val EnclosingMethod_attribute(enclosingClazz, enclosingMethodName, enclosingMethodDescriptor) = ema
           if (isEnclosedByMethod(ema)) {
-            builder.addDep(thisClassID, getID(ema.clazz, ema.name, ema.descriptor), IS_INNER_CLASS_OF)
+            addDep(thisClassID, getID(enclosingClazz, enclosingMethodName, enclosingMethodDescriptor), IS_INNER_CLASS_OF)
           } else {
-            builder.addDep(thisClassID, getID(ema.clazz), IS_INNER_CLASS_OF)
+            addDep(thisClassID, getID(enclosingClazz), IS_INNER_CLASS_OF)
           }
         }
         case InnerClasses_attribute(innerClasses) =>
-          for (c <- innerClasses) {
-            if (c.outerClassType != null && c.outerClassType.eq(clazz.thisClass)) {
-              builder.addDep(getID(c.innerClassType), thisClassID, IS_INNER_CLASS_OF)
+          for (InnerClassesEntry(innerClassType, outerClassType, _, _) <- innerClasses) {
+            if (outerClassType != null && outerClassType == thisClass) {
+              addDep(getID(innerClassType), thisClassID, IS_INNER_CLASS_OF)
             }
           }
-        //TODO: make use of Signature_attribute
-        case sa: Signature_attribute =>
-        //          println(sa)
+        case sa: Signature =>
+        //TODO: impl.
         case _ =>
       }
     }
 
     //process fields
-    for (field <- clazz.fields) {
-      process(field)(thisClassName, thisClassID)
+    for (field <- fields) {
+      process(field)(thisClass, thisClassID)
     }
 
     //process methods
-    for (method <- clazz.methods) {
-      process(method)(thisClassName, thisClassID)
+    for (method <- methods) {
+      process(method)(thisClass, thisClassID)
     }
   }
 
-  private def process(field: Field_Info)(implicit thisClassName: String, thisClassID: Option[Int]) {
-    val fieldID = getID(thisClassName, field)
-    builder.addDep(fieldID, thisClassID, if (ACC_STATIC ∈ field.accessFlags) IS_CLASS_MEMBER_OF else IS_INSTANCE_MEMBER_OF)
-    builder.addDep(fieldID, getID(field.descriptor.fieldType), IS_OF_TYPE)
+  private def process(field: Field_Info)(implicit thisClass: ObjectType, thisClassID: Int) {
+    val fieldID = getID(thisClass, field)
+    val Field_Info(accessFlags, _, FieldDescriptor(fieldType), attributes) = field
+
+    addDep(fieldID, thisClassID, if (ACC_STATIC ∈ accessFlags) IS_CLASS_MEMBER_OF else IS_INSTANCE_MEMBER_OF)
+    addDep(fieldID, getID(fieldType), IS_OF_TYPE)
+
     //process attributes
-    for (attribute <- field.attributes) {
+    for (attribute <- attributes) {
       attribute match {
         case Annotations_Attribute(_, annotations) =>
           for (annotation <- annotations) {
             process(annotation)(fieldID)
           }
-        case ConstantValue_attribute(constantValue) =>
-          builder.addDep(fieldID, getID(constantValue.valueType), USES_CONSTANT_VALUE_OF_TYPE)
-        //TODO: make use of Signature_attribute
-        case sa: Signature_attribute =>
-        //          println(sa)
+        case cv: ConstantValue[_] =>
+          addDep(fieldID, getID(cv.valueType), USES_CONSTANT_VALUE_OF_TYPE)
+        case sa: Signature =>
+        //TODO: impl.
         case _ =>
       }
     }
   }
 
-  private def process(method: Method_Info)(implicit thisClassName: String, thisClassID: Option[Int]) {
-    implicit val methodID = getID(thisClassName, method)
-    builder.addDep(methodID, thisClassID, if (ACC_STATIC ∈ method.accessFlags) IS_CLASS_MEMBER_OF else IS_INSTANCE_MEMBER_OF)
-    builder.addDep(methodID, getID(method.descriptor.returnType), RETURNS)
-    for (paramType <- method.descriptor.parameterTypes) {
-      builder.addDep(methodID, getID(paramType), HAS_PARAMETER_OF_TYPE)
+  private def process(method: Method_Info)(implicit thisClass: ObjectType, thisClassID: Int) {
+    implicit val methodID = getID(thisClass, method)
+    val Method_Info(accessFlags, _, MethodDescriptor(parameterTypes, returnType), attributes) = method
+
+    addDep(methodID, thisClassID, if (ACC_STATIC ∈ accessFlags) IS_CLASS_MEMBER_OF else IS_INSTANCE_MEMBER_OF)
+    addDep(methodID, getID(returnType), RETURNS)
+    for (paramType <- parameterTypes) {
+      addDep(methodID, getID(paramType), HAS_PARAMETER_OF_TYPE)
     }
 
     //process attributes
-    for (attribute <- method.attributes) {
+    for (attribute <- attributes) {
       attribute match {
         case Annotations_Attribute(_, annotations) =>
           for (annotation <- annotations) {
             process(annotation)(methodID)
           }
-        case paa: ParameterAnnotations_attribute =>
-          for (annotations <- paa.parameterAnnotations) {
+        case ParameterAnnotations_attribute(_, parameterAnnotations) =>
+          for (annotations <- parameterAnnotations) {
             for (annotation <- annotations) {
               process(annotation)(methodID, PARAMETER_ANNOTATED_WITH)
             }
           }
         case Exceptions_attribute(exceptionTable) =>
           for (exception <- exceptionTable) {
-            builder.addDep(methodID, getID(exception), THROWS)
+            addDep(methodID, getID(exception), THROWS)
           }
-        case ada: AnnotationDefault_attribute => {
-          processElementValue(ada.elementValue)(methodID)
+        case AnnotationDefault_attribute(elementValue) => {
+          processElementValue(elementValue)(methodID)
         }
         case Code_attribute(_, _, code, exceptionTable, attributes) =>
           process(methodID, code)
-          for (exception <- exceptionTable) {
-            if (!isFinallyBlock(exception.catchType)) {
-              builder.addDep(methodID, getID(exception.catchType), CATCHES)
+          for (ExceptionTableEntry(_, _, _, catchType) <- exceptionTable) {
+            if (!isFinallyBlock(catchType)) {
+              addDep(methodID, getID(catchType), CATCHES)
             }
           }
           for (attr <- attributes) {
             attr match {
               case LocalVariableTable_attribute(localVariableTable) =>
-                for (lvt <- localVariableTable) {
-                  builder.addDep(methodID, getID(lvt.fieldType), HAS_LOCAL_VARIABLE_OF_TYPE)
+                for (LocalVariableTableEntry(_, _, _, fieldType, _) <- localVariableTable) {
+                  addDep(methodID, getID(fieldType), HAS_LOCAL_VARIABLE_OF_TYPE)
                 }
-              //TODO: make use of LocalVariableTypeTable_attribute
               case LocalVariableTypeTable_attribute(localVariableTypeTable) =>
-                for (lvtt <- localVariableTypeTable) {
+                for (LocalVariableTypeTableEntry(_, _, _, signature, _) <- localVariableTypeTable) {
                   //TODO: impl.
                 }
-              //                println(lvtta)
               case _ =>
             }
           }
-        //TODO: make use of Signature_attribute
-        case sa: Signature_attribute =>
-        //          println(sa)
+        case sa: Signature =>
+        //TODO: impl.
         case _ =>
       }
     }
   }
 
-  private def processElementValue(elementValue: ElementValue)(implicit srcID: Option[Int], annotationDepType: DependencyType = ANNOTATED_WITH) {
+  private def processElementValue(elementValue: ElementValue)(implicit srcID: Int, annotationDepType: DependencyType = ANNOTATED_WITH) {
     elementValue match {
       case ClassValue(returnType) =>
-        builder.addDep(srcID, getID(returnType), USES_DEFAULT_CLASS_VALUE_TYPE)
+        addDep(srcID, getID(returnType), USES_DEFAULT_CLASS_VALUE_TYPE)
       case EnumValue(enumType, constName) =>
-        builder.addDep(srcID, getID(enumType), USES_DEFAULT_ENUM_VALUE_TYPE)
-        builder.addDep(srcID, getID(enumType, constName), USES_ENUM_VALUE)
+        addDep(srcID, getID(enumType), USES_DEFAULT_ENUM_VALUE_TYPE)
+        addDep(srcID, getID(enumType, constName), USES_ENUM_VALUE)
       case ArrayValue(values) =>
         for (value <- values) {
           processElementValue(value)
@@ -198,10 +197,12 @@ class DepExtractor(val builder: DepBuilder) extends InstructionDepExtractor {
     }
   }
 
-  private def process(annotation: Annotation)(implicit srcID: Option[Int], depType: DependencyType = ANNOTATED_WITH) {
-    builder.addDep(srcID, getID(annotation.annotationType), depType)
-    for (elemValuePair <- annotation.elementValuePairs) {
-      processElementValue(elemValuePair.elementValue)
+  private def process(annotation: Annotation)(implicit srcID: Int, depType: DependencyType = ANNOTATED_WITH) {
+    val Annotation(annotationType, elementValuePairs) = annotation
+
+    addDep(srcID, getID(annotationType), depType)
+    for (ElementValuePair(_, elementValue) <- elementValuePairs) {
+      processElementValue(elementValue)
     }
   }
 
@@ -210,15 +211,4 @@ class DepExtractor(val builder: DepBuilder) extends InstructionDepExtractor {
 
   private def isEnclosedByMethod(ema: EnclosingMethod_attribute): Boolean =
     ema.name != null && ema.descriptor != null // otherwise the inner class is assigned to a field
-
-  // TODO the following code is very suspicious!
-  private val baseTypes = Array("byte", "short", "int", "long", "float", "double", "char", "boolean", "void")
-  protected def filter(name: String): Boolean = {
-    for (swFilter <- baseTypes) {
-      if (name.startsWith(swFilter)) {
-        return true
-      }
-    }
-    false
-  }
 }

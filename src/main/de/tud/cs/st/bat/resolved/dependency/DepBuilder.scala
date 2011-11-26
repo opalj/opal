@@ -32,7 +32,7 @@
 */
 package de.tud.cs.st.bat.resolved
 package dependency
-import java.lang.Integer
+
 import DependencyType._
 
 /**
@@ -45,16 +45,15 @@ import DependencyType._
  */
 trait DepBuilder {
 
-  def getID(identifier: String): Int
-  def getID(identifier: String, clazz: ClassFile): Int
-  def getID(identifier: String, field: Field_Info): Int
-  def getID(identifier: String, method: Method_Info): Int
+  def getID(classFile: ClassFile): Int
+  def getID(t: Type): Int
+  def getID(classFile: ClassFile, field: Field_Info): Int
+  def getID(definingObjectType: ObjectType, field: Field_Info): Int
+  def getID(definingObjectType: ObjectType, fieldName: String): Int
+  def getID(classFile: ClassFile, method: Method_Info): Int
+  def getID(definingObjectType: ObjectType, method: Method_Info): Int
+  def getID(definingObjectType: ObjectType, methodName: String, methodDescriptor: MethodDescriptor): Int
 
   def addDep(src: Int, trgt: Int, dType: DependencyType)
 
-  def addDep(src: Option[Int], trgt: Option[Int], dType: DependencyType) {
-    if (src != None && trgt != None) {
-      addDep(src.get, trgt.get, dType)
-    }
-  }
 }
