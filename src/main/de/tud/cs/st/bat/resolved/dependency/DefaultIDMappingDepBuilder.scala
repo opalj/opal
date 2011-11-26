@@ -33,7 +33,6 @@
 package de.tud.cs.st.bat.resolved
 package dependency
 
-import DependencyType._
 import dependencies.SourceElementIDsMap
 import dependencies.UseIDOfBaseTypeForArrayTypes
 

@@ -41,11 +41,11 @@ package dependencies
  */
 trait UseIDOfBaseTypeForArrayTypes extends SourceElementIDs {
 
-  abstract override def sourceElementID(t: Type): Int = {
-    t match {
-      case at: ArrayType ⇒ super.sourceElementID(at.baseType)
-      case _ ⇒ super.sourceElementID(t)
+    abstract override def sourceElementID(t: Type): Int = {
+        t match {
+            case at: ArrayType ⇒ super.sourceElementID(at.baseType)
+            case _             ⇒ super.sourceElementID(t)
+        }
     }
-  }
 
 }
