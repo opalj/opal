@@ -36,32 +36,54 @@ package dependencies
 /**
  * Associates a source element (type, method or field declaration) with a unique id.
  *
+ * Types are associated with ids larger than 0 and smaller than one billion.
+ *
+ * Fields are associated with ids > 1 000 000 000 and < 2 000 000 000
+ *
+ * Methods are associated with ids > 2 000 000 000
+ *
  * @author Michael Eichberg
  */
-trait SourceElementIDs {
+trait SourceElementIDsMap extends SourceElementIDs {
 
-    final def sourceElementID(classFile: ClassFile): Int =
-        sourceElementID(classFile.thisClass)
+    //
+    // Associates each type with a unique ID
+    //
 
-    def sourceElementID(t: Type): Int
+    import scala.collection.mutable.WeakHashMap
 
-    final def sourceElementID(classFile: ClassFile, field: Field_Info): Int =
-        sourceElementID(classFile.thisClass, field.name)
+    private var nextTypeID = 0;
 
-    final def sourceElementID(definingObjectType: ObjectType, field: Field_Info): Int =
-        sourceElementID(definingObjectType, field.name)
+    private val typeIDs = WeakHashMap[Type, Int]()
 
-    def sourceElementID(definingObjectType: ObjectType, fieldName: String): Int
+    def sourceElementID(t: Type): Int = typeIDs.getOrElseUpdate(t, { nextTypeID += 1; nextTypeID })
 
-    final def sourceElementID(classFile: ClassFile, method: Method_Info): Int =
-        sourceElementID(classFile.thisClass, method)
+    //
+    // Associates each field with a unique ID
+    //
 
-    final def sourceElementID(definingObjectType: ObjectType, method: Method_Info): Int = {
-        val Method_Info(_, methodName, methodDescriptor, _) = method
-        sourceElementID(definingObjectType, methodName, methodDescriptor)
+    private var nextFieldID = 1000000000;
+
+    private val fieldIDs = WeakHashMap[ObjectType, WeakHashMap[String, Int]]()
+
+    def sourceElementID(definingObjectType: ObjectType, fieldName: String): Int =
+        fieldIDs.
+            getOrElseUpdate(definingObjectType, { WeakHashMap[String, Int]() }).
+            getOrElseUpdate(fieldName, { nextFieldID += 1; nextFieldID })
+
+    //
+    // Associates each method with a unique ID
+    //
+
+    private var nextMethodID = 2000000000;
+
+    private val methodIDs = WeakHashMap[ObjectType, WeakHashMap[(String, MethodDescriptor), Int]]()
+
+    def sourceElementID(definingObjectType: ObjectType, methodName: String, methodDescriptor: MethodDescriptor): Int = {
+        methodIDs.
+            getOrElseUpdate(definingObjectType, { WeakHashMap[(String, MethodDescriptor), Int]() }).
+            getOrElseUpdate((methodName, methodDescriptor), { nextMethodID += 1; nextMethodID })
     }
 
-    def sourceElementID(definingObjectType: ObjectType, methodName: String, methodDescriptor: MethodDescriptor): Int
-
 }
-object SourceElementIDs extends SourceElementIDsMap
+

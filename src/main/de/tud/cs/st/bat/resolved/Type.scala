@@ -286,6 +286,8 @@ class ArrayType private (val componentType: FieldType) extends ReferenceType {
         }
     }
 
+    def baseType: Type = componentType match { case at: ArrayType ⇒ at.baseType; case _ ⇒ componentType }
+
     def toJava: String = componentType.toJava+"[]"
 
     override def toString = "ArrayType("+componentType.toString+")"
