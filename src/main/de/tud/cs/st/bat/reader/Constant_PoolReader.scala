@@ -30,7 +30,8 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.reader
+package de.tud.cs.st.bat
+package reader
 
 import java.io.DataInputStream
 
@@ -155,31 +156,11 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
             val constantPoolEntry = constantReader(in)
             constant_pool_entries(i) = constantPoolEntry
             tag match {
-                case Constant_PoolReader.CONSTANT_Long_ID   ⇒ i += 2
-                case Constant_PoolReader.CONSTANT_Double_ID ⇒ i += 2
-                case _                                      ⇒ i += 1
+                case Constant_PoolTags.CONSTANT_Long_ID   ⇒ i += 2
+                case Constant_PoolTags.CONSTANT_Double_ID ⇒ i += 2
+                case _                                    ⇒ i += 1
             }
         }
         constant_pool_entries
     }
-}
-
-object Constant_PoolReader {
-
-    // the following order, is the order as used in the JVM Spec:
-    private val CONSTANT_Class_ID = 7
-    private val CONSTANT_Fieldref_ID = 9
-    private val CONSTANT_Methodref_ID = 10
-    private val CONSTANT_InterfaceMethodref_ID = 11
-    private val CONSTANT_String_ID = 8
-    private val CONSTANT_Integer_ID = 3
-    private val CONSTANT_Float_ID = 4
-    private val CONSTANT_Long_ID = 5
-    private val CONSTANT_Double_ID = 6
-    private val CONSTANT_NameAndType_ID = 12
-    private val CONSTANT_Utf8_ID = 1
-    private val CONSTANT_MethodHandle_ID = 15
-    private val CONSTANT_MethodType_ID = 16
-    private val CONSTANT_InvokeDynamic_ID = 18
-
 }

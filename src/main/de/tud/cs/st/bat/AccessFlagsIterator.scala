@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische
-*    Universität Darmstadt nor the names of its contributors may be used to
-*    endorse or promote products derived from this software without specific
+*  - Neither the name of the Software Technology Group or Technische 
+*    Universität Darmstadt nor the names of its contributors may be used to 
+*    endorse or promote products derived from this software without specific 
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -31,41 +31,42 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 */
 package de.tud.cs.st.bat
-package canonical
 
 /**
- * A name and type info entry in the constant pool.
+ * Enables iterating over a class( file member)'s access flags. I.e., given
+ * the access flags of a class file, a field or a method it is then possible
+ * to iterate over the flags that are set.
  *
  * @author Michael Eichberg
  */
-trait CONSTANT_NameAndType_info extends Constant_Pool_Entry {
+final class AccessFlagsIterator(
+    accessFlags: Int,
+    ctx: AccessFlagsContext)
+    extends Iterator[AccessFlag] {
 
-    //
-    // ABSTRACT DEFINITIONS
-    //
+    private[this] var flags = accessFlags
 
-    /**
-     * ''From the Specification'''
-     *
-     * The value of the name_index item must be a valid index into the
-     * constant_pool table. The constant_pool entry at that index
-     * must be a CONSTANT_Utf8_info structure representing
-     * either the special method name &lt;init&gt; or a valid
-     * unqualiﬁed name denoting a ﬁeld or method.
-     */
-    val name_index: Int
+    private[this] val potentialAccessFlags = AccessFlagsContexts.potentialAccessFlags(ctx)
 
-    val descriptor_index: Int
+    private[this] var index = -1
 
-    //
-    // IMPLEMENTATION
-    //
+    def hasNext = flags != 0
 
-    def Constant_Type_Value = Constant_PoolTags.CONSTANT_NameAndType
+    def next: AccessFlag = {
+        while ((index + 1) < potentialAccessFlags.size) {
+            index += 1
+            if ((flags & potentialAccessFlags(index).mask) != 0) {
+                flags = flags & (~potentialAccessFlags(index).mask)
+                return potentialAccessFlags(index)
+            }
+        }
+        sys.error("Unknown access flag(s): "+Integer.toHexString(flags))
+    }
 }
+object AccessFlagsIterator {
 
+    def apply(accessFlags: Int, ctx: AccessFlagsContext) =
+        new AccessFlagsIterator(accessFlags, ctx)
 
-
-
-
+}
 

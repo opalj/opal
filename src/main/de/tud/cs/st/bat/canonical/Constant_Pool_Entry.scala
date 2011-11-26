@@ -30,7 +30,8 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.canonical
+package de.tud.cs.st.bat
+package canonical
 
 /**
  * @author Michael Eichberg
@@ -41,7 +42,7 @@ trait Constant_Pool_Entry {
     // ABSTRACT DEFINITIONS
     //
 
-    def Constant_Type_Value: de.tud.cs.st.bat.reader.Constant_PoolTags.Value
+    def Constant_Type_Value: Constant_PoolTags.Value
 
 }
 

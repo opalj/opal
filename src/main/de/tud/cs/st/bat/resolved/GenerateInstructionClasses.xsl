@@ -72,14 +72,11 @@ import de.tud.cs.st.bat.resolved.InstructionExceptions._
 /**
  * <xsl:value-of select="opal:operation/text()" />.
  *
- * @version Generator: 0.9.1
+ * @version Generator: 0.9.2 (Last change: Nov. 26th 2011)
  */   
 <xsl:choose>
-	<xsl:when test="count(opal:format/opal:std/opal:el) eq 1">
-case object <xsl:value-of select="upper-case(string(@name))"/><!-- We have to use uppercase names to avoid name clashes with keywords (e.g. "return") and to make sure the names look meaningful: "FLOAD" looks better than "Fload".  -->
-	</xsl:when>
-	<xsl:otherwise>
-case class <xsl:value-of select="upper-case(string(@name))"/> (<!-- delegate the generation of the parameters -->
+	<xsl:when test="count(opal:format/opal:std/opal:el) eq 1">case object <xsl:value-of select="upper-case(string(@name))"/><!-- We have to use uppercase names to avoid name clashes with keywords (e.g. "return") and to make sure the names look meaningful: "FLOAD" looks better than "Fload".  --></xsl:when>
+	<xsl:otherwise>case class <xsl:value-of select="upper-case(string(@name))"/> (<!-- delegate the generation of the parameters -->
 	<xsl:call-template name="generate_parameters"/>
 )</xsl:otherwise></xsl:choose>
 extends Instruction {
@@ -196,7 +193,7 @@ extends Instruction {
 			 --><xsl:call-template name="generate_prolog_parameterization_parameters"><xsl:with-param name="instruction" select="$baseInstruction"/></xsl:call-template>,</xsl:if>			
 			 <xsl:choose>
 				<xsl:when test="./@name eq 'ldc'">	
-				constantValueRef.toProlog(factory)</xsl:when>
+				constantValue.valueToProlog(factory)</xsl:when>
 				<xsl:otherwise>
 				IntegerAtom(<xsl:value-of select="./opal:specialized/opal:parameter/@value"/>)</xsl:otherwise>
 			</xsl:choose> 
@@ -234,7 +231,7 @@ extends Instruction {
 				<xsl:value-of select="$id"/>.toProlog(factory)</xsl:when>
 	
 			<xsl:when test="$fet eq 'ubyte_cp_index→constant_value' or $fet eq 'ushort_cp_index→constant_value'">
-				<xsl:value-of select="$id"/>.toProlog(factory)</xsl:when>			
+				<xsl:value-of select="$id"/>.valueToProlog(factory)</xsl:when>			
 	
 			<xsl:when test="$fet eq 'ushort_cp_index→fieldref'">
 				declaringClass.toProlog(factory),

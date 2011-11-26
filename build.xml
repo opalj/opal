@@ -415,7 +415,7 @@ Author 		Michael Eichberg (mail@michael-eichberg.de)
 
 	<target
 		name="default"
-		depends="compile,run-basic-tests,doc,package"
+		depends="package,doc"
 		description="Compiles, tests, executes and packages Opal."/>
 
 </project>

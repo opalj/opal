@@ -58,7 +58,7 @@ object FieldDescriptor {
  * "4.4.3 Method Descriptors":<br />
  * A method descriptor represents the parameters that the method takes and
  * the value that it returns: <br />
- * * <pre>
+ * <pre>
  * MethodDescriptor:
  * 	(ParameterDescriptor*) ReturnDescriptor
  * </pre>
@@ -78,9 +78,8 @@ object FieldDescriptor {
  * 	V
  * </pre>
  */
-final case class MethodDescriptor(
-        val parameterTypes: Seq[FieldType],
-        val returnType: Type) extends Descriptor {
+final case class MethodDescriptor(val parameterTypes: Seq[FieldType], val returnType: Type)
+        extends Descriptor {
 
     def toXML =
         <descriptor>

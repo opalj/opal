@@ -30,19 +30,13 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved
+package de.tud.cs.st.bat
+package resolved
 
 import scala.xml.Elem
 import scala.xml.Null
 import scala.xml.Text
 import scala.xml.TopScope
-
-import de.tud.cs.st.bat.canonical.AccessFlagsContext
-import de.tud.cs.st.bat.canonical.ACC_INTERFACE
-import de.tud.cs.st.bat.canonical.ACC_ANNOTATION
-import de.tud.cs.st.bat.canonical.ACC_ENUM
-
-import TypeAliases._
 
 /**
  * Represents a single class file.
@@ -65,8 +59,8 @@ case class ClassFile(
      */
     def classSignature: Option[ClassSignature] = {
         attributes find {
-            case Signature_attribute(s: ClassSignature) ⇒ return Some(s)
-            case _                                      ⇒ false
+            case s: ClassSignature ⇒ return Some(s)
+            case _                 ⇒ false
         }
         None
     }
@@ -89,15 +83,14 @@ case class ClassFile(
         None
     }
 
-    import de.tud.cs.st.bat.canonical.AccessFlagsContext.CLASS
-    import de.tud.cs.st.bat.canonical.AccessFlagsIterator
+    import AccessFlagsContexts.CLASS
 
     def toXML = {
         <class
 			type={ thisClass.className }
 			minor_version={ minorVersion.toString }
 			major_version={ majorVersion.toString } >
-			<flags>{ AccessFlagsIterator(accessFlags, CLASS) map((f) ⇒ Elem(null, f.toString, Null, TopScope)) }</flags>
+			<flags>{ AccessFlagsIterator(accessFlags, CLASS) map(_.toXML) }</flags>
 			<attributes>{ for (attribute ← attributes) yield attribute.toXML }</attributes>
 			<extends type={ if (superClass ne null) { Some(Text(superClass.className)) } else { None } } />
 			{ for (interface ← interfaces) yield <implements type={ interface.className }/> }
@@ -171,11 +164,9 @@ case class ClassFile(
 
     }
 
-    private val classCategoryMask: Int =
-        ACC_INTERFACE.mask | ACC_ANNOTATION.mask | ACC_ENUM.mask
+    private val classCategoryMask: Int = ACC_INTERFACE.mask | ACC_ANNOTATION.mask | ACC_ENUM.mask
 
-    private val annotationMask: Int =
-        ACC_ANNOTATION.mask | ACC_INTERFACE.mask
+    private val annotationMask: Int = ACC_ANNOTATION.mask | ACC_INTERFACE.mask
 
     private def getClassCategoryAtom[F, T, A <: T](factory: PrologTermFactory[F, T, A]): A = {
 

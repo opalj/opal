@@ -32,66 +32,49 @@
 */
 package de.tud.cs.st.bat.resolved
 
-
 /**
  * Part of the Java 6 stack map table attribute.
  *
  * @author Michael Eichberg
  */
-trait VerificationTypeInfo {
-	
-	def toXML : scala.xml.Node
-	
+sealed trait VerificationTypeInfo {
+
+    def toXML: scala.xml.Node
+
 }
 
-
-case class TopVariableInfo private() extends VerificationTypeInfo { 
-	def toXML = <top_variable/> 
-}
-object TopVariableInfo { lazy val instance = new TopVariableInfo }
-
-
-case class IntegerVariableInfo private() extends VerificationTypeInfo { 
-	def toXML = <integer_variable/> 
-}
-object IntegerVariableInfo { lazy val instance = new IntegerVariableInfo }
-
-
-case class FloatVariableInfo private() extends VerificationTypeInfo { 
-	def toXML = <float_variable/> 
-}
-object FloatVariableInfo { lazy val instance = new FloatVariableInfo }
-
-
-case class LongVariableInfo private() extends VerificationTypeInfo {
-	def toXML = <long_variable/> 
-}
-object LongVariableInfo { lazy val instance = new LongVariableInfo }
-
-
-case class DoubleVariableInfo private() extends VerificationTypeInfo { 
-	def toXML = <double_variable/> 
-}
-object DoubleVariableInfo { lazy val instance = new DoubleVariableInfo }
-
-
-case class NullVariableInfo private() extends VerificationTypeInfo { 
-	def toXML = <null_variable/> 
-}
-object NullVariableInfo { lazy val instance = new NullVariableInfo }
-
-
-case class UninitializedThisVariableInfo private() extends VerificationTypeInfo { 
-	def toXML = <uninitialized_this_variable/> 
-}
-object UninitializedThisVariableInfo { lazy val instance = new UninitializedThisVariableInfo }
-
-
-case class UninitializedVariableInfo(val offset : Int) extends VerificationTypeInfo { 
-	def toXML = <uninitialized_variable offset={ offset.toString }/> 
+case object TopVariableInfo extends VerificationTypeInfo {
+    def toXML = <top_variable/>
 }
 
+case object IntegerVariableInfo extends VerificationTypeInfo {
+    def toXML = <integer_variable/>
+}
 
-case class ObjectVariableInfo(val clazz : ObjectType) extends VerificationTypeInfo { 
-	def toXML = <object_variable type={ clazz.className }/> 
+case object FloatVariableInfo extends VerificationTypeInfo {
+    def toXML = <float_variable/>
+}
+
+case object LongVariableInfo extends VerificationTypeInfo {
+    def toXML = <long_variable/>
+}
+
+case object DoubleVariableInfo extends VerificationTypeInfo {
+    def toXML = <double_variable/>
+}
+
+case object NullVariableInfo extends VerificationTypeInfo {
+    def toXML = <null_variable/>
+}
+
+case object UninitializedThisVariableInfo extends VerificationTypeInfo {
+    def toXML = <uninitialized_this_variable/>
+}
+
+case class UninitializedVariableInfo(val offset: Int) extends VerificationTypeInfo {
+    def toXML = <uninitialized_variable offset={ offset.toString }/>
+}
+
+case class ObjectVariableInfo(val clazz: ObjectType) extends VerificationTypeInfo {
+    def toXML = <object_variable type={ clazz.className }/>
 }

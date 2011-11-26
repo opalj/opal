@@ -30,7 +30,9 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved.reader
+package de.tud.cs.st.bat
+package resolved
+package reader
 
 import de.tud.cs.st.bat.reader.Signature_attributeReader
 
@@ -44,13 +46,12 @@ trait Signature_attributeBinding
         with Constant_PoolResolver
         with AttributeBinding {
 
-    type Signature_attribute = de.tud.cs.st.bat.resolved.Signature_attribute
+    type Signature_attribute = Signature
 
     def Signature_attribute(attribute_name_index: Constant_Pool_Index,
                             signature_index: Constant_Pool_Index)(
-                                implicit cp: Constant_Pool, ap: AttributeParent) = {
-        new Signature_attribute(signature_index)
-    }
+                                implicit cp: Constant_Pool, ap: AttributeParent): Signature_attribute =
+        CONSTANT_Utf8_info_IndexToSignature(signature_index)
 
 }
 

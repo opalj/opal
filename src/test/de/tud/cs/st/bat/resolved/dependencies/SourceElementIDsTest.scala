@@ -62,6 +62,34 @@ class SourceElementIDsTest extends FunSuite {
         assert(ot1 != ot3)
     }
 
+    test("ArrayType IDs") {
+        val ot1 = id(ObjectType("java/lang/Object"))
+        val aot1 = id(FieldType("[Ljava/lang/Object;"))
+        assert(ot1 != aot1)
+
+        val aot2 = id(FieldType("[Ljava/lang/Object;"))
+        assert(aot1 == aot2)
+
+        val aot3 = id(FieldType("[Ljava/lang/Integer;"))
+        assert(aot1 != aot3)
+    }
+
+    test("ArrayType IDs are replaced by ObjectType IDs") {
+        val ids = new SourceElementIDsMap with UseIDOfBaseTypeForArrayTypes 
+        
+        val ot1 = ids.sourceElementID(ObjectType("java/lang/Object"))
+        val aot1 = ids.sourceElementID(FieldType("[Ljava/lang/Object;"))
+        assert(ot1 == aot1)
+
+        val aot2 = ids.sourceElementID(FieldType("[Ljava/lang/Object;"))
+        assert(aot1 == aot2)
+
+        val aot3 = ids.sourceElementID(FieldType("[Ljava/lang/Integer;"))
+        assert(aot1 != aot3)
+        
+        assert(aot3 == ids.sourceElementID(ObjectType("java/lang/Integer")))
+    }
+
     test("Method IDs") {
         val obj = ObjectType("java/lang/Object")
         val int = ObjectType("java/lang/Integer")

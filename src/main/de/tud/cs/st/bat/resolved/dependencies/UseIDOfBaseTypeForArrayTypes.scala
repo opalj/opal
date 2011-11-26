@@ -34,34 +34,18 @@ package de.tud.cs.st.bat.resolved
 package dependencies
 
 /**
- * Associates a source element (type, method or field declaration) with a unique id.
+ * If you do not want to assign unique IDs to array types but instead want to use the
+ * ID of the underlying base type, this trait can be mixed in.
  *
- * @author Michael Eichberg
+ * @Michael Eichberg
  */
-trait SourceElementIDs {
+trait UseIDOfBaseTypeForArrayTypes extends SourceElementIDs {
 
-    final def sourceElementID(classFile: ClassFile): Int =
-        sourceElementID(classFile.thisClass)
-
-    def sourceElementID(t: Type): Int
-
-    final def sourceElementID(classFile: ClassFile, field: Field_Info): Int =
-        sourceElementID(classFile.thisClass, field.name)
-
-    final def sourceElementID(definingObjectType: ObjectType, field: Field_Info): Int =
-        sourceElementID(definingObjectType, field.name)
-
-    def sourceElementID(definingObjectType: ObjectType, fieldName: String): Int
-
-    final def sourceElementID(classFile: ClassFile, method: Method_Info): Int =
-        sourceElementID(classFile.thisClass, method)
-
-    final def sourceElementID(definingObjectType: ObjectType, method: Method_Info): Int = {
-        val Method_Info(_, methodName, methodDescriptor, _) = method
-        sourceElementID(definingObjectType, methodName, methodDescriptor)
+    abstract override def sourceElementID(t: Type): Int = {
+        t match {
+            case at: ArrayType ⇒ super.sourceElementID(at.baseType)
+            case _             ⇒ super.sourceElementID(t)
+        }
     }
 
-    def sourceElementID(definingObjectType: ObjectType, methodName: String, methodDescriptor: MethodDescriptor): Int
-
 }
-object SourceElementIDs extends SourceElementIDsMap

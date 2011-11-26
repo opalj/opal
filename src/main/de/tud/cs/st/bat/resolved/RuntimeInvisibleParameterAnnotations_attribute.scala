@@ -30,26 +30,22 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved
-
-import TypeAliases._
+package de.tud.cs.st.bat
+package resolved
 
 /**
  * Parameter annotations.
  *
  * @author Michael Eichberg
  */
-case class RuntimeInvisibleParameterAnnotations_attribute (
-	val parameterAnnotations : ParameterAnnotations
-)
-extends ParameterAnnotations_attribute {
+case class RuntimeInvisibleParameterAnnotations_attribute(val parameterAnnotations: ParameterAnnotations)
+        extends ParameterAnnotations_attribute {
 
-	def isRuntimeVisible : Boolean = false
+    final def isRuntimeVisible: Boolean = false
 
-	def toXML = 
-		<runtime_invisible_parameter_annotations>
+    def toXML =
+        <runtime_invisible_parameter_annotations>
 			{ parameterAnnotationsToXML }
 		</runtime_invisible_parameter_annotations>
-
 
 }

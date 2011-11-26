@@ -30,69 +30,47 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved
-
-
-
-import TypeAliases._
-
+package de.tud.cs.st.bat
+package resolved
 
 /**
  * A method's line number table.
  *
  * @author Michael Eichberg
  */
-case class LineNumberTable_attribute(
-	val lineNumberTable : LineNumberTable	// TODO make the LineNumberTable an attribute itself (safe memory and time..)
-) extends Attribute {
+case class LineNumberTable_attribute(val lineNumberTable: LineNumberTable)
+        extends Attribute {
 
-	def toXML =
-		<line_number_table>
-			{ for (entry <- lineNumberTable) yield entry.toXML }
+    def toXML =
+        <line_number_table>
+			{ for (entry ← lineNumberTable) yield entry.toXML }
 		</line_number_table>
 
-	def toProlog[F,T,A <: T](
-		factory : PrologTermFactory[F,T,A],
-		declaringEntityKey : A
-	) : List[F] =
-		sys.error("Not supported; use toProlog(PrologTermFactory,Atom,Array[Int]) instead.")
+    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] =
+        sys.error("Not supported; use toProlog(PrologTermFactory,Atom,Array[Int]) instead.")
 
-	def toProlog[F,T,A <: T](
-		factory : PrologTermFactory[F,T,A],
-		declaringEntityKey : A,
-		pc_to_seqNo : Array[Int]
-	) : F = {
+    def toProlog[F, T, A <: T](
+        factory: PrologTermFactory[F, T, A],
+        declaringEntityKey: A,
+        pc_to_seqNo: Array[Int]): F = {
 
-		import factory._
+        import factory._
 
-		Fact(
-			"method_line_number_table",
-			declaringEntityKey,
-			Terms(lineNumberTable,(_:LineNumberTableEntry).toProlog(factory,pc_to_seqNo))
-		)
-	}
+        Fact(
+            "method_line_number_table",
+            declaringEntityKey,
+            Terms(lineNumberTable, (_: LineNumberTableEntry).toProlog(factory, pc_to_seqNo))
+        )
+    }
 }
 
-case class LineNumberTableEntry (
-	val startPC : Int,
-	val lineNumber : Int
-) {
+case class LineNumberTableEntry(val startPC: Int,
+                                val lineNumber: Int) {
 
-	def toXML = <entry start_pc={ startPC.toString } lineNumber={ lineNumber.toString }/>
+    def toXML = <entry start_pc={ startPC.toString } lineNumber={ lineNumber.toString }/>
 
-	def toProlog[F,T,A <: T](
-		factory : PrologTermFactory[F,T,A],
-		pc_to_seqNo : Array[Int]
-	) : T = {
-
-		import factory._
-
-		Term(
-			"kv",
-			//Term("pc",
-				IntegerAtom(pc_to_seqNo(startPC)),
-			//),
-			Term("ln",IntegerAtom(lineNumber))
-		)
-	}
+    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], pc_to_seqNo: Array[Int]): T = {
+        import factory._
+        Term("kv", IntegerAtom(pc_to_seqNo(startPC)), Term("ln", IntegerAtom(lineNumber)))
+    }
 }

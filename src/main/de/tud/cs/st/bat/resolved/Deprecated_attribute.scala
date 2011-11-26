@@ -41,10 +41,10 @@ case object Deprecated_attribute extends Attribute {
 
     def toXML = <deprecated/>
 
-    def toProlog[F, T, A <: T](
-        factory: PrologTermFactory[F, T, A],
-        declaringEntityKey: A): List[F] =
-        Nil // The deprecated attribute is treated as another access_flag 
+    /**
+     * @return Nil; the deprecated attribute is treated as another access_flag.
+     */
+    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] = Nil
 
 }
 

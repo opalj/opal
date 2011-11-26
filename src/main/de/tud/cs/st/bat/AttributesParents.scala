@@ -31,49 +31,15 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 */
 package de.tud.cs.st.bat
-package reader
-
-import java.io.DataInputStream
-
-import de.tud.cs.st.util.ControlAbstractions.repeat
 
 /**
- * '''From the Specification'''
- * <pre>
- * RuntimeVisibleAnnotations_attribute {
- * 	u2 attribute_name_index;
- * 	u4 attribute_length;
- * 	u2 num_annotations;
- * 	annotation annotations[num_annotations];
- * }
- * </pre>
+ * Enumeration of all primary class file elements that can have attributes.
+ *
  * @author Michael Eichberg
  */
-trait RuntimeVisibleAnnotations_attributeReader extends AttributeReader {
-
-    type RuntimeVisibleAnnotations_attribute <: Attribute
-    type Annotations
-
-    def Annotations(in: DataInputStream, cp: Constant_Pool): Annotations
-
-    def RuntimeVisibleAnnotations_attribute(attribute_name_index: Constant_Pool_Index,
-                                            attribute_length: Int,
-                                            annotations: Annotations)(
-                                                implicit constant_pool: Constant_Pool): RuntimeVisibleAnnotations_attribute
-
-    register(
-        RuntimeVisibleAnnotations_attributeReader.ATTRIBUTE_NAME ->
-            ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
-                val attribute_length = in.readInt()
-                RuntimeVisibleAnnotations_attribute(
-                    attribute_name_index, attribute_length, Annotations(in, cp)
-                )(cp)
-            })
-    )
-}
-
-object RuntimeVisibleAnnotations_attributeReader {
-
-    val ATTRIBUTE_NAME = "RuntimeVisibleAnnotations"
-
+object AttributesParents extends Enumeration {
+    val ClassFile = Value
+    val Field_info = Value
+    val Method_info = Value
+    val Code_attribute = Value
 }

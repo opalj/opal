@@ -30,50 +30,41 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved
+package de.tud.cs.st.bat
+package resolved
 
 import scala.xml.Elem
 import scala.xml.Null
 import scala.xml.Text
 import scala.xml.TopScope
 
-import TypeAliases._
-
 /**
  * Represents a single field declaration.
  *
  * @author Michael Eichberg
  */
-case class Field_Info(
-        val accessFlags: Int,
-        val name: String,
-        val descriptor: FieldDescriptor,
-        val attributes: Attributes) {
+case class Field_Info(val accessFlags: Int,
+                      val name: String,
+                      val descriptor: FieldDescriptor,
+                      val attributes: Attributes) {
 
     def fieldTypeSignature: Option[FieldTypeSignature] = {
-        for (attribute ← attributes) {
-            attribute match {
-                case Signature_attribute(s: FieldTypeSignature) ⇒ return Some(s)
-                case _ ⇒ ;
-            }
+        attributes find {
+            case s: FieldTypeSignature ⇒ return Some(s)
+            case _ ⇒ false;
         }
         None
     }
-
-    import de.tud.cs.st.bat.canonical.AccessFlagsContext.FIELD
-    import de.tud.cs.st.bat.canonical.AccessFlagsIterator
 
     def toXML =
         <field
 			name={ name }
 			type={ descriptor.fieldType.toJava } >
-			<flags>{ AccessFlagsIterator(accessFlags, FIELD) map((f) ⇒ Elem(null, f.toString, Null, TopScope)) }</flags>
+			<flags>{ AccessFlagsIterator(accessFlags, AccessFlagsContexts.FIELD) map(_.toXML) }</flags>
 			<attributes>{ for (attribute ← attributes) yield attribute.toXML }</attributes>
 		</field>
 
-    def toProlog[F, T, A <: T](
-        factory: PrologTermFactory[F, T, A],
-        classFileKeyAtom: A): List[F] = {
+    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], classFileKeyAtom: A): List[F] = {
 
         import factory._
 
@@ -83,9 +74,9 @@ case class Field_Info(
 
         for (attribute ← attributes) {
             facts = (attribute match {
-                case aa: Annotations_Attribute    ⇒ aa.toProlog(factory, key)
-                case cva: ConstantValue_attribute ⇒ cva.toProlog(factory, key)
-                case _                            ⇒ Nil
+                case aa: Annotations_Attribute ⇒ aa.toProlog(factory, key)
+                case cva: ConstantValue[_]     ⇒ cva.toProlog(factory, key)
+                case _                         ⇒ Nil
             }) ::: facts
         }
 
@@ -95,7 +86,7 @@ case class Field_Info(
             key,
             TextAtom(name),
             descriptor.toProlog(factory),
-            VisibilityAtom(accessFlags, FIELD),
+            VisibilityAtom(accessFlags, AccessFlagsContexts.FIELD),
             FinalTerm(accessFlags),
             StaticTerm(accessFlags),
             TransientTerm(accessFlags),

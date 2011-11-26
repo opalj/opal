@@ -45,9 +45,7 @@ trait Attribute {
     def toXML: scala.xml.Node
 
     /**
-     * Returns an (ISO-)Prolog representation of this attribute.
+     * Creates a Prolog representation of this attribute.
      */
-    def toProlog[F, T, A <: T](
-        factory: PrologTermFactory[F, T, A],
-        declaringEntityKey: A): List[F]
+    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F]
 }

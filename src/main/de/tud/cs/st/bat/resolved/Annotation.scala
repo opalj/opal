@@ -32,37 +32,24 @@
 */
 package de.tud.cs.st.bat.resolved
 
-import TypeAliases._
-
-
 /**
  * An annotation of a class, a field, a method or a method parameter.
  *
  * @author Michael Eichberg
  */
-case class Annotation ( 
-	val annotationType : FieldType, 
-	val elementValuePairs : ElementValuePairs 
-)  {
+case class Annotation(val annotationType: FieldType,
+                      val elementValuePairs: ElementValuePairs) {
 
+    def toXML =
+        <annotation type={ annotationType.toJava }>
+		{ for (elementValuePair ← elementValuePairs) yield elementValuePair.toXML }
+		</annotation>
 
-	def toXML =
-		<annotation type={ annotationType.toJava }>
-		{ 
-			for (elementValuePair <- elementValuePairs) 
-				yield elementValuePair.toXML  
-		}
-		</annotation> 
-
-
-	def toProlog[F,T,A <: T](factory : PrologTermFactory[F,T,A]) : T =
-		factory.Term(
-			"annotation",	// functor
-			annotationType.toProlog(factory),
-			factory.Terms(
-				elementValuePairs,
-				(_ : ElementValuePair).toProlog(factory)
-			)
-		)
+    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T =
+        factory.Term(
+            "annotation", // functor
+            annotationType.toProlog(factory),
+            factory.Terms(elementValuePairs, (_: ElementValuePair).toProlog(factory))
+        )
 
 }

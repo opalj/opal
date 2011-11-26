@@ -34,29 +34,25 @@ package de.tud.cs.st.bat.resolved.reader
 
 import de.tud.cs.st.bat.reader.Unknown_attributeReader
 
-
 /**
- * "Factory" to create unknown attributes which are used to represent class 
+ * "Factory" to create unknown attributes which are used to represent class
  * file attributes that are not understood by this framework.
  *
  * @author Michael Eichberg
  */
-trait Unknown_attributeBinding 
-	extends Unknown_attributeReader
-		with Constant_PoolResolver
-		with AttributeBinding		
-{
-	
-	
-	type Unknown_attribute = de.tud.cs.st.bat.resolved.Unknown_attribute	
-	
-	
-	def Unknown_attribute(
-		attribute_name_index : Int, 
-		info : Array[Byte]
-	)( implicit constant_pool : Constant_Pool) : Unknown_attribute = {
-		new Unknown_attribute(attribute_name_index, info) 
-	}
+trait Unknown_attributeBinding
+        extends Unknown_attributeReader
+        with Constant_PoolResolver
+        with AttributeBinding {
+
+    type Unknown_attribute = de.tud.cs.st.bat.resolved.Unknown_attribute
+
+    def Unknown_attribute(
+        attribute_name_index: Constant_Pool_Index,
+        info: Array[Byte])(
+            implicit constant_pool: Constant_Pool): Unknown_attribute =
+        new Unknown_attribute(attribute_name_index, info)
+
 }
 
 

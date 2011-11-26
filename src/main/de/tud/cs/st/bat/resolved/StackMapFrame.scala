@@ -30,91 +30,89 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved
-
-import TypeAliases._
+package de.tud.cs.st.bat
+package resolved
 
 /**
  * Part of the Java 6 stack map table attribute.
  *
  * @author Michael Eichberg
  */
-
 sealed trait StackMapFrame /*extends de.tud.cs.st.bat.StackMapFrame*/ {
-	type VerificationTypeInfo = de.tud.cs.st.bat.resolved.VerificationTypeInfo
-	// [DOCUMENTATION ONLY]	type VerificationTypeInfoLocals = IndexedSeq[VerificationTypeInfo]
-	//	[DOCUMENTATION ONLY]	type VerificationTypeInfoStack = IndexedSeq[VerificationTypeInfo]
-	
-	def toXML : scala.xml.Node
-	
-	def frameType : Int
-	
-	//final def frame_type = frameType // using the underscore it the JVM Spec's notation..
+    type VerificationTypeInfo = de.tud.cs.st.bat.resolved.VerificationTypeInfo
+    // [DOCUMENTATION ONLY]	type VerificationTypeInfoLocals = IndexedSeq[VerificationTypeInfo]
+    //	[DOCUMENTATION ONLY]	type VerificationTypeInfoStack = IndexedSeq[VerificationTypeInfo]
+
+    def toXML: scala.xml.Node
+
+    def frameType: Int
+
+    //final def frame_type = frameType // using the underscore it the JVM Spec's notation..
 }
 
-case class SameFrame(
-	val frameType : Int
-) extends /* de.tud.cs.st.bat.SameFrame with */ StackMapFrame {
-	def toXML = <same_frame tag={ frameType.toString }/>
+case class SameFrame(val frameType: Int)
+        extends /* de.tud.cs.st.bat.SameFrame with */ StackMapFrame {
+
+    def toXML = <same_frame tag={ frameType.toString }/>
 }
 
-case class SameLocals1StackItemFrame(
-	val frameType : Int,
-	val verificationTypeInfoStackItem : VerificationTypeInfo
-) extends /* de.tud.cs.st.bat.SameLocals1StackItemFrame with*/ StackMapFrame {
-	def toXML = 
-		<same_locals_1_stack_item_frame tag={ frameType.toString }>
+case class SameLocals1StackItemFrame(val frameType: Int,
+                                     val verificationTypeInfoStackItem: VerificationTypeInfo)
+        extends /* de.tud.cs.st.bat.SameLocals1StackItemFrame with*/ StackMapFrame {
+
+    def toXML =
+        <same_locals_1_stack_item_frame tag={ frameType.toString }>
 			{ verificationTypeInfoStackItem.toXML }
 		</same_locals_1_stack_item_frame>
 }
 
-case class SameLocals1StackItemFrameExtended(
-	val frameType : Int,
-	val offsetDelta : Int,
-	val verificationTypeInfoStackItem : VerificationTypeInfo
-) extends /*de.tud.cs.st.bat.SameLocals1StackItemFrameExtended with */ StackMapFrame {
-	def toXML = 
-		<same_locals_1_stack_item_frame_extended tag={ frameType.toString } offset_delta={ offsetDelta.toString }>
+case class SameLocals1StackItemFrameExtended(val frameType: Int,
+                                             val offsetDelta: Int,
+                                             val verificationTypeInfoStackItem: VerificationTypeInfo)
+        extends /*de.tud.cs.st.bat.SameLocals1StackItemFrameExtended with */ StackMapFrame {
+
+    def toXML =
+        <same_locals_1_stack_item_frame_extended tag={ frameType.toString } offset_delta={ offsetDelta.toString }>
 			{ verificationTypeInfoStackItem.toXML }
 		</same_locals_1_stack_item_frame_extended>
 }
 
-case class ChopFrame(
-	val frameType : Int,
-	val offsetDelta : Int
-) extends /*de.tud.cs.st.bat.ChopFrame with*/ StackMapFrame {
-	def toXML = 
-		<chop_frame tag={ frameType.toString } offset_delta={ offsetDelta.toString }/>
+case class ChopFrame(val frameType: Int,
+                     val offsetDelta: Int)
+        extends /*de.tud.cs.st.bat.ChopFrame with*/ StackMapFrame {
+
+    def toXML =
+        <chop_frame tag={ frameType.toString } offset_delta={ offsetDelta.toString }/>
 }
 
-case class SameFrameExtended(
-	val frameType : Int, 
-	val offsetDelta : Int
-) extends /* de.tud.cs.st.bat.SameFrameExtended with */ StackMapFrame {
-	def toXML = 
-		<same_frame_extended tag={ frameType.toString } offset_delta={ offsetDelta.toString }/>
+case class SameFrameExtended(val frameType: Int,
+                             val offsetDelta: Int)
+        extends /* de.tud.cs.st.bat.SameFrameExtended with */ StackMapFrame {
+
+    def toXML =
+        <same_frame_extended tag={ frameType.toString } offset_delta={ offsetDelta.toString }/>
 }
 
-case class AppendFrame(
-	val frameType : Int, 
-	val offsetDelta : Int,
-	val verificationTypeInfoLocals : VerificationTypeInfoLocals
-) extends /*de.tud.cs.st.bat.AppendFrame with*/ StackMapFrame {
-	def toXML = 
-		<append_frame tag={ frameType.toString } offset_delta={ offsetDelta.toString }>
-			<locals>{ for (local <- verificationTypeInfoLocals) yield local.toXML }</locals>
+case class AppendFrame(val frameType: Int,
+                       val offsetDelta: Int,
+                       val verificationTypeInfoLocals: VerificationTypeInfoLocals)
+        extends /*de.tud.cs.st.bat.AppendFrame with*/ StackMapFrame {
+
+    def toXML =
+        <append_frame tag={ frameType.toString } offset_delta={ offsetDelta.toString }>
+			<locals>{ for (local ← verificationTypeInfoLocals) yield local.toXML }</locals>
 		</append_frame>
 }
 
-case class FullFrame(
-	val frameType : Int,
-	val offsetDelta : Int,
-	val verificationTypeInfoLocals : VerificationTypeInfoLocals, 
-	val verificationTypeInfoStack : VerificationTypeInfoStack
-) extends /*de.tud.cs.st.bat.FullFrame with*/ StackMapFrame {
-	def toXML = 
-		<append_frame tag={ frameType.toString } offset_delta={ offsetDelta.toString }>
-			<locals>{ for (local <- verificationTypeInfoLocals) yield local.toXML }</locals>
-			<stack>{ for (item <- verificationTypeInfoStack) yield item.toXML }</stack>
+case class FullFrame(val frameType: Int,
+                     val offsetDelta: Int,
+                     val verificationTypeInfoLocals: VerificationTypeInfoLocals,
+                     val verificationTypeInfoStack: VerificationTypeInfoStack)
+        extends /*de.tud.cs.st.bat.FullFrame with*/ StackMapFrame {
+
+    def toXML =
+        <append_frame tag={ frameType.toString } offset_delta={ offsetDelta.toString }>
+			<locals>{ for (local ← verificationTypeInfoLocals) yield local.toXML }</locals>
+			<stack>{ for (item ← verificationTypeInfoStack) yield item.toXML }</stack>
 		</append_frame>
 }

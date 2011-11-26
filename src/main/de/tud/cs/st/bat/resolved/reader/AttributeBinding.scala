@@ -33,10 +33,9 @@
 package de.tud.cs.st.bat.resolved.reader
 
 import de.tud.cs.st.bat.reader.AttributesAbstractions
-import de.tud.cs.st.bat.resolved.TypeAliases._
 
 /**
- * Defines the common base type of all "resolved" attributes.
+ * Defines the common bindings for all "resolved" attributes.
  *
  * @author Michael Eichberg
  */

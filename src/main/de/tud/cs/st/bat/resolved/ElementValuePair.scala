@@ -30,29 +30,24 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved
-
-import scala.xml.Node
-import scala.xml.Text
-
+package de.tud.cs.st.bat
+package resolved
 
 /**
  *
  * @author Michael Eichberg
  */
-case class ElementValuePair (
-	val elementName : String,
-	val elementValue : ElementValue
-) {
-	
-	def toXML = <element name={ elementName }>{ elementValue.toXML } </element>
+case class ElementValuePair(val elementName: String,
+                            val elementValue: ElementValue) {
 
-	def toProlog[F,T,A <: T](factory : PrologTermFactory[F,T,A]) : T = {
-		factory.Term(
-			"element",	// functor
-			factory.TextAtom(elementName),
-			elementValue.toProlog(factory)
-		)
-	}
+    def toXML = <element name={ elementName }>{ elementValue.toXML } </element>
+
+    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T = {
+        factory.Term(
+            "element", // functor
+            factory.TextAtom(elementName),
+            elementValue.toProlog(factory)
+        )
+    }
 }
 

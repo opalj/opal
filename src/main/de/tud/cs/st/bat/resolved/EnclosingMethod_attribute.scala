@@ -30,43 +30,36 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved
-
-
+package de.tud.cs.st.bat
+package resolved
 
 /**
  * A class' enclosing method's attribute.
  *
  * @author Michael Eichberg
  */
-case class EnclosingMethod_attribute(
-	val clazz : ObjectType,
-	val name : String,
-	val descriptor : MethodDescriptor  
-) extends Attribute {
-	
-	
-	def toXML = 
-		<enclosing_method
+case class EnclosingMethod_attribute(val clazz: ObjectType,
+                                     val name: String,
+                                     val descriptor: MethodDescriptor)
+        extends Attribute {
+
+    def toXML =
+        <enclosing_method
 			class={ clazz.className }
 			name={ name } >
 			{ if (descriptor != null) descriptor.toXML } 
 		</enclosing_method>
 
+    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] = {
+        import factory._
 
-	def toProlog[F,T,A <: T](
-		factory : PrologTermFactory[F,T,A],
-		declaringEntityKey : A
-	) : List[F] = {
-		import factory._
-		
-		Fact(
-			"enclosing_method",
-			declaringEntityKey,
-			clazz.toProlog(factory),
-			if (name != null) TextAtom(name)	else NoneAtom,
-			if (descriptor != null) descriptor.toProlog(factory) else NoneAtom
-		) :: Nil
-	}
-		
+        Fact(
+            "enclosing_method",
+            declaringEntityKey,
+            clazz.toProlog(factory),
+            if (name != null) TextAtom(name) else NoneAtom,
+            if (descriptor != null) descriptor.toProlog(factory) else NoneAtom
+        ) :: Nil
+    }
+
 }

@@ -30,27 +30,27 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.canonical
-
-import java.io.DataInput
+package de.tud.cs.st.bat
+package canonical
 
 /**
-
+ * Common supertype of the constant pool representations for
+ * fields, methods, and interface methods.
+ *
  * @author Michael Eichberg
  */
 trait CONSTANT_Ref extends Constant_Pool_Entry {
 
-	//
-	// ABSTRACT DEFINITIONS
-	//
+    //
+    // ABSTRACT DEFINITIONS
+    //
 
-	val class_index : Int
+    val class_index: Int
 
+    //
+    // IMPLEMENTATION
+    //
 
-	//
-	// IMPLEMENTATION
-	//
-
-	val name_and_type_index : Int
+    val name_and_type_index: Int
 
 }

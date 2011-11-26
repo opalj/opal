@@ -13,9 +13,9 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- *  - Neither the name of the Software Technology Group or Technische
- *    Universität Darmstadt nor the names of its contributors may be used to
- *    endorse or promote products derived from this software without specific
+ *  - Neither the name of the Software Technology Group or Technische 
+ *    Universität Darmstadt nor the names of its contributors may be used to 
+ *    endorse or promote products derived from this software without specific 
  *    prior written permission.
  *
  *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -30,38 +30,18 @@
  *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st.bat.resolved
-package dependencies
+package de.tud.cs.st.bat
 
 /**
- * Associates a source element (type, method or field declaration) with a unique id.
+ * Convenience methods related to access flags.
  *
  * @author Michael Eichberg
  */
-trait SourceElementIDs {
+object AccessFlags {
 
-    final def sourceElementID(classFile: ClassFile): Int =
-        sourceElementID(classFile.thisClass)
+    import scala.xml._
 
-    def sourceElementID(t: Type): Int
-
-    final def sourceElementID(classFile: ClassFile, field: Field_Info): Int =
-        sourceElementID(classFile.thisClass, field.name)
-
-    final def sourceElementID(definingObjectType: ObjectType, field: Field_Info): Int =
-        sourceElementID(definingObjectType, field.name)
-
-    def sourceElementID(definingObjectType: ObjectType, fieldName: String): Int
-
-    final def sourceElementID(classFile: ClassFile, method: Method_Info): Int =
-        sourceElementID(classFile.thisClass, method)
-
-    final def sourceElementID(definingObjectType: ObjectType, method: Method_Info): Int = {
-        val Method_Info(_, methodName, methodDescriptor, _) = method
-        sourceElementID(definingObjectType, methodName, methodDescriptor)
-    }
-
-    def sourceElementID(definingObjectType: ObjectType, methodName: String, methodDescriptor: MethodDescriptor): Int
+    def toXML(flags: Int, ctx: AccessFlagsContext) =
+        <flags>{ AccessFlagsIterator(flags, ctx) map(_.toXML) }</flags>
 
 }
-object SourceElementIDs extends SourceElementIDsMap

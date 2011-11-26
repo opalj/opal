@@ -30,29 +30,19 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved
-
-import de.tud.cs.st.prolog.{GroundTerm,Atom,Fact}
-
+package de.tud.cs.st.bat
+package resolved
 
 /**
  * The source file attribute.
  *
  * @author Michael Eichberg
  */
-case class SourceFile_attribute(
-	val sourceFile : String
-) extends Attribute {
-	
-	def toXML = <source file={ sourceFile }/>
-	
-	def toProlog[F,T,A <: T](
-		factory : PrologTermFactory[F,T,A],
-		declaringEntityKey : A
-	) : List[F] = 
-		factory.Fact(
-			"class_file_source",
-			declaringEntityKey,
-			factory.TextAtom(sourceFile)
-		) :: Nil
+case class SourceFile_attribute(val sourceFile: String)
+        extends Attribute {
+
+    def toXML = <source file={ sourceFile }/>
+
+    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] =
+        factory.Fact("class_file_source", declaringEntityKey, factory.TextAtom(sourceFile)) :: Nil
 }

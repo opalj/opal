@@ -30,7 +30,8 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.reader
+package de.tud.cs.st.bat
+package reader
 
 import java.io.DataInputStream
 import de.tud.cs.st.util.ControlAbstractions.repeat
@@ -115,7 +116,7 @@ trait AttributesReader
         attributeReaders += r
     }
 
-    def Attributes(ap: AttributesParent.Value, cp: Constant_Pool, in: DataInputStream): Attributes = {
+    def Attributes(ap: AttributesParent, cp: Constant_Pool, in: DataInputStream): Attributes = {
         val attributes_count = in.readUnsignedShort
         if (attributes_count == 0)
             Nil

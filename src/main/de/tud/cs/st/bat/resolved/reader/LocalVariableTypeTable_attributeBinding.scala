@@ -60,7 +60,7 @@ trait LocalVariableTypeTable_attributeBinding
             start_pc,
             length,
             name_index,
-            cpidxToFieldTypeSignature(signature_index),
+            CONSTANT_Utf8_info_IndexToFieldTypeSignature(signature_index),
             index)
     }
 

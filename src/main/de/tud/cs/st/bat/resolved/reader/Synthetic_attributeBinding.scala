@@ -30,7 +30,8 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved.reader
+package de.tud.cs.st.bat.resolved
+package reader
 
 import de.tud.cs.st.bat.reader.Synthetic_attributeReader
 
@@ -46,7 +47,8 @@ trait Synthetic_attributeBinding
 
     type Synthetic_attribute = de.tud.cs.st.bat.resolved.Attribute
 
-    def Synthetic_attribute(attribute_name_index: Int)(implicit constant_pool: Constant_Pool) = de.tud.cs.st.bat.resolved.Synthetic_attribute
+    def Synthetic_attribute(attribute_name_index: Constant_Pool_Index)(
+        implicit constant_pool: Constant_Pool) = de.tud.cs.st.bat.resolved.Synthetic_attribute
 
 }
 

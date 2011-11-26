@@ -30,9 +30,8 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved
-
-import de.tud.cs.st.prolog.{ GroundTerm, Atom, Fact }
+package de.tud.cs.st.bat
+package resolved
 
 /**
  * The synthetic attribute.
@@ -43,7 +42,9 @@ case object Synthetic_attribute extends Attribute {
 
     def toXML = <synthetic/>
 
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] =
-        Nil // We do represent the synthetic as another access flag.
+    /**
+     * We do represent the synthetic as another access flag and not as a standard attribute.
+     */
+    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] = Nil
 
 }

@@ -30,31 +30,19 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved
-
-import de.tud.cs.st.prolog.{GroundTerm,Atom,Fact}
-
-
-import TypeAliases._
-
+package de.tud.cs.st.bat
+package resolved
 
 /**
  * Representation of the Java 6 stack map table attribute.
  *
  * @author Michael Eichberg
  */
-case class StackMapTable_attribute (
-	val stackMapFrames : StackMapFrames // TODO make the StackMapFrames an attribute on their own
-) extends Attribute {
+case class StackMapTable_attribute(val stackMapFrames: StackMapFrames)
+        extends Attribute {
 
-	// type StackMapFrames = Seq[StackMapFrame]
+    def toXML = <stack_map_table>{ for (frame ← stackMapFrames) yield frame.toXML }</stack_map_table>
 
-	def toXML =
-		<stack_map_table>
-			{ for (frame <- stackMapFrames) yield frame.toXML }
-		</stack_map_table>
-
-
-	def toProlog[F,T,A <: T](factory : PrologTermFactory[F,T,A],declaringEntityKey : A) : List[F] =
-		Nil // TODO	implement conversion of StackMapFrames to Prolog
+    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] =
+        Nil // TODO	implement conversion of StackMapFrames to Prolog
 }

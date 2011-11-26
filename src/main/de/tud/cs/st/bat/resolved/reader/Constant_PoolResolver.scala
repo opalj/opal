@@ -30,7 +30,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st.bat.resolved
+package de.tud.cs.st.bat
+package resolved
 package reader
 
 import de.tud.cs.st.bat.canonical.reader.Constant_PoolBinding
@@ -144,17 +145,16 @@ trait Constant_PoolResolver extends Constant_PoolBinding {
 
     implicit def FieldDescriptorToFieldType(fd: FieldDescriptor): FieldType = fd.fieldType
 
-    implicit def CONSTANT_Utf8_info_IndexToSignature(cuii: Constant_Pool_Index)(implicit cp: Constant_Pool, ap: de.tud.cs.st.bat.reader.AttributesParent.Value): Signature = {
-        import de.tud.cs.st.bat.reader.AttributesParent
+    implicit def CONSTANT_Utf8_info_IndexToSignature(cuii: Constant_Pool_Index)(implicit cp: Constant_Pool, ap: AttributesParent): Signature = {
         ap match {
-            case AttributesParent.Field_info     ⇒ SignatureParser.parseFieldTypeSignature(cuii)
-            case AttributesParent.ClassFile      ⇒ SignatureParser.parseClassSignature(cuii)
-            case AttributesParent.Method_info    ⇒ SignatureParser.parseMethodTypeSignature(cuii)
-            case AttributesParent.Code_attribute ⇒ sys.error("signature attributes stored in a code_attribute's attributes table are non-standard")
+            case AttributesParents.Field_info     ⇒ SignatureParser.parseFieldTypeSignature(cuii)
+            case AttributesParents.ClassFile      ⇒ SignatureParser.parseClassSignature(cuii)
+            case AttributesParents.Method_info    ⇒ SignatureParser.parseMethodTypeSignature(cuii)
+            case AttributesParents.Code_attribute ⇒ sys.error("signature attributes stored in a code_attribute's attributes table are non-standard")
         }
     }
 
-    def cpidxToFieldTypeSignature(signature_index: Constant_Pool_Index)(implicit cp: Constant_Pool): FieldTypeSignature = {
+    def CONSTANT_Utf8_info_IndexToFieldTypeSignature(signature_index: Constant_Pool_Index)(implicit cp: Constant_Pool): FieldTypeSignature = {
         SignatureParser.parseFieldTypeSignature(signature_index)
     }
 }

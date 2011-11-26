@@ -30,32 +30,25 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved
-
-import TypeAliases._
-
+package de.tud.cs.st.bat
+package resolved
 
 /**
  * A class' inner classes.
  *
  * @author Michael Eichberg
  */
-case class InnerClasses_attribute(
-	val classes : InnerClassesEntries
-) extends Attribute {
+case class InnerClasses_attribute(val classes: InnerClassesEntries)
+        extends Attribute {
 
-	def toXML =
-		<inner_classes>
-			{ for (clazz <- classes) yield clazz.toXML}
+    def toXML =
+        <inner_classes>
+			{ for (clazz ← classes) yield clazz.toXML }
 		</inner_classes>
 
-
-	def toProlog[F,T,A <: T](
-		factory : PrologTermFactory[F,T,A],
-		declaringEntityKey : A
-	) : List[F] =
-		Nil
-	/*	{
+    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] =
+        Nil
+    /*	{ TODO write out the inner classes information in Prolog
 		import factory._
 
 		Fact(
@@ -65,31 +58,25 @@ case class InnerClasses_attribute(
 		) :: Nil
 	}
 	*/
-
 }
 
 
-case class InnerClassesEntry(
-	val innerClassType : ObjectType,
+case class InnerClassesEntry(	val innerClassType : ObjectType,
 	val outerClassType : ObjectType,
 	val innerName : String,
 	val innerClassAccessFlags : Int
 ) {
 
-	import de.tud.cs.st.bat.canonical.AccessFlagsContext.INNER_CLASS
-	import de.tud.cs.st.bat.canonical.AccessFlags
-
 	def toXML =
-		<class innerName={ innerName }>
-			{	var nodes : List[scala.xml.Node] = Nil
-				nodes = AccessFlags.toXML(innerClassAccessFlags, INNER_CLASS) :: nodes
+		<class innerName={ innerName }>{	
+			    var nodes : List[scala.xml.Node] = Nil
+				nodes = AccessFlags.toXML(innerClassAccessFlags, AccessFlagsContexts.INNER_CLASS) :: nodes
 				if (outerClassType != null) nodes = <outer_class type={outerClassType.className}/> :: nodes
 				nodes = <inner_class type={innerClassType.className}/> :: nodes
 				nodes
-			}
-		</class>
+		}</class>
 
-	/* 			// TODO implement toProlog
+	/* 	
 	def toProlog(
 		factory : PrologTermFactory,
 	) : GroundTerm = {
@@ -99,5 +86,4 @@ case class InnerClassesEntry(
 		)
 	}
 	*/
-
 }

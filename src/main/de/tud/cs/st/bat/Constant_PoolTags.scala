@@ -31,49 +31,42 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 */
 package de.tud.cs.st.bat
-package reader
-
-import java.io.DataInputStream
-
-import de.tud.cs.st.util.ControlAbstractions.repeat
 
 /**
- * '''From the Specification'''
- * <pre>
- * RuntimeVisibleAnnotations_attribute {
- * 	u2 attribute_name_index;
- * 	u4 attribute_length;
- * 	u2 num_annotations;
- * 	annotation annotations[num_annotations];
- * }
- * </pre>
+ * The constant pool tags as defined by the JVM specification.
+ *
  * @author Michael Eichberg
  */
-trait RuntimeVisibleAnnotations_attributeReader extends AttributeReader {
+object Constant_PoolTags extends Enumeration {
 
-    type RuntimeVisibleAnnotations_attribute <: Attribute
-    type Annotations
+    val CONSTANT_Class_ID = 7
+    val CONSTANT_Fieldref_ID = 9
+    val CONSTANT_Methodref_ID = 10
+    val CONSTANT_InterfaceMethodref_ID = 11
+    val CONSTANT_String_ID = 8
+    val CONSTANT_Integer_ID = 3
+    val CONSTANT_Float_ID = 4
+    val CONSTANT_Long_ID = 5
+    val CONSTANT_Double_ID = 6
+    val CONSTANT_NameAndType_ID = 12
+    val CONSTANT_Utf8_ID = 1
+    val CONSTANT_MethodHandle_ID = 15
+    val CONSTANT_MethodType_ID = 16
+    val CONSTANT_InvokeDynamic_ID = 18
 
-    def Annotations(in: DataInputStream, cp: Constant_Pool): Annotations
-
-    def RuntimeVisibleAnnotations_attribute(attribute_name_index: Constant_Pool_Index,
-                                            attribute_length: Int,
-                                            annotations: Annotations)(
-                                                implicit constant_pool: Constant_Pool): RuntimeVisibleAnnotations_attribute
-
-    register(
-        RuntimeVisibleAnnotations_attributeReader.ATTRIBUTE_NAME ->
-            ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
-                val attribute_length = in.readInt()
-                RuntimeVisibleAnnotations_attribute(
-                    attribute_name_index, attribute_length, Annotations(in, cp)
-                )(cp)
-            })
-    )
-}
-
-object RuntimeVisibleAnnotations_attributeReader {
-
-    val ATTRIBUTE_NAME = "RuntimeVisibleAnnotations"
+    val CONSTANT_Class = Value(CONSTANT_Class_ID, "CONSTANT_Class")
+    val CONSTANT_Fieldref = Value(CONSTANT_Fieldref_ID, "CONSTANT_Fieldref")
+    val CONSTANT_Methodref = Value(CONSTANT_Methodref_ID, "CONSTANT_Methodref")
+    val CONSTANT_InterfaceMethodref = Value(CONSTANT_InterfaceMethodref_ID, "CONSTANT_InterfaceMethodref")
+    val CONSTANT_String = Value(CONSTANT_String_ID, "CONSTANT_String")
+    val CONSTANT_Integer = Value(CONSTANT_Integer_ID, "CONSTANT_Integer")
+    val CONSTANT_Float = Value(CONSTANT_Float_ID, "CONSTANT_Float")
+    val CONSTANT_Long = Value(CONSTANT_Long_ID, "CONSTANT_Long")
+    val CONSTANT_Double = Value(CONSTANT_Double_ID, "CONSTANT_Double")
+    val CONSTANT_NameAndType = Value(CONSTANT_NameAndType_ID, "CONSTANT_NameAndType")
+    val CONSTANT_Utf8 = Value(CONSTANT_Utf8_ID, "CONSTANT_Utf8")
+    val CONSTANT_MethodHandle = Value(CONSTANT_MethodHandle_ID, "CONSTANT_MethodHandle")
+    val CONSTANT_MethodType = Value(CONSTANT_MethodType_ID, "CONSTANT_MethodType")
+    val CONSTANT_InvokeDynamic = Value(CONSTANT_InvokeDynamic_ID, "CONSTANT_InvokeDynamic")
 
 }

@@ -30,32 +30,26 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved.reader
+package de.tud.cs.st.bat.resolved
+package reader
 
 import de.tud.cs.st.bat.reader.ConstantValue_attributeReader
 
-
 /**
- * 
+ *
  *
  * @author Michael Eichberg
  */
-trait ConstantValue_attributeBinding 
-	extends ConstantValue_attributeReader
-		with Constant_PoolResolver
-		with AttributeBinding		
-{
+trait ConstantValue_attributeBinding
+    extends ConstantValue_attributeReader
+    with Constant_PoolResolver
+    with AttributeBinding {
 
+    type ConstantValue_attribute = ConstantValue[_]
 
-	type ConstantValue_attribute = de.tud.cs.st.bat.resolved.ConstantValue_attribute			
-
-
-	def ConstantValue_attribute (
-		attribute_name_index : Int, constantvalue_index : Int 
-	)( implicit constant_pool : Constant_Pool) = {
-		new ConstantValue_attribute (constantvalue_index) 
-	}
-
+    def ConstantValue_attribute(attributeNameIndex: Constant_Pool_Index, constantValueIndex: Constant_Pool_Index)(implicit cp: Constant_Pool) = {
+        CONSTANT_Value_IndexToConstantValue(constantValueIndex)
+    }
 
 }
 
