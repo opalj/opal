@@ -50,9 +50,11 @@ trait SourceElementIDsMap extends SourceElementIDs {
     // Associates each type with a unique ID
     //
 
+    val LOWEST_TYPE_ID: Int = 0
+
     import scala.collection.mutable.WeakHashMap
 
-    private var nextTypeID = 0;
+    private var nextTypeID = LOWEST_TYPE_ID;
 
     private val typeIDs = WeakHashMap[Type, Int]()
 
@@ -62,7 +64,9 @@ trait SourceElementIDsMap extends SourceElementIDs {
     // Associates each field with a unique ID
     //
 
-    private var nextFieldID = 1000000000;
+    val LOWEST_FIELD_ID: Int = 1000000000
+
+    private var nextFieldID = LOWEST_FIELD_ID
 
     private val fieldIDs = WeakHashMap[ObjectType, WeakHashMap[String, Int]]()
 
@@ -75,7 +79,9 @@ trait SourceElementIDsMap extends SourceElementIDs {
     // Associates each method with a unique ID
     //
 
-    private var nextMethodID = 2000000000;
+    val LOWEST_METHOD_ID: Int = 2000000000
+
+    private var nextMethodID = LOWEST_METHOD_ID
 
     private val methodIDs = WeakHashMap[ObjectType, WeakHashMap[(String, MethodDescriptor), Int]]()
 
