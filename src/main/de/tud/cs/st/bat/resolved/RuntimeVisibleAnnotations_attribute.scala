@@ -30,27 +30,24 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved
+package de.tud.cs.st.bat
+package resolved
 
-import de.tud.cs.st.prolog.{GroundTerm,Atom,Fact}
-
-import TypeAliases._
+import de.tud.cs.st.prolog.{ GroundTerm, Atom, Fact }
 
 /**
  * A class, method, or field annotation.
  *
  * @author Michael Eichberg
  */
-case class RuntimeVisibleAnnotations_attribute (
-	val annotations : Annotations
-) extends Annotations_Attribute {
+case class RuntimeVisibleAnnotations_attribute(
+    val annotations: Annotations) extends Annotations_Attribute {
 
-	final def isRuntimeVisible : Boolean = true
+    final def isRuntimeVisible: Boolean = true
 
-	def toXML = 
-		<runtime_visible_annotations>
+    def toXML =
+        <runtime_visible_annotations>
 			{ annotationsToXML }
 		</runtime_visible_annotations>
-	
 
 }

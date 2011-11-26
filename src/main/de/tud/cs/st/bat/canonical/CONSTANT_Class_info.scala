@@ -30,11 +30,11 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.canonical
-
-import java.io.DataInput
+package de.tud.cs.st.bat
+package canonical
 
 /**
+ * This structure is used to represent a class or an interface.
  *
  * @author Michael Eichberg
  */
@@ -50,7 +50,7 @@ trait CONSTANT_Class_info extends Constant_Pool_Entry {
     // IMPLEMENTATION
     //
 
-    def Constant_Type_Value = de.tud.cs.st.bat.reader.Constant_PoolTags.CONSTANT_Class
+    def Constant_Type_Value = Constant_PoolTags.CONSTANT_Class
 
 }
 

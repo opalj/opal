@@ -37,7 +37,7 @@ import de.tud.cs.st.bat.reader.Constant_PoolReader
 
 
 /**
- * Representation of the constant pool as specified by the JVM Spec. 
+ * Representation of the constant pool as specified by the JVM Specification. 
  * (This representation does not provide any abstraction.)
  *
  * @author Michael Eichberg

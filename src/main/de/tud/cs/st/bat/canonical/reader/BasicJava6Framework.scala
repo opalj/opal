@@ -30,7 +30,8 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.canonical.reader
+package de.tud.cs.st.bat
+package canonical.reader
 
 import de.tud.cs.st.bat.reader.Unknown_attributeReader
 
@@ -186,7 +187,7 @@ object BasicJava6Framework
 
   def Signature_attribute(
     attribute_name_index: Int,
-    signature_index: Int)(implicit constant_pool: Constant_Pool, ap: de.tud.cs.st.bat.reader.AttributesParent.Value) =
+    signature_index: Int)(implicit constant_pool: Constant_Pool, ap: AttributeParent) =
     new Signature_attribute(attribute_name_index, signature_index)
 
   case class ConstantValue_attribute(

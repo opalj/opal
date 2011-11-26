@@ -33,9 +33,8 @@
 package de.tud.cs.st.bat
 
 /**
- * This class models the different contexts (class, inner_class, method and
- * field) in which the JVM Spec. uses an
- * access_flags field and defines which access_flags can be found in which context.
+ * This class enumerates the different contexts in which the JVM Spec. uses 
+ * access_flags fields and defines which access_flags can be found in which context.
  *
  * @author Michael Eichberg
  */

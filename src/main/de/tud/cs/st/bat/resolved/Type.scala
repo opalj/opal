@@ -32,8 +32,6 @@
 */
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.prolog.{ GroundTerm, Atom, Fact }
-
 /**
  * Representation of a JVM type.
  *
@@ -237,7 +235,7 @@ class ObjectType private (
 
     def toJava: String = className.replace('/', '.')
 
-    override def toString = "ObjectType(className=\"" + className + "\")"
+    override def toString = "ObjectType(className=\""+className+"\")"
 
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]) =
         factory.Term("class", factory.TextAtom(packageName), factory.TextAtom(simpleName))
@@ -288,9 +286,9 @@ class ArrayType private (val componentType: FieldType) extends ReferenceType {
         }
     }
 
-    def toJava: String = componentType.toJava + "[]"
+    def toJava: String = componentType.toJava+"[]"
 
-    override def toString = "ArrayType(" + componentType.toString + ")"
+    override def toString = "ArrayType("+componentType.toString+")"
 
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]) =
         factory.Term("array", componentType.toProlog(factory))

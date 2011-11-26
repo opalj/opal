@@ -30,30 +30,20 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved
-
+package de.tud.cs.st.bat
+package resolved
 
 /**
  * Specifies the default value of an annotation's element.
  *
  * @author Michael Eichberg
  */
-case class AnnotationDefault_attribute (
-	val elementValue : ElementValue
-)
-extends Attribute {
+case class AnnotationDefault_attribute(val elementValue: ElementValue)
+        extends Attribute {
 
-		
-	def toXML = <annotation_default>{ elementValue.toXML }</annotation_default>
+    def toXML = <annotation_default>{ elementValue.toXML }</annotation_default>
 
-	def toProlog[F,T,A <: T](
-			factory : PrologTermFactory[F,T,A],
-			declaringEntityKey : A
-	) : List[F] = 
-		factory.Fact(
-			"annotation_default",
-			declaringEntityKey,
-			elementValue.toProlog(factory)
-		) :: Nil
-	
+    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] =
+        factory.Fact("annotation_default", declaringEntityKey, elementValue.toProlog(factory)) :: Nil
+
 }

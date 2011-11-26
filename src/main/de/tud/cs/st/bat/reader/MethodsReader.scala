@@ -30,7 +30,8 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.reader
+package de.tud.cs.st.bat
+package reader
 
 import java.io.DataInputStream
 import de.tud.cs.st.util.ControlAbstractions.repeat
@@ -47,7 +48,7 @@ trait MethodsReader extends Constant_PoolAbstractions {
 
     type Attributes
 
-    protected def Attributes(ap: AttributesParent.Value,
+    protected def Attributes(ap: AttributesParent,
                              cp: Constant_Pool,
                              in: DataInputStream): Attributes
 
@@ -84,7 +85,7 @@ trait MethodsReader extends Constant_PoolAbstractions {
             in.readUnsignedShort,
             in.readUnsignedShort,
             in.readUnsignedShort,
-            Attributes(AttributesParent.Method_info, cp, in)
+            Attributes(AttributesParents.Method_info, cp, in)
         )(cp)
     }
 }

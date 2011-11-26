@@ -1977,12 +1977,12 @@
 	<instruction name="ldc" opcode="18">
 		<operation>Push item from runtime constant pool</operation>
 		<specialized base="ldc_w">
-			<parameter id="constantValueRef" value="$constantValueRef"/>
+			<parameter id="constantValue" value="$constantValue"/>
 		</specialized>
 		<format>
 			<std>
 				<el type="mnemonic"/>
-				<el type="ubyte_cp_index→constant_value" id="constantValueRef"><!--
+				<el type="ubyte_cp_index→constant_value" id="constantValue"><!--
 					The index must be a valid index into the runtime constant pool of the current 
 					class. The runtime constant pool entry at the index either must be a  runtime
 					constant of type int or float, or must be a symbolic reference to a class 
@@ -1997,7 +1997,7 @@
 		<format>
 			<std>
 				<el type="mnemonic"/>
-				<el type="ushort_cp_index→constant_value" id="constantValueRef"><!--
+				<el type="ushort_cp_index→constant_value" id="constantValue"><!--
 					The index must be a valid index into the runtime constant pool of the current 
 					class. The runtime constant pool entry at the index either must be a  runtime
 					constant of type int or float, or must be a symbolic reference to a class 
@@ -2012,7 +2012,7 @@
 		<format>
 			<std>
 				<el type="mnemonic"/>
-				<el type="ushort_cp_index→constant_value" id="constantValueRef"><!--
+				<el type="ushort_cp_index→constant_value" id="constantValue"><!--
 					The runtime constant pool entry at the index must be a runtime constant of type 
 					long or double(§5.1). The numeric value of that runtime constant 
 					is pushed onto the operand stack as a long or double, respectively.

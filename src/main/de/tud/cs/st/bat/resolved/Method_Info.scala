@@ -38,23 +38,31 @@ import scala.xml.Null
 import scala.xml.Text
 import scala.xml.TopScope
 
-import TypeAliases._
-
 /**
  * Represents a single method.
  *
  * @author Michael Eichberg
  */
-case class Method_Info(
-    val accessFlags: Int,
-    val name: String,
-    val descriptor: MethodDescriptor,
-    val attributes: Attributes) {
+case class Method_Info(val accessFlags: Int,
+                       val name: String,
+                       val descriptor: MethodDescriptor,
+                       val attributes: Attributes) {
 
     def code: Option[Code_attribute] = {
         attributes find {
             case ca: Code_attribute ⇒ return Some(ca)
             case _                  ⇒ false
+        }
+        None
+    }
+
+    /**
+     * Each class file optionally defines a clas signature.
+     */
+    def methodTypeSignature: Option[MethodTypeSignature] = {
+        attributes find {
+            case s: MethodTypeSignature ⇒ return Some(s)
+            case _                      ⇒ false
         }
         None
     }

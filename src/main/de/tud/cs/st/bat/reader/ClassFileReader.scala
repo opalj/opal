@@ -30,7 +30,8 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.reader
+package de.tud.cs.st.bat
+package reader
 
 import java.io.{ InputStream, DataInputStream, BufferedInputStream }
 import java.util.zip.{ ZipFile, ZipEntry }
@@ -172,7 +173,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      * I
      */
     protected def Attributes(
-        ap: AttributesParent.Value,
+        ap: AttributesParent,
         cp: Constant_Pool,
         in: DataInputStream): Attributes
 
@@ -287,7 +288,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         val interfaces = Interfaces(in, cp)
         val fields = Fields(in, cp)
         val methods = Methods(in, cp)
-        val attributes = Attributes(AttributesParent.ClassFile, cp, in)
+        val attributes = Attributes(AttributesParents.ClassFile, cp, in)
 
         ClassFile(
             minor_version, major_version,

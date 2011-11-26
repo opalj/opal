@@ -30,23 +30,32 @@
  *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
+package de.tud.cs.st.bat
 
 /**
- * Common constants and type definitions used across BAT. The constants
- * defined in the following may or may not be used by certain representations,
- * but they are generally interesting when dealing with Java bytecode and
- * therefore defined in BAT's root package.
+ * Final type bindings.
  *
  * @author Michael Eichberg
  */
-package object bat {
+package object resolved {
 
-    type AccessFlagsContext = AccessFlagsContexts.Value
+    type Attributes = Seq[Attribute]
 
-    type AttributeParent = AttributesParents.Value
+    type Annotations = IndexedSeq[Annotation]
+    type ElementValuePairs = IndexedSeq[ElementValuePair]
 
-    type AttributesParent = AttributesParents.Value
-    
-    type ConstantPoolTag = Constant_PoolTags.Value
+    type InnerClassesEntries = IndexedSeq[InnerClassesEntry]
+
+    type Methods = IndexedSeq[Method_Info]
+    type ExceptionTable = IndexedSeq[ExceptionTableEntry]
+    type LineNumberTable = IndexedSeq[LineNumberTableEntry]
+    type LocalVariableTypeTable = IndexedSeq[LocalVariableTypeTableEntry]
+    type LocalVariableTable = IndexedSeq[LocalVariableTableEntry]
+    type ParameterAnnotations = IndexedSeq[Annotations]
+    type StackMapFrames = IndexedSeq[StackMapFrame]
+    type VerificationTypeInfoLocals = IndexedSeq[VerificationTypeInfo]
+    type VerificationTypeInfoStack = IndexedSeq[VerificationTypeInfo]
+
+    type Fields = IndexedSeq[Field_Info]
+
 }

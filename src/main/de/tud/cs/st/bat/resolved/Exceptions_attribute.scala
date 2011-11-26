@@ -30,34 +30,30 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved
+package de.tud.cs.st.bat
+package resolved
 
 /**
  * A method's declared exceptions.
  *
  * @author Michael Eichberg
  */
-case class Exceptions_attribute (
-	val exceptionTable : Seq[ObjectType]
-) extends Attribute {
-	
-	
-	def toXML = 
-		<exceptions>
-			{ for (exception <- exceptionTable) yield <exception type={ exception.toJava }/> }
+case class Exceptions_attribute(val exceptionTable: Seq[ObjectType])
+        extends Attribute {
+
+    def toXML =
+        <exceptions>
+			{ for (exception ← exceptionTable) yield <exception type={ exception.toJava }/> }
 		</exceptions>
 
-	def toProlog[F,T,A <: T](
-		factory : PrologTermFactory[F,T,A],
-		declaringEntityKey : A
-	) : List[F] = {
-		
-		import factory._
-		Fact(
-			"method_exceptions",
-			declaringEntityKey,
-			Terms(exceptionTable,(_:ObjectType).toProlog(factory))
-		) :: Nil
-		
-	}
+    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] = {
+
+        import factory._
+        Fact(
+            "method_exceptions",
+            declaringEntityKey,
+            Terms(exceptionTable, (_: ObjectType).toProlog(factory))
+        ) :: Nil
+
+    }
 }

@@ -30,11 +30,8 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved
-
-
-import TypeAliases._
-
+package de.tud.cs.st.bat
+package resolved
 
 /**
  * Common superclass of all instructions.
@@ -42,30 +39,28 @@ import TypeAliases._
  * @author Michael Eichberg
  */
 trait Instruction {
-	
-	def opcode : Int
-	
-	def mnemonic : String 
-	
-	def exceptions : List[ObjectType]
-				
-	def toXML(pc: Int) : scala.xml.Node	
-	
-	def toProlog[F,T,A <: T](
-		factory : PrologTermFactory[F,T,A],
-		declaringEntityKey : A,
-		pc : Int,
-		pc_to_seqNo : Array[Int]
-	) : F 
-	/*= {
-		
-		import factory._
-		
-		Fact(
-			"instr",
-			declaringEntityKey,
-			IntegerAtom(pc) // ,
-			// ...
-		)
-	}*/
+
+    def opcode: Int
+
+    def mnemonic: String
+
+    def exceptions: List[ObjectType]
+
+    def toXML(pc: Int): scala.xml.Node
+
+    /**
+     * Creates a Prolog representation for this instruction.
+     * @param factory the Factory that is used to create the corresponding term.
+     * @param declaringEntityKey the id (Prolog Atom) that identifies the Method / Codeblock to which this
+     * 	instruction belongs
+     * @param pc the program counter of this instruction
+     * @param pc_to_seqNo an array that maps the pc to another (number). This is beneficial because program
+     * 	counters are not continuous in the bytecode and making them continuous facilitates ceratin analyses.
+     */
+    def toProlog[F, T, A <: T](
+        factory: PrologTermFactory[F, T, A],
+        declaringEntityKey: A,
+        pc: Int,
+        pc_to_seqNo: Array[Int]): F
+
 }

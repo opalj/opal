@@ -30,10 +30,11 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.canonical
+package de.tud.cs.st.bat
+package canonical
 
 /**
- * A string entry in the constant pool.
+ * A reference to a string entry in the constant pool.
  *
  * @author Michael Eichberg
  */
@@ -49,7 +50,7 @@ trait CONSTANT_String_info extends Constant_Pool_Entry {
     // IMPLEMENTATION
     //
 
-    def Constant_Type_Value = de.tud.cs.st.bat.reader.Constant_PoolTags.CONSTANT_String
+    def Constant_Type_Value = Constant_PoolTags.CONSTANT_String
 
 }
 

@@ -35,15 +35,13 @@ package resolved
 
 import de.tud.cs.st.prolog.{ GroundTerm, GroundTerms, Atom, Fact }
 
-import TypeAliases._
-
 /**
  * A collection of helper methods to create atoms, terms and facts.
  *
  * @author Michael Eichberg
  */
 abstract class PrologTermFactory[Fact, Term, Atom <: Term]
-    extends de.tud.cs.st.prolog.PrologTermFactory[Fact, Term, Atom] {
+        extends de.tud.cs.st.prolog.PrologTermFactory[Fact, Term, Atom] {
 
     def KeyAtom(key: String): Atom
 

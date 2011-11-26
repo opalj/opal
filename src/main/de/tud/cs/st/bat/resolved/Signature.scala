@@ -30,15 +30,8 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved
-
-import de.tud.cs.st.prolog.{ GroundTerm, Atom, Fact }
-
-/**
- * Represents a Java signature.
- *
- * @author Michael Eichberg
- */
+package de.tud.cs.st.bat
+package resolved
 
 trait ReturnTypeSignature {
 
@@ -54,7 +47,18 @@ trait ThrowsSignature {
 
 }
 
-sealed trait Signature {
+/**
+ * The common super trait of those classes that represent attribute-level signatures as defined
+ * in the JVM specification.
+ */
+sealed trait Signature extends Attribute {
+
+    // TODO Signature to XML...
+    def toXML = <signature/> //{ signature }</signature>
+
+    // TODO Signature to Prolog...
+    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] =
+        Nil // TODO	implement toProlog
 }
 
 case class ClassSignature(
@@ -120,8 +124,8 @@ trait TypeArgument {
 }
 
 case class ProperTypeArgument(
-    varianceIndicator: Option[VarianceIndicator],
-    fieldTypeSignature: FieldTypeSignature) extends TypeArgument {
+        varianceIndicator: Option[VarianceIndicator],
+        fieldTypeSignature: FieldTypeSignature) extends TypeArgument {
 
 }
 

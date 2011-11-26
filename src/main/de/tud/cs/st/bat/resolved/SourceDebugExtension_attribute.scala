@@ -30,28 +30,22 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved
-
-import de.tud.cs.st.prolog.{GroundTerm,Atom,Fact}
-
+package de.tud.cs.st.bat
+package resolved
 
 /**
  * Debug information.
  *
  * @author Michael Eichberg
  */
-case class SourceDebugExtension_attribute (
-	val debug_extension : String
-) extends Attribute {
+case class SourceDebugExtension_attribute(val debug_extension: String)
+        extends Attribute {
 
-	def toXML =
-		<source_debug_extension>
+    def toXML =
+        <source_debug_extension>
 			{ debug_extension }
 		</source_debug_extension>
 
-	def toProlog[F,T,A <: T](
-		factory : PrologTermFactory[F,T,A],
-		declaringEntityKey : A
-	) : List[F] =
-		Nil // TODO	implement to Prolog conversion
+    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] =
+        Nil // TODO	implement to Prolog conversion
 }

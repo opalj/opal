@@ -30,9 +30,8 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved
-
-import TypeAliases._
+package de.tud.cs.st.bat
+package resolved
 
 /**
  * Parameter annotations.
@@ -40,42 +39,38 @@ import TypeAliases._
  * @author Michael Eichberg
  */
 trait ParameterAnnotations_attribute extends Attribute { // TODO inconsistent naming: choose either ...AnnotationsAttribute or ...Annotations_attribute
-	
-	def parameterAnnotations : ParameterAnnotations
 
-	def isRuntimeVisible : Boolean
-	
-	protected def parameterAnnotationsToXML = 
-		for (parameter <- parameterAnnotations) yield {
-		<parameter>
-			{ for (annotation <- parameter) yield annotation.toXML }
-		</parameter>
-		}
+    def parameterAnnotations: ParameterAnnotations
 
+    def isRuntimeVisible: Boolean
 
-	final def toProlog[F,T,A <: T](
-		factory : PrologTermFactory[F,T,A],
-		declaringEntityKey : A
-	) : List[F] = {
+    protected def parameterAnnotationsToXML =
+        for (parameter ← parameterAnnotations) yield {
+            <parameter>{ for (annotation ← parameter) yield annotation.toXML }</parameter>
+        }
 
-		import factory._
+    final def toProlog[F, T, A <: T](
+        factory: PrologTermFactory[F, T, A],
+        declaringEntityKey: A): List[F] = {
 
-		var facts : List[F] = Nil
+        import factory._
 
-		Fact(
-			"parameter_annotations",
-			declaringEntityKey,
-			if (isRuntimeVisible) 
-				StringAtom("runtime_visible")
-			else
-				StringAtom("runtime_invisible"),			
-			Terms(
-				parameterAnnotations,
-				(parameterAnnotation : Seq[Annotation]) => {
-					Terms(parameterAnnotation,(_ : Annotation).toProlog(factory))
-				}
-			)
-		) :: facts
-	}
+        var facts: List[F] = Nil
+
+        Fact(
+            "parameter_annotations",
+            declaringEntityKey,
+            if (isRuntimeVisible)
+                StringAtom("runtime_visible")
+            else
+                StringAtom("runtime_invisible"),
+            Terms(
+                parameterAnnotations,
+                (parameterAnnotation: Seq[Annotation]) ⇒ {
+                    Terms(parameterAnnotation, (_: Annotation).toProlog(factory))
+                }
+            )
+        ) :: facts
+    }
 
 }

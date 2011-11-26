@@ -30,7 +30,8 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.canonical
+package de.tud.cs.st.bat
+package canonical
 
 /**
  * A name and type info entry in the constant pool.
@@ -49,7 +50,7 @@ trait CONSTANT_NameAndType_info extends Constant_Pool_Entry {
      * The value of the name_index item must be a valid index into the
      * constant_pool table. The constant_pool entry at that index
      * must be a CONSTANT_Utf8_info structure representing
-     * either the special method name <init> or a valid
+     * either the special method name &lt;init&gt; or a valid
      * unqualiﬁed name denoting a ﬁeld or method.
      */
     val name_index: Int
@@ -60,7 +61,7 @@ trait CONSTANT_NameAndType_info extends Constant_Pool_Entry {
     // IMPLEMENTATION
     //
 
-    def Constant_Type_Value = de.tud.cs.st.bat.reader.Constant_PoolTags.CONSTANT_NameAndType
+    def Constant_Type_Value = Constant_PoolTags.CONSTANT_NameAndType
 }
 
 

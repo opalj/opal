@@ -30,23 +30,16 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved
+package de.tud.cs.st.bat
 
 /**
- * A class's, method's or field's signature.
+ * Enumeration of all primary class file elements that can have attributes.
  *
  * @author Michael Eichberg
  */
-case class Signature_attribute(
-        val signature: Signature // TODO make the Signature an attribute itself (safe memory and time..)
-        ) extends Attribute {
-
-    // TODO Signature to XML...
-    def toXML = <signature>{ signature }</signature>
-
-    // TODO Signature to Prolog...
-    def toProlog[F, T, A <: T](
-        factory: PrologTermFactory[F, T, A],
-        declaringEntityKey: A): List[F] =
-        Nil // TODO	implement toProlog
+object AttributesParents extends Enumeration {
+    val ClassFile = Value
+    val Field_info = Value
+    val Method_info = Value
+    val Code_attribute = Value
 }

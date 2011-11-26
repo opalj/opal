@@ -32,24 +32,23 @@
 */
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.prolog.{GroundTerm,Atom,Fact}
-
+import de.tud.cs.st.prolog.{ GroundTerm, Atom, Fact }
 
 /**
  * Represents the unknown attribute.
  *
  * @author Michael Eichberg
  */
-case class Unknown_attribute(
-	val attribute_name : String,
-	val info : Array[Byte]
-) extends Attribute {
-	
-	def toXML = 
-		<unknown name={ attribute_name }>
+case class Unknown_attribute(val attribute_name: String, val info: Array[Byte])
+        extends Attribute {
+
+    def toXML =
+        <unknown name={ attribute_name }>
 			{ scala.xml.Text(info.mkString(" ")) }
 		</unknown>
-		
-	def toProlog[F,T,A <: T](factory : PrologTermFactory[F,T,A],declaringEntityKey : A) : List[F]  
-		= Nil // we do not want to represent unknown attributes.
+
+    /**
+     * @return Nil; unknown attributes are not represented.
+     */
+    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] = Nil
 }

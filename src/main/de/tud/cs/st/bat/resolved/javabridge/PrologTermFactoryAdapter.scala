@@ -34,9 +34,6 @@ package de.tud.cs.st.bat
 package resolved
 package javabridge
 
-import canonical._
-import resolved.TypeAliases._
-
 /**
  * This class adapts the PrologTermFactory java interface to the scala
  * class hierarchy for prolog term factories.
@@ -44,6 +41,7 @@ import resolved.TypeAliases._
  * @author Sebastian Harrte
  */
 protected final class PrologTermFactoryAdapter[Fact, Term, Atom <: Term](
+
     val adaptee: PrologTermFactory[Fact, Term, Atom]) extends resolved.PrologTermFactory[Fact, Term, Atom] {
 
     def KeyAtom(s: String) = adaptee.KeyAtom(s)

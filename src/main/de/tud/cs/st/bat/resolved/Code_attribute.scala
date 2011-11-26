@@ -32,10 +32,6 @@
 */
 package de.tud.cs.st.bat.resolved
 
-
-import TypeAliases._
-
-
 /**
  * Representation of a method's code attribute.
  *

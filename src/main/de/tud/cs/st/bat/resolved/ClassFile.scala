@@ -38,31 +38,29 @@ import scala.xml.Null
 import scala.xml.Text
 import scala.xml.TopScope
 
-import TypeAliases._
-
 /**
  * Represents a single class file.
  *
  * @author Michael Eichberg
  */
 case class ClassFile(
-    val minorVersion: Int,
-    val majorVersion: Int,
-    val accessFlags: Int,
-    val thisClass: ObjectType,
-    val superClass: ObjectType,
-    val interfaces: Seq[ObjectType],
-    val fields: Fields,
-    val methods: Methods,
-    val attributes: Attributes) {
+        val minorVersion: Int,
+        val majorVersion: Int,
+        val accessFlags: Int,
+        val thisClass: ObjectType,
+        val superClass: ObjectType,
+        val interfaces: Seq[ObjectType],
+        val fields: Fields,
+        val methods: Methods,
+        val attributes: Attributes) {
 
     /**
      * Each class file optionally defines a clas signature.
      */
     def classSignature: Option[ClassSignature] = {
         attributes find {
-            case Signature_attribute(s: ClassSignature) ⇒ return Some(s)
-            case _                                      ⇒ false
+            case s: ClassSignature ⇒ return Some(s)
+            case _                 ⇒ false
         }
         None
     }

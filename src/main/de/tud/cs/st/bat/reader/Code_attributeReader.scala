@@ -30,7 +30,8 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.reader
+package de.tud.cs.st.bat
+package reader
 
 import java.io.DataInputStream
 
@@ -76,7 +77,7 @@ trait Code_attributeReader extends AttributeReader {
 
     def Code(in: DataInputStream, cp: Constant_Pool): Code
 
-    protected def Attributes(ap: AttributesParent.Value, cp: Constant_Pool, in: DataInputStream): Attributes
+    protected def Attributes(ap: AttributesParent, cp: Constant_Pool, in: DataInputStream): Attributes
 
     def Code_attribute(attribute_name_index: Constant_Pool_Index,
                        attribute_length: Int,
@@ -121,7 +122,7 @@ trait Code_attributeReader extends AttributeReader {
                                 )(cp)
                             }
                     },
-                    Attributes(AttributesParent.Code_attribute, cp, in)
+                    Attributes(AttributesParents.Code_attribute, cp, in)
                 )(cp)
             }
             )

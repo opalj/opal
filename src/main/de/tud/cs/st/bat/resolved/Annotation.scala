@@ -32,8 +32,6 @@
 */
 package de.tud.cs.st.bat.resolved
 
-import TypeAliases._
-
 
 /**
  * An annotation of a class, a field, a method or a method parameter.
