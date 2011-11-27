@@ -30,16 +30,15 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved
+package de.tud.cs.st.bat
+package resolved
 
 /**
  * Represents constant values.
  *
- * Constant values are optional attributes of field declarations.
- *
  * @author Michael Eichberg
  */
-sealed trait ConstantValue[T >: Nothing] extends Attribute {
+sealed trait ConstantValue[T >: Nothing] extends ConstantValueAttribute {
 
     //
     // ABSTRACT IMPLEMENTATION
@@ -47,9 +46,9 @@ sealed trait ConstantValue[T >: Nothing] extends Attribute {
 
     def value: T
 
-    def valueToString: String
-
     def valueType: Type
+
+    def valueToString: String
 
     def valueToProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T
 
@@ -60,7 +59,7 @@ sealed trait ConstantValue[T >: Nothing] extends Attribute {
     def toXML = <constant type={ valueType.toJava }>{ valueToString }</constant>
 
     /**
-     * 
+     *
      */
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] =
         factory.Fact("field_value", declaringEntityKey, valueToProlog(factory)) :: Nil

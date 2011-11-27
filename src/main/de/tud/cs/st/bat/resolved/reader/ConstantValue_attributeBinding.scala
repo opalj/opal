@@ -41,11 +41,11 @@ import de.tud.cs.st.bat.reader.ConstantValue_attributeReader
  * @author Michael Eichberg
  */
 trait ConstantValue_attributeBinding
-    extends ConstantValue_attributeReader
-    with Constant_PoolResolver
-    with AttributeBinding {
+        extends ConstantValue_attributeReader
+        with Constant_PoolResolver
+        with AttributeBinding {
 
-    type ConstantValue_attribute = ConstantValue[_]
+    type ConstantValue_attribute = ConstantValueAttribute
 
     def ConstantValue_attribute(attributeNameIndex: Constant_Pool_Index, constantValueIndex: Constant_Pool_Index)(implicit cp: Constant_Pool) = {
         CONSTANT_Value_IndexToConstantValue(constantValueIndex)

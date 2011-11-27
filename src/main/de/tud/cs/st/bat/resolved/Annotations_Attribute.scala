@@ -37,7 +37,7 @@ package de.tud.cs.st.bat.resolved
  *
  * @author Michael Eichberg
  */
-trait Annotations_Attribute extends Attribute { // TODO inconsistent naming: choose either AnnotationsAttribute or Annotations_attribute...
+trait Annotations_Attribute extends Attribute {
 
     def annotations: Annotations
 

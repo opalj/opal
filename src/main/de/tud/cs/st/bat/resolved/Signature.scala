@@ -51,20 +51,12 @@ trait ThrowsSignature {
  * The common super trait of those classes that represent attribute-level signatures as defined
  * in the JVM specification.
  */
-sealed trait Signature extends Attribute {
-
-    // TODO Signature to XML...
-    def toXML = <signature/> //{ signature }</signature>
-
-    // TODO Signature to Prolog...
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] =
-        Nil // TODO	implement toProlog
-}
+sealed trait Signature
 
 case class ClassSignature(
         formalTypeParameters: Option[List[FormalTypeParameter]],
         superClassSignature: ClassTypeSignature,
-        superInterfaceSignature: List[ClassTypeSignature]) extends Signature {
+        superInterfaceSignature: List[ClassTypeSignature]) extends Signature with SignatureAttribute {
 
 }
 
@@ -73,11 +65,11 @@ case class MethodTypeSignature(
     parametersTypeSignatures: List[TypeSignature],
     returnType: ReturnTypeSignature,
     throwsSignature: List[ThrowsSignature])
-        extends Signature {
+        extends Signature with SignatureAttribute  {
 
 }
 
-trait FieldTypeSignature extends Signature with TypeSignature {
+trait FieldTypeSignature extends Signature with TypeSignature with SignatureAttribute  {
 
 }
 

@@ -38,12 +38,15 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case class AnnotationDefault_attribute(val elementValue: ElementValue)
-        extends Attribute {
+trait AnnotationDefault_attribute extends Attribute {
 
-    def toXML = <annotation_default>{ elementValue.toXML }</annotation_default>
+    def valueToProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T
 
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] =
-        factory.Fact("annotation_default", declaringEntityKey, elementValue.toProlog(factory)) :: Nil
+    def valueToXML: scala.xml.Node
+
+    final def toXML = <annotation_default>{ valueToXML }</annotation_default>
+
+    final def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] =
+        factory.Fact("annotation_default", declaringEntityKey, valueToProlog(factory)) :: Nil
 
 }

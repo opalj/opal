@@ -34,19 +34,14 @@ package de.tud.cs.st.bat
 package resolved
 
 /**
- * Common superclass of all class file attributes.
+ * Represents constant value attributes.
+ *
+ * Constant values are optional attributes of field declarations.
  *
  * @author Michael Eichberg
  */
-trait Attribute {
+trait ConstantValueAttribute extends Attribute {
 
-    /**
-     * Returns an XML representation of this attribute.
-     */
-    def toXML: scala.xml.Node
+    // This is just a marker interface/trait.
 
-    /**
-     * Creates a Prolog representation of this attribute.
-     */
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F]
 }

@@ -34,19 +34,14 @@ package de.tud.cs.st.bat
 package resolved
 
 /**
- * Common superclass of all class file attributes.
- *
  * @author Michael Eichberg
  */
-trait Attribute {
+trait SignatureAttribute extends Attribute {
 
-    /**
-     * Returns an XML representation of this attribute.
-     */
-    def toXML: scala.xml.Node
+    // TODO Signature to XML...
+    def toXML = <signature/> //{ signature }</signature>
 
-    /**
-     * Creates a Prolog representation of this attribute.
-     */
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F]
+    // TODO Signature to Prolog...
+    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] =
+        Nil // TODO	implement toProlog
 }

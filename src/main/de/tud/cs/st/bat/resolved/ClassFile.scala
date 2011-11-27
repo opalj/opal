@@ -33,11 +33,6 @@
 package de.tud.cs.st.bat
 package resolved
 
-import scala.xml.Elem
-import scala.xml.Null
-import scala.xml.Text
-import scala.xml.TopScope
-
 /**
  * Represents a single class file.
  *
@@ -92,7 +87,7 @@ case class ClassFile(
 			major_version={ majorVersion.toString } >
 			<flags>{ AccessFlagsIterator(accessFlags, CLASS) map(_.toXML) }</flags>
 			<attributes>{ for (attribute ← attributes) yield attribute.toXML }</attributes>
-			<extends type={ if (superClass ne null) { Some(Text(superClass.className)) } else { None } } />
+			<extends type={ if (superClass ne null) { Some(scala.xml.Text(superClass.className)) } else { None } } />
 			{ for (interface ← interfaces) yield <implements type={ interface.className }/> }
 			{ for (field ← fields) yield field.toXML }
 			{ for (method ← methods) yield method.toXML }
