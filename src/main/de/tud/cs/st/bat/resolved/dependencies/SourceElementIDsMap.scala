@@ -41,6 +41,9 @@ package dependencies
  * Fields are associated with ids > 1 000 000 000 and < 2 000 000 000
  *
  * Methods are associated with ids > 2 000 000 000
+ * 
+ * '''Implementation Note'''
+ * This class is not thread safe.
  *
  * @author Michael Eichberg
  */
@@ -89,6 +92,17 @@ trait SourceElementIDsMap extends SourceElementIDs {
         methodIDs.
             getOrElseUpdate(definingObjectType, { WeakHashMap[(String, MethodDescriptor), Int]() }).
             getOrElseUpdate((methodName, methodDescriptor), { nextMethodID += 1; nextMethodID })
+    }
+    
+    def reset {
+        nextTypeID = LOWEST_TYPE_ID
+        typeIDs.clear()
+        
+        nextFieldID = LOWEST_FIELD_ID
+        fieldIDs.clear()
+        
+        nextMethodID = LOWEST_METHOD_ID
+        methodIDs.clear()
     }
 
 }
