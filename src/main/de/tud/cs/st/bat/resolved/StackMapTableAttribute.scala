@@ -38,7 +38,7 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case class StackMapTable_attribute(val stackMapFrames: StackMapFrames)
+case class StackMapTableAttribute(val stackMapFrames: StackMapFrames)
         extends Attribute {
 
     def toXML = <stack_map_table>{ for (frame ← stackMapFrames) yield frame.toXML }</stack_map_table>
