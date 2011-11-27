@@ -40,8 +40,8 @@ import de.tud.cs.st.prolog.{ GroundTerm, Atom, Fact }
  *
  * @author Michael Eichberg
  */
-case class RuntimeVisibleAnnotations_attribute(
-    val annotations: Annotations) extends Annotations_Attribute {
+case class RuntimeVisibleAnnotations_attribute(val annotations: Annotations)
+        extends AnnotationsAttribute {
 
     final def isRuntimeVisible: Boolean = true
 

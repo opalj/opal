@@ -41,7 +41,7 @@ import de.tud.cs.st.prolog.{ GroundTerm, Atom, Fact }
  * @author Michael Eichberg
  */
 case class RuntimeInvisibleAnnotations_attribute(val annotations: Annotations)
-        extends Annotations_Attribute {
+        extends AnnotationsAttribute {
 
     final def isRuntimeVisible: Boolean = false
 

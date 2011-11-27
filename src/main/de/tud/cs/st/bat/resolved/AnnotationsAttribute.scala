@@ -37,7 +37,7 @@ package de.tud.cs.st.bat.resolved
  *
  * @author Michael Eichberg
  */
-trait Annotations_Attribute extends Attribute {
+trait AnnotationsAttribute extends Attribute {
 
     def annotations: Annotations
 
@@ -84,8 +84,8 @@ trait Annotations_Attribute extends Attribute {
 
 }
 
-object Annotations_Attribute {
+object AnnotationsAttribute {
 
-    def unapply(aa: Annotations_Attribute): Option[(Boolean, Annotations)] =
+    def unapply(aa: AnnotationsAttribute): Option[(Boolean, Annotations)] =
         Some(aa.isRuntimeVisible, aa.annotations)
 }

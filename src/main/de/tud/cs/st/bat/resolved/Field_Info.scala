@@ -74,8 +74,8 @@ case class Field_Info(val accessFlags: Int,
 
         for (attribute ← attributes) {
             facts = (attribute match {
-                case aa: Annotations_Attribute ⇒ aa.toProlog(factory, key)
-                case cva: ConstantValue[_]     ⇒ cva.toProlog(factory, key)
+                case aa: AnnotationsAttribute ⇒ aa.toProlog(factory, key)
+                case cva: ConstantValueAttribute     ⇒ cva.toProlog(factory, key)
                 case _                         ⇒ Nil
             }) ::: facts
         }

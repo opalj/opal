@@ -111,7 +111,7 @@ case class Method_Info(val accessFlags: Int,
 
         for (attribute ← attributes) {
             facts = (attribute match {
-                case aa: Annotations_Attribute           ⇒ aa.toProlog(factory, key)
+                case aa: AnnotationsAttribute           ⇒ aa.toProlog(factory, key)
                 case paa: ParameterAnnotations_attribute ⇒ paa.toProlog(factory, key)
                 case ea: Exceptions_attribute            ⇒ ea.toProlog(factory, key)
                 case ada: AnnotationDefaultAttribute    ⇒ ada.toProlog(factory, key)

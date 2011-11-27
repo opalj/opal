@@ -137,7 +137,7 @@ case class ClassFile(
         for (attribute ← attributes) {
             facts = (attribute match {
                 case sfa: SourceFile_attribute      ⇒ sfa.toProlog(factory, key)
-                case aa: Annotations_Attribute      ⇒ aa.toProlog(factory, key)
+                case aa: AnnotationsAttribute      ⇒ aa.toProlog(factory, key)
                 case ema: EnclosingMethod_attribute ⇒ ema.toProlog(factory, key)
                 case _                              ⇒ Nil
             }) ::: facts
