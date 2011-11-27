@@ -37,13 +37,11 @@ package de.tud.cs.st.bat.resolved
  *
  * @author Michael Eichberg
  */
-case class Code_attribute (
-	val maxStack : Int,
-	val maxLocals : Int,
-	val code : Array[Instruction],
-	val exceptionTable : ExceptionTable,
-	val attributes : Attributes
-) extends Attribute {
+case class Code_attribute(val maxStack: Int,
+                          val maxLocals: Int,
+                          val code: Array[Instruction],
+                          val exceptionTable: ExceptionTable,
+                          val attributes: Attributes) extends Attribute {
 
 	def toXML =
 		<code
@@ -67,10 +65,7 @@ case class Code_attribute (
 		</code>
 
 
-	def toProlog[F,T,A <: T](
-		factory : PrologTermFactory[F,T,A],
-		declaringEntityKey : A
-	) : List[F] = {
+	def toProlog[F,T,A <: T](		factory : PrologTermFactory[F,T,A],		declaringEntityKey : A	) : List[F] = {
 
 		import factory._
 
@@ -121,6 +116,8 @@ case class Code_attribute (
 				 	facts = lnta.toProlog(factory,declaringEntityKey,pc_to_seqNo) :: facts
 				case lvta : LocalVariableTable_attribute =>
 				 	facts = lvta.toProlog(factory,declaringEntityKey,pc_to_seqNo) :: facts
+				case lvtta : LocalVariableTypeTable_attribute =>
+				 	facts = lvtta.toProlog(factory,declaringEntityKey,pc_to_seqNo) :: facts
 				case _ => Nil
 			}
 		}
