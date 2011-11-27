@@ -48,10 +48,8 @@ case class LocalVariableTable_attribute(val localVariableTable: LocalVariableTab
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] =
         sys.error("Not supported; use toProlog(PrologTermFactory,Atom,Array[Int]) instead.")
 
-    def toProlog[F, T, A <: T](
-        factory: PrologTermFactory[F, T, A],
-        declaringEntityKey: A,
-        pc_to_seqNo: Array[Int]): F = {
+        
+    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A, pc_to_seqNo: Array[Int]): F = {
 
         import factory._
 

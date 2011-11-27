@@ -48,9 +48,12 @@ case class Method_Info(val accessFlags: Int,
                        val descriptor: MethodDescriptor,
                        val attributes: Attributes) {
 
-    def code: Option[Code_attribute] = {
+    /**
+     * This method's implementation (if it is not abstract).
+     */
+    def code: Option[CodeAttribute] = {
         attributes find {
-            case ca: Code_attribute ⇒ return Some(ca)
+            case ca: CodeAttribute ⇒ return Some(ca)
             case _                  ⇒ false
         }
         None
@@ -115,7 +118,7 @@ case class Method_Info(val accessFlags: Int,
                 case paa: ParameterAnnotations_attribute ⇒ paa.toProlog(factory, key)
                 case ea: Exceptions_attribute            ⇒ ea.toProlog(factory, key)
                 case ada: AnnotationDefaultAttribute    ⇒ ada.toProlog(factory, key)
-                case ca: Code_attribute                  ⇒ ca.toProlog(factory, key)
+                case ca: CodeAttribute                  ⇒ ca.toProlog(factory, key)
                 case _                                   ⇒ Nil
             }) ::: facts
         }

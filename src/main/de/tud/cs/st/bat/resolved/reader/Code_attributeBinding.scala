@@ -30,45 +30,45 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved.reader
+package de.tud.cs.st.bat.resolved
+package reader
 
 import de.tud.cs.st.bat.reader.Code_attributeReader
 
 /**
- * 
+ *
  *
  * @author Michael Eichberg
  */
-trait Code_attributeBinding 
-	extends Code_attributeReader
-		with Constant_PoolResolver
-		with CodeBinding
-		with AttributeBinding		
-{
-	
-			
-	type ExceptionTableEntry = de.tud.cs.st.bat.resolved.ExceptionTableEntry	
-	val ExceptionTableEntryManifest : ClassManifest[ExceptionTableEntry] = implicitly	
-	type Code_attribute = de.tud.cs.st.bat.resolved.Code_attribute
+trait Code_attributeBinding
+        extends Code_attributeReader
+        with Constant_PoolResolver
+        with CodeBinding
+        with AttributeBinding {
 
+    type ExceptionTableEntry = de.tud.cs.st.bat.resolved.ExceptionTableEntry
+    val ExceptionTableEntryManifest: ClassManifest[ExceptionTableEntry] = implicitly
+    type Code_attribute = de.tud.cs.st.bat.resolved.CodeAttribute
 
-	
-	def Code_attribute (
-		attribute_name_index : Int, attribute_length : Int,
-		max_stack : Int, max_locals : Int, code : Code,
-		exception_table : ExceptionTable,
-		attributes : Attributes
-	)( implicit constant_pool : Constant_Pool) =
-		new Code_attribute (max_stack, max_locals, code, exception_table, attributes)
+    def Code_attribute(attribute_name_index: Constant_Pool_Index,
+                       attribute_length: Int,
+                       max_stack: Int,
+                       max_locals: Int,
+                       code: Code,
+                       exception_table: ExceptionTable,
+                       attributes: Attributes)(
+                           implicit constant_pool: Constant_Pool) =
+        new CodeAttribute(max_stack, max_locals, code, exception_table, attributes)
 
-
-	def ExceptionTableEntry ( 
-		start_pc: Int, end_pc: Int, handler_pc : Int, catch_type : Int
-	)( implicit constant_pool : Constant_Pool) : ExceptionTableEntry = {
-		new ExceptionTableEntry (
-			start_pc,end_pc, handler_pc, if (catch_type == 0) null else catch_type
-		)
-	}
+    def ExceptionTableEntry(start_pc: Int,
+                            end_pc: Int,
+                            handler_pc: Int,
+                            catch_type: Int)(
+                                implicit constant_pool: Constant_Pool): ExceptionTableEntry = {
+        new ExceptionTableEntry(
+            start_pc, end_pc, handler_pc, if (catch_type == 0) null else catch_type
+        )
+    }
 }
 
 

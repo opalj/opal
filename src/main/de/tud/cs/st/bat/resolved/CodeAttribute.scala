@@ -37,7 +37,7 @@ package de.tud.cs.st.bat.resolved
  *
  * @author Michael Eichberg
  */
-case class Code_attribute(val maxStack: Int,
+case class CodeAttribute(val maxStack: Int,
                           val maxLocals: Int,
                           val code: Array[Instruction],
                           val exceptionTable: ExceptionTable,
