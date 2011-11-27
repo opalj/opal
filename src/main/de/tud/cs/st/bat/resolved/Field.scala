@@ -49,8 +49,6 @@ case class Field(val accessFlags: Int,
                  val attributes: Attributes)
         extends CommonAttributes {
 
-    // TODO move runtime(In)VisibleAnnotations, isDeprecated and is Synthetic in a special trait...
-
     def fieldTypeSignature: Option[FieldTypeSignature] = {
         attributes find {
             case s: FieldTypeSignature ⇒ return Some(s)
