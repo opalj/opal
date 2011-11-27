@@ -39,7 +39,7 @@ import de.tud.cs.st.prolog.{ GroundTerm, Atom, Fact }
  *
  * @author Michael Eichberg
  */
-case class Unknown_attribute(val attribute_name: String, val info: Array[Byte])
+case class UnknownAttribute(val attribute_name: String, val info: Array[Byte])
         extends Attribute {
 
     def toXML =
