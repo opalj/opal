@@ -38,10 +38,9 @@ package resolved
  */
 trait SignatureAttribute extends Attribute {
 
-    // TODO Signature to XML...
-    def toXML = <signature/> //{ signature }</signature>
+    
+    def toXML = <signature/> //{ signature }</signature> // TODO [XML] SignatureAttribute
 
-    // TODO Signature to Prolog...
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): F =
-        factory.Fact("signature",declaringEntityKey) // TODO	implement toProlog
+        factory.Fact("signature",declaringEntityKey) // TODO [Prolog] SignatureAttribute
 }

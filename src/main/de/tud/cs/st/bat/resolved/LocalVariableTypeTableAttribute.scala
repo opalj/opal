@@ -48,7 +48,7 @@ case class LocalVariableTypeTableAttribute(val localVariableTypeTable: LocalVari
 
 
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A, pc_to_seqNo: Array[Int]): F = {
-    	factory.Fact("method_local_variable_type_table") // TODO complete support
+    	factory.Fact("method_local_variable_type_table") // TODO [Prolog] LocalVariableTypeTableAttribute
     }
 }
 

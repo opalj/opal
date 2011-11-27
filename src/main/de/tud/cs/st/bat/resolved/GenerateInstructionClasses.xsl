@@ -240,7 +240,7 @@ extends Instruction {
 			
 	
 			<xsl:when test="$fet eq 'ushort_cp_index→call_site_specifier'">
-				// TODO valid index into the bootstrap_methods array of the bootstrap method table 
+				<!-- TODO [Java7] valid index into the bootstrap_methods array of the bootstrap method table  -->
 				TextAtom(name),		
 				methodDescriptor.toProlog(factory)</xsl:when>			
 		

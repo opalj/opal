@@ -224,7 +224,7 @@ trait BytecodeReaderAndBinding extends Constant_PoolResolver with CodeBinding{
 		</xsl:when>	
 		<!-- CONSTANT POOL ENTRIES -->
 		<xsl:when test="$fet eq 'ushort_cp_index→call_site_specifier'">
-			// TODO index into bootstrap method attribute table
+			<!-- TODO [Java 7] invokedynamic - index into bootstrap method attribute table-->
 			val (name,methodDescriptor) /*: (String, MethodDescriptor)*/  = CONSTANT_NameAndType_info_IndexToNameAndMethodDescriptor(in.readUnsignedShort) <xsl:if test="$fe/@id">// <xsl:value-of select="$fe/@id"/></xsl:if> 
 			val p<xsl:value-of select="$parameterId"/> : String = name
 			val p<xsl:value-of select="$parameterId+1"/> : MethodDescriptor = methodDescriptor	

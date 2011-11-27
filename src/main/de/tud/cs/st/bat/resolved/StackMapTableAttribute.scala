@@ -44,5 +44,5 @@ case class StackMapTableAttribute(val stackMapFrames: StackMapFrames)
     def toXML = <stack_map_table>{ for (frame ← stackMapFrames) yield frame.toXML }</stack_map_table>
 
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] =
-        Nil // TODO	implement conversion of StackMapFrames to Prolog
+        Nil // TODO [Prolog] StackMapTableAttribute
 }

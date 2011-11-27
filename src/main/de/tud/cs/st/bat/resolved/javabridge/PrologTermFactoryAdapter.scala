@@ -40,9 +40,8 @@ package javabridge
  *
  * @author Sebastian Harrte
  */
-protected final class PrologTermFactoryAdapter[Fact, Term, Atom <: Term](
-
-    val adaptee: PrologTermFactory[Fact, Term, Atom]) extends resolved.PrologTermFactory[Fact, Term, Atom] {
+protected final class PrologTermFactoryAdapter[Fact, Term, Atom <: Term](val adaptee: PrologTermFactory[Fact, Term, Atom])
+        extends resolved.PrologTermFactory[Fact, Term, Atom] {
 
     def KeyAtom(s: String) = adaptee.KeyAtom(s)
 
@@ -69,7 +68,6 @@ protected final class PrologTermFactoryAdapter[Fact, Term, Atom <: Term](
             arglist.add(terms(i))
             i += 1
         }
-        // TODO check if "asArray/ToArray/" is sufficient.
         adaptee.Term(functor, arglist)
     }
 

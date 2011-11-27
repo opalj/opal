@@ -48,7 +48,7 @@ case class InnerClassesAttribute(val classes: InnerClassesEntries)
 
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] =
         Nil
-    /*	{ TODO write out the inner classes information in Prolog
+    /*	{ TODO [Prolog] InnerClassesAttribute
 		import factory._
 
 		Fact(
