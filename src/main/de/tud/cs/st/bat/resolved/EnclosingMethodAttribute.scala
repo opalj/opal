@@ -38,7 +38,7 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case class EnclosingMethod_attribute(val clazz: ObjectType,
+case class EnclosingMethodAttribute(val clazz: ObjectType,
                                      val name: String,
                                      val descriptor: MethodDescriptor)
         extends Attribute {
