@@ -61,6 +61,14 @@ case class ClassFile(
 
     def isAnnotationDeclaration: Boolean = (accessFlags & classCategoryMask) == annotationMask
 
+    def isDeprectated: Boolean = {
+        attributes find {
+            case DeprecatedAttribute ⇒ return true
+            case _                   ⇒ false
+        }
+        false
+    }
+
     /**
      * Each class file optionally defines a clas signature.
      */

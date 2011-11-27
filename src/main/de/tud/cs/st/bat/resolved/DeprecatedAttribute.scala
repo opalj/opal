@@ -37,7 +37,7 @@ package de.tud.cs.st.bat.resolved
  *
  * @author Michael Eichberg
  */
-case object Deprecated_attribute extends Attribute {
+case object DeprecatedAttribute extends Attribute {
 
     def toXML = <deprecated/>
 

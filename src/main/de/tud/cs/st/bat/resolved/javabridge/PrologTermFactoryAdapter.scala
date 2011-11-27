@@ -137,6 +137,6 @@ protected final class PrologTermFactoryAdapter[Fact, Term, Atom <: Term](
             || (attributes contains Synthetic_attribute))
 
     override def DeprecatedTerm(attributes: Attributes) =
-        adaptee.DeprecatedTerm(attributes contains Deprecated_attribute)
+        adaptee.DeprecatedTerm(attributes contains DeprecatedAttribute)
 
 }
