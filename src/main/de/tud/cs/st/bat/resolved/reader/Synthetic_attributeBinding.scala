@@ -48,7 +48,7 @@ trait Synthetic_attributeBinding
     type Synthetic_attribute = de.tud.cs.st.bat.resolved.Attribute
 
     def Synthetic_attribute(attribute_name_index: Constant_Pool_Index)(
-        implicit constant_pool: Constant_Pool) = de.tud.cs.st.bat.resolved.Synthetic_attribute
+        implicit constant_pool: Constant_Pool) = de.tud.cs.st.bat.resolved.SyntheticAttribute
 
 }
 

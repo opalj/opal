@@ -96,7 +96,7 @@ abstract class PrologTermFactory[Fact, Term, Atom <: Term]
         Term(
             "synthetic",
             if ((ACC_SYNTHETIC ∈ access_flags)
-                || (attributes contains Synthetic_attribute))
+                || (attributes contains SyntheticAttribute))
                 YesAtom
             else
                 NoAtom

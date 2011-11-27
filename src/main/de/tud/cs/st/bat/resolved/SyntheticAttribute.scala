@@ -38,7 +38,7 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case object Synthetic_attribute extends Attribute {
+case object SyntheticAttribute extends Attribute {
 
     def toXML = <synthetic/>
 
