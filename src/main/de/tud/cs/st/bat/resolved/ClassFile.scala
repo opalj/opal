@@ -80,7 +80,7 @@ case class ClassFile(
      */
     def sourceFile: Option[String] = {
         attributes find {
-            case SourceFile_attribute(s) ⇒ return Some(s)
+            case SourceFileAttribute(s) ⇒ return Some(s)
             case _                       ⇒ false
         }
         None
@@ -144,7 +144,7 @@ case class ClassFile(
         }
         for (attribute ← attributes) {
             facts = (attribute match {
-                case sfa: SourceFile_attribute      ⇒ sfa.toProlog(factory, key)
+                case sfa: SourceFileAttribute      ⇒ sfa.toProlog(factory, key)
                 case aa: AnnotationsAttribute       ⇒ aa.toProlog(factory, key)
                 case ema: EnclosingMethodAttribute ⇒ ema.toProlog(factory, key)
                 case _                              ⇒ Nil

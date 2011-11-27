@@ -47,7 +47,7 @@ trait SourceFile_attributeBinding
 {
 	
 	
-	type SourceFile_attribute = de.tud.cs.st.bat.resolved.SourceFile_attribute	
+	type SourceFile_attribute = de.tud.cs.st.bat.resolved.SourceFileAttribute	
 
 
 	def SourceFile_attribute(

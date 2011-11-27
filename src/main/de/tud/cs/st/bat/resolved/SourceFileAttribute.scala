@@ -38,7 +38,7 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case class SourceFile_attribute(val sourceFile: String)
+case class SourceFileAttribute(val sourceFile: String)
         extends Attribute {
 
     def toXML = <source file={ sourceFile }/>
