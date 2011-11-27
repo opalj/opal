@@ -240,7 +240,7 @@ extends Instruction {
 			
 	
 			<xsl:when test="$fet eq 'ushort_cp_index→call_site_specifier'">
-				<!-- TODO [Java7] valid index into the bootstrap_methods array of the bootstrap method table  -->
+				<!-- TODO [Java7] "invokedynamic" - resolve valid index into the bootstrap_methods array of the bootstrap method table  -->
 				TextAtom(name),		
 				methodDescriptor.toProlog(factory)</xsl:when>			
 		
@@ -302,7 +302,7 @@ extends Instruction {
 			&lt;fieldref declaring_class={ declaringClass.toJava } name={ name } type={ fieldType.toJava }/&gt;</xsl:when>				
 	
 			<xsl:when test="$fet eq 'ushort_cp_index→call_site_specifier'">
-			// TODO valid index into the bootstrap_methods array of the bootstrap method table ?
+			/* TODO [Java 7] "invokedynamic" - resolve valid index into the bootstrap_methods array of the bootstrap method table  */
 			&lt;methodref name={ name } &gt;
 				{ methodDescriptor.toXML }
 			&lt;/methodref&gt;</xsl:when>			
@@ -346,7 +346,7 @@ extends Instruction {
 	val name : String,
 	val fieldType : FieldType</xsl:when>				
 		<xsl:when test="$fet eq 'ushort_cp_index→call_site_specifier'">
-	// TODO.... valid index into the bootstrap_methods array of the bootstrap method table 
+	// TODO [Java7] "invokedynamic" - resolve valid index into the bootstrap_methods array of the bootstrap method table 
 	val name : String,
 	val methodDescriptor : MethodDescriptor // an interface or class type to be precise</xsl:when>			
 		<xsl:when test="$fet eq 'ushort_cp_index→methodref' or $fet eq 'ushort_cp_index→interface_methodref'">
