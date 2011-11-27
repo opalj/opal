@@ -38,7 +38,7 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case class InnerClasses_attribute(val classes: InnerClassesEntries)
+case class InnerClassesAttribute(val classes: InnerClassesEntries)
         extends Attribute {
 
     def toXML =
