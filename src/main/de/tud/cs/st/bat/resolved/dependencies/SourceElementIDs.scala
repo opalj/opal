@@ -53,11 +53,11 @@ trait SourceElementIDs {
 
     def sourceElementID(definingObjectType: ObjectType, fieldName: String): Int
 
-    final def sourceElementID(classFile: ClassFile, method: Method_Info): Int =
+    final def sourceElementID(classFile: ClassFile, method: Method): Int =
         sourceElementID(classFile.thisClass, method)
 
-    final def sourceElementID(definingObjectType: ObjectType, method: Method_Info): Int = {
-        val Method_Info(_, methodName, methodDescriptor, _) = method
+    final def sourceElementID(definingObjectType: ObjectType, method: Method): Int = {
+        val Method(_, methodName, methodDescriptor, _) = method
         sourceElementID(definingObjectType, methodName, methodDescriptor)
     }
 

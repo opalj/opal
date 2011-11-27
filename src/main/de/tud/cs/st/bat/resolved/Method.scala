@@ -43,10 +43,10 @@ import scala.xml.TopScope
  *
  * @author Michael Eichberg
  */
-case class Method_Info(val accessFlags: Int,
-                       val name: String,
-                       val descriptor: MethodDescriptor,
-                       val attributes: Attributes) {
+case class Method(val accessFlags: Int,
+                      val name: String,
+                      val descriptor: MethodDescriptor,
+                      val attributes: Attributes) {
 
     def isDeprectated: Boolean = attributes contains DeprecatedAttribute // the deprecated attribute is always set when either the annotation or the JavaDoc tag is used
 

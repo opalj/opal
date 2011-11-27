@@ -54,8 +54,8 @@ object EqualsHashcodeChecker
             var definesEqualsMethod = false
             var definesHashCodeMethod = false
             for (method ← classFile.methods) method match {
-                case Method_Info(_, "equals", MethodDescriptor(Seq(ObjectType("java/lang/Object")), BooleanType), _) ⇒ definesEqualsMethod = true
-                case Method_Info(_, "hashCode", MethodDescriptor(Seq(), IntegerType), _) ⇒ definesHashCodeMethod = true
+                case Method(_, "equals", MethodDescriptor(Seq(ObjectType("java/lang/Object")), BooleanType), _) ⇒ definesEqualsMethod = true
+                case Method(_, "hashCode", MethodDescriptor(Seq(), IntegerType), _) ⇒ definesHashCodeMethod = true
                 case _ ⇒
             }
 

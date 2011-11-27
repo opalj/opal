@@ -46,7 +46,7 @@ trait ClassFileBinding
 
     type ClassFile = de.tud.cs.st.bat.resolved.ClassFile
 
-    type Method_Info = de.tud.cs.st.bat.resolved.Method_Info
+    type Method_Info = de.tud.cs.st.bat.resolved.Method
     type Methods <: IndexedSeq[Method_Info]
     val Method_InfoManifest: ClassManifest[Method_Info] = implicitly
 
