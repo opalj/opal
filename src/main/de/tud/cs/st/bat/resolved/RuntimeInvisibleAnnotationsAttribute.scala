@@ -40,14 +40,14 @@ import de.tud.cs.st.prolog.{ GroundTerm, Atom, Fact }
  *
  * @author Michael Eichberg
  */
-case class RuntimeVisibleAnnotations_attribute(val annotations: Annotations)
+case class RuntimeInvisibleAnnotationsAttribute(val annotations: Annotations)
         extends AnnotationsAttribute {
 
-    final def isRuntimeVisible: Boolean = true
+    final def isRuntimeVisible: Boolean = false
 
     def toXML =
-        <runtime_visible_annotations>
+        <runtime_invisible_annotations>
 			{ annotationsToXML }
-		</runtime_visible_annotations>
+		</runtime_invisible_annotations>
 
 }

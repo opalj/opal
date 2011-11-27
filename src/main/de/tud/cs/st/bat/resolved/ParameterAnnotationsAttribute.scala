@@ -38,7 +38,7 @@ package resolved
  *
  * @author Michael Eichberg
  */
-trait ParameterAnnotations_attribute extends Attribute { // TODO inconsistent naming: choose either ...AnnotationsAttribute or ...Annotations_attribute
+trait ParameterAnnotationsAttribute extends Attribute { // TODO inconsistent naming: choose either ...AnnotationsAttribute or ...Annotations_attribute
 
     def parameterAnnotations: ParameterAnnotations
 

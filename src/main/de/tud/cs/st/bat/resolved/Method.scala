@@ -44,9 +44,9 @@ import scala.xml.TopScope
  * @author Michael Eichberg
  */
 case class Method(val accessFlags: Int,
-                      val name: String,
-                      val descriptor: MethodDescriptor,
-                      val attributes: Attributes) {
+                  val name: String,
+                  val descriptor: MethodDescriptor,
+                  val attributes: Attributes) {
 
     def isDeprectated: Boolean = attributes contains DeprecatedAttribute // the deprecated attribute is always set when either the annotation or the JavaDoc tag is used
 
@@ -116,12 +116,12 @@ case class Method(val accessFlags: Int,
 
         for (attribute ← attributes) {
             facts = (attribute match {
-                case aa: AnnotationsAttribute            ⇒ aa.toProlog(factory, key)
-                case paa: ParameterAnnotations_attribute ⇒ paa.toProlog(factory, key)
+                case aa: AnnotationsAttribute           ⇒ aa.toProlog(factory, key)
+                case paa: ParameterAnnotationsAttribute ⇒ paa.toProlog(factory, key)
                 case ea: ExceptionsAttribute            ⇒ ea.toProlog(factory, key)
-                case ada: AnnotationDefaultAttribute     ⇒ ada.toProlog(factory, key)
-                case ca: CodeAttribute                   ⇒ ca.toProlog(factory, key)
-                case _                                   ⇒ Nil
+                case ada: AnnotationDefaultAttribute    ⇒ ada.toProlog(factory, key)
+                case ca: CodeAttribute                  ⇒ ca.toProlog(factory, key)
+                case _                                  ⇒ Nil
             }) ::: facts
         }
 

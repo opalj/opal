@@ -77,10 +77,10 @@ trait AnnotationsBinding
     type BooleanValue = de.tud.cs.st.bat.resolved.BooleanValue
     type ElementValuePair = de.tud.cs.st.bat.resolved.ElementValuePair
     val ElementValuePairManifest: ClassManifest[ElementValuePair] = implicitly
-    type RuntimeVisibleAnnotations_attribute = de.tud.cs.st.bat.resolved.RuntimeVisibleAnnotations_attribute
-    type RuntimeInvisibleAnnotations_attribute = de.tud.cs.st.bat.resolved.RuntimeInvisibleAnnotations_attribute
-    type RuntimeVisibleParameterAnnotations_attribute = de.tud.cs.st.bat.resolved.RuntimeVisibleParameterAnnotations_attribute
-    type RuntimeInvisibleParameterAnnotations_attribute = de.tud.cs.st.bat.resolved.RuntimeInvisibleParameterAnnotations_attribute
+    type RuntimeVisibleAnnotations_attribute = de.tud.cs.st.bat.resolved.RuntimeVisibleAnnotationsAttribute
+    type RuntimeInvisibleAnnotations_attribute = de.tud.cs.st.bat.resolved.RuntimeInvisibleAnnotationsAttribute
+    type RuntimeVisibleParameterAnnotations_attribute = de.tud.cs.st.bat.resolved.RuntimeVisibleParameterAnnotationsAttribute
+    type RuntimeInvisibleParameterAnnotations_attribute = de.tud.cs.st.bat.resolved.RuntimeInvisibleParameterAnnotationsAttribute
 
     val AnnotationManifest: ClassManifest[Annotation] = implicitly
 
