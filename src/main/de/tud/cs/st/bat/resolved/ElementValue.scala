@@ -175,12 +175,9 @@ case class ClassValue(val value: ReturnType) extends ElementValue {
 
     def valueToXML = <class type={ value.toJava }/>
 
-    def valueToProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T = {
-        factory.Term(
-            "class",
-            value.toProlog(factory)
-        )
-    }
+    def valueToProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T =
+        factory.Term("class", value.toProlog(factory))
+
 }
 
 case class EnumValue(val enumType: ObjectType, val constName: String) extends ElementValue {

@@ -42,12 +42,8 @@ case class ElementValuePair(val elementName: String,
 
     def toXML = <element name={ elementName }>{ elementValue.valueToXML } </element>
 
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T = {
-        factory.Term(
-            "element", // functor
-            factory.TextAtom(elementName),
-            elementValue.valueToProlog(factory)
-        )
-    }
+    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T =
+        factory.Term("element", factory.TextAtom(elementName), elementValue.valueToProlog(factory))
+
 }
 
