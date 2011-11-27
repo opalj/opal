@@ -46,6 +46,4 @@ case class SourceDebugExtensionAttribute(val debug_extension: String)
 			{ debug_extension }
 		</source_debug_extension>
 
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] =
-        Nil // TODO	implement to Prolog conversion
 }

@@ -42,6 +42,6 @@ trait SignatureAttribute extends Attribute {
     def toXML = <signature/> //{ signature }</signature>
 
     // TODO Signature to Prolog...
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] =
-        Nil // TODO	implement toProlog
+    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): F =
+        factory.Fact("signature",declaringEntityKey) // TODO	implement toProlog
 }

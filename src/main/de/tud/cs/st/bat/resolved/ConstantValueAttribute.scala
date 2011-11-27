@@ -42,6 +42,5 @@ package resolved
  */
 trait ConstantValueAttribute extends Attribute {
 
-    // This is just a marker interface/trait.
-
+    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F]
 }

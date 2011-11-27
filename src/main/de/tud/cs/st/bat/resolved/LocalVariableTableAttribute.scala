@@ -45,10 +45,6 @@ case class LocalVariableTableAttribute(val localVariableTable: LocalVariableTabl
 			{ for (entry ← localVariableTable) yield entry.toXML }
 		</local_variable_table>
 
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] =
-        sys.error("Not supported; use toProlog(PrologTermFactory,Atom,Array[Int]) instead.")
-
-        
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A, pc_to_seqNo: Array[Int]): F = {
 
         import factory._

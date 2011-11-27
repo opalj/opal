@@ -41,7 +41,16 @@ case class CodeAttribute(val maxStack: Int,
                           val maxLocals: Int,
                           val code: Array[Instruction],
                           val exceptionTable: ExceptionTable,
-                          val attributes: Attributes) extends Attribute {
+                          val attributes: Attributes) 
+                          extends Attribute {
+    
+    def stackMapTable : Option[StackMapFrames] = {
+        attributes find {
+            case StackMapTableAttribute(smf) => return Some(smf)
+            case _ => false
+        }
+        None
+    }
 
 	def toXML =
 		<code
@@ -65,7 +74,7 @@ case class CodeAttribute(val maxStack: Int,
 		</code>
 
 
-	def toProlog[F,T,A <: T](		factory : PrologTermFactory[F,T,A],		declaringEntityKey : A	) : List[F] = {
+	def toProlog[F,T,A <: T](factory : PrologTermFactory[F,T,A], declaringEntityKey : A) : List[F] = {
 
 		import factory._
 

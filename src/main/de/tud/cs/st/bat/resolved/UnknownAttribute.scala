@@ -46,9 +46,4 @@ case class UnknownAttribute(val attribute_name: String, val info: Array[Byte])
         <unknown name={ attribute_name }>
 			{ scala.xml.Text(info.mkString(" ")) }
 		</unknown>
-
-    /**
-     * @return Nil; unknown attributes are not represented.
-     */
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] = Nil
 }

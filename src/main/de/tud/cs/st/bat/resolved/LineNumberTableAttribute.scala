@@ -46,8 +46,6 @@ case class LineNumberTableAttribute(val lineNumberTable: LineNumberTable)
 			{ for (entry ← lineNumberTable) yield entry.toXML }
 		</line_number_table>
 
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] =
-        sys.error("Not supported; use toProlog(PrologTermFactory,Atom,Array[Int]) instead.")
 
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A, pc_to_seqNo: Array[Int]): F = {
 

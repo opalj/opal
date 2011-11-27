@@ -63,6 +63,14 @@ case class ClassFile(
 
     def isDeprectated: Boolean = attributes contains DeprecatedAttribute // the deprecated attribute is always set when either the annotation or the JavaDoc tag is used
 
+    def innerClassesEntries : Option[InnerClassesEntries] = {
+        attributes find {
+            case InnerClassesAttribute(ice) ⇒ return Some(ice)
+            case _                 ⇒ false
+        }
+        None
+    }
+    
     /**
      * Each class file optionally defines a clas signature.
      */
@@ -145,9 +153,10 @@ case class ClassFile(
         for (attribute ← attributes) {
             facts = (attribute match {
                 case sfa: SourceFileAttribute      ⇒ sfa.toProlog(factory, key)
-                case aa: AnnotationsAttribute       ⇒ aa.toProlog(factory, key)
+                case aa: AnnotationsAttribute      ⇒ aa.toProlog(factory, key)
                 case ema: EnclosingMethodAttribute ⇒ ema.toProlog(factory, key)
-                case _                              ⇒ Nil
+                case ics: InnerClassesAttribute    ⇒ ics.toProlog(factory, key)
+                case _                             ⇒ Nil
             }) ::: facts
         }
 
