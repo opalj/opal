@@ -61,8 +61,7 @@ case class ClassFile(
 
     def isAnnotationDeclaration: Boolean = (accessFlags & classCategoryMask) == annotationMask
 
-    def isDeprectated: Boolean = attributes contains DeprecatedAttribute
-    
+    def isDeprectated: Boolean = attributes contains DeprecatedAttribute // the deprecated attribute is always set when either the annotation or the JavaDoc tag is used
 
     /**
      * Each class file optionally defines a clas signature.

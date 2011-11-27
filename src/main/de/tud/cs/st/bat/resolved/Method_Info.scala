@@ -48,13 +48,15 @@ case class Method_Info(val accessFlags: Int,
                        val descriptor: MethodDescriptor,
                        val attributes: Attributes) {
 
+    def isDeprectated: Boolean = attributes contains DeprecatedAttribute // the deprecated attribute is always set when either the annotation or the JavaDoc tag is used
+
     /**
      * This method's implementation (if it is not abstract).
      */
     def code: Option[CodeAttribute] = {
         attributes find {
             case ca: CodeAttribute ⇒ return Some(ca)
-            case _                  ⇒ false
+            case _                 ⇒ false
         }
         None
     }
@@ -114,11 +116,11 @@ case class Method_Info(val accessFlags: Int,
 
         for (attribute ← attributes) {
             facts = (attribute match {
-                case aa: AnnotationsAttribute           ⇒ aa.toProlog(factory, key)
+                case aa: AnnotationsAttribute            ⇒ aa.toProlog(factory, key)
                 case paa: ParameterAnnotations_attribute ⇒ paa.toProlog(factory, key)
                 case ea: Exceptions_attribute            ⇒ ea.toProlog(factory, key)
-                case ada: AnnotationDefaultAttribute    ⇒ ada.toProlog(factory, key)
-                case ca: CodeAttribute                  ⇒ ca.toProlog(factory, key)
+                case ada: AnnotationDefaultAttribute     ⇒ ada.toProlog(factory, key)
+                case ca: CodeAttribute                   ⇒ ca.toProlog(factory, key)
                 case _                                   ⇒ Nil
             }) ::: facts
         }
