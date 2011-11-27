@@ -34,26 +34,23 @@ package de.tud.cs.st.bat.resolved.reader
 
 import de.tud.cs.st.bat.reader.SourceDebugExtension_attributeReader
 
-
 /**
- * 
+ *
  *
  * @author Michael Eichberg
  */
-trait SourceDebugExtension_attributeBinding 
-	extends SourceDebugExtension_attributeReader
-		with Constant_PoolResolver
-		with AttributeBinding		
-{
+trait SourceDebugExtension_attributeBinding
+        extends SourceDebugExtension_attributeReader
+        with Constant_PoolResolver
+        with AttributeBinding {
 
-	
-	type SourceDebugExtension_attribute = de.tud.cs.st.bat.resolved.SourceDebugExtension_attribute			
+    type SourceDebugExtension_attribute = de.tud.cs.st.bat.resolved.SourceDebugExtensionAttribute
 
-
-	def SourceDebugExtension_attribute (
-		attribute_name_index : Int, attribute_length : Int, debug_extension : String
-	)( implicit constant_pool : Constant_Pool) : SourceDebugExtension_attribute = 
-		new SourceDebugExtension_attribute(debug_extension)
+    def SourceDebugExtension_attribute(attribute_name_index: Constant_Pool_Index,
+                                       attribute_length: Int,
+                                       debug_extension: String)(
+                                           implicit constant_pool: Constant_Pool): SourceDebugExtension_attribute =
+        new SourceDebugExtension_attribute(debug_extension)
 
 }
 

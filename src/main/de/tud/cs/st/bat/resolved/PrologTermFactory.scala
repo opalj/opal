@@ -103,16 +103,8 @@ abstract class PrologTermFactory[Fact, Term, Atom <: Term]
         )
     }
 
-    def DeprecatedTerm(attributes: Attributes) = {
-        // TODO What happens if I use the Java annotation "@deprecated" ?
-        Term(
-            "deprecated",
-            if (attributes contains DeprecatedAttribute)
-                YesAtom
-            else
-                NoAtom
-        )
-    }
+    def DeprecatedTerm(attributes: Attributes) =
+        Term("deprecated", if (attributes contains DeprecatedAttribute) YesAtom else NoAtom)
 
 }
 

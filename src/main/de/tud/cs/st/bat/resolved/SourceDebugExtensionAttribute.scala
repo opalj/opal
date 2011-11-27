@@ -38,7 +38,7 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case class SourceDebugExtension_attribute(val debug_extension: String)
+case class SourceDebugExtensionAttribute(val debug_extension: String)
         extends Attribute {
 
     def toXML =
