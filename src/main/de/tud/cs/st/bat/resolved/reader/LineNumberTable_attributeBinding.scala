@@ -34,33 +34,31 @@ package de.tud.cs.st.bat.resolved.reader
 
 import de.tud.cs.st.bat.reader.LineNumberTable_attributeReader
 
-
 /**
- * 
+ *
  *
  * @author Michael Eichberg
  */
-trait LineNumberTable_attributeBinding 
-	extends LineNumberTable_attributeReader
-		with Constant_PoolResolver
-		with AttributeBinding	
-{
-	
-	type LineNumberTableEntry = de.tud.cs.st.bat.resolved.LineNumberTableEntry		
-	val LineNumberTableEntryManifest : ClassManifest[LineNumberTableEntry] = implicitly
-	
-	type LineNumberTable_attribute = de.tud.cs.st.bat.resolved.LineNumberTable_attribute		
+trait LineNumberTable_attributeBinding
+        extends LineNumberTable_attributeReader
+        with Constant_PoolResolver
+        with AttributeBinding {
 
+    type LineNumberTableEntry = de.tud.cs.st.bat.resolved.LineNumberTableEntry
+    val LineNumberTableEntryManifest: ClassManifest[LineNumberTableEntry] = implicitly
 
-	def LineNumberTable_attribute (
-		attribute_name_index : Int, attribute_length : Int, line_number_table : LineNumberTable
-	)( implicit constant_pool : Constant_Pool) : LineNumberTable_attribute = 
-		new LineNumberTable_attribute(line_number_table) 
+    type LineNumberTable_attribute = de.tud.cs.st.bat.resolved.LineNumberTableAttribute
 
+    def LineNumberTable_attribute(attribute_name_index: Constant_Pool_Index,
+                                  attribute_length: Int,
+                                  line_number_table: LineNumberTable)(
+                                      implicit constant_pool: Constant_Pool): LineNumberTable_attribute =
+        new LineNumberTable_attribute(line_number_table)
 
-	def LineNumberTableEntry (start_pc : Int, line_number : Int)( implicit constant_pool : Constant_Pool) = 
-		new LineNumberTableEntry(start_pc, line_number)
-
+    def LineNumberTableEntry(start_pc: Int,
+                             line_number: Int)(
+                                 implicit constant_pool: Constant_Pool) =
+        new LineNumberTableEntry(start_pc, line_number)
 
 }
 
