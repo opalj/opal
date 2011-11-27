@@ -46,11 +46,10 @@ import scala.xml.TopScope
 case class Field(val accessFlags: Int,
                  val name: String,
                  val descriptor: FieldDescriptor,
-                 val attributes: Attributes) {
+                 val attributes: Attributes)
+        extends CommonAttributes {
 
     // TODO move runtime(In)VisibleAnnotations, isDeprecated and is Synthetic in a special trait...
-
-    def isDeprectated: Boolean = attributes contains DeprecatedAttribute // the deprecated attribute is always set when either the annotation or the JavaDoc tag is used
 
     def fieldTypeSignature: Option[FieldTypeSignature] = {
         attributes find {

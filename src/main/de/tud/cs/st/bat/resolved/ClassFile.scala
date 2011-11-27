@@ -38,16 +38,16 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case class ClassFile(
-        val minorVersion: Int,
-        val majorVersion: Int,
-        val accessFlags: Int,
-        val thisClass: ObjectType,
-        val superClass: ObjectType,
-        val interfaces: Seq[ObjectType],
-        val fields: Fields,
-        val methods: Methods,
-        val attributes: Attributes) {
+case class ClassFile(val minorVersion: Int,
+                     val majorVersion: Int,
+                     val accessFlags: Int,
+                     val thisClass: ObjectType,
+                     val superClass: ObjectType,
+                     val interfaces: Seq[ObjectType],
+                     val fields: Fields,
+                     val methods: Methods,
+                     val attributes: Attributes)
+        extends CommonAttributes {
 
     private val classCategoryMask: Int = ACC_INTERFACE.mask | ACC_ANNOTATION.mask | ACC_ENUM.mask
 
@@ -61,16 +61,14 @@ case class ClassFile(
 
     def isAnnotationDeclaration: Boolean = (accessFlags & classCategoryMask) == annotationMask
 
-    def isDeprectated: Boolean = attributes contains DeprecatedAttribute // the deprecated attribute is always set when either the annotation or the JavaDoc tag is used
-
-    def innerClassesEntries : Option[InnerClassesEntries] = {
+    def innerClassesEntries: Option[InnerClassesEntries] = {
         attributes find {
             case InnerClassesAttribute(ice) ⇒ return Some(ice)
-            case _                 ⇒ false
+            case _                          ⇒ false
         }
         None
     }
-    
+
     /**
      * Each class file optionally defines a clas signature.
      */
@@ -89,7 +87,7 @@ case class ClassFile(
     def sourceFile: Option[String] = {
         attributes find {
             case SourceFileAttribute(s) ⇒ return Some(s)
-            case _                       ⇒ false
+            case _                      ⇒ false
         }
         None
     }
