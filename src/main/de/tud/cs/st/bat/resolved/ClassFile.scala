@@ -49,6 +49,18 @@ case class ClassFile(
         val methods: Methods,
         val attributes: Attributes) {
 
+    private val classCategoryMask: Int = ACC_INTERFACE.mask | ACC_ANNOTATION.mask | ACC_ENUM.mask
+
+    private val annotationMask: Int = ACC_INTERFACE.mask | ACC_ANNOTATION.mask
+
+    def isClassDeclaration: Boolean = (accessFlags & classCategoryMask) == 0
+
+    def isEnumDeclaration: Boolean = (accessFlags & classCategoryMask) == ACC_ENUM.mask
+
+    def isInterfaceDeclaration: Boolean = (accessFlags & classCategoryMask) == ACC_INTERFACE.mask
+
+    def isAnnotationDeclaration: Boolean = (accessFlags & classCategoryMask) == annotationMask
+
     /**
      * Each class file optionally defines a clas signature.
      */
@@ -65,12 +77,6 @@ case class ClassFile(
      * at most one SourceFile attribute.
      */
     def sourceFile: Option[String] = {
-        // for (attribute ← attributes) {
-        // 	attribute match {
-        // 		case SourceFile_attribute(s) ⇒ return Some(s)
-        // 		case _                                      ⇒ ;
-        // 	}
-        // }
         attributes find {
             case SourceFile_attribute(s) ⇒ return Some(s)
             case _                       ⇒ false
@@ -137,7 +143,7 @@ case class ClassFile(
         for (attribute ← attributes) {
             facts = (attribute match {
                 case sfa: SourceFile_attribute      ⇒ sfa.toProlog(factory, key)
-                case aa: AnnotationsAttribute      ⇒ aa.toProlog(factory, key)
+                case aa: AnnotationsAttribute       ⇒ aa.toProlog(factory, key)
                 case ema: EnclosingMethod_attribute ⇒ ema.toProlog(factory, key)
                 case _                              ⇒ Nil
             }) ::: facts
@@ -159,19 +165,12 @@ case class ClassFile(
 
     }
 
-    private val classCategoryMask: Int = ACC_INTERFACE.mask | ACC_ANNOTATION.mask | ACC_ENUM.mask
-
-    private val annotationMask: Int = ACC_ANNOTATION.mask | ACC_INTERFACE.mask
-
     private def getClassCategoryAtom[F, T, A <: T](factory: PrologTermFactory[F, T, A]): A = {
-
-        import factory._
-
         accessFlags & classCategoryMask match {
-            case 0                  ⇒ StringAtom("class_declaration")
-            case ACC_INTERFACE.mask ⇒ StringAtom("interface_declaration")
-            case ACC_ENUM.mask      ⇒ StringAtom("enum_declaration")
-            case annotation_mask    ⇒ StringAtom("annotation_declaration")
+            case 0                  ⇒ factory.StringAtom("class_declaration")
+            case ACC_INTERFACE.mask ⇒ factory.StringAtom("interface_declaration")
+            case ACC_ENUM.mask      ⇒ factory.StringAtom("enum_declaration")
+            case _                  ⇒ factory.StringAtom("annotation_declaration")
         }
     }
 }
