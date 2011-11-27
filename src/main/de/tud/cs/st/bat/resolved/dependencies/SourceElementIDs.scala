@@ -45,10 +45,10 @@ trait SourceElementIDs {
 
     def sourceElementID(t: Type): Int
 
-    final def sourceElementID(classFile: ClassFile, field: Field_Info): Int =
+    final def sourceElementID(classFile: ClassFile, field: Field): Int =
         sourceElementID(classFile.thisClass, field.name)
 
-    final def sourceElementID(definingObjectType: ObjectType, field: Field_Info): Int =
+    final def sourceElementID(definingObjectType: ObjectType, field: Field): Int =
         sourceElementID(definingObjectType, field.name)
 
     def sourceElementID(definingObjectType: ObjectType, fieldName: String): Int

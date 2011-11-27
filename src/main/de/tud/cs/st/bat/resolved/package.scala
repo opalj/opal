@@ -56,6 +56,6 @@ package object resolved {
     type VerificationTypeInfoLocals = IndexedSeq[VerificationTypeInfo]
     type VerificationTypeInfoStack = IndexedSeq[VerificationTypeInfo]
 
-    type Fields = IndexedSeq[Field_Info]
+    type Fields = IndexedSeq[Field]
 
 }

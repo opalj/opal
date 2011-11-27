@@ -43,15 +43,27 @@ import scala.xml.TopScope
  *
  * @author Michael Eichberg
  */
-case class Field_Info(val accessFlags: Int,
-                      val name: String,
-                      val descriptor: FieldDescriptor,
-                      val attributes: Attributes) {
+case class Field(val accessFlags: Int,
+                 val name: String,
+                 val descriptor: FieldDescriptor,
+                 val attributes: Attributes) {
+
+    // TODO move runtime(In)VisibleAnnotations, isDeprecated and is Synthetic in a special trait...
+
+    def isDeprectated: Boolean = attributes contains DeprecatedAttribute // the deprecated attribute is always set when either the annotation or the JavaDoc tag is used
 
     def fieldTypeSignature: Option[FieldTypeSignature] = {
         attributes find {
             case s: FieldTypeSignature ⇒ return Some(s)
-            case _ ⇒ false;
+            case _                     ⇒ false;
+        }
+        None
+    }
+
+    def constantValue: Option[ConstantValue[_]] = {
+        attributes find {
+            case cv: ConstantValue[_] ⇒ return Some(cv)
+            case _                    ⇒ false;
         }
         None
     }
@@ -74,9 +86,9 @@ case class Field_Info(val accessFlags: Int,
 
         for (attribute ← attributes) {
             facts = (attribute match {
-                case aa: AnnotationsAttribute ⇒ aa.toProlog(factory, key)
-                case cva: ConstantValueAttribute     ⇒ cva.toProlog(factory, key)
-                case _                         ⇒ Nil
+                case aa: AnnotationsAttribute    ⇒ aa.toProlog(factory, key)
+                case cva: ConstantValueAttribute ⇒ cva.toProlog(factory, key)
+                case _                           ⇒ Nil
             }) ::: facts
         }
 

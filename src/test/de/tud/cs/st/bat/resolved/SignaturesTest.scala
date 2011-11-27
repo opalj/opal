@@ -60,11 +60,11 @@ class SignaturesTest extends FunSuite {
     test("parsing the field type signatures") {
         classA.fields.foreach(x ⇒
             x match {
-                case Field_Info(_, "b", _, _) ⇒ {
+                case Field(_, "b", _, _) ⇒ {
                     val signature = x.fieldTypeSignature;
                     println("B : " + signature)
                 }
-                case Field_Info(_, "bs", _, _) ⇒ {
+                case Field(_, "bs", _, _) ⇒ {
                     val signature = x.fieldTypeSignature
                     println("Bs : " + signature)
                 }
