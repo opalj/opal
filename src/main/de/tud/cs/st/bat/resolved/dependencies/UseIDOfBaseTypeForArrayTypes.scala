@@ -37,7 +37,7 @@ package dependencies
  * If you do not want to assign unique IDs to array types but instead want to use the
  * ID of the underlying base type, this trait can be mixed in.
  *
- * @Michael Eichberg
+ * @author Michael Eichberg
  */
 trait UseIDOfBaseTypeForArrayTypes extends SourceElementIDs {
 
