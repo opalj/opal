@@ -66,7 +66,7 @@ import scala.xml.Node
  *
  * @author Michael Eichberg
  */
-sealed trait ElementValue extends AnnotationDefault_attribute 
+sealed trait ElementValue extends AnnotationDefaultAttribute 
 
 case class ByteValue(val value: Byte) extends ElementValue {
 

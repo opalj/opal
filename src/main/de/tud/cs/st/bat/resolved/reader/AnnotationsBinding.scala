@@ -60,7 +60,7 @@ trait AnnotationsBinding
         with AttributeBinding {
 
     type Annotation = de.tud.cs.st.bat.resolved.Annotation
-    type AnnotationDefault_attribute = de.tud.cs.st.bat.resolved.AnnotationDefault_attribute
+    type AnnotationDefault_attribute = de.tud.cs.st.bat.resolved.AnnotationDefaultAttribute
     type ElementValue = de.tud.cs.st.bat.resolved.ElementValue
     val ElementValueManifest: ClassManifest[ElementValue] = implicitly
     type EnumValue = de.tud.cs.st.bat.resolved.EnumValue

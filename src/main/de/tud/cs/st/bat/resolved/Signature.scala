@@ -53,36 +53,35 @@ trait ThrowsSignature {
  */
 sealed trait Signature
 
-case class ClassSignature(
-        formalTypeParameters: Option[List[FormalTypeParameter]],
-        superClassSignature: ClassTypeSignature,
-        superInterfaceSignature: List[ClassTypeSignature]) extends Signature with SignatureAttribute {
+case class ClassSignature(formalTypeParameters: Option[List[FormalTypeParameter]],
+                          superClassSignature: ClassTypeSignature,
+                          superInterfaceSignature: List[ClassTypeSignature])
+        extends Signature
+        with SignatureAttribute {
 
 }
 
-case class MethodTypeSignature(
-    formalTypeParameters: Option[List[FormalTypeParameter]],
-    parametersTypeSignatures: List[TypeSignature],
-    returnType: ReturnTypeSignature,
-    throwsSignature: List[ThrowsSignature])
-        extends Signature with SignatureAttribute  {
+case class MethodTypeSignature(formalTypeParameters: Option[List[FormalTypeParameter]],
+                               parametersTypeSignatures: List[TypeSignature],
+                               returnType: ReturnTypeSignature,
+                               throwsSignature: List[ThrowsSignature])
+        extends Signature
+        with SignatureAttribute {
 
 }
 
-trait FieldTypeSignature extends Signature with TypeSignature with SignatureAttribute  {
+trait FieldTypeSignature extends Signature with TypeSignature with SignatureAttribute {
 
 }
 
-case class ArrayTypeSignature(
-    typeSignature: TypeSignature)
+case class ArrayTypeSignature(typeSignature: TypeSignature)
         extends FieldTypeSignature {
 
 }
 
-case class ClassTypeSignature(
-    packageIdentifier: Option[String],
-    simpleClassTypeSignature: SimpleClassTypeSignature,
-    classTypeSignatureSuffix: List[SimpleClassTypeSignature])
+case class ClassTypeSignature(packageIdentifier: Option[String],
+                              simpleClassTypeSignature: SimpleClassTypeSignature,
+                              classTypeSignatureSuffix: List[SimpleClassTypeSignature])
         extends FieldTypeSignature
         with ThrowsSignature {
 
@@ -95,19 +94,18 @@ case class ClassTypeSignature(
     }
 }
 
-case class SimpleClassTypeSignature(
-    simpleName: String,
-    typeArguments: Option[List[TypeArgument]])
-
-case class TypeVariableSignature(
-        identifier: String) extends FieldTypeSignature with ThrowsSignature {
+case class TypeVariableSignature(identifier: String)
+        extends FieldTypeSignature
+        with ThrowsSignature {
 
 }
 
-case class FormalTypeParameter(
-        identifier: String,
-        classBound: Option[FieldTypeSignature],
-        interfaceBound: Option[FieldTypeSignature]) {
+case class SimpleClassTypeSignature(simpleName: String,
+                                    typeArguments: Option[List[TypeArgument]])
+
+case class FormalTypeParameter(identifier: String,
+                               classBound: Option[FieldTypeSignature],
+                               interfaceBound: Option[FieldTypeSignature]) {
 
 }
 
@@ -115,9 +113,9 @@ trait TypeArgument {
 
 }
 
-case class ProperTypeArgument(
-        varianceIndicator: Option[VarianceIndicator],
-        fieldTypeSignature: FieldTypeSignature) extends TypeArgument {
+case class ProperTypeArgument(varianceIndicator: Option[VarianceIndicator],
+                              fieldTypeSignature: FieldTypeSignature)
+        extends TypeArgument {
 
 }
 

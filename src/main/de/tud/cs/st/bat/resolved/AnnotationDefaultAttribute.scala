@@ -38,7 +38,7 @@ package resolved
  *
  * @author Michael Eichberg
  */
-trait AnnotationDefault_attribute extends Attribute {
+trait AnnotationDefaultAttribute extends Attribute {
 
     def valueToProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T
 
