@@ -52,7 +52,7 @@ object ISOProlog {
 	 * Converts the given String into an ISO Prolog String by escaping the string.
 	 */
 	def escapeString(s : String) : String = {
-		// FIXME what do we have to do in case of multiline strings?
+		// TODO [Prolog] Test that we handle multiline strings correctly.
 		var t:String = s.replace("\\","\\\\").replace("\'","\\'");
 		return t.replace("\n", "\\n");
 	}

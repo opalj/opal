@@ -45,7 +45,8 @@ trait AnnotationsAttribute extends Attribute {
 
     def annotationsToXML = for (annotation ← annotations) yield annotation.toXML
 
-    // FIXME Is the following correct? The key of an annotation fact is composed out of the (reference)keyAtom and the annotationTypeTerm. Every Annoation only allowed to appear once (in Java source code this is the case, but what does the JVM Spec say?)
+    // The key of an annotation fact is composed out of the (reference)keyAtom and the annotationTypeTerm.
+    // Every Annotation is only allowed to appear once (at least in the Java Programming Language and in Java's public API).
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] = {
 
         import factory._
