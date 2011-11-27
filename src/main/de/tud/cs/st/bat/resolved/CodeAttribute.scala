@@ -114,9 +114,9 @@ case class CodeAttribute(val maxStack: Int,
 			 attribute match {
 				case lnta : LineNumberTableAttribute =>
 				 	facts = lnta.toProlog(factory,declaringEntityKey,pc_to_seqNo) :: facts
-				case lvta : LocalVariableTable_attribute =>
+				case lvta : LocalVariableTableAttribute =>
 				 	facts = lvta.toProlog(factory,declaringEntityKey,pc_to_seqNo) :: facts
-				case lvtta : LocalVariableTypeTable_attribute =>
+				case lvtta : LocalVariableTypeTableAttribute =>
 				 	facts = lvtta.toProlog(factory,declaringEntityKey,pc_to_seqNo) :: facts
 				case _ => Nil
 			}

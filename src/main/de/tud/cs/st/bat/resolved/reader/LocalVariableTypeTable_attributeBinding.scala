@@ -44,14 +44,14 @@ trait LocalVariableTypeTable_attributeBinding
         with Constant_PoolResolver
         with AttributeBinding {
 
-    type LocalVariableTypeTable_attribute = de.tud.cs.st.bat.resolved.LocalVariableTypeTable_attribute
+    type LocalVariableTypeTable_attribute = de.tud.cs.st.bat.resolved.LocalVariableTypeTableAttribute
 
     type LocalVariableTypeTableEntry = de.tud.cs.st.bat.resolved.LocalVariableTypeTableEntry
     val LocalVariableTypeTableEntryManifest: ClassManifest[LocalVariableTypeTableEntry] = implicitly
 
     def LocalVariableTypeTableEntry(start_pc: Int,
                                     length: Int,
-                                    name_index: Int,
+                                    name_index: Constant_Pool_Index,
                                     signature_index: Constant_Pool_Index,
                                     index: Int)(
                                         implicit constant_pool: Constant_Pool): LocalVariableTypeTableEntry = {

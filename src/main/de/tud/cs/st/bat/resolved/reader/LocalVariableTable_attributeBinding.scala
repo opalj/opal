@@ -48,7 +48,7 @@ trait LocalVariableTable_attributeBinding
 {
 	
 	
-	type LocalVariableTable_attribute = de.tud.cs.st.bat.resolved.LocalVariableTable_attribute		
+	type LocalVariableTable_attribute = de.tud.cs.st.bat.resolved.LocalVariableTableAttribute		
 	type LocalVariableTableEntry = de.tud.cs.st.bat.resolved.LocalVariableTableEntry
 	val LocalVariableTableEntryManifest : ClassManifest[LocalVariableTableEntry] = implicitly
 

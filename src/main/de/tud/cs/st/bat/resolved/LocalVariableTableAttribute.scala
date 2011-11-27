@@ -37,7 +37,7 @@ package de.tud.cs.st.bat.resolved
  *
  * @author Michael Eichberg
  */
-case class LocalVariableTable_attribute(val localVariableTable: LocalVariableTable)
+case class LocalVariableTableAttribute(val localVariableTable: LocalVariableTable)
         extends Attribute {
 
     def toXML =

@@ -38,7 +38,7 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case class LocalVariableTypeTable_attribute(val localVariableTypeTable: LocalVariableTypeTable)
+case class LocalVariableTypeTableAttribute(val localVariableTypeTable: LocalVariableTypeTable)
         extends Attribute {
 
     def toXML =
