@@ -42,9 +42,5 @@ case object SyntheticAttribute extends Attribute {
 
     def toXML = <synthetic/>
 
-    /**
-     * We do represent the synthetic as another access flag and not as a standard attribute.
-     */
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] = Nil
 
 }
