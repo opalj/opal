@@ -47,7 +47,6 @@ case class ExceptionsAttribute(val exceptionTable: Seq[ObjectType])
 		</exceptions>
 
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] = {
-
         import factory._
         Fact(
             "method_exceptions",
