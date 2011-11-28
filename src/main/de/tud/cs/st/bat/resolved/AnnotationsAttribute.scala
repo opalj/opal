@@ -69,20 +69,7 @@ trait AnnotationsAttribute extends Attribute {
             ) :: facts
         }
         facts
-
-        /*
-		Fact(
-			"annotations",
-			declaringEntityKey,
-			if (isRuntimeVisible)
-				StringAtom("runtime_visible")
-			else
-				StringAtom("runtime_invisible"),
-			Terms(annotations,(_ : Annotation).toProlog(factory))
-		) :: facts
-		*/
     }
-
 }
 
 object AnnotationsAttribute {
