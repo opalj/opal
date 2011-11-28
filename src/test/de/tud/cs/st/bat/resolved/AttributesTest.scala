@@ -30,7 +30,8 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved
+package de.tud.cs.st.bat
+package resolved
 
 import de.tud.cs.st.bat.resolved.reader.Java6Framework
 
@@ -39,11 +40,23 @@ import org.scalatest.FunSuite
 /**
  * @author Michael Eichberg
  */
+@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class AttributesTest extends FunSuite {
 
-  // TODO implement this test...
-  test("all standard attributes are existing") {
-    val classFile = Java6Framework.ClassFile("test/classfiles/Multithreaded RPN Calculator 2008_10_17 - Java 6 all debug info.zip", "src/de/michaeleichberg/multihtreadedprogramming/v2Beta4Thread/Calculator.class")
+
+  test("test that the deprecated attribute is present") {
+    val classFile1 = Java6Framework.ClassFile("test/classfiles/Attributes.zip", "attributes/DeprecatedByAnnotation.class")
+    assert (classFile1.isDeprectated)
+    assert (classFile1.runtimeVisibleAnnotations.get.find({case Annotation(ObjectType("java/lang/Deprecated"),_) => true; case _ => false }) != None)
+    
+    val classFile2 = Java6Framework.ClassFile("test/classfiles/Attributes.zip", "attributes/DeprecatedByJavaDoc.class")
+    assert (classFile1.isDeprectated)
+    
   }
 
+  test("test that the source file attribute is present") {
+    val classFile1 = Java6Framework.ClassFile("test/classfiles/Attributes.zip", "attributes/DeprecatedByAnnotation.class")
+    assert (classFile1.sourceFile != None)
+  }
+  
 }
