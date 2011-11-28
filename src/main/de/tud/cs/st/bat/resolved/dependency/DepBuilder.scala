@@ -47,10 +47,8 @@ trait DepBuilder {
 
   def getID(classFile: ClassFile): Int
   def getID(t: Type): Int
-  def getID(classFile: ClassFile, field: Field): Int
   def getID(definingObjectType: ObjectType, field: Field): Int
   def getID(definingObjectType: ObjectType, fieldName: String): Int
-  def getID(classFile: ClassFile, method: Method): Int
   def getID(definingObjectType: ObjectType, method: Method): Int
   def getID(definingObjectType: ObjectType, methodName: String, methodDescriptor: MethodDescriptor): Int
 

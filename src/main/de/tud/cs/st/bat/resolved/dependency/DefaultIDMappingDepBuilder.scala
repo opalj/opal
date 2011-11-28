@@ -40,7 +40,7 @@ import dependencies.UseIDOfBaseTypeForArrayTypes
  *
  * @author Thomas Schlosser
  */
-trait DefaultIDMappingDepBuilder extends SourceElementIDsMap with UseIDOfBaseTypeForArrayTypes {
+trait DefaultIDMappingDepBuilder extends DepBuilder with SourceElementIDsMap with UseIDOfBaseTypeForArrayTypes {
 
   def getID(classFile: ClassFile): Int =
     sourceElementID(classFile)
@@ -48,17 +48,11 @@ trait DefaultIDMappingDepBuilder extends SourceElementIDsMap with UseIDOfBaseTyp
   def getID(t: Type): Int =
     sourceElementID(t)
 
-  def getID(classFile: ClassFile, field: Field): Int =
-    sourceElementID(classFile, field)
-
   def getID(definingObjectType: ObjectType, field: Field): Int =
     sourceElementID(definingObjectType, field)
 
   def getID(definingObjectType: ObjectType, fieldName: String): Int =
     sourceElementID(definingObjectType, fieldName)
-
-  def getID(classFile: ClassFile, method: Method): Int =
-    sourceElementID(classFile, method)
 
   def getID(definingObjectType: ObjectType, method: Method): Int =
     sourceElementID(definingObjectType, method)
