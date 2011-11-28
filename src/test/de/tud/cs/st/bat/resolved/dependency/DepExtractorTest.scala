@@ -641,19 +641,19 @@ class DepExtractorTest extends FunSuite with de.tud.cs.st.util.perf.BasicPerform
     def getID(t: Type): Int =
       getID(getNameOfUnderlyingType(t))
 
-    def getID(classFile: ClassFile, field: Field_Info): Int =
+    def getID(classFile: ClassFile, field: Field): Int =
       getID(classFile.thisClass, field.name)
 
-    def getID(definingObjectType: ObjectType, field: Field_Info): Int =
+    def getID(definingObjectType: ObjectType, field: Field): Int =
       getID(definingObjectType, field.name)
 
     def getID(definingObjectType: ObjectType, fieldName: String): Int =
       getID(getNameOfUnderlyingType(definingObjectType) + FIELD_AND_METHOD_SEPARATOR + fieldName)
 
-    def getID(classFile: ClassFile, method: Method_Info): Int =
+    def getID(classFile: ClassFile, method: Method): Int =
       getID(classFile.thisClass, method)
 
-    def getID(definingObjectType: ObjectType, method: Method_Info): Int =
+    def getID(definingObjectType: ObjectType, method: Method): Int =
       getID(definingObjectType, method.name, method.descriptor)
 
     def getID(definingObjectType: ObjectType, methodName: String, methodDescriptor: MethodDescriptor): Int =

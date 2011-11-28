@@ -48,19 +48,19 @@ trait DefaultIDMappingDepBuilder extends SourceElementIDsMap with UseIDOfBaseTyp
   def getID(t: Type): Int =
     sourceElementID(t)
 
-  def getID(classFile: ClassFile, field: Field_Info): Int =
+  def getID(classFile: ClassFile, field: Field): Int =
     sourceElementID(classFile, field)
 
-  def getID(definingObjectType: ObjectType, field: Field_Info): Int =
+  def getID(definingObjectType: ObjectType, field: Field): Int =
     sourceElementID(definingObjectType, field)
 
   def getID(definingObjectType: ObjectType, fieldName: String): Int =
     sourceElementID(definingObjectType, fieldName)
 
-  def getID(classFile: ClassFile, method: Method_Info): Int =
+  def getID(classFile: ClassFile, method: Method): Int =
     sourceElementID(classFile, method)
 
-  def getID(definingObjectType: ObjectType, method: Method_Info): Int =
+  def getID(definingObjectType: ObjectType, method: Method): Int =
     sourceElementID(definingObjectType, method)
 
   def getID(definingObjectType: ObjectType, methodName: String, methodDescriptor: MethodDescriptor): Int =
