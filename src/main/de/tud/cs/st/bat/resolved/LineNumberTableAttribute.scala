@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -34,19 +34,38 @@ package de.tud.cs.st.bat
 package resolved
 
 /**
- * Parameter annotations.
+ * A method's line number table.
  *
  * @author Michael Eichberg
  */
-case class RuntimeVisibleParameterAnnotations_attribute(
-    val parameterAnnotations: ParameterAnnotations)
-    extends ParameterAnnotations_attribute {
-
-    final def isRuntimeVisible: Boolean = true
+case class LineNumberTableAttribute(val lineNumberTable: LineNumberTable)
+        extends Attribute {
 
     def toXML =
-        <runtime_visible_parameter_annotations>
-			{ parameterAnnotationsToXML }
-		</runtime_visible_parameter_annotations>
+        <line_number_table>
+			{ for (entry ← lineNumberTable) yield entry.toXML }
+		</line_number_table>
 
+
+    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A, pc_to_seqNo: Array[Int]): F = {
+
+        import factory._
+
+        Fact(
+            "method_line_number_table",
+            declaringEntityKey,
+            Terms(lineNumberTable, (_: LineNumberTableEntry).toProlog(factory, pc_to_seqNo))
+        )
+    }
+}
+
+case class LineNumberTableEntry(val startPC: Int,
+                                val lineNumber: Int) {
+
+    def toXML = <entry start_pc={ startPC.toString } lineNumber={ lineNumber.toString }/>
+
+    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], pc_to_seqNo: Array[Int]): T = {
+        import factory._
+        Term("kv", IntegerAtom(pc_to_seqNo(startPC)), Term("ln", IntegerAtom(lineNumber)))
+    }
 }

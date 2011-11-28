@@ -30,7 +30,8 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved
+package de.tud.cs.st.bat
+package resolved
 
 /**
  * Common superclass of all class file attributes.
@@ -44,8 +45,4 @@ trait Attribute {
      */
     def toXML: scala.xml.Node
 
-    /**
-     * Creates a Prolog representation of this attribute.
-     */
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F]
 }

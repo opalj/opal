@@ -30,19 +30,63 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat
-package resolved
+package de.tud.cs.st.bat.resolved
 
 /**
- * Representation of the Java 6 stack map table attribute.
+ * A class, method, or field annotation.
  *
  * @author Michael Eichberg
  */
-case class StackMapTable_attribute(val stackMapFrames: StackMapFrames)
-        extends Attribute {
+trait AnnotationsAttribute extends Attribute {
 
-    def toXML = <stack_map_table>{ for (frame ← stackMapFrames) yield frame.toXML }</stack_map_table>
+    def annotations: Annotations
 
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] =
-        Nil // TODO	implement conversion of StackMapFrames to Prolog
+    def isRuntimeVisible: Boolean
+
+    def annotationsToXML = for (annotation ← annotations) yield annotation.toXML
+
+    // The key of an annotation fact is composed out of the (reference)keyAtom and the annotationTypeTerm.
+    // Every Annotation is only allowed to appear once (at least in the Java Programming Language and in Java's public API).
+    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] = {
+
+        import factory._
+
+        var facts: List[F] = Nil
+
+        for (annotation ← annotations) {
+            facts = Fact(
+                "annotation",
+                declaringEntityKey,
+                if (isRuntimeVisible)
+                    StringAtom("runtime_visible")
+                else
+                    StringAtom("runtime_invisible"),
+                annotation.annotationType.toProlog(factory),
+                factory.Terms(
+                    annotation.elementValuePairs,
+                    (_: ElementValuePair).toProlog(factory)
+                )
+            ) :: facts
+        }
+        facts
+
+        /*
+		Fact(
+			"annotations",
+			declaringEntityKey,
+			if (isRuntimeVisible)
+				StringAtom("runtime_visible")
+			else
+				StringAtom("runtime_invisible"),
+			Terms(annotations,(_ : Annotation).toProlog(factory))
+		) :: facts
+		*/
+    }
+
+}
+
+object AnnotationsAttribute {
+
+    def unapply(aa: AnnotationsAttribute): Option[(Boolean, Annotations)] =
+        Some(aa.isRuntimeVisible, aa.annotations)
 }

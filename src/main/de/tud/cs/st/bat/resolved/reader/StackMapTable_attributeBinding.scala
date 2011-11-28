@@ -50,7 +50,7 @@ trait StackMapTable_attributeBinding
 
     type VerificationTypeInfo = de.tud.cs.st.bat.resolved.VerificationTypeInfo
     val VerificationTypeInfoManifest: ClassManifest[VerificationTypeInfo] = implicitly
-    type StackMapTable_attribute = de.tud.cs.st.bat.resolved.StackMapTable_attribute
+    type StackMapTable_attribute = de.tud.cs.st.bat.resolved.StackMapTableAttribute
     type StackMapFrame = de.tud.cs.st.bat.resolved.StackMapFrame
     type FullFrame = de.tud.cs.st.bat.resolved.FullFrame
     type SameFrame = de.tud.cs.st.bat.resolved.SameFrame

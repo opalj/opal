@@ -30,62 +30,42 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved
+package de.tud.cs.st.bat
+package resolved
 
 /**
- * A class, method, or field annotation.
+ * Representation of the local variable type table.
  *
  * @author Michael Eichberg
  */
-trait Annotations_Attribute extends Attribute { // TODO inconsistent naming: choose either AnnotationsAttribute or Annotations_attribute...
+case class LocalVariableTypeTableAttribute(val localVariableTypeTable: LocalVariableTypeTable)
+        extends Attribute {
 
-    def annotations: Annotations
+    def toXML =
+        <local_variable_type_table>
+			{ for (entry ← localVariableTypeTable) yield entry.toXML }
+		</local_variable_type_table>
 
-    def isRuntimeVisible: Boolean
 
-    def annotationsToXML = for (annotation ← annotations) yield annotation.toXML
-
-    // FIXME Is the following correct? The key of an annotation fact is composed out of the (reference)keyAtom and the annotationTypeTerm. Every Annoation only allowed to appear once (in Java source code this is the case, but what does the JVM Spec say?)
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] = {
-
-        import factory._
-
-        var facts: List[F] = Nil
-
-        for (annotation ← annotations) {
-            facts = Fact(
-                "annotation",
-                declaringEntityKey,
-                if (isRuntimeVisible)
-                    StringAtom("runtime_visible")
-                else
-                    StringAtom("runtime_invisible"),
-                annotation.annotationType.toProlog(factory),
-                factory.Terms(
-                    annotation.elementValuePairs,
-                    (_: ElementValuePair).toProlog(factory)
-                )
-            ) :: facts
-        }
-        facts
-
-        /*
-		Fact(
-			"annotations",
-			declaringEntityKey,
-			if (isRuntimeVisible)
-				StringAtom("runtime_visible")
-			else
-				StringAtom("runtime_invisible"),
-			Terms(annotations,(_ : Annotation).toProlog(factory))
-		) :: facts
-		*/
+    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A, pc_to_seqNo: Array[Int]): F = {
+    	factory.Fact("method_local_variable_type_table") // TODO [Prolog] LocalVariableTypeTableAttribute
     }
+}
+
+case class LocalVariableTypeTableEntry(
+        val startPC: Int,
+        val length: Int,
+        val name: String,
+        val signature: FieldTypeSignature,
+        val index: Int) {
+
+    def toXML =
+        <entry
+			signature={ signature.toXML }
+			start_pc={ startPC.toString }
+			length={ length.toString }
+			name={ name }
+			index={ index.toString }/>
 
 }
 
-object Annotations_Attribute {
-
-    def unapply(aa: Annotations_Attribute): Option[(Boolean, Annotations)] =
-        Some(aa.isRuntimeVisible, aa.annotations)
-}

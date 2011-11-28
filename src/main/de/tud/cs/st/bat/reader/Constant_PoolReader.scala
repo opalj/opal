@@ -102,7 +102,7 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
 
     import Constant_PoolTags._
 
-    // TODO Replace IndexedSeq[Constant_Pool_Entry] by a structural type that defines an apply(i,value) method.
+    // TODO [Improvement] Replace IndexedSeq[Constant_Pool_Entry] by a structural type that defines an apply(i,value) method.
     type Constant_Pool = IndexedSeq[Constant_Pool_Entry]
 
     private val reader = new Array[(DataInputStream) ⇒ Constant_Pool_Entry](Constant_PoolTags.maxId + 1)

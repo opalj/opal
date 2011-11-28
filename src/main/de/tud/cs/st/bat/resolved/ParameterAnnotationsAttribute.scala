@@ -34,26 +34,47 @@ package de.tud.cs.st.bat
 package resolved
 
 /**
- * A method's declared exceptions.
+ * Parameter annotations.
  *
  * @author Michael Eichberg
  */
-case class Exceptions_attribute(val exceptionTable: Seq[ObjectType])
-        extends Attribute {
+trait ParameterAnnotationsAttribute extends Attribute { 
 
-    def toXML =
-        <exceptions>
-			{ for (exception ← exceptionTable) yield <exception type={ exception.toJava }/> }
-		</exceptions>
+    def parameterAnnotations: ParameterAnnotations
 
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] = {
+    def isRuntimeVisible: Boolean
+
+    protected def parameterAnnotationsToXML =
+        for (parameter ← parameterAnnotations) yield {
+            <parameter>{ for (annotation ← parameter) yield annotation.toXML }</parameter>
+        }
+
+    final def toProlog[F, T, A <: T](
+        factory: PrologTermFactory[F, T, A],
+        declaringEntityKey: A): List[F] = {
 
         import factory._
-        Fact(
-            "method_exceptions",
-            declaringEntityKey,
-            Terms(exceptionTable, (_: ObjectType).toProlog(factory))
-        ) :: Nil
 
+        var facts: List[F] = Nil
+
+        Fact(
+            "parameter_annotations",
+            declaringEntityKey,
+            if (isRuntimeVisible)
+                StringAtom("runtime_visible")
+            else
+                StringAtom("runtime_invisible"),
+            Terms(
+                parameterAnnotations,
+                (parameterAnnotation: Seq[Annotation]) ⇒ {
+                    Terms(parameterAnnotation, (_: Annotation).toProlog(factory))
+                }
+            )
+        ) :: facts
     }
+}
+
+object ParameterAnnotations_attribute {
+  def unapply(paa: ParameterAnnotations_attribute): Option[(Boolean, ParameterAnnotations)] =
+    Some(paa.isRuntimeVisible, paa.parameterAnnotations)
 }

@@ -33,67 +33,57 @@
 package de.tud.cs.st.bat
 package resolved
 
-import scala.xml.Elem
-import scala.xml.Null
-import scala.xml.Text
-import scala.xml.TopScope
-
 /**
- * Represents a single field declaration.
+ * A class' inner classes.
  *
  * @author Michael Eichberg
  */
-case class Field_Info(val accessFlags: Int,
-                      val name: String,
-                      val descriptor: FieldDescriptor,
-                      val attributes: Attributes) {
-
-    def fieldTypeSignature: Option[FieldTypeSignature] = {
-        attributes find {
-            case s: FieldTypeSignature ⇒ return Some(s)
-            case _ ⇒ false;
-        }
-        None
-    }
+case class InnerClassesAttribute(val classes: InnerClassesEntries)
+        extends Attribute {
 
     def toXML =
-        <field
-			name={ name }
-			type={ descriptor.fieldType.toJava } >
-			<flags>{ AccessFlagsIterator(accessFlags, AccessFlagsContexts.FIELD) map(_.toXML) }</flags>
-			<attributes>{ for (attribute ← attributes) yield attribute.toXML }</attributes>
-		</field>
+        <inner_classes>
+			{ for (clazz ← classes) yield clazz.toXML }
+		</inner_classes>
 
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], classFileKeyAtom: A): List[F] = {
+    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] =
+        Nil
+    /*	{ TODO [Prolog] InnerClassesAttribute
+		import factory._
 
-        import factory._
+		Fact(
+			"inner_classes",
+			declaringEntityKey,
+			Terms(classes,(_:InnerClassesEntry).toProlog(factory))
+		) :: Nil
+	}
+	*/
+}
 
-        var facts: List[F] = Nil
 
-        val key = KeyAtom("f_")
+case class InnerClassesEntry(	val innerClassType : ObjectType,
+	val outerClassType : ObjectType,
+	val innerName : String,
+	val innerClassAccessFlags : Int
+) {
 
-        for (attribute ← attributes) {
-            facts = (attribute match {
-                case aa: Annotations_Attribute ⇒ aa.toProlog(factory, key)
-                case cva: ConstantValue[_]     ⇒ cva.toProlog(factory, key)
-                case _                         ⇒ Nil
-            }) ::: facts
-        }
+	def toXML =
+		<class innerName={ innerName }>{	
+			    var nodes : List[scala.xml.Node] = Nil
+				nodes = AccessFlags.toXML(innerClassAccessFlags, AccessFlagsContexts.INNER_CLASS) :: nodes
+				if (outerClassType != null) nodes = <outer_class type={outerClassType.className}/> :: nodes
+				nodes = <inner_class type={innerClassType.className}/> :: nodes
+				nodes
+		}</class>
 
-        Fact(
-            "field", // functor
-            classFileKeyAtom,
-            key,
-            TextAtom(name),
-            descriptor.toProlog(factory),
-            VisibilityAtom(accessFlags, AccessFlagsContexts.FIELD),
-            FinalTerm(accessFlags),
-            StaticTerm(accessFlags),
-            TransientTerm(accessFlags),
-            VolatileTerm(accessFlags),
-            SyntheticTerm(accessFlags, attributes),
-            DeprecatedTerm(attributes)
-        ) :: facts
-
-    }
+	/* 	
+	def toProlog(
+		factory : PrologTermFactory,
+	) : GroundTerm = {
+		import factory._
+		Term(
+			"inner_class",
+		)
+	}
+	*/
 }

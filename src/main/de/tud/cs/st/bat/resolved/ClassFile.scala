@@ -33,26 +33,41 @@
 package de.tud.cs.st.bat
 package resolved
 
-import scala.xml.Elem
-import scala.xml.Null
-import scala.xml.Text
-import scala.xml.TopScope
-
 /**
  * Represents a single class file.
  *
  * @author Michael Eichberg
  */
-case class ClassFile(
-        val minorVersion: Int,
-        val majorVersion: Int,
-        val accessFlags: Int,
-        val thisClass: ObjectType,
-        val superClass: ObjectType,
-        val interfaces: Seq[ObjectType],
-        val fields: Fields,
-        val methods: Methods,
-        val attributes: Attributes) {
+case class ClassFile(val minorVersion: Int,
+                     val majorVersion: Int,
+                     val accessFlags: Int,
+                     val thisClass: ObjectType,
+                     val superClass: ObjectType,
+                     val interfaces: Seq[ObjectType],
+                     val fields: Fields,
+                     val methods: Methods,
+                     val attributes: Attributes)
+        extends CommonAttributes {
+
+    private val classCategoryMask: Int = ACC_INTERFACE.mask | ACC_ANNOTATION.mask | ACC_ENUM.mask
+
+    private val annotationMask: Int = ACC_INTERFACE.mask | ACC_ANNOTATION.mask
+
+    def isClassDeclaration: Boolean = (accessFlags & classCategoryMask) == 0
+
+    def isEnumDeclaration: Boolean = (accessFlags & classCategoryMask) == ACC_ENUM.mask
+
+    def isInterfaceDeclaration: Boolean = (accessFlags & classCategoryMask) == ACC_INTERFACE.mask
+
+    def isAnnotationDeclaration: Boolean = (accessFlags & classCategoryMask) == annotationMask
+
+    def innerClassesEntries: Option[InnerClassesEntries] = {
+        attributes find {
+            case InnerClassesAttribute(ice) ⇒ return Some(ice)
+            case _                          ⇒ false
+        }
+        None
+    }
 
     /**
      * Each class file optionally defines a clas signature.
@@ -70,15 +85,9 @@ case class ClassFile(
      * at most one SourceFile attribute.
      */
     def sourceFile: Option[String] = {
-        // for (attribute ← attributes) {
-        // 	attribute match {
-        // 		case SourceFile_attribute(s) ⇒ return Some(s)
-        // 		case _                                      ⇒ ;
-        // 	}
-        // }
         attributes find {
-            case SourceFile_attribute(s) ⇒ return Some(s)
-            case _                       ⇒ false
+            case SourceFileAttribute(s) ⇒ return Some(s)
+            case _                      ⇒ false
         }
         None
     }
@@ -92,7 +101,7 @@ case class ClassFile(
 			major_version={ majorVersion.toString } >
 			<flags>{ AccessFlagsIterator(accessFlags, CLASS) map(_.toXML) }</flags>
 			<attributes>{ for (attribute ← attributes) yield attribute.toXML }</attributes>
-			<extends type={ if (superClass ne null) { Some(Text(superClass.className)) } else { None } } />
+			<extends type={ if (superClass ne null) { Some(scala.xml.Text(superClass.className)) } else { None } } />
 			{ for (interface ← interfaces) yield <implements type={ interface.className }/> }
 			{ for (field ← fields) yield field.toXML }
 			{ for (method ← methods) yield method.toXML }
@@ -141,10 +150,11 @@ case class ClassFile(
         }
         for (attribute ← attributes) {
             facts = (attribute match {
-                case sfa: SourceFile_attribute      ⇒ sfa.toProlog(factory, key)
-                case aa: Annotations_Attribute      ⇒ aa.toProlog(factory, key)
-                case ema: EnclosingMethod_attribute ⇒ ema.toProlog(factory, key)
-                case _                              ⇒ Nil
+                case sfa: SourceFileAttribute      ⇒ sfa.toProlog(factory, key)
+                case aa: AnnotationsAttribute      ⇒ aa.toProlog(factory, key)
+                case ema: EnclosingMethodAttribute ⇒ ema.toProlog(factory, key)
+                case ics: InnerClassesAttribute    ⇒ ics.toProlog(factory, key)
+                case _                             ⇒ Nil
             }) ::: facts
         }
 
@@ -164,19 +174,12 @@ case class ClassFile(
 
     }
 
-    private val classCategoryMask: Int = ACC_INTERFACE.mask | ACC_ANNOTATION.mask | ACC_ENUM.mask
-
-    private val annotationMask: Int = ACC_ANNOTATION.mask | ACC_INTERFACE.mask
-
     private def getClassCategoryAtom[F, T, A <: T](factory: PrologTermFactory[F, T, A]): A = {
-
-        import factory._
-
         accessFlags & classCategoryMask match {
-            case 0                  ⇒ StringAtom("class_declaration")
-            case ACC_INTERFACE.mask ⇒ StringAtom("interface_declaration")
-            case ACC_ENUM.mask      ⇒ StringAtom("enum_declaration")
-            case annotation_mask    ⇒ StringAtom("annotation_declaration")
+            case 0                  ⇒ factory.StringAtom("class_declaration")
+            case ACC_INTERFACE.mask ⇒ factory.StringAtom("interface_declaration")
+            case ACC_ENUM.mask      ⇒ factory.StringAtom("enum_declaration")
+            case _                  ⇒ factory.StringAtom("annotation_declaration")
         }
     }
 }

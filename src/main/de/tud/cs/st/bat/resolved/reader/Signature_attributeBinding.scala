@@ -46,12 +46,12 @@ trait Signature_attributeBinding
         with Constant_PoolResolver
         with AttributeBinding {
 
-    type Signature_attribute = Signature
+    type Signature_attribute = SignatureAttribute
 
     def Signature_attribute(attribute_name_index: Constant_Pool_Index,
                             signature_index: Constant_Pool_Index)(
                                 implicit cp: Constant_Pool, ap: AttributeParent): Signature_attribute =
-        CONSTANT_Utf8_info_IndexToSignature(signature_index)
+        CONSTANT_Utf8_info_IndexToSignatureAttribute(signature_index)
 
 }
 

@@ -96,23 +96,15 @@ abstract class PrologTermFactory[Fact, Term, Atom <: Term]
         Term(
             "synthetic",
             if ((ACC_SYNTHETIC ∈ access_flags)
-                || (attributes contains Synthetic_attribute))
+                || (attributes contains SyntheticAttribute))
                 YesAtom
             else
                 NoAtom
         )
     }
 
-    def DeprecatedTerm(attributes: Attributes) = {
-        // TODO What happens if I use the Java annotation "@deprecated" ?
-        Term(
-            "deprecated",
-            if (attributes contains Deprecated_attribute)
-                YesAtom
-            else
-                NoAtom
-        )
-    }
+    def DeprecatedTerm(attributes: Attributes) =
+        Term("deprecated", if (attributes contains DeprecatedAttribute) YesAtom else NoAtom)
 
 }
 

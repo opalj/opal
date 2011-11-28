@@ -47,7 +47,7 @@ trait Exceptions_attributeBinding
 {
 	
 	
-	type Exceptions_attribute = de.tud.cs.st.bat.resolved.Exceptions_attribute	
+	type Exceptions_attribute = de.tud.cs.st.bat.resolved.ExceptionsAttribute	
 	val Exceptions_attributeManifest: ClassManifest[Exceptions_attribute] = implicitly
 	
 	def Exceptions_attribute (

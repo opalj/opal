@@ -32,7 +32,6 @@
 */
 package de.tud.cs.st.prolog
 
-// TODO extract the definition for arbitrary (non-ground) terms.
 
 /**
  * A list of terms. 

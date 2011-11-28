@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische
-*    Universität Darmstadt nor the names of its contributors may be used to
-*    endorse or promote products derived from this software without specific
+*  - Neither the name of the Software Technology Group or Technische 
+*    Universität Darmstadt nor the names of its contributors may be used to 
+*    endorse or promote products derived from this software without specific 
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -34,56 +34,32 @@ package de.tud.cs.st.bat
 package resolved
 
 /**
- * A class' inner classes.
+ * A class' enclosing method's attribute.
  *
  * @author Michael Eichberg
  */
-case class InnerClasses_attribute(val classes: InnerClassesEntries)
+case class EnclosingMethodAttribute(val clazz: ObjectType,
+                                     val name: String,
+                                     val descriptor: MethodDescriptor)
         extends Attribute {
 
     def toXML =
-        <inner_classes>
-			{ for (clazz ← classes) yield clazz.toXML }
-		</inner_classes>
+        <enclosing_method
+			class={ clazz.className }
+			name={ name } >
+			{ if (descriptor != null) descriptor.toXML } 
+		</enclosing_method>
 
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] =
-        Nil
-    /*	{ TODO write out the inner classes information in Prolog
-		import factory._
+    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] = {
+        import factory._
 
-		Fact(
-			"inner_classes",
-			declaringEntityKey,
-			Terms(classes,(_:InnerClassesEntry).toProlog(factory))
-		) :: Nil
-	}
-	*/
-}
+        Fact(
+            "enclosing_method",
+            declaringEntityKey,
+            clazz.toProlog(factory),
+            if (name != null) TextAtom(name) else NoneAtom,
+            if (descriptor != null) descriptor.toProlog(factory) else NoneAtom
+        ) :: Nil
+    }
 
-
-case class InnerClassesEntry(	val innerClassType : ObjectType,
-	val outerClassType : ObjectType,
-	val innerName : String,
-	val innerClassAccessFlags : Int
-) {
-
-	def toXML =
-		<class innerName={ innerName }>{	
-			    var nodes : List[scala.xml.Node] = Nil
-				nodes = AccessFlags.toXML(innerClassAccessFlags, AccessFlagsContexts.INNER_CLASS) :: nodes
-				if (outerClassType != null) nodes = <outer_class type={outerClassType.className}/> :: nodes
-				nodes = <inner_class type={innerClassType.className}/> :: nodes
-				nodes
-		}</class>
-
-	/* 	
-	def toProlog(
-		factory : PrologTermFactory,
-	) : GroundTerm = {
-		import factory._
-		Term(
-			"inner_class",
-		)
-	}
-	*/
 }

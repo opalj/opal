@@ -30,7 +30,8 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved
+package de.tud.cs.st.bat
+package resolved
 
 import java.io.{ File, FileInputStream }
 import java.io.IOException
@@ -39,7 +40,7 @@ import scala.xml._
 
 import de.tud.cs.st.util.UTF8Println
 
-import de.tud.cs.st.bat.resolved.reader.Java6Framework
+import reader.Java6Framework
 
 /**
  * Creates an XML representation of each class file and pretty prints the

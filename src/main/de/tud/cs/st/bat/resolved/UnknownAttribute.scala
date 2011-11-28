@@ -30,22 +30,20 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat
-package resolved
+package de.tud.cs.st.bat.resolved
+
+import de.tud.cs.st.prolog.{ GroundTerm, Atom, Fact }
 
 /**
- * Parameter annotations.
+ * Represents the unknown attribute.
  *
  * @author Michael Eichberg
  */
-case class RuntimeInvisibleParameterAnnotations_attribute(val parameterAnnotations: ParameterAnnotations)
-        extends ParameterAnnotations_attribute {
-
-    final def isRuntimeVisible: Boolean = false
+case class UnknownAttribute(val attribute_name: String, val info: Array[Byte])
+        extends Attribute {
 
     def toXML =
-        <runtime_invisible_parameter_annotations>
-			{ parameterAnnotationsToXML }
-		</runtime_invisible_parameter_annotations>
-
+        <unknown name={ attribute_name }>
+			{ scala.xml.Text(info.mkString(" ")) }
+		</unknown>
 }

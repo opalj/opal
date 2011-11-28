@@ -45,7 +45,7 @@ trait Unknown_attributeBinding
         with Constant_PoolResolver
         with AttributeBinding {
 
-    type Unknown_attribute = de.tud.cs.st.bat.resolved.Unknown_attribute
+    type Unknown_attribute = de.tud.cs.st.bat.resolved.UnknownAttribute
 
     def Unknown_attribute(
         attribute_name_index: Constant_Pool_Index,

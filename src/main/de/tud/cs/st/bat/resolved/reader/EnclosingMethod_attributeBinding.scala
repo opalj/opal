@@ -44,7 +44,7 @@ trait EnclosingMethod_attributeBinding
         with Constant_PoolResolver
         with AttributeBinding {
 
-    type EnclosingMethod_attribute = de.tud.cs.st.bat.resolved.EnclosingMethod_attribute
+    type EnclosingMethod_attribute = de.tud.cs.st.bat.resolved.EnclosingMethodAttribute
 
     def EnclosingMethod_attribute(attribute_name_index: Constant_Pool_Index,
                                   class_index: Constant_Pool_Index,

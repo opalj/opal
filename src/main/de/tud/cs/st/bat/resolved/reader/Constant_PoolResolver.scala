@@ -145,7 +145,7 @@ trait Constant_PoolResolver extends Constant_PoolBinding {
 
     implicit def FieldDescriptorToFieldType(fd: FieldDescriptor): FieldType = fd.fieldType
 
-    implicit def CONSTANT_Utf8_info_IndexToSignature(cuii: Constant_Pool_Index)(implicit cp: Constant_Pool, ap: AttributesParent): Signature = {
+    implicit def CONSTANT_Utf8_info_IndexToSignatureAttribute(cuii: Constant_Pool_Index)(implicit cp: Constant_Pool, ap: AttributesParent): SignatureAttribute = {
         ap match {
             case AttributesParents.Field_info     ⇒ SignatureParser.parseFieldTypeSignature(cuii)
             case AttributesParents.ClassFile      ⇒ SignatureParser.parseClassSignature(cuii)

@@ -43,15 +43,19 @@ import scala.xml.TopScope
  *
  * @author Michael Eichberg
  */
-case class Method_Info(val accessFlags: Int,
-                       val name: String,
-                       val descriptor: MethodDescriptor,
-                       val attributes: Attributes) {
+case class Method(val accessFlags: Int,
+                  val name: String,
+                  val descriptor: MethodDescriptor,
+                  val attributes: Attributes)
+        extends CommonAttributes {
 
-    def code: Option[Code_attribute] = {
+    /**
+     * This method's implementation (if it is not abstract).
+     */
+    def code: Option[CodeAttribute] = {
         attributes find {
-            case ca: Code_attribute ⇒ return Some(ca)
-            case _                  ⇒ false
+            case ca: CodeAttribute ⇒ return Some(ca)
+            case _                 ⇒ false
         }
         None
     }
@@ -111,12 +115,12 @@ case class Method_Info(val accessFlags: Int,
 
         for (attribute ← attributes) {
             facts = (attribute match {
-                case aa: Annotations_Attribute           ⇒ aa.toProlog(factory, key)
-                case paa: ParameterAnnotations_attribute ⇒ paa.toProlog(factory, key)
-                case ea: Exceptions_attribute            ⇒ ea.toProlog(factory, key)
-                case ada: AnnotationDefault_attribute    ⇒ ada.toProlog(factory, key)
-                case ca: Code_attribute                  ⇒ ca.toProlog(factory, key)
-                case _                                   ⇒ Nil
+                case aa: AnnotationsAttribute           ⇒ aa.toProlog(factory, key)
+                case paa: ParameterAnnotationsAttribute ⇒ paa.toProlog(factory, key)
+                case ea: ExceptionsAttribute            ⇒ ea.toProlog(factory, key)
+                case ada: AnnotationDefaultAttribute    ⇒ ada.toProlog(factory, key)
+                case ca: CodeAttribute                  ⇒ ca.toProlog(factory, key)
+                case _                                  ⇒ Nil
             }) ::: facts
         }
 

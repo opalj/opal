@@ -34,7 +34,7 @@ package de.tud.cs.st.bat.resolved
 
 import scala.util.parsing.combinator._
 
-// TODO consider making the signature parser abstract and use the factory pattern as in the case of all other major structures
+// TODO [Improvement] consider making the signature parser abstract and use the factory pattern as in the case of all other major structures
 
 /**
  * A parser for Java class file signatures.
@@ -43,7 +43,7 @@ import scala.util.parsing.combinator._
  */
 object SignatureParser extends RegexParsers {
 
-    // TODO evaluate if the (fieldType/...)Signature parsers are created over and over again... and if we can do something about the performance....
+    // TODO [Performance] Evaluate if the (fieldType/...)Signature parsers are created over and over again and if so, if we can do something about it.
 
     def parseClassSignature(signature: String): ClassSignature = {
         parseAll(_ClassSignature, signature).get
@@ -150,7 +150,7 @@ object SignatureParser extends RegexParsers {
         '^' ~> (_ClassTypeSignature | _TypeVariableSignature)
 
     protected def _BaseType: Parser[BaseType] =
-        // TODO [Performance & Learning] implement a special purpose parser that switches on the character
+        // TODO [Performance] Implement a special purpose parser that switches on the read character.
         'B' ^^ (_ ⇒ ByteType) |
             'C' ^^ (_ ⇒ CharType) |
             'D' ^^ (_ ⇒ DoubleType) |

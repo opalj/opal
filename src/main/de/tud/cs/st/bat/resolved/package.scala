@@ -46,7 +46,7 @@ package object resolved {
 
     type InnerClassesEntries = IndexedSeq[InnerClassesEntry]
 
-    type Methods = IndexedSeq[Method_Info]
+    type Methods = IndexedSeq[Method]
     type ExceptionTable = IndexedSeq[ExceptionTableEntry]
     type LineNumberTable = IndexedSeq[LineNumberTableEntry]
     type LocalVariableTypeTable = IndexedSeq[LocalVariableTypeTableEntry]
@@ -56,6 +56,6 @@ package object resolved {
     type VerificationTypeInfoLocals = IndexedSeq[VerificationTypeInfo]
     type VerificationTypeInfoStack = IndexedSeq[VerificationTypeInfo]
 
-    type Fields = IndexedSeq[Field_Info]
+    type Fields = IndexedSeq[Field]
 
 }

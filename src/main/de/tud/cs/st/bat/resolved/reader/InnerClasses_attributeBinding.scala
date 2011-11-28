@@ -46,7 +46,7 @@ trait InnerClasses_attributeBinding
 		with AttributeBinding	
 {
 	
-	type InnerClasses_attribute = de.tud.cs.st.bat.resolved.InnerClasses_attribute
+	type InnerClasses_attribute = de.tud.cs.st.bat.resolved.InnerClassesAttribute
 	type InnerClassesEntry = de.tud.cs.st.bat.resolved.InnerClassesEntry
 	val InnerClassesEntryManifest : ClassManifest[InnerClassesEntry] = implicitly
 	

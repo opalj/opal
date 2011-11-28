@@ -34,18 +34,13 @@ package de.tud.cs.st.bat
 package resolved
 
 /**
- * Debug information.
+ * Represents constant value attributes.
+ *
+ * Constant values are optional attributes of field declarations.
  *
  * @author Michael Eichberg
  */
-case class SourceDebugExtension_attribute(val debug_extension: String)
-        extends Attribute {
+trait ConstantValueAttribute extends Attribute {
 
-    def toXML =
-        <source_debug_extension>
-			{ debug_extension }
-		</source_debug_extension>
-
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] =
-        Nil // TODO	implement to Prolog conversion
+    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F]
 }

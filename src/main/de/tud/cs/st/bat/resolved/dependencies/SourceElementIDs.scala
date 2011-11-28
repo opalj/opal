@@ -45,19 +45,19 @@ trait SourceElementIDs {
 
     def sourceElementID(t: Type): Int
 
-    final def sourceElementID(classFile: ClassFile, field: Field_Info): Int =
+    final def sourceElementID(classFile: ClassFile, field: Field): Int =
         sourceElementID(classFile.thisClass, field.name)
 
-    final def sourceElementID(definingObjectType: ObjectType, field: Field_Info): Int =
+    final def sourceElementID(definingObjectType: ObjectType, field: Field): Int =
         sourceElementID(definingObjectType, field.name)
 
     def sourceElementID(definingObjectType: ObjectType, fieldName: String): Int
 
-    final def sourceElementID(classFile: ClassFile, method: Method_Info): Int =
+    final def sourceElementID(classFile: ClassFile, method: Method): Int =
         sourceElementID(classFile.thisClass, method)
 
-    final def sourceElementID(definingObjectType: ObjectType, method: Method_Info): Int = {
-        val Method_Info(_, methodName, methodDescriptor, _) = method
+    final def sourceElementID(definingObjectType: ObjectType, method: Method): Int = {
+        val Method(_, methodName, methodDescriptor, _) = method
         sourceElementID(definingObjectType, methodName, methodDescriptor)
     }
 

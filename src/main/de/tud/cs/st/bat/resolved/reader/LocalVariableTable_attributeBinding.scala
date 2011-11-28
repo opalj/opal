@@ -35,36 +35,35 @@ package reader
 
 import de.tud.cs.st.bat.reader.LocalVariableTable_attributeReader
 
-
 /**
- * 
+ *
  *
  * @author Michael Eichberg
  */
-trait LocalVariableTable_attributeBinding 
-	extends LocalVariableTable_attributeReader
-		with Constant_PoolResolver
-		with AttributeBinding		
-{
-	
-	
-	type LocalVariableTable_attribute = de.tud.cs.st.bat.resolved.LocalVariableTable_attribute		
-	type LocalVariableTableEntry = de.tud.cs.st.bat.resolved.LocalVariableTableEntry
-	val LocalVariableTableEntryManifest : ClassManifest[LocalVariableTableEntry] = implicitly
+trait LocalVariableTable_attributeBinding
+        extends LocalVariableTable_attributeReader
+        with Constant_PoolResolver
+        with AttributeBinding {
 
+    type LocalVariableTable_attribute = de.tud.cs.st.bat.resolved.LocalVariableTableAttribute
+    type LocalVariableTableEntry = de.tud.cs.st.bat.resolved.LocalVariableTableEntry
+    val LocalVariableTableEntryManifest: ClassManifest[LocalVariableTableEntry] = implicitly
 
-	def LocalVariableTableEntry (
-		start_pc : Int, length : Int,	name_index : Int,	descriptor_index : Int,	index : Int
-	)( implicit constant_pool : Constant_Pool) : LocalVariableTableEntry = {
-		val fieldDescriptor : FieldDescriptor = descriptor_index
-		new LocalVariableTableEntry (start_pc, length, name_index, fieldDescriptor.fieldType , index) 
-	}
+    def LocalVariableTableEntry(start_pc: Int,
+                                length: Int,
+                                name_index: Constant_Pool_Index,
+                                descriptor_index: Constant_Pool_Index,
+                                index: Int)(
+                                    implicit constant_pool: Constant_Pool): LocalVariableTableEntry = {
+        val fieldDescriptor: FieldDescriptor = descriptor_index
+        new LocalVariableTableEntry(start_pc, length, name_index, fieldDescriptor.fieldType, index)
+    }
 
-
-	def LocalVariableTable_attribute (	
-		attribute_name_index : Int, attribute_length : Int, local_variable_table : LocalVariableTable
-	)( implicit constant_pool : Constant_Pool) : LocalVariableTable_attribute = 
-		new LocalVariableTable_attribute (local_variable_table)
+    def LocalVariableTable_attribute(attribute_name_index: Constant_Pool_Index,
+                                     attribute_length: Int,
+                                     local_variable_table: LocalVariableTable)(
+                                         implicit constant_pool: Constant_Pool): LocalVariableTable_attribute =
+        new LocalVariableTable_attribute(local_variable_table)
 
 }
 

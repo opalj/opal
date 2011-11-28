@@ -34,16 +34,25 @@ package de.tud.cs.st.bat
 package resolved
 
 /**
- * Specifies the default value of an annotation's element.
+ * A method's declared exceptions.
  *
  * @author Michael Eichberg
  */
-case class AnnotationDefault_attribute(val elementValue: ElementValue)
+case class ExceptionsAttribute(val exceptionTable: Seq[ObjectType])
         extends Attribute {
 
-    def toXML = <annotation_default>{ elementValue.toXML }</annotation_default>
+    def toXML =
+        <exceptions>
+			{ for (exception ← exceptionTable) yield <exception type={ exception.toJava }/> }
+		</exceptions>
 
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] =
-        factory.Fact("annotation_default", declaringEntityKey, elementValue.toProlog(factory)) :: Nil
+    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] = {
+        import factory._
+        Fact(
+            "method_exceptions",
+            declaringEntityKey,
+            Terms(exceptionTable, (_: ObjectType).toProlog(factory))
+        ) :: Nil
 
+    }
 }

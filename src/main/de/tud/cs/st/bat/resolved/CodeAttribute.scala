@@ -37,13 +37,20 @@ package de.tud.cs.st.bat.resolved
  *
  * @author Michael Eichberg
  */
-case class Code_attribute (
-	val maxStack : Int,
-	val maxLocals : Int,
-	val code : Array[Instruction],
-	val exceptionTable : ExceptionTable,
-	val attributes : Attributes
-) extends Attribute {
+case class CodeAttribute(val maxStack: Int,
+                          val maxLocals: Int,
+                          val code: Array[Instruction],
+                          val exceptionTable: ExceptionTable,
+                          val attributes: Attributes) 
+                          extends Attribute {
+    
+    def stackMapTable : Option[StackMapFrames] = {
+        attributes find {
+            case StackMapTableAttribute(smf) => return Some(smf)
+            case _ => false
+        }
+        None
+    }
 
 	def toXML =
 		<code
@@ -67,10 +74,7 @@ case class Code_attribute (
 		</code>
 
 
-	def toProlog[F,T,A <: T](
-		factory : PrologTermFactory[F,T,A],
-		declaringEntityKey : A
-	) : List[F] = {
+	def toProlog[F,T,A <: T](factory : PrologTermFactory[F,T,A], declaringEntityKey : A) : List[F] = {
 
 		import factory._
 
@@ -117,10 +121,12 @@ case class Code_attribute (
 		// 3. get the prolog representation of all relevant attributes
 		for (attribute <- attributes) {
 			 attribute match {
-				case lnta : LineNumberTable_attribute =>
+				case lnta : LineNumberTableAttribute =>
 				 	facts = lnta.toProlog(factory,declaringEntityKey,pc_to_seqNo) :: facts
-				case lvta : LocalVariableTable_attribute =>
+				case lvta : LocalVariableTableAttribute =>
 				 	facts = lvta.toProlog(factory,declaringEntityKey,pc_to_seqNo) :: facts
+				case lvtta : LocalVariableTypeTableAttribute =>
+				 	facts = lvtta.toProlog(factory,declaringEntityKey,pc_to_seqNo) :: facts
 				case _ => Nil
 			}
 		}

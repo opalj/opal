@@ -35,59 +35,51 @@ package resolved
 
 import scala.xml.Node
 
-
 /**
  * The values of an annotation.
  *
- * <p>
- * 	From the specification:
- * 	<pre>
- * element_value {
- * u1 tag;
- * union {
- * u2   const_value_index;
+ * '''From the Specification'''
+ * {{{
+ * 	element_value {
+ * 		u1 tag;
+ * 		union {
+ * 			u2   const_value_index;
  *
- * {
- * u2 type_name_index;
- * u2 const_name_index;
- * } enum_const_value;
+ * 			{
+ * 				u2 type_name_index;
+ * 				u2 const_name_index;
+ * 			} enum_const_value;
  *
- * u2 class_info_index;
+ * 			u2 class_info_index;
  *
- * annotation annotation_value;
+ * 			annotation annotation_value;
  *
- * {
- * u2    num_values;
- * element_value values[num_values];
- * } array_value;
- * } value;
- * }
- * 	</pre>
- * </p>
+ * 			{
+ * 				u2    num_values;
+ * 				element_value values[num_values];
+ * 			} array_value;
+ * 		} value;
+ * 	}
+ * }}}
  *
  * @author Michael Eichberg
  */
-sealed trait ElementValue {
-
-    def toXML: Node
-
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T
-
-}
+sealed trait ElementValue extends AnnotationDefaultAttribute
 
 case class ByteValue(val value: Byte) extends ElementValue {
-    
-    def toXML = <byte value={ value.toString }/>
 
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T =
+    def valueToXML = <byte value={ value.toString }/>
+
+    def valueToProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T =
         factory.Term("byte", factory.IntegerAtom(value))
 
 }
 
 case class CharValue(val value: Char) extends ElementValue {
-    def toXML = <char value={ value.toString }/>
 
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T = {
+    def valueToXML = <char value={ value.toString }/>
+
+    def valueToProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T = {
         factory.Term(
             "char",
             factory.IntegerAtom(value)
@@ -96,9 +88,10 @@ case class CharValue(val value: Char) extends ElementValue {
 }
 
 case class DoubleValue(val value: Double) extends ElementValue {
-    def toXML = <double value={ value.toString }/>
 
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T = {
+    def valueToXML = <double value={ value.toString }/>
+
+    def valueToProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T = {
         factory.Term(
             "double",
             factory.FloatAtom(value)
@@ -107,9 +100,10 @@ case class DoubleValue(val value: Double) extends ElementValue {
 }
 
 case class FloatValue(val value: Float) extends ElementValue {
-    def toXML = <float value={ value.toString }/>
 
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T = {
+    def valueToXML = <float value={ value.toString }/>
+
+    def valueToProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T = {
         factory.Term(
             "float",
             factory.FloatAtom(value)
@@ -118,9 +112,10 @@ case class FloatValue(val value: Float) extends ElementValue {
 }
 
 case class IntValue(val value: Int) extends ElementValue {
-    def toXML = <int value={ value.toString }/>
 
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T = {
+    def valueToXML = <int value={ value.toString }/>
+
+    def valueToProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T = {
         factory.Term(
             "int",
             factory.IntegerAtom(value)
@@ -129,9 +124,10 @@ case class IntValue(val value: Int) extends ElementValue {
 }
 
 case class LongValue(val value: Long) extends ElementValue {
-    def toXML = <long value={ value.toString }/>
 
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T = {
+    def valueToXML = <long value={ value.toString }/>
+
+    def valueToProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T = {
         factory.Term(
             "long",
             factory.IntegerAtom(value)
@@ -140,9 +136,10 @@ case class LongValue(val value: Long) extends ElementValue {
 }
 
 case class ShortValue(val value: Short) extends ElementValue {
-    def toXML = <short value={ value.toString }/>
 
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T = {
+    def valueToXML = <short value={ value.toString }/>
+
+    def valueToProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T = {
         factory.Term(
             "short",
             factory.IntegerAtom(value)
@@ -151,9 +148,10 @@ case class ShortValue(val value: Short) extends ElementValue {
 }
 
 case class BooleanValue(val value: Boolean) extends ElementValue {
-    def toXML = <boolean value={ value.toString }/>
 
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T = {
+    def valueToXML = <boolean value={ value.toString }/>
+
+    def valueToProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T = {
         factory.Term(
             "boolean",
             if (value) factory.YesAtom else factory.NoAtom
@@ -162,9 +160,10 @@ case class BooleanValue(val value: Boolean) extends ElementValue {
 }
 
 case class StringValue(val value: String) extends ElementValue {
-    def toXML = <string>{ value.toString }</string>
 
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T = {
+    def valueToXML = <string>{ value.toString }</string>
+
+    def valueToProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T = {
         factory.Term(
             "string",
             factory.TextAtom(value)
@@ -173,20 +172,19 @@ case class StringValue(val value: String) extends ElementValue {
 }
 
 case class ClassValue(val value: ReturnType) extends ElementValue {
-    def toXML = <class type={ value.toJava }/>
 
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T = {
-        factory.Term(
-            "class",
-            value.toProlog(factory) // TODO doesn't this lead to awkward class(class(...,...)) structures?
-        )
-    }
+    def valueToXML = <class type={ value.toJava }/>
+
+    def valueToProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T =
+        factory.Term("class", value.toProlog(factory))
+
 }
 
 case class EnumValue(val enumType: ObjectType, val constName: String) extends ElementValue {
-    def toXML = <enum type={ enumType.className }>{ constName }</enum>
 
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T = {
+    def valueToXML = <enum type={ enumType.className }>{ constName }</enum>
+
+    def valueToProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T = {
         factory.Term(
             "enum",
             enumType.toProlog(factory),
@@ -196,20 +194,22 @@ case class EnumValue(val enumType: ObjectType, val constName: String) extends El
 }
 
 case class ArrayValue(val values: IndexedSeq[ElementValue]) extends ElementValue {
-    def toXML = <array>{ for (value ← values) yield value.toXML }</array>
 
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T = {
+    def valueToXML = <array>{ for (value ← values) yield value.toXML }</array>
+
+    def valueToProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T = {
         factory.Term(
             "array",
-            factory.Terms(values, (_: ElementValue).toProlog(factory))
+            factory.Terms(values, (_: ElementValue).valueToProlog(factory))
         )
     }
 }
 
 case class AnnotationValue(val annotation: Annotation) extends ElementValue {
-    def toXML = annotation.toXML
 
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T = {
+    def valueToXML = annotation.toXML
+
+    def valueToProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T = {
         annotation.toProlog(factory)
     }
 }

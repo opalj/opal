@@ -30,32 +30,23 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved.reader
-
-import de.tud.cs.st.bat.reader.SourceFile_attributeReader
-
+package de.tud.cs.st.bat
+package resolved
 
 /**
- * 
+ * Specifies the default value of an annotation's element.
  *
  * @author Michael Eichberg
  */
-trait SourceFile_attributeBinding 
-	extends SourceFile_attributeReader
-		with Constant_PoolResolver
-		with AttributeBinding	
-{
-	
-	
-	type SourceFile_attribute = de.tud.cs.st.bat.resolved.SourceFileAttribute	
+trait AnnotationDefaultAttribute extends Attribute {
 
+    def valueToProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T
 
-	def SourceFile_attribute(
-		attribute_name_index : Int, sourceFile_index : Int
-	)( implicit constant_pool : Constant_Pool) : SourceFile_attribute = {
-		new SourceFile_attribute(sourceFile_index)
-	}
+    def valueToXML: scala.xml.Node
+
+    final def toXML = <annotation_default>{ valueToXML }</annotation_default>
+
+    final def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] =
+        factory.Fact("annotation_default", declaringEntityKey, valueToProlog(factory)) :: Nil
 
 }
-
-

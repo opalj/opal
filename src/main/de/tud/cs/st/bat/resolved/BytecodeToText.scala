@@ -30,13 +30,14 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved
+package de.tud.cs.st.bat
+package resolved
 
 import java.io.FileInputStream
 
 import de.tud.cs.st.util.UTF8Println
 
-import de.tud.cs.st.bat.resolved.reader.Java6Framework
+import reader.Java6Framework
 
 /**
  * Prints out the object graph using the compiler generated "toString" method.

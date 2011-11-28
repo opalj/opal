@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -33,21 +33,17 @@
 package de.tud.cs.st.bat
 package resolved
 
-import de.tud.cs.st.prolog.{ GroundTerm, Atom, Fact }
-
 /**
- * A class, method, or field annotation.
+ * Debug information.
  *
  * @author Michael Eichberg
  */
-case class RuntimeInvisibleAnnotations_attribute(val annotations: Annotations)
-        extends Annotations_Attribute {
-
-    final def isRuntimeVisible: Boolean = false
+case class SourceDebugExtensionAttribute(val debug_extension: String)
+        extends Attribute {
 
     def toXML =
-        <runtime_invisible_annotations>
-			{ annotationsToXML }
-		</runtime_invisible_annotations>
+        <source_debug_extension>
+			{ debug_extension }
+		</source_debug_extension>
 
 }

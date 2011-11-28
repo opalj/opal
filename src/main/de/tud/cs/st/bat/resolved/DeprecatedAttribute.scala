@@ -32,42 +32,14 @@
 */
 package de.tud.cs.st.bat.resolved
 
-import reader.Java6Framework
-
 /**
- * Demonstrates how to implement a very simple checker.
+ * The deprecated attribute.
  *
  * @author Michael Eichberg
  */
-object EqualsHashcodeChecker
-        extends App
-        with de.tud.cs.st.util.perf.ToCommandLinePerformanceEvaluation {
+case object DeprecatedAttribute extends Attribute {
 
-    val classFiles: Seq[ClassFile] = Java6Framework.ClassFiles("test/classfiles/BAT2XML - target 1.7.zip")
-
-    var classFileCount = 0
-    var problemCount = 0
-    time("Equals-Hashcode checker") {
-        for (classFile ← classFiles) {
-            classFileCount += 1
-
-            var definesEqualsMethod = false
-            var definesHashCodeMethod = false
-            for (method ← classFile.methods) method match {
-                case Method(_, "equals", MethodDescriptor(Seq(ObjectType("java/lang/Object")), BooleanType), _) ⇒ definesEqualsMethod = true
-                case Method(_, "hashCode", MethodDescriptor(Seq(), IntegerType), _) ⇒ definesHashCodeMethod = true
-                case _ ⇒
-            }
-
-            if (definesEqualsMethod != definesHashCodeMethod) {
-                problemCount += 1
-                println("the class: " +
-                    classFile.thisClass.className +
-                    " does not satisfy java.lang.Object's equals-hashCode contract.")
-            }
-        }
-    }
-    println("Number of class files: " + classFileCount )
-    println("Number of class files which violate the contract: " + problemCount)
+    def toXML = <deprecated/>
 
 }
+

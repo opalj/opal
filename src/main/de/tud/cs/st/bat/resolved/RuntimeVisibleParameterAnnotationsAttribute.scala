@@ -30,25 +30,22 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved
-
-import de.tud.cs.st.prolog.{ GroundTerm, Atom, Fact }
+package de.tud.cs.st.bat
+package resolved
 
 /**
- * Represents the unknown attribute.
+ * Parameter annotations.
  *
  * @author Michael Eichberg
  */
-case class Unknown_attribute(val attribute_name: String, val info: Array[Byte])
-        extends Attribute {
+case class RuntimeVisibleParameterAnnotationsAttribute(val parameterAnnotations: ParameterAnnotations)
+        extends ParameterAnnotationsAttribute {
+
+    final def isRuntimeVisible: Boolean = true
 
     def toXML =
-        <unknown name={ attribute_name }>
-			{ scala.xml.Text(info.mkString(" ")) }
-		</unknown>
+        <runtime_visible_parameter_annotations>
+			{ parameterAnnotationsToXML }
+		</runtime_visible_parameter_annotations>
 
-    /**
-     * @return Nil; unknown attributes are not represented.
-     */
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] = Nil
 }
