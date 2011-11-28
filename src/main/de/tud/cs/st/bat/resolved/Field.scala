@@ -45,7 +45,7 @@ import scala.xml.TopScope
  */
 case class Field(val accessFlags: Int,
                  val name: String,
-                 val descriptor: FieldDescriptor,
+                 val fieldType: FieldType,
                  val attributes: Attributes)
         extends CommonAttributes {
 
@@ -68,7 +68,7 @@ case class Field(val accessFlags: Int,
     def toXML =
         <field
 			name={ name }
-			type={ descriptor.fieldType.toJava } >
+			type={ fieldType.toJava } >
 			<flags>{ AccessFlagsIterator(accessFlags, AccessFlagsContexts.FIELD) map(_.toXML) }</flags>
 			<attributes>{ for (attribute ← attributes) yield attribute.toXML }</attributes>
 		</field>
@@ -94,7 +94,7 @@ case class Field(val accessFlags: Int,
             classFileKeyAtom,
             key,
             TextAtom(name),
-            descriptor.toProlog(factory),
+            fieldType.toProlog(factory),
             VisibilityAtom(accessFlags, AccessFlagsContexts.FIELD),
             FinalTerm(accessFlags),
             StaticTerm(accessFlags),

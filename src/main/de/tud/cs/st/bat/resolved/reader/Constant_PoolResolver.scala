@@ -36,7 +36,6 @@ package reader
 
 import de.tud.cs.st.bat.canonical.reader.Constant_PoolBinding
 
-import de.tud.cs.st.bat.resolved.FieldDescriptor
 import de.tud.cs.st.bat.resolved.MethodDescriptor
 
 /**
@@ -48,6 +47,8 @@ import de.tud.cs.st.bat.resolved.MethodDescriptor
  */
 trait Constant_PoolResolver extends Constant_PoolBinding {
 
+    // TODO [Improvement] Consider making the Constant_PoolResolver less implicit; e.g., by defining "asConstant_NameAndType_Info" on Constant_Pool_Entry
+    
     // ______________________________________________________________________________________________
     //
     // VARIOUS HELPER METHODS THAT ARE - IN GENERAL - IMPLICITLY USED TO RESOLVE THE CONSTANT POOL.
@@ -73,7 +74,7 @@ trait Constant_PoolResolver extends Constant_PoolBinding {
             case cnti: CONSTANT_NameAndType_info ⇒ (
                 cnti.name_index, // => implicitly converted
                 {
-                    CONSTANT_Utf8_info_IndexToFieldDescriptor(cnti.descriptor_index).fieldType
+                    CONSTANT_Utf8_info_IndexToFieldType(cnti.descriptor_index) 
                 }
             )
         }
@@ -106,9 +107,6 @@ trait Constant_PoolResolver extends Constant_PoolBinding {
 
     implicit def CONSTANT_Utf8_info_IndexToString(cuii: Constant_Pool_Index)(implicit cp: Constant_Pool): String =
         cp(cuii) match { case cui: CONSTANT_Utf8_info ⇒ cui.value }
-
-    implicit def CONSTANT_Utf8_info_IndexToFieldDescriptor(cuii: Constant_Pool_Index)(implicit cp: Constant_Pool): FieldDescriptor =
-        cp(cuii) match { case cui: CONSTANT_Utf8_info ⇒ FieldDescriptor(cui.value) }
 
     implicit def CONSTANT_Utf8_info_IndexToMethodDescriptor(cuii: Constant_Pool_Index)(implicit cp: Constant_Pool): MethodDescriptor =
         cp(cuii) match { case cui: CONSTANT_Utf8_info ⇒ MethodDescriptor(cui.value) }
@@ -143,7 +141,8 @@ trait Constant_PoolResolver extends Constant_PoolBinding {
             }
         )
 
-    implicit def FieldDescriptorToFieldType(fd: FieldDescriptor): FieldType = fd.fieldType
+    implicit def CONSTANT_Utf8_info_IndexToFieldType(cuii: Constant_Pool_Index)(implicit cp: Constant_Pool): FieldType =
+        cp(cuii) match { case CONSTANT_Utf8_info(value) ⇒ FieldType(value) }
 
     implicit def CONSTANT_Utf8_info_IndexToSignatureAttribute(cuii: Constant_Pool_Index)(implicit cp: Constant_Pool, ap: AttributesParent): SignatureAttribute = {
         ap match {

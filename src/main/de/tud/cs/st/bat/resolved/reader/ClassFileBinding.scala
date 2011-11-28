@@ -62,11 +62,11 @@ trait ClassFileBinding
         implicit constant_pool: Constant_Pool): Interface = interface_index
 
     def Field_Info(access_flags: Int,
-                   name_index: Int,
-                   descriptor_index: Int,
+                   name_index: Constant_Pool_Index,
+                   descriptor_index: Constant_Pool_Index,
                    attributes: Attributes)(
                        implicit constant_pool: Constant_Pool): Field_Info = {
-        new Field_Info(access_flags, name_index, descriptor_index, attributes)
+        new Field(access_flags, name_index, CONSTANT_Utf8_info_IndexToFieldType(descriptor_index), attributes)
     }
 
     def Method_Info(accessFlags: Int,
@@ -74,7 +74,7 @@ trait ClassFileBinding
                     descriptor_index: Int,
                     attributes: Attributes)(
                         implicit constant_pool: Constant_Pool): Method_Info = {
-        new Method_Info(accessFlags, name_index, descriptor_index, attributes)
+        new Method(accessFlags, name_index, descriptor_index, attributes)
     }
 
     def ClassFile(minor_version: Int, major_version: Int,
