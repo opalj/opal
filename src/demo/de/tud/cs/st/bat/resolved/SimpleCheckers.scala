@@ -62,13 +62,11 @@ object SimpleCheckers
 
             if (definesEqualsMethod != definesHashCodeMethod) {
                 problemCount += 1
-                println("the class: " +
-                    classFile.thisClass.className +
-                    " does not satisfy java.lang.Object's equals-hashCode contract.")
+                println("the class: " + classFile.thisClass.className + " does not satisfy java.lang.Object's equals-hashCode contract.")
             }
         }
 
-        aggregateTimes('CovEqChecker){
+        aggregateTimes('CovEqChecker) {
             var definesEqualsMethod = false
             var definesCovariantEqualsMethod = false
             for (method ← classFile.methods) method match {
@@ -78,14 +76,12 @@ object SimpleCheckers
             }
             if (definesCovariantEqualsMethod && !definesEqualsMethod) {
                 problemCount += 1
-                println("the class: " +
-                    classFile.thisClass.className +
-                    " defines a covariant equals method.")
+                println("the class: " + classFile.thisClass.className + " defines a covariant equals method.")
             }
         }
     }
-    printAggregatedTimes('EqHcChecker,"Equals-HashCode Checker")
-    printAggregatedTimes('CovEqChecker,"Covariant Equals Checker")
+    printAggregatedTimes('EqHcChecker, "Equals-HashCode Checker")
+    printAggregatedTimes('CovEqChecker, "Covariant Equals Checker")
     println("Number of class files: " + classFileCount)
     println("Number of class files which violate the contract: " + problemCount)
 
