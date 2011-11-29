@@ -39,7 +39,7 @@ import reader.Java6Framework
  *
  * @author Michael Eichberg
  */
-object EqualsHashcodeChecker
+object SimpleCheckers
         extends App
         with de.tud.cs.st.util.perf.ToCommandLinePerformanceEvaluation {
 
@@ -47,10 +47,11 @@ object EqualsHashcodeChecker
 
     var classFileCount = 0
     var problemCount = 0
-    time("Equals-Hashcode checker") {
-        for (classFile ← classFiles) {
-            classFileCount += 1
 
+    for (classFile ← classFiles) {
+        classFileCount += 1
+
+        aggregateTimes('EqHcChecker) {
             var definesEqualsMethod = false
             var definesHashCodeMethod = false
             for (method ← classFile.methods) method match {
@@ -66,8 +67,26 @@ object EqualsHashcodeChecker
                     " does not satisfy java.lang.Object's equals-hashCode contract.")
             }
         }
+
+        aggregateTimes('CovEqChecker){
+            var definesEqualsMethod = false
+            var definesCovariantEqualsMethod = false
+            for (method ← classFile.methods) method match {
+                case Method(_, "equals", MethodDescriptor(Seq(ObjectType("java/lang/Object")), BooleanType), _) ⇒ definesEqualsMethod = true
+                case Method(_, "equals", MethodDescriptor(Seq(_), BooleanType), _) ⇒ definesCovariantEqualsMethod = true
+                case _ ⇒
+            }
+            if (definesCovariantEqualsMethod && !definesEqualsMethod) {
+                problemCount += 1
+                println("the class: " +
+                    classFile.thisClass.className +
+                    " defines a covariant equals method.")
+            }
+        }
     }
-    println("Number of class files: " + classFileCount )
+    printAggregatedTimes('EqHcChecker,"Equals-HashCode Checker")
+    printAggregatedTimes('CovEqChecker,"Covariant Equals Checker")
+    println("Number of class files: " + classFileCount)
     println("Number of class files which violate the contract: " + problemCount)
 
 }
