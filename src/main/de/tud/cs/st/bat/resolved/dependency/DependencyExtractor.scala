@@ -55,10 +55,10 @@ class DependencyExtractor(val builder: DependencyBuilder) extends InstructionDep
         val ClassFile(_, _, _, thisClass, superClass, interfaces, fields, methods, attributes) = clazz
 
         // process super class
-        addDep(thisClassID, getID(superClass), EXTENDS)
+        addDependency(thisClassID, getID(superClass), EXTENDS)
 
         // process interfaces
-        interfaces foreach { i ⇒ addDep(thisClassID, getID(i), IMPLEMENTS) }
+        interfaces foreach { i ⇒ addDependency(thisClassID, getID(i), IMPLEMENTS) }
 
         //process attributes
         attributes foreach {
@@ -67,7 +67,7 @@ class DependencyExtractor(val builder: DependencyBuilder) extends InstructionDep
                     annotations foreach { process(_)(thisClassID) }
                 case ema: EnclosingMethodAttribute ⇒ {
                     val EnclosingMethodAttribute(enclosingClazz, enclosingMethodName, enclosingMethodDescriptor) = ema
-                    addDep(
+                    addDependency(
                         thisClassID,
                         {
                             if (isEnclosedByMethod(ema))
@@ -81,7 +81,7 @@ class DependencyExtractor(val builder: DependencyBuilder) extends InstructionDep
                     for (
                         InnerClassesEntry(innerClassType, outerClassType, _, _) ← innerClasses if outerClassType != null if outerClassType == thisClass
                     ) {
-                        addDep(getID(innerClassType), thisClassID, IS_INNER_CLASS_OF)
+                        addDependency(getID(innerClassType), thisClassID, IS_INNER_CLASS_OF)
                     }
                 case sa: Signature ⇒
                 //TODO: impl.
@@ -100,8 +100,8 @@ class DependencyExtractor(val builder: DependencyBuilder) extends InstructionDep
         val fieldID = getID(thisClass, field)
         val Field(accessFlags, _, fieldType, attributes) = field
 
-        addDep(fieldID, thisClassID, if (ACC_STATIC ∈ accessFlags) IS_CLASS_MEMBER_OF else IS_INSTANCE_MEMBER_OF)
-        addDep(fieldID, getID(fieldType), IS_OF_TYPE)
+        addDependency(fieldID, thisClassID, if (ACC_STATIC ∈ accessFlags) IS_CLASS_MEMBER_OF else IS_INSTANCE_MEMBER_OF)
+        addDependency(fieldID, getID(fieldType), IS_OF_TYPE)
 
         //process attributes
         attributes foreach {
@@ -109,7 +109,7 @@ class DependencyExtractor(val builder: DependencyBuilder) extends InstructionDep
                 case AnnotationsAttribute(_, annotations) ⇒
                     annotations foreach { process(_)(fieldID) }
                 case cv: ConstantValue[_] ⇒
-                    addDep(fieldID, getID(cv.valueType), USES_CONSTANT_VALUE_OF_TYPE)
+                    addDependency(fieldID, getID(cv.valueType), USES_CONSTANT_VALUE_OF_TYPE)
                 case sa: Signature ⇒
                 //TODO: impl.
                 case _             ⇒
@@ -121,9 +121,9 @@ class DependencyExtractor(val builder: DependencyBuilder) extends InstructionDep
         implicit val methodID = getID(thisClass, method)
         val Method(accessFlags, _, MethodDescriptor(parameterTypes, returnType), attributes) = method
 
-        addDep(methodID, thisClassID, if (ACC_STATIC ∈ accessFlags) IS_CLASS_MEMBER_OF else IS_INSTANCE_MEMBER_OF)
-        addDep(methodID, getID(returnType), RETURNS)
-        parameterTypes foreach { pt ⇒ addDep(methodID, getID(pt), HAS_PARAMETER_OF_TYPE) }
+        addDependency(methodID, thisClassID, if (ACC_STATIC ∈ accessFlags) IS_CLASS_MEMBER_OF else IS_INSTANCE_MEMBER_OF)
+        addDependency(methodID, getID(returnType), RETURNS)
+        parameterTypes foreach { pt ⇒ addDependency(methodID, getID(pt), HAS_PARAMETER_OF_TYPE) }
 
         //process attributes
         attributes foreach {
@@ -133,7 +133,7 @@ class DependencyExtractor(val builder: DependencyBuilder) extends InstructionDep
                 case ParameterAnnotationsAttribute(_, parameterAnnotations) ⇒
                     parameterAnnotations foreach { _ foreach { process(_)(methodID, PARAMETER_ANNOTATED_WITH) } }
                 case ExceptionsAttribute(exceptionTable) ⇒
-                    exceptionTable foreach { e ⇒ addDep(methodID, getID(e), THROWS) }
+                    exceptionTable foreach { e ⇒ addDependency(methodID, getID(e), THROWS) }
                 case elementValue: ElementValue ⇒
                     processElementValue(elementValue)(methodID)
                 case CodeAttribute(_, _, code, exceptionTable, attributes) ⇒
@@ -143,13 +143,13 @@ class DependencyExtractor(val builder: DependencyBuilder) extends InstructionDep
                     for (
                         ExceptionTableEntry(_, _, _, catchType) ← exceptionTable if !isFinallyBlock(catchType)
                     ) {
-                        addDep(methodID, getID(catchType), CATCHES)
+                        addDependency(methodID, getID(catchType), CATCHES)
                     }
                     attributes foreach {
                         _ match {
                             case LocalVariableTableAttribute(localVariableTable) ⇒
                                 for (LocalVariableTableEntry(_, _, _, fieldType, _) ← localVariableTable) {
-                                    addDep(methodID, getID(fieldType), HAS_LOCAL_VARIABLE_OF_TYPE)
+                                    addDependency(methodID, getID(fieldType), HAS_LOCAL_VARIABLE_OF_TYPE)
                                 }
                             case LocalVariableTypeTableAttribute(localVariableTypeTable) ⇒
                                 for (LocalVariableTypeTableEntry(_, _, _, signature, _) ← localVariableTypeTable) {
@@ -168,10 +168,10 @@ class DependencyExtractor(val builder: DependencyBuilder) extends InstructionDep
     private def processElementValue(elementValue: ElementValue)(implicit srcID: Int, annotationDepType: DependencyType = ANNOTATED_WITH) {
         elementValue match {
             case ClassValue(returnType) ⇒
-                addDep(srcID, getID(returnType), USES_DEFAULT_CLASS_VALUE_TYPE)
+                addDependency(srcID, getID(returnType), USES_DEFAULT_CLASS_VALUE_TYPE)
             case EnumValue(enumType, constName) ⇒
-                addDep(srcID, getID(enumType), USES_DEFAULT_ENUM_VALUE_TYPE)
-                addDep(srcID, getID(enumType, constName), USES_ENUM_VALUE)
+                addDependency(srcID, getID(enumType), USES_DEFAULT_ENUM_VALUE_TYPE)
+                addDependency(srcID, getID(enumType, constName), USES_ENUM_VALUE)
             case ArrayValue(values) ⇒
                 values foreach { processElementValue(_) }
             case AnnotationValue(annotation) ⇒
@@ -183,7 +183,7 @@ class DependencyExtractor(val builder: DependencyBuilder) extends InstructionDep
     private def process(annotation: Annotation)(implicit srcID: Int, depType: DependencyType = ANNOTATED_WITH) {
         val Annotation(annotationType, elementValuePairs) = annotation
 
-        addDep(srcID, getID(annotationType), depType)
+        addDependency(srcID, getID(annotationType), depType)
         for (ElementValuePair(_, elementValue) ← elementValuePairs) {
             processElementValue(elementValue)
         }

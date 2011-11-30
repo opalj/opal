@@ -106,7 +106,7 @@ class BasicDependencyExtractorTest extends Suite with de.tud.cs.st.util.perf.Bas
         reporter(TestStarting(ordinal, "BasicDependencyExtractorTests", None, testName))
         try {
             val dependencyBuilder: DependencyBuilder = new DependencyBuilder with DefaultIDMappingDependencyBuilder {
-                def addDep(src: Int, trgt: Int, dType: DependencyType) {
+                def addDependency(src: Int, trgt: Int, dType: DependencyType) {
                 }
             }
             val dependencyExtractor = new DependencyExtractor(dependencyBuilder)

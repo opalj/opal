@@ -105,7 +105,7 @@ class DependencyExtractorRunTimeTest extends FunSuite with de.tud.cs.st.util.per
         println("testDependencyExtraction["+zipFile+"]")
 
         val dependencyBuilder = new DependencyBuilder with DefaultIDMappingDependencyBuilder {
-            def addDep(src: Int, trgt: Int, dType: DependencyType) {}
+            def addDependency(src: Int, trgt: Int, dType: DependencyType) {}
         }
         val dependencyExtractor = new DependencyExtractor(dependencyBuilder)
 

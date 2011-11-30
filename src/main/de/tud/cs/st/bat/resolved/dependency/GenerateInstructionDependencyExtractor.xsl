@@ -125,40 +125,40 @@ trait InstructionDependencyExtractor extends CodeBinding {
 	<xsl:choose>
 		<xsl:when test="$fet eq 'ubyte' or $fet eq 'atype' or $fet eq 'byte' or $fet eq 'ushort' or $fet eq 'short' or $fet eq 'int' or $fet eq 'branchoffset' or $fet eq 'branchoffset_wide'"></xsl:when>
 		<xsl:when test="$fet eq 'ushort_cp_index→referenceType'"><!-- used by anewarray, checkcast, instanceof, multianewarray -->
-                    addDep(methodId, getID(<xsl:value-of select="$id"/>), <xsl:choose>
+                    addDependency(methodId, getID(<xsl:value-of select="$id"/>), <xsl:choose>
 						<xsl:when test="../../../@name eq 'anewarray'">CREATES_ARRAY_OF_TYPE</xsl:when>
 						<xsl:when test="../../../@name eq 'checkcast'">CASTS_INTO</xsl:when>
 						<xsl:when test="../../../@name eq 'instanceof'">CHECKS_INSTANCEOF</xsl:when>
 						<xsl:when test="../../../@name eq 'multianewarray'">CREATES_ARRAY_OF_TYPE</xsl:when>
 						<xsl:otherwise>USED_TYPE</xsl:otherwise></xsl:choose>)</xsl:when>
 		<xsl:when test="$fet eq 'ushort_cp_index→objectType'"><!-- used by new -->
-                    addDep(methodId, getID(<xsl:value-of select="$id"/>), <xsl:choose>
+                    addDependency(methodId, getID(<xsl:value-of select="$id"/>), <xsl:choose>
 						<xsl:when test="../../../@name eq 'new'">CREATES</xsl:when>
 						<xsl:otherwise>USED_TYPE</xsl:otherwise></xsl:choose>)</xsl:when>
 		<xsl:when test="$fet eq 'ubyte_cp_index→constant_value' or $fet eq 'ushort_cp_index→constant_value'"></xsl:when><!-- used by ldc, ldc_w, ldc2 -->
 		<xsl:when test="$fet eq 'ushort_cp_index→fieldref'"><!-- used by get/put field/static -->
-                    addDep(methodId, getID(declaringClass), USES_FIELD_DECLARING_TYPE)
-                    addDep(methodId, getID(declaringClass, name), <xsl:choose>
+                    addDependency(methodId, getID(declaringClass), USES_FIELD_DECLARING_TYPE)
+                    addDependency(methodId, getID(declaringClass, name), <xsl:choose>
 						<xsl:when test="starts-with(../../../@name,'get')">READS_FIELD</xsl:when>
 						<xsl:when test="starts-with(../../../@name,'put')">WRITES_FIELD</xsl:when></xsl:choose>)
-                    addDep(methodId, getID(fieldType), <xsl:choose>
+                    addDependency(methodId, getID(fieldType), <xsl:choose>
 						<xsl:when test="starts-with(../../../@name,'get')">USES_FIELD_READ_TYPE</xsl:when>
 						<xsl:when test="starts-with(../../../@name,'put')">USES_FIELD_WRITE_TYPE</xsl:when></xsl:choose>)</xsl:when>
 		<xsl:when test="$fet eq 'ushort_cp_index→call_site_specifier'"><!-- used by invokedynamic --><!--
 		 --><!--TODO: A call dependency to a method without declaring class makes not much sense
-            addDep(methodId, getID(name, methodDescriptor),METHOD_CALL)-->
-                    methodDescriptor.parameterTypes foreach { parameterType ⇒ addDep(methodId, getID(parameterType), USES_PARAMETER_TYPE) }
-                    addDep(methodId, getID(methodDescriptor.returnType), USES_RETURN_TYPE)</xsl:when>
+            addDependency(methodId, getID(name, methodDescriptor),METHOD_CALL)-->
+                    methodDescriptor.parameterTypes foreach { parameterType ⇒ addDependency(methodId, getID(parameterType), USES_PARAMETER_TYPE) }
+                    addDependency(methodId, getID(methodDescriptor.returnType), USES_RETURN_TYPE)</xsl:when>
 		<xsl:when test="$fet eq 'ushort_cp_index→methodref'"><!-- used by invokespecial, invokestatic, invokevirtual -->
-                    addDep(methodId, getID(declaringClass), USES_METHOD_DECLARING_TYPE)
-                    addDep(methodId, getID(declaringClass, name, methodDescriptor), CALLS_METHOD)
-                    methodDescriptor.parameterTypes foreach { parameterType ⇒ addDep(methodId, getID(parameterType), USES_PARAMETER_TYPE) }
-                    addDep(methodId, getID(methodDescriptor.returnType), USES_RETURN_TYPE)</xsl:when>
+                    addDependency(methodId, getID(declaringClass), USES_METHOD_DECLARING_TYPE)
+                    addDependency(methodId, getID(declaringClass, name, methodDescriptor), CALLS_METHOD)
+                    methodDescriptor.parameterTypes foreach { parameterType ⇒ addDependency(methodId, getID(parameterType), USES_PARAMETER_TYPE) }
+                    addDependency(methodId, getID(methodDescriptor.returnType), USES_RETURN_TYPE)</xsl:when>
         <xsl:when test="$fet eq 'ushort_cp_index→interface_methodref'"><!-- used by invokeinterface -->
-                    addDep(methodId, getID(declaringClass), USES_METHOD_DECLARING_TYPE)
-                    addDep(methodId, getID(declaringClass, name, methodDescriptor), CALLS_INTERFACE_METHOD)
-                    methodDescriptor.parameterTypes foreach { parameterType ⇒ addDep(methodId, getID(parameterType), USES_PARAMETER_TYPE) }
-                    addDep(methodId, getID(methodDescriptor.returnType), USES_RETURN_TYPE)</xsl:when>
+                    addDependency(methodId, getID(declaringClass), USES_METHOD_DECLARING_TYPE)
+                    addDependency(methodId, getID(declaringClass, name, methodDescriptor), CALLS_INTERFACE_METHOD)
+                    methodDescriptor.parameterTypes foreach { parameterType ⇒ addDependency(methodId, getID(parameterType), USES_PARAMETER_TYPE) }
+                    addDependency(methodId, getID(methodDescriptor.returnType), USES_RETURN_TYPE)</xsl:when>
 		<xsl:when test="name($fe) eq 'list'"></xsl:when>
 
 	<!-- If we would be able to use schema validation, then we would not require the following check. -->

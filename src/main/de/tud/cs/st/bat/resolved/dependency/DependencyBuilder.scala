@@ -52,6 +52,6 @@ trait DependencyBuilder {
     def getID(definingObjectType: ObjectType, method: Method): Int
     def getID(definingObjectType: ObjectType, methodName: String, methodDescriptor: MethodDescriptor): Int
 
-    def addDep(src: Int, trgt: Int, dType: DependencyType)
+    def addDependency(src: Int, trgt: Int, dType: DependencyType)
 
 }

@@ -665,13 +665,13 @@ class DependencyExtractorTest extends FunSuite with de.tud.cs.st.util.perf.Basic
 
         private val baseTypes = Array("byte", "short", "int", "long", "float", "double", "char", "boolean", "void")
 
-        def addDep(src: Int, trgt: Int, dType: DependencyType) {
+        def addDependency(src: Int, trgt: Int, dType: DependencyType) {
             val srcNode = nodes(src)
             val trgtNode = nodes(trgt)
             if (baseTypes.contains(srcNode) || baseTypes.contains(trgtNode)) {
                 return
             }
-            //        println("addDep: " + srcNode + "--[" + dType + "]-->" + trgtNode)
+            //        println("addDependency: " + srcNode + "--[" + dType + "]-->" + trgtNode)
             dependencies = (srcNode, trgtNode, dType) :: dependencies
         }
     }
