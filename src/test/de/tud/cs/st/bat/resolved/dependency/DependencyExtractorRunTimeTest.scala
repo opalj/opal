@@ -33,12 +33,6 @@
 package de.tud.cs.st.bat.resolved
 package dependency
 
-import java.io.File
-import java.io.FileWriter
-import java.util.zip.ZipFile
-import java.util.zip.ZipEntry
-import scala.math.Ordering
-import org.junit.Test
 import org.junit.runner.RunWith
 import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner

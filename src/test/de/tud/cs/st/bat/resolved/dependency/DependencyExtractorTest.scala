@@ -33,9 +33,6 @@
 package de.tud.cs.st.bat.resolved
 package dependency
 
-import java.io.File
-import java.util.zip.ZipFile
-import java.util.zip.ZipEntry
 import org.junit.runner.RunWith
 import scala.collection.mutable.ArrayBuffer
 import org.scalatest.FunSuite
@@ -56,29 +53,9 @@ class DependencyExtractorTest extends FunSuite with de.tud.cs.st.util.perf.Basic
     type Dependency = (String, String, DependencyType)
     type Dependencies = List[Dependency]
 
-    /*
-   * All class files stored in the zip file "Dependencies" found in the test data directory.
-   */
-    private val testClasses = {
-        var classFiles: List[de.tud.cs.st.bat.resolved.ClassFile] = Nil
-        // The location of the "test/data" directory depends on the current directory used for 
-        // running this test suite... i.e. whether the current directory is the directory where
-        // this class / this source file is stored or the BAT's root directory. 
-        var file = new File("../../../../../../../test/classfiles/Dependencies.zip")
-        if (!file.exists()) file = new File("test/classfiles/Dependencies.zip")
-        if (!file.exists() || !file.isFile || !file.canRead || !file.getName.endsWith(".zip")) throw new Exception("Required zip file 'Dependencies.zip' in 'test/classfiles' could not be found or read!")
-        val zipfile = new ZipFile(file)
-        val zipentries = (zipfile).entries
-        while (zipentries.hasMoreElements) {
-            val zipentry = zipentries.nextElement
-            if (!zipentry.isDirectory && zipentry.getName.endsWith(".class")) {
-                classFiles = Java6Framework.ClassFile(() ⇒ zipfile.getInputStream(zipentry)) :: classFiles
-            }
-        }
-        classFiles
-    }
-
     test("Dependency extraction") {
+        val testClasses = Java6Framework.ClassFiles("test/classfiles/Dependencies.zip")
+
         // create dependency builder that collects all added dependencies
         val dependencyBuilder = new CollectorDependencyBuilder
         val dependencyExtractor = new DependencyExtractor(dependencyBuilder)

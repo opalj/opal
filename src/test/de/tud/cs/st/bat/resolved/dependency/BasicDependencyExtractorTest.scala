@@ -32,6 +32,7 @@
 */
 package de.tud.cs.st.bat.resolved
 package dependency
+
 import org.scalatest.Suite
 import java.io.File
 import java.util.zip.ZipFile
