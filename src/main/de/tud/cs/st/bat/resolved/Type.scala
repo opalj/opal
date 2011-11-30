@@ -62,7 +62,7 @@ sealed trait Type {
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T
 }
 
-trait ReturnType extends Type {
+sealed trait ReturnType extends Type {
 
     override final def isReturnType = true
 }
@@ -76,9 +76,10 @@ object ReturnType {
     }
 }
 
-final case object VoidType extends ReturnType with ReturnTypeSignature {
+trait VoidType extends ReturnType with ReturnTypeSignature {
 
     // remark: the default implementation of equals and hashCode suits our needs!
+	def accept[T](sv : SignatureVisitor[T]) : T = sv.visit(this)
 
     override def isVoidType = true
 
@@ -89,8 +90,9 @@ final case object VoidType extends ReturnType with ReturnTypeSignature {
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]) = factory.StringAtom("void")
 
 }
+final case object VoidType extends VoidType
 
-trait FieldType extends ReturnType {
+sealed trait FieldType extends ReturnType {
 
     override final def isFieldType = true
 }
@@ -116,19 +118,22 @@ object FieldType {
     }
 }
 
-trait BaseType extends FieldType with TypeSignature {
+sealed trait BaseType extends FieldType with TypeSignature {
 
     override final def isBaseType = true
+
 }
 
-trait ReferenceType extends FieldType {
+sealed trait ReferenceType extends FieldType {
 
     override final def isReferenceType = true
 }
 
-final case object ByteType extends BaseType {
+trait ByteType extends BaseType {
 
     override def isByteType = true
+
+    def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     def toJava: String = "byte"
 
@@ -136,10 +141,13 @@ final case object ByteType extends BaseType {
 
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]) = factory.StringAtom("byte")
 }
+final case object ByteType extends ByteType
 
-final case object CharType extends BaseType {
+trait CharType extends BaseType {
 
     override def isCharType = true
+
+    def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     def toJava: String = "char"
 
@@ -147,10 +155,13 @@ final case object CharType extends BaseType {
 
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]) = factory.StringAtom("char")
 }
+final case object CharType extends CharType
 
-final case object DoubleType extends BaseType {
+trait DoubleType extends BaseType {
 
     override def isDoubleType = true
+
+    def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     def toJava: String = "double"
 
@@ -158,10 +169,13 @@ final case object DoubleType extends BaseType {
 
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]) = factory.StringAtom("double")
 }
+final case object DoubleType extends DoubleType
 
-final case object FloatType extends BaseType {
+trait FloatType extends BaseType {
 
     override def isFloatType = true
+
+    def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     def toJava: String = "float"
 
@@ -169,10 +183,13 @@ final case object FloatType extends BaseType {
 
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]) = factory.StringAtom("float")
 }
+final case object FloatType extends FloatType
 
-final case object ShortType extends BaseType {
+trait ShortType extends BaseType {
 
     override def isShortType = true
+
+    def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     def toJava: String = "short"
 
@@ -180,10 +197,13 @@ final case object ShortType extends BaseType {
 
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]) = factory.StringAtom("short")
 }
+final case object ShortType extends ShortType
 
-final case object IntegerType extends BaseType {
+trait IntegerType extends BaseType {
 
     override def isIntegerType = true
+
+    def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     def toJava: String = "int"
 
@@ -191,10 +211,13 @@ final case object IntegerType extends BaseType {
 
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]) = factory.StringAtom("int")
 }
+final case object IntegerType extends IntegerType
 
-final case object LongType extends BaseType {
+trait LongType extends BaseType {
 
     override def isLongType = true
+
+    def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     def toJava: String = "long"
 
@@ -202,10 +225,13 @@ final case object LongType extends BaseType {
 
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]) = factory.StringAtom("long")
 }
+final case object LongType extends LongType
 
-final case object BooleanType extends BaseType {
+trait BooleanType extends BaseType {
 
     override def isBooleanType = true
+
+    def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     def toJava: String = "boolean"
 
@@ -213,6 +239,7 @@ final case object BooleanType extends BaseType {
 
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]) = factory.StringAtom("boolean")
 }
+final case object BooleanType extends BooleanType
 
 class ObjectType private (
     val className: String)
@@ -235,7 +262,7 @@ class ObjectType private (
 
     def toJava: String = className.replace('/', '.')
 
-    override def toString = "ObjectType(className=\""+className+"\")"
+    override def toString = "ObjectType(className=\"" + className + "\")"
 
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]) =
         factory.Term("class", factory.TextAtom(packageName), factory.TextAtom(simpleName))
@@ -288,9 +315,9 @@ class ArrayType private (val componentType: FieldType) extends ReferenceType {
 
     def baseType: Type = componentType match { case at: ArrayType ⇒ at.baseType; case _ ⇒ componentType }
 
-    def toJava: String = componentType.toJava+"[]"
+    def toJava: String = componentType.toJava + "[]"
 
-    override def toString = "ArrayType("+componentType.toString+")"
+    override def toString = "ArrayType(" + componentType.toString + ")"
 
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]) =
         factory.Term("array", componentType.toProlog(factory))

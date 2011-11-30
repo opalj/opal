@@ -43,6 +43,22 @@ import org.scalatest.FunSuite
 //@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class SignaturesTest extends FunSuite {
 
+    test("traversing a minimal class type signature") {
+        var types: Set[Type] = Set()
+        val visitor = new TypesVisitor(t ⇒ { types = types + t })
+        visitor.visit(SignatureParser.parseClassSignature("<E:Ljava/Object;>Lde/Iterator<TE;>;"))
+
+        assert(types == Set(ObjectType("java/Object"), ObjectType("de/Iterator")))
+    }
+
+    test("traversing a class type signature") {
+        var types: Set[Type] = Set()
+        val visitor = new TypesVisitor(t ⇒ { types = types + t })
+        visitor.visit(SignatureParser.parseClassSignature("LDefault;Lde/Collection<Lde/Type;>;LAnotherDefault;Lde/MyObject;"))
+
+        assert(types == Set(ObjectType("Default"), ObjectType("de/Collection"), ObjectType("de/Type"), ObjectType("AnotherDefault"), ObjectType("de/MyObject")))
+    }
+
     private val classA = Java6Framework.ClassFile("test/classfiles/Signatures.zip", "signatures/A.class")
     assert(classA ne null)
 
