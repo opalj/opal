@@ -42,7 +42,6 @@ import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
 import de.tud.cs.st.bat.resolved.reader.Java6Framework
 import DependencyType._
-import dependencies.UseIDOfBaseTypeForArrayTypes
 
 /**
  * Tests whether the DependencyExtractor extracts all dependencies correctly.

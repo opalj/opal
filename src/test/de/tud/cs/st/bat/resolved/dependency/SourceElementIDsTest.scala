@@ -31,7 +31,7 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 */
 package de.tud.cs.st.bat.resolved
-package dependencies
+package dependency
 
 import org.scalatest.FunSuite
 
@@ -42,10 +42,10 @@ import org.scalatest.FunSuite
  */
 //@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class SourceElementIDsTest extends FunSuite {
-  
+
     import SourceElementIDs.{ sourceElementID ⇒ id }
     SourceElementIDs.reset
-    
+
     test("BaseType IDs") {
         val it = id(IntegerType)
         val lt = id(LongType)
@@ -76,8 +76,8 @@ class SourceElementIDsTest extends FunSuite {
     }
 
     test("ArrayType IDs are replaced by ObjectType IDs") {
-        val ids = new SourceElementIDsMap with UseIDOfBaseTypeForArrayTypes 
-        
+        val ids = new SourceElementIDsMap with UseIDOfBaseTypeForArrayTypes
+
         val ot1 = ids.sourceElementID(ObjectType("java/lang/Object"))
         val aot1 = ids.sourceElementID(FieldType("[Ljava/lang/Object;"))
         assert(ot1 == aot1)
@@ -87,7 +87,7 @@ class SourceElementIDsTest extends FunSuite {
 
         val aot3 = ids.sourceElementID(FieldType("[Ljava/lang/Integer;"))
         assert(aot1 != aot3)
-        
+
         assert(aot3 == ids.sourceElementID(ObjectType("java/lang/Integer")))
     }
 

@@ -33,9 +33,6 @@
 package de.tud.cs.st.bat.resolved
 package dependency
 
-import dependencies.SourceElementIDsMap
-import dependencies.UseIDOfBaseTypeForArrayTypes
-
 /**
  *
  * @author Thomas Schlosser

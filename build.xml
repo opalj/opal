@@ -321,7 +321,7 @@ Author 		Michael Eichberg (mail@michael-eichberg.de)
 			<runpath><path refid="test.classpath"/></runpath>
 			<reporter type="stderr" />
 			<!-- <reporter type="stderr graphic" />	-->
-			<suite classname="de.tud.cs.st.bat.resolved.dependencies.SourceElementIDsTest"/>
+			<suite classname="de.tud.cs.st.bat.resolved.dependency.SourceElementIDsTest"/>
 			<suite classname="de.tud.cs.st.bat.resolved.SignaturesTest"/>
 		 	<suite classname="de.tud.cs.st.bat.resolved.ArrayTypeTest"/>
 		 	<suite classname="de.tud.cs.st.bat.resolved.FieldTypeTest"/>

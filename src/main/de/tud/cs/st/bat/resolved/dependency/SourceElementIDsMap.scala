@@ -31,7 +31,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 package de.tud.cs.st.bat.resolved
-package dependencies
+package dependency
 
 /**
  * Associates a source element (type, method or field declaration) with a unique id.
@@ -41,7 +41,7 @@ package dependencies
  * Fields are associated with ids > 1 000 000 000 and < 2 000 000 000
  *
  * Methods are associated with ids > 2 000 000 000
- * 
+ *
  * '''Implementation Note'''
  * This class is not thread safe.
  *
@@ -93,14 +93,14 @@ trait SourceElementIDsMap extends SourceElementIDs {
             getOrElseUpdate(definingObjectType, { WeakHashMap[(String, MethodDescriptor), Int]() }).
             getOrElseUpdate((methodName, methodDescriptor), { nextMethodID += 1; nextMethodID })
     }
-    
+
     def reset {
         nextTypeID = LOWEST_TYPE_ID
         typeIDs.clear()
-        
+
         nextFieldID = LOWEST_FIELD_ID
         fieldIDs.clear()
-        
+
         nextMethodID = LOWEST_METHOD_ID
         methodIDs.clear()
     }

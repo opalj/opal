@@ -31,7 +31,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 package de.tud.cs.st.bat.resolved
-package dependencies
+package dependency
 
 /**
  * If you do not want to assign unique IDs to array types but instead want to use the

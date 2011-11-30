@@ -44,7 +44,7 @@ object AssociateUniqueIDs
         extends App
         with de.tud.cs.st.util.perf.ToCommandLinePerformanceEvaluation {
 
-    import dependencies.SourceElementIDs.{ sourceElementID ⇒ id }
+    import dependency.SourceElementIDs.{ sourceElementID ⇒ id }
 
     val classFiles: Seq[ClassFile] = Java6Framework.ClassFiles("test/classfiles/BAT2XML - target 1.7.zip")
 

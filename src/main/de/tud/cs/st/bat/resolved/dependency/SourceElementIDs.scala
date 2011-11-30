@@ -31,7 +31,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 package de.tud.cs.st.bat.resolved
-package dependencies
+package dependency
 
 /**
  * Associates a source element (type, method or field declaration) with a unique id.
