@@ -156,39 +156,28 @@ case class CodeAttribute(val maxStack: Int,
 			(attributes.toString)+
 		")"
 	}
-
 }
 
+case class ExceptionTableEntry(val startPC: Int,
+                               val endPC: Int,
+                               val handlerPC: Int,
+                               val catchType: ObjectType) {
 
-case class ExceptionTableEntry  (
-	val startPC: Int,
-	val endPC: Int,
-	val handlerPC : Int,
-	val catchType : ObjectType
-) {
-
-	import scala.xml.Text
-
-	def toXML =
-		<exception_handler
+    def toXML =
+        <exception_handler
 			start_pc={ startPC.toString }
 			end_pc={ endPC.toString }
 			handler_pc={ handlerPC.toString }
-			type={ if(catchType != null) Some(Text(catchType.toJava)) else None  }/>
+			type={ if (catchType != null) Some(scala.xml.Text(catchType.toJava)) else None }/>
 
-		def toProlog[F,T,A <: T](
-			factory : PrologTermFactory[F,T,A],
-			pc_to_seqNo : Array[Int]
-		) : T = {
-
-			import factory._
-
-			Term(
-				"handler", // an annonymous "pair"
-				IntegerAtom(pc_to_seqNo(startPC)),
-				IntegerAtom(pc_to_seqNo(endPC)),
-				IntegerAtom(pc_to_seqNo(handlerPC)),
-				if (catchType != null) catchType.toProlog(factory) else StringAtom("any")
-			)
-		}
+    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], pc_to_seqNo: Array[Int]): T = {
+        import factory._
+        Term(
+            "handler", // an annonymous "pair"
+            IntegerAtom(pc_to_seqNo(startPC)),
+            IntegerAtom(pc_to_seqNo(endPC)),
+            IntegerAtom(pc_to_seqNo(handlerPC)),
+            if (catchType != null) catchType.toProlog(factory) else StringAtom("any")
+        )
+    }
 }

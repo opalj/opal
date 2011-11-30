@@ -30,31 +30,12 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved
+package de.tud.cs.st.bat
+package resolved
+
 
 /**
- * Common supertype of all descriptors.
- *
- * @author Michael Eichberg
- */
-sealed trait Descriptor {}
-
-// TODO can we get rid of the FieldDescriptor?
-final case class FieldDescriptor(val fieldType: FieldType) extends Descriptor {
-
-    def toJava: String = fieldType.toJava
-
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]) = fieldType.toProlog(factory)
-
-}
-object FieldDescriptor {
-
-    def apply(fd: String): FieldDescriptor = new FieldDescriptor(FieldType(fd))
-
-}
-
-/**
- * Represents a method descriptor as described in the JVM Spec. section
+ * Represents a method descriptor as described in the JVM Specification section
  * "4.4.3 Method Descriptors":<br />
  * A method descriptor represents the parameters that the method takes and
  * the value that it returns: <br />
@@ -78,8 +59,7 @@ object FieldDescriptor {
  * 	V
  * </pre>
  */
-final case class MethodDescriptor(val parameterTypes: Seq[FieldType], val returnType: Type)
-        extends Descriptor {
+case class MethodDescriptor(val parameterTypes: Seq[FieldType], val returnType: Type) {
 
     def toXML =
         <descriptor>

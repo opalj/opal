@@ -46,56 +46,56 @@ import java.util.Enumeration
 class FieldTypeTest extends FunSuite {
 
     test("Byte Field Descriptor") {
-        val fd = FieldDescriptor("B")
-        assert(fd.fieldType == ByteType)
+        val fieldType = FieldType("B")
+        assert(fieldType == ByteType)
     }
 
     test("Char Field Descriptor") {
-        val fd = FieldDescriptor("C")
-        assert(fd.fieldType == CharType)
+        val fieldType = FieldType("C")
+        assert(fieldType == CharType)
     }
 
     test("Double Field Descriptor") {
-        val fd = FieldDescriptor("D")
-        assert(fd.fieldType == DoubleType)
+        val fieldType = FieldType("D")
+        assert(fieldType == DoubleType)
     }
 
     test("Float Field Descriptor") {
-        val fd = FieldDescriptor("F")
-        assert(fd.fieldType == FloatType)
+        val fieldType = FieldType("F")
+        assert(fieldType == FloatType)
     }
 
     test("Integer Field Descriptor") {
-        val fd = FieldDescriptor("I")
-        assert(fd.fieldType == IntegerType)
+        val fieldType = FieldType("I")
+        assert(fieldType == IntegerType)
     }
 
     test("Long Field Descriptor") {
-        val fd = FieldDescriptor("J")
-        assert(fd.fieldType == LongType)
+        val fieldType = FieldType("J")
+        assert(fieldType == LongType)
     }
 
     test("ObjectType Field Descriptor") {
-        val fd = FieldDescriptor("Ljava/lang/Object;")
-        val ObjectType(className) = fd.fieldType
+        val fieldType = FieldType("Ljava/lang/Object;")
+        val ObjectType(className) = fieldType
         assert(className === "java/lang/Object")
     }
 
     test("ArrayType (Array of References) Field Descriptor") {
-        val fd = FieldDescriptor("[Ljava/lang/Object;")
-        val ArrayType(componentType) = fd.fieldType
+        val fieldType = FieldType("[Ljava/lang/Object;")
+        val ArrayType(componentType) = fieldType
         assert(componentType === FieldType("Ljava/lang/Object;"))
     }
 
     test("ArrayType (Array of Primitives) Field Descriptor") {
-        val fd = FieldDescriptor("[J")
-        val ArrayType(componentType) = fd.fieldType
+        val fieldType = FieldType("[J")
+        val ArrayType(componentType) = fieldType
         assert(componentType === LongType)
     }
 
     test("ArrayType (Array of Array of Primitives) Field Descriptor") {
-        val fd = FieldDescriptor("[[S")
-        fd.fieldType match {
+        val fieldType = FieldType("[[S")
+        fieldType match {
             case ArrayType(ArrayType(ShortType)) ⇒ /*OK*/
         }
     }

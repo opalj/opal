@@ -55,8 +55,8 @@ trait LocalVariableTable_attributeBinding
                                 descriptor_index: Constant_Pool_Index,
                                 index: Int)(
                                     implicit constant_pool: Constant_Pool): LocalVariableTableEntry = {
-        val fieldDescriptor: FieldDescriptor = descriptor_index
-        new LocalVariableTableEntry(start_pc, length, name_index, fieldDescriptor.fieldType, index)
+        val fieldType = CONSTANT_Utf8_info_IndexToFieldType(descriptor_index)
+        new LocalVariableTableEntry(start_pc, length, name_index, fieldType, index)
     }
 
     def LocalVariableTable_attribute(attribute_name_index: Constant_Pool_Index,

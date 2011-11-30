@@ -139,8 +139,9 @@ trait AnnotationsBinding
         new ClassValue(ReturnType(rt))
     }
 
-    def EnumValue(
-        type_name_index: Int, const_name_index: Int)(implicit constant_pool: Constant_Pool): ElementValue = {
+    def EnumValue(type_name_index: Int,
+                  const_name_index: Int)(
+                      implicit constant_pool: Constant_Pool): ElementValue = {
         new EnumValue(FieldType(type_name_index).asInstanceOf[ObjectType], const_name_index)
     }
 
@@ -150,10 +151,10 @@ trait AnnotationsBinding
     def ArrayValue(values: ElementValues)(implicit constant_pool: Constant_Pool): ElementValue =
         new ArrayValue(values)
 
-    def Annotation(
-        type_index: Int, element_value_pairs: ElementValuePairs)(implicit constant_pool: Constant_Pool) = {
-        val fieldDescriptor: FieldDescriptor = type_index
-        new Annotation(fieldDescriptor, element_value_pairs)
+    def Annotation(type_index: Constant_Pool_Index,
+                   element_value_pairs: ElementValuePairs)(
+                       implicit constant_pool: Constant_Pool) = {
+        new Annotation(CONSTANT_Utf8_info_IndexToFieldType(type_index), element_value_pairs)
     }
 
     def AnnotationDefault_attribute(attribute_name_index: Constant_Pool_Index,
@@ -163,20 +164,28 @@ trait AnnotationsBinding
         element_value
     }
 
-    def RuntimeVisibleAnnotations_attribute(
-        attribute_name_index: Int, attribute_length: Int, annotations: Annotations)(implicit constant_pool: Constant_Pool) =
+    def RuntimeVisibleAnnotations_attribute(attribute_name_index: Int,
+                                            attribute_length: Int,
+                                            annotations: Annotations)(
+                                                implicit constant_pool: Constant_Pool) =
         new RuntimeVisibleAnnotations_attribute(annotations)
 
-    def RuntimeInvisibleAnnotations_attribute(
-        attribute_name_index: Int, attribute_length: Int, annotations: Annotations)(implicit constant_pool: Constant_Pool) =
+    def RuntimeInvisibleAnnotations_attribute(attribute_name_index: Int,
+                                              attribute_length: Int,
+                                              annotations: Annotations)(
+                                                  implicit constant_pool: Constant_Pool) =
         new RuntimeInvisibleAnnotations_attribute(annotations)
 
-    def RuntimeVisibleParameterAnnotations_attribute(
-        attribute_name_index: Int, attribute_length: Int, parameter_annotations: ParameterAnnotations)(implicit constant_pool: Constant_Pool) =
+    def RuntimeVisibleParameterAnnotations_attribute(attribute_name_index: Int,
+                                                     attribute_length: Int,
+                                                     parameter_annotations: ParameterAnnotations)(
+                                                         implicit constant_pool: Constant_Pool) =
         new RuntimeVisibleParameterAnnotations_attribute(parameter_annotations)
 
-    def RuntimeInvisibleParameterAnnotations_attribute(
-        attribute_name_index: Int, attribute_length: Int, parameter_annotations: ParameterAnnotations)(implicit constant_pool: Constant_Pool) =
+    def RuntimeInvisibleParameterAnnotations_attribute(attribute_name_index: Int,
+                                                       attribute_length: Int,
+                                                       parameter_annotations: ParameterAnnotations)(
+                                                           implicit constant_pool: Constant_Pool) =
         new RuntimeInvisibleParameterAnnotations_attribute(parameter_annotations)
 
 }

@@ -162,7 +162,7 @@ Author 		Michael Eichberg (mail@michael-eichberg.de)
 	<target
 			name="generate-code-for-resolved-representation"
 			depends="init,check-instructions-specification"
-			description="Generates code necessary for the resolved representation of Java Bytecode.">
+			description='Generates (Scala) code necessary for the "resolved representation" of Java Bytecode.'>
 
 		<mkdir dir="${scala.generated.dir}/de/tud/cs/st/bat/resolved/reader"/>
 
@@ -210,7 +210,7 @@ Author 		Michael Eichberg (mail@michael-eichberg.de)
 		<mkdir dir="${prolog.generated.dir}"/>
 	</target>
 
-	<target name="compile" depends="generate-code-for-resolved-representation" description="Compiles the core Opal library.">
+	<target name="compile" depends="generate-code-for-resolved-representation" description="Compiles BAT.">
 		<echo>
 		Note, if compilation fails due to a stack overflow error it is necessary
 		to increase Java's heap and stack size. E.g. if you use Unix just set
@@ -243,7 +243,7 @@ Author 		Michael Eichberg (mail@michael-eichberg.de)
 	         source="1.5" />
 	</target>
 
-	<target name="compile-tests" depends="compile" description="Compiles the code to test (some parts of) Opal.">
+	<target name="compile-tests" depends="compile" description="Compiles BAT's test suite.">
 		<scalac
 				srcdir="${src.test.dir}"
 				target="jvm-1.5"
@@ -314,18 +314,6 @@ Author 		Michael Eichberg (mail@michael-eichberg.de)
 		</echo>
 	</target>
 
-	<target name="run-util-tests"
-		depends="tests-common"
-		description="Executes all tests related to BAT's utility classes.">
-		<scalatest>
-			<runpath>
-				<path refid="test.classpath"/>
-			</runpath>
-			<reporter type="graphic" />
-			<suite classname="de.tud.cs.st.util.collection.ArraysTest"/>
-		</scalatest>
- 	</target>
-
 	<target name="run-basic-tests"
 		depends="tests-common"
 		description="Executes BAT's test suite.">
@@ -356,7 +344,7 @@ Author 		Michael Eichberg (mail@michael-eichberg.de)
 		</scalatest>
  	</target>
 
-	<target name="api-doc" depends="compile" description="Generates Opal's API documentation.">
+	<target name="api-doc" depends="compile" description="Generates BAT's API documentation.">
 		<!-- TODO java doc... -->
 		<scaladoc
 				destdir="${doc.dir}"
@@ -380,7 +368,7 @@ Author 		Michael Eichberg (mail@michael-eichberg.de)
 
 	<target name="doc" depends="api-doc,instructions-schema-doc" description="Generates all documentation." />
 
-	<target name="demo" depends="compile" description="Demonstrates Opal.">
+	<target name="demo" depends="compile" description="Demonstrates BAT.">
 		<echo>
 			_________________________________________________________________________
 
@@ -409,13 +397,13 @@ Author 		Michael Eichberg (mail@michael-eichberg.de)
 		</java>
 	</target>
 
-	<target name="package" depends="compile,run-comprehensive-tests" description="Packages Opal.">
-		<jar destfile="${build.dir}/opal-${version}.jar" basedir="${class.dir}"/>
+	<target name="package" depends="compile" description="Packages BAT.">
+		<jar destfile="${build.dir}/bat-${version}.jar" basedir="${class.dir}"/>
 	</target>
 
 	<target
 		name="default"
-		depends="package,doc"
-		description="Compiles, tests, executes and packages Opal."/>
+		depends="compile,run-comprehensive-tests,doc,package"
+		description="Compiles, tests, executes and packages BAT."/>
 
 </project>
