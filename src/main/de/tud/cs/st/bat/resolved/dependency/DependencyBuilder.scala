@@ -36,22 +36,22 @@ package dependency
 import DependencyType._
 
 /**
- * Interface used by DepExtractor to get unique numerical identifiers
+ * Interface used by DependencyExtractor to get unique numerical identifiers
  * and to export extracted dependency. Classes that have this trait mixed in
- * can be used as DepExtractor's class parameter and for example collect the
+ * can be used as DependencyExtractor's class parameter and for example collect the
  * extracted dependencies.
  *
  * @author Thomas Schlosser
  */
-trait DepBuilder {
+trait DependencyBuilder {
 
-  def getID(classFile: ClassFile): Int
-  def getID(t: Type): Int
-  def getID(definingObjectType: ObjectType, field: Field): Int
-  def getID(definingObjectType: ObjectType, fieldName: String): Int
-  def getID(definingObjectType: ObjectType, method: Method): Int
-  def getID(definingObjectType: ObjectType, methodName: String, methodDescriptor: MethodDescriptor): Int
+    def getID(classFile: ClassFile): Int
+    def getID(t: Type): Int
+    def getID(definingObjectType: ObjectType, field: Field): Int
+    def getID(definingObjectType: ObjectType, fieldName: String): Int
+    def getID(definingObjectType: ObjectType, method: Method): Int
+    def getID(definingObjectType: ObjectType, methodName: String, methodDescriptor: MethodDescriptor): Int
 
-  def addDep(src: Int, trgt: Int, dType: DependencyType)
+    def addDep(src: Int, trgt: Int, dType: DependencyType)
 
 }

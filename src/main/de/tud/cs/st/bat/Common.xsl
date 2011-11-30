@@ -100,7 +100,7 @@
 
 	<xsl:template name="copyright">
 		<xsl:param name="sourceFile" required="yes"/>
- /* 
+/* 
    --------------------------------------------------------------------------
  
  	               THIS FILE IS AUTO GENERATED - DO NOT CHANGE MANUALLY!
@@ -142,7 +142,7 @@
    POSSIBILITY OF SUCH DAMAGE.
   
  */
-	</xsl:template>
+</xsl:template>
 
 
 </xsl:stylesheet>

@@ -44,55 +44,53 @@
 	<xsl:include href="../../Common.xsl"/>
 
 <xsl:template match="/">
-    <xsl:call-template name="copyright">
-		<xsl:with-param name="sourceFile">GenerateInstructionDepExtractor.xsl</xsl:with-param>
+	<xsl:call-template name="copyright">
+		<xsl:with-param name="sourceFile">GenerateInstructionDependencyExtractor.xsl</xsl:with-param>
 	</xsl:call-template>
-
 package de.tud.cs.st.bat.resolved
 package dependency
 
+import annotation.switch
 import de.tud.cs.st.util.ControlAbstractions.repeat
 import de.tud.cs.st.bat.resolved.reader.CodeBinding
 import DependencyType._
 
 /**
- * This class extracts all (non-primitive) dependencies out of the given instructions.
+ * This class extracts all dependencies out of the given instructions.
  *
  * @version [Generated] <xsl:value-of select="current-dateTime()"/>
  */
-trait InstructionDepExtractor extends CodeBinding{
+trait InstructionDependencyExtractor extends CodeBinding {
 
-  val builder: DepBuilder
+    val builder: DependencyBuilder
 
-  /**
-   * Factory method that transforms an array of instructions into an array of dependencies.
-   */
-  def process(methodId: Int, instructions : Code) {
-    import builder._
+    /**
+     * Factory method that transforms an array of instructions into an array of dependencies.
+     */
+    def process(methodId: Int, instructions: Code) {
+        import builder._
 
-    for (instr &lt;- instructions){
-      if(instr != null){
-        instr match{<xsl:for-each select="/opal:instructions/opal:instruction">
-          				<xsl:call-template name="opal:instruction" />
-        			</xsl:for-each>
-          case _ =>
+        for (instr ← instructions if instr != null) {
+            (instr.opcode: @switch) match {<xsl:for-each select="/opal:instructions/opal:instruction">
+                                   <xsl:call-template name="opal:instruction" />
+                               </xsl:for-each>
+                case _ ⇒
+            }
         }
-      }
     }
-  }
 }
 </xsl:template>
 
-<xsl:template name="opal:instruction">
-	<!-- current context: an opal:instruction -->
-	<xsl:if test="opal:numberOfInstructionParameters(.)>0">
-          case <xsl:value-of select="upper-case(string(@name))"/>(<xsl:for-each select="opal:stdInstructionParameters(.)">
-				<xsl:call-template name="generate_case_parameters"><xsl:with-param name="fe" select="."/></xsl:call-template><xsl:if test="position() != last()">, </xsl:if>
-			</xsl:for-each>) =&gt; {<xsl:for-each select="opal:stdInstructionParameters(.)">
-				<xsl:call-template name="generate_case_impl"><xsl:with-param name="fe" select="."/></xsl:call-template>
-			</xsl:for-each>
-          }
-	</xsl:if>
+<xsl:template name="opal:instruction"><!-- current context: an opal:instruction -->
+    <xsl:if test="count(opal:stdInstructionParameters(.)[./@type eq 'ushort_cp_index→referenceType' or ./@type eq 'ushort_cp_index→objectType' or ./@type eq 'ushort_cp_index→fieldref' or ./@type eq 'ushort_cp_index→call_site_specifier' or ./@type eq 'ushort_cp_index→methodref' or ./@type eq 'ushort_cp_index→interface_methodref'])>0">
+                case <xsl:value-of select="upper-case(string(@opcode))"/> ⇒ {
+                    val <xsl:value-of select="upper-case(string(@name))"/>(<xsl:for-each select="opal:stdInstructionParameters(.)">
+                            <xsl:call-template name="generate_case_parameters"><xsl:with-param name="fe" select="."/></xsl:call-template><xsl:if test="position() != last()">, </xsl:if>
+                        </xsl:for-each>) = instr.asInstanceOf[<xsl:value-of select="upper-case(string(@name))"/>]<xsl:for-each select="opal:stdInstructionParameters(.)">
+                        <xsl:call-template name="generate_case_impl"><xsl:with-param name="fe" select="."/></xsl:call-template>
+                    </xsl:for-each>
+                }
+</xsl:if>
 </xsl:template>
 
 
@@ -127,46 +125,40 @@ trait InstructionDepExtractor extends CodeBinding{
 	<xsl:choose>
 		<xsl:when test="$fet eq 'ubyte' or $fet eq 'atype' or $fet eq 'byte' or $fet eq 'ushort' or $fet eq 'short' or $fet eq 'int' or $fet eq 'branchoffset' or $fet eq 'branchoffset_wide'"></xsl:when>
 		<xsl:when test="$fet eq 'ushort_cp_index→referenceType'"><!-- used by anewarray, checkcast, instanceof, multianewarray -->
-            addDep(methodId, getID(<xsl:value-of select="$id"/>), <xsl:choose>
-				<xsl:when test="../../../@name eq 'anewarray'">CREATES_ARRAY_OF_TYPE</xsl:when>
-				<xsl:when test="../../../@name eq 'checkcast'">CASTS_INTO</xsl:when>
-				<xsl:when test="../../../@name eq 'instanceof'">CHECKS_INSTANCEOF</xsl:when>
-				<xsl:when test="../../../@name eq 'multianewarray'">CREATES_ARRAY_OF_TYPE</xsl:when>
-				<xsl:otherwise>USED_TYPE</xsl:otherwise></xsl:choose>)</xsl:when>
+                    addDep(methodId, getID(<xsl:value-of select="$id"/>), <xsl:choose>
+						<xsl:when test="../../../@name eq 'anewarray'">CREATES_ARRAY_OF_TYPE</xsl:when>
+						<xsl:when test="../../../@name eq 'checkcast'">CASTS_INTO</xsl:when>
+						<xsl:when test="../../../@name eq 'instanceof'">CHECKS_INSTANCEOF</xsl:when>
+						<xsl:when test="../../../@name eq 'multianewarray'">CREATES_ARRAY_OF_TYPE</xsl:when>
+						<xsl:otherwise>USED_TYPE</xsl:otherwise></xsl:choose>)</xsl:when>
 		<xsl:when test="$fet eq 'ushort_cp_index→objectType'"><!-- used by new -->
-            addDep(methodId, getID(<xsl:value-of select="$id"/>), <xsl:choose>
-				<xsl:when test="../../../@name eq 'new'">CREATES</xsl:when>
-				<xsl:otherwise>USED_TYPE</xsl:otherwise></xsl:choose>)</xsl:when>
+                    addDep(methodId, getID(<xsl:value-of select="$id"/>), <xsl:choose>
+						<xsl:when test="../../../@name eq 'new'">CREATES</xsl:when>
+						<xsl:otherwise>USED_TYPE</xsl:otherwise></xsl:choose>)</xsl:when>
 		<xsl:when test="$fet eq 'ubyte_cp_index→constant_value' or $fet eq 'ushort_cp_index→constant_value'"></xsl:when><!-- used by ldc, ldc_w, ldc2 -->
 		<xsl:when test="$fet eq 'ushort_cp_index→fieldref'"><!-- used by get/put field/static -->
-            addDep(methodId, getID(declaringClass), USES_FIELD_DECLARING_TYPE)
-            addDep(methodId, getID(declaringClass, name), <xsl:choose>
-				<xsl:when test="starts-with(../../../@name,'get')">READS_FIELD</xsl:when>
-				<xsl:when test="starts-with(../../../@name,'put')">WRITES_FIELD</xsl:when></xsl:choose>)
-            addDep(methodId, getID(fieldType), <xsl:choose>
-				<xsl:when test="starts-with(../../../@name,'get')">USES_FIELD_READ_TYPE</xsl:when>
-				<xsl:when test="starts-with(../../../@name,'put')">USES_FIELD_WRITE_TYPE</xsl:when></xsl:choose>)</xsl:when>
+                    addDep(methodId, getID(declaringClass), USES_FIELD_DECLARING_TYPE)
+                    addDep(methodId, getID(declaringClass, name), <xsl:choose>
+						<xsl:when test="starts-with(../../../@name,'get')">READS_FIELD</xsl:when>
+						<xsl:when test="starts-with(../../../@name,'put')">WRITES_FIELD</xsl:when></xsl:choose>)
+                    addDep(methodId, getID(fieldType), <xsl:choose>
+						<xsl:when test="starts-with(../../../@name,'get')">USES_FIELD_READ_TYPE</xsl:when>
+						<xsl:when test="starts-with(../../../@name,'put')">USES_FIELD_WRITE_TYPE</xsl:when></xsl:choose>)</xsl:when>
 		<xsl:when test="$fet eq 'ushort_cp_index→call_site_specifier'"><!-- used by invokedynamic --><!--
 		 --><!--TODO: A call dependency to a method without declaring class makes not much sense
             addDep(methodId, getID(name, methodDescriptor),METHOD_CALL)-->
-            for (paramType &lt;- methodDescriptor.parameterTypes) {
-              addDep(methodId, getID(paramType), USES_PARAMETER_TYPE)
-            }
-            addDep(methodId, getID(methodDescriptor.returnType), USES_RETURN_TYPE)</xsl:when>
+                    methodDescriptor.parameterTypes foreach { parameterType ⇒ addDep(methodId, getID(parameterType), USES_PARAMETER_TYPE) }
+                    addDep(methodId, getID(methodDescriptor.returnType), USES_RETURN_TYPE)</xsl:when>
 		<xsl:when test="$fet eq 'ushort_cp_index→methodref'"><!-- used by invokespecial, invokestatic, invokevirtual -->
-            addDep(methodId, getID(declaringClass), USES_METHOD_DECLARING_TYPE)
-            addDep(methodId, getID(declaringClass, name, methodDescriptor), CALLS_METHOD)
-            for (paramType &lt;- methodDescriptor.parameterTypes) {
-              addDep(methodId, getID(paramType), USES_PARAMETER_TYPE)
-            }
-            addDep(methodId, getID(methodDescriptor.returnType), USES_RETURN_TYPE)</xsl:when>
+                    addDep(methodId, getID(declaringClass), USES_METHOD_DECLARING_TYPE)
+                    addDep(methodId, getID(declaringClass, name, methodDescriptor), CALLS_METHOD)
+                    methodDescriptor.parameterTypes foreach { parameterType ⇒ addDep(methodId, getID(parameterType), USES_PARAMETER_TYPE) }
+                    addDep(methodId, getID(methodDescriptor.returnType), USES_RETURN_TYPE)</xsl:when>
         <xsl:when test="$fet eq 'ushort_cp_index→interface_methodref'"><!-- used by invokeinterface -->
-            addDep(methodId, getID(declaringClass), USES_METHOD_DECLARING_TYPE)
-            addDep(methodId, getID(declaringClass, name, methodDescriptor), CALLS_INTERFACE_METHOD)
-            for (paramType &lt;- methodDescriptor.parameterTypes) {
-              addDep(methodId, getID(paramType), USES_PARAMETER_TYPE)
-            }
-            addDep(methodId, getID(methodDescriptor.returnType), USES_RETURN_TYPE)</xsl:when>
+                    addDep(methodId, getID(declaringClass), USES_METHOD_DECLARING_TYPE)
+                    addDep(methodId, getID(declaringClass, name, methodDescriptor), CALLS_INTERFACE_METHOD)
+                    methodDescriptor.parameterTypes foreach { parameterType ⇒ addDep(methodId, getID(parameterType), USES_PARAMETER_TYPE) }
+                    addDep(methodId, getID(methodDescriptor.returnType), USES_RETURN_TYPE)</xsl:when>
 		<xsl:when test="name($fe) eq 'list'"></xsl:when>
 
 	<!-- If we would be able to use schema validation, then we would not require the following check. -->

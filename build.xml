@@ -196,9 +196,9 @@ Author 		Michael Eichberg (mail@michael-eichberg.de)
 		</saxon-xslt>
 		
 		<saxon-xslt 
-			style="${src.main.dir}/de/tud/cs/st/bat/resolved/dependency/GenerateInstructionDepExtractor.xsl"
+			style="${src.main.dir}/de/tud/cs/st/bat/resolved/dependency/GenerateInstructionDependencyExtractor.xsl"
 			in="${src.spec.dir}/10.2011/JVMInstructions.xml"
-			out="${scala.generated.dir}/de/tud/cs/st/bat/resolved/dependency/InstructionDepExtractor.scala">
+			out="${scala.generated.dir}/de/tud/cs/st/bat/resolved/dependency/InstructionDependencyExtractor.scala">
 		</saxon-xslt>
 	</target>
 
@@ -340,8 +340,8 @@ Author 		Michael Eichberg (mail@michael-eichberg.de)
 		 	<suite classname="de.tud.cs.st.bat.resolved.MethodDescriptorTest"/>
 		 	<suite classname="de.tud.cs.st.bat.resolved.ObjectTypeTest"/>
 			<suite classname="de.tud.cs.st.bat.resolved.AttributesTest"/>
-			<suite classname="de.tud.cs.st.bat.resolved.dependency.BasicDepExtractorTest"/>
-			<suite classname="de.tud.cs.st.bat.resolved.dependency.DepExtractorTest"/>
+			<suite classname="de.tud.cs.st.bat.resolved.dependency.BasicDependencyExtractorTest"/>
+			<suite classname="de.tud.cs.st.bat.resolved.dependency.DependencyExtractorTest"/>
 		</scalatest> 
  	</target>
 

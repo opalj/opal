@@ -40,39 +40,39 @@ package resolved
  */
 trait ParameterAnnotationsAttribute extends Attribute {
 
-  def parameterAnnotations: ParameterAnnotations
+    def parameterAnnotations: ParameterAnnotations
 
-  def isRuntimeVisible: Boolean
+    def isRuntimeVisible: Boolean
 
-  protected def parameterAnnotationsToXML =
-    for (parameter ← parameterAnnotations) yield {
-      <parameter>{ for (annotation ← parameter) yield annotation.toXML }</parameter>
+    protected def parameterAnnotationsToXML =
+        for (parameter ← parameterAnnotations) yield {
+            <parameter>{ for (annotation ← parameter) yield annotation.toXML }</parameter>
+        }
+
+    final def toProlog[F, T, A <: T](
+        factory: PrologTermFactory[F, T, A],
+        declaringEntityKey: A): List[F] = {
+
+        import factory._
+
+        var facts: List[F] = Nil
+
+        Fact(
+            "parameter_annotations",
+            declaringEntityKey,
+            if (isRuntimeVisible)
+                StringAtom("runtime_visible")
+            else
+                StringAtom("runtime_invisible"),
+            Terms(
+                parameterAnnotations,
+                (parameterAnnotation: Seq[Annotation]) ⇒ {
+                    Terms(parameterAnnotation, (_: Annotation).toProlog(factory))
+                })) :: facts
     }
-
-  final def toProlog[F, T, A <: T](
-    factory: PrologTermFactory[F, T, A],
-    declaringEntityKey: A): List[F] = {
-
-    import factory._
-
-    var facts: List[F] = Nil
-
-    Fact(
-      "parameter_annotations",
-      declaringEntityKey,
-      if (isRuntimeVisible)
-        StringAtom("runtime_visible")
-      else
-        StringAtom("runtime_invisible"),
-      Terms(
-        parameterAnnotations,
-        (parameterAnnotation: Seq[Annotation]) ⇒ {
-          Terms(parameterAnnotation, (_: Annotation).toProlog(factory))
-        })) :: facts
-  }
 }
 
 object ParameterAnnotationsAttribute {
-  def unapply(paa: ParameterAnnotationsAttribute): Option[(Boolean, ParameterAnnotations)] =
-    Some(paa.isRuntimeVisible, paa.parameterAnnotations)
+    def unapply(paa: ParameterAnnotationsAttribute): Option[(Boolean, ParameterAnnotations)] =
+        Some(paa.isRuntimeVisible, paa.parameterAnnotations)
 }
