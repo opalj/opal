@@ -98,7 +98,7 @@ class DependencyExtractor(val builder: DependencyBuilder) extends InstructionDep
 
     private def process(field: Field)(implicit thisClass: ObjectType, thisClassID: Int) {
         val fieldID = getID(thisClass, field)
-        val Field(accessFlags, _, FieldDescriptor(fieldType), attributes) = field
+        val Field(accessFlags, _, fieldType, attributes) = field
 
         addDep(fieldID, thisClassID, if (ACC_STATIC ∈ accessFlags) IS_CLASS_MEMBER_OF else IS_INSTANCE_MEMBER_OF)
         addDep(fieldID, getID(fieldType), IS_OF_TYPE)
