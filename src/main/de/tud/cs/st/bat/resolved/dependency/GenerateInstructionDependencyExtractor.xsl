@@ -145,7 +145,7 @@ trait InstructionDependencyExtractor extends CodeBinding {
 						<xsl:when test="starts-with(../../../@name,'get')">USES_FIELD_READ_TYPE</xsl:when>
 						<xsl:when test="starts-with(../../../@name,'put')">USES_FIELD_WRITE_TYPE</xsl:when></xsl:choose>)</xsl:when>
 		<xsl:when test="$fet eq 'ushort_cp_index→call_site_specifier'"><!-- used by invokedynamic --><!--
-		 --><!--TODO: A call dependency to a method without declaring class makes not much sense
+		 --><!--TODO [Java 7]: Adding a 'call' dependency that refers to a method with unknown declaring class does not make much sense.
             addDependency(methodId, getID(name, methodDescriptor),METHOD_CALL)-->
                     methodDescriptor.parameterTypes foreach { parameterType ⇒ addDependency(methodId, getID(parameterType), USES_PARAMETER_TYPE) }
                     addDependency(methodId, getID(methodDescriptor.returnType), USES_RETURN_TYPE)</xsl:when>
