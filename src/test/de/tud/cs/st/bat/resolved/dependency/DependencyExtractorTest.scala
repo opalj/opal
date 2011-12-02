@@ -103,7 +103,8 @@ class DependencyExtractorTest extends FunSuite with de.tud.cs.st.util.perf.Basic
         aDeps.assertDependency("dependencies.TestClass.testMethod()", "java.util.List", HAS_LOCAL_VARIABLE_OF_TYPE)
         aDeps.assertDependency("dependencies.TestClass.testMethod()", "java.lang.CharSequence", USES_TYPE_IN_TYPE_PARAMETERS)
         aDeps.assertDependency("dependencies.TestClass.testMethod()", "java.util.ArrayList", CREATES)
-        //TODO: aDeps.assertDependency("dependencies.TestClass.testMethod()", "java.lang.String", USES_TYPE_IN_TYPE_PARAMETERS)
+        // FIXME: The type parameter of ArrayList is String, hence there should be a dependency between this method and String!
+        // aDeps.assertDependency("dependencies.TestClass.testMethod()", "java.lang.String", USES_TYPE_IN_TYPE_PARAMETERS)
         aDeps.assertDependency("dependencies.TestClass.testMethod()", "java.util.ArrayList", USES_METHOD_DECLARING_TYPE)
         aDeps.assertDependency("dependencies.TestClass.testMethod()", "java.util.ArrayList.<init>()", CALLS_METHOD)
         //    	list.add(null);
@@ -569,7 +570,7 @@ class DependencyExtractorTest extends FunSuite with de.tud.cs.st.util.perf.Basic
         aDeps.assertDependency("dependencies.InstructionsTestClass.method()", "java.lang.Object.equals(java.lang.Object)", CALLS_METHOD)
         aDeps.assertDependency("dependencies.InstructionsTestClass.method()", "java.lang.Object", USES_PARAMETER_TYPE)
         //    
-        //    	// TODO: add test for INVOKEDYNAMIC
+        //    	// TODO [Java 7]: add test for INVOKEDYNAMIC
         //        }
         //    }
     }
