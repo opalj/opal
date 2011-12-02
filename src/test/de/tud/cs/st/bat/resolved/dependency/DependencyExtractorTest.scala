@@ -99,12 +99,11 @@ class DependencyExtractorTest extends FunSuite with de.tud.cs.st.util.perf.Basic
         //        public void testMethod() {
         aDeps.assertDependency("dependencies.TestClass.testMethod()", "dependencies.TestClass", IS_INSTANCE_MEMBER_OF)
         assertImplicitThisLocalVariable("dependencies.TestClass.testMethod()")
+        // // NOTE: It is not possible to determine a dependency to 'java.lang.String' which is used in type parameters of ArrayList.
         //    	List<? extends CharSequence> list = new ArrayList<String>();
         aDeps.assertDependency("dependencies.TestClass.testMethod()", "java.util.List", HAS_LOCAL_VARIABLE_OF_TYPE)
         aDeps.assertDependency("dependencies.TestClass.testMethod()", "java.lang.CharSequence", USES_TYPE_IN_TYPE_PARAMETERS)
         aDeps.assertDependency("dependencies.TestClass.testMethod()", "java.util.ArrayList", CREATES)
-        // FIXME: The type parameter of ArrayList is String, hence there should be a dependency between this method and String!
-        // aDeps.assertDependency("dependencies.TestClass.testMethod()", "java.lang.String", USES_TYPE_IN_TYPE_PARAMETERS)
         aDeps.assertDependency("dependencies.TestClass.testMethod()", "java.util.ArrayList", USES_METHOD_DECLARING_TYPE)
         aDeps.assertDependency("dependencies.TestClass.testMethod()", "java.util.ArrayList.<init>()", CALLS_METHOD)
         //    	list.add(null);
