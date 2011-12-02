@@ -33,6 +33,8 @@
 package de.tud.cs.st.bat.resolved
 package reader
 
+import java.util.zip.ZipFile
+import java.io.DataInputStream
 import scala.math.Ordering$Long$
 import org.junit.runner.RunWith
 import org.scalatest.FunSuite
@@ -43,7 +45,9 @@ import org.scalatest.junit.JUnitRunner
  *
  */
 @RunWith(classOf[JUnitRunner])
-class Java6FrameworkRunTimeTest extends FunSuite with de.tud.cs.st.util.perf.BasicPerformanceEvaluation {
+class Java6FrameworkRunTimeTest extends FunSuite
+        with ClassFileTestUtility
+        with de.tud.cs.st.util.perf.BasicPerformanceEvaluation {
 
     test("testClassFileReading - Apache ANT 1.7.1 - javac 6 default target.zip") {
         testClassFileReading("test/classfiles/Apache ANT 1.7.1 - javac 6 default target.zip")
@@ -100,7 +104,7 @@ class Java6FrameworkRunTimeTest extends FunSuite with de.tud.cs.st.util.perf.Bas
         var max = Long.MinValue
         for (i ← 1 to 10)
             time(duration ⇒ { min = Ordering[Long].min(duration, min); max = Ordering[Long].max(duration, max) }) {
-                Java6Framework.ClassFiles(zipFile)
+                ClassFiles(zipFile)
             }
         println("min time to read class files: "+nanoSecondsToMilliseconds(min)+"ms")
         println("max time to read class files: "+nanoSecondsToMilliseconds(max)+"ms")

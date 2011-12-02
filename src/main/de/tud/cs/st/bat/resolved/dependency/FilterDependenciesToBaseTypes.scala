@@ -13,9 +13,9 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- *  - Neither the name of the Software Technology Group or Technische 
- *    Universität Darmstadt nor the names of its contributors may be used to 
- *    endorse or promote products derived from this software without specific 
+ *  - Neither the name of the Software Technology Group or Technische
+ *    Universität Darmstadt nor the names of its contributors may be used to
+ *    endorse or promote products derived from this software without specific
  *    prior written permission.
  *
  *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -30,25 +30,29 @@
  *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-package dependencies;
+package de.tud.cs.st.bat.resolved
+package dependency
 
-import java.util.ArrayList;
-import java.util.List;
+import DependencyType._
 
 /**
+ * If you do not want to have dependencies to base types, this trait can be mixed in.
+ *
  * @author Thomas Schlosser
- * 
  */
-public class TestClass implements TestInterface {
-    public void testMethod() {
-	List<? extends CharSequence> list = new ArrayList<String>();
-	list.add(null);
+trait FilterDependenciesToBaseTypes extends DependencyBuilder {
+
+    private val IDOfFiltered = Int.MinValue
+
+    abstract override def getID(t: Type): Int = {
+        if (t.isBaseType)
+            return IDOfFiltered
+        super.getID(t)
     }
 
-    public String testMethod(Integer i, int j) {
-	if (i != null && i.intValue() > j) {
-	    return i.toString();
-	}
-	return String.valueOf(j);
+    abstract override def addDependency(src: Int, trgt: Int, dType: DependencyType) {
+        if (src == Int.MinValue || trgt == Int.MinValue)
+            return
+        super.addDependency(src, trgt, dType)
     }
 }

@@ -79,7 +79,9 @@ class DependencyExtractorTest extends FunSuite with de.tud.cs.st.util.perf.Basic
         assertTestAnnotation
         assertAnnotationDefaultAttributeTestClass
         assertInstructionsTestClass
-        //TODO: generics have also to be considered
+        assertSignatureTestInterface
+        assertSignatureTestClass
+        assertSignatureTestSubClass
 
         assert(aDeps.deps.isEmpty, "Too many ["+aDeps.deps.size+"] dependencies have been extracted:\n"+aDeps.deps.mkString("\n"))
     }
@@ -97,9 +99,11 @@ class DependencyExtractorTest extends FunSuite with de.tud.cs.st.util.perf.Basic
         //        public void testMethod() {
         aDeps.assertDependency("dependencies.TestClass.testMethod()", "dependencies.TestClass", IS_INSTANCE_MEMBER_OF)
         assertImplicitThisLocalVariable("dependencies.TestClass.testMethod()")
-        //    	List<String> list = new ArrayList<String>();
+        //    	List<? extends CharSequence> list = new ArrayList<String>();
         aDeps.assertDependency("dependencies.TestClass.testMethod()", "java.util.List", HAS_LOCAL_VARIABLE_OF_TYPE)
+        aDeps.assertDependency("dependencies.TestClass.testMethod()", "java.lang.CharSequence", USES_TYPE_IN_TYPE_PARAMETERS)
         aDeps.assertDependency("dependencies.TestClass.testMethod()", "java.util.ArrayList", CREATES)
+        //TODO: aDeps.assertDependency("dependencies.TestClass.testMethod()", "java.lang.String", USES_TYPE_IN_TYPE_PARAMETERS)
         aDeps.assertDependency("dependencies.TestClass.testMethod()", "java.util.ArrayList", USES_METHOD_DECLARING_TYPE)
         aDeps.assertDependency("dependencies.TestClass.testMethod()", "java.util.ArrayList.<init>()", CALLS_METHOD)
         //    	list.add(null);
@@ -570,12 +574,209 @@ class DependencyExtractorTest extends FunSuite with de.tud.cs.st.util.perf.Basic
         //    }
     }
 
-    private def assertImplicitDefaultConstructor(className: String)(implicit aDeps: AssertableDependencies) {
+    private def assertSignatureTestInterface(implicit aDeps: AssertableDependencies) {
+        //    package dependencies;
+        //    
+        //    import java.io.InputStream;
+        //    import java.io.OutputStream;
+        //    
+        //    public interface SignatureTestInterface<T extends InputStream, Z> {
+        aDeps.assertDependency("dependencies.SignatureTestInterface", "java.lang.Object", EXTENDS)
+        aDeps.assertDependency("dependencies.SignatureTestInterface", "java.io.InputStream", USES_TYPE_IN_TYPE_PARAMETERS)
+        aDeps.assertDependency("dependencies.SignatureTestInterface", "java.lang.Object", USES_TYPE_IN_TYPE_PARAMETERS)
+        //
+        //        public T m1();
+        aDeps.assertDependency("dependencies.SignatureTestInterface.m1()", "dependencies.SignatureTestInterface", IS_INSTANCE_MEMBER_OF)
+        aDeps.assertDependency("dependencies.SignatureTestInterface.m1()", "java.io.InputStream", RETURNS)
+        //    
+        //        public void m2(T t, Z z);
+        aDeps.assertDependency("dependencies.SignatureTestInterface.m2(java.io.InputStream, java.lang.Object)", "dependencies.SignatureTestInterface", IS_INSTANCE_MEMBER_OF)
+        aDeps.assertDependency("dependencies.SignatureTestInterface.m2(java.io.InputStream, java.lang.Object)", "java.io.InputStream", HAS_PARAMETER_OF_TYPE)
+        aDeps.assertDependency("dependencies.SignatureTestInterface.m2(java.io.InputStream, java.lang.Object)", "java.lang.Object", HAS_PARAMETER_OF_TYPE)
+        //    
+        //        public <W> W m3();
+        aDeps.assertDependency("dependencies.SignatureTestInterface.m3()", "dependencies.SignatureTestInterface", IS_INSTANCE_MEMBER_OF)
+        aDeps.assertDependency("dependencies.SignatureTestInterface.m3()", "java.lang.Object", USES_TYPE_IN_TYPE_PARAMETERS)
+        aDeps.assertDependency("dependencies.SignatureTestInterface.m3()", "java.lang.Object", RETURNS)
+        //    
+        //        public <W extends T> W m4();
+        aDeps.assertDependency("dependencies.SignatureTestInterface.m4()", "dependencies.SignatureTestInterface", IS_INSTANCE_MEMBER_OF)
+        aDeps.assertDependency("dependencies.SignatureTestInterface.m4()", "java.io.InputStream", RETURNS)
+        //    
+        //        public <W extends OutputStream> W m5();
+        aDeps.assertDependency("dependencies.SignatureTestInterface.m5()", "dependencies.SignatureTestInterface", IS_INSTANCE_MEMBER_OF)
+        aDeps.assertDependency("dependencies.SignatureTestInterface.m5()", "java.io.OutputStream", USES_TYPE_IN_TYPE_PARAMETERS)
+        aDeps.assertDependency("dependencies.SignatureTestInterface.m5()", "java.io.OutputStream", RETURNS)
+        //    }
+    }
+
+    private def assertSignatureTestClass(implicit aDeps: AssertableDependencies) {
+        //    package dependencies;
+        //    
+        //    import java.io.FileOutputStream;
+        //    import java.io.FilterInputStream;
+        //    import java.util.ArrayList;
+        //    import java.util.List;
+        //    
+        //    public abstract class SignatureTestClass<Q extends FilterInputStream>
+        //    	implements SignatureTestInterface<Q, String> {
+        aDeps.assertDependency("dependencies.SignatureTestClass", "java.lang.Object", EXTENDS)
+        aDeps.assertDependency("dependencies.SignatureTestClass", "java.io.FilterInputStream", USES_TYPE_IN_TYPE_PARAMETERS)
+        aDeps.assertDependency("dependencies.SignatureTestClass", "java.lang.String", USES_TYPE_IN_TYPE_PARAMETERS)
+        aDeps.assertDependency("dependencies.SignatureTestClass", "dependencies.SignatureTestInterface", IMPLEMENTS)
+        assertImplicitDefaultConstructor("dependencies.SignatureTestClass")
+        //    
+        //        protected Q f1;
+        aDeps.assertDependency("dependencies.SignatureTestClass.f1", "dependencies.SignatureTestClass", IS_INSTANCE_MEMBER_OF)
+        aDeps.assertDependency("dependencies.SignatureTestClass.f1", "java.io.FilterInputStream", IS_OF_TYPE)
+        //    
+        //        protected List<Long> f2;
+        aDeps.assertDependency("dependencies.SignatureTestClass.f2", "dependencies.SignatureTestClass", IS_INSTANCE_MEMBER_OF)
+        aDeps.assertDependency("dependencies.SignatureTestClass.f2", "java.util.List", IS_OF_TYPE)
+        aDeps.assertDependency("dependencies.SignatureTestClass.f2", "java.lang.Long", USES_TYPE_IN_TYPE_PARAMETERS)
+        //    
+        //        public abstract Q m1();
+        aDeps.assertDependency("dependencies.SignatureTestClass.m1()", "dependencies.SignatureTestClass", IS_INSTANCE_MEMBER_OF)
+        aDeps.assertDependency("dependencies.SignatureTestClass.m1()", "java.io.FilterInputStream", RETURNS)
+        // // implicit method:
+        // // public InputStream m1(){
+        // //     return m1(); //Method m1:()Ljava/io/FilterInputStream;
+        // // }
+        aDeps.assertDependency("dependencies.SignatureTestClass.m1()", "dependencies.SignatureTestClass", IS_INSTANCE_MEMBER_OF)
+        aDeps.assertDependency("dependencies.SignatureTestClass.m1()", "java.io.InputStream", RETURNS)
+        assertImplicitThisLocalVariable("dependencies.SignatureTestClass.m1()")
+        aDeps.assertDependency("dependencies.SignatureTestClass.m1()", "dependencies.SignatureTestClass", USES_METHOD_DECLARING_TYPE)
+        aDeps.assertDependency("dependencies.SignatureTestClass.m1()", "dependencies.SignatureTestClass.m1()", CALLS_METHOD)
+        aDeps.assertDependency("dependencies.SignatureTestClass.m1()", "java.io.FilterInputStream", USES_RETURN_TYPE)
+        //    
+        //        public abstract void m2(Q t, String z);
+        aDeps.assertDependency("dependencies.SignatureTestClass.m2(java.io.FilterInputStream, java.lang.String)", "dependencies.SignatureTestClass", IS_INSTANCE_MEMBER_OF)
+        aDeps.assertDependency("dependencies.SignatureTestClass.m2(java.io.FilterInputStream, java.lang.String)", "java.io.FilterInputStream", HAS_PARAMETER_OF_TYPE)
+        aDeps.assertDependency("dependencies.SignatureTestClass.m2(java.io.FilterInputStream, java.lang.String)", "java.lang.String", HAS_PARAMETER_OF_TYPE)
+        // // implicit method:
+        // // public void m2(java.io.InputStream t, java.lang.Object z){
+        // //     return m2((java.io.FileInputStream)t, (java.lang.String) z);
+        // // }
+        aDeps.assertDependency("dependencies.SignatureTestClass.m2(java.io.InputStream, java.lang.Object)", "dependencies.SignatureTestClass", IS_INSTANCE_MEMBER_OF)
+        aDeps.assertDependency("dependencies.SignatureTestClass.m2(java.io.InputStream, java.lang.Object)", "java.io.InputStream", HAS_PARAMETER_OF_TYPE)
+        aDeps.assertDependency("dependencies.SignatureTestClass.m2(java.io.InputStream, java.lang.Object)", "java.io.InputStream", HAS_LOCAL_VARIABLE_OF_TYPE)
+        aDeps.assertDependency("dependencies.SignatureTestClass.m2(java.io.InputStream, java.lang.Object)", "java.lang.Object", HAS_PARAMETER_OF_TYPE)
+        aDeps.assertDependency("dependencies.SignatureTestClass.m2(java.io.InputStream, java.lang.Object)", "java.lang.Object", HAS_LOCAL_VARIABLE_OF_TYPE)
+        assertImplicitThisLocalVariable("dependencies.SignatureTestClass.m2(java.io.InputStream, java.lang.Object)")
+        aDeps.assertDependency("dependencies.SignatureTestClass.m2(java.io.InputStream, java.lang.Object)", "java.io.FilterInputStream", CASTS_INTO)
+        aDeps.assertDependency("dependencies.SignatureTestClass.m2(java.io.InputStream, java.lang.Object)", "java.lang.String", CASTS_INTO)
+        aDeps.assertDependency("dependencies.SignatureTestClass.m2(java.io.InputStream, java.lang.Object)", "dependencies.SignatureTestClass", USES_METHOD_DECLARING_TYPE)
+        aDeps.assertDependency("dependencies.SignatureTestClass.m2(java.io.InputStream, java.lang.Object)", "dependencies.SignatureTestClass.m2(java.io.FilterInputStream, java.lang.String)", CALLS_METHOD)
+        aDeps.assertDependency("dependencies.SignatureTestClass.m2(java.io.InputStream, java.lang.Object)", "java.io.FilterInputStream", USES_PARAMETER_TYPE)
+        aDeps.assertDependency("dependencies.SignatureTestClass.m2(java.io.InputStream, java.lang.Object)", "java.lang.String", USES_PARAMETER_TYPE)
+        //    
+        //        @SuppressWarnings("unchecked")
+        //        public abstract Integer m3();
+        aDeps.assertDependency("dependencies.SignatureTestClass.m3()", "dependencies.SignatureTestClass", IS_INSTANCE_MEMBER_OF)
+        aDeps.assertDependency("dependencies.SignatureTestClass.m3()", "java.lang.Integer", RETURNS)
+        // // implicit method:
+        // // public Object m3(){
+        // //     return m3(); //Method m3:()Ljava/lang/Integer;
+        // // }
+        aDeps.assertDependency("dependencies.SignatureTestClass.m3()", "dependencies.SignatureTestClass", IS_INSTANCE_MEMBER_OF)
+        aDeps.assertDependency("dependencies.SignatureTestClass.m3()", "java.lang.Object", RETURNS)
+        assertImplicitThisLocalVariable("dependencies.SignatureTestClass.m3()")
+        aDeps.assertDependency("dependencies.SignatureTestClass.m3()", "dependencies.SignatureTestClass", USES_METHOD_DECLARING_TYPE)
+        aDeps.assertDependency("dependencies.SignatureTestClass.m3()", "dependencies.SignatureTestClass.m3()", CALLS_METHOD)
+        aDeps.assertDependency("dependencies.SignatureTestClass.m3()", "java.lang.Integer", USES_RETURN_TYPE)
+        //    
+        //        public abstract Q m4();
+        aDeps.assertDependency("dependencies.SignatureTestClass.m4()", "dependencies.SignatureTestClass", IS_INSTANCE_MEMBER_OF)
+        aDeps.assertDependency("dependencies.SignatureTestClass.m4()", "java.io.FilterInputStream", RETURNS)
+        // // implicit method:
+        // // public InputStream m4(){
+        // //     return m4(); //Method m4:()Ljava/io/FilterInputStream;
+        // // }
+        aDeps.assertDependency("dependencies.SignatureTestClass.m4()", "dependencies.SignatureTestClass", IS_INSTANCE_MEMBER_OF)
+        aDeps.assertDependency("dependencies.SignatureTestClass.m4()", "java.io.InputStream", RETURNS)
+        assertImplicitThisLocalVariable("dependencies.SignatureTestClass.m4()")
+        aDeps.assertDependency("dependencies.SignatureTestClass.m4()", "dependencies.SignatureTestClass", USES_METHOD_DECLARING_TYPE)
+        aDeps.assertDependency("dependencies.SignatureTestClass.m4()", "dependencies.SignatureTestClass.m4()", CALLS_METHOD)
+        aDeps.assertDependency("dependencies.SignatureTestClass.m4()", "java.io.FilterInputStream", USES_RETURN_TYPE)
+        //    
+        //        @SuppressWarnings("unchecked")
+        //        public abstract FileOutputStream m5();
+        aDeps.assertDependency("dependencies.SignatureTestClass.m5()", "dependencies.SignatureTestClass", IS_INSTANCE_MEMBER_OF)
+        aDeps.assertDependency("dependencies.SignatureTestClass.m5()", "java.io.FileOutputStream", RETURNS)
+        // // implicit method:
+        // // public OutputStream m5(){
+        // //     return m5(); //Method m5:()Ljava/io/FileOutputStream;
+        // // }
+        aDeps.assertDependency("dependencies.SignatureTestClass.m5()", "dependencies.SignatureTestClass", IS_INSTANCE_MEMBER_OF)
+        aDeps.assertDependency("dependencies.SignatureTestClass.m5()", "java.io.OutputStream", RETURNS)
+        assertImplicitThisLocalVariable("dependencies.SignatureTestClass.m5()")
+        aDeps.assertDependency("dependencies.SignatureTestClass.m5()", "dependencies.SignatureTestClass", USES_METHOD_DECLARING_TYPE)
+        aDeps.assertDependency("dependencies.SignatureTestClass.m5()", "dependencies.SignatureTestClass.m5()", CALLS_METHOD)
+        aDeps.assertDependency("dependencies.SignatureTestClass.m5()", "java.io.FileOutputStream", USES_RETURN_TYPE)
+        //    
+        //        public abstract List<String> m6(ArrayList<Integer> p);
+        aDeps.assertDependency("dependencies.SignatureTestClass.m6(java.util.ArrayList)", "dependencies.SignatureTestClass", IS_INSTANCE_MEMBER_OF)
+        aDeps.assertDependency("dependencies.SignatureTestClass.m6(java.util.ArrayList)", "java.util.ArrayList", HAS_PARAMETER_OF_TYPE)
+        aDeps.assertDependency("dependencies.SignatureTestClass.m6(java.util.ArrayList)", "java.lang.Integer", USES_TYPE_IN_TYPE_PARAMETERS)
+        aDeps.assertDependency("dependencies.SignatureTestClass.m6(java.util.ArrayList)", "java.util.List", RETURNS)
+        aDeps.assertDependency("dependencies.SignatureTestClass.m6(java.util.ArrayList)", "java.lang.String", USES_TYPE_IN_TYPE_PARAMETERS)
+        //    }
+    }
+
+    private def assertSignatureTestSubClass(implicit aDeps: AssertableDependencies) {
+        //    package dependencies;
+        //    
+        //    import java.io.FileOutputStream;
+        //    import java.util.jar.JarInputStream;
+        //    import java.util.zip.ZipInputStream;
+        //    
+        //    public abstract class SignatureTestSubClass extends
+        //    	SignatureTestClass<ZipInputStream> {
+        aDeps.assertDependency("dependencies.SignatureTestSubClass", "dependencies.SignatureTestClass", EXTENDS)
+        aDeps.assertDependency("dependencies.SignatureTestSubClass", "java.util.zip.ZipInputStream", USES_TYPE_IN_TYPE_PARAMETERS)
+        assertImplicitDefaultConstructor("dependencies.SignatureTestSubClass", "dependencies.SignatureTestClass")
+        //        protected JarInputStream f1;
+        aDeps.assertDependency("dependencies.SignatureTestSubClass.f1", "dependencies.SignatureTestSubClass", IS_INSTANCE_MEMBER_OF)
+        aDeps.assertDependency("dependencies.SignatureTestSubClass.f1", "java.util.jar.JarInputStream", IS_OF_TYPE)
+        //    
+        //        @SuppressWarnings("unchecked")
+        //        public abstract Integer m3();
+        aDeps.assertDependency("dependencies.SignatureTestSubClass.m3()", "dependencies.SignatureTestSubClass", IS_INSTANCE_MEMBER_OF)
+        aDeps.assertDependency("dependencies.SignatureTestSubClass.m3()", "java.lang.Integer", RETURNS)
+        // // implicit method:
+        // // public Object m3(){
+        // //     return m3(); //Method m3:()Ljava/lang/Integer;
+        // // }
+        aDeps.assertDependency("dependencies.SignatureTestSubClass.m3()", "dependencies.SignatureTestSubClass", IS_INSTANCE_MEMBER_OF)
+        aDeps.assertDependency("dependencies.SignatureTestSubClass.m3()", "java.lang.Object", RETURNS)
+        assertImplicitThisLocalVariable("dependencies.SignatureTestSubClass.m3()")
+        aDeps.assertDependency("dependencies.SignatureTestSubClass.m3()", "dependencies.SignatureTestSubClass", USES_METHOD_DECLARING_TYPE)
+        aDeps.assertDependency("dependencies.SignatureTestSubClass.m3()", "dependencies.SignatureTestSubClass.m3()", CALLS_METHOD)
+        aDeps.assertDependency("dependencies.SignatureTestSubClass.m3()", "java.lang.Integer", USES_RETURN_TYPE)
+        //            
+        //        @SuppressWarnings("unchecked")
+        //        public abstract FileOutputStream m5();
+        aDeps.assertDependency("dependencies.SignatureTestSubClass.m5()", "dependencies.SignatureTestSubClass", IS_INSTANCE_MEMBER_OF)
+        aDeps.assertDependency("dependencies.SignatureTestSubClass.m5()", "java.io.FileOutputStream", RETURNS)
+        // // implicit method:
+        // // public OutputStream m5(){
+        // //     return m5(); //Method m5:()Ljava/io/FileOutputStream;
+        // // }
+        aDeps.assertDependency("dependencies.SignatureTestSubClass.m5()", "dependencies.SignatureTestSubClass", IS_INSTANCE_MEMBER_OF)
+        aDeps.assertDependency("dependencies.SignatureTestSubClass.m5()", "java.io.OutputStream", RETURNS)
+        assertImplicitThisLocalVariable("dependencies.SignatureTestSubClass.m5()")
+        aDeps.assertDependency("dependencies.SignatureTestSubClass.m5()", "dependencies.SignatureTestSubClass", USES_METHOD_DECLARING_TYPE)
+        aDeps.assertDependency("dependencies.SignatureTestSubClass.m5()", "dependencies.SignatureTestSubClass.m5()", CALLS_METHOD)
+        aDeps.assertDependency("dependencies.SignatureTestSubClass.m5()", "java.io.FileOutputStream", USES_RETURN_TYPE)
+        //    }
+    }
+
+    private def assertImplicitDefaultConstructor(className: String, superClassName: String = "java.lang.Object")(implicit aDeps: AssertableDependencies) {
         //	//implicit constructor:
         val constructorName = className+".<init>()"
         aDeps.assertDependency(constructorName, className, IS_INSTANCE_MEMBER_OF)
-        aDeps.assertDependency(constructorName, "java.lang.Object", USES_METHOD_DECLARING_TYPE)
-        aDeps.assertDependency(constructorName, "java.lang.Object.<init>()", CALLS_METHOD)
+        aDeps.assertDependency(constructorName, superClassName, USES_METHOD_DECLARING_TYPE)
+        aDeps.assertDependency(constructorName, superClassName+".<init>()", CALLS_METHOD)
         assertImplicitThisLocalVariable(constructorName)
     }
 

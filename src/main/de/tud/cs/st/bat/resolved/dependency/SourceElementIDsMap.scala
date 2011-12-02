@@ -57,11 +57,11 @@ trait SourceElementIDsMap extends SourceElementIDs {
 
     import scala.collection.mutable.WeakHashMap
 
-    private var nextTypeID = LOWEST_TYPE_ID;
+    private var lastTypeID = LOWEST_TYPE_ID - 1;
 
     private val typeIDs = WeakHashMap[Type, Int]()
 
-    def sourceElementID(t: Type): Int = typeIDs.getOrElseUpdate(t, { nextTypeID += 1; nextTypeID })
+    def sourceElementID(t: Type): Int = typeIDs.getOrElseUpdate(t, { lastTypeID += 1; lastTypeID })
 
     //
     // Associates each field with a unique ID
@@ -69,14 +69,14 @@ trait SourceElementIDsMap extends SourceElementIDs {
 
     val LOWEST_FIELD_ID: Int = 1000000000
 
-    private var nextFieldID = LOWEST_FIELD_ID
+    private var lastFieldID = LOWEST_FIELD_ID - 1
 
     private val fieldIDs = WeakHashMap[ObjectType, WeakHashMap[String, Int]]()
 
     def sourceElementID(definingObjectType: ObjectType, fieldName: String): Int =
         fieldIDs.
             getOrElseUpdate(definingObjectType, { WeakHashMap[String, Int]() }).
-            getOrElseUpdate(fieldName, { nextFieldID += 1; nextFieldID })
+            getOrElseUpdate(fieldName, { lastFieldID += 1; lastFieldID })
 
     //
     // Associates each method with a unique ID
@@ -84,24 +84,24 @@ trait SourceElementIDsMap extends SourceElementIDs {
 
     val LOWEST_METHOD_ID: Int = 2000000000
 
-    private var nextMethodID = LOWEST_METHOD_ID
+    private var lastMethodID = LOWEST_METHOD_ID - 1
 
     private val methodIDs = WeakHashMap[ObjectType, WeakHashMap[(String, MethodDescriptor), Int]]()
 
     def sourceElementID(definingObjectType: ObjectType, methodName: String, methodDescriptor: MethodDescriptor): Int = {
         methodIDs.
             getOrElseUpdate(definingObjectType, { WeakHashMap[(String, MethodDescriptor), Int]() }).
-            getOrElseUpdate((methodName, methodDescriptor), { nextMethodID += 1; nextMethodID })
+            getOrElseUpdate((methodName, methodDescriptor), { lastMethodID += 1; lastMethodID })
     }
 
     def reset {
-        nextTypeID = LOWEST_TYPE_ID
+        lastTypeID = LOWEST_TYPE_ID - 1
         typeIDs.clear()
 
-        nextFieldID = LOWEST_FIELD_ID
+        lastFieldID = LOWEST_FIELD_ID - 1
         fieldIDs.clear()
 
-        nextMethodID = LOWEST_METHOD_ID
+        lastMethodID = LOWEST_METHOD_ID - 1
         methodIDs.clear()
     }
 

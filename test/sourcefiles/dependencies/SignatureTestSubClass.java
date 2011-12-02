@@ -32,23 +32,21 @@
  */
 package dependencies;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.FileOutputStream;
+import java.util.jar.JarInputStream;
+import java.util.zip.ZipInputStream;
 
 /**
  * @author Thomas Schlosser
  * 
  */
-public class TestClass implements TestInterface {
-    public void testMethod() {
-	List<? extends CharSequence> list = new ArrayList<String>();
-	list.add(null);
-    }
+public abstract class SignatureTestSubClass extends
+	SignatureTestClass<ZipInputStream> {
+    protected JarInputStream f1;
 
-    public String testMethod(Integer i, int j) {
-	if (i != null && i.intValue() > j) {
-	    return i.toString();
-	}
-	return String.valueOf(j);
-    }
+    @SuppressWarnings("unchecked")
+    public abstract Integer m3();
+
+    @SuppressWarnings("unchecked")
+    public abstract FileOutputStream m5();
 }

@@ -84,6 +84,9 @@ object DependencyType extends Enumeration {
     val CALLS_INTERFACE_METHOD = Value("calls interface method")
     val USES_TYPE = Value("uses type") // default 'uses' dependency
 
+    // signature related dependency types
+    val USES_TYPE_IN_TYPE_PARAMETERS = Value("uses type in type parameters")
+
     val UNDEFINED = Value("undefined dependency")
 
 }

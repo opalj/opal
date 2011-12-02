@@ -32,6 +32,8 @@
  */
 package dependencies;
 
+import java.io.FileOutputStream;
+import java.io.FilterInputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,16 +41,24 @@ import java.util.List;
  * @author Thomas Schlosser
  * 
  */
-public class TestClass implements TestInterface {
-    public void testMethod() {
-	List<? extends CharSequence> list = new ArrayList<String>();
-	list.add(null);
-    }
+public abstract class SignatureTestClass<Q extends FilterInputStream>
+	implements SignatureTestInterface<Q, String> {
 
-    public String testMethod(Integer i, int j) {
-	if (i != null && i.intValue() > j) {
-	    return i.toString();
-	}
-	return String.valueOf(j);
-    }
+    protected Q f1;
+
+    protected List<Long> f2;
+
+    public abstract Q m1();
+
+    public abstract void m2(Q t, String z);
+
+    @SuppressWarnings("unchecked")
+    public abstract Integer m3();
+
+    public abstract Q m4();
+
+    @SuppressWarnings("unchecked")
+    public abstract FileOutputStream m5();
+
+    public abstract List<String> m6(ArrayList<Integer> p);
 }

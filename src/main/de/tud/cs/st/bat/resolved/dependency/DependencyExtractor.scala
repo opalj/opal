@@ -37,7 +37,6 @@ import DependencyType._
 import de.tud.cs.st.bat.AccessFlagsContexts._
 import de.tud.cs.st.bat.ACC_STATIC
 import de.tud.cs.st.bat.AccessFlagsIterator
-import de.tud.cs.st.util.perf.ToCommandLinePerformanceEvaluation
 
 /**
  * DependencyExtractor can process a ClassFile and extract all dependencies between
@@ -46,7 +45,7 @@ import de.tud.cs.st.util.perf.ToCommandLinePerformanceEvaluation
  *
  * @author Thomas Schlosser
  */
-class DependencyExtractor(val builder: DependencyBuilder) extends InstructionDependencyExtractor with ToCommandLinePerformanceEvaluation {
+class DependencyExtractor(val builder: DependencyBuilder) extends InstructionDependencyExtractor {
 
     import builder._
 
@@ -84,8 +83,8 @@ class DependencyExtractor(val builder: DependencyBuilder) extends InstructionDep
                         addDependency(getID(innerClassType), thisClassID, IS_INNER_CLASS_OF)
                     }
                 case sa: Signature ⇒
-                //TODO: impl.
-                case _             ⇒
+                    processSignature(sa, thisClassID)
+                case _ ⇒
             }
         }
 
@@ -111,8 +110,8 @@ class DependencyExtractor(val builder: DependencyBuilder) extends InstructionDep
                 case cv: ConstantValue[_] ⇒
                     addDependency(fieldID, getID(cv.valueType), USES_CONSTANT_VALUE_OF_TYPE)
                 case sa: Signature ⇒
-                //TODO: impl.
-                case _             ⇒
+                    processSignature(sa, fieldID)
+                case _ ⇒
             }
         }
     }
@@ -137,9 +136,7 @@ class DependencyExtractor(val builder: DependencyBuilder) extends InstructionDep
                 case elementValue: ElementValue ⇒
                     processElementValue(elementValue)(methodID)
                 case CodeAttribute(_, _, code, exceptionTable, attributes) ⇒
-                    aggregateTimes('process_code) {
-                        process(methodID, code)
-                    }
+                    process(methodID, code)
                     for (
                         ExceptionTableEntry(_, _, _, catchType) ← exceptionTable if !isFinallyBlock(catchType)
                     ) {
@@ -153,19 +150,77 @@ class DependencyExtractor(val builder: DependencyBuilder) extends InstructionDep
                                 }
                             case LocalVariableTypeTableAttribute(localVariableTypeTable) ⇒
                                 for (LocalVariableTypeTableEntry(_, _, _, signature, _) ← localVariableTypeTable) {
-                                    //TODO: impl.
+                                    processSignature(signature, methodID)
                                 }
                             case _ ⇒
                         }
                     }
                 case sa: Signature ⇒
-                //TODO: impl.
-                case _             ⇒
+                    processSignature(sa, methodID)
+                case _ ⇒
             }
         }
     }
 
-    private def processElementValue(elementValue: ElementValue)(implicit srcID: Int, annotationDepType: DependencyType = ANNOTATED_WITH) {
+    private def processSignature(signature: SignatureElement, srcID: Int, isInTypeParameters: Boolean = false) {
+        def processFormalTypeParameters(formalTypeParameters: Option[List[FormalTypeParameter]]) {
+            formalTypeParameters match {
+                case Some(list) ⇒
+                    for (FormalTypeParameter(_, classBound, interfaceBound) ← list) {
+                        if (classBound.isDefined)
+                            processSignature(classBound.get, srcID, true)
+                        if (interfaceBound.isDefined)
+                            processSignature(interfaceBound.get, srcID, true)
+                    }
+                case None ⇒
+            }
+        }
+
+        def processSimpleClassTypeSignature(simpleClassTypeSignatures: SimpleClassTypeSignature) {
+            val SimpleClassTypeSignature(_, typeArguments) = simpleClassTypeSignatures
+            processTypeArguments(typeArguments)
+        }
+
+        def processTypeArguments(typeArguments: Option[List[TypeArgument]]) {
+            typeArguments match {
+                case Some(args) ⇒
+                    args foreach {
+                        _ match {
+                            case ProperTypeArgument(_, fieldTypeSignature) ⇒
+                                processSignature(fieldTypeSignature, srcID, true)
+                            // case Wildcard ⇒
+                            case _ ⇒
+                        }
+                    }
+                case None ⇒
+            }
+        }
+
+        signature match {
+            case ClassSignature(formalTypeParameters, superClassSignature, superInterfacesSignature) ⇒
+                processFormalTypeParameters(formalTypeParameters)
+                processSignature(superClassSignature, srcID)
+                superInterfacesSignature foreach { cts ⇒ processSignature(cts, srcID) }
+            case MethodTypeSignature(formalTypeParameters, parametersTypeSignatures, returnTypeSignature, throwsSignature) ⇒
+                processFormalTypeParameters(formalTypeParameters)
+                parametersTypeSignatures foreach { pts ⇒ processSignature(pts, srcID) }
+                processSignature(returnTypeSignature, srcID)
+                throwsSignature foreach { ts ⇒ processSignature(ts, srcID) }
+            case ArrayTypeSignature(typeSignature) ⇒
+                processSignature(typeSignature, srcID)
+            case cts: ClassTypeSignature ⇒
+                if (isInTypeParameters)
+                    addDependency(srcID, getID(cts.objectType), USES_TYPE_IN_TYPE_PARAMETERS)
+                processSimpleClassTypeSignature(cts.simpleClassTypeSignature)
+            case ProperTypeArgument(_, fieldTypeSignature) ⇒
+                processSignature(fieldTypeSignature, srcID)
+            // case TypeVariableSignature(identifier) ⇒
+            // case VoidType ⇒
+            case _ ⇒
+        }
+    }
+
+    private def processElementValue(elementValue: ElementValue)(implicit srcID: Int, annotationDependencyType: DependencyType = ANNOTATED_WITH) {
         elementValue match {
             case ClassValue(returnType) ⇒
                 addDependency(srcID, getID(returnType), USES_DEFAULT_CLASS_VALUE_TYPE)
@@ -180,10 +235,10 @@ class DependencyExtractor(val builder: DependencyBuilder) extends InstructionDep
         }
     }
 
-    private def process(annotation: Annotation)(implicit srcID: Int, depType: DependencyType = ANNOTATED_WITH) {
+    private def process(annotation: Annotation)(implicit srcID: Int, dependencyType: DependencyType = ANNOTATED_WITH) {
         val Annotation(annotationType, elementValuePairs) = annotation
 
-        addDependency(srcID, getID(annotationType), depType)
+        addDependency(srcID, getID(annotationType), dependencyType)
         for (ElementValuePair(_, elementValue) ← elementValuePairs) {
             processElementValue(elementValue)
         }

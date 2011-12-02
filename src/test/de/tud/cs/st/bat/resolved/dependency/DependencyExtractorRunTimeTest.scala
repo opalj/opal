@@ -45,7 +45,9 @@ import scala.math.Ordering$Long$
  *
  */
 @RunWith(classOf[JUnitRunner])
-class DependencyExtractorRunTimeTest extends FunSuite with de.tud.cs.st.util.perf.BasicPerformanceEvaluation {
+class DependencyExtractorRunTimeTest extends FunSuite
+        with ClassFileTestUtility
+        with de.tud.cs.st.util.perf.BasicPerformanceEvaluation {
 
     test("testDependencyExtraction - Apache ANT 1.7.1 - javac 6 default target.zip") {
         testDependencyExtraction("test/classfiles/Apache ANT 1.7.1 - javac 6 default target.zip")
@@ -103,7 +105,7 @@ class DependencyExtractorRunTimeTest extends FunSuite with de.tud.cs.st.util.per
         }
         val dependencyExtractor = new DependencyExtractor(dependencyBuilder)
 
-        var testClasses = Java6Framework.ClassFiles(zipFile)
+        var testClasses = ClassFiles(zipFile)
         var min = Long.MaxValue
         var max = Long.MinValue
         for (i ← 1 to 10)

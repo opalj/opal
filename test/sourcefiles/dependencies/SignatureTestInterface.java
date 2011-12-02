@@ -32,23 +32,22 @@
  */
 package dependencies;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 /**
  * @author Thomas Schlosser
  * 
  */
-public class TestClass implements TestInterface {
-    public void testMethod() {
-	List<? extends CharSequence> list = new ArrayList<String>();
-	list.add(null);
-    }
+public interface SignatureTestInterface<T extends InputStream, Z> {
 
-    public String testMethod(Integer i, int j) {
-	if (i != null && i.intValue() > j) {
-	    return i.toString();
-	}
-	return String.valueOf(j);
-    }
+    public T m1();
+
+    public void m2(T t, Z z);
+
+    public <W> W m3();
+
+    public <W extends T> W m4();
+
+    public <W extends OutputStream> W m5();
 }
