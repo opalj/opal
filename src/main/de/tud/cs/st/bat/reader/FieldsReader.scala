@@ -83,7 +83,7 @@ trait FieldsReader extends Constant_PoolAbstractions {
             in.readUnsignedShort,
             in.readUnsignedShort,
             in.readUnsignedShort,
-            Attributes(AttributesParents.Field_info, cp, in)
+            Attributes(AttributesParent.Field, cp, in)
         )(cp)
     }
 }

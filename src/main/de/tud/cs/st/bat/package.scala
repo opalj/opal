@@ -44,9 +44,11 @@ package object bat {
 
     type AccessFlagsContext = AccessFlagsContexts.Value
 
-    type AttributeParent = AttributesParents.Value
+    type AttributeParent = AttributesParent.Value
 
-    type AttributesParent = AttributesParents.Value
+    type AttributesParent = AttributesParent.Value
     
     type ConstantPoolTag = Constant_PoolTags.Value
+    
+    val CLASS_FILE_MAGIC = 0xCAFEBABE
 }

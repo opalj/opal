@@ -146,10 +146,10 @@ trait Constant_PoolResolver extends Constant_PoolBinding {
 
     implicit def CONSTANT_Utf8_info_IndexToSignatureAttribute(cuii: Constant_Pool_Index)(implicit cp: Constant_Pool, ap: AttributesParent): SignatureAttribute = {
         ap match {
-            case AttributesParents.Field_info     ⇒ SignatureParser.parseFieldTypeSignature(cuii)
-            case AttributesParents.ClassFile      ⇒ SignatureParser.parseClassSignature(cuii)
-            case AttributesParents.Method_info    ⇒ SignatureParser.parseMethodTypeSignature(cuii)
-            case AttributesParents.Code_attribute ⇒ sys.error("signature attributes stored in a code_attribute's attributes table are non-standard")
+            case AttributesParent.Field     ⇒ SignatureParser.parseFieldTypeSignature(cuii)
+            case AttributesParent.ClassFile      ⇒ SignatureParser.parseClassSignature(cuii)
+            case AttributesParent.Method    ⇒ SignatureParser.parseMethodTypeSignature(cuii)
+            case AttributesParent.Code ⇒ sys.error("signature attributes stored in a code_attribute's attributes table are non-standard")
         }
     }
 

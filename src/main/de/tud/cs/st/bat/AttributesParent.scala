@@ -33,13 +33,13 @@
 package de.tud.cs.st.bat
 
 /**
- * Enumeration of all primary class file elements that can have attributes.
+ * Enumeration of all class file structures that can have attributes.
  *
  * @author Michael Eichberg
  */
-object AttributesParents extends Enumeration {
+object AttributesParent extends Enumeration {
     val ClassFile = Value
-    val Field_info = Value
-    val Method_info = Value
-    val Code_attribute = Value
+    val Field = Value
+    val Method = Value
+    val Code = Value
 }

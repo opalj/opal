@@ -70,7 +70,7 @@ case class ClassFile(val minorVersion: Int,
     }
 
     /**
-     * Each class file optionally defines a clas signature.
+     * Each class file optionally defines a class signature.
      */
     def classSignature: Option[ClassSignature] = {
         attributes find {
@@ -94,7 +94,7 @@ case class ClassFile(val minorVersion: Int,
 
     import AccessFlagsContexts.CLASS
 
-    def toXML = {
+    def toXML =
         <class
 			type={ thisClass.className }
 			minor_version={ minorVersion.toString }
@@ -106,13 +106,12 @@ case class ClassFile(val minorVersion: Int,
 			{ for (field ← fields) yield field.toXML }
 			{ for (method ← methods) yield method.toXML }
 		</class>
-    }
 
     /**
      * Converts this object-oriented representation of a class file to a list of Prolog facts.
-     * 	<br/>
+     *
      * Structure of a class_file fact (representing only the class declaration):
-     * <pre>
+     * {{{
      * class_file(
      * 		classFileKey : Atom
      * 		classCategory : Atom
@@ -125,14 +124,13 @@ case class ClassFile(val minorVersion: Int,
      * 		synthetic : Term
      * 		deprecated : Term
      * )
-     * </pre>
+     * }}}
+     *
      * The "super" access_flag is not modeled since it is a legacy flag that is always set.
-     * <br />
-     * <i>
+     *
      * The modeling of the facts is inspired by the representation used in:
      * "Verification of Java Bytecode using Analysis and Transformation of Logic Programs;
      * E. Albert, M. Gomez-Zamalloa, L. Hubert and G. Puebla"
-     * </i>
      */
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): List[F] = {
 
