@@ -49,6 +49,6 @@ trait CONSTANT_Integer_info extends Constant_Pool_Entry {
     // IMPLEMENTATION
     //
 
-    def Constant_Type_Value = Constant_PoolTags.CONSTANT_Integer
+    def Constant_Type_Value = ConstantPoolTags.CONSTANT_Integer
 
 }

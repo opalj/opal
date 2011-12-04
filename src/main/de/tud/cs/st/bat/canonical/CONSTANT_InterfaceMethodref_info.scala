@@ -43,6 +43,6 @@ trait CONSTANT_InterfaceMethodref_info extends CONSTANT_Ref {
     // IMPLEMENTATION
     //
 
-    def Constant_Type_Value = Constant_PoolTags.CONSTANT_InterfaceMethodref
+    def Constant_Type_Value = ConstantPoolTags.CONSTANT_InterfaceMethodref
 
 }

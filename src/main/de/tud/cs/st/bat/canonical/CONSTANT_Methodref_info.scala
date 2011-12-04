@@ -44,5 +44,5 @@ trait CONSTANT_Methodref_info extends CONSTANT_Ref {
     // IMPLEMENTATION
     //
 
-    def Constant_Type_Value = Constant_PoolTags.CONSTANT_Methodref
+    def Constant_Type_Value = ConstantPoolTags.CONSTANT_Methodref
 }

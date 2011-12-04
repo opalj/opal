@@ -43,6 +43,6 @@ trait CONSTANT_Fieldref_info extends CONSTANT_Ref {
     // IMPLEMENTATION
     //
 
-    def Constant_Type_Value = Constant_PoolTags.CONSTANT_Fieldref
+    def Constant_Type_Value = ConstantPoolTags.CONSTANT_Fieldref
 
 }

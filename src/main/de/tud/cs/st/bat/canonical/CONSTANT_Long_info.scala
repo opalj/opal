@@ -49,6 +49,6 @@ trait CONSTANT_Long_info extends Constant_Pool_Entry {
     // IMPLEMENTATION
     //
 
-    def Constant_Type_Value = Constant_PoolTags.CONSTANT_Long
+    def Constant_Type_Value = ConstantPoolTags.CONSTANT_Long
 
 }

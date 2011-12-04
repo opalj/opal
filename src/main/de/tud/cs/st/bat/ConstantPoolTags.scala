@@ -33,12 +33,15 @@
 package de.tud.cs.st.bat
 
 /**
- * The constant pool tags as defined by the JVM specification.
- *
+ * A constant pool tag identifies the type of a specific entry in the 
+ * constant pool. 
+ *  
  * @author Michael Eichberg
  */
-object Constant_PoolTags extends Enumeration {
+object ConstantPoolTags extends Enumeration {
 
+    // IN THE FOLLOWING THE ORDER IS AS DEFINED IN THE JVM SE SPECIFICATION
+    
     val CONSTANT_Class_ID = 7
     val CONSTANT_Fieldref_ID = 9
     val CONSTANT_Methodref_ID = 10

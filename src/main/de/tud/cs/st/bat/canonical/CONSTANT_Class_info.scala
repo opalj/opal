@@ -50,7 +50,7 @@ trait CONSTANT_Class_info extends Constant_Pool_Entry {
     // IMPLEMENTATION
     //
 
-    def Constant_Type_Value = Constant_PoolTags.CONSTANT_Class
+    def Constant_Type_Value = ConstantPoolTags.CONSTANT_Class
 
 }
 

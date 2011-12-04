@@ -50,6 +50,6 @@ trait CONSTANT_Utf8_info extends Constant_Pool_Entry {
     // IMPLEMENTATION
     //
 
-    def Constant_Type_Value = Constant_PoolTags.CONSTANT_Utf8
+    def Constant_Type_Value = ConstantPoolTags.CONSTANT_Utf8
 
 }

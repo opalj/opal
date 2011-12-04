@@ -100,12 +100,12 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
     // IMPLEMENTATION
     //
 
-    import Constant_PoolTags._
+    import ConstantPoolTags._
 
     // TODO [Improvement] Replace IndexedSeq[Constant_Pool_Entry] by a factory method that returns an IndexedSeq that will be initialized
     type Constant_Pool = IndexedSeq[Constant_Pool_Entry]
 
-    private val reader = new Array[(DataInputStream) ⇒ Constant_Pool_Entry](Constant_PoolTags.maxId + 1)
+    private val reader = new Array[(DataInputStream) ⇒ Constant_Pool_Entry](ConstantPoolTags.maxId + 1)
 
     reader(CONSTANT_Class.id) = (in: DataInputStream) ⇒ CONSTANT_Class_info(in.readUnsignedShort)
 
@@ -156,9 +156,9 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
             val constantPoolEntry = constantReader(in)
             constant_pool_entries(i) = constantPoolEntry
             tag match {
-                case Constant_PoolTags.CONSTANT_Long_ID   ⇒ i += 2
-                case Constant_PoolTags.CONSTANT_Double_ID ⇒ i += 2
-                case _                                    ⇒ i += 1
+                case ConstantPoolTags.CONSTANT_Long_ID   ⇒ i += 2
+                case ConstantPoolTags.CONSTANT_Double_ID ⇒ i += 2
+                case _                                   ⇒ i += 1
             }
         }
         constant_pool_entries

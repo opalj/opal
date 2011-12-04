@@ -42,7 +42,7 @@ trait Constant_Pool_Entry {
     // ABSTRACT DEFINITIONS
     //
 
-    def Constant_Type_Value: Constant_PoolTags.Value
+    def Constant_Type_Value: ConstantPoolTag
 
 }
 
