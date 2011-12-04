@@ -34,13 +34,14 @@ package de.tud.cs.st.bat
 package resolved
 
 /**
- * Defines methods to return attributes that are common to class, field and method declarations.
+ * Defines methods to return common attributes from the attributes table of
+ * class, field and method declarations.
  *
  * @author Michael Eichberg
  */
 trait CommonAttributes {
 
-    def attributes: Attributes
+    protected def attributes: Attributes
 
     def runtimeVisibleAnnotations: Option[Annotations] = {
         attributes find {

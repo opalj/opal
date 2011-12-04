@@ -39,9 +39,9 @@ package de.tud.cs.st.bat.resolved
  */
 trait AnnotationsAttribute extends Attribute {
 
-    def annotations: Annotations
-
     def isRuntimeVisible: Boolean
+
+    def annotations: Annotations
 
     def annotationsToXML = for (annotation ← annotations) yield annotation.toXML
 
@@ -62,7 +62,7 @@ trait AnnotationsAttribute extends Attribute {
                 else
                     StringAtom("runtime_invisible"),
                 annotation.annotationType.toProlog(factory),
-                factory.Terms(
+                Terms(
                     annotation.elementValuePairs,
                     (_: ElementValuePair).toProlog(factory)
                 )

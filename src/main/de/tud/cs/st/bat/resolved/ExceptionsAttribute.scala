@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -43,13 +43,12 @@ case class ExceptionsAttribute(val exceptionTable: Seq[ObjectType])
 
     def toXML =
         <exceptions>
-			{ for (exception ← exceptionTable) yield <exception type={ exception.toJava }/> }
-		</exceptions>
+    		{ for (exception ← exceptionTable) yield <exception type={ exception.toJava }/> }
+    	</exceptions>
 
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] = {
         import factory._
-        Fact(
-            "method_exceptions",
+        Fact("method_exceptions",
             declaringEntityKey,
             Terms(exceptionTable, (_: ObjectType).toProlog(factory))
         ) :: Nil
