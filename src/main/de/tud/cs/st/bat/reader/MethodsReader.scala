@@ -37,7 +37,8 @@ import java.io.DataInputStream
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
 /**
- *
+ * Defines a template method to read in a class file's Method_info structure. 
+ * 
  * @author Michael Eichberg
  */
 trait MethodsReader extends Constant_PoolAbstractions {
@@ -85,7 +86,7 @@ trait MethodsReader extends Constant_PoolAbstractions {
             in.readUnsignedShort,
             in.readUnsignedShort,
             in.readUnsignedShort,
-            Attributes(AttributesParents.Method_info, cp, in)
+            Attributes(AttributesParent.Method, cp, in)
         )(cp)
     }
 }

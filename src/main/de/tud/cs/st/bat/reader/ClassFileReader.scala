@@ -45,15 +45,7 @@ import de.tud.cs.st.util.ControlAbstractions.repeat
  * (including) version 50 (Java 6). Version 51 (Java 7) is currently only
  * partially supported.
  *
- * '''Notes for Implementors'''
- *
- * Reading of the class file's major structures: the Constant Pool, Field/Method
- * declarations, the set of implemented Interfaces, and the Attributes is
- * delegated to special readers. This enables a very high-level of adaptability.
- *
- * For details see the JVM Specification: The ClassFile Structure.
- *
- * Format
+ * '''Format'''
  * {{{
  * ClassFile {
  * 	u4 magic;
@@ -74,6 +66,14 @@ import de.tud.cs.st.util.ControlAbstractions.repeat
  * 	attribute_info attributes[attributes_count];
  * }
  * }}}
+ *
+ * For details see the JVM Specification: The ClassFile Structure.
+ *
+ * '''Notes for Implementors'''
+ *
+ * Reading of the class file's major structures: the constant pool, fields, methods
+ * the set of implemented interfaces, and the attributes is
+ * delegated to special readers. This enables a very high-level of adaptability.
  *
  * @author Michael Eichberg
  */
@@ -204,8 +204,8 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      *  which must not return `null`. If you already do have an open input stream
      *  which should not be closed after reading the class file use [[de.tud.cs.st.bat.reader.ClassFileReader.ClassFile(DataInputStream)]] instead.
      *  The (newly created) InputStream returned by calling `create` is closed by this method.
-     *  If the created input stream is not a `DataInputStream` the stream returned by `InputStream`
-     *  will be automatically be wrapped.
+     *  The created input stream will automatically be wrapped by BAT to enable efficient reading of the
+     *  class file.
      */
     def ClassFile(create: () ⇒ InputStream): ClassFile = {
         var in = create();
@@ -217,7 +217,8 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         }
         try {
             ClassFile(in.asInstanceOf[DataInputStream])
-        } finally {
+        }
+        finally {
             in.close
         }
     }
@@ -226,7 +227,8 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         val in = new DataInputStream(zipFile.getInputStream(zipEntry))
         try {
             ClassFile(in)
-        } finally {
+        }
+        finally {
             in.close
         }
     }
@@ -242,7 +244,8 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         try {
             val zipEntry = zipFile.getEntry(zipFileEntryName)
             ClassFile(zipFile, zipEntry)
-        } finally {
+        }
+        finally {
             zipFile.close
         }
     }
@@ -271,7 +274,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      */
     def ClassFile(in: DataInputStream): ClassFile = {
         // magic
-        require(ClassFileReader.CLASS_FILE_MAGIC == in.readInt, "No class file.")
+        require(CLASS_FILE_MAGIC == in.readInt, "No class file.")
 
         val minor_version = in.readUnsignedShort // minor_version
         val major_version = in.readUnsignedShort // major_version
@@ -281,14 +284,14 @@ trait ClassFileReader extends Constant_PoolAbstractions {
             (major_version < 51 ||
                 (major_version == 51 && minor_version == 0))) // Java 6 = 50.0; Java 7 == 51.0
 
-        implicit val cp = Constant_Pool(in)
+        val cp = Constant_Pool(in)
         val access_flags = in.readUnsignedShort
         val this_class = in.readUnsignedShort
         val super_class = in.readUnsignedShort
         val interfaces = Interfaces(in, cp)
         val fields = Fields(in, cp)
         val methods = Methods(in, cp)
-        val attributes = Attributes(AttributesParents.ClassFile, cp, in)
+        val attributes = Attributes(AttributesParent.ClassFile, cp, in)
 
         ClassFile(
             minor_version, major_version,
@@ -296,15 +299,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
             this_class, super_class, interfaces,
             fields, methods,
             attributes
-        )
+        )(cp)
     }
 }
 
-object ClassFileReader {
-
-    /**
-     * The magic code with which every Java class file starts.
-     */
-    val CLASS_FILE_MAGIC = 0xCAFEBABE
-
-}
