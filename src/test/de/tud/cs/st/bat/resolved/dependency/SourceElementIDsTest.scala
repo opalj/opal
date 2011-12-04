@@ -40,7 +40,7 @@ import org.scalatest.FunSuite
  *
  * @author Michael Eichberg
  */
-//@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
+@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class SourceElementIDsTest extends FunSuite {
 
     import SourceElementIDs.{ sourceElementID ⇒ id }
@@ -99,16 +99,16 @@ class SourceElementIDsTest extends FunSuite {
         val md2 = MethodDescriptor("(III)I")
 
         val obj_md1_id = id(obj, name, md1)
-        assert(obj_md1_id == 2000000001)
+        assert(obj_md1_id == 1000000000)
         assert(obj_md1_id == id(obj, name, md1))
 
         val int_md1_id = id(int, name, md1)
-        assert(int_md1_id > 2000000001)
+        assert(int_md1_id > 1000000000)
         assert(int_md1_id == id(int, name, md1))
         assert(obj_md1_id != int_md1_id)
 
         val ind_md2_id = id(int, name, md2)
-        assert(ind_md2_id > 2000000002)
+        assert(ind_md2_id > 1000000001)
         assert(ind_md2_id != int_md1_id)
         assert(ind_md2_id != id(int, "bar", md2))
     }
@@ -120,15 +120,15 @@ class SourceElementIDsTest extends FunSuite {
         val bar = "bar"
 
         val obj_foo_id = id(obj, foo)
-        assert(obj_foo_id == 1000000001)
+        assert(obj_foo_id == 500000000)
         assert(obj_foo_id == id(obj, foo))
 
         val int_foo_id = id(int, foo)
-        assert(int_foo_id > 1000000001)
+        assert(int_foo_id > 500000000)
         assert(int_foo_id == id(int, foo))
 
         val ind_bar_id = id(int, bar)
-        assert(ind_bar_id > 1000000002)
+        assert(ind_bar_id > 500000001)
         assert(ind_bar_id != int_foo_id)
         assert(ind_bar_id == id(int, bar))
     }

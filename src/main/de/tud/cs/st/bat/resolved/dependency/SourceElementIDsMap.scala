@@ -38,16 +38,18 @@ package dependency
  *
  * Types are associated with ids larger than 0 and smaller than one billion.
  *
- * Fields are associated with ids > 1 000 000 000 and < 2 000 000 000
+ * Fields are associated with ids >= 500 000 000 and < 1 000 000 000
  *
- * Methods are associated with ids > 2 000 000 000
+ * Methods are associated with ids >= 1 000 000 000 and < 1 500 000 000
+ *
+ * Ids between 1 500 000 000 and Int.MaxValue can be used for custom id mappings.
  *
  * '''Implementation Note'''
  * This class is not thread safe.
  *
  * @author Michael Eichberg
  */
-trait SourceElementIDsMap extends SourceElementIDs {
+trait SourceElementIDsMap extends SourceElementIDs with IDResetter {
 
     //
     // Associates each type with a unique ID
@@ -67,7 +69,7 @@ trait SourceElementIDsMap extends SourceElementIDs {
     // Associates each field with a unique ID
     //
 
-    val LOWEST_FIELD_ID: Int = 1000000000
+    val LOWEST_FIELD_ID: Int = 500000000
 
     private var lastFieldID = LOWEST_FIELD_ID - 1
 
@@ -82,7 +84,7 @@ trait SourceElementIDsMap extends SourceElementIDs {
     // Associates each method with a unique ID
     //
 
-    val LOWEST_METHOD_ID: Int = 2000000000
+    val LOWEST_METHOD_ID: Int = 1000000000
 
     private var lastMethodID = LOWEST_METHOD_ID - 1
 
