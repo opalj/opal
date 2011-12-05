@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -47,7 +47,7 @@ object BasicJava6Framework
     with Constant_PoolBinding
     with Unknown_attributeReader {
 
-  // 
+  //
   // IMPLEMENTATION OF THE CLASSES REPRESENTING A CLASS FILE
   //
 
@@ -257,7 +257,7 @@ object BasicJava6Framework
     val start_pc: Int,
     val line_number: Int) extends de.tud.cs.st.bat.canonical.LineNumberTableEntry
 
-  def LineNumberTableEntry(start_pc: Int, line_number: Int)(implicit constant_pool: Constant_Pool) =
+  def LineNumberTableEntry(start_pc: Int, line_number: Int) =
     new LineNumberTableEntry(start_pc, line_number)
 
   case class LocalVariableTableEntry(
@@ -330,7 +330,7 @@ object BasicJava6Framework
 
     //
     // ABSTRACT DEFINITIONS
-    // 
+    //
     type Code = BasicJava6Framework.Code
     type ExceptionTableEntry = BasicJava6Framework.ExceptionTableEntry
     type Attributes = BasicJava6Framework.Attributes
