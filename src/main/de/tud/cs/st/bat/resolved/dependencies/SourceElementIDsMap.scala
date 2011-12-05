@@ -41,7 +41,7 @@ package dependencies
  * Fields are associated with ids > 1 000 000 000 and < 2 000 000 000
  *
  * Methods are associated with ids > 2 000 000 000
- * 
+ *
  * '''Implementation Note'''
  * This class is not thread safe.
  *
@@ -86,21 +86,22 @@ trait SourceElementIDsMap extends SourceElementIDs {
 
     private var nextMethodID = LOWEST_METHOD_ID
 
-    private val methodIDs = WeakHashMap[ObjectType, WeakHashMap[(String, MethodDescriptor), Int]]()
+    private val methodIDs = WeakHashMap[ObjectType, WeakHashMap[MethodDescriptor, WeakHashMap[String, Int]]]()
 
     def sourceElementID(definingObjectType: ObjectType, methodName: String, methodDescriptor: MethodDescriptor): Int = {
         methodIDs.
-            getOrElseUpdate(definingObjectType, { WeakHashMap[(String, MethodDescriptor), Int]() }).
-            getOrElseUpdate((methodName, methodDescriptor), { nextMethodID += 1; nextMethodID })
+            getOrElseUpdate(definingObjectType, { WeakHashMap[MethodDescriptor, WeakHashMap[String, Int]]() }).
+            getOrElseUpdate(methodDescriptor, { WeakHashMap[String, Int]() }).
+            getOrElseUpdate(methodName, { nextMethodID += 1; nextMethodID })
     }
-    
+
     def reset {
         nextTypeID = LOWEST_TYPE_ID
         typeIDs.clear()
-        
+
         nextFieldID = LOWEST_FIELD_ID
         fieldIDs.clear()
-        
+
         nextMethodID = LOWEST_METHOD_ID
         methodIDs.clear()
     }

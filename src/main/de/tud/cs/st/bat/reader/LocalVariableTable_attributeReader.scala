@@ -66,7 +66,7 @@ trait LocalVariableTable_attributeReader extends AttributeReader {
 
     def LocalVariableTableEntry(start_pc: Int,
                                 length: Int,
-                                name_index: Int,
+                                name_index: Constant_Pool_Index,
                                 descriptor_index: Constant_Pool_Index,
                                 index: Int)(
                                     implicit constant_pool: Constant_Pool): LocalVariableTableEntry
@@ -89,14 +89,21 @@ trait LocalVariableTable_attributeReader extends AttributeReader {
                 LocalVariableTable_attribute(
                     attribute_name_index,
                     attribute_length,
-                    repeat(in.readUnsignedShort) {
-                        LocalVariableTableEntry(
-                            in.readUnsignedShort,
-                            in.readUnsignedShort,
-                            in.readUnsignedShort,
-                            in.readUnsignedShort,
-                            in.readUnsignedShort
-                        )(cp)
+                    {
+                        val entriesCount = in.readUnsignedShort
+                        val entries = new Array[LocalVariableTableEntry](entriesCount)
+                        var i = 0
+                        while (i < entriesCount) {
+                            entries(i) = LocalVariableTableEntry(
+                                in.readUnsignedShort,
+                                in.readUnsignedShort,
+                                in.readUnsignedShort,
+                                in.readUnsignedShort,
+                                in.readUnsignedShort
+                            )(cp)
+                            i += 1
+                        }
+                        entries
                     }
                 )(cp)
             }
