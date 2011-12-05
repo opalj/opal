@@ -36,16 +36,16 @@ package dependency
 import DependencyType._
 
 /**
- * If you do not want to have dependencies to base types, this trait can be mixed in.
+ * If you do not want to have dependencies to base and void types, this trait can be mixed in.
  *
  * @author Thomas Schlosser
  */
-trait FilterDependenciesToBaseTypes extends DependencyBuilder {
+trait FilterDependenciesToBaseAndVoidTypes extends DependencyBuilder {
 
     private val IDOfFiltered = Int.MinValue
 
     abstract override def getID(t: Type): Int = {
-        if (t.isBaseType)
+        if (t.isBaseType || t.isVoidType)
             return IDOfFiltered
         super.getID(t)
     }
