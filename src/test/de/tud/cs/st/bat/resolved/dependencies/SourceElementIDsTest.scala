@@ -40,12 +40,12 @@ import org.scalatest.FunSuite
  *
  * @author Michael Eichberg
  */
-//@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
+@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class SourceElementIDsTest extends FunSuite {
-  
+
     import SourceElementIDs.{ sourceElementID ⇒ id }
     SourceElementIDs.reset
-    
+
     test("BaseType IDs") {
         val it = id(IntegerType)
         val lt = id(LongType)
@@ -76,8 +76,8 @@ class SourceElementIDsTest extends FunSuite {
     }
 
     test("ArrayType IDs are replaced by ObjectType IDs") {
-        val ids = new SourceElementIDsMap with UseIDOfBaseTypeForArrayTypes 
-        
+        val ids = new SourceElementIDsMap with UseIDOfBaseTypeForArrayTypes
+
         val ot1 = ids.sourceElementID(ObjectType("java/lang/Object"))
         val aot1 = ids.sourceElementID(FieldType("[Ljava/lang/Object;"))
         assert(ot1 == aot1)
@@ -87,7 +87,7 @@ class SourceElementIDsTest extends FunSuite {
 
         val aot3 = ids.sourceElementID(FieldType("[Ljava/lang/Integer;"))
         assert(aot1 != aot3)
-        
+
         assert(aot3 == ids.sourceElementID(ObjectType("java/lang/Integer")))
     }
 
@@ -111,6 +111,9 @@ class SourceElementIDsTest extends FunSuite {
         assert(ind_md2_id > 2000000002)
         assert(ind_md2_id != int_md1_id)
         assert(ind_md2_id != id(int, "bar", md2))
+
+        System.gc
+        assert(obj_md1_id == id(obj, name, md1))
     }
 
     test("Field IDs") {
