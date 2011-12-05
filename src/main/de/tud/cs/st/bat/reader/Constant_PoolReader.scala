@@ -100,7 +100,7 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
     // IMPLEMENTATION
     //
 
-    import Constant_PoolTags._
+    import ConstantPoolTags._
 
     type Constant_Pool = IndexedSeq[Constant_Pool_Entry]
 
