@@ -111,6 +111,9 @@ class SourceElementIDsTest extends FunSuite {
         assert(ind_md2_id > 1000000001)
         assert(ind_md2_id != int_md1_id)
         assert(ind_md2_id != id(int, "bar", md2))
+
+        System.gc
+        assert(obj_md1_id == id(obj, name, md1))
     }
 
     test("Field IDs") {

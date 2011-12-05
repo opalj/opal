@@ -62,9 +62,7 @@ trait LineNumberTable_attributeReader extends AttributeReader {
                                   line_number_table: LineNumberTable)(
                                       implicit constant_pool: Constant_Pool): LineNumberTable_attribute
 
-    def LineNumberTableEntry(start_pc: Int,
-                             line_number: Int)(
-                                 implicit constant_pool: Constant_Pool): LineNumberTableEntry
+    def LineNumberTableEntry(start_pc: Int, line_number: Int): LineNumberTableEntry
 
     //
     // IMPLEMENTATION
@@ -79,9 +77,7 @@ trait LineNumberTable_attributeReader extends AttributeReader {
                 attribute_name_index,
                 attribute_length,
                 repeat(in.readUnsignedShort) {
-                    LineNumberTableEntry(
-                        in.readUnsignedShort,
-                        in.readUnsignedShort)(cp)
+                    LineNumberTableEntry(in.readUnsignedShort, in.readUnsignedShort)
                 }
             )(cp)
         })

@@ -89,13 +89,13 @@ trait SourceElementIDsMap extends SourceElementIDs with IDResetter {
 
     private var lastMethodID = LOWEST_METHOD_ID - 1
 
-    //FIXME Don't use a HashMap for the values to support scenarios where existing classfiles are updated
-    private val methodIDs = WeakHashMap[ObjectType, HashMap[(String, MethodDescriptor), Int]]()
+    private val methodIDs = WeakHashMap[ObjectType, WeakHashMap[MethodDescriptor, WeakHashMap[String, Int]]]()
 
     def sourceElementID(definingObjectType: ObjectType, methodName: String, methodDescriptor: MethodDescriptor): Int = {
         methodIDs.
-            getOrElseUpdate(definingObjectType, { HashMap[(String, MethodDescriptor), Int]() }).
-            getOrElseUpdate(new Tuple2(methodName, methodDescriptor), { lastMethodID += 1; lastMethodID })
+            getOrElseUpdate(definingObjectType, { WeakHashMap[MethodDescriptor, WeakHashMap[String, Int]]() }).
+            getOrElseUpdate(methodDescriptor, { WeakHashMap[String, Int]() }).
+            getOrElseUpdate(methodName, { lastMethodID += 1; lastMethodID })
     }
 
     def reset {

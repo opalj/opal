@@ -102,38 +102,7 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
 
     import Constant_PoolTags._
 
-    // TODO [Improvement] Replace IndexedSeq[Constant_Pool_Entry] by a factory method that returns an IndexedSeq that will be initialized
     type Constant_Pool = IndexedSeq[Constant_Pool_Entry]
-
-    private val reader = new Array[(DataInputStream) ⇒ Constant_Pool_Entry](Constant_PoolTags.maxId + 1)
-
-    reader(CONSTANT_Class.id) = (in: DataInputStream) ⇒ CONSTANT_Class_info(in.readUnsignedShort)
-
-    reader(CONSTANT_Fieldref.id) = (in: DataInputStream) ⇒ CONSTANT_Fieldref_info(in.readUnsignedShort, in.readUnsignedShort)
-
-    reader(CONSTANT_Methodref.id) = (in: DataInputStream) ⇒ CONSTANT_Methodref_info(in.readUnsignedShort, in.readUnsignedShort)
-
-    reader(CONSTANT_InterfaceMethodref.id) = (in: DataInputStream) ⇒ CONSTANT_InterfaceMethodref_info(in.readUnsignedShort, in.readUnsignedShort)
-
-    reader(CONSTANT_String.id) = (in: DataInputStream) ⇒ CONSTANT_String_info(in.readUnsignedShort)
-
-    reader(CONSTANT_Integer.id) = (in: DataInputStream) ⇒ CONSTANT_Integer_info(in.readInt)
-
-    reader(CONSTANT_Float.id) = (in: DataInputStream) ⇒ CONSTANT_Float_info(in.readFloat)
-
-    reader(CONSTANT_Long.id) = (in: DataInputStream) ⇒ CONSTANT_Long_info(in.readLong)
-
-    reader(CONSTANT_Double.id) = (in: DataInputStream) ⇒ CONSTANT_Double_info(in.readDouble)
-
-    reader(CONSTANT_NameAndType.id) = (in: DataInputStream) ⇒ CONSTANT_NameAndType_info(in.readUnsignedShort, in.readUnsignedShort)
-
-    reader(CONSTANT_Utf8.id) = (in: DataInputStream) ⇒ CONSTANT_Utf8_info(in.readUTF)
-
-    reader(CONSTANT_MethodHandle.id) = (in: DataInputStream) ⇒ CONSTANT_MethodHandle_info(in.readUnsignedByte, in.readUnsignedShort)
-
-    reader(CONSTANT_MethodType.id) = (in: DataInputStream) ⇒ CONSTANT_MethodType_info(in.readUnsignedShort)
-
-    reader(CONSTANT_InvokeDynamic.id) = (in: DataInputStream) ⇒ CONSTANT_InvokeDynamic_info(in.readUnsignedShort, in.readUnsignedShort)
 
     def Constant_Pool(in: DataInputStream): Constant_Pool = {
         /*
@@ -152,13 +121,22 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
         var i = 1
         while (i < constant_pool_count) {
             val tag = in.readUnsignedByte
-            val constantReader = reader(tag)
-            val constantPoolEntry = constantReader(in)
-            constant_pool_entries(i) = constantPoolEntry
-            tag match {
-                case Constant_PoolTags.CONSTANT_Long_ID   ⇒ i += 2
-                case Constant_PoolTags.CONSTANT_Double_ID ⇒ i += 2
-                case _                                    ⇒ i += 1
+            constant_pool_entries(i) = tag match {
+                case CONSTANT_Class_ID              ⇒ i += 1; CONSTANT_Class_info(in.readUnsignedShort)
+                case CONSTANT_Fieldref_ID           ⇒ i += 1; CONSTANT_Fieldref_info(in.readUnsignedShort, in.readUnsignedShort)
+                case CONSTANT_Methodref_ID          ⇒ i += 1; CONSTANT_Methodref_info(in.readUnsignedShort, in.readUnsignedShort)
+                case CONSTANT_InterfaceMethodref_ID ⇒ i += 1; CONSTANT_InterfaceMethodref_info(in.readUnsignedShort, in.readUnsignedShort)
+                case CONSTANT_String_ID             ⇒ i += 1; CONSTANT_String_info(in.readUnsignedShort)
+                case CONSTANT_Integer_ID            ⇒ i += 1; CONSTANT_Integer_info(in.readInt)
+                case CONSTANT_Float_ID              ⇒ i += 1; CONSTANT_Float_info(in.readFloat)
+                case CONSTANT_Long_ID               ⇒ i += 2; CONSTANT_Long_info(in.readLong)
+                case CONSTANT_Double_ID             ⇒ i += 2; CONSTANT_Double_info(in.readDouble)
+                case CONSTANT_NameAndType_ID        ⇒ i += 1; CONSTANT_NameAndType_info(in.readUnsignedShort, in.readUnsignedShort)
+                case CONSTANT_Utf8_ID               ⇒ i += 1; CONSTANT_Utf8_info(in.readUTF)
+                case CONSTANT_MethodHandle_ID       ⇒ i += 1; CONSTANT_MethodHandle_info(in.readUnsignedByte, in.readUnsignedShort)
+                case CONSTANT_MethodType_ID         ⇒ i += 1; CONSTANT_MethodType_info(in.readUnsignedShort)
+                case CONSTANT_InvokeDynamic_ID      ⇒ i += 1; CONSTANT_InvokeDynamic_info(in.readUnsignedShort, in.readUnsignedShort)
+                case _                              ⇒ sys.error("unsupported constant pool tag: " + tag)
             }
         }
         constant_pool_entries
