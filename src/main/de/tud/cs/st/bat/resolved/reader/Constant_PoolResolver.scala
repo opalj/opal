@@ -41,6 +41,12 @@ import de.tud.cs.st.bat.canonical.ConstantPoolEntries
 /**
  * A representation of the constant pool.
  *
+ * '''Implementation Notice'''
+ * The constant pool is considered to be static; i.e., references between
+ * constant pool entries are always resolved at most once and the results are cached.
+ * Hence, after reading the constant pool the constant pool is treated as
+ * immutable; the referenced constant pool entry must not change.
+ *
  * @author Michael Eichberg
  */
 trait Constant_PoolResolver extends Constant_PoolReader {
@@ -102,11 +108,24 @@ trait Constant_PoolResolver extends Constant_PoolReader {
     }
 
     case class CONSTANT_Utf8_info(val value: String) extends Constant_Pool_Entry {
+
         override def asString = value
-        override def asMethodDescriptor = MethodDescriptor(value)
-        override def asFieldType = FieldType(value)
-        override def asFieldTypeSignature = SignatureParser.parseFieldTypeSignature(value)
-        override def asSignatureAttribute(implicit ap: AttributeParent) = {
+
+        private[this] var methodDescriptor: MethodDescriptor = null // to cache the result
+        override def asMethodDescriptor = {
+            if (methodDescriptor eq null) { methodDescriptor = MethodDescriptor(value) };
+            methodDescriptor
+        }
+
+        private[this] var fieldType: FieldType = null // to cache the result
+        override def asFieldType = {
+            if (fieldType eq null) { fieldType = FieldType(value) };
+            fieldType
+        }
+
+        override def asFieldTypeSignature = SignatureParser.parseFieldTypeSignature(value) // should be called at most once => caching doesn't make sense
+
+        override def asSignatureAttribute(implicit ap: AttributeParent) = { // should be called at most once => caching doesn't make sense
             ap match {
                 case AttributesParent.Field     ⇒ SignatureParser.parseFieldTypeSignature(value)
                 case AttributesParent.ClassFile ⇒ SignatureParser.parseClassSignature(value)
@@ -114,7 +133,7 @@ trait Constant_PoolResolver extends Constant_PoolReader {
                 case AttributesParent.Code      ⇒ sys.error("signature attributes stored in a code_attribute's attributes table are non-standard")
             }
         }
-        override def asConstantValue(implicit cp: Constant_Pool) = ConstantString(value) // required to support annotations
+        override def asConstantValue(implicit cp: Constant_Pool) = ConstantString(value) // required to support annotations; should be called at most once => caching doesn't make sense
     }
 
     case class CONSTANT_String_info(val string_index: Constant_Pool_Index) extends Constant_Pool_Entry {
@@ -125,24 +144,34 @@ trait Constant_PoolResolver extends Constant_PoolReader {
                                       val name_and_type_index: Constant_Pool_Index)
             extends Constant_Pool_Entry {
 
+        private[this] var fieldref: (ObjectType, String, FieldType) = null // to cache the result
         override def asFieldref(implicit cp: Constant_Pool): (ObjectType, String, FieldType) = {
-            val nameAndType = cp(name_and_type_index).asNameAndType_info
-            (cp(class_index).asObjectType,
-                nameAndType.name,
-                nameAndType.fieldType
-            )
+            if (fieldref eq null) {
+                val nameAndType = cp(name_and_type_index).asNameAndType_info
+                fieldref = (cp(class_index).asObjectType,
+                    nameAndType.name,
+                    nameAndType.fieldType
+                )
+            }
+            fieldref
         }
     }
 
     private[Constant_PoolResolver] trait AsMethodref extends Constant_Pool_Entry {
+
         def class_index: Constant_Pool_Index
         def name_and_type_index: Constant_Pool_Index
+
+        private[this] var methodref: (ObjectType, String, MethodDescriptor) = null // to cache the result
         override def asMethodref(implicit cp: Constant_Pool): (ObjectType, String, MethodDescriptor) = {
-            val nameAndType = cp(name_and_type_index).asNameAndType_info
-            (cp(class_index).asObjectType,
-                nameAndType.name,
-                nameAndType.methodDescriptor
-            )
+            if (methodref eq null) {
+                val nameAndType = cp(name_and_type_index).asNameAndType_info
+                methodref = (cp(class_index).asObjectType,
+                    nameAndType.name,
+                    nameAndType.methodDescriptor
+                )
+            }
+            methodref
         }
     }
 
@@ -158,7 +187,7 @@ trait Constant_PoolResolver extends Constant_PoolReader {
 
         override def asNameAndType_info: CONSTANT_NameAndType_info = this
 
-        def name(implicit cp: Constant_Pool): String = cp(name_index).asString
+        def name(implicit cp: Constant_Pool): String = cp(name_index).asString // this operation is very cheap and hence, it doesn't make sense to cache the result
         def fieldType(implicit cp: Constant_Pool): FieldType = cp(descriptor_index).asFieldType
         def methodDescriptor(implicit cp: Constant_Pool): MethodDescriptor = cp(descriptor_index).asMethodDescriptor
     }
@@ -185,7 +214,7 @@ trait Constant_PoolResolver extends Constant_PoolReader {
     //
     // IMPLEMENTATION OF THE CONSTANT POOL READER'S FACTORY METHODS
     //
-    
+
     def CONSTANT_Class_info(i: Int): CONSTANT_Class_info = new CONSTANT_Class_info(i)
 
     def CONSTANT_Double_info(d: Double): CONSTANT_Double_info = new CONSTANT_Double_info(d)
@@ -226,7 +255,7 @@ trait Constant_PoolResolver extends Constant_PoolReader {
     def CONSTANT_InvokeDynamic_info(bootstrap_method_attr_index: Constant_Pool_Index,
                                     name_and_type_index: Constant_Pool_Index): CONSTANT_InvokeDynamic_info =
         new CONSTANT_InvokeDynamic_info(bootstrap_method_attr_index, name_and_type_index)
-  
+
 }
 
 
