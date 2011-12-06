@@ -62,7 +62,12 @@ trait CommonAttributes {
     def isSynthetic: Boolean = attributes contains SyntheticAttribute
 
     /**
-     * Note that the deprecated attribute is always set when either the annotation or the JavaDoc tag is used.
+     * Returns true if this (field, method, class) declaration is declared
+     * as deprecated.
+     *
+     * ==Java==
+     * Note that the deprecated attribute is always set when either the deprecated
+     * annotation or the JavaDoc tag is used.
      */
     def isDeprectated: Boolean = attributes contains DeprecatedAttribute
 
