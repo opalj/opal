@@ -31,41 +31,45 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 */
 package de.tud.cs.st.bat
-package canonical
 
 /**
- * A name and type info entry in the constant pool.
- *
+ * A constant pool tag identifies the type of a specific entry in the 
+ * constant pool. 
+ *  
  * @author Michael Eichberg
  */
-trait CONSTANT_NameAndType_info extends Constant_Pool_Entry {
+object ConstantPoolTags extends Enumeration {
 
-    //
-    // ABSTRACT DEFINITIONS
-    //
+    // IN THE FOLLOWING THE ORDER IS AS DEFINED IN THE JVM SE SPECIFICATION
+    
+    val CONSTANT_Class_ID = 7
+    val CONSTANT_Fieldref_ID = 9
+    val CONSTANT_Methodref_ID = 10
+    val CONSTANT_InterfaceMethodref_ID = 11
+    val CONSTANT_String_ID = 8
+    val CONSTANT_Integer_ID = 3
+    val CONSTANT_Float_ID = 4
+    val CONSTANT_Long_ID = 5
+    val CONSTANT_Double_ID = 6
+    val CONSTANT_NameAndType_ID = 12
+    val CONSTANT_Utf8_ID = 1
+    val CONSTANT_MethodHandle_ID = 15
+    val CONSTANT_MethodType_ID = 16
+    val CONSTANT_InvokeDynamic_ID = 18
 
-    /**
-     * ''From the Specification'''
-     *
-     * The value of the name_index item must be a valid index into the
-     * constant_pool table. The constant_pool entry at that index
-     * must be a CONSTANT_Utf8_info structure representing
-     * either the special method name &lt;init&gt; or a valid
-     * unqualiﬁed name denoting a ﬁeld or method.
-     */
-    val name_index: Int
+    val CONSTANT_Class = Value(CONSTANT_Class_ID, "CONSTANT_Class")
+    val CONSTANT_Fieldref = Value(CONSTANT_Fieldref_ID, "CONSTANT_Fieldref")
+    val CONSTANT_Methodref = Value(CONSTANT_Methodref_ID, "CONSTANT_Methodref")
+    val CONSTANT_InterfaceMethodref = Value(CONSTANT_InterfaceMethodref_ID, "CONSTANT_InterfaceMethodref")
+    val CONSTANT_String = Value(CONSTANT_String_ID, "CONSTANT_String")
+    val CONSTANT_Integer = Value(CONSTANT_Integer_ID, "CONSTANT_Integer")
+    val CONSTANT_Float = Value(CONSTANT_Float_ID, "CONSTANT_Float")
+    val CONSTANT_Long = Value(CONSTANT_Long_ID, "CONSTANT_Long")
+    val CONSTANT_Double = Value(CONSTANT_Double_ID, "CONSTANT_Double")
+    val CONSTANT_NameAndType = Value(CONSTANT_NameAndType_ID, "CONSTANT_NameAndType")
+    val CONSTANT_Utf8 = Value(CONSTANT_Utf8_ID, "CONSTANT_Utf8")
+    val CONSTANT_MethodHandle = Value(CONSTANT_MethodHandle_ID, "CONSTANT_MethodHandle")
+    val CONSTANT_MethodType = Value(CONSTANT_MethodType_ID, "CONSTANT_MethodType")
+    val CONSTANT_InvokeDynamic = Value(CONSTANT_InvokeDynamic_ID, "CONSTANT_InvokeDynamic")
 
-    val descriptor_index: Int
-
-    //
-    // IMPLEMENTATION
-    //
-
-    def Constant_Type_Value = Constant_PoolTags.CONSTANT_NameAndType
 }
-
-
-
-
-
-

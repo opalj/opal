@@ -39,16 +39,28 @@ import scala.xml.Text
 import scala.xml.TopScope
 
 /**
- * Represents a single field declaration.
+ * Represents a single field declaration/definition.
+ *
+ * @param accessFlags This field's access flags. To analyze the access flags
+ *  bit vector use [[de.tud.cs.st.bat.AccessFlag]] or [[de.tud.cs.st.bat.AccessFlagsIterator]].
+ * @param name The name of this field. Note, that this name may be no valid
+ *  Java programming language identifier.
+ * @param fieldType The (erased) type of this field.
+ * @param attributes The defined attributes. The JVM 7 specification defines the following
+ * 	attributes for fields: [[de.tud.cs.st.bat.resolved.ConstantValue]], [[de.tud.cs.st.bat.resolved.Synthetic]], [[de.tud.cs.st.bat.resolved.Signature]],
+ * 	[[de.tud.cs.st.bat.resolved.Deprecated]], [[de.tud.cs.st.bat.resolved.RuntimeVisibleAnnotations]] and [[de.tud.cs.st.bat.resolved.RuntimeInvisibleAnnotations]].
  *
  * @author Michael Eichberg
  */
-case class Field(val accessFlags: Int,
-                 val name: String,
-                 val fieldType: FieldType,
-                 val attributes: Attributes)
+case class Field(accessFlags: Int,
+                 name: String,
+                 fieldType: FieldType,
+                 attributes: Attributes)
         extends CommonAttributes {
 
+    /**
+     * Returns this field's type signature.
+     */
     def fieldTypeSignature: Option[FieldTypeSignature] = {
         attributes find {
             case s: FieldTypeSignature ⇒ return Some(s)
@@ -57,6 +69,9 @@ case class Field(val accessFlags: Int,
         None
     }
 
+    /**
+     * Returns this field's constant value.
+     */
     def constantValue: Option[ConstantValue[_]] = {
         attributes find {
             case cv: ConstantValue[_] ⇒ return Some(cv)

@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -43,7 +43,7 @@ import de.tud.cs.st.bat.reader.AnnotationDefault_attributeReader
 import de.tud.cs.st.bat.reader.ElementValuePairsReader
 
 /**
- * Reads in annotations.
+ * Implements factory methods to create representations of Java annotations.
  *
  * @author Michael Eichberg
  */
@@ -84,108 +84,110 @@ trait AnnotationsBinding
 
     val AnnotationManifest: ClassManifest[Annotation] = implicitly
 
-    def ElementValuePair(
-        element_name_index: Int, element_value: ElementValue)(implicit constant_pool: Constant_Pool): ElementValuePair = {
-        new ElementValuePair(element_name_index, element_value)
+    def ElementValuePair(element_name_index: Constant_Pool_Index,
+                         element_value: ElementValue)(
+                             implicit cp: Constant_Pool): ElementValuePair = {
+        new ElementValuePair(cp(element_name_index).asString, element_value)
     }
 
-    def ByteValue(const_value_index: Int)(implicit constant_pool: Constant_Pool): ElementValue = {
-        val cv: ConstantValue[_] = const_value_index
+    def ByteValue(const_value_index: Constant_Pool_Index)(implicit cp: Constant_Pool): ElementValue = {
+        val cv: ConstantValue[_] = cp(const_value_index).asConstantValue
         new ByteValue(cv.toByte)
     }
 
-    def CharValue(const_value_index: Int)(implicit constant_pool: Constant_Pool): ElementValue = {
-        val cv: ConstantValue[_] = const_value_index
+    def CharValue(const_value_index: Constant_Pool_Index)(implicit cp: Constant_Pool): ElementValue = {
+        val cv: ConstantValue[_] = cp(const_value_index).asConstantValue
         new CharValue(cv.toChar)
     }
 
-    def DoubleValue(const_value_index: Int)(implicit constant_pool: Constant_Pool): ElementValue = {
-        val cv: ConstantValue[_] = const_value_index
+    def DoubleValue(const_value_index: Constant_Pool_Index)(implicit cp: Constant_Pool): ElementValue = {
+        val cv: ConstantValue[_] = cp(const_value_index).asConstantValue
         new DoubleValue(cv.toDouble)
     }
 
-    def FloatValue(const_value_index: Int)(implicit constant_pool: Constant_Pool): ElementValue = {
-        val cv: ConstantValue[_] = const_value_index
+    def FloatValue(const_value_index: Constant_Pool_Index)(implicit cp: Constant_Pool): ElementValue = {
+        val cv: ConstantValue[_] = cp(const_value_index).asConstantValue
         new FloatValue(cv.toFloat)
     }
 
-    def IntValue(const_value_index: Int)(implicit constant_pool: Constant_Pool): ElementValue = {
-        val cv: ConstantValue[_] = const_value_index
+    def IntValue(const_value_index: Constant_Pool_Index)(implicit cp: Constant_Pool): ElementValue = {
+        val cv: ConstantValue[_] = cp(const_value_index).asConstantValue
         new IntValue(cv.toInt)
     }
 
-    def LongValue(const_value_index: Int)(implicit constant_pool: Constant_Pool): ElementValue = {
-        val cv: ConstantValue[_] = const_value_index
+    def LongValue(const_value_index: Constant_Pool_Index)(implicit cp: Constant_Pool): ElementValue = {
+        val cv: ConstantValue[_] = cp(const_value_index).asConstantValue
         new LongValue(cv.toLong)
     }
 
-    def ShortValue(const_value_index: Int)(implicit constant_pool: Constant_Pool): ElementValue = {
-        val cv: ConstantValue[_] = const_value_index
+    def ShortValue(const_value_index: Constant_Pool_Index)(implicit cp: Constant_Pool): ElementValue = {
+        val cv: ConstantValue[_] = cp(const_value_index).asConstantValue
         new ShortValue(cv.toShort)
     }
 
-    def BooleanValue(const_value_index: Int)(implicit constant_pool: Constant_Pool): ElementValue = {
-        val cv: ConstantValue[_] = const_value_index
+    def BooleanValue(const_value_index: Constant_Pool_Index)(implicit cp: Constant_Pool): ElementValue = {
+        val cv: ConstantValue[_] = cp(const_value_index).asConstantValue
         new BooleanValue(cv.toBoolean)
     }
 
-    def StringValue(const_value_index: Int)(implicit constant_pool: Constant_Pool): ElementValue = {
-        val cv: ConstantValue[_] = const_value_index
+    def StringValue(const_value_index: Constant_Pool_Index)(implicit cp: Constant_Pool): ElementValue = {
+        val cv: ConstantValue[_] = cp(const_value_index).asConstantValue
         new StringValue(cv.toUTF8)
     }
 
-    def ClassValue(const_value_index: Int)(implicit constant_pool: Constant_Pool): ElementValue = {
-        val rt: String = const_value_index
+    def ClassValue(const_value_index: Constant_Pool_Index)(implicit cp: Constant_Pool): ElementValue = {
+        val rt: String = cp(const_value_index).asString
         new ClassValue(ReturnType(rt))
     }
 
-    def EnumValue(type_name_index: Int,
-                  const_name_index: Int)(
-                      implicit constant_pool: Constant_Pool): ElementValue = {
-        new EnumValue(FieldType(type_name_index).asInstanceOf[ObjectType], const_name_index)
+    def EnumValue(type_name_index: Constant_Pool_Index,
+                  const_name_index: Constant_Pool_Index)(
+                      implicit cp: Constant_Pool): ElementValue = {
+        // TODO Looks suspicious... either comment or fix.
+        new EnumValue(cp(type_name_index).asFieldType.asInstanceOf[ObjectType], cp(const_name_index).asString)
     }
 
-    def AnnotationValue(annotation: Annotation)(implicit constant_pool: Constant_Pool): ElementValue =
+    def AnnotationValue(annotation: Annotation)(implicit cp: Constant_Pool): ElementValue =
         new AnnotationValue(annotation)
 
-    def ArrayValue(values: ElementValues)(implicit constant_pool: Constant_Pool): ElementValue =
+    def ArrayValue(values: ElementValues)(implicit cp: Constant_Pool): ElementValue =
         new ArrayValue(values)
 
     def Annotation(type_index: Constant_Pool_Index,
                    element_value_pairs: ElementValuePairs)(
-                       implicit constant_pool: Constant_Pool) = {
-        new Annotation(CONSTANT_Utf8_info_IndexToFieldType(type_index), element_value_pairs)
+                       implicit cp: Constant_Pool) = {
+        new Annotation(cp(type_index).asFieldType, element_value_pairs)
     }
 
     def AnnotationDefault_attribute(attribute_name_index: Constant_Pool_Index,
                                     attribute_length: Int,
                                     element_value: ElementValue)(
-                                        implicit constant_pool: Constant_Pool) = {
+                                        implicit cp: Constant_Pool) = {
         element_value
     }
 
-    def RuntimeVisibleAnnotations_attribute(attribute_name_index: Int,
+    def RuntimeVisibleAnnotations_attribute(attribute_name_index: Constant_Pool_Index,
                                             attribute_length: Int,
                                             annotations: Annotations)(
-                                                implicit constant_pool: Constant_Pool) =
+                                                implicit cp: Constant_Pool) =
         new RuntimeVisibleAnnotations_attribute(annotations)
 
-    def RuntimeInvisibleAnnotations_attribute(attribute_name_index: Int,
+    def RuntimeInvisibleAnnotations_attribute(attribute_name_index: Constant_Pool_Index,
                                               attribute_length: Int,
                                               annotations: Annotations)(
-                                                  implicit constant_pool: Constant_Pool) =
+                                                  implicit cp: Constant_Pool) =
         new RuntimeInvisibleAnnotations_attribute(annotations)
 
-    def RuntimeVisibleParameterAnnotations_attribute(attribute_name_index: Int,
+    def RuntimeVisibleParameterAnnotations_attribute(attribute_name_index: Constant_Pool_Index,
                                                      attribute_length: Int,
                                                      parameter_annotations: ParameterAnnotations)(
-                                                         implicit constant_pool: Constant_Pool) =
+                                                         implicit cp: Constant_Pool) =
         new RuntimeVisibleParameterAnnotations_attribute(parameter_annotations)
 
-    def RuntimeInvisibleParameterAnnotations_attribute(attribute_name_index: Int,
+    def RuntimeInvisibleParameterAnnotations_attribute(attribute_name_index: Constant_Pool_Index,
                                                        attribute_length: Int,
                                                        parameter_annotations: ParameterAnnotations)(
-                                                           implicit constant_pool: Constant_Pool) =
+                                                           implicit cp: Constant_Pool) =
         new RuntimeInvisibleParameterAnnotations_attribute(parameter_annotations)
 
 }

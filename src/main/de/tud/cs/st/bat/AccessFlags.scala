@@ -39,8 +39,6 @@ package de.tud.cs.st.bat
  */
 object AccessFlags {
 
-    import scala.xml._
-
     def toXML(flags: Int, ctx: AccessFlagsContext) =
         <flags>{ AccessFlagsIterator(flags, ctx) map(_.toXML) }</flags>
 

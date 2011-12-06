@@ -34,29 +34,25 @@ package de.tud.cs.st.bat.resolved.reader
 
 import de.tud.cs.st.bat.reader.Exceptions_attributeReader
 
-
 /**
- * 
+ *
  *
  * @author Michael Eichberg
  */
-trait Exceptions_attributeBinding 
-	extends Exceptions_attributeReader
-		with Constant_PoolResolver
-		with AttributeBinding		
-{
-	
-	
-	type Exceptions_attribute = de.tud.cs.st.bat.resolved.ExceptionsAttribute	
-	val Exceptions_attributeManifest: ClassManifest[Exceptions_attribute] = implicitly
-	
-	def Exceptions_attribute (
-		attribute_name_index : Int, attribute_length : Int,
-		exception_index_table : ExceptionIndexTable	
-	)( implicit constant_pool : Constant_Pool) : Exceptions_attribute = {
-		new Exceptions_attribute(exception_index_table)
-	}	
+trait Exceptions_attributeBinding
+        extends Exceptions_attributeReader
+        with Constant_PoolResolver
+        with AttributeBinding {
 
+    type Exceptions_attribute = de.tud.cs.st.bat.resolved.ExceptionsAttribute
+    val Exceptions_attributeManifest: ClassManifest[Exceptions_attribute] = implicitly
+
+    def Exceptions_attribute(attribute_name_index: Constant_Pool_Index,
+                             attribute_length: Int,
+                             exception_index_table: ExceptionIndexTable)(
+                                 implicit cp: Constant_Pool): Exceptions_attribute = {
+        new Exceptions_attribute(exception_index_table.map(e_idx ⇒ cp(e_idx).asObjectType))
+    }
 
 }
 

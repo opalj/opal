@@ -57,7 +57,7 @@ trait AttributesReader
 
     type CONSTANT_Utf8_info <: Constant_Pool_Entry with ValueAsString
 
-    type Constant_Pool <: IndexedSeq[Constant_Pool_Entry]
+    override type Constant_Pool = Array[Constant_Pool_Entry]
 
     /**
      * This factory method is called if an attribute is encountered that is unknown. In general,

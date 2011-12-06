@@ -34,27 +34,23 @@ package de.tud.cs.st.bat.resolved.reader
 
 import de.tud.cs.st.bat.reader.SourceFile_attributeReader
 
-
 /**
- * 
+ *
  *
  * @author Michael Eichberg
  */
-trait SourceFile_attributeBinding 
-	extends SourceFile_attributeReader
-		with Constant_PoolResolver
-		with AttributeBinding	
-{
-	
-	
-	type SourceFile_attribute = de.tud.cs.st.bat.resolved.SourceFileAttribute	
+trait SourceFile_attributeBinding
+        extends SourceFile_attributeReader
+        with Constant_PoolResolver
+        with AttributeBinding {
 
+    type SourceFile_attribute = de.tud.cs.st.bat.resolved.SourceFileAttribute
 
-	def SourceFile_attribute(
-		attribute_name_index : Int, sourceFile_index : Int
-	)( implicit constant_pool : Constant_Pool) : SourceFile_attribute = {
-		new SourceFile_attribute(sourceFile_index)
-	}
+    def SourceFile_attribute(attribute_name_index: Int,
+                             sourceFile_index: Int)(
+                                 implicit cp: Constant_Pool): SourceFile_attribute = {
+        new SourceFile_attribute(cp(sourceFile_index).asString)
+    }
 
 }
 

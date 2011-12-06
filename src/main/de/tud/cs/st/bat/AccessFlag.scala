@@ -13,9 +13,9 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- *  - Neither the name of the Software Technology Group or Technische 
- *    Universität Darmstadt nor the names of its contributors may be used to 
- *    endorse or promote products derived from this software without specific 
+ *  - Neither the name of the Software Technology Group or Technische
+ *    Universität Darmstadt nor the names of its contributors may be used to
+ *    endorse or promote products derived from this software without specific
  *    prior written permission.
  *
  *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -33,14 +33,18 @@
 package de.tud.cs.st.bat
 
 /**
- * Common super type of all access flags.
+ * A class, field or method declaration's access flag. An access flag is
+ * basically just a unique bit vector that can be combined with other
+ * access flags to create an integer based bit vector that represents all
+ * flags defined for a class, method or field declaration.
  *
  * @author Michael Eichberg
  */
 sealed trait AccessFlag {
 
     /**
-     * The java (source code) name of the access flag if it exists.
+     * The Java (source code) name of the access flag if it exists. E.g.,
+     * "public", "native", etc.
      */
     def javaName: Option[String]
 
@@ -50,7 +54,7 @@ sealed trait AccessFlag {
     def mask: Int
 
     /**
-     * Determines if this access flag is set in the given access_flags field.
+     * Determines if this access flag is set in the given access_flags bit vector.
      * E.g., to determine if a method's static modifier is set it is sufficient
      * to call {{{ACC_STATIC ∈ method.access_flags}}}.
      */

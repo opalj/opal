@@ -34,128 +34,228 @@ package de.tud.cs.st.bat
 package resolved
 package reader
 
-import de.tud.cs.st.bat.canonical.reader.Constant_PoolBinding
-
+import de.tud.cs.st.bat.reader.Constant_PoolReader
 import de.tud.cs.st.bat.resolved.MethodDescriptor
+import de.tud.cs.st.bat.canonical.ConstantPoolEntries
 
 /**
- * Helper methods to replace int-based references  into the constant pool
- * (i.e., Constant_Pool_Indexes) with
- * direct reference to the corresponding, decoded objects.
+ * A representation of the constant pool.
+ *
+ * '''Implementation Notice'''
+ * The constant pool is considered to be static; i.e., references between
+ * constant pool entries are always resolved at most once and the results are cached.
+ * Hence, after reading the constant pool the constant pool is treated as
+ * immutable; the referenced constant pool entry must not change.
  *
  * @author Michael Eichberg
  */
-trait Constant_PoolResolver extends Constant_PoolBinding {
+trait Constant_PoolResolver extends Constant_PoolReader {
 
-    // TODO [Improvement] Consider making the Constant_PoolResolver less implicit; e.g., by defining "asConstant_NameAndType_Info" on Constant_Pool_Entry
-    
-    // ______________________________________________________________________________________________
-    //
-    // VARIOUS HELPER METHODS THAT ARE - IN GENERAL - IMPLICITLY USED TO RESOLVE THE CONSTANT POOL.
-    //
-    // The following implicit method definitions use the target type (e.g. ObjectType,
-    // FieldDescriptor,...) to determine the type of the constant pool's entry with the specified
-    // index.
-    // All references to the constant pool will be resolved while parsing the class file. After
-    // the class file is read the constant pool can be / is deleted.
-    // ______________________________________________________________________________________________
-    //
+    trait Constant_Pool_Entry {
+        def asString: String = sys.error("conversion to string is not supported")
+        def asFieldType: FieldType = sys.error("conversion to field type is not supported")
+        def asMethodDescriptor: MethodDescriptor = sys.error("conversion to method descriptor is not supported")
+        def asFieldTypeSignature: FieldTypeSignature = sys.error("conversion to field type signature is not supported")
 
-    implicit def CONSTANT_NameAndType_info_IndexToNameAndMethodDescriptor(cntii: Constant_Pool_Index)(implicit cp: Constant_Pool): (String, MethodDescriptor) =
-        cp(cntii) match {
-            case cnti: CONSTANT_NameAndType_info ⇒ (
-                cnti.name_index, // => implicitly converted
-                cnti.descriptor_index // => implicitly converted
-            )
-        }
+        def asSignatureAttribute(implicit ap: AttributeParent): SignatureAttribute = sys.error("conversion to signature attribute is not supported")
 
-    implicit def CONSTANT_NameAndType_info_IndexToNameAndFieldType(cntii: Constant_Pool_Index)(implicit cp: Constant_Pool): (String, FieldType) =
-        cp(cntii) match {
-            case cnti: CONSTANT_NameAndType_info ⇒ (
-                cnti.name_index, // => implicitly converted
+        def asNameAndMethodDescriptor(implicit cp: Constant_Pool): (String, MethodDescriptor) = sys.error("conversion to name and method descriptor is not supported")
+        def asConstantValue(implicit cp: Constant_Pool): ConstantValue[_] = sys.error("conversion to constant value is not supported")
+        def asFieldref(implicit cp: Constant_Pool): (ObjectType, String, FieldType) = sys.error("conversion to field ref is not supported")
+        def asMethodref(implicit cp: Constant_Pool): (ObjectType, String, MethodDescriptor) = sys.error("conversion to method ref is not supported")
+        def asObjectType(implicit cp: Constant_Pool): ObjectType = sys.error("conversion to object type is not supported")
+
+        def asNameAndType_info: CONSTANT_NameAndType_info = sys.error("conversion to name and type info is not supported")
+    }
+
+    val Constant_Pool_EntryManifest: ClassManifest[Constant_Pool_Entry] = implicitly
+
+    case class CONSTANT_Class_info(val name_index: Constant_Pool_Index) extends Constant_Pool_Entry {
+        override def asConstantValue(implicit cp: Constant_Pool) = {
+            ConstantClass(
                 {
-                    CONSTANT_Utf8_info_IndexToFieldType(cnti.descriptor_index) 
+                    val s = cp(name_index).asString
+                    if (s.charAt(0) == '[')
+                        FieldType(s).asInstanceOf[ReferenceType]
+                    else
+                        ObjectType(s)
                 }
             )
         }
+        override def asObjectType(implicit cp: Constant_Pool) = {
+            ObjectType(cp(name_index).asString)
+        }
+    }
 
-    implicit def CONSTANT_Fieldref_info_IndexToFieldref(cfrii: Constant_Pool_Index)(implicit cp: Constant_Pool): (ObjectType, String, FieldType) =
-        cp(cfrii) match {
-            case cfri: CONSTANT_Fieldref_info ⇒
-                val declaringClass: ObjectType = cfri.class_index // => implicitly converted
-                val (name, fieldType) = CONSTANT_NameAndType_info_IndexToNameAndFieldType(cfri.name_and_type_index)
-                (declaringClass, name, fieldType)
+    case class CONSTANT_Double_info(value: ConstantDouble) extends Constant_Pool_Entry {
+        def this(value: Double) { this(ConstantDouble(value)) }
+        override def asConstantValue(implicit cp: Constant_Pool) = value
+    }
+
+    case class CONSTANT_Float_info(value: ConstantFloat) extends Constant_Pool_Entry {
+        def this(value: Float) { this(ConstantFloat(value)) }
+        override def asConstantValue(implicit cp: Constant_Pool) = value
+    }
+
+    case class CONSTANT_Integer_info(value: ConstantInteger) extends Constant_Pool_Entry {
+        def this(value: Int) { this(ConstantInteger(value)) }
+        override def asConstantValue(implicit cp: Constant_Pool) = value
+    }
+
+    case class CONSTANT_Long_info(value: ConstantLong) extends Constant_Pool_Entry {
+        def this(value: Long) { this(ConstantLong(value)) }
+        override def asConstantValue(implicit cp: Constant_Pool) = value
+    }
+
+    case class CONSTANT_Utf8_info(val value: String) extends Constant_Pool_Entry {
+
+        override def asString = value
+
+        private[this] var methodDescriptor: MethodDescriptor = null // to cache the result
+        override def asMethodDescriptor = {
+            if (methodDescriptor eq null) { methodDescriptor = MethodDescriptor(value) };
+            methodDescriptor
         }
 
-    implicit def CONSTANT_MethodRef_info_IndexToMethodRef(cmrii: Constant_Pool_Index)(implicit cp: Constant_Pool): (ObjectType, String, MethodDescriptor) =
-        cp(cmrii) match {
-            case cmri: CONSTANT_Methodref_info ⇒
-                val declaringClass: ObjectType = cmri.class_index
-                val (name, methodDescriptor) = CONSTANT_NameAndType_info_IndexToNameAndMethodDescriptor(cmri.name_and_type_index)
-                (declaringClass, name, methodDescriptor)
-            case cimri: CONSTANT_InterfaceMethodref_info ⇒
-                val declaringClass: ObjectType = cimri.class_index
-                val (name, methodDescriptor) = CONSTANT_NameAndType_info_IndexToNameAndMethodDescriptor(cimri.name_and_type_index)
-                (declaringClass, name, methodDescriptor)
+        private[this] var fieldType: FieldType = null // to cache the result
+        override def asFieldType = {
+            if (fieldType eq null) { fieldType = FieldType(value) };
+            fieldType
         }
 
-    implicit def CONSTANT_Class_info_IndexToObjectType(ccii: Constant_Pool_Index)(implicit cp: Constant_Pool): ObjectType =
-        cp(ccii) match {
-            case cci: CONSTANT_Class_info ⇒
-                cp(cci.name_index) match { case cui: CONSTANT_Utf8_info ⇒ ObjectType(cui.value) }
-        }
+        override def asFieldTypeSignature = SignatureParser.parseFieldTypeSignature(value) // should be called at most once => caching doesn't make sense
 
-    implicit def CONSTANT_Utf8_info_IndexToString(cuii: Constant_Pool_Index)(implicit cp: Constant_Pool): String =
-        cp(cuii) match { case cui: CONSTANT_Utf8_info ⇒ cui.value }
-
-    implicit def CONSTANT_Utf8_info_IndexToMethodDescriptor(cuii: Constant_Pool_Index)(implicit cp: Constant_Pool): MethodDescriptor =
-        cp(cuii) match { case cui: CONSTANT_Utf8_info ⇒ MethodDescriptor(cui.value) }
-
-    implicit def CONSTANT_Value_IndexToConstantValue(cvi: Constant_Pool_Index)(implicit cp: Constant_Pool): ConstantValue[_] =
-        cp(cvi) match {
-            case csi: CONSTANT_String_info  ⇒ ConstantString(csi.string_index /* implicit conversion */ )
-            case cli: CONSTANT_Long_info    ⇒ ConstantLong(cli.value)
-            case cii: CONSTANT_Integer_info ⇒ ConstantInteger(cii.value)
-            case cdi: CONSTANT_Double_info  ⇒ ConstantDouble(cdi.value)
-            case cfi: CONSTANT_Float_info   ⇒ ConstantFloat(cfi.value)
-            case cu8i: CONSTANT_Utf8_info   ⇒ ConstantString(cu8i.value) // added to support annotations
-            case cci: CONSTANT_Class_info ⇒
-                cp(cci.name_index) match {
-                    case cui: CONSTANT_Utf8_info ⇒ ConstantClass(
-                        {
-                            val s = cui.value
-                            if (s.charAt(0) == '[')
-                                FieldType(s).asInstanceOf[ReferenceType]
-                            else
-                                ObjectType(s)
-                        }
-                    )
-                }
-        }
-
-    implicit def SeqOfCONSTANT_Class_info_IndexToSeqOfObjectType(cciis: Seq[Constant_Pool_Index])(implicit cp: Constant_Pool): Seq[ObjectType] =
-        cciis map (
-            cp(_) match {
-                case cci: CONSTANT_Class_info ⇒
-                    cp(cci.name_index) match { case cui: CONSTANT_Utf8_info ⇒ ObjectType(cui.value) }
+        override def asSignatureAttribute(implicit ap: AttributeParent) = { // should be called at most once => caching doesn't make sense
+            ap match {
+                case AttributesParent.Field     ⇒ SignatureParser.parseFieldTypeSignature(value)
+                case AttributesParent.ClassFile ⇒ SignatureParser.parseClassSignature(value)
+                case AttributesParent.Method    ⇒ SignatureParser.parseMethodTypeSignature(value)
+                case AttributesParent.Code      ⇒ sys.error("signature attributes stored in a code_attribute's attributes table are non-standard")
             }
-        )
+        }
+        override def asConstantValue(implicit cp: Constant_Pool) = ConstantString(value) // required to support annotations; should be called at most once => caching doesn't make sense
+    }
 
-    implicit def CONSTANT_Utf8_info_IndexToFieldType(cuii: Constant_Pool_Index)(implicit cp: Constant_Pool): FieldType =
-        cp(cuii) match { case CONSTANT_Utf8_info(value) ⇒ FieldType(value) }
+    case class CONSTANT_String_info(val string_index: Constant_Pool_Index) extends Constant_Pool_Entry {
+        override def asConstantValue(implicit cp: Constant_Pool) = ConstantString(cp(string_index).asString)
+    }
 
-    implicit def CONSTANT_Utf8_info_IndexToSignatureAttribute(cuii: Constant_Pool_Index)(implicit cp: Constant_Pool, ap: AttributesParent): SignatureAttribute = {
-        ap match {
-            case AttributesParent.Field     ⇒ SignatureParser.parseFieldTypeSignature(cuii)
-            case AttributesParent.ClassFile      ⇒ SignatureParser.parseClassSignature(cuii)
-            case AttributesParent.Method    ⇒ SignatureParser.parseMethodTypeSignature(cuii)
-            case AttributesParent.Code ⇒ sys.error("signature attributes stored in a code_attribute's attributes table are non-standard")
+    case class CONSTANT_Fieldref_info(val class_index: Constant_Pool_Index,
+                                      val name_and_type_index: Constant_Pool_Index)
+            extends Constant_Pool_Entry {
+
+        private[this] var fieldref: (ObjectType, String, FieldType) = null // to cache the result
+        override def asFieldref(implicit cp: Constant_Pool): (ObjectType, String, FieldType) = {
+            if (fieldref eq null) {
+                val nameAndType = cp(name_and_type_index).asNameAndType_info
+                fieldref = (cp(class_index).asObjectType,
+                    nameAndType.name,
+                    nameAndType.fieldType
+                )
+            }
+            fieldref
         }
     }
 
-    def CONSTANT_Utf8_info_IndexToFieldTypeSignature(signature_index: Constant_Pool_Index)(implicit cp: Constant_Pool): FieldTypeSignature = {
-        SignatureParser.parseFieldTypeSignature(signature_index)
+    private[Constant_PoolResolver] trait AsMethodref extends Constant_Pool_Entry {
+
+        def class_index: Constant_Pool_Index
+        def name_and_type_index: Constant_Pool_Index
+
+        private[this] var methodref: (ObjectType, String, MethodDescriptor) = null // to cache the result
+        override def asMethodref(implicit cp: Constant_Pool): (ObjectType, String, MethodDescriptor) = {
+            if (methodref eq null) {
+                val nameAndType = cp(name_and_type_index).asNameAndType_info
+                methodref = (cp(class_index).asObjectType,
+                    nameAndType.name,
+                    nameAndType.methodDescriptor
+                )
+            }
+            methodref
+        }
     }
+
+    case class CONSTANT_Methodref_info(class_index: Constant_Pool_Index,
+                                       name_and_type_index: Constant_Pool_Index) extends AsMethodref
+
+    case class CONSTANT_InterfaceMethodref_info(class_index: Constant_Pool_Index,
+                                                name_and_type_index: Constant_Pool_Index) extends AsMethodref
+
+    case class CONSTANT_NameAndType_info(name_index: Constant_Pool_Index,
+                                         descriptor_index: Constant_Pool_Index)
+            extends Constant_Pool_Entry {
+
+        override def asNameAndType_info: CONSTANT_NameAndType_info = this
+
+        def name(implicit cp: Constant_Pool): String = cp(name_index).asString // this operation is very cheap and hence, it doesn't make sense to cache the result
+        def fieldType(implicit cp: Constant_Pool): FieldType = cp(descriptor_index).asFieldType
+        def methodDescriptor(implicit cp: Constant_Pool): MethodDescriptor = cp(descriptor_index).asMethodDescriptor
+    }
+
+    case class CONSTANT_MethodHandle_info(val reference_kind: Int,
+                                          val reference_index: Int)
+            extends Constant_Pool_Entry {
+
+        // TODO [Java 7] Support CONSTANT_MethodHandle_info
+    }
+
+    case class CONSTANT_MethodType_info(val descriptor_index: Constant_Pool_Index)
+            extends Constant_Pool_Entry {
+
+        // TODO [Java 7] Support CONSTANT_MethodType_info
+    }
+
+    case class CONSTANT_InvokeDynamic_info(bootstrap_method_attr_index: Constant_Pool_Index,
+                                           name_and_type_index: Constant_Pool_Index)
+            extends Constant_Pool_Entry {
+        // TODO [Java 7] Support CONSTANT_InvokeDynamic
+    }
+
+    //
+    // IMPLEMENTATION OF THE CONSTANT POOL READER'S FACTORY METHODS
+    //
+
+    def CONSTANT_Class_info(i: Int): CONSTANT_Class_info = new CONSTANT_Class_info(i)
+
+    def CONSTANT_Double_info(d: Double): CONSTANT_Double_info = new CONSTANT_Double_info(d)
+
+    def CONSTANT_Float_info(f: Float): CONSTANT_Float_info = new CONSTANT_Float_info(f)
+
+    def CONSTANT_Integer_info(i: Int): CONSTANT_Integer_info = new CONSTANT_Integer_info(i)
+
+    def CONSTANT_Long_info(l: Long): CONSTANT_Long_info = new CONSTANT_Long_info(l)
+
+    def CONSTANT_Utf8_info(s: String): CONSTANT_Utf8_info = new CONSTANT_Utf8_info(s)
+
+    def CONSTANT_String_info(i: Int): CONSTANT_String_info = new CONSTANT_String_info(i)
+
+    def CONSTANT_Fieldref_info(class_index: Constant_Pool_Index,
+                               name_and_type_index: Constant_Pool_Index): CONSTANT_Fieldref_info =
+        new CONSTANT_Fieldref_info(class_index, name_and_type_index)
+
+    def CONSTANT_Methodref_info(class_index: Constant_Pool_Index,
+                                name_and_type_index: Constant_Pool_Index): CONSTANT_Methodref_info =
+        new CONSTANT_Methodref_info(class_index, name_and_type_index)
+
+    def CONSTANT_InterfaceMethodref_info(class_index: Constant_Pool_Index,
+                                         name_and_type_index: Constant_Pool_Index): CONSTANT_InterfaceMethodref_info =
+        new CONSTANT_InterfaceMethodref_info(class_index, name_and_type_index)
+
+    def CONSTANT_NameAndType_info(name_index: Constant_Pool_Index,
+                                  descriptor_index: Constant_Pool_Index): CONSTANT_NameAndType_info =
+        new CONSTANT_NameAndType_info(name_index, descriptor_index)
+
+    def CONSTANT_MethodHandle_info(reference_kind: Int,
+                                   reference_index: Int): CONSTANT_MethodHandle_info =
+        new CONSTANT_MethodHandle_info(reference_kind, reference_index)
+
+    def CONSTANT_MethodType_info(descriptor_index: Constant_Pool_Index): CONSTANT_MethodType_info =
+        new CONSTANT_MethodType_info(descriptor_index)
+
+    def CONSTANT_InvokeDynamic_info(bootstrap_method_attr_index: Constant_Pool_Index,
+                                    name_and_type_index: Constant_Pool_Index): CONSTANT_InvokeDynamic_info =
+        new CONSTANT_InvokeDynamic_info(bootstrap_method_attr_index, name_and_type_index)
+
 }
 
 

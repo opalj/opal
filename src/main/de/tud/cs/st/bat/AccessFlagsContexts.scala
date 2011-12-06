@@ -32,8 +32,10 @@
  */
 package de.tud.cs.st.bat
 
+import scala.collection.immutable.IndexedSeq
+
 /**
- * This class enumerates the different contexts in which the JVM Spec. uses 
+ * This class enumerates the different contexts in which the JVM Spec. uses
  * access_flags fields and defines which access_flags can be found in which context.
  *
  * @author Michael Eichberg
@@ -43,7 +45,7 @@ object AccessFlagsContexts extends Enumeration {
     val INNER_CLASS, CLASS, METHOD, FIELD = Value
 
     val INNER_CLASS_FLAGS: IndexedSeq[AccessFlag] =
-        Array(ACC_PUBLIC,
+        IndexedSeq(ACC_PUBLIC,
             ACC_PRIVATE,
             ACC_PROTECTED,
             ACC_STATIC,
@@ -56,7 +58,7 @@ object AccessFlagsContexts extends Enumeration {
             ACC_ENUM)
 
     val CLASS_FLAGS: IndexedSeq[AccessFlag] =
-        Array(ACC_PUBLIC,
+        IndexedSeq(ACC_PUBLIC,
             ACC_FINAL,
             ACC_SUPER,
             ACC_INTERFACE,
@@ -66,7 +68,7 @@ object AccessFlagsContexts extends Enumeration {
             ACC_ENUM)
 
     val FIELD_FLAGS: IndexedSeq[AccessFlag] =
-        Array(ACC_PUBLIC,
+        IndexedSeq(ACC_PUBLIC,
             ACC_PRIVATE,
             ACC_PROTECTED,
             ACC_STATIC,
@@ -77,7 +79,7 @@ object AccessFlagsContexts extends Enumeration {
             ACC_ENUM)
 
     val METHOD_FLAGS: IndexedSeq[AccessFlag] =
-        Array(ACC_PUBLIC,
+        IndexedSeq(ACC_PUBLIC,
             ACC_PRIVATE,
             ACC_PROTECTED,
             ACC_STATIC,
@@ -91,10 +93,10 @@ object AccessFlagsContexts extends Enumeration {
             ACC_SYNTHETIC)
 
     val CLASS_VISIBILITY_FLAGS: IndexedSeq[AccessFlag] =
-        Array(ACC_PUBLIC)
+        IndexedSeq(ACC_PUBLIC)
 
     val MEMBER_VISIBILITY_FLAGS: IndexedSeq[AccessFlag] =
-        Array(ACC_PUBLIC, ACC_PRIVATE, ACC_PROTECTED)
+        IndexedSeq(ACC_PUBLIC, ACC_PRIVATE, ACC_PROTECTED)
 
     val INNER_CLASS_VISIBILITY_FLAGS: IndexedSeq[AccessFlag] =
         MEMBER_VISIBILITY_FLAGS

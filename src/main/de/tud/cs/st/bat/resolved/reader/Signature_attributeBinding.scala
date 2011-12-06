@@ -51,7 +51,7 @@ trait Signature_attributeBinding
     def Signature_attribute(attribute_name_index: Constant_Pool_Index,
                             signature_index: Constant_Pool_Index)(
                                 implicit cp: Constant_Pool, ap: AttributeParent): Signature_attribute =
-        CONSTANT_Utf8_info_IndexToSignatureAttribute(signature_index)
+        cp(signature_index).asSignatureAttribute(ap)
 
 }
 

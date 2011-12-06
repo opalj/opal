@@ -35,14 +35,19 @@ package de.tud.cs.st.bat
 /**
  * Enables iterating over a class( file member)'s access flags. I.e., given
  * the access flags of a class file, a field or a method it is then possible
- * to iterate over the flags that are set.
+ * to iterate over the flags (synthetic, public, deprecated, etc.) that are set.
  *
+ * @param accessFlags the class( file member)'s access flags
+ * @param ctx the accessFlags' context; the interpretation of the access
+ * 	flags bit vector partially depends on the concrete source element that
+ * 	defines the accessFlags.
+ * 
  * @author Michael Eichberg
  */
 final class AccessFlagsIterator(
     accessFlags: Int,
     ctx: AccessFlagsContext)
-    extends Iterator[AccessFlag] {
+        extends Iterator[AccessFlag] {
 
     private[this] var flags = accessFlags
 

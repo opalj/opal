@@ -30,7 +30,8 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.canonical
+package de.tud.cs.st.bat
+package canonical
 
 
 /**
@@ -43,7 +44,7 @@ trait ClassFile {
 	// ABSTRACT DEFINITIONS
 	//
 
-	type Constant_Pool_Entry <: de.tud.cs.st.bat.canonical.Constant_Pool_Entry
+	type Constant_Pool_Entry <: ConstantPoolEntries.Constant_Pool_Entry
 	type Fields 
 	type Methods 
 	type Attributes
@@ -51,7 +52,7 @@ trait ClassFile {
 
 
 	type Constant_Pool_Index = Int
-	type Constant_Pool = IndexedSeq[Constant_Pool_Entry]
+	type Constant_Pool = Array[Constant_Pool_Entry]
 
 	
   	val minor_version : Int

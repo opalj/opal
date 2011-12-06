@@ -30,128 +30,100 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.canonical
+package de.tud.cs.st.bat
+package canonical
 package reader
 
 import de.tud.cs.st.bat.reader.Constant_PoolReader
 
-
 /**
- * Representation of the constant pool as specified by the JVM Specification. 
+ * Representation of the constant pool as specified by the JVM Specification.
  * (This representation does not provide any abstraction.)
  *
  * @author Michael Eichberg
  */
 trait Constant_PoolBinding extends Constant_PoolReader {
 
+    type Constant_Pool_Entry = ConstantPoolEntries.Constant_Pool_Entry
+    val Constant_Pool_EntryManifest: ClassManifest[Constant_Pool_Entry] = implicitly
 
+    type CONSTANT_Class_info = ConstantPoolEntries.CONSTANT_Class_info
+    
+    type CONSTANT_Fieldref_info = ConstantPoolEntries.CONSTANT_Fieldref_info
 
-	// ______________________________________________________________________________________________
-	//
-	// REPRESENTATION OF THE CONSTANT POOL
-	// ______________________________________________________________________________________________
-	//
+    type CONSTANT_Methodref_info = ConstantPoolEntries.CONSTANT_Methodref_info
 
-	type Constant_Pool_Entry = de.tud.cs.st.bat.canonical.Constant_Pool_Entry
-	val Constant_Pool_EntryManifest : ClassManifest[Constant_Pool_Entry] = implicitly
+    type CONSTANT_InterfaceMethodref_info = ConstantPoolEntries.CONSTANT_InterfaceMethodref_info
 
+    type CONSTANT_String_info = ConstantPoolEntries.CONSTANT_String_info
 
-	case class CONSTANT_Class_info(val name_index:Int) extends de.tud.cs.st.bat.canonical.CONSTANT_Class_info 
-	def CONSTANT_Class_info(i : Int) : CONSTANT_Class_info = new CONSTANT_Class_info(i)
+    type CONSTANT_Integer_info = ConstantPoolEntries.CONSTANT_Integer_info
 
+    type CONSTANT_Float_info = ConstantPoolEntries.CONSTANT_Float_info
 
-	case class CONSTANT_Double_info(val value:Double) extends de.tud.cs.st.bat.canonical.CONSTANT_Double_info 
-	def CONSTANT_Double_info(d : Double) : CONSTANT_Double_info = new CONSTANT_Double_info(d)
+    type CONSTANT_Long_info = ConstantPoolEntries.CONSTANT_Long_info
 
+    type CONSTANT_Double_info = ConstantPoolEntries.CONSTANT_Double_info
 
-	case class CONSTANT_Float_info(val value:Float) extends de.tud.cs.st.bat.canonical.CONSTANT_Float_info 
-	def CONSTANT_Float_info(f : Float) : CONSTANT_Float_info = new CONSTANT_Float_info(f)
+    type CONSTANT_NameAndType_info = ConstantPoolEntries.CONSTANT_NameAndType_info
 
+    type CONSTANT_Utf8_info = ConstantPoolEntries.CONSTANT_Utf8_info
 
-	case class CONSTANT_Integer_info(val value:Int) extends de.tud.cs.st.bat.canonical.CONSTANT_Integer_info 
-	def CONSTANT_Integer_info(i : Int) : CONSTANT_Integer_info = new CONSTANT_Integer_info(i) 
+    type CONSTANT_MethodHandle_info = ConstantPoolEntries.CONSTANT_MethodHandle_info
 
+    type CONSTANT_MethodType_info = ConstantPoolEntries.CONSTANT_MethodType_info
 
-	case class CONSTANT_Long_info(val value:Long) extends de.tud.cs.st.bat.canonical.CONSTANT_Long_info 		
-	def CONSTANT_Long_info(l : Long) : CONSTANT_Long_info = new CONSTANT_Long_info(l)
+    type CONSTANT_InvokeDynamic_info = ConstantPoolEntries.CONSTANT_InvokeDynamic_info
 
+    import ConstantPoolEntries._
 
-	case class CONSTANT_Utf8_info(val value:String) extends de.tud.cs.st.bat.canonical.CONSTANT_Utf8_info 		
-	def CONSTANT_Utf8_info(s : String) : CONSTANT_Utf8_info = new CONSTANT_Utf8_info(s) 
+    def CONSTANT_Class_info(i: Int): CONSTANT_Class_info =
+        new CONSTANT_Class_info(i)
 
+    def CONSTANT_Double_info(d: Double): CONSTANT_Double_info =
+        new CONSTANT_Double_info(d)
 
-	case class CONSTANT_String_info(val string_index:Int) extends de.tud.cs.st.bat.canonical.CONSTANT_String_info 	
-	def CONSTANT_String_info(i : Int) : CONSTANT_String_info = new CONSTANT_String_info(i)
+    def CONSTANT_Float_info(f: Float): CONSTANT_Float_info =
+        new CONSTANT_Float_info(f)
 
+    def CONSTANT_Integer_info(i: Int): CONSTANT_Integer_info =
+        new CONSTANT_Integer_info(i)
 
-	case class CONSTANT_Fieldref_info(
-	  val	class_index : Int,
-	  val name_and_type_index : Int
-	) extends de.tud.cs.st.bat.canonical.CONSTANT_Fieldref_info 
+    def CONSTANT_Long_info(l: Long): CONSTANT_Long_info =
+        new CONSTANT_Long_info(l)
 
-	def CONSTANT_Fieldref_info(
-			class_index : Int, name_and_type_index : Int
-	) : CONSTANT_Fieldref_info = new CONSTANT_Fieldref_info(class_index, name_and_type_index) 
+    def CONSTANT_Utf8_info(s: String): CONSTANT_Utf8_info =
+        new CONSTANT_Utf8_info(s)
 
+    def CONSTANT_String_info(i: Int): CONSTANT_String_info =
+        new CONSTANT_String_info(i)
 
-	case class CONSTANT_Methodref_info(
-	  val	class_index : Int,
-	  val name_and_type_index : Int
-	) extends de.tud.cs.st.bat.canonical.CONSTANT_Methodref_info
+    def CONSTANT_Fieldref_info(class_index: Int,
+                               name_and_type_index: Int): CONSTANT_Fieldref_info =
+        new CONSTANT_Fieldref_info(class_index, name_and_type_index)
 
-	def CONSTANT_Methodref_info(
-		class_index : Int, name_and_type_index : Int
-	) : CONSTANT_Methodref_info = new CONSTANT_Methodref_info(class_index, name_and_type_index) 
+    def CONSTANT_Methodref_info(class_index: Int,
+                                name_and_type_index: Int): CONSTANT_Methodref_info =
+        new CONSTANT_Methodref_info(class_index, name_and_type_index)
 
+    def CONSTANT_InterfaceMethodref_info(class_index: Int,
+                                         name_and_type_index: Int): CONSTANT_InterfaceMethodref_info =
+        new CONSTANT_InterfaceMethodref_info(class_index, name_and_type_index)
 
-	case class CONSTANT_InterfaceMethodref_info(
-	  val	class_index : Int,
-	  val name_and_type_index : Int
-	) extends de.tud.cs.st.bat.canonical.CONSTANT_InterfaceMethodref_info		
+    def CONSTANT_NameAndType_info(name_index: Int,
+                                  descriptor_index: Int): CONSTANT_NameAndType_info =
+        new CONSTANT_NameAndType_info(name_index, descriptor_index)
 
-	def CONSTANT_InterfaceMethodref_info(
-		class_index : Int, name_and_type_index : Int
-	) : CONSTANT_InterfaceMethodref_info = 
-		new CONSTANT_InterfaceMethodref_info(class_index, name_and_type_index) 
+    def CONSTANT_MethodHandle_info(reference_kind: Int,
+                                   reference_index: Int): CONSTANT_MethodHandle_info =
+        new CONSTANT_MethodHandle_info(ReferenceKind(reference_kind), reference_index)
 
+    def CONSTANT_MethodType_info(descriptor_index: Int): CONSTANT_MethodType_info =
+        new CONSTANT_MethodType_info(descriptor_index)
 
-	case class CONSTANT_NameAndType_info(
-	  val	name_index : Int,
-	  val descriptor_index : Int
-	) extends de.tud.cs.st.bat.canonical.CONSTANT_NameAndType_info	
-
-	def CONSTANT_NameAndType_info(
-		name_index : Int, descriptor_index : Int
-	) : CONSTANT_NameAndType_info = new CONSTANT_NameAndType_info(name_index, descriptor_index) 
-	
-	
-	case class CONSTANT_MethodHandle_info (
-	 	val reference_kind : ReferenceKind.Value,
-	   val reference_index : Int
-	) extends de.tud.cs.st.bat.canonical.CONSTANT_MethodHandle_info
-	
-	def CONSTANT_MethodHandle_info(
-		reference_kind : Int, reference_index : Int
-	) : CONSTANT_MethodHandle_info = new CONSTANT_MethodHandle_info(ReferenceKind(reference_kind), reference_index)
-	
-	
-	case class CONSTANT_MethodType_info (
-	 	val descriptor_index : Int
-	) extends de.tud.cs.st.bat.canonical.CONSTANT_MethodType_info
-	
-	def CONSTANT_MethodType_info(
-		descriptor_index : Int
-	) : CONSTANT_MethodType_info = new CONSTANT_MethodType_info(descriptor_index)
-	
-	
-	case class CONSTANT_InvokeDynamic_info (
-	 	val bootstrap_method_attr_index : Int,
-	   val name_and_type_index : Int
-	) extends de.tud.cs.st.bat.canonical.CONSTANT_InvokeDynamic_info
-	
-	def CONSTANT_InvokeDynamic_info(
-		bootstrap_method_attr_index : Int, name_and_type_index : Int
-	) : CONSTANT_InvokeDynamic_info = new CONSTANT_InvokeDynamic_info(bootstrap_method_attr_index, name_and_type_index)
+    def CONSTANT_InvokeDynamic_info(bootstrap_method_attr_index: Int,
+                                    name_and_type_index: Int): CONSTANT_InvokeDynamic_info =
+        new CONSTANT_InvokeDynamic_info(bootstrap_method_attr_index, name_and_type_index)
 }
 
 

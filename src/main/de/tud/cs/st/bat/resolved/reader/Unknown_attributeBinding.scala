@@ -47,11 +47,10 @@ trait Unknown_attributeBinding
 
     type Unknown_attribute = de.tud.cs.st.bat.resolved.UnknownAttribute
 
-    def Unknown_attribute(
-        attribute_name_index: Constant_Pool_Index,
-        info: Array[Byte])(
-            implicit constant_pool: Constant_Pool): Unknown_attribute =
-        new Unknown_attribute(attribute_name_index, info)
+    def Unknown_attribute(attribute_name_index: Constant_Pool_Index,
+                          info: Array[Byte])(
+                              implicit cp: Constant_Pool): Unknown_attribute =
+        new Unknown_attribute(cp(attribute_name_index).asString, info)
 
 }
 

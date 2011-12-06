@@ -54,13 +54,13 @@ trait LocalVariableTypeTable_attributeBinding
                                     name_index: Constant_Pool_Index,
                                     signature_index: Constant_Pool_Index,
                                     index: Int)(
-                                        implicit constant_pool: Constant_Pool): LocalVariableTypeTableEntry = {
+                                        implicit cp: Constant_Pool): LocalVariableTypeTableEntry = {
 
         new LocalVariableTypeTableEntry(
             start_pc,
             length,
-            name_index,
-            CONSTANT_Utf8_info_IndexToFieldTypeSignature(signature_index),
+            cp(name_index).asString,
+            cp(signature_index).asFieldTypeSignature,
             index)
     }
 

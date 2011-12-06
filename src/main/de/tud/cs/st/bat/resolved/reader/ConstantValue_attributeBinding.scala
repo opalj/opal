@@ -47,8 +47,10 @@ trait ConstantValue_attributeBinding
 
     type ConstantValue_attribute = ConstantValueAttribute
 
-    def ConstantValue_attribute(attributeNameIndex: Constant_Pool_Index, constantValueIndex: Constant_Pool_Index)(implicit cp: Constant_Pool) = {
-        CONSTANT_Value_IndexToConstantValue(constantValueIndex)
+    def ConstantValue_attribute(attributeNameIndex: Constant_Pool_Index,
+                                constantValueIndex: Constant_Pool_Index)(
+                                    implicit cp: Constant_Pool) = {
+        cp(constantValueIndex).asConstantValue
     }
 
 }

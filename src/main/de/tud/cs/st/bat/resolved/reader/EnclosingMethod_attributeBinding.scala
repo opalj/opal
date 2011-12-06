@@ -49,11 +49,21 @@ trait EnclosingMethod_attributeBinding
     def EnclosingMethod_attribute(attribute_name_index: Constant_Pool_Index,
                                   class_index: Constant_Pool_Index,
                                   method_index: Constant_Pool_Index)(
-                                      implicit constant_pool: Constant_Pool): EnclosingMethod_attribute = {
-        val name_and_type: (String, MethodDescriptor) = if (method_index == 0) (null, null) else method_index
-        new EnclosingMethod_attribute(
-            class_index, name_and_type._1, name_and_type._2
-        )
+                                      implicit cp: Constant_Pool): EnclosingMethod_attribute = {
+        if (method_index == 0) {
+            new EnclosingMethod_attribute(cp(class_index).asObjectType, null, null)
+        }
+        else {
+            val name_and_type = cp(method_index).asNameAndType_info
+            new EnclosingMethod_attribute(
+                cp(class_index).asObjectType,
+                name_and_type.name,
+                name_and_type.methodDescriptor)
+        }
+        //        val name_and_type: (String, MethodDescriptor) = if (method_index == 0) (null, null) else method_index
+        //        new EnclosingMethod_attribute(
+        //            class_index, name_and_type._1, name_and_type._2
+        //        )
     }
 }
 
