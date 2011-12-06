@@ -52,31 +52,18 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
     implicit val Constant_Pool_EntryManifest: ClassManifest[Constant_Pool_Entry]
 
     type CONSTANT_Class_info <: Constant_Pool_Entry
-
     type CONSTANT_Fieldref_info <: Constant_Pool_Entry
-
     type CONSTANT_Methodref_info <: Constant_Pool_Entry
-
     type CONSTANT_InterfaceMethodref_info <: Constant_Pool_Entry
-
     type CONSTANT_String_info <: Constant_Pool_Entry
-
     type CONSTANT_Integer_info <: Constant_Pool_Entry
-
     type CONSTANT_Float_info <: Constant_Pool_Entry
-
     type CONSTANT_Long_info <: Constant_Pool_Entry
-
     type CONSTANT_Double_info <: Constant_Pool_Entry
-
     type CONSTANT_NameAndType_info <: Constant_Pool_Entry
-
     type CONSTANT_Utf8_info <: Constant_Pool_Entry with ValueAsString
-
     type CONSTANT_MethodHandle_info <: Constant_Pool_Entry
-
     type CONSTANT_MethodType_info <: Constant_Pool_Entry
-
     type CONSTANT_InvokeDynamic_info <: Constant_Pool_Entry
 
     // FACTORY METHODS
@@ -102,8 +89,7 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
 
     import ConstantPoolTags._
 
-    type Constant_Pool = IndexedSeq[Constant_Pool_Entry]
-
+    type Constant_Pool = Array[Constant_Pool_Entry]
 
     def Constant_Pool(in: DataInputStream): Constant_Pool = {
         /*

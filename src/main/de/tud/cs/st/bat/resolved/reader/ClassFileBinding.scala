@@ -58,23 +58,31 @@ trait ClassFileBinding
     type Interfaces <: IndexedSeq[ObjectType]
     val InterfaceManifest: ClassManifest[Interface] = implicitly
 
-    def Interface(interface_index: Constant_Pool_Index)(
-        implicit constant_pool: Constant_Pool): Interface = interface_index
+    def Interface(interface_index: Constant_Pool_Index)(implicit cp: Constant_Pool): Interface =
+        cp(interface_index).asObjectType
 
     def Field_Info(access_flags: Int,
                    name_index: Constant_Pool_Index,
                    descriptor_index: Constant_Pool_Index,
                    attributes: Attributes)(
-                       implicit constant_pool: Constant_Pool): Field_Info = {
-        new Field(access_flags, name_index, CONSTANT_Utf8_info_IndexToFieldType(descriptor_index), attributes)
+                       implicit cp: Constant_Pool): Field_Info = {
+        new Field(
+            access_flags,
+            cp(name_index).asString,
+            cp(descriptor_index).asFieldType,
+            attributes)
     }
 
     def Method_Info(accessFlags: Int,
                     name_index: Int,
                     descriptor_index: Int,
                     attributes: Attributes)(
-                        implicit constant_pool: Constant_Pool): Method_Info = {
-        new Method(accessFlags, name_index, descriptor_index, attributes)
+                        implicit cp: Constant_Pool): Method_Info = {
+        new Method(
+            accessFlags,
+            cp(name_index).asString,
+            cp(descriptor_index).asMethodDescriptor,
+            attributes)
     }
 
     def ClassFile(minor_version: Int, major_version: Int,
@@ -85,12 +93,12 @@ trait ClassFileBinding
                   fields: Fields,
                   methods: Methods,
                   attributes: Attributes)(
-                      implicit constant_pool: Constant_Pool): ClassFile = {
+                      implicit cp: Constant_Pool): ClassFile = {
         new ClassFile(
             minor_version, major_version, access_flags,
-            this_class,
+            cp(this_class).asObjectType,
             // to handle the special case that this class file represents java.lang.Object
-            { if (super_class == 0) null else super_class },
+            { if (super_class == 0) null else cp(super_class).asObjectType },
             interfaces, fields, methods, attributes
         )
     }

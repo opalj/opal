@@ -34,41 +34,36 @@ package de.tud.cs.st.bat.resolved.reader
 
 import de.tud.cs.st.bat.reader.InnerClasses_attributeReader
 
-
 /**
- * 
+ *
  *
  * @author Michael Eichberg
  */
-trait InnerClasses_attributeBinding 
-	extends InnerClasses_attributeReader
-		with Constant_PoolResolver
-		with AttributeBinding	
-{
-	
-	type InnerClasses_attribute = de.tud.cs.st.bat.resolved.InnerClassesAttribute
-	type InnerClassesEntry = de.tud.cs.st.bat.resolved.InnerClassesEntry
-	val InnerClassesEntryManifest : ClassManifest[InnerClassesEntry] = implicitly
-	
-	
-	def InnerClasses_attribute(
-		attribute_name_index : Int, classes : InnerClassesEntries
-	)( implicit constant_pool : Constant_Pool) : InnerClasses_attribute = 
-		new InnerClasses_attribute(classes) 
+trait InnerClasses_attributeBinding
+        extends InnerClasses_attributeReader
+        with Constant_PoolResolver
+        with AttributeBinding {
 
+    type InnerClasses_attribute = de.tud.cs.st.bat.resolved.InnerClassesAttribute
+    type InnerClassesEntry = de.tud.cs.st.bat.resolved.InnerClassesEntry
+    val InnerClassesEntryManifest: ClassManifest[InnerClassesEntry] = implicitly
 
-	def InnerClassesEntry(
-		inner_class_info_index : Int, outer_class_info_index : Int,
-		inner_name_index : Int,	inner_class_access_flags : Int	
-	)( implicit constant_pool : Constant_Pool) = { 
-		new InnerClassesEntry (
-			if (inner_class_info_index == 0) null else inner_class_info_index, 
-			if (outer_class_info_index == 0) null else outer_class_info_index, 
-			if (inner_name_index == 0) null else inner_name_index, 
-			inner_class_access_flags 
-		) 
-	}
+    def InnerClasses_attribute(attribute_name_index: Constant_Pool_Index,
+                               classes: InnerClassesEntries)(
+                                   implicit constant_pool: Constant_Pool): InnerClasses_attribute =
+        new InnerClasses_attribute(classes)
 
+    def InnerClassesEntry(inner_class_info_index: Constant_Pool_Index,
+                          outer_class_info_index: Constant_Pool_Index,
+                          inner_name_index: Constant_Pool_Index,
+                          inner_class_access_flags: Int)(implicit cp: Constant_Pool) = {
+        new InnerClassesEntry(
+            if (inner_class_info_index == 0) null else cp(inner_class_info_index).asObjectType,
+            if (outer_class_info_index == 0) null else cp(outer_class_info_index).asObjectType,
+            if (inner_name_index == 0) null else cp(inner_name_index).asString,
+            inner_class_access_flags
+        )
+    }
 
 }
 

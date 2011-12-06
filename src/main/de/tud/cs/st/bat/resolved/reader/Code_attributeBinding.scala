@@ -57,16 +57,18 @@ trait Code_attributeBinding
                        code: Code,
                        exception_table: ExceptionTable,
                        attributes: Attributes)(
-                           implicit constant_pool: Constant_Pool) =
+                           implicit cp: Constant_Pool) = {
         new CodeAttribute(max_stack, max_locals, code, exception_table, attributes)
+    }
 
     def ExceptionTableEntry(start_pc: Int,
                             end_pc: Int,
                             handler_pc: Int,
-                            catch_type: Int)(
-                                implicit constant_pool: Constant_Pool): ExceptionTableEntry = {
+                            catch_type_index: Constant_Pool_Index)(
+                                implicit cp: Constant_Pool): ExceptionTableEntry = {
         new ExceptionTableEntry(
-            start_pc, end_pc, handler_pc, if (catch_type == 0) null else catch_type
+            start_pc, end_pc, handler_pc,
+            if (catch_type_index == 0) null else cp(catch_type_index).asObjectType
         )
     }
 }

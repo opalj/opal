@@ -66,13 +66,13 @@ trait BytecodeReaderAndBinding extends Constant_PoolResolver with CodeBinding{
 	import java.io.DataInputStream
 	import java.io.ByteArrayInputStream
 
-	type Constant_Pool &lt;: Seq[Constant_Pool_Entry]
+	override type Constant_Pool = Array[Constant_Pool_Entry]
 
 
 	/**
 	 * Factory method that transforms an array of bytes into an array of instructions.
 	 */
-	def Code(source : Array[Byte])(implicit constant_pool : Constant_Pool) : Code = {
+	def Code(source : Array[Byte])(implicit cp : Constant_Pool) : Code = {
 	
 		val bas = new ByteArrayInputStream(source)
 		val in = new DataInputStream(bas)
@@ -80,7 +80,7 @@ trait BytecodeReaderAndBinding extends Constant_PoolResolver with CodeBinding{
 		var previousInstruction : Instruction = null
 		while (in.available > 0){
 			val index = source.length - in.available
-			previousInstruction = parsers(in.readUnsignedByte)(previousInstruction,index,in,constant_pool)
+			previousInstruction = parsers(in.readUnsignedByte)(previousInstruction,index,in,cp)
 			target(index) = previousInstruction
 		}
 	
@@ -90,7 +90,7 @@ trait BytecodeReaderAndBinding extends Constant_PoolResolver with CodeBinding{
 	// (previousInstruction: Instruction,
 	//  index : Int,
 	//  in : DataInputStream,
-	//  constant_pool : Constant_Pool
+	//  cp : Constant_Pool
 	// ) => Instruction
 	private val parsers : Array[(Instruction, Int, DataInputStream, Constant_Pool) => Instruction ] = new Array(256)
 	
@@ -114,11 +114,10 @@ trait BytecodeReaderAndBinding extends Constant_PoolResolver with CodeBinding{
 
 <xsl:template match="opal:instruction">
 
-	parsers(<xsl:value-of select="./@opcode"/>) =	(previousInstruction : Instruction, index : Int, in : DataInputStream, constant_pool : Constant_Pool) => {
+	parsers(<xsl:value-of select="./@opcode"/>) =	(previousInstruction : Instruction, index : Int, in : DataInputStream, cp : Constant_Pool) => {
 		<xsl:if test="$debug eq 'true'">
 		println("Reading instruction: <xsl:value-of select="./@name"/>")
 		</xsl:if>
-		implicit val cp = constant_pool
 		<xsl:choose>
 			<xsl:when test="count(opal:format/opal:std/opal:el) eq 1"><!-- The simple case that the instruction is identified by its mnemonic and does not have any parameters. -->
 		<xsl:value-of select="upper-case(string(@name))"/> // instance of the instruction</xsl:when>
@@ -225,7 +224,7 @@ trait BytecodeReaderAndBinding extends Constant_PoolResolver with CodeBinding{
 		<!-- CONSTANT POOL ENTRIES -->
 		<xsl:when test="$fet eq 'ushort_cp_index→call_site_specifier'">
 			/* TODO [Java 7] "invokedynamic" - resolve index into bootstrap method attribute table. */
-			val (name,methodDescriptor) /*: (String, MethodDescriptor)*/  = CONSTANT_NameAndType_info_IndexToNameAndMethodDescriptor(in.readUnsignedShort) <xsl:if test="$fe/@id">// <xsl:value-of select="$fe/@id"/></xsl:if> 
+			val (name,methodDescriptor) : (String, MethodDescriptor)  = cp(in.readUnsignedShort).asNameAndMethodDescriptor(cp) <xsl:if test="$fe/@id">// <xsl:value-of select="$fe/@id"/></xsl:if> 
 			val p<xsl:value-of select="$parameterId"/> : String = name
 			val p<xsl:value-of select="$parameterId+1"/> : MethodDescriptor = methodDescriptor	
 			<xsl:call-template name="process_instruction_parameters">
@@ -234,7 +233,7 @@ trait BytecodeReaderAndBinding extends Constant_PoolResolver with CodeBinding{
 			</xsl:call-template>
 		</xsl:when>	
 		<xsl:when test="$fet eq 'ushort_cp_index→methodref' or $fe/@type eq 'ushort_cp_index→interface_methodref'">
-			val (declaringClass,name,methodDescriptor) /*: (ObjectType,String,MethodDescriptor)*/ = CONSTANT_MethodRef_info_IndexToMethodRef(in.readUnsignedShort) <xsl:if test="$fe/@id">// <xsl:value-of select="$fe/@id"/></xsl:if> 
+			val (declaringClass,name,methodDescriptor) : (ObjectType,String,MethodDescriptor) = cp(in.readUnsignedShort).asMethodref(cp) <xsl:if test="$fe/@id">// <xsl:value-of select="$fe/@id"/></xsl:if> 
 			val p<xsl:value-of select="$parameterId"/> = declaringClass
 			val p<xsl:value-of select="$parameterId+1"/> = name
 			val p<xsl:value-of select="$parameterId+2"/> = methodDescriptor 
@@ -244,7 +243,7 @@ trait BytecodeReaderAndBinding extends Constant_PoolResolver with CodeBinding{
 			</xsl:call-template>
 		</xsl:when>	
 		<xsl:when test="$fet eq 'ushort_cp_index→fieldref'">
-			val (declaringClass, name, fieldType) /*: (ObjectType,String,FieldType)*/ = CONSTANT_Fieldref_info_IndexToFieldref(in.readUnsignedShort) <xsl:if test="$fe/@id">// <xsl:value-of select="$fe/@id"/></xsl:if> 
+			val (declaringClass, name, fieldType) : (ObjectType,String,FieldType) = cp(in.readUnsignedShort).asFieldref(cp) <xsl:if test="$fe/@id">// <xsl:value-of select="$fe/@id"/></xsl:if> 
 			val p<xsl:value-of select="$parameterId"/> = declaringClass
 			val p<xsl:value-of select="$parameterId+1"/> = name
 			val p<xsl:value-of select="$parameterId+2"/> = fieldType 
@@ -255,7 +254,7 @@ trait BytecodeReaderAndBinding extends Constant_PoolResolver with CodeBinding{
 		</xsl:when>	
 		<xsl:when test="$fet eq 'ubyte_cp_index→constant_value' ">
 			<xsl:if test="$fe/@id">// <xsl:value-of select="$fe/@id"/></xsl:if>
-			val p<xsl:value-of select="$parameterId"/> : ConstantValue[_] = in.readUnsignedByte		 
+			val p<xsl:value-of select="$parameterId"/> : ConstantValue[_] = cp(in.readUnsignedByte).asConstantValue(cp)		 
 			<xsl:call-template name="process_instruction_parameters">
 				<xsl:with-param name="fes" select="$fes[position() > 1]"/>
 				<xsl:with-param name="parameterId" select="$parameterId+1"/>
@@ -263,7 +262,7 @@ trait BytecodeReaderAndBinding extends Constant_PoolResolver with CodeBinding{
 		</xsl:when>		
 		<xsl:when test="$fet eq 'ushort_cp_index→constant_value' ">
 			<xsl:if test="$fe/@id">// <xsl:value-of select="$fe/@id"/></xsl:if>
-			val p<xsl:value-of select="$parameterId"/> : ConstantValue[_] = in.readUnsignedShort		 
+			val p<xsl:value-of select="$parameterId"/> : ConstantValue[_] = cp(in.readUnsignedShort).asConstantValue(cp)		 
 			<xsl:call-template name="process_instruction_parameters">
 				<xsl:with-param name="fes" select="$fes[position() > 1]"/>
 				<xsl:with-param name="parameterId" select="$parameterId+1"/>
@@ -271,7 +270,7 @@ trait BytecodeReaderAndBinding extends Constant_PoolResolver with CodeBinding{
 		</xsl:when>		
 		<xsl:when test="$fet eq 'ushort_cp_index→referenceType' ">
 			<xsl:if test="$fe/@id">// <xsl:value-of select="$fe/@id"/></xsl:if>
-			val cv : ConstantValue[_] = in.readUnsignedShort
+			val cv : ConstantValue[_] = cp(in.readUnsignedShort).asConstantValue(cp)
 			val p<xsl:value-of select="$parameterId"/> = cv.toClass		 
 			<xsl:call-template name="process_instruction_parameters">
 				<xsl:with-param name="fes" select="$fes[position() > 1]"/>
@@ -280,7 +279,7 @@ trait BytecodeReaderAndBinding extends Constant_PoolResolver with CodeBinding{
 		</xsl:when>	
 		<xsl:when test="$fet eq 'ushort_cp_index→objectType' "><!-- required by new... i.e. how to interpret the value referenced by a constant_class info structure depends on the instruction -->
 			<xsl:if test="$fe/@id">// <xsl:value-of select="$fe/@id"/></xsl:if>
-			val p<xsl:value-of select="$parameterId"/> = CONSTANT_Class_info_IndexToObjectType(in.readUnsignedShort)	 
+			val p<xsl:value-of select="$parameterId"/> = cp(in.readUnsignedShort).asObjectType(cp)	 
 			<xsl:call-template name="process_instruction_parameters">
 				<xsl:with-param name="fes" select="$fes[position() > 1]"/>
 				<xsl:with-param name="parameterId" select="$parameterId+1"/>

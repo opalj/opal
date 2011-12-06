@@ -118,8 +118,8 @@ trait StackMapTable_attributeBinding
 
     def UninitializedVariableInfo(offset: Int) = new UninitializedVariableInfo(offset)
 
-    def ObjectVariableInfo(cpool_index: Int)(implicit constant_pool: Constant_Pool) = {
-        new ObjectVariableInfo(cpool_index)
+    def ObjectVariableInfo(cpool_index: Int)(implicit cp: Constant_Pool) = {
+        new ObjectVariableInfo(cp(cpool_index).asObjectType)
     }
 
 }
