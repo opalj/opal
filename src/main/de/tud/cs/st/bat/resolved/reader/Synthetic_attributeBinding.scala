@@ -42,7 +42,7 @@ import de.tud.cs.st.bat.reader.Synthetic_attributeReader
  */
 trait Synthetic_attributeBinding
         extends Synthetic_attributeReader
-        with Constant_PoolResolver
+        with ConstantPoolBinding
         with AttributeBinding {
 
     type Synthetic_attribute = de.tud.cs.st.bat.resolved.Attribute

@@ -41,7 +41,7 @@ import de.tud.cs.st.bat.reader.InnerClasses_attributeReader
  */
 trait InnerClasses_attributeBinding
         extends InnerClasses_attributeReader
-        with Constant_PoolResolver
+        with ConstantPoolBinding
         with AttributeBinding {
 
     type InnerClasses_attribute = de.tud.cs.st.bat.resolved.InnerClassesAttribute

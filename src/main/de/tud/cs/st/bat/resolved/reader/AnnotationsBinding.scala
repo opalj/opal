@@ -56,7 +56,7 @@ trait AnnotationsBinding
         with ParameterAnnotationsReader
         with AnnotationDefault_attributeReader
         with ElementValuePairsReader
-        with Constant_PoolResolver
+        with ConstantPoolBinding
         with AttributeBinding {
 
     type Annotation = de.tud.cs.st.bat.resolved.Annotation

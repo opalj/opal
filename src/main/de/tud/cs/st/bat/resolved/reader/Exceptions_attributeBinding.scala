@@ -41,7 +41,7 @@ import de.tud.cs.st.bat.reader.Exceptions_attributeReader
  */
 trait Exceptions_attributeBinding
         extends Exceptions_attributeReader
-        with Constant_PoolResolver
+        with ConstantPoolBinding
         with AttributeBinding {
 
     type Exceptions_attribute = de.tud.cs.st.bat.resolved.ExceptionsAttribute

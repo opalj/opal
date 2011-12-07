@@ -35,8 +35,7 @@ package resolved
 package reader
 
 import de.tud.cs.st.bat.reader.Constant_PoolReader
-import de.tud.cs.st.bat.resolved.MethodDescriptor
-import de.tud.cs.st.bat.canonical.ConstantPoolEntries
+
 
 /**
  * A representation of the constant pool.
@@ -49,7 +48,7 @@ import de.tud.cs.st.bat.canonical.ConstantPoolEntries
  *
  * @author Michael Eichberg
  */
-trait Constant_PoolResolver extends Constant_PoolReader {
+trait ConstantPoolBinding extends Constant_PoolReader {
 
     trait Constant_Pool_Entry {
         def asString: String = sys.error("conversion to string is not supported")
@@ -65,7 +64,7 @@ trait Constant_PoolResolver extends Constant_PoolReader {
         def asMethodref(implicit cp: Constant_Pool): (ObjectType, String, MethodDescriptor) = sys.error("conversion to method ref is not supported")
         def asObjectType(implicit cp: Constant_Pool): ObjectType = sys.error("conversion to object type is not supported")
 
-        def asNameAndType_info: CONSTANT_NameAndType_info = sys.error("conversion to name and type info is not supported")
+        def asNameAndType: CONSTANT_NameAndType_info = sys.error("conversion to name and type info is not supported")
     }
 
     val Constant_Pool_EntryManifest: ClassManifest[Constant_Pool_Entry] = implicitly
@@ -147,7 +146,7 @@ trait Constant_PoolResolver extends Constant_PoolReader {
         private[this] var fieldref: (ObjectType, String, FieldType) = null // to cache the result
         override def asFieldref(implicit cp: Constant_Pool): (ObjectType, String, FieldType) = {
             if (fieldref eq null) {
-                val nameAndType = cp(name_and_type_index).asNameAndType_info
+                val nameAndType = cp(name_and_type_index).asNameAndType
                 fieldref = (cp(class_index).asObjectType,
                     nameAndType.name,
                     nameAndType.fieldType
@@ -157,7 +156,7 @@ trait Constant_PoolResolver extends Constant_PoolReader {
         }
     }
 
-    private[Constant_PoolResolver] trait AsMethodref extends Constant_Pool_Entry {
+    private[ConstantPoolBinding] trait AsMethodref extends Constant_Pool_Entry {
 
         def class_index: Constant_Pool_Index
         def name_and_type_index: Constant_Pool_Index
@@ -165,7 +164,7 @@ trait Constant_PoolResolver extends Constant_PoolReader {
         private[this] var methodref: (ObjectType, String, MethodDescriptor) = null // to cache the result
         override def asMethodref(implicit cp: Constant_Pool): (ObjectType, String, MethodDescriptor) = {
             if (methodref eq null) {
-                val nameAndType = cp(name_and_type_index).asNameAndType_info
+                val nameAndType = cp(name_and_type_index).asNameAndType
                 methodref = (cp(class_index).asObjectType,
                     nameAndType.name,
                     nameAndType.methodDescriptor
@@ -185,7 +184,7 @@ trait Constant_PoolResolver extends Constant_PoolReader {
                                          descriptor_index: Constant_Pool_Index)
             extends Constant_Pool_Entry {
 
-        override def asNameAndType_info: CONSTANT_NameAndType_info = this
+        override def asNameAndType: CONSTANT_NameAndType_info = this
 
         def name(implicit cp: Constant_Pool): String = cp(name_index).asString // this operation is very cheap and hence, it doesn't make sense to cache the result
         def fieldType(implicit cp: Constant_Pool): FieldType = cp(descriptor_index).asFieldType

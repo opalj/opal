@@ -41,7 +41,7 @@ import de.tud.cs.st.bat.reader.ClassFileReader
  */
 trait ClassFileBinding
         extends ClassFileReader
-        with Constant_PoolResolver
+        with ConstantPoolBinding
         with AttributeBinding {
 
     type ClassFile = de.tud.cs.st.bat.resolved.ClassFile
@@ -66,11 +66,7 @@ trait ClassFileBinding
                    descriptor_index: Constant_Pool_Index,
                    attributes: Attributes)(
                        implicit cp: Constant_Pool): Field_Info = {
-        new Field(
-            access_flags,
-            cp(name_index).asString,
-            cp(descriptor_index).asFieldType,
-            attributes)
+        new Field(access_flags, cp(name_index).asString, cp(descriptor_index).asFieldType, attributes)
     }
 
     def Method_Info(accessFlags: Int,
@@ -78,11 +74,7 @@ trait ClassFileBinding
                     descriptor_index: Int,
                     attributes: Attributes)(
                         implicit cp: Constant_Pool): Method_Info = {
-        new Method(
-            accessFlags,
-            cp(name_index).asString,
-            cp(descriptor_index).asMethodDescriptor,
-            attributes)
+        new Method(accessFlags, cp(name_index).asString, cp(descriptor_index).asMethodDescriptor, attributes)
     }
 
     def ClassFile(minor_version: Int, major_version: Int,

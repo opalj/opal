@@ -41,7 +41,7 @@ import de.tud.cs.st.bat.reader.EnclosingMethod_attributeReader
  */
 trait EnclosingMethod_attributeBinding
         extends EnclosingMethod_attributeReader
-        with Constant_PoolResolver
+        with ConstantPoolBinding
         with AttributeBinding {
 
     type EnclosingMethod_attribute = de.tud.cs.st.bat.resolved.EnclosingMethodAttribute
@@ -51,19 +51,12 @@ trait EnclosingMethod_attributeBinding
                                   method_index: Constant_Pool_Index)(
                                       implicit cp: Constant_Pool): EnclosingMethod_attribute = {
         if (method_index == 0) {
-            new EnclosingMethod_attribute(cp(class_index).asObjectType, null, null)
+            return new EnclosingMethod_attribute(cp(class_index).asObjectType, null, null)
         }
-        else {
-            val name_and_type = cp(method_index).asNameAndType_info
-            new EnclosingMethod_attribute(
-                cp(class_index).asObjectType,
-                name_and_type.name,
-                name_and_type.methodDescriptor)
-        }
-        //        val name_and_type: (String, MethodDescriptor) = if (method_index == 0) (null, null) else method_index
-        //        new EnclosingMethod_attribute(
-        //            class_index, name_and_type._1, name_and_type._2
-        //        )
+
+        val nameAndType = cp(method_index).asNameAndType
+        new EnclosingMethod_attribute(cp(class_index).asObjectType, nameAndType.name, nameAndType.methodDescriptor)
+
     }
 }
 

@@ -41,7 +41,7 @@ import de.tud.cs.st.bat.reader.SourceDebugExtension_attributeReader
  */
 trait SourceDebugExtension_attributeBinding
         extends SourceDebugExtension_attributeReader
-        with Constant_PoolResolver
+        with ConstantPoolBinding
         with AttributeBinding {
 
     type SourceDebugExtension_attribute = de.tud.cs.st.bat.resolved.SourceDebugExtensionAttribute

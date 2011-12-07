@@ -62,7 +62,7 @@ import de.tud.cs.st.util.ControlAbstractions.repeat
  *
  * @version [Generated] <xsl:value-of select="current-dateTime()"/>
  */
-trait BytecodeReaderAndBinding extends Constant_PoolResolver with CodeBinding{
+trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding{
 
 	import java.io.DataInputStream
 	import java.io.ByteArrayInputStream

@@ -42,7 +42,7 @@ import de.tud.cs.st.bat.reader.ConstantValue_attributeReader
  */
 trait ConstantValue_attributeBinding
         extends ConstantValue_attributeReader
-        with Constant_PoolResolver
+        with ConstantPoolBinding
         with AttributeBinding {
 
     type ConstantValue_attribute = ConstantValueAttribute

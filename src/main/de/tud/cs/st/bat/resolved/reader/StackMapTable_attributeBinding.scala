@@ -45,7 +45,7 @@ trait StackMapTable_attributeBinding
         extends StackMapTable_attributeReader
         with StackMapFrameReader
         with VerificationTypeInfoReader
-        with Constant_PoolResolver
+        with ConstantPoolBinding
         with AttributeBinding {
 
     type VerificationTypeInfo = de.tud.cs.st.bat.resolved.VerificationTypeInfo

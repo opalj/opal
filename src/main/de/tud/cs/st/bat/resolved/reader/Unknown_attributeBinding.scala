@@ -42,7 +42,7 @@ import de.tud.cs.st.bat.reader.Unknown_attributeReader
  */
 trait Unknown_attributeBinding
         extends Unknown_attributeReader
-        with Constant_PoolResolver
+        with ConstantPoolBinding
         with AttributeBinding {
 
     type Unknown_attribute = de.tud.cs.st.bat.resolved.UnknownAttribute

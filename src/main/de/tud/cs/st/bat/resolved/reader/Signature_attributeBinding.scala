@@ -43,7 +43,7 @@ import de.tud.cs.st.bat.reader.Signature_attributeReader
  */
 trait Signature_attributeBinding
         extends Signature_attributeReader
-        with Constant_PoolResolver
+        with ConstantPoolBinding
         with AttributeBinding {
 
     type Signature_attribute = SignatureAttribute

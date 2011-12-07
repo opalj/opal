@@ -41,7 +41,7 @@ import de.tud.cs.st.bat.reader.SourceFile_attributeReader
  */
 trait SourceFile_attributeBinding
         extends SourceFile_attributeReader
-        with Constant_PoolResolver
+        with ConstantPoolBinding
         with AttributeBinding {
 
     type SourceFile_attribute = de.tud.cs.st.bat.resolved.SourceFileAttribute

@@ -40,9 +40,9 @@ import de.tud.cs.st.bat.reader.Code_attributeReader
  *
  * @author Michael Eichberg
  */
-trait Code_attributeBinding
+trait CodeAttributeBinding
         extends Code_attributeReader
-        with Constant_PoolResolver
+        with ConstantPoolBinding
         with CodeBinding
         with AttributeBinding {
 
