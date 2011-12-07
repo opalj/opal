@@ -51,7 +51,7 @@ import org.scalatest.junit.JUnitRunner
 @RunWith(classOf[JUnitRunner])
 class Java6FrameworkRunTimeTest extends FunSuite
         with ClassFileTestUtility
-        with de.tud.cs.st.util.perf.BasicPerformanceEvaluation {
+        with de.tud.cs.st.util.perf.PerformanceEvaluation {
 
     test("testClassFileReading - Apache ANT 1.7.1 - javac 6 default target.zip") {
         testClassFileReading("test/classfiles/Apache ANT 1.7.1 - javac 6 default target.zip")

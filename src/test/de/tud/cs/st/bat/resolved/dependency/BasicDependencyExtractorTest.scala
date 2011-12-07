@@ -56,7 +56,7 @@ import DependencyType._
  * @author Thomas Schlosser
  */
 @RunWith(classOf[JUnitRunner])
-class BasicDependencyExtractorTest extends Suite with de.tud.cs.st.util.perf.BasicPerformanceEvaluation {
+class BasicDependencyExtractorTest extends Suite {
 
     /*
     * Registry of all class files stored in the zip files found in the test data directory.

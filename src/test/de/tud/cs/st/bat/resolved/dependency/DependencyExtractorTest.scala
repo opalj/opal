@@ -48,7 +48,7 @@ import DependencyType._
  * @author Thomas Schlosser
  */
 @RunWith(classOf[JUnitRunner])
-class DependencyExtractorTest extends FunSuite with de.tud.cs.st.util.perf.BasicPerformanceEvaluation {
+class DependencyExtractorTest extends FunSuite {
 
     type Dependency = (String, String, DependencyType)
     type Dependencies = List[Dependency]
