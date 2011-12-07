@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -32,39 +32,72 @@
 */
 package de.tud.cs.st.util.perf
 
-
 import scala.collection.mutable.Map
 
-
 /**
- * Trait that defines methods for measuring the execution time of some code.
+ * Measures the execution time of some code.
  *
  * @author Michael Eichberg
  */
-trait PerformanceEvaluation extends BasicPerformanceEvaluation {
+trait PerformanceEvaluation {
 
+    final def nanoSecondsToSeconds(value: Long): Double = value.toDouble / 1000.0d / 1000.0d / 1000.0d
+    final def nsToSecs(value: Long): Double = nanoSecondsToSeconds(value)
 
-	/**
-	 * Times the execution of a given method (function literal) / code block.
-	 * @param s a string that identifies the code/the method that is measured. <br/>
-	 * E.g. <i>"calculation of the fibonacci number".</i>
-	 */
-	def time[T](s : String)(f : => T ) : T
+    final def nanoSecondsToMilliseconds(value: Long): Double = value.toDouble / 1000.0d / 1000.0d
 
+    final def asSeconds(startTimeInNanoSeconds: Long, endTimeInNanoSeconds: Long): Double =
+        nanoSecondsToSeconds(endTimeInNanoSeconds - startTimeInNanoSeconds)
 
+    /**
+     * Times the execution of a given method (function literal) / code block.
+     *
+     * @param r A function that is passed the time (in nano seconds) that it
+     * 	took to evaluate the function f.
+     */
+    def time[T](r: Long ⇒ Unit)(f: ⇒ T): T = {
 
+        val startTime: Long = System.nanoTime
+        val result = f
+        val endTime: Long = System.nanoTime
 
-	/**
-	 * Times the execution of the given method / function literal / code block and
-	 * adds it to the execution time of previous methods / function literals/ code blocks
-	 * that were measured and for which the same symbole was used. <br/>
-	 * E.g. <code>aggregateTimes('base_analysis){ ... do something ... }</code>
-	 *
-	 * @param s symbol used to put multiple measurements into relation. 
-	 */
-	def aggregateTimes[T](s : Symbol)(f : => T) : T 
-	
-	def printAggregatedTimes(s:Symbol, description:String)
-	
-	def resetAggregatedTimes(s:Symbol) 
+        r(endTime - startTime)
+
+        result
+    }
+
+    private[this] val times: Map[Symbol, Long] = Map()
+
+    /**
+     * Times the execution of the given method / function literal / code block and
+     * adds it to the execution time of previous methods / function literals/ code blocks
+     * that were measured and for which the same symbol was used. <br/>
+     * E.g. <code>time('base_analysis){ ... do something ... }</code>
+     *
+     * @param s Symbol used to put multiple measurements into relation.
+     * @param f The function that will be evaluated and for which the execution
+     * time will be measured.
+     */
+    def time[T](s: Symbol)(f: ⇒ T): T = {
+        val startTime = System.nanoTime
+        val result = f
+        val endTime = System.nanoTime
+
+        val old = times.getOrElseUpdate(s, 0l)
+        times.update(s, old + (endTime - startTime))
+
+        result
+    }
+
+    def getTime(sym: Symbol): Long = {
+        times.getOrElseUpdate(sym, 0l)
+    }
+
+    def reset(s: Symbol) {
+        times.remove(s)
+    }
+
+    def resetAll() {
+        times.clear()
+    }
 }

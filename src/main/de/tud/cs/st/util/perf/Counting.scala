@@ -32,36 +32,35 @@
 */
 package de.tud.cs.st.util.perf
 
-import scala.collection.mutable.Map
-
 /**
- * Trait that defines methods for measuring the execution time of some code.
+ * Counts how often some piece of code is executed.
  *
  * @author Michael Eichberg
  */
-trait BasicPerformanceEvaluation {
+trait Counting
+        extends PerformanceEvaluation {
 
-    def nanoSecondsToSeconds(value: Long): Double = value.toDouble / 1000.0d / 1000.0d / 1000.0d
+    import scala.collection.mutable.Map
 
-    def nanoSecondsToMilliseconds(value: Long): Double = value.toDouble / 1000.0d / 1000.0d
+    private[this] val count: Map[Symbol, Int] = Map()
 
-    def asSeconds(startTimeInNanoSeconds: Long, endTimeInNanoSeconds: Long): Double =
-        nanoSecondsToSeconds(endTimeInNanoSeconds - startTimeInNanoSeconds)
+    abstract override def time[T](s: Symbol)(f: ⇒ T): T = {
+        count.update(s, count.getOrElseUpdate(s, 0) + 1)
 
-    /**
-     * Times the execution of a given method (function literal) / code block.
-     *
-     * @param r a function that is passed the time (in nano seconds) required to execute the time method block.
-     */
-    def time[T](r: Long ⇒ Unit)(f: ⇒ T): T = {
-
-        val startTime: Long = System.nanoTime
-        val result = f
-        val endTime: Long = System.nanoTime
-
-        r(endTime - startTime)
-
-        result
+        super.time(s)(f)
     }
 
+    def getCount(sym: Symbol): Int = {
+        count.getOrElse(sym, 0)
+    }
+
+    abstract override def reset(sym: Symbol) {
+        count.update(sym, 0)
+
+        super.reset(sym)
+    }
+
+    abstract override def resetAll{
+        count.clear()
+    }
 }

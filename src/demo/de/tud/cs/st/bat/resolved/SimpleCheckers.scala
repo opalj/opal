@@ -30,7 +30,10 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved
+package de.tud.cs.st
+package bat.resolved
+
+import util.perf.{ Counting, PerformanceEvaluation }
 
 import reader.Java6Framework
 
@@ -39,50 +42,51 @@ import reader.Java6Framework
  *
  * @author Michael Eichberg
  */
-object SimpleCheckers
-        extends App
-        with de.tud.cs.st.util.perf.ToCommandLinePerformanceEvaluation {
+object SimpleCheckers extends App {
+
+    private val CountingPerformanceEvaluator = new PerformanceEvaluation with Counting
+    import CountingPerformanceEvaluator._
 
     val classFiles: Seq[ClassFile] = Java6Framework.ClassFiles("test/classfiles/BAT2XML - target 1.7.zip")
 
-    var classFileCount = 0
     var problemCount = 0
 
     for (classFile ← classFiles) {
-        classFileCount += 1
+        time('Overall) {
 
-        aggregateTimes('EqHcChecker) {
-            var definesEqualsMethod = false
-            var definesHashCodeMethod = false
-            for (method ← classFile.methods) method match {
-                case Method(_, "equals", MethodDescriptor(Seq(ObjectType("java/lang/Object")), BooleanType), _) ⇒ definesEqualsMethod = true
-                case Method(_, "hashCode", MethodDescriptor(Seq(), IntegerType), _) ⇒ definesHashCodeMethod = true
-                case _ ⇒
+            time('EqHcChecker) {
+                var definesEqualsMethod = false
+                var definesHashCodeMethod = false
+                for (method ← classFile.methods) method match {
+                    case Method(_, "equals", MethodDescriptor(Seq(ObjectType("java/lang/Object")), BooleanType), _) ⇒ definesEqualsMethod = true
+                    case Method(_, "hashCode", MethodDescriptor(Seq(), IntegerType), _) ⇒ definesHashCodeMethod = true
+                    case _ ⇒
+                }
+
+                if (definesEqualsMethod != definesHashCodeMethod) {
+                    problemCount += 1
+                    println("the class: " + classFile.thisClass.className + " does not satisfy java.lang.Object's equals-hashCode contract.")
+                }
             }
 
-            if (definesEqualsMethod != definesHashCodeMethod) {
-                problemCount += 1
-                println("the class: " + classFile.thisClass.className + " does not satisfy java.lang.Object's equals-hashCode contract.")
-            }
-        }
-
-        aggregateTimes('CovEqChecker) {
-            var definesEqualsMethod = false
-            var definesCovariantEqualsMethod = false
-            for (method ← classFile.methods) method match {
-                case Method(_, "equals", MethodDescriptor(Seq(ObjectType("java/lang/Object")), BooleanType), _) ⇒ definesEqualsMethod = true
-                case Method(_, "equals", MethodDescriptor(Seq(_), BooleanType), _) ⇒ definesCovariantEqualsMethod = true
-                case _ ⇒
-            }
-            if (definesCovariantEqualsMethod && !definesEqualsMethod) {
-                problemCount += 1
-                println("the class: " + classFile.thisClass.className + " defines a covariant equals method.")
+            time('CovEqChecker) {
+                var definesEqualsMethod = false
+                var definesCovariantEqualsMethod = false
+                for (method ← classFile.methods) method match {
+                    case Method(_, "equals", MethodDescriptor(Seq(ObjectType("java/lang/Object")), BooleanType), _) ⇒ definesEqualsMethod = true
+                    case Method(_, "equals", MethodDescriptor(Seq(_), BooleanType), _) ⇒ definesCovariantEqualsMethod = true
+                    case _ ⇒
+                }
+                if (definesCovariantEqualsMethod && !definesEqualsMethod) {
+                    problemCount += 1
+                    println("the class: " + classFile.thisClass.className + " defines a covariant equals method, but does not also define the standard equals method.")
+                }
             }
         }
     }
-    printAggregatedTimes('EqHcChecker, "Equals-HashCode Checker")
-    printAggregatedTimes('CovEqChecker, "Covariant Equals Checker")
-    println("Number of class files: " + classFileCount)
+    println("Equals-HashCode Checker: " + nsToSecs(getTime('EqHcChecker)))
+    println("Covariant Equals Checker: " + nsToSecs(getTime('CovEqChecker)))
+    println("Number of class files: " + getCount('Overall) + " processed in: " + nsToSecs(getTime('Overall)))
     println("Number of class files which violate the contract: " + problemCount)
 
 }
