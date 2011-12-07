@@ -34,7 +34,8 @@ package de.tud.cs.st.bat
 package resolved
 
 /**
- * Debug information.
+ * Debug information. The source debug extension attribute is an optional
+ * attribute of a class declaration ([[de.tud.cs.st.bat.resolved.ClassFile]])
  *
  * @author Michael Eichberg
  */

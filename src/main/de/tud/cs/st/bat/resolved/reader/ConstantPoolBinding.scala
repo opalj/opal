@@ -56,7 +56,7 @@ trait ConstantPoolBinding extends Constant_PoolReader {
         def asMethodDescriptor: MethodDescriptor = sys.error("conversion to method descriptor is not supported")
         def asFieldTypeSignature: FieldTypeSignature = sys.error("conversion to field type signature is not supported")
 
-        def asSignatureAttribute(implicit ap: AttributeParent): SignatureAttribute = sys.error("conversion to signature attribute is not supported")
+        def asSignature(implicit ap: AttributeParent): Signature = sys.error("conversion to signature attribute is not supported")
 
         def asNameAndMethodDescriptor(implicit cp: Constant_Pool): (String, MethodDescriptor) = sys.error("conversion to name and method descriptor is not supported")
         def asConstantValue(implicit cp: Constant_Pool): ConstantValue[_] = sys.error("conversion to constant value is not supported")
@@ -124,7 +124,7 @@ trait ConstantPoolBinding extends Constant_PoolReader {
 
         override def asFieldTypeSignature = SignatureParser.parseFieldTypeSignature(value) // should be called at most once => caching doesn't make sense
 
-        override def asSignatureAttribute(implicit ap: AttributeParent) = { // should be called at most once => caching doesn't make sense
+        override def asSignature(implicit ap: AttributeParent) = { // should be called at most once => caching doesn't make sense
             ap match {
                 case AttributesParent.Field     ⇒ SignatureParser.parseFieldTypeSignature(value)
                 case AttributesParent.ClassFile ⇒ SignatureParser.parseClassSignature(value)

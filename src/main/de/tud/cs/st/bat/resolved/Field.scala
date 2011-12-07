@@ -98,9 +98,9 @@ case class Field(accessFlags: Int,
 
         for (attribute ← attributes) {
             facts = (attribute match {
-                case aa: AnnotationsAttribute    ⇒ aa.toProlog(factory, key)
-                case cva: ConstantValueAttribute ⇒ cva.toProlog(factory, key)
-                case _                           ⇒ Nil
+                case aa: AnnotationsAttribute ⇒ aa.toProlog(factory, key)
+                case cva: ConstantValue[_]    ⇒ cva.toProlog(factory, key)
+                case _                        ⇒ Nil
             }) ::: facts
         }
 
