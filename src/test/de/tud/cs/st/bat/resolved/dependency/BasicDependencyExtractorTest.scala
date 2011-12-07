@@ -50,7 +50,7 @@ import DependencyType._
 
 /**
  * Tests whether all class files contained in the "test/classfiles" directory
- * can be processed by the DependencyExtractor without failure.
+ * can be processed by the <code>DependencyExtractor</code> without failure.
  * The results themselves will not be verified in these test cases.
  *
  * @author Thomas Schlosser
@@ -59,8 +59,8 @@ import DependencyType._
 class BasicDependencyExtractorTest extends Suite with de.tud.cs.st.util.perf.BasicPerformanceEvaluation {
 
     /*
-   * Registry of all class files stored in the zip files found in the test data directory.
-   */
+    * Registry of all class files stored in the zip files found in the test data directory.
+    */
     private val testCases = {
 
         var tcs = scala.collection.immutable.Map[String, (ZipFile, ZipEntry)]()

@@ -41,6 +41,10 @@ import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
 
 /**
+ * Tests the run time of class file reading.
+ * The reading process of each tested library is repeated ten times
+ * and then the lowest and highest run times are printed to the console.
+ *
  * @author Thomas Schlosser
  *
  */

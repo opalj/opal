@@ -34,12 +34,15 @@ package de.tud.cs.st.bat.resolved
 package dependency
 
 /**
- * Associates a source element (type, method or field declaration) with a unique id.
+ * Provides common reset interface for different kinds of ID mappers.
  *
  * @author Thomas Schlosser
  */
 trait IDResetter {
 
+    /**
+     * Resets all IDs and associated values.
+     */
     def reset
 
 }

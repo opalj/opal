@@ -43,7 +43,7 @@ import DependencyType._
 /**
  * Tests whether the DependencyExtractor extracts all dependencies correctly.
  * The class files in the "test/classfiles/Dependencies.zip" file
- * provide a basis for the verifications done in this dependencies.
+ * provide a basis for the verifications done in this tests.
  *
  * @author Thomas Schlosser
  */

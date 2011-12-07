@@ -62,14 +62,23 @@ import DependencyType._
  */
 trait InstructionDependencyExtractor extends CodeBinding {
 
+    /**
+     * Builder that is used to get unique identifiers for all source elements
+     * and to add the extracted dependencies to.
+     */
     val builder: DependencyBuilder
 
     /**
-     * Factory method that transforms an array of instructions into an array of dependencies.
+     * Extracts all dependencies found in the given instructions.
+     * 
+     * @param methodId The ID of the source of the extracted dependencies. 
+     * @param instructions The instructions that should be analyzed for dependencies.
      */
     def process(methodId: Int, instructions: Code) {
         import builder._
 
+        // iterate over all instructions and extract
+        // the instruction specific dependencies
         for (instr ← instructions if instr != null) {
             (instr.opcode: @switch) match {<xsl:for-each select="/opal:instructions/opal:instruction">
                                    <xsl:call-template name="opal:instruction" />
@@ -164,32 +173,6 @@ trait InstructionDependencyExtractor extends CodeBinding {
 	<!-- If we would be able to use schema validation, then we would not require the following check. -->
 		<xsl:otherwise>
 			<xsl:message terminate="yes">Unsupported format element: <xsl:value-of select="$fe"/></xsl:message>
-		</xsl:otherwise>
-	</xsl:choose>
-</xsl:template>
-
-
-
-<xsl:template name="toVariableTypes">
-	<xsl:param name="fets" required="yes"/>
-	<xsl:choose>
-		<xsl:when test="count($fets) eq 1"><xsl:call-template name="formatElementType_to_VariableType"><xsl:with-param name="fet" select="$fets[position() eq 1]"/></xsl:call-template></xsl:when>
-		<xsl:otherwise>(<xsl:for-each select="$fets"><xsl:call-template name="formatElementType_to_VariableType"><xsl:with-param name="fet" select="." /></xsl:call-template><xsl:if test="position() != last()">, </xsl:if></xsl:for-each>)</xsl:otherwise>
-	</xsl:choose>
-</xsl:template>
-
-
-
-<xsl:template name="formatElementType_to_VariableType">
-	<!-- Currently, only usable in combination with processing "list" format elements
-		 where the primitive types are int or branchoffset_wide
-	-->
-	<xsl:param name="fet" required="yes"/>
-	<xsl:choose>
-		<xsl:when test="$fet eq 'int' or $fet eq 'branchoffset_wide'">Int</xsl:when>
-		<!-- If we would be able to use schema validation, then we would not require the following check. -->
-		<xsl:otherwise>
-			<xsl:message terminate="yes">Unsupported format type: <xsl:value-of select="$fet"/></xsl:message>
 		</xsl:otherwise>
 	</xsl:choose>
 </xsl:template>

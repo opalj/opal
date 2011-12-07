@@ -36,11 +36,15 @@ package dependency
 import org.junit.runner.RunWith
 import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
-import de.tud.cs.st.bat.resolved.DependencyType._
+import de.tud.cs.st.bat.resolved.dependency.DependencyType._
 import de.tud.cs.st.bat.resolved.reader.Java6Framework
 import scala.math.Ordering$Long$
 
 /**
+ * Tests the run time of dependency extraction.
+ * The extraction process of each tested library is repeated ten times
+ * and then the lowest and highest run times are printed to the console.
+ *
  * @author Thomas Schlosser
  *
  */

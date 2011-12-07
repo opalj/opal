@@ -31,6 +31,7 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 */
 package de.tud.cs.st.bat.resolved
+package dependency
 
 /**
  * DependencyType enumerates all different kinds of dependency types that can
@@ -41,33 +42,25 @@ package de.tud.cs.st.bat.resolved
 object DependencyType extends Enumeration {
     type DependencyType = Value
 
-    // class/method/field related dependency types
+    // class/method/field definition related dependency types
     val EXTENDS = Value("extends")
     val IMPLEMENTS = Value("implements")
     val IS_INSTANCE_MEMBER_OF = Value("is instance member of")
     val IS_CLASS_MEMBER_OF = Value("is class member of")
     val IS_INNER_CLASS_OF = Value("is inner class of")
 
-    // annotation related dependency types
-    val ANNOTATED_WITH = Value("annotated with")
-    val PARAMETER_ANNOTATED_WITH = Value("parameter annotated with")
-    val USES_DEFAULT_CLASS_VALUE_TYPE = Value("uses default class value type")
-    val USES_DEFAULT_ENUM_VALUE_TYPE = Value("uses default enum value type")
-    val USES_DEFAULT_ANNOTATION_VALUE_TYPE = Value("uses default annotation value type")
+    // field definition related dependency types
+    val IS_OF_TYPE = Value("is of type")
+    val USES_CONSTANT_VALUE_OF_TYPE = Value("uses constant value of type")
 
-    // method related dependency types
+    // method definition related dependency types
     val RETURNS = Value("returns")
     val HAS_PARAMETER_OF_TYPE = Value("has parameter of type")
     val THROWS = Value("throws")
     val CATCHES = Value("catches")
-    val USES_ENUM_VALUE = Value("uses enum value")
+
+    // code related dependency types
     val HAS_LOCAL_VARIABLE_OF_TYPE = Value("has local variable of type")
-
-    // field related dependency types
-    val IS_OF_TYPE = Value("is of type")
-    val USES_CONSTANT_VALUE_OF_TYPE = Value("uses constant value of type")
-
-    // instruction related dependency types
     val CREATES_ARRAY_OF_TYPE = Value("creates array of type")
     val CASTS_INTO = Value("casts into")
     val CHECKS_INSTANCEOF = Value("checks instanceOf")
@@ -84,9 +77,17 @@ object DependencyType extends Enumeration {
     val CALLS_INTERFACE_METHOD = Value("calls interface method")
     val USES_TYPE = Value("uses type") // default 'uses' dependency
 
-    // signature related dependency types
-    val USES_TYPE_IN_TYPE_PARAMETERS = Value("uses type in type parameters")
+    // annotation related dependency types
+    val ANNOTATED_WITH = Value("annotated with")
+    val PARAMETER_ANNOTATED_WITH = Value("parameter annotated with")
 
-    val UNDEFINED = Value("undefined dependency")
+    // element value related dependency type
+    val USES_DEFAULT_CLASS_VALUE_TYPE = Value("uses default class value type")
+    val USES_DEFAULT_ENUM_VALUE_TYPE = Value("uses default enum value type")
+    val USES_ENUM_VALUE = Value("uses enum value")
+    val USES_DEFAULT_ANNOTATION_VALUE_TYPE = Value("uses default annotation value type")
+
+    // signature/type parameter related dependency types
+    val USES_TYPE_IN_TYPE_PARAMETERS = Value("uses type in type parameters")
 
 }

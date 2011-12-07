@@ -34,26 +34,82 @@ package de.tud.cs.st.bat.resolved
 package dependency
 
 /**
+ * If you want to use the <code>SourceElementIDsMap</code> for <code>DependencyExtractor</code>'s
+ * ID generation and if you also want to have dependencies to the underlying base type instead of
+ * dependencies to array types, this trait can be mixed in.
+ * All <code>getID</code> calls will be redirected to the corresponding <code>sourceElementID</code>
+ * method implemented in <code>SourceElementIDsMap</code>.
+ *
+ * The only remaining abstract method is the <code>addDependency</code> method defined in
+ * <code>DependencyBuilder</code>.
  *
  * @author Thomas Schlosser
  */
 trait DefaultIDMappingDependencyBuilder extends DependencyBuilder with SourceElementIDsMap with UseIDOfBaseTypeForArrayTypes {
 
+    /**
+     * Gets a unique numerical identifier for the given class file.
+     *
+     * This method only calls the <code>sourceElementID(ClassFile)</code>
+     * method implemented in <code>SourceElementIDsMap</code>.
+     *
+     * @see de.tud.cs.st.bat.resolved.dependency.DependencyBuilder#getID(de.tud.cs.st.bat.resolved.ClassFile)
+     */
     def getID(classFile: ClassFile): Int =
         sourceElementID(classFile)
 
+    /**
+     * Gets a unique numerical identifier for the given type.
+     *
+     * This method only calls the <code>sourceElementID(Type)</code>
+     * method implemented in <code>SourceElementIDsMap</code>.
+     *
+     * @see de.tud.cs.st.bat.resolved.dependency.DependencyBuilder#getID(de.tud.cs.st.bat.resolved.Type)
+     */
     def getID(t: Type): Int =
         sourceElementID(t)
 
+    /**
+     * Gets a unique numerical identifier for the given pair of type and field.
+     *
+     * This method only calls the <code>sourceElementID(ObjectType, Field)</code>
+     * method implemented in <code>SourceElementIDsMap</code>.
+     *
+     * @see de.tud.cs.st.bat.resolved.dependency.DependencyBuilder#getID(de.tud.cs.st.bat.resolved.ObjectType, de.tud.cs.st.bat.resolved.Field)
+     */
     def getID(definingObjectType: ObjectType, field: Field): Int =
         sourceElementID(definingObjectType, field)
 
+    /**
+     * Gets a unique numerical identifier for the given pair of type and field name.
+     *
+     * This method only calls the <code>sourceElementID(ObjectType, String)</code>
+     * method implemented in <code>SourceElementIDsMap</code>.
+     *
+     * @see de.tud.cs.st.bat.resolved.dependency.DependencyBuilder#getID(de.tud.cs.st.bat.resolved.ObjectType, java.lang.String)
+     */
     def getID(definingObjectType: ObjectType, fieldName: String): Int =
         sourceElementID(definingObjectType, fieldName)
 
+    /**
+     * Gets a unique numerical identifier for the given pair of type and method.
+     *
+     * This method only calls the <code>sourceElementID(ObjectType, Method)</code>
+     * method implemented in <code>SourceElementIDsMap</code>.
+     *
+     * @see de.tud.cs.st.bat.resolved.dependency.DependencyBuilder#getID(de.tud.cs.st.bat.resolved.ObjectType, de.tud.cs.st.bat.resolved.Method)
+     */
     def getID(definingObjectType: ObjectType, method: Method): Int =
         sourceElementID(definingObjectType, method)
 
+    /**
+     * Gets a unique numerical identifier for the given triple of type, method name and method descriptor.
+     *
+     * This method only calls the <code>sourceElementID(ObjectType, String, MethodDescriptor)</code>
+     * method implemented in <code>SourceElementIDsMap</code>.
+     *
+     * @see de.tud.cs.st.bat.resolved.dependency.DependencyBuilder#getID(de.tud.cs.st.bat.resolved.ObjectType, java.lang.String, de.tud.cs.st.bat.resolved.MethodDescriptor)
+     */
     def getID(definingObjectType: ObjectType, methodName: String, methodDescriptor: MethodDescriptor): Int =
         sourceElementID(definingObjectType, methodName, methodDescriptor)
 

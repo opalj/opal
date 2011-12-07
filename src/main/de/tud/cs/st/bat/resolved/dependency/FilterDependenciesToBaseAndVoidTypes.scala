@@ -42,16 +42,38 @@ import DependencyType._
  */
 trait FilterDependenciesToBaseAndVoidTypes extends DependencyBuilder {
 
-    private val IDOfFiltered = Int.MinValue
+    /**
+     * Pseudo ID that is used to handle the filtering as cooperation between
+     * <code>getID</code> and <code>addDependency</code>.
+     */
+    private val ID_OF_FILTERED = Int.MinValue
 
+    /**
+     * Filters ID lookups to base and void types.
+     * For all other types, the ID that is determined by the class this trait is mixed in, is returned.
+     *
+     * @param t The type, an unique ID should be returned for.
+     * @return Value of <code>ID_OF_FILTERED</code> if the given type is a base or void type.
+     *         Otherwise, the result of super's <code>getID(Type)</code> method is returned.
+     */
     abstract override def getID(t: Type): Int = {
         if (t.isBaseType || t.isVoidType)
-            return IDOfFiltered
+            return ID_OF_FILTERED
         super.getID(t)
     }
 
+    /**
+     * Filters dependencies from/to base and void types.
+     * These types are recognized by comparing the given IDs with the
+     * value of the pseudo filter ID <code>ID_OF_FILTERED</code>.
+     * Unfiltered dependencies are passed to the super's <code>addDependency</code> method.
+     *
+     * @param src The ID of the source node.
+     * @param trgt The ID of the target node.
+     * @param dType The type of the dependency between source and target.
+     */
     abstract override def addDependency(src: Int, trgt: Int, dType: DependencyType) {
-        if (src == Int.MinValue || trgt == Int.MinValue)
+        if (src == ID_OF_FILTERED || trgt == ID_OF_FILTERED)
             return
         super.addDependency(src, trgt, dType)
     }
