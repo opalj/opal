@@ -33,7 +33,7 @@
 package de.tud.cs.st.bat
 
 /**
- * A class, field or method declaration's access flag. An access flag is
+ * A class, field or method declaration's access flags. An access flag is
  * basically just a unique bit vector that can be combined with other
  * access flags to create an integer based bit vector that represents all
  * flags defined for a class, method or field declaration.
@@ -49,7 +49,7 @@ sealed trait AccessFlag {
     def javaName: Option[String]
 
     /**
-     * The int mask of this access flag as defined by the JVM spec.
+     * The int mask of this access flag as defined by the JVM 7 specification.
      */
     def mask: Int
 
