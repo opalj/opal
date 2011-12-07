@@ -50,7 +50,7 @@ import de.tud.cs.st.bat.reader.CodeReader
  * @author Michael Eichberg
  */
 object Java6Framework
-	extends Constant_PoolResolver
+	extends ConstantPoolBinding
 		with ClassFileBinding
 		with InterfacesReader
 		with FieldsReader
@@ -73,7 +73,7 @@ object Java6Framework
 		with Exceptions_attributeBinding
 		with ConstantValue_attributeBinding
 		with BytecodeReaderAndBinding
-		with Code_attributeBinding
+		with CodeAttributeBinding
 			with CodeReader
 {
 

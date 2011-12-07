@@ -39,7 +39,7 @@ import de.tud.cs.st.bat.reader.Deprecated_attributeReader
  */
 trait Deprecated_attributeBinding
         extends Deprecated_attributeReader
-        with Constant_PoolResolver
+        with ConstantPoolBinding
         with AttributeBinding {
 
     type Deprecated_attribute = de.tud.cs.st.bat.resolved.Attribute

@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -38,33 +38,25 @@ import scala.xml.Node
 /**
  * The values of an annotation.
  *
- * '''From the Specification'''
- * {{{
- * 	element_value {
- * 		u1 tag;
- * 		union {
- * 			u2   const_value_index;
  *
- * 			{
- * 				u2 type_name_index;
- * 				u2 const_name_index;
- * 			} enum_const_value;
- *
- * 			u2 class_info_index;
- *
- * 			annotation annotation_value;
- *
- * 			{
- * 				u2    num_values;
- * 				element_value values[num_values];
- * 			} array_value;
- * 		} value;
- * 	}
- * }}}
  *
  * @author Michael Eichberg
  */
-sealed trait ElementValue extends AnnotationDefaultAttribute
+sealed trait ElementValue extends Attribute {
+
+    def valueToProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T
+
+    def valueToXML: scala.xml.Node
+
+    /**
+     * XML representation of this element value as if it defines an annotation
+     * default attribute.
+     */
+    final def toXML = <annotation_default>{ valueToXML }</annotation_default>
+
+    final def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] =
+        factory.Fact("annotation_default", declaringEntityKey, valueToProlog(factory)) :: Nil
+}
 
 case class ByteValue(val value: Byte) extends ElementValue {
 

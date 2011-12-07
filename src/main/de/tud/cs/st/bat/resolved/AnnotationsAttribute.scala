@@ -33,14 +33,20 @@
 package de.tud.cs.st.bat.resolved
 
 /**
- * A class, method, or field annotation.
+ * The runtime (in)visible annotations of a class, method, or field.
  *
  * @author Michael Eichberg
  */
 trait AnnotationsAttribute extends Attribute {
 
+    /**
+     * Returns true if these annotations are visible at runtime.
+     */
     def isRuntimeVisible: Boolean
 
+    /**
+     * The set of declared annotations; it may be empty.
+     */
     def annotations: Annotations
 
     def annotationsToXML = for (annotation ← annotations) yield annotation.toXML

@@ -42,7 +42,7 @@ import de.tud.cs.st.bat.reader.LocalVariableTable_attributeReader
  */
 trait LocalVariableTable_attributeBinding
         extends LocalVariableTable_attributeReader
-        with Constant_PoolResolver
+        with ConstantPoolBinding
         with AttributeBinding {
 
     type LocalVariableTable_attribute = de.tud.cs.st.bat.resolved.LocalVariableTableAttribute

@@ -33,117 +33,11 @@
 package de.tud.cs.st.bat
 package resolved
 
+/**
+ * @author Michael Eichberg
+ */
 trait SignatureElement {
     def accept[T](sv: SignatureVisitor[T]): T
-}
-
-trait SignatureVisitor[T] {
-    def visit(cs: ClassSignature): T
-    def visit(mts: MethodTypeSignature): T
-    def visit(cts: ClassTypeSignature): T
-    def visit(ats: ArrayTypeSignature): T
-    def visit(tvs: TypeVariableSignature): T
-    def visit(scts: SimpleClassTypeSignature): T
-    def visit(ftp: FormalTypeParameter): T
-    def visit(pta: ProperTypeArgument): T
-    def visit(cvi: CovariantIndicator): T
-    def visit(cvi: ContravariantIndicator): T
-    def visit(wc: Wildcard): T
-    def visit(bt: BooleanType): T
-    def visit(bt: ByteType): T
-    def visit(it: IntegerType): T
-    def visit(lt: LongType): T
-    def visit(ct: CharType): T
-    def visit(st: ShortType): T
-    def visit(ft: FloatType): T
-    def visit(dt: DoubleType): T
-    def visit(vt: VoidType): T
-}
-trait TraversingVisitor extends SignatureVisitor[Unit] {
-
-    def visit(cs: ClassSignature) {
-        cs.formalTypeParameters foreach (_.foreach(_.accept(this)))
-        cs.superClassSignature.accept(this)
-        cs.superInterfacesSignature.foreach(_.accept(this))
-    }
-
-    def visit(mts: MethodTypeSignature) {
-        mts.formalTypeParameters.foreach(_.foreach(_.accept(this)))
-        mts.parametersTypeSignatures.foreach(_.accept(this))
-        mts.returnTypeSignature.accept(this)
-        mts.throwsSignature.foreach(_.accept(this))
-    }
-
-    def visit(cts: ClassTypeSignature) {
-        cts.simpleClassTypeSignature.accept(this)
-        cts.classTypeSignatureSuffix.foreach(_.accept(this))
-    }
-
-    def visit(ats: ArrayTypeSignature) {
-        ats.typeSignature.accept(this)
-    }
-
-    def visit(tvs: TypeVariableSignature) { /* Leadnode */ }
-
-    def visit(scts: SimpleClassTypeSignature) {
-        scts.typeArguments.foreach(_.foreach(_.accept(this)))
-    }
-
-    def visit(ftp: FormalTypeParameter) {
-        ftp.classBound.foreach(_.accept(this))
-        ftp.interfaceBound.foreach(_.accept(this))
-    }
-
-    def visit(pta: ProperTypeArgument) {
-        pta.varianceIndicator.foreach(_.accept(this))
-        pta.fieldTypeSignature.accept(this)
-    }
-
-    def visit(cvi: CovariantIndicator) { /* Leafnode */ }
-
-    def visit(cvi: ContravariantIndicator) { /* Leafnode */ }
-
-    def visit(wc: Wildcard) { /* Leafnode */ }
-
-    def visit(bt: BooleanType) { /* Leafnode */ }
-
-    def visit(bt: ByteType) { /* Leafnode */ }
-
-    def visit(it: IntegerType) { /* Leafnode */ }
-
-    def visit(lt: LongType) { /* Leafnode */ }
-
-    def visit(ct: CharType) { /* Leafnode */ }
-
-    def visit(st: ShortType) { /* Leafnode */ }
-
-    def visit(ft: FloatType) { /* Leafnode */ }
-
-    def visit(dt: DoubleType) { /* Leafnode */ }
-
-    def visit(vt: VoidType) { /* Leafnode */ }
-
-}
-
-/**
- * Traverses a signature and calls for each Type the given method.
- *
- * '''Thread Safety'''
- * This class is thread-safe and reusable. I.e., you can use one instance
- * of this visitor to simultaneously process multiple signatures. In this
- * case, however, the given function f also has to be thread safe.
- */
-class TypesVisitor(val f: Type ⇒ Unit) extends TraversingVisitor {
-    override def visit(cts: ClassTypeSignature) { f(cts.objectType); super.visit(cts) }
-    override def visit(bt: BooleanType) { f(bt) }
-    override def visit(bt: ByteType) { f(bt) }
-    override def visit(it: IntegerType) { f(it) }
-    override def visit(lt: LongType) { f(lt) }
-    override def visit(ct: CharType) { f(ct) }
-    override def visit(st: ShortType) { f(st) }
-    override def visit(ft: FloatType) { f(ft) }
-    override def visit(dt: DoubleType) { f(dt) }
-    override def visit(vt: VoidType) { f(vt) }
 }
 
 trait ReturnTypeSignature extends SignatureElement {
@@ -162,13 +56,18 @@ sealed trait ThrowsSignature extends SignatureElement {
  * The common super trait of those classes that represent attribute-level signatures as defined
  * in the JVM specification.
  */
-sealed trait Signature extends SignatureElement
+sealed trait Signature extends SignatureElement with Attribute {
+
+    def toXML = <signature/> //{ signature }</signature> // TODO [XML] SignatureAttribute
+
+    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): F =
+        factory.Fact("signature", declaringEntityKey) // TODO [Prolog] SignatureAttribute
+}
 
 case class ClassSignature(formalTypeParameters: Option[List[FormalTypeParameter]],
                           superClassSignature: ClassTypeSignature,
                           superInterfacesSignature: List[ClassTypeSignature])
-        extends Signature
-        with SignatureAttribute {
+        extends Signature {
 
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
 }
@@ -177,16 +76,14 @@ case class MethodTypeSignature(formalTypeParameters: Option[List[FormalTypeParam
                                parametersTypeSignatures: List[TypeSignature],
                                returnTypeSignature: ReturnTypeSignature,
                                throwsSignature: List[ThrowsSignature])
-        extends Signature
-        with SignatureAttribute {
+        extends Signature {
 
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
 }
 
 trait FieldTypeSignature
         extends Signature
-        with TypeSignature
-        with SignatureAttribute {
+        with TypeSignature {
 
 }
 
@@ -256,25 +153,25 @@ sealed trait VarianceIndicator extends SignatureElement {
  * If you have declaration such as <? extends Entry> then the "? extends" part
  * is represented by the CovariantIndicator.
  */
-sealed trait CovariantIndicator extends VarianceIndicator {
+trait CovariantIndicator extends VarianceIndicator {
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
 }
-final case object CovariantIndicator extends CovariantIndicator
+case object CovariantIndicator extends CovariantIndicator
 
 /**
  * A declaration such as <? super Entry> is represented in class file signatures
  * by the ContravariantIndicator ("? super") and a FieldTypeSignature.
  */
-sealed trait ContravariantIndicator extends VarianceIndicator {
+trait ContravariantIndicator extends VarianceIndicator {
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
 }
-final case object ContravariantIndicator extends ContravariantIndicator
+case object ContravariantIndicator extends ContravariantIndicator
 
 /**
  * If a type argument is not further specified (e.g. List<?> l = …) then the
  * type argument "?" is represented by this object.
  */
-sealed trait Wildcard extends TypeArgument {
+trait Wildcard extends TypeArgument {
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
 }
-final case object Wildcard extends Wildcard
+case object Wildcard extends Wildcard

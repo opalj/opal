@@ -30,19 +30,21 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved
+package de.tud.cs.st
+package bat
+package resolved
 
+import util.perf.PerformanceEvaluation
 import reader.Java6Framework
 
 /**
  * Just a very small code snippet that shows how to load all class files
- * from a zip file and how to associate all top-level source elements with unique ids.
+ * from a zip file and how to associate all top-level source elements (class,
+ * field and method declarations) with unique ids.
  *
  * @author Michael Eichberg
  */
-object AssociateUniqueIDs
-        extends App
-        with de.tud.cs.st.util.perf.ToCommandLinePerformanceEvaluation {
+object AssociateUniqueIDs extends App with PerformanceEvaluation {
 
     import dependency.SourceElementIDs.{ sourceElementID ⇒ id }
 
@@ -62,5 +64,7 @@ object AssociateUniqueIDs
         }
     }
 
-    time("Loading all class files and associating unique ids") { loadAllClassFiles() }
+    time(t ⇒ println("Loading all class files and associating unique ids took: " + nsToSecs(t))) {
+        loadAllClassFiles()
+    }
 }

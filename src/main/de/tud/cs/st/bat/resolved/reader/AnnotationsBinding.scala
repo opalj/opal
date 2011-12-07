@@ -43,7 +43,7 @@ import de.tud.cs.st.bat.reader.AnnotationDefault_attributeReader
 import de.tud.cs.st.bat.reader.ElementValuePairsReader
 
 /**
- * Implements factory methods to create representations of Java annotations.
+ * Factory methods to create representations of Java annotations.
  *
  * @author Michael Eichberg
  */
@@ -56,11 +56,11 @@ trait AnnotationsBinding
         with ParameterAnnotationsReader
         with AnnotationDefault_attributeReader
         with ElementValuePairsReader
-        with Constant_PoolResolver
+        with ConstantPoolBinding
         with AttributeBinding {
 
     type Annotation = de.tud.cs.st.bat.resolved.Annotation
-    type AnnotationDefault_attribute = de.tud.cs.st.bat.resolved.AnnotationDefaultAttribute
+    type AnnotationDefault_attribute = de.tud.cs.st.bat.resolved.ElementValue
     type ElementValue = de.tud.cs.st.bat.resolved.ElementValue
     val ElementValueManifest: ClassManifest[ElementValue] = implicitly
     type EnumValue = de.tud.cs.st.bat.resolved.EnumValue

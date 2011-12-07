@@ -43,15 +43,15 @@ import de.tud.cs.st.bat.reader.Signature_attributeReader
  */
 trait Signature_attributeBinding
         extends Signature_attributeReader
-        with Constant_PoolResolver
+        with ConstantPoolBinding
         with AttributeBinding {
 
-    type Signature_attribute = SignatureAttribute
+    type Signature_attribute = Signature
 
     def Signature_attribute(attribute_name_index: Constant_Pool_Index,
                             signature_index: Constant_Pool_Index)(
                                 implicit cp: Constant_Pool, ap: AttributeParent): Signature_attribute =
-        cp(signature_index).asSignatureAttribute(ap)
+        cp(signature_index).asSignature(ap)
 
 }
 

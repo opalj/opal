@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -51,24 +51,24 @@ import org.scalatest.events._
 
 /**
  * This test(suite) just loads a very large number of class files to make sure the library
- * can handle them and to test the "corner" cases. Basically, we test for NPEs and 
+ * can handle them and to test the "corner" cases. Basically, we test for NPEs and
  * ArrayIndexOutOfBoundExceptions.
  *
  * @author Michael Eichberg
  */
-class RegressionSuite extends Suite with de.tud.cs.st.util.perf.BasicPerformanceEvaluation {
+class RegressionSuite extends Suite with de.tud.cs.st.util.perf.PerformanceEvaluation {
 
 
 	/*
 	 * Registry of all class files stored in the zip files found in the test data directory.
-	 */	
+	 */
 	private val testCases = {
-		
+
 		var tcs = scala.collection.immutable.Map[String,(ZipFile,ZipEntry)]()
-		
-		// The location of the "test/data" directory depends on the current directory used for 
+
+		// The location of the "test/data" directory depends on the current directory used for
 		// running this test suite... i.e. whether the current directory is the directory where
-		// this class / this source file is stored or BAT's root directory. 
+		// this class / this source file is stored or BAT's root directory.
 		var files = new File("../../../../../../test/classfiles").listFiles()
 		if (files == null) files = new File("test/classfiles").listFiles()
 
@@ -82,34 +82,34 @@ class RegressionSuite extends Suite with de.tud.cs.st.util.perf.BasicPerformance
 				val zipentry = zipentries.nextElement
 				if (!zipentry.isDirectory && zipentry.getName.endsWith(".class")) {
 					val testCase = ("Read class file: "+zipfile.getName+" - "+zipentry.getName -> (zipfile,zipentry))
-					tcs = tcs + testCase			
+					tcs = tcs + testCase
 				}
 			}
 		}
-		
+
 		tcs
 	}
-				
-	override lazy val testNames : Set[String] = { 
-		val r = (Set[String]() /: (testCases.keys)) ( _ + _ ) 
-		r 
+
+	override lazy val testNames : Set[String] = {
+		val r = (Set[String]() /: (testCases.keys)) ( _ + _ )
+		r
 	}
-	
+
 	override def tags: Map[String, Set[String]] = Map()
-	
+
 
 	override def runTest(
 		testName : String,
-		reporter: Reporter, 
-		stopper: Stopper, 
+		reporter: Reporter,
+		stopper: Stopper,
 		configMap: Map[String, Any],
 		tracker : Tracker
 	) {
-		
+
 		val ordinal = tracker.nextOrdinal
 		reporter(TestStarting(ordinal,"BATTests",None,testName))
 		try {
-			
+
 			// 1. Test ... just read in the class file and use a basic representation that represents everything as is
 			val (file,entry) = testCases(testName)
 			/*time( duration => {
@@ -137,7 +137,7 @@ class RegressionSuite extends Suite with de.tud.cs.st.util.perf.BasicPerformance
 			//}
 			// 2.2. Test ... if we can create the XML representation for the class file without generating errors
 			classFile.toXML
-			
+
 			reporter(TestSucceeded(ordinal,"BATTests",None,testName))
 		} catch {
 			case t: Throwable => reporter(TestFailed(ordinal,"Failure","BATTests",None,testName,Some(t)))

@@ -41,8 +41,7 @@ package resolved
  *  it will not contain any path information.
  * @author Michael Eichberg
  */
-case class SourceFileAttribute(val sourceFile: String)
-        extends Attribute {
+case class SourceFileAttribute(val sourceFile: String) extends Attribute {
 
     def toXML = <source file={ sourceFile }/>
 

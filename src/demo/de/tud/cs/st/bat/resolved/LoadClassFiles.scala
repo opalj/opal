@@ -30,7 +30,8 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved
+package de.tud.cs.st
+package bat.resolved
 
 import reader.Java6Framework
 
@@ -42,7 +43,7 @@ import reader.Java6Framework
  */
 object LoadClassFiles
         extends App
-        with de.tud.cs.st.util.perf.ToCommandLinePerformanceEvaluation {
+        with util.perf.PerformanceEvaluation {
 
     val classFiles: Seq[ClassFile] = Java6Framework.ClassFiles("test/classfiles/BAT2XML - target 1.7.zip")
 
@@ -52,13 +53,13 @@ object LoadClassFiles
         }
     }
 
-    time("Loading all class files - initialization - 1. iteration") { loadAllClassFiles() }
-    time("Loading all class files - initialization - 2. iteration") { loadAllClassFiles() }
+    time(t ⇒ println("Loading all class files - initialization - 1. iteration: " + nsToSecs(t))) { loadAllClassFiles() }
+    time(t ⇒ println("Loading all class files - initialization - 2. iteration: " + nsToSecs(t))) { loadAllClassFiles() }
 
-    time("Overall execution time of all four iterations") {
-        time("Loading all class files 1. Iteration") { loadAllClassFiles() }
-        time("Loading all class files 2. Iteration") { loadAllClassFiles() }
-        time("Loading all class files 3. Iteration") { loadAllClassFiles() }
-        time("Loading all class files 4. Iteration") { loadAllClassFiles() }
+    time(t ⇒ println("Overall execution time of all four iterations: " + nsToSecs(t))) {
+        time(t ⇒ println("Loading all class files 1. Iteration: " + nsToSecs(t))) { loadAllClassFiles() }
+        time(t ⇒ println("Loading all class files 2. Iteration: " + nsToSecs(t))) { loadAllClassFiles() }
+        time(t ⇒ println("Loading all class files 3. Iteration: " + nsToSecs(t))) { loadAllClassFiles() }
+        time(t ⇒ println("Loading all class files 4. Iteration: " + nsToSecs(t))) { loadAllClassFiles() }
     }
 }

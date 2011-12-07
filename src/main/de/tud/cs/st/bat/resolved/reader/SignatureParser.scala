@@ -31,17 +31,18 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 */
 package de.tud.cs.st.bat.resolved
+package reader
 
 import scala.util.parsing.combinator._
 
 // TODO [Improvement] consider making the signature parser abstract and use the factory pattern as in the case of all other major structures
 
 /**
- * A parser for Java class file signatures.
+ * Parses Java class file signatures.
  *
  * @author Michael Eichberg
  */
-object SignatureParser extends RegexParsers {
+class SignatureParser extends RegexParsers {
 
     // TODO [Performance] Evaluate if the (fieldType/...)Signature parsers are created over and over again and if so, if we can do something about it.
 
@@ -165,7 +166,7 @@ object SignatureParser extends RegexParsers {
             'V' ^^ (_ ⇒ VoidType)
 
 }
-
+object SignatureParser extends SignatureParser
 
 
 

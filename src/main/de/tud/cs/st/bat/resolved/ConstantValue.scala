@@ -38,7 +38,7 @@ package resolved
  *
  * @author Michael Eichberg
  */
-sealed trait ConstantValue[T >: Nothing] extends ConstantValueAttribute {
+sealed trait ConstantValue[T >: Nothing] extends Attribute {
 
     //
     // ABSTRACT IMPLEMENTATION

@@ -30,38 +30,33 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.util.perf
-
-import scala.collection.mutable.Map
+package de.tud.cs.st.bat.resolved
 
 /**
- * Trait that defines methods for measuring the execution time of some code.
+ * An entry in the exceptions table of a [[de.tud.cs.st.bat.resolved.CodeAttribute]]
  *
  * @author Michael Eichberg
  */
-trait BasicPerformanceEvaluation {
+case class ExceptionTableEntry(val startPC: Int,
+                               val endPC: Int,
+                               val handlerPC: Int,
+                               val catchType: ObjectType) {
 
-    def nanoSecondsToSeconds(value: Long): Double = value.toDouble / 1000.0d / 1000.0d / 1000.0d
+    def toXML =
+        <exception_handler
+			start_pc={ startPC.toString }
+			end_pc={ endPC.toString }
+			handler_pc={ handlerPC.toString }
+			type={ if (catchType != null) Some(scala.xml.Text(catchType.toJava)) else None }/>
 
-    def nanoSecondsToMilliseconds(value: Long): Double = value.toDouble / 1000.0d / 1000.0d
-
-    def asSeconds(startTimeInNanoSeconds: Long, endTimeInNanoSeconds: Long): Double =
-        nanoSecondsToSeconds(endTimeInNanoSeconds - startTimeInNanoSeconds)
-
-    /**
-     * Times the execution of a given method (function literal) / code block.
-     *
-     * @param r a function that is passed the time (in nano seconds) required to execute the time method block.
-     */
-    def time[T](r: Long ⇒ Unit)(f: ⇒ T): T = {
-
-        val startTime: Long = System.nanoTime
-        val result = f
-        val endTime: Long = System.nanoTime
-
-        r(endTime - startTime)
-
-        result
+    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], pc_to_seqNo: Array[Int]): T = {
+        import factory._
+        Term(
+            "handler", // an annonymous "pair"
+            IntegerAtom(pc_to_seqNo(startPC)),
+            IntegerAtom(pc_to_seqNo(endPC)),
+            IntegerAtom(pc_to_seqNo(handlerPC)),
+            if (catchType != null) catchType.toProlog(factory) else StringAtom("any")
+        )
     }
-
 }

@@ -118,7 +118,7 @@ case class Method(val accessFlags: Int,
                 case aa: AnnotationsAttribute           ⇒ aa.toProlog(factory, key)
                 case paa: ParameterAnnotationsAttribute ⇒ paa.toProlog(factory, key)
                 case ea: ExceptionsAttribute            ⇒ ea.toProlog(factory, key)
-                case ada: AnnotationDefaultAttribute    ⇒ ada.toProlog(factory, key)
+                case ada: ElementValue                  ⇒ ada.toProlog(factory, key)
                 case ca: CodeAttribute                  ⇒ ca.toProlog(factory, key)
                 case _                                  ⇒ Nil
             }) ::: facts

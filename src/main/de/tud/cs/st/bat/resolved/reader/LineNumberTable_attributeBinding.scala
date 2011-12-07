@@ -41,7 +41,7 @@ import de.tud.cs.st.bat.reader.LineNumberTable_attributeReader
  */
 trait LineNumberTable_attributeBinding
         extends LineNumberTable_attributeReader
-        with Constant_PoolResolver
+        with ConstantPoolBinding
         with AttributeBinding {
 
     type LineNumberTableEntry = de.tud.cs.st.bat.resolved.LineNumberTableEntry
