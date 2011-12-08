@@ -45,12 +45,32 @@ object Main {
     def main(args: Array[String]) = {
         analyze(Java6Framework.ClassFiles("test/classfiles/BAT2XML - target 1.7.zip"))
     }
+    
+    
+    object ClassHierarchie {
+        
+        import scala.collection.mutable.Map
+        import scala.collection.mutable.Set
+        
+        private var supertypes : Map[ObjectType,Set[ObjectType]] = Map() withDefaultValue Set.empty
+        private var subtypes : Map[ObjectType,Set[ObjectType]] = Map() withDefaultValue Set.empty
+        
+        def update(classFile : ClassFile) {
+            val thisType = classFile.thisClass
+//            supertypes.
+//            classFile.superClass
+        }
+        
+        def subtypes(objectType : ObjectType) : Set[ObjectType] = subtypes.apply(objectType) 
+        def supertypes(objectType : ObjectType) : Set[ObjectType] = supertypes.apply(objectType)
+    } 
 
     def analyze(classFiles: Seq[ClassFile]) {
-        var classFileCount = 0
-        var problemCount = 0
-
-//        for (classFile ← classFiles) {
+        
+        // Build the class hierarchy
+    	for (classFile ← classFiles) {
+    		ClassHierarchie.update(classFile)
+        }
 //            classFileCount += 1
 //
 //            aggregateTimes('EqHcChecker) {
@@ -84,7 +104,6 @@ object Main {
 //        }
 //        printAggregatedTimes('EqHcChecker, "Equals-HashCode Checker")
 //        printAggregatedTimes('CovEqChecker, "Covariant Equals Checker")
-        println("Number of class files: " + classFileCount)
-        println("Number of class files which violate the contract: " + problemCount)
+ 
     }
 }
