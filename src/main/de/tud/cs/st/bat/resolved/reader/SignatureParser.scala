@@ -113,7 +113,8 @@ class SignatureParser extends RegexParsers {
             case ps ~ scts ~ ctsss ⇒ ClassTypeSignature(ps, scts, ctsss)
         }
 
-    protected def _PackageSpecifier: Parser[String] = (_Identifier ~ ('/' ~> opt(_PackageSpecifier)))^^{case id ~ rest => id + "/"+ rest.getOrElse("")}
+    protected def _PackageSpecifier: Parser[String] =
+        (_Identifier ~ ('/' ~> opt(_PackageSpecifier))) ^^ { case id ~ rest ⇒ id+"/"+rest.getOrElse("") }
 
     protected def _SimpleClassTypeSignature: Parser[SimpleClassTypeSignature] =
         _Identifier ~! opt(_TypeArguments) ^^ {
@@ -140,9 +141,7 @@ class SignatureParser extends RegexParsers {
             '-' ^^ { _ ⇒ ContravariantIndicator }
 
     protected def _ArrayTypeSignature: Parser[ArrayTypeSignature] =
-        '[' ~> _TypeSignature ^^ {
-            ArrayTypeSignature(_)
-        }
+        '[' ~> _TypeSignature ^^ { ArrayTypeSignature(_) }
 
     protected def _TypeSignature: Parser[TypeSignature] =
         _FieldTypeSignature | _BaseType
@@ -161,9 +160,7 @@ class SignatureParser extends RegexParsers {
             'S' ^^ (_ ⇒ ShortType) |
             'Z' ^^ (_ ⇒ BooleanType)
 
-    protected def _ReturnType: Parser[ReturnTypeSignature] =
-        _TypeSignature |
-            'V' ^^ (_ ⇒ VoidType)
+    protected def _ReturnType: Parser[ReturnTypeSignature] = _TypeSignature | 'V' ^^ (_ ⇒ VoidType)
 
 }
 object SignatureParser extends SignatureParser
