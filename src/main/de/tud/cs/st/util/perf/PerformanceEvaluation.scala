@@ -90,7 +90,7 @@ trait PerformanceEvaluation {
     }
 
     def getTime(sym: Symbol): Long = {
-        times.getOrElseUpdate(sym, 0l)
+        times.getOrElse(sym, 0l)
     }
 
     def reset(s: Symbol) {
