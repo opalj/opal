@@ -247,7 +247,7 @@ class ObjectType private (
 
     override final def isObjectType = true
 
-    override def hashCode = className.hashCode * 43
+    override lazy val hashCode = className.hashCode * 43
 
     override def equals(other: Any): Boolean = {
         other match {
@@ -255,6 +255,8 @@ class ObjectType private (
             case _                ⇒ false
         }
     }
+
+    def equals(other : ObjectType) : Boolean = other.className == this.className
 
     def simpleName: String = ObjectType.simpleName(className)
 
