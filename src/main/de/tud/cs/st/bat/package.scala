@@ -13,9 +13,9 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- *  - Neither the name of the Software Technology Group or Technische 
- *    Universität Darmstadt nor the names of its contributors may be used to 
- *    endorse or promote products derived from this software without specific 
+ *  - Neither the name of the Software Technology Group or Technische
+ *    Universität Darmstadt nor the names of its contributors may be used to
+ *    endorse or promote products derived from this software without specific
  *    prior written permission.
  *
  *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -33,10 +33,20 @@
 package de.tud.cs.st
 
 /**
+ * BAT is a Java bytecode library written in Java.
+ *
+ *
+ *
+ * == This Package ==
  * Common constants and type definitions used across BAT. The constants
  * defined in the following may or may not be used by certain representations,
  * but they are generally interesting when dealing with Java bytecode and
  * therefore defined in BAT's root package.
+ *
+ * == General Design Rules ==
+ * Unless explicitly noted, BAT does not make use of null values. I.e.,
+ * methods do not take null values as parameters and will never return null
+ * values.
  *
  * @author Michael Eichberg
  */
@@ -47,8 +57,8 @@ package object bat {
     type AttributeParent = AttributesParent.Value
 
     type AttributesParent = AttributesParent.Value
-    
+
     type ConstantPoolTag = ConstantPoolTags.Value
-    
+
     val CLASS_FILE_MAGIC = 0xCAFEBABE
 }
