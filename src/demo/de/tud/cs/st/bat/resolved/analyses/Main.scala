@@ -30,80 +30,151 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved
+package de.tud.cs.st
+package bat.resolved
 package analyses
 
+import util.perf.{ Counting, PerformanceEvaluation }
+import util.graphs.{ Node, toDot }
 import reader.Java6Framework
 
 /**
- * Demonstrates how to implement a very simple checker.
+ * Implementation of some simple static analyses to demonstrate the flexibility
+ * and power offered by Scala and BAT when analyzing class files.
+ *
+ * The implemented static analyses are insprired by Findbugs
+ * (http://findbugs.sourceforge.net/bugDescriptions.html).
  *
  * @author Michael Eichberg
  */
-object Main {
+class Main
+object Main extends Main {
 
-    def main(args: Array[String]) = {
-        analyze(Java6Framework.ClassFiles("test/classfiles/BAT2XML - target 1.7.zip"))
+    private val CountingPerformanceEvaluator = new PerformanceEvaluation with Counting
+    import CountingPerformanceEvaluator._
+
+    private def printUsage: Unit = {
+        println("Usage: java …ClassHierarchy <ZIP or JAR file containing class files>+")
+        println("(c) 2011 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
     }
-    
-    
-    object ClassHierarchie {
-        
-        import scala.collection.mutable.Map
-        import scala.collection.mutable.Set
-        
-        private var supertypes : Map[ObjectType,Set[ObjectType]] = Map() withDefaultValue Set.empty
-        private var subtypes : Map[ObjectType,Set[ObjectType]] = Map() withDefaultValue Set.empty
-        
-        def update(classFile : ClassFile) {
-            val thisType = classFile.thisClass
-//            supertypes.
-//            classFile.superClass
-        }
-        
-        def subtypes(objectType : ObjectType) : Set[ObjectType] = subtypes.apply(objectType) 
-        def supertypes(objectType : ObjectType) : Set[ObjectType] = supertypes.apply(objectType)
-    } 
 
-    def analyze(classFiles: Seq[ClassFile]) {
-        
-        // Build the class hierarchy
-    	for (classFile ← classFiles) {
-    		ClassHierarchie.update(classFile)
+    def main(args: Array[String]) {
+
+        if (args.length == 0 || !args.forall(arg ⇒ arg.endsWith(".zip") || arg.endsWith(".jar"))) {
+            printUsage
+            sys.exit(1)
         }
-//            classFileCount += 1
-//
-//            aggregateTimes('EqHcChecker) {
-//                var definesEqualsMethod = false
-//                var definesHashCodeMethod = false
-//                for (method ← classFile.methods) method match {
-//                    case Method(_, "equals", MethodDescriptor(Seq(ObjectType("java/lang/Object")), BooleanType), _) ⇒ definesEqualsMethod = true
-//                    case Method(_, "hashCode", MethodDescriptor(Seq(), IntegerType), _) ⇒ definesHashCodeMethod = true
-//                    case _ ⇒
-//                }
-//
-//                if (definesEqualsMethod != definesHashCodeMethod) {
-//                    problemCount += 1
-//                    println("the class: " + classFile.thisClass.className + " does not satisfy java.lang.Object's equals-hashCode contract.")
-//                }
-//            }
-//
-//            aggregateTimes('CovEqChecker) {
-//                var definesEqualsMethod = false
-//                var definesCovariantEqualsMethod = false
-//                for (method ← classFile.methods) method match {
-//                    case Method(_, "equals", MethodDescriptor(Seq(ObjectType("java/lang/Object")), BooleanType), _) ⇒ definesEqualsMethod = true
-//                    case Method(_, "equals", MethodDescriptor(Seq(_), BooleanType), _) ⇒ definesCovariantEqualsMethod = true
-//                    case _ ⇒
-//                }
-//                if (definesCovariantEqualsMethod && !definesEqualsMethod) {
-//                    problemCount += 1
-//                    println("the class: " + classFile.thisClass.className + " defines a covariant equals method, but does not also define the standard equals method.")
-//                }
-//            }
-//        }
-//        printAggregatedTimes('EqHcChecker, "Equals-HashCode Checker")
-//        printAggregatedTimes('CovEqChecker, "Covariant Equals Checker")
- 
+
+        for (arg ← args) {
+            val file = new java.io.File(arg)
+            if (!file.canRead() || file.isDirectory()) {
+                println("The file: " + file + " cannot be read.");
+                printUsage
+                sys.exit(1)
+            }
+        }
+
+        analyze(args)
+        sys.exit(0)
+    }
+
+    // The following code is meant to show how easy it is to write analyses;
+    // it is not meant to demonstrate how to write such analyses in an effecient
+    // manner.
+    def analyze(zipFiles: Array[String]) {
+        val classHierarchy = new ClassHierarchy {}
+
+        var classFilesCount = 0
+        val classFiles = time(t ⇒ println("Reading all class files took: " + nsToSecs(t))) {
+            for (zipFile ← zipFiles; classFile ← Java6Framework.ClassFiles(zipFile)) yield {
+                classFilesCount += 1
+                classHierarchy.update(classFile)
+                classFile
+            }
+        }
+        val getClassFile = classFiles.map(cf ⇒ (cf.thisClass, cf)).toMap
+        println("Number of class files: " + classFilesCount)
+
+        // FINDBUGS: CI: Class is final but declares protected field (CI_CONFUSED_INHERITANCE) // http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/ConfusedInheritance.java
+        val protectedFields = time(t ⇒ println("CI_CONFUSED_INHERITANCE: " + nsToSecs(t))) {
+            for (
+                classFile ← classFiles if classFile.isFinal;
+                field ← classFile.fields if field.isProtected
+            ) yield (classFile, field)
+        }
+        println("\tViolations: " + protectedFields.size)
+
+        // FINDBUGS: UuF: Unused field (UUF_UNUSED_FIELD)
+        var unusedFields: List[(ClassFile, Traversable[String])] = Nil
+        time(t ⇒ println("UUF_UNUSED_FIELD: " + nsToSecs(t))) {
+            for (classFile ← classFiles if !classFile.isInterfaceDeclaration) {
+                val declaringClass = classFile.thisClass
+                var privateFields = (for (field ← classFile.fields if field.isPrivate) yield field.name).toSet
+                for (
+                    method ← classFile.methods if method.body.isDefined;
+                    instruction ← method.body.get.code
+                ) {
+                    instruction match {
+                        case GETFIELD(`declaringClass`, name, _)  ⇒ privateFields -= name
+                        case GETSTATIC(`declaringClass`, name, _) ⇒ privateFields -= name
+                        case _                                    ⇒
+                    }
+                }
+                if (privateFields.size > 0)
+                    unusedFields = (classFile, privateFields) :: unusedFields
+            }
+        }
+        println("\tViolations: " + unusedFields.size)
+
+        // FINDBUGS: Dm: Explicit garbage collection; extremely dubious except in benchmarking code (DM_GC)
+        var garbageCollectingMethods: List[(ClassFile, Method, Instruction)] = Nil
+        time(t ⇒ println("DM_GC: " + nsToSecs(t))) {
+            for (
+                classFile ← classFiles;
+                method ← classFile.methods if method.body.isDefined;
+                instruction ← method.body.get.code
+            ) {
+                instruction match {
+                    case INVOKESTATIC(ObjectType("java/lang/System"), "gc", MethodDescriptor(Seq(), VoidType)) |
+                        INVOKEVIRTUAL(ObjectType("java/lang/Runtime"), "gc", MethodDescriptor(Seq(), VoidType)) ⇒
+                        garbageCollectingMethods = (classFile, method, instruction) :: garbageCollectingMethods
+                    case _ ⇒
+                }
+            }
+        }
+        println("\tViolations: " + garbageCollectingMethods.size)
+
+        // FINDBUGS: FI: Finalizer should be protected, not public (FI_PUBLIC_SHOULD_BE_PROTECTED)
+        var classesWithPublicFinalizeMethods = time(t ⇒ println("FI_PUBLIC_SHOULD_BE_PROTECTED: " + nsToSecs(t))) {
+            for (
+                classFile ← classFiles if classFile.methods.exists(method ⇒ method.name == "finalize" && method.isPublic && method.descriptor.returnType == VoidType && method.descriptor.parameterTypes.size == 0)
+            ) yield classFile
+        }
+        println("\tViolations: " + classesWithPublicFinalizeMethods.length)
+
+        // FINDBUGS: Se: Class is Serializable but its superclass doesn't define a void constructor (SE_NO_SUITABLE_CONSTRUCTOR)
+        val serializableClasses = classHierarchy.subclasses(ObjectType("java/io/Serializable"))
+        val classesWithoutDefaultConstructor = time(t ⇒ println("SE_NO_SUITABLE_CONSTRUCTOR: " + nsToSecs(t))) {
+            for (
+                superclass ← classHierarchy.superclasses(serializableClasses) if getClassFile.isDefinedAt(superclass) && // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available
+                    {
+                        val superClassFile = getClassFile(superclass)
+                        !superClassFile.isInterfaceDeclaration &&
+                            !superClassFile.constructors.exists(_.descriptor.parameterTypes.length == 0)
+                    }
+            ) yield superclass // there can be at most one method
+        }
+        println("\tViolations: " + classesWithoutDefaultConstructor.size)
+
+        // FINDBUGS: (IMSE_DONT_CATCH_IMSE) http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/DontCatchIllegalMonitorStateException.java
+        val IllegalMonitorStateExceptionType = ObjectType("java/lang/IllegalMonitorStateException")
+        val catchesIllegalMonitorStateException = time(t ⇒ println("IMSE_DONT_CATCH_IMSE: " + nsToSecs(t))) {
+            for (
+                classFile ← classFiles if classFile.isClassDeclaration;
+                method ← classFile.methods if method.body.isDefined;
+                exceptionHandler ← method.body.get.exceptionTable if exceptionHandler.catchType == IllegalMonitorStateExceptionType
+            ) yield (classFile, method)
+        }
+        println("\tViolations: " + catchesIllegalMonitorStateException.size)
     }
 }
