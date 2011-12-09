@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -32,7 +32,6 @@
 */
 package de.tud.cs.st.util.graphs
 
-
 /**
  * Generates a dot file for the given graph
  *
@@ -40,37 +39,37 @@ package de.tud.cs.st.util.graphs
  */
 trait toDot {
 
+    implicit def nodeToInt(n: Node): Int = n.uniqueId
 
-	implicit def nodeToInt (n : Node) : Int = n.uniqueId
+    def generateDot(nodes: Set[Node]): String = {
 
+        var nodesToProcess = nodes.toList
+        var processedNodes = Set[Int]()
 
-	def generateDot(nodes : Set[Node]) : String = {
+        var s = "digraph G {\n"
 
-		var nodesToProcess = nodes.toList
-		var processedNodes = Set[Int]()
-		
-		var s = "digraph G {\n"
-		
-		while (!(nodesToProcess isEmpty)){
-			val n = nodesToProcess.head
-			// prepare the next iteration
-			processedNodes += n
-			nodesToProcess = nodesToProcess.tail
-			
-			s += "\t"+n.uniqueId+"[label=\""+n.toHRR+"\"];\n"
-		
-			n.foreachSuccessor (sn => {
-				s += "\t"+n.uniqueId+" -> "+ sn.uniqueId +";\n" // +"[dir=none];\n"
-				if (!(processedNodes contains sn)) {					
-					nodesToProcess = sn :: nodesToProcess
-				}
-			})
-		}
+        while (!(nodesToProcess isEmpty)) {
+            val n = nodesToProcess.head
+            // prepare the next iteration
+            processedNodes += n
+            nodesToProcess = nodesToProcess.tail
 
-		s += "}"
-		s
-	}
+            if (n.toHRR.isDefined) s += "\t" + n.uniqueId + "[label=\"" + n.toHRR.get + "\"];\n"
 
-	
+            val f = (sn : Node) => {
+                if (n.toHRR.isDefined) s += "\t" + n.uniqueId + " -> " + sn.uniqueId + ";\n" // +"[dir=none];\n"
+
+                if (!(processedNodes contains sn)) {
+                    nodesToProcess = sn :: nodesToProcess
+                }
+            }
+            n.foreachSuccessor(f)
+        }
+
+        s += "}"
+        s
+    }
+
 }
+object toDot extends toDot
 

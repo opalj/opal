@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -32,22 +32,19 @@
 */
 package de.tud.cs.st.util.graphs
 
-
 /**
-
  * @author Michael Eichberg
  */
 trait Node {
 
+    /**
+     * @return a textual representation of this node; the encoding has to be UTF8.
+     */
+    def toHRR: Option[String]
 
-	/**
-	 * @return a textual representation of this node; the encoding has to be UTF8.
-	 */
-	def toHRR : String
+    def uniqueId: Int
 
-	def uniqueId : Int
-		
-	def foreachSuccessor (f : Node => Unit) : Unit
-	
+    def foreachSuccessor(f: Node ⇒ _): Unit
+
 }
 
