@@ -46,7 +46,7 @@ import reader.Java6Framework
  */
 object AssociateUniqueIDs extends App with PerformanceEvaluation {
 
-    import dependencies.SourceElementIDs.{ sourceElementID ⇒ id }
+    import dependency.SourceElementIDs.{ sourceElementID ⇒ id }
 
     val classFiles: Seq[ClassFile] = Java6Framework.ClassFiles("test/classfiles/BAT2XML - target 1.7.zip")
 

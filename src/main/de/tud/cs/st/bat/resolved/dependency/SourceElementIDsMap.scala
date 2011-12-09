@@ -31,23 +31,26 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 package de.tud.cs.st.bat.resolved
-package dependencies
+package dependency
+import scala.collection.mutable.HashMap
 
 /**
  * Associates a source element (type, method or field declaration) with a unique id.
  *
  * Types are associated with ids larger than 0 and smaller than one billion.
  *
- * Fields are associated with ids > 1 000 000 000 and < 2 000 000 000
+ * Fields are associated with ids >= 500 000 000 and < 1 000 000 000
  *
- * Methods are associated with ids > 2 000 000 000
+ * Methods are associated with ids >= 1 000 000 000 and < 1 500 000 000
+ *
+ * Ids between 1 500 000 000 and Int.MaxValue can be used for custom id mappings.
  *
  * '''Implementation Note'''
  * This class is not thread safe.
  *
  * @author Michael Eichberg
  */
-trait SourceElementIDsMap extends SourceElementIDs {
+trait SourceElementIDsMap extends SourceElementIDs with IDResetter {
 
     //
     // Associates each type with a unique ID
@@ -57,34 +60,34 @@ trait SourceElementIDsMap extends SourceElementIDs {
 
     import scala.collection.mutable.WeakHashMap
 
-    private var nextTypeID = LOWEST_TYPE_ID;
+    private var lastTypeID = LOWEST_TYPE_ID - 1;
 
     private val typeIDs = WeakHashMap[Type, Int]()
 
-    def sourceElementID(t: Type): Int = typeIDs.getOrElseUpdate(t, { nextTypeID += 1; nextTypeID })
+    def sourceElementID(t: Type): Int = typeIDs.getOrElseUpdate(t, { lastTypeID += 1; lastTypeID })
 
     //
     // Associates each field with a unique ID
     //
 
-    val LOWEST_FIELD_ID: Int = 1000000000
+    val LOWEST_FIELD_ID: Int = 500000000
 
-    private var nextFieldID = LOWEST_FIELD_ID
+    private var lastFieldID = LOWEST_FIELD_ID - 1
 
     private val fieldIDs = WeakHashMap[ObjectType, WeakHashMap[String, Int]]()
 
     def sourceElementID(definingObjectType: ObjectType, fieldName: String): Int =
         fieldIDs.
             getOrElseUpdate(definingObjectType, { WeakHashMap[String, Int]() }).
-            getOrElseUpdate(fieldName, { nextFieldID += 1; nextFieldID })
+            getOrElseUpdate(fieldName, { lastFieldID += 1; lastFieldID })
 
     //
     // Associates each method with a unique ID
     //
 
-    val LOWEST_METHOD_ID: Int = 2000000000
+    val LOWEST_METHOD_ID: Int = 1000000000
 
-    private var nextMethodID = LOWEST_METHOD_ID
+    private var lastMethodID = LOWEST_METHOD_ID - 1
 
     private val methodIDs = WeakHashMap[ObjectType, WeakHashMap[MethodDescriptor, WeakHashMap[String, Int]]]()
 
@@ -92,17 +95,17 @@ trait SourceElementIDsMap extends SourceElementIDs {
         methodIDs.
             getOrElseUpdate(definingObjectType, { WeakHashMap[MethodDescriptor, WeakHashMap[String, Int]]() }).
             getOrElseUpdate(methodDescriptor, { WeakHashMap[String, Int]() }).
-            getOrElseUpdate(methodName, { nextMethodID += 1; nextMethodID })
+            getOrElseUpdate(methodName, { lastMethodID += 1; lastMethodID })
     }
 
     def reset {
-        nextTypeID = LOWEST_TYPE_ID
+        lastTypeID = LOWEST_TYPE_ID - 1
         typeIDs.clear()
 
-        nextFieldID = LOWEST_FIELD_ID
+        lastFieldID = LOWEST_FIELD_ID - 1
         fieldIDs.clear()
 
-        nextMethodID = LOWEST_METHOD_ID
+        lastMethodID = LOWEST_METHOD_ID - 1
         methodIDs.clear()
     }
 

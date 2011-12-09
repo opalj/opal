@@ -784,7 +784,7 @@
 		</exceptions>
 	</instruction>
 	<instruction name="fcmpg" opcode="150">
-		<operation>Compare double</operation>
+		<operation>Compare float</operation>
 		<parameterized base="cmp">
 			<type name="float" />
 			<classifier name="g" />
@@ -841,7 +841,7 @@
 		</format>
 	</instruction>
 	<instruction name="fdiv" opcode="110">
-		<operation>Divide fload</operation>
+		<operation>Divide float</operation>
 		<parameterized base="div">
 			<type name="float" />
 		</parameterized>
@@ -934,7 +934,7 @@
 		</format>
 	</instruction>
 	<instruction name="frem" opcode="114">
-		<operation>Remainder fload</operation>
+		<operation>Remainder float</operation>
 		<parameterized base="rem">
 			<type name="float" />
 		</parameterized>
@@ -1296,7 +1296,7 @@
 		</exceptions>
 	</instruction>
 	<instruction name="if_acmpeq" opcode="165">
-		<operation>Branch if reference comparison succeeds</operation>
+		<operation>Branch if reference comparison succeeds; succeeds if and only if value1 = value2</operation>
 		<parameterized base="if_cmp">
 			<type name="reference" />
 			<operator name="eq" />
@@ -1309,7 +1309,7 @@
 		</format>
 	</instruction>
 	<instruction name="if_acmpne" opcode="166">
-		<operation>Branch if reference comparison succeeds</operation>
+		<operation>Branch if reference comparison succeeds; succeeds if and only if value1 ≠ value2</operation>
 		<parameterized base="if_cmp">
 			<type name="reference" />
 			<operator name="ne" />
@@ -1412,7 +1412,7 @@
 		</format>
 	</instruction>
 	<instruction name="ifne" opcode="154">
-		<operation>Branch if int comparison with zero succeeds; succeeds if and only if value ≠ 0</operation>
+		<operation>Branch if int comparison with zero succeeds; succeeds if and only if value ≠ 0</operation>
 		<parameterized base="if">
 			<operator name="ne"/>
 		</parameterized>	
@@ -2182,7 +2182,7 @@
 		</format>
 	</instruction>
 	<instruction name="lshr" opcode="123">
-		<operation>Arithmetic shift rigth long</operation>
+		<operation>Arithmetic shift right long</operation>
 		<parameterized base="shr">
 			<type name="long"/>
 		</parameterized>
@@ -2231,7 +2231,7 @@
 		</format>
 	</instruction>
 	<instruction name="lstore_2" opcode="65">
-		<operation>Store long into local variable with index 1</operation>
+		<operation>Store long into local variable with index 2</operation>
 		<specialized base="lstore">
 			<parameter id="lvIndex" value="2"/>
 		</specialized>							

@@ -42,6 +42,7 @@ import org.scalatest.Suites
  */
 class BATSuite extends Suites(
 
+    // BAT...
     new bat.resolved.SignaturesTest,
     new bat.resolved.ObjectTypeTest,
     new bat.resolved.ArrayTypeTest,
@@ -49,9 +50,11 @@ class BATSuite extends Suites(
     new bat.resolved.MethodDescriptorTest,
     new bat.resolved.AttributesTest,
 
-    new bat.resolved.dependencies.SourceElementIDsTest,
+    new bat.resolved.dependency.SourceElementIDsTest,
 
     // REGRESSION tests
-    new bat.RegressionSuite
+    new bat.RegressionSuite,
 
-)
+    // Dependency Extractor tests
+    new bat.resolved.dependency.BasicDependencyExtractorTest,
+    new bat.resolved.dependency.DependencyExtractorTest)

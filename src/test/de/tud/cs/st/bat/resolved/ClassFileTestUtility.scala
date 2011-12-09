@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische
-*    Universität Darmstadt nor the names of its contributors may be used to
-*    endorse or promote products derived from this software without specific
+*  - Neither the name of the Software Technology Group or Technische 
+*    Universität Darmstadt nor the names of its contributors may be used to 
+*    endorse or promote products derived from this software without specific 
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -30,49 +30,36 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat
-package resolved
+package de.tud.cs.st.bat.resolved
+
+import java.util.zip.ZipFile
+import java.io.DataInputStream
+import reader.Java6Framework
 
 /**
- * Parameter annotations.
+ * Provides common functionality that are potentially needed in test cases that make use of ClassFiles.
  *
- * @author Michael Eichberg
+ * @author Thomas Schlosser
+ *
  */
-trait ParameterAnnotationsAttribute extends Attribute {
+trait ClassFileTestUtility {
 
-    def parameterAnnotations: ParameterAnnotations
-
-    def isRuntimeVisible: Boolean
-
-    protected def parameterAnnotationsToXML =
-        for (parameter ← parameterAnnotations) yield {
-            <parameter>{ for (annotation ← parameter) yield annotation.toXML }</parameter>
+    /**
+     * Reads the <code>ClassFile<code>s eagerly.
+     *
+     * @param zip the path to a ZIP file that contains the class files that should be read
+     * @return the class files contained by the ZIP file given by its path
+     */
+    def ClassFiles(zip: String): Seq[ClassFile] = {
+        var classFileEntries: List[ClassFile] = Nil
+        val zipFile = new ZipFile(zip)
+        val zipEntries = (zipFile).entries
+        while (zipEntries.hasMoreElements) {
+            val zipEntry = zipEntries.nextElement
+            if (!zipEntry.isDirectory && zipEntry.getName.endsWith(".class")) {
+                classFileEntries = Java6Framework.ClassFile(new DataInputStream(zipFile.getInputStream(zipEntry))) :: classFileEntries
+            }
         }
-
-    final def toProlog[F, T, A <: T](
-        factory: PrologTermFactory[F, T, A],
-        declaringEntityKey: A): List[F] = {
-
-        import factory._
-
-        var facts: List[F] = Nil
-
-        Fact(
-            "parameter_annotations",
-            declaringEntityKey,
-            if (isRuntimeVisible)
-                StringAtom("runtime_visible")
-            else
-                StringAtom("runtime_invisible"),
-            Terms(
-                parameterAnnotations,
-                (parameterAnnotation: Seq[Annotation]) ⇒ {
-                    Terms(parameterAnnotation, (_: Annotation).toProlog(factory))
-                })) :: facts
+        classFileEntries
     }
-}
-
-object ParameterAnnotationsAttribute {
-    def unapply(paa: ParameterAnnotationsAttribute): Option[(Boolean, ParameterAnnotations)] =
-        Some(paa.isRuntimeVisible, paa.parameterAnnotations)
 }

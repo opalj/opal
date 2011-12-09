@@ -13,9 +13,9 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- *  - Neither the name of the Software Technology Group or Technische
- *    Universität Darmstadt nor the names of its contributors may be used to
- *    endorse or promote products derived from this software without specific
+ *  - Neither the name of the Software Technology Group or Technische 
+ *    Universität Darmstadt nor the names of its contributors may be used to 
+ *    endorse or promote products derived from this software without specific 
  *    prior written permission.
  *
  *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -30,38 +30,24 @@
  *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st.bat.resolved
-package dependencies
+package dependencies;
+
+import java.io.InputStream;
+import java.io.OutputStream;
 
 /**
- * Associates a source element (type, method or field declaration) with a unique id.
- *
- * @author Michael Eichberg
+ * @author Thomas Schlosser
+ * 
  */
-trait SourceElementIDs {
+public interface SignatureTestInterface<T extends InputStream, Z> {
 
-    final def sourceElementID(classFile: ClassFile): Int =
-        sourceElementID(classFile.thisClass)
+    public T m1();
 
-    def sourceElementID(t: Type): Int
+    public void m2(T t, Z z);
 
-    final def sourceElementID(classFile: ClassFile, field: Field): Int =
-        sourceElementID(classFile.thisClass, field.name)
+    public <W> W m3();
 
-    final def sourceElementID(definingObjectType: ObjectType, field: Field): Int =
-        sourceElementID(definingObjectType, field.name)
+    public <W extends T> W m4();
 
-    def sourceElementID(definingObjectType: ObjectType, fieldName: String): Int
-
-    final def sourceElementID(classFile: ClassFile, method: Method): Int =
-        sourceElementID(classFile.thisClass, method)
-
-    final def sourceElementID(definingObjectType: ObjectType, method: Method): Int = {
-        val Method(_, methodName, methodDescriptor, _) = method
-        sourceElementID(definingObjectType, methodName, methodDescriptor)
-    }
-
-    def sourceElementID(definingObjectType: ObjectType, methodName: String, methodDescriptor: MethodDescriptor): Int
-
+    public <W extends OutputStream> W m5();
 }
-object SourceElementIDs extends SourceElementIDsMap
