@@ -37,8 +37,7 @@ package de.tud.cs.st.util.perf
  *
  * @author Michael Eichberg
  */
-trait Counting
-        extends PerformanceEvaluation {
+trait Counting extends PerformanceEvaluation {
 
     import scala.collection.mutable.Map
 
@@ -46,7 +45,6 @@ trait Counting
 
     abstract override def time[T](s: Symbol)(f: ⇒ T): T = {
         count.update(s, count.getOrElseUpdate(s, 0) + 1)
-
         super.time(s)(f)
     }
 
@@ -56,7 +54,6 @@ trait Counting
 
     abstract override def reset(sym: Symbol) {
         count.update(sym, 0)
-
         super.reset(sym)
     }
 
