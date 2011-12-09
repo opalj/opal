@@ -46,7 +46,7 @@ object LoadClassFile extends App {
 
     println(classFile.thisClass.className)
 
-    println("extends " + classFile.superClass.className)
+    classFile.superClass.foreach(t ⇒ println("extends " + t.className))
 
     print("implements")
     classFile.interfaces.foreach(interface ⇒ print(" " + interface.className))

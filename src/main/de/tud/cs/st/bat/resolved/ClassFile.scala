@@ -32,9 +32,26 @@
 */
 package de.tud.cs.st.bat
 package resolved
+import de.tud.cs.st.bat.ACC_FINAL
 
 /**
  * Represents a single class file.
+ *
+ * @param minorVersion The minor part of this class file's version number.
+ * @param majorVersion The major part of this class file's version number.
+ * @param accessFlags This class' access flags. To further analyze the access flags
+ *  either use the corresponding convenience methods (e.g., isEnumDeclaration())
+ *  or the class [[de.tud.cs.st.bat.AccessFlagsIterator]] or the classes which
+ *  inherit from [[de.tud.cs.st.bat.AccessFlag]].
+ * @param thisClass The type implemented by this class file.
+ * @param superClass The class from which this class inherits. None, if this
+ * 	class file represents java.lang.Object.
+ * @param interfaces The set of implemented interfaces. May be empty.
+ * @param fields The set of declared fields. May be empty.
+ * @param methods The set of declared methods. May be empty.
+ * @param attributes This class file's reified attributes. Which attributes
+ *  are reified dependes on the configuration of the class file reader; e.g.,
+ *  [[de.tud.cs.st.bat.resolved.reader.Java6Framework]].
  *
  * @author Michael Eichberg
  */
@@ -42,7 +59,7 @@ case class ClassFile(val minorVersion: Int,
                      val majorVersion: Int,
                      val accessFlags: Int,
                      val thisClass: ObjectType,
-                     val superClass: ObjectType,
+                     val superClass: Option[ObjectType],
                      val interfaces: Seq[ObjectType],
                      val fields: Fields,
                      val methods: Methods,
@@ -52,6 +69,10 @@ case class ClassFile(val minorVersion: Int,
     private val classCategoryMask: Int = ACC_INTERFACE.mask | ACC_ANNOTATION.mask | ACC_ENUM.mask
 
     private val annotationMask: Int = ACC_INTERFACE.mask | ACC_ANNOTATION.mask
+
+    def isFinal: Boolean = ACC_FINAL element_of accessFlags
+
+    def isPublic: Boolean = ACC_PUBLIC element_of accessFlags
 
     def isClassDeclaration: Boolean = (accessFlags & classCategoryMask) == 0
 
@@ -92,6 +113,8 @@ case class ClassFile(val minorVersion: Int,
         None
     }
 
+    def constructors : Seq[Method]  = methods.view.filter(_.name == "<init>")
+
     import AccessFlagsContexts.CLASS
 
     def toXML =
@@ -101,7 +124,7 @@ case class ClassFile(val minorVersion: Int,
 			major_version={ majorVersion.toString } >
 			<flags>{ AccessFlagsIterator(accessFlags, CLASS) map(_.toXML) }</flags>
 			<attributes>{ for (attribute ← attributes) yield attribute.toXML }</attributes>
-			<extends type={ if (superClass ne null) { Some(scala.xml.Text(superClass.className)) } else { None } } />
+			<extends type={ if (superClass.isDefined) { Some(scala.xml.Text(superClass.get.className)) } else { None } } />
 			{ for (interface ← interfaces) yield <implements type={ interface.className }/> }
 			{ for (field ← fields) yield field.toXML }
 			{ for (method ← methods) yield method.toXML }
@@ -161,7 +184,7 @@ case class ClassFile(val minorVersion: Int,
             key,
             getClassCategoryAtom(factory),
             thisClass.toProlog(factory),
-            if (superClass ne null) superClass.toProlog(factory) else NoneAtom,
+            if (superClass.isDefined) superClass.get.toProlog(factory) else NoneAtom,
             Terms(interfaces, (_: ObjectType).toProlog(factory)),
             VisibilityAtom(accessFlags, CLASS),
             FinalTerm(accessFlags),

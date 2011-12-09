@@ -90,7 +90,7 @@ trait ClassFileBinding
             minor_version, major_version, access_flags,
             cp(this_class).asObjectType,
             // to handle the special case that this class file represents java.lang.Object
-            { if (super_class == 0) null else cp(super_class).asObjectType },
+            { if (super_class == 0) None else Some(cp(super_class).asObjectType) },
             interfaces, fields, methods, attributes
         )
     }
