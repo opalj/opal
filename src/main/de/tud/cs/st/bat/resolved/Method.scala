@@ -43,11 +43,17 @@ import scala.xml.TopScope
  *
  * @author Michael Eichberg
  */
-case class Method(val accessFlags: Int,
-                  val name: String,
-                  val descriptor: MethodDescriptor,
-                  val attributes: Attributes)
+case class Method(accessFlags: Int,
+                  name: String,
+                  descriptor: MethodDescriptor,
+                  attributes: Attributes)
         extends CommonAttributes {
+
+    def isPublic: Boolean = ACC_PUBLIC element_of accessFlags
+
+    def isProtected: Boolean = ACC_PROTECTED element_of accessFlags
+
+    def isPrivate: Boolean = ACC_PRIVATE element_of accessFlags
 
     /**
      * This method's implementation (if it is not abstract).
