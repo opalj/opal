@@ -38,7 +38,7 @@ import util.perf.{ Counting, PerformanceEvaluation }
 import reader.Java6Framework
 
 /**
- * Demonstrates how to implement a very simple checker.
+ * Demonstrates how to implement two very simple checkers using BAT.
  *
  * @author Michael Eichberg
  */
@@ -74,7 +74,7 @@ object SimpleCheckers extends App {
                 var definesCovariantEqualsMethod = false
                 for (method ← classFile.methods) method match {
                     case Method(_, "equals", MethodDescriptor(Seq(ObjectType("java/lang/Object")), BooleanType), _) ⇒ definesEqualsMethod = true
-                    case Method(_, "equals", MethodDescriptor(Seq(_), BooleanType), _) ⇒ definesCovariantEqualsMethod = true
+                    case Method(_, "equals", MethodDescriptor(Seq(ObjectType(_)), BooleanType), _) ⇒ definesCovariantEqualsMethod = true
                     case _ ⇒
                 }
                 if (definesCovariantEqualsMethod && !definesEqualsMethod) {
