@@ -58,7 +58,7 @@ case class Method(accessFlags: Int,
     /**
      * This method's implementation (if it is not abstract).
      */
-    def code: Option[CodeAttribute] = {
+    def body: Option[CodeAttribute] = {
         attributes find {
             case ca: CodeAttribute ⇒ return Some(ca)
             case _                 ⇒ false
