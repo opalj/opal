@@ -58,6 +58,12 @@ case class Field(accessFlags: Int,
                  attributes: Attributes)
         extends CommonAttributes {
 
+    def isPublic: Boolean = ACC_PUBLIC element_of accessFlags
+    def isProtected: Boolean = ACC_PROTECTED element_of accessFlags
+    def isPrivate: Boolean = ACC_PRIVATE element_of accessFlags
+
+    def isStatic: Boolean = ACC_STATIC element_of accessFlags
+
     /**
      * Returns this field's type signature.
      */
