@@ -41,6 +41,12 @@ package resolved
  */
 case class MethodDescriptor(parameterTypes: Seq[FieldType], returnType: Type) {
 
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
+
     def toXML =
         <descriptor>
 			{ for (pt ← parameterTypes) yield <parameter type={ pt.toJava } /> }
@@ -78,7 +84,7 @@ object MethodDescriptor {
 
     private def parseParameterType(md: String, startIndex: Int): (FieldType, Int) = {
         val td = md.charAt(startIndex)
-        td match {
+        (td: @scala.annotation.switch) match {
             case 'L' ⇒
                 val endIndex = md.indexOf(';', startIndex + 1)
                 ( // this is the return tuple

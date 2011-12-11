@@ -38,7 +38,6 @@ import DependencyType._
 
 import scala.collection.mutable.ArrayBuffer
 import org.scalatest.FunSuite
-import org.scalatest.junit.JUnitRunner
 
 /**
  * Tests whether the DependencyExtractor extracts all dependencies correctly.
@@ -47,7 +46,7 @@ import org.scalatest.junit.JUnitRunner
  *
  * @author Thomas Schlosser
  */
-@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
+//@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class DependencyExtractorTest extends FunSuite {
 
     type Dependency = (String, String, DependencyType)
@@ -83,7 +82,7 @@ class DependencyExtractorTest extends FunSuite {
         assertSignatureTestClass
         assertSignatureTestSubClass
 
-        assert(aDeps.deps.isEmpty, "Too many [" + aDeps.deps.size + "] dependencies have been extracted:\n" + aDeps.deps.mkString("\n"))
+        assert(aDeps.deps.isEmpty, "Too many ["+aDeps.deps.size+"] dependencies have been extracted:\n"+aDeps.deps.mkString("\n"))
     }
 
     private def assertTestClass(implicit aDeps: AssertableDependencies) {
@@ -773,10 +772,10 @@ class DependencyExtractorTest extends FunSuite {
 
     private def assertImplicitDefaultConstructor(className: String, superClassName: String = "java.lang.Object")(implicit aDeps: AssertableDependencies) {
         //	//implicit constructor:
-        val constructorName = className + ".<init>()"
+        val constructorName = className+".<init>()"
         aDeps.assertDependency(constructorName, className, IS_INSTANCE_MEMBER_OF)
         aDeps.assertDependency(constructorName, superClassName, USES_METHOD_DECLARING_TYPE)
-        aDeps.assertDependency(constructorName, superClassName + ".<init>()", CALLS_METHOD)
+        aDeps.assertDependency(constructorName, superClassName+".<init>()", CALLS_METHOD)
         assertImplicitThisLocalVariable(constructorName)
     }
 
@@ -791,8 +790,9 @@ class DependencyExtractorTest extends FunSuite {
             if (deps.contains(dep)) {
                 deps = deps diff List(dep)
                 //        println("verified dependency: " + src + "--[" + dType + "]-->" + trgt)
-            } else {
-                throw new AssertionError("Dependency " + dep + " was not extracted successfully!\nRemaining dependencies:\n" + deps.mkString("\n"))
+            }
+            else {
+                throw new AssertionError("Dependency "+dep+" was not extracted successfully!\nRemaining dependencies:\n"+deps.mkString("\n"))
             }
         }
     }
@@ -832,7 +832,7 @@ class DependencyExtractorTest extends FunSuite {
             getID(getNameOfUnderlyingType(definingObjectType) + FIELD_AND_METHOD_SEPARATOR + getMethodAsName(methodName, methodDescriptor))
 
         def getMethodAsName(methodName: String, methodDescriptor: MethodDescriptor): String = {
-            methodName + "(" + methodDescriptor.parameterTypes.map(pT ⇒ getNameOfUnderlyingType(pT)).mkString(", ") + ")"
+            methodName+"("+methodDescriptor.parameterTypes.map(pT ⇒ getNameOfUnderlyingType(pT)).mkString(", ")+")"
         }
 
         protected def getNameOfUnderlyingType(obj: Type): String =

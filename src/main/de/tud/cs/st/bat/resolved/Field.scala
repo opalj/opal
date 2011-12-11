@@ -67,24 +67,20 @@ case class Field(accessFlags: Int,
     /**
      * Returns this field's type signature.
      */
-    def fieldTypeSignature: Option[FieldTypeSignature] = {
-        attributes find {
-            case s: FieldTypeSignature ⇒ return Some(s)
-            case _                     ⇒ false;
-        }
-        None
-    }
+    def fieldTypeSignature: Option[FieldTypeSignature] =
+        attributes collectFirst { case s: FieldTypeSignature ⇒ s }
 
     /**
      * Returns this field's constant value.
      */
-    def constantValue: Option[ConstantValue[_]] = {
-        attributes find {
-            case cv: ConstantValue[_] ⇒ return Some(cv)
-            case _                    ⇒ false;
-        }
-        None
-    }
+    def constantValue: Option[ConstantValue[_]] =
+        attributes collectFirst { case cv: ConstantValue[_] ⇒ cv }
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
     def toXML =
         <field

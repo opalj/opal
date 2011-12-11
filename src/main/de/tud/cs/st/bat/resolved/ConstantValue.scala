@@ -56,14 +56,6 @@ sealed trait ConstantValue[T >: Nothing] extends Attribute {
     // IMPLEMENTATION
     //
 
-    def toXML = <constant type={ valueType.toJava }>{ valueToString }</constant>
-
-    /**
-     *
-     */
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] =
-        factory.Fact("field_value", declaringEntityKey, valueToProlog(factory)) :: Nil
-
     def toBoolean: Boolean = sys.error("This constant value ("+this+") cannot be converted to a boolean value")
     def toByte: Byte = sys.error("This constant value ("+this+") cannot be converted to a byte value")
     def toChar: Char = sys.error("This constant value ("+this+") cannot be converted to an char value")
@@ -74,21 +66,38 @@ sealed trait ConstantValue[T >: Nothing] extends Attribute {
     def toDouble: Double = sys.error("This constant value ("+this+") cannot be converted to a double value")
     def toUTF8: String = sys.error("This constant value ("+this+") cannot be converted to a String(UTF8) value")
     def toClass: ReferenceType = sys.error("This constant value ("+this+") cannot be converted to a class value")
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
+
+    def toXML = <constant type={ valueType.toJava }>{ valueToString }</constant>
+
+    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] =
+        factory.Fact("field_value", declaringEntityKey, valueToProlog(factory)) :: Nil
+
 }
 
-case class ConstantLong(val value: Long) extends ConstantValue[Long] {
+case class ConstantLong(value: Long) extends ConstantValue[Long] {
     override def toLong = value
     def valueToString = value.toString
     def valueType = LongType
 
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
     def valueToProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T = {
         import factory._
         Term("long", IntegerAtom(value))
     }
 }
 
-case class ConstantInteger(val value: Int) extends ConstantValue[Int] {
-    override def toBoolean = value != 0
+case class ConstantInteger(value: Int) extends ConstantValue[Int] {
+    override def toBoolean = value != 0 // TODO Does this method: ConstantInteger.toBoolean makes sense?
     override def toByte = value.toByte
     override def toChar = value.toChar
     override def toShort = value.toShort
@@ -96,6 +105,11 @@ case class ConstantInteger(val value: Int) extends ConstantValue[Int] {
     def valueToString = value.toString
     def valueType = IntegerType
 
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
     def valueToProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T = {
         import factory._
         Term("int", IntegerAtom(value))
@@ -103,11 +117,16 @@ case class ConstantInteger(val value: Int) extends ConstantValue[Int] {
 
 }
 
-case class ConstantDouble(val value: Double) extends ConstantValue[Double] {
+case class ConstantDouble(value: Double) extends ConstantValue[Double] {
     override def toDouble = value
     def valueToString = value.toString
     def valueType = DoubleType
 
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
     def valueToProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T = {
         import factory._
         Term("double", FloatAtom(value))
@@ -115,11 +134,16 @@ case class ConstantDouble(val value: Double) extends ConstantValue[Double] {
 
 }
 
-case class ConstantFloat(val value: Float) extends ConstantValue[Float] {
+case class ConstantFloat(value: Float) extends ConstantValue[Float] {
     override def toFloat = value
     def valueToString = value.toString
     def valueType = FloatType
 
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
     def valueToProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T = {
         import factory._
         Term("float", FloatAtom(value))
@@ -127,10 +151,16 @@ case class ConstantFloat(val value: Float) extends ConstantValue[Float] {
 
 }
 
-case class ConstantString(val value: String) extends ConstantValue[String] {
+case class ConstantString(value: String) extends ConstantValue[String] {
     override def toUTF8 = value
     def valueToString = value.toString
     def valueType = ObjectType("java/lang/String")
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
     def valueToProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T = {
         import factory._
@@ -139,11 +169,16 @@ case class ConstantString(val value: String) extends ConstantValue[String] {
 }
 
 // ConstantClass is used by anewarray and multianewarray
-case class ConstantClass(val value: ReferenceType) extends ConstantValue[ReferenceType] {
+case class ConstantClass(value: ReferenceType) extends ConstantValue[ReferenceType] {
     override def toClass = value
     def valueToString = value.toJava
     def valueType = ObjectType("java/lang/Class")
 
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
     def valueToProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T = {
         import factory._
         value.toProlog(factory)

@@ -44,6 +44,12 @@ trait ParameterAnnotationsAttribute extends Attribute {
 
     def isRuntimeVisible: Boolean
 
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
+
     protected def parameterAnnotationsToXML =
         for (parameter ← parameterAnnotations) yield {
             <parameter>{ for (annotation ← parameter) yield annotation.toXML }</parameter>

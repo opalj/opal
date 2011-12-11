@@ -38,10 +38,16 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case class RuntimeVisibleParameterAnnotationsAttribute(val parameterAnnotations: ParameterAnnotations)
+case class RuntimeVisibleParameterAnnotationsAttribute(parameterAnnotations: ParameterAnnotations)
         extends ParameterAnnotationsAttribute {
 
     final def isRuntimeVisible: Boolean = true
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
     def toXML =
         <runtime_visible_parameter_annotations>

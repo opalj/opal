@@ -38,11 +38,17 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case class RuntimeInvisibleParameterAnnotationsAttribute(val parameterAnnotations: ParameterAnnotations)
+case class RuntimeInvisibleParameterAnnotationsAttribute(parameterAnnotations: ParameterAnnotations)
         extends ParameterAnnotationsAttribute {
 
     final def isRuntimeVisible: Boolean = false
 
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
+    
     def toXML =
         <runtime_invisible_parameter_annotations>
 			{ parameterAnnotationsToXML }

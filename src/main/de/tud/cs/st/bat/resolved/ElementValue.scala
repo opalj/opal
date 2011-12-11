@@ -36,13 +36,17 @@ package resolved
 import scala.xml.Node
 
 /**
- * The values of an annotation.
- *
- *
+ * An annotation's value.
  *
  * @author Michael Eichberg
  */
 sealed trait ElementValue extends Attribute {
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
     def valueToProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T
 
@@ -58,7 +62,7 @@ sealed trait ElementValue extends Attribute {
         factory.Fact("annotation_default", declaringEntityKey, valueToProlog(factory)) :: Nil
 }
 
-case class ByteValue(val value: Byte) extends ElementValue {
+case class ByteValue(value: Byte) extends ElementValue {
 
     def valueToXML = <byte value={ value.toString }/>
 
@@ -67,7 +71,7 @@ case class ByteValue(val value: Byte) extends ElementValue {
 
 }
 
-case class CharValue(val value: Char) extends ElementValue {
+case class CharValue(value: Char) extends ElementValue {
 
     def valueToXML = <char value={ value.toString }/>
 
@@ -79,7 +83,7 @@ case class CharValue(val value: Char) extends ElementValue {
     }
 }
 
-case class DoubleValue(val value: Double) extends ElementValue {
+case class DoubleValue(value: Double) extends ElementValue {
 
     def valueToXML = <double value={ value.toString }/>
 
@@ -91,7 +95,7 @@ case class DoubleValue(val value: Double) extends ElementValue {
     }
 }
 
-case class FloatValue(val value: Float) extends ElementValue {
+case class FloatValue(value: Float) extends ElementValue {
 
     def valueToXML = <float value={ value.toString }/>
 
@@ -103,7 +107,13 @@ case class FloatValue(val value: Float) extends ElementValue {
     }
 }
 
-case class IntValue(val value: Int) extends ElementValue {
+case class IntValue(value: Int) extends ElementValue {
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
     def valueToXML = <int value={ value.toString }/>
 
@@ -115,7 +125,13 @@ case class IntValue(val value: Int) extends ElementValue {
     }
 }
 
-case class LongValue(val value: Long) extends ElementValue {
+case class LongValue(value: Long) extends ElementValue {
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
     def valueToXML = <long value={ value.toString }/>
 
@@ -127,7 +143,13 @@ case class LongValue(val value: Long) extends ElementValue {
     }
 }
 
-case class ShortValue(val value: Short) extends ElementValue {
+case class ShortValue(value: Short) extends ElementValue {
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
     def valueToXML = <short value={ value.toString }/>
 
@@ -139,7 +161,13 @@ case class ShortValue(val value: Short) extends ElementValue {
     }
 }
 
-case class BooleanValue(val value: Boolean) extends ElementValue {
+case class BooleanValue(value: Boolean) extends ElementValue {
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
     def valueToXML = <boolean value={ value.toString }/>
 
@@ -151,7 +179,13 @@ case class BooleanValue(val value: Boolean) extends ElementValue {
     }
 }
 
-case class StringValue(val value: String) extends ElementValue {
+case class StringValue(value: String) extends ElementValue {
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
     def valueToXML = <string>{ value.toString }</string>
 
@@ -163,7 +197,13 @@ case class StringValue(val value: String) extends ElementValue {
     }
 }
 
-case class ClassValue(val value: ReturnType) extends ElementValue {
+case class ClassValue(value: ReturnType) extends ElementValue {
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
     def valueToXML = <class type={ value.toJava }/>
 
@@ -172,7 +212,13 @@ case class ClassValue(val value: ReturnType) extends ElementValue {
 
 }
 
-case class EnumValue(val enumType: ObjectType, val constName: String) extends ElementValue {
+case class EnumValue(enumType: ObjectType, val constName: String) extends ElementValue {
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
     def valueToXML = <enum type={ enumType.className }>{ constName }</enum>
 
@@ -185,7 +231,13 @@ case class EnumValue(val enumType: ObjectType, val constName: String) extends El
     }
 }
 
-case class ArrayValue(val values: IndexedSeq[ElementValue]) extends ElementValue {
+case class ArrayValue(values: IndexedSeq[ElementValue]) extends ElementValue {
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
     def valueToXML = <array>{ for (value ← values) yield value.toXML }</array>
 
@@ -197,7 +249,13 @@ case class ArrayValue(val values: IndexedSeq[ElementValue]) extends ElementValue
     }
 }
 
-case class AnnotationValue(val annotation: Annotation) extends ElementValue {
+case class AnnotationValue(annotation: Annotation) extends ElementValue {
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
     def valueToXML = annotation.toXML
 

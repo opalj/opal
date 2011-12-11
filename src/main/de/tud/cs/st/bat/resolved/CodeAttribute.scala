@@ -37,20 +37,31 @@ package de.tud.cs.st.bat.resolved
  *
  * @author Michael Eichberg
  */
-case class CodeAttribute(val maxStack: Int,
-                          val maxLocals: Int,
-                          val code: Array[Instruction],
-                          val exceptionTable: ExceptionTable,
-                          val attributes: Attributes) 
-                          extends Attribute {
-    
-    def stackMapTable : Option[StackMapFrames] = {
-        attributes find {
-            case StackMapTableAttribute(smf) => return Some(smf)
-            case _ => false
-        }
-        None
+case class CodeAttribute(maxStack: Int,
+                         maxLocals: Int,
+                         code: Array[Instruction],
+                         exceptionTable: ExceptionTable,
+                         attributes: Attributes)
+        extends Attribute {
+
+    def stackMapTable: Option[StackMapFrames] =
+        attributes collectFirst { case StackMapTableAttribute(smf) ⇒ smf }
+
+    override def toString = {
+        "Code_attribute(maxStack="+
+            maxStack+", maxLocals="+
+            maxLocals+","+
+            (code.filter(_ ne null).deep.toString) +
+            (exceptionTable.toString)+","+
+            (attributes.toString)+
+            ")"
     }
+    	
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
 	def toXML =
 		<code
@@ -147,13 +158,5 @@ case class CodeAttribute(val maxStack: Int,
 	}
 
 
-	override def toString = {
-		"Code_attribute(maxStack="+
-			maxStack+", maxLocals="+
-			maxLocals+","+
-			(code.filter(_ ne null).deep.toString)+
-			(exceptionTable.toString)+","+
-			(attributes.toString)+
-		")"
-	}
+
 }

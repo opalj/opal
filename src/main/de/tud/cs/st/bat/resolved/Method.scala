@@ -58,24 +58,20 @@ case class Method(accessFlags: Int,
     /**
      * This method's implementation (if it is not abstract).
      */
-    def body: Option[CodeAttribute] = {
-        attributes find {
-            case ca: CodeAttribute ⇒ return Some(ca)
-            case _                 ⇒ false
-        }
-        None
-    }
+    def body: Option[CodeAttribute] =
+        attributes collectFirst { case ca: CodeAttribute ⇒ ca }
 
     /**
      * Each class file optionally defines a clas signature.
      */
-    def methodTypeSignature: Option[MethodTypeSignature] = {
-        attributes find {
-            case s: MethodTypeSignature ⇒ return Some(s)
-            case _                      ⇒ false
-        }
-        None
-    }
+    def methodTypeSignature: Option[MethodTypeSignature] =
+        attributes collectFirst { case s: MethodTypeSignature ⇒ s }
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
     import AccessFlagsContexts.METHOD
 

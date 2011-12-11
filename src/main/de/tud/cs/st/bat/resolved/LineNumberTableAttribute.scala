@@ -38,14 +38,19 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case class LineNumberTableAttribute(val lineNumberTable: LineNumberTable)
+case class LineNumberTableAttribute(lineNumberTable: LineNumberTable)
         extends Attribute {
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
     def toXML =
         <line_number_table>
 			{ for (entry ← lineNumberTable) yield entry.toXML }
 		</line_number_table>
-
 
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A, pc_to_seqNo: Array[Int]): F = {
 
@@ -59,8 +64,14 @@ case class LineNumberTableAttribute(val lineNumberTable: LineNumberTable)
     }
 }
 
-case class LineNumberTableEntry(val startPC: Int,
-                                val lineNumber: Int) {
+case class LineNumberTableEntry(startPC: Int,
+                                lineNumber: Int) {
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
     def toXML = <entry start_pc={ startPC.toString } lineNumber={ lineNumber.toString }/>
 

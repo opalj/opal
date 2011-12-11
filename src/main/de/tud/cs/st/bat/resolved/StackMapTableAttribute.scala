@@ -34,12 +34,18 @@ package de.tud.cs.st.bat
 package resolved
 
 /**
- * Representation of the Java 6 stack map table attribute.
+ * Java 6's stack map table attribute.
  *
  * @author Michael Eichberg
  */
-case class StackMapTableAttribute(val stackMapFrames: StackMapFrames)
+case class StackMapTableAttribute(stackMapFrames: StackMapFrames)
         extends Attribute {
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
     def toXML = <stack_map_table>{ for (frame ← stackMapFrames) yield frame.toXML }</stack_map_table>
 

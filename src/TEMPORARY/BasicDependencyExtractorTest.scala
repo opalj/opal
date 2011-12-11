@@ -54,7 +54,7 @@ import DependencyType._
  *
  * @author Thomas Schlosser
  */
-@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
+//@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class BasicDependencyExtractorTest extends Suite {
 
     /*

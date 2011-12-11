@@ -37,10 +37,16 @@ package de.tud.cs.st.bat.resolved
  *
  * @author Michael Eichberg
  */
-case class ExceptionTableEntry(val startPC: Int,
-                               val endPC: Int,
-                               val handlerPC: Int,
-                               val catchType: ObjectType) {
+case class ExceptionTableEntry(startPC: Int,
+                               endPC: Int,
+                               handlerPC: Int,
+                               catchType: ObjectType) {
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
     def toXML =
         <exception_handler

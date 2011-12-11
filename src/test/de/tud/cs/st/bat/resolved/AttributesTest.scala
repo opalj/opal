@@ -40,7 +40,7 @@ import org.scalatest.FunSuite
 /**
  * @author Michael Eichberg
  */
-@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
+//@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class AttributesTest extends FunSuite {
 
     test("test that the deprecated attribute is present") {

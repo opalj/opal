@@ -41,24 +41,41 @@ package resolved
 sealed trait StackMapFrame /*extends de.tud.cs.st.bat.StackMapFrame*/ {
     type VerificationTypeInfo = de.tud.cs.st.bat.resolved.VerificationTypeInfo
     // [DOCUMENTATION ONLY]	type VerificationTypeInfoLocals = IndexedSeq[VerificationTypeInfo]
-    //	[DOCUMENTATION ONLY]	type VerificationTypeInfoStack = IndexedSeq[VerificationTypeInfo]
+    // [DOCUMENTATION ONLY]	type VerificationTypeInfoStack = IndexedSeq[VerificationTypeInfo]
 
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
     def toXML: scala.xml.Node
 
     def frameType: Int
 
-    //final def frame_type = frameType // using the underscore it the JVM Spec's notation..
+    //final def frame_type = frameType 
 }
 
-case class SameFrame(val frameType: Int)
+case class SameFrame(frameType: Int)
         extends /* de.tud.cs.st.bat.SameFrame with */ StackMapFrame {
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
     def toXML = <same_frame tag={ frameType.toString }/>
 }
 
-case class SameLocals1StackItemFrame(val frameType: Int,
-                                     val verificationTypeInfoStackItem: VerificationTypeInfo)
+case class SameLocals1StackItemFrame(frameType: Int,
+                                     verificationTypeInfoStackItem: VerificationTypeInfo)
         extends /* de.tud.cs.st.bat.SameLocals1StackItemFrame with*/ StackMapFrame {
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
     def toXML =
         <same_locals_1_stack_item_frame tag={ frameType.toString }>
@@ -66,10 +83,16 @@ case class SameLocals1StackItemFrame(val frameType: Int,
 		</same_locals_1_stack_item_frame>
 }
 
-case class SameLocals1StackItemFrameExtended(val frameType: Int,
-                                             val offsetDelta: Int,
-                                             val verificationTypeInfoStackItem: VerificationTypeInfo)
+case class SameLocals1StackItemFrameExtended(frameType: Int,
+                                             offsetDelta: Int,
+                                             verificationTypeInfoStackItem: VerificationTypeInfo)
         extends /*de.tud.cs.st.bat.SameLocals1StackItemFrameExtended with */ StackMapFrame {
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
     def toXML =
         <same_locals_1_stack_item_frame_extended tag={ frameType.toString } offset_delta={ offsetDelta.toString }>
@@ -77,26 +100,44 @@ case class SameLocals1StackItemFrameExtended(val frameType: Int,
 		</same_locals_1_stack_item_frame_extended>
 }
 
-case class ChopFrame(val frameType: Int,
-                     val offsetDelta: Int)
+case class ChopFrame(frameType: Int,
+                     offsetDelta: Int)
         extends /*de.tud.cs.st.bat.ChopFrame with*/ StackMapFrame {
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
     def toXML =
         <chop_frame tag={ frameType.toString } offset_delta={ offsetDelta.toString }/>
 }
 
-case class SameFrameExtended(val frameType: Int,
-                             val offsetDelta: Int)
+case class SameFrameExtended(frameType: Int,
+                             offsetDelta: Int)
         extends /* de.tud.cs.st.bat.SameFrameExtended with */ StackMapFrame {
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
     def toXML =
         <same_frame_extended tag={ frameType.toString } offset_delta={ offsetDelta.toString }/>
 }
 
-case class AppendFrame(val frameType: Int,
-                       val offsetDelta: Int,
-                       val verificationTypeInfoLocals: VerificationTypeInfoLocals)
+case class AppendFrame(frameType: Int,
+                       offsetDelta: Int,
+                       verificationTypeInfoLocals: VerificationTypeInfoLocals)
         extends /*de.tud.cs.st.bat.AppendFrame with*/ StackMapFrame {
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
     def toXML =
         <append_frame tag={ frameType.toString } offset_delta={ offsetDelta.toString }>
@@ -104,11 +145,17 @@ case class AppendFrame(val frameType: Int,
 		</append_frame>
 }
 
-case class FullFrame(val frameType: Int,
-                     val offsetDelta: Int,
-                     val verificationTypeInfoLocals: VerificationTypeInfoLocals,
-                     val verificationTypeInfoStack: VerificationTypeInfoStack)
+case class FullFrame(frameType: Int,
+                     offsetDelta: Int,
+                     verificationTypeInfoLocals: VerificationTypeInfoLocals,
+                     verificationTypeInfoStack: VerificationTypeInfoStack)
         extends /*de.tud.cs.st.bat.FullFrame with*/ StackMapFrame {
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
     def toXML =
         <append_frame tag={ frameType.toString } offset_delta={ offsetDelta.toString }>

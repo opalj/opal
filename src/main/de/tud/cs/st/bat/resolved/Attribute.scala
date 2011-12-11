@@ -34,12 +34,18 @@ package de.tud.cs.st.bat
 package resolved
 
 /**
- * Common superclass of all class file attributes.
+ * A class file attribute.
  *
  * @author Michael Eichberg
  */
 trait Attribute {
 
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
+    
     /**
      * Returns an XML representation of this attribute.
      */

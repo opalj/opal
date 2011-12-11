@@ -38,26 +38,36 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case class LocalVariableTypeTableAttribute(val localVariableTypeTable: LocalVariableTypeTable)
+case class LocalVariableTypeTableAttribute(localVariableTypeTable: LocalVariableTypeTable)
         extends Attribute {
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
     def toXML =
         <local_variable_type_table>
 			{ for (entry ← localVariableTypeTable) yield entry.toXML }
 		</local_variable_type_table>
 
-
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A, pc_to_seqNo: Array[Int]): F = {
-    	factory.Fact("method_local_variable_type_table") // TODO [Prolog] LocalVariableTypeTableAttribute
+        factory.Fact("method_local_variable_type_table") // TODO [Prolog] LocalVariableTypeTableAttribute
     }
 }
 
-case class LocalVariableTypeTableEntry(
-        val startPC: Int,
-        val length: Int,
-        val name: String,
-        val signature: FieldTypeSignature,
-        val index: Int) {
+case class LocalVariableTypeTableEntry(startPC: Int,
+                                       length: Int,
+                                       name: String,
+                                       signature: FieldTypeSignature,
+                                       index: Int) {
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
     def toXML =
         <entry

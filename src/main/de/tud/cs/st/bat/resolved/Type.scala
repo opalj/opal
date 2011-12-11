@@ -33,7 +33,7 @@
 package de.tud.cs.st.bat.resolved
 
 /**
- * Representation of a JVM type.
+ * One JVM type.
  *
  * @author Michael Eichberg
  */
@@ -59,6 +59,12 @@ sealed trait Type {
 
     def toJava: String
 
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
+
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T
 }
 
@@ -79,13 +85,19 @@ object ReturnType {
 sealed trait VoidType extends ReturnType with ReturnTypeSignature {
 
     // remark: the default implementation of equals and hashCode suits our needs!
-	def accept[T](sv : SignatureVisitor[T]) : T = sv.visit(this)
+    def accept[T](sv: SignatureVisitor[T]): T = sv.visit(this)
 
     override def isVoidType = true
 
     def toJava: String = "void"
 
     override def toString() = "VoidType"
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]) = factory.StringAtom("void")
 
@@ -104,7 +116,7 @@ object FieldType {
     def apply(ft: String): FieldType = {
         import scala.annotation.switch
 
-        (ft.charAt(0) : @switch) match {
+        (ft.charAt(0): @switch) match {
             case 'B' ⇒ ByteType
             case 'C' ⇒ CharType
             case 'D' ⇒ DoubleType
@@ -140,6 +152,12 @@ trait ByteType extends BaseType {
 
     override def toString() = "ByteType"
 
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
+
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]) = factory.StringAtom("byte")
 }
 final case object ByteType extends ByteType
@@ -153,6 +171,12 @@ trait CharType extends BaseType {
     def toJava: String = "char"
 
     override def toString() = "CharType"
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]) = factory.StringAtom("char")
 }
@@ -168,6 +192,12 @@ trait DoubleType extends BaseType {
 
     override def toString() = "DoubleType"
 
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
+
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]) = factory.StringAtom("double")
 }
 final case object DoubleType extends DoubleType
@@ -181,6 +211,12 @@ trait FloatType extends BaseType {
     def toJava: String = "float"
 
     override def toString() = "FloatType"
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]) = factory.StringAtom("float")
 }
@@ -196,6 +232,12 @@ trait ShortType extends BaseType {
 
     override def toString() = "ShortType"
 
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
+
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]) = factory.StringAtom("short")
 }
 final case object ShortType extends ShortType
@@ -209,6 +251,12 @@ trait IntegerType extends BaseType {
     def toJava: String = "int"
 
     override def toString() = "IntegerType"
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]) = factory.StringAtom("int")
 }
@@ -224,6 +272,12 @@ trait LongType extends BaseType {
 
     override def toString() = "LongType"
 
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
+
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]) = factory.StringAtom("long")
 }
 final case object LongType extends LongType
@@ -238,26 +292,27 @@ trait BooleanType extends BaseType {
 
     override def toString() = "BooleanType"
 
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
+
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]) = factory.StringAtom("boolean")
 }
 final case object BooleanType extends BooleanType
 
-final class ObjectType private (
-    val className: String)
-        extends ReferenceType {
+final class ObjectType private (val className: String) extends ReferenceType {
 
     override final def isObjectType = true
 
     override lazy val hashCode = className.hashCode * 43
 
     override def equals(other: Any): Boolean = {
-        other match {
-            case that: ObjectType ⇒ that.className == this.className
-            case _                ⇒ false
-        }
+        other.getClass == this.getClass() && other.asInstanceOf[ObjectType].className == this.className
     }
 
-    def equals(other : ObjectType) : Boolean = other.className == this.className
+    def equals(other: ObjectType): Boolean = other.className == this.className
 
     def simpleName: String = ObjectType.simpleName(className)
 
@@ -265,7 +320,13 @@ final class ObjectType private (
 
     def toJava: String = className.replace('/', '.')
 
-    override def toString = "ObjectType(className=\"" + className + "\")"
+    override def toString = "ObjectType(className=\""+className+"\")"
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]) =
         factory.Term("class", factory.TextAtom(packageName), factory.TextAtom(simpleName))
@@ -273,7 +334,7 @@ final class ObjectType private (
 }
 object ObjectType {
 
-    // FIXME memory leak...
+    // FIXME potential memory leak...
     private val cache: scala.collection.mutable.Map[String, ObjectType] = scala.collection.mutable.Map()
 
     /**
@@ -318,9 +379,15 @@ final class ArrayType private (val componentType: FieldType) extends ReferenceTy
 
     def baseType: Type = componentType match { case at: ArrayType ⇒ at.baseType; case _ ⇒ componentType }
 
-    def toJava: String = componentType.toJava + "[]"
+    def toJava: String = componentType.toJava+"[]"
 
-    override def toString = "ArrayType(" + componentType.toString + ")"
+    override def toString = "ArrayType("+componentType.toString+")"
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]) =
         factory.Term("array", componentType.toProlog(factory))
@@ -328,7 +395,7 @@ final class ArrayType private (val componentType: FieldType) extends ReferenceTy
 }
 object ArrayType {
 
-    // FIXME memory leak...
+    // FIXME potential memory leak...
     private val cache: scala.collection.mutable.Map[FieldType, ArrayType] = scala.collection.mutable.Map()
 
     /**

@@ -32,70 +32,62 @@
 */
 package de.tud.cs.st.bat.resolved
 
-
 import org.scalatest.FunSuite
-import java.io.File
-import java.util.zip.ZipFile
-import java.util.Enumeration
-
 
 /**
  * @author Michael Eichberg
  */
-@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
+//@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class MethodDescriptorTest extends FunSuite {
 
-	test("Parsing: ()V") {
-		val md = MethodDescriptor("()V")
-		assert (md.parameterTypes.size == 0)
-		assert (md.returnType.isVoidType)
-	}
+    test("Parsing: ()V") {
+        val md = MethodDescriptor("()V")
+        assert(md.parameterTypes.size == 0)
+        assert(md.returnType.isVoidType)
+    }
 
-	test("Parsing: (III)I") {
-		val md = MethodDescriptor("(III)I")
-		assert (md.parameterTypes.size == 3)
-		assert (md.parameterTypes(0).isIntegerType)
-		assert (md.parameterTypes(1).isIntegerType)
-		assert (md.parameterTypes(2).isIntegerType)
-		assert (md.returnType.isIntegerType)
-	}
+    test("Parsing: (III)I") {
+        val md = MethodDescriptor("(III)I")
+        assert(md.parameterTypes.size == 3)
+        assert(md.parameterTypes(0).isIntegerType)
+        assert(md.parameterTypes(1).isIntegerType)
+        assert(md.parameterTypes(2).isIntegerType)
+        assert(md.returnType.isIntegerType)
+    }
 
-	test("Parsing: ([I)[I") {
-		val md = MethodDescriptor("([I)[I")
-		assert (md.parameterTypes.size == 1)
-		assert (md.parameterTypes(0).isArrayType)
-		assert (md.returnType.isArrayType)
-	}
+    test("Parsing: ([I)[I") {
+        val md = MethodDescriptor("([I)[I")
+        assert(md.parameterTypes.size == 1)
+        assert(md.parameterTypes(0).isArrayType)
+        assert(md.returnType.isArrayType)
+    }
 
-	test("Parsing: ([[[III)[I") {
-		val md = MethodDescriptor("([[[III)[I")
-		assert (md.parameterTypes.size == 3)
-		assert (md.parameterTypes(0).isArrayType)
-		assert (md.parameterTypes(1).isIntegerType)
-		assert (md.parameterTypes(2).isIntegerType)
-		assert (md.returnType.isArrayType)
-	}
+    test("Parsing: ([[[III)[I") {
+        val md = MethodDescriptor("([[[III)[I")
+        assert(md.parameterTypes.size == 3)
+        assert(md.parameterTypes(0).isArrayType)
+        assert(md.parameterTypes(1).isIntegerType)
+        assert(md.parameterTypes(2).isIntegerType)
+        assert(md.returnType.isArrayType)
+    }
 
+    test("Parsing: (IDLjava/lang/Thread;)Ljava/lang/Object;") {
+        val md = MethodDescriptor("(IDLjava/lang/Thread;)Ljava/lang/Object;")
+        assert(md.parameterTypes.size == 3)
+        assert(md.parameterTypes(0).isIntegerType)
+        assert(md.parameterTypes(1).isDoubleType)
+        assert(md.parameterTypes(2).isObjectType)
+        assert(md.returnType.isObjectType)
+    }
 
-	test("Parsing: (IDLjava/lang/Thread;)Ljava/lang/Object;") {
-		val md = MethodDescriptor("(IDLjava/lang/Thread;)Ljava/lang/Object;")
-		assert (md.parameterTypes.size == 3)
-		assert (md.parameterTypes(0).isIntegerType)
-		assert (md.parameterTypes(1).isDoubleType)
-		assert (md.parameterTypes(2).isObjectType)
-		assert (md.returnType.isObjectType)
-	}
-
-
-	test("Parsing: (IDLjava/lang/Thread;[J)[Ljava/lang/Object;") {
-		val md = MethodDescriptor("(IDLjava/lang/Thread;[J)[Ljava/lang/Object;")
-		assert (md.parameterTypes.size == 4)
-		assert (md.parameterTypes(0).isIntegerType)
-		assert (md.parameterTypes(1).isDoubleType)
-		assert (md.parameterTypes(2).isObjectType)
-		assert (md.parameterTypes(3).isArrayType)
-		assert (md.returnType.isArrayType)
-	}
-
+    test("Parsing: (IDLjava/lang/Thread;[J)[Ljava/lang/Object;") {
+        val md = MethodDescriptor("(IDLjava/lang/Thread;[J)[Ljava/lang/Object;")
+        assert(md.parameterTypes.size == 4)
+        assert(md.parameterTypes(0).isIntegerType)
+        assert(md.parameterTypes(1).isDoubleType)
+        assert(md.parameterTypes(2).isObjectType)
+        assert(md.parameterTypes(3).isArrayType)
+        assert(md.returnType.isArrayType)
+    }
 
 }

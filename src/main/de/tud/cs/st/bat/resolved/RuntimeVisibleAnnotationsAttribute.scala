@@ -33,15 +33,19 @@
 package de.tud.cs.st.bat
 package resolved
 
-import de.tud.cs.st.prolog.{ GroundTerm, Atom, Fact }
-
 /**
  * A class, method, or field annotation.
  *
  * @author Michael Eichberg
  */
-case class RuntimeVisibleAnnotationsAttribute(val annotations: Annotations)
+case class RuntimeVisibleAnnotationsAttribute(annotations: Annotations)
         extends AnnotationsAttribute {
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
     final def isRuntimeVisible: Boolean = true
 

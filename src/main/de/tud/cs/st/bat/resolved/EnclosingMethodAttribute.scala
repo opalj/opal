@@ -38,10 +38,16 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case class EnclosingMethodAttribute(val clazz: ObjectType,
-                                     val name: String,
-                                     val descriptor: MethodDescriptor)
+case class EnclosingMethodAttribute(clazz: ObjectType,
+                                    name: String,
+                                    descriptor: MethodDescriptor)
         extends Attribute {
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
     def toXML =
         <enclosing_method

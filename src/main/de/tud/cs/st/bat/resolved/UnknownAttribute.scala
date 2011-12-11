@@ -39,11 +39,17 @@ import de.tud.cs.st.prolog.{ GroundTerm, Atom, Fact }
  *
  * @author Michael Eichberg
  */
-case class UnknownAttribute(val attribute_name: String, val info: Array[Byte])
+case class UnknownAttribute(attributeName: String, info: Array[Byte])
         extends Attribute {
 
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
+
     def toXML =
-        <unknown name={ attribute_name }>
+        <unknown name={ attributeName }>
 			{ scala.xml.Text(info.mkString(" ")) }
 		</unknown>
 }

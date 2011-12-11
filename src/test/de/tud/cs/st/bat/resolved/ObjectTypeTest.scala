@@ -32,43 +32,34 @@
 */
 package de.tud.cs.st.bat.resolved
 
-
 import org.scalatest.FunSuite
-import java.io.File
-import java.util.zip.ZipFile
-import java.util.Enumeration
-
 
 /**
-
  * @author Michael Eichberg
  */
+//@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class ObjectTypeTest extends FunSuite {
 
+    test("Equality") {
+        val ot1 = ObjectType("java/lang/Object")
+        val ot2 = ObjectType("java/lang/Object")
 
-	test("Equality") {
-		val ot1 = ObjectType("java/lang/Object")
-		val ot2 = ObjectType("java/lang/Object")
-		
-		assert (ot1 == ot2)
-	}
-	
-	
-	test("Reference equality") {
-		val ot1 = ObjectType("java/lang/Object")
-		val ot2 = ObjectType("java/lang/Object")
-		val ot3 = ObjectType("java/lang/String")
-		
-		assert (ot1 eq ot2)
-		assert (ot1 ne ot3)
-	}
+        assert(ot1 == ot2)
+    }
 
+    test("Reference equality") {
+        val ot1 = ObjectType("java/lang/Object")
+        val ot2 = ObjectType("java/lang/Object")
+        val ot3 = ObjectType("java/lang/String")
 
-	test("Pattern matching") {
-		val ot1 : FieldType = ObjectType("java/lang/Object")
-		
-		ot1 match { case ObjectType(c) => assert (c === "java/lang/Object") }
-	}
+        assert(ot1 eq ot2)
+        assert(ot1 ne ot3)
+    }
 
+    test("Pattern matching") {
+        val ot1: FieldType = ObjectType("java/lang/Object")
+
+        ot1 match { case ObjectType(c) ⇒ assert(c === "java/lang/Object") }
+    }
 
 }

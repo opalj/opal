@@ -49,6 +49,12 @@ trait AnnotationsAttribute extends Attribute {
      */
     def annotations: Annotations
 
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
+
     def annotationsToXML = for (annotation ← annotations) yield annotation.toXML
 
     // The key of an annotation fact is composed out of the (reference)keyAtom and the annotationTypeTerm.

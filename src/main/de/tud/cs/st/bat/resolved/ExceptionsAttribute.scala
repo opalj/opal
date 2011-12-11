@@ -38,8 +38,14 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case class ExceptionsAttribute(val exceptionTable: Seq[ObjectType])
+case class ExceptionsAttribute(exceptionTable: Seq[ObjectType])
         extends Attribute {
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
     def toXML =
         <exceptions>

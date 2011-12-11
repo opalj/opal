@@ -82,38 +82,32 @@ case class ClassFile(val minorVersion: Int,
 
     def isAnnotationDeclaration: Boolean = (accessFlags & classCategoryMask) == annotationMask
 
-    def innerClassesEntries: Option[InnerClassesEntries] = {
-        attributes find {
-            case InnerClassesAttribute(ice) ⇒ return Some(ice)
-            case _                          ⇒ false
-        }
-        None
-    }
+    def innerClassesEntries: Option[InnerClassesEntries] =
+        attributes collectFirst { case InnerClassesAttribute(ice) ⇒ ice }
 
     /**
      * Each class file optionally defines a class signature.
      */
-    def classSignature: Option[ClassSignature] = {
-        attributes find {
-            case s: ClassSignature ⇒ return Some(s)
-            case _                 ⇒ false
-        }
-        None
-    }
+    def classSignature: Option[ClassSignature] =
+        attributes collectFirst { case s: ClassSignature ⇒ s }
 
     /**
      * The SourceFile attribute is an optional attribute [...]. There can be
      * at most one SourceFile attribute.
      */
-    def sourceFile: Option[String] = {
-        attributes find {
-            case SourceFileAttribute(s) ⇒ return Some(s)
-            case _                      ⇒ false
-        }
-        None
-    }
+    def sourceFile: Option[String] =
+        attributes collectFirst { case SourceFileAttribute(s) ⇒ s }
 
-    def constructors : Seq[Method]  = methods.view.filter(_.name == "<init>")
+    /**
+     * All constructors/initializers defined by this class. (This does not include static initializers.)
+     */
+    def constructors: Seq[Method] = methods.view.filter(_.name == "<init>")
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
     import AccessFlagsContexts.CLASS
 

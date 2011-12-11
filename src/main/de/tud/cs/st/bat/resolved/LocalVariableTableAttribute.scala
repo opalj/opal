@@ -37,8 +37,14 @@ package de.tud.cs.st.bat.resolved
  *
  * @author Michael Eichberg
  */
-case class LocalVariableTableAttribute(val localVariableTable: LocalVariableTable)
+case class LocalVariableTableAttribute(localVariableTable: LocalVariableTable)
         extends Attribute {
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
     def toXML =
         <local_variable_table>
@@ -60,11 +66,17 @@ case class LocalVariableTableAttribute(val localVariableTable: LocalVariableTabl
     }
 }
 
-case class LocalVariableTableEntry(val startPC: Int,
-                                   val length: Int,
-                                   val name: String,
-                                   val fieldType: FieldType,
-                                   val index: Int) {
+case class LocalVariableTableEntry(startPC: Int,
+                                   length: Int,
+                                   name: String,
+                                   fieldType: FieldType,
+                                   index: Int) {
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
     def toXML =
         <entry

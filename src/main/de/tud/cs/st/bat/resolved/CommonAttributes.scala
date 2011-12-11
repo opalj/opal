@@ -43,20 +43,11 @@ trait CommonAttributes {
 
     protected def attributes: Attributes
 
-    def runtimeVisibleAnnotations: Option[Annotations] = {
-        attributes find {
-            case RuntimeVisibleAnnotationsAttribute(as) ⇒ return Some(as)
-            case _                                      ⇒ false
-        }
-        None
-    }
+    def runtimeVisibleAnnotations: Option[Annotations] =
+        attributes collectFirst { case RuntimeVisibleAnnotationsAttribute(as) ⇒ as }
 
     def runtimeInvisibleAnnotations: Option[Annotations] = {
-        attributes find {
-            case RuntimeInvisibleAnnotationsAttribute(as) ⇒ return Some(as)
-            case _                                        ⇒ false
-        }
-        None
+        attributes collectFirst { case RuntimeInvisibleAnnotationsAttribute(as) ⇒ as }
     }
 
     def isSynthetic: Boolean = attributes contains SyntheticAttribute

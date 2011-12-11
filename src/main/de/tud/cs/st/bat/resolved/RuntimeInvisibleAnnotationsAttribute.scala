@@ -33,8 +33,6 @@
 package de.tud.cs.st.bat
 package resolved
 
-import de.tud.cs.st.prolog.{ GroundTerm, Atom, Fact }
-
 /**
  * The runtime invisible class, method, or field annotations.
  *
@@ -42,10 +40,16 @@ import de.tud.cs.st.prolog.{ GroundTerm, Atom, Fact }
  *
  * @author Michael Eichberg
  */
-case class RuntimeInvisibleAnnotationsAttribute(val annotations: Annotations)
+case class RuntimeInvisibleAnnotationsAttribute(annotations: Annotations)
         extends AnnotationsAttribute {
 
     final def isRuntimeVisible: Boolean = false
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
     def toXML =
         <runtime_invisible_annotations>

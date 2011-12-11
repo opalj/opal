@@ -33,16 +33,13 @@
 package de.tud.cs.st.bat.resolved
 
 import org.scalatest.FunSuite
-import java.io.File
-import java.util.zip.ZipFile
-import java.util.Enumeration
 
 /**
  * Test the construction and analysis of types.
  *
  * @author Michael Eichberg
  */
-@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
+//@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class FieldTypeTest extends FunSuite {
 
     test("Byte Field Descriptor") {

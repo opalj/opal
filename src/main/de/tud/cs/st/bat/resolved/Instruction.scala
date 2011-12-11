@@ -40,11 +40,22 @@ package resolved
  */
 trait Instruction {
 
+    /** The opcode of the instruction as defined by the JVM specification. */
     def opcode: Int
 
+    /** The mnemonic of the instruction as defined by the JVM specification. */
     def mnemonic: String
 
+    /**
+     * The exceptions that may be thrown at runtime if the execution of this instruction fails.
+     */
     def exceptions: List[ObjectType]
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
     def toXML(pc: Int): scala.xml.Node
 

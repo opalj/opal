@@ -38,9 +38,15 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case class InnerClassesAttribute(val classes: InnerClassesEntries)
+case class InnerClassesAttribute(classes: InnerClassesEntries)
         extends Attribute {
 
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
+    
     def toXML =
         <inner_classes>
 			{ for (clazz ← classes) yield clazz.toXML }
@@ -60,13 +66,17 @@ case class InnerClassesAttribute(val classes: InnerClassesEntries)
 	*/
 }
 
+case class InnerClassesEntry(innerClassType: ObjectType,
+                             outerClassType: ObjectType,
+                             innerName: String,
+                             innerClassAccessFlags: Int) {
 
-case class InnerClassesEntry(	val innerClassType : ObjectType,
-	val outerClassType : ObjectType,
-	val innerName : String,
-	val innerClassAccessFlags : Int
-) {
-
+        //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
+    
 	def toXML =
 		<class innerName={ innerName }>{	
 			    var nodes : List[scala.xml.Node] = Nil

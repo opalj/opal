@@ -34,11 +34,18 @@ package de.tud.cs.st.bat
 package resolved
 
 /**
+ * An annotation's name-value pair.
  *
  * @author Michael Eichberg
  */
-case class ElementValuePair(val elementName: String,
-                            val elementValue: ElementValue) {
+case class ElementValuePair(elementName: String,
+                            elementValue: ElementValue) {
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
     def toXML = <element name={ elementName }>{ elementValue.valueToXML } </element>
 

@@ -53,8 +53,7 @@ sealed trait ThrowsSignature extends SignatureElement {
 }
 
 /**
- * The common super trait of those classes that represent attribute-level signatures as defined
- * in the JVM specification.
+ * An attribute-level signature as defined in the JVM specification.
  */
 sealed trait Signature extends SignatureElement with Attribute {
 

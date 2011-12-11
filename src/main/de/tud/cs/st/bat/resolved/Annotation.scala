@@ -48,6 +48,12 @@ package de.tud.cs.st.bat.resolved
 case class Annotation(val annotationType: FieldType,
                       val elementValuePairs: ElementValuePairs) {
 
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
+
     def toXML =
         <annotation type={ annotationType.toJava }>
 		{ for (elementValuePair ← elementValuePairs) yield elementValuePair.toXML }
