@@ -76,7 +76,7 @@ object ReturnType {
     }
 }
 
-trait VoidType extends ReturnType with ReturnTypeSignature {
+sealed trait VoidType extends ReturnType with ReturnTypeSignature {
 
     // remark: the default implementation of equals and hashCode suits our needs!
 	def accept[T](sv : SignatureVisitor[T]) : T = sv.visit(this)
@@ -102,8 +102,9 @@ sealed trait FieldType extends ReturnType {
 object FieldType {
 
     def apply(ft: String): FieldType = {
+        import scala.annotation.switch
 
-        ft.charAt(0) match {
+        (ft.charAt(0) : @switch) match {
             case 'B' ⇒ ByteType
             case 'C' ⇒ CharType
             case 'D' ⇒ DoubleType
@@ -241,7 +242,7 @@ trait BooleanType extends BaseType {
 }
 final case object BooleanType extends BooleanType
 
-class ObjectType private (
+final class ObjectType private (
     val className: String)
         extends ReferenceType {
 
@@ -302,7 +303,7 @@ object ObjectType {
     }
 }
 
-class ArrayType private (val componentType: FieldType) extends ReferenceType {
+final class ArrayType private (val componentType: FieldType) extends ReferenceType {
 
     override final def isArrayType = true
 

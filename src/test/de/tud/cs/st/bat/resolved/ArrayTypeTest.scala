@@ -42,7 +42,7 @@ import java.util.Enumeration
  *
  * @author Michael Eichberg
  */
-//@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
+@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class ArrayTypeTest extends FunSuite {
 
     test("Equality") {

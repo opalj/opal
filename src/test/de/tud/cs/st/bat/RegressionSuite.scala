@@ -30,7 +30,8 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat
+package de.tud.cs.st
+package bat
 
 import java.io.File
 import java.util.zip.ZipFile
@@ -56,8 +57,10 @@ import org.scalatest.events._
  *
  * @author Michael Eichberg
  */
-class RegressionSuite extends Suite with de.tud.cs.st.util.perf.PerformanceEvaluation {
+class RegressionSuite extends Suite {
 
+    val performanceEvaluation = new util.perf.PerformanceEvaluation{}
+    import performanceEvaluation._
 
 	/*
 	 * Registry of all class files stored in the zip files found in the test data directory.

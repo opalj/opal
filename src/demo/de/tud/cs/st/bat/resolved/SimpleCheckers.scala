@@ -42,51 +42,78 @@ import reader.Java6Framework
  *
  * @author Michael Eichberg
  */
-object SimpleCheckers extends App {
+object SimpleCheckers {
 
-    private val CountingPerformanceEvaluator = new PerformanceEvaluation with Counting
-    import CountingPerformanceEvaluator._
+    private def printUsage: Unit = {
+        println("Performs some extremely simple checks on class files.")
+        println("Usage: java …SimpleCheckers <ZIP or JAR file containing class files>+")
+        println("(c) 2011 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
+    }
 
-    val classFiles: Seq[ClassFile] = Java6Framework.ClassFiles("test/classfiles/BAT2XML - target 1.7.zip")
+    def main(args: Array[String]) {
 
-    var problemCount = 0
+        if (args.length == 0 || !args.forall(arg ⇒ arg.endsWith(".zip") || arg.endsWith(".jar"))) {
+            printUsage
+            sys.exit(1)
+        }
 
-    for (classFile ← classFiles) {
-        time('Overall) {
-
-            time('EqHcChecker) {
-                var definesEqualsMethod = false
-                var definesHashCodeMethod = false
-                for (method ← classFile.methods) method match {
-                    case Method(_, "equals", MethodDescriptor(Seq(ObjectType("java/lang/Object")), BooleanType), _) ⇒ definesEqualsMethod = true
-                    case Method(_, "hashCode", MethodDescriptor(Seq(), IntegerType), _) ⇒ definesHashCodeMethod = true
-                    case _ ⇒
-                }
-
-                if (definesEqualsMethod != definesHashCodeMethod) {
-                    problemCount += 1
-                    println("the class: " + classFile.thisClass.className + " does not satisfy java.lang.Object's equals-hashCode contract.")
-                }
+        for (arg ← args) {
+            val file = new java.io.File(arg)
+            if (!file.canRead() || file.isDirectory()) {
+                println(arg + " is not a valid ZIP/Jar file.");
+                printUsage
+                sys.exit(1)
             }
+        }
 
-            time('CovEqChecker) {
-                var definesEqualsMethod = false
-                var definesCovariantEqualsMethod = false
-                for (method ← classFile.methods) method match {
-                    case Method(_, "equals", MethodDescriptor(Seq(ObjectType("java/lang/Object")), BooleanType), _) ⇒ definesEqualsMethod = true
-                    case Method(_, "equals", MethodDescriptor(Seq(ObjectType(_)), BooleanType), _) ⇒ definesCovariantEqualsMethod = true
-                    case _ ⇒
+        analyze(args)
+        sys.exit(0)
+    }
+
+    def analyze(zipFiles: Array[String]) {
+        val CountingPerformanceEvaluator = new PerformanceEvaluation with Counting
+        import CountingPerformanceEvaluator._
+        var problemCount = 0
+
+        time('Overall) {
+            for (
+                zipFile ← zipFiles;
+                classFile ← Java6Framework.ClassFiles(zipFile)
+            ) {
+
+                time('EqHcChecker) {
+                    var definesEqualsMethod = false
+                    var definesHashCodeMethod = false
+                    for (method ← classFile.methods) method match {
+                        case Method(_, "equals", MethodDescriptor(Seq(ObjectType("java/lang/Object")), BooleanType), _) ⇒ definesEqualsMethod = true
+                        case Method(_, "hashCode", MethodDescriptor(Seq(), IntegerType), _) ⇒ definesHashCodeMethod = true
+                        case _ ⇒
+                    }
+
+                    if (definesEqualsMethod != definesHashCodeMethod) {
+                        problemCount += 1
+                        println("the class: " + classFile.thisClass.className + " does not satisfy java.lang.Object's equals-hashCode contract.")
+                    }
                 }
-                if (definesCovariantEqualsMethod && !definesEqualsMethod) {
-                    problemCount += 1
-                    println("the class: " + classFile.thisClass.className + " defines a covariant equals method, but does not also define the standard equals method.")
+
+                time('CovEqChecker) {
+                    var definesEqualsMethod = false
+                    var definesCovariantEqualsMethod = false
+                    for (method ← classFile.methods) method match {
+                        case Method(_, "equals", MethodDescriptor(Seq(ObjectType("java/lang/Object")), BooleanType), _) ⇒ definesEqualsMethod = true
+                        case Method(_, "equals", MethodDescriptor(Seq(ObjectType(_)), BooleanType), _) ⇒ definesCovariantEqualsMethod = true
+                        case _ ⇒
+                    }
+                    if (definesCovariantEqualsMethod && !definesEqualsMethod) {
+                        problemCount += 1
+                        println("the class: " + classFile.thisClass.className + " defines a covariant equals method, but does not also define the standard equals method.")
+                    }
                 }
             }
         }
+        println("Equals-HashCode Checker: " + nsToSecs(getTime('EqHcChecker)))
+        println("Covariant Equals Checker: " + nsToSecs(getTime('CovEqChecker)))
+        println("Analyzed all classes in: " + nsToSecs(getTime('Overall)))
+        println("Number of identified violations: " + problemCount)
     }
-    println("Equals-HashCode Checker: " + nsToSecs(getTime('EqHcChecker)))
-    println("Covariant Equals Checker: " + nsToSecs(getTime('CovEqChecker)))
-    println("Number of class files: " + getCount('Overall) + " processed in: " + nsToSecs(getTime('Overall)))
-    println("Number of class files which violate the contract: " + problemCount)
-
 }

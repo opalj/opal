@@ -44,27 +44,40 @@ import reader.Java6Framework
  *
  * @author Michael Eichberg
  */
-object AssociateUniqueIDs extends App with PerformanceEvaluation {
+object AssociateUniqueIDs extends PerformanceEvaluation {
 
     import dependency.SourceElementIDs.{ sourceElementID ⇒ id }
 
-    val classFiles: Seq[ClassFile] = Java6Framework.ClassFiles("test/classfiles/BAT2XML - target 1.7.zip")
+    def main(args: Array[String]) {
+        if (args.length != 1) {
+            println("You have to specify a zip/jar file containing class files.")
+            sys.exit(1)
+        }
+        val file = new java.io.File(args(0))
+        if (!file.canRead() || file.isDirectory()) {
+            println("No valid zip file: " + args(0))
+            println("You have to specify a zip/jar file containing class files.")
+            sys.exit(2);
+        }
 
-    val loadAllClassFiles = () ⇒ {
-        for (classFile ← classFiles) {
-            val classID = id(classFile)
+        val classFiles: Seq[ClassFile] = Java6Framework.ClassFiles(args(0))
 
-            for (method ← classFile.methods) {
-                id(classFile, method)
-            }
+        val loadAllClassFiles = () ⇒ {
+            for (classFile ← classFiles) {
+                val classID = id(classFile)
 
-            for (field ← classFile.fields) {
-                id(classFile, field)
+                for (method ← classFile.methods) {
+                    id(classFile, method)
+                }
+
+                for (field ← classFile.fields) {
+                    id(classFile, field)
+                }
             }
         }
-    }
 
-    time(t ⇒ println("Loading all class files and associating unique ids took: " + nsToSecs(t))) {
-        loadAllClassFiles()
+        time(t ⇒ println("Loading all class files and associating unique ids took: " + nsToSecs(t)+" seconds.")) {
+            loadAllClassFiles()
+        }
     }
 }

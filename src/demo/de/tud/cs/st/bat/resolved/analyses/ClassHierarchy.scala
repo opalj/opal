@@ -47,7 +47,7 @@ import reader.Java6Framework
  */
 class ClassHierarchy {
 
-    import dependencies.SourceElementIDs.{ sourceElementID ⇒ id }
+    import dependency.SourceElementIDs.{ sourceElementID ⇒ id }
 
     import scala.collection._
     import mutable.Map

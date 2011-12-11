@@ -39,7 +39,9 @@ import org.scalatest.Suites
  *
  * @author Michael Eichberg
  * @author Sebastian Hartte
+ * @author Thomas Schlosser
  */
+@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class BATSuite extends Suites(
 
     // BAT...

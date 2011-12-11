@@ -65,7 +65,8 @@ class DependencyExtractor(val builder: DependencyBuilder) extends InstructionDep
         val ClassFile(_, _, _, thisClass, superClass, interfaces, fields, methods, attributes) = clazz
 
         // process super class: add a dependency from this class to its super class
-        addDependency(thisClassID, getID(superClass), EXTENDS)
+        clazz.superClass.foreach(superClass => addDependency(thisClassID, getID(superClass), EXTENDS))
+
 
         // process interfaces: add a dependency from this class to every interface that is directly implemented by this class
         interfaces foreach { i ⇒ addDependency(thisClassID, getID(i), IMPLEMENTS) }
@@ -191,7 +192,7 @@ class DependencyExtractor(val builder: DependencyBuilder) extends InstructionDep
             case ParameterAnnotationsAttribute(_, parameterAnnotations) ⇒ // handles RuntimeVisibleParameterAnnotations and RuntimeInvisibleParameterAnnotations
                 // Process each annotation the method's parameteres are annotated with.
                 // The method remains the source of all dependencies that are extracted
-                // in the annotation processing method.    
+                // in the annotation processing method.
                 parameterAnnotations foreach { _ foreach { process(_, methodID, PARAMETER_ANNOTATED_WITH) } }
             case ExceptionsAttribute(exceptionTable) ⇒
                 // add dependencies from the method to all throwables that are declared explicitly
@@ -357,7 +358,7 @@ class DependencyExtractor(val builder: DependencyBuilder) extends InstructionDep
     private def processElementValue(elementValue: ElementValue, srcID: Int) {
         elementValue match {
             case ClassValue(returnType) ⇒
-                // add a dependency to the default class type 
+                // add a dependency to the default class type
                 addDependency(srcID, getID(returnType), USES_DEFAULT_CLASS_VALUE_TYPE)
             case EnumValue(enumType, constName) ⇒
                 // add dependencies to the enum type and to the used enum value

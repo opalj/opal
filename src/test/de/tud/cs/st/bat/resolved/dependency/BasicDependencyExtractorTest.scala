@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -33,19 +33,18 @@
 package de.tud.cs.st.bat.resolved
 package dependency
 
-import org.scalatest.Suite
 import java.io.File
 import java.util.zip.ZipFile
 import java.util.zip.ZipEntry
+import org.scalatest.Suite
 import org.scalatest.Reporter
 import org.scalatest.Stopper
 import org.scalatest.Tracker
 import org.scalatest.events.TestStarting
-import de.tud.cs.st.bat.resolved.reader.Java6Framework
 import org.scalatest.events.TestSucceeded
 import org.scalatest.events.TestFailed
-import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
+
+import reader.Java6Framework
 import DependencyType._
 
 /**
@@ -55,7 +54,7 @@ import DependencyType._
  *
  * @author Thomas Schlosser
  */
-@RunWith(classOf[JUnitRunner])
+@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class BasicDependencyExtractorTest extends Suite {
 
     /*
@@ -65,9 +64,9 @@ class BasicDependencyExtractorTest extends Suite {
 
         var tcs = scala.collection.immutable.Map[String, (ZipFile, ZipEntry)]()
 
-        // The location of the "test/classfiles" directory depends on the current directory used for 
+        // The location of the "test/classfiles" directory depends on the current directory used for
         // running this test suite... i.e. whether the current directory is the directory where
-        // this class / this source file is stored or the BAT's root directory. 
+        // this class / this source file is stored or the BAT's root directory.
         var files = new File("../../../../../../../test/classfiles").listFiles()
         if (files == null) files = new File("test/classfiles").listFiles()
 

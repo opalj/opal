@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -40,9 +40,9 @@ import java.util.Enumeration
 
 
 /**
-
  * @author Michael Eichberg
  */
+@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class MethodDescriptorTest extends FunSuite {
 
 	test("Parsing: ()V") {
@@ -55,8 +55,8 @@ class MethodDescriptorTest extends FunSuite {
 		val md = MethodDescriptor("(III)I")
 		assert (md.parameterTypes.size == 3)
 		assert (md.parameterTypes(0).isIntegerType)
-		assert (md.parameterTypes(1).isIntegerType)		
-		assert (md.parameterTypes(2).isIntegerType)		
+		assert (md.parameterTypes(1).isIntegerType)
+		assert (md.parameterTypes(2).isIntegerType)
 		assert (md.returnType.isIntegerType)
 	}
 
@@ -71,8 +71,8 @@ class MethodDescriptorTest extends FunSuite {
 		val md = MethodDescriptor("([[[III)[I")
 		assert (md.parameterTypes.size == 3)
 		assert (md.parameterTypes(0).isArrayType)
-		assert (md.parameterTypes(1).isIntegerType)		
-		assert (md.parameterTypes(2).isIntegerType)	
+		assert (md.parameterTypes(1).isIntegerType)
+		assert (md.parameterTypes(2).isIntegerType)
 		assert (md.returnType.isArrayType)
 	}
 
@@ -81,8 +81,8 @@ class MethodDescriptorTest extends FunSuite {
 		val md = MethodDescriptor("(IDLjava/lang/Thread;)Ljava/lang/Object;")
 		assert (md.parameterTypes.size == 3)
 		assert (md.parameterTypes(0).isIntegerType)
-		assert (md.parameterTypes(1).isDoubleType)		
-		assert (md.parameterTypes(2).isObjectType)	
+		assert (md.parameterTypes(1).isDoubleType)
+		assert (md.parameterTypes(2).isObjectType)
 		assert (md.returnType.isObjectType)
 	}
 
@@ -91,11 +91,11 @@ class MethodDescriptorTest extends FunSuite {
 		val md = MethodDescriptor("(IDLjava/lang/Thread;[J)[Ljava/lang/Object;")
 		assert (md.parameterTypes.size == 4)
 		assert (md.parameterTypes(0).isIntegerType)
-		assert (md.parameterTypes(1).isDoubleType)		
+		assert (md.parameterTypes(1).isDoubleType)
 		assert (md.parameterTypes(2).isObjectType)
-		assert (md.parameterTypes(3).isArrayType)			
+		assert (md.parameterTypes(3).isArrayType)
 		assert (md.returnType.isArrayType)
 	}
 
-	
+
 }

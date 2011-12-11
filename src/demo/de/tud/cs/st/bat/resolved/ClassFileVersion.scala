@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -32,34 +32,39 @@
 */
 package de.tud.cs.st.bat.resolved
 
-import java.util.zip.ZipFile
-import java.io.DataInputStream
 import reader.Java6Framework
 
 /**
- * Provides common functionality that are potentially needed in test cases that make use of ClassFiles.
+ * Just a very small code snippet that shows how to load a class file
+ * and how to access the most basic information.
  *
- * @author Thomas Schlosser
- *
+ * @author Michael Eichberg
  */
-trait ClassFileTestUtility {
+object ClassFileInformation {
 
-    /**
-     * Reads the <code>ClassFile<code>s eagerly.
-     *
-     * @param zip the path to a ZIP file that contains the class files that should be read
-     * @return the class files contained by the ZIP file given by its path
-     */
-    def ClassFiles(zip: String): Seq[ClassFile] = {
-        var classFileEntries: List[ClassFile] = Nil
-        val zipFile = new ZipFile(zip)
-        val zipEntries = (zipFile).entries
-        while (zipEntries.hasMoreElements) {
-            val zipEntry = zipEntries.nextElement
-            if (!zipEntry.isDirectory && zipEntry.getName.endsWith(".class")) {
-                classFileEntries = Java6Framework.ClassFile(new DataInputStream(zipFile.getInputStream(zipEntry))) :: classFileEntries
-            }
+    def main(args: Array[String]) {
+        if (args.length < 2) {
+            println("Usage: java …ClassFileInformation <ZIP or JAR file containing class files> <Name of classfile (incl. path information) contained in the ZIP/JAR file>+")
+            println("(c) 2011 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
+            sys.exit(1)
         }
-        classFileEntries
+
+        for (classFileName ← args.drop(1)) {
+            val classFile = Java6Framework.ClassFile(args(0), classFileName)
+
+            print(classFile.thisClass.className)
+            classFile.superClass.foreach(t ⇒ print(" extends " + t.className))
+
+            if (classFile.interfaces.length > 0) {
+                print(" implements")
+                classFile.interfaces.foreach(interface ⇒ print(" " + interface.className))
+                println
+            }
+
+            println("Sourcefile: " + (classFile sourceFile match { case Some(s) ⇒ s; case _ ⇒ "<NONE>" }))
+            println("Version   : " + classFile.majorVersion + "." + classFile.minorVersion)
+            println
+        }
+        sys.exit(0)
     }
 }

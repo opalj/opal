@@ -40,7 +40,7 @@ package dependency
  * @author Thomas Schlosser
  */
 object DependencyType extends Enumeration {
-    type DependencyType = Value
+    
 
     // class/method/field definition related dependency types
     val EXTENDS = Value("extends")
