@@ -87,56 +87,56 @@ trait AnnotationsBinding
     def ElementValuePair(element_name_index: Constant_Pool_Index,
                          element_value: ElementValue)(
                              implicit cp: Constant_Pool): ElementValuePair = {
-        new ElementValuePair(cp(element_name_index).asString, element_value)
+        new ElementValuePair(element_name_index.asString, element_value)
     }
 
     def ByteValue(const_value_index: Constant_Pool_Index)(implicit cp: Constant_Pool): ElementValue = {
-        val cv: ConstantValue[_] = cp(const_value_index).asConstantValue
+        val cv: ConstantValue[_] = const_value_index.asConstantValue
         new ByteValue(cv.toByte)
     }
 
     def CharValue(const_value_index: Constant_Pool_Index)(implicit cp: Constant_Pool): ElementValue = {
-        val cv: ConstantValue[_] = cp(const_value_index).asConstantValue
+        val cv: ConstantValue[_] = const_value_index.asConstantValue
         new CharValue(cv.toChar)
     }
 
     def DoubleValue(const_value_index: Constant_Pool_Index)(implicit cp: Constant_Pool): ElementValue = {
-        val cv: ConstantValue[_] = cp(const_value_index).asConstantValue
+        val cv: ConstantValue[_] = const_value_index.asConstantValue
         new DoubleValue(cv.toDouble)
     }
 
     def FloatValue(const_value_index: Constant_Pool_Index)(implicit cp: Constant_Pool): ElementValue = {
-        val cv: ConstantValue[_] = cp(const_value_index).asConstantValue
+        val cv: ConstantValue[_] = const_value_index.asConstantValue
         new FloatValue(cv.toFloat)
     }
 
     def IntValue(const_value_index: Constant_Pool_Index)(implicit cp: Constant_Pool): ElementValue = {
-        val cv: ConstantValue[_] = cp(const_value_index).asConstantValue
+        val cv: ConstantValue[_] = const_value_index.asConstantValue
         new IntValue(cv.toInt)
     }
 
     def LongValue(const_value_index: Constant_Pool_Index)(implicit cp: Constant_Pool): ElementValue = {
-        val cv: ConstantValue[_] = cp(const_value_index).asConstantValue
+        val cv: ConstantValue[_] = const_value_index.asConstantValue
         new LongValue(cv.toLong)
     }
 
     def ShortValue(const_value_index: Constant_Pool_Index)(implicit cp: Constant_Pool): ElementValue = {
-        val cv: ConstantValue[_] = cp(const_value_index).asConstantValue
+        val cv: ConstantValue[_] = const_value_index.asConstantValue
         new ShortValue(cv.toShort)
     }
 
     def BooleanValue(const_value_index: Constant_Pool_Index)(implicit cp: Constant_Pool): ElementValue = {
-        val cv: ConstantValue[_] = cp(const_value_index).asConstantValue
+        val cv: ConstantValue[_] = const_value_index.asConstantValue
         new BooleanValue(cv.toBoolean)
     }
 
     def StringValue(const_value_index: Constant_Pool_Index)(implicit cp: Constant_Pool): ElementValue = {
-        val cv: ConstantValue[_] = cp(const_value_index).asConstantValue
+        val cv: ConstantValue[_] = const_value_index.asConstantValue
         new StringValue(cv.toUTF8)
     }
 
     def ClassValue(const_value_index: Constant_Pool_Index)(implicit cp: Constant_Pool): ElementValue = {
-        val rt: String = cp(const_value_index).asString
+        val rt: String = const_value_index.asString
         new ClassValue(ReturnType(rt))
     }
 
@@ -144,7 +144,7 @@ trait AnnotationsBinding
                   const_name_index: Constant_Pool_Index)(
                       implicit cp: Constant_Pool): ElementValue = {
         // TODO Looks suspicious... either comment or fix.
-        new EnumValue(cp(type_name_index).asFieldType.asInstanceOf[ObjectType], cp(const_name_index).asString)
+        new EnumValue(type_name_index.asFieldType.asInstanceOf[ObjectType], const_name_index.asString)
     }
 
     def AnnotationValue(annotation: Annotation)(implicit cp: Constant_Pool): ElementValue =
@@ -156,7 +156,7 @@ trait AnnotationsBinding
     def Annotation(type_index: Constant_Pool_Index,
                    element_value_pairs: ElementValuePairs)(
                        implicit cp: Constant_Pool) = {
-        new Annotation(cp(type_index).asFieldType, element_value_pairs)
+        new Annotation(type_index.asFieldType, element_value_pairs)
     }
 
     def AnnotationDefault_attribute(attribute_name_index: Constant_Pool_Index,

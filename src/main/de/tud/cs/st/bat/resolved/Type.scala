@@ -142,7 +142,7 @@ sealed trait ReferenceType extends FieldType {
     override final def isReferenceType = true
 }
 
-trait ByteType extends BaseType {
+sealed trait ByteType extends BaseType {
 
     override def isByteType = true
 
@@ -162,7 +162,7 @@ trait ByteType extends BaseType {
 }
 final case object ByteType extends ByteType
 
-trait CharType extends BaseType {
+sealed trait CharType extends BaseType {
 
     override def isCharType = true
 
@@ -182,7 +182,7 @@ trait CharType extends BaseType {
 }
 final case object CharType extends CharType
 
-trait DoubleType extends BaseType {
+sealed trait DoubleType extends BaseType {
 
     override def isDoubleType = true
 
@@ -202,7 +202,7 @@ trait DoubleType extends BaseType {
 }
 final case object DoubleType extends DoubleType
 
-trait FloatType extends BaseType {
+sealed trait FloatType extends BaseType {
 
     override def isFloatType = true
 
@@ -222,7 +222,7 @@ trait FloatType extends BaseType {
 }
 final case object FloatType extends FloatType
 
-trait ShortType extends BaseType {
+sealed trait ShortType extends BaseType {
 
     override def isShortType = true
 
@@ -242,7 +242,7 @@ trait ShortType extends BaseType {
 }
 final case object ShortType extends ShortType
 
-trait IntegerType extends BaseType {
+sealed trait IntegerType extends BaseType {
 
     override def isIntegerType = true
 
@@ -262,7 +262,7 @@ trait IntegerType extends BaseType {
 }
 final case object IntegerType extends IntegerType
 
-trait LongType extends BaseType {
+sealed trait LongType extends BaseType {
 
     override def isLongType = true
 
@@ -282,7 +282,7 @@ trait LongType extends BaseType {
 }
 final case object LongType extends LongType
 
-trait BooleanType extends BaseType {
+sealed trait BooleanType extends BaseType {
 
     override def isBooleanType = true
 

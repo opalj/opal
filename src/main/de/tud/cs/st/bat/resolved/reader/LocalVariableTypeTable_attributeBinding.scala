@@ -59,8 +59,8 @@ trait LocalVariableTypeTable_attributeBinding
         new LocalVariableTypeTableEntry(
             start_pc,
             length,
-            cp(name_index).asString,
-            cp(signature_index).asFieldTypeSignature,
+            name_index.asString,
+            signature_index.asFieldTypeSignature,
             index)
     }
 

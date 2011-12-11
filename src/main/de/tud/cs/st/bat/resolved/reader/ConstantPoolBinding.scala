@@ -36,7 +36,6 @@ package reader
 
 import de.tud.cs.st.bat.reader.Constant_PoolReader
 
-
 /**
  * A representation of the constant pool.
  *
@@ -49,6 +48,8 @@ import de.tud.cs.st.bat.reader.Constant_PoolReader
  * @author Michael Eichberg
  */
 trait ConstantPoolBinding extends Constant_PoolReader {
+
+    implicit def ConstantPoolIndexToConstantPoolEntry(index: Constant_Pool_Index)(implicit cp: Constant_Pool): Constant_Pool_Entry = cp(index)
 
     trait Constant_Pool_Entry {
         def asString: String = sys.error("conversion to string is not supported")
@@ -73,7 +74,7 @@ trait ConstantPoolBinding extends Constant_PoolReader {
         override def asConstantValue(implicit cp: Constant_Pool) = {
             ConstantClass(
                 {
-                    val s = cp(name_index).asString
+                    val s = name_index.asString
                     if (s.charAt(0) == '[')
                         FieldType(s).asInstanceOf[ReferenceType]
                     else
@@ -82,7 +83,7 @@ trait ConstantPoolBinding extends Constant_PoolReader {
             )
         }
         override def asObjectType(implicit cp: Constant_Pool) = {
-            ObjectType(cp(name_index).asString)
+            ObjectType(name_index.asString)
         }
     }
 
@@ -136,7 +137,7 @@ trait ConstantPoolBinding extends Constant_PoolReader {
     }
 
     case class CONSTANT_String_info(val string_index: Constant_Pool_Index) extends Constant_Pool_Entry {
-        override def asConstantValue(implicit cp: Constant_Pool) = ConstantString(cp(string_index).asString)
+        override def asConstantValue(implicit cp: Constant_Pool) = ConstantString(string_index.asString)
     }
 
     case class CONSTANT_Fieldref_info(val class_index: Constant_Pool_Index,
@@ -146,8 +147,8 @@ trait ConstantPoolBinding extends Constant_PoolReader {
         private[this] var fieldref: (ObjectType, String, FieldType) = null // to cache the result
         override def asFieldref(implicit cp: Constant_Pool): (ObjectType, String, FieldType) = {
             if (fieldref eq null) {
-                val nameAndType = cp(name_and_type_index).asNameAndType
-                fieldref = (cp(class_index).asObjectType,
+                val nameAndType = name_and_type_index.asNameAndType
+                fieldref = (class_index.asObjectType,
                     nameAndType.name,
                     nameAndType.fieldType
                 )
@@ -164,8 +165,8 @@ trait ConstantPoolBinding extends Constant_PoolReader {
         private[this] var methodref: (ObjectType, String, MethodDescriptor) = null // to cache the result
         override def asMethodref(implicit cp: Constant_Pool): (ObjectType, String, MethodDescriptor) = {
             if (methodref eq null) {
-                val nameAndType = cp(name_and_type_index).asNameAndType
-                methodref = (cp(class_index).asObjectType,
+                val nameAndType = name_and_type_index.asNameAndType
+                methodref = (class_index.asObjectType,
                     nameAndType.name,
                     nameAndType.methodDescriptor
                 )
@@ -186,9 +187,9 @@ trait ConstantPoolBinding extends Constant_PoolReader {
 
         override def asNameAndType: CONSTANT_NameAndType_info = this
 
-        def name(implicit cp: Constant_Pool): String = cp(name_index).asString // this operation is very cheap and hence, it doesn't make sense to cache the result
-        def fieldType(implicit cp: Constant_Pool): FieldType = cp(descriptor_index).asFieldType
-        def methodDescriptor(implicit cp: Constant_Pool): MethodDescriptor = cp(descriptor_index).asMethodDescriptor
+        def name(implicit cp: Constant_Pool): String = name_index.asString // this operation is very cheap and hence, it doesn't make sense to cache the result
+        def fieldType(implicit cp: Constant_Pool): FieldType = descriptor_index.asFieldType
+        def methodDescriptor(implicit cp: Constant_Pool): MethodDescriptor = descriptor_index.asMethodDescriptor
     }
 
     case class CONSTANT_MethodHandle_info(val reference_kind: Int,

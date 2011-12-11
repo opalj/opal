@@ -51,11 +51,11 @@ trait EnclosingMethod_attributeBinding
                                   method_index: Constant_Pool_Index)(
                                       implicit cp: Constant_Pool): EnclosingMethod_attribute = {
         if (method_index == 0) {
-            return new EnclosingMethod_attribute(cp(class_index).asObjectType, null, null)
+            return new EnclosingMethod_attribute(class_index.asObjectType, null, null)
         }
 
-        val nameAndType = cp(method_index).asNameAndType
-        new EnclosingMethod_attribute(cp(class_index).asObjectType, nameAndType.name, nameAndType.methodDescriptor)
+        val nameAndType = method_index.asNameAndType
+        new EnclosingMethod_attribute(class_index.asObjectType, nameAndType.name, nameAndType.methodDescriptor)
 
     }
 }

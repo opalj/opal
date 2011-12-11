@@ -58,9 +58,9 @@ trait InnerClasses_attributeBinding
                           inner_name_index: Constant_Pool_Index,
                           inner_class_access_flags: Int)(implicit cp: Constant_Pool) = {
         new InnerClassesEntry(
-            if (inner_class_info_index == 0) null else cp(inner_class_info_index).asObjectType,
-            if (outer_class_info_index == 0) null else cp(outer_class_info_index).asObjectType,
-            if (inner_name_index == 0) null else cp(inner_name_index).asString,
+            if (inner_class_info_index == 0) null else inner_class_info_index.asObjectType,
+            if (outer_class_info_index == 0) null else outer_class_info_index.asObjectType,
+            if (inner_name_index == 0) null else inner_name_index.asString,
             inner_class_access_flags
         )
     }

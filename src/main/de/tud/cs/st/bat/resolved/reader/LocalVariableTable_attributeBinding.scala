@@ -58,8 +58,8 @@ trait LocalVariableTable_attributeBinding
         new LocalVariableTableEntry(
                 start_pc, 
                 length, 
-                cp(name_index).asString, 
-                cp(descriptor_index).asFieldType, 
+                name_index.asString, 
+                descriptor_index.asFieldType, 
                 index)
     }
 

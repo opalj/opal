@@ -51,7 +51,7 @@ trait Exceptions_attributeBinding
                              attribute_length: Int,
                              exception_index_table: ExceptionIndexTable)(
                                  implicit cp: Constant_Pool): Exceptions_attribute = {
-        new Exceptions_attribute(exception_index_table.map(e_idx ⇒ cp(e_idx).asObjectType))
+        new Exceptions_attribute(exception_index_table.map(e_idx ⇒ e_idx.asObjectType))
     }
 
 }
