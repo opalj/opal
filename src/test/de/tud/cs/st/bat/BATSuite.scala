@@ -30,7 +30,7 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st
+package de.tud.cs.st.bat
 
 import org.scalatest.Suites
 
@@ -41,22 +41,19 @@ import org.scalatest.Suites
  * @author Sebastian Hartte
  * @author Thomas Schlosser
  */
-@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
+//@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class BATSuite extends Suites(
 
-    // BAT...
-    new bat.resolved.SignaturesTest,
-    new bat.resolved.ObjectTypeTest,
-    new bat.resolved.ArrayTypeTest,
-    new bat.resolved.FieldTypeTest,
-    new bat.resolved.MethodDescriptorTest,
-    new bat.resolved.AttributesTest,
+    new resolved.ObjectTypeTest,
+    new resolved.ArrayTypeTest,
+    new resolved.FieldTypeTest,
+    new resolved.SignaturesTest,
+    new resolved.MethodDescriptorTest,
+    new resolved.AttributesTest,
 
-    new bat.resolved.dependency.SourceElementIDsTest,
+    new resolved.dependency.SourceElementIDsTest,
+    // TODO [Compiler Crash] new resolved.dependency.DependencyExtractorTest
 
-    // REGRESSION tests
-    new bat.RegressionSuite,
-
-    // Dependency Extractor tests
-    new bat.resolved.dependency.BasicDependencyExtractorTest,
-    new bat.resolved.dependency.DependencyExtractorTest)
+    new RegressionSuite
+// TODO [Compiler Crash] new bat.resolved.dependency.BasicDependencyExtractorTest,
+)
