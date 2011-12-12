@@ -81,13 +81,13 @@ class ClassHierarchy {
      * that directly inherit from the given type.
      */
     def subclasses(objectType: ObjectType): immutable.Set[ObjectType] =
-        subclasses.apply(objectType).toSet
+        subclasses.getOrElse(objectType, Set.empty).toSet
 
     /**
      * The classes and interfaces from which the given type directly inherits.
      */
     def superclasses(objectType: ObjectType): immutable.Set[ObjectType] =
-        superclasses.apply(objectType).toSet
+        superclasses.getOrElse(objectType, Set.empty).toSet
 
     /**
      * The classes and interfaces from which the given types directly inherit.
