@@ -39,12 +39,16 @@ import de.tud.cs.st.bat.ACC_STATIC
 import de.tud.cs.st.bat.AccessFlagsIterator
 
 /**
- * DependencyExtractor can process a ClassFile and extract all dependencies between
- * classes, interfaces, fields and methods. Unique IDs are retrieved from and
+ * Extracts the dependencies between
+ * classes, interfaces, fields and methods.
+ *
+ * Unique IDs are retrieved from and
  * dependencies are passed to the 'getID' and 'addDependency' methods provided by
  * the given DependencyBuilder.
- * <br/>
- * NOTE: Only attributes defined by Java 5 specification are considered in this implementation.
+ *
+ *
+ * ==Implementation Note==
+ * Only attributes defined by Java 5 specification are considered in this implementation.
  *
  *
  * @author Thomas Schlosser
@@ -55,40 +59,32 @@ class DependencyExtractor(val builder: DependencyBuilder) extends InstructionDep
 
     /**
      * Processes the given class file and all fields and methods that are defined in it.
-     * I.e. it extracts all static source code dependencies that start from the given
+     * I.e. it extracts all source code dependencies that start from the given
      * class file, its fields or methods, respectively.
      *
-     * @param clazz The class file whose dependencies should be extracted.
+     * @param classFile The class file whose dependencies should be extracted.
      */
-    def process(clazz: ClassFile) {
-        val thisClassID = getID(clazz)
-        val ClassFile(_, _, _, thisClass, superClass, interfaces, fields, methods, attributes) = clazz
+    def process(classFile: ClassFile) {
+        val thisClassID = getID(classFile)
+        val ClassFile(_, _, _, thisClass, superClass, interfaces, fields, methods, attributes) = classFile
 
-        // process super class: add a dependency from this class to its super class
-        clazz.superClass.foreach(superClass => addDependency(thisClassID, getID(superClass), EXTENDS))
+        classFile.superClass foreach { superClass ⇒ addDependency(thisClassID, getID(superClass), EXTENDS) }
 
-
-        // process interfaces: add a dependency from this class to every interface that is directly implemented by this class
         interfaces foreach { i ⇒ addDependency(thisClassID, getID(i), IMPLEMENTS) }
 
-        // process attributes
-        // (As defined by Java 5 specification, classes can contain the following attributes:
+        // As defined by the Java 5 specification, a class declaration can contain the following attributes:
         // InnerClasses, EnclosingMethod, Synthetic, SourceFile, Signature, Deprecated,
-        // SourceDebugExtension, RuntimeVisibleAnnotations, and RuntimeInvisibleAnnotations)
+        // SourceDebugExtension, RuntimeVisibleAnnotations, and RuntimeInvisibleAnnotations
         attributes foreach {
             case AnnotationsAttribute(_, annotations) ⇒ // handles RuntimeVisibleAnnotations and RuntimeInvisibleAnnotations
-                // Process each annotation this class is annotated with.
-                // This class remains the source of all dependencies that are extracted
-                // in the annotation processing method.
                 annotations foreach { process(_, thisClassID) }
-            case ema: EnclosingMethodAttribute ⇒ {
-                val EnclosingMethodAttribute(enclosingClazz, enclosingMethodName, enclosingMethodDescriptor) = ema
+            case ema @ EnclosingMethodAttribute(enclosingClazz, enclosingMethodName, enclosingMethodDescriptor) ⇒ {
                 // add a dependency from this class to its enclosing method/class
                 addDependency(
                     thisClassID,
                     {
-                        // check whether the enclosing method attribute refers to
-                        // an enclosing method or an enclosing class
+                        // Check whether the enclosing method attribute refers to
+                        // an enclosing method or an enclosing class.
                         if (isEnclosedByMethod(ema))
                             getID(enclosingClazz, enclosingMethodName, enclosingMethodDescriptor)
                         else
@@ -101,16 +97,12 @@ class DependencyExtractor(val builder: DependencyBuilder) extends InstructionDep
                     // Check whether the outer class of the inner class attribute
                     // is equals to the currently processed class. If this is the case,
                     // a dependency from inner class to this class will be added.
-                    InnerClassesEntry(innerClassType, outerClassType, _, _) ← innerClasses if outerClassType != null if outerClassType == thisClass
+                    InnerClassesEntry(innerClass, outerClass, _, _) ← innerClasses if outerClass != null if outerClass == thisClass
                 ) {
-                    addDependency(getID(innerClassType), thisClassID, IS_INNER_CLASS_OF)
+                    addDependency(getID(innerClass), thisClassID, IS_INNER_CLASS_OF)
                 }
-            case signature: Signature ⇒
-                // Process the signature of this class. This class remains the source
-                // of all dependencies that are extracted in the signature processing method.
-                processSignature(signature, thisClassID)
-            case _ ⇒ // All remaining class attributes (Synthetic, SourceFile, Deprecated, and
-            // SourceDebugExtension) have not be considered for dependency extraction.
+            case signature: Signature ⇒ processSignature(signature, thisClassID)
+            case _                    ⇒ // Synthetic, SourceFile, Deprecated, and SourceDebugExtension do not create dependencies
         }
 
         // process fields
@@ -125,37 +117,28 @@ class DependencyExtractor(val builder: DependencyBuilder) extends InstructionDep
      * from this field.
      *
      * @param field The field whose dependencies should be extracted.
-     * @param thisClass The field's declaring class.
+     * @param thisClass The type of this field's declaring class.
      * @param thisClassID The ID of the field's declaring class.
      */
     private def process(field: Field, thisClass: ObjectType, thisClassID: Int) {
         val fieldID = getID(thisClass, field)
         val Field(accessFlags, _, fieldType, attributes) = field
 
-        // add a dependency from the field to its declaring class; distinguish between class and instance members
-        addDependency(fieldID, thisClassID, if (ACC_STATIC ∈ accessFlags) IS_CLASS_MEMBER_OF else IS_INSTANCE_MEMBER_OF)
+        addDependency(fieldID, thisClassID, if (field.isStatic) IS_CLASS_MEMBER_OF else IS_INSTANCE_MEMBER_OF)
         // add a dependency from the field to its type
         addDependency(fieldID, getID(fieldType), IS_OF_TYPE)
 
-        // process attributes
-        // (As defined by Java 5 specification, fields can contain the following attributes:
+        // The Java 5 specification defines the following attributes:
         // ConstantValue, Synthetic, Signature, Deprecated, RuntimeVisibleAnnotations, and
-        // RuntimeInvisibleAnnotations)
+        // RuntimeInvisibleAnnotations
         attributes foreach {
             case AnnotationsAttribute(_, annotations) ⇒ // handles RuntimeVisibleAnnotations and RuntimeInvisibleAnnotations
-                // Process each annotation the field is annotated with.
-                // The field remains the source of all dependencies that are extracted
-                // in the annotation processing method.
                 annotations foreach { process(_, fieldID) }
             case cv: ConstantValue[_] ⇒
-                // add a dependency from the field to the constant value's type
                 addDependency(fieldID, getID(cv.valueType), USES_CONSTANT_VALUE_OF_TYPE)
             case signature: Signature ⇒
-                // Process the signature of the field. The field remains the source
-                // of all dependencies that are extracted in the signature processing method.
                 processSignature(signature, fieldID)
-            case _ ⇒ // All remaining field attributes (Synthetic and Deprecated)
-            // have not be considered for dependency extraction.
+            case _ ⇒ // Synthetic and Deprecated do not introduce new dependencies
         }
     }
 
@@ -171,35 +154,23 @@ class DependencyExtractor(val builder: DependencyBuilder) extends InstructionDep
         val methodID = getID(thisClass, method)
         val Method(accessFlags, _, MethodDescriptor(parameterTypes, returnType), attributes) = method
 
-        // add a dependency from the method to its declaring class; distinguish between class and instance members
-        addDependency(methodID, thisClassID, if (ACC_STATIC ∈ accessFlags) IS_CLASS_MEMBER_OF else IS_INSTANCE_MEMBER_OF)
-        // add a dependency from the method to its return type
+        addDependency(methodID, thisClassID, if (method.isStatic) IS_CLASS_MEMBER_OF else IS_INSTANCE_MEMBER_OF)
+
         addDependency(methodID, getID(returnType), RETURNS)
-        // add dependencies from the method to all its parameter types
         parameterTypes foreach { pt ⇒ addDependency(methodID, getID(pt), HAS_PARAMETER_OF_TYPE) }
 
-        // process attributes
-        // (As defined by Java 5 specification, methods can contain the following attributes:
+        // The Java 5 specification defines the following attributes:
         // Code, Exceptions, Synthetic, Signature, Deprecated, RuntimeVisibleAnnotations,
         // RuntimeInvisibleAnnotations, RuntimeVisibleParameterAnnotations,
-        // RuntimeInvisibleParameterAnnotations, and AnnotationDefault)
+        // RuntimeInvisibleParameterAnnotations, and AnnotationDefault
         attributes foreach {
             case AnnotationsAttribute(_, annotations) ⇒ // handles RuntimeVisibleAnnotations and RuntimeInvisibleAnnotations
-                // Process each annotation the method is annotated with.
-                // The method remains the source of all dependencies that are extracted
-                // in the annotation processing method.
                 annotations foreach { process(_, methodID) }
             case ParameterAnnotationsAttribute(_, parameterAnnotations) ⇒ // handles RuntimeVisibleParameterAnnotations and RuntimeInvisibleParameterAnnotations
-                // Process each annotation the method's parameteres are annotated with.
-                // The method remains the source of all dependencies that are extracted
-                // in the annotation processing method.
                 parameterAnnotations foreach { _ foreach { process(_, methodID, PARAMETER_ANNOTATED_WITH) } }
             case ExceptionsAttribute(exceptionTable) ⇒
-                // add dependencies from the method to all throwables that are declared explicitly
                 exceptionTable foreach { e ⇒ addDependency(methodID, getID(e), THROWS) }
-            case elementValue: ElementValue ⇒ // ElementValue is the BAT representation of the AnnotationDefault attribute
-                // Process element value. The method remains the source of all dependencies
-                // that are extracted in the annotation processing method.
+            case elementValue: ElementValue ⇒ // ElementValues encode annotation default attributes
                 processElementValue(elementValue, methodID)
             case CodeAttribute(_, _, code, exceptionTable, attributes) ⇒
                 // Process code instructions by calling the process method which is defined in
@@ -211,32 +182,27 @@ class DependencyExtractor(val builder: DependencyBuilder) extends InstructionDep
                 ) {
                     addDependency(methodID, getID(catchType), CATCHES)
                 }
-                // process code attribute's attributes
-                // (As defined by Java 5 specification, the code attribute can contain the following attributes:
+                // The Java 5 specification defines the following attributes:
                 // LineNumberTable, LocalVariableTable, and LocalVariableTypeTable)
                 attributes foreach {
                     case LocalVariableTableAttribute(localVariableTable) ⇒
-                        // add dependencies from the method to all types that are used in local variables
-                        localVariableTable foreach { entry ⇒ addDependency(methodID, getID(entry.fieldType), HAS_LOCAL_VARIABLE_OF_TYPE) }
+                        localVariableTable foreach {
+                            entry ⇒ addDependency(methodID, getID(entry.fieldType), HAS_LOCAL_VARIABLE_OF_TYPE)
+                        }
                     case LocalVariableTypeTableAttribute(localVariableTypeTable) ⇒
-                        // Process all signatures of the local variable types that are used in the method.
-                        // The method remains the source of all dependencies that are extracted
-                        // in the signature processing method.
-                        localVariableTypeTable foreach { entry ⇒ processSignature(entry.signature, methodID) }
-                    case _ ⇒ // The remaining code attribute's attribute (LineNumberTable)
-                    // has not be considered for dependency extraction.
+                        localVariableTypeTable foreach {
+                            entry ⇒ processSignature(entry.signature, methodID)
+                        }
+                    case _ ⇒ // The LineNumberTable does not define relevant dependencies
                 }
             case sa: Signature ⇒
-                // Process the signature of the method. The method remains the source
-                // of all dependencies that are extracted in the signature processing method.
                 processSignature(sa, methodID)
-            case _ ⇒ // All remaining method attributes (Synthetic and Deprecated)
-            // have not be considered for dependency extraction.
+            case _ ⇒ // The attributes Synthetic and Deprecated do not introduce further dependencies
         }
     }
 
     /**
-     * Processes the given signature.<br/>
+     * Processes the given signature.
      * Processing a signature means extracting all references to types
      * that are used in the type parameters that occur in the signature.
      * After that extraction, dependencies from the given source to the
@@ -358,18 +324,13 @@ class DependencyExtractor(val builder: DependencyBuilder) extends InstructionDep
     private def processElementValue(elementValue: ElementValue, srcID: Int) {
         elementValue match {
             case ClassValue(returnType) ⇒
-                // add a dependency to the default class type
                 addDependency(srcID, getID(returnType), USES_DEFAULT_CLASS_VALUE_TYPE)
             case EnumValue(enumType, constName) ⇒
-                // add dependencies to the enum type and to the used enum value
                 addDependency(srcID, getID(enumType), USES_DEFAULT_ENUM_VALUE_TYPE)
                 addDependency(srcID, getID(enumType, constName), USES_ENUM_VALUE)
             case ArrayValue(values) ⇒
-                // extract dependencies of the array values by calling this method again
                 values foreach { processElementValue(_, srcID) }
             case AnnotationValue(annotation) ⇒
-                // extract dependencies of the default annotation
-                // by calling the annotation processing method
                 process(annotation, srcID, USES_DEFAULT_ANNOTATION_VALUE_TYPE)
             case _ ⇒ // Remaining ElementValue types (ByteValue, CharValue, DoubleValue,
             // FloatValue, IntValue, LongValue, ShortValue, BooleanValue, StringValue)

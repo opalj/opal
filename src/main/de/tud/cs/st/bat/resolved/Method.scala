@@ -55,6 +55,8 @@ case class Method(accessFlags: Int,
 
     def isPrivate: Boolean = ACC_PRIVATE element_of accessFlags
 
+    def isStatic: Boolean = ACC_STATIC element_of accessFlags
+
     /**
      * This method's implementation (if it is not abstract).
      */

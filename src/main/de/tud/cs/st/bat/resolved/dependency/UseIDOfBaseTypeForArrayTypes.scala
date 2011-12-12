@@ -34,8 +34,8 @@ package de.tud.cs.st.bat.resolved
 package dependency
 
 /**
- * If you do not want to assign unique IDs to array types but instead want to use the
- * ID of the underlying base type, this trait can be mixed in.
+ * To assign a dependency to an array's base type instead of the array itelf, this
+ * trait can be mixed in.
  *
  * @author Michael Eichberg
  */
