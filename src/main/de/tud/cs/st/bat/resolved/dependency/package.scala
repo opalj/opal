@@ -33,11 +33,11 @@
 package de.tud.cs.st.bat.resolved
 
 /**
-  *
+ *
  * @author Michael Eichberg
  */
 package object dependency {
 
-	type DependencyType = DependencyType.Value
+    type DependencyType = DependencyType.Value
 
 }

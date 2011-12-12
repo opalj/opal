@@ -58,4 +58,5 @@ package object resolved {
 
     type Fields = IndexedSeq[Field]
 
+    type Code = Array[Instruction]
 }

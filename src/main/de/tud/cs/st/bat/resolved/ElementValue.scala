@@ -197,7 +197,7 @@ case class StringValue(value: String) extends ElementValue {
     }
 }
 
-case class ClassValue(value: ReturnType) extends ElementValue {
+case class ClassValue(value: Type) extends ElementValue {
 
     //
     //

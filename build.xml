@@ -193,10 +193,6 @@ Author 	Michael Eichberg (mail@michael-eichberg.de)
 		            in="${src.spec.dir}/10.2011/JVMInstructions.xml"
 		            out="${scala.generated.dir}/de/tud/cs/st/bat/resolved/reader/BytecodeReaderAndBinding.scala" />
 
-		<saxon-xslt style="${src.main.dir}/de/tud/cs/st/bat/resolved/dependency/GenerateInstructionDependencyExtractor.xsl"
-		            in="${src.spec.dir}/10.2011/JVMInstructions.xml"
-		            out="${scala.generated.dir}/de/tud/cs/st/bat/resolved/dependency/InstructionDependencyExtractor.scala" />
-
 	</target>
 
 	<target name="generate-code-for-prolog-representation"

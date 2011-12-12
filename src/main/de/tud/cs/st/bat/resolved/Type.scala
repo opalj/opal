@@ -33,13 +33,11 @@
 package de.tud.cs.st.bat.resolved
 
 /**
- * One JVM type.
+ * A JVM type.
  *
  * @author Michael Eichberg
  */
 sealed trait Type {
-
-    def isReturnType: Boolean = true
 
     def isFieldType: Boolean = false
     def isBaseType: Boolean = false
@@ -68,26 +66,18 @@ sealed trait Type {
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T
 }
 
-sealed trait ReturnType extends Type {
+final object ReturnType {
 
-    override final def isReturnType = true
-}
-object ReturnType {
+    def apply(rt: String): Type = if (rt.charAt(0) == 'V') VoidType else FieldType(rt)
 
-    def apply(rt: String): ReturnType = {
-        rt.charAt(0) match {
-            case 'V' ⇒ VoidType
-            case _   ⇒ FieldType(rt)
-        }
-    }
 }
 
-sealed trait VoidType extends ReturnType with ReturnTypeSignature {
+sealed trait VoidType extends Type with ReturnTypeSignature {
 
     // remark: the default implementation of equals and hashCode suits our needs!
     def accept[T](sv: SignatureVisitor[T]): T = sv.visit(this)
 
-    override def isVoidType = true
+    override final def isVoidType = true
 
     def toJava: String = "void"
 
@@ -104,7 +94,7 @@ sealed trait VoidType extends ReturnType with ReturnTypeSignature {
 }
 final case object VoidType extends VoidType
 
-sealed trait FieldType extends ReturnType {
+sealed trait FieldType extends Type {
 
     override final def isFieldType = true
 }
@@ -114,9 +104,7 @@ sealed trait FieldType extends ReturnType {
 object FieldType {
 
     def apply(ft: String): FieldType = {
-        import scala.annotation.switch
-
-        (ft.charAt(0): @switch) match {
+        (ft.charAt(0): @scala.annotation.switch) match {
             case 'B' ⇒ ByteType
             case 'C' ⇒ CharType
             case 'D' ⇒ DoubleType
@@ -393,7 +381,7 @@ final class ArrayType private (val componentType: FieldType) extends ReferenceTy
         factory.Term("array", componentType.toProlog(factory))
 
 }
-object ArrayType {
+final object ArrayType {
 
     // FIXME potential memory leak...
     private val cache: scala.collection.mutable.Map[FieldType, ArrayType] = scala.collection.mutable.Map()
@@ -410,8 +398,6 @@ object ArrayType {
     def unapply(at: ArrayType): Option[FieldType] = Some(at.componentType)
 
 }
-
-
 
 
 

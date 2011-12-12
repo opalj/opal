@@ -34,10 +34,10 @@ package de.tud.cs.st.bat.resolved
 package dependency
 
 /**
- * DependencyType enumerates all different kinds of dependency types that can
- * occur between classes, interfaces, fields and methods.
+ * Enumeration of all kinds of dependencies that are extracted by the [[de.tud.cs.st.bat.resolved.dependency.DependencyExtractor]].
  *
  * @author Thomas Schlosser
+ * @author Michael Eichberg
  */
 object DependencyType extends Enumeration {
     

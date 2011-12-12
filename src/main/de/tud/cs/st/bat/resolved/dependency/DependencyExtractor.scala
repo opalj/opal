@@ -53,9 +53,8 @@ import de.tud.cs.st.bat.AccessFlagsIterator
  *
  * @author Thomas Schlosser
  */
-class DependencyExtractor(val builder: DependencyBuilder) extends InstructionDependencyExtractor {
+trait DependencyExtractor extends DependencyBuilder with SourceElementIDs {
 
-    import builder._
 
     /**
      * Processes the given class file and all fields and methods that are defined in it.
@@ -65,12 +64,12 @@ class DependencyExtractor(val builder: DependencyBuilder) extends InstructionDep
      * @param classFile The class file whose dependencies should be extracted.
      */
     def process(classFile: ClassFile) {
-        val thisClassID = getID(classFile)
+        val thisClassID = sourceElementID(classFile)
         val ClassFile(_, _, _, thisClass, superClass, interfaces, fields, methods, attributes) = classFile
 
-        classFile.superClass foreach { superClass ⇒ addDependency(thisClassID, getID(superClass), EXTENDS) }
+        classFile.superClass foreach { superClass ⇒ addDependency(thisClassID, sourceElementID(superClass), EXTENDS) }
 
-        interfaces foreach { i ⇒ addDependency(thisClassID, getID(i), IMPLEMENTS) }
+        interfaces foreach { i ⇒ addDependency(thisClassID, sourceElementID(i), IMPLEMENTS) }
 
         // As defined by the Java 5 specification, a class declaration can contain the following attributes:
         // InnerClasses, EnclosingMethod, Synthetic, SourceFile, Signature, Deprecated,
@@ -86,9 +85,9 @@ class DependencyExtractor(val builder: DependencyBuilder) extends InstructionDep
                         // Check whether the enclosing method attribute refers to
                         // an enclosing method or an enclosing class.
                         if (isEnclosedByMethod(ema))
-                            getID(enclosingClazz, enclosingMethodName, enclosingMethodDescriptor)
+                            sourceElementID(enclosingClazz, enclosingMethodName, enclosingMethodDescriptor)
                         else
-                            getID(enclosingClazz)
+                            sourceElementID(enclosingClazz)
                     },
                     IS_INNER_CLASS_OF)
             }
@@ -99,7 +98,7 @@ class DependencyExtractor(val builder: DependencyBuilder) extends InstructionDep
                     // a dependency from inner class to this class will be added.
                     InnerClassesEntry(innerClass, outerClass, _, _) ← innerClasses if outerClass != null if outerClass == thisClass
                 ) {
-                    addDependency(getID(innerClass), thisClassID, IS_INNER_CLASS_OF)
+                    addDependency(sourceElementID(innerClass), thisClassID, IS_INNER_CLASS_OF)
                 }
             case signature: Signature ⇒ processSignature(signature, thisClassID)
             case _                    ⇒ // Synthetic, SourceFile, Deprecated, and SourceDebugExtension do not create dependencies
@@ -121,12 +120,12 @@ class DependencyExtractor(val builder: DependencyBuilder) extends InstructionDep
      * @param thisClassID The ID of the field's declaring class.
      */
     private def process(field: Field, thisClass: ObjectType, thisClassID: Int) {
-        val fieldID = getID(thisClass, field)
+        val fieldID = sourceElementID(thisClass, field)
         val Field(accessFlags, _, fieldType, attributes) = field
 
         addDependency(fieldID, thisClassID, if (field.isStatic) IS_CLASS_MEMBER_OF else IS_INSTANCE_MEMBER_OF)
         // add a dependency from the field to its type
-        addDependency(fieldID, getID(fieldType), IS_OF_TYPE)
+        addDependency(fieldID, sourceElementID(fieldType), IS_OF_TYPE)
 
         // The Java 5 specification defines the following attributes:
         // ConstantValue, Synthetic, Signature, Deprecated, RuntimeVisibleAnnotations, and
@@ -135,7 +134,7 @@ class DependencyExtractor(val builder: DependencyBuilder) extends InstructionDep
             case AnnotationsAttribute(_, annotations) ⇒ // handles RuntimeVisibleAnnotations and RuntimeInvisibleAnnotations
                 annotations foreach { process(_, fieldID) }
             case cv: ConstantValue[_] ⇒
-                addDependency(fieldID, getID(cv.valueType), USES_CONSTANT_VALUE_OF_TYPE)
+                addDependency(fieldID, sourceElementID(cv.valueType), USES_CONSTANT_VALUE_OF_TYPE)
             case signature: Signature ⇒
                 processSignature(signature, fieldID)
             case _ ⇒ // Synthetic and Deprecated do not introduce new dependencies
@@ -151,13 +150,13 @@ class DependencyExtractor(val builder: DependencyBuilder) extends InstructionDep
      * @param thisClassID The ID of the method's declaring class.
      */
     private def process(method: Method, thisClass: ObjectType, thisClassID: Int) {
-        val methodID = getID(thisClass, method)
+        val methodID = sourceElementID(thisClass, method)
         val Method(accessFlags, _, MethodDescriptor(parameterTypes, returnType), attributes) = method
 
         addDependency(methodID, thisClassID, if (method.isStatic) IS_CLASS_MEMBER_OF else IS_INSTANCE_MEMBER_OF)
 
-        addDependency(methodID, getID(returnType), RETURNS)
-        parameterTypes foreach { pt ⇒ addDependency(methodID, getID(pt), HAS_PARAMETER_OF_TYPE) }
+        addDependency(methodID, sourceElementID(returnType), RETURNS)
+        parameterTypes foreach { pt ⇒ addDependency(methodID, sourceElementID(pt), HAS_PARAMETER_OF_TYPE) }
 
         // The Java 5 specification defines the following attributes:
         // Code, Exceptions, Synthetic, Signature, Deprecated, RuntimeVisibleAnnotations,
@@ -169,7 +168,7 @@ class DependencyExtractor(val builder: DependencyBuilder) extends InstructionDep
             case ParameterAnnotationsAttribute(_, parameterAnnotations) ⇒ // handles RuntimeVisibleParameterAnnotations and RuntimeInvisibleParameterAnnotations
                 parameterAnnotations foreach { _ foreach { process(_, methodID, PARAMETER_ANNOTATED_WITH) } }
             case ExceptionsAttribute(exceptionTable) ⇒
-                exceptionTable foreach { e ⇒ addDependency(methodID, getID(e), THROWS) }
+                exceptionTable foreach { e ⇒ addDependency(methodID, sourceElementID(e), THROWS) }
             case elementValue: ElementValue ⇒ // ElementValues encode annotation default attributes
                 processElementValue(elementValue, methodID)
             case CodeAttribute(_, _, code, exceptionTable, attributes) ⇒
@@ -180,14 +179,14 @@ class DependencyExtractor(val builder: DependencyBuilder) extends InstructionDep
                 for (
                     ExceptionTableEntry(_, _, _, catchType) ← exceptionTable if !isFinallyBlock(catchType)
                 ) {
-                    addDependency(methodID, getID(catchType), CATCHES)
+                    addDependency(methodID, sourceElementID(catchType), CATCHES)
                 }
                 // The Java 5 specification defines the following attributes:
                 // LineNumberTable, LocalVariableTable, and LocalVariableTypeTable)
                 attributes foreach {
                     case LocalVariableTableAttribute(localVariableTable) ⇒
                         localVariableTable foreach {
-                            entry ⇒ addDependency(methodID, getID(entry.fieldType), HAS_LOCAL_VARIABLE_OF_TYPE)
+                            entry ⇒ addDependency(methodID, sourceElementID(entry.fieldType), HAS_LOCAL_VARIABLE_OF_TYPE)
                         }
                     case LocalVariableTypeTableAttribute(localVariableTypeTable) ⇒
                         localVariableTypeTable foreach {
@@ -301,7 +300,7 @@ class DependencyExtractor(val builder: DependencyBuilder) extends InstructionDep
                 // If the class is used in a type parameter, a dependency between the given
                 // source and the class is added.
                 if (isInTypeParameters)
-                    addDependency(srcID, getID(cts.objectType), USES_TYPE_IN_TYPE_PARAMETERS)
+                    addDependency(srcID, sourceElementID(cts.objectType), USES_TYPE_IN_TYPE_PARAMETERS)
                 processSimpleClassTypeSignature(cts.simpleClassTypeSignature)
             case ProperTypeArgument(_, fieldTypeSignature) ⇒
                 // process proper type argument by calling this method again and passing
@@ -310,7 +309,7 @@ class DependencyExtractor(val builder: DependencyBuilder) extends InstructionDep
             case BooleanType | ByteType | IntegerType | LongType | CharType | ShortType | FloatType | DoubleType | VoidType ⇒
                 // add a dependency to base or void type if the type is used in a type parameter
                 if (isInTypeParameters)
-                    addDependency(srcID, getID(signature.asInstanceOf[ReturnType]), USES_TYPE_IN_TYPE_PARAMETERS)
+                    addDependency(srcID, sourceElementID(signature.asInstanceOf[Type]), USES_TYPE_IN_TYPE_PARAMETERS)
             case _ ⇒ // TypeVariableSignature and Wildcard refer to no concrete type, hence there is nothing to do in this case.
         }
     }
@@ -324,10 +323,10 @@ class DependencyExtractor(val builder: DependencyBuilder) extends InstructionDep
     private def processElementValue(elementValue: ElementValue, srcID: Int) {
         elementValue match {
             case ClassValue(returnType) ⇒
-                addDependency(srcID, getID(returnType), USES_DEFAULT_CLASS_VALUE_TYPE)
+                addDependency(srcID, sourceElementID(returnType), USES_DEFAULT_CLASS_VALUE_TYPE)
             case EnumValue(enumType, constName) ⇒
-                addDependency(srcID, getID(enumType), USES_DEFAULT_ENUM_VALUE_TYPE)
-                addDependency(srcID, getID(enumType, constName), USES_ENUM_VALUE)
+                addDependency(srcID, sourceElementID(enumType), USES_DEFAULT_ENUM_VALUE_TYPE)
+                addDependency(srcID, sourceElementID(enumType, constName), USES_ENUM_VALUE)
             case ArrayValue(values) ⇒
                 values foreach { processElementValue(_, srcID) }
             case AnnotationValue(annotation) ⇒
@@ -349,9 +348,116 @@ class DependencyExtractor(val builder: DependencyBuilder) extends InstructionDep
     private def process(annotation: Annotation, srcID: Int, dependencyType: DependencyType = ANNOTATED_WITH) {
         val Annotation(annotationType, elementValuePairs) = annotation
         // add dependency from source to the discovered annotation type
-        addDependency(srcID, getID(annotationType), dependencyType)
+        addDependency(srcID, sourceElementID(annotationType), dependencyType)
         // extract dependencies for each element value pair that is used in the given annotation
         elementValuePairs foreach { evp ⇒ processElementValue(evp.elementValue, srcID) }
+    }
+
+    /**
+     * Extracts all dependencies found in the given instructions.
+     *
+     * @param methodId The ID of the source of the extracted dependencies.
+     * @param instructions The instructions that should be analyzed for dependencies.
+     */
+    def process(methodId: Int, instructions: Code) {
+  
+
+        for (instr ← instructions if instr != null) {
+            (instr.opcode: @annotation.switch) match {
+                case 189 ⇒ {
+                    val ANEWARRAY(componentType) = instr.asInstanceOf[ANEWARRAY]
+                    addDependency(methodId, sourceElementID(componentType), CREATES_ARRAY_OF_TYPE)
+                }
+
+                case 192 ⇒ {
+                    val CHECKCAST(referenceType) = instr.asInstanceOf[CHECKCAST]
+                    addDependency(methodId, sourceElementID(referenceType), CASTS_INTO)
+                }
+
+                case 180 ⇒ {
+                    val GETFIELD(declaringClass, name, fieldType) = instr.asInstanceOf[GETFIELD]
+                    addDependency(methodId, sourceElementID(declaringClass), USES_FIELD_DECLARING_TYPE)
+                    addDependency(methodId, sourceElementID(declaringClass, name), READS_FIELD)
+                    addDependency(methodId, sourceElementID(fieldType), USES_FIELD_READ_TYPE)
+                }
+
+                case 178 ⇒ {
+                    val GETSTATIC(declaringClass, name, fieldType) = instr.asInstanceOf[GETSTATIC]
+                    addDependency(methodId, sourceElementID(declaringClass), USES_FIELD_DECLARING_TYPE)
+                    addDependency(methodId, sourceElementID(declaringClass, name), READS_FIELD)
+                    addDependency(methodId, sourceElementID(fieldType), USES_FIELD_READ_TYPE)
+                }
+
+                case 193 ⇒ {
+                    val INSTANCEOF(referenceType) = instr.asInstanceOf[INSTANCEOF]
+                    addDependency(methodId, sourceElementID(referenceType), CHECKS_INSTANCEOF)
+                }
+
+                case 186 ⇒ {
+                    val INVOKEDYNAMIC(name, methodDescriptor) = instr.asInstanceOf[INVOKEDYNAMIC]
+                    methodDescriptor.parameterTypes foreach { parameterType ⇒ addDependency(methodId, sourceElementID(parameterType), USES_PARAMETER_TYPE) }
+                    addDependency(methodId, sourceElementID(methodDescriptor.returnType), USES_RETURN_TYPE)
+                }
+
+                case 185 ⇒ {
+                    val INVOKEINTERFACE(declaringClass, name, methodDescriptor) = instr.asInstanceOf[INVOKEINTERFACE]
+                    addDependency(methodId, sourceElementID(declaringClass), USES_METHOD_DECLARING_TYPE)
+                    addDependency(methodId, sourceElementID(declaringClass, name, methodDescriptor), CALLS_INTERFACE_METHOD)
+                    methodDescriptor.parameterTypes foreach { parameterType ⇒ addDependency(methodId, sourceElementID(parameterType), USES_PARAMETER_TYPE) }
+                    addDependency(methodId, sourceElementID(methodDescriptor.returnType), USES_RETURN_TYPE)
+                }
+
+                case 183 ⇒ {
+                    val INVOKESPECIAL(declaringClass, name, methodDescriptor) = instr.asInstanceOf[INVOKESPECIAL]
+                    addDependency(methodId, sourceElementID(declaringClass), USES_METHOD_DECLARING_TYPE)
+                    addDependency(methodId, sourceElementID(declaringClass, name, methodDescriptor), CALLS_METHOD)
+                    methodDescriptor.parameterTypes foreach { parameterType ⇒ addDependency(methodId, sourceElementID(parameterType), USES_PARAMETER_TYPE) }
+                    addDependency(methodId, sourceElementID(methodDescriptor.returnType), USES_RETURN_TYPE)
+                }
+
+                case 184 ⇒ {
+                    val INVOKESTATIC(declaringClass, name, methodDescriptor) = instr.asInstanceOf[INVOKESTATIC]
+                    addDependency(methodId, sourceElementID(declaringClass), USES_METHOD_DECLARING_TYPE)
+                    addDependency(methodId, sourceElementID(declaringClass, name, methodDescriptor), CALLS_METHOD)
+                    methodDescriptor.parameterTypes foreach { parameterType ⇒ addDependency(methodId, sourceElementID(parameterType), USES_PARAMETER_TYPE) }
+                    addDependency(methodId, sourceElementID(methodDescriptor.returnType), USES_RETURN_TYPE)
+                }
+
+                case 182 ⇒ {
+                    val INVOKEVIRTUAL(declaringClass, name, methodDescriptor) = instr.asInstanceOf[INVOKEVIRTUAL]
+                    addDependency(methodId, sourceElementID(declaringClass), USES_METHOD_DECLARING_TYPE)
+                    addDependency(methodId, sourceElementID(declaringClass, name, methodDescriptor), CALLS_METHOD)
+                    methodDescriptor.parameterTypes foreach { parameterType ⇒ addDependency(methodId, sourceElementID(parameterType), USES_PARAMETER_TYPE) }
+                    addDependency(methodId, sourceElementID(methodDescriptor.returnType), USES_RETURN_TYPE)
+                }
+
+                case 197 ⇒ {
+                    val MULTIANEWARRAY(componentType, dimensions) = instr.asInstanceOf[MULTIANEWARRAY]
+                    addDependency(methodId, sourceElementID(componentType), CREATES_ARRAY_OF_TYPE)
+                }
+
+                case 187 ⇒ {
+                    val NEW(objectType) = instr.asInstanceOf[NEW]
+                    addDependency(methodId, sourceElementID(objectType), CREATES)
+                }
+
+                case 181 ⇒ {
+                    val PUTFIELD(declaringClass, name, fieldType) = instr.asInstanceOf[PUTFIELD]
+                    addDependency(methodId, sourceElementID(declaringClass), USES_FIELD_DECLARING_TYPE)
+                    addDependency(methodId, sourceElementID(declaringClass, name), WRITES_FIELD)
+                    addDependency(methodId, sourceElementID(fieldType), USES_FIELD_WRITE_TYPE)
+                }
+
+                case 179 ⇒ {
+                    val PUTSTATIC(declaringClass, name, fieldType) = instr.asInstanceOf[PUTSTATIC]
+                    addDependency(methodId, sourceElementID(declaringClass), USES_FIELD_DECLARING_TYPE)
+                    addDependency(methodId, sourceElementID(declaringClass, name), WRITES_FIELD)
+                    addDependency(methodId, sourceElementID(fieldType), USES_FIELD_WRITE_TYPE)
+                }
+
+                case _ ⇒
+            }
+        }
     }
 
     /**
