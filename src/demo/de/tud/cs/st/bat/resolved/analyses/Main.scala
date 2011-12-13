@@ -153,7 +153,7 @@ object Main extends Main {
         println("\tViolations: " + classesWithPublicFinalizeMethods.length)
 
         // FINDBUGS: Se: Class is Serializable but its superclass doesn't define a void constructor (SE_NO_SUITABLE_CONSTRUCTOR)
-        val serializableClasses = classHierarchy.subclasses(ObjectType("java/io/Serializable"))
+        val serializableClasses = classHierarchy.subclasses(ObjectType("java/io/Serializable")).getOrElse(Nil)
         val classesWithoutDefaultConstructor = time(t ⇒ println("SE_NO_SUITABLE_CONSTRUCTOR: " + nsToSecs(t))) {
             for (
                 superclass ← classHierarchy.superclasses(serializableClasses) if getClassFile.isDefinedAt(superclass) && // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available

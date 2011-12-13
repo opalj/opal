@@ -39,7 +39,7 @@ import util.graphs.{ Node, toDot }
 import reader.Java6Framework
 
 /**
- * Represents the project's class hierarchy.
+ * Represents the visible part of a project's class hierarchy.
  *
  * To construct the class hierarchy use the update method.
  *
@@ -79,15 +79,46 @@ class ClassHierarchy {
     /**
      * The classes (and interfaces if the given type is an interface type)
      * that directly inherit from the given type.
+     *
+     * If we have not (yet) analyzed the class file implementing the given
+     * type (i.e., the class file was not yet passed to "update"), None is
+     * returned. I.e., we know nothing about the respective type. If we have
+     * seen the class file, but did not see (so far) any class files that
+     * implements a type that directly inherits from the given type, an empty
+     * set is returned. I.e., if you have passed all class files of a project
+     * to update and then ask for the subclasses of a specific type and an
+     * empty set is returned, then you have the guarantee no class in the
+     * project inherits form the given type.
+     *
+     * @return The direct subtypes of the given type.
      */
-    def subclasses(objectType: ObjectType): immutable.Set[ObjectType] =
-        subclasses.apply(objectType).toSet
+    def subclasses(objectType: ObjectType): Option[immutable.Set[ObjectType]] =
+        if (subclasses.contains(objectType))
+            Some(subclasses.apply(objectType).toSet)
+        else
+            None
 
     /**
      * The classes and interfaces from which the given type directly inherits.
+     *
+     * If we have not (yet) seen the class file of the given type – i.e., the
+     * update method was not yet called with the class file that implements the
+     * given type as a parameter –  None is returned. Hence, None indicates
+     * that we know nothing about the superclasses of the given type. This is
+     * in particular the case if you analyze a project's class files but
+     * do not also analyze all used libraries.
+     *
+     * The empty set will only be returned, if the class file of "java.lang.Object"
+     * was analyzed, and the given object type represents "java.lang.Object".
+     * Recall, that interfaces always (implicitly) inherit from java.lang.Object.
+     *
+     * @return The direct supertypes of the given type.
      */
-    def superclasses(objectType: ObjectType): immutable.Set[ObjectType] =
-        superclasses.apply(objectType).toSet
+    def superclasses(objectType: ObjectType): Option[immutable.Set[ObjectType]] =
+        if (superclasses.contains(objectType))
+            Some(superclasses.apply(objectType).toSet)
+        else
+            None
 
     /**
      * The classes and interfaces from which the given types directly inherit.
