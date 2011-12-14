@@ -34,7 +34,8 @@ package de.tud.cs.st.bat.resolved
 package dependency
 
 /**
- * Associates a source element (type, method or field declaration) with a unique id.
+ * Associates a source element (type/class, method or field declaration) with
+ * a unique id.
  *
  * @author Michael Eichberg
  */
