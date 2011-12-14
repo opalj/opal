@@ -55,15 +55,15 @@ import de.tud.cs.st.bat.ACC_FINAL
  *
  * @author Michael Eichberg
  */
-case class ClassFile(val minorVersion: Int,
-                     val majorVersion: Int,
-                     val accessFlags: Int,
-                     val thisClass: ObjectType,
-                     val superClass: Option[ObjectType],
-                     val interfaces: Seq[ObjectType],
-                     val fields: Fields,
-                     val methods: Methods,
-                     val attributes: Attributes)
+case class ClassFile(minorVersion: Int,
+                     majorVersion: Int,
+                     accessFlags: Int,
+                     thisClass: ObjectType,
+                     superClass: Option[ObjectType],
+                     interfaces: Seq[ObjectType],
+                     fields: Fields,
+                     methods: Methods,
+                     attributes: Attributes)
         extends CommonAttributes {
 
     private val classCategoryMask: Int = ACC_INTERFACE.mask | ACC_ANNOTATION.mask | ACC_ENUM.mask
