@@ -37,14 +37,22 @@ import scala.collection.mutable.HashMap
 /**
  * Associates a source element (type, method or field declaration) with a unique id.
  *
- * Types are associated with ids larger than 0 and smaller than one billion.
+ * Types are associated with ids larger than 0.
  *
- * Fields are associated with ids >= 100 000 000 and < 1 000 000 000
+ * Fields are associated with ids >= LOWEST_FIELD_ID
  *
- * Methods are associated with ids >= 1 000 000 000
+ * Methods are associated with ids >= LOWEST_METHOD_ID
  *
- * Negative IDs are never assigned my this source element to ID mapping.
- * The largest id is equivalent to 1 000 000 000 + number of methods seen.
+ * Negative IDs are never assigned by this source element to ID mapping.
+ * The largest id is equivalent to LOWEST_METHOD_ID + number of methods seen.
+ *
+ * '''Usage Scenario'''
+ * Ids can be used to space efficiently encode dependencies between code elements
+ * E.g., assuming that the analyzed source code has less than 1.000.000 class
+ * declarations, less than 4.000.000 field declarations and less than 12.777.215
+ * method declarations than a single int value can be used to encode the
+ * target source element and the kind of the dependency. The highest 8 bit of
+ * the int value can be used to encode the dependency kind.
  *
  * '''Implementation Note'''
  * This class is not thread safe.
@@ -72,7 +80,7 @@ trait SourceElementIDsMap extends SourceElementIDs with IDResetter {
     // Associates each field with a unique ID
     //
 
-    val LOWEST_FIELD_ID: Int = 100000000
+    val LOWEST_FIELD_ID: Int = 1000000
 
     private var nextFieldID = LOWEST_FIELD_ID
 
@@ -87,7 +95,7 @@ trait SourceElementIDsMap extends SourceElementIDs with IDResetter {
     // Associates each method with a unique ID
     //
 
-    val LOWEST_METHOD_ID: Int = 1000000000
+    val LOWEST_METHOD_ID: Int = 5000000
 
     private var nextMethodID = LOWEST_METHOD_ID
 
