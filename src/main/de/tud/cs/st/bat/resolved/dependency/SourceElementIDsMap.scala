@@ -48,7 +48,7 @@ import scala.collection.mutable.HashMap
  *
  * '''Usage Scenario'''
  * Ids can be used to space efficiently encode dependencies between code elements
- * E.g., assuming that the analyzed source code has less than 1.000.000 class
+ * E.g., assuming that the analyzed code base has less than 1.000.000 class
  * declarations, less than 4.000.000 field declarations and less than 12.777.215
  * method declarations than a single int value can be used to encode the
  * target source element and the kind of the dependency. The highest 8 bit of
