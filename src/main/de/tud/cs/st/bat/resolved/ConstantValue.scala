@@ -79,6 +79,10 @@ sealed trait ConstantValue[T >: Nothing] extends Attribute {
         factory.Fact("field_value", declaringEntityKey, valueToProlog(factory)) :: Nil
 
 }
+object ConstantValue {
+
+    def unapply(constantValue: ConstantValue[_]): Option[Type] = Some(constantValue.valueType)
+}
 
 case class ConstantLong(value: Long) extends ConstantValue[Long] {
     override def toLong = value
@@ -172,7 +176,7 @@ case class ConstantString(value: String) extends ConstantValue[String] {
 case class ConstantClass(value: ReferenceType) extends ConstantValue[ReferenceType] {
     override def toClass = value
     def valueToString = value.toJava
-    def valueType = ObjectType("java/lang/Class")
+    def valueType = ObjectType("java/lang/Class") // TODO Document if this is correct in case of (multi)anewarray.
 
     //
     //
