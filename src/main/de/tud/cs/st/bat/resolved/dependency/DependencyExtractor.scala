@@ -30,17 +30,17 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved
+package de.tud.cs.st.bat
+package resolved
 package dependency
 
 import DependencyType._
-import de.tud.cs.st.bat.AccessFlagsContexts._
-import de.tud.cs.st.bat.ACC_STATIC
-import de.tud.cs.st.bat.AccessFlagsIterator
 
 /**
- * Extracts the dependencies between
- * classes, interfaces, fields and methods.
+ * Traverses a class file and identifies all
+ * dependencies between the element that is traversed and any other
+ * used element.
+ * Extracts the dependencies between classes, interfaces, fields and methods.
  *
  * Unique IDs are retrieved from and
  * dependencies are passed to the 'getID' and 'addDependency' methods provided by
@@ -48,13 +48,13 @@ import de.tud.cs.st.bat.AccessFlagsIterator
  *
  *
  * ==Implementation Note==
- * Only attributes defined by Java 5 specification are considered in this implementation.
+ * Only attributes defined by the Java 5/6 specification are considered in this implementation.
  *
  *
  * @author Thomas Schlosser
+ * @author Michael Eichberg
  */
 trait DependencyExtractor extends DependencyBuilder with SourceElementIDs {
-
 
     /**
      * Processes the given class file and all fields and methods that are defined in it.
@@ -67,9 +67,12 @@ trait DependencyExtractor extends DependencyBuilder with SourceElementIDs {
         val thisClassID = sourceElementID(classFile)
         val ClassFile(_, _, _, thisClass, superClass, interfaces, fields, methods, attributes) = classFile
 
-        classFile.superClass foreach { superClass ⇒ addDependency(thisClassID, sourceElementID(superClass), EXTENDS) }
+        superClass foreach { superClass ⇒ addDependency(thisClassID, sourceElementID(superClass), EXTENDS) }
+        interfaces foreach { interface ⇒ addDependency(thisClassID, sourceElementID(interface), IMPLEMENTS) }
 
-        interfaces foreach { i ⇒ addDependency(thisClassID, sourceElementID(i), IMPLEMENTS) }
+        fields foreach { process(_, thisClass, thisClassID) }
+
+        methods foreach { process(_, thisClass, thisClassID) }
 
         // As defined by the Java 5 specification, a class declaration can contain the following attributes:
         // InnerClasses, EnclosingMethod, Synthetic, SourceFile, Signature, Deprecated,
@@ -94,7 +97,7 @@ trait DependencyExtractor extends DependencyBuilder with SourceElementIDs {
             case InnerClassesAttribute(innerClasses) ⇒
                 for (
                     // Check whether the outer class of the inner class attribute
-                    // is equals to the currently processed class. If this is the case,
+                    // is equal to the currently processed class. If this is the case,
                     // a dependency from inner class to this class will be added.
                     InnerClassesEntry(innerClass, outerClass, _, _) ← innerClasses if outerClass != null if outerClass == thisClass
                 ) {
@@ -104,11 +107,6 @@ trait DependencyExtractor extends DependencyBuilder with SourceElementIDs {
             case _                    ⇒ // Synthetic, SourceFile, Deprecated, and SourceDebugExtension do not create dependencies
         }
 
-        // process fields
-        fields foreach { process(_, thisClass, thisClassID) }
-
-        // process methods
-        methods foreach { process(_, thisClass, thisClassID) }
     }
 
     /**
@@ -116,15 +114,14 @@ trait DependencyExtractor extends DependencyBuilder with SourceElementIDs {
      * from this field.
      *
      * @param field The field whose dependencies should be extracted.
-     * @param thisClass The type of this field's declaring class.
-     * @param thisClassID The ID of the field's declaring class.
+     * @param declaringType The type of this field's declaring class.
+     * @param declaringTypeID The ID of the field's declaring class.
      */
-    private def process(field: Field, thisClass: ObjectType, thisClassID: Int) {
-        val fieldID = sourceElementID(thisClass, field)
+    protected def process(field: Field, declaringType: ObjectType, declaringTypeID: Int) {
+        val fieldID = sourceElementID(declaringType, field)
         val Field(accessFlags, _, fieldType, attributes) = field
 
-        addDependency(fieldID, thisClassID, if (field.isStatic) IS_CLASS_MEMBER_OF else IS_INSTANCE_MEMBER_OF)
-        // add a dependency from the field to its type
+        addDependency(fieldID, declaringTypeID, if (field.isStatic) IS_CLASS_MEMBER_OF else IS_INSTANCE_MEMBER_OF)
         addDependency(fieldID, sourceElementID(fieldType), IS_OF_TYPE)
 
         // The Java 5 specification defines the following attributes:
@@ -133,8 +130,10 @@ trait DependencyExtractor extends DependencyBuilder with SourceElementIDs {
         attributes foreach {
             case AnnotationsAttribute(_, annotations) ⇒ // handles RuntimeVisibleAnnotations and RuntimeInvisibleAnnotations
                 annotations foreach { process(_, fieldID) }
-            case cv: ConstantValue[_] ⇒
-                addDependency(fieldID, sourceElementID(cv.valueType), USES_CONSTANT_VALUE_OF_TYPE)
+            case ConstantValue(ot: ObjectType) ⇒
+                addDependency(fieldID, sourceElementID(ot), USES_CONSTANT_VALUE_OF_TYPE)
+            case ConstantValue(at: ArrayType) if at.baseType.isObjectType ⇒
+                addDependency(fieldID, sourceElementID(at.baseType), USES_CONSTANT_VALUE_OF_TYPE)
             case signature: Signature ⇒
                 processSignature(signature, fieldID)
             case _ ⇒ // Synthetic and Deprecated do not introduce new dependencies
@@ -146,14 +145,14 @@ trait DependencyExtractor extends DependencyBuilder with SourceElementIDs {
      * from this method.
      *
      * @param method The method whose dependencies should be extracted.
-     * @param thisClass The method's declaring class.
-     * @param thisClassID The ID of the method's declaring class.
+     * @param declaringType The method's declaring class.
+     * @param declaringTypeID The ID of the method's declaring class.
      */
-    private def process(method: Method, thisClass: ObjectType, thisClassID: Int) {
-        val methodID = sourceElementID(thisClass, method)
+    protected def process(method: Method, declaringType: ObjectType, declaringTypeID: Int) {
+        val methodID = sourceElementID(declaringType, method)
         val Method(accessFlags, _, MethodDescriptor(parameterTypes, returnType), attributes) = method
 
-        addDependency(methodID, thisClassID, if (method.isStatic) IS_CLASS_MEMBER_OF else IS_INSTANCE_MEMBER_OF)
+        addDependency(methodID, declaringTypeID, if (method.isStatic) IS_CLASS_MEMBER_OF else IS_INSTANCE_MEMBER_OF)
 
         addDependency(methodID, sourceElementID(returnType), RETURNS)
         parameterTypes foreach { pt ⇒ addDependency(methodID, sourceElementID(pt), HAS_PARAMETER_OF_TYPE) }
@@ -216,7 +215,7 @@ trait DependencyExtractor extends DependencyBuilder with SourceElementIDs {
      * @param isInTypeParameters Signals whether the current signature (part)
      *                           is already a part of a type parameter.
      */
-    private def processSignature(signature: SignatureElement, srcID: Int, isInTypeParameters: Boolean = false) {
+    protected def processSignature(signature: SignatureElement, srcID: Int, isInTypeParameters: Boolean = false) {
         /**
          * Processes the given option of a formal type parameter list.
          * Since they are always part of a type parameter, all types that
@@ -360,7 +359,6 @@ trait DependencyExtractor extends DependencyBuilder with SourceElementIDs {
      * @param instructions The instructions that should be analyzed for dependencies.
      */
     def process(methodId: Int, instructions: Code) {
-  
 
         for (instr ← instructions if instr != null) {
             (instr.opcode: @annotation.switch) match {
