@@ -47,15 +47,7 @@ case class Method(accessFlags: Int,
                   name: String,
                   descriptor: MethodDescriptor,
                   attributes: Attributes)
-        extends CommonAttributes {
-
-    def isPublic: Boolean = ACC_PUBLIC element_of accessFlags
-
-    def isProtected: Boolean = ACC_PROTECTED element_of accessFlags
-
-    def isPrivate: Boolean = ACC_PRIVATE element_of accessFlags
-
-    def isStatic: Boolean = ACC_STATIC element_of accessFlags
+        extends ClassMember {
 
     /**
      * This method's implementation (if it is not abstract).

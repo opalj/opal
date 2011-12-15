@@ -33,11 +33,6 @@
 package de.tud.cs.st.bat
 package resolved
 
-import scala.xml.Elem
-import scala.xml.Null
-import scala.xml.Text
-import scala.xml.TopScope
-
 /**
  * Represents a single field declaration/definition.
  *
@@ -52,68 +47,14 @@ import scala.xml.TopScope
  *
  * @author Michael Eichberg
  */
-case class Field(accessFlags: Int,
-                 name: String,
-                 fieldType: FieldType,
-                 attributes: Attributes)
-        extends ClassMember {
+trait ClassMember extends CommonAttributes {
 
-    /**
-     * Returns this field's type signature.
-     */
-    def fieldTypeSignature: Option[FieldTypeSignature] =
-        attributes collectFirst { case s: FieldTypeSignature ⇒ s }
+    def accessFlags: Int
 
-    /**
-     * Returns this field's constant value.
-     */
-    def constantValue: Option[ConstantValue[_]] =
-        attributes collectFirst { case cv: ConstantValue[_] ⇒ cv }
+    def isPublic: Boolean = ACC_PUBLIC element_of accessFlags
+    def isProtected: Boolean = ACC_PROTECTED element_of accessFlags
+    def isPrivate: Boolean = ACC_PRIVATE element_of accessFlags
 
-    //
-    //
-    // SUPPORT FOR SPECIAL REPRESENTATIONS
-    //
-    //
+    def isStatic: Boolean = ACC_STATIC element_of accessFlags
 
-    def toXML =
-        <field
-			name={ name }
-			type={ fieldType.toJava } >
-			<flags>{ AccessFlagsIterator(accessFlags, AccessFlagsContexts.FIELD) map(_.toXML) }</flags>
-			<attributes>{ for (attribute ← attributes) yield attribute.toXML }</attributes>
-		</field>
-
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], classFileKeyAtom: A): List[F] = {
-
-        import factory._
-
-        var facts: List[F] = Nil
-
-        val key = KeyAtom("f_")
-
-        for (attribute ← attributes) {
-            facts = (attribute match {
-                case aa: AnnotationsAttribute ⇒ aa.toProlog(factory, key)
-                case cva: ConstantValue[_]    ⇒ cva.toProlog(factory, key)
-                case _                        ⇒ Nil
-            }) ::: facts
-        }
-
-        Fact(
-            "field", // functor
-            classFileKeyAtom,
-            key,
-            TextAtom(name),
-            fieldType.toProlog(factory),
-            VisibilityAtom(accessFlags, AccessFlagsContexts.FIELD),
-            FinalTerm(accessFlags),
-            StaticTerm(accessFlags),
-            TransientTerm(accessFlags),
-            VolatileTerm(accessFlags),
-            SyntheticTerm(accessFlags, attributes),
-            DeprecatedTerm(attributes)
-        ) :: facts
-
-    }
 }
