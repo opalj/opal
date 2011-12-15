@@ -65,112 +65,130 @@ sealed trait AccessFlag {
     def toXML: scala.xml.Node
 }
 
-case object ACC_PUBLIC extends AccessFlag {
+sealed trait VisibilityModifier extends AccessFlag
+final object VisibilityModifier {
+
+    val mask = ACC_PRIVATE.mask | ACC_PUBLIC.mask | ACC_PROTECTED.mask
+
+    private val SOME_PUBLIC = Some(ACC_PUBLIC)
+    private val SOME_PRIVATE = Some(ACC_PRIVATE)
+    private val SOME_PROTECTED = Some(ACC_PROTECTED)
+
+    def get(accessFlags: Int): Option[VisibilityModifier] =
+        ((accessFlags & VisibilityModifier.mask): @scala.annotation.switch) match {
+            case 1 /*ACC_PUBLIC.mask*/    ⇒ SOME_PUBLIC
+            case 2 /*ACC_PRIVATE.mask*/   ⇒ SOME_PRIVATE
+            case 4 /*ACC_PROTECTED.mask*/ ⇒ SOME_PROTECTED
+            case _                  ⇒ None
+        }
+}
+
+final case object ACC_PUBLIC extends VisibilityModifier {
     val javaName: Option[String] = Some("public")
-    val mask = 0x0001
-    lazy val toXML = scala.xml.Elem(null, "public", scala.xml.Null, scala.xml.TopScope)
+    val mask : Int = 0x0001
+    lazy val toXML = <public />
 }
 
-case object ACC_PRIVATE extends AccessFlag {
+final case object ACC_PRIVATE extends VisibilityModifier {
     val javaName: Option[String] = Some("private")
-    val mask = 0x0002
-    lazy val toXML = scala.xml.Elem(null, "private", scala.xml.Null, scala.xml.TopScope)
+    val mask : Int = 0x0002
+    lazy val toXML = <private />
 }
 
-case object ACC_PROTECTED extends AccessFlag {
+final case object ACC_PROTECTED extends VisibilityModifier {
     val javaName: Option[String] = Some("protected")
-    val mask = 0x0004
-    lazy val toXML = scala.xml.Elem(null, "protected", scala.xml.Null, scala.xml.TopScope)
+    val mask : Int = 0x0004
+    lazy val toXML = <protected />
 }
 
-case object ACC_STATIC extends AccessFlag {
+final case object ACC_STATIC extends AccessFlag {
     val javaName: Option[String] = Some("static")
     val mask = 0x0008
-    lazy val toXML = scala.xml.Elem(null, "static", scala.xml.Null, scala.xml.TopScope)
+    lazy val toXML = <static />
 }
 
-case object ACC_FINAL extends AccessFlag {
+final case object ACC_FINAL extends AccessFlag {
     val javaName: Option[String] = Some("final")
     val mask = 0x0010
-    lazy val toXML = scala.xml.Elem(null, "final", scala.xml.Null, scala.xml.TopScope)
+    lazy val toXML = <final />
 }
 
-case object ACC_SUPER extends AccessFlag {
+final case object ACC_SUPER extends AccessFlag {
     val javaName: Option[String] = None
     val mask = 0x0020
-    lazy val toXML = scala.xml.Elem(null, "super", scala.xml.Null, scala.xml.TopScope)
+    lazy val toXML = <super />
 }
 
-case object ACC_SYNCHRONIZED extends AccessFlag {
+final case object ACC_SYNCHRONIZED extends AccessFlag {
     val javaName: Option[String] = Some("synchronized")
     val mask = 0x0020
-    lazy val toXML = scala.xml.Elem(null, "synchronized", scala.xml.Null, scala.xml.TopScope)
+    lazy val toXML = <synchronized />
 }
 
-case object ACC_VOLATILE extends AccessFlag {
+final case object ACC_VOLATILE extends AccessFlag {
     val javaName: Option[String] = Some("volatile")
     val mask = 0x0040
-    lazy val toXML = scala.xml.Elem(null, "volatile", scala.xml.Null, scala.xml.TopScope)
+    lazy val toXML = <volatile />
 }
 
-case object ACC_BRIDGE extends AccessFlag {
+final case object ACC_BRIDGE extends AccessFlag {
     val javaName: Option[String] = None
     val mask = 0x0040
-    lazy val toXML = scala.xml.Elem(null, "bridge", scala.xml.Null, scala.xml.TopScope)
+    lazy val toXML = <bridge />
 }
 
-case object ACC_TRANSIENT extends AccessFlag {
+final case object ACC_TRANSIENT extends AccessFlag {
     val javaName: Option[String] = Some("transient")
     val mask = 0x0080
-    lazy val toXML = scala.xml.Elem(null, "transient", scala.xml.Null, scala.xml.TopScope)
+    lazy val toXML = <transient />
 }
 
-case object ACC_VARARGS extends AccessFlag {
+final case object ACC_VARARGS extends AccessFlag {
     val javaName: Option[String] = None
     val mask = 0x0080
-    lazy val toXML = scala.xml.Elem(null, "varargs", scala.xml.Null, scala.xml.TopScope)
+    lazy val toXML = <varargs />
 }
 
-case object ACC_NATIVE extends AccessFlag {
+final case object ACC_NATIVE extends AccessFlag {
     val javaName: Option[String] = Some("native")
     val mask = 0x0100
-    lazy val toXML = scala.xml.Elem(null, "native", scala.xml.Null, scala.xml.TopScope)
+    lazy val toXML = <native />
 }
 
-case object ACC_INTERFACE extends AccessFlag {
+final case object ACC_INTERFACE extends AccessFlag {
     val javaName: Option[String] = None // this flag modifies the semantics of a class, but it is not an additional flag
     val mask = 0x0200
-    lazy val toXML = scala.xml.Elem(null, "interface", scala.xml.Null, scala.xml.TopScope)
+    lazy val toXML = <interface />
 }
 
-case object ACC_ABSTRACT extends AccessFlag {
+final case object ACC_ABSTRACT extends AccessFlag {
     val javaName: Option[String] = Some("abstract")
     val mask = 0x0400
-    lazy val toXML = scala.xml.Elem(null, "abstract", scala.xml.Null, scala.xml.TopScope)
+    lazy val toXML = <abstract />
 }
 
-case object ACC_STRICT extends AccessFlag {
+final case object ACC_STRICT extends AccessFlag {
     val javaName: Option[String] = Some("strictfp")
     val mask = 0x0800
-    lazy val toXML = scala.xml.Elem(null, "strictfp", scala.xml.Null, scala.xml.TopScope)
+    lazy val toXML = <strictfp />
 }
 
-case object ACC_SYNTHETIC extends AccessFlag {
+final case object ACC_SYNTHETIC extends AccessFlag {
     val javaName: Option[String] = None
     val mask = 0x1000
-    lazy val toXML = scala.xml.Elem(null, "synthetic", scala.xml.Null, scala.xml.TopScope)
+    lazy val toXML = <synthetic />
 }
 
-case object ACC_ANNOTATION extends AccessFlag {
+final case object ACC_ANNOTATION extends AccessFlag {
 
     val javaName: Option[String] = None
     val mask = 0x2000
-    lazy val toXML = scala.xml.Elem(null, "annotation", scala.xml.Null, scala.xml.TopScope)
+    lazy val toXML = <annotation />
 }
 
-case object ACC_ENUM extends AccessFlag {
+final case object ACC_ENUM extends AccessFlag {
     val javaName: Option[String] = None
     val mask = 0x4000
-    lazy val toXML = scala.xml.Elem(null, "enum", scala.xml.Null, scala.xml.TopScope)
+    lazy val toXML = <enum />
 }
 

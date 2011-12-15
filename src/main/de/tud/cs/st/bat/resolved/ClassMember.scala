@@ -34,27 +34,23 @@ package de.tud.cs.st.bat
 package resolved
 
 /**
- * Represents a single field declaration/definition.
- *
- * @param accessFlags This field's access flags. To analyze the access flags
- *  bit vector use [[de.tud.cs.st.bat.AccessFlag]] or [[de.tud.cs.st.bat.AccessFlagsIterator]].
- * @param name The name of this field. Note, that this name may be no valid
- *  Java programming language identifier.
- * @param fieldType The (erased) type of this field.
- * @param attributes The defined attributes. The JVM 7 specification defines the following
- * 	attributes for fields: [[de.tud.cs.st.bat.resolved.ConstantValue]], [[de.tud.cs.st.bat.resolved.Synthetic]], [[de.tud.cs.st.bat.resolved.Signature]],
- * 	[[de.tud.cs.st.bat.resolved.Deprecated]], [[de.tud.cs.st.bat.resolved.RuntimeVisibleAnnotations]] and [[de.tud.cs.st.bat.resolved.RuntimeInvisibleAnnotations]].
+ * Abstractions over the common properties of class members.
  *
  * @author Michael Eichberg
  */
 trait ClassMember extends CommonAttributes {
 
-    def accessFlags: Int
+    protected def accessFlags: Int
 
     def isPublic: Boolean = ACC_PUBLIC element_of accessFlags
     def isProtected: Boolean = ACC_PROTECTED element_of accessFlags
     def isPrivate: Boolean = ACC_PRIVATE element_of accessFlags
 
     def isStatic: Boolean = ACC_STATIC element_of accessFlags
+}
 
+object ClassMember {
+
+    def unapply(classMember: ClassMember): Option[VisibilityModifier] =
+        VisibilityModifier.get(classMember.accessFlags)
 }
