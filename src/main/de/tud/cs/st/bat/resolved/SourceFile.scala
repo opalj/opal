@@ -41,7 +41,7 @@ package resolved
  *  it will not contain any path information.
  * @author Michael Eichberg
  */
-case class SourceFileAttribute(sourceFile: String) extends Attribute {
+case class SourceFile(sourceFile: String) extends Attribute {
 
     //
     //

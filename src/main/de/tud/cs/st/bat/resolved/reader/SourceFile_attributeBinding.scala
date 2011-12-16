@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -35,7 +35,7 @@ package de.tud.cs.st.bat.resolved.reader
 import de.tud.cs.st.bat.reader.SourceFile_attributeReader
 
 /**
- *
+ * The factory method to create the source file attribute.
  *
  * @author Michael Eichberg
  */
@@ -44,7 +44,7 @@ trait SourceFile_attributeBinding
         with ConstantPoolBinding
         with AttributeBinding {
 
-    type SourceFile_attribute = de.tud.cs.st.bat.resolved.SourceFileAttribute
+    type SourceFile_attribute = de.tud.cs.st.bat.resolved.SourceFile
 
     def SourceFile_attribute(attribute_name_index: Constant_Pool_Index,
                              sourceFile_index: Constant_Pool_Index)(

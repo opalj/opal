@@ -66,9 +66,7 @@ case class ClassFile(minorVersion: Int,
                      attributes: Attributes)
         extends CommonAttributes {
 
-    private val classCategoryMask: Int = ACC_INTERFACE.mask | ACC_ANNOTATION.mask | ACC_ENUM.mask
-
-    private val annotationMask: Int = ACC_INTERFACE.mask | ACC_ANNOTATION.mask
+    import ClassFile._
 
     def isFinal: Boolean = ACC_FINAL element_of accessFlags
 
@@ -99,7 +97,7 @@ case class ClassFile(minorVersion: Int,
      * at most one SourceFile attribute.
      */
     def sourceFile: Option[String] =
-        attributes collectFirst { case SourceFileAttribute(s) ⇒ s }
+        attributes collectFirst { case SourceFile(s) ⇒ s }
 
     def sourceDebugExtension: Option[String] =
         attributes collectFirst { case SourceDebugExtension(s) ⇒ s }
@@ -176,7 +174,7 @@ case class ClassFile(minorVersion: Int,
         }
         for (attribute ← attributes) {
             facts = (attribute match {
-                case sfa: SourceFileAttribute   ⇒ sfa.toProlog(factory, key)
+                case sfa: SourceFile            ⇒ sfa.toProlog(factory, key)
                 case aa: AnnotationsAttribute   ⇒ aa.toProlog(factory, key)
                 case ema: EnclosingMethod       ⇒ ema.toProlog(factory, key)
                 case ics: InnerClassesAttribute ⇒ ics.toProlog(factory, key)
@@ -208,4 +206,11 @@ case class ClassFile(minorVersion: Int,
             case _                  ⇒ factory.StringAtom("annotation_declaration")
         }
     }
+}
+
+object ClassFile {
+
+    private val classCategoryMask: Int = ACC_INTERFACE.mask | ACC_ANNOTATION.mask | ACC_ENUM.mask
+
+    private val annotationMask: Int = ACC_INTERFACE.mask | ACC_ANNOTATION.mask
 }
