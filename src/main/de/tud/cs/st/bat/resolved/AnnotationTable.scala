@@ -30,36 +30,62 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat
-package resolved
+package de.tud.cs.st.bat.resolved
 
 /**
- * Defines methods to return common attributes from the attributes table of
- * class, field and method declarations.
+ * The runtime (in)visible annotations of a class, method, or field.
  *
  * @author Michael Eichberg
  */
-trait CommonAttributes {
-
-    protected def attributes: Attributes
-
-    def runtimeVisibleAnnotations: Option[Annotations] =
-        attributes collectFirst { case RuntimeVisibleAnnotationTable(vas) ⇒ vas }
-
-    def runtimeInvisibleAnnotations: Option[Annotations] = {
-        attributes collectFirst { case RuntimeInvisibleAnnotationTable(ias) ⇒ ias }
-    }
-
-    def isSynthetic: Boolean = attributes contains Synthetic
+trait AnnotationTable extends Attribute {
 
     /**
-     * Returns true if this (field, method, class) declaration is declared
-     * as deprecated.
-     *
-     * ==Java==
-     * Note that the deprecated attribute is always set when either the deprecated
-     * annotation or the JavaDoc tag is used.
+     * Returns true if these annotations are visible at runtime.
      */
-    def isDeprectated: Boolean = attributes contains Deprecated
+    def isRuntimeVisible: Boolean
 
+    /**
+     * The set of declared annotations; it may be empty.
+     */
+    def annotations: Annotations
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
+
+    def annotationsToXML = for (annotation ← annotations) yield annotation.toXML
+
+    // The key of an annotation fact is composed out of the (reference)keyAtom and the annotationTypeTerm.
+    // Every Annotation is only allowed to appear once (at least in the Java Programming Language and in Java's public API).
+    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] = {
+
+        import factory._
+
+        var facts: List[F] = Nil
+
+        for (annotation ← annotations) {
+            facts = Fact(
+                "annotation",
+                declaringEntityKey,
+                if (isRuntimeVisible)
+                    StringAtom("runtime_visible")
+                else
+                    StringAtom("runtime_invisible"),
+                annotation.annotationType.toProlog(factory),
+                Terms(
+                    annotation.elementValuePairs,
+                    (_: ElementValuePair).toProlog(factory)
+                )
+            ) :: facts
+        }
+        facts
+    }
+}
+
+object AnnotationTable {
+
+    def unapply(aa: AnnotationTable): Option[(Boolean, Annotations)] =
+        Some(aa.isRuntimeVisible, aa.annotations)
 }

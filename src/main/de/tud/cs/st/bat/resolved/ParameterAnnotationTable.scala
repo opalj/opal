@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -38,20 +38,47 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case class RuntimeInvisibleParameterAnnotationsAttribute(parameterAnnotations: ParameterAnnotations)
-        extends ParameterAnnotationsAttribute {
+trait ParameterAnnotationTable extends Attribute {
 
-    final def isRuntimeVisible: Boolean = false
+    def parameterAnnotations: ParameterAnnotations
+
+    def isRuntimeVisible: Boolean
 
     //
     //
     // SUPPORT FOR SPECIAL REPRESENTATIONS
     //
     //
-    
-    def toXML =
-        <runtime_invisible_parameter_annotations>
-			{ parameterAnnotationsToXML }
-		</runtime_invisible_parameter_annotations>
 
+    protected def parameterAnnotationsToXML =
+        for (parameter ← parameterAnnotations) yield {
+            <parameter>{ for (annotation ← parameter) yield annotation.toXML }</parameter>
+        }
+
+    final def toProlog[F, T, A <: T](
+        factory: PrologTermFactory[F, T, A],
+        declaringEntityKey: A): List[F] = {
+
+        import factory._
+
+        var facts: List[F] = Nil
+
+        Fact(
+            "parameter_annotations",
+            declaringEntityKey,
+            if (isRuntimeVisible)
+                StringAtom("runtime_visible")
+            else
+                StringAtom("runtime_invisible"),
+            Terms(
+                parameterAnnotations,
+                (parameterAnnotation: Seq[Annotation]) ⇒ {
+                    Terms(parameterAnnotation, (_: Annotation).toProlog(factory))
+                })) :: facts
+    }
+}
+
+object ParameterAnnotationTable {
+    def unapply(paa: ParameterAnnotationTable): Option[(Boolean, ParameterAnnotations)] =
+        Some(paa.isRuntimeVisible, paa.parameterAnnotations)
 }

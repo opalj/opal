@@ -78,7 +78,7 @@ trait DependencyExtractor extends DependencyBuilder with SourceElementIDs {
         // InnerClasses, EnclosingMethod, Synthetic, SourceFile, Signature, Deprecated,
         // SourceDebugExtension, RuntimeVisibleAnnotations, and RuntimeInvisibleAnnotations
         attributes foreach {
-            case AnnotationsAttribute(_, annotations) ⇒ // handles RuntimeVisibleAnnotations and RuntimeInvisibleAnnotations
+            case AnnotationTable(_, annotations) ⇒ // handles RuntimeVisibleAnnotations and RuntimeInvisibleAnnotations
                 annotations foreach { process(_, thisClassID) }
             case ema @ EnclosingMethod(enclosingClazz, enclosingMethodName, enclosingMethodDescriptor) ⇒ {
                 // add a dependency from this class to its enclosing method/class
@@ -128,7 +128,7 @@ trait DependencyExtractor extends DependencyBuilder with SourceElementIDs {
         // ConstantValue, Synthetic, Signature, Deprecated, RuntimeVisibleAnnotations, and
         // RuntimeInvisibleAnnotations
         attributes foreach {
-            case AnnotationsAttribute(_, annotations) ⇒ // handles RuntimeVisibleAnnotations and RuntimeInvisibleAnnotations
+            case AnnotationTable(_, annotations) ⇒ // handles RuntimeVisibleAnnotations and RuntimeInvisibleAnnotations
                 annotations foreach { process(_, fieldID) }
             case ConstantValue(ot: ObjectType) ⇒
                 addDependency(fieldID, sourceElementID(ot), USES_CONSTANT_VALUE_OF_TYPE)
@@ -162,9 +162,9 @@ trait DependencyExtractor extends DependencyBuilder with SourceElementIDs {
         // RuntimeInvisibleAnnotations, RuntimeVisibleParameterAnnotations,
         // RuntimeInvisibleParameterAnnotations, and AnnotationDefault
         attributes foreach {
-            case AnnotationsAttribute(_, annotations) ⇒ // handles RuntimeVisibleAnnotations and RuntimeInvisibleAnnotations
+            case AnnotationTable(_, annotations) ⇒ // handles RuntimeVisibleAnnotations and RuntimeInvisibleAnnotations
                 annotations foreach { process(_, methodID) }
-            case ParameterAnnotationsAttribute(_, parameterAnnotations) ⇒ // handles RuntimeVisibleParameterAnnotations and RuntimeInvisibleParameterAnnotations
+            case ParameterAnnotationTable(_, parameterAnnotations) ⇒ // handles RuntimeVisibleParameterAnnotations and RuntimeInvisibleParameterAnnotations
                 parameterAnnotations foreach { _ foreach { process(_, methodID, PARAMETER_ANNOTATED_WITH) } }
             case ExceptionTable(exceptionTable) ⇒
                 exceptionTable foreach { e ⇒ addDependency(methodID, sourceElementID(e), THROWS) }
@@ -349,7 +349,7 @@ trait DependencyExtractor extends DependencyBuilder with SourceElementIDs {
         // add dependency from source to the discovered annotation type
         addDependency(srcID, sourceElementID(annotationType), dependencyType)
         // extract dependencies for each element value pair that is used in the given annotation
-        elementValuePairs foreach { evp ⇒ processElementValue(evp.elementValue, srcID) }
+        elementValuePairs foreach { evp ⇒ processElementValue(evp.value, srcID) }
     }
 
     /**

@@ -34,16 +34,14 @@ package de.tud.cs.st.bat
 package resolved
 
 /**
- * The runtime invisible class, method, or field annotations.
- *
- *
+ * Parameter annotations.
  *
  * @author Michael Eichberg
  */
-case class RuntimeInvisibleAnnotationsAttribute(annotations: Annotations)
-        extends AnnotationsAttribute {
+case class RuntimeVisibleParameterAnnotationTable(parameterAnnotations: ParameterAnnotations)
+        extends ParameterAnnotationTable {
 
-    final def isRuntimeVisible: Boolean = false
+    final def isRuntimeVisible: Boolean = true
 
     //
     //
@@ -52,8 +50,8 @@ case class RuntimeInvisibleAnnotationsAttribute(annotations: Annotations)
     //
 
     def toXML =
-        <runtime_invisible_annotations>
-			{ annotationsToXML }
-		</runtime_invisible_annotations>
+        <runtime_visible_parameter_annotations>
+			{ parameterAnnotationsToXML }
+        </runtime_visible_parameter_annotations>
 
 }

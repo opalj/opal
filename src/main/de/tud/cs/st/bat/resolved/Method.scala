@@ -33,11 +33,6 @@
 package de.tud.cs.st.bat
 package resolved
 
-import scala.xml.Elem
-import scala.xml.Null
-import scala.xml.Text
-import scala.xml.TopScope
-
 /**
  * Represents a single method.
  *
@@ -50,10 +45,10 @@ case class Method(accessFlags: Int,
         extends ClassMember {
 
     def runtimeVisibleParameterAnnotations: Option[ParameterAnnotations] =
-        attributes collectFirst { case RuntimeVisibleParameterAnnotationsAttribute(pas) ⇒ pas }
+        attributes collectFirst { case RuntimeVisibleParameterAnnotationTable(pas) ⇒ pas }
 
     def runtimeInvisibleParameterAnnotations: Option[ParameterAnnotations] =
-        attributes collectFirst { case RuntimeInvisibleParameterAnnotationsAttribute(pas) ⇒ pas }
+        attributes collectFirst { case RuntimeInvisibleParameterAnnotationTable(pas) ⇒ pas }
 
     def isVarargs: Boolean = ACC_VARARGS element_of accessFlags
 
@@ -68,8 +63,7 @@ case class Method(accessFlags: Int,
     /**
      * This method's implementation (if it is not abstract).
      */
-    def body: Option[Code] =
-        attributes collectFirst { case c: Code ⇒ c }
+    def body: Option[Code] = attributes collectFirst { case c: Code ⇒ c }
 
     /**
      * Each method optionally defines a method type signature.
@@ -127,12 +121,12 @@ case class Method(accessFlags: Int,
 
         for (attribute ← attributes) {
             facts = (attribute match {
-                case aa: AnnotationsAttribute           ⇒ aa.toProlog(factory, key)
-                case paa: ParameterAnnotationsAttribute ⇒ paa.toProlog(factory, key)
+                case aa: AnnotationTable           ⇒ aa.toProlog(factory, key)
+                case paa: ParameterAnnotationTable ⇒ paa.toProlog(factory, key)
                 case ea: ExceptionTable            ⇒ ea.toProlog(factory, key)
-                case ada: ElementValue                  ⇒ ada.toProlog(factory, key)
-                case ca: Code                  ⇒ ca.toProlog(factory, key)
-                case _                                  ⇒ Nil
+                case ada: ElementValue             ⇒ ada.toProlog(factory, key)
+                case ca: Code                      ⇒ ca.toProlog(factory, key)
+                case _                             ⇒ Nil
             }) ::: facts
         }
 

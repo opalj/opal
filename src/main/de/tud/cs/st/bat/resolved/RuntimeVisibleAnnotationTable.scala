@@ -30,24 +30,15 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved
+package de.tud.cs.st.bat
+package resolved
 
 /**
- * The runtime (in)visible annotations of a class, method, or field.
+ * A class, method, or field annotation.
  *
  * @author Michael Eichberg
  */
-trait AnnotationsAttribute extends Attribute {
-
-    /**
-     * Returns true if these annotations are visible at runtime.
-     */
-    def isRuntimeVisible: Boolean
-
-    /**
-     * The set of declared annotations; it may be empty.
-     */
-    def annotations: Annotations
+case class RuntimeVisibleAnnotationTable(annotations: Annotations) extends AnnotationTable {
 
     //
     //
@@ -55,37 +46,8 @@ trait AnnotationsAttribute extends Attribute {
     //
     //
 
-    def annotationsToXML = for (annotation ← annotations) yield annotation.toXML
+    final def isRuntimeVisible: Boolean = true
 
-    // The key of an annotation fact is composed out of the (reference)keyAtom and the annotationTypeTerm.
-    // Every Annotation is only allowed to appear once (at least in the Java Programming Language and in Java's public API).
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] = {
+    def toXML = <runtime_visible_annotations>{ annotationsToXML }</runtime_visible_annotations>
 
-        import factory._
-
-        var facts: List[F] = Nil
-
-        for (annotation ← annotations) {
-            facts = Fact(
-                "annotation",
-                declaringEntityKey,
-                if (isRuntimeVisible)
-                    StringAtom("runtime_visible")
-                else
-                    StringAtom("runtime_invisible"),
-                annotation.annotationType.toProlog(factory),
-                Terms(
-                    annotation.elementValuePairs,
-                    (_: ElementValuePair).toProlog(factory)
-                )
-            ) :: facts
-        }
-        facts
-    }
-}
-
-object AnnotationsAttribute {
-
-    def unapply(aa: AnnotationsAttribute): Option[(Boolean, Annotations)] =
-        Some(aa.isRuntimeVisible, aa.annotations)
 }

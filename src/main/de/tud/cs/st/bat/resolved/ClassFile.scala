@@ -175,7 +175,7 @@ case class ClassFile(minorVersion: Int,
         for (attribute ← attributes) {
             facts = (attribute match {
                 case sfa: SourceFile            ⇒ sfa.toProlog(factory, key)
-                case aa: AnnotationsAttribute   ⇒ aa.toProlog(factory, key)
+                case aa: AnnotationTable   ⇒ aa.toProlog(factory, key)
                 case ema: EnclosingMethod       ⇒ ema.toProlog(factory, key)
                 case ics: InnerClassTable ⇒ ics.toProlog(factory, key)
                 case _                          ⇒ Nil

@@ -62,6 +62,12 @@ sealed trait ElementValue extends Attribute {
 
 case class ByteValue(value: Byte) extends ElementValue {
 
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
+
     def valueToXML = <byte value={ value.toString }/>
 
     def valueToProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T =
@@ -70,6 +76,12 @@ case class ByteValue(value: Byte) extends ElementValue {
 }
 
 case class CharValue(value: Char) extends ElementValue {
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
     def valueToXML = <char value={ value.toString }/>
 
@@ -83,6 +95,12 @@ case class CharValue(value: Char) extends ElementValue {
 
 case class DoubleValue(value: Double) extends ElementValue {
 
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
+
     def valueToXML = <double value={ value.toString }/>
 
     def valueToProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T = {
@@ -94,6 +112,12 @@ case class DoubleValue(value: Double) extends ElementValue {
 }
 
 case class FloatValue(value: Float) extends ElementValue {
+
+    //
+    //
+    // SUPPORT FOR SPECIAL REPRESENTATIONS
+    //
+    //
 
     def valueToXML = <float value={ value.toString }/>
 

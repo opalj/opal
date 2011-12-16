@@ -34,15 +34,13 @@ package de.tud.cs.st.bat
 package resolved
 
 /**
- * Parameter annotations.
+ * The runtime invisible class, method, or field annotations.
  *
  * @author Michael Eichberg
  */
-trait ParameterAnnotationsAttribute extends Attribute {
+case class RuntimeInvisibleAnnotationTable(annotations: Annotations) extends AnnotationTable {
 
-    def parameterAnnotations: ParameterAnnotations
-
-    def isRuntimeVisible: Boolean
+    final def isRuntimeVisible: Boolean = false
 
     //
     //
@@ -50,35 +48,6 @@ trait ParameterAnnotationsAttribute extends Attribute {
     //
     //
 
-    protected def parameterAnnotationsToXML =
-        for (parameter ← parameterAnnotations) yield {
-            <parameter>{ for (annotation ← parameter) yield annotation.toXML }</parameter>
-        }
+    def toXML = <runtime_invisible_annotations>{ annotationsToXML }</runtime_invisible_annotations>
 
-    final def toProlog[F, T, A <: T](
-        factory: PrologTermFactory[F, T, A],
-        declaringEntityKey: A): List[F] = {
-
-        import factory._
-
-        var facts: List[F] = Nil
-
-        Fact(
-            "parameter_annotations",
-            declaringEntityKey,
-            if (isRuntimeVisible)
-                StringAtom("runtime_visible")
-            else
-                StringAtom("runtime_invisible"),
-            Terms(
-                parameterAnnotations,
-                (parameterAnnotation: Seq[Annotation]) ⇒ {
-                    Terms(parameterAnnotation, (_: Annotation).toProlog(factory))
-                })) :: facts
-    }
-}
-
-object ParameterAnnotationsAttribute {
-    def unapply(paa: ParameterAnnotationsAttribute): Option[(Boolean, ParameterAnnotations)] =
-        Some(paa.isRuntimeVisible, paa.parameterAnnotations)
 }
