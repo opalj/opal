@@ -44,6 +44,15 @@ case class CodeAttribute(maxStack: Int,
                          attributes: Attributes)
         extends Attribute {
 
+    def lineNumberTable: Option[LineNumberTable] =
+        attributes collectFirst { case LineNumberTableAttribute(lnt) ⇒ lnt }
+
+    def localVariableTable: Option[LocalVariableTable] =
+        attributes collectFirst { case LocalVariableTableAttribute(lvt) ⇒ lvt }
+
+    def localVariableTypeTable: Option[LocalVariableTypeTable] =
+        attributes collectFirst { case LocalVariableTypeTableAttribute(lvtt) ⇒ lvtt }
+
     def stackMapTable: Option[StackMapFrames] =
         attributes collectFirst { case StackMapTableAttribute(smf) ⇒ smf }
 
@@ -56,7 +65,7 @@ case class CodeAttribute(maxStack: Int,
             (attributes.toString)+
             ")"
     }
-    	
+
     //
     //
     // SUPPORT FOR SPECIAL REPRESENTATIONS
