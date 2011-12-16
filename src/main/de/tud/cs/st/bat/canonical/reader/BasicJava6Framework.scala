@@ -325,7 +325,7 @@ object BasicJava6Framework
             val max_stack: Int,
             val max_locals: Int,
             val instructions: Instructions,
-            val exception_table: ExceptionTable,
+            val exception_handlers: ExceptionHandlers,
             val attributes: Attributes) extends de.tud.cs.st.bat.canonical.Code_attribute {
 
         //
@@ -340,10 +340,10 @@ object BasicJava6Framework
     def Code_attribute(
         attribute_name_index: Int, attribute_length: Int,
         max_stack: Int, max_locals: Int, instructions: Instructions,
-        exception_table: ExceptionTable,
+        exception_handlers: ExceptionHandlers,
         attributes: Attributes)(implicit constant_pool: Constant_Pool) =
         new Code_attribute(
-            attribute_name_index, attribute_length, max_stack, max_locals, instructions, exception_table, attributes
+            attribute_name_index, attribute_length, max_stack, max_locals, instructions, exception_handlers, attributes
         )
 
     case class ExceptionTableEntry(

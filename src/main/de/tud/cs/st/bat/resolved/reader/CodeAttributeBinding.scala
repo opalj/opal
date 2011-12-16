@@ -55,10 +55,10 @@ trait CodeAttributeBinding
                        max_stack: Int,
                        max_locals: Int,
                        instructions: Instructions,
-                       exception_table: ExceptionTable,
+                       exception_handlers: ExceptionHandlers,
                        attributes: Attributes)(
                            implicit cp: Constant_Pool) = {
-        new Code(max_stack, max_locals, instructions, exception_table, attributes)
+        new Code(max_stack, max_locals, instructions, exception_handlers, attributes)
     }
 
     def ExceptionTableEntry(start_pc: Int,

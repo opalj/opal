@@ -34,12 +34,12 @@ package de.tud.cs.st.bat
 package resolved
 
 /**
- * A method's declared exceptions.
+ * Attribute in a method's attributes table that declares the (checked) exceptions
+ * that may be thrown by the method.
  *
  * @author Michael Eichberg
  */
-case class ExceptionsAttribute(exceptionTable: Seq[ObjectType])
-        extends Attribute {
+case class ExceptionsTable(exceptions: Exceptions) extends Attribute {
 
     //
     //
@@ -49,14 +49,14 @@ case class ExceptionsAttribute(exceptionTable: Seq[ObjectType])
 
     def toXML =
         <exceptions>
-    		{ for (exception ← exceptionTable) yield <exception type={ exception.toJava }/> }
+    		{ for (exception ← exceptions) yield <exception type={ exception.toJava }/> }
     	</exceptions>
 
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] = {
         import factory._
         Fact("method_exceptions",
             declaringEntityKey,
-            Terms(exceptionTable, (_: ObjectType).toProlog(factory))
+            Terms(exceptions, (_: ObjectType).toProlog(factory))
         ) :: Nil
 
     }

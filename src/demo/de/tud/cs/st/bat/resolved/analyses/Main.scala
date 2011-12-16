@@ -172,7 +172,7 @@ object Main extends Main {
             for (
                 classFile ← classFiles if classFile.isClassDeclaration;
                 method ← classFile.methods if method.body.isDefined;
-                exceptionHandler ← method.body.get.exceptionTable if exceptionHandler.catchType == IllegalMonitorStateExceptionType
+                exceptionHandler ← method.body.get.exceptionHandlers if exceptionHandler.catchType == IllegalMonitorStateExceptionType
             ) yield (classFile, method)
         }
         println("\tViolations: " + catchesIllegalMonitorStateException.size)

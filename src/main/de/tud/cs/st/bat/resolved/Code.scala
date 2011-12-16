@@ -40,7 +40,7 @@ package de.tud.cs.st.bat.resolved
 case class Code(maxStack: Int,
                 maxLocals: Int,
                 instructions: Array[Instruction],
-                exceptionTable: ExceptionTable,
+                exceptionHandlers: ExceptionHandlers,
                 attributes: Attributes)
         extends Attribute {
 
@@ -61,7 +61,7 @@ case class Code(maxStack: Int,
             maxStack+", maxLocals="+
             maxLocals+","+
             (instructions.filter(_ ne null).deep.toString) +
-            (exceptionTable.toString)+","+
+            (exceptionHandlers.toString)+","+
             (attributes.toString)+
             ")"
     }
@@ -77,7 +77,7 @@ case class Code(maxStack: Int,
 			max_stack={ maxStack.toString }
 			max_locals={ maxLocals.toString } >
 			<attributes>{ for (attribute <- attributes) yield attribute.toXML }</attributes>
-			<exception_handlers>{ for (entry <- exceptionTable) yield entry.toXML }</exception_handlers>
+			<exception_handlers>{ for (entry <- exceptionHandlers) yield entry.toXML }</exception_handlers>
 			<instructions>
 			{
 				var instrs : List[scala.xml.Node] = Nil
@@ -152,12 +152,12 @@ case class Code(maxStack: Int,
 		}
 
 		// 4. represent the "MethodExceptionsTable"
-		if (exceptionTable != null && exceptionTable.size > 0){
+		if (exceptionHandlers.size > 0){
 			facts = Fact(
 				"method_exceptions_table",
 				declaringEntityKey,
 				Terms(
-					exceptionTable,
+					exceptionHandlers,
 					(_:ExceptionHandler).toProlog(factory,pc_to_seqNo)
 				)
 			) :: facts

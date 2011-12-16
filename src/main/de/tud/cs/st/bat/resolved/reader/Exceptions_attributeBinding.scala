@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -30,12 +30,13 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved.reader
+package de.tud.cs.st.bat.resolved
+package reader
 
 import de.tud.cs.st.bat.reader.Exceptions_attributeReader
 
 /**
- *
+ * The factory method to create a method's exception attribute.
  *
  * @author Michael Eichberg
  */
@@ -44,7 +45,7 @@ trait Exceptions_attributeBinding
         with ConstantPoolBinding
         with AttributeBinding {
 
-    type Exceptions_attribute = de.tud.cs.st.bat.resolved.ExceptionsAttribute
+    type Exceptions_attribute = de.tud.cs.st.bat.resolved.ExceptionsTable
     val Exceptions_attributeManifest: ClassManifest[Exceptions_attribute] = implicitly
 
     def Exceptions_attribute(attribute_name_index: Constant_Pool_Index,

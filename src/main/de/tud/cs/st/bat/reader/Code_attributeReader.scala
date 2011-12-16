@@ -84,7 +84,7 @@ trait Code_attributeReader extends AttributeReader {
                        max_stack: Int,
                        max_locals: Int,
                        instructions: Instructions,
-                       exception_table: ExceptionTable,
+                       exception_handlers: ExceptionHandlers,
                        attributes: Attributes)(implicit constant_pool: Constant_Pool): Code_attribute
 
     def ExceptionTableEntry(start_pc: Int,
@@ -97,9 +97,9 @@ trait Code_attributeReader extends AttributeReader {
     // IMPLEMENTATION
     //
 
-    type ExceptionTable = IndexedSeq[ExceptionTableEntry]
+    type ExceptionHandlers = IndexedSeq[ExceptionTableEntry]
 
-    private val EMPTY_EXCEPTION_TABLE: ExceptionTable = Vector.empty
+    private val EMPTY_EXCEPTION_TABLE: ExceptionHandlers = Vector.empty
 
     register(
         Code_attributeReader.ATTRIBUTE_NAME ->

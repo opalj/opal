@@ -51,14 +51,14 @@ trait Code_attribute extends Attribute {
     val max_stack: Int
     val max_locals: Int
     val instructions: Instructions
-    val exception_table: ExceptionTable
+    val exception_handlers: ExceptionHandlers
     val attributes: Attributes
 
     //
     // CONCRETE (FINAL) DEFINITIONS
     //
 
-    type ExceptionTable = Seq[ExceptionTableEntry]
+    type ExceptionHandlers = Seq[ExceptionTableEntry]
 
     def attribute_name = de.tud.cs.st.bat.reader.Code_attributeReader.ATTRIBUTE_NAME
 }

@@ -166,7 +166,7 @@ trait DependencyExtractor extends DependencyBuilder with SourceElementIDs {
                 annotations foreach { process(_, methodID) }
             case ParameterAnnotationsAttribute(_, parameterAnnotations) ⇒ // handles RuntimeVisibleParameterAnnotations and RuntimeInvisibleParameterAnnotations
                 parameterAnnotations foreach { _ foreach { process(_, methodID, PARAMETER_ANNOTATED_WITH) } }
-            case ExceptionsAttribute(exceptionTable) ⇒
+            case ExceptionsTable(exceptionTable) ⇒
                 exceptionTable foreach { e ⇒ addDependency(methodID, sourceElementID(e), THROWS) }
             case elementValue: ElementValue ⇒ // ElementValues encode annotation default attributes
                 processElementValue(elementValue, methodID)

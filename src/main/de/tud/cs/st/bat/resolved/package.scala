@@ -56,7 +56,8 @@ package object resolved {
     type InnerClassesEntries = IndexedSeq[InnerClassesEntry]
 
     type Methods = IndexedSeq[Method]
-    type ExceptionTable = IndexedSeq[ExceptionHandler]
+    type Exceptions = Seq[ObjectType]
+    type ExceptionHandlers = IndexedSeq[ExceptionHandler]
     type LineNumbers = IndexedSeq[LineNumber]
     type LocalVariableTypes = IndexedSeq[LocalVariableType]
     type LocalVariables = IndexedSeq[LocalVariable]
