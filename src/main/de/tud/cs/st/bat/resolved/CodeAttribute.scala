@@ -158,7 +158,7 @@ case class CodeAttribute(maxStack: Int,
 				declaringEntityKey,
 				Terms(
 					exceptionTable,
-					(_:ExceptionTableEntry).toProlog(factory,pc_to_seqNo)
+					(_:ExceptionHandler).toProlog(factory,pc_to_seqNo)
 				)
 			) :: facts
 		}

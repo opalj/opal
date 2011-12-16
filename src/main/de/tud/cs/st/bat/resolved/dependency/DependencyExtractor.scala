@@ -176,7 +176,7 @@ trait DependencyExtractor extends DependencyBuilder with SourceElementIDs {
                 process(methodID, code)
                 // add dependencies from the method to all throwables that are used in catch statements
                 for (
-                    ExceptionTableEntry(_, _, _, catchType) ← exceptionTable if !isFinallyBlock(catchType)
+                    ExceptionHandler(_, _, _, catchType) ← exceptionTable if !isFinallyBlock(catchType)
                 ) {
                     addDependency(methodID, sourceElementID(catchType), CATCHES)
                 }

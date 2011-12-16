@@ -33,14 +33,15 @@
 package de.tud.cs.st.bat.resolved
 
 /**
- * An entry in the exceptions table of a [[de.tud.cs.st.bat.resolved.CodeAttribute]]
+ * An entry in the exceptions table of a [[de.tud.cs.st.bat.resolved.Code]]
+ * block.
  *
  * @author Michael Eichberg
  */
-case class ExceptionTableEntry(startPC: Int,
-                               endPC: Int,
-                               handlerPC: Int,
-                               catchType: ObjectType) {
+case class ExceptionHandler(startPC: Int,
+                            endPC: Int,
+                            handlerPC: Int,
+                            catchType: ObjectType) {
 
     //
     //

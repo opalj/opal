@@ -13,9 +13,9 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- *  - Neither the name of the Software Technology Group or Technische 
- *    Universität Darmstadt nor the names of its contributors may be used to 
- *    endorse or promote products derived from this software without specific 
+ *  - Neither the name of the Software Technology Group or Technische
+ *    Universität Darmstadt nor the names of its contributors may be used to
+ *    endorse or promote products derived from this software without specific
  *    prior written permission.
  *
  *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -33,7 +33,16 @@
 package de.tud.cs.st.bat
 
 /**
- * Final type bindings.
+ * This package implements BAT's – so-called – resolved representation Java bytecode;
+ * the name was chosen to denote that all index-based reference to the constant pool structure
+ * are resolved to direct references to the constant pool entries;
+ * i.e., no constant pool based lookups are required anymore.
+ *
+ * This representation of Java bytecode is considered as BAT's standard representation
+ * for writing Scala based analyses. This representation is engineered such
+ * that it facilitates writing analyses that use pattern matching.
+ *
+ * This representation is also the basis for other representations.
  *
  * @author Michael Eichberg
  */
@@ -47,7 +56,7 @@ package object resolved {
     type InnerClassesEntries = IndexedSeq[InnerClassesEntry]
 
     type Methods = IndexedSeq[Method]
-    type ExceptionTable = IndexedSeq[ExceptionTableEntry]
+    type ExceptionTable = IndexedSeq[ExceptionHandler]
     type LineNumberTable = IndexedSeq[LineNumberTableEntry]
     type LocalVariableTypeTable = IndexedSeq[LocalVariableTypeTableEntry]
     type LocalVariableTable = IndexedSeq[LocalVariableTableEntry]
