@@ -93,10 +93,7 @@ class ClassHierarchy {
      * @return The direct subtypes of the given type.
      */
     def subclasses(objectType: ObjectType): Option[immutable.Set[ObjectType]] =
-        if (subclasses.contains(objectType))
-            Some(subclasses.apply(objectType).toSet)
-        else
-            None
+        subclasses.get(objectType).map(_.toSet)
 
     /**
      * The classes and interfaces from which the given type directly inherits.
@@ -115,10 +112,7 @@ class ClassHierarchy {
      * @return The direct supertypes of the given type.
      */
     def superclasses(objectType: ObjectType): Option[immutable.Set[ObjectType]] =
-        if (superclasses.contains(objectType))
-            Some(superclasses.apply(objectType).toSet)
-        else
-            None
+        superclasses.get(objectType).map(_.toSet)
 
     /**
      * The classes and interfaces from which the given types directly inherit.
