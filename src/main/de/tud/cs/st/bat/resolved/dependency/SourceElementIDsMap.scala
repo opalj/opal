@@ -60,7 +60,7 @@ import scala.collection.mutable.HashMap
  * @author Michael Eichberg
  * @author Thomas Schlosser
  */
-trait SourceElementIDsMap extends SourceElementIDs with IDResetter {
+trait SourceElementIDsMap extends SourceElementIDs {
 
     //
     // Associates each type with a unique ID
@@ -108,6 +108,10 @@ trait SourceElementIDsMap extends SourceElementIDs with IDResetter {
             getOrElseUpdate(methodName, { val id = nextMethodID; nextMethodID += 1; id })
     }
 
+    /**
+     * Resets the ids to their initial values and clears all bindings between
+     * source elements and ids.
+     */
     def reset {
         nextTypeID = LOWEST_TYPE_ID
         typeIDs.clear()
