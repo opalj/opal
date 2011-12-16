@@ -79,25 +79,25 @@ final object VisibilityModifier {
             case 1 /*ACC_PUBLIC.mask*/    ⇒ SOME_PUBLIC
             case 2 /*ACC_PRIVATE.mask*/   ⇒ SOME_PRIVATE
             case 4 /*ACC_PROTECTED.mask*/ ⇒ SOME_PROTECTED
-            case _                  ⇒ None
+            case _                        ⇒ None
         }
 }
 
 final case object ACC_PUBLIC extends VisibilityModifier {
     val javaName: Option[String] = Some("public")
-    val mask : Int = 0x0001
+    val mask: Int = 0x0001
     lazy val toXML = <public />
 }
 
 final case object ACC_PRIVATE extends VisibilityModifier {
     val javaName: Option[String] = Some("private")
-    val mask : Int = 0x0002
+    val mask: Int = 0x0002
     lazy val toXML = <private />
 }
 
 final case object ACC_PROTECTED extends VisibilityModifier {
     val javaName: Option[String] = Some("protected")
-    val mask : Int = 0x0004
+    val mask: Int = 0x0004
     lazy val toXML = <protected />
 }
 
