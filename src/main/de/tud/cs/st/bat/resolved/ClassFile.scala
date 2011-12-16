@@ -82,6 +82,9 @@ case class ClassFile(minorVersion: Int,
 
     def isAnnotationDeclaration: Boolean = (accessFlags & classCategoryMask) == annotationMask
 
+    def enclosingMethod: Option[EnclosingMethod] =
+        attributes collectFirst { case em: EnclosingMethod ⇒ em }
+
     def innerClassesEntries: Option[InnerClassesEntries] =
         attributes collectFirst { case InnerClassesAttribute(ice) ⇒ ice }
 
@@ -165,11 +168,11 @@ case class ClassFile(minorVersion: Int,
         }
         for (attribute ← attributes) {
             facts = (attribute match {
-                case sfa: SourceFileAttribute      ⇒ sfa.toProlog(factory, key)
-                case aa: AnnotationsAttribute      ⇒ aa.toProlog(factory, key)
-                case ema: EnclosingMethodAttribute ⇒ ema.toProlog(factory, key)
-                case ics: InnerClassesAttribute    ⇒ ics.toProlog(factory, key)
-                case _                             ⇒ Nil
+                case sfa: SourceFileAttribute   ⇒ sfa.toProlog(factory, key)
+                case aa: AnnotationsAttribute   ⇒ aa.toProlog(factory, key)
+                case ema: EnclosingMethod       ⇒ ema.toProlog(factory, key)
+                case ics: InnerClassesAttribute ⇒ ics.toProlog(factory, key)
+                case _                          ⇒ Nil
             }) ::: facts
         }
 

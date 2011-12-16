@@ -80,7 +80,7 @@ trait DependencyExtractor extends DependencyBuilder with SourceElementIDs {
         attributes foreach {
             case AnnotationsAttribute(_, annotations) ⇒ // handles RuntimeVisibleAnnotations and RuntimeInvisibleAnnotations
                 annotations foreach { process(_, thisClassID) }
-            case ema @ EnclosingMethodAttribute(enclosingClazz, enclosingMethodName, enclosingMethodDescriptor) ⇒ {
+            case ema @ EnclosingMethod(enclosingClazz, enclosingMethodName, enclosingMethodDescriptor) ⇒ {
                 // add a dependency from this class to its enclosing method/class
                 addDependency(
                     thisClassID,
@@ -476,6 +476,6 @@ trait DependencyExtractor extends DependencyBuilder with SourceElementIDs {
      * @return <code>true</code> if method name and descriptor is not NULL.
      *         Otherwise, <code>false</code> is returned.
      */
-    private def isEnclosedByMethod(ema: EnclosingMethodAttribute): Boolean =
+    private def isEnclosedByMethod(ema: EnclosingMethod): Boolean =
         ema.name != null && ema.descriptor != null // otherwise the inner class is assigned to a field
 }
