@@ -170,10 +170,10 @@ trait DependencyExtractor extends DependencyBuilder with SourceElementIDs {
                 exceptionTable foreach { e ⇒ addDependency(methodID, sourceElementID(e), THROWS) }
             case elementValue: ElementValue ⇒ // ElementValues encode annotation default attributes
                 processElementValue(elementValue, methodID)
-            case CodeAttribute(_, _, code, exceptionTable, attributes) ⇒
+            case Code(_, _, instructions, exceptionTable, attributes) ⇒
                 // Process code instructions by calling the process method which is defined in
                 // the generated InstructionDependencyExtractor super class.
-                process(methodID, code)
+                process(methodID, instructions)
                 // add dependencies from the method to all throwables that are used in catch statements
                 for (
                     ExceptionHandler(_, _, _, catchType) ← exceptionTable if !isFinallyBlock(catchType)

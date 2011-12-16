@@ -37,11 +37,11 @@ package de.tud.cs.st.bat.resolved
  *
  * @author Michael Eichberg
  */
-case class CodeAttribute(maxStack: Int,
-                         maxLocals: Int,
-                         instructions: Array[Instruction],
-                         exceptionTable: ExceptionTable,
-                         attributes: Attributes)
+case class Code(maxStack: Int,
+                maxLocals: Int,
+                instructions: Array[Instruction],
+                exceptionTable: ExceptionTable,
+                attributes: Attributes)
         extends Attribute {
 
     def lineNumberTable: Option[LineNumberTable] =

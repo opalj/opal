@@ -48,7 +48,7 @@ trait CodeAttributeBinding
 
     type ExceptionTableEntry = de.tud.cs.st.bat.resolved.ExceptionHandler
     val ExceptionTableEntryManifest: ClassManifest[ExceptionTableEntry] = implicitly
-    type Code_attribute = de.tud.cs.st.bat.resolved.CodeAttribute
+    type Code_attribute = de.tud.cs.st.bat.resolved.Code
 
     def Code_attribute(attribute_name_index: Constant_Pool_Index,
                        attribute_length: Int,
@@ -58,7 +58,7 @@ trait CodeAttributeBinding
                        exception_table: ExceptionTable,
                        attributes: Attributes)(
                            implicit cp: Constant_Pool) = {
-        new CodeAttribute(max_stack, max_locals, instructions, exception_table, attributes)
+        new Code(max_stack, max_locals, instructions, exception_table, attributes)
     }
 
     def ExceptionTableEntry(start_pc: Int,

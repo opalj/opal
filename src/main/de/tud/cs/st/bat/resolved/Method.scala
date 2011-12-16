@@ -68,8 +68,8 @@ case class Method(accessFlags: Int,
     /**
      * This method's implementation (if it is not abstract).
      */
-    def body: Option[CodeAttribute] =
-        attributes collectFirst { case ca: CodeAttribute ⇒ ca }
+    def body: Option[Code] =
+        attributes collectFirst { case c: Code ⇒ c }
 
     /**
      * Each method optionally defines a method type signature.
@@ -131,7 +131,7 @@ case class Method(accessFlags: Int,
                 case paa: ParameterAnnotationsAttribute ⇒ paa.toProlog(factory, key)
                 case ea: ExceptionsAttribute            ⇒ ea.toProlog(factory, key)
                 case ada: ElementValue                  ⇒ ada.toProlog(factory, key)
-                case ca: CodeAttribute                  ⇒ ca.toProlog(factory, key)
+                case ca: Code                  ⇒ ca.toProlog(factory, key)
                 case _                                  ⇒ Nil
             }) ::: facts
         }
