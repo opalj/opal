@@ -34,13 +34,13 @@ package de.tud.cs.st.bat
 package resolved
 
 /**
- * Debug information. The source debug extension attribute is an optional
- * attribute of a class declaration ([[de.tud.cs.st.bat.resolved.ClassFile]])
+ * Attribute to associate additional debug information with a class. The source
+ * debug extension attribute is an optional attribute of a class declaration
+ * ([[de.tud.cs.st.bat.resolved.ClassFile]]).
  *
  * @author Michael Eichberg
  */
-case class SourceDebugExtensionAttribute(debug_extension: String)
-        extends Attribute {
+case class SourceDebugExtension(debug_extension: String) extends Attribute {
 
     //
     //
