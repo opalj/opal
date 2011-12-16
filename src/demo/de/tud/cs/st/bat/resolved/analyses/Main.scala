@@ -112,7 +112,7 @@ object Main extends Main {
                 var privateFields = (for (field ← classFile.fields if field.isPrivate) yield field.name).toSet
                 for (
                     method ← classFile.methods if method.body.isDefined;
-                    instruction ← method.body.get.code
+                    instruction ← method.body.get.instructions
                 ) {
                     instruction match {
                         case GETFIELD(`declaringClass`, name, _)  ⇒ privateFields -= name
@@ -132,7 +132,7 @@ object Main extends Main {
             for (
                 classFile ← classFiles;
                 method ← classFile.methods if method.body.isDefined;
-                instruction ← method.body.get.code
+                instruction ← method.body.get.instructions
             ) {
                 instruction match {
                     case INVOKESTATIC(ObjectType("java/lang/System"), "gc", MethodDescriptor(Seq(), VoidType)) |

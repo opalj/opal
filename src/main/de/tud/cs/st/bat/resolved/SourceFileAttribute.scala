@@ -34,7 +34,7 @@ package de.tud.cs.st.bat
 package resolved
 
 /**
- * The source file attribute. It is an optional attribute in the attributes
+ * The source file attribute is an optional attribute in the attributes
  * table of [[de.tud.cs.st.bat.resolved.ClassFile]] objects.
  *
  * @param sourceFile The name of the source file from which this class file was compiled;

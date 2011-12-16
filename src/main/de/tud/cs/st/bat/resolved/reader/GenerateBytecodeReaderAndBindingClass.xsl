@@ -72,7 +72,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding{
 	/**
 	 * Transforms an array of bytes into an array of [[de.tud.cs.st.bat.resolved.Instruction]]s.
 	 */
-	def Code(source : Array[Byte])(implicit cp : Constant_Pool) : Code = {
+	def Instructions(source : Array[Byte])(implicit cp : Constant_Pool) : Instructions = {
 
 		val bas = new ByteArrayInputStream(source)
 		val in = new DataInputStream(bas)

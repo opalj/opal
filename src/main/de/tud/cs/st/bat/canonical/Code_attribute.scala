@@ -42,7 +42,7 @@ trait Code_attribute extends Attribute {
     // ABSTRACT DEFINITIONS
     //
 
-    type Code
+    type Instructions
     type ExceptionTableEntry
     type Attributes
 
@@ -50,7 +50,7 @@ trait Code_attribute extends Attribute {
     val attribute_length: Int
     val max_stack: Int
     val max_locals: Int
-    val code: Code
+    val instructions: Instructions
     val exception_table: ExceptionTable
     val attributes: Attributes
 

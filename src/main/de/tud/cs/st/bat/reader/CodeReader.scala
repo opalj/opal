@@ -43,15 +43,15 @@ import de.tud.cs.st.util.ControlAbstractions.repeat
  */
 trait CodeReader extends Constant_PoolAbstractions {
 
-    type Code
+    type Instructions
 
-    def Code(code: Array[Byte])(implicit constant_pool: Constant_Pool): Code
+    def Instructions(instructions: Array[Byte])(implicit constant_pool: Constant_Pool): Instructions
 
-    def Code(in: DataInputStream, cp: Constant_Pool): Code = {
+    def Instructions(in: DataInputStream, cp: Constant_Pool): Instructions = {
         val code_length = in.readInt
         val the_code = new Array[Byte](code_length)
         in.readFully(the_code)
 
-        Code(the_code)(cp)
+        Instructions(the_code)(cp)
     }
 }

@@ -358,7 +358,7 @@ trait DependencyExtractor extends DependencyBuilder with SourceElementIDs {
      * @param methodId The ID of the source of the extracted dependencies.
      * @param instructions The instructions that should be analyzed for dependencies.
      */
-    def process(methodId: Int, instructions: Code) {
+    def process(methodId: Int, instructions: Instructions) {
 
         for (instr ← instructions if instr != null) {
             (instr.opcode: @annotation.switch) match {

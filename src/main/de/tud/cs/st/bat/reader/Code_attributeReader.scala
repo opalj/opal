@@ -69,13 +69,13 @@ trait Code_attributeReader extends AttributeReader {
     type ExceptionTableEntry
     implicit val ExceptionTableEntryManifest: ClassManifest[ExceptionTableEntry]
 
-    type Code
+    type Instructions
 
     type Code_attribute <: Attribute
 
     type Attributes
 
-    def Code(in: DataInputStream, cp: Constant_Pool): Code
+    def Instructions(in: DataInputStream, cp: Constant_Pool): Instructions
 
     protected def Attributes(ap: AttributesParent, cp: Constant_Pool, in: DataInputStream): Attributes
 
@@ -83,7 +83,7 @@ trait Code_attributeReader extends AttributeReader {
                        attribute_length: Int,
                        max_stack: Int,
                        max_locals: Int,
-                       code: Code,
+                       instructions: Instructions,
                        exception_table: ExceptionTable,
                        attributes: Attributes)(implicit constant_pool: Constant_Pool): Code_attribute
 
@@ -109,7 +109,7 @@ trait Code_attributeReader extends AttributeReader {
                     in.readInt(),
                     in.readUnsignedShort(),
                     in.readUnsignedShort(),
-                    Code(in, cp),
+                    Instructions(in, cp),
                     {
                         val exception_table_length = in.readUnsignedShort()
                         if (exception_table_length == 0)

@@ -39,7 +39,7 @@ package de.tud.cs.st.bat.resolved
  */
 case class CodeAttribute(maxStack: Int,
                          maxLocals: Int,
-                         code: Array[Instruction],
+                         instructions: Array[Instruction],
                          exceptionTable: ExceptionTable,
                          attributes: Attributes)
         extends Attribute {
@@ -60,7 +60,7 @@ case class CodeAttribute(maxStack: Int,
         "Code_attribute(maxStack="+
             maxStack+", maxLocals="+
             maxLocals+","+
-            (code.filter(_ ne null).deep.toString) +
+            (instructions.filter(_ ne null).deep.toString) +
             (exceptionTable.toString)+","+
             (attributes.toString)+
             ")"
@@ -82,9 +82,9 @@ case class CodeAttribute(maxStack: Int,
 			{
 				var instrs : List[scala.xml.Node] = Nil
 				var i = 0
-				while (i < code.length){
-					if (code(i) != null) {
-						instrs = code(i).toXML(i) :: instrs
+				while (i < instructions.length){
+					if (instructions(i) != null) {
+						instrs = instructions(i).toXML(i) :: instrs
 					}
 					i += 1
 				}
@@ -100,18 +100,18 @@ case class CodeAttribute(maxStack: Int,
 
 		// 1. create a "map" that associates each instruction's PC with the
 		// 	a logical number (ignoring wide)
-		val pc_to_seqNo : Array[Int] = new Array[Int](code.size)
+		val pc_to_seqNo : Array[Int] = new Array[Int](instructions.size)
 
 		{	// the following two variables have only "local" scope
 			var pc = 0
 			var index = 0
-			while (pc < code.length){
+			while (pc < instructions.length){
 				pc_to_seqNo(pc) = index
 				if (pc == 0) {
 					index += 1
 				}
-				else if (code(pc) != null) {
-					if (code(pc-1) == null || code(pc-1).opcode != WIDE.opcode) {
+				else if (instructions(pc) != null) {
+					if (instructions(pc-1) == null || instructions(pc-1).opcode != WIDE.opcode) {
 				 		// if an instruction is modified by "wide" then the jump target must be the wide instruction!
 						index += 1
 					}
@@ -124,10 +124,10 @@ case class CodeAttribute(maxStack: Int,
 
 		// 2. get the prolog representation of all relevant instructions
 		{	// the following two variables have only "local" scope
-			var pc = code.length-1
+			var pc = instructions.length-1
 			while (pc >= 0 ){
-				if (code(pc) != null && code(pc).opcode != WIDE.opcode) {
-					facts = code(pc).toProlog(
+				if (instructions(pc) != null && instructions(pc).opcode != WIDE.opcode) {
+					facts = instructions(pc).toProlog(
 						factory,
 						declaringEntityKey,
 						pc,
