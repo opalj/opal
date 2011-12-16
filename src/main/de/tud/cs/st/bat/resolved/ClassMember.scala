@@ -47,6 +47,8 @@ trait ClassMember extends CommonAttributes {
     def isPrivate: Boolean = ACC_PRIVATE element_of accessFlags
 
     def isStatic: Boolean = ACC_STATIC element_of accessFlags
+
+    def isFinal : Boolean = ACC_FINAL element_of accessFlags
 }
 
 object ClassMember {

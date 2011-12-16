@@ -58,6 +58,10 @@ case class Field(accessFlags: Int,
                  attributes: Attributes)
         extends ClassMember {
 
+    def isTransient: Boolean = ACC_TRANSIENT element_of accessFlags
+
+    def isVolatile: Boolean = ACC_VOLATILE element_of accessFlags
+
     /**
      * Returns this field's type signature.
      */

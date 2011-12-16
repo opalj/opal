@@ -49,6 +49,16 @@ case class Method(accessFlags: Int,
                   attributes: Attributes)
         extends ClassMember {
 
+    def isVarargs : Boolean = ACC_VARARGS element_of accessFlags
+
+    def isSynchronized : Boolean = ACC_SYNCHRONIZED element_of accessFlags
+
+    def isBridge : Boolean = ACC_BRIDGE element_of accessFlags
+
+    def isNative : Boolean = ACC_NATIVE element_of accessFlags
+
+    def isStrict : Boolean = ACC_STRICT element_of accessFlags
+
     /**
      * This method's implementation (if it is not abstract).
      */
