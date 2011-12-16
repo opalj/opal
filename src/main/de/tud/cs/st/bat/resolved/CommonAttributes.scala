@@ -60,6 +60,6 @@ trait CommonAttributes {
      * Note that the deprecated attribute is always set when either the deprecated
      * annotation or the JavaDoc tag is used.
      */
-    def isDeprectated: Boolean = attributes contains DeprecatedAttribute
+    def isDeprectated: Boolean = attributes contains Deprecated
 
 }

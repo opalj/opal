@@ -37,7 +37,7 @@ package de.tud.cs.st.bat.resolved
  *
  * @author Michael Eichberg
  */
-case object DeprecatedAttribute extends Attribute {
+case object Deprecated extends Attribute {
 
     //
     //

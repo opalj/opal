@@ -104,7 +104,7 @@ abstract class PrologTermFactory[Fact, Term, Atom <: Term]
     }
 
     def DeprecatedTerm(attributes: Attributes) =
-        Term("deprecated", if (attributes contains DeprecatedAttribute) YesAtom else NoAtom)
+        Term("deprecated", if (attributes contains Deprecated) YesAtom else NoAtom)
 
 }
 
