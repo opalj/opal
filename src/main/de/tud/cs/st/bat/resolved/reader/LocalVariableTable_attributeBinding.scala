@@ -45,7 +45,7 @@ trait LocalVariableTable_attributeBinding
         with ConstantPoolBinding
         with AttributeBinding {
 
-    type LocalVariableTable_attribute = de.tud.cs.st.bat.resolved.LocalVariableTableAttribute
+    type LocalVariableTable_attribute = de.tud.cs.st.bat.resolved.LocalVariableTable
     type LocalVariableTableEntry = de.tud.cs.st.bat.resolved.LocalVariable
     val LocalVariableTableEntryManifest: ClassManifest[LocalVariable] = implicitly
 
@@ -66,8 +66,8 @@ trait LocalVariableTable_attributeBinding
     def LocalVariableTable_attribute(attribute_name_index: Constant_Pool_Index,
                                      attribute_length: Int,
                                      local_variable_table: LocalVariables)(
-                                         implicit constant_pool: Constant_Pool): LocalVariableTable_attribute =
-        new LocalVariableTable_attribute(local_variable_table)
+                                         implicit constant_pool: Constant_Pool): LocalVariableTable =
+        new LocalVariableTable(local_variable_table)
 
 }
 

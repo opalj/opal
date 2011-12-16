@@ -48,13 +48,13 @@ trait LineNumberTable_attributeBinding
     type LineNumberTableEntry = de.tud.cs.st.bat.resolved.LineNumber
     val LineNumberTableEntryManifest: ClassManifest[LineNumber] = implicitly
 
-    type LineNumberTable_attribute = de.tud.cs.st.bat.resolved.LineNumberTableAttribute
+    type LineNumberTable_attribute = de.tud.cs.st.bat.resolved.LineNumberTable
 
     def LineNumberTable_attribute(attribute_name_index: Constant_Pool_Index,
                                   attribute_length: Int,
                                   line_number_table: LineNumbers)(
-                                      implicit constant_pool: Constant_Pool): LineNumberTable_attribute =
-        new LineNumberTable_attribute(line_number_table)
+                                      implicit constant_pool: Constant_Pool): LineNumberTable =
+        new LineNumberTable(line_number_table)
 
     def LineNumberTableEntry(start_pc: Int, line_number: Int) =
         new LineNumber(start_pc, line_number)

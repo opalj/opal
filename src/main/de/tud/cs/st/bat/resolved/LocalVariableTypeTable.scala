@@ -38,8 +38,7 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case class LocalVariableTypeTableAttribute(localVariableTypes: LocalVariableTypes)
-        extends Attribute {
+case class LocalVariableTypeTable(localVariableTypes: LocalVariableTypes) extends Attribute {
 
     //
     //

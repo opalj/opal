@@ -45,13 +45,13 @@ case class Code(maxStack: Int,
         extends Attribute {
 
     def lineNumberTable: Option[LineNumbers] =
-        attributes collectFirst { case LineNumberTableAttribute(lnt) ⇒ lnt }
+        attributes collectFirst { case LineNumberTable(lnt) ⇒ lnt }
 
     def localVariableTable: Option[LocalVariables] =
-        attributes collectFirst { case LocalVariableTableAttribute(lvt) ⇒ lvt }
+        attributes collectFirst { case LocalVariableTable(lvt) ⇒ lvt }
 
     def localVariableTypeTable: Option[LocalVariableTypes] =
-        attributes collectFirst { case LocalVariableTypeTableAttribute(lvtt) ⇒ lvtt }
+        attributes collectFirst { case LocalVariableTypeTable(lvtt) ⇒ lvtt }
 
     def stackMapTable: Option[StackMapFrames] =
         attributes collectFirst { case StackMapTable(smf) ⇒ smf }
@@ -141,11 +141,11 @@ case class Code(maxStack: Int,
 		// 3. get the prolog representation of all relevant attributes
 		for (attribute <- attributes) {
 			 attribute match {
-				case lnta : LineNumberTableAttribute =>
+				case lnta : LineNumberTable =>
 				 	facts = lnta.toProlog(factory,declaringEntityKey,pc_to_seqNo) :: facts
-				case lvta : LocalVariableTableAttribute =>
+				case lvta : LocalVariableTable =>
 				 	facts = lvta.toProlog(factory,declaringEntityKey,pc_to_seqNo) :: facts
-				case lvtta : LocalVariableTypeTableAttribute =>
+				case lvtta : LocalVariableTypeTable =>
 				 	facts = lvtta.toProlog(factory,declaringEntityKey,pc_to_seqNo) :: facts
 				case _ => Nil
 			}

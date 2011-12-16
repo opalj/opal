@@ -30,16 +30,14 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat
-package resolved
+package de.tud.cs.st.bat.resolved
 
 /**
- * A method's line number table.
+ * Representation of the local variable table.
  *
  * @author Michael Eichberg
  */
-case class LineNumberTableAttribute(lineNumbers: LineNumbers)
-        extends Attribute {
+case class LocalVariableTable(localVariables: LocalVariables) extends Attribute {
 
     //
     //
@@ -48,29 +46,35 @@ case class LineNumberTableAttribute(lineNumbers: LineNumbers)
     //
 
     def toXML =
-        <line_number_table>
-			{ for (entry ← lineNumbers) yield entry.toXML }
-		</line_number_table>
+        <local_variable_table>
+			{ for (entry ← localVariables) yield entry.toXML }
+		</local_variable_table>
 
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A, pc_to_seqNo: Array[Int]): F = {
 
         import factory._
 
         Fact(
-            "method_line_number_table",
+            "method_local_variable_table",
             declaringEntityKey,
-            Terms(lineNumbers, (_: LineNumber).toProlog(factory, pc_to_seqNo))
+            Terms(
+                localVariables,
+                (_: LocalVariable).toProlog(factory, pc_to_seqNo)
+            )
         )
     }
 }
 
 /**
- * An entry in a line number table.
+ * An entry in a local variable table.
  *
  * @author Michael Eichberg
  */
-case class LineNumber(startPC: Int,
-                      lineNumber: Int) {
+case class LocalVariable(startPC: Int,
+                         length: Int,
+                         name: String,
+                         fieldType: FieldType,
+                         index: Int) {
 
     //
     //
@@ -78,10 +82,38 @@ case class LineNumber(startPC: Int,
     //
     //
 
-    def toXML = <entry start_pc={ startPC.toString } lineNumber={ lineNumber.toString }/>
+    def toXML =
+        <entry
+			type={ fieldType.toJava }
+			start_pc={ startPC.toString }
+			length={ length.toString }
+			name={ name }
+			index={ index.toString }/>
 
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], pc_to_seqNo: Array[Int]): T = {
+    def toProlog[F, T, A <: T](
+        factory: PrologTermFactory[F, T, A],
+        pc_to_seqNo: Array[Int]): T = {
+
         import factory._
-        Term("kv", IntegerAtom(pc_to_seqNo(startPC)), Term("ln", IntegerAtom(lineNumber)))
+
+        Term(
+            "kv",
+            //Term("start_pc",
+            IntegerAtom(pc_to_seqNo(startPC)),
+            //),
+            Term(
+                "length",
+                if (startPC + length < pc_to_seqNo.size)
+                    IntegerAtom(pc_to_seqNo(startPC + length))
+                else
+                    IntegerAtom(pc_to_seqNo.size)
+            ),
+            TextAtom(name),
+            fieldType.toProlog(factory),
+            Term(
+                "index",
+                IntegerAtom(index)
+            )
+        )
     }
 }

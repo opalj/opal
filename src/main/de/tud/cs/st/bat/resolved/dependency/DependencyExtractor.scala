@@ -183,11 +183,11 @@ trait DependencyExtractor extends DependencyBuilder with SourceElementIDs {
                 // The Java 5 specification defines the following attributes:
                 // LineNumberTable, LocalVariableTable, and LocalVariableTypeTable)
                 attributes foreach {
-                    case LocalVariableTableAttribute(localVariableTable) ⇒
+                    case LocalVariableTable(localVariableTable) ⇒
                         localVariableTable foreach {
                             entry ⇒ addDependency(methodID, sourceElementID(entry.fieldType), HAS_LOCAL_VARIABLE_OF_TYPE)
                         }
-                    case LocalVariableTypeTableAttribute(localVariableTypeTable) ⇒
+                    case LocalVariableTypeTable(localVariableTypeTable) ⇒
                         localVariableTypeTable foreach {
                             entry ⇒ processSignature(entry.signature, methodID)
                         }
