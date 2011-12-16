@@ -94,7 +94,7 @@ trait DependencyExtractor extends DependencyBuilder with SourceElementIDs {
                     },
                     IS_INNER_CLASS_OF)
             }
-            case InnerClassesAttribute(innerClasses) ⇒
+            case InnerClassTable(innerClasses) ⇒
                 for (
                     // Check whether the outer class of the inner class attribute
                     // is equal to the currently processed class. If this is the case,

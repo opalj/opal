@@ -38,7 +38,7 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case class InnerClassesAttribute(innerClasses: InnerClasses) extends Attribute {
+case class InnerClassTable(innerClasses: InnerClasses) extends Attribute {
 
     //
     //

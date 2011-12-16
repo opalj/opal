@@ -84,7 +84,7 @@ case class ClassFile(minorVersion: Int,
         attributes collectFirst { case em: EnclosingMethod ⇒ em }
 
     def innerClasses: Option[InnerClasses] =
-        attributes collectFirst { case InnerClassesAttribute(ice) ⇒ ice }
+        attributes collectFirst { case InnerClassTable(ice) ⇒ ice }
 
     /**
      * Each class file optionally defines a class signature.
@@ -177,7 +177,7 @@ case class ClassFile(minorVersion: Int,
                 case sfa: SourceFile            ⇒ sfa.toProlog(factory, key)
                 case aa: AnnotationsAttribute   ⇒ aa.toProlog(factory, key)
                 case ema: EnclosingMethod       ⇒ ema.toProlog(factory, key)
-                case ics: InnerClassesAttribute ⇒ ics.toProlog(factory, key)
+                case ics: InnerClassTable ⇒ ics.toProlog(factory, key)
                 case _                          ⇒ Nil
             }) ::: facts
         }
