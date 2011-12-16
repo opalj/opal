@@ -101,6 +101,9 @@ case class ClassFile(minorVersion: Int,
     def sourceFile: Option[String] =
         attributes collectFirst { case SourceFileAttribute(s) ⇒ s }
 
+    def sourceDebugExtension: Option[String] =
+        attributes collectFirst { case SourceDebugExtension(s) ⇒ s }
+
     /**
      * All constructors/instance initialization methods defined by this class. (This does not include static initializers.)
      */
