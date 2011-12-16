@@ -156,15 +156,15 @@ object BasicJava6Framework
 
     case class InnerClasses_attribute(
             val attribute_name_index: Int,
-            val classes: InnerClassesEntries) extends de.tud.cs.st.bat.canonical.InnerClasses_attribute {
+            val inner_classes: InnerClasses) extends de.tud.cs.st.bat.canonical.InnerClasses_attribute {
 
         type Class = BasicJava6Framework.InnerClassesEntry
 
     }
 
     def InnerClasses_attribute(
-        attribute_name_index: Int, classes: InnerClassesEntries)(implicit constant_pool: Constant_Pool): InnerClasses_attribute =
-        new InnerClasses_attribute(attribute_name_index, classes)
+        attribute_name_index: Int, inner_classes: InnerClasses)(implicit constant_pool: Constant_Pool): InnerClasses_attribute =
+        new InnerClasses_attribute(attribute_name_index, inner_classes)
 
     case class InnerClassesEntry(
         val inner_class_info_index: Int,

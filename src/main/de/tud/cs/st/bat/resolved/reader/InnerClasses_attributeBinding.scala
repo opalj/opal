@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -30,12 +30,13 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved.reader
+package de.tud.cs.st.bat.resolved
+package reader
 
 import de.tud.cs.st.bat.reader.InnerClasses_attributeReader
 
 /**
- *
+ * The factory methods to create inner classes attributes and entries.
  *
  * @author Michael Eichberg
  */
@@ -45,13 +46,13 @@ trait InnerClasses_attributeBinding
         with AttributeBinding {
 
     type InnerClasses_attribute = de.tud.cs.st.bat.resolved.InnerClassesAttribute
-    type InnerClassesEntry = de.tud.cs.st.bat.resolved.InnerClassesEntry
+    type InnerClassesEntry = de.tud.cs.st.bat.resolved.InnerClass
     val InnerClassesEntryManifest: ClassManifest[InnerClassesEntry] = implicitly
 
     def InnerClasses_attribute(attribute_name_index: Constant_Pool_Index,
-                               classes: InnerClassesEntries)(
+                               inner_classes: InnerClasses)(
                                    implicit constant_pool: Constant_Pool): InnerClasses_attribute =
-        new InnerClasses_attribute(classes)
+        new InnerClasses_attribute(inner_classes)
 
     def InnerClassesEntry(inner_class_info_index: Constant_Pool_Index,
                           outer_class_info_index: Constant_Pool_Index,

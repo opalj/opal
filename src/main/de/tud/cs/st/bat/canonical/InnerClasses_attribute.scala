@@ -47,7 +47,7 @@ trait InnerClasses_attribute extends Attribute {
 
     val attribute_name_index: Int
 
-    val classes: InnerClassesEntries
+    val inner_classes: InnerClassesEntries
 
     //
     // IMPLEMENTATION
@@ -57,7 +57,7 @@ trait InnerClasses_attribute extends Attribute {
 
     def attribute_name = de.tud.cs.st.bat.reader.InnerClasses_attributeReader.ATTRIBUTE_NAME
 
-    def attribute_length = 2 + (classes.size * 8)
+    def attribute_length = 2 + (inner_classes.size * 8)
 
 }
 

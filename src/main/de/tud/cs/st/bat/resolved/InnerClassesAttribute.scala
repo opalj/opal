@@ -34,22 +34,21 @@ package de.tud.cs.st.bat
 package resolved
 
 /**
- * A class' inner classes.
+ * Attribute in a class' attribute table the encodes information about inner classes.
  *
  * @author Michael Eichberg
  */
-case class InnerClassesAttribute(classes: InnerClassesEntries)
-        extends Attribute {
+case class InnerClassesAttribute(innerClasses: InnerClasses) extends Attribute {
 
     //
     //
     // SUPPORT FOR SPECIAL REPRESENTATIONS
     //
     //
-    
+
     def toXML =
         <inner_classes>
-			{ for (clazz ← classes) yield clazz.toXML }
+			{ for (innerClass ← innerClasses) yield innerClass.toXML }
 		</inner_classes>
 
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] =
@@ -66,19 +65,19 @@ case class InnerClassesAttribute(classes: InnerClassesEntries)
 	*/
 }
 
-case class InnerClassesEntry(innerClassType: ObjectType,
-                             outerClassType: ObjectType,
-                             innerName: String,
-                             innerClassAccessFlags: Int) {
+case class InnerClass(innerClassType: ObjectType,
+                      outerClassType: ObjectType,
+                      innerName: String,
+                      innerClassAccessFlags: Int) {
 
-        //
+    //
     //
     // SUPPORT FOR SPECIAL REPRESENTATIONS
     //
     //
-    
+
 	def toXML =
-		<class innerName={ innerName }>{	
+		<class innerName={ innerName }>{
 			    var nodes : List[scala.xml.Node] = Nil
 				nodes = AccessFlags.toXML(innerClassAccessFlags, AccessFlagsContexts.INNER_CLASS) :: nodes
 				if (outerClassType != null) nodes = <outer_class type={outerClassType.className}/> :: nodes
@@ -86,7 +85,7 @@ case class InnerClassesEntry(innerClassType: ObjectType,
 				nodes
 		}</class>
 
-	/* 	
+	/*
 	def toProlog(
 		factory : PrologTermFactory,
 	) : GroundTerm = {

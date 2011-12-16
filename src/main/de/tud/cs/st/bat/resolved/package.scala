@@ -53,7 +53,7 @@ package object resolved {
     type Annotations = IndexedSeq[Annotation]
     type ElementValuePairs = IndexedSeq[ElementValuePair]
 
-    type InnerClassesEntries = IndexedSeq[InnerClassesEntry]
+    type InnerClasses = IndexedSeq[InnerClass]
 
     type Methods = IndexedSeq[Method]
     type Exceptions = Seq[ObjectType]

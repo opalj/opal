@@ -61,7 +61,7 @@ trait InnerClasses_attributeReader extends AttributeReader {
     type InnerClasses_attribute <: Attribute
 
     def InnerClasses_attribute(attribute_name_index: Constant_Pool_Index,
-                               classes: InnerClassesEntries)(
+                               inner_classes: InnerClasses)(
                                    implicit constant_pool: Constant_Pool): InnerClasses_attribute
 
     def InnerClassesEntry(inner_class_info_index: Constant_Pool_Index,
@@ -74,7 +74,7 @@ trait InnerClasses_attributeReader extends AttributeReader {
     // IMPLEMENTATION
     //
 
-    type InnerClassesEntries = IndexedSeq[InnerClassesEntry]
+    type InnerClasses = IndexedSeq[InnerClassesEntry]
 
     register(
         InnerClasses_attributeReader.ATTRIBUTE_NAME ->

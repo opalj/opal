@@ -85,7 +85,7 @@ case class ClassFile(minorVersion: Int,
     def enclosingMethod: Option[EnclosingMethod] =
         attributes collectFirst { case em: EnclosingMethod ⇒ em }
 
-    def innerClassesEntries: Option[InnerClassesEntries] =
+    def innerClasses: Option[InnerClasses] =
         attributes collectFirst { case InnerClassesAttribute(ice) ⇒ ice }
 
     /**
