@@ -39,7 +39,7 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case class ExceptionsTable(exceptions: Exceptions) extends Attribute {
+case class ExceptionTable(exceptions: Exceptions) extends Attribute {
 
     //
     //

@@ -129,7 +129,7 @@ case class Method(accessFlags: Int,
             facts = (attribute match {
                 case aa: AnnotationsAttribute           ⇒ aa.toProlog(factory, key)
                 case paa: ParameterAnnotationsAttribute ⇒ paa.toProlog(factory, key)
-                case ea: ExceptionsTable            ⇒ ea.toProlog(factory, key)
+                case ea: ExceptionTable            ⇒ ea.toProlog(factory, key)
                 case ada: ElementValue                  ⇒ ada.toProlog(factory, key)
                 case ca: Code                  ⇒ ca.toProlog(factory, key)
                 case _                                  ⇒ Nil

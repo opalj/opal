@@ -45,7 +45,7 @@ trait Exceptions_attributeBinding
         with ConstantPoolBinding
         with AttributeBinding {
 
-    type Exceptions_attribute = de.tud.cs.st.bat.resolved.ExceptionsTable
+    type Exceptions_attribute = de.tud.cs.st.bat.resolved.ExceptionTable
     val Exceptions_attributeManifest: ClassManifest[Exceptions_attribute] = implicitly
 
     def Exceptions_attribute(attribute_name_index: Constant_Pool_Index,
