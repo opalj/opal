@@ -50,7 +50,7 @@ trait CommonAttributes {
         attributes collectFirst { case RuntimeInvisibleAnnotationsAttribute(as) ⇒ as }
     }
 
-    def isSynthetic: Boolean = attributes contains SyntheticAttribute
+    def isSynthetic: Boolean = attributes contains Synthetic
 
     /**
      * Returns true if this (field, method, class) declaration is declared

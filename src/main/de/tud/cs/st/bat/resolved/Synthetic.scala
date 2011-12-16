@@ -38,7 +38,7 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case object SyntheticAttribute extends Attribute {
+case object Synthetic extends Attribute {
 
     //
     //
