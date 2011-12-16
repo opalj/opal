@@ -36,6 +36,7 @@ package reader
 import de.tud.cs.st.bat.reader.LocalVariableTypeTable_attributeReader
 
 /**
+ * The factory methods to create local variable type tables and their entries.
  *
  * @author Michael Eichberg
  */
@@ -46,7 +47,7 @@ trait LocalVariableTypeTable_attributeBinding
 
     type LocalVariableTypeTable_attribute = de.tud.cs.st.bat.resolved.LocalVariableTypeTableAttribute
 
-    type LocalVariableTypeTableEntry = de.tud.cs.st.bat.resolved.LocalVariableTypeTableEntry
+    type LocalVariableTypeTableEntry = de.tud.cs.st.bat.resolved.LocalVariableType
     val LocalVariableTypeTableEntryManifest: ClassManifest[LocalVariableTypeTableEntry] = implicitly
 
     def LocalVariableTypeTableEntry(start_pc: Int,
@@ -54,9 +55,9 @@ trait LocalVariableTypeTable_attributeBinding
                                     name_index: Constant_Pool_Index,
                                     signature_index: Constant_Pool_Index,
                                     index: Int)(
-                                        implicit cp: Constant_Pool): LocalVariableTypeTableEntry = {
+                                        implicit cp: Constant_Pool): LocalVariableType = {
 
-        new LocalVariableTypeTableEntry(
+        new LocalVariableType(
             start_pc,
             length,
             name_index.asString,

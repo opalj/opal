@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -36,7 +36,7 @@ package reader
 import de.tud.cs.st.bat.reader.LocalVariableTable_attributeReader
 
 /**
- *
+ * The factory methods to create local variable tables and their entries.
  *
  * @author Michael Eichberg
  */
@@ -46,21 +46,21 @@ trait LocalVariableTable_attributeBinding
         with AttributeBinding {
 
     type LocalVariableTable_attribute = de.tud.cs.st.bat.resolved.LocalVariableTableAttribute
-    type LocalVariableTableEntry = de.tud.cs.st.bat.resolved.LocalVariableTableEntry
-    val LocalVariableTableEntryManifest: ClassManifest[LocalVariableTableEntry] = implicitly
+    type LocalVariableTableEntry = de.tud.cs.st.bat.resolved.LocalVariable
+    val LocalVariableTableEntryManifest: ClassManifest[LocalVariable] = implicitly
 
     def LocalVariableTableEntry(start_pc: Int,
                                 length: Int,
                                 name_index: Constant_Pool_Index,
                                 descriptor_index: Constant_Pool_Index,
                                 index: Int)(
-                                    implicit cp: Constant_Pool): LocalVariableTableEntry = {
-        new LocalVariableTableEntry(
-                start_pc, 
-                length, 
-                name_index.asString, 
-                descriptor_index.asFieldType, 
-                index)
+                                    implicit cp: Constant_Pool): LocalVariable = {
+        new LocalVariable(
+            start_pc,
+            length,
+            name_index.asString,
+            descriptor_index.asFieldType,
+            index)
     }
 
     def LocalVariableTable_attribute(attribute_name_index: Constant_Pool_Index,

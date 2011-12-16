@@ -30,12 +30,13 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved.reader
+package de.tud.cs.st.bat.resolved
+package reader
 
 import de.tud.cs.st.bat.reader.LineNumberTable_attributeReader
 
 /**
- *
+ * The factory methods to create line number tables and their entries.
  *
  * @author Michael Eichberg
  */
@@ -44,8 +45,8 @@ trait LineNumberTable_attributeBinding
         with ConstantPoolBinding
         with AttributeBinding {
 
-    type LineNumberTableEntry = de.tud.cs.st.bat.resolved.LineNumberTableEntry
-    val LineNumberTableEntryManifest: ClassManifest[LineNumberTableEntry] = implicitly
+    type LineNumberTableEntry = de.tud.cs.st.bat.resolved.LineNumber
+    val LineNumberTableEntryManifest: ClassManifest[LineNumber] = implicitly
 
     type LineNumberTable_attribute = de.tud.cs.st.bat.resolved.LineNumberTableAttribute
 
@@ -56,7 +57,7 @@ trait LineNumberTable_attributeBinding
         new LineNumberTable_attribute(line_number_table)
 
     def LineNumberTableEntry(start_pc: Int, line_number: Int) =
-        new LineNumberTableEntry(start_pc, line_number)
+        new LineNumber(start_pc, line_number)
 
 }
 

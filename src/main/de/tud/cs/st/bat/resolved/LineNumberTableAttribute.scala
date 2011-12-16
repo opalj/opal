@@ -59,13 +59,18 @@ case class LineNumberTableAttribute(lineNumberTable: LineNumberTable)
         Fact(
             "method_line_number_table",
             declaringEntityKey,
-            Terms(lineNumberTable, (_: LineNumberTableEntry).toProlog(factory, pc_to_seqNo))
+            Terms(lineNumberTable, (_: LineNumber).toProlog(factory, pc_to_seqNo))
         )
     }
 }
 
-case class LineNumberTableEntry(startPC: Int,
-                                lineNumber: Int) {
+/**
+ * An entry in a line number table.
+ *
+ * @author Michael Eichberg
+ */
+case class LineNumber(startPC: Int,
+                      lineNumber: Int) {
 
     //
     //

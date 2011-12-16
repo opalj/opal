@@ -57,11 +57,11 @@ case class LocalVariableTypeTableAttribute(localVariableTypeTable: LocalVariable
     }
 }
 
-case class LocalVariableTypeTableEntry(startPC: Int,
-                                       length: Int,
-                                       name: String,
-                                       signature: FieldTypeSignature,
-                                       index: Int) {
+case class LocalVariableType(startPC: Int,
+                             length: Int,
+                             name: String,
+                             signature: FieldTypeSignature,
+                             index: Int) {
 
     //
     //

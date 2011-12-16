@@ -60,17 +60,22 @@ case class LocalVariableTableAttribute(localVariableTable: LocalVariableTable)
             declaringEntityKey,
             Terms(
                 localVariableTable,
-                (_: LocalVariableTableEntry).toProlog(factory, pc_to_seqNo)
+                (_: LocalVariable).toProlog(factory, pc_to_seqNo)
             )
         )
     }
 }
 
-case class LocalVariableTableEntry(startPC: Int,
-                                   length: Int,
-                                   name: String,
-                                   fieldType: FieldType,
-                                   index: Int) {
+/**
+ * An entry in a local variable table.
+ *
+ * @author Michael Eichberg
+ */
+case class LocalVariable(startPC: Int,
+                         length: Int,
+                         name: String,
+                         fieldType: FieldType,
+                         index: Int) {
 
     //
     //
