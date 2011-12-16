@@ -102,9 +102,14 @@ case class ClassFile(minorVersion: Int,
         attributes collectFirst { case SourceFileAttribute(s) ⇒ s }
 
     /**
-     * All constructors/initializers defined by this class. (This does not include static initializers.)
+     * All constructors/instance initialization methods defined by this class. (This does not include static initializers.)
      */
     def constructors: Seq[Method] = methods.view.filter(_.name == "<init>")
+
+    def staticInitializer: Option[Method] =
+        methods.collectFirst({
+            case method @ Method(_, "<clinit>", MethodDescriptor(Seq(), VoidType), _) ⇒ method
+        })
 
     //
     //
