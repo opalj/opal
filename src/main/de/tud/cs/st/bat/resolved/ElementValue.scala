@@ -33,8 +33,6 @@
 package de.tud.cs.st.bat
 package resolved
 
-import scala.xml.Node
-
 /**
  * An annotation's value.
  *

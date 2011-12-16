@@ -33,11 +33,6 @@
 package de.tud.cs.st.bat
 package resolved
 
-import scala.xml.Elem
-import scala.xml.Null
-import scala.xml.Text
-import scala.xml.TopScope
-
 /**
  * Represents a single field declaration/definition.
  *
