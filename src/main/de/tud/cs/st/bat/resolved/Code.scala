@@ -54,7 +54,7 @@ case class Code(maxStack: Int,
         attributes collectFirst { case LocalVariableTypeTableAttribute(lvtt) ⇒ lvtt }
 
     def stackMapTable: Option[StackMapFrames] =
-        attributes collectFirst { case StackMapTableAttribute(smf) ⇒ smf }
+        attributes collectFirst { case StackMapTable(smf) ⇒ smf }
 
     override def toString = {
         "Code_attribute(maxStack="+

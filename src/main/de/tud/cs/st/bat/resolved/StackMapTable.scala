@@ -38,8 +38,7 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case class StackMapTableAttribute(stackMapFrames: StackMapFrames)
-        extends Attribute {
+case class StackMapTable(stackMapFrames: StackMapFrames) extends Attribute {
 
     //
     //

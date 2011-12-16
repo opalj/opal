@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -30,14 +30,16 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved.reader
+package de.tud.cs.st.bat.resolved
+package reader
 
 import de.tud.cs.st.bat.reader.StackMapTable_attributeReader
 import de.tud.cs.st.bat.reader.StackMapFrameReader
 import de.tud.cs.st.bat.reader.VerificationTypeInfoReader
 
 /**
- *
+ * Provides the factory methods to create a stack map table attribute and
+ * its entries.
  *
  * @author Michael Eichberg
  */
@@ -50,7 +52,7 @@ trait StackMapTable_attributeBinding
 
     type VerificationTypeInfo = de.tud.cs.st.bat.resolved.VerificationTypeInfo
     val VerificationTypeInfoManifest: ClassManifest[VerificationTypeInfo] = implicitly
-    type StackMapTable_attribute = de.tud.cs.st.bat.resolved.StackMapTableAttribute
+    type StackMapTable_attribute = de.tud.cs.st.bat.resolved.StackMapTable
     type StackMapFrame = de.tud.cs.st.bat.resolved.StackMapFrame
     type FullFrame = de.tud.cs.st.bat.resolved.FullFrame
     type SameFrame = de.tud.cs.st.bat.resolved.SameFrame
@@ -75,7 +77,7 @@ trait StackMapTable_attributeBinding
     def StackMapTable_attribute(attribute_name_index: Constant_Pool_Index,
                                 attribute_length: Int,
                                 stack_map_frames: StackMapFrames)(implicit cp: Constant_Pool) =
-        new StackMapTable_attribute(stack_map_frames)
+        new StackMapTable(stack_map_frames)
 
     def SameFrame(frame_type: Int): StackMapFrame =
         new SameFrame(frame_type)
