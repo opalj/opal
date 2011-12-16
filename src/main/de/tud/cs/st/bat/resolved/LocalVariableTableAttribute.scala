@@ -37,7 +37,7 @@ package de.tud.cs.st.bat.resolved
  *
  * @author Michael Eichberg
  */
-case class LocalVariableTableAttribute(localVariableTable: LocalVariableTable)
+case class LocalVariableTableAttribute(localVariables: LocalVariables)
         extends Attribute {
 
     //
@@ -48,7 +48,7 @@ case class LocalVariableTableAttribute(localVariableTable: LocalVariableTable)
 
     def toXML =
         <local_variable_table>
-			{ for (entry ← localVariableTable) yield entry.toXML }
+			{ for (entry ← localVariables) yield entry.toXML }
 		</local_variable_table>
 
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A, pc_to_seqNo: Array[Int]): F = {
@@ -59,7 +59,7 @@ case class LocalVariableTableAttribute(localVariableTable: LocalVariableTable)
             "method_local_variable_table",
             declaringEntityKey,
             Terms(
-                localVariableTable,
+                localVariables,
                 (_: LocalVariable).toProlog(factory, pc_to_seqNo)
             )
         )

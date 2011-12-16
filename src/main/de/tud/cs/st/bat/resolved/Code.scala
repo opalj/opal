@@ -44,13 +44,13 @@ case class Code(maxStack: Int,
                 attributes: Attributes)
         extends Attribute {
 
-    def lineNumberTable: Option[LineNumberTable] =
+    def lineNumberTable: Option[LineNumbers] =
         attributes collectFirst { case LineNumberTableAttribute(lnt) ⇒ lnt }
 
-    def localVariableTable: Option[LocalVariableTable] =
+    def localVariableTable: Option[LocalVariables] =
         attributes collectFirst { case LocalVariableTableAttribute(lvt) ⇒ lvt }
 
-    def localVariableTypeTable: Option[LocalVariableTypeTable] =
+    def localVariableTypeTable: Option[LocalVariableTypes] =
         attributes collectFirst { case LocalVariableTypeTableAttribute(lvtt) ⇒ lvtt }
 
     def stackMapTable: Option[StackMapFrames] =

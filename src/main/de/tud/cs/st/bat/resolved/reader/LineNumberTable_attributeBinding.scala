@@ -52,7 +52,7 @@ trait LineNumberTable_attributeBinding
 
     def LineNumberTable_attribute(attribute_name_index: Constant_Pool_Index,
                                   attribute_length: Int,
-                                  line_number_table: LineNumberTable)(
+                                  line_number_table: LineNumbers)(
                                       implicit constant_pool: Constant_Pool): LineNumberTable_attribute =
         new LineNumberTable_attribute(line_number_table)
 

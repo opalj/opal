@@ -38,7 +38,7 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case class LocalVariableTypeTableAttribute(localVariableTypeTable: LocalVariableTypeTable)
+case class LocalVariableTypeTableAttribute(localVariableTypes: LocalVariableTypes)
         extends Attribute {
 
     //
@@ -49,7 +49,7 @@ case class LocalVariableTypeTableAttribute(localVariableTypeTable: LocalVariable
 
     def toXML =
         <local_variable_type_table>
-			{ for (entry ← localVariableTypeTable) yield entry.toXML }
+			{ for (entry ← localVariableTypes) yield entry.toXML }
 		</local_variable_type_table>
 
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A, pc_to_seqNo: Array[Int]): F = {

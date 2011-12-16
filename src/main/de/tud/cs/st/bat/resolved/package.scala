@@ -57,9 +57,9 @@ package object resolved {
 
     type Methods = IndexedSeq[Method]
     type ExceptionTable = IndexedSeq[ExceptionHandler]
-    type LineNumberTable = IndexedSeq[LineNumber]
-    type LocalVariableTypeTable = IndexedSeq[LocalVariableType]
-    type LocalVariableTable = IndexedSeq[LocalVariable]
+    type LineNumbers = IndexedSeq[LineNumber]
+    type LocalVariableTypes = IndexedSeq[LocalVariableType]
+    type LocalVariables = IndexedSeq[LocalVariable]
     type ParameterAnnotations = IndexedSeq[Annotations]
     type StackMapFrames = IndexedSeq[StackMapFrame]
     type VerificationTypeInfoLocals = IndexedSeq[VerificationTypeInfo]

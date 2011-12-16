@@ -38,7 +38,7 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case class LineNumberTableAttribute(lineNumberTable: LineNumberTable)
+case class LineNumberTableAttribute(lineNumbers: LineNumbers)
         extends Attribute {
 
     //
@@ -49,7 +49,7 @@ case class LineNumberTableAttribute(lineNumberTable: LineNumberTable)
 
     def toXML =
         <line_number_table>
-			{ for (entry ← lineNumberTable) yield entry.toXML }
+			{ for (entry ← lineNumbers) yield entry.toXML }
 		</line_number_table>
 
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A, pc_to_seqNo: Array[Int]): F = {
@@ -59,7 +59,7 @@ case class LineNumberTableAttribute(lineNumberTable: LineNumberTable)
         Fact(
             "method_line_number_table",
             declaringEntityKey,
-            Terms(lineNumberTable, (_: LineNumber).toProlog(factory, pc_to_seqNo))
+            Terms(lineNumbers, (_: LineNumber).toProlog(factory, pc_to_seqNo))
         )
     }
 }

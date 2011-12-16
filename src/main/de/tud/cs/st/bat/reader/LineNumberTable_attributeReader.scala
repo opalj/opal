@@ -59,7 +59,7 @@ trait LineNumberTable_attributeReader extends AttributeReader {
 
     def LineNumberTable_attribute(attribute_name_index: Constant_Pool_Index,
                                   attribute_length: Int,
-                                  line_number_table: LineNumberTable)(
+                                  line_number_table: LineNumbers)(
                                       implicit constant_pool: Constant_Pool): LineNumberTable_attribute
 
     def LineNumberTableEntry(start_pc: Int, line_number: Int): LineNumberTableEntry
@@ -68,7 +68,7 @@ trait LineNumberTable_attributeReader extends AttributeReader {
     // IMPLEMENTATION
     //
 
-    type LineNumberTable = IndexedSeq[LineNumberTableEntry]
+    type LineNumbers = IndexedSeq[LineNumberTableEntry]
 
     register(LineNumberTable_attributeReader.ATTRIBUTE_NAME ->
         ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {

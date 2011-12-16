@@ -241,14 +241,14 @@ object BasicJava6Framework
 
     case class LineNumberTable_attribute(
             val attribute_name_index: Int,
-            val line_number_table: LineNumberTable) extends de.tud.cs.st.bat.canonical.LineNumberTable_attribute {
+            val line_number_table: LineNumbers) extends de.tud.cs.st.bat.canonical.LineNumberTable_attribute {
 
         type LineNumberTableEntry = BasicJava6Framework.LineNumberTableEntry
 
     }
 
     def LineNumberTable_attribute(
-        attribute_name_index: Int, attribute_length: Int, line_number_table: LineNumberTable)(implicit constant_pool: Constant_Pool): LineNumberTable_attribute =
+        attribute_name_index: Int, attribute_length: Int, line_number_table: LineNumbers)(implicit constant_pool: Constant_Pool): LineNumberTable_attribute =
         new LineNumberTable_attribute(
             attribute_name_index, line_number_table
         )
@@ -275,14 +275,14 @@ object BasicJava6Framework
 
     case class LocalVariableTable_attribute(
             val attribute_name_index: Int,
-            val local_variable_table: LocalVariableTable) extends de.tud.cs.st.bat.canonical.LocalVariableTable_attribute {
+            val local_variable_table: LocalVariables) extends de.tud.cs.st.bat.canonical.LocalVariableTable_attribute {
 
         type LocalVariableTableEntry = BasicJava6Framework.LocalVariableTableEntry
 
     }
 
     def LocalVariableTable_attribute(
-        attribute_name_index: Int, attribute_length: Int, local_variable_table: LocalVariableTable)(implicit constant_pool: Constant_Pool): LocalVariableTable_attribute =
+        attribute_name_index: Int, attribute_length: Int, local_variable_table: LocalVariables)(implicit constant_pool: Constant_Pool): LocalVariableTable_attribute =
         new LocalVariableTable_attribute(
             attribute_name_index, local_variable_table
         )
@@ -302,7 +302,7 @@ object BasicJava6Framework
 
     case class LocalVariableTypeTable_attribute(
             val attribute_name_index: Int,
-            val local_variable_type_table: LocalVariableTypeTable) extends de.tud.cs.st.bat.canonical.LocalVariableTypeTable_attribute {
+            val local_variable_type_table: LocalVariableTypes) extends de.tud.cs.st.bat.canonical.LocalVariableTypeTable_attribute {
 
         type LocalVariableTypeTableEntry = BasicJava6Framework.LocalVariableTypeTableEntry
 
@@ -310,7 +310,7 @@ object BasicJava6Framework
 
     def LocalVariableTypeTable_attribute(
         attribute_name_index: Int, attribute_length: Int,
-        local_variable_type_table: LocalVariableTypeTable)(implicit constant_pool: Constant_Pool) =
+        local_variable_type_table: LocalVariableTypes)(implicit constant_pool: Constant_Pool) =
         new LocalVariableTypeTable_attribute(
             attribute_name_index, local_variable_type_table
         )

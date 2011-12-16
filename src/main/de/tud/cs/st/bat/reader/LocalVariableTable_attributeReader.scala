@@ -73,14 +73,14 @@ trait LocalVariableTable_attributeReader extends AttributeReader {
 
     def LocalVariableTable_attribute(attribute_name_index: Constant_Pool_Index,
                                      attribute_length: Int,
-                                     local_variable_table: LocalVariableTable)(
+                                     local_variable_table: LocalVariables)(
                                          implicit constant_pool: Constant_Pool): LocalVariableTable_attribute
 
     //
     // IMPLEMENTATION
     //
 
-    type LocalVariableTable = IndexedSeq[LocalVariableTableEntry]
+    type LocalVariables = IndexedSeq[LocalVariableTableEntry]
 
     register(
         LocalVariableTable_attributeReader.ATTRIBUTE_NAME ->

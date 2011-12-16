@@ -66,7 +66,7 @@ trait LocalVariableTypeTable_attributeReader extends AttributeReader {
 
     def LocalVariableTypeTable_attribute(attribute_name_index: Constant_Pool_Index,
                                          attribute_length: Int,
-                                         local_variable_type_table: LocalVariableTypeTable)(
+                                         local_variable_type_table: LocalVariableTypes)(
                                              implicit constant_pool: Constant_Pool): LocalVariableTypeTable_attribute
 
     def LocalVariableTypeTableEntry(start_pc: Int,
@@ -80,7 +80,7 @@ trait LocalVariableTypeTable_attributeReader extends AttributeReader {
     // IMPLEMENTATION
     //
 
-    type LocalVariableTypeTable = IndexedSeq[LocalVariableTypeTableEntry]
+    type LocalVariableTypes = IndexedSeq[LocalVariableTypeTableEntry]
 
     register(
         LocalVariableTypeTable_attributeReader.ATTRIBUTE_NAME ->
