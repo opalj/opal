@@ -122,7 +122,7 @@ Author 	Michael Eichberg (mail@michael-eichberg.de)
 		<classpath refid="scala.classpath" />
 	</taskdef>
 	<taskdef name="scalatest" classname="org.scalatest.tools.ScalaTestAntTask">
-		<classpath refid="test.classpath" />		
+		<classpath refid="test.classpath" />
 	</taskdef>
 	<taskdef name="saxon-xslt" classname="net.sf.saxon.ant.AntTransform">
 		<classpath refid="saxon.classpath" />
@@ -236,9 +236,10 @@ Author 	Michael Eichberg (mail@michael-eichberg.de)
 		        target="jvm-1.5"
 		        destdir="${class.dir}"
 		        classpathref="test.classpath"
+				addparams="-g:vars"
 		        deprecation="on"
 		        scalacdebugging="on"
-		        force="changed">
+		        force="true">
 			<include name="**/*.scala" />
 		</scalac>
 	</target>
@@ -338,8 +339,8 @@ Author 	Michael Eichberg (mail@michael-eichberg.de)
 			<suite classname="de.tud.cs.st.bat.resolved.MethodDescriptorTest" />
 			<suite classname="de.tud.cs.st.bat.resolved.ObjectTypeTest" />
 			<suite classname="de.tud.cs.st.bat.resolved.AttributesTest" />
-			<suite classname="de.tud.cs.st.bat.resolved.dependency.SourceElementIDsTest" />		
-			<!-- TODO Figure out, why the Scala compiler always crashes... <suite classname="de.tud.cs.st.bat.resolved.dependency.DependencyExtractorTest" /> -->
+			<suite classname="de.tud.cs.st.bat.resolved.dependency.SourceElementIDsTest" />
+			<suite classname="de.tud.cs.st.bat.resolved.dependency.DependencyExtractorTest" />
 		</scalatest>
 	</target>
 

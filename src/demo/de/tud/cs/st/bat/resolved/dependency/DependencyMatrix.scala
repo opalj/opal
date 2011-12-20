@@ -33,8 +33,8 @@
 package de.tud.cs.st
 package bat
 package resolved
+package dependency
 
-import dependency._
 import reader.Java6Framework
 
 /**

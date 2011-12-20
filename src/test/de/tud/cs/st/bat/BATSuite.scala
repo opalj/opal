@@ -52,7 +52,7 @@ class BATSuite extends Suites(
     new resolved.AttributesTest,
 
     new resolved.dependency.SourceElementIDsTest,
-    // TODO [Compiler Crash] new resolved.dependency.DependencyExtractorTest
+    new resolved.dependency.DependencyExtractorTest,
 
     new RegressionSuite
 // TODO [Compiler Crash] new bat.resolved.dependency.BasicDependencyExtractorTest,
