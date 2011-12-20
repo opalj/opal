@@ -41,7 +41,7 @@ import org.scalatest.Suites
  * @author Sebastian Hartte
  * @author Thomas Schlosser
  */
-//@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
+@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class BATSuite extends Suites(
 
     new resolved.ObjectTypeTest,
