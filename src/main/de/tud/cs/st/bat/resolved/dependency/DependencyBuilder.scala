@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -36,15 +36,10 @@ package dependency
 import DependencyType._
 
 /**
- * Interface used by <code>DependencyExtractor</code> to get unique numerical identifiers
- * and to export extracted dependency. Classes that have this trait mixed in can be used
- * as <code>DependencyExtractor</code>'s class parameter and for example collect the
- * extracted dependencies.
  *
- * IMPLEMENTATION NOTE: In general, every the two related <code>getID</code> methods
- * should return the same result for parameters that refer to the same source element.
  *
  * @author Thomas Schlosser
+ * @author Michael Eichberg
  */
 trait DependencyBuilder {
 
@@ -53,8 +48,8 @@ trait DependencyBuilder {
      *
      * @param sourceID The ID of the origin source element.
      * @param targetID The ID of the target source element.
-     * @param dType The type of the dependency.
+     * @param dependencyType The type of the dependency.
      */
-    def addDependency(sourceID: Int, targetID: Int, dType: DependencyType)
+    def addDependency(sourceID: Int, targetID: Int, dependencyType: DependencyType)
 
 }

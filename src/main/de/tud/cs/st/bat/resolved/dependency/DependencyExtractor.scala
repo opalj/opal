@@ -37,18 +37,24 @@ package dependency
 import DependencyType._
 
 /**
- * Traverses a class file and identifies all
- * dependencies between the element that is traversed and any other
- * used element.
- * Extracts the dependencies between classes, interfaces, fields and methods.
+ * Traverses a class file and identifies all dependencies between the element (class, field, method
+ * declaration) that is traversed and any element the traversed element depends on.
  *
- * Unique IDs are retrieved from and
- * dependencies are passed to the 'getID' and 'addDependency' methods provided by
- * the given DependencyBuilder.
+ * By default, self dependencies will be reported. If necessary or undesired, self dependencies can
+ * easily be filtered by a [[de.tud.cs.st.bat.resolved.dependency.DependencyBuilder]]'s
+ * addDependency method.
  *
+ * ==Usage==
+ * To assign ids to source elements the dependency extractor relies on source element ids as
+ * provided by implementations of [[de.tud.cs.st.bat.resolved.dependency.SourceElementIDs]].
+ * After getting the ids of the depending source elements, a [[de.tud.cs.st.bat.resolved.dependency.DependencyBuilder]]'s
+ * addDependency method is called with the ids and the type of the dependency as a parameter.
+ *
+ * [[de.tud.cs.st.bat.resolved.dependency.DependencyMatrix]] provides an example how to use
+ * the dependency extractor.
  *
  * ==Implementation Note==
- * Only attributes defined by the Java 5/6 specification are considered in this implementation.
+ * Only attributes defined by the JVM 6 specification are considered in this implementation.
  *
  *
  * @author Thomas Schlosser
@@ -110,10 +116,9 @@ trait DependencyExtractor extends DependencyBuilder with SourceElementIDs {
     }
 
     /**
-     * Processes the given field, i.e. extracts all dependencies that start
-     * from this field.
+     * Extracts all source elements on which the given field definition depends.
      *
-     * @param field The field whose dependencies should be extracted.
+     * @param field The field whose dependencies will be extracted.
      * @param declaringType The type of this field's declaring class.
      * @param declaringTypeID The ID of the field's declaring class.
      */
