@@ -124,7 +124,7 @@ trait DependencyExtractor extends DependencyProcessor with SourceElementIDs {
      */
     protected def process(field: Field, declaringType: ObjectType, declaringTypeID: Int) {
         val fieldID = sourceElementID(declaringType, field)
-        val Field(accessFlags, _, fieldType, attributes) = field
+        val Field(_ /*accessFlags*/, _, fieldType, attributes) = field
 
         processDependency(fieldID, declaringTypeID, if (field.isStatic) IS_CLASS_MEMBER_OF else IS_INSTANCE_MEMBER_OF)
         processDependency(fieldID, sourceElementID(fieldType), IS_OF_TYPE)
@@ -155,7 +155,7 @@ trait DependencyExtractor extends DependencyProcessor with SourceElementIDs {
      */
     protected def process(method: Method, declaringType: ObjectType, declaringTypeID: Int) {
         val methodID = sourceElementID(declaringType, method)
-        val Method(accessFlags, _, MethodDescriptor(parameterTypes, returnType), attributes) = method
+        val Method(_ /*accessFlags*/, _, MethodDescriptor(parameterTypes, returnType), attributes) = method
 
         processDependency(methodID, declaringTypeID, if (method.isStatic) IS_CLASS_MEMBER_OF else IS_INSTANCE_MEMBER_OF)
 
@@ -175,7 +175,7 @@ trait DependencyExtractor extends DependencyProcessor with SourceElementIDs {
                 exceptionTable foreach { e ⇒ processDependency(methodID, sourceElementID(e), THROWS) }
             case elementValue: ElementValue ⇒ // ElementValues encode annotation default attributes
                 processElementValue(elementValue, methodID)
-            case Code(_, _, instructions, exceptionTable, attributes) ⇒
+            case Code(_, _, instructions, exceptionTable, codeAttributes) ⇒
                 // Process code instructions by calling the process method which is defined in
                 // the generated InstructionDependencyExtractor super class.
                 process(methodID, instructions)
@@ -187,7 +187,7 @@ trait DependencyExtractor extends DependencyProcessor with SourceElementIDs {
                 }
                 // The Java 5 specification defines the following attributes:
                 // LineNumberTable, LocalVariableTable, and LocalVariableTypeTable)
-                attributes foreach {
+                codeAttributes foreach {
                     case LocalVariableTable(localVariableTable) ⇒
                         localVariableTable foreach {
                             entry ⇒ processDependency(methodID, sourceElementID(entry.fieldType), HAS_LOCAL_VARIABLE_OF_TYPE)
@@ -397,10 +397,8 @@ trait DependencyExtractor extends DependencyProcessor with SourceElementIDs {
                 }
 
                 case 186 ⇒ {
-                    val INVOKEDYNAMIC(name, methodDescriptor) = instr.asInstanceOf[INVOKEDYNAMIC]
-                    methodDescriptor.parameterTypes foreach { parameterType ⇒ processDependency(methodId, sourceElementID(parameterType), USES_PARAMETER_TYPE) }
-                    processDependency(methodId, sourceElementID(methodDescriptor.returnType), USES_RETURN_TYPE)
-                }
+                    sys.error("Java 7's invokedynamic bytecode instruction is not yet supported ") // TODO [Java 7] Support dependency extraction.
+                   }
 
                 case 185 ⇒ {
                     val INVOKEINTERFACE(declaringClass, name, methodDescriptor) = instr.asInstanceOf[INVOKEINTERFACE]
@@ -435,7 +433,7 @@ trait DependencyExtractor extends DependencyProcessor with SourceElementIDs {
                 }
 
                 case 197 ⇒ {
-                    val MULTIANEWARRAY(componentType, dimensions) = instr.asInstanceOf[MULTIANEWARRAY]
+                    val MULTIANEWARRAY(componentType, _ /*dimensions*/) = instr.asInstanceOf[MULTIANEWARRAY]
                     processDependency(methodId, sourceElementID(componentType), CREATES_ARRAY_OF_TYPE)
                 }
 
