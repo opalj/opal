@@ -46,7 +46,7 @@ import scala.collection.mutable.HashMap
  * Negative IDs are never assigned by this source element to ID mapping.
  * The largest id is equivalent to LOWEST_METHOD_ID + number of methods seen.
  *
- * '''Usage Scenario'''
+ * ==Usage Scenario==
  * Ids can be used to space efficiently encode dependencies between code elements
  * E.g., assuming that the analyzed code base has less than 1.000.000 class
  * declarations, less than 4.000.000 field declarations and less than 12.777.215
@@ -54,7 +54,7 @@ import scala.collection.mutable.HashMap
  * target source element and the kind of the dependency. The highest 8 bit of
  * the int value can be used to encode the dependency kind.
  *
- * '''Implementation Note'''
+ * ==Implementation Note==
  * This class is not thread safe.
  *
  * @author Michael Eichberg
