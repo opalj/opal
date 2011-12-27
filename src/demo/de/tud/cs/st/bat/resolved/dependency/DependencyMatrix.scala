@@ -79,7 +79,7 @@ object DependencyMatrix {
         import scala.collection.mutable.{ Map, Set }
         val dependencyMatrix = Map[Int, Set[(Int, DependencyType)]]()
         val dependencyExtractor = new DependencyExtractor with SourceElementIDsMap {
-            def addDependency(src: Int, trgt: Int, dType: DependencyType) {
+            def processDependency(src: Int, trgt: Int, dType: DependencyType) {
                 dependencyMatrix.getOrElseUpdate(src, { Set[(Int, DependencyType)]() }) + ((trgt, dType))
             }
         }

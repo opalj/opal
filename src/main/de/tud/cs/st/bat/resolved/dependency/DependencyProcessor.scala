@@ -33,23 +33,27 @@
 package de.tud.cs.st.bat.resolved
 package dependency
 
-import DependencyType._
-
 /**
- *
- *
- * @author Thomas Schlosser
- * @author Michael Eichberg
- */
-trait DependencyBuilder {
+  * Trait that declares a method that will be called, e.g., by the [[de.tud.cs.st.bat.resolved.dependency.DependencyExtractor]],
+  * for every encountered dependency.
+  *
+  * ==Usage==
+  * Given an implementation of this trait which builds a dependency graph, e.g., a trait DependencyGraphBuilder, it is
+  * then possible to create an instance of a [[de.tud.cs.st.bat.resolved.dependency.DependencyExtractor]] instance by
+  * mixing in the DependencyGraphBuilder trait.
+  *
+  * @author Thomas Schlosser
+  * @author Michael Eichberg
+  */
+trait DependencyProcessor {
 
     /**
-     * Adds a dependency of the given type between the source and target.
-     *
-     * @param sourceID The ID of the origin source element.
-     * @param targetID The ID of the target source element.
-     * @param dependencyType The type of the dependency.
-     */
-    def addDependency(sourceID: Int, targetID: Int, dependencyType: DependencyType)
+      * Processes a dependency of the given type between the source and target.
+      *
+      * @param sourceID The ID of the origin source element.
+      * @param targetID The ID of the target source element.
+      * @param dependencyType The type of the dependency.
+      */
+    def processDependency(sourceID: Int, targetID: Int, dependencyType: DependencyType)
 
 }

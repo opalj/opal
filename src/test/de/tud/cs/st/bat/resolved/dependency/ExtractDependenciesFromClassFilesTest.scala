@@ -104,7 +104,7 @@ class ExtractDependenciesFromClassFilesTest extends Suite {
         reporter(TestStarting(ordinal, "BasicDependencyExtractorTests", None, testName))
         try {
             val dependencyExtractor = new DependencyExtractor with SourceElementIDsMap {
-                def addDependency(src: Int, trgt: Int, dType: DependencyType) {
+                def processDependency(src: Int, trgt: Int, dType: DependencyType) {
                     /* DO NOTHING */
                 }
             }

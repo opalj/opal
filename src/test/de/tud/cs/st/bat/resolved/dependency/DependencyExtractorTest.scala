@@ -53,7 +53,7 @@ class DependencyExtractorTest extends FunSuite {
         var dependencies: List[Tuple3[String, String, DependencyType]] = Nil
 
         // basically, just collects all dependencies
-        val dependencyExtractor = new DependencyExtractor with DependencyBuilder with SourceElementIDs {
+        val dependencyExtractor = new DependencyExtractor with DependencyProcessor with SourceElementIDs {
 
             val FIELD_AND_METHOD_SEPARATOR = "."
 
@@ -90,7 +90,7 @@ class DependencyExtractorTest extends FunSuite {
             // TODO remove
             private val baseTypes = Array("byte", "short", "int", "long", "float", "double", "char", "boolean", "void")
 
-            def addDependency(src: Int, trgt: Int, dType: DependencyType) {
+            def processDependency(src: Int, trgt: Int, dType: DependencyType) {
                 val srcNode = nodes(src)
                 val trgtNode = nodes(trgt)
                 if (baseTypes.contains(srcNode) || baseTypes.contains(trgtNode)) {
