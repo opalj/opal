@@ -33,7 +33,7 @@
 package de.tud.cs.st.bat
 
 /**
- * This package implements BAT's – so-called – resolved representation Java bytecode;
+ * This package implements BAT's – so-called – resolved representation of Java bytecode;
  * the name was chosen to denote that all index-based reference to the constant pool structure
  * are resolved to direct references to the constant pool entries;
  * i.e., no constant pool based lookups are required anymore.
