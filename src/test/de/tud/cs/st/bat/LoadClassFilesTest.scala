@@ -30,32 +30,31 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved
-package dependency
+package de.tud.cs.st
+package bat
 
 import java.io.File
 import java.util.zip.ZipFile
 import java.util.zip.ZipEntry
+
+import de.tud.cs.st.bat.canonical.reader.BasicJava6Framework
+import de.tud.cs.st.bat.resolved.reader.Java6Framework
+
 import org.scalatest.Suite
 import org.scalatest.Reporter
 import org.scalatest.Stopper
 import org.scalatest.Tracker
-import org.scalatest.events.TestStarting
-import org.scalatest.events.TestSucceeded
-import org.scalatest.events.TestFailed
+import org.scalatest.events._
 
-import reader.Java6Framework
-import DependencyType._
 
 /**
- * Tests whether all class files contained in the "test/classfiles" directory
- * can be processed by the <code>DependencyExtractor</code> without failure.
- * The results themselves will not be verified in these test cases.
- *
- * @author Thomas Schlosser
- */
-//@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
-class BasicDependencyExtractorTest extends Suite {
+  * This test(suite) just loads a very large number of class files to make sure the library
+  * can handle them and to test the "corner" cases. Basically, we test for NPEs,
+  * ArrayIndexOutOfBoundExceptions and similar issues.
+  *
+  * @author Michael Eichberg
+  */
+class LoadClassFilesTest extends Suite {
 
     /*
     * Registry of all class files stored in the zip files found in the test data directory.
@@ -64,14 +63,14 @@ class BasicDependencyExtractorTest extends Suite {
 
         var tcs = scala.collection.immutable.Map[String, (ZipFile, ZipEntry)]()
 
-        // The location of the "test/classfiles" directory depends on the current directory used for
+        // The location of the "test/data" directory depends on the current directory used for
         // running this test suite... i.e. whether the current directory is the directory where
-        // this class / this source file is stored or the BAT's root directory.
-        var files = new File("../../../../../../../test/classfiles").listFiles()
+        // this class / this source file is stored or BAT's root directory.
+        var files = new File("../../../../../../test/classfiles").listFiles()
         if (files == null) files = new File("test/classfiles").listFiles()
 
         for {
-            file ← files
+            file <- files
             if (file.isFile && file.canRead && file.getName.endsWith(".zip"))
         } {
             val zipfile = new ZipFile(file)
@@ -79,7 +78,7 @@ class BasicDependencyExtractorTest extends Suite {
             while (zipentries.hasMoreElements) {
                 val zipentry = zipentries.nextElement
                 if (!zipentry.isDirectory && zipentry.getName.endsWith(".class")) {
-                    val testCase = ("Extract dependencies of class file: "+zipfile.getName+" - "+zipentry.getName -> (zipfile, zipentry))
+                    val testCase = ("Read class file: " + zipfile.getName + " - " + zipentry.getName ->(zipfile, zipentry))
                     tcs = tcs + testCase
                 }
             }
@@ -88,41 +87,36 @@ class BasicDependencyExtractorTest extends Suite {
         tcs
     }
 
-    override lazy val testNames: Set[String] = {
-        val r = (Set[String]() /: (testCases.keys))(_ + _)
-        r
-    }
+    override lazy val testNames: Set[String] = (Set[String]() /: (testCases.keys))(_ + _)
 
     override def tags: Map[String, Set[String]] = Map()
 
-    override def runTest(
-        testName: String,
-        reporter: Reporter,
-        stopper: Stopper,
-        configMap: Map[String, Any],
-        tracker: Tracker) {
+
+    override def runTest(testName: String,
+                         reporter: Reporter,
+                         stopper: Stopper,
+                         configMap: Map[String, Any],
+                         tracker: Tracker
+                            ) {
 
         val ordinal = tracker.nextOrdinal
-        reporter(TestStarting(ordinal, "BasicDependencyExtractorTests", None, testName))
+        reporter(TestStarting(ordinal, "BATTests", None, testName))
         try {
-            val dependencyBuilder: DependencyBuilder = new DependencyBuilder with DefaultIDMappingDependencyBuilder {
-                def addDependency(src: Int, trgt: Int, dType: DependencyType) {
-                }
-            }
-            val dependencyExtractor = new DependencyExtractor(dependencyBuilder)
 
+            // 1. Test ... just read in the class file and use a basic representation that represents everything as is
             val (file, entry) = testCases(testName)
+            BasicJava6Framework.ClassFile(() => file.getInputStream(entry))
 
+            // 2.1. Test ... read in the class file and resolve the constant pool
             var classFile: de.tud.cs.st.bat.resolved.ClassFile = null
-            classFile = Java6Framework.ClassFile(() ⇒ file.getInputStream(entry))
+            classFile = Java6Framework.ClassFile(() => file.getInputStream(entry))
+            // 2.2. Test ... if we can create the XML representation for the class file without generating errors
+            classFile.toXML
 
-            // process classFile using dependency extractor
-            dependencyExtractor.process(classFile)
-
-            reporter(TestSucceeded(ordinal, "BasicDependencyExtractorTests", None, testName))
-        }
-        catch {
-            case t: Throwable ⇒ reporter(TestFailed(ordinal, "Failure", "BasicDependencyExtractorTests", None, testName, Some(t)))
+            reporter(TestSucceeded(ordinal, "BATTests", None, testName))
+        } catch {
+            case t: Throwable => reporter(TestFailed(ordinal, "Failure", "BATTests", None, testName, Some(t)))
         }
     }
+
 }
