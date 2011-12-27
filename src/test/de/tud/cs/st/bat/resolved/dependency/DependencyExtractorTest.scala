@@ -100,7 +100,7 @@ class DependencyExtractorTest extends FunSuite {
             }
         }
 
-        def assertTestClass {
+        def assertTestClass() {
             //    package dependencies;
             //
             //    import java.util.ArrayList;
@@ -148,7 +148,7 @@ class DependencyExtractorTest extends FunSuite {
             //    }
         }
 
-        def assertTestInterface {
+        def assertTestInterface() {
             //    package dependencies;
             //
             //    public interface TestInterface {
@@ -163,7 +163,7 @@ class DependencyExtractorTest extends FunSuite {
             //    }
         }
 
-        def assertMarkerInterface {
+        def assertMarkerInterface() {
             //    package dependencies.sub;
             //
             //    public interface MarkerInterface {
@@ -172,7 +172,7 @@ class DependencyExtractorTest extends FunSuite {
             //    }
         }
 
-        def assertDeprecatedInterface {
+        def assertDeprecatedInterface() {
             //    package dependencies.sub;
             //
             //    import dependencies.TestInterface;
@@ -195,7 +195,7 @@ class DependencyExtractorTest extends FunSuite {
             //    }
         }
 
-        def assertFieldsClass {
+        def assertFieldsClass() {
             //    package dependencies;
             //
             //    public class FieldsClass {
@@ -255,7 +255,7 @@ class DependencyExtractorTest extends FunSuite {
             //    }
         }
 
-        def assertOuterAndInnerClass {
+        def assertOuterAndInnerClass() {
             //    package dependencies;
             //
             //    public class OuterClass {
@@ -286,7 +286,7 @@ class DependencyExtractorTest extends FunSuite {
             //    }
         }
 
-        def assertEnclosingMethodAndInnerClass {
+        def assertEnclosingMethodAndInnerClass() {
             //    package dependencies;
             //
             //    public class EnclosingMethodClass {
@@ -376,7 +376,7 @@ class DependencyExtractorTest extends FunSuite {
             //    }
         }
 
-        def assertExceptionTestClass {
+        def assertExceptionTestClass() {
             //    package dependencies;
             //
             //    import java.util.FormatterClosedException;
@@ -434,7 +434,7 @@ class DependencyExtractorTest extends FunSuite {
             //    }
         }
 
-        def assertTestAnnotation {
+        def assertTestAnnotation() {
             //    package dependencies;
             //
             //    import java.lang.annotation.ElementType;
@@ -471,7 +471,7 @@ class DependencyExtractorTest extends FunSuite {
             //    }
         }
 
-        def assertAnnotationDefaultAttributeTestClass {
+        def assertAnnotationDefaultAttributeTestClass() {
             //    package dependencies;
             //
             //    import java.lang.annotation.ElementType;
@@ -498,7 +498,7 @@ class DependencyExtractorTest extends FunSuite {
             //    }
         }
 
-        def assertInstructionsTestClass {
+        def assertInstructionsTestClass() {
             //    package dependencies;
             //
             //    import java.io.FilterInputStream;
@@ -588,7 +588,7 @@ class DependencyExtractorTest extends FunSuite {
             //    }
         }
 
-        def assertSignatureTestInterface {
+        def assertSignatureTestInterface() {
             //    package dependencies;
             //
             //    import java.io.InputStream;
@@ -624,7 +624,7 @@ class DependencyExtractorTest extends FunSuite {
             //    }
         }
 
-        def assertSignatureTestClass {
+        def assertSignatureTestClass() {
             //    package dependencies;
             //
             //    import java.io.FileOutputStream;
@@ -737,7 +737,7 @@ class DependencyExtractorTest extends FunSuite {
             //    }
         }
 
-        def assertSignatureTestSubClass {
+        def assertSignatureTestSubClass() {
             //    package dependencies;
             //
             //    import java.io.FileOutputStream;
@@ -815,20 +815,20 @@ class DependencyExtractorTest extends FunSuite {
         }
 
         // test that the extracted dependencies are as expected
-        assertTestClass
-        assertTestInterface
-        assertMarkerInterface
-        assertDeprecatedInterface
-        assertFieldsClass
-        assertOuterAndInnerClass
-        assertEnclosingMethodAndInnerClass
-        assertExceptionTestClass
-        assertTestAnnotation
-        assertAnnotationDefaultAttributeTestClass
-        assertInstructionsTestClass
-        assertSignatureTestInterface
-        assertSignatureTestClass
-        assertSignatureTestSubClass
+        assertTestClass()
+        assertTestInterface()
+        assertMarkerInterface()
+        assertDeprecatedInterface()
+        assertFieldsClass()
+        assertOuterAndInnerClass()
+        assertEnclosingMethodAndInnerClass()
+        assertExceptionTestClass()
+        assertTestAnnotation()
+        assertAnnotationDefaultAttributeTestClass()
+        assertInstructionsTestClass()
+        assertSignatureTestInterface()
+        assertSignatureTestClass()
+        assertSignatureTestSubClass()
 
         assert(dependencies.isEmpty, "Too many ["+dependencies.size+"] dependencies have been extracted:\n"+dependencies.mkString("\n"))
 
