@@ -6,3 +6,6 @@ build.properties
 .project
 bin
 .settings
+.iml
+.ipr
+.iws
