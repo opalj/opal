@@ -32,7 +32,7 @@
  */
 package de.tud.cs.st.bat.resolved
 package dependency
-import scala.collection.mutable.HashMap
+
 
 /**
  * Associates a source element (type, method or field declaration) with a unique id.
@@ -112,7 +112,7 @@ trait SourceElementIDsMap extends SourceElementIDs {
      * Resets the ids to their initial values and clears all bindings between
      * source elements and ids.
      */
-    def reset {
+    def reset() {
         nextTypeID = LOWEST_TYPE_ID
         typeIDs.clear()
 
