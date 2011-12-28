@@ -43,6 +43,16 @@ case class EnclosingMethod(clazz: ObjectType,
                            descriptor: MethodDescriptor)
         extends Attribute {
 
+    /*
+      * Determines whether the given EnclosingMethod attribute
+      * contains method information.
+      *
+      * @param em The attribute that should be analyzed.
+      * @return <code>true</code> if method name and descriptor is not NULL.
+      *         Otherwise, <code>false</code> is returned.
+      */
+    // TODO [Functionality] Check if it makes sense to add the method: private def isEnclosedByMethod(em: EnclosingMethod): Boolean = name != null && descriptor != null // otherwise the inner class is assigned to a field
+
     //
     //
     // SUPPORT FOR SPECIAL REPRESENTATIONS
