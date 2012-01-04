@@ -1,11 +1,17 @@
 # Overview
-BAT is a Java Bytecode library written in Scala 2.9.x that facilitates generating representations of Java Bytecode that suit your needs. You can think of a BAT as a software product line for bytecode representations. BAT fully supports Java 6 class files and contains preliminary support for Java 7 as of Okt. 2011.
+BAT is a Scala library written in Scala 2.9.x for analyzing Java Bytecode.
+
+BAT's primary focus is on providing different representations of Java Bytecode to support a project's special needs.
+BAT generally supports Java 6 class files and contains preliminary support for Java 7 as of Jan. 2012.
 
 Currently, four representations are provided/are supported:
 
 1. Native/Canonical - Basically, a one to one representation of the class file; Java Bytecode's constant pool is not resolved and instructions are not made explicit.
 
-2. Resolved - An object-oriented representation that facilitates writing analysis against the bytecode. The constant pool is completely resolved and all instructions are explicitly represented; all standard Java 6 Bytecode attributes are represented.
+2. Resolved - An object-oriented representation that facilitates writing analysis against the bytecode. 
+            If you want to write bytecode analyses in Scala then we recommend to use this representation. 
+            The most important property of this representation is that the constant pool is completely resolved and all instructions are explicitly represented.
+            This representation also provides some functionality to extract a class file's dependencies.
 
 3. Prolog - A representation of Java Bytecode as a set of Prolog facts. This representation builds upon the resolved representation and basically represents all information that are represented by the resolved representation.
 
