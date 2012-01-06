@@ -60,67 +60,67 @@ trait SignatureVisitor[T] {
 }
 trait TraversingVisitor extends SignatureVisitor[Unit] {
 
-    def visit(cs: ClassSignature) {
+    override def visit(cs: ClassSignature) {
         cs.formalTypeParameters foreach (_.foreach(_.accept(this)))
         cs.superClassSignature.accept(this)
         cs.superInterfacesSignature.foreach(_.accept(this))
     }
 
-    def visit(mts: MethodTypeSignature) {
+    override def visit(mts: MethodTypeSignature) {
         mts.formalTypeParameters.foreach(_.foreach(_.accept(this)))
         mts.parametersTypeSignatures.foreach(_.accept(this))
         mts.returnTypeSignature.accept(this)
         mts.throwsSignature.foreach(_.accept(this))
     }
 
-    def visit(cts: ClassTypeSignature) {
+    override def visit(cts: ClassTypeSignature) {
         cts.simpleClassTypeSignature.accept(this)
         cts.classTypeSignatureSuffix.foreach(_.accept(this))
     }
 
-    def visit(ats: ArrayTypeSignature) {
+    override def visit(ats: ArrayTypeSignature) {
         ats.typeSignature.accept(this)
     }
 
-    def visit(tvs: TypeVariableSignature) { /* Leafnode */ }
+    override def visit(tvs: TypeVariableSignature) { /* Leafnode */ }
 
-    def visit(scts: SimpleClassTypeSignature) {
+    override def visit(scts: SimpleClassTypeSignature) {
         scts.typeArguments.foreach(_.foreach(_.accept(this)))
     }
 
-    def visit(ftp: FormalTypeParameter) {
+    override def visit(ftp: FormalTypeParameter) {
         ftp.classBound.foreach(_.accept(this))
         ftp.interfaceBound.foreach(_.accept(this))
     }
 
-    def visit(pta: ProperTypeArgument) {
+    override def visit(pta: ProperTypeArgument) {
         pta.varianceIndicator.foreach(_.accept(this))
         pta.fieldTypeSignature.accept(this)
     }
 
-    def visit(cvi: CovariantIndicator) { /* Leafnode */ }
+    override def visit(cvi: CovariantIndicator) { /* Leafnode */ }
 
-    def visit(cvi: ContravariantIndicator) { /* Leafnode */ }
+    override def visit(cvi: ContravariantIndicator) { /* Leafnode */ }
 
-    def visit(wc: Wildcard) { /* Leafnode */ }
+    override def visit(wc: Wildcard) { /* Leafnode */ }
 
-    def visit(bt: BooleanType) { /* Leafnode */ }
+    override def visit(bt: BooleanType) { /* Leafnode */ }
 
-    def visit(bt: ByteType) { /* Leafnode */ }
+    override def visit(bt: ByteType) { /* Leafnode */ }
 
-    def visit(it: IntegerType) { /* Leafnode */ }
+    override def visit(it: IntegerType) { /* Leafnode */ }
 
-    def visit(lt: LongType) { /* Leafnode */ }
+    override def visit(lt: LongType) { /* Leafnode */ }
 
-    def visit(ct: CharType) { /* Leafnode */ }
+    override def visit(ct: CharType) { /* Leafnode */ }
 
-    def visit(st: ShortType) { /* Leafnode */ }
+    override def visit(st: ShortType) { /* Leafnode */ }
 
-    def visit(ft: FloatType) { /* Leafnode */ }
+    override def visit(ft: FloatType) { /* Leafnode */ }
 
-    def visit(dt: DoubleType) { /* Leafnode */ }
+    override def visit(dt: DoubleType) { /* Leafnode */ }
 
-    def visit(vt: VoidType) { /* Leafnode */ }
+    override def visit(vt: VoidType) { /* Leafnode */ }
 
 }
 

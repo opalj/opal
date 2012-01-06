@@ -103,7 +103,7 @@ class ExtractDependenciesFromClassFilesTest extends Suite {
         val ordinal = tracker.nextOrdinal
         reporter(TestStarting(ordinal, "BasicDependencyExtractorTests", None, testName))
         try {
-            val dependencyExtractor = new DependencyExtractor with SourceElementIDsMap {
+            val dependencyExtractor = new DependencyExtractor with SourceElementIDsMap with DoNothingSourceElementsVisitor {
                 def processDependency(src: Int, trgt: Int, dType: DependencyType) {
                     /* DO NOTHING */
                 }

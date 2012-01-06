@@ -53,7 +53,7 @@ class DependencyExtractorTest extends FunSuite {
         var dependencies: List[Tuple3[String, String, DependencyType]] = Nil
 
         // basically, just collects all dependencies
-        val dependencyExtractor = new DependencyExtractor with DependencyProcessor with SourceElementIDs {
+        val dependencyExtractor = new DependencyExtractor with DoNothingSourceElementsVisitor {
 
             val FIELD_AND_METHOD_SEPARATOR = "."
 

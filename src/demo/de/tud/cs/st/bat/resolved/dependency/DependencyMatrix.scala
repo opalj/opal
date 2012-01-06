@@ -78,9 +78,9 @@ object DependencyMatrix {
     def analyze(zipFiles: Array[String]) {
         import scala.collection.mutable.{ Map, Set }
         val dependencyMatrix = Map[Int, Set[(Int, DependencyType)]]()
-        val dependencyExtractor = new DependencyExtractor with SourceElementIDsMap {
-            def processDependency(src: Int, trgt: Int, dType: DependencyType) {
-                dependencyMatrix.getOrElseUpdate(src, { Set[(Int, DependencyType)]() }) + ((trgt, dType))
+        val dependencyExtractor = new DependencyExtractor with SourceElementIDsMap with DoNothingSourceElementsVisitor {
+            def processDependency(sourceID: Int, targetID: Int, dType: DependencyType) {
+                dependencyMatrix.getOrElseUpdate(sourceID, { Set[(Int, DependencyType)]() }) + ((targetID, dType))
             }
         }
 

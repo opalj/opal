@@ -42,7 +42,8 @@ import DependencyType._
  *
  * By default, self dependencies will be reported. If necessary or undesired, self dependencies can
  * easily be filtered by a [[de.tud.cs.st.bat.resolved.dependency.DependencyProcessor]]'s
- * processDependency method.
+ * processDependency method (which is called by the dependency extractor, but whose implementation needs
+ * to be provided.)
  *
  * ==Usage==
  * To assign ids to source elements the dependency extractor relies on source element ids as
@@ -60,7 +61,7 @@ import DependencyType._
  * @author Thomas Schlosser
  * @author Michael Eichberg
  */
-trait DependencyExtractor extends DependencyProcessor with SourceElementIDs {
+trait DependencyExtractor extends DependencyProcessor with SourceElementIDs with SourceElementsVisitor[Unit] {
 
     /**
      * Processes the given class file and all fields and methods that are defined in it.
@@ -70,6 +71,7 @@ trait DependencyExtractor extends DependencyProcessor with SourceElementIDs {
      * @param classFile The class file whose dependencies should be extracted.
      */
     def process(classFile: ClassFile) {
+        visit(classFile)
         val thisClassID = sourceElementID(classFile)
         val ClassFile(_, _, _, thisClass, superClass, interfaces, fields, methods, attributes) = classFile
 
@@ -80,10 +82,10 @@ trait DependencyExtractor extends DependencyProcessor with SourceElementIDs {
             processDependency(thisClassID, _, IMPLEMENTS)
         }
         fields foreach {
-            process(_, thisClass, thisClassID)
+            process(_, classFile, thisClassID)
         }
         methods foreach {
-            process(_, thisClass, thisClassID)
+            process(_, classFile, thisClassID)
         }
 
         // As defined by the Java 5 specification, a class declaration can contain the following attributes:
@@ -120,11 +122,12 @@ trait DependencyExtractor extends DependencyProcessor with SourceElementIDs {
      * Extracts all source elements on which the given field definition depends.
      *
      * @param field The field whose dependencies will be extracted.
-     * @param declaringType The type of this field's declaring class.
+     * @param declaringClass This field's declaring class.
      * @param declaringTypeID The ID of the field's declaring class.
      */
-    protected def process(field: Field, declaringType: ObjectType, declaringTypeID: Int) {
-        val fieldID = sourceElementID(declaringType, field)
+    protected def process(field: Field, declaringClass: ClassFile, declaringTypeID: Int) {
+        visit(declaringClass,field)
+        val fieldID = sourceElementID(declaringClass.thisClass, field)
         val Field(_ /*accessFlags*/ , _, fieldType, attributes) = field
 
         processDependency(fieldID, declaringTypeID, if (field.isStatic) IS_CLASS_MEMBER_OF else IS_INSTANCE_MEMBER_OF)
@@ -158,8 +161,9 @@ trait DependencyExtractor extends DependencyProcessor with SourceElementIDs {
      * @param declaringType The method's declaring class.
      * @param declaringTypeID The ID of the method's declaring class.
      */
-    protected def process(method: Method, declaringType: ObjectType, declaringTypeID: Int) {
-        val methodID = sourceElementID(declaringType, method)
+    protected def process(method: Method, declaringClass: ClassFile, declaringTypeID: Int) {
+        visit(declaringClass,method)
+        val methodID = sourceElementID(declaringClass.thisClass, method)
         val Method(_ /*accessFlags*/ , _, MethodDescriptor(parameterTypes, returnType), attributes) = method
 
         processDependency(methodID, declaringTypeID, if (method.isStatic) IS_CLASS_MEMBER_OF else IS_INSTANCE_MEMBER_OF)
@@ -510,17 +514,29 @@ trait DependencyExtractor extends DependencyProcessor with SourceElementIDs {
         processDependency(id, sourceElementID(declaringClass, fieldName), dType)
     }
 
-    protected def processDependency(jvmType: ObjectType, id: Int, dType: DependencyType) {
-        processDependency(sourceElementID(jvmType), id, dType)
+    protected def processDependency(objectType: ObjectType, id: Int, dType: DependencyType) {
+        processDependency(sourceElementID(objectType), id, dType)
     }
 
-    protected def processDependency(id: Int, jvmType: ReferenceType, dType: DependencyType) {
-        processDependency(id, sourceElementID(jvmType), dType)
+    protected def processDependency(id: Int, referenceType: ReferenceType, dType: DependencyType) {
+        processDependency(id, sourceElementID(referenceType), dType)
     }
 
-    protected def processDependency(id: Int, jvmType: Type, dType: DependencyType) {
-        if (jvmType.isReferenceType) {
-            processDependency(id, sourceElementID(jvmType.asInstanceOf[ReferenceType]), dType)
+    /**
+     * Processes a dependency to some type.
+     *
+     * By default dependencies to primitive types are filtered and not reported; you can override this method
+     * with e.g.
+     * {{{
+     * protected def processDependency(id: Int, aType: Type, dType: DependencyType) {
+     *     processDependency(id, sourceElementID(aType), dType)
+     * }
+     * }}}
+     * if dependencies to primitive types should be reported to a [[de.tud.cs.st.bat.resolved.dependency.DependencyProcessor]].
+     */
+    protected def processDependency(id: Int, aType: Type, dType: DependencyType) {
+        if (aType.isReferenceType) {
+            processDependency(id, sourceElementID(aType.asInstanceOf[ReferenceType]), dType)
         }
     }
 }

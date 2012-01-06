@@ -56,7 +56,7 @@ class ClassHierarchy {
     private[this] var superclasses: Map[ObjectType, Set[ObjectType]] = Map()
     private[this] var subclasses: Map[ObjectType, Set[ObjectType]] = Map()
 
-    def update(classFiles: Traversable[ClassFile]) {
+    final def update(classFiles: Traversable[ClassFile]) {
         classFiles.foreach(update(_))
     }
 

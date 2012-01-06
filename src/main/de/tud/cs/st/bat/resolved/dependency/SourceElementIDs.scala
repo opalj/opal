@@ -35,24 +35,31 @@ package dependency
 
 /**
  * Associates a source element (type/class, method or field declaration) with
- * a unique id.
+ * a unique id. The methods of this interface are called by the
+ * [[de.tud.cs.st.bat.resolved.dependency.DependencyExtractor]] while traversing
+ * a class file.
  *
  * @author Michael Eichberg
  */
 trait SourceElementIDs {
 
+    /**
+     * Called by, e.g., the dependency extractor, to get the id of a specific type.
+     */
+    def sourceElementID(t: Type): Int
+
+    def sourceElementID(definingObjectType: ObjectType, fieldName: String): Int
+
+    def sourceElementID(definingObjectType: ObjectType, methodName: String, methodDescriptor: MethodDescriptor): Int
+
     final def sourceElementID(classFile: ClassFile): Int =
         sourceElementID(classFile.thisClass)
-
-    def sourceElementID(t: Type): Int
 
     final def sourceElementID(classFile: ClassFile, field: Field): Int =
         sourceElementID(classFile.thisClass, field.name)
 
     final def sourceElementID(definingObjectType: ObjectType, field: Field): Int =
         sourceElementID(definingObjectType, field.name)
-
-    def sourceElementID(definingObjectType: ObjectType, fieldName: String): Int
 
     final def sourceElementID(classFile: ClassFile, method: Method): Int =
         sourceElementID(classFile.thisClass, method)
@@ -61,8 +68,5 @@ trait SourceElementIDs {
         val Method(_, methodName, methodDescriptor, _) = method
         sourceElementID(definingObjectType, methodName, methodDescriptor)
     }
-
-    def sourceElementID(definingObjectType: ObjectType, methodName: String, methodDescriptor: MethodDescriptor): Int
-
 }
 object SourceElementIDs extends SourceElementIDsMap

@@ -30,41 +30,30 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved
-
-import reader.Java6Framework
+package de.tud.cs.st.bat
+package resolved
 
 /**
- * Just a very small code snippet that shows how to load a class file
- * and how to access the most basic information.
+ * Classes that traverse a class file can extend this trait to facilitate
+ * reporting the traversed source file elements; e.g., see
+ * [[de.tud.cs.st.bat.resolved.dependency.DependencyExtractor]].
  *
  * @author Michael Eichberg
  */
-object ClassFileInformation {
-
-    def main(args: Array[String]) {
-        if (args.length < 2) {
-            println("Usage: java …ClassFileInformation <ZIP or JAR file containing class files> <Name of classfile (incl. path information) contained in the ZIP/JAR file>+")
-            println("(c) 2011 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
-            sys.exit(1)
-        }
-
-        for (classFileName ← args.drop(1)/* drop the name of the zip file */) {
-            val classFile = Java6Framework.ClassFile(args(0), classFileName)
-
-            print(classFile.thisClass.className)
-            classFile.superClass.foreach(t ⇒ print(" extends " + t.className)) // java.lang.Object does not have a super class!
-
-            if (classFile.interfaces.length > 0) {
-                print(" implements")
-                classFile.interfaces.foreach(interface ⇒ print(" " + interface.className))
-                println
-            }
-
-            println("Sourcefile: " + (classFile sourceFile match { case Some(s) ⇒ s; case _ ⇒ "<NOT AVAILABE>" }))
-            println("Version   : " + classFile.majorVersion + "." + classFile.minorVersion)
-            println
-        }
-        sys.exit(0)
-    }
+trait SourceElementsVisitor[T] {
+    def visit(classFile: ClassFile): T
+    def visit(classFile: ClassFile, method: Method): T
+    def visit(classFile: ClassFile, field: Field): T
 }
+
+/**
+ * Implementation of the SourceElementsVisitor trait where all methods do nothing.
+ *
+ * @author Michael Eichberg
+ */
+trait DoNothingSourceElementsVisitor extends SourceElementsVisitor[Unit] {
+    override def visit(classFile: ClassFile) {}
+    override def visit(classFile: ClassFile, method: Method) {}
+    override def visit(classFile: ClassFile, field: Field) {}
+}
+

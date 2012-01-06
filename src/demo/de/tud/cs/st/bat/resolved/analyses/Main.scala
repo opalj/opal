@@ -42,7 +42,7 @@ import reader.Java6Framework
  * Implementation of some simple static analyses to demonstrate the flexibility
  * and power offered by Scala and BAT when analyzing class files.
  *
- * The implemented static analyses are insprired by Findbugs
+ * The implemented static analyses are inspired by Findbugs
  * (http://findbugs.sourceforge.net/bugDescriptions.html).
  *
  * @author Michael Eichberg
@@ -79,8 +79,8 @@ object Main extends Main {
     }
 
     // The following code is meant to show how easy it is to write analyses;
-    // it is not meant to demonstrate how to write such analyses in an effecient
-    // manner.
+    // it is not meant to demonstrate how to write such analyses in an efficient
+    // manner. (However, the performance is still acceptable.)
     def analyze(zipFiles: Array[String]) {
         val classHierarchy = new ClassHierarchy {}
 

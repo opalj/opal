@@ -33,7 +33,6 @@
 package de.tud.cs.st.bat.resolved
 package dependency
 
-
 /**
  * Associates a source element (type, method or field declaration) with a unique id.
  *
@@ -61,6 +60,7 @@ package dependency
  * @author Thomas Schlosser
  */
 trait SourceElementIDsMap extends SourceElementIDs {
+
 
     //
     // Associates each type with a unique ID
