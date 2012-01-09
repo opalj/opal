@@ -13,9 +13,9 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- *  - Neither the name of the Software Technology Group or Technische 
- *    Universität Darmstadt nor the names of its contributors may be used to 
- *    endorse or promote products derived from this software without specific 
+ *  - Neither the name of the Software Technology Group or Technische
+ *    Universität Darmstadt nor the names of its contributors may be used to
+ *    endorse or promote products derived from this software without specific
  *    prior written permission.
  *
  *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -34,20 +34,19 @@ package dependencies;
 
 /**
  * @author Thomas Schlosser
- * 
  */
 public class EnclosingMethodClass {
 
-    public Object enclosingField = new Object() {
-    };
+	public Object enclosingField = new Object() {
+	};
 
-    public static Object staticEnclosingField = new Object() {
-    };
+	public static Object staticEnclosingField = new Object() {
+	};
 
-    public void enclosingMethod() {
-	new Object() {
-	    public void innerMethod() {
-	    }
-	}.innerMethod();
-    }
+	public void enclosingMethod() {
+		new Object() {
+			public void innerMethod() {
+			}
+		}.innerMethod();
+	}
 }
