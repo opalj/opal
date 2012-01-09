@@ -43,8 +43,8 @@ import org.scalatest.FunSuite
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class SourceElementIDsTest extends FunSuite {
 
-    import SourceElementIDs.{ sourceElementID ⇒ id }
-    SourceElementIDs.reset
+    val ids = new SourceElementIDsMap{}
+    import ids.{ sourceElementID ⇒ id }
 
     test("BaseType IDs") {
         val it = id(IntegerType)

@@ -108,20 +108,5 @@ trait SourceElementIDsMap extends SourceElementIDs {
             getOrElseUpdate(methodName, { val id = nextMethodID; nextMethodID += 1; id })
     }
 
-    /**
-     * Resets the ids to their initial values and clears all bindings between
-     * source elements and ids.
-     */
-    def reset() {
-        nextTypeID = LOWEST_TYPE_ID
-        typeIDs.clear()
-
-        nextFieldID = LOWEST_FIELD_ID
-        fieldIDs.clear()
-
-        nextMethodID = LOWEST_METHOD_ID
-        methodIDs.clear()
-    }
-
 }
 
