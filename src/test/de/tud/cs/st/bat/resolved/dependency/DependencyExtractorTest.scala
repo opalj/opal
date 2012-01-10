@@ -831,7 +831,6 @@ class DependencyExtractorTest extends FunSuite {
         assertSignatureTestSubClass()
 
         assert(dependencies.isEmpty, "Too many ["+dependencies.size+"] dependencies have been extracted:\n"+dependencies.mkString("\n"))
-
     }
 }
 

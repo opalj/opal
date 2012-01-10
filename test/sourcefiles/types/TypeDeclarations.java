@@ -30,22 +30,43 @@
  *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st.bat.resolved
-package dependency
+package types;
 
 /**
- * To assign a dependency to an array's base type instead of the array itself, this
- * trait can be mixed in.
+ * This class contains public fields of all standard Java types.
+ *
+ * NOTE<br />
+ * This class is not meant to be (automatically) recompiled; it just serves documentation purposes.
  *
  * @author Michael Eichberg
  */
-trait UseIDOfBaseTypeForArrayTypes extends SourceElementIDs {
+public class TypeDeclarations {
 
-    abstract override def sourceElementID(t: Type): Int = {
-        t match {
-            case at: ArrayType ⇒ super.sourceElementID(at.baseType)
-            case _             ⇒ super.sourceElementID(t)
-        }
-    }
+	public boolean j;
+
+	public byte b;
+	public char c;
+	public short s;
+	public int i;
+	public long l;
+
+	public float f;
+	public double d;
+
+	public boolean js[];
+	public boolean jss[][];
+
+	public byte bs[];
+	public char cs[];
+	public short ss[];
+	public int is[];
+	public long ls[];
+
+	public float fs[];
+	public double ds[];
+
+	public Object o;
+	public Object os[];
+	public Object oss[][];
 
 }

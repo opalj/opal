@@ -525,7 +525,8 @@ trait DependencyExtractor extends DependencyProcessor with SourceElementIDs with
     /**
      * Processes a dependency to some type.
      *
-     * By default dependencies to primitive types are filtered and not reported; you can override this method
+     * By default dependencies to primitive types (which includes dependencies to arrays of primitive types)
+     * are filtered and not reported; you can override this method
      * with e.g.
      * {{{
      * protected def processDependency(id: Int, aType: Type, dType: DependencyType) {
@@ -535,7 +536,7 @@ trait DependencyExtractor extends DependencyProcessor with SourceElementIDs with
      * if dependencies to primitive types should be reported to a [[de.tud.cs.st.bat.resolved.dependency.DependencyProcessor]].
      */
     protected def processDependency(id: Int, aType: Type, dType: DependencyType) {
-        if (aType.isReferenceType) {
+        if (aType.isObjectType || (aType.isArrayType && aType.asInstanceOf[ArrayType].baseType.isObjectType)) {
             processDependency(id, sourceElementID(aType.asInstanceOf[ReferenceType]), dType)
         }
     }

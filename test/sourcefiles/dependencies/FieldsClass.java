@@ -13,9 +13,9 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- *  - Neither the name of the Software Technology Group or Technische 
- *    Universität Darmstadt nor the names of its contributors may be used to 
- *    endorse or promote products derived from this software without specific 
+ *  - Neither the name of the Software Technology Group or Technische
+ *    Universität Darmstadt nor the names of its contributors may be used to
+ *    endorse or promote products derived from this software without specific
  *    prior written permission.
  *
  *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -34,26 +34,26 @@ package dependencies;
 
 /**
  * @author Thomas Schlosser
- * 
+ *
  */
 public class FieldsClass {
-    public final static String CONSTANT = "constant";
-    private Integer i;
+	public final static String CONSTANT = "constant";
+	private Integer i;
 
-    @Deprecated
-    protected int deprecatedField;
+	@Deprecated
+	protected int deprecatedField;
 
-    private Integer readField() {
-	return i;
-    }
+	private Integer readField() {
+		return i;
+	}
 
-    private void writeField(Integer j) {
-	i = j;
-    }
+	private void writeField(Integer j) {
+		i = j;
+	}
 
-    public Integer readWrite(Integer j) {
-	Integer result = readField();
-	writeField(j);
-	return result;
-    }
+	public Integer readWrite(Integer j) {
+		Integer result = readField();
+		writeField(j);
+		return result;
+	}
 }

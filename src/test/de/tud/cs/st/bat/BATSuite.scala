@@ -51,8 +51,10 @@ class BATSuite extends Suites(
     new resolved.MethodDescriptorTest,
     new resolved.AttributesTest,
 
+    new resolved.dependency.DependenciesToPrimitiveTypesTest,
     new resolved.dependency.SourceElementIDsTest,
     new resolved.dependency.DependencyExtractorTest,
+    new resolved.dependency.UseIDOfBaseTypeForArrayTypesTest,
 
     new LoadClassFilesTest,
     new resolved.dependency.ExtractDependenciesFromClassFilesTest
