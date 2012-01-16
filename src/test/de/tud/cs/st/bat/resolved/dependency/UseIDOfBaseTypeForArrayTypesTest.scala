@@ -51,36 +51,34 @@ import org.scalatest.matchers.ShouldMatchers
 @RunWith(classOf[JUnitRunner])
 class UseIDOfBaseTypeForArrayTypesTest extends FlatSpec with ShouldMatchers with BeforeAndAfterAll {
 
-    val extractedTypes = {
-        val types = scala.collection.mutable.Set[Type]()
-        class TypeCollector extends SourceElementIDs {
+    val extractedTypes = scala.collection.mutable.Set[Type]()
 
-            def sourceElementID(t: Type): Int = {
-                types += t
-                -1
-            }
+    class TypeCollector extends  SourceElementIDs with DependencyExtractor with DoNothingSourceElementsVisitor {
 
-            def sourceElementID(definingObjectType: ObjectType, fieldName: String): Int = {
-                types += definingObjectType
-                -1
-            }
-
-            def sourceElementID(definingObjectType: ObjectType, methodName: String, methodDescriptor: MethodDescriptor): Int = {
-                types += definingObjectType
-                -1
-            }
+        def sourceElementID(t: Type): Int = {
+            extractedTypes += t
+            -1
         }
 
-        object DependencyCollector extends TypeCollector with UseIDOfBaseTypeForArrayTypes  with DependencyExtractor with DoNothingSourceElementsVisitor {
-
-            def processDependency(sourceID: Int, targetID: Int, dependencyType: DependencyType) {}
+        def sourceElementID(definingObjectType: ObjectType, fieldName: String): Int = {
+            extractedTypes += definingObjectType
+            -1
         }
 
-        DependencyCollector.process(
-            Java6Framework.ClassFile("test/classfiles/Dependencies.zip", "dependencies/InstructionsTestClass.class")
-        );
-        types
+        def sourceElementID(definingObjectType: ObjectType, methodName: String, methodDescriptor: MethodDescriptor): Int = {
+            extractedTypes += definingObjectType
+            -1
+        }
+
+        def processDependency(sourceID: Int, targetID: Int, dependencyType: DependencyType) {}
     }
+
+    object TypeCollector extends TypeCollector with UseIDOfBaseTypeForArrayTypes
+
+    TypeCollector.process(
+      Java6Framework.ClassFile("test/classfiles/Dependencies.zip", "dependencies/InstructionsTestClass.class")
+      //  Java6Framework.ClassFile(() => new java.io.FileInputStream("test/classfiles/BinderHelper.class"))
+    );
 
     behavior of "DependencyExtractor with UseIDOfBaseTypeForArrayTypes"
 
@@ -97,7 +95,28 @@ class UseIDOfBaseTypeForArrayTypesTest extends FlatSpec with ShouldMatchers with
     }
 
     it should "not extract a dependency to any arraytype" in {
-        assert(!(extractedTypes exists {case ArrayType(_) => true; case _ => false}))
+        println(extractedTypes.mkString("\n"))
+        assert(!(extractedTypes exists { case ArrayType(_) ⇒ true; case _ ⇒ false }))
     }
+
+//    it should "never extract dependencies to array types" in {
+//        var files = new java.io.File("../../../../../../../test/classfiles").listFiles()
+//        if (files == null) files = new java.io.File("test/classfiles").listFiles()
+//        for {
+//            file ← files
+//            if (file.isFile && file.canRead && file.getName.endsWith(".zip"))
+//        } {
+//            val zipfile = new java.util.zip.ZipFile(file)
+//            val zipentries = (zipfile).entries
+//            while (zipentries.hasMoreElements) {
+//                val zipentry = zipentries.nextElement
+//                if (!zipentry.isDirectory && zipentry.getName.endsWith(".class")) {
+//                    var classFile = Java6Framework.ClassFile(() ⇒ zipfile.getInputStream(zipentry))
+//                    TypeCollector.process(classFile)
+//                }
+//            }
+//        }
+//        assert(!(extractedTypes exists { case ArrayType(_) ⇒ true; case _ ⇒ false }))
+//    }
 
 }
