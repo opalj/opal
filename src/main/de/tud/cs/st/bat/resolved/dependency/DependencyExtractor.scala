@@ -518,10 +518,6 @@ trait DependencyExtractor extends DependencyProcessor with SourceElementIDs with
         processDependency(sourceElementID(objectType), id, dType)
     }
 
-    protected def processDependency(id: Int, referenceType: ReferenceType, dType: DependencyType) {
-        processDependency(id, sourceElementID(referenceType), dType)
-    }
-
     /**
      * Processes a dependency to some type.
      *

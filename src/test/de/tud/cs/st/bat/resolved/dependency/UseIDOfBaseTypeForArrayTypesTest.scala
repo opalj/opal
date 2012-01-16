@@ -71,7 +71,7 @@ class UseIDOfBaseTypeForArrayTypesTest extends FlatSpec with ShouldMatchers with
             }
         }
 
-        object DependencyCollector extends TypeCollector with UseIDOfBaseTypeForArrayTypes with DependencyExtractor with DoNothingSourceElementsVisitor {
+        object DependencyCollector extends TypeCollector with UseIDOfBaseTypeForArrayTypes  with DependencyExtractor with DoNothingSourceElementsVisitor {
 
             def processDependency(sourceID: Int, targetID: Int, dependencyType: DependencyType) {}
         }
@@ -96,12 +96,8 @@ class UseIDOfBaseTypeForArrayTypesTest extends FlatSpec with ShouldMatchers with
         assert(extractedTypes contains ObjectType("java/lang/Integer"))
     }
 
-    it should "not extract a dependency to the type Long[]" in {
-        assert(!(extractedTypes contains ArrayType(ObjectType("java/lang/Object"))))
-    }
-
-    it should "not extract a dependency to the type Integer[][]" in {
-        assert(!(extractedTypes contains ArrayType(ArrayType(ObjectType("java/lang/Object")))))
+    it should "not extract a dependency to any arraytype" in {
+        assert(!(extractedTypes exists {case ArrayType(_) => true; case _ => false}))
     }
 
 }
