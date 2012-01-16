@@ -126,7 +126,7 @@ trait DependencyExtractor extends DependencyProcessor with SourceElementIDs with
      * @param declaringTypeID The ID of the field's declaring class.
      */
     protected def process(field: Field, declaringClass: ClassFile, declaringTypeID: Int) {
-        visit(declaringClass,field)
+        visit(declaringClass, field)
         val fieldID = sourceElementID(declaringClass.thisClass, field)
         val Field(_ /*accessFlags*/ , _, fieldType, attributes) = field
 
@@ -144,9 +144,7 @@ trait DependencyExtractor extends DependencyProcessor with SourceElementIDs with
             case ConstantValue(ot: ObjectType) ⇒
                 processDependency(fieldID, ot, USES_CONSTANT_VALUE_OF_TYPE)
             case ConstantValue(at: ArrayType) ⇒
-                if (at.baseType.isObjectType) {
-                    processDependency(fieldID, at.baseType, USES_CONSTANT_VALUE_OF_TYPE)
-                }
+                processDependency(fieldID, at, USES_CONSTANT_VALUE_OF_TYPE)
             case signature: Signature ⇒
                 processSignature(signature, fieldID)
             case _ ⇒ // Synthetic and Deprecated do not introduce new dependencies
@@ -162,7 +160,7 @@ trait DependencyExtractor extends DependencyProcessor with SourceElementIDs with
      * @param declaringTypeID The ID of the method's declaring class.
      */
     protected def process(method: Method, declaringClass: ClassFile, declaringTypeID: Int) {
-        visit(declaringClass,method)
+        visit(declaringClass, method)
         val methodID = sourceElementID(declaringClass.thisClass, method)
         val Method(_ /*accessFlags*/ , _, MethodDescriptor(parameterTypes, returnType), attributes) = method
 
@@ -533,7 +531,7 @@ trait DependencyExtractor extends DependencyProcessor with SourceElementIDs with
      */
     protected def processDependency(id: Int, aType: Type, dType: DependencyType) {
         if (aType.isObjectType || (aType.isArrayType && aType.asInstanceOf[ArrayType].baseType.isObjectType)) {
-            processDependency(id, sourceElementID(aType.asInstanceOf[ReferenceType]), dType)
+            processDependency(id, sourceElementID(aType), dType)
         }
     }
 }
