@@ -44,18 +44,25 @@ import org.scalatest.Suites
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class BATSuite extends Suites(
 
-    new resolved.ObjectTypeTest,
+    //
+    // QUICK TESTS
+    // (in alphabetical order)
+    //
     new resolved.ArrayTypeTest,
-    new resolved.FieldTypeTest,
-    new resolved.SignaturesTest,
-    new resolved.MethodDescriptorTest,
     new resolved.AttributesTest,
+    new resolved.FieldTypeTest,
+    new resolved.MethodDescriptorTest,
+    new resolved.ObjectTypeTest,
+    new resolved.SignaturesTest,
 
     new resolved.dependency.DependenciesToPrimitiveTypesTest,
-    new resolved.dependency.SourceElementIDsTest,
     new resolved.dependency.DependencyExtractorTest,
+    new resolved.dependency.SourceElementIDsTest,
     new resolved.dependency.UseIDOfBaseTypeForArrayTypesTest,
 
+    //
+    // LONG-RUNNING TESTS
+    //
     new LoadClassFilesTest,
     new resolved.dependency.ExtractDependenciesFromClassFilesTest
 )
