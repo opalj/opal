@@ -46,7 +46,9 @@ import reader.Java6Framework
  */
 object AssociateUniqueIDs extends PerformanceEvaluation {
 
-    import dependency.SourceElementIDs.{ sourceElementID ⇒ id }
+    object SourceElementIDs extends dependency.SourceElementIDsMap
+
+    import SourceElementIDs.{ sourceElementID ⇒ id }
 
     def main(args: Array[String]) {
         if (args.length != 1) {

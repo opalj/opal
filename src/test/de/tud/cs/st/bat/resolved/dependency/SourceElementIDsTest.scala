@@ -43,7 +43,7 @@ import org.scalatest.FunSuite
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class SourceElementIDsTest extends FunSuite {
 
-    val ids = new SourceElementIDsMap{}
+    val ids = new SourceElementIDsMap {}
     import ids.{ sourceElementID ⇒ id }
 
     test("BaseType IDs") {
@@ -92,6 +92,9 @@ class SourceElementIDsTest extends FunSuite {
     }
 
     test("Method IDs") {
+        val ids = new SourceElementIDsMap with UseIDOfBaseTypeForArrayTypes
+        import ids.{ sourceElementID ⇒ id }
+
         val obj = ObjectType("java/lang/Object")
         val int = ObjectType("java/lang/Integer")
         val name = "foo"
@@ -99,16 +102,16 @@ class SourceElementIDsTest extends FunSuite {
         val md2 = MethodDescriptor("(III)I")
 
         val obj_md1_id = id(obj, name, md1)
-        assert(obj_md1_id == SourceElementIDs.LOWEST_METHOD_ID)
+        assert(obj_md1_id == ids.LOWEST_METHOD_ID)
         assert(obj_md1_id == id(obj, name, md1))
 
         val int_md1_id = id(int, name, md1)
-        assert(int_md1_id > SourceElementIDs.LOWEST_METHOD_ID)
+        assert(int_md1_id > ids.LOWEST_METHOD_ID)
         assert(int_md1_id == id(int, name, md1))
         assert(obj_md1_id != int_md1_id)
 
         val ind_md2_id = id(int, name, md2)
-        assert(ind_md2_id > SourceElementIDs.LOWEST_METHOD_ID+1)
+        assert(ind_md2_id > ids.LOWEST_METHOD_ID + 1)
         assert(ind_md2_id != int_md1_id)
         assert(ind_md2_id != id(int, "bar", md2))
 
@@ -117,21 +120,24 @@ class SourceElementIDsTest extends FunSuite {
     }
 
     test("Field IDs") {
+        val ids = new SourceElementIDsMap with UseIDOfBaseTypeForArrayTypes
+        import ids.{ sourceElementID ⇒ id }
+
         val obj = ObjectType("java/lang/Object")
         val int = ObjectType("java/lang/Integer")
         val foo = "foo"
         val bar = "bar"
 
         val obj_foo_id = id(obj, foo)
-        assert(obj_foo_id == SourceElementIDs.LOWEST_FIELD_ID)
+        assert(obj_foo_id == ids.LOWEST_FIELD_ID)
         assert(obj_foo_id == id(obj, foo))
 
         val int_foo_id = id(int, foo)
-        assert(int_foo_id > SourceElementIDs.LOWEST_FIELD_ID)
+        assert(int_foo_id > ids.LOWEST_FIELD_ID)
         assert(int_foo_id == id(int, foo))
 
         val ind_bar_id = id(int, bar)
-        assert(ind_bar_id > SourceElementIDs.LOWEST_FIELD_ID+1)
+        assert(ind_bar_id > ids.LOWEST_FIELD_ID + 1)
         assert(ind_bar_id != int_foo_id)
         assert(ind_bar_id == id(int, bar))
     }

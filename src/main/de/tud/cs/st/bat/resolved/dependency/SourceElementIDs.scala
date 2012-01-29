@@ -44,7 +44,14 @@ package dependency
 trait SourceElementIDs {
 
     /**
-     * Called by, e.g., the dependency extractor, to get the id of a specific type.
+     * Returns the ID associated with the given type. This ID uniquely identifies this
+     * type declaration. If the
+     *
+     * ==
+     * Called, e.g., by the [[de.tud.cs.st.bat.resolved.dependency.DependencyExtractor]] to get the id of
+     * a specific type.
+     *
+     * @return The ID associated with the given type.
      */
     def sourceElementID(t: Type): Int
 
@@ -69,4 +76,4 @@ trait SourceElementIDs {
         sourceElementID(definingObjectType, methodName, methodDescriptor)
     }
 }
-object SourceElementIDs extends SourceElementIDsMap
+//object SourceElementIDs extends SourceElementIDsMap
