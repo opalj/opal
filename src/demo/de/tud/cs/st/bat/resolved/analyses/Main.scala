@@ -54,7 +54,7 @@ object Main extends Main {
     import CountingPerformanceEvaluator._
 
     private def printUsage: Unit = {
-        println("Usage: java …ClassHierarchy <ZIP or JAR file containing class files>+")
+        println("Usage: java …Main <ZIP or JAR file containing class files>+")
         println("(c) 2011 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
     }
 
