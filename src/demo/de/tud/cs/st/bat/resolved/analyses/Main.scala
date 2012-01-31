@@ -68,7 +68,7 @@ object Main extends Main {
         for (arg ← args) {
             val file = new java.io.File(arg)
             if (!file.canRead() || file.isDirectory()) {
-                println("The file: " + file + " cannot be read.");
+                println("The file: "+file+" cannot be read.");
                 printUsage
                 sys.exit(1)
             }
@@ -85,7 +85,7 @@ object Main extends Main {
         val classHierarchy = new ClassHierarchy {}
 
         var classFilesCount = 0
-        val classFiles = time(t ⇒ println("Reading all class files took: " + nsToSecs(t))) {
+        val classFiles = time(t ⇒ println("Reading all class files took: "+nsToSecs(t))) {
             for (zipFile ← zipFiles; classFile ← Java6Framework.ClassFiles(zipFile)) yield {
                 classFilesCount += 1
                 classHierarchy.update(classFile)
@@ -93,20 +93,20 @@ object Main extends Main {
             }
         }
         val getClassFile = classFiles.map(cf ⇒ (cf.thisClass, cf)).toMap
-        println("Number of class files: " + classFilesCount)
+        println("Number of class files: "+classFilesCount)
 
         // FINDBUGS: CI: Class is final but declares protected field (CI_CONFUSED_INHERITANCE) // http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/ConfusedInheritance.java
-        val protectedFields = time(t ⇒ println("CI_CONFUSED_INHERITANCE: " + nsToSecs(t))) {
+        val protectedFields = time(t ⇒ println("CI_CONFUSED_INHERITANCE: "+nsToSecs(t))) {
             for (
                 classFile ← classFiles if classFile.isFinal;
                 field ← classFile.fields if field.isProtected
             ) yield (classFile, field)
         }
-        println("\tViolations: " + protectedFields.size)
+        println("\tViolations: "+protectedFields.size)
 
         // FINDBUGS: UuF: Unused field (UUF_UNUSED_FIELD)
         var unusedFields: List[(ClassFile, Traversable[String])] = Nil
-        time(t ⇒ println("UUF_UNUSED_FIELD: " + nsToSecs(t))) {
+        time(t ⇒ println("UUF_UNUSED_FIELD: "+nsToSecs(t))) {
             for (classFile ← classFiles if !classFile.isInterfaceDeclaration) {
                 val declaringClass = classFile.thisClass
                 var privateFields = (for (field ← classFile.fields if field.isPrivate) yield field.name).toSet
@@ -124,11 +124,11 @@ object Main extends Main {
                     unusedFields = (classFile, privateFields) :: unusedFields
             }
         }
-        println("\tViolations: " + unusedFields.size)
+        println("\tViolations: "+unusedFields.size)
 
         // FINDBUGS: Dm: Explicit garbage collection; extremely dubious except in benchmarking code (DM_GC)
         var garbageCollectingMethods: List[(ClassFile, Method, Instruction)] = Nil
-        time(t ⇒ println("DM_GC: " + nsToSecs(t))) {
+        time(t ⇒ println("DM_GC: "+nsToSecs(t))) {
             for (
                 classFile ← classFiles;
                 method ← classFile.methods if method.body.isDefined;
@@ -142,19 +142,34 @@ object Main extends Main {
                 }
             }
         }
-        println("\tViolations: " + garbageCollectingMethods.size)
+        println("\tViolations: "+garbageCollectingMethods.size)
 
         // FINDBUGS: FI: Finalizer should be protected, not public (FI_PUBLIC_SHOULD_BE_PROTECTED)
-        var classesWithPublicFinalizeMethods = time(t ⇒ println("FI_PUBLIC_SHOULD_BE_PROTECTED: " + nsToSecs(t))) {
+        var classesWithPublicFinalizeMethods = time(t ⇒ println("FI_PUBLIC_SHOULD_BE_PROTECTED: "+nsToSecs(t))) {
             for (
                 classFile ← classFiles if classFile.methods.exists(method ⇒ method.name == "finalize" && method.isPublic && method.descriptor.returnType == VoidType && method.descriptor.parameterTypes.size == 0)
             ) yield classFile
         }
-        println("\tViolations: " + classesWithPublicFinalizeMethods.length)
+        println("\tViolations: "+classesWithPublicFinalizeMethods.length)
 
         // FINDBUGS: Se: Class is Serializable but its superclass doesn't define a void constructor (SE_NO_SUITABLE_CONSTRUCTOR)
         val serializableClasses = classHierarchy.subclasses(ObjectType("java/io/Serializable")).getOrElse(Set.empty)
-        val classesWithoutDefaultConstructor = time(t ⇒ println("SE_NO_SUITABLE_CONSTRUCTOR: " + nsToSecs(t))) {
+        // The following solution reports all pairs of seriablizable classes and their non-seriablizable
+        // superclasses that do not define a default constructor.
+        //        val classesWithoutDefaultConstructor = time(t ⇒ println("SE_NO_SUITABLE_CONSTRUCTOR: "+nsToSecs(t))) {
+        //            for (
+        //                serializableClass ← serializableClasses;
+        //                superclasses ← classHierarchy.superclasses(serializableClass)
+        //            ) yield for (
+        //                superclass ← superclasses if getClassFile.isDefinedAt(superclass) && // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available
+        //                    {
+        //                        val superClassFile = getClassFile(superclass)
+        //                        !superClassFile.isInterfaceDeclaration &&
+        //                            !superClassFile.constructors.exists(_.descriptor.parameterTypes.length == 0)
+        //                    }
+        //            ) yield (serializableClass, superclass)
+        //        }
+        val classesWithoutDefaultConstructor = time(t ⇒ println("SE_NO_SUITABLE_CONSTRUCTOR: "+nsToSecs(t))) {
             for (
                 superclass ← classHierarchy.superclasses(serializableClasses) if getClassFile.isDefinedAt(superclass) && // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available
                     {
@@ -164,17 +179,17 @@ object Main extends Main {
                     }
             ) yield superclass // there can be at most one method
         }
-        println("\tViolations: " + classesWithoutDefaultConstructor.size)
+        println("\tViolations: "+classesWithoutDefaultConstructor.size);
 
         // FINDBUGS: (IMSE_DONT_CATCH_IMSE) http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/DontCatchIllegalMonitorStateException.java
         val IllegalMonitorStateExceptionType = ObjectType("java/lang/IllegalMonitorStateException")
-        val catchesIllegalMonitorStateException = time(t ⇒ println("IMSE_DONT_CATCH_IMSE: " + nsToSecs(t))) {
+        val catchesIllegalMonitorStateException = time(t ⇒ println("IMSE_DONT_CATCH_IMSE: "+nsToSecs(t))) {
             for (
                 classFile ← classFiles if classFile.isClassDeclaration;
                 method ← classFile.methods if method.body.isDefined;
                 exceptionHandler ← method.body.get.exceptionHandlers if exceptionHandler.catchType == IllegalMonitorStateExceptionType
             ) yield (classFile, method)
         }
-        println("\tViolations: " + catchesIllegalMonitorStateException.size)
+        println("\tViolations: "+catchesIllegalMonitorStateException.size)
     }
 }
