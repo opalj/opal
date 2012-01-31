@@ -1,5 +1,5 @@
 /* License (BSD Style License):
-*  Copyright (c) 2009, 2011
+*  Copyright (c) 2009, 2012
 *  Software Technology Group
 *  Department of Computer Science
 *  Technische Universität Darmstadt
@@ -31,28 +31,62 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 */
 package de.tud.cs.st.bat
-package resolved
+
+import resolved.dependency.checking._
+
+import org.junit.runner.RunWith
+import org.scalatest.junit.JUnitRunner
+import org.scalatest.Spec
+import org.scalatest.FlatSpec
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.matchers.ShouldMatchers
 
 /**
- * Abstractions over the common properties of class members.
+ * Tests that BAT's architectural constraints are satisfied.
  *
  * @author Michael Eichberg
  */
-trait ClassMember extends SourceElement with CommonAttributes {
+@RunWith(classOf[JUnitRunner])
+class Architecture extends FlatSpec with ShouldMatchers with BeforeAndAfterAll {
 
-    protected def accessFlags: Int
+    val configuration = new Specification {
 
-    def isPublic: Boolean = ACC_PUBLIC element_of accessFlags
-    def isProtected: Boolean = ACC_PROTECTED element_of accessFlags
-    def isPrivate: Boolean = ACC_PRIVATE element_of accessFlags
+        ensemble('Root) {
+            "de.tud.cs.st.bat.*"
+        }
 
-    def isStatic: Boolean = ACC_STATIC element_of accessFlags
+        ensemble('canonical) {
+            "de.tud.cs.st.bat.canonical.*"
+        }
 
-    def isFinal : Boolean = ACC_FINAL element_of accessFlags
-}
+        ensemble('canonical_reader) {
+            "de.tud.cs.st.bat.canonical.reader.*"
+        }
 
-object ClassMember {
+        ensemble('reader) {
+            "de.tud.cs.st.bat.reader.*"
+        }
 
-    def unapply(classMember: ClassMember): Option[VisibilityModifier] =
-        VisibilityModifier.get(classMember.accessFlags)
+        ensemble('resolved_representation) {
+            "de.tud.cs.st.bat.resolved.**"
+        }
+
+        ensemble('support) {
+            "de.tud.cs.st.util.**" || "de.tud.cs.st.prolog.*"
+        }
+
+        ensemble('util) {
+            "de.tud.cs.st.util.**"
+        }
+
+        ensemble('prolog) {
+            "de.tud.cs.st.prolog.*"
+        }
+
+        ensemble('empty) {
+            "<EMPTY>.*"
+        }
+
+        only('empty) is_allowed_to_depend_on 'prolog
+    }
 }

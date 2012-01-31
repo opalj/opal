@@ -34,25 +34,19 @@ package de.tud.cs.st.bat
 package resolved
 
 /**
- * Abstractions over the common properties of class members.
+ * We treat as a source element every element of a class file that can be referenced
+ * from other class files.
  *
  * @author Michael Eichberg
  */
-trait ClassMember extends SourceElement with CommonAttributes {
+trait SourceElement {
+    def isClassFile = false
+    def isMethod = false;
+    def isField = false;
 
-    protected def accessFlags: Int
-
-    def isPublic: Boolean = ACC_PUBLIC element_of accessFlags
-    def isProtected: Boolean = ACC_PROTECTED element_of accessFlags
-    def isPrivate: Boolean = ACC_PRIVATE element_of accessFlags
-
-    def isStatic: Boolean = ACC_STATIC element_of accessFlags
-
-    def isFinal : Boolean = ACC_FINAL element_of accessFlags
+    def asClassFile: ClassFile = throw new UnsupportedOperationException
+    def asMethod: Method = throw new UnsupportedOperationException
+    def asField: Field = throw new UnsupportedOperationException
 }
 
-object ClassMember {
 
-    def unapply(classMember: ClassMember): Option[VisibilityModifier] =
-        VisibilityModifier.get(classMember.accessFlags)
-}

@@ -44,6 +44,10 @@ case class Method(accessFlags: Int,
                   attributes: Attributes)
         extends ClassMember {
 
+    override def isMethod = true
+
+    override def asMethod = this
+
     def runtimeVisibleParameterAnnotations: Option[ParameterAnnotations] =
         attributes collectFirst { case RuntimeVisibleParameterAnnotationTable(pas) ⇒ pas }
 

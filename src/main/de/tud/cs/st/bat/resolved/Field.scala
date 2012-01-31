@@ -53,6 +53,10 @@ case class Field(accessFlags: Int,
                  attributes: Attributes)
         extends ClassMember {
 
+    override def isField = true
+
+    override def asField = this
+
     def isTransient: Boolean = ACC_TRANSIENT element_of accessFlags
 
     def isVolatile: Boolean = ACC_VOLATILE element_of accessFlags

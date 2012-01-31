@@ -30,29 +30,73 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat
+package de.tud.cs.st
+package bat
 package resolved
+package dependency
+package checking
+
+import reader.Java6Framework
 
 /**
- * Abstractions over the common properties of class members.
+ * This class (the implementation) demonstrates how to load all class files
+ * from a zip file and how to easily measure the runtime performance.
  *
  * @author Michael Eichberg
  */
-trait ClassMember extends SourceElement with CommonAttributes {
+object Main extends App with Specification {
 
-    protected def accessFlags: Int
+    println("Checking dependencies of BAT")
 
-    def isPublic: Boolean = ACC_PUBLIC element_of accessFlags
-    def isProtected: Boolean = ACC_PROTECTED element_of accessFlags
-    def isPrivate: Boolean = ACC_PRIVATE element_of accessFlags
+    ensemble('Root) {
+        "de.tud.cs.st.bat.*"
+    }
 
-    def isStatic: Boolean = ACC_STATIC element_of accessFlags
+    ensemble('canonical) {
+        "de.tud.cs.st.bat.canonical.*"
+    }
 
-    def isFinal : Boolean = ACC_FINAL element_of accessFlags
-}
+    ensemble('canonical_reader) {
+        "de.tud.cs.st.bat.canonical.reader.*"
+    }
 
-object ClassMember {
+    ensemble('reader) {
+        "de.tud.cs.st.bat.reader.*"
+    }
 
-    def unapply(classMember: ClassMember): Option[VisibilityModifier] =
-        VisibilityModifier.get(classMember.accessFlags)
+    ensemble('resolved_representation) {
+        "de.tud.cs.st.bat.resolved.**"
+    }
+
+     ensemble('resolved_representation_reader) {
+        "de.tud.cs.st.bat.resolved.**"
+    }
+
+    ensemble('support) {
+        "de.tud.cs.st.util.**" || "de.tud.cs.st.prolog.*"
+    }
+
+    ensemble('util) {
+        "de.tud.cs.st.util.**"
+    }
+
+    ensemble('prolog) {
+        "de.tud.cs.st.prolog.*"
+    }
+
+    ensemble('empty) {
+        Nothing
+    }
+
+    ensemble('demo_code) {
+        "de.tud.cs.st.bat.LoadClassFilesTest"
+    }
+
+    only('demo_code) is_allowed_to_depend_on 'resolved_representation_reader
+
+    //only('empty) is_allowed_to_depend_on 'prolog
+
+    //only('util) is_allowed_to_depend_on 'reader
+
+    analyze(List(new java.io.File("build/class")))
 }

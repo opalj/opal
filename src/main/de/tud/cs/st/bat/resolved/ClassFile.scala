@@ -64,9 +64,13 @@ case class ClassFile(minorVersion: Int,
                      fields: Fields,
                      methods: Methods,
                      attributes: Attributes)
-        extends CommonAttributes {
+        extends CommonAttributes with SourceElement {
 
     import ClassFile._
+
+    override def isClassFile = true
+
+    override def asClassFile = this
 
     def isFinal: Boolean = ACC_FINAL element_of accessFlags
 
@@ -174,11 +178,11 @@ case class ClassFile(minorVersion: Int,
         }
         for (attribute ← attributes) {
             facts = (attribute match {
-                case sfa: SourceFile            ⇒ sfa.toProlog(factory, key)
-                case aa: AnnotationTable   ⇒ aa.toProlog(factory, key)
-                case ema: EnclosingMethod       ⇒ ema.toProlog(factory, key)
+                case sfa: SourceFile      ⇒ sfa.toProlog(factory, key)
+                case aa: AnnotationTable  ⇒ aa.toProlog(factory, key)
+                case ema: EnclosingMethod ⇒ ema.toProlog(factory, key)
                 case ics: InnerClassTable ⇒ ics.toProlog(factory, key)
-                case _                          ⇒ Nil
+                case _                    ⇒ Nil
             }) ::: facts
         }
 

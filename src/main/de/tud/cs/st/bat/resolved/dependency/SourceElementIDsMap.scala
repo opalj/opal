@@ -61,6 +61,29 @@ package dependency
  */
 trait SourceElementIDsMap extends SourceElementIDs {
 
+    def sourceElementIDtoString(id: Int): Option[String] = {
+        if (id < LOWEST_FIELD_ID) {
+            typeIDs.foreach(p ⇒ {
+                val (t, anID) = p; if (id == anID)
+                    return Some(t.toJava)
+            })
+        }
+        else if (id < LOWEST_METHOD_ID) {
+            for ((declaringType, fieldDetails) ← fieldIDs) {
+                for ((fieldName, anID) ← fieldDetails if id == anID)
+                    return Some(declaringType.toJava+"."+fieldName)
+            }
+        }
+        else {
+            for (
+                (declaringType, methodSignature) ← methodIDs;
+                (methodDescriptor, methodDetails) ← methodSignature;
+                (methodName, anID) ← methodDetails if anID == id
+            ) return Some(declaringType.toJava+"."+methodName+" "+methodDescriptor)
+        }
+
+        None
+    }
 
     //
     // Associates each type with a unique ID
