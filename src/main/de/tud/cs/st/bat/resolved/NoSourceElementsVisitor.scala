@@ -34,15 +34,13 @@ package de.tud.cs.st.bat
 package resolved
 
 /**
- * Classes that traverse a class file can extend this trait to facilitate
- * reporting the traversed source file elements; e.g., see
- * [[de.tud.cs.st.bat.resolved.dependency.DependencyExtractor]].
+ * Simple implementation of the SourceElementsVisitor trait where all methods do nothing.
  *
  * @author Michael Eichberg
  */
-trait SourceElementsVisitor[T] {
-    def visit(classFile: ClassFile): T
-    def visit(classFile: ClassFile, method: Method): T
-    def visit(classFile: ClassFile, field: Field): T
+trait NoSourceElementsVisitor extends SourceElementsVisitor[Unit] {
+    final override def visit(classFile: ClassFile) {}
+    final override def visit(classFile: ClassFile, method: Method) {}
+    final override def visit(classFile: ClassFile, field: Field) {}
 }
 

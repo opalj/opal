@@ -42,8 +42,10 @@ import analyses.ClassHierarchy
  * First define the ensembles, then the rules and at last specify the
  * class files that should be analyzed. The rules will then be automatically
  * evaluated.
+ *
+ * @author Michael Eichberg
  */
-trait Specification {
+class Specification extends SourceElementIDsMap with ReverseMapping with UseIDOfBaseTypeForArrayTypes {
 
     type SourceElementID = Int
 
@@ -54,7 +56,7 @@ trait Specification {
         def ||(right: SourceElementsMatcher): SourceElementsMatcher = {
             return new SourceElementsMatcher {
                 def extension() = {
-                    left.extension union (right.extension)
+                    left.extension ++ (right.extension)
                 }
 
                 override def toString() = {
@@ -70,32 +72,50 @@ trait Specification {
      *
      * @author Michael Eichberg
      */
-    case class PackageNameBasedMatcher(val specifiedPackageName: String, val matchSubpackages: Boolean = false)
+    case class PackageNameBasedMatcher(val packageName: String, val matchSubpackages: Boolean = false)
             extends SourceElementsMatcher {
+
+        require(packageName.indexOf('*') == -1)
+        require(packageName.indexOf('.') == -1)
 
         def extension(): Set[SourceElementID] = {
             {
                 for (
                     classFile ← classFiles.values if {
-                        val givenPackageName = classFile.thisClass.packageName
-                        givenPackageName.startsWith(specifiedPackageName) && (
+                        val thisClassPackageName = classFile.thisClass.packageName
+                        thisClassPackageName.startsWith(packageName) && (
                             matchSubpackages ||
-                            givenPackageName.length() == specifiedPackageName.length()
+                            thisClassPackageName.length() == packageName.length()
                         )
                     }
-                ) yield Set(dependencyExtractor.sourceElementID(classFile)) union
-                    classFile.methods.map(dependencyExtractor.sourceElementID(classFile, _)).toSet union
-                    classFile.fields.map(dependencyExtractor.sourceElementID(classFile, _)).toSet
+                ) yield {
+                    val classFileID = sourceElementID(classFile)
+//                    println(classFile.thisClass.className +"=>"+ classFileID+" =>" +sourceElementIDtoString(classFileID))
+                    val methodIDs = classFile.methods.map(sourceElementID(classFile, _))
+                    val fieldIDs = classFile.fields.map(sourceElementID(classFile, _))
+                    var r = fieldIDs.toSet ++ methodIDs + classFileID
+//                    println(this.toString+" => "+classFile.thisClass.className + " : " +r.mkString(","))
+                    r
+                }
+
             }.flatten.toSet
+        }
+
+        override def toString = {
+            var s = "Packages("+packageName.replace('/', '.')+".*"
+            if (matchSubpackages)
+                s += "*"
+            s += ")"
+            s
         }
     }
 
     case class ClassMatcher(val className: String) extends SourceElementsMatcher {
         def extension(): Set[SourceElementID] = {
             for (classFile ← classFiles.values if className == classFile.thisClass.className)
-                yield Set(dependencyExtractor.sourceElementID(classFile)) union
-                classFile.methods.map(dependencyExtractor.sourceElementID(classFile, _)).toSet union
-                classFile.fields.map(dependencyExtractor.sourceElementID(classFile, _)).toSet
+                yield Set(sourceElementID(classFile)) union
+                classFile.methods.map(sourceElementID(classFile, _)).toSet union
+                classFile.fields.map(sourceElementID(classFile, _)).toSet
         }.flatten.toSet
     }
 
@@ -103,7 +123,7 @@ trait Specification {
         def extension(): Set[SourceElementID] = Set();
     }
 
-    val dependencyExtractor = new DependencyExtractor with SourceElementIDsMap with DoNothingSourceElementsVisitor {
+    val dependencyExtractor = new DependencyExtractor(Specification.this) with NoSourceElementsVisitor {
 
         val outgoing = scala.collection.mutable.Map[SourceElementID, scala.collection.mutable.Set[(SourceElementID, DependencyType)]]()
         val incoming = scala.collection.mutable.Map[SourceElementID, scala.collection.mutable.Set[(SourceElementID, DependencyType)]]()
@@ -145,7 +165,7 @@ trait Specification {
     case class Violation(source: SourceElementID, target: SourceElementID, dependencyType: DependencyType, description: String) {
 
         override def toString(): String = {
-            description+": "+dependencyExtractor.sourceElementIDtoString(source).get+" "+dependencyType+" of "+dependencyExtractor.sourceElementIDtoString(target).get
+            description+": "+sourceElementIDtoString(source)+" "+dependencyType+" of "+sourceElementIDtoString(target)
         }
 
     }
@@ -187,7 +207,20 @@ trait Specification {
         // 2. calculate the extension of the ensembles
         for ((ensembleName, (sourceElementMatcher, _)) ← ensembles) {
             val extension = sourceElementMatcher.extension()
-            println(ensembleName+" : "+sourceElementMatcher+" => "+extension)
+//            println(
+//                ensembleName+
+//                    " : "+
+//                    sourceElementMatcher+
+//                    " => "+
+//                    {
+//                        if (extension.isEmpty)
+//                            "NO ELEMENTS"
+//                        else {
+//                            val ex = extension.toList
+//                            (("\n\t"+extension.head.toString+":"+sourceElementIDtoString(extension.head)) /: extension.tail)((s,id) => s+"\n\t"+id+":"+sourceElementIDtoString(id))
+//                        }
+//                    }
+//            )
             ensembles.update(ensembleName, (sourceElementMatcher, extension))
         }
 
@@ -211,7 +244,7 @@ trait Specification {
         var directories = List(file)
         while (directories.nonEmpty) {
             val directory = directories.head
-            println("reading directory: "+directory);
+            println("reading class files in directory: "+directory);
             directories = directories.tail
             for (file ← directory.listFiles()) {
                 if (file.isDirectory()) {

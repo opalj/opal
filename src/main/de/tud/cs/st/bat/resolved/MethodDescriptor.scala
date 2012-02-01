@@ -61,6 +61,15 @@ case class MethodDescriptor(parameterTypes: Seq[FieldType], returnType: Type) {
         )
     }
 
+    def toUMLNotation: String = {
+        "("+{
+            if (parameterTypes.size == 0)
+                ""
+            else
+                (parameterTypes.head.toJava /: parameterTypes.tail)(_+", "+_.toJava)
+        }+") : "+returnType.toJava
+    }
+
 }
 object MethodDescriptor {
 

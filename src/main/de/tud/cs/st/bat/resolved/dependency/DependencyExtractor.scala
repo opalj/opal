@@ -40,19 +40,20 @@ import DependencyType._
  * Traverses a class file and identifies all dependencies between the element (class, field, method
  * declaration) that is traversed and any element the traversed element depends on.
  *
- * By default, self dependencies will be reported. If necessary or undesired, self dependencies can
+ * By default, self dependencies will be reported (e.g. a method that calls itself). If necessary or undesired, self dependencies can
  * easily be filtered by a [[de.tud.cs.st.bat.resolved.dependency.DependencyProcessor]]'s
  * processDependency method (which is called by the dependency extractor, but whose implementation needs
  * to be provided.)
  *
  * ==Usage==
+ * The demo class [[de.tud.cs.st.bat.resolved.dependency.DependencyMatrix]] (see the implementation) provides
+ * an example how to use the dependency extractor.
+ *
  * To assign ids to source elements the dependency extractor relies on source element ids as
  * provided by implementations of [[de.tud.cs.st.bat.resolved.dependency.SourceElementIDs]].
  * After getting the ids of the depending source elements, a [[de.tud.cs.st.bat.resolved.dependency.DependencyProcessor]]'s
  * processDependency method is called with the ids and the type of the dependency as a parameter.
  *
- * The demo class [[de.tud.cs.st.bat.resolved.dependency.DependencyMatrix]] provides an example how to use
- * the dependency extractor.
  *
  * ==Implementation Note==
  * Only attributes defined by the JVM 6 specification are considered in this implementation.
@@ -61,7 +62,9 @@ import DependencyType._
  * @author Thomas Schlosser
  * @author Michael Eichberg
  */
-trait DependencyExtractor extends DependencyProcessor with SourceElementIDs with SourceElementsVisitor[Unit] {
+abstract class DependencyExtractor(val sourceElementIDs: SourceElementIDs) extends DependencyProcessor with SourceElementsVisitor[Unit] {
+
+    import sourceElementIDs._
 
     /**
      * Processes the given class file and all fields and methods that are defined in it.

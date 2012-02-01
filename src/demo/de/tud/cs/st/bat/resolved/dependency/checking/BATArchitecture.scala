@@ -30,19 +30,74 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat
+package de.tud.cs.st
+package bat
 package resolved
+package dependency
+package checking
+
+import reader.Java6Framework
 
 /**
- * Classes that traverse a class file can extend this trait to facilitate
- * reporting the traversed source file elements; e.g., see
- * [[de.tud.cs.st.bat.resolved.dependency.DependencyExtractor]].
+ * Demonstrates how to check BAT's fundamental architectural properties.
  *
  * @author Michael Eichberg
  */
-trait SourceElementsVisitor[T] {
-    def visit(classFile: ClassFile): T
-    def visit(classFile: ClassFile, method: Method): T
-    def visit(classFile: ClassFile, field: Field): T
-}
+object BATArchitecture extends Specification with App{
 
+    println("Checking BAT's architecture")
+
+    ensemble('Root) {
+        "de.tud.cs.st.bat.*"
+    }
+
+    ensemble('canonical) {
+        "de.tud.cs.st.bat.canonical.*"
+    }
+
+    ensemble('canonical_reader) {
+        "de.tud.cs.st.bat.canonical.reader.*"
+    }
+
+    ensemble('reader) {
+        "de.tud.cs.st.bat.reader.*"
+    }
+
+    ensemble('resolved_representation) {
+        "de.tud.cs.st.bat.resolved.**"
+    }
+
+     ensemble('resolved_representation_reader) {
+        "de.tud.cs.st.bat.resolved.**"
+    }
+
+    ensemble('support) {
+        "de.tud.cs.st.util.**" || "de.tud.cs.st.prolog.*"
+    }
+
+    ensemble('util) {
+        "de.tud.cs.st.util.**"
+    }
+
+    ensemble('prolog) {
+        "de.tud.cs.st.prolog.*"
+    }
+
+    ensemble('empty) {
+        Nothing
+    }
+
+    ensemble('demo_code) {
+        "de.tud.cs.st.bat.LoadClassFilesTest"
+    }
+
+    only('demo_code) is_allowed_to_depend_on 'resolved_representation_reader
+
+    //only('empty) is_allowed_to_depend_on 'prolog
+
+    //only('util) is_allowed_to_depend_on 'reader
+
+    analyze(List(new java.io.File("build/class")))
+
+    println("Finished checking BAT's architecture.")
+}

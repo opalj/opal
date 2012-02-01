@@ -52,12 +52,11 @@ class DependencyExtractorTest extends FunSuite {
 
         var dependencies: List[Tuple3[String, String, DependencyType]] = Nil
 
-        // basically, just collects all dependencies
-        val dependencyExtractor = new DependencyExtractor with DoNothingSourceElementsVisitor {
+        var nodes = new scala.collection.mutable.ArrayBuffer[String](1000)
+
+        object SourceElementIDsProvider extends SourceElementIDs {
 
             val FIELD_AND_METHOD_SEPARATOR = "."
-
-            private[this] var nodes = new scala.collection.mutable.ArrayBuffer[String](1000)
 
             def sourceElementID(identifier: String): Int = {
                 var index = nodes.indexOf(identifier)
@@ -86,16 +85,12 @@ class DependencyExtractorTest extends FunSuite {
                     obj.asInstanceOf[ArrayType].baseType.toJava
                 else
                     obj.toJava
+        }
 
-            // TODO remove
-            private val baseTypes = Array("byte", "short", "int", "long", "float", "double", "char", "boolean", "void")
-
+        val dependencyExtractor = new DependencyExtractor(SourceElementIDsProvider) with NoSourceElementsVisitor {
             def processDependency(src: Int, trgt: Int, dType: DependencyType) {
                 val srcNode = nodes(src)
                 val trgtNode = nodes(trgt)
-                if (baseTypes.contains(srcNode) || baseTypes.contains(trgtNode)) {
-                    return
-                }
                 dependencies = (srcNode, trgtNode, dType) :: dependencies
             }
         }
@@ -785,7 +780,7 @@ class DependencyExtractorTest extends FunSuite {
             //    }
         }
 
-        def assertImplicitDefaultConstructor(className: String, superClassName: String = "java.lang.Object"){
+        def assertImplicitDefaultConstructor(className: String, superClassName: String = "java.lang.Object") {
             //	//implicit constructor:
             val constructorName = className+".<init>()"
             assertDependency(constructorName, className, IS_INSTANCE_MEMBER_OF)
@@ -794,7 +789,7 @@ class DependencyExtractorTest extends FunSuite {
             assertImplicitThisLocalVariable(constructorName)
         }
 
-        def assertImplicitThisLocalVariable(methodName: String){
+        def assertImplicitThisLocalVariable(methodName: String) {
             // //implicit local variable 'this'
             assertDependency(methodName, methodName.substring(0, methodName.substring(0, methodName.lastIndexOf('(')).lastIndexOf('.')), HAS_LOCAL_VARIABLE_OF_TYPE)
         }

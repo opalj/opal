@@ -39,7 +39,7 @@ import reader.Java6Framework
 
 /**
  * This class (the implementation) demonstrates how to load all class files
- * from a zip file and how to easily measure the runtime performance.
+ * from a zip file and how to create a dependency matrix.
  *
  * @author Michael Eichberg
  * @author Thomas Schlosser
@@ -50,9 +50,9 @@ object DependencyMatrix {
     import performance._
 
     private def printUsage: Unit = {
-        println("Loads all classes stored in the zip files 5 times and prints out the fastest time.")
-        println("Usage: java …LoadClassFiles <ZIP or JAR file containing class files>+")
-        println("(c) 2011 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
+        println("Loads all classes stored in the zip files and creates a dependency matrix.")
+        println("Usage: java …DependencyMatrix <ZIP or JAR file containing class files>+")
+        println("(c) 2011,2012 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
     }
 
     def main(args: Array[String]) {
@@ -78,31 +78,25 @@ object DependencyMatrix {
     def analyze(zipFiles: Array[String]) {
         import scala.collection.mutable.{ Map, Set }
         val dependencyMatrix = Map[Int, Set[(Int, DependencyType)]]()
-        val dependencyExtractor = new DependencyExtractor with SourceElementIDsMap with DoNothingSourceElementsVisitor {
+        val dependencyExtractor = new DependencyExtractor(new SourceElementIDsMap()) with NoSourceElementsVisitor {
             def processDependency(sourceID: Int, targetID: Int, dType: DependencyType) {
                 dependencyMatrix.getOrElseUpdate(sourceID, { Set[(Int, DependencyType)]() }) + ((targetID, dType))
             }
         }
 
-        print("Reading all class files - "+zipFiles.mkString(", ")+" - (5 times): ")
+        println("Reading all class files - "+zipFiles.mkString(", ")+".")
         var count = 0
-        var min = Long.MaxValue
-
-        for (i ← 1 to 5) {
-            dependencyMatrix.clear()
-            print(".")
-            time(duration ⇒ { min = math.min(duration, min) }) {
-                for (
-                    zipFile ← zipFiles;
-                    classFile ← Java6Framework.ClassFiles(zipFile)
-                ) {
-                    require(classFile.thisClass ne null)
-                    count += 1
-                    dependencyExtractor.process(classFile)
-                }
+        var duration = Long.MaxValue
+        time(duration = _) {
+            for (
+                zipFile ← zipFiles;
+                classFile ← Java6Framework.ClassFiles(zipFile)
+            ) {
+                require(classFile.thisClass ne null)
+                count += 1
+                dependencyExtractor.process(classFile)
             }
-
         }
-        println("\nReading all "+(count / 5)+" class files and building the dependency matrix required at least: "+nanoSecondsToMilliseconds(min)+"milliseconds.")
+        println("\nReading all "+(count)+" class files and building the dependency matrix required: "+nanoSecondsToMilliseconds(duration)+"milliseconds.")
     }
 }

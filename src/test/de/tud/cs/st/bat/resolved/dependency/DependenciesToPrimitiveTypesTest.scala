@@ -52,8 +52,8 @@ class DependenciesToPrimitiveTypesTest extends FlatSpec with ShouldMatchers with
 
     val extractedTypes = {
         val types = scala.collection.mutable.Set[Type]()
-        val DependencyCollector = new DependencyExtractor with DoNothingSourceElementsVisitor {
 
+        object TypesCollector extends SourceElementIDs {
             def sourceElementID(t: Type): Int = {
                 types += t
                 -1
@@ -68,6 +68,9 @@ class DependenciesToPrimitiveTypesTest extends FlatSpec with ShouldMatchers with
                 types += definingObjectType
                 -1
             }
+        }
+
+        val DependencyCollector = new DependencyExtractor(TypesCollector) with NoSourceElementsVisitor {
 
             def processDependency(sourceID: Int, targetID: Int, dependencyType: DependencyType) {}
         }

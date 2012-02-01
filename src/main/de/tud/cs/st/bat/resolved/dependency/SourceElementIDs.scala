@@ -55,25 +55,24 @@ trait SourceElementIDs {
      */
     def sourceElementID(t: Type): Int
 
-    def sourceElementID(definingObjectType: ObjectType, fieldName: String): Int
+    def sourceElementID(declaringObjectType: ObjectType, fieldName: String): Int
 
-    def sourceElementID(definingObjectType: ObjectType, methodName: String, methodDescriptor: MethodDescriptor): Int
+    def sourceElementID(declaringObjectType: ObjectType, methodName: String, methodDescriptor: MethodDescriptor): Int
 
     final def sourceElementID(classFile: ClassFile): Int =
         sourceElementID(classFile.thisClass)
 
-    final def sourceElementID(classFile: ClassFile, field: Field): Int =
-        sourceElementID(classFile.thisClass, field.name)
+    final def sourceElementID(declaringClassFile: ClassFile, field: Field): Int =
+        sourceElementID(declaringClassFile.thisClass, field.name)
 
-    final def sourceElementID(definingObjectType: ObjectType, field: Field): Int =
-        sourceElementID(definingObjectType, field.name)
+    final def sourceElementID(declaringObjectType: ObjectType, field: Field): Int =
+        sourceElementID(declaringObjectType, field.name)
 
-    final def sourceElementID(classFile: ClassFile, method: Method): Int =
-        sourceElementID(classFile.thisClass, method)
+    final def sourceElementID(declaringClassFile: ClassFile, method: Method): Int =
+        sourceElementID(declaringClassFile.thisClass, method)
 
-    final def sourceElementID(definingObjectType: ObjectType, method: Method): Int = {
+    final def sourceElementID(declaringObjectType: ObjectType, method: Method): Int = {
         val Method(_, methodName, methodDescriptor, _) = method
-        sourceElementID(definingObjectType, methodName, methodDescriptor)
+        sourceElementID(declaringObjectType, methodName, methodDescriptor)
     }
 }
-//object SourceElementIDs extends SourceElementIDsMap

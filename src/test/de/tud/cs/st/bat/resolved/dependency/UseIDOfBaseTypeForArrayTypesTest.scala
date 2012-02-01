@@ -53,7 +53,7 @@ class UseIDOfBaseTypeForArrayTypesTest extends FlatSpec with ShouldMatchers with
 
     val extractedTypes = scala.collection.mutable.Set[Type]()
 
-    class TypeCollector extends  SourceElementIDs with DependencyExtractor with DoNothingSourceElementsVisitor {
+    class SourceElementIDsProvider extends SourceElementIDs {
 
         def sourceElementID(t: Type): Int = {
             extractedTypes += t
@@ -69,15 +69,15 @@ class UseIDOfBaseTypeForArrayTypesTest extends FlatSpec with ShouldMatchers with
             extractedTypes += definingObjectType
             -1
         }
+    }
 
+    object TypeCollector extends DependencyExtractor(new SourceElementIDsProvider with UseIDOfBaseTypeForArrayTypes) with NoSourceElementsVisitor {
         def processDependency(sourceID: Int, targetID: Int, dependencyType: DependencyType) {}
     }
 
-    object TypeCollector extends TypeCollector with UseIDOfBaseTypeForArrayTypes
-
     TypeCollector.process(
-      Java6Framework.ClassFile("test/classfiles/Dependencies.zip", "dependencies/InstructionsTestClass.class")
-      //  Java6Framework.ClassFile(() => new java.io.FileInputStream("test/classfiles/BinderHelper.class"))
+        Java6Framework.ClassFile("test/classfiles/Dependencies.zip", "dependencies/InstructionsTestClass.class")
+    //  Java6Framework.ClassFile(() => new java.io.FileInputStream("test/classfiles/BinderHelper.class"))
     );
 
     behavior of "DependencyExtractor with UseIDOfBaseTypeForArrayTypes"
@@ -99,24 +99,24 @@ class UseIDOfBaseTypeForArrayTypesTest extends FlatSpec with ShouldMatchers with
         assert(!(extractedTypes exists { case ArrayType(_) ⇒ true; case _ ⇒ false }))
     }
 
-//    it should "never extract dependencies to array types" in {
-//        var files = new java.io.File("../../../../../../../test/classfiles").listFiles()
-//        if (files == null) files = new java.io.File("test/classfiles").listFiles()
-//        for {
-//            file ← files
-//            if (file.isFile && file.canRead && file.getName.endsWith(".zip"))
-//        } {
-//            val zipfile = new java.util.zip.ZipFile(file)
-//            val zipentries = (zipfile).entries
-//            while (zipentries.hasMoreElements) {
-//                val zipentry = zipentries.nextElement
-//                if (!zipentry.isDirectory && zipentry.getName.endsWith(".class")) {
-//                    var classFile = Java6Framework.ClassFile(() ⇒ zipfile.getInputStream(zipentry))
-//                    TypeCollector.process(classFile)
-//                }
-//            }
-//        }
-//        assert(!(extractedTypes exists { case ArrayType(_) ⇒ true; case _ ⇒ false }))
-//    }
+    //    it should "never extract dependencies to array types" in {
+    //        var files = new java.io.File("../../../../../../../test/classfiles").listFiles()
+    //        if (files == null) files = new java.io.File("test/classfiles").listFiles()
+    //        for {
+    //            file ← files
+    //            if (file.isFile && file.canRead && file.getName.endsWith(".zip"))
+    //        } {
+    //            val zipfile = new java.util.zip.ZipFile(file)
+    //            val zipentries = (zipfile).entries
+    //            while (zipentries.hasMoreElements) {
+    //                val zipentry = zipentries.nextElement
+    //                if (!zipentry.isDirectory && zipentry.getName.endsWith(".class")) {
+    //                    var classFile = Java6Framework.ClassFile(() ⇒ zipfile.getInputStream(zipentry))
+    //                    TypeCollector.process(classFile)
+    //                }
+    //            }
+    //        }
+    //        assert(!(extractedTypes exists { case ArrayType(_) ⇒ true; case _ ⇒ false }))
+    //    }
 
 }

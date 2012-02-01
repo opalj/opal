@@ -34,13 +34,27 @@ package de.tud.cs.st.bat.resolved
 package dependency
 
 /**
+ * ==Implementation Note==
+ * When implemented, the following invariant has to hold:
+ * LOWEST_TYPE_ID << LOWEST_FIELD_ID << LOWEST_METHOD_ID.
+ *
+ * @author Michael Eichberg
+ */
+trait CategorizedSourceElementIDs extends SourceElementIDs {
+
+    def LOWEST_TYPE_ID: Int
+    def LOWEST_FIELD_ID: Int
+    def LOWEST_METHOD_ID: Int
+}
+
+/**
  * Associates a source element (type, method or field declaration) with a unique id.
  *
- * Types are associated with ids larger than 0.
+ * Types are associated with ids >= LOWEST_TYPE_ID.
  *
- * Fields are associated with ids >= LOWEST_FIELD_ID
+ * Fields are associated with ids >= LOWEST_FIELD_ID.
  *
- * Methods are associated with ids >= LOWEST_METHOD_ID
+ * Methods are associated with ids >= LOWEST_METHOD_ID.
  *
  * Negative IDs are never assigned by this source element to ID mapping.
  * The largest id is equivalent to LOWEST_METHOD_ID + number of methods seen.
@@ -49,9 +63,9 @@ package dependency
  * Ids can be used to space efficiently encode dependencies between code elements
  * E.g., assuming that the analyzed code base has less than 1.000.000 class
  * declarations, less than 4.000.000 field declarations and less than 12.777.215
- * method declarations than a single int value can be used to encode the
+ * method declarations than a single integer value can be used to encode the
  * target source element and the kind of the dependency. The highest 8 bit of
- * the int value can be used to encode the dependency kind.
+ * the integer value can be used to encode the dependency kind.
  *
  * ==Implementation Note==
  * This class is not thread safe.
@@ -59,31 +73,7 @@ package dependency
  * @author Michael Eichberg
  * @author Thomas Schlosser
  */
-trait SourceElementIDsMap extends SourceElementIDs {
-
-    def sourceElementIDtoString(id: Int): Option[String] = {
-        if (id < LOWEST_FIELD_ID) {
-            typeIDs.foreach(p ⇒ {
-                val (t, anID) = p; if (id == anID)
-                    return Some(t.toJava)
-            })
-        }
-        else if (id < LOWEST_METHOD_ID) {
-            for ((declaringType, fieldDetails) ← fieldIDs) {
-                for ((fieldName, anID) ← fieldDetails if id == anID)
-                    return Some(declaringType.toJava+"."+fieldName)
-            }
-        }
-        else {
-            for (
-                (declaringType, methodSignature) ← methodIDs;
-                (methodDescriptor, methodDetails) ← methodSignature;
-                (methodName, anID) ← methodDetails if anID == id
-            ) return Some(declaringType.toJava+"."+methodName+" "+methodDescriptor)
-        }
-
-        None
-    }
+class SourceElementIDsMap extends CategorizedSourceElementIDs {
 
     //
     // Associates each type with a unique ID
