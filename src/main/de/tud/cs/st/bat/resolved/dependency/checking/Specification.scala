@@ -108,9 +108,9 @@ class Specification extends SourceElementIDsMap with ReverseMapping with UseIDOf
 
     var dependencyCheckers: List[DependencyChecker] = Nil
 
-    case class GlobalIncomingConstraint(sourceEnsemble: Symbol, targetEnsemble: Symbol) extends DependencyChecker {
+    case class GlobalIncomingConstraint(targetEnsemble: Symbol,sourceEnsembles: Seq[Symbol]) extends DependencyChecker {
         def violations() = {
-            val (_, sourceEnsembleElements) = ensembles(sourceEnsemble)
+            val sourceEnsembleElements = (SortedSet[SourceElementID]() /: sourceEnsembles)(_ ++ ensembles(_)._2 )
             val (_, targetEnsembleElements) = ensembles(targetEnsemble)
             for (
                 targetEnsembleElement ← targetEnsembleElements if incomingDependencies.contains(targetEnsembleElement);
@@ -119,7 +119,7 @@ class Specification extends SourceElementIDsMap with ReverseMapping with UseIDOf
         }
 
         override def toString =
-            targetEnsemble+" allows_incoming_dependencies_from "+sourceEnsemble
+            targetEnsemble+" allows_incoming_dependencies_from ("+sourceEnsembles.mkString(",")+")"
     }
 
     case class SpecificationFactory(ensembleSymbol: Symbol) {
@@ -128,12 +128,12 @@ class Specification extends SourceElementIDsMap with ReverseMapping with UseIDOf
             ensemble(ensembleSymbol)(sourceElementsMatcher)
         }
 
-        def allows_incoming_dependencies_from(otherEnsembleSymbol: Symbol) {
-            dependencyCheckers = GlobalIncomingConstraint(otherEnsembleSymbol, ensembleSymbol) :: dependencyCheckers
+        def allows_incoming_dependencies_from(sourceEnsembleSymbols: Symbol*) {
+            dependencyCheckers = GlobalIncomingConstraint(ensembleSymbol,sourceEnsembleSymbols.toSeq) :: dependencyCheckers
         }
     }
 
-    implicit def EnsembleNameToRuleFactory(ensembleSymbol: Symbol): SpecificationFactory =
+    implicit def EnsembleNameToSpecificationElementFactory(ensembleSymbol: Symbol): SpecificationFactory =
         SpecificationFactory(ensembleSymbol)
 
     def ensembleToString(ensembleName: Symbol): String = {

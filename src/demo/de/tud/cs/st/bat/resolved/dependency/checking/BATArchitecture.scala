@@ -57,11 +57,15 @@ object BATArchitecture extends Specification with App {
 
     'resolved_representation{ "de.tud.cs.st.bat.resolved.**" }
 
-    'resolved_representation_reader_implementation {
+    'resolved_representation_reader_implementation{
         "de.tud.cs.st.bat.resolved.reader.**" except "de.tud.cs.st.bat.resolved.reader.Java6Framework*"
-        }
+    }
 
-   // 'support{ "de.tud.cs.st.util.**" union "de.tud.cs.st.prolog.*" }
+    'resolved_representation_reader_interface{
+        "de.tud.cs.st.bat.resolved.reader.Java6Framework*"
+    }
+
+    // 'support{ "de.tud.cs.st.util.**" union "de.tud.cs.st.prolog.*" }
 
     'util{ "de.tud.cs.st.util.**" }
 
@@ -71,7 +75,10 @@ object BATArchitecture extends Specification with App {
 
     'demo_code{ "de.tud.cs.st.bat.LoadClassFilesTest*" }
 
-    'resolved_representation_reader_implementation allows_incoming_dependencies_from 'demo_code
+    'resolved_representation_reader_implementation allows_incoming_dependencies_from (
+        'demo_code,
+        'resolved_representation_reader_interface
+    )
 
     //only('empty) is_allowed_to_depend_on 'prolog
 
