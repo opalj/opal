@@ -34,7 +34,7 @@ package de.tud.cs.st.bat.resolved
 package dependency
 
 /**
- * Associates each unique ID with its source element.
+ * Associates each unique ID with its underlying source element.
  *
  * @author Michael Eichberg
  */

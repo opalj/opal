@@ -33,10 +33,10 @@
 package de.tud.cs.st.bat
 package reader
 
-import java.io.{ InputStream, DataInputStream, BufferedInputStream }
+import java.io.{ InputStream, DataInputStream, BufferedInputStream, ByteArrayInputStream }
 import java.util.zip.{ ZipFile, ZipEntry }
-
 import de.tud.cs.st.util.ControlAbstractions.repeat
+import java.rmi.UnexpectedException
 
 /**
  * Abstract trait that implements a template method to read in a Java class file.
@@ -210,10 +210,18 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     def ClassFile(create: () ⇒ InputStream): ClassFile = {
         var in = create();
         if (!in.isInstanceOf[DataInputStream]) {
-            if (!in.isInstanceOf[BufferedInputStream]) {
-                in = new BufferedInputStream(in)
+            // TODO needs to be made more robust
+            val data = new Array[Byte](in.available)
+            var bytesRead = 0
+            while (bytesRead < data.length) {
+                bytesRead = bytesRead + in.read(data, bytesRead, data.length - bytesRead)
             }
-            in = new DataInputStream(in)
+            if (in.available != 0) throw new RuntimeException("unexpected additional data available")
+            in = new DataInputStream(new ByteArrayInputStream(data))
+            //            if (!in.isInstanceOf[BufferedInputStream]) {
+            //                in = new BufferedInputStream(in)
+            //            }
+            //            in = new DataInputStream(in)
         }
         try {
             ClassFile(in.asInstanceOf[DataInputStream])
@@ -224,13 +232,14 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     }
 
     protected[this] def ClassFile(zipFile: ZipFile, zipEntry: ZipEntry): ClassFile = {
-        val in = new DataInputStream(zipFile.getInputStream(zipEntry))
-        try {
-            ClassFile(in)
-        }
-        finally {
-            in.close
-        }
+        ClassFile(() ⇒ zipFile.getInputStream(zipEntry))
+        //        val in = new DataInputStream(zipFile.getInputStream(zipEntry))
+        //        try {
+        //            ClassFile(in)
+        //        }
+        //        finally {
+        //            in.close
+        //        }
     }
 
     /**
@@ -266,11 +275,48 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         ClassFiles(new ZipFile(zipFileName))
     }
 
+    def ClassFiles(file: java.io.File): Seq[ClassFile] = {
+        if (!file.exists())
+            return Nil
+
+        if (file.isFile()) {
+            if (file.getName.endsWith(".zip") || file.getName.endsWith(".jar"))
+                return ClassFiles(file.getName)
+
+            if (file.getName.endsWith(".class"))
+                return List(ClassFile(() ⇒ new java.io.FileInputStream(file)))
+
+            return Nil
+        }
+
+        // file.isDirectory
+        var classFiles: List[ClassFile] = Nil
+        var directories = List(file) // our work list
+
+        while (directories.nonEmpty) {
+            val directory = directories.head
+            directories = directories.tail
+            var classFileCount = 0
+            for (file ← directory.listFiles()) {
+                if (file.isDirectory()) {
+                    directories = file :: directories
+                }
+                if (file.getName().endsWith(".class")) {
+                    classFileCount += 1
+                    classFiles = ClassFile(() ⇒ new java.io.FileInputStream(file)) :: classFiles
+                }
+            }
+        }
+
+        return classFiles;
+
+    }
+
     /**
      * Template method to read in a Java class file from the given input stream.
      *
      * @param in the DataInputStream from which the class file will be read. The
-     *  stream is never closed by this method.
+     *  stream is not closed by this method.
      */
     def ClassFile(in: DataInputStream): ClassFile = {
         // magic

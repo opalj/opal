@@ -35,7 +35,14 @@ package dependency
 
 /**
  * Associates a source element (type/class, method or field declaration) with
- * a unique id. The methods of this interface are called by the
+ * a unique id.
+ *
+ * ==Adaptation==
+ * If you want to be able to efficiently retrieve a source element if you have an id, consider mixing
+ * in the [[de.tud.cs.st.bat.resolved.dependency.ReverseMapping]] trait.
+ *
+ * ==Typical Use==
+ * The methods of this interface are called by the
  * [[de.tud.cs.st.bat.resolved.dependency.DependencyExtractor]] while traversing
  * a class file.
  *
@@ -45,7 +52,8 @@ trait SourceElementIDs {
 
     /**
      * Returns the ID associated with the given type. This ID uniquely identifies this
-     * type declaration. If the
+     * type declaration. If the type does not yet has an associated id,
+     * new id is created and returned.
      *
      * ==
      * Called, e.g., by the [[de.tud.cs.st.bat.resolved.dependency.DependencyExtractor]] to get the id of
@@ -55,8 +63,18 @@ trait SourceElementIDs {
      */
     def sourceElementID(t: Type): Int
 
+    /**
+     * Returns the ID associated with the given field. This ID uniquely identifies
+     * the specified field.  If the field does not yet has an associated id,
+     * new id is created and returned.
+     */
     def sourceElementID(declaringObjectType: ObjectType, fieldName: String): Int
 
+    /**
+     * Returns the ID associated with the given method. This ID uniquely identifies
+     * the specified method. If the method does not yet has an associated id,
+     * new id is created and returned.
+     */
     def sourceElementID(declaringObjectType: ObjectType, methodName: String, methodDescriptor: MethodDescriptor): Int
 
     final def sourceElementID(classFile: ClassFile): Int =

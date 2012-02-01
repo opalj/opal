@@ -43,61 +43,41 @@ import reader.Java6Framework
  *
  * @author Michael Eichberg
  */
-object BATArchitecture extends Specification with App{
+object BATArchitecture extends Specification with App {
 
     println("Checking BAT's architecture")
 
-    ensemble('Root) {
-        "de.tud.cs.st.bat.*"
-    }
+    'Root{ "de.tud.cs.st.bat.*" }
 
-    ensemble('canonical) {
-        "de.tud.cs.st.bat.canonical.*"
-    }
+    'canonical{ "de.tud.cs.st.bat.canonical.*" }
 
-    ensemble('canonical_reader) {
-        "de.tud.cs.st.bat.canonical.reader.*"
-    }
+    'canonical_reader{ "de.tud.cs.st.bat.canonical.reader.*" }
 
-    ensemble('reader) {
-        "de.tud.cs.st.bat.reader.*"
-    }
+    'reader{ "de.tud.cs.st.bat.reader.*" }
 
-    ensemble('resolved_representation) {
-        "de.tud.cs.st.bat.resolved.**"
-    }
+    'resolved_representation{ "de.tud.cs.st.bat.resolved.**" }
 
-     ensemble('resolved_representation_reader) {
-        "de.tud.cs.st.bat.resolved.**"
-    }
+    'resolved_representation_reader_implementation {
+        "de.tud.cs.st.bat.resolved.reader.**" except "de.tud.cs.st.bat.resolved.reader.Java6Framework*"
+        }
 
-    ensemble('support) {
-        "de.tud.cs.st.util.**" || "de.tud.cs.st.prolog.*"
-    }
+   // 'support{ "de.tud.cs.st.util.**" union "de.tud.cs.st.prolog.*" }
 
-    ensemble('util) {
-        "de.tud.cs.st.util.**"
-    }
+    'util{ "de.tud.cs.st.util.**" }
 
-    ensemble('prolog) {
-        "de.tud.cs.st.prolog.*"
-    }
+    'prolog{ "de.tud.cs.st.prolog.*" }
 
-    ensemble('empty) {
-        Nothing
-    }
+    'empty{ Nothing }
 
-    ensemble('demo_code) {
-        "de.tud.cs.st.bat.LoadClassFilesTest"
-    }
+    'demo_code{ "de.tud.cs.st.bat.LoadClassFilesTest*" }
 
-    only('demo_code) is_allowed_to_depend_on 'resolved_representation_reader
+    'resolved_representation_reader_implementation allows_incoming_dependencies_from 'demo_code
 
     //only('empty) is_allowed_to_depend_on 'prolog
 
     //only('util) is_allowed_to_depend_on 'reader
 
-    analyze(List(new java.io.File("build/class")))
+    analyze(List(Directory("build/class")))
 
     println("Finished checking BAT's architecture.")
 }

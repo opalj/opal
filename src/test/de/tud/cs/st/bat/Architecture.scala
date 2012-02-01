@@ -71,9 +71,9 @@ class Architecture extends FlatSpec with ShouldMatchers with BeforeAndAfterAll {
             "de.tud.cs.st.bat.resolved.**"
         }
 
-        ensemble('support) {
-            "de.tud.cs.st.util.**" || "de.tud.cs.st.prolog.*"
-        }
+//        ensemble('support) {
+//            "de.tud.cs.st.util.**" union "de.tud.cs.st.prolog.*"
+//        }
 
         ensemble('util) {
             "de.tud.cs.st.util.**"
@@ -87,6 +87,6 @@ class Architecture extends FlatSpec with ShouldMatchers with BeforeAndAfterAll {
             "<EMPTY>.*"
         }
 
-        only('empty) is_allowed_to_depend_on 'prolog
+      //  only('empty) is_allowed_to_depend_on 'prolog
     }
 }

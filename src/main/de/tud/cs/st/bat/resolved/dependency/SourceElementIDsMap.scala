@@ -34,16 +34,23 @@ package de.tud.cs.st.bat.resolved
 package dependency
 
 /**
+ * Marker trait to state that each type of source element is associated
+ * with its own continuous sequence of ids.
+ *
  * ==Implementation Note==
- * When implemented, the following invariant has to hold:
- * LOWEST_TYPE_ID << LOWEST_FIELD_ID << LOWEST_METHOD_ID.
+ * When implemented, the following invariants have to hold:
+ * - LOWEST_TYPE_ID << LOWEST_FIELD_ID << LOWEST_METHOD_ID.
+ * - largest(type_id) < LOWEST_FIELD_ID
+ * - largest(field_id) < LOWEST_METHOD_ID
  *
  * @author Michael Eichberg
  */
 trait CategorizedSourceElementIDs extends SourceElementIDs {
 
     def LOWEST_TYPE_ID: Int
+
     def LOWEST_FIELD_ID: Int
+
     def LOWEST_METHOD_ID: Int
 }
 

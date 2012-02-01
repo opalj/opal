@@ -31,16 +31,21 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 package de.tud.cs.st.bat.resolved
+package dependency
+package checking
+
+import reader.Java6Framework
+import analyses.ClassHierarchy
 
 /**
- * Functionality to extract dependencies between class files.
+ * Represents a project's data.
  *
  * @author Michael Eichberg
  */
-package object dependency {
+trait Project extends SourceElementIDs {
 
-    type SourceElementID = Int
+    def classHierarchy: ClassHierarchy
 
-    type DependencyType = DependencyType.Value
+    def classFiles: scala.collection.Map[ObjectType, ClassFile]  
 
 }

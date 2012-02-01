@@ -36,6 +36,7 @@ package checking
 
 import reader.Java6Framework
 import analyses.ClassHierarchy
+import scala.collection.immutable.SortedSet
 
 /**
  * Represents a configuration of a project's allowed/expected dependencies.
@@ -45,127 +46,58 @@ import analyses.ClassHierarchy
  *
  * @author Michael Eichberg
  */
-class Specification extends SourceElementIDsMap with ReverseMapping with UseIDOfBaseTypeForArrayTypes {
+class Specification extends SourceElementIDsMap with ReverseMapping with UseIDOfBaseTypeForArrayTypes with Project {
 
-    type SourceElementID = Int
+    override val classHierarchy = new ClassHierarchy {}
 
-    trait SourceElementsMatcher { left ⇒
+    override val classFiles = scala.collection.mutable.Map[ObjectType, ClassFile]()
 
-        def extension(): Set[SourceElementID]
+    val ensembles = scala.collection.mutable.Map[Symbol, (SourceElementsMatcher, SortedSet[SourceElementID])]()
 
-        def ||(right: SourceElementsMatcher): SourceElementsMatcher = {
-            return new SourceElementsMatcher {
-                def extension() = {
-                    left.extension ++ (right.extension)
-                }
+    val outgoingDependencies = scala.collection.mutable.Map[SourceElementID, scala.collection.mutable.Set[(SourceElementID, DependencyType)]]()
 
-                override def toString() = {
-                    "OrSourceElementsMatcher("+left.toString+","+right.toString+")"
-                }
-            };
-        }
-    }
-
-    /**
-     * @param specifiedPackageName The name of a package in binary notation. (I.e., "/" are used to separate
-     * a package name's segments; e.g., "java/lang/Object").
-     *
-     * @author Michael Eichberg
-     */
-    case class PackageNameBasedMatcher(val packageName: String, val matchSubpackages: Boolean = false)
-            extends SourceElementsMatcher {
-
-        require(packageName.indexOf('*') == -1)
-        require(packageName.indexOf('.') == -1)
-
-        def extension(): Set[SourceElementID] = {
-            {
-                for (
-                    classFile ← classFiles.values if {
-                        val thisClassPackageName = classFile.thisClass.packageName
-                        thisClassPackageName.startsWith(packageName) && (
-                            matchSubpackages ||
-                            thisClassPackageName.length() == packageName.length()
-                        )
-                    }
-                ) yield {
-                    val classFileID = sourceElementID(classFile)
-//                    println(classFile.thisClass.className +"=>"+ classFileID+" =>" +sourceElementIDtoString(classFileID))
-                    val methodIDs = classFile.methods.map(sourceElementID(classFile, _))
-                    val fieldIDs = classFile.fields.map(sourceElementID(classFile, _))
-                    var r = fieldIDs.toSet ++ methodIDs + classFileID
-//                    println(this.toString+" => "+classFile.thisClass.className + " : " +r.mkString(","))
-                    r
-                }
-
-            }.flatten.toSet
-        }
-
-        override def toString = {
-            var s = "Packages("+packageName.replace('/', '.')+".*"
-            if (matchSubpackages)
-                s += "*"
-            s += ")"
-            s
-        }
-    }
-
-    case class ClassMatcher(val className: String) extends SourceElementsMatcher {
-        def extension(): Set[SourceElementID] = {
-            for (classFile ← classFiles.values if className == classFile.thisClass.className)
-                yield Set(sourceElementID(classFile)) union
-                classFile.methods.map(sourceElementID(classFile, _)).toSet union
-                classFile.fields.map(sourceElementID(classFile, _)).toSet
-        }.flatten.toSet
-    }
-
-    case object Nothing extends SourceElementsMatcher {
-        def extension(): Set[SourceElementID] = Set();
-    }
+    val incomingDependencies = scala.collection.mutable.Map[SourceElementID, scala.collection.mutable.Set[(SourceElementID, DependencyType)]]()
 
     val dependencyExtractor = new DependencyExtractor(Specification.this) with NoSourceElementsVisitor {
 
-        val outgoing = scala.collection.mutable.Map[SourceElementID, scala.collection.mutable.Set[(SourceElementID, DependencyType)]]()
-        val incoming = scala.collection.mutable.Map[SourceElementID, scala.collection.mutable.Set[(SourceElementID, DependencyType)]]()
-
         def processDependency(sourceID: SourceElementID, targetID: SourceElementID, dType: DependencyType) {
-            outgoing.
+            outgoingDependencies.
                 getOrElseUpdate(sourceID, { scala.collection.mutable.Set() }).
                 add((targetID, dType))
-            incoming.
+            incomingDependencies.
                 getOrElseUpdate(targetID, { scala.collection.mutable.Set() }).
                 add((sourceID, dType))
         }
     }
 
-    val classHierarchy = new ClassHierarchy {}
-
-    val classFiles = scala.collection.mutable.Map[ObjectType, ClassFile]()
-
-    val ensembles = scala.collection.mutable.Map[Symbol, (SourceElementsMatcher, Set[SourceElementID])]()
-
     def ensemble(ensembleName: Symbol)(sourceElementMatcher: SourceElementsMatcher) {
         if (ensembles.contains(ensembleName))
             throw new IllegalArgumentException("Ensemble is already defined: "+ensembleName)
 
-        ensembles.put(ensembleName, (sourceElementMatcher, Set()))
+        ensembles.put(ensembleName, (sourceElementMatcher, SortedSet()))
     }
 
-    implicit def StringToPackageNameBasedMatcher(matcher: String): SourceElementsMatcher = {
+    @throws(classOf[SpecificationError])
+    implicit def StringToSourceElementMatcher(matcher: String): SourceElementsMatcher = {
         if (matcher endsWith ".*")
             return new PackageNameBasedMatcher(matcher.substring(0, matcher.length() - 2).replace('.', '/'))
         if (matcher endsWith ".**")
             return new PackageNameBasedMatcher(matcher.substring(0, matcher.length() - 3).replace('.', '/'), true)
+        if (matcher endsWith "*")
+            return new ClassMatcher(matcher.substring(0, matcher.length() - 1).replace('.', '/'), true)
         if (matcher.indexOf('*') == -1)
             return new ClassMatcher(matcher.replace('.', '/'))
 
-        throw new IllegalArgumentException("Unsupported pattern: "+matcher);
+        throw new SpecificationError("unsupported pattern: "+matcher);
     }
+
+    implicit def FileToClassFileProvider(file: java.io.File): Seq[ClassFile] = Java6Framework.ClassFiles(file)
 
     case class Violation(source: SourceElementID, target: SourceElementID, dependencyType: DependencyType, description: String) {
 
         override def toString(): String = {
-            description+": "+sourceElementIDtoString(source)+" "+dependencyType+" of "+sourceElementIDtoString(target)
+            description+": "+
+                sourceElementIDtoString(source)+" "+dependencyType+" "+sourceElementIDtoString(target)
         }
 
     }
@@ -181,23 +113,47 @@ class Specification extends SourceElementIDsMap with ReverseMapping with UseIDOf
             val (_, sourceEnsembleElements) = ensembles(sourceEnsemble)
             val (_, targetEnsembleElements) = ensembles(targetEnsemble)
             for (
-                targetEnsembleElement ← targetEnsembleElements if dependencyExtractor.incoming.contains(targetEnsembleElement);
-                (incomingElement, dependencyType) ← dependencyExtractor.incoming(targetEnsembleElement) if !(sourceEnsembleElements.contains(incomingElement) || targetEnsembleElements.contains(incomingElement))
+                targetEnsembleElement ← targetEnsembleElements if incomingDependencies.contains(targetEnsembleElement);
+                (incomingElement, dependencyType) ← incomingDependencies(targetEnsembleElement) if !(sourceEnsembleElements.contains(incomingElement) || targetEnsembleElements.contains(incomingElement))
             ) yield Violation(incomingElement, targetEnsembleElement, dependencyType, "violation of a global incoming constraint ")
         }
 
         override def toString =
-            "Constraint: only "+sourceEnsemble+" is allowed to depend on "+targetEnsemble
+            targetEnsemble+" allows_incoming_dependencies_from "+sourceEnsemble
     }
 
-    case class only(sourceEnsemble: Symbol) {
-        def is_allowed_to_depend_on(targetEnsemble: Symbol) {
-            dependencyCheckers = GlobalIncomingConstraint(sourceEnsemble, targetEnsemble) :: dependencyCheckers
+    case class SpecificationFactory(ensembleSymbol: Symbol) {
+
+        def apply(sourceElementsMatcher: SourceElementsMatcher) {
+            ensemble(ensembleSymbol)(sourceElementsMatcher)
         }
+
+        def allows_incoming_dependencies_from(otherEnsembleSymbol: Symbol) {
+            dependencyCheckers = GlobalIncomingConstraint(otherEnsembleSymbol, ensembleSymbol) :: dependencyCheckers
+        }
+    }
+
+    implicit def EnsembleNameToRuleFactory(ensembleSymbol: Symbol): SpecificationFactory =
+        SpecificationFactory(ensembleSymbol)
+
+    def ensembleToString(ensembleName: Symbol): String = {
+        var (sourceElementsMatcher, extension) = ensembles(ensembleName)
+        ensembleName+":"+
+            sourceElementsMatcher+
+            " => "+
+            {
+                if (extension.isEmpty)
+                    "NO ELEMENTS"
+                else {
+                    val ex = extension.toList
+                    (("\n\t"+extension.head.toString+":"+sourceElementIDtoString(extension.head)) /: extension.tail)((s, id) ⇒ s+"\n\t"+id+":"+sourceElementIDtoString(id))
+                }
+            }
     }
 
     def analyze(classFileProviders: Traversable[Traversable[ClassFile]]) {
         // 1. create and update the support data structures
+        println("1. Reading and analyzing class files.")
         for (classFileProvider ← classFileProviders; classFile ← classFileProvider) {
             classHierarchy.update(classFile)
             classFiles.put(classFile.thisClass, classFile)
@@ -205,58 +161,34 @@ class Specification extends SourceElementIDsMap with ReverseMapping with UseIDOf
         }
 
         // 2. calculate the extension of the ensembles
+        println("2. Determing the extension of the ensembles.")
         for ((ensembleName, (sourceElementMatcher, _)) ← ensembles) {
-            val extension = sourceElementMatcher.extension()
-//            println(
-//                ensembleName+
-//                    " : "+
-//                    sourceElementMatcher+
-//                    " => "+
-//                    {
-//                        if (extension.isEmpty)
-//                            "NO ELEMENTS"
-//                        else {
-//                            val ex = extension.toList
-//                            (("\n\t"+extension.head.toString+":"+sourceElementIDtoString(extension.head)) /: extension.tail)((s,id) => s+"\n\t"+id+":"+sourceElementIDtoString(id))
-//                        }
-//                    }
-//            )
+            val extension = sourceElementMatcher.extension(this)
             ensembles.update(ensembleName, (sourceElementMatcher, extension))
         }
 
         // 3. check all rules
+        println("3. Checking the specified dependency constraints.")
         for (dependencyChecker ← dependencyCheckers) {
             println("Checking: "+dependencyChecker)
             for (violation ← dependencyChecker.violations) println(violation)
         }
     }
 
-    implicit def FileToClassFileProvider(file: java.io.File): Traversable[ClassFile] = {
-        if (!file.exists())
-            throw new IllegalArgumentException("the given file: "+file+" does not exist");
-
-        if (file.isFile()) {
-            return List(Java6Framework.ClassFile(() ⇒ new java.io.FileInputStream(file)))
-        }
-
-        // file.isDirectory
-        var classFiles: List[ClassFile] = Nil
-        var directories = List(file)
-        while (directories.nonEmpty) {
-            val directory = directories.head
-            println("reading class files in directory: "+directory);
-            directories = directories.tail
-            for (file ← directory.listFiles()) {
-                if (file.isDirectory()) {
-                    directories = file :: directories
-                }
-                if (file.getName().endsWith(".class")) {
-                    classFiles = Java6Framework.ClassFile(() ⇒ new java.io.FileInputStream(file)) :: classFiles
-                }
-            }
-        }
-
-        return classFiles;
+    @throws(classOf[SpecificationError])
+    def Directory(directoryName: String): java.io.File = {
+        val file = new java.io.File(directoryName)
+        if (!file.exists)
+            throw new SpecificationError("The specified directory does not exist: "+directoryName+".")
+        if (!file.canRead)
+            throw new SpecificationError("Cannot read the specified directory: "+directoryName+".")
+        if (!file.isDirectory)
+            throw new SpecificationError("The specified directory is not a directory: "+directoryName+".")
+        file
     }
+
+}
+
+class SpecificationError(val description: String) extends Exception(description) {
 
 }
