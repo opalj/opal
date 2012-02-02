@@ -291,25 +291,29 @@ trait ClassFileReader extends Constant_PoolAbstractions {
 
         // file.isDirectory
         var classFiles: List[ClassFile] = Nil
-        var directories = List(file) // our work list
+        var directories : List[java.io.File] = List(file) // our work list
 
         while (directories.nonEmpty) {
             val directory = directories.head
             directories = directories.tail
             var classFileCount = 0
-            for (file ← directory.listFiles()) {
+            for (file ← directory.listFiles()/*.par*/) {
                 if (file.isDirectory()) {
-                    directories = file :: directories
+                 //   directories.synchronized {
+                    	directories = file :: directories
+                 //   }
                 }
-                if (file.getName().endsWith(".class")) {
+                else if (file.getName().endsWith(".class")) {
                     classFileCount += 1
-                    classFiles = ClassFile(() ⇒ new java.io.FileInputStream(file)) :: classFiles
+                    val classFile = ClassFile(() ⇒ new java.io.FileInputStream(file))
+                 //   classFiles.synchronized {
+                    	classFiles = classFile :: classFiles
+                 //   }
                 }
             }
         }
 
         return classFiles;
-
     }
 
     /**

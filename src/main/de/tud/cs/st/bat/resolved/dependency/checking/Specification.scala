@@ -108,9 +108,9 @@ class Specification extends SourceElementIDsMap with ReverseMapping with UseIDOf
 
     var dependencyCheckers: List[DependencyChecker] = Nil
 
-    case class GlobalIncomingConstraint(targetEnsemble: Symbol,sourceEnsembles: Seq[Symbol]) extends DependencyChecker {
+    case class GlobalIncomingConstraint(targetEnsemble: Symbol, sourceEnsembles: Seq[Symbol]) extends DependencyChecker {
         def violations() = {
-            val sourceEnsembleElements = (SortedSet[SourceElementID]() /: sourceEnsembles)(_ ++ ensembles(_)._2 )
+            val sourceEnsembleElements = (SortedSet[SourceElementID]() /: sourceEnsembles)(_ ++ ensembles(_)._2)
             val (_, targetEnsembleElements) = ensembles(targetEnsemble)
             for (
                 targetEnsembleElement ← targetEnsembleElements if incomingDependencies.contains(targetEnsembleElement);
@@ -129,7 +129,7 @@ class Specification extends SourceElementIDsMap with ReverseMapping with UseIDOf
         }
 
         def allows_incoming_dependencies_from(sourceEnsembleSymbols: Symbol*) {
-            dependencyCheckers = GlobalIncomingConstraint(ensembleSymbol,sourceEnsembleSymbols.toSeq) :: dependencyCheckers
+            dependencyCheckers = GlobalIncomingConstraint(ensembleSymbol, sourceEnsembleSymbols.toSeq) :: dependencyCheckers
         }
     }
 
@@ -152,26 +152,47 @@ class Specification extends SourceElementIDsMap with ReverseMapping with UseIDOf
     }
 
     def analyze(classFileProviders: Traversable[Traversable[ClassFile]]) {
+
+        val performance = new de.tud.cs.st.util.perf.PerformanceEvaluation {}
+        import performance._
+
         // 1. create and update the support data structures
-        println("1. Reading and analyzing class files.")
-        for (classFileProvider ← classFileProviders; classFile ← classFileProvider) {
-            classHierarchy.update(classFile)
-            classFiles.put(classFile.thisClass, classFile)
-            dependencyExtractor.process(classFile)
+        print("1. Reading and analyzing class files took ")
+        time(t ⇒ println(nsToSecs(t).toString+" seconds.")) {
+            for (
+                classFileProvider ← classFileProviders;
+                classFile ← classFileProvider
+            ) {
+                classHierarchy.update(classFile)
+                classFiles.put(classFile.thisClass, classFile)
+                dependencyExtractor.process(classFile)
+            }
         }
 
         // 2. calculate the extension of the ensembles
-        println("2. Determing the extension of the ensembles.")
-        for ((ensembleName, (sourceElementMatcher, _)) ← ensembles) {
-            val extension = sourceElementMatcher.extension(this)
-            ensembles.update(ensembleName, (sourceElementMatcher, extension))
+        print("2. Determing the extension of the ensembles took ")
+        time(t ⇒ println(nsToSecs(t).toString+" seconds.")) {
+            val instantiatedEnsembles = ensembles.par.map((ensemble) ⇒ {
+                val (ensembleName, (sourceElementMatcher, _)) = ensemble
+                val extension = sourceElementMatcher.extension(this)
+                (ensembleName, (sourceElementMatcher, extension))
+            })
+            ensembles.clear
+            ensembles.++=(instantiatedEnsembles.toIterator)
+            // Non-parallel implementation
+            // for ((ensembleName, (sourceElementMatcher, _)) ← ensembles) {
+            // 	val extension = sourceElementMatcher.extension(this)
+            // 	ensembles.update(ensembleName, (sourceElementMatcher, extension))
+            // }
         }
 
         // 3. check all rules
-        println("3. Checking the specified dependency constraints.")
-        for (dependencyChecker ← dependencyCheckers) {
-            println("Checking: "+dependencyChecker)
-            for (violation ← dependencyChecker.violations) println(violation)
+        println("3. Checking the specified dependency constraints")
+        time(t ⇒ println("   took "+nsToSecs(t).toString+" seconds.")) {
+            for (dependencyChecker ← dependencyCheckers) {
+                println("Checking: "+dependencyChecker)
+                for (violation ← dependencyChecker.violations) println(violation)
+            }
         }
     }
 

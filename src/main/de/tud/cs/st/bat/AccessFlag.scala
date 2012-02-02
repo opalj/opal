@@ -86,19 +86,19 @@ final object VisibilityModifier {
 final case object ACC_PUBLIC extends VisibilityModifier {
     val javaName: Option[String] = Some("public")
     val mask: Int = 0x0001
-    lazy val toXML = <public />
+    val toXML = <public />
 }
 
 final case object ACC_PRIVATE extends VisibilityModifier {
     val javaName: Option[String] = Some("private")
     val mask: Int = 0x0002
-    lazy val toXML = <private />
+    val toXML = <private />
 }
 
 final case object ACC_PROTECTED extends VisibilityModifier {
     val javaName: Option[String] = Some("protected")
     val mask: Int = 0x0004
-    lazy val toXML = <protected />
+    val toXML = <protected />
 }
 
 final case object ACC_STATIC extends AccessFlag {
@@ -110,7 +110,7 @@ final case object ACC_STATIC extends AccessFlag {
 final case object ACC_FINAL extends AccessFlag {
     val javaName: Option[String] = Some("final")
     val mask = 0x0010
-    lazy val toXML = <final />
+    val toXML = <final />
 }
 
 final case object ACC_SUPER extends AccessFlag {
@@ -122,25 +122,25 @@ final case object ACC_SUPER extends AccessFlag {
 final case object ACC_SYNCHRONIZED extends AccessFlag {
     val javaName: Option[String] = Some("synchronized")
     val mask = 0x0020
-    lazy val toXML = <synchronized />
+    val toXML = <synchronized />
 }
 
 final case object ACC_VOLATILE extends AccessFlag {
     val javaName: Option[String] = Some("volatile")
     val mask = 0x0040
-    lazy val toXML = <volatile />
+    val toXML = <volatile />
 }
 
 final case object ACC_BRIDGE extends AccessFlag {
     val javaName: Option[String] = None
     val mask = 0x0040
-    lazy val toXML = <bridge />
+    val toXML = <bridge />
 }
 
 final case object ACC_TRANSIENT extends AccessFlag {
     val javaName: Option[String] = Some("transient")
     val mask = 0x0080
-    lazy val toXML = <transient />
+    val toXML = <transient />
 }
 
 final case object ACC_VARARGS extends AccessFlag {
@@ -152,7 +152,7 @@ final case object ACC_VARARGS extends AccessFlag {
 final case object ACC_NATIVE extends AccessFlag {
     val javaName: Option[String] = Some("native")
     val mask = 0x0100
-    lazy val toXML = <native />
+    val toXML = <native />
 }
 
 final case object ACC_INTERFACE extends AccessFlag {
@@ -164,31 +164,31 @@ final case object ACC_INTERFACE extends AccessFlag {
 final case object ACC_ABSTRACT extends AccessFlag {
     val javaName: Option[String] = Some("abstract")
     val mask = 0x0400
-    lazy val toXML = <abstract />
+    val toXML = <abstract />
 }
 
 final case object ACC_STRICT extends AccessFlag {
     val javaName: Option[String] = Some("strictfp")
     val mask = 0x0800
-    lazy val toXML = <strictfp />
+    val toXML = <strictfp />
 }
 
 final case object ACC_SYNTHETIC extends AccessFlag {
     val javaName: Option[String] = None
     val mask = 0x1000
-    lazy val toXML = <synthetic />
+    val toXML = <synthetic />
 }
 
 final case object ACC_ANNOTATION extends AccessFlag {
 
     val javaName: Option[String] = None
     val mask = 0x2000
-    lazy val toXML = <annotation />
+    val toXML = <annotation />
 }
 
 final case object ACC_ENUM extends AccessFlag {
     val javaName: Option[String] = None
     val mask = 0x4000
-    lazy val toXML = <enum />
+    val toXML = <enum />
 }
 
