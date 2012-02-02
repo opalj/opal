@@ -47,6 +47,9 @@ object BATArchitecture extends Specification with App {
 
     println("Checking BAT's architecture")
 
+    //
+    // Architectural entities
+
     'Root{ "de.tud.cs.st.bat.*" }
 
     'canonical{ "de.tud.cs.st.bat.canonical.*" }
@@ -65,26 +68,49 @@ object BATArchitecture extends Specification with App {
         "de.tud.cs.st.bat.resolved.reader.Java6Framework*"
     }
 
-    // 'support{ "de.tud.cs.st.util.**" union "de.tud.cs.st.prolog.*" }
-
     'util{ "de.tud.cs.st.util.**" }
 
     'prolog{ "de.tud.cs.st.prolog.*" }
 
     'empty{ Nothing }
 
-    'demo_code{ "de.tud.cs.st.bat.LoadClassFilesTest*" }
+    'demo_code{
+        "de.tud.cs.st.bat.resolved.AssociateUniqueIDs*" and
+            "de.tud.cs.st.bat.resolved.ClassFileInformation*" and
+            "de.tud.cs.st.bat.resolved.SimpleCheckers*" and
+            "de.tud.cs.st.bat.resolved.analyses.Main*" and
+            "de.tud.cs.st.bat.resolved.dependency.DependencyMatrix*" and
+            "de.tud.cs.st.bat.resolved.dependency.checking.BATArchitecture*"
+    }
+
+    'blackbox_tests{
+        "de.tud.cs.st.bat.Architecture*" and
+            "de.tud.cs.st.bat.BATSuite*" and
+            "de.tud.cs.st.bat.LoadClassFilesTest*"
+    }
+
+    'BAT_test_suite{
+        "de.tud.cs.st.bat.BATSuite*"
+    }
+
+    //
+    // Architectural rules:
 
     'resolved_representation_reader_implementation allows_incoming_dependencies_from (
-        'demo_code,
-        'resolved_representation_reader_interface
+        'resolved_representation_reader_interface,
+        'BAT_test_suite
     )
 
-    //only('empty) is_allowed_to_depend_on 'prolog
+    'demo_code allows_incoming_dependencies_from 'empty
 
-    //only('util) is_allowed_to_depend_on 'reader
+    'blackbox_tests allows_incoming_dependencies_from 'empty
 
-    analyze(List(Directory("build/class")))
+    //
+    // Code basis that is to be analyzed
+
+    analyze(List(Directory(".")))
+
+    println(ensembleToString('BAT_test_suite))
 
     println("Finished checking BAT's architecture.")
 }

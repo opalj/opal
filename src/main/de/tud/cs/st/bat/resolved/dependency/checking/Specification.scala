@@ -136,19 +136,22 @@ class Specification extends SourceElementIDsMap with ReverseMapping with UseIDOf
     implicit def EnsembleNameToSpecificationElementFactory(ensembleSymbol: Symbol): SpecificationFactory =
         SpecificationFactory(ensembleSymbol)
 
-    def ensembleToString(ensembleName: Symbol): String = {
-        var (sourceElementsMatcher, extension) = ensembles(ensembleName)
-        ensembleName+":"+
-            sourceElementsMatcher+
-            " => "+
+    /**
+     * Returns a textual representation of an ensemble.
+     *
+     */
+    def ensembleToString(ensembleSymbol: Symbol): String = {
+        var (sourceElementsMatcher, extension) = ensembles(ensembleSymbol)
+        ensembleSymbol+"{"+
+            sourceElementsMatcher+"  "+
             {
                 if (extension.isEmpty)
-                    "NO ELEMENTS"
+                    "/* NO ELEMENTS */ "
                 else {
                     val ex = extension.toList
-                    (("\n\t"+extension.head.toString+":"+sourceElementIDtoString(extension.head)) /: extension.tail)((s, id) ⇒ s+"\n\t"+id+":"+sourceElementIDtoString(id))
+                    (("\n\t//"+extension.head.toString+":"+sourceElementIDtoString(extension.head)) /: extension.tail)((s, id) ⇒ s+"\n\t//"+id+":"+sourceElementIDtoString(id))
                 }
-            }
+            }+"}"
     }
 
     def analyze(classFileProviders: Traversable[Traversable[ClassFile]]) {
@@ -189,7 +192,7 @@ class Specification extends SourceElementIDsMap with ReverseMapping with UseIDOf
         // 3. check all rules
         println("3. Checking the specified dependency constraints")
         time(t ⇒ println("   took "+nsToSecs(t).toString+" seconds.")) {
-            for (dependencyChecker ← dependencyCheckers) {
+            for (dependencyChecker ← dependencyCheckers.par) {
                 println("Checking: "+dependencyChecker)
                 for (violation ← dependencyChecker.violations) println(violation)
             }
@@ -210,6 +213,4 @@ class Specification extends SourceElementIDsMap with ReverseMapping with UseIDOf
 
 }
 
-class SpecificationError(val description: String) extends Exception(description) {
-
-}
+case class SpecificationError(val description: String) extends Exception(description)
