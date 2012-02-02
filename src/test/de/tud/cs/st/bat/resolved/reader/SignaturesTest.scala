@@ -31,8 +31,8 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 */
 package de.tud.cs.st.bat.resolved
+package reader
 
-import reader._
 import org.scalatest.FunSuite
 
 /**
