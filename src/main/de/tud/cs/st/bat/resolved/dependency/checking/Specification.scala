@@ -149,7 +149,7 @@ class Specification extends SourceElementIDsMap with ReverseMapping with UseIDOf
                     "/* NO ELEMENTS */ "
                 else {
                     val ex = extension.toList
-                    (("\n\t//"+extension.head.toString+":"+sourceElementIDtoString(extension.head)) /: extension.tail)((s, id) ⇒ s+"\n\t//"+id+":"+sourceElementIDtoString(id))
+                    (("\n\t//"+extension.head.toString+":"+sourceElementIDtoString(extension.head)+"\n") /: extension.tail)((s, id) ⇒ s+"\t//"+id+":"+sourceElementIDtoString(id)+"\n")
                 }
             }+"}"
     }
