@@ -72,8 +72,6 @@ object BATArchitecture extends Specification with App {
 
     'prolog{ "de.tud.cs.st.prolog.*" }
 
-    'empty{ Nothing }
-
     'demo_code{
         "de.tud.cs.st.bat.resolved.AssociateUniqueIDs*" and
             "de.tud.cs.st.bat.resolved.ClassFileInformation*" and
@@ -93,6 +91,8 @@ object BATArchitecture extends Specification with App {
         "de.tud.cs.st.bat.BATSuite*"
     }
 
+    'Error{ "doo.bat.*"}
+
     //
     // Architectural rules:
 
@@ -101,9 +101,9 @@ object BATArchitecture extends Specification with App {
         'BAT_test_suite
     )
 
-    'demo_code allows_incoming_dependencies_from 'empty
+    'demo_code allows_incoming_dependencies_from empty
 
-    'blackbox_tests allows_incoming_dependencies_from 'empty
+    'blackbox_tests allows_incoming_dependencies_from empty
 
     //
     // Code basis that is to be analyzed

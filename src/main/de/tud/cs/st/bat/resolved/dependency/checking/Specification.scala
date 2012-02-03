@@ -43,6 +43,10 @@ import scala.collection.immutable.SortedSet
  * First define the ensembles, then the rules and at last specify the
  * class files that should be analyzed. The rules will then be automatically
  * evaluated.
+ * ==Typical Usage==
+ * One ensemble is predefined: [[Specification.empty]] it represents an ensemble that contains no
+ * source elements and which can, e.g., be used to specify that no "real" ensemble is allowed
+ * to depend on a specific ensemble.
  *
  * @author Michael Eichberg
  */
@@ -52,7 +56,9 @@ class Specification extends SourceElementIDsMap with ReverseMapping with UseIDOf
 
     override val classFiles = scala.collection.mutable.Map[ObjectType, ClassFile]()
 
-    val ensembles = scala.collection.mutable.Map[Symbol, (SourceElementsMatcher, SortedSet[SourceElementID])]()
+    val ensembles = scala.collection.mutable.Map[Symbol, (SourceElementsMatcher, SortedSet[SourceElementID])](
+    		'empty -> (NoSourceElements,SortedSet())
+    )
 
     val outgoingDependencies = scala.collection.mutable.Map[SourceElementID, scala.collection.mutable.Set[(SourceElementID, DependencyType)]]()
 
@@ -69,6 +75,8 @@ class Specification extends SourceElementIDsMap with ReverseMapping with UseIDOf
                 add((sourceID, dType))
         }
     }
+
+    val empty = 'empty
 
     def ensemble(ensembleName: Symbol)(sourceElementMatcher: SourceElementsMatcher) {
         if (ensembles.contains(ensembleName))
@@ -137,8 +145,7 @@ class Specification extends SourceElementIDsMap with ReverseMapping with UseIDOf
         SpecificationFactory(ensembleSymbol)
 
     /**
-     * Returns a textual representation of an ensemble.
-     *
+     * Returns a textual representation (as defined in a specification) of an ensemble.
      */
     def ensembleToString(ensembleSymbol: Symbol): String = {
         var (sourceElementsMatcher, extension) = ensembles(ensembleSymbol)
@@ -160,7 +167,7 @@ class Specification extends SourceElementIDsMap with ReverseMapping with UseIDOf
         import performance._
 
         // 1. create and update the support data structures
-        print("1. Reading and analyzing class files took ")
+        print("1. Reading class files and extracting dependencies took ")
         time(t ⇒ println(nsToSecs(t).toString+" seconds.")) {
             for (
                 classFileProvider ← classFileProviders;
@@ -189,6 +196,11 @@ class Specification extends SourceElementIDsMap with ReverseMapping with UseIDOf
             // }
         }
 
+        // 2.1. check that all ensembles contain at least one source element
+        for ((ensembleSymbol,(matcher,extension)) <- ensembles if extension.isEmpty && matcher != NoSourceElements ) {
+            println("Warning: "+ensembleSymbol+" did not match any source elements: "+matcher.toString)
+        }
+
         // 3. check all rules
         println("3. Checking the specified dependency constraints")
         time(t ⇒ println("   took "+nsToSecs(t).toString+" seconds.")) {
@@ -214,3 +226,4 @@ class Specification extends SourceElementIDsMap with ReverseMapping with UseIDOf
 }
 
 case class SpecificationError(val description: String) extends Exception(description)
+

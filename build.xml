@@ -381,7 +381,16 @@ Author 	Michael Eichberg (mail@michael-eichberg.de)
 
 	<target name="doc" depends="api-doc,instructions-schema-doc" description="Generates all documentation." />
 
-	<target name="demo" depends="compile" description="Demonstrates BAT.">
+	<target name="demo-architecture-checking" depends="compile" description="Checks BAT's architecture for architectural violations.">
+		<java classname="de.tud.cs.st.bat.resolved.dependency.checking.BATArchitecture" fork="true">
+			<classpath>
+				<path refid="project.classpath" />
+			</classpath>
+			<arg line="java.lang.Object" />
+		</java>
+	</target>
+
+	<target name="demo-representations" depends="compile" description="Demonstrates the XML and Prolog representations provided by BAT.">
 		<echo>
 			_________________________________________________________________________
 

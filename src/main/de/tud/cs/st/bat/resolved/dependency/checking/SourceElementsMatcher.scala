@@ -134,7 +134,7 @@ case class ClassMatcher(val className: String,val matchPrefix : Boolean = false)
     override def toString = "\""+className+"\""
 }
 
-case object Nothing extends SourceElementsMatcher {
+case object NoSourceElements extends SourceElementsMatcher {
     def extension(project: Project): SortedSet[SourceElementID] = SortedSet();
 }
 
