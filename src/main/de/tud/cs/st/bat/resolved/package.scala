@@ -33,16 +33,18 @@
 package de.tud.cs.st.bat
 
 /**
- * This package implements BAT's – so-called – resolved representation of Java bytecode;
- * the name was chosen to denote that all index-based reference to the constant pool structure
- * are resolved to direct references to the constant pool entries;
- * i.e., no constant pool based lookups are required anymore.
+ * In this representation of Java bytecode references to a Java class file's constant
+ * pool are replaced by direct references to the corresponding constant pool entries
+ * to facilitate analyses and foster comprehension. Based on the fact that indirect reference to
+ * constant pool entries are resolved and replaced by direct reference this
+ * representation is called the resolved representation.
  *
  * This representation of Java bytecode is considered as BAT's standard representation
  * for writing Scala based analyses. This representation is engineered such
  * that it facilitates writing analyses that use pattern matching.
  *
- * This representation is also the basis for other representations.
+ * This representation is also the basis for other representations such as the XML or
+ * Prolog based representations.
  *
  * @author Michael Eichberg
  */
@@ -69,4 +71,6 @@ package object resolved {
     type Fields = IndexedSeq[Field]
 
     type Instructions = Array[Instruction]
+
+    type SourceElementID = Int
 }

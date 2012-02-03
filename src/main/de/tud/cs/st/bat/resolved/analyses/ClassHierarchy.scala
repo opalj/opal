@@ -41,15 +41,12 @@ import reader.Java6Framework
 /**
  * Represents the visible part of a project's class hierarchy.
  *
- * To construct the class hierarchy use the update method.
+ * ==Usage==
+ * To build the class hierarchy use the add method.
  *
  * @author Michael Eichberg
  */
 class ClassHierarchy {
-
-    object SourceElementIDs extends dependency.SourceElementIDsMap
-
-    import SourceElementIDs.{ sourceElementID ⇒ id }
 
     import scala.collection._
     import mutable.Map
@@ -58,11 +55,11 @@ class ClassHierarchy {
     private[this] var superclasses: Map[ObjectType, Set[ObjectType]] = Map()
     private[this] var subclasses: Map[ObjectType, Set[ObjectType]] = Map()
 
-    final def update(classFiles: Traversable[ClassFile]) {
-        classFiles.foreach(update(_))
+    final def add(classFiles: Traversable[ClassFile]) {
+        classFiles.foreach(add(_))
     }
 
-    def update(classFile: ClassFile) {
+    def add(classFile: ClassFile) {
         val thisType = classFile.thisClass
         val thisTypesSuperclasses = superclasses.getOrElseUpdate(thisType, Set.empty)
 
@@ -132,6 +129,9 @@ class ClassHierarchy {
      */
     def toGraph: Node = new Node {
 
+        val sourceElementIDs = new dependency.SourceElementIDsMap
+        import sourceElementIDs.{ sourceElementID ⇒ id }
+
         private val nodes: Map[ObjectType, Node] = Map() ++ subclasses.keys.map(t ⇒ {
             val entry: (ObjectType, Node) = (
                 t,
@@ -174,7 +174,7 @@ object ClassHierarchyVisualizer {
 
         val classHierarchy = new ClassHierarchy
 
-        for (arg ← args; classFile ← Java6Framework.ClassFiles(arg)) classHierarchy.update(classFile)
+        for (arg ← args; classFile ← Java6Framework.ClassFiles(arg)) classHierarchy.add(classFile)
 
         println(toDot.generateDot(Set(classHierarchy.toGraph)))
     }

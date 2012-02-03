@@ -43,6 +43,7 @@ import scala.collection.immutable.SortedSet
  * First define the ensembles, then the rules and at last specify the
  * class files that should be analyzed. The rules will then be automatically
  * evaluated.
+ *
  * ==Typical Usage==
  * One ensemble is predefined: [[Specification.empty]] it represents an ensemble that contains no
  * source elements and which can, e.g., be used to specify that no "real" ensemble is allowed
@@ -52,12 +53,12 @@ import scala.collection.immutable.SortedSet
  */
 class Specification extends SourceElementIDsMap with ReverseMapping with UseIDOfBaseTypeForArrayTypes with Project {
 
-    override val classHierarchy = new ClassHierarchy {}
+    override val classHierarchy = new ClassHierarchy
 
     override val classFiles = scala.collection.mutable.Map[ObjectType, ClassFile]()
 
     val ensembles = scala.collection.mutable.Map[Symbol, (SourceElementsMatcher, SortedSet[SourceElementID])](
-    		'empty -> (NoSourceElements,SortedSet())
+    		'empty -> (NoSourceElementsMatcher,SortedSet())
     )
 
     val outgoingDependencies = scala.collection.mutable.Map[SourceElementID, scala.collection.mutable.Set[(SourceElementID, DependencyType)]]()
@@ -173,7 +174,7 @@ class Specification extends SourceElementIDsMap with ReverseMapping with UseIDOf
                 classFileProvider ← classFileProviders;
                 classFile ← classFileProvider
             ) {
-                classHierarchy.update(classFile)
+                classHierarchy.add(classFile)
                 classFiles.put(classFile.thisClass, classFile)
                 dependencyExtractor.process(classFile)
             }
@@ -197,7 +198,7 @@ class Specification extends SourceElementIDsMap with ReverseMapping with UseIDOf
         }
 
         // 2.1. check that all ensembles contain at least one source element
-        for ((ensembleSymbol,(matcher,extension)) <- ensembles if extension.isEmpty && matcher != NoSourceElements ) {
+        for ((ensembleSymbol,(matcher,extension)) <- ensembles if extension.isEmpty && matcher != NoSourceElementsMatcher ) {
             println("Warning: "+ensembleSymbol+" did not match any source elements: "+matcher.toString)
         }
 

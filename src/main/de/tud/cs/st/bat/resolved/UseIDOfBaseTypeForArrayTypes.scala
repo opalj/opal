@@ -31,7 +31,6 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 package de.tud.cs.st.bat.resolved
-package dependency
 
 /**
  * To assign a dependency to an array's base type instead of the array itself, this

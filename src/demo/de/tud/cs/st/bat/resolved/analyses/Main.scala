@@ -88,7 +88,7 @@ object Main extends Main {
         val classFiles = time(t ⇒ println("Reading all class files took: "+nsToSecs(t))) {
             for (zipFile ← zipFiles; classFile ← Java6Framework.ClassFiles(zipFile)) yield {
                 classFilesCount += 1
-                classHierarchy.update(classFile)
+                classHierarchy.add(classFile)
                 classFile
             }
         }

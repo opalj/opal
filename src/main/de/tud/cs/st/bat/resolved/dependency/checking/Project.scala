@@ -38,7 +38,7 @@ import reader.Java6Framework
 import analyses.ClassHierarchy
 
 /**
- * Represents a project's data.
+ * Represents a Java, Scala, Groovy,... project's data.
  *
  * @author Michael Eichberg
  */
@@ -46,6 +46,6 @@ trait Project extends SourceElementIDs {
 
     def classHierarchy: ClassHierarchy
 
-    def classFiles: scala.collection.Map[ObjectType, ClassFile]  
+    def classFiles: scala.collection.Map[ObjectType, ClassFile]
 
 }

@@ -39,8 +39,6 @@ package de.tud.cs.st.bat.resolved
  */
 package object dependency {
 
-    type SourceElementID = Int
-
     type DependencyType = DependencyType.Value
 
 }
