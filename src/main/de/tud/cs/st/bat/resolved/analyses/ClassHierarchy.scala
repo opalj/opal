@@ -42,37 +42,36 @@ import reader.Java6Framework
  * Represents the visible part of a project's class hierarchy.
  *
  * ==Usage==
- * To build the class hierarchy use the add method.
+ * To build the class hierarchy use the ++ and + method.
  *
  * @author Michael Eichberg
  */
-class ClassHierarchy {
+class ClassHierarchy(
+        protected val superclasses: Map[ObjectType, Set[ObjectType]] = Map(),
+        protected val subclasses: Map[ObjectType, Set[ObjectType]] = Map()) {
 
-    import scala.collection._
-    import mutable.Map
-    import mutable.Set
+    def ++(classFiles: Traversable[ClassFile]): ClassHierarchy = (this /: classFiles)(_ + _)
 
-    private[this] var superclasses: Map[ObjectType, Set[ObjectType]] = Map()
-    private[this] var subclasses: Map[ObjectType, Set[ObjectType]] = Map()
-
-    final def add(classFiles: Traversable[ClassFile]) {
-        classFiles.foreach(add(_))
-    }
-
-    def add(classFile: ClassFile) {
+    def +(classFile: ClassFile): ClassHierarchy = {
         val thisType = classFile.thisClass
-        val thisTypesSuperclasses = superclasses.getOrElseUpdate(thisType, Set.empty)
+        val thisTypesSuperclass = classFile.superClass
 
-        subclasses.getOrElseUpdate(thisType, Set.empty) // we want to make sure that this type is seen
+        var thisTypesSuperclasses = superclasses.getOrElse(thisType, Set.empty) ++ classFile.interfaces
+        if (thisTypesSuperclass.isDefined)
+            thisTypesSuperclasses = thisTypesSuperclasses + thisTypesSuperclass.get
+        val newSuperclasses = superclasses.updated(thisType, thisTypesSuperclasses)
 
-        thisTypesSuperclasses ++= classFile.interfaces
-        for (supertype ← classFile.interfaces) {
-            subclasses.getOrElseUpdate(supertype, Set.empty) += thisType
+        var newSubclasses = subclasses.updated(thisType, subclasses.getOrElse(thisType, Set.empty)) // we want to make sure that this type is seen
+        if (thisTypesSuperclass.isDefined) {
+            val supertype = thisTypesSuperclass.get
+            newSubclasses = newSubclasses.updated(supertype, newSubclasses.getOrElse(supertype, Set.empty) + thisType)
         }
-        classFile.superClass.foreach(supertype ⇒ {
-            thisTypesSuperclasses += supertype
-            subclasses.getOrElseUpdate(supertype, Set.empty) += thisType
-        })
+        newSubclasses =
+            (newSubclasses /: classFile.interfaces)((sc, supertype) ⇒ {
+                sc.updated(supertype, sc.getOrElse(supertype, Set.empty) + thisType)
+            })
+
+        new ClassHierarchy(newSuperclasses, newSubclasses)
     }
 
     /**
@@ -80,19 +79,19 @@ class ClassHierarchy {
      * that directly inherit from the given type.
      *
      * If we have not (yet) analyzed the class file implementing the given
-     * type (i.e., the class file was not yet passed to "update"), None is
+     * type (i.e., the class file was not yet passed to "update") or if
+     * we have not yet seen any direct subtype of the given type, scala.None is
      * returned. I.e., we know nothing about the respective type. If we have
      * seen the class file, but did not see (so far) any class files that
      * implements a type that directly inherits from the given type, an empty
-     * set is returned. I.e., if you have passed all class files of a project
-     * to update and then ask for the subclasses of a specific type and an
-     * empty set is returned, then you have the guarantee no class in the
-     * project inherits form the given type.
+     * set is returned. I.e., if you analyzed all class files of a project
+     * and then ask for the subclasses of a specific type and an
+     * empty set is returned, then you have the guarantee that no class in the
+     * project *directly* inherits form the given type.
      *
      * @return The direct subtypes of the given type.
      */
-    def subclasses(objectType: ObjectType): Option[immutable.Set[ObjectType]] =
-        subclasses.get(objectType).map(_.toSet)
+    def subclasses(objectType: ObjectType): Option[Set[ObjectType]] = subclasses.get(objectType)
 
     /**
      * The classes and interfaces from which the given type directly inherits.
@@ -110,26 +109,27 @@ class ClassHierarchy {
      *
      * @return The direct supertypes of the given type.
      */
-    def superclasses(objectType: ObjectType): Option[immutable.Set[ObjectType]] =
-        superclasses.get(objectType).map(_.toSet)
+    def superclasses(objectType: ObjectType): Option[Set[ObjectType]] =
+        superclasses.get(objectType)
 
     /**
      * The classes and interfaces from which the given types directly inherit.
+     *
+     * If the class file of a given object type was not previously analyzed
+     * an error will be returned.
+     *
+     * ==Performances Note==
+     * The result is (re-)calculated every time this function is called.
      */
-    def superclasses(objectTypes: Traversable[ObjectType]): immutable.Set[ObjectType] = {
-        var allSuperclasses = immutable.Set.empty[ObjectType]
-        for (objectType ← objectTypes; superclass ← superclasses.apply(objectType)) {
-            allSuperclasses = allSuperclasses + superclass
-        }
-        allSuperclasses
-    }
+    def superclasses(objectTypes: Traversable[ObjectType]): Set[ObjectType] =
+        (Set.empty[ObjectType] /: objectTypes)(_ ++ superclasses.apply(_))
 
     /**
      * Returns a view of the class hierarchy as a graph.
      */
     def toGraph: Node = new Node {
 
-        val sourceElementIDs = new dependency.SourceElementIDsMap
+        val sourceElementIDs = new SourceElementIDsMap
         import sourceElementIDs.{ sourceElementID ⇒ id }
 
         private val nodes: Map[ObjectType, Node] = Map() ++ subclasses.keys.map(t ⇒ {
@@ -172,9 +172,7 @@ object ClassHierarchyVisualizer {
             sys.exit(1)
         }
 
-        val classHierarchy = new ClassHierarchy
-
-        for (arg ← args; classFile ← Java6Framework.ClassFiles(arg)) classHierarchy.add(classFile)
+        val classHierarchy = (new ClassHierarchy /: args)(_ ++ Java6Framework.ClassFiles(_))
 
         println(toDot.generateDot(Set(classHierarchy.toGraph)))
     }

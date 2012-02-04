@@ -53,9 +53,13 @@ import scala.collection.immutable.SortedSet
  */
 class Specification extends SourceElementIDsMap with ReverseMapping with UseIDOfBaseTypeForArrayTypes with Project {
 
-    override val classHierarchy = new ClassHierarchy
+    private[this] var theClassHierarchy = new ClassHierarchy
+    override def classHierarchy = theClassHierarchy
 
-    override val classFiles = scala.collection.mutable.Map[ObjectType, ClassFile]()
+    private[this] var allClassFiles = Map[ObjectType, ClassFile]()
+    override def classFiles = allClassFiles
+
+    private[this] var matchedSourceElements = SortedSet[SourceElementID]()
 
     val ensembles = scala.collection.mutable.Map[Symbol, (SourceElementsMatcher, SortedSet[SourceElementID])](
     		'empty -> (NoSourceElementsMatcher,SortedSet())
@@ -128,13 +132,19 @@ class Specification extends SourceElementIDsMap with ReverseMapping with UseIDOf
         }
 
         override def toString =
-            targetEnsemble+" allows_incoming_dependencies_from ("+sourceEnsembles.mkString(",")+")"
+            targetEnsemble+" is_only_to_be_used_by ("+sourceEnsembles.mkString(",")+")"
     }
+
+    case class LocalOutgoingConstraint
 
     case class SpecificationFactory(ensembleSymbol: Symbol) {
 
         def apply(sourceElementsMatcher: SourceElementsMatcher) {
             ensemble(ensembleSymbol)(sourceElementsMatcher)
+        }
+
+        def is_only_to_be_used_by(sourceEnsembleSymbols: Symbol*) {
+            dependencyCheckers = GlobalIncomingConstraint(ensembleSymbol, sourceEnsembleSymbols.toSeq) :: dependencyCheckers
         }
 
         def allows_incoming_dependencies_from(sourceEnsembleSymbols: Symbol*) {
@@ -174,8 +184,8 @@ class Specification extends SourceElementIDsMap with ReverseMapping with UseIDOf
                 classFileProvider ← classFileProviders;
                 classFile ← classFileProvider
             ) {
-                classHierarchy.add(classFile)
-                classFiles.put(classFile.thisClass, classFile)
+                theClassHierarchy = theClassHierarchy + classFile
+                allClassFiles = allClassFiles.updated(classFile.thisClass, classFile)
                 dependencyExtractor.process(classFile)
             }
         }
@@ -186,6 +196,9 @@ class Specification extends SourceElementIDsMap with ReverseMapping with UseIDOf
             val instantiatedEnsembles = ensembles.par.map((ensemble) ⇒ {
                 val (ensembleName, (sourceElementMatcher, _)) = ensemble
                 val extension = sourceElementMatcher.extension(this)
+                Specification.this.synchronized {
+                    matchedSourceElements = matchedSourceElements ++ extension
+                }
                 (ensembleName, (sourceElementMatcher, extension))
             })
             ensembles.clear
@@ -203,10 +216,10 @@ class Specification extends SourceElementIDsMap with ReverseMapping with UseIDOf
         }
 
         // 3. check all rules
-        println("3. Checking the specified dependency constraints")
-        time(t ⇒ println("   took "+nsToSecs(t).toString+" seconds.")) {
+        println("3. Checking the specified dependency constraints:")
+        time(t ⇒ println("   Checking all constraints took "+nsToSecs(t).toString+" seconds.")) {
             for (dependencyChecker ← dependencyCheckers.par) {
-                println("Checking: "+dependencyChecker)
+                println("   Checking: "+dependencyChecker)
                 for (violation ← dependencyChecker.violations) println(violation)
             }
         }

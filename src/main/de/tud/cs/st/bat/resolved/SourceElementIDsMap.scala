@@ -31,7 +31,6 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 package de.tud.cs.st.bat.resolved
-package dependency
 
 /**
  * Marker trait to state that each type of source element is associated

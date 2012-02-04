@@ -82,13 +82,13 @@ object Main extends Main {
     // it is not meant to demonstrate how to write such analyses in an efficient
     // manner. (However, the performance is still acceptable.)
     def analyze(zipFiles: Array[String]) {
-        val classHierarchy = new ClassHierarchy {}
+        var classHierarchy = new ClassHierarchy
 
         var classFilesCount = 0
         val classFiles = time(t ⇒ println("Reading all class files took: "+nsToSecs(t))) {
             for (zipFile ← zipFiles; classFile ← Java6Framework.ClassFiles(zipFile)) yield {
                 classFilesCount += 1
-                classHierarchy.add(classFile)
+                classHierarchy = classHierarchy + classFile
                 classFile
             }
         }

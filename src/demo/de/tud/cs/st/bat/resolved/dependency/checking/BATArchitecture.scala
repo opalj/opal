@@ -91,8 +91,6 @@ object BATArchitecture extends Specification with App {
         "de.tud.cs.st.bat.BATSuite*"
     }
 
-    'Error{ "doo.bat.*"}
-
     //
     // Architectural rules:
 
