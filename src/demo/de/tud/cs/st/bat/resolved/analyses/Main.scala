@@ -52,6 +52,8 @@ object Main extends Main {
 
     private val CountingPerformanceEvaluator = new PerformanceEvaluation with Counting
     import CountingPerformanceEvaluator._
+    
+    import de.tud.cs.st.util.perf._
 
     private def printUsage: Unit = {
         println("Usage: java …Main <ZIP or JAR file containing class files>+")

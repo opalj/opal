@@ -46,6 +46,8 @@ import reader.Java6Framework
  */
 object AssociateUniqueIDs extends PerformanceEvaluation {
 
+    import de.tud.cs.st.util.perf._
+    
     val sourceElementIDs = new SourceElementIDsMap
 
     import sourceElementIDs.{ sourceElementID ⇒ id }

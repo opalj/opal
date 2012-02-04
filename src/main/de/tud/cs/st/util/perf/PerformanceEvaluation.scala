@@ -41,14 +41,6 @@ import scala.collection.mutable.Map
  */
 trait PerformanceEvaluation {
 
-    final def nanoSecondsToSeconds(value: Long): Double = value.toDouble / 1000.0d / 1000.0d / 1000.0d
-    final def nsToSecs(value: Long): Double = nanoSecondsToSeconds(value)
-
-    final def nanoSecondsToMilliseconds(value: Long): Double = value.toDouble / 1000.0d / 1000.0d
-
-    final def asSeconds(startTimeInNanoSeconds: Long, endTimeInNanoSeconds: Long): Double =
-        nanoSecondsToSeconds(endTimeInNanoSeconds - startTimeInNanoSeconds)
-
     /**
      * Times the execution of a given method (function literal) / code block.
      *
@@ -101,3 +93,4 @@ trait PerformanceEvaluation {
         times.clear()
     }
 }
+

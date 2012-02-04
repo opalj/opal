@@ -127,4 +127,7 @@ class SourceElementIDsMap extends CategorizedSourceElementIDs {
             getOrElseUpdate(methodName, { val id = nextMethodID; nextMethodID += 1; id })
     }
 
+    def allSourceElementIDs() = {
+        typeIDs.values ++ fieldIDs.values.flatMap(_.values) ++ methodIDs.values.flatMap(_.values.flatMap(_.values))
+    }
 }

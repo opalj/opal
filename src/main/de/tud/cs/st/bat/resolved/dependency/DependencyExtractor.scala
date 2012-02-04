@@ -62,7 +62,9 @@ import DependencyType._
  * @author Thomas Schlosser
  * @author Michael Eichberg
  */
-abstract class DependencyExtractor(val sourceElementIDs: SourceElementIDs) extends DependencyProcessor with SourceElementsVisitor[Unit] {
+abstract class DependencyExtractor(val sourceElementIDs: SourceElementIDs)
+        extends DependencyProcessor
+        with SourceElementsVisitor[Unit] {
 
     import sourceElementIDs._
 

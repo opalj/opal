@@ -39,7 +39,7 @@ package checking
 import reader.Java6Framework
 
 /**
- * Demonstrates how to check BAT's fundamental architectural properties.
+ * Specification of BAT's architecture.
  *
  * @author Michael Eichberg
  */
@@ -50,29 +50,13 @@ object BATArchitecture extends Specification with App {
     //
     // Architectural entities
 
-    'Root{ "de.tud.cs.st.bat.*" }
-
-    'canonical{ "de.tud.cs.st.bat.canonical.*" }
-
-    'canonical_reader{ "de.tud.cs.st.bat.canonical.reader.*" }
-
-    'reader{ "de.tud.cs.st.bat.reader.*" }
-
-    'resolved_representation{ "de.tud.cs.st.bat.resolved.**" }
-
-    'resolved_representation_reader_implementation{
-        "de.tud.cs.st.bat.resolved.reader.**" except "de.tud.cs.st.bat.resolved.reader.Java6Framework*"
+    'Integration_Tests{
+        "de.tud.cs.st.bat.Architecture*" and
+            "de.tud.cs.st.bat.BATSuite*" and
+            "de.tud.cs.st.bat.LoadClassFilesTest*"
     }
 
-    'resolved_representation_reader_interface{
-        "de.tud.cs.st.bat.resolved.reader.Java6Framework*"
-    }
-
-    'util{ "de.tud.cs.st.util.**" }
-
-    'prolog{ "de.tud.cs.st.prolog.*" }
-
-    'demo_code{
+    'Demo_Code{
         "de.tud.cs.st.bat.resolved.AssociateUniqueIDs*" and
             "de.tud.cs.st.bat.resolved.ClassFileInformation*" and
             "de.tud.cs.st.bat.resolved.SimpleCheckers*" and
@@ -81,34 +65,71 @@ object BATArchitecture extends Specification with App {
             "de.tud.cs.st.bat.resolved.dependency.checking.BATArchitecture*"
     }
 
-    'blackbox_tests{
-        "de.tud.cs.st.bat.Architecture*" and
-            "de.tud.cs.st.bat.BATSuite*" and
-            "de.tud.cs.st.bat.LoadClassFilesTest*"
+    'BAT_Commons{ "de.tud.cs.st.bat.*" except 'Integration_Tests }
+
+    'Generic_Reader{ "de.tud.cs.st.bat.reader.**" }
+
+    'Canonical_Representation{ "de.tud.cs.st.bat.canonical.**" }
+
+    'Canonical_Representation_Interface{ "de.tud.cs.st.bat.canonical.*" }
+
+    'Canonical_Representation_Reader{ "de.tud.cs.st.bat.canonical.reader.*" }
+
+    'Resolved_Representation{ "de.tud.cs.st.bat.resolved.**" except 'Demo_Code }
+
+    'Resolved_Representation_Interface{ "de.tud.cs.st.bat.resolved.*" }
+
+    'Resolved_Representation_Reader_Interface{
+        "de.tud.cs.st.bat.resolved.reader.Java6Framework*"
     }
 
-    'BAT_test_suite{
-        "de.tud.cs.st.bat.BATSuite*"
+    'Resolved_Representation_Reader_Implementation{
+        "de.tud.cs.st.bat.resolved.reader.**" except 'Resolved_Representation_Reader_Interface
     }
+
+    'Resolved_Representation_Dependency{ "de.tud.cs.st.bat.resolved.dependency.**" except 'Demo_Code }
+    
+    'Resolved_Representation_Dependency_Checking{ "de.tud.cs.st.bat.resolved.dependency.checking.**" except 'Demo_Code }
+
+    'Resolved_Representation_Analyses{ "de.tud.cs.st.bat.resolved.analyses.**" except 'Demo_Code }
+
+    'Utils{ "de.tud.cs.st.util.**" }
+
+    'Prolog{ "de.tud.cs.st.prolog.*" }
 
     //
     // Architectural rules:
 
-    'resolved_representation_reader_implementation allows_incoming_dependencies_from (
-        'resolved_representation_reader_interface,
-        'BAT_test_suite
+    'BAT_Commons is_only_allowed_to_use ('Utils, 'Prolog)
+
+    'Integration_Tests allows_incoming_dependencies_from empty
+
+    'Canonical_Representation is_only_allowed_to_use ('BAT_Commons, 'Generic_Reader)
+
+    'Resolved_Representation_Interface is_only_allowed_to_use (
+        'BAT_Commons, 'Resolved_Representation_Reader_Interface, 'Utils, 'Prolog
     )
 
-    'demo_code allows_incoming_dependencies_from empty
+    'Resolved_Representation_Reader_Implementation allows_incoming_dependencies_from (
+        'Resolved_Representation_Reader_Interface,
+        'Integration_Tests
+    )
 
-    'blackbox_tests allows_incoming_dependencies_from empty
+    'Resolved_Representation_Dependency allows_incoming_dependencies_from ('Integration_Tests, 'Demo_Code)
+
+    'Resolved_Representation_Analyses allows_incoming_dependencies_from (
+            'Integration_Tests,'Demo_Code,
+            'Resolved_Representation_Dependency_Checking
+            )
+
+    'Demo_Code allows_incoming_dependencies_from empty
 
     //
     // Code basis that is to be analyzed
 
-    analyze(List(Directory(".")))
+    analyze(Directory("."))
 
-    println(ensembleToString('BAT_test_suite))
+    //println(ensembleToString('Integration_Tests))
 
     println("Finished checking BAT's architecture.")
 }

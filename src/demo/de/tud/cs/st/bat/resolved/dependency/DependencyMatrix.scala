@@ -48,6 +48,7 @@ object DependencyMatrix {
 
     val performance = new util.perf.PerformanceEvaluation {}
     import performance._
+    import de.tud.cs.st.util.perf._
 
     private def printUsage: Unit = {
         println("Loads all classes stored in the zip files and creates a dependency matrix.")

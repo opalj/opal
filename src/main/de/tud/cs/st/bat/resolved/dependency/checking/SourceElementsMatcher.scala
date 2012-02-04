@@ -52,7 +52,7 @@ trait SourceElementsMatcher { left ⇒
             }
 
             override def toString() = { //
-                "("+left+" union "+right+")"
+                "("+left+" and "+right+")"
             }
         }
     }

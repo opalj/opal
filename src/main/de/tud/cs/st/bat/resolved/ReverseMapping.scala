@@ -31,7 +31,6 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 package de.tud.cs.st.bat.resolved
-package dependency
 
 /**
  * Associates each unique ID with its underlying source element.
@@ -84,4 +83,5 @@ trait ReverseMapping extends CategorizedSourceElementIDs {
         val (declaringType, methodName, methodDescriptor) = methodIDs(id - LOWEST_METHOD_ID)
         return declaringType.toJava+"."+methodName+""+(methodDescriptor.toUMLNotation)
     }
+    
 }

@@ -73,6 +73,7 @@ object SimpleCheckers {
     def analyze(zipFiles: Array[String]) {
         val CountingPerformanceEvaluator = new PerformanceEvaluation with Counting
         import CountingPerformanceEvaluator._
+        import de.tud.cs.st.util.perf._
         var problemCount = 0
 
         time('Overall) {
