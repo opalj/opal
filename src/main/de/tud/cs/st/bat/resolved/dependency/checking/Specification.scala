@@ -69,7 +69,7 @@ class Specification extends SourceElementIDsMap with ReverseMapping with UseIDOf
      */
     def ensembles = theEnsembles
 
-    // calculated after all class files have been loaded    
+    // calculated after all class files have been loaded
     private[this] var theOutgoingDependencies = Map[SourceElementID, Set[(SourceElementID, DependencyType)]]()
     /**
      * Mapping between a source element and those source elements it depends on.
@@ -217,7 +217,7 @@ class Specification extends SourceElementIDsMap with ReverseMapping with UseIDOf
     protected implicit def EnsembleToSourceElementMatcher(ensembleSymbol: Symbol): SourceElementsMatcher = {
         if (!ensembles.contains(ensembleSymbol))
             throw new SpecificationError("The ensemble: "+ensembleSymbol+" is not yet defined.")
-        
+
         ensembles(ensembleSymbol)._1
     }
 

@@ -397,6 +397,12 @@ final object ArrayType {
 
     def unapply(at: ArrayType): Option[FieldType] = Some(at.componentType)
 
+    def baseType(t: Type): Type = {
+        t match {
+            case at: ArrayType ⇒ at.baseType
+            case _             ⇒ t
+        }
+    }
 }
 
 
