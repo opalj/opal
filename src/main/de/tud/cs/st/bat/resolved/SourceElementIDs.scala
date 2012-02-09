@@ -73,7 +73,7 @@ trait SourceElementIDs {
      * the specified method. If the method does not yet has an associated id,
      * new id is created and returned.
      */
-    def sourceElementID(declaringObjectType: ObjectType, methodName: String, methodDescriptor: MethodDescriptor): Int
+    def sourceElementID(declaringReferenceType: ReferenceType, methodName: String, methodDescriptor: MethodDescriptor): Int
 
     final def sourceElementID(classFile: ClassFile): Int =
         sourceElementID(classFile.thisClass)
@@ -87,8 +87,8 @@ trait SourceElementIDs {
     final def sourceElementID(declaringClassFile: ClassFile, method: Method): Int =
         sourceElementID(declaringClassFile.thisClass, method)
 
-    final def sourceElementID(declaringObjectType: ObjectType, method: Method): Int = {
+    final def sourceElementID(declaringReferenceType: ReferenceType, method: Method): Int = {
         val Method(_, methodName, methodDescriptor, _) = method
-        sourceElementID(declaringObjectType, methodName, methodDescriptor)
+        sourceElementID(declaringReferenceType, methodName, methodDescriptor)
     }
 }

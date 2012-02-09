@@ -228,7 +228,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding{
 			</xsl:call-template>
 		</xsl:when>
 		<xsl:when test="$fet eq 'ushort_cp_index→methodref' or $fe/@type eq 'ushort_cp_index→interface_methodref'">
-			val (declaringClass,name,methodDescriptor) /*: (ObjectType,String,MethodDescriptor)*/ = cp(in.readUnsignedShort).asMethodref(cp) <xsl:if test="$fe/@id">// <xsl:value-of select="$fe/@id"/></xsl:if>
+			val (declaringClass,name,methodDescriptor) /*: (ReferenceType,String,MethodDescriptor)*/ = cp(in.readUnsignedShort).asMethodref(cp) <xsl:if test="$fe/@id">// <xsl:value-of select="$fe/@id"/></xsl:if>
 			val p<xsl:value-of select="$parameterId"/> = declaringClass
 			val p<xsl:value-of select="$parameterId+1"/> = name
 			val p<xsl:value-of select="$parameterId+2"/> = methodDescriptor

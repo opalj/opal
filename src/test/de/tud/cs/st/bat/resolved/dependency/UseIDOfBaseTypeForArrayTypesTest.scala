@@ -65,8 +65,8 @@ class UseIDOfBaseTypeForArrayTypesTest extends FlatSpec with ShouldMatchers with
             -1
         }
 
-        def sourceElementID(definingObjectType: ObjectType, methodName: String, methodDescriptor: MethodDescriptor): Int = {
-            extractedTypes += definingObjectType
+        def sourceElementID(definingReferenceType: ReferenceType, methodName: String, methodDescriptor: MethodDescriptor): Int = {
+            extractedTypes += definingReferenceType
             -1
         }
     }

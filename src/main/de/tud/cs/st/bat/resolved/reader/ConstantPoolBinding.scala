@@ -62,8 +62,10 @@ trait ConstantPoolBinding extends Constant_PoolReader {
         def asNameAndMethodDescriptor(implicit cp: Constant_Pool): (String, MethodDescriptor) = sys.error("conversion to name and method descriptor is not supported")
         def asConstantValue(implicit cp: Constant_Pool): ConstantValue[_] = sys.error("conversion to constant value is not supported")
         def asFieldref(implicit cp: Constant_Pool): (ObjectType, String, FieldType) = sys.error("conversion to field ref is not supported")
-        def asMethodref(implicit cp: Constant_Pool): (ObjectType, String, MethodDescriptor) = sys.error("conversion to method ref is not supported")
+        def asMethodref(implicit cp: Constant_Pool): (ReferenceType, String, MethodDescriptor) = sys.error("conversion to method ref is not supported")
+
         def asObjectType(implicit cp: Constant_Pool): ObjectType = sys.error("conversion to object type is not supported")
+        def asReferenceType(implicit cp: Constant_Pool): ReferenceType = sys.error("conversion to object type is not supported")
 
         def asNameAndType: CONSTANT_NameAndType_info = sys.error("conversion to name and type info is not supported")
     }
@@ -71,20 +73,9 @@ trait ConstantPoolBinding extends Constant_PoolReader {
     val Constant_Pool_EntryManifest: ClassManifest[Constant_Pool_Entry] = implicitly
 
     case class CONSTANT_Class_info(val name_index: Constant_Pool_Index) extends Constant_Pool_Entry {
-        override def asConstantValue(implicit cp: Constant_Pool) = {
-            ConstantClass(
-                {
-                    val s = name_index.asString
-                    if (s.charAt(0) == '[')
-                        FieldType(s).asInstanceOf[ReferenceType]
-                    else
-                        ObjectType(s)
-                }
-            )
-        }
-        override def asObjectType(implicit cp: Constant_Pool) = {
-            ObjectType(name_index.asString)
-        }
+        override def asConstantValue(implicit cp: Constant_Pool) = ConstantClass(asReferenceType)
+        override def asObjectType(implicit cp: Constant_Pool) = ObjectType(name_index.asString)
+        override def asReferenceType(implicit cp : Constant_Pool) = ReferenceType(name_index.asString)
     }
 
     case class CONSTANT_Double_info(value: ConstantDouble) extends Constant_Pool_Entry {
@@ -162,11 +153,11 @@ trait ConstantPoolBinding extends Constant_PoolReader {
         def class_index: Constant_Pool_Index
         def name_and_type_index: Constant_Pool_Index
 
-        private[this] var methodref: (ObjectType, String, MethodDescriptor) = null // to cache the result
-        override def asMethodref(implicit cp: Constant_Pool): (ObjectType, String, MethodDescriptor) = {
+        private[this] var methodref: (ReferenceType, String, MethodDescriptor) = null // to cache the result
+        override def asMethodref(implicit cp: Constant_Pool): (ReferenceType, String, MethodDescriptor) = {
             if (methodref eq null) {
                 val nameAndType = name_and_type_index.asNameAndType
-                methodref = (class_index.asObjectType,
+                methodref = (class_index.asReferenceType,
                     nameAndType.name,
                     nameAndType.methodDescriptor
                 )

@@ -129,6 +129,15 @@ sealed trait ReferenceType extends FieldType {
 
     override final def isReferenceType = true
 }
+object ReferenceType {
+
+    def apply(rt: String): ReferenceType = {
+        if (rt.charAt(0) == '[')
+            ArrayType(FieldType(rt.substring(1)))
+        else
+            ObjectType(rt);
+    }
+}
 
 sealed trait ByteType extends BaseType {
 

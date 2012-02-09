@@ -64,8 +64,8 @@ class DependenciesToPrimitiveTypesTest extends FlatSpec with ShouldMatchers with
                 -1
             }
 
-            def sourceElementID(definingObjectType: ObjectType, methodName: String, methodDescriptor: MethodDescriptor): Int = {
-                types += definingObjectType
+            def sourceElementID(definingReferenceType: ReferenceType, methodName: String, methodDescriptor: MethodDescriptor): Int = {
+                types += definingReferenceType
                 -1
             }
         }

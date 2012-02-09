@@ -118,11 +118,11 @@ class SourceElementIDsMap extends CategorizedSourceElementIDs {
 
     private var nextMethodID = LOWEST_METHOD_ID
 
-    private val methodIDs = WeakHashMap[ObjectType, WeakHashMap[MethodDescriptor, WeakHashMap[String, Int]]]()
+    private val methodIDs = WeakHashMap[ReferenceType, WeakHashMap[MethodDescriptor, WeakHashMap[String, Int]]]()
 
-    def sourceElementID(definingObjectType: ObjectType, methodName: String, methodDescriptor: MethodDescriptor): Int = {
+    def sourceElementID(definingReferenceType: ReferenceType, methodName: String, methodDescriptor: MethodDescriptor): Int = {
         methodIDs.
-            getOrElseUpdate(definingObjectType, { WeakHashMap[MethodDescriptor, WeakHashMap[String, Int]]() }).
+            getOrElseUpdate(definingReferenceType, { WeakHashMap[MethodDescriptor, WeakHashMap[String, Int]]() }).
             getOrElseUpdate(methodDescriptor, { WeakHashMap[String, Int]() }).
             getOrElseUpdate(methodName, { val id = nextMethodID; nextMethodID += 1; id })
     }

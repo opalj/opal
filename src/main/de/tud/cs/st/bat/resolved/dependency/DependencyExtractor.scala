@@ -506,7 +506,7 @@ abstract class DependencyExtractor(val sourceElementIDs: SourceElementIDs)
         catchType == null
 
     protected def processDependency(id: Int,
-                                    declaringClass: ObjectType,
+                                    declaringClass: ReferenceType,
                                     methodName: String,
                                     methodDescriptor: MethodDescriptor,
                                     dType: DependencyType) {

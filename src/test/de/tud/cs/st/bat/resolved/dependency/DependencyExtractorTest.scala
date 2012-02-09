@@ -73,8 +73,8 @@ class DependencyExtractorTest extends FunSuite {
             def sourceElementID(definingObjectType: ObjectType, fieldName: String): Int =
                 sourceElementID(getNameOfUnderlyingType(definingObjectType) + FIELD_AND_METHOD_SEPARATOR + fieldName)
 
-            def sourceElementID(definingObjectType: ObjectType, methodName: String, methodDescriptor: MethodDescriptor): Int =
-                sourceElementID(getNameOfUnderlyingType(definingObjectType) + FIELD_AND_METHOD_SEPARATOR + getMethodAsName(methodName, methodDescriptor))
+            def sourceElementID(definingReferenceType: ReferenceType, methodName: String, methodDescriptor: MethodDescriptor): Int =
+                sourceElementID(getNameOfUnderlyingType(definingReferenceType) + FIELD_AND_METHOD_SEPARATOR + getMethodAsName(methodName, methodDescriptor))
 
             private def getMethodAsName(methodName: String, methodDescriptor: MethodDescriptor): String = {
                 methodName+"("+methodDescriptor.parameterTypes.map(pT ⇒ getNameOfUnderlyingType(pT)).mkString(", ")+")"
