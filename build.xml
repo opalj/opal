@@ -46,7 +46,7 @@ Author 	Michael Eichberg (mail@michael-eichberg.de)
 	<property file="build.properties" />
 
 	<!-- General properties -->
-	<property name="version" value="1.6.0.R1" />
+	<property name="version" value="1.6.0.RC1" />
 
 
 	<!-- Directories which contain the project's source files. -->
