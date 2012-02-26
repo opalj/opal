@@ -72,9 +72,9 @@ class Specification extends SourceElementIDsMap with ReverseMapping with UseIDOf
     // calculated after all class files have been loaded
     private[this] var theOutgoingDependencies = Map[SourceElementID, Set[(SourceElementID, DependencyType)]]()
     /**
-     * Mapping between a source element and those source elements it depends on.
+     * Mapping between a source element and those source elements it depends on/uses.
      *
-     * This mapping is automatically created when calling analyze.
+     * This mapping is automatically created when analyze is called.
      */
     def outgoingDependencies = theOutgoingDependencies
 
@@ -83,7 +83,7 @@ class Specification extends SourceElementIDsMap with ReverseMapping with UseIDOf
     /**
      * Mapping between a source element and those source elements that depend on it.
      *
-     * This mapping is automatically created when calling analyze.
+     * This mapping is automatically created when analyze is called.
      */
     def incomingDependencies = theIncomingDependencies
 
