@@ -296,9 +296,12 @@ final class ObjectType private (val className: String) extends ReferenceType {
 
     override lazy val hashCode = className.hashCode * 43
 
-    override def equals(other: Any): Boolean = {
-        other.getClass == this.getClass() && other.asInstanceOf[ObjectType].className == this.className
-    }
+    override def equals(other: Any): Boolean =
+        other match {
+            case that: ObjectType =>
+                equals(that)
+            case _ => false
+        }
 
     def equals(other: ObjectType): Boolean = other.className == this.className
 
