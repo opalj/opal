@@ -41,12 +41,13 @@ package bugs;
  *
  * @author Michael Eichberg
  */
+@SuppressWarnings("all")
 public class A extends SuperA implements java.io.Serializable {
 
 	public A() {
 		super(100);
 		try {
-		System.gc();
+			System.gc();
 		} catch (IllegalMonitorStateException ims) {
 			ims.printStackTrace();
 		}
@@ -54,5 +55,6 @@ public class A extends SuperA implements java.io.Serializable {
 
 	public void finalize() {
 		System.out.println("Nothing to do...");
+		Runtime.runFinalizersOnExit(true);
 	}
 }

@@ -93,6 +93,12 @@ class ClassHierarchy(
      */
     def subclasses(objectType: ObjectType): Option[Set[ObjectType]] = subclasses.get(objectType)
 
+    def subtypes(objectType : ObjectType) : Option[Set[ObjectType]] = {
+        subclasses.get(objectType).map((t) => {
+             (subclasses.get(objectType).get /: t)(_ ++ subtypes(_).getOrElse(Set()))
+        })
+    }
+
     /**
      * The classes and interfaces from which the given type directly inherits.
      *

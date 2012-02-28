@@ -72,6 +72,8 @@ case class ClassFile(minorVersion: Int,
 
     override def asClassFile = this
 
+    def isAbstract : Boolean = ACC_ABSTRACT element_of accessFlags
+
     def isFinal: Boolean = ACC_FINAL element_of accessFlags
 
     def isPublic: Boolean = ACC_PUBLIC element_of accessFlags

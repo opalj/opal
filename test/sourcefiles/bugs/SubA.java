@@ -41,6 +41,7 @@ package bugs;
  *
  * @author Michael Eichberg
  */
+@SuppressWarnings("all")
 final public class SubA extends A {
 
 	protected int ANSWER = 42;

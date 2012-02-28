@@ -44,6 +44,16 @@ import reader.Java6Framework
  *
  * The implemented static analyses are inspired by Findbugs
  * (http://findbugs.sourceforge.net/bugDescriptions.html).
+ * <ul>
+ * <li> FINDBUGS: CI: Class is final but declares protected field (CI_CONFUSED_INHERITANCE) // http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/ConfusedInheritance.java</li>
+ * <li> FINDBUGS: UuF: Unused field (UUF_UNUSED_FIELD)</li>
+ * <li> FINDBUGS: Dm: Explicit garbage collection; extremely dubious except in benchmarking code (DM_GC)</li>
+ * <li>*FINDBUGS: Dm: Method invokes dangerous method runFinalizersOnExit (DM_RUN_FINALIZERS_ON_EXIT)</li>
+ * <li> FINDBUGS: FI: Finalizer should be protected, not public (FI_PUBLIC_SHOULD_BE_PROTECTED)</li>
+ * <li> FINDBUGS: Se: Class is Serializable but its superclass doesn't define a void constructor (SE_NO_SUITABLE_CONSTRUCTOR)</li>
+ * <li>*FINDBUGS: Eq: Abstract class defines covariant equals() method (EQ_ABSTRACT_SELF)</li>
+ * <li> FINDBUGS: (IMSE_DONT_CATCH_IMSE) http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/DontCatchIllegalMonitorStateException.java</li>
+ * </ul>
  *
  * @author Michael Eichberg
  */
@@ -52,7 +62,7 @@ object Main extends Main {
 
     private val CountingPerformanceEvaluator = new PerformanceEvaluation with Counting
     import CountingPerformanceEvaluator._
-    
+
     import de.tud.cs.st.util.perf._
 
     private def printUsage: Unit = {
@@ -106,27 +116,22 @@ object Main extends Main {
         }
         println("\tViolations: "+protectedFields.size)
 
-        // FINDBUGS: UuF: Unused field (UUF_UNUSED_FIELD)
-        var unusedFields: List[(ClassFile, Traversable[String])] = Nil
-        time(t ⇒ println("UUF_UNUSED_FIELD: "+nsToSecs(t))) {
-            for (classFile ← classFiles if !classFile.isInterfaceDeclaration) {
-                val declaringClass = classFile.thisClass
-                var privateFields = (for (field ← classFile.fields if field.isPrivate) yield field.name).toSet
+        // FINDBUGS: Co: Abstract class defines covariant compareTo() method (CO_ABSTRACT_SELF)
+        // FINDBUGS: Co: Covariant compareTo() method defined (CO_SELF_NO_OBJECT)
+        // This class defines a covariant version of compareTo().  To correctly override the compareTo() method in the Comparable interface, the parameter of compareTo() must have type java.lang.Object.
+        var covariantCompareToMethods = time(t ⇒ println("CO_SELF_NO_OBJECT/CO_ABSTRACT_SELF"+nsToSecs(t))) {
+            (
                 for (
-                    method ← classFile.methods if method.body.isDefined;
-                    instruction ← method.body.get.instructions
-                ) {
-                    instruction match {
-                        case GETFIELD(`declaringClass`, name, _)  ⇒ privateFields -= name
-                        case GETSTATIC(`declaringClass`, name, _) ⇒ privateFields -= name
-                        case _                                    ⇒
-                    }
-                }
-                if (privateFields.size > 0)
-                    unusedFields = (classFile, privateFields) :: unusedFields
-            }
+                    allComparables ← classHierarchy.subtypes(ObjectType("java/lang/Comparable"))
+                ) yield for (
+                    comparable ← allComparables;
+                    classFile ← getClassFile.get(comparable)
+                ) yield for (
+                    method @ Method(_, "compareTo", MethodDescriptor(Seq(parameterType), IntegerType), _) ← classFile.methods if parameterType != ObjectType("java/lang/Object")
+                ) yield Some(classFile, method)
+            )
         }
-        println("\tViolations: "+unusedFields.size)
+      //TODO  println("\tViolations: "+covariantCompareToMethods.getOrElse(Set()).size)
 
         // FINDBUGS: Dm: Explicit garbage collection; extremely dubious except in benchmarking code (DM_GC)
         var garbageCollectingMethods: List[(ClassFile, Method, Instruction)] = Nil
@@ -145,6 +150,35 @@ object Main extends Main {
             }
         }
         println("\tViolations: "+garbageCollectingMethods.size)
+
+        // FINDBUGS: Dm: Method invokes dangerous method runFinalizersOnExit (DM_RUN_FINALIZERS_ON_EXIT)
+        var methodsThatCallRunFinalizersOnExit: List[(ClassFile, Method, Instruction)] = Nil
+        time(t ⇒ println("DM_RUN_FINALIZERS_ON_EXIT: "+nsToSecs(t))) {
+            for (
+                classFile ← classFiles;
+                method ← classFile.methods if method.body.isDefined;
+                instruction ← method.body.get.instructions
+            ) {
+                instruction match {
+                    case INVOKESTATIC(ObjectType("java/lang/System"), "runFinalizersOnExit", MethodDescriptor(Seq(BooleanType), VoidType)) |
+                        INVOKESTATIC(ObjectType("java/lang/Runtime"), "runFinalizersOnExit", MethodDescriptor(Seq(BooleanType), VoidType)) ⇒
+                        methodsThatCallRunFinalizersOnExit = (classFile, method, instruction) :: methodsThatCallRunFinalizersOnExit
+                    case _ ⇒
+                }
+            }
+        }
+        println("\tViolations: "+methodsThatCallRunFinalizersOnExit.size)
+        //methodsThatCallRunFinalizersOnExit.foreach((t) => {println(t._1.thisClass.className+ " "+ t._2.name)});
+
+        // FINDBUGS: Eq: Abstract class defines covariant equals() method (EQ_ABSTRACT_SELF)
+        var abstractClassThatDefinesCovariantEquals = time(t ⇒ println("EQ_ABSTRACT_SELF: "+nsToSecs(t))) {
+            for (
+                classFile ← classFiles if classFile.isAbstract;
+                method @ Method(_, "equals", MethodDescriptor(Seq(parameterType), BooleanType), _) ← classFile.methods if parameterType != ObjectType("java/lang/Object")
+            ) yield (classFile, method);
+        }
+        println("\tViolations: "+abstractClassThatDefinesCovariantEquals.size)
+        //abstractClassThatDefinesCovariantEquals.foreach((t) => {println(t._1.thisClass.className+ " "+ t._2.name)});
 
         // FINDBUGS: FI: Finalizer should be protected, not public (FI_PUBLIC_SHOULD_BE_PROTECTED)
         var classesWithPublicFinalizeMethods = time(t ⇒ println("FI_PUBLIC_SHOULD_BE_PROTECTED: "+nsToSecs(t))) {
@@ -182,6 +216,28 @@ object Main extends Main {
             ) yield superclass // there can be at most one method
         }
         println("\tViolations: "+classesWithoutDefaultConstructor.size);
+
+        // FINDBUGS: UuF: Unused field (UUF_UNUSED_FIELD)
+        var unusedFields: List[(ClassFile, Traversable[String])] = Nil
+        time(t ⇒ println("UUF_UNUSED_FIELD: "+nsToSecs(t))) {
+            for (classFile ← classFiles if !classFile.isInterfaceDeclaration) {
+                val declaringClass = classFile.thisClass
+                var privateFields = (for (field ← classFile.fields if field.isPrivate) yield field.name).toSet
+                for (
+                    method ← classFile.methods if method.body.isDefined;
+                    instruction ← method.body.get.instructions
+                ) {
+                    instruction match {
+                        case GETFIELD(`declaringClass`, name, _)  ⇒ privateFields -= name
+                        case GETSTATIC(`declaringClass`, name, _) ⇒ privateFields -= name
+                        case _                                    ⇒
+                    }
+                }
+                if (privateFields.size > 0)
+                    unusedFields = (classFile, privateFields) :: unusedFields
+            }
+        }
+        println("\tViolations: "+unusedFields.size)
 
         // FINDBUGS: (IMSE_DONT_CATCH_IMSE) http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/DontCatchIllegalMonitorStateException.java
         val IllegalMonitorStateExceptionType = ObjectType("java/lang/IllegalMonitorStateException")

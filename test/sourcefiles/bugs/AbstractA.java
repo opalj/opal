@@ -41,17 +41,10 @@ package bugs;
  *
  * @author Michael Eichberg
  */
-@SuppressWarnings("all")
-public class SuperA {
+public abstract class AbstractA {
 
-	private int unused = -1;
-
-	public SuperA(int i) {
-		System.out.println(i);
+	public boolean equals(SuperA obj) {
+		return super.equals(obj);
 	}
 
-	public void finalize() {
-		System.out.println("Nothing to do...");
-		System.runFinalizersOnExit(true);
-	}
 }
