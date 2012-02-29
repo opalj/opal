@@ -41,10 +41,15 @@ package bugs;
  *
  * @author Michael Eichberg
  */
-public abstract class AbstractA {
+public abstract class AbstractA implements Comparable<Integer> {
 
 	public boolean equals(SuperA obj) {
 		return super.equals(obj);
+	}
+
+	@Override
+	public int compareTo(Integer o) {
+		return 0;
 	}
 
 }

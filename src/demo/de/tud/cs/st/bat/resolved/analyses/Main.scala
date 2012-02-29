@@ -46,6 +46,8 @@ import reader.Java6Framework
  * (http://findbugs.sourceforge.net/bugDescriptions.html).
  * <ul>
  * <li> FINDBUGS: CI: Class is final but declares protected field (CI_CONFUSED_INHERITANCE) // http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/ConfusedInheritance.java</li>
+ * <li>*FINDBUGS: Co: Abstract class defines covariant compareTo() method (CO_ABSTRACT_SELF)</li>
+   <li>*FINDBUGS: Co: Covariant compareTo() method defined (CO_SELF_NO_OBJECT)</li>
  * <li> FINDBUGS: UuF: Unused field (UUF_UNUSED_FIELD)</li>
  * <li> FINDBUGS: Dm: Explicit garbage collection; extremely dubious except in benchmarking code (DM_GC)</li>
  * <li>*FINDBUGS: Dm: Method invokes dangerous method runFinalizersOnExit (DM_RUN_FINALIZERS_ON_EXIT)</li>
@@ -120,18 +122,23 @@ object Main extends Main {
         // FINDBUGS: Co: Covariant compareTo() method defined (CO_SELF_NO_OBJECT)
         // This class defines a covariant version of compareTo().  To correctly override the compareTo() method in the Comparable interface, the parameter of compareTo() must have type java.lang.Object.
         var covariantCompareToMethods = time(t ⇒ println("CO_SELF_NO_OBJECT/CO_ABSTRACT_SELF"+nsToSecs(t))) {
-            (
-                for (
-                    allComparables ← classHierarchy.subtypes(ObjectType("java/lang/Comparable"))
-                ) yield for (
-                    comparable ← allComparables;
-                    classFile ← getClassFile.get(comparable)
-                ) yield for (
-                    method @ Method(_, "compareTo", MethodDescriptor(Seq(parameterType), IntegerType), _) ← classFile.methods if parameterType != ObjectType("java/lang/Object")
-                ) yield Some(classFile, method)
-            )
+        	// Weakness: In a project, where we extend a predefined class (of the JDK) that
+            // inherits from Comparable and in which we define covariant comparesTo method,
+            // we will not be able to identify this issue unless we have identified the whole
+            // class hierarchy.
+            // Note: Most of the complexity of the following analysis is required to deal
+            // with the situation where we only see a partial class hierarchy!
+            classHierarchy.subtypes(ObjectType("java/lang/Comparable")).map((allComparables) ⇒ {
+                (Set[(ClassFile,Method)]()  /: allComparables)((violations,comparable) ⇒ {
+                    violations ++ getClassFile.get(comparable).map((classFile) ⇒ {
+                        for (
+                            method @ Method(_, "compareTo", MethodDescriptor(Seq(parameterType), IntegerType), _) ← classFile.methods if parameterType != ObjectType("java/lang/Object")
+                        ) yield {(classFile, method)}
+                    }).getOrElse(Set())
+                })
+            })
         }
-      //TODO  println("\tViolations: "+covariantCompareToMethods.getOrElse(Set()).size)
+        println("\tViolations: "+covariantCompareToMethods.getOrElse(Set()).size)
 
         // FINDBUGS: Dm: Explicit garbage collection; extremely dubious except in benchmarking code (DM_GC)
         var garbageCollectingMethods: List[(ClassFile, Method, Instruction)] = Nil
