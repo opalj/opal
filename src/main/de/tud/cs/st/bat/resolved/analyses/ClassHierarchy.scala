@@ -94,9 +94,17 @@ class ClassHierarchy(
     def subclasses(objectType: ObjectType): Option[Set[ObjectType]] = subclasses.get(objectType)
 
     def subtypes(objectType : ObjectType) : Option[Set[ObjectType]] = {
+        subclasses.get(objectType).map(t =>
+          for {
+            subclass <- subclasses.get(objectType).get
+            subtype <- subtypes(subclass).getOrElse(Set()) + subclass
+          } yield subtype)
+
+        /*
         subclasses.get(objectType).map((t) => {
              (subclasses.get(objectType).get /: t)(_ ++ subtypes(_).getOrElse(Set()))
         })
+        */
     }
 
     /**
