@@ -48,6 +48,7 @@ import reader.Java6Framework
  * <li>0-FINDBUGS: CI: Class is final but declares protected field (CI_CONFUSED_INHERITANCE) // http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/ConfusedInheritance.java</li>
  * <li>2-FINDBUGS: CN: Class implements Cloneable but does not define or use clone method (CN_IDIOM)</li>
  * <li>2-FINDBUGS: CN: clone method does not call super.clone() (CN_IDIOM_NO_SUPER_CALL)</li>
+ * <li>2-FINDBUGS: CN: Class defines clone() but doesn't implement Cloneable (CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE)
  * <li>1-FINDBUGS: Co: Abstract class defines covariant compareTo() method (CO_ABSTRACT_SELF)</li>
  * <li>1-FINDBUGS: Co: Covariant compareTo() method defined (CO_SELF_NO_OBJECT)</li>
  * <li>0-FINDBUGS: UuF: Unused field (UUF_UNUSED_FIELD)</li>
@@ -127,30 +128,40 @@ object Main extends Main {
             for {
                 allCloneable ← classHierarchy.subtypes(ObjectType("java/lang/Cloneable")).toList
                 cloneable ← allCloneable
-                classFile ← getClassFile.get(cloneable).toList if !classFile.methods.exists(
-                    {
-                        case Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object), _) ⇒ true;
-                        case _ ⇒ false;
-                    }
-                )
+                classFile ← getClassFile.get(cloneable).toList
+                if !classFile.methods.exists({
+                    case Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object), _) ⇒ true;
+                    case _ ⇒ false;
+                })
             } yield classFile.thisClass.className
         }
-        println("\tViolations: "+ cloneableNoClone.size)
+        println("\tViolations: "+cloneableNoClone.size)
 
         // FINDBUGS: CN: clone method does not call super.clone() (CN_IDIOM_NO_SUPER_CALL)
         var cloneDoesNotCallSuperClone = time(t ⇒ println("CN_IDIOM_NO_SUPER_CALL: "+nsToSecs(t))) {
             for {
-                classFile ← classFiles if !classFile.isInterfaceDeclaration && !classFile.isAnnotationDeclaration && classFile.superClass.isDefined
-                method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object), _) ← classFile.methods if !method.isAbstract
-                body ← method.body.toList if !body.instructions.find(
-                    {
-                        case INVOKESPECIAL(superClass, "clone", MethodDescriptor(Seq(), ObjectType.Object)) ⇒ true;
-                        case _ ⇒ false;
-                    }
-                ).isDefined
+                classFile ← classFiles
+                if !classFile.isInterfaceDeclaration && !classFile.isAnnotationDeclaration
+                if classFile.superClass.isDefined
+                method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object), _) ← classFile.methods
+                if !method.isAbstract
+                if !method.body.get.instructions.exists({
+                    case INVOKESPECIAL(superClass, "clone", MethodDescriptor(Seq(), ObjectType.Object)) ⇒ true;
+                    case _ ⇒ false;
+                })
             } yield (classFile, method)
         }
         println("\tViolations: "+cloneDoesNotCallSuperClone.size)
+
+        // FINDBUGS: CN: Class defines clone() but doesn't implement Cloneable (CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE)
+        var cloneButNotCloneable = time(t ⇒ println("CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE: "+nsToSecs(t))) {
+            for {
+                classFile ← classFiles if !classFile.isAnnotationDeclaration && classFile.superClass.isDefined
+                method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object), _) ← classFile.methods
+                if !classHierarchy.isSubtypeOf(classFile.thisClass, ObjectType("java/lang/Cloneable")).getOrElse(false)
+            } yield (classFile.thisClass.className, method.name)
+        }
+        println("\tViolations: " /*+cloneButNotCloneable.mkString(", ")*/ +cloneButNotCloneable.size)
 
         // FINDBUGS: Co: Abstract class defines covariant compareTo() method (CO_ABSTRACT_SELF)
         // FINDBUGS: Co: Covariant compareTo() method defined (CO_SELF_NO_OBJECT)
