@@ -362,6 +362,8 @@ object ObjectType {
         else
             className.substring(0, index)
     }
+
+    val Object = ObjectType("java/lang/Object")
 }
 
 final class ArrayType private (val componentType: FieldType) extends ReferenceType {

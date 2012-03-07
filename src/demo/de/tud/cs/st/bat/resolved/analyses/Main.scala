@@ -45,16 +45,18 @@ import reader.Java6Framework
  * The implemented static analyses are inspired by Findbugs
  * (http://findbugs.sourceforge.net/bugDescriptions.html).
  * <ul>
- * <li> FINDBUGS: CI: Class is final but declares protected field (CI_CONFUSED_INHERITANCE) // http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/ConfusedInheritance.java</li>
- * <li>*FINDBUGS: Co: Abstract class defines covariant compareTo() method (CO_ABSTRACT_SELF)</li>
- * <li>*FINDBUGS: Co: Covariant compareTo() method defined (CO_SELF_NO_OBJECT)</li>
- * <li> FINDBUGS: UuF: Unused field (UUF_UNUSED_FIELD)</li>
- * <li> FINDBUGS: Dm: Explicit garbage collection; extremely dubious except in benchmarking code (DM_GC)</li>
- * <li>*FINDBUGS: Dm: Method invokes dangerous method runFinalizersOnExit (DM_RUN_FINALIZERS_ON_EXIT)</li>
- * <li> FINDBUGS: FI: Finalizer should be protected, not public (FI_PUBLIC_SHOULD_BE_PROTECTED)</li>
- * <li> FINDBUGS: Se: Class is Serializable but its superclass doesn't define a void constructor (SE_NO_SUITABLE_CONSTRUCTOR)</li>
- * <li>*FINDBUGS: Eq: Abstract class defines covariant equals() method (EQ_ABSTRACT_SELF)</li>
- * <li> FINDBUGS: (IMSE_DONT_CATCH_IMSE) http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/DontCatchIllegalMonitorStateException.java</li>
+ * <li>0-FINDBUGS: CI: Class is final but declares protected field (CI_CONFUSED_INHERITANCE) // http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/ConfusedInheritance.java</li>
+ * <li>2-FINDBUGS: CN: Class implements Cloneable but does not define or use clone method (CN_IDIOM)</li>
+ * <li>2-FINDBUGS: CN: clone method does not call super.clone() (CN_IDIOM_NO_SUPER_CALL)</li>
+ * <li>1-FINDBUGS: Co: Abstract class defines covariant compareTo() method (CO_ABSTRACT_SELF)</li>
+ * <li>1-FINDBUGS: Co: Covariant compareTo() method defined (CO_SELF_NO_OBJECT)</li>
+ * <li>0-FINDBUGS: UuF: Unused field (UUF_UNUSED_FIELD)</li>
+ * <li>0-FINDBUGS: Dm: Explicit garbage collection; extremely dubious except in benchmarking code (DM_GC)</li>
+ * <li>1-FINDBUGS: Dm: Method invokes dangerous method runFinalizersOnExit (DM_RUN_FINALIZERS_ON_EXIT)</li>
+ * <li>0-FINDBUGS: FI: Finalizer should be protected, not public (FI_PUBLIC_SHOULD_BE_PROTECTED)</li>
+ * <li>0-FINDBUGS: Se: Class is Serializable but its superclass doesn't define a void constructor (SE_NO_SUITABLE_CONSTRUCTOR)</li>
+ * <li>1-FINDBUGS: Eq: Abstract class defines covariant equals() method (EQ_ABSTRACT_SELF)</li>
+ * <li>0-FINDBUGS: (IMSE_DONT_CATCH_IMSE) http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/DontCatchIllegalMonitorStateException.java</li>
  * </ul>
  *
  * @author Michael Eichberg
@@ -118,10 +120,42 @@ object Main extends Main {
         }
         println("\tViolations: "+protectedFields.size)
 
+        // FINDBUGS: CN: Class implements Cloneable but does not define or use clone method (CN_IDIOM)
+        var cloneableNoClone = time(t ⇒ println("CN_IDIOM: "+nsToSecs(t))) {
+            // Weakness: We will not identify cloneable classes in projects, where we extend a predefined
+            // class (of the JDK) that indirectly inherits from Cloneable.
+            for {
+                allCloneable ← classHierarchy.subtypes(ObjectType("java/lang/Cloneable")).toList
+                cloneable ← allCloneable
+                classFile ← getClassFile.get(cloneable).toList if !classFile.methods.exists(
+                    {
+                        case Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object), _) ⇒ true;
+                        case _ ⇒ false;
+                    }
+                )
+            } yield classFile.thisClass.className
+        }
+        println("\tViolations: "+ cloneableNoClone.size)
+
+        // FINDBUGS: CN: clone method does not call super.clone() (CN_IDIOM_NO_SUPER_CALL)
+        var cloneDoesNotCallSuperClone = time(t ⇒ println("CN_IDIOM_NO_SUPER_CALL: "+nsToSecs(t))) {
+            for {
+                classFile ← classFiles if !classFile.isInterfaceDeclaration && !classFile.isAnnotationDeclaration && classFile.superClass.isDefined
+                method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object), _) ← classFile.methods if !method.isAbstract
+                body ← method.body.toList if !body.instructions.find(
+                    {
+                        case INVOKESPECIAL(superClass, "clone", MethodDescriptor(Seq(), ObjectType.Object)) ⇒ true;
+                        case _ ⇒ false;
+                    }
+                ).isDefined
+            } yield (classFile, method)
+        }
+        println("\tViolations: "+cloneDoesNotCallSuperClone.size)
+
         // FINDBUGS: Co: Abstract class defines covariant compareTo() method (CO_ABSTRACT_SELF)
         // FINDBUGS: Co: Covariant compareTo() method defined (CO_SELF_NO_OBJECT)
         // This class defines a covariant version of compareTo().  To correctly override the compareTo() method in the Comparable interface, the parameter of compareTo() must have type java.lang.Object.
-        var covariantCompareToMethods = time(t ⇒ println("CO_SELF_NO_OBJECT/CO_ABSTRACT_SELF"+nsToSecs(t))) {
+        var covariantCompareToMethods = time(t ⇒ println("CO_SELF_NO_OBJECT/CO_ABSTRACT_SELF: "+nsToSecs(t))) {
             // Weakness: In a project, where we extend a predefined class (of the JDK) that
             // inherits from Comparable and in which we define covariant comparesTo method,
             // we will not be able to identify this issue unless we have identified the whole
@@ -132,15 +166,6 @@ object Main extends Main {
                 classFile ← getClassFile.get(comparable).toList
                 method @ Method(_, "compareTo", MethodDescriptor(Seq(parameterType), IntegerType), _) ← classFile.methods if parameterType != ObjectType("java/lang/Object")
             } yield (classFile, method)
-            //            classHierarchy.subtypes(ObjectType("java/lang/Comparable")).map((allComparables) ⇒ {
-            //                (Set[(ClassFile, Method)]() /: allComparables)((violations, comparable) ⇒ {
-            //                    violations ++ getClassFile.get(comparable).map((classFile) ⇒ {
-            //                        for (
-            //                            method @ Method(_, "compareTo", MethodDescriptor(Seq(parameterType), IntegerType), _) ← classFile.methods if parameterType != ObjectType("java/lang/Object")
-            //                        ) yield { (classFile, method) }
-            //                    }).getOrElse(Set())
-            //                })
-            //            }).toList
         }
         println("\tViolations: "+covariantCompareToMethods.size)
 

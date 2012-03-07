@@ -64,6 +64,8 @@ case class Method(accessFlags: Int,
 
     def isStrict: Boolean = ACC_STRICT element_of accessFlags
 
+    def isAbstract : Boolean = ACC_ABSTRACT element_of accessFlags
+
     /**
      * This method's implementation (if it is not abstract).
      */
