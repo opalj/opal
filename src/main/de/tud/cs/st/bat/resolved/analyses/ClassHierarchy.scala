@@ -93,16 +93,23 @@ class ClassHierarchy(
      */
     def subclasses(objectType: ObjectType): Option[Set[ObjectType]] = subclasses.get(objectType)
 
-    def subtypes(objectType : ObjectType) : Option[Set[ObjectType]] = {
-        subclasses.get(objectType).map(t =>
+    /**
+     * The set of all classes (and interfaces) that inherit from the given type.
+     *
+     * @see subclasses(ObjectType) For general remarks about the precision of
+     * the analysis.
+     * @return The set of all direct and indirect subtypes of the given type.
+     */
+    def subtypes(objectType: ObjectType): Option[Set[ObjectType]] = {
+        subclasses.get(objectType).map(t ⇒
           for {
             subclass <- subclasses.get(objectType).get
             subtype <- subtypes(subclass).getOrElse(Set()) + subclass
           } yield subtype)
 
         /*
-        subclasses.get(objectType).map((t) => {
-             (subclasses.get(objectType).get /: t)(_ ++ subtypes(_).getOrElse(Set()))
+        subclasses.get(objectType).map((t) ⇒ {
+            (subclasses.get(objectType).get /: t)(_ ++ subtypes(_).getOrElse(Set()))
         })
         */
     }
@@ -125,6 +132,36 @@ class ClassHierarchy(
      */
     def superclasses(objectType: ObjectType): Option[Set[ObjectType]] =
         superclasses.get(objectType)
+
+    def isSubtypeOf(currentType: ObjectType, superType: ObjectType): Option[Boolean] = {
+        if (currentType == superType) {
+            Some(true);
+        }
+        else {
+            // If we don't have the complete hierarchy available and we
+            // are not able to identify that the current type is actually
+            // a subtype of the given type (superType) and if we find a
+            // type for which we have not seen the class file, the
+            // analysis is considered to be not conclusive.
+            var nonConclusive = false;
+            for {
+                superclasses ← superclasses.get(currentType).toList
+                superclass ← superclasses
+            } {
+                isSubtypeOf(superclass, superType) match {
+                    case Some(false)        ⇒ ;
+                    case found @ Some(true) ⇒ return found;
+                    case None               ⇒ nonConclusive = true;
+                }
+            }
+            if (nonConclusive) {
+                None
+            }
+            else {
+                Some(false)
+            }
+        }
+    }
 
     /**
      * The classes and interfaces from which the given types directly inherit.
