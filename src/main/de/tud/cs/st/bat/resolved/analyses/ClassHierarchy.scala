@@ -103,10 +103,10 @@ class ClassHierarchy(
     def subtypes(objectType: ObjectType): Option[Set[ObjectType]] = {
         val theSubclasses = subclasses.get(objectType)
         theSubclasses.map(t ⇒
-          for {
-            subclass <- theSubclasses.get
-            subtype <- subtypes(subclass).getOrElse(Set()) + subclass
-          } yield subtype)
+            for {
+                subclass ← theSubclasses.get
+                subtype ← subtypes(subclass).getOrElse(Set()) + subclass
+            } yield subtype)
 
         /*
         subclasses.get(objectType).map((t) ⇒ {
