@@ -101,9 +101,17 @@ class ClassHierarchy(
      * @return The set of all direct and indirect subtypes of the given type.
      */
     def subtypes(objectType: ObjectType): Option[Set[ObjectType]] = {
+        subclasses.get(objectType).map(t ⇒
+          for {
+            subclass <- subclasses.get(objectType).get
+            subtype <- subtypes(subclass).getOrElse(Set()) + subclass
+          } yield subtype)
+
+        /*
         subclasses.get(objectType).map((t) ⇒ {
             (subclasses.get(objectType).get /: t)(_ ++ subtypes(_).getOrElse(Set()))
         })
+        */
     }
 
     /**
