@@ -102,10 +102,10 @@ class ClassHierarchy(
      */
     def subtypes(objectType: ObjectType): Option[Set[ObjectType]] = {
         subclasses.get(objectType).map(t ⇒
-          for {
-            subclass <- subclasses.get(objectType).get
-            subtype <- subtypes(subclass).getOrElse(Set()) + subclass
-          } yield subtype)
+            for {
+                subclass ← subclasses.get(objectType).get
+                subtype ← subtypes(subclass).getOrElse(Set()) + subclass
+            } yield subtype)
 
         /*
         subclasses.get(objectType).map((t) ⇒ {
@@ -133,14 +133,23 @@ class ClassHierarchy(
     def superclasses(objectType: ObjectType): Option[Set[ObjectType]] =
         superclasses.get(objectType)
 
-    def isSubtypeOf(currentType: ObjectType, superType: ObjectType): Option[Boolean] = {
-        if (currentType == superType) {
+    /**
+     * Determines if a given type is a subtype of another given type.
+     *
+     * @return Some(true) if currentType is a subtype of supertype. Some(false)
+     * if currentType is not a subtype of supertype and None if the analysis is
+     * not conclusive. The latter can happen if the class hierarchy is not
+     * completely available and hence precise information about a type's supertype
+     * are not available.
+     */
+    def isSubtypeOf(currentType: ObjectType, supertype: ObjectType): Option[Boolean] = {
+        if (currentType == supertype) {
             Some(true);
         }
         else {
             // If we don't have the complete hierarchy available and we
             // are not able to identify that the current type is actually
-            // a subtype of the given type (superType) and if we find a
+            // a subtype of the given type (supertype) and if we find a
             // type for which we have not seen the class file, the
             // analysis is considered to be not conclusive.
             var nonConclusive = false;
@@ -148,10 +157,12 @@ class ClassHierarchy(
                 superclasses ← superclasses.get(currentType).toList
                 superclass ← superclasses
             } {
-                isSubtypeOf(superclass, superType) match {
-                    case Some(false)        ⇒ ;
+                isSubtypeOf(superclass, supertype) match {
+                    case Some(false)        ⇒ /* let's continue the search */ ;
                     case found @ Some(true) ⇒ return found;
-                    case None               ⇒ nonConclusive = true;
+                    case None ⇒
+                        /* It is still possible that we are able to determine that currentType is a subtype of supertype. */
+                        nonConclusive = true;
                 }
             }
             if (nonConclusive) {
