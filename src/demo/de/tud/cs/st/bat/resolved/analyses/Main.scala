@@ -51,12 +51,12 @@ import reader.Java6Framework
  * <li>2-FINDBUGS: CN: Class defines clone() but doesn't implement Cloneable (CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE)
  * <li>1-FINDBUGS: Co: Abstract class defines covariant compareTo() method (CO_ABSTRACT_SELF)</li>
  * <li>1-FINDBUGS: Co: Covariant compareTo() method defined (CO_SELF_NO_OBJECT)</li>
- * <li>0-FINDBUGS: UuF: Unused field (UUF_UNUSED_FIELD)</li>
  * <li>0-FINDBUGS: Dm: Explicit garbage collection; extremely dubious except in benchmarking code (DM_GC)</li>
  * <li>1-FINDBUGS: Dm: Method invokes dangerous method runFinalizersOnExit (DM_RUN_FINALIZERS_ON_EXIT)</li>
+ * <li>1-FINDBUGS: Eq: Abstract class defines covariant equals() method (EQ_ABSTRACT_SELF)</li>
  * <li>0-FINDBUGS: FI: Finalizer should be protected, not public (FI_PUBLIC_SHOULD_BE_PROTECTED)</li>
  * <li>0-FINDBUGS: Se: Class is Serializable but its superclass doesn't define a void constructor (SE_NO_SUITABLE_CONSTRUCTOR)</li>
- * <li>1-FINDBUGS: Eq: Abstract class defines covariant equals() method (EQ_ABSTRACT_SELF)</li>
+ * <li>0-FINDBUGS: UuF: Unused field (UUF_UNUSED_FIELD)</li>
  * <li>0-FINDBUGS: (IMSE_DONT_CATCH_IMSE) http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/DontCatchIllegalMonitorStateException.java</li>
  * </ul>
  *
