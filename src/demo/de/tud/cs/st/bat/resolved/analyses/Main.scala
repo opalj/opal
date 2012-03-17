@@ -142,16 +142,16 @@ object Main extends Main {
             for {
                 classFile ← classFiles
                 if !classFile.isInterfaceDeclaration && !classFile.isAnnotationDeclaration
-                if classFile.superClass.isDefined
+                superClass <- classFile.superClass.toList
                 method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object), _) ← classFile.methods
                 if !method.isAbstract
                 if !method.body.get.instructions.exists({
-                    case INVOKESPECIAL(superClass, "clone", MethodDescriptor(Seq(), ObjectType.Object)) ⇒ true;
+                    case INVOKESPECIAL(`superClass`, "clone", MethodDescriptor(Seq(), ObjectType.Object)) ⇒ true;
                     case _ ⇒ false;
                 })
-            } yield (classFile, method)
+            } yield (classFile/*.thisClass.className*/, method/*.name*/)
         }
-        println("\tViolations: "+cloneDoesNotCallSuperClone.size)
+        println("\tViolations: "+cloneDoesNotCallSuperClone.size/*+": "+cloneDoesNotCallSuperClone.mkString("; ")*/)
 
         // FINDBUGS: CN: Class defines clone() but doesn't implement Cloneable (CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE)
         var cloneButNotCloneable = time(t ⇒ println("CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE: "+nsToSecs(t))) {
