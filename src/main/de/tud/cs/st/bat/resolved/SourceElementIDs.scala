@@ -50,10 +50,10 @@ trait SourceElementIDs {
 
     /**
      * Returns the ID associated with the given type. This ID uniquely identifies this
-     * type declaration. If the type does not yet has an associated id,
+     * type declaration. If the type does not yet has an associated id, a
      * new id is created and returned.
      *
-     * ==
+     * ==Usage==
      * Called, e.g., by the [[de.tud.cs.st.bat.resolved.dependency.DependencyExtractor]] to get the id of
      * a specific type.
      *
