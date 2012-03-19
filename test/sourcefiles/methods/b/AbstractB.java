@@ -13,9 +13,9 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- *  - Neither the name of the Software Technology Group or Technische
- *    Universität Darmstadt nor the names of its contributors may be used to
- *    endorse or promote products derived from this software without specific
+ *  - Neither the name of the Software Technology Group or Technische 
+ *    Universität Darmstadt nor the names of its contributors may be used to 
+ *    endorse or promote products derived from this software without specific 
  *    prior written permission.
  *
  *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -30,54 +30,18 @@
  *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-package dependencies;
-
-import java.io.FilterInputStream;
-import java.io.InputStream;
-import java.util.zip.InflaterInputStream;
-import java.util.zip.ZipInputStream;
+package methods.b;
 
 /**
- * @author Thomas Schlosser
- *
+ * This class was used to create a class file with some well defined issues. The
+ * created class is subsequently used by several tests.
+ * 
+ * NOTE<br />
+ * This class is not meant to be (automatically) recompiled; it just serves
+ * documentation purposes.
+ * 
+ * @author Michael Eichberg
  */
-public class InstructionsTestClass {
-	public Object field;
-	public static InputStream staticField;
+public abstract class AbstractB implements SomeSubInterface {
 
-	public void method() {
-		// NEW and INVOKESPECIAL (constructor call)
-		Object obj = new Object();
-		FilterInputStream stream = null;
-		// ANEWARRAY
-		obj = new Long[1];
-		// MULTIANEWARRAY
-		obj = new Integer[1][];
-
-		// PUTFIELD
-		field = obj;
-		// GETFIELD
-		obj = field;
-		// INSTANCEOF
-		if (obj instanceof ZipInputStream) {
-			// CHECKCAST
-			stream = (InflaterInputStream) obj;
-			// PUTSTATIC
-			staticField = stream;
-			// GETSTATIC
-			obj = staticField;
-		}
-
-		// INVOKESTATIC
-		System.currentTimeMillis();
-
-		TestInterface ti = new TestClass();
-		// INVOKEINTERFACE
-		ti.testMethod();
-
-		// INVOKEVIRTUAL
-		obj.equals(stream);
-
-		// TODO [Java 7] add test for INVOKEDYNAMIC
-	}
 }

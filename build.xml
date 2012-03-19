@@ -340,6 +340,7 @@ Author 	Michael Eichberg (mail@michael-eichberg.de)
 			<suite classname="de.tud.cs.st.bat.resolved.AttributesTest" />
 			<suite classname="de.tud.cs.st.bat.resolved.SourceElementIDsTest" />
 			<suite classname="de.tud.cs.st.bat.resolved.reader.SignaturesTest" />
+			<suite classname="de.tud.cs.st.bat.resolved.analyses.ProjectTest" />
 			<suite classname="de.tud.cs.st.bat.resolved.dependency.DependencyExtractorTest" />
 			<suite classname="de.tud.cs.st.bat.resolved.dependency.UseIDOfBaseTypeForArrayTypesTest" />
 			<suite classname="de.tud.cs.st.bat.resolved.dependency.DependenciesToPrimitiveTypesTest" />
