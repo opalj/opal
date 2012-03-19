@@ -48,16 +48,30 @@ import methods.b.B;
 public class User {
 
 	public static void main(String[] args) {
+		first();
+		second();
+		third();
+	}
 
-		Super asuper = new Super();
+	private static void third() {
+		System.out.println("3");
 		DirectSub adsub = new DirectSub();
 		IndirectSub aidsub = new IndirectSub();
-
-		B b = new B();
-		methods.b.DirectSub bdsub = new methods.b.DirectSub();
-
 		((Super) aidsub).defaultVisibilityMethod();
 		new SubIndirectSub().defaultVisibilityMethod();
+	}
+
+	private static void second() {
+		System.out.println("2");
+		B b = new B();
+		methods.b.DirectSub bdsub = new methods.b.DirectSub();
+		((Super)b).defaultVisibilityMethod(); // calls "Super's default visibility method using invokevirtual
+	}
+
+	private static void first() {
+		System.out.println("1");
+		Super asuper = new Super();
+		asuper.defaultVisibilityMethod();
 	}
 
 }

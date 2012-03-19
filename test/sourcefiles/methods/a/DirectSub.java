@@ -49,7 +49,7 @@ public class DirectSub extends Super {
 	}
 
 	void defaultVisibilityMethod() {
-		// empty
+		super.defaultVisibilityMethod();
 	}
 
 	private void privateMethod() {

@@ -33,27 +33,31 @@
 package methods.a;
 
 /**
- * This class was used to create a class file with some well defined issues. The created class is
- * subsequently used by several tests.
- *
+ * This class was used to create a class file with some well defined issues. The
+ * created class is subsequently used by several tests.
+ * 
  * NOTE<br />
- * This class is not meant to be (automatically) recompiled; it just serves documentation purposes.
- *
+ * This class is not meant to be (automatically) recompiled; it just serves
+ * documentation purposes.
+ * 
  * @author Michael Eichberg
  */
 @SuppressWarnings("all")
 public class Super {
 
-	public void publicMethod(){
+	public void publicMethod() {
 		// empty
 	}
 
-	
-	void defaultVisibilityMethod(){
+	void defaultVisibilityMethod() {
 		System.out.println("Super.defaultVisibilityMethod()");
 	}
-	
-	private void privateMethod(){
+
+	void anotherDefaultVisibilityMethod() {
+		System.out.println("Super.anotherDefaultVisibilityMethod()");
+	}
+
+	private void privateMethod() {
 		// empty
 	}
 }
