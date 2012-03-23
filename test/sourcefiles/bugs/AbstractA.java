@@ -47,6 +47,8 @@ public abstract class AbstractA implements Comparable<Integer> {
 		return super.equals(obj);
 	}
 
+	public abstract boolean equals(AbstractA obj);
+
 	@Override
 	public int compareTo(Integer o) {
 		return 0;
