@@ -103,7 +103,10 @@ object Main extends Main {
 
         var classFilesCount = 0
         val classFiles = time(t ⇒ println("Reading all class files took: "+nsToSecs(t))) {
-            for (zipFile ← zipFiles; classFile ← Java6Framework.ClassFiles(zipFile)) yield {
+            for (
+                zipFile ← zipFiles if { println("Reading: "+zipFile); true };
+                classFile ← Java6Framework.ClassFiles(zipFile)
+            ) yield {
                 classFilesCount += 1
                 classHierarchy = classHierarchy + classFile
                 classFile
@@ -142,16 +145,16 @@ object Main extends Main {
             for {
                 classFile ← classFiles
                 if !classFile.isInterfaceDeclaration && !classFile.isAnnotationDeclaration
-                superClass <- classFile.superClass.toList
+                superClass ← classFile.superClass.toList
                 method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object), _) ← classFile.methods
                 if !method.isAbstract
                 if !method.body.get.instructions.exists({
                     case INVOKESPECIAL(`superClass`, "clone", MethodDescriptor(Seq(), ObjectType.Object)) ⇒ true;
                     case _ ⇒ false;
                 })
-            } yield (classFile/*.thisClass.className*/, method/*.name*/)
+            } yield (classFile /*.thisClass.className*/ , method /*.name*/ )
         }
-        println("\tViolations: "+cloneDoesNotCallSuperClone.size/*+": "+cloneDoesNotCallSuperClone.mkString("; ")*/)
+        println("\tViolations: "+cloneDoesNotCallSuperClone.size /*+": "+cloneDoesNotCallSuperClone.mkString("; ")*/ )
 
         // FINDBUGS: CN: Class defines clone() but doesn't implement Cloneable (CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE)
         var cloneButNotCloneable = time(t ⇒ println("CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE: "+nsToSecs(t))) {
@@ -217,15 +220,23 @@ object Main extends Main {
         println("\tViolations: "+methodsThatCallRunFinalizersOnExit.size)
         //methodsThatCallRunFinalizersOnExit.foreach((t) => {println(t._1.thisClass.className+ " "+ t._2.name)});
 
-        // FINDBUGS: Eq: Abstract class defines covariant equals() method (EQ_ABSTRACT_SELF)
-        var abstractClassThatDefinesCovariantEquals = time(t ⇒ println("EQ_ABSTRACT_SELF: "+nsToSecs(t))) {
+        //        // FINDBUGS: Eq: Abstract class defines covariant equals() method (EQ_ABSTRACT_SELF)
+        //        var abstractClassThatDefinesCovariantEquals = time(t ⇒ println("EQ_ABSTRACT_SELF: "+nsToSecs(t))) {
+        //            for (
+        //                classFile ← classFiles if classFile.isAbstract;
+        //                method @ Method(_, "equals", MethodDescriptor(Seq(parameterType), BooleanType), _) ← classFile.methods if parameterType != ObjectType("java/lang/Object")
+        //            ) yield (classFile, method);
+        //        }
+        //        println("\tViolations: "+abstractClassThatDefinesCovariantEquals.size)
+        //        //abstractClassThatDefinesCovariantEquals.foreach((t) => {println(t._1.thisClass.className+ " "+ t._2.name)});
+        // FINDBUGS: EQ_ABSTRACT_SELF - a covariant equals method that is abstract (the following reflects the implemented checker)
+        var abstractCovariantEquals = time(t ⇒ println("EQ_ABSTRACT_SELF: "+nsToSecs(t))) {
             for (
-                classFile ← classFiles if classFile.isAbstract;
-                method @ Method(_, "equals", MethodDescriptor(Seq(parameterType), BooleanType), _) ← classFile.methods if parameterType != ObjectType("java/lang/Object")
+                classFile ← classFiles;
+                method @ Method(_, "equals", MethodDescriptor(Seq(classFile.thisClass), BooleanType), _) ← classFile.methods if method.isAbstract
             ) yield (classFile, method);
         }
-        println("\tViolations: "+abstractClassThatDefinesCovariantEquals.size)
-        //abstractClassThatDefinesCovariantEquals.foreach((t) => {println(t._1.thisClass.className+ " "+ t._2.name)});
+        println("\tViolations: "+abstractCovariantEquals.size)
 
         // FINDBUGS: FI: Finalizer should be protected, not public (FI_PUBLIC_SHOULD_BE_PROTECTED)
         var classesWithPublicFinalizeMethods = time(t ⇒ println("FI_PUBLIC_SHOULD_BE_PROTECTED: "+nsToSecs(t))) {
@@ -264,27 +275,53 @@ object Main extends Main {
         }
         println("\tViolations: "+classesWithoutDefaultConstructor.size);
 
-        // FINDBUGS: UuF: Unused field (UUF_UNUSED_FIELD)
-        var unusedFields: List[(ClassFile, Traversable[String])] = Nil
-        time(t ⇒ println("UUF_UNUSED_FIELD: "+nsToSecs(t))) {
-            for (classFile ← classFiles if !classFile.isInterfaceDeclaration) {
-                val declaringClass = classFile.thisClass
-                var privateFields = (for (field ← classFile.fields if field.isPrivate) yield field.name).toSet
-                for (
-                    method ← classFile.methods if method.body.isDefined;
-                    instruction ← method.body.get.instructions
-                ) {
-                    instruction match {
-                        case GETFIELD(`declaringClass`, name, _)  ⇒ privateFields -= name
-                        case GETSTATIC(`declaringClass`, name, _) ⇒ privateFields -= name
-                        case _                                    ⇒
-                    }
+        //        // FINDBUGS: UuF: Unused field (UUF_UNUSED_FIELD)
+        //        var unusedFields: List[(ClassFile, Traversable[String])] = Nil
+        //        time(t ⇒ println("UUF_UNUSED_FIELD: "+nsToSecs(t))) {
+        //            for (classFile ← classFiles if !classFile.isInterfaceDeclaration) {
+        //                val declaringClass = classFile.thisClass
+        //                var privateFields = (for (field ← classFile.fields if field.isPrivate) yield field.name).toSet
+        //                for (
+        //                    method ← classFile.methods if method.body.isDefined;
+        //                    instruction ← method.body.get.instructions
+        //                ) {
+        //                    instruction match {
+        //                        case GETFIELD(`declaringClass`, name, _)  ⇒ privateFields -= name
+        //                        case GETSTATIC(`declaringClass`, name, _) ⇒ privateFields -= name
+        //                        case _                                    ⇒
+        //                    }
+        //                }
+        //                if (privateFields.size > 0)
+        //                    unusedFields = (classFile, privateFields) :: unusedFields
+        //            }
+        //        }
+        //        println("\tViolations: "+unusedFields.size)
+        var allFields = List[(ObjectType, String)]()
+        var readFields = Set[(ObjectType, String)]()
+        var writtenFields = Set[(ObjectType, String)]()
+        time(t ⇒ println("UUF_UNUSED_FIELD (public, protected, default and private): "+nsToSecs(t))) {
+            allFields = for (
+                classFile ← classFiles.toList if !classFile.isInterfaceDeclaration;
+                field ← classFile.fields if !(field.isStatic && field.isFinal)
+            ) yield (classFile.thisClass, field.name);
+            for (
+                classFile ← classFiles if !classFile.isInterfaceDeclaration;
+                method ← classFile.methods if method.body.isDefined;
+                instruction ← method.body.get.instructions
+            ) {
+                instruction match {
+                    case GETFIELD(declaringClass, name, _)  ⇒ readFields += ((declaringClass, name))
+                    case GETSTATIC(declaringClass, name, _) ⇒ readFields += ((declaringClass, name))
+                    case PUTSTATIC(declaringClass, name, _) ⇒ writtenFields += ((declaringClass, name))
+                    case PUTFIELD(declaringClass, name, _)  ⇒ writtenFields += ((declaringClass, name))
+                    case _                                  ⇒
                 }
-                if (privateFields.size > 0)
-                    unusedFields = (classFile, privateFields) :: unusedFields
             }
         }
-        println("\tViolations: "+unusedFields.size)
+        println("\tNumber of fields: "+allFields.size+"; Number of read fields: "+readFields.size+"; Number of written fields: "+writtenFields.size);
+        println("\tViolations - unused fields: "+((allFields diff readFields.toSeq) diff writtenFields.toSeq).size)
+        println("\tViolations - fields that are not read: "+(allFields diff readFields.toSeq).size)
+        println("\tViolations - fields that are not written: "+(allFields diff writtenFields.toSeq).size)
 
         // FINDBUGS: (IMSE_DONT_CATCH_IMSE) http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/DontCatchIllegalMonitorStateException.java
         val IllegalMonitorStateExceptionType = ObjectType("java/lang/IllegalMonitorStateException")
