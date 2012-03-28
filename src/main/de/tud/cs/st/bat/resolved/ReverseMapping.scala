@@ -69,6 +69,13 @@ trait ReverseMapping extends CategorizedSourceElementIDs {
         id
     }
 
+    /**
+     * Returns a human readable representation of the source element identified by the
+     * given id.
+     *
+     * @param id A valid identifier; i.e., an id returned by one of the sourceElementID methods.
+     *  If the id is not valid, the behavior is undefined.
+     */
     def sourceElementIDtoString(id: Int): String = {
         if (id < LOWEST_FIELD_ID) {
             return typeIDs(id - LOWEST_TYPE_ID).toJava
