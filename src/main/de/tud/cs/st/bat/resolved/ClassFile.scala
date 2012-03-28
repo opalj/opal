@@ -50,7 +50,7 @@ import de.tud.cs.st.bat.ACC_FINAL
  * @param fields The set of declared fields. May be empty.
  * @param methods The set of declared methods. May be empty.
  * @param attributes This class file's reified attributes. Which attributes
- *  are reified dependes on the configuration of the class file reader; e.g.,
+ *  are reified depends on the configuration of the class file reader; e.g.,
  *  [[de.tud.cs.st.bat.resolved.reader.Java6Framework]].
  *
  * @author Michael Eichberg
