@@ -33,28 +33,33 @@
 package de.tud.cs.st.bat.resolved
 
 /**
- * Uniquely identifies a specific source element (Type, Field or Method declaration).
+ * Uniquely identifies a specific element that can (by definition) only exist
+ * once in a project. For example, in the context of BAT a type declaration
+ * is unique or the combination of a typedeclaration and a field name or
+ * the combination of a type declaration, method name and method descriptor.
  *
  * @author Michael Eichberg
  */
-trait SourceElementIdentifier {
+trait StructureIdentifier {
 
     /**
-     * Returns a compact, human readable representation of this source element's id.
+     * Returns a compact, human readable representation of this structure element.
      * This representation is not guaranteed to return a unique representation.
+     * However, it should be precise enough to enable developers (with some
+     * additional context information) to precisely identify the structure element.
      */
     def toHRR: String
 
     /**
-     * Returns the name of the package in which this source element is defined. If
-     * this source element (e.g., a primitive type) does not belong to a specific
-     * pacakge None is returned. In case of the default pacakge, the empty string
-     * is returned.
+     * Returns the name of the package in which this structure element is defined. If
+     * this element (e.g., a primitive type) does not belong to a specific
+     * package or the concept of a package name does not apply None is returned.
+     * In case of the default package, the empty string is returned.
      */
     def declaringPackage: Option[String]
 }
 
-case class TypeIdentifier(t: Type) extends SourceElementIdentifier {
+case class TypeIdentifier(t: Type) extends StructureIdentifier {
 
     def toHRR = t.toJava
 
@@ -68,7 +73,7 @@ case class TypeIdentifier(t: Type) extends SourceElementIdentifier {
 case class MethodIdentifier(declaringReferenceType: ReferenceType,
                             methodName: String,
                             methodDescriptor: MethodDescriptor)
-        extends SourceElementIdentifier {
+        extends StructureIdentifier {
 
     def toHRR = declaringReferenceType.toJava+"."+methodName+""+(methodDescriptor.toUMLNotation)
 
@@ -82,7 +87,7 @@ case class MethodIdentifier(declaringReferenceType: ReferenceType,
 
 case class FieldIdentifier(declaringObjectType: ObjectType,
                            fieldName: String)
-        extends SourceElementIdentifier {
+        extends StructureIdentifier {
     def toHRR = declaringObjectType.toJava+"."+fieldName
 
     def declaringPackage = Some(declaringObjectType.packageName)
