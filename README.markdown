@@ -11,7 +11,7 @@ Currently, four representations are provided/are supported:
 2. Resolved - An object-oriented representation that facilitates writing analysis against the bytecode. 
             If you want to write bytecode analyses in Scala then we recommend to use this representation. 
             The most important property of this representation is that the constant pool is completely resolved and all instructions are explicitly represented.
-            This representation also provides some functionality to extract a class file's dependencies.
+            This representation also provides functionality to extract a class file's dependencies and to create a project's class hierarchy.
 
 3. Prolog - A representation of Java Bytecode as a set of Prolog facts. This representation builds upon the resolved representation and basically represents all information that are represented by the resolved representation.
 
