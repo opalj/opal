@@ -42,7 +42,7 @@ import scala.collection.mutable.Map
 trait PerformanceEvaluation {
 
     /**
-     * Times the execution of a given method (function literal) / code block.
+     * Times the execution of a given method f (function literal / code block).
      *
      * @param r A function that is passed the time (in nano seconds) that it
      * 	took to evaluate the function f.
