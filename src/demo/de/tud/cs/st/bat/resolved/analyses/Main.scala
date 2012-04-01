@@ -331,6 +331,7 @@ object Main extends Main {
             println("\tViolations - fields that are not written: "+(allFields diff writtenFields.toSeq).size)
 
             // FINDBUGS: (IMSE_DONT_CATCH_IMSE) http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/DontCatchIllegalMonitorStateException.java
+            // Dubious catching of IllegalMonitorStateException.
             val IllegalMonitorStateExceptionType = ObjectType("java/lang/IllegalMonitorStateException")
             val catchesIllegalMonitorStateException = time(t ⇒ println("IMSE_DONT_CATCH_IMSE: "+nsToSecs(t))) {
                 for (
