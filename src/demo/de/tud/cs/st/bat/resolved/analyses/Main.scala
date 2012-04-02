@@ -190,9 +190,9 @@ object Main extends Main {
             // FINDBUGS: Dm: Explicit garbage collection; extremely dubious except in benchmarking code (DM_GC)
             var garbageCollectingMethods: List[(ClassFile, Method, Instruction)] = Nil
             time(t ⇒ println("DM_GC: "+nsToSecs(t))) {
-                for (
-                    classFile ← classFiles;
-                    method ← classFile.methods if method.body.isDefined;
+                for ( // we don't care about gc calls in java.lang and also about gc calls that happen inside of methods related to garbage collection (heuristic)
+                    classFile ← classFiles if !classFile.thisClass.className.startsWith("java/lang");
+                    method ← classFile.methods if method.body.isDefined && !"(^gc)|(gc$)".r.findFirstIn(method.name).isDefined;
                     instruction ← method.body.get.instructions
                 ) {
                     instruction match {
