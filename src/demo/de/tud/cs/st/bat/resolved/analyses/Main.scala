@@ -313,8 +313,9 @@ object Main extends Main {
                 ) yield (classFile.thisClass, field.name);
                 for (
                     classFile ← classFiles if !classFile.isInterfaceDeclaration;
-                    method ← classFile.methods if method.body.isDefined;
-                    instruction ← method.body.get.instructions
+                    method ← classFile.methods; // if method.body.isDefined;
+                    body ← method.body;
+                    instruction ← body.instructions
                 ) {
                     instruction match {
                         case GETFIELD(declaringClass, name, _)  ⇒ readFields += ((declaringClass, name))
