@@ -35,7 +35,7 @@ package de.tud.cs.st.bat.resolved
 /**
  * Uniquely identifies a specific element that can (by definition) only exist
  * once in a project. For example, in the context of BAT a type declaration
- * is unique or the combination of a typedeclaration and a field name or
+ * is unique or the combination of a type declaration and a field name or
  * the combination of a type declaration, method name and method descriptor.
  *
  * @author Michael Eichberg
@@ -79,9 +79,10 @@ case class MethodIdentifier(declaringReferenceType: ReferenceType,
 
     def declaringPackage =
         declaringReferenceType match {
-            case o: ObjectType ⇒ Some(o.packageName);
-            case a: ArrayType  ⇒ Some("java/lang"); // required to handle "clone" calls on arrays
-            case _             ⇒ None
+            case o: ObjectType            ⇒ Some(o.packageName);
+            case ArrayType(o: ObjectType) ⇒ Some(o.packageName);
+            case a: ArrayType             ⇒ Some("java/lang"); // handles calls on Arrays of primitives
+            case _                        ⇒ None
         }
 }
 
