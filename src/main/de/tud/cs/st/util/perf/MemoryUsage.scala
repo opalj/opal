@@ -33,12 +33,16 @@
 package de.tud.cs.st.util.perf
 
 /**
- * Evaluates the amount of memory that is used.
+ * Methods related to the measuring of an application's memory performance.
  *
  * @author Michael Eichberg
  */
 object MemoryUsage {
 
+    /**
+     * Measures the amount of memory that is used as a side-effect
+     * of executing the given method.
+     */
     def apply[T](mu: (Long) ⇒ Unit)(f: ⇒ T): T = {
         val memoryMXBean = java.lang.management.ManagementFactory.getMemoryMXBean
         memoryMXBean.gc()
