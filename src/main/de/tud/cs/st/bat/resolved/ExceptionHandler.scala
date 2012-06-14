@@ -36,12 +36,17 @@ package de.tud.cs.st.bat.resolved
  * An entry in the exceptions table of a [[de.tud.cs.st.bat.resolved.Code]]
  * block.
  *
+ * @param startPC A valid index into the code array. It points to the first instruction in the "try-block" (inclusive).
+ * @param endPC An index into the code array that points to the instruction after the "try-block" (exclusive).
+ * @param handlerPC Points to the first instruction of the exception handler.
+ * @param catchType The type of the exception that is catched.
+ *
  * @author Michael Eichberg
  */
 case class ExceptionHandler(startPC: Int,
                             endPC: Int,
                             handlerPC: Int,
-                            catchType: ObjectType) {
+                            catchType: Option[ObjectType]) {
 
     //
     //
@@ -54,7 +59,7 @@ case class ExceptionHandler(startPC: Int,
 			start_pc={ startPC.toString }
 			end_pc={ endPC.toString }
 			handler_pc={ handlerPC.toString }
-			type={ if (catchType != null) Some(scala.xml.Text(catchType.toJava)) else None }/>
+			type={ catchType.map((t) ⇒ xml.Text(t.toJava)) }/>
 
     def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], pc_to_seqNo: Array[Int]): T = {
         import factory._
@@ -63,7 +68,7 @@ case class ExceptionHandler(startPC: Int,
             IntegerAtom(pc_to_seqNo(startPC)),
             IntegerAtom(pc_to_seqNo(endPC)),
             IntegerAtom(pc_to_seqNo(handlerPC)),
-            if (catchType != null) catchType.toProlog(factory) else StringAtom("any")
+            if (catchType.isDefined) catchType.get.toProlog(factory) else StringAtom("any")
         )
     }
 }

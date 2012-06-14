@@ -39,21 +39,25 @@ import analyses.ClassHierarchy
 import scala.collection.immutable.SortedSet
 
 /**
- * A specification of a project's allowed/expected dependencies.
+ * A specification of a project's architectural constraints.
  *
- * ==Intended Usage==
+ * ===Usage===
  * First define the ensembles, then the rules and at last specify the
  * class files that should be analyzed. The rules will then be automatically
  * evaluated.
  *
- * ==Hints==
+ * ===Hints===
  * One ensemble is predefined: [[Specification.empty]] it represents an ensemble that contains no
  * source elements and which can, e.g., be used to specify that no "real" ensemble is allowed
  * to depend on a specific ensemble.
  *
  * @author Michael Eichberg
  */
-class Specification extends SourceElementIDsMap with ReverseMapping with UseIDOfBaseTypeForArrayTypes with Project {
+class Specification
+        extends SourceElementIDsMap
+        with ReverseMapping
+        with UseIDOfBaseTypeForArrayTypes
+        with Project {
 
     private[this] var theClassHierarchy = new ClassHierarchy
     override def classHierarchy = theClassHierarchy

@@ -87,7 +87,7 @@ class Project(
      * to the receiver's class than to look up the actual declaration in one of the
      * receiver's super classes.
      *
-     * @return Some((ClassFile,Method)) if the method is found. None if the method is not
+     * @return `Some((ClassFile,Method))` if the method is found. `None` if the method is not
      * 	found. This can happen under two circumstances. First, not all class files
      * 	referred to/used by the project are (yet) analyzed; i.e., we do not have the
      * 	complete view on all class files belonging to the project. Second, the analyzed

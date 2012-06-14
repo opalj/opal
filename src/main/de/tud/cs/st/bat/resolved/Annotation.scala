@@ -33,7 +33,7 @@
 package de.tud.cs.st.bat.resolved
 
 /**
- * An annotation of a class, a field, a method or a method parameter.
+ * An annotation of a class, field, method or method parameter.
  *
  * Annotations are associated with a class, field, or method using a
  * [[de.tud.cs.st.bat.resolved.RuntimeInvisibleAnnotations]] or a

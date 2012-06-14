@@ -43,9 +43,6 @@ package de.tud.cs.st.bat
  * for writing Scala based analyses. This representation is engineered such
  * that it facilitates writing analyses that use pattern matching.
  *
- * This representation is also the basis for other representations such as the XML or
- * Prolog based representations.
- *
  * @author Michael Eichberg
  */
 package object resolved {
