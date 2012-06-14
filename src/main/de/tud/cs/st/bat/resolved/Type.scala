@@ -37,13 +37,13 @@ package de.tud.cs.st.bat.resolved
  * Machine).
  */
 sealed class ComputationalTypeCategory(val operandSize: Byte) {
-
+    def id: Byte
 }
 case object Category1ComputationalTypeCategory extends ComputationalTypeCategory(1) {
-
+    def id = 1
 }
 case object Category2ComputationalTypeCategory extends ComputationalTypeCategory(2) {
-
+    def id = 2
 }
 
 /**
