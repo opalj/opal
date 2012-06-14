@@ -173,6 +173,11 @@ Author 	Michael Eichberg (mail@michael-eichberg.de)
 		</xslt>
 	-->
 
+		<saxon-xslt style="${src.main.dir}/JVMInstructionsList.xsl"
+		            in="${src.spec.dir}/10.2011/JVMInstructions.xml"
+		            out="${scala.generated.dir}/JVMInstructionsList.txt">
+		</saxon-xslt>
+
 		<saxon-xslt style="${src.main.dir}/de/tud/cs/st/bat/resolved/GenerateInstructionExceptionsClass.xsl"
 		            in="${src.spec.dir}/10.2011/JVMInstructions.xml"
 		            out="${scala.generated.dir}/de/tud/cs/st/bat/resolved/InstructionExceptions.scala">
