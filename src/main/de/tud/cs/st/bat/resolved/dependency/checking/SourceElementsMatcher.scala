@@ -57,7 +57,7 @@ trait SourceElementsMatcher { left ⇒
         }
     }
 
-	def except(right: SourceElementsMatcher): SourceElementsMatcher = {
+    def except(right: SourceElementsMatcher): SourceElementsMatcher = {
         new SourceElementsMatcher {
             def extension(project: Project) = {
                 left.extension(project) -- right.extension(project)
@@ -111,19 +111,20 @@ case class PackageNameBasedMatcher(val packageName: String, val matchSubpackages
     }
 }
 
-case class ClassMatcher(val className: String,val matchPrefix : Boolean = false) extends SourceElementsMatcher {
+case class ClassMatcher(val className: String, val matchPrefix: Boolean = false) extends SourceElementsMatcher {
 
     require(className.indexOf('*') == -1)
     require(className.indexOf('.') == -1)
 
     def extension(project: Project): SortedSet[SourceElementID] = {
         var sourceElementIDs: SortedSet[SourceElementID] = SortedSet()
-        project.classFiles.values.filter( (classFile) =>
-                { val otherClassName = classFile.thisClass.className
-                    otherClassName.startsWith(className) && (
-                            matchPrefix ||
-                            otherClassName.length == className.length)
-                            }).foreach((classFile) ⇒ {
+        project.classFiles.values.filter((classFile) ⇒
+            {
+                val otherClassName = classFile.thisClass.className
+                otherClassName.startsWith(className) && (
+                    matchPrefix ||
+                    otherClassName.length == className.length)
+            }).foreach((classFile) ⇒ {
             sourceElementIDs += project.sourceElementID(classFile)
             sourceElementIDs ++= classFile.methods.map(project.sourceElementID(classFile, _))
             sourceElementIDs ++= classFile.fields.map(project.sourceElementID(classFile, _))

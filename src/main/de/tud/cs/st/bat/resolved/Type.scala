@@ -33,6 +33,34 @@
 package de.tud.cs.st.bat.resolved
 
 /**
+ * The computational type category of a value on the operand stack. (cf. JVM Spec. 2.11.1 Types and the Java Virtual
+ * Machine).
+ */
+sealed class ComputationalTypeCategory(val operandSize: Byte) {
+
+}
+case object Category1ComputationalTypeCategory extends ComputationalTypeCategory(1) {
+
+}
+case object Category2ComputationalTypeCategory extends ComputationalTypeCategory(2) {
+
+}
+
+/**
+ * The computational type of a value on the operand stack. (cf. JVM Spec. 2.11.1 Types and the Java Virtual
+ * Machine).
+ */
+sealed class ComputationalType(val computationTypeCategory: ComputationalTypeCategory) {
+    def operandSize = computationTypeCategory.operandSize
+}
+case object ComputationalTypeInt extends ComputationalType(Category1ComputationalTypeCategory)
+case object ComputationalTypeFloat extends ComputationalType(Category1ComputationalTypeCategory)
+case object ComputationalTypeReference extends ComputationalType(Category1ComputationalTypeCategory)
+case object ComputationalTypeReturnAddress extends ComputationalType(Category1ComputationalTypeCategory)
+case object ComputationalTypeLong extends ComputationalType(Category2ComputationalTypeCategory)
+case object ComputationalTypeDouble extends ComputationalType(Category2ComputationalTypeCategory)
+
+/**
  * A JVM type.
  *
  * @author Michael Eichberg
@@ -54,6 +82,8 @@ sealed trait Type {
     def isBooleanType: Boolean = false
     def isArrayType: Boolean = false
     def isObjectType: Boolean = false
+
+    def computationalType: ComputationalType
 
     def toJava: String
 
@@ -78,6 +108,9 @@ sealed trait VoidType extends Type with ReturnTypeSignature {
     def accept[T](sv: SignatureVisitor[T]): T = sv.visit(this)
 
     override final def isVoidType = true
+
+    def computationalType: ComputationalType =
+        throw new Error("\"void\" values do not have a computational type")
 
     def toJava: String = "void"
 
@@ -128,6 +161,8 @@ sealed trait BaseType extends FieldType with TypeSignature {
 sealed trait ReferenceType extends FieldType {
 
     override final def isReferenceType = true
+
+    def computationalType = ComputationalTypeReference
 }
 object ReferenceType {
 
@@ -142,6 +177,8 @@ object ReferenceType {
 sealed trait ByteType extends BaseType {
 
     override def isByteType = true
+
+    def computationalType = ComputationalTypeInt
 
     def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
@@ -163,6 +200,8 @@ sealed trait CharType extends BaseType {
 
     override def isCharType = true
 
+    def computationalType = ComputationalTypeInt
+
     def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     def toJava: String = "char"
@@ -182,6 +221,8 @@ final case object CharType extends CharType
 sealed trait DoubleType extends BaseType {
 
     override def isDoubleType = true
+
+    def computationalType = ComputationalTypeDouble
 
     def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
@@ -203,6 +244,8 @@ sealed trait FloatType extends BaseType {
 
     override def isFloatType = true
 
+    def computationalType = ComputationalTypeFloat
+
     def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     def toJava: String = "float"
@@ -222,6 +265,8 @@ final case object FloatType extends FloatType
 sealed trait ShortType extends BaseType {
 
     override def isShortType = true
+
+    def computationalType = ComputationalTypeInt
 
     def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
@@ -243,6 +288,8 @@ sealed trait IntegerType extends BaseType {
 
     override def isIntegerType = true
 
+    def computationalType = ComputationalTypeInt
+
     def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     def toJava: String = "int"
@@ -263,6 +310,8 @@ sealed trait LongType extends BaseType {
 
     override def isLongType = true
 
+    def computationalType = ComputationalTypeLong
+
     def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     def toJava: String = "long"
@@ -282,6 +331,8 @@ final case object LongType extends LongType
 sealed trait BooleanType extends BaseType {
 
     override def isBooleanType = true
+
+    def computationalType = ComputationalTypeInt
 
     def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
@@ -307,9 +358,9 @@ final class ObjectType private (val className: String) extends ReferenceType {
 
     override def equals(other: Any): Boolean =
         other match {
-            case that: ObjectType =>
+            case that: ObjectType ⇒
                 equals(that)
-            case _ => false
+            case _ ⇒ false
         }
 
     def equals(other: ObjectType): Boolean = other.className == this.className
