@@ -88,21 +88,6 @@ case object NullValue extends Value {
     def computationalType = ComputationalTypeReference
 }
 
-/*
- * After the execution of a (a,i,f,l,d)return instruction, the stack/heap is no longer allowed to be used.s
- */
-object NoMemoryLayout extends SomeMemoryLayout[Nothing] {
-    def locals: IndexedSeq[Value] = {
-        throw new Error("no memory layout available")
-    }
-    def operands: List[Value] = {
-        throw new Error("no memory layout available")
-    }
-    def update(instruction: BytecodeInstruction): this.type = {
-        throw new Error("no memory layout available")
-    }
-}
-
 trait SomeMemoryLayout[+M <: SomeMemoryLayout[_]] {
     def locals: IndexedSeq[Value]
     def operands: List[Value]
@@ -111,13 +96,19 @@ trait SomeMemoryLayout[+M <: SomeMemoryLayout[_]] {
 
 trait Domain {
     def aaload(index: Value, arrayref: Value): Value
-    def nullValue(): Value
     def aastore(value: Value, index: Value, arrayref: Value): Unit
+    def aconstNull(): Value
+    def anewarray(count: Value, componentType: ReferenceType): Value
     def areturn(value: Value): Unit
+    def arraylength(value: Value): Value
+    def ireturn(value: Value): Unit
+    def lreturn(value: Value): Unit
+    def freturn(value: Value): Unit
+    def dreturn(value: Value): Unit
     def vreturn(): Unit
 }
 
-class TypeDomain {
+class TypeDomain extends Domain {
     def aaload(index: Value, arrayref: Value): Value = {
         arrayref match {
             case TypedValue(ArrayType(componentType)) ⇒ TypedValue(componentType)
@@ -125,17 +116,41 @@ class TypeDomain {
             case _                                    ⇒ ComputationalTypeValue(ComputationalTypeReference)
         }
     }
-    def nullValue() = NullValue
     def aastore(value: Value, index: Value, arrayref: Value) { /* Nothing to do. */ }
+    def aconstNull() = NullValue
+    def anewarray(count: Value, componentType: ReferenceType): Value = {
+        TypedValue(ArrayType(componentType))
+    }
+    def arraylength(value: Value): Value = TypedValue.IntegerValue
     def areturn(value: Value) { /* Nothing to do. */ }
+    def ireturn(value: Value) { /* Nothing to do. */ }
+    def freturn(value: Value) { /* Nothing to do. */ }
+    def lreturn(value: Value) { /* Nothing to do. */ }
+    def dreturn(value: Value) { /* Nothing to do. */ }
     def vreturn() { /* Nothing to do. */ }
 }
 
-class MemoryLayout(val operands: List[Value], val locals: IndexedSeq[Value])(implicit domain: Domain) extends SomeMemoryLayout[MemoryLayout] {
+class MemoryLayout(
+    val operands: List[Value],
+    val locals: IndexedSeq[Value])(
+        implicit domain: Domain)
+        extends SomeMemoryLayout[MemoryLayout] {
+
+    /**
+     * Extractor object that matches `Value`s which have computational type category 2.
+     */
+    private[this] object CTC1 {
+        def unapply(value: Value): Boolean = value.computationalType.computationTypeCategory.id == 1
+    }
+    /**
+     * Extractor object that matches `Value`s which have computational type category 2.
+     */
+    private[this] object CTC2 {
+        def unapply(value: Value): Boolean = value.computationalType.computationTypeCategory.id == 2
+    }
 
     def update(instruction: BytecodeInstruction): MemoryLayout = {
         import annotation.switch
-
         (instruction.opcode: @switch) match {
             case 50 /*aaload*/ ⇒ {
                 val index :: arrayref :: rest = operands
@@ -148,23 +163,31 @@ class MemoryLayout(val operands: List[Value], val locals: IndexedSeq[Value])(imp
                 new MemoryLayout(rest, locals)
             }
             case 1 /*aconst_null*/ ⇒
-                new MemoryLayout(domain.nullValue :: operands, locals)
-            case 25 /*aload*/ ⇒
-                new MemoryLayout(
-                    locals(instruction.asInstanceOf[ALOAD].lvIndex) :: operands,
-                    locals)
-            case 42 /*aload_0*/      ⇒ new MemoryLayout(locals(0) :: operands, locals)
-            case 43 /*aload_1*/      ⇒ new MemoryLayout(locals(1) :: operands, locals)
-            case 44 /*aload_2*/      ⇒ new MemoryLayout(locals(2) :: operands, locals)
-            case 45 /*aload_3*/      ⇒ new MemoryLayout(locals(3) :: operands, locals)
-            case 189 /*anewarray*/   ⇒ new MemoryLayout(TypedValue(ArrayType(instruction.asInstanceOf[ANEWARRAY].componentType)) :: (operands.tail), locals)
-            case 176 /*areturn*/     ⇒ NoMemoryLayout
-            case 190 /*arraylength*/ ⇒ new MemoryLayout(TypedValue(IntegerType) :: (operands.tail), locals)
-            case 58 /*astore*/       ⇒ new MemoryLayout(operands.tail, locals.updated(instruction.asInstanceOf[ASTORE].lvIndex, locals.head))
-            case 75 /*astore_0*/     ⇒ new MemoryLayout(operands.tail, locals.updated(0, locals.head))
-            case 76 /*astore_1*/     ⇒ new MemoryLayout(operands.tail, locals.updated(1, locals.head))
-            case 77 /*astore_2*/     ⇒ new MemoryLayout(operands.tail, locals.updated(2, locals.head))
-            case 78 /*astore_3*/     ⇒ new MemoryLayout(operands.tail, locals.updated(3, locals.head))
+                new MemoryLayout(domain.aconstNull :: operands, locals)
+            case 25 /*aload*/   ⇒ new MemoryLayout(locals(instruction.asInstanceOf[ALOAD].lvIndex) :: operands, locals)
+            case 42 /*aload_0*/ ⇒ new MemoryLayout(locals(0) :: operands, locals)
+            case 43 /*aload_1*/ ⇒ new MemoryLayout(locals(1) :: operands, locals)
+            case 44 /*aload_2*/ ⇒ new MemoryLayout(locals(2) :: operands, locals)
+            case 45 /*aload_3*/ ⇒ new MemoryLayout(locals(3) :: operands, locals)
+            case 189 /*anewarray*/ ⇒ {
+                val count :: rest = operands
+                val newOperands = domain.anewarray(count, instruction.asInstanceOf[ANEWARRAY].componentType) :: rest
+                new MemoryLayout(newOperands, locals)
+            }
+            case 176 /*areturn*/ ⇒ {
+                domain.areturn(operands.head)
+                new MemoryLayout(List.empty,IndexedSeq.empty)
+            }
+            case 190 /*arraylength*/ ⇒ {
+                val arrayref = operands.head
+                val newOperands = domain.arraylength(arrayref) :: operands.tail
+                new MemoryLayout(newOperands, locals)
+            }
+            case 58 /*astore*/   ⇒ new MemoryLayout(operands.tail, locals.updated(instruction.asInstanceOf[ASTORE].lvIndex, operands.head))
+            case 75 /*astore_0*/ ⇒ new MemoryLayout(operands.tail, locals.updated(0, operands.head))
+            case 76 /*astore_1*/ ⇒ new MemoryLayout(operands.tail, locals.updated(1, operands.head))
+            case 77 /*astore_2*/ ⇒ new MemoryLayout(operands.tail, locals.updated(2, operands.head))
+            case 78 /*astore_3*/ ⇒ new MemoryLayout(operands.tail, locals.updated(3, operands.head))
             case 191 /*athrow*/ ⇒ new MemoryLayout(
                 {
                     val v = operands.head
@@ -174,47 +197,59 @@ class MemoryLayout(val operands: List[Value], val locals: IndexedSeq[Value])(imp
                     }
                 },
                 locals)
-            case 51 /*baload*/           ⇒ null
-            case 84 /*bastore*/          ⇒ null
-            case 16 /*bipush*/           ⇒ null
-            case 52 /*caload*/           ⇒ null
-            case 85 /*castore*/          ⇒ null
-            case 192 /*checkcast*/       ⇒ null
-            case 144 /*d2f*/             ⇒ null
-            case 142 /*d2i*/             ⇒ null
-            case 143 /*d2l*/             ⇒ null
-            case 99 /*dadd*/             ⇒ null
-            case 49 /*daload*/           ⇒ null
-            case 82 /*dastore*/          ⇒ null
-            case 152 /*dcmpg*/           ⇒ null
-            case 151 /*dcmpl*/           ⇒ null
-            case 14 /*dconst_0*/         ⇒ null
-            case 15 /*dconst_1*/         ⇒ null
-            case 111 /*ddiv*/            ⇒ null
-            case 24 /*dload*/            ⇒ null
-            case 38 /*dload_0*/          ⇒ new MemoryLayout(operands.tail, locals.updated(0, locals.head))
-            case 39 /*dload_1*/          ⇒ new MemoryLayout(operands.tail, locals.updated(1, locals.head))
-            case 40 /*dload_2*/          ⇒ new MemoryLayout(operands.tail, locals.updated(2, locals.head))
-            case 41 /*dload_3*/          ⇒ new MemoryLayout(operands.tail, locals.updated(3, locals.head))
-            case 107 /*dmul*/            ⇒ null
-            case 119 /*dneg*/            ⇒ null
-            case 115 /*drem*/            ⇒ null
-            case 175 /*dreturn*/         ⇒ NoMemoryLayout
-            case 57 /*dstore*/           ⇒ null
-            case 71 /*dstore_0*/         ⇒ null
-            case 72 /*dstore_1*/         ⇒ null
-            case 73 /*dstore_2*/         ⇒ null
-            case 74 /*dstore_3*/         ⇒ null
-            case 103 /*dsub*/            ⇒ null
-            case 89 /*dup*/              ⇒ null
-            case 90 /*dup_x1*/           ⇒ null
-            case 91 /*dup_x2*/           ⇒ null
-            case 92 /*dup2*/             ⇒ null
+            case 51 /*baload*/     ⇒ null
+            case 84 /*bastore*/    ⇒ null
+            case 16 /*bipush*/     ⇒ null
+            case 52 /*caload*/     ⇒ null
+            case 85 /*castore*/    ⇒ null
+            case 192 /*checkcast*/ ⇒ new MemoryLayout(TypedValue(instruction.asInstanceOf[CHECKCAST].referenceType) :: (operands.tail), locals)
+            case 144 /*d2f*/       ⇒ new MemoryLayout(FloatValue :: (operands.tail), locals)
+            case 142 /*d2i*/       ⇒ new MemoryLayout(IntegerValue :: (operands.tail), locals)
+            case 143 /*d2l*/       ⇒ new MemoryLayout(LongValue :: (operands.tail), locals)
+            case 99 /*dadd*/       ⇒ new MemoryLayout(operands.tail, locals)
+            case 49 /*daload*/     ⇒ new MemoryLayout(DoubleValue :: (operands.tail.tail), locals)
+            case 82 /*dastore*/    ⇒ new MemoryLayout(operands.tail.tail.tail, locals)
+            case 152 /*dcmpg*/     ⇒ new MemoryLayout(IntegerValue :: (operands.tail.tail), locals)
+            case 151 /*dcmpl*/     ⇒ new MemoryLayout(IntegerValue :: (operands.tail.tail), locals)
+            case 14 /*dconst_0*/   ⇒ new MemoryLayout(DoubleValue :: operands, locals)
+            case 15 /*dconst_1*/   ⇒ new MemoryLayout(DoubleValue :: operands, locals)
+            case 111 /*ddiv*/      ⇒ new MemoryLayout(operands.tail, locals)
+            case 24 /*dload*/      ⇒ new MemoryLayout(locals(instruction.asInstanceOf[DLOAD].lvIndex) :: operands, locals)
+            case 38 /*dload_0*/    ⇒
+            case 39 /*dload_1*/    ⇒
+            case 40 /*dload_2*/    ⇒
+            case 41 /*dload_3*/    ⇒
+            case 107 /*dmul*/      ⇒ new MemoryLayout(operands.tail, locals)
+            case 119 /*dneg*/      ⇒ this
+            case 115 /*drem*/      ⇒ new MemoryLayout(operands.tail, locals)
+            case 175 /*dreturn*/   ⇒ domain.dreturn(operands.head)
+            case 57 /*dstore*/     ⇒
+            case 71 /*dstore_0*/   ⇒ new MemoryLayout(operands.tail, locals.updated(0, operands.head))
+            case 72 /*dstore_1*/   ⇒ new MemoryLayout(operands.tail, locals.updated(1, operands.head))
+            case 73 /*dstore_2*/   ⇒ new MemoryLayout(operands.tail, locals.updated(2, operands.head))
+            case 74 /*dstore_3*/   ⇒ new MemoryLayout(operands.tail, locals.updated(3, operands.head))
+            case 103 /*dsub*/      ⇒ new MemoryLayout(operands.tail, locals)
+            case 89 /*dup*/ ⇒
+                new MemoryLayout((operands.head) :: operands, locals)
+            case 90 /*dup_x1*/ ⇒ operands match {
+                case v1 :: v2 :: rest ⇒
+                    new MemoryLayout(v1 :: v2 :: v1 :: rest, locals)
+            }
+            case 91 /*dup_x2*/ ⇒ operands match {
+                case (v1 /*@ CTC1()*/ ) :: (v2 @ CTC1()) :: (v3 /*@ CTC1()*/ ) :: rest ⇒
+                    new MemoryLayout(v1 :: v2 :: v3 :: v1 :: rest, locals)
+                case v1 /*@ CTC1()*/ :: v2 /* @ CTC2()*/ :: rest ⇒
+                    new MemoryLayout(v1 :: v2 :: v1 :: rest, locals)
+            }
+            case 92 /*dup2*/ ⇒ operands match {
+                case (v1 @ CTC1()) :: (v2 /*@ CTC1()*/ ) :: _ ⇒ new MemoryLayout(v1 :: v2 :: operands, locals)
+                case (v /*@ CTC2()*/ ) :: _                   ⇒ new MemoryLayout(v :: operands, locals)
+            }
             case 93 /*dup2_x1*/          ⇒ null
             case 94 /*dup2_x2*/          ⇒ null
-            case 141 /*f2d*/             ⇒ null
-            case 139 /*f2i*/             ⇒ null
-            case 140 /*f2l*/             ⇒ null
+            case 141 /*f2d*/             ⇒ new MemoryLayout(DoubleValue :: (operands.tail), locals)
+            case 139 /*f2i*/             ⇒ new MemoryLayout(IntegerValue :: (operands.tail), locals)
+            case 140 /*f2l*/             ⇒ new MemoryLayout(LongValue :: (operands.tail), locals)
             case 98 /*fadd*/             ⇒ null
             case 48 /*faload*/           ⇒ null
             case 81 /*fastore*/          ⇒ null
@@ -243,24 +278,24 @@ class MemoryLayout(val operands: List[Value], val locals: IndexedSeq[Value])(imp
             case 178 /*getstatic*/       ⇒ null
             case 167 /*goto*/            ⇒ null
             case 200 /*goto_w*/          ⇒ null
-            case 145 /*i2b*/             ⇒ null
-            case 146 /*i2c*/             ⇒ null
-            case 135 /*i2d*/             ⇒ null
-            case 134 /*i2f*/             ⇒ null
-            case 133 /*i2l*/             ⇒ null
-            case 147 /*i2s*/             ⇒ null
-            case 96 /*iadd*/             ⇒ null
+            case 145 /*i2b*/             ⇒ new MemoryLayout(ByteValue :: (operands.tail), locals)
+            case 146 /*i2c*/             ⇒ new MemoryLayout(CharValue :: (operands.tail), locals)
+            case 135 /*i2d*/             ⇒ new MemoryLayout(DoubleValue :: (operands.tail), locals)
+            case 134 /*i2f*/             ⇒ new MemoryLayout(FloatValue :: (operands.tail), locals)
+            case 133 /*i2l*/             ⇒ new MemoryLayout(LongValue :: (operands.tail), locals)
+            case 147 /*i2s*/             ⇒ new MemoryLayout(ShortValue :: (operands.tail), locals)
+            case 96 /*iadd*/             ⇒ new MemoryLayout(operands.tail, locals)
             case 46 /*iaload*/           ⇒ null
-            case 126 /*iand*/            ⇒ null
+            case 126 /*iand*/            ⇒ new MemoryLayout(operands.tail, locals)
             case 79 /*iastore*/          ⇒ null
-            case 2 /*iconst_m1*/         ⇒ null
-            case 3 /*iconst_0*/          ⇒ null
-            case 4 /*iconst_1*/          ⇒ null
-            case 5 /*iconst_2*/          ⇒ null
-            case 6 /*iconst_3*/          ⇒ null
-            case 7 /*iconst_4*/          ⇒ null
-            case 8 /*iconst_5*/          ⇒ null
-            case 108 /*idiv*/            ⇒ null
+            case 2 /*iconst_m1*/         ⇒ new MemoryLayout(IntegerValue :: operands, locals)
+            case 3 /*iconst_0*/          ⇒ new MemoryLayout(IntegerValue :: operands, locals)
+            case 4 /*iconst_1*/          ⇒ new MemoryLayout(IntegerValue :: operands, locals)
+            case 5 /*iconst_2*/          ⇒ new MemoryLayout(IntegerValue :: operands, locals)
+            case 6 /*iconst_3*/          ⇒ new MemoryLayout(IntegerValue :: operands, locals)
+            case 7 /*iconst_4*/          ⇒ new MemoryLayout(IntegerValue :: operands, locals)
+            case 8 /*iconst_5*/          ⇒ new MemoryLayout(IntegerValue :: operands, locals)
+            case 108 /*idiv*/            ⇒ new MemoryLayout(operands.tail, locals)
             case 165 /*if_acmpeq*/       ⇒ new MemoryLayout(operands.tail.tail, locals)
             case 166 /*if_acmpne*/       ⇒ new MemoryLayout(operands.tail.tail, locals)
             case 159 /*if_icmpeq*/       ⇒ new MemoryLayout(operands.tail.tail, locals)
@@ -393,7 +428,7 @@ object QCode {
         // true if the instruction with the respective program counter is already transformed
         val transformed = new Array[Boolean](code.instructions.length)
 
-        var worklist: List[(Int /*program counter*/ , MemoryLayout /* the layout of the locals and stack before the instruction with the respective pc is executed */ )] = List((0, new MemoryLayout(Nil, initialLocals)))
+        var worklist: List[(Int /*program counter*/ , MemoryLayout /* the layout of the locals and stack before the instruction with the respective pc is executed */ )] = List((0, new MemoryLayout(Nil, initialLocals)(new TypeDomain)))
         // the instructions which are at the beginning of a catch block are also added to the catch block
         for (exceptionHandler ← code.exceptionHandlers) {
 
