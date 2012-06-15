@@ -88,11 +88,7 @@ case object NullValue extends Value {
     def computationalType = ComputationalTypeReference
 }
 
-trait SomeMemoryLayout[+M <: SomeMemoryLayout[_]] {
-    def locals: IndexedSeq[Value]
-    def operands: List[Value]
-    def update(instruction: BytecodeInstruction): M
-}
+
 
 trait Domain {
     def aaload(index: Value, arrayref: Value): Value
@@ -123,11 +119,23 @@ class TypeDomain extends Domain {
     }
     def arraylength(value: Value): Value = TypedValue.IntegerValue
     def areturn(value: Value) { /* Nothing to do. */ }
+
+    def iconst(constValue: Int): Value = { TypedValue.IntegerValue }
     def ireturn(value: Value) { /* Nothing to do. */ }
+
     def freturn(value: Value) { /* Nothing to do. */ }
+
     def lreturn(value: Value) { /* Nothing to do. */ }
+
     def dreturn(value: Value) { /* Nothing to do. */ }
+
     def vreturn() { /* Nothing to do. */ }
+}
+
+trait SomeMemoryLayout[+M <: SomeMemoryLayout[_]] {
+    def locals: IndexedSeq[Value]
+    def operands: List[Value]
+    def update(instruction: BytecodeInstruction): M
 }
 
 class MemoryLayout(
@@ -206,7 +214,11 @@ class MemoryLayout(
             case 144 /*d2f*/       ⇒ new MemoryLayout(TypedValue.FloatValue :: (operands.tail), locals)
             case 142 /*d2i*/       ⇒ new MemoryLayout(TypedValue.IntegerValue :: (operands.tail), locals)
             case 143 /*d2l*/       ⇒ new MemoryLayout(TypedValue.LongValue :: (operands.tail), locals)
-            case 99 /*dadd*/       ⇒ new MemoryLayout(operands.tail, locals)
+            case 99 /*dadd*/       ⇒ {
+                val op1 :: op1 :: rest = operands
+                val newOperands = domain.arithmeticExpression(DoubleType,AddOperator,op1,op2) :: rest
+                new MemoryLayout(newOperands, locals)
+            }
             case 49 /*daload*/     ⇒ new MemoryLayout(TypedValue.DoubleValue :: (operands.tail.tail), locals)
             case 82 /*dastore*/    ⇒ new MemoryLayout(operands.tail.tail.tail, locals)
             case 152 /*dcmpg*/     ⇒ new MemoryLayout(TypedValue.IntegerValue :: (operands.tail.tail), locals)
@@ -247,9 +259,11 @@ class MemoryLayout(
                 case _ ⇒ sys.error("internal implementation error or invalid bytecode")
             }
             case 92 /*dup2*/ ⇒ operands match {
-                case (v1 @ CTC1()) :: (v2 /*@ CTC1()*/ ) :: _ ⇒ new MemoryLayout(v1 :: v2 :: operands, locals)
-                case (v /*@ CTC2()*/ ) :: _                   ⇒ new MemoryLayout(v :: operands, locals)
-                case _                                        ⇒ sys.error("internal implementation error or invalid bytecode")
+                case (v1 @ CTC1()) :: (v2 /*@ CTC1()*/ ) :: _ ⇒
+                    new MemoryLayout(v1 :: v2 :: operands, locals)
+                case (v /*@ CTC2()*/ ) :: _ ⇒
+                    new MemoryLayout(v :: operands, locals)
+                case _ ⇒ sys.error("internal implementation error or invalid bytecode")
             }
             case 93 /*dup2_x1*/  ⇒ null
             case 94 /*dup2_x2*/  ⇒ null
