@@ -254,7 +254,7 @@ class MemoryLayout(
             case 91 /*dup_x2*/ ⇒ operands match {
                 case (v1 /*@ CTC1()*/ ) :: (v2 @ CTC1()) :: (v3 /*@ CTC1()*/ ) :: rest ⇒
                     new MemoryLayout(v1 :: v2 :: v3 :: v1 :: rest, locals)
-                case v1 /*@ CTC1()*/ :: v2 /* @ CTC2()*/ :: rest ⇒
+                case (v1 /*@ CTC1()*/) :: v2 /* @ CTC2()*/ :: rest ⇒
                     new MemoryLayout(v1 :: v2 :: v1 :: rest, locals)
                 case _ ⇒ sys.error("internal implementation error or invalid bytecode")
             }
