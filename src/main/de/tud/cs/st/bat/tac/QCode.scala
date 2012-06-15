@@ -48,10 +48,10 @@ import resolved.ANEWARRAY
  * @author Michael Eichberg
  */
 sealed trait Value {
-    /**
-     * The computational type of the value.
-     */
-    def computationalType: ComputationalType
+	/**
+	 * The computational type of the value.
+	 */
+	def computationalType : ComputationalType
 }
 
 /**
@@ -60,113 +60,113 @@ sealed trait Value {
  *
  * @author Michael Eichberg
  */
-case class TypedValue(valueType: Type) extends Value {
-    def computationalType = valueType.computationalType
+case class TypedValue(valueType : Type) extends Value {
+	def computationalType = valueType.computationalType
 }
-
 object TypedValue {
-    val BooleanValue = TypedValue(BooleanType)
-    val ByteValue = TypedValue(ByteType)
-    val CharValue = TypedValue(CharType)
-    val ShortValue = TypedValue(ShortType)
-    val IntegerValue = TypedValue(IntegerType)
-    val LongValue = TypedValue(LongType)
-    val FloatValue = TypedValue(FloatType)
-    val DoubleValue = TypedValue(DoubleType)
+	val BooleanValue = TypedValue(BooleanType)
+	val ByteValue = TypedValue(ByteType)
+	val CharValue = TypedValue(CharType)
+	val ShortValue = TypedValue(ShortType)
+	val IntegerValue = TypedValue(IntegerType)
+	val LongValue = TypedValue(LongType)
+	val FloatValue = TypedValue(FloatType)
+	val DoubleValue = TypedValue(DoubleType)
 }
 
-case class ComputationalTypeValue(val computationalType: ComputationalType) extends Value
+case class ComputationalTypeValue(val computationalType : ComputationalType) extends Value
 object ComputationalTypeValue {
-    val CTIntegerValue = ComputationalTypeValue(ComputationalTypeInt)
-    val CTFloatValue = ComputationalTypeValue(ComputationalTypeFloat)
-    val CTReferenceValue = ComputationalTypeValue(ComputationalTypeReference)
-    val CTReturnAddressValue = ComputationalTypeValue(ComputationalTypeReturnAddress)
-    val CTLongValue = ComputationalTypeValue(ComputationalTypeLong)
-    val CTDoubleValue = ComputationalTypeValue(ComputationalTypeDouble)
+	val CTIntegerValue = ComputationalTypeValue(ComputationalTypeInt)
+	val CTFloatValue = ComputationalTypeValue(ComputationalTypeFloat)
+	val CTReferenceValue = ComputationalTypeValue(ComputationalTypeReference)
+	val CTReturnAddressValue = ComputationalTypeValue(ComputationalTypeReturnAddress)
+	val CTLongValue = ComputationalTypeValue(ComputationalTypeLong)
+	val CTDoubleValue = ComputationalTypeValue(ComputationalTypeDouble)
 }
 
 case object NullValue extends Value {
-    def computationalType = ComputationalTypeReference
+	def computationalType = ComputationalTypeReference
 }
 
-
-
-
+object Operator extends Enumeration {
+	type Operator = Value
+	val Add, Sub, Mult, Div, Rem = Value
+}
 
 case class QCode {
 
 }
 object QCode {
-    /**
-     * @param classFile Some class file.
-     * @param method A method with a body of the respective given class file.
-     */
-    def apply(classFile: ClassFile, method: Method): QCode = {
-        val code = method.body.get
-        val initialLocals = {
-            var locals: Vector[Value] = Vector.empty
-            var localVariableIndex = 0
+	/**
+	 * @param classFile Some class file.
+	 * @param method A method with a body of the respective given class file.
+	 */
+	def apply(classFile : ClassFile, method : Method) : QCode = {
+		val code = method.body.get
+		val initialLocals = {
+			var locals : Vector[Value] = Vector.empty
+			var localVariableIndex = 0
 
-            if (!method.isStatic) {
-                val thisType = classFile.thisClass
-                locals = locals.updated(localVariableIndex, TypedValue(thisType))
-                localVariableIndex += thisType.computationalType.operandSize
-            }
-            for (parameterType ← method.descriptor.parameterTypes) {
-                val ct = parameterType.computationalType
-                locals = locals.updated(localVariableIndex, TypedValue(parameterType))
-                localVariableIndex += ct.operandSize
-            }
-            locals
-        }
+			if (!method.isStatic) {
+				val thisType = classFile.thisClass
+				locals = locals.updated(localVariableIndex, TypedValue(thisType))
+				localVariableIndex += thisType.computationalType.operandSize
+			}
+			for (parameterType ← method.descriptor.parameterTypes) {
+				val ct = parameterType.computationalType
+				locals = locals.updated(localVariableIndex, TypedValue(parameterType))
+				localVariableIndex += ct.operandSize
+			}
+			locals
+		}
 
-        // true if the instruction with the respective program counter is already transformed
-        val transformed = new Array[Boolean](code.instructions.length)
+		// true if the instruction with the respective program counter is already transformed
+		val transformed = new Array[Boolean](code.instructions.length)
 
-        var worklist: List[(Int /*program counter*/ , MemoryLayout /* the layout of the locals and stack before the instruction with the respective pc is executed */ )] = List((0, new MemoryLayout(Nil, initialLocals)(new TypeDomain)))
-        // the instructions which are at the beginning of a catch block are also added to the catch block
-        for (exceptionHandler ← code.exceptionHandlers) {
+		var worklist : List[(Int /*program counter*/ , MemoryLayout /* the layout of the locals and stack before the instruction with the respective pc is executed */ )] = List((0, new MemoryLayout(Nil, initialLocals)(new TypeDomain)))
+		// the instructions which are at the beginning of a catch block are also added to the catch block
+		for (exceptionHandler ← code.exceptionHandlers) {
 
-        }
+		}
 
-        while (worklist.nonEmpty) {
-            val (pc, memoryLayout) = worklist.head
-            worklist = worklist.tail
-            if (!transformed(pc)) {
+		while (worklist.nonEmpty) {
+			val (pc, memoryLayout) = worklist.head
+			worklist = worklist.tail
+			if (!transformed(pc)) {
 
-                memoryLayout.update(code.instructions(pc))
+				memoryLayout.update(code.instructions(pc))
 
-                // prepare for the transformation of the next instruction
-                transformed(pc) = true
-            }
-        }
+				// prepare for the transformation of the next instruction
+				transformed(pc) = true
+			}
+		}
 
-        null
-    }
+		null
+	}
 }
 
 trait LValue extends RValue
 trait RValue
 
-case class Parameter(val id: Int) extends RValue
+case class Parameter(val id : Int) extends RValue
 
 case class This extends RValue
 
 trait Statement
 trait Expression extends RValue
 trait UnaryExpression extends Expression {
-    def exp: LValue
+	def exp : LValue
 }
 abstract class BinaryExpression extends Expression {
-    def lExp: LValue
-    def rExp: LValue
+	def lExp : LValue
+	def rExp : LValue
 }
-case class AndExpression(val lExp: LValue, val rExp: LValue) extends BinaryExpression
+case class AndExpression(val lExp : LValue, val rExp : LValue) extends BinaryExpression
 
 case object MonitorEnter extends Statement
 case object MonitorExit extends Statement
-case class Assignment(lValue: LValue, rValue: RValue) extends Statement
+case class Assignment(lValue : LValue, rValue : RValue) extends Statement
 
 object Demo extends scala.App {
-    //    new SEStatement(MonitorEnter, new RValue[ReferenceType] {}) {}
+	//    new SEStatement(MonitorEnter, new RValue[ReferenceType] {}) {}
 }
