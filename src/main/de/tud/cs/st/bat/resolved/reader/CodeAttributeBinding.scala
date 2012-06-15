@@ -68,7 +68,7 @@ trait CodeAttributeBinding
                                 implicit cp: Constant_Pool): ExceptionTableEntry = {
         new ExceptionTableEntry(
             start_pc, end_pc, handler_pc,
-            if (catch_type_index == 0) null else catch_type_index.asObjectType
+            if (catch_type_index == 0) None else Some(catch_type_index.asObjectType)
         )
     }
 }

@@ -202,10 +202,8 @@ abstract class DependencyExtractor(val sourceElementIDs: SourceElementIDs)
                 // the generated InstructionDependencyExtractor super class.
                 process(methodID, instructions)
                 // add dependencies from the method to all throwables that are used in catch statements
-                for (
-                    ExceptionHandler(_, _, _, catchType) ← exceptionTable if !isFinallyBlock(catchType)
-                ) {
-                    processDependency(methodID, catchType, CATCHES)
+                for (exceptionHandler ← exceptionTable if  exceptionHandler.catchType.isDefined) {
+                    processDependency(methodID, exceptionHandler.catchType.get, CATCHES)
                 }
                 // The Java 5 specification defines the following attributes:
                 // LineNumberTable, LocalVariableTable, and LocalVariableTypeTable)
@@ -494,16 +492,6 @@ abstract class DependencyExtractor(val sourceElementIDs: SourceElementIDs)
             }
         }
     }
-
-    /**
-     * Determines whether the given catchType refers to a finally block.
-     *
-     * @param catchType The type that should be analyzed.
-     * @return <code>true</code> if the catchType is NULL.
-     *         Otherwise, <code>false</code> is returned.
-     */
-    private def isFinallyBlock(catchType: ObjectType): Boolean =
-        catchType == null
 
     protected def processDependency(id: Int,
                                     declaringClass: ReferenceType,
