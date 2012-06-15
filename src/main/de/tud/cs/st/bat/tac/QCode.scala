@@ -40,6 +40,11 @@ import resolved.ANEWARRAY
 
 /**
  * A value on the stack or a value stored in one of the local variables.
+ *
+ * @note The minimal information that is
+ * required by this framework is the computational type of the values. This specific type information is
+ * required, e.g., to determine the effect of `dup_...` instructions or the other generic instructions.
+ *
  * @author Michael Eichberg
  */
 sealed trait Value {
@@ -49,17 +54,15 @@ sealed trait Value {
     def computationalType: ComputationalType
 }
 
-/*
+/**
+ * Represents a value on the stack or in a local variable for which we have more precise type information
+ * than just the computational type value.
  *
+ * @author Michael Eichberg
  */
-case object UnusableValue {
-    def computationalType: ComputationalType = throw new Error("")
-}
-
 case class TypedValue(valueType: Type) extends Value {
     def computationalType = valueType.computationalType
 }
-
 object TypedValue {
     val BooleanValue = TypedValue(BooleanType)
     val ByteValue = TypedValue(ByteType)
@@ -72,49 +75,84 @@ object TypedValue {
 }
 
 case class ComputationalTypeValue(val computationalType: ComputationalType) extends Value
+object ComputationalTypeValue {
+    val CTIntegerValue = ComputationalTypeValue(ComputationalTypeInt)
+    val CTFloatValue = ComputationalTypeValue(ComputationalTypeFloat)
+    val CTReferenceValue = ComputationalTypeValue(ComputationalTypeReference)
+    val CTReturnAddressValue = ComputationalTypeValue(ComputationalTypeReturnAddress)
+    val CTLongValue = ComputationalTypeValue(ComputationalTypeLong)
+    val CTDoubleValue = ComputationalTypeValue(ComputationalTypeDouble)
+}
 
 case object NullValue extends Value {
     def computationalType = ComputationalTypeReference
 }
 
-sealed protected trait SomeMemoryLayout {
-    def locals: IndexedSeq[Value]
-    def operands: List[Value]
-    def update(instruction: BytecodeInstruction): SomeMemoryLayout
-}
 /*
  * After the execution of a (a,i,f,l,d)return instruction, the stack/heap is no longer allowed to be used.s
  */
-object NoMemoryLayout extends SomeMemoryLayout {
+object NoMemoryLayout extends SomeMemoryLayout[Nothing] {
     def locals: IndexedSeq[Value] = {
         throw new Error("no memory layout available")
     }
     def operands: List[Value] = {
         throw new Error("no memory layout available")
     }
-    def update(instruction: BytecodeInstruction): SomeMemoryLayout = {
+    def update(instruction: BytecodeInstruction): this.type = {
         throw new Error("no memory layout available")
     }
 }
-class MemoryLayout(val operands: List[Value], val locals: IndexedSeq[Value]) extends SomeMemoryLayout {
 
-    def update(instruction: BytecodeInstruction): SomeMemoryLayout = {
+trait SomeMemoryLayout[+M <: SomeMemoryLayout[_]] {
+    def locals: IndexedSeq[Value]
+    def operands: List[Value]
+    def update(instruction: BytecodeInstruction): M
+}
+
+trait Domain {
+    def aaload(index: Value, arrayref: Value): Value
+    def nullValue(): Value
+    def aastore(value: Value, index: Value, arrayref: Value): Unit
+    def areturn(value: Value): Unit
+    def vreturn(): Unit
+}
+
+class TypeDomain {
+    def aaload(index: Value, arrayref: Value): Value = {
+        arrayref match {
+            case TypedValue(ArrayType(componentType)) ⇒ TypedValue(componentType)
+            /* TODO Do we want to handle: case NullValue => …*/
+            case _                                    ⇒ ComputationalTypeValue(ComputationalTypeReference)
+        }
+    }
+    def nullValue() = NullValue
+    def aastore(value: Value, index: Value, arrayref: Value) { /* Nothing to do. */ }
+    def areturn(value: Value) { /* Nothing to do. */ }
+    def vreturn() { /* Nothing to do. */ }
+}
+
+class MemoryLayout(val operands: List[Value], val locals: IndexedSeq[Value])(implicit domain: Domain) extends SomeMemoryLayout[MemoryLayout] {
+
+    def update(instruction: BytecodeInstruction): MemoryLayout = {
         import annotation.switch
 
         (instruction.opcode: @switch) match {
-            case 50 /*aaload*/ ⇒ new MemoryLayout(
-                {
-                    val arrayref = operands.tail.head
-                    arrayref match {
-                        case TypedValue(ArrayType(componentType)) ⇒ TypedValue(componentType) :: operands.tail.tail
-                        /* TODO Do we want to handle: case NullValue => …*/
-                        case _                                    ⇒ ComputationalTypeValue(ComputationalTypeReference) :: (operands.tail.tail)
-                    }
-                },
-                locals)
-            case 83 /*aastore*/      ⇒ new MemoryLayout(operands.tail.tail.tail, locals)
-            case 1 /*aconst_null*/   ⇒ new MemoryLayout(NullValue :: operands, locals)
-            case 25 /*aload*/        ⇒ new MemoryLayout(locals(instruction.asInstanceOf[ALOAD].lvIndex) :: operands, locals)
+            case 50 /*aaload*/ ⇒ {
+                val index :: arrayref :: rest = operands
+                val newOperands = domain.aaload(index, arrayref) :: rest
+                new MemoryLayout(newOperands, locals)
+            }
+            case 83 /*aastore*/ ⇒ {
+                val value :: index :: arrayref :: rest = operands
+                domain.aastore(value, index, arrayref)
+                new MemoryLayout(rest, locals)
+            }
+            case 1 /*aconst_null*/ ⇒
+                new MemoryLayout(domain.nullValue :: operands, locals)
+            case 25 /*aload*/ ⇒
+                new MemoryLayout(
+                    locals(instruction.asInstanceOf[ALOAD].lvIndex) :: operands,
+                    locals)
             case 42 /*aload_0*/      ⇒ new MemoryLayout(locals(0) :: operands, locals)
             case 43 /*aload_1*/      ⇒ new MemoryLayout(locals(1) :: operands, locals)
             case 44 /*aload_2*/      ⇒ new MemoryLayout(locals(2) :: operands, locals)
@@ -387,18 +425,18 @@ case class This extends RValue
 trait Statement
 trait Expression extends RValue
 trait UnaryExpression extends Expression {
-    def exp : LValue
+    def exp: LValue
 }
 abstract class BinaryExpression extends Expression {
     def lExp: LValue
     def rExp: LValue
 }
-case class AndExpression(val lExp: LValue, val rExp: LValue)  extends BinaryExpression
+case class AndExpression(val lExp: LValue, val rExp: LValue) extends BinaryExpression
 
 case object MonitorEnter extends Statement
 case object MonitorExit extends Statement
 case class Assignment(lValue: LValue, rValue: RValue) extends Statement
 
 object Demo extends scala.App {
-//    new SEStatement(MonitorEnter, new RValue[ReferenceType] {}) {}
+    //    new SEStatement(MonitorEnter, new RValue[ReferenceType] {}) {}
 }
