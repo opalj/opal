@@ -15,9 +15,9 @@ trait Domain {
 	def anewarray(count : Value, componentType : ReferenceType) : Value
 	def areturn(value : Value) : Unit
 	def arraylength(value : Value) : Value
-	def baload(index : Value, arrayred : Value) : Value
+	def baload(index : Value, arrayref : Value) : Value
 	def bastore(value : Value, index : Value, arrayref : Value) : Unit
-	def caload(index : Value, arrayred : Value) : Value
+	def caload(index : Value, arrayref : Value) : Value
 	def castore(value : Value, index : Value, arrayref : Value) : Unit
 	def checkcast(objectref : Value, componentType : ReferenceType) : Value
 	def ireturn(value : Value) : Unit

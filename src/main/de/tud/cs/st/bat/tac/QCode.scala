@@ -144,7 +144,7 @@ object QCode {
 		null
 	}
 }
-
+/*
 trait LValue extends RValue
 trait RValue
 
@@ -170,3 +170,4 @@ case class Assignment(lValue : LValue, rValue : RValue) extends Statement
 object Demo extends scala.App {
 	//    new SEStatement(MonitorEnter, new RValue[ReferenceType] {}) {}
 }
+*/

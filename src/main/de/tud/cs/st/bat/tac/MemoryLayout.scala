@@ -88,7 +88,7 @@ class MemoryLayout(
 				domain.bastore(value, index, arrayref)
 				new MemoryLayout(rest, locals)
 			}
-			case 16 /*bipush*/ ⇒ new MemoryLayout(TypedValue.ByteValue :: (operands.tail), locals)
+			case 16 /*bipush*/ ⇒ new MemoryLayout(TypedValue.ByteValue :: operands, locals)
 			case 52 /*caload*/ ⇒ {
 				val index :: arrayref :: rest = operands
 				val newOperands = domain.caload(index, arrayref) :: rest
