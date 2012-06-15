@@ -34,8 +34,10 @@
 package de.tud.cs.st.bat
 
 /**
- * This package defines classes and traits used by its three-address code based representation.
+ * This package defines classes and traits used by BAT's abstract interpretation framework.
  *
+ * @note This framework assumes that the analyzed bytecode is valid; i.e., the JVM's bytecode verifier
+ * would verify the code.
  * @author Michael Eichberg
  */
 package object tac {
