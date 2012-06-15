@@ -145,7 +145,7 @@ class MemoryLayout(
         extends SomeMemoryLayout[MemoryLayout] {
 
     /**
-     * Extractor object that matches `Value`s which have computational type category 2.
+     * Extractor object that matches `Value`s which have computational type category 1.
      */
     private[this] object CTC1 {
         def unapply(value: Value): Boolean = value.computationalType.computationTypeCategory.id == 1
