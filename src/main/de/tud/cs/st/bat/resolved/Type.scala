@@ -32,6 +32,8 @@
 */
 package de.tud.cs.st.bat.resolved
 
+import scala.annotation.tailrec
+
 /**
  * The computational type category of a value on the operand stack. (cf. JVM Spec. 2.11.1 Types and the Java Virtual
  * Machine).
@@ -180,6 +182,8 @@ sealed trait ByteType extends BaseType {
 
     def computationalType = ComputationalTypeInt
 
+    val atype = 8
+
     def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     def toJava: String = "byte"
@@ -201,6 +205,8 @@ sealed trait CharType extends BaseType {
     override def isCharType = true
 
     def computationalType = ComputationalTypeInt
+
+    val atype = 5
 
     def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
@@ -224,6 +230,8 @@ sealed trait DoubleType extends BaseType {
 
     def computationalType = ComputationalTypeDouble
 
+    val atype = 7
+
     def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     def toJava: String = "double"
@@ -245,6 +253,8 @@ sealed trait FloatType extends BaseType {
     override def isFloatType = true
 
     def computationalType = ComputationalTypeFloat
+
+    val atype = 6
 
     def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
@@ -268,6 +278,8 @@ sealed trait ShortType extends BaseType {
 
     def computationalType = ComputationalTypeInt
 
+    val atype = 9
+
     def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     def toJava: String = "short"
@@ -289,6 +301,8 @@ sealed trait IntegerType extends BaseType {
     override def isIntegerType = true
 
     def computationalType = ComputationalTypeInt
+
+    val atype = 10
 
     def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
@@ -312,6 +326,8 @@ sealed trait LongType extends BaseType {
 
     def computationalType = ComputationalTypeLong
 
+    val atype = 11
+
     def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     def toJava: String = "long"
@@ -333,6 +349,8 @@ sealed trait BooleanType extends BaseType {
     override def isBooleanType = true
 
     def computationalType = ComputationalTypeInt
+
+    val atype = 4
 
     def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
@@ -456,8 +474,17 @@ final object ArrayType {
      *
      * This method makes sure that every array type is represented by exactly one ArrayType object.
      */
-    def apply(componentType: FieldType) = {
+    def apply(componentType: FieldType) : ArrayType = {
         cache.getOrElseUpdate(componentType, new ArrayType(componentType))
+    }
+
+    def apply(dimension: Int, componentType: FieldType) : ArrayType = {
+        @tailrec
+        val at = apply(componentType)
+        if (dimension > 1)
+            apply(dimension - 1, at)
+        else
+            at
     }
 
     def unapply(at: ArrayType): Option[FieldType] = Some(at.componentType)

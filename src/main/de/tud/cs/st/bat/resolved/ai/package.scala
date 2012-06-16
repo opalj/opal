@@ -32,6 +32,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package de.tud.cs.st.bat
+package resolved
 
 /**
  * This package defines classes and traits used by BAT's abstract interpretation framework.
@@ -40,6 +41,6 @@ package de.tud.cs.st.bat
  * would verify the code.
  * @author Michael Eichberg
  */
-package object tac {
+package object ai {
 
 }

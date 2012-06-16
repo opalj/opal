@@ -5,7 +5,7 @@
   Software Technology Group
   Department of Computer Science
   Technische Universität Darmstadt
-  All rights reserved.   
+  All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions are met:
@@ -14,11 +14,11 @@
     this list of conditions and the following disclaimer.
   - Redistributions in binary form must reproduce the above copyright notice,
     this list of conditions and the following disclaimer in the documentation
-    and/or other materials provided with the distribution. 
-  - Neither the name of the Software Technology Group or Technische 
-    Universität Darmstadt nor the names of its contributors may be used to 
-    endorse or promote products derived from this software without specific 
-    prior written permission. 
+    and/or other materials provided with the distribution.
+  - Neither the name of the Software Technology Group or Technische
+    Universität Darmstadt nor the names of its contributors may be used to
+    endorse or promote products derived from this software without specific
+    prior written permission.
 
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -35,7 +35,7 @@
   Author: Michael Eichberg (www.michael-eichberg.de)
 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="2.0"
-	xmlns:opal="http://www.opal-project.de/BAT/10.2011/JVMInstructions">
+	xmlns:opal="http://www.opal-project.de/BAT/06.2012/JVMInstructions">
 
 	<xsl:output media-type="text/plain" encoding="UTF-8" method="text" />
 
@@ -55,7 +55,7 @@ package de.tud.cs.st.bat.resolved
  * @version [Generator:] 0.9.0
  */
 object InstructionExceptions {
- 
+
 	<xsl:for-each select="distinct-values(/opal:instructions/opal:instruction/opal:exceptions/opal:exception/@type)">
 	val <xsl:value-of select="opal:lastSegment(string(.),'\.')"/> = ObjectType("<xsl:value-of select="."/>")
 	</xsl:for-each>
