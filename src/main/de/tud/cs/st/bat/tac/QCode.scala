@@ -88,6 +88,10 @@ case object NullValue extends Value {
 	def computationalType = ComputationalTypeReference
 }
 
+case class ReturnAddressValue(address : Int) extends Value {
+    def computationalType = ComputationalTypeReturnAddress
+}
+
 object Operator extends Enumeration {
 	type Operator = Value
 	val Add, Sub, Mult, Div, Rem = Value
