@@ -35,54 +35,61 @@ package de.tud.cs.st.bat
 package resolved
 package ai
 
+/**
+ * @author Michael Eichberg
+ */
 object AI {
 
-    /**
+   /**
      * @param classFile Some class file.
-     * @param method A method with a body of the respective given class file.
+     * @param method A non-abstract,non-native method of the given class file.
+     * @param domain The abstract domain that is used during the interpretation.
      */
-    def apply(classFile: ClassFile, method: Method)(implicit domain: Domain): Array[MemoryLayout] = {
-        val code = method.body.get.instructions
-        val initialLocals = {
-            var locals: IndexedSeq[Value] = new Array[Value](method.body.get.maxLocals)
-            var localVariableIndex = 0
+   def apply(classFile : ClassFile, method : Method)(implicit domain : Domain) : Array[MemoryLayout] = {
+      val code = method.body.get.instructions
+      val initialLocals = {
+         var locals : IndexedSeq[Value] = new Array[Value](method.body.get.maxLocals)
+         var localVariableIndex = 0
 
-            if (!method.isStatic) {
-                val thisType = classFile.thisClass
-                locals = locals.updated(localVariableIndex, TypedValue(thisType))
-                localVariableIndex += 1 /*==thisType.computationalType.operandSize*/
-            }
+         if (!method.isStatic) {
+            val thisType = classFile.thisClass
+            locals = locals.updated(localVariableIndex, TypedValue(thisType))
+            localVariableIndex += 1 /*==thisType.computationalType.operandSize*/
+         }
 
-            for (parameterType ← method.descriptor.parameterTypes) {
-                val ct = parameterType.computationalType
-                locals = locals.updated(localVariableIndex, TypedValue(parameterType))
-                localVariableIndex += ct.operandSize
-            }
-            locals
-        }
+         for (parameterType ← method.descriptor.parameterTypes) {
+            val ct = parameterType.computationalType
+            locals = locals.updated(localVariableIndex, TypedValue(parameterType))
+            localVariableIndex += ct.operandSize
+         }
+         locals
+      }
+      apply(code, initialLocals)
+   }
 
-        // true if the instruction with the respective program counter is already transformed
-        val memoryLayouts = new Array[MemoryLayout](code.length)
-        memoryLayouts(0) = new MemoryLayout(Nil, initialLocals)
+   def apply(code : Array[Instruction], initialLocals : IndexedSeq[Value])(implicit domain : Domain) : Array[MemoryLayout] = {
+      // true if the instruction with the respective program counter is already transformed
+      val memoryLayouts = new Array[MemoryLayout](code.length)
+      memoryLayouts(0) = new MemoryLayout(Nil, initialLocals)
 
-        var worklist: List[Int /*program counter*/ ] = List(0)
-        while (worklist.nonEmpty) {
-            var pc = worklist.head
-            worklist = worklist.tail
-            val instruction = code(pc)
-            val memoryLayout = memoryLayouts(pc)
+      var worklist : List[Int /*program counter*/ ] = List(0)
+      while (worklist.nonEmpty) {
+         var pc = worklist.head
+         worklist = worklist.tail
+         val instruction = code(pc)
+         val memoryLayout = memoryLayouts(pc)
 
-            val newMemoryLayout = memoryLayout.update(instruction)
+         val newMemoryLayout = memoryLayout.update(instruction)
 
-            // Go to the next instruction and store the memory layout 
-            pc += 1
-            while (pc < code.length && (code(pc) eq null)) pc += 1
-            if (pc < code.length) {
-                worklist = pc :: worklist
-                memoryLayouts(pc) = newMemoryLayout
-            }
-        }
+         // Go to the next instruction and store the memory layout 
+         pc += 1
+         while (pc < code.length && (code(pc) eq null)) pc += 1
+         if (pc < code.length) {
+            worklist = pc :: worklist
+            memoryLayouts(pc) = newMemoryLayout
+         }
+      }
 
-        memoryLayouts
-    }
+      memoryLayouts
+   }
 }
