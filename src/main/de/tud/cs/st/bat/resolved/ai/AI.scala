@@ -35,22 +35,24 @@ package de.tud.cs.st.bat
 package resolved
 package ai
 
-object QCode {
+object AI {
+
     /**
      * @param classFile Some class file.
      * @param method A method with a body of the respective given class file.
      */
     def apply(classFile: ClassFile, method: Method)(implicit domain: Domain): Array[MemoryLayout] = {
-        val code = method.body.get
+        val code = method.body.get.instructions
         val initialLocals = {
-            var locals: Vector[Value] = Vector.empty
+            var locals: IndexedSeq[Value] = new Array[Value](method.body.get.maxLocals)
             var localVariableIndex = 0
 
             if (!method.isStatic) {
                 val thisType = classFile.thisClass
                 locals = locals.updated(localVariableIndex, TypedValue(thisType))
-                localVariableIndex += thisType.computationalType.operandSize
+                localVariableIndex += 1 /*==thisType.computationalType.operandSize*/
             }
+
             for (parameterType ← method.descriptor.parameterTypes) {
                 val ct = parameterType.computationalType
                 locals = locals.updated(localVariableIndex, TypedValue(parameterType))
@@ -60,27 +62,27 @@ object QCode {
         }
 
         // true if the instruction with the respective program counter is already transformed
-        val transformed = new Array[Boolean](code.instructions.length)
-        val memoryLayouts = new Array[MemoryLayout](code.instructions.length)
+        val memoryLayouts = new Array[MemoryLayout](code.length)
+        memoryLayouts(0) = new MemoryLayout(Nil, initialLocals)
 
-        var worklist: List[(Int /*program counter*/ , MemoryLayout /* the layout of the locals and stack before the instruction with the respective pc is executed */ )] = List((0, new MemoryLayout(Nil, initialLocals)))
-        // the instructions which are at the beginning of a catch block are also added to the catch block
-        for (exceptionHandler ← code.exceptionHandlers) {
-
-        }
-
+        var worklist: List[Int /*program counter*/ ] = List(0)
         while (worklist.nonEmpty) {
-            val (pc, memoryLayout) = worklist.head
+            var pc = worklist.head
             worklist = worklist.tail
-            if (!transformed(pc)) {
+            val instruction = code(pc)
+            val memoryLayout = memoryLayouts(pc)
 
-                memoryLayout.update(code.instructions(pc))
+            val newMemoryLayout = memoryLayout.update(instruction)
 
-                // prepare for the transformation of the next instruction
-                transformed(pc) = true
+            // Go to the next instruction and store the memory layout 
+            pc += 1
+            while (pc < code.length && (code(pc) eq null)) pc += 1
+            if (pc < code.length) {
+                worklist = pc :: worklist
+                memoryLayouts(pc) = newMemoryLayout
             }
         }
 
-        null
+        memoryLayouts
     }
 }
