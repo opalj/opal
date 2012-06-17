@@ -349,6 +349,7 @@ Author 	Michael Eichberg (mail@michael-eichberg.de)
 			<suite classname="de.tud.cs.st.bat.resolved.dependency.DependencyExtractorTest" />
 			<suite classname="de.tud.cs.st.bat.resolved.dependency.UseIDOfBaseTypeForArrayTypesTest" />
 			<suite classname="de.tud.cs.st.bat.resolved.dependency.DependenciesToPrimitiveTypesTest" />
+			<suite classname="de.tud.cs.st.bat.resolved.ai.AI_SimpleMethodsTest" />
 		</scalatest>
 	</target>
 
