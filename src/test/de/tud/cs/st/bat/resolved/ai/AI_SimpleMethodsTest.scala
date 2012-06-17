@@ -120,20 +120,28 @@ class AI_SimpleMethodsTest extends FlatSpec with ShouldMatchers /*with BeforeAnd
       domain.returnedValue should be(Some(TypedValue.DoubleValue))
    }
 
+   it should "be able to handle simple methods correctly" in {
+      val method = classFile.methods.find(_.name == "objectToString").get
+      val domain = new RecordingDomain
+      /*val result =*/ AI(classFile, method)(domain)
+
+      domain.returnedValue should be(Some(TypedValue.StringValue))
+   }
+
+   it should "be able to correctly handle casts" in {
+      val method = classFile.methods.find(_.name == "asSimpleMethods").get
+      val domain = new RecordingDomain
+      /*val result =*/ AI(classFile, method)(domain)
+
+      domain.returnedValue should be(Some(TypedValue(ObjectType("ai/SimpleMethods"))))
+   }
+
    it should "be able to analyze a method that squares a given double value" in {
       val method = classFile.methods.find(_.name == "square").get
       val domain = new RecordingDomain
       /*val result =*/ AI(classFile, method)(domain)
 
       domain.returnedValue should be(Some(TypedValue.DoubleValue))
-   }
-
-   it should "be able to analyze a method that creates an instance of an object using reflection" in {
-      val method = classFile.methods.find(_.name == "create").get
-      val domain = new RecordingDomain
-      val result = AI(classFile, method)(domain)
-
-      domain.returnedValue should be(Some(TypedValue(ObjectType.Object)))
    }
 
    it should "be able to analyze a classical setter method" in {
@@ -152,4 +160,13 @@ class AI_SimpleMethodsTest extends FlatSpec with ShouldMatchers /*with BeforeAnd
 
       domain.returnedValue should be(Some(TypedValue.FloatValue))
    }
+
+   it should "be able to analyze a method that creates an instance of an object using reflection" in {
+      val method = classFile.methods.find(_.name == "create").get
+      val domain = new RecordingDomain
+      val result = AI(classFile, method)(domain)
+
+      domain.returnedValue should be(Some(TypedValue(ObjectType.Object)))
+   }
+
 }

@@ -77,8 +77,12 @@ public class SimpleMethods {
 		return i * i;
 	}
 
-	public static <T> T create(Class<T> clazz) throws Exception {
-		return clazz.newInstance();
+	public static String objectToString(Object o) {
+		return o.toString();
+	}
+
+	public static SimpleMethods asSimpleMethods(Object o) {
+		return (SimpleMethods) o; // this is deliberately not (type) safe
 	}
 
 	// SEGMENT (START)
@@ -91,6 +95,11 @@ public class SimpleMethods {
 	public float getValue() {
 		return value;
 	}
+
 	// SEGMENT (END)
+
+	public static <T> T create(Class<T> clazz) throws Exception {
+		return clazz.newInstance();
+	}
 
 }
