@@ -36,58 +36,154 @@ package resolved
 package ai
 
 /**
- * A value on the stack or a value stored in one of the local variables.
- *
- * @note The minimal information that is
- * required by this framework is the computational type of the values. This specific type information is
- * required, e.g., to determine the effect of `dup_...` instructions or the other generic instructions.
- *
- * @author Michael Eichberg
- */
+  * Abstracts over a concrete operand stack value or a value stored in one of the local variables.
+  *
+  * @note The minimal information that is required by BAT is the computational type of the values.
+  * This information is required to correctly model the effect of `dup_...` instructions or the other
+  * generic instructions and to make the analyze of bytecode at least possible.
+  *
+  * @author Michael Eichberg
+  */
 sealed trait Value {
-    /**
+   /**
      * The computational type of the value.
      */
-    def computationalType: ComputationalType
+   def computationalType : ComputationalType
 }
-// TODO Reconsider the type hierarchy
+/**
+  * Trait that is mixed in by values for which we have more precise type information.
+  *
+  * @author Michael Eichberg
+  */
+sealed trait TypedValue extends Value {
+   def valueType : Type
+}
+object TypedValue {
 
-case class ComputationalTypeValue(val computationalType: ComputationalType) extends Value
-object ComputationalTypeValue {
-    val CTIntegerValue = ComputationalTypeValue(ComputationalTypeInt)
-    val CTFloatValue = ComputationalTypeValue(ComputationalTypeFloat)
-    val CTReferenceValue = ComputationalTypeValue(ComputationalTypeReference)
-    val CTReturnAddressValue = ComputationalTypeValue(ComputationalTypeReturnAddress)
-    val CTLongValue = ComputationalTypeValue(ComputationalTypeLong)
-    val CTDoubleValue = ComputationalTypeValue(ComputationalTypeDouble)
+   val AString = AReferenceTypeValue(ObjectType.String)
+   val AClass = AReferenceTypeValue(ObjectType.Class)
+   val AnObject = AReferenceTypeValue(ObjectType.Object)
+
+   def apply(t : Type) : TypedValue = {
+      t match {
+         case BooleanType          ⇒ SomeBooleanValue
+         case ByteType             ⇒ SomeByteValue
+         case ShortType            ⇒ SomeShortValue
+         case CharType             ⇒ SomeCharValue
+         case IntegerType          ⇒ SomeIntegerValue
+         case FloatType            ⇒ SomeFloatValue
+         case LongType             ⇒ SomeLongValue
+         case DoubleType           ⇒ SomeDoubleValue
+         case rt @ ReferenceType() ⇒ AReferenceTypeValue(rt)
+      }
+
+   }
+
+   def unapply(tv : TypedValue) : Option[Type] = Some(tv.valueType)
 }
 
 /**
- * Represents a value on the stack or in a local variable for which we have more precise type information
- * than just the computational type value.
- *
- * @author Michael Eichberg
- */
-case class TypedValue(valueType: Type) extends Value {
-    def computationalType = valueType.computationalType
+  * Abstracts over all values with computational type category `1`.
+  *
+  * @author Michael Eichberg
+  */
+sealed trait ComputationalTypeCategory1Value extends Value
+
+/**
+  * Abstracts over all values with computational type `integer`.
+  *
+  * @author Michael Eichberg
+  */
+sealed class CTIntegerValue extends ComputationalTypeCategory1Value {
+   final def computationalType : ComputationalType = ComputationalTypeInt
 }
-object TypedValue {
-    val BooleanValue = TypedValue(BooleanType)
-    val ByteValue = TypedValue(ByteType)
-    val CharValue = TypedValue(CharType)
-    val ShortValue = TypedValue(ShortType)
-    val IntegerValue = TypedValue(IntegerType)
-    val LongValue = TypedValue(LongType)
-    val FloatValue = TypedValue(FloatType)
-    val DoubleValue = TypedValue(DoubleType)
-    val StringValue = TypedValue(ObjectType("java/lang/String"))
-    val ClassValue = TypedValue(ObjectType("java/lang/Class"))
+final object CTIntegerValue extends CTIntegerValue
+
+class SomeBooleanValue extends CTIntegerValue with TypedValue {
+   def valueType = BooleanType
+}
+final object SomeBooleanValue extends SomeBooleanValue
+
+class SomeByteValue extends CTIntegerValue with TypedValue {
+   def valueType = ByteType
+}
+final object SomeByteValue extends SomeByteValue
+
+class SomeShortValue extends CTIntegerValue with TypedValue {
+   def valueType = ShortType
+}
+final object SomeShortValue extends SomeShortValue
+
+class SomeCharValue extends CTIntegerValue with TypedValue {
+   def valueType = CharType
+}
+final object SomeCharValue extends SomeCharValue
+
+class SomeIntegerValue extends CTIntegerValue with TypedValue {
+   def valueType = IntegerType
+}
+final object SomeIntegerValue extends SomeIntegerValue
+
+/**
+  * Abstracts over all values with computational type `float`.
+  *
+  * @author Michael Eichberg
+  */
+class SomeFloatValue extends ComputationalTypeCategory1Value with TypedValue {
+   final def computationalType : ComputationalType = ComputationalTypeFloat
+   final def valueType = FloatType
+}
+final object SomeFloatValue extends SomeFloatValue
+
+/**
+  * Abstracts over all values with computational type `reference`.
+  *
+  * @author Michael Eichberg
+  */
+sealed class CTReferenceValue extends ComputationalTypeCategory1Value {
+   final def computationalType : ComputationalType = ComputationalTypeReference
+}
+final object CTReferenceValue extends CTReferenceValue
+
+final case object NullValue extends CTReferenceValue
+
+class SomeReferenceTypeValue extends CTReferenceValue with TypedValue {
+   def valueType : ReferenceType = ObjectType.Object
+}
+case class AReferenceTypeValue(override val valueType : ReferenceType) extends SomeReferenceTypeValue
+
+/**
+  * Represents a value of type return address.
+  *
+  * @note The framework completely handles all aspects related to return address values.
+  */
+sealed class CTReturnAddressValue extends ComputationalTypeCategory1Value {
+   final def computationalType : ComputationalType = ComputationalTypeReturnAddress
+}
+final case class ReturnAddressValue(address : Int) extends CTReturnAddressValue
+
+/**
+  * Abstracts over all values with computational type category `2`.
+  *
+  * @author Michael Eichberg
+  */
+sealed trait ComputationalTypeCategory2Value extends Value
+
+class SomeLongValue extends ComputationalTypeCategory2Value with TypedValue {
+   final def computationalType : ComputationalType = ComputationalTypeLong
+   final def valueType = LongType
 }
 
-case object NullValue extends Value {
-    def computationalType = ComputationalTypeReference
-}
+final object SomeLongValue extends SomeLongValue
 
-case class ReturnAddressValue(address: Int) extends Value {
-    def computationalType = ComputationalTypeReturnAddress
+class SomeDoubleValue extends ComputationalTypeCategory2Value with TypedValue {
+   final def computationalType : ComputationalType = ComputationalTypeDouble
+   final def valueType = DoubleType
 }
+final object SomeDoubleValue extends SomeDoubleValue
+
+
+
+
+
+

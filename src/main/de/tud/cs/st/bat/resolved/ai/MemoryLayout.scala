@@ -404,34 +404,34 @@ class MemoryLayout(
             case _ ⇒ sys.error("internal implementation error or invalid bytecode")
          }
          case 91 /*dup_x2*/ ⇒ operands match {
-            case (v1 /*@ CTC1()*/ ) :: (v2 @ CTC1()) :: (v3 /*@ CTC1()*/ ) :: rest ⇒
+            case (v1 /*: CTC1*/ ) :: (v2 : CTC1) :: (v3 /*: CTC1*/ ) :: rest ⇒
                new MemoryLayout(v1 :: v2 :: v3 :: v1 :: rest, locals)
-            case (v1 /*@ CTC1()*/ ) :: v2 /* @ CTC2()*/ :: rest ⇒
+            case (v1 /*: CTC1*/ ) :: v2 /* : CTC2*/ :: rest ⇒
                new MemoryLayout(v1 :: v2 :: v1 :: rest, locals)
             case _ ⇒ sys.error("internal implementation error or invalid bytecode")
          }
          case 92 /*dup2*/ ⇒ operands match {
-            case (v1 @ CTC1()) :: (v2 /*@ CTC1()*/ ) :: _ ⇒
+            case (v1 : CTC1) :: (v2 /*: CTC1*/ ) :: _ ⇒
                new MemoryLayout(v1 :: v2 :: operands, locals)
-            case (v /*@ CTC2()*/ ) :: _ ⇒
+            case (v /*: CTC2*/ ) :: _ ⇒
                new MemoryLayout(v :: operands, locals)
             case _ ⇒ sys.error("internal implementation error or invalid bytecode")
          }
          case 93 /*dup2_x1*/ ⇒ operands match {
-            case (v1 @ CTC1()) :: (v2 /*@ CTC1()*/ ) :: (v3 /*@ CTC1()*/ ) :: rest ⇒
+            case (v1 : CTC1) :: (v2 /*: CTC1*/ ) :: (v3 /*: CTC1*/ ) :: rest ⇒
                new MemoryLayout(v1 :: v2 :: v3 :: v1 :: v2 :: rest, locals)
-            case (v1 @ CTC2()) :: (v2 /*@ CTC1()*/ ) :: rest ⇒
+            case (v1 : CTC2) :: (v2 /*: CTC1*/ ) :: rest ⇒
                new MemoryLayout(v1 :: v2 :: v1 :: rest, locals)
             case _ ⇒ sys.error("internal implementation error or invalid bytecode")
          }
          case 94 /*dup2_x2*/ ⇒ operands match {
-            case (v1 @ CTC1()) :: (v2 @ CTC1()) :: (v3 @ CTC1()) :: (v4 /*@ CTC1()*/ ) :: rest ⇒
+            case (v1 : CTC1) :: (v2 : CTC1) :: (v3 : CTC1) :: (v4 /*: CTC1*/ ) :: rest ⇒
                new MemoryLayout(v1 :: v2 :: v3 :: v4 :: v1 :: v2 :: rest, locals)
-            case (v1 @ CTC2()) :: (v2 @ CTC1()) :: (v3 @ CTC1()) :: rest ⇒
+            case (v1 : CTC2) :: (v2 : CTC1) :: (v3 : CTC1) :: rest ⇒
                new MemoryLayout(v1 :: v2 :: v3 :: v1 :: rest, locals)
-            case (v1 @ CTC1()) :: (v2 @ CTC1()) :: (v3 @ CTC2()) :: rest ⇒
+            case (v1 : CTC1) :: (v2 : CTC1) :: (v3 : CTC2) :: rest ⇒
                new MemoryLayout(v1 :: v2 :: v3 :: v1 :: v2 :: rest, locals)
-            case (v1 @ CTC2()) :: (v2 /*@ CTC1()*/ ) :: rest ⇒
+            case (v1 : CTC2) :: (v2 /*: CTC1*/ ) :: rest ⇒
                new MemoryLayout(v1 :: v2 :: v1 :: rest, locals)
             case _ ⇒ sys.error("internal implementation error or invalid bytecode")
          }
@@ -440,8 +440,8 @@ class MemoryLayout(
             new MemoryLayout(operands.tail, locals)
          case 88 /*pop2*/ ⇒
             operands.head match {
-               case CTC1() ⇒ new MemoryLayout(operands.drop(2), locals)
-               case CTC2() ⇒ new MemoryLayout(operands.tail, locals)
+               case _ : CTC1 ⇒ new MemoryLayout(operands.drop(2), locals)
+               case _ : CTC2 ⇒ new MemoryLayout(operands.tail, locals)
             }
 
          case 95 /*swap*/ ⇒ {
@@ -505,8 +505,7 @@ class MemoryLayout(
                invoke.declaringClass,
                invoke.name,
                invoke.methodDescriptor,
-               operands.head,
-               operands.tail.take(argsCount)
+               operands.take(argsCount + 1).reverse
             ) match {
                   case Some(v) ⇒ new MemoryLayout(v :: (operands.drop(argsCount + 1)), locals)
                   case None    ⇒ new MemoryLayout(operands.drop(argsCount + 1), locals)
@@ -519,8 +518,7 @@ class MemoryLayout(
                invoke.declaringClass,
                invoke.name,
                invoke.methodDescriptor,
-               operands.head,
-               operands.tail.take(argsCount)) match {
+               operands.take(argsCount + 1).reverse) match {
                   case Some(v) ⇒ new MemoryLayout(v :: (operands.drop(argsCount + 1)), locals)
                   case None    ⇒ new MemoryLayout(operands.drop(argsCount + 1), locals)
                }
@@ -544,8 +542,7 @@ class MemoryLayout(
                invoke.declaringClass,
                invoke.name,
                invoke.methodDescriptor,
-               operands.head,
-               operands.tail.take(argsCount)) match {
+               operands.take(argsCount + 1)) match {
                   case Some(v) ⇒ new MemoryLayout(v :: (operands.drop(argsCount + 1)), locals)
                   case None    ⇒ new MemoryLayout(operands.drop(argsCount + 1), locals)
                }
@@ -755,16 +752,22 @@ class MemoryLayout(
 }
 
 object MemoryLayout {
+
+   private type CTC1 = ComputationalTypeCategory1Value
+   
+   private type CTC2 = ComputationalTypeCategory2Value
+
    /**
-     * Extractor object to match `Value`s which have computational type category 1.
+     * @note If you use this method to copy values from the stack into local variables, make
+     * sure that you first reverse the order of operands.
      */
-   private object CTC1 {
-      def unapply(value : Value) : Boolean = value.computationalType.computationTypeCategory.id == 1
-   }
-   /**
-     * Extractor object to match `Value`s which have computational type category 2.
-     */
-   private object CTC2 {
-      def unapply(value : Value) : Boolean = value.computationalType.computationTypeCategory.id == 2
+   def mapToLocals(params : List[Value], locals : IndexedSeq[Value]) : IndexedSeq[Value] = {
+      var index = 0
+      var initializedLocals = locals
+      for (param ← params) {
+         initializedLocals.updated(index, param)
+         index += param.computationalType.operandSize
+      }
+      initializedLocals
    }
 }

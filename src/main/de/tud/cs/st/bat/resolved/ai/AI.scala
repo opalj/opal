@@ -53,7 +53,7 @@ object AI {
 
          if (!method.isStatic) {
             val thisType = classFile.thisClass
-            locals = locals.updated(localVariableIndex, TypedValue(thisType))
+            locals = locals.updated(localVariableIndex, AReferenceTypeValue(thisType))
             localVariableIndex += 1 /*==thisType.computationalType.operandSize*/
          }
 

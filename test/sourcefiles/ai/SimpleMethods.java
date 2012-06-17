@@ -98,6 +98,17 @@ public class SimpleMethods {
 
 	// SEGMENT (END)
 
+	public static <T> T asIs(T o) {
+		return o; // the type of the return value directly depends on the input
+					// value
+	}
+
+	public static void multipleCalls() {
+		java.util.List<Object> o = asIs(new java.util.ArrayList<Object>(100));
+		o.toString();
+		o.hashCode();
+	}
+
 	public static <T> T create(Class<T> clazz) throws Exception {
 		return clazz.newInstance();
 	}

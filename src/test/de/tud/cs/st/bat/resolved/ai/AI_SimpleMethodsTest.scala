@@ -65,88 +65,88 @@ class AI_SimpleMethodsTest extends FlatSpec with ShouldMatchers /*with BeforeAnd
    behavior of "the basic abstract interpreter"
 
    it should "be able to analyze a method that does nothing" in {
-      val method = classFile.methods.find(_.name == "nop").get
       val domain = new RecordingDomain
+      val method = classFile.methods.find(_.name == "nop").get
       /*val result =*/ AI(classFile, method)(domain)
 
       domain.returnedValue should be(None)
    }
 
    it should "be able to analyze a method that returns a fixed value" in {
-      val method = classFile.methods.find(_.name == "one").get
       val domain = new RecordingDomain
+      val method = classFile.methods.find(_.name == "one").get
       /*val result =*/ AI(classFile, method)(domain)
 
-      domain.returnedValue should be(Some(TypedValue.IntegerValue))
+      domain.returnedValue should be(Some(SomeIntegerValue))
    }
 
    it should "be able to analyze a method that just returns a given value" in {
-      val method = classFile.methods.find(_.name == "identity").get
       val domain = new RecordingDomain
+      val method = classFile.methods.find(_.name == "identity").get
       /*val result =*/ AI(classFile, method)(domain)
 
-      domain.returnedValue should be(Some(TypedValue.IntegerValue))
+      domain.returnedValue should be(Some(SomeIntegerValue))
    }
 
    it should "be able to analyze that adds two values" in {
-      val method = classFile.methods.find(_.name == "add").get
       val domain = new RecordingDomain
+      val method = classFile.methods.find(_.name == "add").get
       /*val result =*/ AI(classFile, method)(domain)
 
-      domain.returnedValue should be(Some(TypedValue.IntegerValue))
+      domain.returnedValue should be(Some(SomeIntegerValue))
    }
 
    it should "be able to analyze a method that casts an int to a byte" in {
-      val method = classFile.methods.find(_.name == "toByte").get
       val domain = new RecordingDomain
+      val method = classFile.methods.find(_.name == "toByte").get
       /*val result =*/ AI(classFile, method)(domain)
 
-      domain.returnedValue should be(Some(TypedValue.ByteValue))
+      domain.returnedValue should be(Some(SomeByteValue))
    }
 
    it should "be able to analyze a method that casts an int to a short" in {
-      val method = classFile.methods.find(_.name == "toShort").get
       val domain = new RecordingDomain
+      val method = classFile.methods.find(_.name == "toShort").get
       /*val result =*/ AI(classFile, method)(domain)
 
-      domain.returnedValue should be(Some(TypedValue.ShortValue))
+      domain.returnedValue should be(Some(SomeShortValue))
    }
 
    it should "be able to analyze a method that multiplies a value by two" in {
-      val method = classFile.methods.find(_.name == "twice").get
       val domain = new RecordingDomain
+      val method = classFile.methods.find(_.name == "twice").get
       /*val result =*/ AI(classFile, method)(domain)
 
-      domain.returnedValue should be(Some(TypedValue.DoubleValue))
+      domain.returnedValue should be(Some(SomeDoubleValue))
    }
 
    it should "be able to handle simple methods correctly" in {
-      val method = classFile.methods.find(_.name == "objectToString").get
       val domain = new RecordingDomain
+      val method = classFile.methods.find(_.name == "objectToString").get
       /*val result =*/ AI(classFile, method)(domain)
 
-      domain.returnedValue should be(Some(TypedValue.StringValue))
+      domain.returnedValue should be(Some(TypedValue.AString))
    }
 
    it should "be able to correctly handle casts" in {
-      val method = classFile.methods.find(_.name == "asSimpleMethods").get
       val domain = new RecordingDomain
+      val method = classFile.methods.find(_.name == "asSimpleMethods").get
       /*val result =*/ AI(classFile, method)(domain)
 
       domain.returnedValue should be(Some(TypedValue(ObjectType("ai/SimpleMethods"))))
    }
 
    it should "be able to analyze a method that squares a given double value" in {
-      val method = classFile.methods.find(_.name == "square").get
       val domain = new RecordingDomain
+      val method = classFile.methods.find(_.name == "square").get
       /*val result =*/ AI(classFile, method)(domain)
 
-      domain.returnedValue should be(Some(TypedValue.DoubleValue))
+      domain.returnedValue should be(Some(SomeDoubleValue))
    }
 
    it should "be able to analyze a classical setter method" in {
-      val method = classFile.methods.find(_.name == "setValue").get
       val domain = new RecordingDomain
+      val method = classFile.methods.find(_.name == "setValue").get
       val result = AI(classFile, method)(domain)
 
       result should not be (null)
@@ -154,19 +154,37 @@ class AI_SimpleMethodsTest extends FlatSpec with ShouldMatchers /*with BeforeAnd
    }
 
    it should "be able to analyze a classical getter method" in {
-      val method = classFile.methods.find(_.name == "getValue").get
       val domain = new RecordingDomain
+      val method = classFile.methods.find(_.name == "getValue").get
       /*val result =*/ AI(classFile, method)(domain)
 
-      domain.returnedValue should be(Some(TypedValue.FloatValue))
+      domain.returnedValue should be(Some(SomeFloatValue))
+   }
+
+   it should "be able to return the correct type of an object if an object that is passed in is directly returned" in {
+      implicit val domain = new RecordingDomain
+      val method = classFile.methods.find(_.name == "asIs").get
+      val t = ObjectType("some/Foo")
+      val locals = new Array[Value](1)
+      locals(0) = TypedValue(t)
+      AI(method.body.get.instructions, locals)
+
+      domain.returnedValue should be(Some(TypedValue(t)))
    }
 
    it should "be able to analyze a method that creates an instance of an object using reflection" in {
-      val method = classFile.methods.find(_.name == "create").get
       val domain = new RecordingDomain
+      val method = classFile.methods.find(_.name == "create").get
       val result = AI(classFile, method)(domain)
 
       domain.returnedValue should be(Some(TypedValue(ObjectType.Object)))
    }
 
+   it should "be able to analyze a method that creates an object and which calls multiple methods of the new object" in {
+      val domain = new RecordingDomain
+      val method = classFile.methods.find(_.name == "multipleCalls").get
+      val result = AI(classFile, method)(domain)
+
+      domain.returnedValue should be(None)
+   }
 }
