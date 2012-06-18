@@ -100,9 +100,9 @@ class TypeDomain extends Domain {
    //
 
    def checkcast(value : Value, resolvedType : ReferenceType) = TypedValue(resolvedType)
-   def instanceof(value : Value, resolvedType : ReferenceType) = TypedValue(resolvedType)
+   def instanceof(value : Value, resolvedType : ReferenceType) = SomeBooleanValue
 
-   def d2f(value : Value) : Value = SomeDoubleValue
+   def d2f(value : Value) : Value = SomeFloatValue
    def d2i(value : Value) : Value = SomeIntegerValue
    def d2l(value : Value) : Value = SomeLongValue
 

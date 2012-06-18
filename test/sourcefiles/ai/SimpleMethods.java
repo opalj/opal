@@ -35,12 +35,12 @@ package ai;
 /**
  * A very large number of methods that do not contain any control-flow
  * statements.
- * 
+ *
  * NOTE<br />
  * This class is not meant to be (automatically) recompiled; it just serves
  * documentation purposes. The compiled class that is used by the tests is found
  * in the test-classfiles directory.
- * 
+ *
  * @author Michael Eichberg
  */
 public class SimpleMethods {
@@ -56,11 +56,11 @@ public class SimpleMethods {
 	}
 
 	public static long lOne() {
-		return 1;
+		return 1l;
 	}
 
 	public static double dOne() {
-		return 1.0;
+		return 1.0d;
 	}
 
 	public static float fOne() {
@@ -303,20 +303,20 @@ public class SimpleMethods {
 	public static int iNeg(int i) {
 		return -i;
 	}
-	
-	
+
+
 	//
 	// TYPE CHECKS
 	public static SimpleMethods asSimpleMethods(Object o) {
 		return (SimpleMethods) o; // this is deliberately not (type) safe
 	}
-	
+
 	public static boolean asSimpleMethodsInstance(Object o) {
 		return o instanceof SimpleMethods ; // this is deliberately not (type) safe
 	}
 
 	/*
-	 * 
+	 *
 	 */
 	public static double twice(double i) {
 		return 2 * i;
@@ -330,7 +330,7 @@ public class SimpleMethods {
 		return o.toString();
 	}
 
-	
+
 
 	// SEGMENT (START)
 	private float value;
