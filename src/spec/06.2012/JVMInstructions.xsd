@@ -515,28 +515,6 @@
         </restriction>
     </simpleType>
 
-    <simpleType name="FormatElement-return_address">
-        <annotation>
-            <documentation>Execution proceeds with the instruction with the given opcode.
-                (A short value).
-            </documentation>
-        </annotation>
-        <restriction base="opal:AbstractFormatElement">
-            <enumeration value="return_address"/>
-        </restriction>
-    </simpleType>
-
-    <simpleType name="FormatElement-return_address_wide">
-        <annotation>
-            <documentation>Execution proceeds with the instruction with the given opcode.
-                (An int value).
-            </documentation>
-        </annotation>
-        <restriction base="opal:AbstractFormatElement">
-            <enumeration value="return_address_wide"/>
-        </restriction>
-    </simpleType>
-
     <simpleType name="FormatElement-padding_bytes">
         <annotation>
             <documentation> The padding bytes format element does not have a fixed length; instead

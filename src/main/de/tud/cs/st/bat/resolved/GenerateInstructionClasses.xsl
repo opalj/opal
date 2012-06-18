@@ -203,10 +203,8 @@ extends Instruction {
 				 (e.g. goto - goto_w) and has exactly one parameter
 		 -->	"<xsl:value-of select="$baseInstructionName"/>",
 			<xsl:choose>
-				<xsl:when test="./@name eq 'goto'">
+				<xsl:when test="./@name eq 'goto' or ./@name eq 'jsr'">
 				IntegerAtom(pc_to_seqNo(pc+branchoffset) - pc_to_seqNo(pc))</xsl:when>
-				<xsl:when test="./@name eq 'jsr'">
-				IntegerAtom(pc_to_seqNo(pc+returnAddress) - pc_to_seqNo(pc))</xsl:when>
 				<xsl:otherwise>
 					<xsl:message terminate="yes">Error unsupported:<xsl:value-of select="./@name"/></xsl:message>
 				</xsl:otherwise>
@@ -224,7 +222,7 @@ extends Instruction {
 			<xsl:when test="$fet eq 'ubyte' or $fet eq 'byte' or $fet eq 'atype' or $fet eq 'ushort' or $fet eq 'short' or $fet eq 'int'">
 				IntegerAtom(<xsl:value-of select="$id"/>)</xsl:when>
 
-			<xsl:when test="$fet eq 'branchoffset' or $fet eq 'branchoffset_wide' or $fet eq 'return_address' or $fet eq 'return_address_wide'">
+			<xsl:when test="$fet eq 'branchoffset' or $fet eq 'branchoffset_wide'">
 				IntegerAtom(pc_to_seqNo(pc+<xsl:value-of select="$id"/>) - pc_to_seqNo(pc))</xsl:when>
 
 			<xsl:when test="$fet eq 'ushort_cp_index→referenceType' or $fet eq 'ushort_cp_index→objectType'">
@@ -287,7 +285,7 @@ extends Instruction {
 	<xsl:variable name="id" select="$fe/@id"/>
 	<xsl:variable name="fet" select="$fe/@type"/>
 	<xsl:choose>
-			<xsl:when test="$fet eq 'ubyte' or $fet eq 'byte' or $fet eq 'atype' or $fet eq 'ushort' or $fet eq 'short' or $fet eq 'int' or $fet eq 'branchoffset' or $fet eq 'branchoffset_wide' or $fet eq 'return_address' or $fet eq 'return_address_wide'">
+			<xsl:when test="$fet eq 'ubyte' or $fet eq 'byte' or $fet eq 'atype' or $fet eq 'ushort' or $fet eq 'short' or $fet eq 'int' or $fet eq 'branchoffset' or $fet eq 'branchoffset_wide'">
 			&lt;<xsl:value-of select="$id"/> value={ <xsl:value-of select="$id"/>.toString }/&gt;</xsl:when>
 
 			<xsl:when test="$fet eq 'ushort_cp_index→referenceType' or $fet eq 'ushort_cp_index→objectType'">
@@ -333,7 +331,7 @@ extends Instruction {
 	<xsl:variable name="fet" select="$fe/@type"/>
 	<xsl:variable name="id" select="$fe/@id"/>
 	<xsl:choose>
-		<xsl:when test="$fet eq 'ubyte' or $fet eq 'atype' or $fet eq 'byte' or $fet eq 'ushort' or $fet eq 'short' or $fet eq 'int' or $fet eq 'branchoffset' or $fet eq 'branchoffset_wide' or $fet eq 'return_address' or $fet eq 'return_address_wide'">
+		<xsl:when test="$fet eq 'ubyte' or $fet eq 'atype' or $fet eq 'byte' or $fet eq 'ushort' or $fet eq 'short' or $fet eq 'int' or $fet eq 'branchoffset' or $fet eq 'branchoffset_wide'">
 	val <xsl:value-of select="$id"/> : Int</xsl:when>
 		<xsl:when test="$fet eq 'ushort_cp_index→referenceType'">
 	val <xsl:value-of select="$id"/> : ReferenceType</xsl:when>
@@ -382,7 +380,7 @@ extends Instruction {
 	-->
 	<xsl:param name="fet" required="yes"/>
 	<xsl:choose>
-		<xsl:when test="$fet eq 'int' or $fet eq 'branchoffset_wide'  or $fet eq 'return_address_wide'">Int</xsl:when>
+		<xsl:when test="$fet eq 'int' or $fet eq 'branchoffset_wide'">Int</xsl:when>
 		<!-- If we would be able to use schema validation, then we would not require the following check. -->
 		<xsl:otherwise>
 			<xsl:message terminate="yes">Unsupported format type: <xsl:value-of select="$fet"/></xsl:message>

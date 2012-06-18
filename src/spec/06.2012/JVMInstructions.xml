@@ -1837,12 +1837,12 @@
 	<instruction name="jsr" opcode="168" deprecated="1.6">
 		<operation>Jump subroutine</operation>
 		<specialized base="jsr_w">
-			<parameter id="returnAddress" value="$returnAddress"/>
+			<parameter id="branchoffset" value="$branchoffset"/>
 		</specialized>
 		<format>
 			<std>
 				<el type="mnemonic"/>
-				<el type="return_address" id="returnAddress"/>
+				<el type="branchoffset" id="branchoffset"/>
 			</std>
 		</format>
 	</instruction>
@@ -1851,7 +1851,7 @@
 		<format>
 			<std>
 				<el type="mnemonic"/>
-				<el type="return_address_wide" id="returnAddress"/>
+				<el type="branchoffset_wide" id="branchoffset"/>
 			</std>
 		</format>
 	</instruction>

@@ -200,7 +200,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding{
 				<xsl:with-param name="parameterId" select="$parameterId + 1"/>
 			</xsl:call-template>
 		</xsl:when>
-		<xsl:when test="$fet eq 'short' or $fe/@type eq 'branchoffset' or $fe/@type eq 'return_address'">
+		<xsl:when test="$fet eq 'short' or $fe/@type eq 'branchoffset'">
 			<xsl:if test="$fe/@id">// <xsl:value-of select="$fe/@id"/>: </xsl:if>
 			val p<xsl:value-of select="$parameterId"/> = in.readShort
 			<xsl:call-template name="process_instruction_parameters">
@@ -208,7 +208,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding{
 				<xsl:with-param name="parameterId" select="$parameterId + 1"/>
 			</xsl:call-template>
 		</xsl:when>
-		<xsl:when test="$fet eq 'int' or $fe/@type eq 'branchoffset_wide' or $fe/@type eq 'return_address_wide'">
+		<xsl:when test="$fet eq 'int' or $fe/@type eq 'branchoffset_wide'">
 			<xsl:if test="$fe/@id">// <xsl:value-of select="$fe/@id"/>: </xsl:if>
 			val p<xsl:value-of select="$parameterId"/> = in.readInt
 			<xsl:call-template name="process_instruction_parameters">
@@ -338,7 +338,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding{
 				<xsl:with-param name="parameterId" select="$parameterId"/>
 			</xsl:call-template>
 		</xsl:when>
-		<xsl:when test="$fet eq 'ubyte' or $fet eq 'byte' or $fet eq 'atype' or $fet eq 'ushort' or $fet eq 'short' or $fet eq 'int' or $fet eq 'branchoffset' or $fet eq 'branchoffset_wide' or $fet eq 'return_address' or $fet eq 'return_address_wide' or $fet eq 'ushort_cp_index→referenceType' or $fet eq 'ushort_cp_index→objectType' or $fet eq 'ubyte_cp_index→constant_value' or $fet eq 'ushort_cp_index→constant_value' or name($fe) eq 'list'">p<xsl:value-of select="$parameterId"/><xsl:if test="$fes[2] and not($fes[2]/@type eq 'IGNORE')">, </xsl:if><xsl:call-template name="create_constructor_parameters"><xsl:with-param name="fes" select="$fes[position() > 1]"/><xsl:with-param name="parameterId" select="$parameterId + 1"/></xsl:call-template></xsl:when>
+		<xsl:when test="$fet eq 'ubyte' or $fet eq 'byte' or $fet eq 'atype' or $fet eq 'ushort' or $fet eq 'short' or $fet eq 'int' or $fet eq 'branchoffset' or $fet eq 'branchoffset_wide' or $fet eq 'ushort_cp_index→referenceType' or $fet eq 'ushort_cp_index→objectType' or $fet eq 'ubyte_cp_index→constant_value' or $fet eq 'ushort_cp_index→constant_value' or name($fe) eq 'list'">p<xsl:value-of select="$parameterId"/><xsl:if test="$fes[2] and not($fes[2]/@type eq 'IGNORE')">, </xsl:if><xsl:call-template name="create_constructor_parameters"><xsl:with-param name="fes" select="$fes[position() > 1]"/><xsl:with-param name="parameterId" select="$parameterId + 1"/></xsl:call-template></xsl:when>
 		<xsl:when test="$fet eq 'ushort_cp_index→call_site_specifier'">/* TODO [Java 7] "invokedynamic" - resolve valid index into the bootstrap_methods array of the bootstrap method table */ p<xsl:value-of select="$parameterId"/>, p<xsl:value-of select="$parameterId + 1"/><xsl:if test="$fes[2] and not($fes[2]/@type eq 'IGNORE')">, </xsl:if><xsl:call-template name="create_constructor_parameters"><xsl:with-param name="fes" select="$fes[position() > 1]"/><xsl:with-param name="parameterId" select="$parameterId + 2"/></xsl:call-template></xsl:when>
 		<xsl:when test="$fet eq 'ushort_cp_index→fieldref' or $fet eq 'ushort_cp_index→methodref' or $fet eq 'ushort_cp_index→interface_methodref'">p<xsl:value-of select="$parameterId"/>, p<xsl:value-of select="$parameterId + 1"/>, p<xsl:value-of select="$parameterId + 2"/><xsl:if test="$fes[2] and not($fes[2]/@type eq 'IGNORE')">, </xsl:if><xsl:call-template name="create_constructor_parameters"><xsl:with-param name="fes" select="$fes[position() > 1]"/><xsl:with-param name="parameterId" select="$parameterId + 3"/></xsl:call-template></xsl:when>
 		<xsl:otherwise><xsl:message terminate="yes">Unsupported format type encountered while creating constructor parameters.</xsl:message></xsl:otherwise>
