@@ -136,7 +136,22 @@ object AI {
                 //               | 156 /*ifge*/
                 //               | 157 /*ifgt*/
                 //               | 158 /*ifle */
-                //               | 199 /*ifnonnull*/
+                case 199 /*ifnonnull*/ ⇒ {
+                    val operand = memoryLayout.operands.head
+                    domain.isNull(operand) match {
+                        case BooleanAnswer.YES ⇒ gotoTarget(pcOfNextInstruction, memoryLayout.update(pc, instruction))
+                        case BooleanAnswer.NO  ⇒ gotoTarget(pc + instruction.asInstanceOf[IFNONNULL].branchoffset, memoryLayout.update(pc, instruction))
+                        case BooleanAnswer.UNKNOWN ⇒ {
+                            gotoTarget(
+                                pc + instruction.asInstanceOf[IFNONNULL].branchoffset,
+                                domain.addIsNonNullConstraint(operand, memoryLayout.update(pc, instruction)))
+
+                            gotoTarget(
+                                pcOfNextInstruction,
+                                domain.addIsNullConstraint(operand, memoryLayout.update(pc, instruction)))
+                        }
+                    }
+                }
                 case 198 /*ifnull*/ ⇒ {
                     val operand = memoryLayout.operands.head
                     domain.isNull(operand) match {
