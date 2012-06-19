@@ -36,106 +36,132 @@ package resolved
 package ai
 
 /**
-  * @author Michael Eichberg
-  */
+ * @author Michael Eichberg
+ */
 object AI {
 
-   /**
+    /**
      * Analyzes the given method using the given domain.
      *
      * @param classFile Some class file.
      * @param method A non-abstract,non-native method of the given class file.
      * @param domain The abstract domain that is used during the interpretation.
      */
-   def apply(classFile : ClassFile, method : Method)(implicit domain : Domain) : Array[MemoryLayout] = {
-      val code = method.body.get.instructions
-      val initialLocals = {
-         var locals : IndexedSeq[Value] = new Array[Value](method.body.get.maxLocals)
-         var localVariableIndex = 0
+    def apply(classFile: ClassFile, method: Method)(implicit domain: Domain): Array[MemoryLayout] = {
+        val code = method.body.get.instructions
+        val initialLocals = {
+            var locals: IndexedSeq[Value] = new Array[Value](method.body.get.maxLocals)
+            var localVariableIndex = 0
 
-         if (!method.isStatic) {
-            val thisType = classFile.thisClass
-            locals = locals.updated(localVariableIndex, AReferenceTypeValue(thisType))
-            localVariableIndex += 1 /*==thisType.computationalType.operandSize*/
-         }
+            if (!method.isStatic) {
+                val thisType = classFile.thisClass
+                locals = locals.updated(localVariableIndex, AReferenceTypeValue(thisType))
+                localVariableIndex += 1 /*==thisType.computationalType.operandSize*/
+            }
 
-         for (parameterType ← method.descriptor.parameterTypes) {
-            val ct = parameterType.computationalType
-            locals = locals.updated(localVariableIndex, TypedValue(parameterType))
-            localVariableIndex += ct.operandSize
-         }
-         locals
-      }
-      apply(code, initialLocals)
-   }
+            for (parameterType ← method.descriptor.parameterTypes) {
+                val ct = parameterType.computationalType
+                locals = locals.updated(localVariableIndex, TypedValue(parameterType))
+                localVariableIndex += ct.operandSize
+            }
+            locals
+        }
+        apply(code, initialLocals)
+    }
 
-   def apply(code : Array[Instruction], initialLocals : IndexedSeq[Value])(implicit domain : Domain) : Array[MemoryLayout] = {
-      // true if the instruction with the respective program counter is already transformed
-      val memoryLayouts = new Array[MemoryLayout](code.length)
-      memoryLayouts(0) = new MemoryLayout(Nil, initialLocals)
+    def apply(code: Array[Instruction], initialLocals: IndexedSeq[Value])(implicit domain: Domain): Array[MemoryLayout] = {
+        // true if the instruction with the respective program counter is already transformed
+        val memoryLayouts = new Array[MemoryLayout](code.length)
+        memoryLayouts(0) = new MemoryLayout(Nil, initialLocals)
 
-      var worklist : List[Int /*program counter*/ ] = List(0)
-      while (worklist.nonEmpty) {
-         val pc = worklist.head
-         worklist = worklist.tail
-         val instruction = code(pc)
-         val memoryLayout = memoryLayouts(pc)
+        var worklist: List[Int /*program counter*/ ] = List(0)
 
-         def gotoTarget(nextPC : Int, nextPCMemoryLayout : MemoryLayout) {
+        def gotoTarget(nextPC: Int, nextPCMemoryLayout: MemoryLayout) {
             if (memoryLayouts(nextPC) == null) {
-               worklist = nextPC :: worklist
-               memoryLayouts(nextPC) = nextPCMemoryLayout
+                worklist = nextPC :: worklist
+                memoryLayouts(nextPC) = nextPCMemoryLayout
             }
             else {
-               // here, we implement the logic to merge domains and the like...
-               sys.error("not yet supported")
+                // here, we implement the logic to merge domains and the like...
+                sys.error("not yet supported")
             }
-         }
-
-         (instruction.opcode : @annotation.switch) match {
-            //
-            // LOCAL TRANSFER OF CONTROL
-            //
-            case 167 /*goto*/   ⇒ gotoTarget(pc + instruction.asInstanceOf[GOTO].branchoffset, memoryLayout.update(pc, instruction))
-            case 200 /*goto_w*/ ⇒ gotoTarget(pc + instruction.asInstanceOf[GOTO_W].branchoffset, memoryLayout.update(pc, instruction))
-
-            case 169 /*ret*/ ⇒ memoryLayout.locals(instruction.asInstanceOf[RET].lvIndex) match {
-               case ReturnAddressValue(returnAddress) ⇒ gotoTarget(returnAddress, memoryLayout.update(pc, instruction))
-               case _                                 ⇒ sys.error("internal implementation error or invalid bytecode")
+        }
+        def gotoTargets(nextPCs: Seq[Int], nextPCMemoryLayout: MemoryLayout) {
+            for (nextPC ← nextPCs) {
+                gotoTarget(nextPC, nextPCMemoryLayout)
             }
-            case 168 /*jsr*/   ⇒ gotoTarget(pc + instruction.asInstanceOf[JSR].branchoffset, memoryLayout.update(pc, instruction))
-            case 201 /*jsr_w*/ ⇒ gotoTarget(pc + instruction.asInstanceOf[JSR_W].branchoffset, memoryLayout.update(pc, instruction))
-            //
-            //            case 171 /*lookupswitch*/
-            //               | 170 /*tableswitch*/ ⇒ new MemoryLayout(operands.tail, locals)
-            //
-            //            case 165 /*if_acmpeq*/
-            //               | 166 /*if_acmpne*/
-            //               | 159 /*if_icmpeq*/
-            //               | 160 /*if_icmpne*/
-            //               | 161 /*if_icmplt*/
-            //               | 162 /*if_icmpge*/
-            //               | 163 /*if_icmpgt*/
-            //               | 164 /*if_icmple*/ ⇒ new MemoryLayout(operands.drop(2), locals)
-            //            case 153 /*ifeq*/
-            //               | 154 /*ifne*/
-            //               | 155 /*iflt*/
-            //               | 156 /*ifge*/
-            //               | 157 /*ifgt*/
-            //               | 158 /*ifle <= */
-            //               | 199 /*ifnonnull*/
-            //               | 198 /*ifnull*/ ⇒ new MemoryLayout(operands.tail, locals)
+        }
 
-            case _ ⇒ {
-               /* TODO Add a method to instruction to get the PC of the next instruction. */ var nextPC = pc + 1; while (nextPC < code.length && (code(nextPC) eq null)) nextPC += 1
-               if (nextPC < code.length) {
-                  gotoTarget(nextPC, memoryLayout.update(pc, instruction))
-               }
+        while (worklist.nonEmpty) {
+            val pc = worklist.head
+            worklist = worklist.tail
+            val instruction = code(pc)
+            val memoryLayout = memoryLayouts(pc)
+
+            def pcOfNextInstruction = {
+                var nextPC = pc + 1
+                /* TODO Add a method to instruction to get the PC of the next instruction. */
+                while (nextPC < code.length && (code(nextPC) eq null)) nextPC += 1
+                nextPC
             }
-         }
 
-      }
+            (instruction.opcode: @annotation.switch) match {
+                //
+                // UNCONDITIONAL TRANSFER OF CONTROL
+                //
+                case 167 /*goto*/   ⇒ gotoTarget(pc + instruction.asInstanceOf[GOTO].branchoffset, memoryLayout.update(pc, instruction))
+                case 200 /*goto_w*/ ⇒ gotoTarget(pc + instruction.asInstanceOf[GOTO_W].branchoffset, memoryLayout.update(pc, instruction))
 
-      memoryLayouts
-   }
+                case 169 /*ret*/ ⇒ memoryLayout.locals(instruction.asInstanceOf[RET].lvIndex) match {
+                    case ReturnAddressValue(returnAddress) ⇒ gotoTarget(returnAddress, memoryLayout.update(pc, instruction))
+                    case _                                 ⇒ sys.error("internal implementation error or invalid bytecode")
+                }
+                case 168 /*jsr*/   ⇒ gotoTarget(pc + instruction.asInstanceOf[JSR].branchoffset, memoryLayout.update(pc, instruction))
+                case 201 /*jsr_w*/ ⇒ gotoTarget(pc + instruction.asInstanceOf[JSR_W].branchoffset, memoryLayout.update(pc, instruction))
+                //
+                //            case 171 /*lookupswitch*/
+                //               | 170 /*tableswitch*/ ⇒ new MemoryLayout(operands.tail, locals)
+                //
+                //            case 165 /*if_acmpeq*/
+                //               | 166 /*if_acmpne*/
+                //               | 159 /*if_icmpeq*/
+                //               | 160 /*if_icmpne*/
+                //               | 161 /*if_icmplt*/
+                //               | 162 /*if_icmpge*/
+                //               | 163 /*if_icmpgt*/
+                //               | 164 /*if_icmple*/ ⇒ new MemoryLayout(operands.drop(2), locals)
+                //            case 153 /*ifeq*/
+                //               | 154 /*ifne*/
+                //               | 155 /*iflt*/
+                //               | 156 /*ifge*/
+                //               | 157 /*ifgt*/
+                //               | 158 /*ifle */
+                //               | 199 /*ifnonnull*/
+                case 198 /*ifnull*/ ⇒ {
+                    val operand = memoryLayout.operands.head
+                    domain.isNull(operand) match {
+                        case BooleanAnswer.YES ⇒ gotoTarget(pc + instruction.asInstanceOf[IFNULL].branchoffset, memoryLayout.update(pc, instruction))
+                        case BooleanAnswer.NO  ⇒ gotoTarget(pcOfNextInstruction, memoryLayout.update(pc, instruction))
+                        case BooleanAnswer.UNKNOWN ⇒ {
+                            gotoTarget(
+                                pc + instruction.asInstanceOf[IFNULL].branchoffset,
+                                domain.addIsNullConstraint(operand, memoryLayout.update(pc, instruction)))
+
+                            gotoTarget(
+                                pcOfNextInstruction,
+                                domain.addIsNonNullConstraint(operand, memoryLayout.update(pc, instruction)))
+                        }
+                    }
+                }
+                case _ ⇒ {
+                    val nextPC = pcOfNextInstruction
+                    if (nextPC < code.length) { // this instruction could be a return instruction
+                        gotoTarget(nextPC, memoryLayout.update(pc, instruction))
+                    }
+                }
+            }
+        }
+
+        memoryLayouts
+    }
 }
