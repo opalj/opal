@@ -46,6 +46,7 @@ import org.scalatest.matchers.ShouldMatchers
  * Basic tests of the abstract interpreter.
  *
  * @author Michael Eichberg
+ * @author Dennis Siebert
  */
 @RunWith(classOf[JUnitRunner])
 class AI_SimpleMethodsTest extends FlatSpec with ShouldMatchers /*with BeforeAndAfterAll */ {
