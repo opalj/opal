@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+
+ <modelVersion>4.0.0</modelVersion>
+
+ <groupId>de.tud.cs.st</groupId>
+ <artifactId>bat</artifactId>
+ <version>1.0.0-SNAPSHOT</version>
+ <name>BAT</name>
+ <inceptionYear>2010</inceptionYear>
+
+ <properties>
+  <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  <dorest.version>0.0.1-SNAPSHOT</dorest.version>
+  <scala.version>2.9.2</scala.version>
+ </properties>
+
+ <repositories>
+  <repository>
+   <id>scala-tools.releases</id>
+   <name>Scala-Tools Dependencies Repository for Releases</name>
+   <url>http://scala-tools.org/repo-releases/</url>
+  </repository>
+ </repositories>
+
+ <build>
+  <sourceDirectory>src/main/scala</sourceDirectory>
+  <testSourceDirectory>src/test/scala</testSourceDirectory>
+  <plugins>
+   <plugin>
+    <groupId>org.scala-tools</groupId>
+    <artifactId>maven-scala-plugin</artifactId>
+    <version>2.15.2</version>
+    <dependencies>
+     <dependency>
+      <groupId>org.scala-lang</groupId>
+      <artifactId>scala-library</artifactId>
+      <version>${scala.version}</version>
+      <scope>compile</scope>
+     </dependency>
+    </dependencies>
+    <executions>
+     <execution>
+      <goals>
+       <goal>compile</goal>
+       <goal>testCompile</goal>
+      </goals>
+     </execution>
+    </executions>
+    <configuration>
+     <args>
+      <arg>-unchecked</arg>
+      <arg>-deprecation</arg>
+      <arg>-explaintypes</arg>
+     </args>
+     <scalaVersion>${scala.version}</scalaVersion>
+     <excludes>
+     </excludes>
+    </configuration>
+   </plugin>
+   <plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-resources-plugin</artifactId>
+    <version>2.4</version>
+   </plugin>
+  </plugins>
+  <pluginManagement>
+   <plugins>
+    <!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven 
+     build itself. -->
+    <plugin>
+     <groupId>org.eclipse.m2e</groupId>
+     <artifactId>lifecycle-mapping</artifactId>
+     <version>1.0.0</version>
+     <configuration>
+      <lifecycleMappingMetadata>
+       <pluginExecutions>
+        <pluginExecution>
+         <pluginExecutionFilter>
+          <groupId>
+           org.scala-tools
+										</groupId>
+          <artifactId>
+           maven-scala-plugin
+										</artifactId>
+          <versionRange>
+           [2.15.2,)
+										</versionRange>
+          <goals>
+           <goal>compile</goal>
+           <goal>testCompile</goal>
+          </goals>
+         </pluginExecutionFilter>
+         <action>
+          <execute></execute>
+         </action>
+        </pluginExecution>
+       </pluginExecutions>
+      </lifecycleMappingMetadata>
+     </configuration>
+    </plugin>
+   </plugins>
+  </pluginManagement>
+ </build>
+
+
+ <dependencies>
+  <dependency>
+   <groupId>org.scala-lang</groupId>
+   <artifactId>scala-library</artifactId>
+   <version>${scala.version}</version>
+   <scope>compile</scope>
+  </dependency>
+	<dependency>
+		<groupId>junit</groupId>
+		<artifactId>junit</artifactId>
+		<version>4.10</version>
+		<scope>test</scope>
+	</dependency>
+	<dependency>
+		<groupId>org.scalatest</groupId>
+		<artifactId>scalatest_${scala.version}</artifactId>
+		<version>1.6.1</version>
+		<scope>test</scope>
+	</dependency>
+ </dependencies>
+
+</project>
