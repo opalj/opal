@@ -33,32 +33,27 @@
 package de.tud.cs.st
 
 /**
- * BAT is a Java bytecode library written in Java.
- *
- *
- *
- * == This Package ==
- * Common constants and type definitions used across BAT. The constants
- * defined in the following may or may not be used by certain representations,
- * but they are generally interesting when dealing with Java bytecode and
- * therefore defined in BAT's root package.
- *
- * == General Design Rules ==
- * Unless explicitly noted, BAT does not make use of null values. I.e.,
- * methods do not take null values as parameters and will never return null
- * values.
- *
- * @author Michael Eichberg
- */
+  * BAT is a Java bytecode library written in Java.
+  *
+  * == This Package ==
+  * Common constants and type definitions used across BAT.
+  *
+  * == General Design Rules ==
+  * Unless explicitly noted, BAT does not make use of null values. I.e., all
+  * methods do not take null values as parameters and will never return null
+  * values.
+  *
+  * @author Michael Eichberg
+  */
 package object bat {
 
-    type AccessFlagsContext = AccessFlagsContexts.Value
+   type AccessFlagsContext = AccessFlagsContexts.Value
 
-    type AttributeParent = AttributesParent.Value
+   type AttributeParent = AttributesParent.Value
 
-    type AttributesParent = AttributesParent.Value
+   type AttributesParent = AttributesParent.Value
 
-    type ConstantPoolTag = ConstantPoolTags.Value
+   type ConstantPoolTag = ConstantPoolTags.Value
 
-    val CLASS_FILE_MAGIC = 0xCAFEBABE
+   val CLASS_FILE_MAGIC = 0xCAFEBABE
 }
