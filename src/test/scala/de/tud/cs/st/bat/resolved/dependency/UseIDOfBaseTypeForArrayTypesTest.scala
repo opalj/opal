@@ -43,81 +43,100 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.matchers.ShouldMatchers
 
 /**
- * Tests that the dependency extractor does not report dependencies to array types but to their base types
- * instead.
- *
- * @author Michael Eichberg
- */
+  * Tests that the dependency extractor does not report dependencies to array types but to their base types
+  * instead.
+  *
+  * @author Michael Eichberg
+  */
 @RunWith(classOf[JUnitRunner])
 class UseIDOfBaseTypeForArrayTypesTest extends FlatSpec with ShouldMatchers with BeforeAndAfterAll {
 
-    val extractedTypes = scala.collection.mutable.Set[Type]()
+   //
+   //
+   // Set up
+   //
+   //
 
-    class SourceElementIDsProvider extends SourceElementIDs {
+   val extractedTypes = scala.collection.mutable.Set[Type]()
 
-        def sourceElementID(t: Type): Int = {
-            extractedTypes += t
-            -1
-        }
+   class SourceElementIDsProvider extends SourceElementIDs {
 
-        def sourceElementID(definingObjectType: ObjectType, fieldName: String): Int = {
-            extractedTypes += definingObjectType
-            -1
-        }
+      def sourceElementID(t : Type) : Int = {
+         extractedTypes += t
+         -1
+      }
 
-        def sourceElementID(definingReferenceType: ReferenceType, methodName: String, methodDescriptor: MethodDescriptor): Int = {
-            extractedTypes += definingReferenceType
-            -1
-        }
-    }
+      def sourceElementID(definingObjectType : ObjectType, fieldName : String) : Int = {
+         extractedTypes += definingObjectType
+         -1
+      }
 
-    object TypeCollector extends DependencyExtractor(new SourceElementIDsProvider with UseIDOfBaseTypeForArrayTypes) with NoSourceElementsVisitor {
-        def processDependency(sourceID: Int, targetID: Int, dependencyType: DependencyType) {}
-    }
+      def sourceElementID(definingReferenceType : ReferenceType, methodName : String, methodDescriptor : MethodDescriptor) : Int = {
+         extractedTypes += definingReferenceType
+         -1
+      }
+   }
 
-    TypeCollector.process(
-        Java6Framework.ClassFile(
-                ClassLoader.getSystemResource("classfiles/Dependencies.zip").getFile,
-                "dependencies/InstructionsTestClass.class")
-    );
+   object TypeCollector
+         extends DependencyExtractor(new SourceElementIDsProvider with UseIDOfBaseTypeForArrayTypes)
+         with NoSourceElementsVisitor {
+      def processDependency(sourceID : Int, targetID : Int, dependencyType : DependencyType) {}
+   }
 
-    behavior of "DependencyExtractor with UseIDOfBaseTypeForArrayTypes"
+   //
+   //
+   // EXERCISE
+   //
+   //
 
-    it should "extract a dependency to java.lang.Object" in {
-        assert(extractedTypes contains ObjectType("java/lang/Object"))
-    }
+   TypeCollector.process(
+      Java6Framework.ClassFile(
+         ClassLoader.getSystemResource("classfiles/Dependencies.zip").getFile,
+         "dependencies/InstructionsTestClass.class")
+   );
 
-    it should "extract a dependency to java.lang.Long" in {
-        assert(extractedTypes contains ObjectType("java/lang/Long"))
-    }
+   //
+   //
+   // VERIFY
+   //
+   //
 
-    it should "extract a dependency to java.lang.Integer" in {
-        assert(extractedTypes contains ObjectType("java/lang/Integer"))
-    }
+   behavior of "DependencyExtractor with UseIDOfBaseTypeForArrayTypes"
 
-    it should "not extract a dependency to any arraytype" in {
-        println(extractedTypes.mkString("\n"))
-        assert(!(extractedTypes exists { case ArrayType(_) ⇒ true; case _ ⇒ false }))
-    }
+   it should "extract a dependency to java.lang.Object" in {
+      assert(extractedTypes contains ObjectType("java/lang/Object"))
+   }
 
-    //    it should "never extract dependencies to array types" in {
-    //        var files = new java.io.File("../../../../../../../test/classfiles").listFiles()
-    //        if (files == null) files = new java.io.File("test/classfiles").listFiles()
-    //        for {
-    //            file ← files
-    //            if (file.isFile && file.canRead && file.getName.endsWith(".zip"))
-    //        } {
-    //            val zipfile = new java.util.zip.ZipFile(file)
-    //            val zipentries = (zipfile).entries
-    //            while (zipentries.hasMoreElements) {
-    //                val zipentry = zipentries.nextElement
-    //                if (!zipentry.isDirectory && zipentry.getName.endsWith(".class")) {
-    //                    var classFile = Java6Framework.ClassFile(() ⇒ zipfile.getInputStream(zipentry))
-    //                    TypeCollector.process(classFile)
-    //                }
-    //            }
-    //        }
-    //        assert(!(extractedTypes exists { case ArrayType(_) ⇒ true; case _ ⇒ false }))
-    //    }
+   it should "extract a dependency to java.lang.Long" in {
+      assert(extractedTypes contains ObjectType("java/lang/Long"))
+   }
+
+   it should "extract a dependency to java.lang.Integer" in {
+      assert(extractedTypes contains ObjectType("java/lang/Integer"))
+   }
+
+   it should "not extract a dependency to any arraytype" in {
+      assert(!(extractedTypes exists { case ArrayType(_) ⇒ true; case _ ⇒ false }))
+   }
+
+   //    it should "never extract dependencies to array types" in {
+   //        var files = new java.io.File("../../../../../../../test/classfiles").listFiles()
+   //        if (files == null) files = new java.io.File("test/classfiles").listFiles()
+   //        for {
+   //            file ← files
+   //            if (file.isFile && file.canRead && file.getName.endsWith(".zip"))
+   //        } {
+   //            val zipfile = new java.util.zip.ZipFile(file)
+   //            val zipentries = (zipfile).entries
+   //            while (zipentries.hasMoreElements) {
+   //                val zipentry = zipentries.nextElement
+   //                if (!zipentry.isDirectory && zipentry.getName.endsWith(".class")) {
+   //                    var classFile = Java6Framework.ClassFile(() ⇒ zipfile.getInputStream(zipentry))
+   //                    TypeCollector.process(classFile)
+   //                }
+   //            }
+   //        }
+   //        assert(!(extractedTypes exists { case ArrayType(_) ⇒ true; case _ ⇒ false }))
+   //    }
 
 }

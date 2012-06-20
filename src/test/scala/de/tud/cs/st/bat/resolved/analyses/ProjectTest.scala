@@ -50,66 +50,80 @@ import org.scalatest.matchers.ShouldMatchers
 @RunWith(classOf[JUnitRunner])
 class ProjectTest extends FlatSpec with ShouldMatchers /*with BeforeAndAfterAll */ {
 
-   val project = new Project ++ Java6Framework.ClassFiles(ClassLoader.getSystemResource("classfiles/Methods.zip").getFile/*"test/classfiles/Methods.zip"*/)
+   //
+   //
+   // Setup
+   //
+   //
+
+   val project =
+      new Project ++
+         Java6Framework.ClassFiles(ClassLoader.getSystemResource("classfiles/Methods.zip").getFile)
 
    val SuperType = ObjectType("methods/a/Super")
    val DirectSub = ObjectType("methods/a/DirectSub")
    val AbstractB = ObjectType("methods/b/AbstractB")
 
+   //
+   //
+   // Verify
+   //
+   //
+
    behavior of "Project's classes repository"
 
    it should "find the class methods.a.Super" in {
-      assert(project.classes.get(SuperType).isDefined);
+      project.classes.get(SuperType) should be('Defined)
    }
 
    it should "find the class methods.b.AbstractB" in {
-      assert(project.classes.get(AbstractB).isDefined);
+      project.classes.get(AbstractB) should be('Defined)
    }
 
    it should "not find the class java.lang.Object" in {
-      assert(!project.classes.get(ObjectType.Object).isDefined);
+      project.classes.get(ObjectType.Object) should not be ('Defined)
    }
 
    behavior of "Project's lookupMethodDeclaration method"
 
    it should "find a public method" in {
-      assert(project.lookupMethodDeclaration(SuperType, "publicMethod", MethodDescriptor("()V")).isDefined)
+      project.lookupMethodDeclaration(SuperType, "publicMethod", MethodDescriptor("()V")) should be('Defined)
    }
 
    it should "find a private method" in {
-      assert(project.lookupMethodDeclaration(SuperType, "privateMethod", MethodDescriptor("()V")).isDefined)
+      project.lookupMethodDeclaration(SuperType, "privateMethod", MethodDescriptor("()V")) should be('Defined)
    }
 
    it should "not find a method that does not exist" in {
-      assert(project.lookupMethodDeclaration(SuperType, "doesNotExist", MethodDescriptor("()V")).isEmpty)
+      project.lookupMethodDeclaration(SuperType, "doesNotExist", MethodDescriptor("()V")) should be('Empty)
    }
 
    it should "find a method with default visibility" in {
-      assert(project.lookupMethodDeclaration(SuperType, "defaultVisibilityMethod", MethodDescriptor("()V")).isDefined)
+      project.lookupMethodDeclaration(SuperType, "defaultVisibilityMethod", MethodDescriptor("()V")) should be('Defined)
    }
 
    it should "find another method with default visibility" in {
-      assert(project.lookupMethodDeclaration(SuperType, "anotherDefaultVisibilityMethod", MethodDescriptor("()V")).isDefined)
+      project.lookupMethodDeclaration(SuperType, "anotherDefaultVisibilityMethod", MethodDescriptor("()V")) should be('Defined)
    }
 
    it should "find the super class' method anotherDefaultVisibilityMethod" in {
-      assert(project.lookupMethodDeclaration(DirectSub, "anotherDefaultVisibilityMethod", MethodDescriptor("()V")).isDefined)
+      project.lookupMethodDeclaration(DirectSub, "anotherDefaultVisibilityMethod", MethodDescriptor("()V")) should be('Defined)
    }
 
    it should "not find Object's toString method, because we only have a partial view of the project" in {
-      assert(project.lookupMethodDeclaration(SuperType, "toString", MethodDescriptor("()Ljava/lang/String;")).isEmpty)
+      project.lookupMethodDeclaration(SuperType, "toString", MethodDescriptor("()Ljava/lang/String;")) should be('Empty)
    }
 
    it should "find a method declared by a directly implemented interface" in {
       val r = project.lookupMethodDeclaration(AbstractB, "someSubMethod", MethodDescriptor("()V"))
-      assert(r.isDefined)
-      assert(r.get._1.thisClass == ObjectType("methods/b/SomeSubInterface"))
+      r should be('Defined)
+      assert(r.get._1.thisClass === ObjectType("methods/b/SomeSubInterface"))
    }
 
    it should "find a method declared by an indirectly implemented interface" in {
       val r = project.lookupMethodDeclaration(AbstractB, "someMethod", MethodDescriptor("()V"))
-      assert(r.isDefined)
-      assert(r.get._1.thisClass == ObjectType("methods/b/SomeInterface"))
+      r should be('Defined)
+      assert(r.get._1.thisClass === ObjectType("methods/b/SomeInterface"))
    }
 
 }

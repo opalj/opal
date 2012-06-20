@@ -33,19 +33,16 @@
 package de.tud.cs.st
 package bat
 
+import resolved.reader.Java6Framework
+
 import java.io.File
 import java.util.zip.ZipFile
 import java.util.zip.ZipEntry
 
-import de.tud.cs.st.bat.canonical.reader.BasicJava6Framework
-import de.tud.cs.st.bat.resolved.reader.Java6Framework
-
-import org.scalatest.Suite
-import org.scalatest.Reporter
-import org.scalatest.Stopper
-import org.scalatest.Tracker
-import org.scalatest.events._
-
+import org.scalatest.FlatSpec
+import org.scalatest.matchers.ShouldMatchers
+import org.junit.runner.RunWith
+import org.scalatest.junit.JUnitRunner
 
 /**
   * This test(suite) just loads a very large number of class files to make sure the library
@@ -54,67 +51,25 @@ import org.scalatest.events._
   *
   * @author Michael Eichberg
   */
-class LoadClassFilesTest extends Suite {
+@RunWith(classOf[JUnitRunner])
+class LoadClassFilesTest extends FlatSpec with ShouldMatchers {
 
-    /*
-    * Registry of all class files stored in the zip files found in the test data directory.
-    */
-    private val testCases = {
+   behavior of "BAT"
 
-        var tcs = scala.collection.immutable.Map[String, (ZipFile, ZipEntry)]()
+   for {
+      file ← new File(ClassLoader.getSystemClassLoader().getResource("classfiles").getFile).listFiles
+      if (file.isFile && file.canRead && file.getName.endsWith(".zip"))
+   } {
+      val zipfile = new ZipFile(file)
+      val zipentries = (zipfile).entries
+      while (zipentries.hasMoreElements) {
+         val zipentry = zipentries.nextElement
+         if (!zipentry.isDirectory && zipentry.getName.endsWith(".class")) {
 
-        // The location of the "test/data" directory depends on the current directory used for
-        // running this test suite... i.e. whether the current directory is the directory where
-        // this class / this source file is stored or BAT's root directory.
-        var files = new File("../../../../../../test/classfiles").listFiles()
-        if (files == null) files = new File("test/classfiles").listFiles()
-
-        for {
-            file <- files
-            if (file.isFile && file.canRead && file.getName.endsWith(".zip"))
-        } {
-            val zipfile = new ZipFile(file)
-            val zipentries = (zipfile).entries
-            while (zipentries.hasMoreElements) {
-                val zipentry = zipentries.nextElement
-                if (!zipentry.isDirectory && zipentry.getName.endsWith(".class")) {
-                    val testCase = ("Read class file: " + zipfile.getName + " - " + zipentry.getName ->(zipfile, zipentry))
-                    tcs = tcs + testCase
-                }
+            it should ("be able to parse the class file " + zipentry.getName + " in " + zipfile.getName) in {
+               Java6Framework.ClassFile(() ⇒ zipfile.getInputStream(zipentry))
             }
-        }
-
-        tcs
-    }
-
-    override lazy val testNames: Set[String] = (Set[String]() /: (testCases.keys))(_ + _)
-
-    override def tags: Map[String, Set[String]] = Map()
-
-
-    override def runTest(testName: String,
-                         reporter: Reporter,
-                         stopper: Stopper,
-                         configMap: Map[String, Any],
-                         tracker: Tracker
-                            ) {
-
-        val ordinal = tracker.nextOrdinal
-        reporter(TestStarting(ordinal, "BATTests", None, testName))
-        try {
-
-            // 1. Test ... just read in the class file and use a basic representation that represents everything as is
-            val (file, entry) = testCases(testName)
-            BasicJava6Framework.ClassFile(() => file.getInputStream(entry))
-
-            // 2.1. Test ... read in the class file and resolve the constant pool
-            var classFile: de.tud.cs.st.bat.resolved.ClassFile = null
-            classFile = Java6Framework.ClassFile(() => file.getInputStream(entry))
-
-            reporter(TestSucceeded(ordinal, "BATTests", None, testName))
-        } catch {
-            case t: Throwable => reporter(TestFailed(ordinal, "Failure", "BATTests", None, testName, Some(t)))
-        }
-    }
-
+         }
+      }
+   }
 }

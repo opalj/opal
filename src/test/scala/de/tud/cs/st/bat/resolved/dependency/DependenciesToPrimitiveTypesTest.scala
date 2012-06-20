@@ -43,120 +43,133 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.matchers.ShouldMatchers
 
 /**
- * Tests that the dependency extractor does not report dependencies to primitive types and arrays of primitive types.
- *
- * @author Michael Eichberg
- */
+  * Tests that the dependency extractor does not report dependencies to primitive types and arrays of primitive types.
+  *
+  * @author Michael Eichberg
+  */
 @RunWith(classOf[JUnitRunner])
-class DependenciesToPrimitiveTypesTest extends FlatSpec with ShouldMatchers with BeforeAndAfterAll {
+class DependenciesToPrimitiveTypesTest extends FlatSpec with ShouldMatchers /*with BeforeAndAfterAll*/ {
 
-    val extractedTypes = {
-        val types = scala.collection.mutable.Set[Type]()
+   //
+   //
+   // Set up
+   //
+   //
+   val extractedTypes = scala.collection.mutable.Set[Type]()
 
-        object TypesCollector extends SourceElementIDs {
-            def sourceElementID(t: Type): Int = {
-                types += t
-                -1
-            }
+   object TypesCollector extends SourceElementIDs {
+      def sourceElementID(t : Type) : Int = {
+         extractedTypes += t
+         -1
+      }
 
-            def sourceElementID(definingObjectType: ObjectType, fieldName: String): Int = {
-                types += definingObjectType
-                -1
-            }
+      def sourceElementID(definingObjectType : ObjectType, fieldName : String) : Int = {
+         extractedTypes += definingObjectType
+         -1
+      }
 
-            def sourceElementID(definingReferenceType: ReferenceType, methodName: String, methodDescriptor: MethodDescriptor): Int = {
-                types += definingReferenceType
-                -1
-            }
-        }
+      def sourceElementID(definingReferenceType : ReferenceType, methodName : String, methodDescriptor : MethodDescriptor) : Int = {
+         extractedTypes += definingReferenceType
+         -1
+      }
+   }
 
-        val DependencyCollector = new DependencyExtractor(TypesCollector) with NoSourceElementsVisitor {
+   val DependencyCollector = new DependencyExtractor(TypesCollector) with NoSourceElementsVisitor {
 
-            def processDependency(sourceID: Int, targetID: Int, dependencyType: DependencyType) {}
-        }
+      def processDependency(sourceID : Int, targetID : Int, dependencyType : DependencyType) {}
+   }
 
-        DependencyCollector.process(
-            Java6Framework.ClassFile(ClassLoader.getSystemResource("classfiles/Types.zip").getFile, "types/TypeDeclarations.class")
-        );
-        types
-    }
+   //
+   //
+   // EXERCISE
+   //
+   //
+   DependencyCollector.process(
+      Java6Framework.ClassFile(ClassLoader.getSystemResource("classfiles/Types.zip").getFile, "types/TypeDeclarations.class")
+   );
 
-    behavior of "DependencyExtractor"
+   //
+   //
+   // VERIFY
+   //
+   //
 
-    it should "extract a dependency to java.lang.Object" in {
-        assert(extractedTypes contains ObjectType("java/lang/Object"))
-    }
+   behavior of "DependencyExtractor"
 
-    it should "extract a dependency to the type java.lang.Object[]" in {
-        assert(extractedTypes contains ArrayType(ObjectType("java/lang/Object")))
-    }
+   it should "extract a dependency to java.lang.Object" in {
+      assert(extractedTypes contains ObjectType.Object, "the extractor did no report an existing dependency to java.lang.Object")
+   }
 
-    it should "extract a dependency to the type java.lang.Object[][]" in {
-        assert(extractedTypes contains ArrayType(ArrayType(ObjectType("java/lang/Object"))))
-    }
+   it should "extract a dependency to the type java.lang.Object[]" in {
+      assert(extractedTypes contains ArrayType(ObjectType("java/lang/Object")))
+   }
 
-    it should "not extract dependencies to byte" in {
-        assert(!(extractedTypes contains ByteType))
-    }
+   it should "extract a dependency to the type java.lang.Object[][]" in {
+      assert(extractedTypes contains ArrayType(ArrayType(ObjectType("java/lang/Object"))))
+   }
 
-    it should "not extract dependencies to short" in {
-        assert(!(extractedTypes contains ShortType))
-    }
+   it should "not extract dependencies to byte" in {
+      assert(!(extractedTypes contains ByteType))
+   }
 
-    it should "not extract dependencies to char" in {
-        assert(!(extractedTypes contains CharType))
-    }
+   it should "not extract dependencies to short" in {
+      assert(!(extractedTypes contains ShortType))
+   }
 
-    it should "not extract dependencies to int" in {
-        assert(!(extractedTypes contains IntegerType))
-    }
+   it should "not extract dependencies to char" in {
+      assert(!(extractedTypes contains CharType))
+   }
 
-    it should "not extract dependencies to long" in {
-        assert(!(extractedTypes contains LongType))
-    }
+   it should "not extract dependencies to int" in {
+      assert(!(extractedTypes contains IntegerType))
+   }
 
-    it should "not extract dependencies to boolean" in {
-        assert(!(extractedTypes contains BooleanType))
-    }
+   it should "not extract dependencies to long" in {
+      assert(!(extractedTypes contains LongType))
+   }
 
-    it should "not extract dependencies to float" in {
-        assert(!(extractedTypes contains FloatType))
-    }
+   it should "not extract dependencies to boolean" in {
+      assert(!(extractedTypes contains BooleanType))
+   }
 
-    it should "not extract dependencies to double" in {
-        assert(!(extractedTypes contains DoubleType))
-    }
+   it should "not extract dependencies to float" in {
+      assert(!(extractedTypes contains FloatType))
+   }
 
-    it should "not extract dependencies to byte arrays" in {
-        assert(!(extractedTypes contains ArrayType(ByteType)))
-    }
+   it should "not extract dependencies to double" in {
+      assert(!(extractedTypes contains DoubleType))
+   }
 
-    it should "not extract dependencies to short arrays" in {
-        assert(!(extractedTypes contains ArrayType(ShortType)))
-    }
+   it should "not extract dependencies to byte arrays" in {
+      assert(!(extractedTypes contains ArrayType(ByteType)))
+   }
 
-    it should "not extract dependencies to char arrays" in {
-        assert(!(extractedTypes contains ArrayType(CharType)))
-    }
+   it should "not extract dependencies to short arrays" in {
+      assert(!(extractedTypes contains ArrayType(ShortType)))
+   }
 
-    it should "not extract dependencies to int arrays" in {
-        assert(!(extractedTypes contains ArrayType(IntegerType)))
-    }
+   it should "not extract dependencies to char arrays" in {
+      assert(!(extractedTypes contains ArrayType(CharType)))
+   }
 
-    it should "not extract dependencies to long arrays" in {
-        assert(!(extractedTypes contains ArrayType(LongType)))
-    }
+   it should "not extract dependencies to int arrays" in {
+      assert(!(extractedTypes contains ArrayType(IntegerType)))
+   }
 
-    it should "not extract dependencies to boolean arrays" in {
-        assert(!(extractedTypes contains ArrayType(BooleanType)))
-    }
+   it should "not extract dependencies to long arrays" in {
+      assert(!(extractedTypes contains ArrayType(LongType)))
+   }
 
-    it should "not extract dependencies to float arrays" in {
-        assert(!(extractedTypes contains ArrayType(FloatType)))
-    }
+   it should "not extract dependencies to boolean arrays" in {
+      assert(!(extractedTypes contains ArrayType(BooleanType)))
+   }
 
-    it should "not extract dependencies to double arrays" in {
-        assert(!(extractedTypes contains ArrayType(DoubleType)))
-    }
+   it should "not extract dependencies to float arrays" in {
+      assert(!(extractedTypes contains ArrayType(FloatType)))
+   }
+
+   it should "not extract dependencies to double arrays" in {
+      assert(!(extractedTypes contains ArrayType(DoubleType)))
+   }
 
 }
