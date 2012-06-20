@@ -39,81 +39,81 @@ import de.tud.cs.st.util.ControlAbstractions.repeat
 import java.rmi.UnexpectedException
 
 /**
- * Abstract trait that implements a template method to read in a Java class file.
- *
- * This library supports class files from version 45 (Java 1.1) up to
- * (including) version 50 (Java 6). Version 51 (Java 7) is currently only
- * partially supported.
- *
- * '''Format'''
- * {{{
- * ClassFile {
- * 	u4 magic;
- * 	u2 minor_version;
- * 	u2 major_version;
- * 	u2 constant_pool_count;
- * 	cp_info constant_pool[constant_pool_count-1];
- * 	u2 access_flags;
- * 	u2 this_class;
- * 	u2 super_class;
- * 	u2 interfaces_count;
- * 	u2 interfaces[interfaces_count];
- * 	u2 fields_count;
- * 	field_info fields[fields_count];
- * 	u2 methods_count;
- * 	method_info methods[methods_count];
- * 	u2 attributes_count;
- * 	attribute_info attributes[attributes_count];
- * }
- * }}}
- *
- * For details see the JVM Specification: The ClassFile Structure.
- *
- * '''Notes for Implementors'''
- *
- * Reading of the class file's major structures: the constant pool, fields, methods
- * the set of implemented interfaces, and the attributes is
- * delegated to special readers. This enables a very high-level of adaptability.
- *
- * @author Michael Eichberg
- */
+  * Abstract trait that implements a template method to read in a Java class file.
+  *
+  * This library supports class files from version 45 (Java 1.1) up to
+  * (including) version 50 (Java 6). Version 51 (Java 7) is currently only
+  * partially supported.
+  *
+  * '''Format'''
+  * {{{
+  * ClassFile {
+  * 	u4 magic;
+  * 	u2 minor_version;
+  * 	u2 major_version;
+  * 	u2 constant_pool_count;
+  * 	cp_info constant_pool[constant_pool_count-1];
+  * 	u2 access_flags;
+  * 	u2 this_class;
+  * 	u2 super_class;
+  * 	u2 interfaces_count;
+  * 	u2 interfaces[interfaces_count];
+  * 	u2 fields_count;
+  * 	field_info fields[fields_count];
+  * 	u2 methods_count;
+  * 	method_info methods[methods_count];
+  * 	u2 attributes_count;
+  * 	attribute_info attributes[attributes_count];
+  * }
+  * }}}
+  *
+  * For details see the JVM Specification: The ClassFile Structure.
+  *
+  * '''Notes for Implementors'''
+  *
+  * Reading of the class file's major structures: the constant pool, fields, methods
+  * the set of implemented interfaces, and the attributes is
+  * delegated to special readers. This enables a very high-level of adaptability.
+  *
+  * @author Michael Eichberg
+  */
 trait ClassFileReader extends Constant_PoolAbstractions {
 
-    //
-    // ABSTRACT DEFINITIONS
-    //
+   //
+   // ABSTRACT DEFINITIONS
+   //
 
-    /**
+   /**
      * The type of the object that represents a Java class file.
      */
-    type ClassFile
+   type ClassFile
 
-    /**
+   /**
      * The type of the object that represents a class's fields.
      */
-    type Fields
+   type Fields
 
-    /**
+   /**
      * The type of the object that represents all methods of a class.
      */
-    type Methods
+   type Methods
 
-    /**
+   /**
      * The type of the object that represents a class declaration's
      * attributes (e.g., the source file attribute.)
      */
-    type Attributes
+   type Attributes
 
-    /**
+   /**
      * The type of the object that represents the interfaces implemented by
      * a class/interface.
      */
-    type Interfaces
+   type Interfaces
 
-    // METHODS DELEGATING TO OTHER READERS
-    //
+   // METHODS DELEGATING TO OTHER READERS
+   //
 
-    /**
+   /**
      * Reads the constant pool using the given stream.
      *
      * The given stream is positioned
@@ -122,9 +122,9 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      * constant pool. Only information belonging to the constant pool are allowed
      * to be read. The stream must not be closed after reading the constant pool.
      */
-    protected def Constant_Pool(in: DataInputStream): Constant_Pool
+   protected def Constant_Pool(in : DataInputStream) : Constant_Pool
 
-    /**
+   /**
      * Reads the information which interfaces are implemented/extended.
      *
      * The given stream is positioned
@@ -132,9 +132,9 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      * template method that reads in a class file to delegate the reading of the
      * extended interfaces.
      */
-    protected def Interfaces(in: DataInputStream, cp: Constant_Pool): Interfaces
+   protected def Interfaces(in : DataInputStream, cp : Constant_Pool) : Interfaces
 
-    /**
+   /**
      * Reads all field declarations using the given stream and constant pool.
      *
      * The given stream is positioned
@@ -142,9 +142,9 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      * template method that reads in a class file to delegate the reading of the
      * declared fields.
      */
-    protected def Fields(in: DataInputStream, cp: Constant_Pool): Fields
+   protected def Fields(in : DataInputStream, cp : Constant_Pool) : Fields
 
-    /**
+   /**
      * Reads all method declarations using the given stream and constant pool.
      *
      * The given stream is positioned directly before a class file's "methods_count" field.
@@ -152,17 +152,10 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      * template method that reads in a class file to delegate the reading of the
      * declared method.
      */
-    protected def Methods(in: DataInputStream, cp: Constant_Pool): Methods
+   protected def Methods(in : DataInputStream, cp : Constant_Pool) : Methods
 
-    /**
+   /**
      * Reads all attributes using the given stream and constant pool.
-     *
-     * '''Implementation Notice'''
-     *
-     * The given stream is positioned
-     * directly before a class file's "attributes_count" field. This method is called by the
-     * template method that reads in a class file to delegate the reading of the
-     * attributes.
      *
      * '''From the Specification'''
      *
@@ -170,34 +163,37 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      * structure are the InnerClasses, EnclosingMethod, Synthetic, Signature,
      * SourceFile, SourceDebugExtension, Deprecated, RuntimeVisibleAnnotations,
      * RuntimeInvisibleAnnotations, and BootstrapMethods attributes.
-     * I
+     *
+     * @note The given stream is positioned directly before a class file's "attributes_count" field.
+     *  This method is called by the template method that reads in a class file to delegate the
+     *  reading of the attributes.
      */
-    protected def Attributes(
-        ap: AttributesParent,
-        cp: Constant_Pool,
-        in: DataInputStream): Attributes
+   protected def Attributes(
+      ap : AttributesParent,
+      cp : Constant_Pool,
+      in : DataInputStream) : Attributes
 
-    /**
+   /**
      * Factory method to create the object that represents the class file
      * as a whole.
      */
-    protected def ClassFile(
-        minor_version: Int,
-        major_version: Int,
-        access_flags: Int,
-        this_class: Constant_Pool_Index,
-        super_class: Constant_Pool_Index,
-        interfaces: Interfaces,
-        fields: Fields,
-        methods: Methods,
-        attributes: Attributes)(
-            implicit cp: Constant_Pool): ClassFile
+   protected def ClassFile(
+      minor_version : Int,
+      major_version : Int,
+      access_flags : Int,
+      this_class : Constant_Pool_Index,
+      super_class : Constant_Pool_Index,
+      interfaces : Interfaces,
+      fields : Fields,
+      methods : Methods,
+      attributes : Attributes)(
+         implicit cp : Constant_Pool) : ClassFile
 
-    //
-    // IMPLEMENTATION
-    //
+   //
+   // IMPLEMENTATION
+   //
 
-    /**
+   /**
      * Reads in a class file.
      *
      * @param create a function that is intended to create a new `InputStream` and
@@ -207,149 +203,138 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      *  The created input stream will automatically be wrapped by BAT to enable efficient reading of the
      *  class file.
      */
-    def ClassFile(create: () ⇒ InputStream): ClassFile = {
-        var in = create();
-        if (!in.isInstanceOf[DataInputStream]) {
-            // TODO needs to be made more robust
-            val data = new Array[Byte](in.available)
-            var bytesRead = 0
-            while (bytesRead < data.length) {
-                bytesRead = bytesRead + in.read(data, bytesRead, data.length - bytesRead)
-            }
-            if (in.available != 0) throw new RuntimeException("unexpected additional data available")
-            in = new DataInputStream(new ByteArrayInputStream(data))
-            //            if (!in.isInstanceOf[BufferedInputStream]) {
-            //                in = new BufferedInputStream(in)
-            //            }
-            //            in = new DataInputStream(in)
-        }
-        try {
-            ClassFile(in.asInstanceOf[DataInputStream])
-        }
-        finally {
-            in.close
-        }
-    }
+   def ClassFile(create : () ⇒ InputStream) : ClassFile = {
+      var in = create();
+      if (!in.isInstanceOf[DataInputStream]) {
+         // TODO needs to be made more robust
+         val data = new Array[Byte](in.available)
+         var bytesRead = 0
+         while (bytesRead < data.length) {
+            bytesRead = bytesRead + in.read(data, bytesRead, data.length - bytesRead)
+         }
+         if (in.available != 0) throw new RuntimeException("unexpected additional data available")
+         in = new DataInputStream(new ByteArrayInputStream(data))
+      }
+      try {
+         ClassFile(in.asInstanceOf[DataInputStream])
+      }
+      finally {
+         in.close
+      }
+   }
 
-    protected[this] def ClassFile(zipFile: ZipFile, zipEntry: ZipEntry): ClassFile = {
-        ClassFile(() ⇒ zipFile.getInputStream(zipEntry))
-        //        val in = new DataInputStream(zipFile.getInputStream(zipEntry))
-        //        try {
-        //            ClassFile(in)
-        //        }
-        //        finally {
-        //            in.close
-        //        }
-    }
+   protected[this] def ClassFile(zipFile : ZipFile, zipEntry : ZipEntry) : ClassFile = {
+      ClassFile(() ⇒ zipFile.getInputStream(zipEntry))
+   }
 
-    /**
+   /**
      * Reads in a single class file from a ZIP/Jar file.
      *
      * @param zipFileName the name of an existing ZIP/JAR file that contains class files.
      * @param zipFileEntryName the name of a class file stored in the specified ZIP/JAR file.
      */
-    def ClassFile(zipFileName: String, zipFileEntryName: String): ClassFile = {
-        val zipFile = new ZipFile(zipFileName)
-        try {
-            val zipEntry = zipFile.getEntry(zipFileEntryName)
-            ClassFile(zipFile, zipEntry)
-        }
-        finally {
-            zipFile.close
-        }
-    }
+   def ClassFile(zipFileName : String, zipFileEntryName : String) : ClassFile = {
+      val zipFile = new ZipFile(zipFileName)
+      try {
+         val zipEntry = zipFile.getEntry(zipFileEntryName)
+         ClassFile(zipFile, zipEntry)
+      }
+      finally {
+         zipFile.close
+      }
+   }
 
-    def ClassFiles(zipFile: ZipFile): Seq[ClassFile] = {
-        var classFileEntries: List[ZipEntry] = Nil
-        val zipEntries = (zipFile).entries
-        while (zipEntries.hasMoreElements) {
-            val zipEntry = zipEntries.nextElement
-            if (!zipEntry.isDirectory && zipEntry.getName.endsWith(".class")) {
-                classFileEntries = zipEntry :: classFileEntries
+   def ClassFiles(zipFile : ZipFile) : Seq[ClassFile] = {
+      var classFileEntries : List[ZipEntry] = Nil
+      val zipEntries = (zipFile).entries
+      while (zipEntries.hasMoreElements) {
+         val zipEntry = zipEntries.nextElement
+         if (!zipEntry.isDirectory && zipEntry.getName.endsWith(".class")) {
+            classFileEntries = zipEntry :: classFileEntries
+         }
+      }
+      classFileEntries.view.map(ClassFile(zipFile, _))
+   }
+
+   def ClassFiles(zipFileName : String) : Seq[ClassFile] = {
+      ClassFiles(new ZipFile(zipFileName))
+   }
+
+   def ClassFiles(file : java.io.File) : Seq[ClassFile] = {
+      if (!file.exists())
+         return Nil
+
+      if (file.isFile()) {
+         if (file.getName.endsWith(".zip") || file.getName.endsWith(".jar"))
+            return ClassFiles(file.getName)
+
+         if (file.getName.endsWith(".class"))
+            return List(ClassFile(() ⇒ new java.io.FileInputStream(file)))
+
+         return Nil
+      }
+
+      // file.isDirectory
+      var classFiles : List[ClassFile] = Nil
+      var directories : List[java.io.File] = List(file) // our work list
+
+      while (directories.nonEmpty) {
+         val directory = directories.head
+         directories = directories.tail
+         var classFileCount = 0
+         for (file ← directory.listFiles() /*.par*/ ) {
+            if (file.isDirectory()) {
+               //   directories.synchronized {
+               directories = file :: directories
+               //   }
             }
-        }
-        classFileEntries.view.map(ClassFile(zipFile, _))
-    }
-
-    def ClassFiles(zipFileName: String): Seq[ClassFile] = {
-        ClassFiles(new ZipFile(zipFileName))
-    }
-
-    def ClassFiles(file: java.io.File): Seq[ClassFile] = {
-        if (!file.exists())
-            return Nil
-
-        if (file.isFile()) {
-            if (file.getName.endsWith(".zip") || file.getName.endsWith(".jar"))
-                return ClassFiles(file.getName)
-
-            if (file.getName.endsWith(".class"))
-                return List(ClassFile(() ⇒ new java.io.FileInputStream(file)))
-
-            return Nil
-        }
-
-        // file.isDirectory
-        var classFiles: List[ClassFile] = Nil
-        var directories : List[java.io.File] = List(file) // our work list
-
-        while (directories.nonEmpty) {
-            val directory = directories.head
-            directories = directories.tail
-            var classFileCount = 0
-            for (file ← directory.listFiles()/*.par*/) {
-                if (file.isDirectory()) {
-                 //   directories.synchronized {
-                    	directories = file :: directories
-                 //   }
-                }
-                else if (file.getName().endsWith(".class")) {
-                    classFileCount += 1
-                    val classFile = ClassFile(() ⇒ new java.io.FileInputStream(file))
-                 //   classFiles.synchronized {
-                    	classFiles = classFile :: classFiles
-                 //   }
-                }
+            else if (file.getName().endsWith(".class")) {
+               classFileCount += 1
+               val classFile = ClassFile(() ⇒ new java.io.FileInputStream(file))
+               //   classFiles.synchronized {
+               classFiles = classFile :: classFiles
+               //   }
             }
-        }
+         }
+      }
 
-        return classFiles;
-    }
+      return classFiles;
+   }
 
-    /**
+   /**
      * Template method to read in a Java class file from the given input stream.
      *
      * @param in the DataInputStream from which the class file will be read. The
      *  stream is not closed by this method.
      */
-    def ClassFile(in: DataInputStream): ClassFile = {
-        // magic
-        require(CLASS_FILE_MAGIC == in.readInt, "No class file.")
+   def ClassFile(in : DataInputStream) : ClassFile = {
+      // magic
+      require(CLASS_FILE_MAGIC == in.readInt, "No class file.")
 
-        val minor_version = in.readUnsignedShort // minor_version
-        val major_version = in.readUnsignedShort // major_version
+      val minor_version = in.readUnsignedShort // minor_version
+      val major_version = in.readUnsignedShort // major_version
 
-        // let's make sure that we support this class file's version
-        require(major_version >= 45 && // at least JDK 1.1.
-            (major_version < 51 ||
-                (major_version == 51 && minor_version == 0))) // Java 6 = 50.0; Java 7 == 51.0
+      // let's make sure that we support this class file's version
+      require(major_version >= 45 && // at least JDK 1.1.
+         (major_version < 51 ||
+            (major_version == 51 && minor_version == 0))) // Java 6 = 50.0; Java 7 == 51.0
 
-        val cp = Constant_Pool(in)
-        val access_flags = in.readUnsignedShort
-        val this_class = in.readUnsignedShort
-        val super_class = in.readUnsignedShort
-        val interfaces = Interfaces(in, cp)
-        val fields = Fields(in, cp)
-        val methods = Methods(in, cp)
-        val attributes = Attributes(AttributesParent.ClassFile, cp, in)
+      val cp = Constant_Pool(in)
+      val access_flags = in.readUnsignedShort
+      val this_class = in.readUnsignedShort
+      val super_class = in.readUnsignedShort
+      val interfaces = Interfaces(in, cp)
+      val fields = Fields(in, cp)
+      val methods = Methods(in, cp)
+      val attributes = Attributes(AttributesParent.ClassFile, cp, in)
 
-        ClassFile(
-            minor_version, major_version,
-            access_flags,
-            this_class, super_class, interfaces,
-            fields, methods,
-            attributes
-        )(cp)
-    }
+      ClassFile(
+         minor_version, major_version,
+         access_flags,
+         this_class, super_class, interfaces,
+         fields, methods,
+         attributes
+      )(cp)
+   }
 }
 
