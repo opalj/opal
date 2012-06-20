@@ -40,20 +40,6 @@ package resolved
  */
 case class LocalVariableTypeTable(localVariableTypes: LocalVariableTypes) extends Attribute {
 
-    //
-    //
-    // SUPPORT FOR SPECIAL REPRESENTATIONS
-    //
-    //
-
-    def toXML =
-        <local_variable_type_table>
-			{ for (entry ← localVariableTypes) yield entry.toXML }
-		</local_variable_type_table>
-
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A, pc_to_seqNo: Array[Int]): F = {
-        factory.Fact("method_local_variable_type_table") // TODO [Prolog] LocalVariableTypeTableAttribute
-    }
 }
 
 case class LocalVariableType(startPC: Int,
@@ -61,20 +47,6 @@ case class LocalVariableType(startPC: Int,
                              name: String,
                              signature: FieldTypeSignature,
                              index: Int) {
-
-    //
-    //
-    // SUPPORT FOR SPECIAL REPRESENTATIONS
-    //
-    //
-
-    def toXML =
-        <entry
-			signature={ signature.toXML }
-			start_pc={ startPC.toString }
-			length={ length.toString }
-			name={ name }
-			index={ index.toString }/>
 
 }
 

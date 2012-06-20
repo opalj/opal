@@ -50,7 +50,6 @@ sealed trait ConstantValue[T >: Nothing] extends Attribute {
 
     def valueToString: String
 
-    def valueToProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T
 
     //
     // IMPLEMENTATION
@@ -67,17 +66,6 @@ sealed trait ConstantValue[T >: Nothing] extends Attribute {
     def toUTF8: String = sys.error("This constant value ("+this+") cannot be converted to a String(UTF8) value")
     def toClass: ReferenceType = sys.error("This constant value ("+this+") cannot be converted to a class value")
 
-    //
-    //
-    // SUPPORT FOR SPECIAL REPRESENTATIONS
-    //
-    //
-
-    def toXML = <constant type={ valueType.toJava }>{ valueToString }</constant>
-
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] =
-        factory.Fact("field_value", declaringEntityKey, valueToProlog(factory)) :: Nil
-
 }
 object ConstantValue {
 
@@ -85,108 +73,71 @@ object ConstantValue {
 }
 
 case class ConstantLong(value: Long) extends ConstantValue[Long] {
+
     override def toLong = value
+
     def valueToString = value.toString
+
     def valueType = LongType
 
-    //
-    //
-    // SUPPORT FOR SPECIAL REPRESENTATIONS
-    //
-    //
-    def valueToProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T = {
-        import factory._
-        Term("long", IntegerAtom(value))
-    }
 }
 
 case class ConstantInteger(value: Int) extends ConstantValue[Int] {
-    override def toBoolean = value != 0 // TODO Does this method: ConstantInteger.toBoolean makes sense?
-    override def toByte = value.toByte
-    override def toChar = value.toChar
-    override def toShort = value.toShort
-    override def toInt = value
-    def valueToString = value.toString
-    def valueType = IntegerType
 
-    //
-    //
-    // SUPPORT FOR SPECIAL REPRESENTATIONS
-    //
-    //
-    def valueToProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T = {
-        import factory._
-        Term("int", IntegerAtom(value))
-    }
+    override def toBoolean = value != 0 // TODO Does this method: ConstantInteger.toBoolean makes sense?
+
+    override def toByte = value.toByte
+
+    override def toChar = value.toChar
+
+    override def toShort = value.toShort
+
+    override def toInt = value
+
+    def valueToString = value.toString
+
+    def valueType = IntegerType
 
 }
 
 case class ConstantDouble(value: Double) extends ConstantValue[Double] {
-    override def toDouble = value
-    def valueToString = value.toString
-    def valueType = DoubleType
 
-    //
-    //
-    // SUPPORT FOR SPECIAL REPRESENTATIONS
-    //
-    //
-    def valueToProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T = {
-        import factory._
-        Term("double", FloatAtom(value))
-    }
+    override def toDouble = value
+
+    def valueToString = value.toString
+
+    def valueType = DoubleType
 
 }
 
 case class ConstantFloat(value: Float) extends ConstantValue[Float] {
-    override def toFloat = value
-    def valueToString = value.toString
-    def valueType = FloatType
 
-    //
-    //
-    // SUPPORT FOR SPECIAL REPRESENTATIONS
-    //
-    //
-    def valueToProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T = {
-        import factory._
-        Term("float", FloatAtom(value))
-    }
+    override def toFloat = value
+
+    def valueToString = value.toString
+
+    def valueType = FloatType
 
 }
 
 case class ConstantString(value: String) extends ConstantValue[String] {
+
     override def toUTF8 = value
+
     def valueToString = value.toString
-    def valueType = ObjectType("java/lang/String")
 
-    //
-    //
-    // SUPPORT FOR SPECIAL REPRESENTATIONS
-    //
-    //
+    def valueType = ObjectType("java/lang/String") // TODO Replace by ObjectType....
 
-    def valueToProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T = {
-        import factory._
-        Term("string", TextAtom(value))
-    }
 }
 
 // ConstantClass is used by anewarray and multianewarray
 case class ConstantClass(value: ReferenceType) extends ConstantValue[ReferenceType] {
-    override def toClass = value
-    def valueToString = value.toJava
-    def valueType = ObjectType("java/lang/Class") // TODO Document if this is correct in case of (multi)anewarray.
 
-    //
-    //
-    // SUPPORT FOR SPECIAL REPRESENTATIONS
-    //
-    //
-    def valueToProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T = {
-        import factory._
-        value.toProlog(factory)
-    }
+    override def toClass = value
+
+    def valueToString = value.toJava
+
+    def valueType = ObjectType("java/lang/Class") // TODO Replace by ObjectType.... // TODO Document if this is correct in case of (multi)anewarray.
 
 }
 

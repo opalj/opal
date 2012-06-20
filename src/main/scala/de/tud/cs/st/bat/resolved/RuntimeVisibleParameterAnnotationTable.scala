@@ -43,15 +43,4 @@ case class RuntimeVisibleParameterAnnotationTable(parameterAnnotations: Paramete
 
     final def isRuntimeVisible: Boolean = true
 
-    //
-    //
-    // SUPPORT FOR SPECIAL REPRESENTATIONS
-    //
-    //
-
-    def toXML =
-        <runtime_visible_parameter_annotations>
-			{ parameterAnnotationsToXML }
-        </runtime_visible_parameter_annotations>
-
 }

@@ -57,10 +57,6 @@ sealed trait ThrowsSignature extends SignatureElement {
  */
 sealed trait Signature extends SignatureElement with Attribute {
 
-    def toXML = <signature/> //{ signature }</signature> // TODO [XML] SignatureAttribute
-
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): F =
-        factory.Fact("signature", declaringEntityKey) // TODO [Prolog] SignatureAttribute
 }
 
 case class ClassSignature(formalTypeParameters: Option[List[FormalTypeParameter]],

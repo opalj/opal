@@ -42,12 +42,4 @@ case class RuntimeInvisibleAnnotationTable(annotations: Annotations) extends Ann
 
     final def isRuntimeVisible: Boolean = false
 
-    //
-    //
-    // SUPPORT FOR SPECIAL REPRESENTATIONS
-    //
-    //
-
-    def toXML = <runtime_invisible_annotations>{ annotationsToXML }</runtime_invisible_annotations>
-
 }

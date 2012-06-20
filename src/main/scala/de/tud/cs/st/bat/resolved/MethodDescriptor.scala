@@ -47,20 +47,6 @@ case class MethodDescriptor(parameterTypes: Seq[FieldType], returnType: Type) {
     //
     //
 
-    def toXML =
-        <descriptor>
-			{ for (pt ← parameterTypes) yield <parameter type={ pt.toJava } /> }
-			<return type={ returnType.toJava } />
-		</descriptor>
-
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]) = {
-        factory.Term(
-            "signature",
-            factory.Terms(parameterTypes, (_: FieldType).toProlog(factory)),
-            returnType.toProlog(factory)
-        )
-    }
-
     def toUMLNotation: String = {
         "("+{
             if (parameterTypes.size == 0)

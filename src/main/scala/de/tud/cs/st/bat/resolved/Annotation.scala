@@ -48,22 +48,5 @@ package de.tud.cs.st.bat.resolved
 case class Annotation(val annotationType: FieldType,
                       val elementValuePairs: ElementValuePairs) {
 
-    //
-    //
-    // SUPPORT FOR SPECIAL REPRESENTATIONS
-    //
-    //
-
-    def toXML =
-        <annotation type={ annotationType.toJava }>
-		{ for (elementValuePair ← elementValuePairs) yield elementValuePair.toXML }
-		</annotation>
-
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T =
-        factory.Term(
-            "annotation", // functor
-            annotationType.toProlog(factory),
-            factory.Terms(elementValuePairs, (_: ElementValuePair).toProlog(factory))
-        )
 
 }

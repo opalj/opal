@@ -62,7 +62,6 @@ sealed trait AccessFlag {
 
     final def ∈(access_flags: Int): Boolean = element_of(access_flags)
 
-    def toXML: scala.xml.Node
 }
 
 sealed trait VisibilityModifier extends AccessFlag
@@ -86,19 +85,16 @@ final object VisibilityModifier {
 final case object ACC_PUBLIC extends VisibilityModifier {
     val javaName: Option[String] = Some("public")
     val mask: Int = 0x0001
-    val toXML = <public />
 }
 
 final case object ACC_PRIVATE extends VisibilityModifier {
     val javaName: Option[String] = Some("private")
     val mask: Int = 0x0002
-    val toXML = <private />
 }
 
 final case object ACC_PROTECTED extends VisibilityModifier {
     val javaName: Option[String] = Some("protected")
     val mask: Int = 0x0004
-    val toXML = <protected />
 }
 
 final case object ACC_STATIC extends AccessFlag {
@@ -110,37 +106,31 @@ final case object ACC_STATIC extends AccessFlag {
 final case object ACC_FINAL extends AccessFlag {
     val javaName: Option[String] = Some("final")
     val mask = 0x0010
-    val toXML = <final />
 }
 
 final case object ACC_SUPER extends AccessFlag {
     val javaName: Option[String] = None
     val mask = 0x0020
-    lazy val toXML = <super />
 }
 
 final case object ACC_SYNCHRONIZED extends AccessFlag {
     val javaName: Option[String] = Some("synchronized")
     val mask = 0x0020
-    val toXML = <synchronized />
 }
 
 final case object ACC_VOLATILE extends AccessFlag {
     val javaName: Option[String] = Some("volatile")
     val mask = 0x0040
-    val toXML = <volatile />
 }
 
 final case object ACC_BRIDGE extends AccessFlag {
     val javaName: Option[String] = None
     val mask = 0x0040
-    val toXML = <bridge />
 }
 
 final case object ACC_TRANSIENT extends AccessFlag {
     val javaName: Option[String] = Some("transient")
     val mask = 0x0080
-    val toXML = <transient />
 }
 
 final case object ACC_VARARGS extends AccessFlag {

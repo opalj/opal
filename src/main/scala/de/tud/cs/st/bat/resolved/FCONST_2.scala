@@ -1,12 +1,4 @@
 /*
---------------------------------------------------------------------------
-
-		THIS FILE IS AUTO GENERATED - DO NOT CHANGE MANUALLY!
-		Generated:  2012-06-19T12:01:56.502+02:00
-		Source File: GenerateInstructionClasses.xsl
-
---------------------------------------------------------------------------
-
  License (BSD Style License):
  Copyright (c) 2009, 2011
  Software Technology Group
@@ -50,7 +42,7 @@ import de.tud.cs.st.bat.resolved.InstructionExceptions._
 /**
  * Push the float constant 2.0 onto the operand stack.
  *
- * @version Generator: 0.10.0 (Last change: June, 16 2012)
+ * @author Michael Eichberg
  */
 case object FCONST_2
 extends Instruction {
@@ -61,33 +53,4 @@ extends Instruction {
 
 	lazy val exceptions : List[ObjectType] =  Nil
 
-
-	def toXML(pc : Int) =
-		<fconst_2 pc={ pc.toString }>
-		</fconst_2>
-
-
-	def toProlog[F,T,A <: T](
-		factory : PrologTermFactory[F,T,A],
-		declaringEntityKey : A,
-		pc : Int,
-		pc_to_seqNo : Array[Int]
-	) : F = {
-
-		import factory._
-
-		Fact(
-			"instr",
-			declaringEntityKey,
-			IntegerAtom(pc_to_seqNo(pc)),
-			Term(
-				"push",
-				Term(
-					"float",
-					
-					StringAtom("2"))
-			)
-		
-		)
-	}
 }

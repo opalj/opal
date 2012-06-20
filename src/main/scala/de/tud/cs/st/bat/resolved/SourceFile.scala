@@ -43,14 +43,4 @@ package resolved
  */
 case class SourceFile(sourceFile: String) extends Attribute {
 
-    //
-    //
-    // SUPPORT FOR SPECIAL REPRESENTATIONS
-    //
-    //
-
-    def toXML = <source file={ sourceFile }/>
-
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] =
-        factory.Fact("class_file_source", declaringEntityKey, factory.TextAtom(sourceFile)) :: Nil
 }

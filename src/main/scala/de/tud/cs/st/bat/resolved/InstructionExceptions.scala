@@ -1,12 +1,4 @@
 /*
---------------------------------------------------------------------------
-
-		THIS FILE IS AUTO GENERATED - DO NOT CHANGE MANUALLY!
-		Generated:  2012-06-19T12:01:56.245+02:00
-		Source File: GenerateInstructionExceptionsClass.xsl
-
---------------------------------------------------------------------------
-
  License (BSD Style License):
  Copyright (c) 2009, 2011
  Software Technology Group
@@ -47,26 +39,27 @@ package de.tud.cs.st.bat.resolved
 /**
  * The exceptions that may be thrown when a Java bytecode instruction is executed.
  *
- * @version [Generator:] 0.9.0
+ * @author Michael Eichberg
  */
 object InstructionExceptions {
 
+// TODO move to ObjectType
 	
-	val NullPointerException = ObjectType("java.lang.NullPointerException")
+	val NullPointerException = ObjectType("java/lang/NullPointerException")
 	
-	val ArrayIndexOutOfBoundsException = ObjectType("java.lang.ArrayIndexOutOfBoundsException")
+	val ArrayIndexOutOfBoundsException = ObjectType("java/lang/ArrayIndexOutOfBoundsException")
 	
-	val ArrayStoreException = ObjectType("java.lang.ArrayStoreException")
+	val ArrayStoreException = ObjectType("java/lang/ArrayStoreException")
 	
-	val NegativeArraySizeException = ObjectType("java.lang.NegativeArraySizeException")
+	val NegativeArraySizeException = ObjectType("java/lang/NegativeArraySizeException")
 	
-	val IllegalMonitorStateException = ObjectType("java.lang.IllegalMonitorStateException")
+	val IllegalMonitorStateException = ObjectType("java/lang/IllegalMonitorStateException")
 	
-	val ClassCastException = ObjectType("java.lang.ClassCastException")
+	val ClassCastException = ObjectType("java/lang/ClassCastException")
 	
-	val ExceptionInInitializerError = ObjectType("java.lang.ExceptionInInitializerError")
+	val ExceptionInInitializerError = ObjectType("java/lang/ExceptionInInitializerError")
 	
-	val ArithmeticException = ObjectType("java.lang.ArithmeticException")
+	val ArithmeticException = ObjectType("java/lang/ArithmeticException")
 	
 
 }

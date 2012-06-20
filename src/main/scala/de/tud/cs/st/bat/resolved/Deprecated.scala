@@ -39,13 +39,5 @@ package de.tud.cs.st.bat.resolved
  */
 case object Deprecated extends Attribute {
 
-    //
-    //
-    // SUPPORT FOR SPECIAL REPRESENTATIONS
-    //
-    //
-
-    def toXML = <deprecated/>
-
 }
 

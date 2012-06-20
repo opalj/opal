@@ -1,12 +1,4 @@
 /*
---------------------------------------------------------------------------
-
-		THIS FILE IS AUTO GENERATED - DO NOT CHANGE MANUALLY!
-		Generated:  2012-06-19T12:01:57.014+02:00
-		Source File: GenerateBytecodeReaderAndBindingClass.xsl
-
---------------------------------------------------------------------------
-
  License (BSD Style License):
  Copyright (c) 2009, 2011
  Software Technology Group

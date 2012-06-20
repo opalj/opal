@@ -32,26 +32,14 @@
 */
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.prolog.{ GroundTerm, Atom, Fact }
-
 /**
- * Representation of an attribute that is not directly supported by BAT.
- *
- * @author Michael Eichberg
- */
+  * Representation of an attribute that is not directly supported by BAT.
+  *
+  * @author Michael Eichberg
+  */
 case class UnknownAttribute(
     attributeName: String,
     info: Array[Byte])
         extends Attribute {
 
-    //
-    //
-    // SUPPORT FOR SPECIAL REPRESENTATIONS
-    //
-    //
-
-    def toXML =
-        <unknown name={ attributeName }>
-			{ scala.xml.Text(info.mkString(" ")) }
-		</unknown>
 }

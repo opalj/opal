@@ -13,7 +13,6 @@
 
  <properties>
   <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  <dorest.version>0.0.1-SNAPSHOT</dorest.version>
   <scala.version>2.9.2</scala.version>
  </properties>
 
@@ -68,7 +67,7 @@
   </plugins>
   <pluginManagement>
    <plugins>
-    <!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven 
+    <!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven
      build itself. -->
     <plugin>
      <groupId>org.eclipse.m2e</groupId>

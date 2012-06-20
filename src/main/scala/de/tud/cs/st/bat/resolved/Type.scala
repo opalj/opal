@@ -88,14 +88,6 @@ sealed trait Type {
    def computationalType : ComputationalType
 
    def toJava : String
-
-   //
-   //
-   // SUPPORT FOR SPECIAL REPRESENTATIONS
-   //
-   //
-
-   def toProlog[F, T, A <: T](factory : PrologTermFactory[F, T, A]) : T
 }
 
 final object ReturnType {
@@ -117,14 +109,6 @@ sealed trait VoidType extends Type with ReturnTypeSignature {
    def toJava : String = "void"
 
    override def toString() = "VoidType"
-
-   //
-   //
-   // SUPPORT FOR SPECIAL REPRESENTATIONS
-   //
-   //
-
-   def toProlog[F, T, A <: T](factory : PrologTermFactory[F, T, A]) = factory.StringAtom("void")
 
 }
 final case object VoidType extends VoidType
@@ -192,13 +176,6 @@ sealed trait ByteType extends BaseType {
 
    override def toString() = "ByteType"
 
-   //
-   //
-   // SUPPORT FOR SPECIAL REPRESENTATIONS
-   //
-   //
-
-   def toProlog[F, T, A <: T](factory : PrologTermFactory[F, T, A]) = factory.StringAtom("byte")
 }
 final case object ByteType extends ByteType
 
@@ -216,13 +193,6 @@ sealed trait CharType extends BaseType {
 
    override def toString() = "CharType"
 
-   //
-   //
-   // SUPPORT FOR SPECIAL REPRESENTATIONS
-   //
-   //
-
-   def toProlog[F, T, A <: T](factory : PrologTermFactory[F, T, A]) = factory.StringAtom("char")
 }
 final case object CharType extends CharType
 
@@ -240,13 +210,6 @@ sealed trait DoubleType extends BaseType {
 
    override def toString() = "DoubleType"
 
-   //
-   //
-   // SUPPORT FOR SPECIAL REPRESENTATIONS
-   //
-   //
-
-   def toProlog[F, T, A <: T](factory : PrologTermFactory[F, T, A]) = factory.StringAtom("double")
 }
 final case object DoubleType extends DoubleType
 
@@ -264,13 +227,6 @@ sealed trait FloatType extends BaseType {
 
    override def toString() = "FloatType"
 
-   //
-   //
-   // SUPPORT FOR SPECIAL REPRESENTATIONS
-   //
-   //
-
-   def toProlog[F, T, A <: T](factory : PrologTermFactory[F, T, A]) = factory.StringAtom("float")
 }
 final case object FloatType extends FloatType
 
@@ -288,13 +244,6 @@ sealed trait ShortType extends BaseType {
 
    override def toString() = "ShortType"
 
-   //
-   //
-   // SUPPORT FOR SPECIAL REPRESENTATIONS
-   //
-   //
-
-   def toProlog[F, T, A <: T](factory : PrologTermFactory[F, T, A]) = factory.StringAtom("short")
 }
 final case object ShortType extends ShortType
 
@@ -312,13 +261,6 @@ sealed trait IntegerType extends BaseType {
 
    override def toString() = "IntegerType"
 
-   //
-   //
-   // SUPPORT FOR SPECIAL REPRESENTATIONS
-   //
-   //
-
-   def toProlog[F, T, A <: T](factory : PrologTermFactory[F, T, A]) = factory.StringAtom("int")
 }
 final case object IntegerType extends IntegerType
 
@@ -336,13 +278,6 @@ sealed trait LongType extends BaseType {
 
    override def toString() = "LongType"
 
-   //
-   //
-   // SUPPORT FOR SPECIAL REPRESENTATIONS
-   //
-   //
-
-   def toProlog[F, T, A <: T](factory : PrologTermFactory[F, T, A]) = factory.StringAtom("long")
 }
 final case object LongType extends LongType
 
@@ -360,13 +295,6 @@ sealed trait BooleanType extends BaseType {
 
    override def toString() = "BooleanType"
 
-   //
-   //
-   // SUPPORT FOR SPECIAL REPRESENTATIONS
-   //
-   //
-
-   def toProlog[F, T, A <: T](factory : PrologTermFactory[F, T, A]) = factory.StringAtom("boolean")
 }
 final case object BooleanType extends BooleanType
 
@@ -392,15 +320,6 @@ final class ObjectType private (val className : String) extends ReferenceType {
    def toJava : String = className.replace('/', '.')
 
    override def toString = "ObjectType(className=\"" + className + "\")"
-
-   //
-   //
-   // SUPPORT FOR SPECIAL REPRESENTATIONS
-   //
-   //
-
-   def toProlog[F, T, A <: T](factory : PrologTermFactory[F, T, A]) =
-      factory.Term("class", factory.TextAtom(packageName), factory.TextAtom(simpleName))
 
 }
 object ObjectType {
@@ -457,15 +376,6 @@ final class ArrayType private (val componentType : FieldType) extends ReferenceT
    def toJava : String = componentType.toJava + "[]"
 
    override def toString = "ArrayType(" + componentType.toString + ")"
-
-   //
-   //
-   // SUPPORT FOR SPECIAL REPRESENTATIONS
-   //
-   //
-
-   def toProlog[F, T, A <: T](factory : PrologTermFactory[F, T, A]) =
-      factory.Term("array", componentType.toProlog(factory))
 
 }
 final object ArrayType {

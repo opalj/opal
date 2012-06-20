@@ -49,39 +49,6 @@ trait AnnotationTable extends Attribute {
      */
     def annotations: Annotations
 
-    //
-    //
-    // SUPPORT FOR SPECIAL REPRESENTATIONS
-    //
-    //
-
-    def annotationsToXML = for (annotation ← annotations) yield annotation.toXML
-
-    // The key of an annotation fact is composed out of the (reference)keyAtom and the annotationTypeTerm.
-    // Every Annotation is only allowed to appear once (at least in the Java Programming Language and in Java's public API).
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] = {
-
-        import factory._
-
-        var facts: List[F] = Nil
-
-        for (annotation ← annotations) {
-            facts = Fact(
-                "annotation",
-                declaringEntityKey,
-                if (isRuntimeVisible)
-                    StringAtom("runtime_visible")
-                else
-                    StringAtom("runtime_invisible"),
-                annotation.annotationType.toProlog(factory),
-                Terms(
-                    annotation.elementValuePairs,
-                    (_: ElementValuePair).toProlog(factory)
-                )
-            ) :: facts
-        }
-        facts
-    }
 }
 
 object AnnotationTable {

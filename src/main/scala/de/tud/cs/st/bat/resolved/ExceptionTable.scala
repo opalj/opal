@@ -41,23 +41,4 @@ package resolved
  */
 case class ExceptionTable(exceptions: Exceptions) extends Attribute {
 
-    //
-    //
-    // SUPPORT FOR SPECIAL REPRESENTATIONS
-    //
-    //
-
-    def toXML =
-        <exceptions>
-    		{ for (exception ← exceptions) yield <exception type={ exception.toJava }/> }
-    	</exceptions>
-
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] = {
-        import factory._
-        Fact("method_exceptions",
-            declaringEntityKey,
-            Terms(exceptions, (_: ObjectType).toProlog(factory))
-        ) :: Nil
-
-    }
 }

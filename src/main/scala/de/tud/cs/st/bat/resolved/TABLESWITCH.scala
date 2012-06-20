@@ -1,12 +1,4 @@
 /*
---------------------------------------------------------------------------
-
-		THIS FILE IS AUTO GENERATED - DO NOT CHANGE MANUALLY!
-		Generated:  2012-06-19T12:01:56.502+02:00
-		Source File: GenerateInstructionClasses.xsl
-
---------------------------------------------------------------------------
-
  License (BSD Style License):
  Copyright (c) 2009, 2011
  Software Technology Group
@@ -50,7 +42,7 @@ import de.tud.cs.st.bat.resolved.InstructionExceptions._
 /**
  * Access jump table by index and jump.
  *
- * @version Generator: 0.10.0 (Last change: June, 16 2012)
+ * @author Michael Eichberg
  */
 case class TABLESWITCH (
 	
@@ -68,37 +60,4 @@ extends Instruction {
 
 	lazy val exceptions : List[ObjectType] =  Nil
 
-
-	def toXML(pc : Int) =
-		<tableswitch pc={ pc.toString }>
-			<defaultOffset value={ defaultOffset.toString }/>
-			<low value={ low.toString }/>
-			<high value={ high.toString }/>
-			{ for (jumpOffset <- jumpOffsets) yield { <case jump_offset={ jumpOffset.toString }/> } }
-		</tableswitch>
-
-
-	def toProlog[F,T,A <: T](
-		factory : PrologTermFactory[F,T,A],
-		declaringEntityKey : A,
-		pc : Int,
-		pc_to_seqNo : Array[Int]
-	) : F = {
-
-		import factory._
-
-		Fact(
-			"instr",
-			declaringEntityKey,
-			IntegerAtom(pc_to_seqNo(pc)), 
-			Term(
-				"tableswitch",
-				IntegerAtom(pc_to_seqNo(pc+defaultOffset) - pc_to_seqNo(pc)), 
-				IntegerAtom(low), 
-				IntegerAtom(high), 
-				Terms(jumpOffsets,(offset : Int) => IntegerAtom(pc_to_seqNo(pc+offset) - pc_to_seqNo(pc)))
-			)
-		
-		)
-	}
 }

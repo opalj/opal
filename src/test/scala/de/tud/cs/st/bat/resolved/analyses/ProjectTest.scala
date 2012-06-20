@@ -50,7 +50,7 @@ import org.scalatest.matchers.ShouldMatchers
 @RunWith(classOf[JUnitRunner])
 class ProjectTest extends FlatSpec with ShouldMatchers /*with BeforeAndAfterAll */ {
 
-   val project = new Project ++ Java6Framework.ClassFiles("test/classfiles/Methods.zip")
+   val project = new Project ++ Java6Framework.ClassFiles(ClassLoader.getSystemResource("classfiles/Methods.zip").getFile/*"test/classfiles/Methods.zip"*/)
 
    val SuperType = ObjectType("methods/a/Super")
    val DirectSub = ObjectType("methods/a/DirectSub")

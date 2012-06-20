@@ -76,7 +76,7 @@ class DependenciesToPrimitiveTypesTest extends FlatSpec with ShouldMatchers with
         }
 
         DependencyCollector.process(
-            Java6Framework.ClassFile("test/classfiles/Types.zip", "types/TypeDeclarations.class")
+            Java6Framework.ClassFile(ClassLoader.getSystemResource("classfiles/Types.zip").getFile, "types/TypeDeclarations.class")
         );
         types
     }

@@ -1,12 +1,4 @@
 /*
---------------------------------------------------------------------------
-
-		THIS FILE IS AUTO GENERATED - DO NOT CHANGE MANUALLY!
-		Generated:  2012-06-19T12:01:56.502+02:00
-		Source File: GenerateInstructionClasses.xsl
-
---------------------------------------------------------------------------
-
  License (BSD Style License):
  Copyright (c) 2009, 2011
  Software Technology Group
@@ -50,7 +42,7 @@ import de.tud.cs.st.bat.resolved.InstructionExceptions._
 /**
  * Set field in object.
  *
- * @version Generator: 0.10.0 (Last change: June, 16 2012)
+ * @author Michael Eichberg
  */
 case class PUTFIELD (
 	
@@ -66,34 +58,4 @@ extends Instruction {
 
 	lazy val exceptions : List[ObjectType] =  Nil
 
-
-	def toXML(pc : Int) =
-		<putfield pc={ pc.toString }>
-			<fieldref declaring_class={ declaringClass.toJava } name={ name } type={ fieldType.toJava }/>
-		</putfield>
-
-
-	def toProlog[F,T,A <: T](
-		factory : PrologTermFactory[F,T,A],
-		declaringEntityKey : A,
-		pc : Int,
-		pc_to_seqNo : Array[Int]
-	) : F = {
-
-		import factory._
-
-		Fact(
-			"instr",
-			declaringEntityKey,
-			IntegerAtom(pc_to_seqNo(pc)),
-			Term(
-				"put",
-				StringAtom("field"),
-				declaringClass.toProlog(factory),
-				TextAtom(name),
-				fieldType.toProlog(factory)
-			)
-		
-		)
-	}
 }

@@ -39,111 +39,40 @@ package de.tud.cs.st.bat.resolved
  */
 sealed trait VerificationTypeInfo {
 
-    //
-    //
-    // SUPPORT FOR SPECIAL REPRESENTATIONS
-    //
-    //
-
-    def toXML: scala.xml.Node
-
 }
 
 case object TopVariableInfo extends VerificationTypeInfo {
 
-    //
-    //
-    // SUPPORT FOR SPECIAL REPRESENTATIONS
-    //
-    //
-
-    def toXML = <top_variable/>
 }
 
 case object IntegerVariableInfo extends VerificationTypeInfo {
 
-    //
-    //
-    // SUPPORT FOR SPECIAL REPRESENTATIONS
-    //
-    //
-
-    def toXML = <integer_variable/>
 }
 
 case object FloatVariableInfo extends VerificationTypeInfo {
 
-    //
-    //
-    // SUPPORT FOR SPECIAL REPRESENTATIONS
-    //
-    //
-
-    def toXML = <float_variable/>
 }
 
 case object LongVariableInfo extends VerificationTypeInfo {
 
-    //
-    //
-    // SUPPORT FOR SPECIAL REPRESENTATIONS
-    //
-    //
-
-    def toXML = <long_variable/>
 }
 
 case object DoubleVariableInfo extends VerificationTypeInfo {
 
-    //
-    //
-    // SUPPORT FOR SPECIAL REPRESENTATIONS
-    //
-    //
-
-    def toXML = <double_variable/>
 }
 
 case object NullVariableInfo extends VerificationTypeInfo {
 
-    //
-    //
-    // SUPPORT FOR SPECIAL REPRESENTATIONS
-    //
-    //
-
-    def toXML = <null_variable/>
 }
 
 case object UninitializedThisVariableInfo extends VerificationTypeInfo {
 
-    //
-    //
-    // SUPPORT FOR SPECIAL REPRESENTATIONS
-    //
-    //
-
-    def toXML = <uninitialized_this_variable/>
 }
 
 case class UninitializedVariableInfo(offset: Int) extends VerificationTypeInfo {
 
-    //
-    //
-    // SUPPORT FOR SPECIAL REPRESENTATIONS
-    //
-    //
-
-    def toXML = <uninitialized_variable offset={ offset.toString }/>
 }
 
 case class ObjectVariableInfo(clazz: ReferenceType) extends VerificationTypeInfo {
 
-    //
-    //
-    // SUPPORT FOR SPECIAL REPRESENTATIONS
-    //
-    //
-
-    def toXML = <object_variable type={ clazz.toJava }/>
 }

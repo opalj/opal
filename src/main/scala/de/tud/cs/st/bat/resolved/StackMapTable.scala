@@ -40,14 +40,4 @@ package resolved
  */
 case class StackMapTable(stackMapFrames: StackMapFrames) extends Attribute {
 
-    //
-    //
-    // SUPPORT FOR SPECIAL REPRESENTATIONS
-    //
-    //
-
-    def toXML = <stack_map_table>{ for (frame ← stackMapFrames) yield frame.toXML }</stack_map_table>
-
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] =
-        Nil // TODO [Prolog] StackMapTableAttribute
 }

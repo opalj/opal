@@ -39,30 +39,6 @@ package de.tud.cs.st.bat.resolved
  */
 case class LocalVariableTable(localVariables: LocalVariables) extends Attribute {
 
-    //
-    //
-    // SUPPORT FOR SPECIAL REPRESENTATIONS
-    //
-    //
-
-    def toXML =
-        <local_variable_table>
-			{ for (entry ← localVariables) yield entry.toXML }
-		</local_variable_table>
-
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A, pc_to_seqNo: Array[Int]): F = {
-
-        import factory._
-
-        Fact(
-            "method_local_variable_table",
-            declaringEntityKey,
-            Terms(
-                localVariables,
-                (_: LocalVariable).toProlog(factory, pc_to_seqNo)
-            )
-        )
-    }
 }
 
 /**
@@ -76,44 +52,4 @@ case class LocalVariable(startPC: Int,
                          fieldType: FieldType,
                          index: Int) {
 
-    //
-    //
-    // SUPPORT FOR SPECIAL REPRESENTATIONS
-    //
-    //
-
-    def toXML =
-        <entry
-			type={ fieldType.toJava }
-			start_pc={ startPC.toString }
-			length={ length.toString }
-			name={ name }
-			index={ index.toString }/>
-
-    def toProlog[F, T, A <: T](
-        factory: PrologTermFactory[F, T, A],
-        pc_to_seqNo: Array[Int]): T = {
-
-        import factory._
-
-        Term(
-            "kv",
-            //Term("start_pc",
-            IntegerAtom(pc_to_seqNo(startPC)),
-            //),
-            Term(
-                "length",
-                if (startPC + length < pc_to_seqNo.size)
-                    IntegerAtom(pc_to_seqNo(startPC + length))
-                else
-                    IntegerAtom(pc_to_seqNo.size)
-            ),
-            TextAtom(name),
-            fieldType.toProlog(factory),
-            Term(
-                "index",
-                IntegerAtom(index)
-            )
-        )
-    }
 }

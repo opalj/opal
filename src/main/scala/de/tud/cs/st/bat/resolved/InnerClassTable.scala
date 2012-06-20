@@ -40,29 +40,6 @@ package resolved
  */
 case class InnerClassTable(innerClasses: InnerClasses) extends Attribute {
 
-    //
-    //
-    // SUPPORT FOR SPECIAL REPRESENTATIONS
-    //
-    //
-
-    def toXML =
-        <inner_classes>
-			{ for (innerClass ← innerClasses) yield innerClass.toXML }
-		</inner_classes>
-
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] =
-        Nil
-    /*	{ TODO [Prolog] InnerClassesAttribute
-		import factory._
-
-		Fact(
-			"inner_classes",
-			declaringEntityKey,
-			Terms(classes,(_:InnerClassesEntry).toProlog(factory))
-		) :: Nil
-	}
-	*/
 }
 
 case class InnerClass(innerClassType: ObjectType,
@@ -70,29 +47,4 @@ case class InnerClass(innerClassType: ObjectType,
                       innerName: String,
                       innerClassAccessFlags: Int) {
 
-    //
-    //
-    // SUPPORT FOR SPECIAL REPRESENTATIONS
-    //
-    //
-
-	def toXML =
-		<class innerName={ innerName }>{
-			    var nodes : List[scala.xml.Node] = Nil
-				nodes = AccessFlags.toXML(innerClassAccessFlags, AccessFlagsContexts.INNER_CLASS) :: nodes
-				if (outerClassType != null) nodes = <outer_class type={outerClassType.className}/> :: nodes
-				nodes = <inner_class type={innerClassType.className}/> :: nodes
-				nodes
-		}</class>
-
-	/*
-	def toProlog(
-		factory : PrologTermFactory,
-	) : GroundTerm = {
-		import factory._
-		Term(
-			"inner_class",
-		)
-	}
-	*/
 }

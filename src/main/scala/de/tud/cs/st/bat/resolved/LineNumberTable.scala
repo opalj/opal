@@ -40,27 +40,6 @@ package resolved
  */
 case class LineNumberTable(lineNumbers: LineNumbers) extends Attribute {
 
-    //
-    //
-    // SUPPORT FOR SPECIAL REPRESENTATIONS
-    //
-    //
-
-    def toXML =
-        <line_number_table>
-			{ for (entry ← lineNumbers) yield entry.toXML }
-		</line_number_table>
-
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A, pc_to_seqNo: Array[Int]): F = {
-
-        import factory._
-
-        Fact(
-            "method_line_number_table",
-            declaringEntityKey,
-            Terms(lineNumbers, (_: LineNumber).toProlog(factory, pc_to_seqNo))
-        )
-    }
 }
 
 /**
@@ -70,16 +49,4 @@ case class LineNumberTable(lineNumbers: LineNumbers) extends Attribute {
  */
 case class LineNumber(startPC: Int, lineNumber: Int) {
 
-    //
-    //
-    // SUPPORT FOR SPECIAL REPRESENTATIONS
-    //
-    //
-
-    def toXML = <entry start_pc={ startPC.toString } lineNumber={ lineNumber.toString }/>
-
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], pc_to_seqNo: Array[Int]): T = {
-        import factory._
-        Term("kv", IntegerAtom(pc_to_seqNo(startPC)), Term("ln", IntegerAtom(lineNumber)))
-    }
 }

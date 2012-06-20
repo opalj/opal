@@ -76,8 +76,9 @@ class UseIDOfBaseTypeForArrayTypesTest extends FlatSpec with ShouldMatchers with
     }
 
     TypeCollector.process(
-        Java6Framework.ClassFile("test/classfiles/Dependencies.zip", "dependencies/InstructionsTestClass.class")
-    //  Java6Framework.ClassFile(() => new java.io.FileInputStream("test/classfiles/BinderHelper.class"))
+        Java6Framework.ClassFile(
+                ClassLoader.getSystemResource("classfiles/Dependencies.zip").getFile,
+                "dependencies/InstructionsTestClass.class")
     );
 
     behavior of "DependencyExtractor with UseIDOfBaseTypeForArrayTypes"

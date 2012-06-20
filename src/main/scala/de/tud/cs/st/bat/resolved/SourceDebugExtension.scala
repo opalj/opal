@@ -42,15 +42,4 @@ package resolved
  */
 case class SourceDebugExtension(debug_extension: String) extends Attribute {
 
-    //
-    //
-    // SUPPORT FOR SPECIAL REPRESENTATIONS
-    //
-    //
-
-    def toXML =
-        <source_debug_extension>
-			{ debug_extension }
-		</source_debug_extension>
-
 }

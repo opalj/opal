@@ -36,17 +36,17 @@ package resolved
 package ai
 
 /**
- * @author Michael Eichberg
- */
+  * @author Michael Eichberg
+  */
 object AI {
 
     /**
-     * Analyzes the given method using the given domain.
-     *
-     * @param classFile Some class file.
-     * @param method A non-abstract,non-native method of the given class file.
-     * @param domain The abstract domain that is used during the interpretation.
-     */
+      * Analyzes the given method using the given domain.
+      *
+      * @param classFile Some class file.
+      * @param method A non-abstract,non-native method of the given class file.
+      * @param domain The abstract domain that is used during the interpretation.
+      */
     def apply(classFile: ClassFile, method: Method)(implicit domain: Domain): Array[MemoryLayout] = {
         val code = method.body.get.instructions
         val initialLocals = {
@@ -77,6 +77,8 @@ object AI {
         var worklist: List[Int /*program counter*/ ] = List(0)
 
         def gotoTarget(nextPC: Int, nextPCMemoryLayout: MemoryLayout) {
+            if (nextPC >= code.length) return ; // we have reached the end of the code
+
             if (memoryLayouts(nextPC) == null) {
                 worklist = nextPC :: worklist
                 memoryLayouts(nextPC) = nextPCMemoryLayout
@@ -170,9 +172,8 @@ object AI {
                 }
                 case _ ⇒ {
                     val nextPC = pcOfNextInstruction
-                    if (nextPC < code.length) { // this instruction could be a return instruction
-                        gotoTarget(nextPC, memoryLayout.update(pc, instruction))
-                    }
+                    val nextMemoryLayout = memoryLayout.update(pc, instruction)
+                    gotoTarget(nextPC, nextMemoryLayout)
                 }
             }
         }

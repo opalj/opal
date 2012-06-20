@@ -44,38 +44,6 @@ trait ParameterAnnotationTable extends Attribute {
 
     def isRuntimeVisible: Boolean
 
-    //
-    //
-    // SUPPORT FOR SPECIAL REPRESENTATIONS
-    //
-    //
-
-    protected def parameterAnnotationsToXML =
-        for (parameter ← parameterAnnotations) yield {
-            <parameter>{ for (annotation ← parameter) yield annotation.toXML }</parameter>
-        }
-
-    final def toProlog[F, T, A <: T](
-        factory: PrologTermFactory[F, T, A],
-        declaringEntityKey: A): List[F] = {
-
-        import factory._
-
-        var facts: List[F] = Nil
-
-        Fact(
-            "parameter_annotations",
-            declaringEntityKey,
-            if (isRuntimeVisible)
-                StringAtom("runtime_visible")
-            else
-                StringAtom("runtime_invisible"),
-            Terms(
-                parameterAnnotations,
-                (parameterAnnotation: Seq[Annotation]) ⇒ {
-                    Terms(parameterAnnotation, (_: Annotation).toProlog(factory))
-                })) :: facts
-    }
 }
 
 object ParameterAnnotationTable {

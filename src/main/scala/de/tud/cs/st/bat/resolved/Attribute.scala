@@ -40,15 +40,4 @@ package resolved
  */
 trait Attribute {
 
-    //
-    //
-    // SUPPORT FOR SPECIAL REPRESENTATIONS
-    //
-    //
-    
-    /**
-     * Returns an XML representation of this attribute.
-     */
-    def toXML: scala.xml.Node
-
 }

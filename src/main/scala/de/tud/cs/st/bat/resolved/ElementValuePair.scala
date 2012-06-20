@@ -40,16 +40,5 @@ package resolved
  */
 case class ElementValuePair(name: String, value: ElementValue) {
 
-    //
-    //
-    // SUPPORT FOR SPECIAL REPRESENTATIONS
-    //
-    //
-
-    def toXML = <element name={ name }>{ value.valueToXML } </element>
-
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A]): T =
-        factory.Term("element", factory.TextAtom(name), value.valueToProlog(factory))
-
 }
 

@@ -53,29 +53,4 @@ case class EnclosingMethod(clazz: ObjectType,
       */
     // TODO [Functionality] Check if it makes sense to add the method: private def isEnclosedByMethod(em: EnclosingMethod): Boolean = name != null && descriptor != null // otherwise the inner class is assigned to a field
 
-    //
-    //
-    // SUPPORT FOR SPECIAL REPRESENTATIONS
-    //
-    //
-
-    def toXML =
-        <enclosing_method
-			class={ clazz.className }
-			name={ name } >
-			{ if (descriptor != null) descriptor.toXML }
-		</enclosing_method>
-
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], declaringEntityKey: A): List[F] = {
-        import factory._
-
-        Fact(
-            "enclosing_method",
-            declaringEntityKey,
-            clazz.toProlog(factory),
-            if (name != null) TextAtom(name) else NoneAtom,
-            if (descriptor != null) descriptor.toProlog(factory) else NoneAtom
-        ) :: Nil
-    }
-
 }

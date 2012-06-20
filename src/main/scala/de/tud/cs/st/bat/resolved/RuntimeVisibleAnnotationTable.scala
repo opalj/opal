@@ -40,14 +40,6 @@ package resolved
  */
 case class RuntimeVisibleAnnotationTable(annotations: Annotations) extends AnnotationTable {
 
-    //
-    //
-    // SUPPORT FOR SPECIAL REPRESENTATIONS
-    //
-    //
-
     final def isRuntimeVisible: Boolean = true
-
-    def toXML = <runtime_visible_annotations>{ annotationsToXML }</runtime_visible_annotations>
 
 }

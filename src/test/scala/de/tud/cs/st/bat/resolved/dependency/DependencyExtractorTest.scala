@@ -805,7 +805,7 @@ class DependencyExtractorTest extends FunSuite {
         }
 
         // extract dependencies
-        for (classFile ← Java6Framework.ClassFiles("test/classfiles/Dependencies.zip")) {
+        for (classFile ← Java6Framework.ClassFiles(ClassLoader.getSystemResource("classfiles/Dependencies.zip").getFile)) {
             dependencyExtractor.process(classFile)
         }
 

@@ -41,6 +41,7 @@ import org.scalatest.Spec
 import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.matchers.ShouldMatchers
+import java.lang.System
 
 /**
  * Basic tests of the abstract interpreter.
@@ -61,7 +62,7 @@ class AI_SimpleMethodsTest extends FlatSpec with ShouldMatchers /*with BeforeAnd
         override def returnVoid() { returnedValue = None }
     }
 
-    val classFile = Java6Framework.ClassFiles("test/classfiles/ai.zip").find(_.thisClass.className == "ai/SimpleMethods").get
+    val classFile = Java6Framework.ClassFiles(ClassLoader.getSystemResource("classfiles/ai.zip").getFile).find(_.thisClass.className == "ai/SimpleMethods").get
     assert(classFile ne null)
 
     behavior of "the basic abstract interpreter"

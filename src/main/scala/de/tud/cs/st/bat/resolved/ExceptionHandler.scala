@@ -48,27 +48,4 @@ case class ExceptionHandler(startPC: Int,
                             handlerPC: Int,
                             catchType: Option[ObjectType]) {
 
-    //
-    //
-    // SUPPORT FOR SPECIAL REPRESENTATIONS
-    //
-    //
-
-    def toXML =
-        <exception_handler
-			start_pc={ startPC.toString }
-			end_pc={ endPC.toString }
-			handler_pc={ handlerPC.toString }
-			type={ catchType.map((t) ⇒ xml.Text(t.toJava)) }/>
-
-    def toProlog[F, T, A <: T](factory: PrologTermFactory[F, T, A], pc_to_seqNo: Array[Int]): T = {
-        import factory._
-        Term(
-            "handler", // an annonymous "pair"
-            IntegerAtom(pc_to_seqNo(startPC)),
-            IntegerAtom(pc_to_seqNo(endPC)),
-            IntegerAtom(pc_to_seqNo(handlerPC)),
-            if (catchType.isDefined) catchType.get.toProlog(factory) else StringAtom("any")
-        )
-    }
 }

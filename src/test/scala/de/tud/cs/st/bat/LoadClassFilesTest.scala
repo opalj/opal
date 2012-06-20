@@ -110,8 +110,6 @@ class LoadClassFilesTest extends Suite {
             // 2.1. Test ... read in the class file and resolve the constant pool
             var classFile: de.tud.cs.st.bat.resolved.ClassFile = null
             classFile = Java6Framework.ClassFile(() => file.getInputStream(entry))
-            // 2.2. Test ... if we can create the XML representation for the class file without generating errors
-            classFile.toXML
 
             reporter(TestSucceeded(ordinal, "BATTests", None, testName))
         } catch {

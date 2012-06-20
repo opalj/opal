@@ -40,12 +40,4 @@ package resolved
  */
 case object Synthetic extends Attribute {
 
-    //
-    //
-    // SUPPORT FOR SPECIAL REPRESENTATIONS
-    //
-    //
-
-    def toXML = <synthetic/>
-
 }
