@@ -42,6 +42,7 @@ package ai;
  * in the test-classfiles directory.
  *
  * @author Michael Eichberg
+ * @author Dennis Siebert
  */
 public class SimpleMethods {
 
@@ -332,7 +333,8 @@ public class SimpleMethods {
 
 
 
-	// SEGMENT (START)
+
+	// SEGMENT FIELDS (START)
 	private float value;
 
 	public void setValue(float value) {
@@ -342,9 +344,20 @@ public class SimpleMethods {
 	public float getValue() {
 		return value;
 	}
+	// SEGMENT FIELDS (END)
 
-	// SEGMENT (END)
+	// SEGMENT STATIC FIELDS (START)
+	private static float sValue;
 
+	public void setSValue(float value) {
+		SimpleMethods.sValue = value;
+	}
+
+	public float getSValue() {
+		return sValue;
+	}
+	// SEGMENT STATIC FIELDS (END)
+	
 	public static <T> T asIs(T o) {
 		return o; // the type of the return value directly depends on the input
 					// value
@@ -361,3 +374,4 @@ public class SimpleMethods {
 	}
 
 }
+

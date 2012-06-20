@@ -467,8 +467,7 @@ final class MemoryLayout(
             case 178 /*getstatic*/ ⇒ {
                 val getstatic = instruction.asInstanceOf[GETSTATIC]
                 new MemoryLayout(
-                    domain.getfield(
-                        operands.head,
+                    domain.getstatic(
                         getstatic.declaringClass,
                         getstatic.name,
                         getstatic.fieldType) :: operands,
@@ -487,7 +486,7 @@ final class MemoryLayout(
             }
             case 179 /*putstatic*/ ⇒ {
                 val putstatic = instruction.asInstanceOf[PUTSTATIC]
-                val value :: objectref :: rest = operands
+                val value :: rest = operands
                 domain.putstatic(
                     value,
                     putstatic.declaringClass,
