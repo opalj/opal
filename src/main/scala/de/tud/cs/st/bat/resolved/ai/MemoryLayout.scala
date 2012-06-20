@@ -79,7 +79,7 @@ final class MemoryLayout(
                 new MemoryLayout(operands.tail, locals.updated(instruction.asInstanceOf[DSTORE].lvIndex, operands.head))
             case 56 /*fstore*/ ⇒
                 new MemoryLayout(operands.tail, locals.updated(instruction.asInstanceOf[FSTORE].lvIndex, operands.head))
-            case 54 /*listore*/ ⇒
+            case 54 /*istore*/ ⇒
                 new MemoryLayout(operands.tail, locals.updated(instruction.asInstanceOf[ISTORE].lvIndex, operands.head))
             case 55 /*lstore*/ ⇒
                 new MemoryLayout(operands.tail, locals.updated(instruction.asInstanceOf[LSTORE].lvIndex, operands.head))

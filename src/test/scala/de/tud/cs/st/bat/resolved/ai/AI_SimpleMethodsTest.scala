@@ -558,6 +558,8 @@ class AI_SimpleMethodsTest extends FlatSpec with ShouldMatchers /*with BeforeAnd
     domain.returnedValue should be(Some(SomeBooleanValue))
   }
 
+  
+  
   //
   // GETTER AND SETTER FOR FIELDS
   it should "be able to analyze a classical setter method" in {
@@ -566,26 +568,26 @@ class AI_SimpleMethodsTest extends FlatSpec with ShouldMatchers /*with BeforeAnd
     val result = AI(classFile, method)(domain)
 
     result should not be (null)
-    domain.returnedValue should be (None)
+    domain.returnedValue should be(None)
   }
+  
 
   it should "be able to analyze a classical getter method" in {
     val domain = new RecordingDomain
     val method = classFile.methods.find(_.name == "getValue").get
     /*val result =*/ AI(classFile, method)(domain)
 
-    domain.returnedValue should be (Some(SomeFloatValue))
+    domain.returnedValue should be(Some(SomeFloatValue))
   }
-  
+
   //
   // GETTER AND SETTER FOR STATIC FIELDS
-   it should "be able to analyze a classical static setter method" in {
+  it should "be able to analyze a classical static setter method" in {
     val domain = new RecordingDomain
     val method = classFile.methods.find(_.name == "setSValue").get
     val result = AI(classFile, method)(domain)
-    println(result)
     result should not be (null)
-    domain.returnedValue should be (None)
+    domain.returnedValue should be(None)
   }
 
   it should "be able to analyze a classical static getter method" in {
@@ -593,9 +595,65 @@ class AI_SimpleMethodsTest extends FlatSpec with ShouldMatchers /*with BeforeAnd
     val method = classFile.methods.find(_.name == "getSValue").get
     /*val result =*/ AI(classFile, method)(domain)
 
-    domain.returnedValue should be (Some(SomeFloatValue))
+    domain.returnedValue should be(Some(SomeFloatValue))
   }
+//
+	// LOADS AND STORES
+  it should "be able to analyze integer load and store commands" in {
+    val domain = new RecordingDomain
+    val method = classFile.methods.find(_.name == "localInt").get
+    /*val result =*/ AI(classFile, method)(domain)
 
+    domain.returnedValue should be(Some(SomeIntegerValue))
+  }
+  
+  it should "be able to analyze odd long load and store commands" in {
+    val domain = new RecordingDomain
+    val method = classFile.methods.find(_.name == "localLongOdd").get
+    /*val result =*/ AI(classFile, method)(domain)
+
+    domain.returnedValue should be(Some(SomeLongValue))
+  }
+  
+ it should "be able to analyze even long load and store commands" in {
+    val domain = new RecordingDomain
+    val method = classFile.methods.find(_.name == "localLongEven").get
+    /*val result =*/ AI(classFile, method)(domain)
+
+    domain.returnedValue should be(Some(SomeLongValue))
+  }
+ 
+   it should "be able to analyze odd double load and store commands" in {
+    val domain = new RecordingDomain
+    val method = classFile.methods.find(_.name == "localDoubleOdd").get
+    /*val result =*/ AI(classFile, method)(domain)
+
+    domain.returnedValue should be(Some(SomeDoubleValue))
+  }
+  
+ it should "be able to analyze even double load and store commands" in {
+    val domain = new RecordingDomain
+    val method = classFile.methods.find(_.name == "localDoubleEven").get
+    /*val result =*/ AI(classFile, method)(domain)
+
+    domain.returnedValue should be(Some(SomeDoubleValue))
+  }
+  
+  it should "be able to analyze float load and store commands" in {
+    val domain = new RecordingDomain
+    val method = classFile.methods.find(_.name == "localFloat").get
+    /*val result =*/ AI(classFile, method)(domain)
+
+    domain.returnedValue should be(Some(SomeFloatValue))
+  }
+  
+  it should "be able to analyze object load and store commands" in {
+    val domain = new RecordingDomain
+    val method = classFile.methods.find(_.name == "localSimpleMethod").get
+    /*val result =*/ AI(classFile, method)(domain)
+
+     domain.returnedValue should be(Some(AReferenceTypeValue(ObjectType("ai/SimpleMethods"))))
+  }
   //
   // OTHER
   it should "be able to analyze a method that multiplies a value by two" in {
