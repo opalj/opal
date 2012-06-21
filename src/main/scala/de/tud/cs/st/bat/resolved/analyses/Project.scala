@@ -81,12 +81,11 @@ class Project(
      * also be used to reliably lookup a private method's declaration or the declaration of
      * a constructor/a static method.
      *
-     * Note that this method might be of limited value if static source code dependencies
+     * @note This method might be of limited value if static source code dependencies
      * are analyzed. If an invoke instruction refers to a method that is not declared
      * by the receiver's class, then it might be more meaningful to still create a dependency
      * to the receiver's class than to look up the actual declaration in one of the
      * receiver's super classes.
-     *
      * @return `Some((ClassFile,Method))` if the method is found. `None` if the method is not
      * 	found. This can happen under two circumstances. First, not all class files
      * 	referred to/used by the project are (yet) analyzed; i.e., we do not have the
