@@ -66,8 +66,8 @@ class ArrayTypeTest extends FunSuite {
         val at1: FieldType = FieldType("[[[Ljava/lang/Object;")
 
         at1 match {
-            case ArrayType(ArrayType(ArrayType(ot: ObjectType))) ⇒
-                assert(ot.className === "java/lang/Object")
+            case ArrayType(ArrayType(ArrayType(ObjectType(className)))) ⇒
+                assert(className === "java/lang/Object")
         }
     }
 
