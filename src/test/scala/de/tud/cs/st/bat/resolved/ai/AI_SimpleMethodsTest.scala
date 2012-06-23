@@ -558,8 +558,6 @@ class AI_SimpleMethodsTest extends FlatSpec with ShouldMatchers /*with BeforeAnd
     domain.returnedValue should be(Some(SomeBooleanValue))
   }
 
-  
-  
   //
   // GETTER AND SETTER FOR FIELDS
   it should "be able to analyze a classical setter method" in {
@@ -570,7 +568,6 @@ class AI_SimpleMethodsTest extends FlatSpec with ShouldMatchers /*with BeforeAnd
     result should not be (null)
     domain.returnedValue should be(None)
   }
-  
 
   it should "be able to analyze a classical getter method" in {
     val domain = new RecordingDomain
@@ -597,8 +594,8 @@ class AI_SimpleMethodsTest extends FlatSpec with ShouldMatchers /*with BeforeAnd
 
     domain.returnedValue should be(Some(SomeFloatValue))
   }
-//
-	// LOADS AND STORES
+  //
+  // LOADS AND STORES
   it should "be able to analyze integer load and store commands" in {
     val domain = new RecordingDomain
     val method = classFile.methods.find(_.name == "localInt").get
@@ -606,7 +603,7 @@ class AI_SimpleMethodsTest extends FlatSpec with ShouldMatchers /*with BeforeAnd
 
     domain.returnedValue should be(Some(SomeIntegerValue))
   }
-  
+
   it should "be able to analyze odd long load and store commands" in {
     val domain = new RecordingDomain
     val method = classFile.methods.find(_.name == "localLongOdd").get
@@ -614,31 +611,31 @@ class AI_SimpleMethodsTest extends FlatSpec with ShouldMatchers /*with BeforeAnd
 
     domain.returnedValue should be(Some(SomeLongValue))
   }
-  
- it should "be able to analyze even long load and store commands" in {
+
+  it should "be able to analyze even long load and store commands" in {
     val domain = new RecordingDomain
     val method = classFile.methods.find(_.name == "localLongEven").get
     /*val result =*/ AI(classFile, method)(domain)
 
     domain.returnedValue should be(Some(SomeLongValue))
   }
- 
-   it should "be able to analyze odd double load and store commands" in {
+
+  it should "be able to analyze odd double load and store commands" in {
     val domain = new RecordingDomain
     val method = classFile.methods.find(_.name == "localDoubleOdd").get
     /*val result =*/ AI(classFile, method)(domain)
 
     domain.returnedValue should be(Some(SomeDoubleValue))
   }
-  
- it should "be able to analyze even double load and store commands" in {
+
+  it should "be able to analyze even double load and store commands" in {
     val domain = new RecordingDomain
     val method = classFile.methods.find(_.name == "localDoubleEven").get
     /*val result =*/ AI(classFile, method)(domain)
 
     domain.returnedValue should be(Some(SomeDoubleValue))
   }
-  
+
   it should "be able to analyze float load and store commands" in {
     val domain = new RecordingDomain
     val method = classFile.methods.find(_.name == "localFloat").get
@@ -646,14 +643,276 @@ class AI_SimpleMethodsTest extends FlatSpec with ShouldMatchers /*with BeforeAnd
 
     domain.returnedValue should be(Some(SomeFloatValue))
   }
-  
+
   it should "be able to analyze object load and store commands" in {
     val domain = new RecordingDomain
     val method = classFile.methods.find(_.name == "localSimpleMethod").get
     /*val result =*/ AI(classFile, method)(domain)
 
-     domain.returnedValue should be(Some(AReferenceTypeValue(ObjectType("ai/SimpleMethods"))))
+    domain.returnedValue should be(Some(AReferenceTypeValue(ObjectType("ai/SimpleMethods"))))
   }
+  
+  //
+  // PUSH CONSTANT VALUE
+ it should "be able to analyze a push of null value" in {
+    val domain = new RecordingDomain
+    val method = classFile.methods.find(_.name == "pushNull").get
+    /*val result =*/ AI(classFile, method)(domain)
+
+    domain.returnedValue should be(Some(NullValue))
+  }
+   it should "be able to analyze a push of byte value" in {
+    val domain = new RecordingDomain
+    val method = classFile.methods.find(_.name == "pushBipush").get
+    /*val result =*/ AI(classFile, method)(domain)
+
+    domain.returnedValue should be(Some(SomeByteValue))
+  }
+   it should "be able to analyze a push of short value" in {
+    val domain = new RecordingDomain
+    val method = classFile.methods.find(_.name == "pushSipush").get
+    /*val result =*/ AI(classFile, method)(domain)
+
+    domain.returnedValue should be(Some(SomeShortValue))
+  }
+    it should "be able to analyze a push of double const0 value" in {
+    val domain = new RecordingDomain
+    val method = classFile.methods.find(_.name == "pushDoubleConst0").get
+    /*val result =*/ AI(classFile, method)(domain)
+
+    domain.returnedValue should be(Some(SomeDoubleValue))
+  }
+     it should "be able to analyze a push of double const1 value" in {
+    val domain = new RecordingDomain
+    val method = classFile.methods.find(_.name == "pushDoubleConst1").get
+    /*val result =*/ AI(classFile, method)(domain)
+
+    domain.returnedValue should be(Some(SomeDoubleValue))
+  }
+       it should "be able to analyze a push of float const0 value" in {
+    val domain = new RecordingDomain
+    val method = classFile.methods.find(_.name == "pushFloatConst0").get
+    /*val result =*/ AI(classFile, method)(domain)
+
+    domain.returnedValue should be(Some(SomeFloatValue))
+  }
+     it should "be able to analyze a push of float const1 value" in {
+    val domain = new RecordingDomain
+    val method = classFile.methods.find(_.name == "pushFloatConst1").get
+    /*val result =*/ AI(classFile, method)(domain)
+
+    domain.returnedValue should be(Some(SomeFloatValue))
+  }
+     it should "be able to analyze a push of float const2 value" in {
+    val domain = new RecordingDomain
+    val method = classFile.methods.find(_.name == "pushFloatConst2").get
+    /*val result =*/ AI(classFile, method)(domain)
+
+    domain.returnedValue should be(Some(SomeFloatValue))
+  }
+       it should "be able to analyze a push of int const-1 value" in {
+    val domain = new RecordingDomain
+    val method = classFile.methods.find(_.name == "pushIntConstn1").get
+    /*val result =*/ AI(classFile, method)(domain)
+
+    domain.returnedValue should be(Some(SomeIntegerValue))
+  }
+     it should "be able to analyze a push of int const0 value" in {
+    val domain = new RecordingDomain
+    val method = classFile.methods.find(_.name == "pushIntConst0").get
+    /*val result =*/ AI(classFile, method)(domain)
+
+    domain.returnedValue should be(Some(SomeIntegerValue))
+  }
+     it should "be able to analyze a push of int const1 value" in {
+    val domain = new RecordingDomain
+    val method = classFile.methods.find(_.name == "pushIntConst1").get
+    /*val result =*/ AI(classFile, method)(domain)
+
+    domain.returnedValue should be(Some(SomeIntegerValue))
+  }
+     it should "be able to analyze a push of int const2 value" in {
+    val domain = new RecordingDomain
+    val method = classFile.methods.find(_.name == "pushIntConst2").get
+    /*val result =*/ AI(classFile, method)(domain)
+
+    domain.returnedValue should be(Some(SomeIntegerValue))
+  }
+     it should "be able to analyze a push of int const3 value" in {
+    val domain = new RecordingDomain
+    val method = classFile.methods.find(_.name == "pushIntConst3").get
+    /*val result =*/ AI(classFile, method)(domain)
+
+    domain.returnedValue should be(Some(SomeIntegerValue))
+  }
+      it should "be able to analyze a push of int const4 value" in {
+    val domain = new RecordingDomain
+    val method = classFile.methods.find(_.name == "pushIntConst4").get
+    /*val result =*/ AI(classFile, method)(domain)
+
+    domain.returnedValue should be(Some(SomeIntegerValue))
+  }
+     it should "be able to analyze a push of int const5value" in {
+    val domain = new RecordingDomain
+    val method = classFile.methods.find(_.name == "pushIntConst5").get
+    /*val result =*/ AI(classFile, method)(domain)
+
+    domain.returnedValue should be(Some(SomeIntegerValue))
+  }
+        it should "be able to analyze a push of long const0 value" in {
+    val domain = new RecordingDomain
+    val method = classFile.methods.find(_.name == "pushLongConst0").get
+    /*val result =*/ AI(classFile, method)(domain)
+
+    domain.returnedValue should be(Some(SomeLongValue))
+  }
+     it should "be able to analyze a push of long const1 value" in {
+    val domain = new RecordingDomain
+    val method = classFile.methods.find(_.name == "pushLongConst1").get
+    /*val result =*/ AI(classFile, method)(domain)
+
+    domain.returnedValue should be(Some(SomeLongValue))
+  }
+  //
+  //
+  // CREATE ARRAY
+  it should "be able to analyze a new boolean array" in {
+    val domain = new RecordingDomain
+    val method = classFile.methods.find(_.name == "createNewBooleanArray").get
+    /*val result =*/ AI(classFile, method)(domain)
+
+    domain.returnedValue should be(Some(AReferenceTypeValue(ArrayType(BooleanType))))
+  }
+  it should "be able to analyze a new char array" in {
+    val domain = new RecordingDomain
+    val method = classFile.methods.find(_.name == "createNewCharArray").get
+    /*val result =*/ AI(classFile, method)(domain)
+
+    domain.returnedValue should be(Some(AReferenceTypeValue(ArrayType(CharType))))
+  }
+  it should "be able to analyze a new float array" in {
+    val domain = new RecordingDomain
+    val method = classFile.methods.find(_.name == "createNewFloatArray").get
+    /*val result =*/ AI(classFile, method)(domain)
+
+    domain.returnedValue should be(Some(AReferenceTypeValue(ArrayType(FloatType))))
+  }
+  it should "be able to analyze a new double array" in {
+    val domain = new RecordingDomain
+    val method = classFile.methods.find(_.name == "createNewDoubleArray").get
+    /*val result =*/ AI(classFile, method)(domain)
+
+    domain.returnedValue should be(Some(AReferenceTypeValue(ArrayType(DoubleType))))
+  }
+  it should "be able to analyze a new byte array" in {
+    val domain = new RecordingDomain
+    val method = classFile.methods.find(_.name == "createNewByteArray").get
+    /*val result =*/ AI(classFile, method)(domain)
+
+    domain.returnedValue should be(Some(AReferenceTypeValue(ArrayType(ByteType))))
+  }
+  it should "be able to analyze a new short array" in {
+    val domain = new RecordingDomain
+    val method = classFile.methods.find(_.name == "createNewShortArray").get
+    /*val result =*/ AI(classFile, method)(domain)
+
+    domain.returnedValue should be(Some(AReferenceTypeValue(ArrayType(ShortType))))
+  }
+  it should "be able to analyze a new int array" in {
+    val domain = new RecordingDomain
+    val method = classFile.methods.find(_.name == "createNewIntArray").get
+    /*val result =*/ AI(classFile, method)(domain)
+
+    domain.returnedValue should be(Some(AReferenceTypeValue(ArrayType(IntegerType))))
+  }
+  it should "be able to analyze a new long array" in {
+    val domain = new RecordingDomain
+    val method = classFile.methods.find(_.name == "createNewLongArray").get
+    /*val result =*/ AI(classFile, method)(domain)
+
+    domain.returnedValue should be(Some(AReferenceTypeValue(ArrayType(LongType))))
+  }
+
+  it should "be able to analyze a new Object array" in {
+    val domain = new RecordingDomain
+    val method = classFile.methods.find(_.name == "createNewSimpleMethodsArray").get
+    /*val result =*/ AI(classFile, method)(domain)
+
+    domain.returnedValue should be(Some(AReferenceTypeValue(ArrayType(ObjectType("ai/SimpleMethods")))))
+  }
+
+  it should "be able to analyze a new multidimensional Object array" in {
+    val domain = new RecordingDomain
+    val method = classFile.methods.find(_.name == "createNewMultiSimpleMethodsArray").get
+    /*val result =*/ AI(classFile, method)(domain)
+
+    domain.returnedValue should be(Some(AReferenceTypeValue(ArrayType(ObjectType("ai/SimpleMethods")))))
+  }
+
+  //
+  // LOAD FROM AND STORE VALUE IN ARRAYS
+  it should "be able to analyze to load and store an object in an array" in {
+    val domain = new RecordingDomain
+    val method = classFile.methods.find(_.name == "objectArray").get
+    /*val result =*/ AI(classFile, method)(domain)
+
+    domain.returnedValue should be(Some(AReferenceTypeValue(ObjectType("ai/SimpleMethods"))))
+  }
+
+  it should "be able to analyze to load and store a byte in an array" in {
+    val domain = new RecordingDomain
+    val method = classFile.methods.find(_.name == "byteArray").get
+    /*val result =*/ AI(classFile, method)(domain)
+
+    domain.returnedValue should be(Some(SomeByteValue))
+  }
+
+  it should "be able to analyze to load and store a char in an array" in {
+    val domain = new RecordingDomain
+    val method = classFile.methods.find(_.name == "charArray").get
+    /*val result =*/ AI(classFile, method)(domain)
+
+    domain.returnedValue should be(Some(SomeCharValue))
+  }
+
+  it should "be able to analyze to load and store a double in an array" in {
+    val domain = new RecordingDomain
+    val method = classFile.methods.find(_.name == "doubleArray").get
+    /*val result =*/ AI(classFile, method)(domain)
+
+    domain.returnedValue should be(Some(SomeDoubleValue))
+  }
+
+  it should "be able to analyze to load and store a float in an array" in {
+    val domain = new RecordingDomain
+    val method = classFile.methods.find(_.name == "floatArray").get
+    /*val result =*/ AI(classFile, method)(domain)
+
+    domain.returnedValue should be(Some(SomeFloatValue))
+  }
+
+  it should "be able to analyze to load and store a int in an array" in {
+    val domain = new RecordingDomain
+    val method = classFile.methods.find(_.name == "intArray").get
+    /*val result =*/ AI(classFile, method)(domain)
+
+    domain.returnedValue should be(Some(SomeIntegerValue))
+  }
+  it should "be able to analyze to load and store a long in an array" in {
+    val domain = new RecordingDomain
+    val method = classFile.methods.find(_.name == "longArray").get
+    /*val result =*/ AI(classFile, method)(domain)
+
+    domain.returnedValue should be(Some(SomeLongValue))
+  }
+  it should "be able to analyze to load and store a short in an array" in {
+    val domain = new RecordingDomain
+    val method = classFile.methods.find(_.name == "shortArray").get
+    /*val result =*/ AI(classFile, method)(domain)
+
+    domain.returnedValue should be(Some(SomeShortValue))
+  }
+
   //
   // OTHER
   it should "be able to analyze a method that multiplies a value by two" in {

@@ -1,5 +1,7 @@
 package ai;
 
+import java.lang.reflect.Array;
+
 /**
  * A very large number of methods that do not contain any control-flow
  * statements.
@@ -400,7 +402,167 @@ public class SimpleMethods {
 		}
 		
 		
+		//
+       // PUSH CONSTANT VALUE
+		public static Object pushNull(){
+			return null;
+		}
+		
+		public static byte pushBipush(){
+			return 6;
+		}
+		
+		public static short pushSipush(){
+			return 128;
+		}		
+		
+		public static double pushDoubleConst0(){
+			return 0.0;
+		}
+		
+		public static double pushDoubleConst1(){
+			return 1.0;
+		}
+		
+		public static float pushFloatConst0(){
+			return 0.0f;
+		}
+		
+		public static float pushFloatConst1(){
+			return 1.0f;
+		}
+		public static float pushFloatConst2(){
+			return 2.0f;
+		}
+		public static int pushIntConstn1(){
+			return -1;
+		}
+		public static int pushIntConst0(){
+			return 0;
+		}
+		public static int pushIntConst1(){
+			return 1;
+		}
+		public static int pushIntConst2(){
+			return 2;
+		}
+		public static int pushIntConst3(){
+			return 3;
+		}
+		public static int pushIntConst4(){
+			return 4;
+		}
+		public static int pushIntConst5(){
+			return 5;
+		}
+		
+		public static long pushLongConst0(){
+			return 0;
+		}
+		public static long pushLongConst1(){
+			return 1;
+		}
+		
+	
+		//
+        // CREATE ARRAY
+		public boolean[] createNewBooleanArray(){
+			boolean[] bs = new boolean[1];
+			return bs;
+		}
+		
+		public char[] createNewCharArray(){
+			char[] cs = new char[1];
+			return cs;
+		}
+		
+		public float[] createNewFloatArray(){
+			float[] fs = new float[1];
+			return fs;
+		}
+		
+		public double[] createNewDoubleArray(){
+			double[] ds = new double[1];
+			return ds;
+		}
+		public byte[] createNewByteArray(){
+			byte[] bs = new byte[1];
+			return bs;
+		}
+		public short[] createNewShortArray(){
+			short[] ss = new short[1];
+			return ss;
+		}
+		public int[] createNewIntArray(){
+			int[] is = new int[1];
+			return is;
+		}
+		public long[] createNewLongArray(){
+			long[] ls = new long[1];
+			return ls;
+		}
+		
+		public SimpleMethods[] createNewSimpleMethodsArray(){
+			SimpleMethods[] ls = new SimpleMethods[1];
+			return ls;
+		}
+		
+		public SimpleMethods[][] createNewMultiSimpleMethodsArray(){
+			SimpleMethods[][] ls = new SimpleMethods[1][2];
+			return ls;
+		}
+		 //
+        // LENGTH OF AN ARRAY
+		public static int arrayLength(Array[] array){
+			return array.length;
+		}
 
+		
+		 //
+        // LOAD FROM AND STORE VALUE IN ARRAYS
+        //
+		
+		public static SimpleMethods objectArray(SimpleMethods[] simpleMethods){
+			simpleMethods[0] = new SimpleMethods();
+			return simpleMethods[0];
+		}
+		
+		public static byte byteArray(byte[] array){
+			array[0] = 0;
+			return array[0];
+		}
+		
+		public static char charArray(char[] array){
+			array[0] = 'c';
+			return array[0];
+		}
+		
+		public static double doubleArray(double[] array){
+			array[0] = 1.0;
+			return array[0];
+		}
+		
+		public static float floatArray(float[] array){
+			array[0] = 1.0f;
+			return array[0];
+		}
+		public static int intArray(int[] array){
+			array[0] = 1;
+			return array[0];
+		}
+		public static long longArray(long[] array){
+			array[0] = 1;
+			return array[0];
+		}
+		
+		public static short shortArray(short[] array){
+			array[0] = 1;
+			return array[0];
+		}
+		
+		
+		//
+		//other
 		public static <T> T asIs(T o) {
 			return o; // the type of the return value directly depends on the input
 						// value

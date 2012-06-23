@@ -49,7 +49,7 @@ public abstract class AbstractA implements Comparable<Integer> {
 
 	public abstract boolean equals(AbstractA obj);
 
-	@Override
+	
 	public int compareTo(Integer o) {
 		return 0;
 	}
