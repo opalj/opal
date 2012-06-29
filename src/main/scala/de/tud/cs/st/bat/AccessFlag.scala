@@ -103,7 +103,6 @@ final case object ACC_PROTECTED extends VisibilityModifier {
 final case object ACC_STATIC extends AccessFlag {
    val javaName : Option[String] = Some("static")
    val mask = 0x0008
-   lazy val toXML = <static />
 }
 
 final case object ACC_FINAL extends AccessFlag {
