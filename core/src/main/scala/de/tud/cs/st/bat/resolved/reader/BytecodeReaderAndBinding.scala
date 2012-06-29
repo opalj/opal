@@ -497,7 +497,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
     parsers(200) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
         // branchoffset:
         val p1 = in.readInt // GOTO_W
-        GOTO(p1)
+        GOTO_W(p1)
     }
 
     parsers(145) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
