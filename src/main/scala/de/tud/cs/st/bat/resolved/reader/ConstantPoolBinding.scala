@@ -37,16 +37,14 @@ package reader
 import de.tud.cs.st.bat.reader.Constant_PoolReader
 
 /**
- * A representation of the constant pool.
- *
- * '''Implementation Notice'''
- * The constant pool is considered to be static; i.e., references between
- * constant pool entries are always resolved at most once and the results are cached.
- * Hence, after reading the constant pool the constant pool is treated as
- * immutable; the referenced constant pool entry must not change.
- *
- * @author Michael Eichberg
- */
+  * A representation of the constant pool.
+  *
+  * @note The constant pool is considered to be static; i.e., references between
+  * constant pool entries are always resolved at most once and the results are cached.
+  * Hence, after reading the constant pool the constant pool is treated as
+  * immutable; the referenced constant pool entry must not change.
+  * @author Michael Eichberg
+  */
 trait ConstantPoolBinding extends Constant_PoolReader {
 
     implicit def ConstantPoolIndexToConstantPoolEntry(index: Constant_Pool_Index)(implicit cp: Constant_Pool): Constant_Pool_Entry = cp(index)
@@ -63,6 +61,7 @@ trait ConstantPoolBinding extends Constant_PoolReader {
         def asConstantValue(implicit cp: Constant_Pool): ConstantValue[_] = sys.error("conversion to constant value is not supported")
         def asFieldref(implicit cp: Constant_Pool): (ObjectType, String, FieldType) = sys.error("conversion to field ref is not supported")
         def asMethodref(implicit cp: Constant_Pool): (ReferenceType, String, MethodDescriptor) = sys.error("conversion to method ref is not supported")
+        def asInvoke[T <: Instruction](create: (ReferenceType, String, MethodDescriptor) ⇒ T)(implicit cp: Constant_Pool): T = sys.error("conversion to method ref is not supported")
 
         def asObjectType(implicit cp: Constant_Pool): ObjectType = sys.error("conversion to object type is not supported")
         def asReferenceType(implicit cp: Constant_Pool): ReferenceType = sys.error("conversion to object type is not supported")
@@ -75,7 +74,7 @@ trait ConstantPoolBinding extends Constant_PoolReader {
     case class CONSTANT_Class_info(val name_index: Constant_Pool_Index) extends Constant_Pool_Entry {
         override def asConstantValue(implicit cp: Constant_Pool) = ConstantClass(asReferenceType)
         override def asObjectType(implicit cp: Constant_Pool) = ObjectType(name_index.asString)
-        override def asReferenceType(implicit cp : Constant_Pool) = ReferenceType(name_index.asString)
+        override def asReferenceType(implicit cp: Constant_Pool) = ReferenceType(name_index.asString)
     }
 
     case class CONSTANT_Double_info(value: ConstantDouble) extends Constant_Pool_Entry {
@@ -163,6 +162,10 @@ trait ConstantPoolBinding extends Constant_PoolReader {
                 )
             }
             methodref
+        }
+        override def asInvoke[T <: Instruction](create: (ReferenceType, String, MethodDescriptor) ⇒ T)(implicit cp: Constant_Pool): T = {
+            val nameAndType = name_and_type_index.asNameAndType
+            create(class_index.asReferenceType, nameAndType.name, nameAndType.methodDescriptor)
         }
     }
 
