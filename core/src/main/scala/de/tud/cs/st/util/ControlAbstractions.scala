@@ -51,11 +51,11 @@ object ControlAbstractions {
      */
     def read[I <: InputStream, T](f: ⇒ I)(r: I ⇒ T): T = {
         val in = f // this calls the function f
-
         try {
             r(in)
         } finally {
-            in.close
+            if (in != null)
+            	in.close
         }
     }
 
