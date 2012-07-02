@@ -32,18 +32,15 @@
 */
 package de.tud.cs.st
 package bat
-package resolved
 package dependency
 package checking
-
-import reader.Java6Framework
 
 /**
  * Specification of BAT's architecture.
  *
  * @author Michael Eichberg
  */
-object BATArchitecture extends Specification with App {
+object BATArchitecture/* extends Specification with App {
 
     println("Checking BAT's architecture")
 
@@ -132,4 +129,5 @@ object BATArchitecture extends Specification with App {
     //println(ensembleToString('Integration_Tests))
 
     println("Finished checking BAT's architecture.")
-}
+    
+}*/

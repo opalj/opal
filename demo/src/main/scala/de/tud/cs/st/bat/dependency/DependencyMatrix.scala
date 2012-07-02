@@ -32,18 +32,20 @@
 */
 package de.tud.cs.st
 package bat
-package resolved
 package dependency
 
-import reader.Java6Framework
+import util.perf.nanoSecondsToMilliseconds
+
+import resolved._
+import resolved.reader.Java6Framework
 
 /**
- * This class (the implementation) demonstrates how to load all class files
- * from a zip file and how to create a dependency matrix.
- *
- * @author Michael Eichberg
- * @author Thomas Schlosser
- */
+  * This class (the implementation) demonstrates how to load all class files
+  * from a zip file and how to create a dependency matrix.
+  *
+  * @author Michael Eichberg
+  * @author Thomas Schlosser
+  */
 object DependencyMatrix {
 
     val performance = new util.perf.PerformanceEvaluation {}
@@ -77,11 +79,17 @@ object DependencyMatrix {
     }
 
     def analyze(zipFiles: Array[String]) {
-        import scala.collection.mutable.{ Map, Set }
-        val dependencyMatrix = Map[Int, Set[(Int, DependencyType)]]()
+        import scala.collection.mutable.Map
+        import scala.collection.mutable.Set
+        val dependencyMatrix = Map[Int, Set[(Int, DependencyType.Value)]]()
         val dependencyExtractor = new DependencyExtractor(new SourceElementIDsMap()) with NoSourceElementsVisitor {
-            def processDependency(sourceID: Int, targetID: Int, dType: DependencyType) {
-                dependencyMatrix.getOrElseUpdate(sourceID, { Set[(Int, DependencyType)]() }) + ((targetID, dType))
+            def processDependency(sourceID: Int, targetID: Int, dType: DependencyType.Value) {
+                val emptySet: Set[(Int, DependencyType)] = Set.empty
+                dependencyMatrix.get(sourceID) match {
+                    case Some(s) ⇒ s += ((targetID, dType))
+                    case None    ⇒ dependencyMatrix += (sourceID -> Set((targetID, dType)))
+                }
+                // [Scala 2.9.X Compiler crashes on:] dependencyMatrix.getOrElseUpdate(sourceID, emptySet)  + ((targetID, dType))
             }
         }
 
