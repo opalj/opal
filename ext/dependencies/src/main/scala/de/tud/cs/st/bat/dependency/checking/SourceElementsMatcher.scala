@@ -30,10 +30,11 @@
  *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st.bat.resolved
+package de.tud.cs.st.bat
 package dependency
 package checking
 
+import resolved._
 import scala.collection.immutable.SortedSet
 
 /**

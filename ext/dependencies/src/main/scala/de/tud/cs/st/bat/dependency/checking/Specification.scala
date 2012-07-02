@@ -30,12 +30,14 @@
  *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st.bat.resolved
+package de.tud.cs.st.bat
 package dependency
 package checking
 
-import reader.Java6Framework
-import analyses.ClassHierarchy
+import resolved._
+import resolved.reader.Java6Framework
+import resolved.analyses.ClassHierarchy
+
 import scala.collection.immutable.SortedSet
 
 /**

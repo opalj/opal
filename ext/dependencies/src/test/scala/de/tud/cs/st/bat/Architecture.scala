@@ -32,7 +32,8 @@
 */
 package de.tud.cs.st.bat
 
-import resolved.dependency.checking._
+import resolved._
+import dependency.checking._
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner

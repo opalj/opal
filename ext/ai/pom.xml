@@ -8,14 +8,14 @@
 
    <parent>
       <groupId>de.tud.cs.st</groupId>
-      <artifactId>bat</artifactId>
+      <artifactId>bat-ext</artifactId>
       <version>1.0.0-SNAPSHOT</version>
       <relativePath>..</relativePath>
    </parent>
 
-   <artifactId>bat-core</artifactId>
-   <name>BAT-Core</name>
-   <inceptionYear>2010</inceptionYear>
+   <artifactId>bat-ext-ai</artifactId>
+   <name>BAT-Extensions-AI</name>
+   <inceptionYear>2012</inceptionYear>
 
    <build>
       <plugins>
@@ -25,5 +25,12 @@
          </plugin>
       </plugins>
    </build>
+
+   <dependencies>
+      <dependency>
+         <groupId>de.tud.cs.st</groupId>
+         <artifactId>bat-core</artifactId>
+      </dependency>
+   </dependencies>
 
 </project>

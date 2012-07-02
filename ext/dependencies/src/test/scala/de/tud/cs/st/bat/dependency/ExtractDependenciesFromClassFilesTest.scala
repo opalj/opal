@@ -30,9 +30,11 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved
+package de.tud.cs.st.bat
 package dependency
 
+import resolved._
+import resolved.reader.Java6Framework
 
 import java.io.File
 import java.util.zip.ZipFile
@@ -44,9 +46,6 @@ import org.scalatest.Tracker
 import org.scalatest.events.TestStarting
 import org.scalatest.events.TestSucceeded
 import org.scalatest.events.TestFailed
-
-import reader.Java6Framework
-
 
 /**
   * Tests whether all class files contained in the "test/classfiles" directory

@@ -31,9 +31,9 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 */
 package de.tud.cs.st.bat
-package resolved
 package dependency
 
+import resolved._
 import DependencyType._
 
 /**

@@ -30,8 +30,10 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved
+package de.tud.cs.st.bat
 package dependency
+
+import resolved._
 
 /**
  * Enumeration of all kinds of dependencies that are extracted by the [[de.tud.cs.st.bat.resolved.dependency.DependencyExtractor]].

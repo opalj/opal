@@ -30,22 +30,15 @@
  *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st.bat.resolved
-package dependency
-package checking
-
-import reader.Java6Framework
-import analyses.ClassHierarchy
+package de.tud.cs.st.bat
 
 /**
- * Represents a Java, Scala, Groovy,... project's data.
+ * Functionality to extract dependencies between class files.
  *
  * @author Michael Eichberg
  */
-trait Project extends SourceElementIDs {
+package object dependency {
 
-    def classHierarchy: ClassHierarchy
-
-    def classFiles: scala.collection.Map[ObjectType, ClassFile]
+    type DependencyType = DependencyType.Value
 
 }

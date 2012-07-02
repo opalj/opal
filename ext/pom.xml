@@ -13,17 +13,20 @@
       <relativePath>..</relativePath>
    </parent>
 
-   <artifactId>bat-core</artifactId>
-   <name>BAT-Core</name>
-   <inceptionYear>2010</inceptionYear>
+   <artifactId>bat-ext</artifactId>
+   <packaging>pom</packaging>
+   <name>BAT-Extensions</name>
+   <inceptionYear>2012</inceptionYear>
 
-   <build>
-      <plugins>
-         <plugin>
-            <groupId>org.scala-tools</groupId>
-            <artifactId>maven-scala-plugin</artifactId>
-         </plugin>
-      </plugins>
-   </build>
+   <modules>
+      <module>dependencies</module>
+	  <module>ai</module>
+   </modules>
 
+      <dependencies>
+         <dependency>
+            <groupId>de.tud.cs.st</groupId>
+            <artifactId>bat-core</artifactId>
+         </dependency>
+      </dependencies>
 </project>
