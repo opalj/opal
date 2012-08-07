@@ -36,11 +36,11 @@ package reader
 import org.scalatest.FunSuite
 
 /**
- * Tests the parsing of signatures.
- *
- * @author Michael Eichberg
- */
-//@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
+  * Tests the parsing of signatures.
+  *
+  * @author Michael Eichberg
+  */
+@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class SignaturesTest extends FunSuite {
 
     test("traversing a minimal class type signature") {
@@ -59,18 +59,18 @@ class SignaturesTest extends FunSuite {
         assert(types == Set(ObjectType("Default"), ObjectType("de/Collection"), ObjectType("de/Type"), ObjectType("AnotherDefault"), ObjectType("de/MyObject")))
     }
 
-    private val classA = Java6Framework.ClassFile("test/classfiles/Signatures.zip", "signatures/A.class")
+    private val classA = Java6Framework.ClassFile(ClassLoader.getSystemResource("classfiles/Signatures.zip").getFile, "signatures/A.class")
     assert(classA ne null)
 
-    private val classB = Java6Framework.ClassFile("test/classfiles/Signatures.zip", "signatures/B.class")
+    private val classB = Java6Framework.ClassFile(ClassLoader.getSystemResource("classfiles/Signatures.zip").getFile, "signatures/B.class")
     assert(classB ne null)
 
     test("parsing the class signatures") {
         val classASignature = classA.classSignature.get
-        println(classASignature)
+        assert(classASignature ne null)
 
         val classBSignature = classB.classSignature.get
-        println(classBSignature)
+        assert(classBSignature ne null)
     }
 
     test("parsing the field type signatures") {
@@ -78,11 +78,11 @@ class SignaturesTest extends FunSuite {
             x match {
                 case Field(_, "b", _, _) ⇒ {
                     val signature = x.fieldTypeSignature;
-                    println("B : " + signature)
+                    assert(signature ne null)
                 }
                 case Field(_, "bs", _, _) ⇒ {
                     val signature = x.fieldTypeSignature
-                    println("Bs : " + signature)
+                    assert(signature ne null)
                 }
                 case _ ⇒ ;
             }
