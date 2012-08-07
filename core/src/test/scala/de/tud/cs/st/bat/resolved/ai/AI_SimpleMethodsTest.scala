@@ -846,7 +846,7 @@ class AI_SimpleMethodsTest extends FlatSpec with ShouldMatchers /*with BeforeAnd
     val method = classFile.methods.find(_.name == "createNewMultiSimpleMethodsArray").get
     /*val result =*/ AI(classFile, method)(domain)
 
-    domain.returnedValue should be(Some(AReferenceTypeValue(ArrayType(ObjectType("ai/SimpleMethods")))))
+    domain.returnedValue should be(Some(AReferenceTypeValue(ArrayType(ArrayType(ObjectType("ai/SimpleMethods"))))))
   }
 
   //

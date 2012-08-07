@@ -44,8 +44,8 @@ class TypeDomain extends Domain {
     // CREATE ARRAY
     //
     def newarray(count: Value, componentType: FieldType): Value = TypedValue(ArrayType(componentType))
-    def multianewarray(counts: List[Value], componentType: FieldType) = {
-        TypedValue(ArrayType(counts.length, componentType))
+    def multianewarray(counts: List[Value], arrayType: FieldType) = {
+        TypedValue(arrayType)
     }
 
     //

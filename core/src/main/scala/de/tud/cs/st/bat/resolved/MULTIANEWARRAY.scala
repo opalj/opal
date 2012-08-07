@@ -32,7 +32,6 @@
  POSSIBILITY OF SUCH DAMAGE.
 */
 
-
 package de.tud.cs.st.bat.resolved
 
 import de.tud.cs.st.util.ControlAbstractions.repeat
@@ -40,21 +39,19 @@ import de.tud.cs.st.util.ControlAbstractions.repeat
 import de.tud.cs.st.bat.resolved.InstructionExceptions._
 
 /**
- * Create new multidimensional array.
- *
- * @author Michael Eichberg
- */
-case class MULTIANEWARRAY (
-	
-	val componentType : ReferenceType, 
-	val dimensions : Int
-)
-extends Instruction {
+  * Create new multidimensional array.
+  *
+  * @author Michael Eichberg
+  */
+case class MULTIANEWARRAY(
+    val componentType: ReferenceType,
+    val dimensions: Int)
+        extends Instruction {
 
-	def opcode : Int = 197
+    def opcode: Int = 197
 
-	def mnemonic : String = "multianewarray"
+    def mnemonic: String = "multianewarray"
 
-	lazy val exceptions : List[ObjectType] =  Nil
+    lazy val exceptions: List[ObjectType] = Nil
 
 }
