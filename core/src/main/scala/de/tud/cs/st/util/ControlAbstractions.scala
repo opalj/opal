@@ -37,25 +37,26 @@ import java.io.InputStream
 import scala.collection.mutable.WrappedArray
 
 /**
- * Implementation of some control abstractions.
- *
- * @author Michael Eichberg
- */
+  * Implementation of some control abstractions.
+  *
+  * @author Michael Eichberg
+  */
 object ControlAbstractions {
 
     /**
-     * This function takes care of the correct handling of input streams.
-     * The function takes a function <code>f</code> that creates a new <code>InputStream</code>
-     * and a function <code>r</code> that processes an input stream. If f returns
-     * <code>null</code>, <code>null</code> is passed to r.
-     */
+      * This function takes care of the correct handling of input streams.
+      * The function takes a function <code>f</code> that creates a new <code>InputStream</code>
+      * and a function <code>r</code> that processes an input stream. If f returns
+      * <code>null</code>, <code>null</code> is passed to r.
+      */
     def read[I <: InputStream, T](f: ⇒ I)(r: I ⇒ T): T = {
         val in = f // this calls the function f
         try {
             r(in)
-        } finally {
+        }
+        finally {
             if (in != null)
-            	in.close
+                in.close
         }
     }
 
@@ -74,10 +75,10 @@ object ControlAbstractions {
     }
 
     /**
-     * @param f a function f that is evaluated
-     * @param times the number of times the result of evaluating f <b>once</b> is stored
-     * in an array of size times.
-     */
+      * @param f a function f that is evaluated
+      * @param times the number of times the result of evaluating f <b>once</b> is stored
+      * in an array of size times.
+      */
     def repeatResultOfEvaluation[T: ClassManifest](f: ⇒ T)(times: Int): WrappedArray[T] = {
         repeat(times)(f)
     }
