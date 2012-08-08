@@ -13,17 +13,22 @@ object ITA_INEFFICIENT_TO_ARRAY
         extends Analysis
 {
 
+    import BaseAnalyses.indexed
+
     val objectArrayType = ArrayType(ObjectType("java/lang/Object"))
 
     val toArrayDescriptor = MethodDescriptor(List(objectArrayType), objectArrayType)
 
     val collectionInterface = ObjectType("java/util/Collection")
 
+    val listInterface = ObjectType("java/util/List")
+
     def isCollectionType(classHierarchy: ClassHierarchy)(t: ReferenceType): Boolean = {
         if (!t.isObjectType) {
             false
         } else {
-            classHierarchy.isSubtypeOf(t.asInstanceOf[ObjectType], collectionInterface).getOrElse(false)
+            classHierarchy.isSubtypeOf(t.asInstanceOf[ObjectType], collectionInterface).getOrElse(false) ||
+                    t == listInterface // TODO needs more heuristic or more analysis
         }
     }
 
@@ -32,27 +37,18 @@ object ITA_INEFFICIENT_TO_ARRAY
         val classHierarchy: ClassHierarchy = project.classHierarchy
         val isCollectionType = this.isCollectionType(classHierarchy) _
         for (classFile ← classFiles;
-             method ← classFile.methods if method.body.isDefined
-        ) yield {
-            val calls = for (i ← 2 to method.body.get.instructions.length - 1 if (
-                    (method.body.get.instructions(i) match {
+             method ← classFile.methods if method.body.isDefined;
+             Seq((ICONST_0, _), (ANEWARRAY(_), _), (instr, idx)) ← indexed(method.body.get.instructions).sliding(3) if (
+                    instr match {
                         case INVOKEINTERFACE(targetType, "toArray", `toArrayDescriptor`)
                             if (isCollectionType(targetType)) => true
                         case INVOKEVIRTUAL(targetType, "toArray", `toArrayDescriptor`)
                             if (isCollectionType(targetType)) => true
                         case _ => false
-                    }) &&
-                            (method.body.get.instructions(i - 1) match {
-                                case ANEWARRAY(_) => true
-                                case _ => false
-                            }) &&
-                            (method.body.get.instructions(i - 2) match {
-                                case ICONST_0 => true
-                                case _ => false
-                            })
-                    )
-            ) yield i
-            (classFile, method, calls)
+                    })
+        ) yield {
+            ("ITA_INEFFICIENT_TO_ARRAY", classFile.thisClass.toJava + "." + method.name + method.descriptor
+                    .toUMLNotation, idx)
         }
     }
 

@@ -15,27 +15,26 @@ object DMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT
 
     val doubleType = ObjectType("java/lang/Double")
 
-    val longBitsToDoubleDescriptor = MethodDescriptor(List(LongType), doubleType)
+    val longBitsToDoubleDescriptor = MethodDescriptor(List(LongType), DoubleType)
 
 
     def analyze(project: Project) = {
         val classFiles: Traversable[ClassFile] = project.classFiles
         for (classFile ← classFiles;
-             method ← classFile.methods if method.body.isDefined
+             method ← classFile.methods if method.body.isDefined;
+             i ← 1 to method.body.get.instructions.length - 1 if
+            (
+                    (method.body.get.instructions(i) match {
+                        case INVOKESTATIC(`doubleType`, "longBitsToDouble", `longBitsToDoubleDescriptor`) => true
+                        case _ => false
+                    }) &&
+                            (method.body.get.instructions(i - 1) match {
+                                case I2L => true
+                                case _ => false
+                            })
+                    )
         ) yield {
-            val calls =
-                for (i ← 1 to method.body.get.instructions.length - 1 if (
-                        (method.body.get.instructions(i) match {
-                            case INVOKESTATIC(`doubleType`, "longBitsToDouble", `longBitsToDoubleDescriptor`) => true
-                            case _ => false
-                        }) &&
-                                (method.body.get.instructions(i - 1) match {
-                                    case I2L => true
-                                    case _ => false
-                                })
-                        )
-                ) yield i
-            (classFile, method, calls)
+            ("DMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT", classFile.thisClass.toJava + "." + method.name + method.descriptor.toUMLNotation, i)
         }
     }
 

@@ -1,9 +1,6 @@
 package de.tud.cs.st.bat.resolved.analyses
 
 import de.tud.cs.st.bat.resolved._
-import de.tud.cs.st.bat.resolved.Field
-import de.tud.cs.st.bat.resolved.GETSTATIC
-import de.tud.cs.st.bat.resolved.GETFIELD
 
 /**
  *
@@ -16,9 +13,9 @@ object BaseAnalyses
 {
     /**
      * Returns all declared fields ever read by any method in any analyzed class
-     * as tuple (declaringClass, name, fieldType)
+     * as tuple (from,field) = ((classFile,Method)(declaringClass, name, fieldType))
      */
-    def readFields(classFiles: Traversable[ClassFile]): Set[(ObjectType, String, Type)] = {
+    def readFields(classFiles: Traversable[ClassFile]): Set[((ClassFile, Method), (ObjectType, String, Type))] = {
         (for (classFile ← classFiles if !classFile.isInterfaceDeclaration;
               method ← classFile.methods if method.body.isDefined;
               instruction ← method.body.get.instructions
@@ -31,9 +28,17 @@ object BaseAnalyses
                       )
         ) yield {
             instruction match {
-                case GETFIELD(declaringClass, name, fieldType) ⇒ (declaringClass, name, fieldType)
-                case GETSTATIC(declaringClass, name, fieldType) ⇒ (declaringClass, name, fieldType)
+                case GETFIELD(declaringClass, name, fieldType) ⇒ ((classFile, method), (declaringClass, name, fieldType))
+                case GETSTATIC(declaringClass, name, fieldType) ⇒ ((classFile, method), (declaringClass, name, fieldType))
             }
         }).toSet
+    }
+
+
+    /**
+     *  returns a filtered sequence of instructions without the bytecode padding
+     */
+    def indexed(instructions : Array[Instruction]) : Seq[(Instruction, Int)] = {
+        instructions.zipWithIndex.filter{ case (instr, _) => instr != null }
     }
 }
