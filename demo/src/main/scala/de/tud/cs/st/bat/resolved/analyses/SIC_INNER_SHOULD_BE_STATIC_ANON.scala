@@ -11,6 +11,7 @@ import de.tud.cs.st.bat.resolved.{ALOAD_1, Field, ClassFile}
  *
  */
 object SIC_INNER_SHOULD_BE_STATIC_ANON
+        extends Analysis
 {
 
     val withinAnonymousClass = Pattern.compile("[$][0-9].*[$]")
@@ -18,8 +19,7 @@ object SIC_INNER_SHOULD_BE_STATIC_ANON
     /**
      * A heuristic for determining whether an inner class is inside an anonymous inner class based on the class name
      */
-    def isWithinAnonymousInnerClass(classFile: ClassFile) : Boolean =
-    {
+    def isWithinAnonymousInnerClass(classFile: ClassFile): Boolean = {
         withinAnonymousClass.matcher(classFile.thisClass.className).find()
     }
 
@@ -65,13 +65,13 @@ object SIC_INNER_SHOULD_BE_STATIC_ANON
      * into the field reference for the outer this instance.
      */
     def constructorReadsOuterThisField(classFile: ClassFile): Boolean = {
-        (for (method ← classFile.constructors if (method.name == "<init>");
-              ALOAD_1 ← method.instructions
+        (for (method ← classFile.constructors if (method.name == "<init>") && method.body.isDefined;
+              ALOAD_1 ← method.body.get.instructions
         ) yield 1).sum > 1
     }
 
-
-    def analyze(classFiles: Traversable[ClassFile]) = {
+    def analyze(project: Project) = {
+        val classFiles: Traversable[ClassFile] = project.classFiles
         val readFields = BaseAnalyses.readFields(classFiles)
         for (classFile ← classFiles
              if (isAnonymousInnerClass(classFile) &&
@@ -79,8 +79,8 @@ object SIC_INNER_SHOULD_BE_STATIC_ANON
                      );
              val declaringClass = classFile.thisClass;
              field@Field(_, name, fieldType, _) ← classFile.fields
-             if (isOuterThisField field &&
-                     ! readFields.contains((declaringClass, name, fieldType)) &&
+             if (isOuterThisField(field) &&
+                     !readFields.contains((declaringClass, name, fieldType)) &&
                      !constructorReadsOuterThisField(classFile)
                      )
         ) yield {
