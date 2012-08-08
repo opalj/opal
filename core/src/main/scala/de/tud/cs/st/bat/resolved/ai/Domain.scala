@@ -44,7 +44,7 @@ trait Domain {
     // CREATE ARRAY
     //
     def newarray(count: Value, componentType: FieldType): Value
-    def multianewarray(counts: List[Value], componentType: FieldType): Value
+    def multianewarray(counts: List[Value], arrayType: FieldType): Value
 
     //
     // LOAD FROM AND STORE VALUE IN ARRAYS
