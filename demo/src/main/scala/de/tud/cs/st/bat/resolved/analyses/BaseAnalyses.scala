@@ -38,7 +38,7 @@ object BaseAnalyses
     /**
      *  returns a filtered sequence of instructions without the bytecode padding
      */
-    def indexed(instructions : Array[Instruction]) : Seq[(Instruction, Int)] = {
+    def withIndex(instructions : Array[Instruction]) : Seq[(Instruction, Int)] = {
         instructions.zipWithIndex.filter{ case (instr, _) => instr != null }
     }
 }

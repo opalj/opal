@@ -13,7 +13,7 @@ object ITA_INEFFICIENT_TO_ARRAY
         extends Analysis
 {
 
-    import BaseAnalyses.indexed
+    import BaseAnalyses.withIndex
 
     val objectArrayType = ArrayType(ObjectType("java/lang/Object"))
 
@@ -38,7 +38,7 @@ object ITA_INEFFICIENT_TO_ARRAY
         val isCollectionType = this.isCollectionType(classHierarchy) _
         for (classFile ← classFiles;
              method ← classFile.methods if method.body.isDefined;
-             Seq((ICONST_0, _), (ANEWARRAY(_), _), (instr, idx)) ← indexed(method.body.get.instructions).sliding(3) if (
+             Seq((ICONST_0, _), (ANEWARRAY(_), _), (instr, idx)) ← withIndex(method.body.get.instructions).sliding(3) if (
                     instr match {
                         case INVOKEINTERFACE(targetType, "toArray", `toArrayDescriptor`)
                             if (isCollectionType(targetType)) => true
