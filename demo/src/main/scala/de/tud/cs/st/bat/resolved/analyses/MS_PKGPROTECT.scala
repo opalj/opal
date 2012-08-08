@@ -1,5 +1,8 @@
 package de.tud.cs.st.bat.resolved.analyses
 
+import de.tud.cs.st.bat.resolved._
+import de.tud.cs.st.bat.resolved.Field
+
 /**
  *
  * Author: Ralf Mitschke
@@ -8,10 +11,42 @@ package de.tud.cs.st.bat.resolved.analyses
  *
  */
 object MS_PKGPROTECT
+        extends Analysis
 {
 
-    /*
+    val hashTableType = ObjectType("java/util/Hashtable")
 
+
+    def isHashTable(t: FieldType) = t == hashTableType
+
+    def isArray(t: FieldType) = t.isArrayType
+
+    def analyze(project: Project) = {
+        val classFiles: Traversable[ClassFile] = project.classFiles
+        // list of tuples in the form (packageName, FieldEntry)
+        val readFieldsFromPackage = BaseAnalyses.readFields(classFiles)
+                .map(entry => (entry._1._1.thisClass.packageName, entry._2))
+        for (classFile ← classFiles if(!classFile.isInterfaceDeclaration);
+             val declaringClass = classFile.thisClass;
+             val packageName = declaringClass.packageName;
+             field@Field(_, name, fieldType, _) ← classFile.fields
+             if (field.isFinal &&
+                     field.isStatic &&
+                     !field.isSynthetic &&
+                     !field.isVolatile &&
+                     (field.isPublic || field.isProtected) &&
+                     (isArray(field.fieldType) || isHashTable(field.fieldType)) &&
+                     !readFieldsFromPackage.exists(entry => entry._2 == (declaringClass,name,fieldType) && entry._1 != packageName)
+                     )
+        ) yield {
+            ("MS_PKGPROTECT", classFile.thisClass.toJava + "."  + field.name + " : " + field.fieldType.toJava)
+        }
+    }
+
+    /**
+     * ########  Code from FindBugs #########
+     */
+    /*
     //RM: fill the ousidePackage
         case GETSTATIC:
         case PUTSTATIC:
@@ -91,4 +126,5 @@ object MS_PKGPROTECT
         }
         bugReporter.reportBug(bug);
      */
+
 }
