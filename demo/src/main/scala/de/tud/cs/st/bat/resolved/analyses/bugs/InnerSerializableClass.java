@@ -9,19 +9,29 @@ package de.tud.cs.st.bat.resolved.analyses.bugs;
  */
 public class InnerSerializableClass implements java.io.Serializable {
 
-	private static final long serialVersionUID = -1182351106716239966L;
+    private static final long serialVersionUID = -1182351106716239966L;
 
-	class SomeInnerClass {
+    class SomeInnerClass {
 
-		class InnerInnerClass implements java.io.Serializable {
+        class InnerInnerClass implements java.io.Serializable {
 
-			private static final long serialVersionUID = 1l;
+            private static final long serialVersionUID = 1l;
 
-		}
+        }
 
-		public String toString() {
-			return "InnerSerializableClass.InnerClass";
-		}
-	}
+        public String toString() {
+            return "InnerSerializableClass.InnerClass";
+        }
+
+    }
+
+}
+
+class OuterClass {
+
+    static class SomeStaticInnerClass implements java.io.Serializable {
+        private static final long serialVersionUID = 2l;
+
+    }
 
 }

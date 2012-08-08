@@ -111,7 +111,7 @@
 			</dependency>
 			<dependency>
 				<groupId>de.tud.cs.st</groupId>
-				<artifactId>bat-dependencies</artifactId>
+				<artifactId>bat-ext-dependencies</artifactId>
 				<version>${project.version}</version>
 			</dependency>			
 			<!-- EXTERNAL DEPENDENCIES -->
