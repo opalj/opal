@@ -11,10 +11,5 @@ bin
 *.iml
 *.ipr
 *.iws
-<<<<<<< HEAD
 .idea
 ~*.xlsx
-=======
-demo/src/main/scala/de/tud/cs/st/bat/resolved/analyses/~$Chosing the Findbugs Analyses.xlsx
-.idea
->>>>>>> added intellij directories to ignore
