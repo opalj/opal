@@ -1,7 +1,7 @@
 package de.tud.cs.st.bat.resolved.analyses
 
 import java.util.regex.Pattern
-import de.tud.cs.st.bat.resolved.{ALOAD_1, Field, ClassFile}
+import de.tud.cs.st.bat.resolved._
 
 /**
  *
@@ -66,13 +66,13 @@ object SIC_INNER_SHOULD_BE_STATIC_ANON
      */
     def constructorReadsOuterThisField(classFile: ClassFile): Boolean = {
         (for (method ← classFile.constructors if (method.name == "<init>") && method.body.isDefined;
-              ALOAD_1 ← method.body.get.instructions
+              instr ← method.body.get.instructions if (instr.isInstanceOf[ALOAD_1.type])
         ) yield 1).sum > 1
     }
 
     def analyze(project: Project) = {
         val classFiles: Traversable[ClassFile] = project.classFiles
-        val readFields = BaseAnalyses.readFields(classFiles)
+        val readFields = BaseAnalyses.readFields(classFiles).map(_._2)
         for (classFile ← classFiles
              if (isAnonymousInnerClass(classFile) &&
                      canConvertToStaticInnerClass(classFile)
@@ -84,7 +84,7 @@ object SIC_INNER_SHOULD_BE_STATIC_ANON
                      !constructorReadsOuterThisField(classFile)
                      )
         ) yield {
-            field
+            ("SIC_INNER_SHOULD_BE_STATIC_ANON", classFile.thisClass.toJava)
         }
     }
 
