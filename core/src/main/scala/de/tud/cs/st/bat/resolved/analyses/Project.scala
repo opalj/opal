@@ -66,6 +66,11 @@ class Project(
     }
 
     /**
+     * This project's current class files.
+     */
+    def classFiles : Iterable[ClassFile] = classes.values
+    
+    /**
      * Looks up the class file and method which actually declares the method that is referred
      * to by the given receiver type, method name and method descriptor.
      *

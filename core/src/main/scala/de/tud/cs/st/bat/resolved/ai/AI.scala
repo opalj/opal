@@ -44,7 +44,7 @@ object AI {
       * Analyzes the given method using the given domain.
       *
       * @param classFile Some class file.
-      * @param method A non-abstract,non-native method of the given class file.
+      * @param method A non-abstract, non-native method of the given class file.
       * @param domain The abstract domain that is used during the interpretation.
       */
     def apply(classFile: ClassFile, method: Method)(implicit domain: Domain): Array[MemoryLayout] = {

@@ -30,21 +30,57 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat
-package resolved
+package de.tud.cs.st
+package bat.resolved
+package analyses
+
+import util.perf.{ Counting, PerformanceEvaluation }
+import util.graphs.{ Node, toDot }
+import reader.Java6Framework
 
 /**
- * Attribute in a class' attribute table the encodes information about inner classes.
- *
- * @author Michael Eichberg
- */
-case class InnerClassTable(innerClasses: InnerClasses) extends Attribute {
+  * @author Michael Eichberg
+  */
+object Bugs {
 
-}
+    private def printUsage: Unit = {
+        println("Usage: java …Bugs <ZIP or JAR file containing class files>+")
+        println("(c) 2012 Michael Eichberg, Ralf Mitschke")
+    }
 
-case class InnerClass(innerClassType: ObjectType,
-                      outerClassType: Option[ObjectType],
-                      innerName: Option[String],
-                      innerClassAccessFlags: Int) {
+    val analyses = List(
+        NonSerializableClassHasASerializableInnerClass
+    )
+
+    def main(args: Array[String]) {
+
+        if (args.length == 0 || !args.forall(arg ⇒ arg.endsWith(".zip") || arg.endsWith(".jar"))) {
+            printUsage
+            sys.exit(1)
+        }
+
+        for (arg ← args) {
+            val file = new java.io.File(arg)
+            if (!file.canRead() || file.isDirectory()) {
+                println("The file: "+file+" cannot be read.");
+                printUsage
+                sys.exit(1)
+            }
+        }
+
+        println("Reading class files:")
+        var project = new Project()
+        for {
+            zipFile ← args if { println("\t"+zipFile); true };
+            classFile ← Java6Framework.ClassFiles(zipFile)
+        } yield {
+            project += classFile
+        }
+        println("Starting analyses: ")
+
+        for (analysis ← analyses) {
+            println(analysis.analyze(project))
+        }
+    }
 
 }

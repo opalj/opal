@@ -36,7 +36,13 @@ package resolved
 package ai
 
 /**
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de), Dennis Siebert
+ * Models the current execution context of a method. I.e., the operand stack as well as the current values of
+ * the registers. The memorylayout is automatically maintained by BAT while analyzing a method. If specific
+ * knowledge about a value is required, the domain is queried to get the necessary information. This callback
+ * mechanism enables the domain to use an arbitrary mechanism to represent values. 
+ * 
+ * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * @author Dennis Siebert
  */
 final class MemoryLayout(
         val operands: List[Value],
@@ -135,9 +141,9 @@ final class MemoryLayout(
 
             case 197 /*multianewarray*/ ⇒ {
                 val multianewarray = instruction.asInstanceOf[MULTIANEWARRAY]
-                val counts = operands.take(multianewarray.dimensions)
+                val initDimensions = operands.take(multianewarray.dimensions)
                 new MemoryLayout(
-                    domain.multianewarray(counts, multianewarray.componentType) :: (operands.drop(multianewarray.dimensions)),
+                    domain.multianewarray(initDimensions, multianewarray.componentType) :: (operands.drop(multianewarray.dimensions)),
                     locals)
             }
 

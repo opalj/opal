@@ -30,21 +30,16 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat
-package resolved
+package de.tud.cs.st
+package bat.resolved
+package analyses
 
-/**
- * Attribute in a class' attribute table the encodes information about inner classes.
- *
- * @author Michael Eichberg
- */
-case class InnerClassTable(innerClasses: InnerClasses) extends Attribute {
+import util.perf.{ Counting, PerformanceEvaluation }
+import util.graphs.{ Node, toDot }
+import reader.Java6Framework
 
-}
+trait Analysis {
 
-case class InnerClass(innerClassType: ObjectType,
-                      outerClassType: Option[ObjectType],
-                      innerName: Option[String],
-                      innerClassAccessFlags: Int) {
+    def analyze(project: Project): Traversable[Product]
 
 }

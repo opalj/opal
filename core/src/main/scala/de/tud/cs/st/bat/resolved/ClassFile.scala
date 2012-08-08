@@ -35,26 +35,26 @@ package resolved
 import de.tud.cs.st.bat.ACC_FINAL
 
 /**
- * Represents a single class file.
- *
- * @param minorVersion The minor part of this class file's version number.
- * @param majorVersion The major part of this class file's version number.
- * @param accessFlags This class' access flags. To further analyze the access flags
- *  either use the corresponding convenience methods (e.g., isEnumDeclaration())
- *  or the class [[de.tud.cs.st.bat.AccessFlagsIterator]] or the classes which
- *  inherit from [[de.tud.cs.st.bat.AccessFlag]].
- * @param thisClass The type implemented by this class file.
- * @param superClass The class from which this class inherits. None, if this
- * 	class file represents java.lang.Object.
- * @param interfaces The set of implemented interfaces. May be empty.
- * @param fields The set of declared fields. May be empty.
- * @param methods The set of declared methods. May be empty.
- * @param attributes This class file's reified attributes. Which attributes
- *  are reified depends on the configuration of the class file reader; e.g.,
- *  [[de.tud.cs.st.bat.resolved.reader.Java6Framework]].
- *
- * @author Michael Eichberg
- */
+  * Represents a single class file.
+  *
+  * @param minorVersion The minor part of this class file's version number.
+  * @param majorVersion The major part of this class file's version number.
+  * @param accessFlags This class' access flags. To further analyze the access flags
+  *  either use the corresponding convenience methods (e.g., isEnumDeclaration())
+  *  or the class [[de.tud.cs.st.bat.AccessFlagsIterator]] or the classes which
+  *  inherit from [[de.tud.cs.st.bat.AccessFlag]].
+  * @param thisClass The type implemented by this class file.
+  * @param superClass The class from which this class inherits. None, if this
+  * 	class file represents java.lang.Object.
+  * @param interfaces The set of implemented interfaces. May be empty.
+  * @param fields The set of declared fields. May be empty.
+  * @param methods The set of declared methods. May be empty.
+  * @param attributes This class file's reified attributes. Which attributes
+  *  are reified depends on the configuration of the class file reader; e.g.,
+  *  [[de.tud.cs.st.bat.resolved.reader.Java6Framework]].
+  *
+  * @author Michael Eichberg
+  */
 case class ClassFile(minorVersion: Int,
                      majorVersion: Int,
                      accessFlags: Int,
@@ -72,7 +72,7 @@ case class ClassFile(minorVersion: Int,
 
     override def asClassFile = this
 
-    def isAbstract : Boolean = ACC_ABSTRACT element_of accessFlags
+    def isAbstract: Boolean = ACC_ABSTRACT element_of accessFlags
 
     def isFinal: Boolean = ACC_FINAL element_of accessFlags
 
@@ -86,22 +86,35 @@ case class ClassFile(minorVersion: Int,
 
     def isAnnotationDeclaration: Boolean = (accessFlags & classCategoryMask) == annotationMask
 
+    def isInnerClass: Boolean = innerClasses.exists(_.exists((innerClassInfo) ⇒ innerClassInfo.innerClassType == thisClass && innerClassInfo.outerClassType.isDefined))
+
     def enclosingMethod: Option[EnclosingMethod] =
         attributes collectFirst { case em: EnclosingMethod ⇒ em }
 
     def innerClasses: Option[InnerClasses] =
         attributes collectFirst { case InnerClassTable(ice) ⇒ ice }
 
+    def outerType: Option[ObjectType] = {
+        innerClasses.foreach(_.foreach(
+            (innerClassInfo: InnerClass) ⇒ {
+                if (innerClassInfo.innerClassType == thisClass && innerClassInfo.outerClassType.isDefined) {
+                    return Some(innerClassInfo.outerClassType.get)
+                }
+            }
+        ))
+        None
+    }
+
     /**
-     * Each class file optionally defines a class signature.
-     */
+      * Each class file optionally defines a class signature.
+      */
     def classSignature: Option[ClassSignature] =
         attributes collectFirst { case s: ClassSignature ⇒ s }
 
     /**
-     * The SourceFile attribute is an optional attribute [...]. There can be
-     * at most one SourceFile attribute.
-     */
+      * The SourceFile attribute is an optional attribute [...]. There can be
+      * at most one SourceFile attribute.
+      */
     def sourceFile: Option[String] =
         attributes collectFirst { case SourceFile(s) ⇒ s }
 
@@ -109,8 +122,8 @@ case class ClassFile(minorVersion: Int,
         attributes collectFirst { case SourceDebugExtension(s) ⇒ s }
 
     /**
-     * All constructors/instance initialization methods defined by this class. (This does not include static initializers.)
-     */
+      * All constructors/instance initialization methods defined by this class. (This does not include static initializers.)
+      */
     def constructors: Seq[Method] = methods.view.filter(_.name == "<init>")
 
     def staticInitializer: Option[Method] =
