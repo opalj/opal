@@ -43,8 +43,8 @@ case class InnerClassTable(innerClasses: InnerClasses) extends Attribute {
 }
 
 case class InnerClass(innerClassType: ObjectType,
-                      outerClassType: ObjectType,
-                      innerName: String,
+                      outerClassType: Option[ObjectType],
+                      innerName: Option[String],
                       innerClassAccessFlags: Int) {
 
 }

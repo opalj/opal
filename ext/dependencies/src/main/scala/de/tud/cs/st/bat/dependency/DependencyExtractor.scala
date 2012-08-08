@@ -113,7 +113,7 @@ abstract class DependencyExtractor(val sourceElementIDs: SourceElementIDs)
                     // Check whether the outer class of the inner class attribute
                     // is equal to the currently processed class. If this is the case,
                     // a dependency from inner class to this class will be added.
-                    InnerClass(innerClass, outerClass, _, _) ← innerClasses if outerClass != null if outerClass == thisClass
+                    InnerClass(innerClass, outerClass, _, _) ← innerClasses if outerClass.isDefined && outerClass.get == thisClass
                 ) {
                     processDependency(innerClass, thisClassID, IS_INNER_CLASS_OF)
                 }
