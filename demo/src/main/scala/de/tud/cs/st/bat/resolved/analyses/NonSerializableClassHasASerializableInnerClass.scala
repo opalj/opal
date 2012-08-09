@@ -31,7 +31,8 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 */
 package de.tud.cs.st
-package bat.resolved
+package bat
+package resolved
 package analyses
 
 import util.perf.{ Counting, PerformanceEvaluation }
@@ -51,9 +52,10 @@ object NonSerializableClassHasASerializableInnerClass extends Analysis {
         for {
             objectTypes ← project.classHierarchy.subclasses(serializable).toSeq
             objectType ← objectTypes
-            classFile = project.classes(objectType)	
-            outerType ← classFile.outerType.toSeq if !project.classHierarchy.isSubtypeOf(outerType, serializable).getOrElse(true /* if we don't know */ )
-            //outerClass <- project.classes.get(outerType).toSeq             
+            classFile = project.classes(objectType)
+            (outerType,thisInnerClassesAccessFlags) ← classFile.outerType if !ACC_STATIC.element_of(thisInnerClassesAccessFlags)
+            if !project.classHierarchy.isSubtypeOf(outerType, serializable).getOrElse(true /* if we don't know anything about the class, then we don't want to generate a warning */ )
+            //outerClass <- project.classes.get(outerType).toSeq                      
         } yield {
             (objectType, outerType)
         }

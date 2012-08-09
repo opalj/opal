@@ -17,10 +17,16 @@ public class InnerSerializableClass implements java.io.Serializable {
 
             private static final long serialVersionUID = 1l;
 
+            public String toString() {
+
+                return InnerSerializableClass.this.toString() + SomeInnerClass.this.toString()
+                        + this.toString();
+            }
+
         }
 
         public String toString() {
-            return "InnerSerializableClass.InnerClass";
+            return "InnerSerializableClass.InnerClass" + InnerSerializableClass.this.hashCode();
         }
 
     }
