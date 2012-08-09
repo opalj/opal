@@ -70,7 +70,7 @@ public class MyRootClass {
         }
 
         public void displayIntReallyNice() {
-            System.out.println(new Formater() {
+            System.out.println(new Formatter() {
                 public String format(final int theX) {
 
                     InnerPrinterOfX printer = new InnerPrinterOfX() {
@@ -87,22 +87,22 @@ public class MyRootClass {
         }
     };
 
-    interface Formater {
+    interface Formatter {
         public String format(int theX);
     }
 
     class InnerPrinterOfX {
-        public Formater prettyPrinter;
+        public Formatter prettyPrinter;
 
         public InnerPrinterOfX() {
-            this.prettyPrinter = new Formater() {
+            this.prettyPrinter = new Formatter() {
                 public String format(int theX) {
                     return "this is the x in a really nice presentation:" + theX;
                 }
             };
         }
 
-        class InnerPrettyPrinter implements Formater {
+        class InnerPrettyPrinter implements Formatter {
             public String format(int theX) {
                 return "this is the x:" + theX;
             }
