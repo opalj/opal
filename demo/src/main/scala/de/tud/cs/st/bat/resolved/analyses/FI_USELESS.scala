@@ -1,5 +1,5 @@
 /* License (BSD Style License):
-*  Copyright (c) 2009, 2011
+*  Copyright (c) 2009, 2012
 *  Software Technology Group
 *  Department of Computer Science
 *  Technische Universität Darmstadt
@@ -56,6 +56,6 @@ object FI_USELESS extends Analysis {
                     case _ ⇒ false
                 }
             )
-        } yield (classFile, method)
+        } yield (classFile.thisClass, method.name, method.descriptor)
     }
 }

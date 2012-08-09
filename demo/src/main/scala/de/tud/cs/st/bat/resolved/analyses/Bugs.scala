@@ -49,7 +49,8 @@ object Bugs {
     }
 
     val analyses = List(
-        NonSerializableClassHasASerializableInnerClass
+        // NonSerializableClassHasASerializableInnerClass,
+        FI_USELESS
     )
 
     def main(args: Array[String]) {
@@ -79,6 +80,7 @@ object Bugs {
         println("Starting analyses: ")
 
         for (analysis ← analyses) {
+            print(analysis.getClass().getSimpleName()+" : ")
             println(analysis.analyze(project).mkString("\n"))
         }
     }
