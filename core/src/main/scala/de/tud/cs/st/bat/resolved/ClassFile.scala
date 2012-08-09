@@ -94,15 +94,15 @@ case class ClassFile(minorVersion: Int,
     def innerClasses: Option[InnerClasses] =
         attributes collectFirst { case InnerClassTable(ice) ⇒ ice }
 
-    def outerType: Option[ObjectType] = {
-        innerClasses.foreach(_.foreach(
-            (innerClassInfo: InnerClass) ⇒ {
-                if (innerClassInfo.innerClassType == thisClass && innerClassInfo.outerClassType.isDefined) {
-                    return Some(innerClassInfo.outerClassType.get)
-                }
-            }
-        ))
-        None
+    /**
+      * Each class has at most one explicit, direct outer type.
+      * 
+      * @return The object type of the outer type as well as this inner classes' access flags.
+      */
+    def outerType: Option[(ObjectType, Int)] = {
+        innerClasses.flatMap(_ collectFirst {
+            case InnerClass(`thisClass`, Some(outerType), _, accessFlags) ⇒ (outerType, accessFlags)
+        })
     }
 
     /**

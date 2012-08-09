@@ -79,7 +79,7 @@ object Bugs {
         println("Starting analyses: ")
 
         for (analysis ← analyses) {
-            println(analysis.analyze(project))
+            println(analysis.analyze(project).mkString("\n"))
         }
     }
 
