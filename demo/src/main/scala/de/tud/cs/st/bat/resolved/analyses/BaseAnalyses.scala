@@ -64,7 +64,10 @@ object BaseAnalyses
      * Returns true if classFile declares the given Field
      */
     def declaresField(classFile: ClassFile)(name : String, fieldType : FieldType): Boolean = {
-
+        classFile.fields.exists{
+            case Field(_, `name`, `fieldType`, _) => true
+            case _ => false
+        }
     }
 
     /**

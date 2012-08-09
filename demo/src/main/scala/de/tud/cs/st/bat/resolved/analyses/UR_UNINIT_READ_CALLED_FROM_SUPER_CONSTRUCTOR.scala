@@ -26,8 +26,8 @@ object UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR
                             !method.isStatic &&
                             isOverride(classFile)(method));
              (GETFIELD(declaringClass, name, fieldType), idx) ← withIndex(method.body.get.instructions);
-             constructor ← classFile.constructors;
-             field ← findField(classFile)(name, fieldType);
+             constructor ← classFile.constructors
+             if declaresField(classFile)(name, fieldType);
              (superClass, superConstructor) ← calledSuperConstructor(classFile, constructor)
              if (calls(superConstructor, superClass, method))
 
