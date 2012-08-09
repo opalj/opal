@@ -1,5 +1,5 @@
 /* License (BSD Style License):
-*  Copyright (c) 2009, 2011
+*  Copyright (c) 2009, 2012
 *  Software Technology Group
 *  Department of Computer Science
 *  Technische Universität Darmstadt
@@ -31,58 +31,31 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 */
 package de.tud.cs.st
-package bat.resolved
+package bat
+package resolved
 package analyses
 
-import util.perf.{ Counting, PerformanceEvaluation }
-import util.graphs.{ Node, toDot }
-import reader.Java6Framework
-
 /**
+  * Finalize just calls super.finalize.
+  *
   * @author Michael Eichberg
   */
-object Bugs {
+object FI_USELESS extends Analysis {
 
-    private def printUsage: Unit = {
-        println("Usage: java …Bugs <ZIP or JAR file containing class files>+")
-        println("(c) 2012 Michael Eichberg, Ralf Mitschke")
-    }
-
-    val analyses = List(
-        // NonSerializableClassHasASerializableInnerClass,
-        FI_USELESS
-    )
-
-    def main(args: Array[String]) {
-
-        if (args.length == 0 || !args.forall(arg ⇒ arg.endsWith(".zip") || arg.endsWith(".jar"))) {
-            printUsage
-            sys.exit(1)
-        }
-
-        for (arg ← args) {
-            val file = new java.io.File(arg)
-            if (!file.canRead() || file.isDirectory()) {
-                println("The file: "+file+" cannot be read.");
-                printUsage
-                sys.exit(1)
-            }
-        }
-
-        println("Reading class files:")
-        var project = new Project()
+    def analyze(project: Project) = {
         for {
-            zipFile ← args if { println("\t"+zipFile); true };
-            classFile ← Java6Framework.ClassFiles(zipFile)
-        } yield {
-            project += classFile
-        }
-        println("Starting analyses: ")
-
-        for (analysis ← analyses) {
-            print(analysis.getClass().getSimpleName()+" : ")
-            println(analysis.analyze(project).mkString("\n"))
-        }
+            classFile ← project.classFiles
+            if !classFile.isInterfaceDeclaration // performance optimization
+            method @ Method(_, "finalize", methodDescriptor @ MethodDescriptor(Seq(), VoidType), _) ← classFile.methods
+            if method.body.isDefined
+            instructions = method.body.get.instructions
+            if instructions.length == 5
+            if instructions.exists(
+                {
+                    case INVOKESPECIAL(_, "finalize", `methodDescriptor`) ⇒ true;
+                    case _ ⇒ false
+                }
+            )
+        } yield (classFile.thisClass, method.name, method.descriptor)
     }
-
 }
