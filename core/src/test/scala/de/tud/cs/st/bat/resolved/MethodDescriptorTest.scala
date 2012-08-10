@@ -35,9 +35,9 @@ package de.tud.cs.st.bat.resolved
 import org.scalatest.FunSuite
 
 /**
- * @author Michael Eichberg
- */
-//@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
+  * @author Michael Eichberg
+  */
+@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class MethodDescriptorTest extends FunSuite {
 
     test("Parsing: ()V") {
@@ -88,6 +88,10 @@ class MethodDescriptorTest extends FunSuite {
         assert(md.parameterTypes(2).isObjectType)
         assert(md.parameterTypes(3).isArrayType)
         assert(md.returnType.isArrayType)
+        assert(md match {
+            case MethodDescriptor(Seq(_: BaseType, DoubleType, ObjectType(_), ArrayType(_)), ArrayType(_)) ⇒ true
+            case _ ⇒ false
+        })
     }
 
 }
