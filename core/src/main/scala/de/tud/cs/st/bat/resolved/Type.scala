@@ -38,29 +38,42 @@ import scala.annotation.tailrec
   * The computational type category of a value on the operand stack. (cf. JVM Spec. 2.11.1 Types and the Java Virtual
   * Machine).
   */
-sealed abstract class ComputationalTypeCategory(val operandSize : Byte) {
-   def id : Byte
+sealed abstract class ComputationalTypeCategory(val operandSize: Byte) {
+    def id: Byte
 }
 final case object Category1ComputationalTypeCategory extends ComputationalTypeCategory(1) {
-   def id = 1
+    def id = 1
 }
 final case object Category2ComputationalTypeCategory extends ComputationalTypeCategory(2) {
-   def id = 2
+    def id = 2
 }
 
 /**
   * The computational type of a value on the operand stack. (cf. JVM Spec. 2.11.1 Types and the Java Virtual
   * Machine).
   */
-sealed class ComputationalType(val computationTypeCategory : ComputationalTypeCategory) {
-   def operandSize = computationTypeCategory.operandSize
+sealed abstract class ComputationalType(val computationTypeCategory: ComputationalTypeCategory) {
+    def operandSize = computationTypeCategory.operandSize
+    def isPrimitiveType: Boolean
 }
-case object ComputationalTypeInt extends ComputationalType(Category1ComputationalTypeCategory)
-case object ComputationalTypeFloat extends ComputationalType(Category1ComputationalTypeCategory)
-case object ComputationalTypeReference extends ComputationalType(Category1ComputationalTypeCategory)
-case object ComputationalTypeReturnAddress extends ComputationalType(Category1ComputationalTypeCategory)
-case object ComputationalTypeLong extends ComputationalType(Category2ComputationalTypeCategory)
-case object ComputationalTypeDouble extends ComputationalType(Category2ComputationalTypeCategory)
+case object ComputationalTypeInt extends ComputationalType(Category1ComputationalTypeCategory) {
+    def isPrimitiveType = true
+}
+case object ComputationalTypeFloat extends ComputationalType(Category1ComputationalTypeCategory) {
+    def isPrimitiveType = true
+}
+case object ComputationalTypeReference extends ComputationalType(Category1ComputationalTypeCategory) {
+    def isPrimitiveType = true
+}
+case object ComputationalTypeReturnAddress extends ComputationalType(Category1ComputationalTypeCategory) {
+    def isPrimitiveType = false
+}
+case object ComputationalTypeLong extends ComputationalType(Category2ComputationalTypeCategory) {
+    def isPrimitiveType = true
+}
+case object ComputationalTypeDouble extends ComputationalType(Category2ComputationalTypeCategory) {
+    def isPrimitiveType = true
+}
 
 /**
   * A JVM type.
@@ -69,346 +82,346 @@ case object ComputationalTypeDouble extends ComputationalType(Category2Computati
   */
 sealed trait Type {
 
-   def isFieldType : Boolean = false
-   def isBaseType : Boolean = false
-   def isReferenceType : Boolean = false
+    def isFieldType: Boolean = false
+    def isBaseType: Boolean = false
+    def isReferenceType: Boolean = false
 
-   def isVoidType : Boolean = false
-   def isByteType : Boolean = false
-   def isCharType : Boolean = false
-   def isShortType : Boolean = false
-   def isIntegerType : Boolean = false
-   def isLongType : Boolean = false
-   def isFloatType : Boolean = false
-   def isDoubleType : Boolean = false
-   def isBooleanType : Boolean = false
-   def isArrayType : Boolean = false
-   def isObjectType : Boolean = false
+    def isVoidType: Boolean = false
+    def isByteType: Boolean = false
+    def isCharType: Boolean = false
+    def isShortType: Boolean = false
+    def isIntegerType: Boolean = false
+    def isLongType: Boolean = false
+    def isFloatType: Boolean = false
+    def isDoubleType: Boolean = false
+    def isBooleanType: Boolean = false
+    def isArrayType: Boolean = false
+    def isObjectType: Boolean = false
 
-   def computationalType : ComputationalType
+    def computationalType: ComputationalType
 
-   def toJava : String
+    def toJava: String
 }
 
 final object ReturnType {
 
-   def apply(rt : String) : Type = if (rt.charAt(0) == 'V') VoidType else FieldType(rt)
+    def apply(rt: String): Type = if (rt.charAt(0) == 'V') VoidType else FieldType(rt)
 
 }
 
 sealed trait VoidType extends Type with ReturnTypeSignature {
 
-   // remark: the default implementation of equals and hashCode suits our needs!
-   def accept[T](sv : SignatureVisitor[T]) : T = sv.visit(this)
+    // remark: the default implementation of equals and hashCode suits our needs!
+    def accept[T](sv: SignatureVisitor[T]): T = sv.visit(this)
 
-   override final def isVoidType = true
+    override final def isVoidType = true
 
-   def computationalType : ComputationalType =
-      throw new Error("\"void\" values do not have a computational type")
+    def computationalType: ComputationalType =
+        throw new Error("\"void\" values do not have a computational type")
 
-   def toJava : String = "void"
+    def toJava: String = "void"
 
-   override def toString() = "VoidType"
+    override def toString() = "VoidType"
 
 }
 final case object VoidType extends VoidType
 
 sealed trait FieldType extends Type {
 
-   override final def isFieldType = true
+    override final def isFieldType = true
 }
 /**
   * Factory object to parse field type (descriptors) to get field type objects.
   */
 object FieldType {
 
-   def apply(ft : String) : FieldType = {
-      (ft.charAt(0) : @scala.annotation.switch) match {
-         case 'B' ⇒ ByteType
-         case 'C' ⇒ CharType
-         case 'D' ⇒ DoubleType
-         case 'F' ⇒ FloatType
-         case 'I' ⇒ IntegerType
-         case 'J' ⇒ LongType
-         case 'S' ⇒ ShortType
-         case 'Z' ⇒ BooleanType
-         case 'L' ⇒ ObjectType(ft.substring(1, ft.length - 1))
-         case '[' ⇒ ArrayType(FieldType(ft.substring(1)))
-      }
-   }
-}
-
-sealed trait BaseType extends FieldType with TypeSignature {
-
-   override final def isBaseType = true
-
+    def apply(ft: String): FieldType = {
+        (ft.charAt(0): @scala.annotation.switch) match {
+            case 'B' ⇒ ByteType
+            case 'C' ⇒ CharType
+            case 'D' ⇒ DoubleType
+            case 'F' ⇒ FloatType
+            case 'I' ⇒ IntegerType
+            case 'J' ⇒ LongType
+            case 'S' ⇒ ShortType
+            case 'Z' ⇒ BooleanType
+            case 'L' ⇒ ObjectType(ft.substring(1, ft.length - 1))
+            case '[' ⇒ ArrayType(FieldType(ft.substring(1)))
+        }
+    }
 }
 
 sealed trait ReferenceType extends FieldType {
 
-   override final def isReferenceType = true
+    override final def isReferenceType = true
 
-   def computationalType = ComputationalTypeReference
+    def computationalType = ComputationalTypeReference
 }
 object ReferenceType {
 
-   def apply(rt : String) : ReferenceType = {
-      if (rt.charAt(0) == '[')
-         ArrayType(FieldType(rt.substring(1)))
-      else
-         ObjectType(rt);
-   }
+    def apply(rt: String): ReferenceType = {
+        if (rt.charAt(0) == '[')
+            ArrayType(FieldType(rt.substring(1)))
+        else
+            ObjectType(rt);
+    }
 
-   def unapply(t : ReferenceType) : Boolean = true
+    def unapply(t: ReferenceType): Boolean = true
+}
+
+sealed trait BaseType extends FieldType with TypeSignature {
+
+    override final def isBaseType = true
+
 }
 
 sealed trait ByteType extends BaseType {
 
-   override def isByteType = true
+    override def isByteType = true
 
-   def computationalType = ComputationalTypeInt
+    def computationalType = ComputationalTypeInt
 
-   val atype = 8
+    val atype = 8
 
-   def accept[T](v : SignatureVisitor[T]) : T = v.visit(this)
+    def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
-   def toJava : String = "byte"
+    def toJava: String = "byte"
 
-   override def toString() = "ByteType"
+    override def toString() = "ByteType"
 
 }
 final case object ByteType extends ByteType
 
 sealed trait CharType extends BaseType {
 
-   override def isCharType = true
+    override def isCharType = true
 
-   def computationalType = ComputationalTypeInt
+    def computationalType = ComputationalTypeInt
 
-   val atype = 5
+    val atype = 5
 
-   def accept[T](v : SignatureVisitor[T]) : T = v.visit(this)
+    def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
-   def toJava : String = "char"
+    def toJava: String = "char"
 
-   override def toString() = "CharType"
+    override def toString() = "CharType"
 
 }
 final case object CharType extends CharType
 
 sealed trait DoubleType extends BaseType {
 
-   override def isDoubleType = true
+    override def isDoubleType = true
 
-   def computationalType = ComputationalTypeDouble
+    def computationalType = ComputationalTypeDouble
 
-   val atype = 7
+    val atype = 7
 
-   def accept[T](v : SignatureVisitor[T]) : T = v.visit(this)
+    def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
-   def toJava : String = "double"
+    def toJava: String = "double"
 
-   override def toString() = "DoubleType"
+    override def toString() = "DoubleType"
 
 }
 final case object DoubleType extends DoubleType
 
 sealed trait FloatType extends BaseType {
 
-   override def isFloatType = true
+    override def isFloatType = true
 
-   def computationalType = ComputationalTypeFloat
+    def computationalType = ComputationalTypeFloat
 
-   val atype = 6
+    val atype = 6
 
-   def accept[T](v : SignatureVisitor[T]) : T = v.visit(this)
+    def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
-   def toJava : String = "float"
+    def toJava: String = "float"
 
-   override def toString() = "FloatType"
+    override def toString() = "FloatType"
 
 }
 final case object FloatType extends FloatType
 
 sealed trait ShortType extends BaseType {
 
-   override def isShortType = true
+    override def isShortType = true
 
-   def computationalType = ComputationalTypeInt
+    def computationalType = ComputationalTypeInt
 
-   val atype = 9
+    val atype = 9
 
-   def accept[T](v : SignatureVisitor[T]) : T = v.visit(this)
+    def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
-   def toJava : String = "short"
+    def toJava: String = "short"
 
-   override def toString() = "ShortType"
+    override def toString() = "ShortType"
 
 }
 final case object ShortType extends ShortType
 
 sealed trait IntegerType extends BaseType {
 
-   override def isIntegerType = true
+    override def isIntegerType = true
 
-   def computationalType = ComputationalTypeInt
+    def computationalType = ComputationalTypeInt
 
-   val atype = 10
+    val atype = 10
 
-   def accept[T](v : SignatureVisitor[T]) : T = v.visit(this)
+    def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
-   def toJava : String = "int"
+    def toJava: String = "int"
 
-   override def toString() = "IntegerType"
+    override def toString() = "IntegerType"
 
 }
 final case object IntegerType extends IntegerType
 
 sealed trait LongType extends BaseType {
 
-   override def isLongType = true
+    override def isLongType = true
 
-   def computationalType = ComputationalTypeLong
+    def computationalType = ComputationalTypeLong
 
-   val atype = 11
+    val atype = 11
 
-   def accept[T](v : SignatureVisitor[T]) : T = v.visit(this)
+    def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
-   def toJava : String = "long"
+    def toJava: String = "long"
 
-   override def toString() = "LongType"
+    override def toString() = "LongType"
 
 }
 final case object LongType extends LongType
 
 sealed trait BooleanType extends BaseType {
 
-   override def isBooleanType = true
+    override def isBooleanType = true
 
-   def computationalType = ComputationalTypeInt
+    def computationalType = ComputationalTypeInt
 
-   val atype = 4
+    val atype = 4
 
-   def accept[T](v : SignatureVisitor[T]) : T = v.visit(this)
+    def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
-   def toJava : String = "boolean"
+    def toJava: String = "boolean"
 
-   override def toString() = "BooleanType"
+    override def toString() = "BooleanType"
 
 }
 final case object BooleanType extends BooleanType
 
-final class ObjectType private (val className : String) extends ReferenceType {
+final class ObjectType private (val className: String) extends ReferenceType {
 
-   override final def isObjectType = true
+    override final def isObjectType = true
 
-   override lazy val hashCode = className.hashCode * 43
+    override lazy val hashCode = className.hashCode * 43
 
-   override def equals(other : Any) : Boolean =
-      other match {
-         case that : ObjectType ⇒
-            equals(that)
-         case _ ⇒ false
-      }
+    override def equals(other: Any): Boolean =
+        other match {
+            case that: ObjectType ⇒
+                equals(that)
+            case _ ⇒ false
+        }
 
-   def equals(other : ObjectType) : Boolean = other.className == this.className
+    def equals(other: ObjectType): Boolean = other.className == this.className
 
-   def simpleName : String = ObjectType.simpleName(className)
+    def simpleName: String = ObjectType.simpleName(className)
 
-   def packageName : String = ObjectType.packageName(className)
+    def packageName: String = ObjectType.packageName(className)
 
-   def toJava : String = className.replace('/', '.')
+    def toJava: String = className.replace('/', '.')
 
-   override def toString = "ObjectType(className=\"" + className + "\")"
+    override def toString = "ObjectType(className=\""+className+"\")"
 
 }
 object ObjectType {
 
-   // FIXME potential memory leak...
-   private val cache : scala.collection.mutable.Map[String, ObjectType] = scala.collection.mutable.Map()
+    // FIXME potential memory leak...
+    private val cache: scala.collection.mutable.Map[String, ObjectType] = scala.collection.mutable.Map()
 
-   /**
-     * Factory method to create ObjectTypes.<br />
-     * This method makes sure that every class is represented by exactly one object type.
-     */
-   def apply(className : String) = {
-      cache.getOrElseUpdate(className, new ObjectType(className))
-   }
+    /**
+      * Factory method to create ObjectTypes.<br />
+      * This method makes sure that every class is represented by exactly one object type.
+      */
+    def apply(className: String) = {
+        cache.getOrElseUpdate(className, new ObjectType(className))
+    }
 
-   def unapply(ot : ObjectType) : Option[String] = Some(ot.className)
+    def unapply(ot: ObjectType): Option[String] = Some(ot.className)
 
-   def simpleName(className : String) : String = {
-      val index = className.lastIndexOf('/')
-      if (index > -1)
-         className.substring(index + 1)
-      else
-         className
-   }
+    def simpleName(className: String): String = {
+        val index = className.lastIndexOf('/')
+        if (index > -1)
+            className.substring(index + 1)
+        else
+            className
+    }
 
-   def packageName(className : String) : String = {
-      val index = className.lastIndexOf('/')
-      if (index == -1)
-         ""
-      else
-         className.substring(0, index)
-   }
+    def packageName(className: String): String = {
+        val index = className.lastIndexOf('/')
+        if (index == -1)
+            ""
+        else
+            className.substring(0, index)
+    }
 
-   val Object = ObjectType("java/lang/Object")
-   val String = ObjectType("java/lang/String")
-   val Class = ObjectType("java/lang/Class")
+    val Object = ObjectType("java/lang/Object")
+    val String = ObjectType("java/lang/String")
+    val Class = ObjectType("java/lang/Class")
 }
 
-final class ArrayType private (val componentType : FieldType) extends ReferenceType {
+final class ArrayType private (val componentType: FieldType) extends ReferenceType {
 
-   override final def isArrayType = true
+    override final def isArrayType = true
 
-   override def hashCode = 13 * (componentType.hashCode + 7)
+    override def hashCode = 13 * (componentType.hashCode + 7)
 
-   override def equals(other : Any) : Boolean = {
-      other match {
-         case that : ArrayType ⇒ this.componentType == that.componentType
-         case _                ⇒ false
-      }
-   }
+    override def equals(other: Any): Boolean = {
+        other match {
+            case that: ArrayType ⇒ this.componentType == that.componentType
+            case _               ⇒ false
+        }
+    }
 
-   def baseType : Type = componentType match { case at : ArrayType ⇒ at.baseType; case _ ⇒ componentType }
+    def baseType: Type = componentType match { case at: ArrayType ⇒ at.baseType; case _ ⇒ componentType }
 
-   def toJava : String = componentType.toJava + "[]"
+    def toJava: String = componentType.toJava+"[]"
 
-   override def toString = "ArrayType(" + componentType.toString + ")"
+    override def toString = "ArrayType("+componentType.toString+")"
 
 }
 final object ArrayType {
 
-   // FIXME potential memory leak...
-   private val cache : scala.collection.mutable.Map[FieldType, ArrayType] = scala.collection.mutable.Map()
+    // FIXME potential memory leak...
+    private val cache: scala.collection.mutable.Map[FieldType, ArrayType] = scala.collection.mutable.Map()
 
-   /**
-     * Factory method to create objects of type <code>ArrayType</code>.
-     *
-     * This method makes sure that every array type is represented by exactly one ArrayType object.
-     */
-   def apply(componentType : FieldType) : ArrayType = {
-      cache.getOrElseUpdate(componentType, new ArrayType(componentType))
-   }
+    /**
+      * Factory method to create objects of type <code>ArrayType</code>.
+      *
+      * This method makes sure that every array type is represented by exactly one ArrayType object.
+      */
+    def apply(componentType: FieldType): ArrayType = {
+        cache.getOrElseUpdate(componentType, new ArrayType(componentType))
+    }
 
-   def apply(dimension : Int, componentType : FieldType) : ArrayType = {
-      @tailrec
-      val at = apply(componentType)
-      if (dimension > 1)
-         apply(dimension - 1, at)
-      else
-         at
-   }
+    def apply(dimension: Int, componentType: FieldType): ArrayType = {
+        @tailrec
+        val at = apply(componentType)
+        if (dimension > 1)
+            apply(dimension - 1, at)
+        else
+            at
+    }
 
-   def unapply(at : ArrayType) : Option[FieldType] = Some(at.componentType)
+    def unapply(at: ArrayType): Option[FieldType] = Some(at.componentType)
 
-   def baseType(t : Type) : Type = {
-      t match {
-         case at : ArrayType ⇒ at.baseType
-         case _              ⇒ t
-      }
-   }
+    def baseType(t: Type): Type = {
+        t match {
+            case at: ArrayType ⇒ at.baseType
+            case _             ⇒ t
+        }
+    }
 }
 
 
