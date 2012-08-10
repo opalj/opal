@@ -66,6 +66,10 @@ case class Method(accessFlags: Int,
 
     def isAbstract: Boolean = ACC_ABSTRACT element_of accessFlags
 
+    def returnType = descriptor.returnType
+    
+    def parameterTypes = descriptor.parameterTypes
+    
     /**
      * This method's implementation (if it is not abstract).
      */
