@@ -19,7 +19,7 @@ object BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION
     // Integer.valueOf(1).doubleValue()
     def analyze(project: Project) = {
         val classFiles: Traversable[ClassFile] = project.classFiles
-        for (classFile ← classFiles if classFile.majorVersion > 49;
+        for (classFile ← classFiles if classFile.majorVersion >= 49;
              method ← classFile.methods if method.body.isDefined;
              Seq(
              (INVOKESPECIAL(firstReceiver, _ , MethodDescriptor(Seq(paramType), _)), _),
