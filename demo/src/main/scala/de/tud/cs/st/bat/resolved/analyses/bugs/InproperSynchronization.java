@@ -33,17 +33,23 @@
 package de.tud.cs.st.bat.resolved.analyses.bugs;
 
 /**
- * This class deliberately contains "useless" code to test checkers that search for it. 
+ * This class contains code related to the "improper synchronization".
  * 
- * It contains:
- * - a finalize method that just calls super.finalize();
+ * It contains: - a pair of getter and setter methods, where the getter method is not synchronized,
+ * but the setter method is synchronized.
  * 
  * @author Michael Eichberg
  */
-@SuppressWarnings("all")
-public class UselessCode {
-    @Override
-    protected void finalize() throws Throwable {
-        super.finalize();
+public class InproperSynchronization {
+
+    private String prop = "";
+
+    public String getProp() {
+        return prop;
     }
+
+    public synchronized void setProp(String prop) {
+        this.prop = prop;
+    }
+
 }

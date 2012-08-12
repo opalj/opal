@@ -1,5 +1,5 @@
 /* License (BSD Style License):
-*  Copyright (c) 2009, 2011
+*  Copyright (c) 2009, 2012
 *  Software Technology Group
 *  Department of Computer Science
 *  Technische Universität Darmstadt
@@ -31,60 +31,33 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 */
 package de.tud.cs.st
-package bat.resolved
+package bat
+package resolved
 package analyses
 
-import reader.Java6Framework
-
 /**
+  * The set method is synchronized and the get method is not synchronized.
+  *
   * @author Michael Eichberg
   */
-object Bugs {
+object UG_SYNC_SET_UNSYNC_GET extends Analysis {
 
-    private def printUsage: Unit = {
-        println("Usage: java …Bugs <ZIP or JAR file containing class files>+")
-        println("(c) 2012 Michael Eichberg, Ralf Mitschke")
-    }
-
-    val analyses = List(
-        DP_DO_INSIDE_DO_PRIVILEGED,
-        NonSerializableClassHasASerializableInnerClass,
-        FI_USELESS,
-        UG_SYNC_SET_UNSYNC_GET
-    )
-
-    def main(args: Array[String]) {
-
-        if (args.length == 0 || !args.forall(arg ⇒ arg.endsWith(".zip") || arg.endsWith(".jar"))) {
-            printUsage
-            sys.exit(1)
-        }
-
-        for (arg ← args) {
-            val file = new java.io.File(arg)
-            if (!file.canRead() || file.isDirectory()) {
-                println("The file: "+file+" cannot be read.");
-                printUsage
-                sys.exit(1)
+    def analyze(project: Project) = {
+        var unsyncedGetters = Map[String, Method]()
+        var syncedSetters = Map[String, Method]()
+        for {
+            classFile ← project.classFiles if !classFile.isInterfaceDeclaration
+            method ← classFile.methods if !method.isAbstract && !method.isStatic && !method.isNative && !method.isPrivate
+        } {
+            if (method.name.startsWith("get") && !method.isSynchronized && method.parameterTypes.length == 0 && method.returnType != VoidType) {
+                unsyncedGetters += ((method.name.substring(3), method))
+            }
+            else if (method.name.startsWith("set") && method.isSynchronized && method.parameterTypes.length == 1 && method.returnType == VoidType) {
+                syncedSetters += ((method.name.substring(3), method))
             }
         }
+        for (property ← syncedSetters.keySet.intersect(unsyncedGetters.keySet))
+            yield (property, syncedSetters(property), unsyncedGetters(property))
 
-        println("Reading class files:")
-        var project = new Project()
-        for {
-            zipFile ← args if {
-                println("\t"+zipFile); true
-            };
-            classFile ← Java6Framework.ClassFiles(zipFile)
-        } yield {
-            project += classFile
-        }
-        println("Starting analyses: ")
-
-        for (analysis ← analyses) {
-            print(analysis.getClass().getSimpleName()+" : \n")
-            println(analysis.analyze(project).mkString("\n"))
-        }
     }
-
 }
