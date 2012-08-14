@@ -40,7 +40,7 @@ package ai
   *
   * @note The minimal information that is required by BAT is the computational type of the values.
   * This information is required to correctly model the effect of `dup_...` instructions or the other
-  * generic instructions and to make the analyze of bytecode at least possible.
+  * generic instructions and to make the analysis of bytecode at least possible.
   *
   * @author Michael Eichberg
   */

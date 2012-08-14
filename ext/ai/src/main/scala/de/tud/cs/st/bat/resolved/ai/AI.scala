@@ -46,6 +46,8 @@ object AI {
       * @param classFile Some class file.
       * @param method A non-abstract, non-native method of the given class file.
       * @param domain The abstract domain that is used during the interpretation.
+      * @return The memory layout that was calculated while performing the abstract interpretation of
+      * the method. 
       */
     def apply(classFile: ClassFile, method: Method)(implicit domain: Domain): Array[MemoryLayout] = {
         val code = method.body.get.instructions
