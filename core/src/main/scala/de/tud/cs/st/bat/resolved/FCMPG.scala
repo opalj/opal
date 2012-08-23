@@ -31,26 +31,17 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Compare float.
- *
- * @author Michael Eichberg
- */
-case object FCMPG
-extends Instruction {
+  * Compare float.
+  *
+  * @author Michael Eichberg
+  */
+case object FCMPG extends ComparisonInstruction {
 
-	def opcode : Int = 150
+    def opcode: Int = 150
 
-	def mnemonic : String = "fcmpg"
-
-	lazy val exceptions : List[ObjectType] =  Nil
+    def mnemonic: String = "fcmpg"
 
 }

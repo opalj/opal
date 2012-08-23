@@ -33,21 +33,15 @@
 */
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Shift left long.
- *
- * @author Michael Eichberg
- */
-case object LSHL
-extends Instruction {
+  * Shift left long.
+  *
+  * @author Michael Eichberg
+  */
+case object LSHL extends ShiftInstruction {
 
-	def opcode : Int = 121
+    def opcode: Int = 121
 
-	def mnemonic : String = "lshl"
-
-	lazy val exceptions : List[ObjectType] =  Nil
+    def mnemonic: String = "lshl"
 
 }

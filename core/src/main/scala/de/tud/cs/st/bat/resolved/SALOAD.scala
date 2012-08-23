@@ -31,26 +31,17 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Load short from array.
- *
- * @author Michael Eichberg
- */
-case object SALOAD
-extends Instruction {
+  * Load short from array.
+  *
+  * @author Michael Eichberg
+  */
+case object SALOAD extends ArrayAccessInstruction with PrimitiveArrayAccess {
 
-	def opcode : Int = 53
+    def opcode: Int = 53
 
-	def mnemonic : String = "saload"
-
-	lazy val exceptions : List[ObjectType] =  Nil
+    def mnemonic: String = "saload"
 
 }

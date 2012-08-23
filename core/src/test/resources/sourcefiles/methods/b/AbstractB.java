@@ -43,5 +43,5 @@ package methods.b;
  * @author Michael Eichberg
  */
 public abstract class AbstractB implements SomeSubInterface {
-
+    // deliberately left empty
 }

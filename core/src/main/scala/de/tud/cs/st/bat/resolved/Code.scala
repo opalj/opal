@@ -33,10 +33,10 @@
 package de.tud.cs.st.bat.resolved
 
 /**
- * Representation of a method's code attribute.
- *
- * @author Michael Eichberg
- */
+  * Representation of a method's code attribute.
+  *
+  * @author Michael Eichberg
+  */
 case class Code(maxStack: Int,
                 maxLocals: Int,
                 instructions: Array[Instruction],
@@ -55,6 +55,86 @@ case class Code(maxStack: Int,
 
     def stackMapTable: Option[StackMapFrames] =
         attributes collectFirst { case StackMapTable(smf) ⇒ smf }
+
+    def isModifiedByWide(pc: Int): Boolean = {
+        pc > 0 && instructions(pc - 1) == WIDE
+    }
+
+    // TODO implement CFG algorithm
+    case class BBInfo private[Code] (
+        val bbID: Int,
+        val firstInstructionPC: Int,
+        val lastInstructionPC: Int,
+        val succBBIDs: List[Int],
+        val predBBIDs: List[Int],
+        val handlesException: Option[ReferenceType] = None)
+
+    /**
+      * @param instrToBBID Associates each instruction (by means of its program counter) with the ID of its
+      * associated basic block.
+      */
+    // TODO implement CFG algorithm
+    case class CFG private[Code] (
+            val instrToBBID: IndexedSeq[Int],
+            val bbInfo: IndexedSeq[BBInfo],
+            val exitBBIDs: Seq[Int]) {
+    }
+
+    /**
+      * The CFG is calculated under a certain assumption.
+      */
+    def cfg = {
+        //    /**
+        //      * The indexes/program counters of instructions that are (potentially) executed after this
+        //      * instruction at runtime. (I.e., this is (in case of control transfer instructions) not the
+        //      * index of the next instruction in the code array).
+        //      *
+        //      * @param currentPC The current pc; i.e., the current index in the code array.
+        //      * @param code This instruction's code block. This information is required to determine the next
+        //      * instruction, e.g., in case of a throw instruction or a "wide instruction".
+        //      */
+        //    def successorPCs(currentPC: Int, code: Code): Traversable[Int]
+
+        // ATHROW
+        //        def successorPCs(currentPC: Int, code: Code): Traversable[Int] = {
+        //            for (exceptionHandler ← code.exceptionHandlers if exceptionHandler.startPC <= currentPC and exceptionHandler.endPC > currentPC) {
+        //
+        //            }
+        //        }
+
+        // ConditionalBranchInstruction
+        //        def successorPCs(currentPC: Int, code: Code): Traversable[Int] = {
+        //            new Traversable[Int] {
+        //                def foreach[U](f: Int ⇒ U) {
+        //                    f(currentPC + 1)
+        //                    f(currentPC + branchoffset)
+        //                }
+        //            }
+        //        }
+
+        // UnconditionalBranchInstruction
+        // def successorPCs(currentPC: Int, code: Code): Traversable[Int] = List(currentPC + branchoffset)
+
+        // LOOKUPSWITCH
+        //        def successorPCs(currentPC: Int, code: Code): Traversable[Int] = {
+        //            new Traversable[Int] {
+        //                def foreach[U](f: Int ⇒ U) {
+        //                    f(currentPC + defaultOffset)
+        //                    npairs.foreach(kv ⇒ f(currentPC + kv._2))
+        //                }
+        //            }
+        //        }
+
+        // TABLESWITCH
+        //        def successorPCs(currentPC: Int, code: Code): Traversable[Int] = {
+        //        new Traversable[Int] {
+        //            def foreach[U](f: Int ⇒ U) {
+        //                f(currentPC + defaultOffset)
+        //                jumpOffsets.foreach(offset ⇒ f(currentPC + offset))
+        //            }
+        //        }
+        //    }
+    }
 
     override def toString = {
         "Code_attribute(maxStack="+

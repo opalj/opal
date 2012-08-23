@@ -31,26 +31,17 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Negate long.
- *
- * @author Michael Eichberg
- */
-case object LNEG
-extends Instruction {
+  * Negate long.
+  *
+  * @author Michael Eichberg
+  */
+case object LNEG extends NegateInstruction {
 
-	def opcode : Int = 117
+    def opcode: Int = 117
 
-	def mnemonic : String = "lneg"
-
-	lazy val exceptions : List[ObjectType] =  Nil
+    def mnemonic: String = "lneg"
 
 }

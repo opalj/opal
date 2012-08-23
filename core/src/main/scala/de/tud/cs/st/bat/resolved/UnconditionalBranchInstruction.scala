@@ -33,14 +33,12 @@
 */
 package de.tud.cs.st.bat.resolved
 
-import scala.collection.immutable.List
-
 /**
   * Common super class of all bytecode instructions that always jump to a specific target instruction.
   *
   * @author Michael Eichberg
   */
-trait UnconditionalJumpInstruction extends Instruction {
+abstract class UnconditionalBranchInstruction extends ControlTransferInstruction {
 
     def branchoffset: Int
 

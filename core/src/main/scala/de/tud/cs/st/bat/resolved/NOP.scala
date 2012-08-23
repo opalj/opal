@@ -31,26 +31,20 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Do nothing.
- *
- * @author Michael Eichberg
- */
-case object NOP
-extends Instruction {
+  * Do nothing.
+  *
+  * @author Michael Eichberg
+  */
+case object NOP extends Instruction {
 
-	def opcode : Int = 0
+    def opcode: Int = 0
 
-	def mnemonic : String = "nop"
+    def mnemonic: String = "nop"
 
-	lazy val exceptions : List[ObjectType] =  Nil
+    def runtimeExceptions: List[ObjectType] = Nil
 
+    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 1
 }

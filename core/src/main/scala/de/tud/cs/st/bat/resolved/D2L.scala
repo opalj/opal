@@ -31,26 +31,17 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Convert double to long.
- *
- * @author Michael Eichberg
- */
-case object D2L
-extends Instruction {
+  * Convert double to long.
+  *
+  * @author Michael Eichberg
+  */
+case object D2L extends NumericConversionInstruction {
 
-	def opcode : Int = 143
+    def opcode: Int = 143
 
-	def mnemonic : String = "d2l"
-
-	lazy val exceptions : List[ObjectType] =  Nil
+    def mnemonic: String = "d2l"
 
 }

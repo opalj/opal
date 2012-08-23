@@ -31,8 +31,6 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
 import de.tud.cs.st.util.ControlAbstractions.repeat
@@ -40,17 +38,14 @@ import de.tud.cs.st.util.ControlAbstractions.repeat
 import de.tud.cs.st.bat.resolved.InstructionExceptions._
 
 /**
- * Convert int to byte.
- *
- * @author Michael Eichberg
- */
-case object I2B
-extends Instruction {
+  * Convert int to byte.
+  *
+  * @author Michael Eichberg
+  */
+case object I2B extends NumericConversionInstruction {
 
-	def opcode : Int = 145
+    def opcode: Int = 145
 
-	def mnemonic : String = "i2b"
-
-	lazy val exceptions : List[ObjectType] =  Nil
+    def mnemonic: String = "i2b"
 
 }

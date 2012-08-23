@@ -31,26 +31,21 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Throw exception or error.
- *
- * @author Michael Eichberg
- */
-case object ATHROW
-extends Instruction {
+  * Throw exception or error.
+  *
+  * @author Michael Eichberg
+  */
+case object ATHROW extends Instruction {
 
-	def opcode : Int = 191
+    def opcode: Int = 191
 
-	def mnemonic : String = "athrow"
+    def mnemonic: String = "athrow"
 
-	lazy val exceptions : List[ObjectType] =  Nil
+    val runtimeExceptions: List[ObjectType] = List(ObjectType.NullPointerException)
+
+    def indexOfNextInstruction(currentPC: Int, code: Code) = currentPC + 1
 
 }

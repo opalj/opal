@@ -31,26 +31,17 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Load float from array.
- *
- * @author Michael Eichberg
- */
-case object FALOAD
-extends Instruction {
+  * Load float from array.
+  *
+  * @author Michael Eichberg
+  */
+case object FALOAD extends ArrayAccessInstruction with PrimitiveArrayAccess {
 
-	def opcode : Int = 48
+    def opcode: Int = 48
 
-	def mnemonic : String = "faload"
-
-	lazy val exceptions : List[ObjectType] =  Nil
+    def mnemonic: String = "faload"
 
 }

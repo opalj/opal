@@ -31,26 +31,21 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Extend local variable index by additional bytes.
- *
- * @author Michael Eichberg
- */
-case object WIDE
-extends Instruction {
+  * Extend local variable index by additional bytes.
+  *
+  * @author Michael Eichberg
+  */
+case object WIDE extends Instruction {
 
-	def opcode : Int = 196
+    def opcode: Int = 196
 
-	def mnemonic : String = "wide"
+    def mnemonic: String = "wide"
 
-	lazy val exceptions : List[ObjectType] =  Nil
+    def runtimeExceptions: List[ObjectType] = Nil
+
+    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 1
 
 }

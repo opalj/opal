@@ -31,26 +31,17 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Swap the top two operand stack values.
- *
- * @author Michael Eichberg
- */
-case object SWAP
-extends Instruction {
+  * Swap the top two operand stack values.
+  *
+  * @author Michael Eichberg
+  */
+case object SWAP extends StackManagementInstruction {
 
-	def opcode : Int = 95
+    def opcode: Int = 95
 
-	def mnemonic : String = "swap"
-
-	lazy val exceptions : List[ObjectType] =  Nil
+    def mnemonic: String = "swap"
 
 }

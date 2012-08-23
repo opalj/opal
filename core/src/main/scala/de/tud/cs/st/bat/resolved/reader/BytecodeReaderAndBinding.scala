@@ -59,10 +59,11 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
     def Instructions(source: Array[Byte])(implicit cp: Constant_Pool): Instructions = {
         val bas = new ByteArrayInputStream(source)
         val in = new DataInputStream(bas)
-        val instructions = new Array[Instruction](source.size)
+        val codeLength = source.size
+        val instructions = new Array[Instruction](codeLength)
         var previousInstruction: Instruction = null
         while (in.available > 0) {
-            val index = source.length - in.available
+            val index = codeLength - in.available
             previousInstruction = parsers(in.readUnsignedByte)(previousInstruction, index, in, cp)
             instructions(index) = previousInstruction
         }
@@ -96,14 +97,10 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
 
     parsers(25) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
         if (WIDE == previousInstruction) {
-            // lvIndex:
-            val p1 = in.readUnsignedShort
-            ALOAD(p1)
+            ALOAD(in.readUnsignedShort /* lvIndex */ )
         }
         else {
-            // lvIndex:
-            val p1 = in.readUnsignedByte
-            ALOAD(p1)
+            ALOAD(in.readUnsignedByte /* lvIndex */ )
         }
     }
 
@@ -126,8 +123,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
     parsers(189) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
         // componentType
         val cv: ConstantValue[_] = cp(in.readUnsignedShort).asConstantValue(cp)
-        val p1 = cv.toClass
-        ANEWARRAY(p1)
+        ANEWARRAY(cv.toClass)
     }
 
     parsers(176) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
@@ -140,14 +136,10 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
 
     parsers(58) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
         if (WIDE == previousInstruction) {
-            // lvIndex:
-            val p1 = in.readUnsignedShort
-            ASTORE(p1)
+            ASTORE(in.readUnsignedShort /* lvIndex */ )
         }
         else {
-            // lvIndex:
-            val p1 = in.readUnsignedByte
-            ASTORE(p1)
+            ASTORE(in.readUnsignedByte /* lvIndex */ )
         }
     }
 
@@ -180,9 +172,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
     }
 
     parsers(16) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // value:
-        val p1 = in.readByte
-        BIPUSH(p1)
+        BIPUSH(in.readByte /* value */ )
     }
 
     parsers(52) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
@@ -196,8 +186,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
     parsers(192) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
         // referenceType
         val cv: ConstantValue[_] = cp(in.readUnsignedShort).asConstantValue(cp)
-        val p1 = cv.toClass
-        CHECKCAST(p1)
+        CHECKCAST(cv.toClass)
     }
 
     parsers(144) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
@@ -246,14 +235,10 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
 
     parsers(24) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
         if (WIDE == previousInstruction) {
-            // lvIndex:
-            val p1 = in.readUnsignedShort
-            DLOAD(p1)
+            DLOAD(in.readUnsignedShort /* lvIndex */ )
         }
         else {
-            // lvIndex:
-            val p1 = in.readUnsignedByte
-            DLOAD(p1)
+            DLOAD(in.readUnsignedByte /* lvIndex */ )
         }
     }
 
@@ -291,14 +276,10 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
 
     parsers(57) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
         if (WIDE == previousInstruction) {
-            // lvIndex:
-            val p1 = in.readUnsignedShort
-            DSTORE(p1)
+            DSTORE(in.readUnsignedShort /* lv_index */ )
         }
         else {
-            // lvIndex:
-            val p1 = in.readUnsignedByte
-            DSTORE(p1)
+            DSTORE(in.readUnsignedByte /* lv_index*/ )
         }
     }
 
@@ -396,14 +377,10 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
 
     parsers(23) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
         if (WIDE == previousInstruction) {
-            // lvIndex:
-            val p1 = in.readUnsignedShort
-            FLOAD(p1)
+            FLOAD(in.readUnsignedShort)
         }
         else {
-            // lvIndex:
-            val p1 = in.readUnsignedByte
-            FLOAD(p1)
+            FLOAD(in.readUnsignedByte)
         }
     }
 
@@ -441,14 +418,10 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
 
     parsers(56) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
         if (WIDE == previousInstruction) {
-            // lvIndex:
-            val p1 = in.readUnsignedShort
-            FSTORE(p1)
+            FSTORE(in.readUnsignedShort)
         }
         else {
-            // lvIndex:
-            val p1 = in.readUnsignedByte
-            FSTORE(p1)
+            FSTORE(in.readUnsignedByte)
         }
     }
 
@@ -474,30 +447,20 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
 
     parsers(180) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
         val (declaringClass, name, fieldType) /*: (ObjectType,String,FieldType)*/ = cp(in.readUnsignedShort).asFieldref(cp) // fieldref
-        val p1 = declaringClass
-        val p2 = name
-        val p3 = fieldType
-        GETFIELD(p1, p2, p3)
+        GETFIELD(declaringClass, name, fieldType)
     }
 
     parsers(178) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
         val (declaringClass, name, fieldType) /*: (ObjectType,String,FieldType)*/ = cp(in.readUnsignedShort).asFieldref(cp) // fieldref
-        val p1 = declaringClass
-        val p2 = name
-        val p3 = fieldType
-        GETSTATIC(p1, p2, p3)
+        GETSTATIC(declaringClass, name, fieldType)
     }
 
     parsers(167) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // branchoffset:
-        val p1 = in.readShort // GOTO
-        GOTO(p1)
+        GOTO(in.readShort /* branchoffset */ )
     }
 
     parsers(200) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // branchoffset:
-        val p1 = in.readInt // GOTO_W
-        GOTO_W(p1)
+        GOTO_W(in.readInt /* branchoffset */ )
     }
 
     parsers(145) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
@@ -573,130 +536,104 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
     }
 
     parsers(165) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // branchoffset:
-        val p1 = in.readShort
-        IF_ACMPEQ(p1)
+        // branchoffset
+        IF_ACMPEQ(in.readShort)
     }
 
     parsers(166) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // branchoffset:
-        val p1 = in.readShort
-        IF_ACMPNE(p1)
+        // branchoffset
+        IF_ACMPNE(in.readShort)
     }
 
     parsers(159) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // branchoffset:
-        val p1 = in.readShort
-        IF_ICMPEQ(p1)
+        // branchoffset
+        IF_ICMPEQ(in.readShort)
     }
 
     parsers(160) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // branchoffset:
-        val p1 = in.readShort
-        IF_ICMPNE(p1)
+        val branchoffset = in.readShort
+        IF_ICMPNE(branchoffset)
     }
 
     parsers(161) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // branchoffset:
-        val p1 = in.readShort
-        IF_ICMPLT(p1)
+        // branchoffset
+        IF_ICMPLT(in.readShort)
     }
 
     parsers(162) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // branchoffset:
-        val p1 = in.readShort
-        IF_ICMPGE(p1)
+        // branchoffset
+        IF_ICMPGE(in.readShort)
     }
 
     parsers(163) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // branchoffset:
-        val p1 = in.readShort
-        IF_ICMPGT(p1)
+        // branchoffset
+        IF_ICMPGT(in.readShort)
     }
 
     parsers(164) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // branchoffset:
-        val p1 = in.readShort
-        IF_ICMPLE(p1)
-
+        // branchoffset
+        IF_ICMPLE(in.readShort)
     }
 
     parsers(153) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // branchoffset:
-        val p1 = in.readShort
-        IFEQ(p1)
+        // branchoffset
+        IFEQ(in.readShort)
     }
 
     parsers(154) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // branchoffset:
-        val p1 = in.readShort
-        IFNE(p1)
+        // branchoffset
+        IFNE(in.readShort)
     }
 
     parsers(155) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // branchoffset:
-        val p1 = in.readShort
-        IFLT(p1)
-
+        // branchoffset
+        IFLT(in.readShort)
     }
 
     parsers(156) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // branchoffset:
-        val p1 = in.readShort
-        IFGE(p1)
+        // branchoffset
+        IFGE(in.readShort)
     }
 
     parsers(157) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // branchoffset:
-        val p1 = in.readShort
-        IFGT(p1)
+        // branchoffset
+        IFGT(in.readShort)
     }
 
     parsers(158) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // branchoffset:
-        val p1 = in.readShort
-        IFLE(p1)
+        // branchoffset
+        IFLE(in.readShort)
     }
 
     parsers(199) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // branchoffset:
-        val p1 = in.readShort
-        IFNONNULL(p1)
+        // branchoffset      
+        IFNONNULL(in.readShort)
     }
 
     parsers(198) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // branchoffset:
-        val p1 = in.readShort
-        IFNULL(p1)
+        // branchoffset
+        IFNULL(in.readShort)
     }
 
     parsers(132) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
         if (WIDE == previousInstruction) {
-            // lvIndex:
-            val p1 = in.readUnsignedShort
-            // constValue:
-            val p2 = in.readShort
-            IINC(p1, p2)
+            val lvIndex = in.readUnsignedShort
+            val constValue = in.readShort
+            IINC(lvIndex, constValue)
         }
         else {
-            // lvIndex:
-            val p1 = in.readUnsignedByte
-            // constValue:
-            val p2 = in.readByte
-            IINC(p1, p2)
+            val lvIndex = in.readUnsignedByte
+            val constValue = in.readByte
+            IINC(lvIndex, constValue)
         }
     }
 
     parsers(21) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
         if (WIDE == previousInstruction) {
-            // lvIndex:
-            val p1 = in.readUnsignedShort
-            ILOAD(p1)
+            ILOAD(in.readUnsignedShort)
         }
         else {
-            // lvIndex:
-            val p1 = in.readUnsignedByte
-            ILOAD(p1)
+            ILOAD(in.readUnsignedByte)
         }
     }
 
@@ -725,43 +662,29 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
     }
 
     parsers(193) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-
-        {
-            // referenceType
-            val cv: ConstantValue[_] = cp(in.readUnsignedShort).asConstantValue(cp)
-            val p1 = cv.toClass
-            INSTANCEOF(p1)
-
-        }
-
+        // referenceType
+        val cv: ConstantValue[_] = cp(in.readUnsignedShort).asConstantValue(cp)
+        INSTANCEOF(cv.toClass)
     }
 
     parsers(186) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-            /* TODO [Java 7] "invokedynamic" - resolve index into bootstrap method attribute table. */
-            val (name, methodDescriptor) /*: (String, MethodDescriptor)*/ = cp(in.readUnsignedShort).asNameAndMethodDescriptor(cp) // callSiteSpecifier
-            val p1: String = name
-            val p2: MethodDescriptor = methodDescriptor
-
-            in.readByte // ignored; fixed value
-            in.readByte // ignored; fixed value
-            INVOKEDYNAMIC( /* TODO [Java 7] "invokedynamic" - resolve valid index into the bootstrap_methods array of the bootstrap method table */ p1, p2)
+        /* TODO [Java 7] "invokedynamic" - resolve index into bootstrap method attribute table. */
+        val (name, methodDescriptor) /*: (String, MethodDescriptor)*/ = cp(in.readUnsignedShort).asNameAndMethodDescriptor(cp) // callSiteSpecifier
+        in.readByte // ignored; fixed value
+        in.readByte // ignored; fixed value
+        INVOKEDYNAMIC( /* TODO [Java 7] "invokedynamic" - resolve valid index into the bootstrap_methods array of the bootstrap method table */ name, methodDescriptor)
     }
 
     parsers(185) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
         val (declaringClass, name, methodDescriptor) /*: (ReferenceType,String,MethodDescriptor)*/ = cp(in.readUnsignedShort).asMethodref(cp) // methodRef
-        val p1 = declaringClass
-        val p2 = name
-        val p3 = methodDescriptor
-
         in.readByte // ignored; fixed value
         in.readByte // ignored; fixed value
-
-        INVOKEINTERFACE(p1, p2, p3)
+        INVOKEINTERFACE(declaringClass, name, methodDescriptor)
     }
 
     parsers(183) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-//        val (declaringClass, name, methodDescriptor) /*: (ReferenceType,String,MethodDescriptor)*/ = cp(in.readUnsignedShort).asMethodref(cp) // methodRef
-//        INVOKESPECIAL(declaringClass, name, methodDescriptor)
+        //        val (declaringClass, name, methodDescriptor) /*: (ReferenceType,String,MethodDescriptor)*/ = cp(in.readUnsignedShort).asMethodref(cp) // methodRef
+        //        INVOKESPECIAL(declaringClass, name, methodDescriptor)
         cp(in.readUnsignedShort).asInvoke(INVOKESPECIAL)(cp)
     }
 
@@ -797,14 +720,10 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
 
     parsers(54) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
         if (WIDE == previousInstruction) {
-            // lvIndex:
-            val p1 = in.readUnsignedShort
-            ISTORE(p1)
+            ISTORE(in.readUnsignedShort)
         }
         else {
-            // lvIndex:
-            val p1 = in.readUnsignedByte
-            ISTORE(p1)
+            ISTORE(in.readUnsignedByte)
         }
     }
 
@@ -837,15 +756,13 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
     }
 
     parsers(168) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // branchoffset:
-        val p1 = in.readShort
-        JSR(p1)
+        // branchoffset
+        JSR(in.readShort)
     }
 
     parsers(201) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // branchoffset:
-        val p1 = in.readInt
-        JSR_W(p1)
+        // branchoffset
+        JSR_W(in.readInt)
     }
 
     parsers(138) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
@@ -889,21 +806,15 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
     }
 
     parsers(18) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // constantValue
-        val p1: ConstantValue[_] = cp(in.readUnsignedByte).asConstantValue(cp)
-        LDC(p1)
+        LDC(cp(in.readUnsignedByte).asConstantValue(cp))
     }
 
     parsers(19) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // constantValue
-        val p1: ConstantValue[_] = cp(in.readUnsignedShort).asConstantValue(cp)
-        LDC_W(p1)
+        LDC_W(cp(in.readUnsignedShort).asConstantValue(cp))
     }
 
     parsers(20) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // constantValue
-        val p1: ConstantValue[_] = cp(in.readUnsignedShort).asConstantValue(cp)
-        LDC2_W(p1)
+        LDC2_W(cp(in.readUnsignedShort).asConstantValue(cp))
     }
 
     parsers(109) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
@@ -912,14 +823,12 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
 
     parsers(22) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
         if (WIDE == previousInstruction) {
-            // lvIndex:
-            val p1 = in.readUnsignedShort
-            LLOAD(p1)
+            val lvIndex = in.readUnsignedShort
+            LLOAD(lvIndex)
         }
         else {
-            // lvIndex:
-            val p1 = in.readUnsignedByte
-            LLOAD(p1)
+            val lvIndex = in.readUnsignedByte
+            LLOAD(lvIndex)
         }
     }
 
@@ -949,15 +858,10 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
 
     parsers(171) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
         in.skip(3 - (index % 4)) // skip padding bytes
-        // defaultOffset:
-        val p1 = in.readInt
-        // npairsCount:
-        val p2 = in.readInt
-        // npairs
-        val p3: IndexedSeq[(Int, Int)] = repeat(p2) {
-            (in.readInt, in.readInt)
-        }
-        LOOKUPSWITCH(p1, p2, p3)
+        val defaultOffset = in.readInt
+        val npairsCount = in.readInt
+        val npairs: IndexedSeq[(Int, Int)] = repeat(npairsCount) { (in.readInt, in.readInt) }
+        LOOKUPSWITCH(defaultOffset, npairsCount, npairs)
     }
 
     parsers(129) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
@@ -982,14 +886,12 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
 
     parsers(55) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
         if (WIDE == previousInstruction) {
-            // lvIndex:
-            val p1 = in.readUnsignedShort
-            LSTORE(p1)
+            val lvIndex = in.readUnsignedShort
+            LSTORE(lvIndex)
         }
         else {
-            // lvIndex:
-            val p1 = in.readUnsignedByte
-            LSTORE(p1)
+            val lvIndex = in.readUnsignedByte
+            LSTORE(lvIndex)
         }
     }
 
@@ -1030,25 +932,16 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
     }
 
     parsers(197) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-
-        // componentType
         val cv: ConstantValue[_] = cp(in.readUnsignedShort).asConstantValue(cp)
-        val p1 = cv.toClass
-        // dimensions:
-        val p2 = in.readUnsignedByte
-        MULTIANEWARRAY(p1, p2)
+        MULTIANEWARRAY(cv.toClass /* componentType */ , in.readUnsignedByte /* dimensions */ )
     }
 
     parsers(187) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // objectType
-        val p1 = cp(in.readUnsignedShort).asObjectType(cp)
-        NEW(p1)
+        NEW(cp(in.readUnsignedShort).asObjectType(cp))
     }
 
     parsers(188) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // atype:
-        val p1 = in.readByte
-        NEWARRAY(p1)
+        NEWARRAY(in.readByte)
     }
 
     parsers(0) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
@@ -1065,30 +958,22 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
 
     parsers(181) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
         val (declaringClass, name, fieldType) /*: (ObjectType,String,FieldType)*/ = cp(in.readUnsignedShort).asFieldref(cp) // fieldref
-        val p1 = declaringClass
-        val p2 = name
-        val p3 = fieldType
-        PUTFIELD(p1, p2, p3)
+        PUTFIELD(declaringClass, name, fieldType)
     }
 
     parsers(179) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
         val (declaringClass, name, fieldType) /*: (ObjectType,String,FieldType)*/ = cp(in.readUnsignedShort).asFieldref(cp) // fieldref
-        val p1 = declaringClass
-        val p2 = name
-        val p3 = fieldType
-        PUTSTATIC(p1, p2, p3)
+        PUTSTATIC(declaringClass, name, fieldType)
     }
 
     parsers(169) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
         if (WIDE == previousInstruction) {
-            // lvIndex:
-            val p1 = in.readUnsignedShort
-            RET(p1)
+            val lvIndex = in.readUnsignedShort
+            RET(lvIndex)
         }
         else {
-            // lvIndex:
-            val p1 = in.readUnsignedByte
-            RET(p1)
+            val lvIndex = in.readUnsignedByte
+            RET(lvIndex)
         }
     }
 
@@ -1105,10 +990,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
     }
 
     parsers(17) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-
-        // value:
-        val p1 = in.readShort
-        SIPUSH(p1)
+        SIPUSH(in.readShort /* value */ )
     }
 
     parsers(95) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
@@ -1117,17 +999,11 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
 
     parsers(170) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
         in.skip(3 - (index % 4)) // skip padding bytes
-        // defaultOffset:
-        val p1 = in.readInt
-        // low:
-        val p2 = in.readInt
-        // high:
-        val p3 = in.readInt
-        // jumpOffsets
-        val p4: IndexedSeq[Int] = repeat(p3 - p2 + 1) {
-            in.readInt
-        }
-        TABLESWITCH(p1, p2, p3, p4)
+        val defaultOffset = in.readInt
+        val low = in.readInt
+        val high = in.readInt
+        val jumpOffsets: IndexedSeq[Int] = repeat(high - low + 1) { in.readInt }
+        TABLESWITCH(defaultOffset, low, high, jumpOffsets)
     }
 
     parsers(196) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {

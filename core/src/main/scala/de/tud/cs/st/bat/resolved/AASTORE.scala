@@ -31,26 +31,21 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Store into reference array.
- *
- * @author Michael Eichberg
- */
-case object AASTORE
-extends Instruction {
+  * Store into reference array.
+  *
+  * @author Michael Eichberg
+  */
+case object AASTORE extends ArrayAccessInstruction {
 
-	def opcode : Int = 83
+    def opcode: Int = 83
 
-	def mnemonic : String = "aastore"
+    def mnemonic: String = "aastore"
 
-	lazy val exceptions : List[ObjectType] =  Nil
-
+    val runtimeExceptions: List[ObjectType] = {
+        import ObjectType._
+        List(ArrayIndexOutOfBoundsException, NullPointerException, ArrayStoreException)
+    }
 }

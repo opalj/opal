@@ -50,7 +50,7 @@ import java.lang.System
  * @author Dennis Siebert
  */
 @RunWith(classOf[JUnitRunner])
-class AI_SimpleMethodsTest extends FlatSpec with ShouldMatchers /*with BeforeAndAfterAll */ {
+class SimpleMethodsTest extends FlatSpec with ShouldMatchers /*with BeforeAndAfterAll */ {
 
   class RecordingDomain extends TypeDomain {
     var returnedValue: Option[Value] = _

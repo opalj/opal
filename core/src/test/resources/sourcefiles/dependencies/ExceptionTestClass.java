@@ -39,6 +39,7 @@ import javax.naming.OperationNotSupportedException;
 /**
  * @author Thomas Schlosser
  */
+@SuppressWarnings("all")
 public class ExceptionTestClass {
 
 	public void testMethod() throws IllegalStateException, OperationNotSupportedException {

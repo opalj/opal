@@ -78,6 +78,23 @@ case object ComputationalTypeDouble extends ComputationalType(Category2Computati
 /**
   * A JVM type.
   *
+  * From the JVM specification:
+  * There are three kinds of reference types: class types, array types, and interface types. Their values are
+  * references to dynamically created class instances, arrays, or class instances or arrays that implement
+  * interfaces, respectively.
+  *
+  * An array type consists of a component type with a single dimension (whose length is not given by the
+  * type). The component type of an array type may itself be an array type. If, starting from any array type,
+  * one considers its component type, and then (if that is also an array type) the component type of that type,
+  * and so on, eventually one must reach a component type that is not an array type; this is called the element
+  * type of the array type. The element type of an array type is necessarily either a primitive type, or a
+  * class type, or an interface type.
+  *
+  * A reference value may also be the special null reference, a reference to no object, which will be denoted
+  * here by null. The null reference initially has no runtime type, but may be cast to any type. The default
+  * value of a reference type is null.
+  * The Java virtual machine specification does not mandate a concrete value encoding null.
+  *
   * @author Michael Eichberg
   */
 sealed trait Type {
@@ -369,6 +386,24 @@ object ObjectType {
     val Object = ObjectType("java/lang/Object")
     val String = ObjectType("java/lang/String")
     val Class = ObjectType("java/lang/Class")
+    val Throwable = ObjectType("java/lang/Throwable")
+    val Error = ObjectType("java/lang/Error")
+    val Exception = ObjectType("java/lang/Exception")
+    val RuntimeException = ObjectType("java/lang/RuntimeException")
+    val IndexOutOfBoundsException = ObjectType("java/lang/IndexOutOfBoundsException")
+
+    // Exceptions and errors that may be throw by the JVM (i.e., instances of these exceptions may be 
+    // created at runtime by the JVM)
+    val ExceptionInInitializerError = ObjectType("java/lang/ExceptionInInitializerError")
+
+    val NullPointerException = ObjectType("java/lang/NullPointerException")
+    val ArrayIndexOutOfBoundsException = ObjectType("java/lang/ArrayIndexOutOfBoundsException")
+    val ArrayStoreException = ObjectType("java/lang/ArrayStoreException")
+    val NegativeArraySizeException = ObjectType("java/lang/NegativeArraySizeException")
+    val IllegalMonitorStateException = ObjectType("java/lang/IllegalMonitorStateException")
+    val ClassCastException = ObjectType("java/lang/ClassCastException")
+    val ArithmeticException = ObjectType("java/lang/ArithmeticException")
+
 }
 
 final class ArrayType private (val componentType: FieldType) extends ReferenceType {
@@ -384,7 +419,9 @@ final class ArrayType private (val componentType: FieldType) extends ReferenceTy
         }
     }
 
-    def baseType: Type = componentType match { case at: ArrayType ⇒ at.baseType; case _ ⇒ componentType }
+    @scala.deprecated("use \"elementType\" instead", "August 2012") def baseType: Type = elementType
+
+    def elementType: Type = componentType match { case at: ArrayType ⇒ at.elementType; case _ ⇒ componentType }
 
     def toJava: String = componentType.toJava+"[]"
 
@@ -418,7 +455,7 @@ final object ArrayType {
 
     def baseType(t: Type): Type = {
         t match {
-            case at: ArrayType ⇒ at.baseType
+            case at: ArrayType ⇒ at.elementType
             case _             ⇒ t
         }
     }

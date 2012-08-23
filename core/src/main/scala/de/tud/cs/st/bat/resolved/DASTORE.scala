@@ -31,26 +31,17 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Store into double array.
- *
- * @author Michael Eichberg
- */
-case object DASTORE
-extends Instruction {
+  * Store into double array.
+  *
+  * @author Michael Eichberg
+  */
+case object DASTORE extends ArrayAccessInstruction with PrimitiveArrayAccess {
 
-	def opcode : Int = 82
+    def opcode: Int = 82
 
-	def mnemonic : String = "dastore"
-
-	lazy val exceptions : List[ObjectType] =  Nil
+    def mnemonic: String = "dastore"
 
 }

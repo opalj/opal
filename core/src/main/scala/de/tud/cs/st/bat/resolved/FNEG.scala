@@ -31,8 +31,6 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
 import de.tud.cs.st.util.ControlAbstractions.repeat
@@ -40,17 +38,14 @@ import de.tud.cs.st.util.ControlAbstractions.repeat
 import de.tud.cs.st.bat.resolved.InstructionExceptions._
 
 /**
- * Negate float.
- *
- * @author Michael Eichberg
- */
-case object FNEG
-extends Instruction {
+  * Negate float.
+  *
+  * @author Michael Eichberg
+  */
+case object FNEG extends NegateInstruction {
 
-	def opcode : Int = 118
+    def opcode: Int = 118
 
-	def mnemonic : String = "fneg"
-
-	lazy val exceptions : List[ObjectType] =  Nil
+    def mnemonic: String = "fneg"
 
 }

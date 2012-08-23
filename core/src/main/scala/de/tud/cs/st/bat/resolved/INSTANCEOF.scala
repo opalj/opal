@@ -33,25 +33,22 @@
 */
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Determine if object is of given type.
- *
- * @author Michael Eichberg
- */
-case class INSTANCEOF (
-	
-	val referenceType : ReferenceType
-)
-extends Instruction {
+  * Determine if object is of given type.
+  *
+  * @author Michael Eichberg
+  */
+case class INSTANCEOF(
+    val referenceType: ReferenceType)
+        extends Instruction {
 
-	def opcode : Int = 193
+    def opcode: Int = 193
 
-	def mnemonic : String = "instanceof"
+    def mnemonic: String = "instanceof"
 
-	lazy val exceptions : List[ObjectType] =  Nil
+    def runtimeExceptions: List[ObjectType] = Nil
+
+    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 3
 
 }
+

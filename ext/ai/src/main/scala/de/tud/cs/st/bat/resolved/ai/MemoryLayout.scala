@@ -36,20 +36,67 @@ package resolved
 package ai
 
 /**
- * Models the current execution context of a method. I.e., the operand stack as well as the current values of
- * the registers. The memorylayout is automatically maintained by BAT while analyzing a method. If specific
- * knowledge about a value is required, the domain is queried to get the necessary information. This callback
- * mechanism enables the domain to use an arbitrary mechanism to represent values. 
- * 
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
- * @author Dennis Siebert
- */
+  * Models the current execution context of a method. I.e., the operand stack as well as the current values of
+  * the registers. The memorylayout is automatically maintained by BAT while analyzing a method. If specific
+  * knowledge about a value is required, the domain is queried to get the necessary information. This callback
+  * mechanism enables the domain to use an arbitrary mechanism to represent values.
+  *
+  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+  * @author Dennis Siebert
+  */
 final class MemoryLayout(
         val operands: List[Value],
         val locals: IndexedSeq[Value])(
                 implicit domain: Domain) {
 
     import MemoryLayout._
+
+    /**
+      * Updates this memory layout with the given memory layout. Returns this memory layout if this memory 
+      * layout already subsumes the given memory layout.
+      */
+    def update(other: MemoryLayout): MemoryLayout = {
+        val maxLocals = this.locals.size
+        require(this.operands.size == other.operands.size, "cannot update this memory layout with the given memory layout because the stack size is different (this is in violation of the JVM spec.)")
+        require(maxLocals == other.locals.size, "this memory layout and the given memory layout cannot be merged due to different number of local variables (registers)")
+
+        var thisRemainingOperands = this.operands
+        var otherRemainingOperands = other.operands
+        var newOperands = List[Value]() // during the update we build the operands stack in reverse order
+        var operandsUpdated = false
+        while (thisRemainingOperands.nonEmpty /* the number of operands of both memory layouts is equal */ ) {
+            val thisOperand = thisRemainingOperands.head
+            val otherOperand = otherRemainingOperands.head
+            otherRemainingOperands = otherRemainingOperands.tail
+            thisRemainingOperands = thisRemainingOperands.tail
+
+            val newOperand = domain.update(thisOperand, otherOperand)
+            newOperands = newOperand :: newOperands
+            if (newOperand != thisOperand) operandsUpdated
+        }
+
+        val localsUpdated = false
+        
+        val newLocals = new Array[Value](maxLocals)
+        var i = 0;
+        while (i < maxLocals) {
+            // TODO Improve this by analyzing the lifeness of the register variables
+            // if one of the value
+            val thisLocal = this.locals(i)
+            val otherLocal = other.locals(i)
+            val newLocal = domain.update(thisLocal,otherLocal)
+            i += 1
+        }
+
+        // return the "new" memory layout
+        if (operandsUpdated || localsUpdated) {
+            new MemoryLayout(newOperands.reverse, newLocals)
+        }
+        else {
+            this
+        }
+
+    }
 
     def update(currentPC: Int, instruction: Instruction): MemoryLayout = {
         (instruction.opcode: @annotation.switch) match {
@@ -763,9 +810,9 @@ object MemoryLayout {
     private type CTC2 = ComputationalTypeCategory2Value
 
     /**
-     * @note If you use this method to copy values from the stack into local variables, make
-     * sure that you first reverse the order of operands.
-     */
+      * @note If you use this method to copy values from the stack into local variables, make
+      * sure that you first reverse the order of operands.
+      */
     def mapToLocals(params: List[Value], locals: IndexedSeq[Value]): IndexedSeq[Value] = {
         var index = 0
         var initializedLocals = locals

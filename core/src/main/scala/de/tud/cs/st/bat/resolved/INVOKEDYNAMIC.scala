@@ -31,31 +31,26 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Invoke instance method; resolve and dispatch based on class.
- *
- * @author Michael Eichberg
- */
-case class INVOKEDYNAMIC (
-	
-	// TODO [Java7] "invokedynamic" - resolve valid index into the bootstrap_methods array of the bootstrap method table
-	val name : String,
-	val methodDescriptor : MethodDescriptor // an interface or class type to be precise
-)
-extends Instruction {
+  * Invoke instance method; resolve and dispatch based on class.
+  *
+  * @author Michael Eichberg
+  */
+case class INVOKEDYNAMIC(
+    // TODO [Java7] "invokedynamic" - resolve valid index into the bootstrap_methods array of the bootstrap method table
+    val name: String,
+    val methodDescriptor: MethodDescriptor // an interface or class type to be precise
+    )
+        extends MethodInvocationInstruction {
 
-	def opcode : Int = 186
+    def opcode: Int = 186
 
-	def mnemonic : String = "invokedynamic"
+    def mnemonic: String = "invokedynamic"
 
-	lazy val exceptions : List[ObjectType] =  Nil
+    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 5
+
+    def runtimeExceptions: List[ObjectType] = Nil /* never throws a "NullPointerException"... */
 
 }

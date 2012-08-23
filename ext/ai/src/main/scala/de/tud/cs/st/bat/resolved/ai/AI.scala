@@ -47,7 +47,7 @@ object AI {
       * @param method A non-abstract, non-native method of the given class file.
       * @param domain The abstract domain that is used during the interpretation.
       * @return The memory layout that was calculated while performing the abstract interpretation of
-      * the method. 
+      * the method.
       */
     def apply(classFile: ClassFile, method: Method)(implicit domain: Domain): Array[MemoryLayout] = {
         val code = method.body.get.instructions
@@ -86,8 +86,11 @@ object AI {
                 memoryLayouts(nextPC) = nextPCMemoryLayout
             }
             else {
-                // here, we implement the logic to merge domains and the like...
-                sys.error("not yet supported")
+                val mergedMemoryLayout = memoryLayouts(nextPC) update nextPCMemoryLayout
+                if (mergedMemoryLayout != memoryLayouts(nextPC)) {
+                    worklist = nextPC :: worklist
+                    memoryLayouts(nextPC) = mergedMemoryLayout
+                }
             }
         }
         def gotoTargets(nextPCs: Seq[Int], nextPCMemoryLayout: MemoryLayout) {
@@ -100,11 +103,11 @@ object AI {
             val pc = worklist.head
             worklist = worklist.tail
             val instruction = code(pc)
-            val memoryLayout = memoryLayouts(pc)
+            val memoryLayout = memoryLayouts(pc) // the memory layout before executing the instruction with the given pc
 
             def pcOfNextInstruction = {
                 var nextPC = pc + 1
-                /* TODO Add a method to instruction to get the PC of the next instruction. */
+                /* TODO Add a method to (all) instruction(s) to get the PC of the next instruction and to avoid that we have to traverse the code. */
                 while (nextPC < code.length && (code(nextPC) eq null)) nextPC += 1
                 nextPC
             }

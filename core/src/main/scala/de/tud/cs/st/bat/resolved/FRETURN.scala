@@ -31,26 +31,17 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Return float from method.
- *
- * @author Michael Eichberg
- */
-case object FRETURN
-extends Instruction {
+  * Return float from method.
+  *
+  * @author Michael Eichberg
+  */
+case object FRETURN extends ReturnInstruction {
 
-	def opcode : Int = 174
+    def opcode: Int = 174
 
-	def mnemonic : String = "freturn"
-
-	lazy val exceptions : List[ObjectType] =  Nil
+    def mnemonic: String = "freturn"
 
 }

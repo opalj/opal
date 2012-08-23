@@ -31,26 +31,17 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Push the long constant 1 onto the operand stack.
- *
- * @author Michael Eichberg
- */
-case object LCONST_1
-extends Instruction {
+  * Push the long constant 1 onto the operand stack.
+  *
+  * @author Michael Eichberg
+  */
+case object LCONST_1 extends LoadConstantInstruction with ImplicitValue {
 
-	def opcode : Int = 10
+    def opcode: Int = 10
 
-	def mnemonic : String = "lconst_1"
-
-	lazy val exceptions : List[ObjectType] =  Nil
+    def mnemonic: String = "lconst_1"
 
 }

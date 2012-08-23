@@ -31,25 +31,16 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Push int constant.
- *
- * @author Michael Eichberg
- */
-case object ICONST_5
-extends Instruction {
+  * Push int constant.
+  *
+  * @author Michael Eichberg
+  */
+case object ICONST_5 extends LoadConstantInstruction with ImplicitValue {
 
-	def opcode : Int = 8
+    def opcode: Int = 8
 
-	def mnemonic : String = "iconst_5"
-
-	lazy val exceptions : List[ObjectType] =  Nil
+    def mnemonic: String = "iconst_5"
 }

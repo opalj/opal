@@ -38,10 +38,9 @@ import java.util.zip.ZipInputStream;
 
 /**
  * @author Thomas Schlosser
- * 
  */
-public abstract class SignatureTestSubClass extends
-	SignatureTestClass<ZipInputStream> {
+@SuppressWarnings("all")
+public abstract class SignatureTestSubClass extends SignatureTestClass<ZipInputStream> {
     protected JarInputStream f1;
 
     @SuppressWarnings("unchecked")

@@ -33,21 +33,15 @@
 */
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Return long from method.
- *
- * @author Michael Eichberg
- */
-case object LRETURN
-extends Instruction {
+  * Return long from method.
+  *
+  * @author Michael Eichberg
+  */
+case object LRETURN extends ReturnInstruction {
 
-	def opcode : Int = 173
+    def opcode: Int = 173
 
-	def mnemonic : String = "lreturn"
-
-	lazy val exceptions : List[ObjectType] =  Nil
+    def mnemonic: String = "lreturn"
 
 }

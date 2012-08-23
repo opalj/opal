@@ -31,26 +31,17 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Store double into local variable with index 1.
- *
- * @author Michael Eichberg
- */
-case object DSTORE_1
-extends Instruction {
+  * Store double into local variable with index 1.
+  *
+  * @author Michael Eichberg
+  */
+case object DSTORE_1 extends StoreLocalVariableInstruction with ImplicitLocalVariableIndex {
 
-	def opcode : Int = 72
+    def opcode: Int = 72
 
-	def mnemonic : String = "dstore_1"
-
-	lazy val exceptions : List[ObjectType] =  Nil
+    def mnemonic: String = "dstore_1"
 
 }

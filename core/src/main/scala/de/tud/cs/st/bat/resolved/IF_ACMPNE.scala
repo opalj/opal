@@ -31,29 +31,17 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Branch if reference comparison succeeds; succeeds if and only if value1 ≠ value2.
- *
- * @author Michael Eichberg
- */
-case class IF_ACMPNE (
-	
-	val branchoffset : Int
-)
-extends Instruction {
+  * Branch if reference comparison succeeds; succeeds if and only if value1 ≠ value2.
+  *
+  * @author Michael Eichberg
+  */
+case class IF_ACMPNE(val branchoffset: Int) extends ConditionalBranchInstruction {
 
-	def opcode : Int = 166
+    def opcode: Int = 166
 
-	def mnemonic : String = "if_acmpne"
-
-	lazy val exceptions : List[ObjectType] =  Nil
+    def mnemonic: String = "if_acmpne"
 
 }

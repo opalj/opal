@@ -31,26 +31,17 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Pop the top operand stack value.
- *
- * @author Michael Eichberg
- */
-case object POP
-extends Instruction {
+  * Pop the top operand stack value.
+  *
+  * @author Michael Eichberg
+  */
+case object POP extends StackManagementInstruction {
 
-	def opcode : Int = 87
+    def opcode: Int = 87
 
-	def mnemonic : String = "pop"
-
-	lazy val exceptions : List[ObjectType] =  Nil
+    def mnemonic: String = "pop"
 
 }

@@ -33,15 +33,14 @@
 package methods.b;
 
 /**
- * This class was used to create a class file with some well defined issues. The
- * created class is subsequently used by several tests.
+ * This class was used to create a class file with some well defined issues. The created class is
+ * subsequently used by several tests.
  * 
  * NOTE<br />
- * This class is not meant to be (automatically) recompiled; it just serves
- * documentation purposes.
+ * This class is not meant to be (automatically) recompiled; it just serves documentation purposes.
  * 
  * @author Michael Eichberg
  */
 public class B extends DirectSub {
-
+    // deliberately left empty
 }

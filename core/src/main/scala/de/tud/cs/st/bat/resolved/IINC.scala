@@ -31,30 +31,29 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Increment local variable by constant.
- *
- * @author Michael Eichberg
- */
-case class IINC (
-	
-	val lvIndex : Int, 
-	val constValue : Int
-)
-extends Instruction {
+  * Increment local variable by constant.
+  *
+  * @author Michael Eichberg
+  */
+case class IINC(val lvIndex: Int, val constValue: Int) extends ArithmeticInstruction {
 
-	def opcode : Int = 132
+    def opcode: Int = 132
 
-	def mnemonic : String = "iinc"
+    def mnemonic: String = "iinc"
 
-	lazy val exceptions : List[ObjectType] =  Nil
+    def runtimeExceptions: List[ObjectType] = Nil
+
+    def indexOfNextInstruction(currentPC: Int, code: Code): Int = {
+
+        if (code.isModifiedByWide(currentPC)) {
+            currentPC + 1 + 4
+        }
+        else {
+            currentPC + 1 + 2
+        }
+    }
 
 }

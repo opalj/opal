@@ -31,32 +31,26 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Invoke instance method; special handling for superclass, private,
-			and instance initialization method invocations.
- *
- * @author Michael Eichberg
- */
-case class INVOKESPECIAL (
-	
-	val declaringClass : ReferenceType, // an interface or class type to be precise
-	val name : String, // an interface or class type to be precise
-	val methodDescriptor : MethodDescriptor
-)
-extends Instruction {
+  * Invoke instance method; special handling for superclass, private,
+  * and instance initialization method invocations.
+  *
+  * @author Michael Eichberg
+  */
+case class INVOKESPECIAL(
+    val declaringClass: ReferenceType, // an interface or class type to be precise
+    val name: String, // an interface or class type to be precise
+    val methodDescriptor: MethodDescriptor)
+        extends MethodInvocationInstruction {
 
-	def opcode : Int = 183
+    def opcode: Int = 183
 
-	def mnemonic : String = "invokespecial"
+    def mnemonic: String = "invokespecial"
 
-	lazy val exceptions : List[ObjectType] =  Nil
+    def runtimeExceptions: List[ObjectType] = MethodInvocationInstruction.runtimeExceptions
+
+    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 3
 
 }

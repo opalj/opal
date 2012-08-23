@@ -31,26 +31,17 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Logical shift right int.
- *
- * @author Michael Eichberg
- */
-case object IUSHR
-extends Instruction {
+  * Logical shift right int.
+  *
+  * @author Michael Eichberg
+  */
+case object IUSHR extends ShiftInstruction {
 
-	def opcode : Int = 124
+    def opcode: Int = 124
 
-	def mnemonic : String = "iushr"
-
-	lazy val exceptions : List[ObjectType] =  Nil
+    def mnemonic: String = "iushr"
 
 }

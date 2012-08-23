@@ -31,26 +31,17 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Compare double.
- *
- * @author Michael Eichberg
- */
-case object DCMPG
-extends Instruction {
+  * Compare double.
+  *
+  * @author Michael Eichberg
+  */
+case object DCMPG extends ComparisonInstruction {
 
-	def opcode : Int = 152
+    def opcode: Int = 152
 
-	def mnemonic : String = "dcmpg"
-
-	lazy val exceptions : List[ObjectType] =  Nil
+    def mnemonic: String = "dcmpg"
 
 }

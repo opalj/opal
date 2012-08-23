@@ -31,29 +31,17 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Store reference into local variable.
- *
- * @author Michael Eichberg
- */
-case class ASTORE (
-	
-	val lvIndex : Int
-)
-extends Instruction {
+  * Store reference into local variable.
+  *
+  * @author Michael Eichberg
+  */
+case class ASTORE(val lvIndex: Int) extends StoreLocalVariableInstruction with ExplicitLocalVariableIndex {
 
-	def opcode : Int = 58
+    def opcode: Int = 58
 
-	def mnemonic : String = "astore"
-
-	lazy val exceptions : List[ObjectType] =  Nil
+    def mnemonic: String = "astore"
 
 }

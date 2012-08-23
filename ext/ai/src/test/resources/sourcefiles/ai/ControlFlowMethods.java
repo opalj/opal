@@ -1,4 +1,3 @@
-package ai;
 /* License (BSD Style License):
  * Copyright (c) 2012
  * Software Technology Group
@@ -31,55 +30,63 @@ package ai;
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+package ai;
 
 /**
- * A very large number of methods that do not contain any control-flow
- * statements.
+ * A very large number of methods that do not contain any control-flow statements.
  * 
  * NOTE<br />
- * This class is not meant to be (automatically) recompiled; it just serves
- * documentation purposes. The compiled class that is used by the tests is found
- * in the test-classfiles directory.
+ * This class is not meant to be (automatically) recompiled; it just serves documentation purposes.
+ * The compiled class that is used by the tests is found in the test-classfiles directory.
  * 
  * @author Michael Eichberg
  */
 public class ControlFlowMethods {
 
-	// 
-	// COMPARISON
-	// RELATIONAL OPERATORS
-	// Comparing two values also invokes some kind of "IF" byte code operations which is a simple control flow.
-	
-	
-	/*
-	FLOAD 0
-    FLOAD 1
-    FCMPL
-    IFLE L1
-	 */
-	public static boolean fCompFCMPL(float i, float j){
-		return i > j;
-	}
+    public static boolean nullComp(Object o) {
+        if (o == null)
+            return true;
+        else
+            return false;
+    }
 
-	public static boolean fCompFCMPG(float i, float j){
-		return i < j;
-	}
-	
-	public static boolean dCompDCMPL(double i, double j){
-		return i > j;
-	}
+    public static boolean nonnullComp(Object o) {
+        if (o == null)
+            return false;
+        else
+            return true;
+    }
 
-	public static boolean dCompDCMPG(double i, double j){
-		return i < j;
-	}
-	
-	public static boolean lCompDCMP(long i, long j){
-		return i == j;
-	}
-	
-	
-	
-	public static boolean dCompDCMPG(int i, int j){
-		return i < j;
-	}
+    //
+    // COMPARISON
+    // RELATIONAL OPERATORS
+    // Comparing two values also invokes some kind of "IF" byte code operations which is a simple
+    // control flow.
+
+    /*
+     * FLOAD 0 FLOAD 1 FCMPL IFLE L1
+     */
+    public static boolean fCompFCMPL(float i, float j) {
+        return i > j;
+    }
+
+    public static boolean fCompFCMPG(float i, float j) {
+        return i < j;
+    }
+
+    public static boolean dCompDCMPL(double i, double j) {
+        return i > j;
+    }
+
+    public static boolean dCompDCMPG(double i, double j) {
+        return i < j;
+    }
+
+    public static boolean lCompDCMP(long i, long j) {
+        return i == j;
+    }
+
+    public static boolean dCompDCMPG(int i, int j) {
+        return i < j;
+    }
 }

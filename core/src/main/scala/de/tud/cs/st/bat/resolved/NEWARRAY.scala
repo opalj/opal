@@ -31,29 +31,21 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Create new arrayhandler.
- *
- * @author Michael Eichberg
- */
-case class NEWARRAY (
-	
-	val atype : Int
-)
-extends Instruction {
+  * Create new array handler.
+  *
+  * @author Michael Eichberg
+  */
+case class NEWARRAY(
+    val atype: Int)
+        extends CreateNewArrayInstruction {
 
-	def opcode : Int = 188
+    def opcode: Int = 188
 
-	def mnemonic : String = "newarray"
+    def mnemonic: String = "newarray"
 
-	lazy val exceptions : List[ObjectType] =  Nil
+    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 2
 
 }
