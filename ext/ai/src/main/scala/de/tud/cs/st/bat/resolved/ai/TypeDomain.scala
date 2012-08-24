@@ -133,7 +133,7 @@ class TypeDomain extends Domain {
 
     def athrow(value: Value): Value = {
         value match {
-            case NullValue ⇒ TypedValue(InstructionExceptions.NullPointerException)
+            case NullValue ⇒ TypedValue(ObjectType.NullPointerException)
             case _         ⇒ value
         }
     }

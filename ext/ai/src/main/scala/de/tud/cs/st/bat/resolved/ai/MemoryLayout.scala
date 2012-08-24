@@ -56,45 +56,46 @@ final class MemoryLayout(
       * layout already subsumes the given memory layout.
       */
     def update(other: MemoryLayout): MemoryLayout = {
-        val maxLocals = this.locals.size
-        require(this.operands.size == other.operands.size, "cannot update this memory layout with the given memory layout because the stack size is different (this is in violation of the JVM spec.)")
-        require(maxLocals == other.locals.size, "this memory layout and the given memory layout cannot be merged due to different number of local variables (registers)")
-
-        var thisRemainingOperands = this.operands
-        var otherRemainingOperands = other.operands
-        var newOperands = List[Value]() // during the update we build the operands stack in reverse order
-        var operandsUpdated = false
-        while (thisRemainingOperands.nonEmpty /* the number of operands of both memory layouts is equal */ ) {
-            val thisOperand = thisRemainingOperands.head
-            val otherOperand = otherRemainingOperands.head
-            otherRemainingOperands = otherRemainingOperands.tail
-            thisRemainingOperands = thisRemainingOperands.tail
-
-            val newOperand = domain.update(thisOperand, otherOperand)
-            newOperands = newOperand :: newOperands
-            if (newOperand != thisOperand) operandsUpdated
-        }
-
-        val localsUpdated = false
-        
-        val newLocals = new Array[Value](maxLocals)
-        var i = 0;
-        while (i < maxLocals) {
-            // TODO Improve this by analyzing the lifeness of the register variables
-            // if one of the value
-            val thisLocal = this.locals(i)
-            val otherLocal = other.locals(i)
-            val newLocal = domain.update(thisLocal,otherLocal)
-            i += 1
-        }
-
-        // return the "new" memory layout
-        if (operandsUpdated || localsUpdated) {
-            new MemoryLayout(newOperands.reverse, newLocals)
-        }
-        else {
-            this
-        }
+        throw new Error("Not yet implemented")
+//        val maxLocals = this.locals.size
+//        require(this.operands.size == other.operands.size, "cannot update this memory layout with the given memory layout because the stack size is different (this is in violation of the JVM spec.)")
+//        require(maxLocals == other.locals.size, "this memory layout and the given memory layout cannot be merged due to different number of local variables (registers)")
+//
+//        var thisRemainingOperands = this.operands
+//        var otherRemainingOperands = other.operands
+//        var newOperands = List[Value]() // during the update we build the operands stack in reverse order
+//        var operandsUpdated = false
+//        while (thisRemainingOperands.nonEmpty /* the number of operands of both memory layouts is equal */ ) {
+//            val thisOperand = thisRemainingOperands.head
+//            val otherOperand = otherRemainingOperands.head
+//            otherRemainingOperands = otherRemainingOperands.tail
+//            thisRemainingOperands = thisRemainingOperands.tail
+//
+//            val newOperand = domain.update(thisOperand, otherOperand)
+//            newOperands = newOperand :: newOperands
+//            if (newOperand != thisOperand) operandsUpdated
+//        }
+//
+//        val localsUpdated = false
+//        
+//        val newLocals = new Array[Value](maxLocals)
+//        var i = 0;
+//        while (i < maxLocals) {
+//            // TODO Improve this by analyzing the lifeness of the register variables
+//            // if one of the value
+//            val thisLocal = this.locals(i)
+//            val otherLocal = other.locals(i)
+//            val newLocal = domain.update(thisLocal,otherLocal)
+//            i += 1
+//        }
+//
+//        // return the "new" memory layout
+//        if (operandsUpdated || localsUpdated) {
+//            new MemoryLayout(newOperands.reverse, newLocals)
+//        }
+//        else {
+//            this
+//        }
 
     }
 
