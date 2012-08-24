@@ -42,9 +42,9 @@ case class NEW(
     val objectType: ObjectType)
         extends Instruction {
 
-    def opcode: Int = 187
+    final def opcode: Int = 187
 
-    def mnemonic: String = "new"
+    final def mnemonic: String = "new"
 
     def runtimeExceptions: List[ObjectType] = Nil
 

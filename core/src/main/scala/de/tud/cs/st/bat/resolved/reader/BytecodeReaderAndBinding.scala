@@ -31,7 +31,6 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
 package de.tud.cs.st.bat.resolved
 package reader
 
@@ -41,8 +40,7 @@ import de.tud.cs.st.util.ControlAbstractions.repeat
   * Defines a method to parse an array of bytes (with Java bytecode instructions) and to return an array
   * of `Instruction`s.
   *
-  * The target array has the same size to make sure that jump offsets etc.
-  * point to the correct instruction.
+  * The target array has the same size to make sure that branch offsets etc. point to the correct instruction.
   *
   * @author Michael Eichberg
   */
@@ -61,953 +59,383 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
         val in = new DataInputStream(bas)
         val codeLength = source.size
         val instructions = new Array[Instruction](codeLength)
-        var previousInstruction: Instruction = null
+
+        var wide: Boolean = false
         while (in.available > 0) {
             val index = codeLength - in.available
-            previousInstruction = parsers(in.readUnsignedByte)(previousInstruction, index, in, cp)
-            instructions(index) = previousInstruction
+
+            instructions(index) = (in.readUnsignedByte: @scala.annotation.switch) match {
+                case 50 ⇒ AALOAD
+                case 83 ⇒ AASTORE
+                case 1  ⇒ ACONST_NULL
+                case 25 ⇒ ALOAD( /* lvIndex */
+                    if (wide) {
+                        wide = false
+                        in.readUnsignedShort
+                    }
+                    else {
+                        in.readUnsignedByte
+                    }
+                )
+                case 42  ⇒ ALOAD_0
+                case 43  ⇒ ALOAD_1
+                case 44  ⇒ ALOAD_2
+                case 45  ⇒ ALOAD_3
+                case 189 ⇒ ANEWARRAY(cp(in.readUnsignedShort).asConstantValue(cp).toClass)
+                case 176 ⇒ ARETURN
+                case 190 ⇒ ARRAYLENGTH
+                case 58 ⇒ ASTORE( /* lvIndex */
+                    if (wide) {
+                        wide = false
+                        in.readUnsignedShort
+                    }
+                    else {
+                        in.readUnsignedByte
+                    }
+                )
+                case 75  ⇒ ASTORE_0
+                case 76  ⇒ ASTORE_1
+                case 77  ⇒ { ASTORE_2 }
+                case 78  ⇒ { ASTORE_3 }
+                case 191 ⇒ { ATHROW }
+                case 51  ⇒ { BALOAD }
+                case 84  ⇒ { BASTORE }
+                case 16  ⇒ { BIPUSH(in.readByte /* value */ ) }
+                case 52  ⇒ { CALOAD }
+                case 85  ⇒ { CASTORE }
+                case 192 ⇒ { CHECKCAST(cp(in.readUnsignedShort).asConstantValue(cp).toClass) }
+                case 144 ⇒ { D2F }
+                case 142 ⇒ { D2I }
+                case 143 ⇒ { D2L }
+                case 99  ⇒ { DADD }
+                case 49  ⇒ { DALOAD }
+                case 82  ⇒ { DASTORE }
+                case 152 ⇒ { DCMPG }
+                case 151 ⇒ { DCMPL }
+                case 14  ⇒ { DCONST_0 }
+                case 15  ⇒ { DCONST_1 }
+                case 111 ⇒ { DDIV }
+                case 24 ⇒ {
+                    DLOAD( /* lvIndex */
+                        if (wide) {
+                            wide = false
+                            in.readUnsignedShort
+                        }
+                        else {
+                            in.readUnsignedByte
+                        }
+                    )
+                }
+                case 38  ⇒ { DLOAD_0 }
+                case 39  ⇒ { DLOAD_1 }
+                case 40  ⇒ { DLOAD_2 }
+                case 41  ⇒ { DLOAD_3 }
+                case 107 ⇒ { DMUL }
+                case 119 ⇒ { DNEG }
+                case 115 ⇒ { DREM }
+                case 175 ⇒ { DRETURN }
+                case 57 ⇒ {
+                    DSTORE( /* lv_index */
+                        if (wide) {
+                            wide = false
+                            in.readUnsignedShort
+                        }
+                        else {
+                            in.readUnsignedByte
+                        }
+                    )
+                }
+                case 71  ⇒ { DSTORE_0 }
+                case 72  ⇒ { DSTORE_1 }
+                case 73  ⇒ { DSTORE_2 }
+                case 74  ⇒ { DSTORE_3 }
+                case 103 ⇒ { DSUB }
+                case 89  ⇒ { DUP }
+                case 90  ⇒ { DUP_X1 }
+                case 91  ⇒ { DUP_X2 }
+                case 92  ⇒ { DUP2 }
+                case 93  ⇒ { DUP2_X1 }
+                case 94  ⇒ { DUP2_X2 }
+                case 141 ⇒ { F2D }
+                case 139 ⇒ { F2I }
+                case 140 ⇒ { F2L }
+                case 98  ⇒ { FADD }
+                case 48  ⇒ { FALOAD }
+                case 81  ⇒ { FASTORE }
+                case 150 ⇒ FCMPG
+                case 149 ⇒ FCMPL
+                case 11  ⇒ FCONST_0
+                case 12  ⇒ FCONST_1
+                case 13  ⇒ FCONST_2
+                case 110 ⇒ FDIV
+                case 23 ⇒ FLOAD(
+                    if (wide) {
+                        wide = false
+                        in.readUnsignedShort
+                    }
+                    else {
+                        in.readUnsignedByte
+                    }
+                )
+                case 34  ⇒ { FLOAD_0 }
+                case 35  ⇒ { FLOAD_1 }
+                case 36  ⇒ { FLOAD_2 }
+                case 37  ⇒ { FLOAD_3 }
+                case 106 ⇒ { FMUL }
+                case 118 ⇒ { FNEG }
+                case 114 ⇒ { FREM }
+                case 174 ⇒ { FRETURN }
+                case 56 ⇒ {
+                    FSTORE(
+                        if (wide) {
+                            wide = false
+                            in.readUnsignedShort
+                        }
+                        else {
+                            in.readUnsignedByte
+                        }
+                    )
+                }
+                case 67  ⇒ { FSTORE_0 }
+                case 68  ⇒ { FSTORE_1 }
+                case 69  ⇒ { FSTORE_2 }
+                case 70  ⇒ { FSTORE_3 }
+                case 102 ⇒ { FSUB }
+                case 180 ⇒ {
+                    val (declaringClass, name, fieldType) /*: (ObjectType,String,FieldType)*/ = cp(in.readUnsignedShort).asFieldref(cp) // fieldref
+                    GETFIELD(declaringClass, name, fieldType)
+                }
+                case 178 ⇒ {
+                    val (declaringClass, name, fieldType) /*: (ObjectType,String,FieldType)*/ = cp(in.readUnsignedShort).asFieldref(cp) // fieldref
+                    GETSTATIC(declaringClass, name, fieldType)
+                }
+                case 167 ⇒ { GOTO(in.readShort /* branchoffset */ ) }
+                case 200 ⇒ { GOTO_W(in.readInt /* branchoffset */ ) }
+                case 145 ⇒ { I2B }
+                case 146 ⇒ { I2C }
+                case 135 ⇒ { I2D }
+                case 134 ⇒ { I2F }
+                case 133 ⇒ { I2L }
+                case 147 ⇒ { I2S }
+                case 96  ⇒ { IADD }
+                case 46  ⇒ { IALOAD }
+                case 126 ⇒ { IAND }
+                case 79  ⇒ { IASTORE }
+                case 2   ⇒ { ICONST_M1 }
+                case 3   ⇒ { ICONST_0 }
+                case 4   ⇒ { ICONST_1 }
+                case 5   ⇒ { ICONST_2 }
+                case 6   ⇒ { ICONST_3 }
+                case 7   ⇒ { ICONST_4 }
+                case 8   ⇒ { ICONST_5 }
+                case 108 ⇒ { IDIV }
+                case 165 ⇒ { IF_ACMPEQ(in.readShort) }
+                case 166 ⇒ { IF_ACMPNE(in.readShort) }
+                case 159 ⇒ { IF_ICMPEQ(in.readShort) }
+                case 160 ⇒ { IF_ICMPNE(in.readShort) }
+                case 161 ⇒ { IF_ICMPLT(in.readShort) }
+                case 162 ⇒ { IF_ICMPGE(in.readShort) }
+                case 163 ⇒ { IF_ICMPGT(in.readShort) }
+                case 164 ⇒ { IF_ICMPLE(in.readShort) }
+                case 153 ⇒ { IFEQ(in.readShort) }
+                case 154 ⇒ { IFNE(in.readShort) }
+                case 155 ⇒ { IFLT(in.readShort) }
+                case 156 ⇒ { IFGE(in.readShort) }
+                case 157 ⇒ { IFGT(in.readShort) }
+                case 158 ⇒ { IFLE(in.readShort) }
+                case 199 ⇒ { IFNONNULL(in.readShort) }
+                case 198 ⇒ { IFNULL(in.readShort) }
+                case 132 ⇒ {
+                    if (wide) {
+                        wide = false
+                        val lvIndex = in.readUnsignedShort
+                        val constValue = in.readShort
+                        IINC(lvIndex, constValue)
+                    }
+                    else {
+                        val lvIndex = in.readUnsignedByte
+                        val constValue = in.readByte
+                        IINC(lvIndex, constValue)
+                    }
+                }
+                case 21 ⇒ {
+                    ILOAD(
+                        if (wide) {
+                            wide = false
+                            in.readUnsignedShort
+                        }
+                        else {
+                            in.readUnsignedByte
+                        }
+                    )
+                }
+                case 26  ⇒ { ILOAD_0 }
+                case 27  ⇒ { ILOAD_1 }
+                case 28  ⇒ { ILOAD_2 }
+                case 29  ⇒ { ILOAD_3 }
+                case 104 ⇒ { IMUL }
+                case 116 ⇒ { INEG }
+                case 193 ⇒ { INSTANCEOF(cp(in.readUnsignedShort).asConstantValue(cp).toClass) }
+                case 186 ⇒ {
+                    /* TODO [Java 7] "invokedynamic" - resolve index into bootstrap method attribute table. */
+                    val (name, methodDescriptor) /*: (String, MethodDescriptor)*/ = cp(in.readUnsignedShort).asNameAndMethodDescriptor(cp) // callSiteSpecifier
+                    in.readByte // ignored; fixed value
+                    in.readByte // ignored; fixed value
+                    INVOKEDYNAMIC( /* TODO [Java 7] "invokedynamic" - resolve valid index into the bootstrap_methods array of the bootstrap method table */ name, methodDescriptor)
+                }
+                case 185 ⇒ {
+                    val (declaringClass, name, methodDescriptor) /*: (ReferenceType,String,MethodDescriptor)*/ = cp(in.readUnsignedShort).asMethodref(cp) // methodRef
+                    in.readByte // ignored; fixed value
+                    in.readByte // ignored; fixed value
+                    INVOKEINTERFACE(declaringClass, name, methodDescriptor)
+                }
+                case 183 ⇒ {
+                    //        val (declaringClass, name, methodDescriptor) /*: (ReferenceType,String,MethodDescriptor)*/ = cp(in.readUnsignedShort).asMethodref(cp) // methodRef
+                    //        INVOKESPECIAL(declaringClass, name, methodDescriptor)
+                    cp(in.readUnsignedShort).asInvoke(INVOKESPECIAL)(cp)
+                }
+                case 184 ⇒ {
+                    val (declaringClass, name, methodDescriptor) /*: (ReferenceType,String,MethodDescriptor)*/ = cp(in.readUnsignedShort).asMethodref(cp) // methodRef
+                    INVOKESTATIC(declaringClass, name, methodDescriptor)
+                }
+                case 182 ⇒ {
+                    val (declaringClass, name, methodDescriptor) /*: (ReferenceType,String,MethodDescriptor)*/ = cp(in.readUnsignedShort).asMethodref(cp) // methodRef
+                    INVOKEVIRTUAL(declaringClass, name, methodDescriptor)
+                }
+                case 128 ⇒ { IOR }
+                case 112 ⇒ { IREM }
+                case 172 ⇒ { IRETURN }
+                case 120 ⇒ { ISHL }
+                case 122 ⇒ { ISHR }
+                case 54 ⇒ ISTORE(
+                    if (wide) {
+                        wide = false
+                        in.readUnsignedShort
+                    }
+                    else {
+                        in.readUnsignedByte
+                    }
+                )
+                case 59  ⇒ { ISTORE_0 }
+                case 60  ⇒ { ISTORE_1 }
+                case 61  ⇒ { ISTORE_2 }
+                case 62  ⇒ { ISTORE_3 }
+                case 100 ⇒ { ISUB }
+                case 124 ⇒ { IUSHR }
+                case 130 ⇒ { IXOR }
+                case 168 ⇒ { JSR(in.readShort) }
+                case 201 ⇒ { JSR_W(in.readInt) }
+                case 138 ⇒ { L2D }
+                case 137 ⇒ { L2F }
+                case 136 ⇒ { L2I }
+                case 97  ⇒ { LADD }
+                case 47  ⇒ { LALOAD }
+                case 127 ⇒ { LAND }
+                case 80  ⇒ { LASTORE }
+                case 148 ⇒ { LCMP }
+                case 9   ⇒ { LCONST_0 }
+                case 10  ⇒ { LCONST_1 }
+                case 18  ⇒ { LDC(cp(in.readUnsignedByte).asConstantValue(cp)) }
+                case 19  ⇒ { LDC_W(cp(in.readUnsignedShort).asConstantValue(cp)) }
+                case 20  ⇒ { LDC2_W(cp(in.readUnsignedShort).asConstantValue(cp)) }
+                case 109 ⇒ { LDIV }
+                case 22 ⇒ {
+                    if (wide) {
+                        wide = false
+                        val lvIndex = in.readUnsignedShort
+                        LLOAD(lvIndex)
+                    }
+                    else {
+                        val lvIndex = in.readUnsignedByte
+                        LLOAD(lvIndex)
+                    }
+                }
+                case 30  ⇒ { LLOAD_0 }
+                case 31  ⇒ { LLOAD_1 }
+                case 32  ⇒ { LLOAD_2 }
+                case 33  ⇒ { LLOAD_3 }
+                case 105 ⇒ { LMUL }
+                case 117 ⇒ { LNEG }
+                case 171 ⇒ {
+                    in.skip(3 - (index % 4)) // skip padding bytes
+                    val defaultOffset = in.readInt
+                    val npairsCount = in.readInt
+                    val npairs: IndexedSeq[(Int, Int)] = repeat(npairsCount) { (in.readInt, in.readInt) }
+                    LOOKUPSWITCH(defaultOffset, npairsCount, npairs)
+                }
+                case 129 ⇒ { LOR }
+                case 113 ⇒ { LREM }
+                case 173 ⇒ { LRETURN }
+                case 121 ⇒ { LSHL }
+                case 123 ⇒ { LSHR }
+                case 55 ⇒ LSTORE(
+                    if (wide) {
+                        wide = false
+                        in.readUnsignedShort
+                    }
+                    else {
+                        in.readUnsignedByte
+                    }
+                )
+                case 63  ⇒ { LSTORE_0 }
+                case 64  ⇒ { LSTORE_1 }
+                case 65  ⇒ { LSTORE_2 }
+                case 66  ⇒ { LSTORE_3 }
+                case 101 ⇒ { LSUB }
+                case 125 ⇒ { LUSHR }
+                case 131 ⇒ { LXOR }
+                case 194 ⇒ { MONITORENTER }
+                case 195 ⇒ { MONITOREXIT }
+                case 197 ⇒ {
+                    MULTIANEWARRAY(
+                        cp(in.readUnsignedShort).asConstantValue(cp).toClass /* componentType */ ,
+                        in.readUnsignedByte /* dimensions */ )
+                }
+                case 187 ⇒ NEW(cp(in.readUnsignedShort).asObjectType(cp))
+                case 188 ⇒ NEWARRAY(in.readByte)
+                case 0   ⇒ { NOP }
+                case 87  ⇒ { POP }
+                case 88  ⇒ { POP2 }
+                case 181 ⇒ {
+                    val (declaringClass, name, fieldType) /*: (ObjectType,String,FieldType)*/ = cp(in.readUnsignedShort).asFieldref(cp) // fieldref
+                    PUTFIELD(declaringClass, name, fieldType)
+                }
+                case 179 ⇒ {
+                    val (declaringClass, name, fieldType) /*: (ObjectType,String,FieldType)*/ = cp(in.readUnsignedShort).asFieldref(cp) // fieldref
+                    PUTSTATIC(declaringClass, name, fieldType)
+                }
+                case 169 ⇒ RET(
+                    if (wide) {
+                        wide = false
+                        in.readUnsignedShort
+                    }
+                    else {
+                        in.readUnsignedByte
+                    }
+                )
+                case 177 ⇒ { RETURN }
+                case 53  ⇒ { SALOAD }
+                case 86  ⇒ { SASTORE }
+                case 17  ⇒ { SIPUSH(in.readShort /* value */ ) }
+                case 95  ⇒ { SWAP }
+                case 170 ⇒ {
+                    in.skip(3 - (index % 4)) // skip padding bytes
+                    val defaultOffset = in.readInt
+                    val low = in.readInt
+                    val high = in.readInt
+                    val jumpOffsets: IndexedSeq[Int] = repeat(high - low + 1) { in.readInt }
+                    TABLESWITCH(defaultOffset, low, high, jumpOffsets)
+                }
+                case 196 ⇒ {
+                    wide = true
+                    WIDE
+                }
+
+                // case opcode ⇒ sys.error("unsupported opcode: "+opcode)
+            }
+
         }
         instructions
-    }
-
-    // (previousInstruction: Instruction,
-    //  index : Int,
-    //  in : DataInputStream,
-    //  cp : Constant_Pool
-    // ) => Instruction
-    private val parsers: Array[(Instruction, Int, DataInputStream, Constant_Pool) ⇒ Instruction] = new Array(256)
-
-    // _____________________________________________________________________________________________
-    //
-    // INITIALIZE THE PARSERS ARRAY
-    // _____________________________________________________________________________________________
-    //
-
-    parsers(50) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        AALOAD // instance of the instruction
-    }
-
-    parsers(83) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        AASTORE // instance of the instruction
-    }
-
-    parsers(1) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        ACONST_NULL // instance of the instruction
-    }
-
-    parsers(25) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        if (WIDE == previousInstruction) {
-            ALOAD(in.readUnsignedShort /* lvIndex */ )
-        }
-        else {
-            ALOAD(in.readUnsignedByte /* lvIndex */ )
-        }
-    }
-
-    parsers(42) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        ALOAD_0 // instance of the instruction
-    }
-
-    parsers(43) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        ALOAD_1 // instance of the instruction
-    }
-
-    parsers(44) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        ALOAD_2 // instance of the instruction
-    }
-
-    parsers(45) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        ALOAD_3 // instance of the instruction
-    }
-
-    parsers(189) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // componentType
-        val cv: ConstantValue[_] = cp(in.readUnsignedShort).asConstantValue(cp)
-        ANEWARRAY(cv.toClass)
-    }
-
-    parsers(176) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        ARETURN // instance of the instruction
-    }
-
-    parsers(190) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        ARRAYLENGTH // instance of the instruction
-    }
-
-    parsers(58) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        if (WIDE == previousInstruction) {
-            ASTORE(in.readUnsignedShort /* lvIndex */ )
-        }
-        else {
-            ASTORE(in.readUnsignedByte /* lvIndex */ )
-        }
-    }
-
-    parsers(75) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        ASTORE_0 // instance of the instruction
-    }
-
-    parsers(76) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        ASTORE_1 // instance of the instruction
-    }
-
-    parsers(77) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        ASTORE_2 // instance of the instruction
-    }
-
-    parsers(78) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        ASTORE_3 // instance of the instruction
-    }
-
-    parsers(191) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        ATHROW // instance of the instruction
-    }
-
-    parsers(51) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        BALOAD // instance of the instruction
-    }
-
-    parsers(84) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        BASTORE // instance of the instruction
-    }
-
-    parsers(16) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        BIPUSH(in.readByte /* value */ )
-    }
-
-    parsers(52) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        CALOAD // instance of the instruction
-    }
-
-    parsers(85) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        CASTORE // instance of the instruction
-    }
-
-    parsers(192) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // referenceType
-        val cv: ConstantValue[_] = cp(in.readUnsignedShort).asConstantValue(cp)
-        CHECKCAST(cv.toClass)
-    }
-
-    parsers(144) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        D2F // instance of the instruction
-    }
-
-    parsers(142) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        D2I // instance of the instruction
-    }
-
-    parsers(143) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        D2L // instance of the instruction
-    }
-
-    parsers(99) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        DADD // instance of the instruction
-    }
-
-    parsers(49) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        DALOAD // instance of the instruction
-    }
-
-    parsers(82) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        DASTORE // instance of the instruction
-    }
-
-    parsers(152) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        DCMPG // instance of the instruction
-    }
-
-    parsers(151) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        DCMPL // instance of the instruction
-    }
-
-    parsers(14) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        DCONST_0 // instance of the instruction
-    }
-
-    parsers(15) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        DCONST_1 // instance of the instruction
-    }
-
-    parsers(111) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        DDIV // instance of the instruction
-    }
-
-    parsers(24) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        if (WIDE == previousInstruction) {
-            DLOAD(in.readUnsignedShort /* lvIndex */ )
-        }
-        else {
-            DLOAD(in.readUnsignedByte /* lvIndex */ )
-        }
-    }
-
-    parsers(38) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        DLOAD_0 // instance of the instruction
-    }
-
-    parsers(39) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        DLOAD_1 // instance of the instruction
-    }
-
-    parsers(40) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        DLOAD_2 // instance of the instruction
-    }
-
-    parsers(41) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        DLOAD_3 // instance of the instruction
-    }
-
-    parsers(107) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        DMUL // instance of the instruction
-    }
-
-    parsers(119) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        DNEG // instance of the instruction
-    }
-
-    parsers(115) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        DREM // instance of the instruction
-    }
-
-    parsers(175) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        DRETURN // instance of the instruction
-    }
-
-    parsers(57) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        if (WIDE == previousInstruction) {
-            DSTORE(in.readUnsignedShort /* lv_index */ )
-        }
-        else {
-            DSTORE(in.readUnsignedByte /* lv_index*/ )
-        }
-    }
-
-    parsers(71) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        DSTORE_0 // instance of the instruction
-    }
-
-    parsers(72) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        DSTORE_1 // instance of the instruction
-    }
-
-    parsers(73) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        DSTORE_2 // instance of the instruction
-    }
-
-    parsers(74) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        DSTORE_3 // instance of the instruction
-    }
-
-    parsers(103) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        DSUB // instance of the instruction
-    }
-
-    parsers(89) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        DUP // instance of the instruction
-    }
-
-    parsers(90) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        DUP_X1 // instance of the instruction
-    }
-
-    parsers(91) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        DUP_X2 // instance of the instruction
-    }
-
-    parsers(92) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        DUP2 // instance of the instruction
-    }
-
-    parsers(93) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        DUP2_X1 // instance of the instruction
-    }
-
-    parsers(94) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        DUP2_X2 // instance of the instruction
-    }
-
-    parsers(141) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        F2D // instance of the instruction
-    }
-
-    parsers(139) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        F2I // instance of the instruction
-    }
-
-    parsers(140) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        F2L // instance of the instruction
-    }
-
-    parsers(98) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        FADD // instance of the instruction
-    }
-
-    parsers(48) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        FALOAD // instance of the instruction
-    }
-
-    parsers(81) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        FASTORE // instance of the instruction
-    }
-
-    parsers(150) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        FCMPG // instance of the instruction
-    }
-
-    parsers(149) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        FCMPL // instance of the instruction
-    }
-
-    parsers(11) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        FCONST_0 // instance of the instruction
-    }
-
-    parsers(12) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        FCONST_1 // instance of the instruction
-    }
-
-    parsers(13) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        FCONST_2 // instance of the instruction
-    }
-
-    parsers(110) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        FDIV // instance of the instruction
-    }
-
-    parsers(23) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        if (WIDE == previousInstruction) {
-            FLOAD(in.readUnsignedShort)
-        }
-        else {
-            FLOAD(in.readUnsignedByte)
-        }
-    }
-
-    parsers(34) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        FLOAD_0 // instance of the instruction
-    }
-
-    parsers(35) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        FLOAD_1 // instance of the instruction
-    }
-
-    parsers(36) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        FLOAD_2 // instance of the instruction
-    }
-
-    parsers(37) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        FLOAD_3 // instance of the instruction
-    }
-
-    parsers(106) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        FMUL // instance of the instruction
-    }
-
-    parsers(118) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        FNEG // instance of the instruction
-    }
-
-    parsers(114) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        FREM // instance of the instruction
-    }
-
-    parsers(174) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        FRETURN // instance of the instruction
-    }
-
-    parsers(56) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        if (WIDE == previousInstruction) {
-            FSTORE(in.readUnsignedShort)
-        }
-        else {
-            FSTORE(in.readUnsignedByte)
-        }
-    }
-
-    parsers(67) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        FSTORE_0 // instance of the instruction
-    }
-
-    parsers(68) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        FSTORE_1 // instance of the instruction
-    }
-
-    parsers(69) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        FSTORE_2 // instance of the instruction
-    }
-
-    parsers(70) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        FSTORE_3 // instance of the instruction
-    }
-
-    parsers(102) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        FSUB // instance of the instruction
-    }
-
-    parsers(180) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        val (declaringClass, name, fieldType) /*: (ObjectType,String,FieldType)*/ = cp(in.readUnsignedShort).asFieldref(cp) // fieldref
-        GETFIELD(declaringClass, name, fieldType)
-    }
-
-    parsers(178) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        val (declaringClass, name, fieldType) /*: (ObjectType,String,FieldType)*/ = cp(in.readUnsignedShort).asFieldref(cp) // fieldref
-        GETSTATIC(declaringClass, name, fieldType)
-    }
-
-    parsers(167) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        GOTO(in.readShort /* branchoffset */ )
-    }
-
-    parsers(200) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        GOTO_W(in.readInt /* branchoffset */ )
-    }
-
-    parsers(145) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        I2B // instance of the instruction
-    }
-
-    parsers(146) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        I2C // instance of the instruction
-    }
-
-    parsers(135) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        I2D // instance of the instruction
-    }
-
-    parsers(134) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        I2F // instance of the instruction
-    }
-
-    parsers(133) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        I2L // instance of the instruction
-    }
-
-    parsers(147) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        I2S // instance of the instruction
-    }
-
-    parsers(96) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        IADD // instance of the instruction
-    }
-
-    parsers(46) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        IALOAD // instance of the instruction
-    }
-
-    parsers(126) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        IAND // instance of the instruction
-    }
-
-    parsers(79) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        IASTORE // instance of the instruction
-    }
-
-    parsers(2) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        ICONST_M1 // instance of the instruction
-    }
-
-    parsers(3) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        ICONST_0 // instance of the instruction
-    }
-
-    parsers(4) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        ICONST_1 // instance of the instruction
-    }
-
-    parsers(5) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        ICONST_2 // instance of the instruction
-    }
-
-    parsers(6) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        ICONST_3 // instance of the instruction
-    }
-
-    parsers(7) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        ICONST_4 // instance of the instruction
-    }
-
-    parsers(8) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        ICONST_5 // instance of the instruction
-    }
-
-    parsers(108) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        IDIV // instance of the instruction
-    }
-
-    parsers(165) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // branchoffset
-        IF_ACMPEQ(in.readShort)
-    }
-
-    parsers(166) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // branchoffset
-        IF_ACMPNE(in.readShort)
-    }
-
-    parsers(159) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // branchoffset
-        IF_ICMPEQ(in.readShort)
-    }
-
-    parsers(160) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        val branchoffset = in.readShort
-        IF_ICMPNE(branchoffset)
-    }
-
-    parsers(161) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // branchoffset
-        IF_ICMPLT(in.readShort)
-    }
-
-    parsers(162) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // branchoffset
-        IF_ICMPGE(in.readShort)
-    }
-
-    parsers(163) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // branchoffset
-        IF_ICMPGT(in.readShort)
-    }
-
-    parsers(164) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // branchoffset
-        IF_ICMPLE(in.readShort)
-    }
-
-    parsers(153) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // branchoffset
-        IFEQ(in.readShort)
-    }
-
-    parsers(154) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // branchoffset
-        IFNE(in.readShort)
-    }
-
-    parsers(155) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // branchoffset
-        IFLT(in.readShort)
-    }
-
-    parsers(156) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // branchoffset
-        IFGE(in.readShort)
-    }
-
-    parsers(157) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // branchoffset
-        IFGT(in.readShort)
-    }
-
-    parsers(158) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // branchoffset
-        IFLE(in.readShort)
-    }
-
-    parsers(199) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // branchoffset      
-        IFNONNULL(in.readShort)
-    }
-
-    parsers(198) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // branchoffset
-        IFNULL(in.readShort)
-    }
-
-    parsers(132) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        if (WIDE == previousInstruction) {
-            val lvIndex = in.readUnsignedShort
-            val constValue = in.readShort
-            IINC(lvIndex, constValue)
-        }
-        else {
-            val lvIndex = in.readUnsignedByte
-            val constValue = in.readByte
-            IINC(lvIndex, constValue)
-        }
-    }
-
-    parsers(21) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        if (WIDE == previousInstruction) {
-            ILOAD(in.readUnsignedShort)
-        }
-        else {
-            ILOAD(in.readUnsignedByte)
-        }
-    }
-
-    parsers(26) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        ILOAD_0 // instance of the instruction
-    }
-
-    parsers(27) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        ILOAD_1 // instance of the instruction
-    }
-
-    parsers(28) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        ILOAD_2 // instance of the instruction
-    }
-
-    parsers(29) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        ILOAD_3 // instance of the instruction
-    }
-
-    parsers(104) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        IMUL // instance of the instruction
-    }
-
-    parsers(116) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        INEG // instance of the instruction
-    }
-
-    parsers(193) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // referenceType
-        val cv: ConstantValue[_] = cp(in.readUnsignedShort).asConstantValue(cp)
-        INSTANCEOF(cv.toClass)
-    }
-
-    parsers(186) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        /* TODO [Java 7] "invokedynamic" - resolve index into bootstrap method attribute table. */
-        val (name, methodDescriptor) /*: (String, MethodDescriptor)*/ = cp(in.readUnsignedShort).asNameAndMethodDescriptor(cp) // callSiteSpecifier
-        in.readByte // ignored; fixed value
-        in.readByte // ignored; fixed value
-        INVOKEDYNAMIC( /* TODO [Java 7] "invokedynamic" - resolve valid index into the bootstrap_methods array of the bootstrap method table */ name, methodDescriptor)
-    }
-
-    parsers(185) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        val (declaringClass, name, methodDescriptor) /*: (ReferenceType,String,MethodDescriptor)*/ = cp(in.readUnsignedShort).asMethodref(cp) // methodRef
-        in.readByte // ignored; fixed value
-        in.readByte // ignored; fixed value
-        INVOKEINTERFACE(declaringClass, name, methodDescriptor)
-    }
-
-    parsers(183) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        //        val (declaringClass, name, methodDescriptor) /*: (ReferenceType,String,MethodDescriptor)*/ = cp(in.readUnsignedShort).asMethodref(cp) // methodRef
-        //        INVOKESPECIAL(declaringClass, name, methodDescriptor)
-        cp(in.readUnsignedShort).asInvoke(INVOKESPECIAL)(cp)
-    }
-
-    parsers(184) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        val (declaringClass, name, methodDescriptor) /*: (ReferenceType,String,MethodDescriptor)*/ = cp(in.readUnsignedShort).asMethodref(cp) // methodRef
-        INVOKESTATIC(declaringClass, name, methodDescriptor)
-    }
-
-    parsers(182) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        val (declaringClass, name, methodDescriptor) /*: (ReferenceType,String,MethodDescriptor)*/ = cp(in.readUnsignedShort).asMethodref(cp) // methodRef
-        INVOKEVIRTUAL(declaringClass, name, methodDescriptor)
-    }
-
-    parsers(128) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        IOR // instance of the instruction
-    }
-
-    parsers(112) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        IREM // instance of the instruction
-    }
-
-    parsers(172) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        IRETURN // instance of the instruction
-    }
-
-    parsers(120) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        ISHL // instance of the instruction
-    }
-
-    parsers(122) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        ISHR // instance of the instruction
-    }
-
-    parsers(54) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        if (WIDE == previousInstruction) {
-            ISTORE(in.readUnsignedShort)
-        }
-        else {
-            ISTORE(in.readUnsignedByte)
-        }
-    }
-
-    parsers(59) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        ISTORE_0 // instance of the instruction
-    }
-
-    parsers(60) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        ISTORE_1 // instance of the instruction
-    }
-
-    parsers(61) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        ISTORE_2 // instance of the instruction
-    }
-
-    parsers(62) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        ISTORE_3 // instance of the instruction
-    }
-
-    parsers(100) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        ISUB // instance of the instruction
-    }
-
-    parsers(124) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        IUSHR // instance of the instruction
-    }
-
-    parsers(130) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        IXOR // instance of the instruction
-    }
-
-    parsers(168) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // branchoffset
-        JSR(in.readShort)
-    }
-
-    parsers(201) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        // branchoffset
-        JSR_W(in.readInt)
-    }
-
-    parsers(138) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        L2D // instance of the instruction
-    }
-
-    parsers(137) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        L2F // instance of the instruction
-    }
-
-    parsers(136) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        L2I // instance of the instruction
-    }
-
-    parsers(97) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        LADD // instance of the instruction
-    }
-
-    parsers(47) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        LALOAD // instance of the instruction
-    }
-
-    parsers(127) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        LAND // instance of the instruction
-    }
-
-    parsers(80) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        LASTORE // instance of the instruction
-    }
-
-    parsers(148) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        LCMP // instance of the instruction
-    }
-
-    parsers(9) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        LCONST_0 // instance of the instruction
-    }
-
-    parsers(10) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        LCONST_1 // instance of the instruction
-    }
-
-    parsers(18) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        LDC(cp(in.readUnsignedByte).asConstantValue(cp))
-    }
-
-    parsers(19) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        LDC_W(cp(in.readUnsignedShort).asConstantValue(cp))
-    }
-
-    parsers(20) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        LDC2_W(cp(in.readUnsignedShort).asConstantValue(cp))
-    }
-
-    parsers(109) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        LDIV // instance of the instruction
-    }
-
-    parsers(22) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        if (WIDE == previousInstruction) {
-            val lvIndex = in.readUnsignedShort
-            LLOAD(lvIndex)
-        }
-        else {
-            val lvIndex = in.readUnsignedByte
-            LLOAD(lvIndex)
-        }
-    }
-
-    parsers(30) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        LLOAD_0 // instance of the instruction
-    }
-
-    parsers(31) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        LLOAD_1 // instance of the instruction
-    }
-
-    parsers(32) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        LLOAD_2 // instance of the instruction
-    }
-
-    parsers(33) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        LLOAD_3 // instance of the instruction
-    }
-
-    parsers(105) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        LMUL // instance of the instruction
-    }
-
-    parsers(117) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        LNEG // instance of the instruction
-    }
-
-    parsers(171) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        in.skip(3 - (index % 4)) // skip padding bytes
-        val defaultOffset = in.readInt
-        val npairsCount = in.readInt
-        val npairs: IndexedSeq[(Int, Int)] = repeat(npairsCount) { (in.readInt, in.readInt) }
-        LOOKUPSWITCH(defaultOffset, npairsCount, npairs)
-    }
-
-    parsers(129) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        LOR // instance of the instruction
-    }
-
-    parsers(113) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        LREM // instance of the instruction
-    }
-
-    parsers(173) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        LRETURN // instance of the instruction
-    }
-
-    parsers(121) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        LSHL // instance of the instruction
-    }
-
-    parsers(123) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        LSHR // instance of the instruction
-    }
-
-    parsers(55) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        if (WIDE == previousInstruction) {
-            val lvIndex = in.readUnsignedShort
-            LSTORE(lvIndex)
-        }
-        else {
-            val lvIndex = in.readUnsignedByte
-            LSTORE(lvIndex)
-        }
-    }
-
-    parsers(63) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        LSTORE_0 // instance of the instruction
-    }
-
-    parsers(64) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        LSTORE_1 // instance of the instruction
-    }
-
-    parsers(65) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        LSTORE_2 // instance of the instruction
-    }
-
-    parsers(66) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        LSTORE_3 // instance of the instruction
-    }
-
-    parsers(101) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        LSUB // instance of the instruction
-    }
-
-    parsers(125) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        LUSHR // instance of the instruction
-    }
-
-    parsers(131) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        LXOR // instance of the instruction
-    }
-
-    parsers(194) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        MONITORENTER // instance of the instruction
-    }
-
-    parsers(195) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        MONITOREXIT // instance of the instruction
-    }
-
-    parsers(197) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        val cv: ConstantValue[_] = cp(in.readUnsignedShort).asConstantValue(cp)
-        MULTIANEWARRAY(cv.toClass /* componentType */ , in.readUnsignedByte /* dimensions */ )
-    }
-
-    parsers(187) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        NEW(cp(in.readUnsignedShort).asObjectType(cp))
-    }
-
-    parsers(188) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        NEWARRAY(in.readByte)
-    }
-
-    parsers(0) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        NOP // instance of the instruction
-    }
-
-    parsers(87) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        POP // instance of the instruction
-    }
-
-    parsers(88) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        POP2 // instance of the instruction
-    }
-
-    parsers(181) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        val (declaringClass, name, fieldType) /*: (ObjectType,String,FieldType)*/ = cp(in.readUnsignedShort).asFieldref(cp) // fieldref
-        PUTFIELD(declaringClass, name, fieldType)
-    }
-
-    parsers(179) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        val (declaringClass, name, fieldType) /*: (ObjectType,String,FieldType)*/ = cp(in.readUnsignedShort).asFieldref(cp) // fieldref
-        PUTSTATIC(declaringClass, name, fieldType)
-    }
-
-    parsers(169) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        if (WIDE == previousInstruction) {
-            val lvIndex = in.readUnsignedShort
-            RET(lvIndex)
-        }
-        else {
-            val lvIndex = in.readUnsignedByte
-            RET(lvIndex)
-        }
-    }
-
-    parsers(177) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        RETURN // instance of the instruction
-    }
-
-    parsers(53) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        SALOAD // instance of the instruction
-    }
-
-    parsers(86) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        SASTORE // instance of the instruction
-    }
-
-    parsers(17) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        SIPUSH(in.readShort /* value */ )
-    }
-
-    parsers(95) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        SWAP // instance of the instruction
-    }
-
-    parsers(170) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        in.skip(3 - (index % 4)) // skip padding bytes
-        val defaultOffset = in.readInt
-        val low = in.readInt
-        val high = in.readInt
-        val jumpOffsets: IndexedSeq[Int] = repeat(high - low + 1) { in.readInt }
-        TABLESWITCH(defaultOffset, low, high, jumpOffsets)
-    }
-
-    parsers(196) = (previousInstruction: Instruction, index: Int, in: DataInputStream, cp: Constant_Pool) ⇒ {
-        WIDE // instance of the instruction
     }
 
 }

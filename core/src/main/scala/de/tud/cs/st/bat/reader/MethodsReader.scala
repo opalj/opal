@@ -37,10 +37,10 @@ import java.io.DataInputStream
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
 /**
- * Defines a template method to read in a class file's Method_info structure. 
- * 
- * @author Michael Eichberg
- */
+  * Defines a template method to read in a class file's Method_info structure.
+  *
+  * @author Michael Eichberg
+  */
 trait MethodsReader extends Constant_PoolAbstractions {
 
     //
@@ -68,13 +68,11 @@ trait MethodsReader extends Constant_PoolAbstractions {
 
     type Methods = IndexedSeq[Method_Info]
 
-    private val NO_METHODS: Methods = Vector.empty
-
     def Methods(in: DataInputStream, cp: Constant_Pool): Methods = {
         val methods_count = in.readUnsignedShort
 
         if (methods_count == 0)
-            NO_METHODS
+            IndexedSeq.empty
         else
             repeat(methods_count) {
                 Method_Info(in, cp)

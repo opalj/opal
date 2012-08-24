@@ -35,11 +35,11 @@ package de.tud.cs.st.bat
 import scala.collection.immutable.IndexedSeq
 
 /**
- * This class enumerates the different contexts in which the JVM Spec. uses
- * access_flags fields and defines which access_flags can be found in which context.
- *
- * @author Michael Eichberg
- */
+  * This class enumerates the different contexts in which the JVM Spec. uses
+  * access_flags fields and defines which access_flags can be found in which context.
+  *
+  * @author Michael Eichberg
+  */
 object AccessFlagsContexts extends Enumeration {
 
     val INNER_CLASS, CLASS, METHOD, FIELD = Value
@@ -92,20 +92,15 @@ object AccessFlagsContexts extends Enumeration {
             ACC_STRICT,
             ACC_SYNTHETIC)
 
-    val CLASS_VISIBILITY_FLAGS: IndexedSeq[AccessFlag] =
-        IndexedSeq(ACC_PUBLIC)
+    val CLASS_VISIBILITY_FLAGS: IndexedSeq[AccessFlag] = IndexedSeq(ACC_PUBLIC)
 
-    val MEMBER_VISIBILITY_FLAGS: IndexedSeq[AccessFlag] =
-        IndexedSeq(ACC_PUBLIC, ACC_PRIVATE, ACC_PROTECTED)
+    val MEMBER_VISIBILITY_FLAGS: IndexedSeq[AccessFlag] = IndexedSeq(ACC_PUBLIC, ACC_PRIVATE, ACC_PROTECTED)
 
-    val INNER_CLASS_VISIBILITY_FLAGS: IndexedSeq[AccessFlag] =
-        MEMBER_VISIBILITY_FLAGS
+    val INNER_CLASS_VISIBILITY_FLAGS: IndexedSeq[AccessFlag] = MEMBER_VISIBILITY_FLAGS
 
-    val FIELD_VISIBILITY_FLAGS: IndexedSeq[AccessFlag] =
-        MEMBER_VISIBILITY_FLAGS
+    val FIELD_VISIBILITY_FLAGS: IndexedSeq[AccessFlag] = MEMBER_VISIBILITY_FLAGS
 
-    val METHOD_VISIBILITY_FLAGS: IndexedSeq[AccessFlag] =
-        MEMBER_VISIBILITY_FLAGS
+    val METHOD_VISIBILITY_FLAGS: IndexedSeq[AccessFlag] = MEMBER_VISIBILITY_FLAGS
 
     def potentialAccessFlags(ctx: AccessFlagsContext): IndexedSeq[AccessFlag] = {
         ctx match {
