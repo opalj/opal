@@ -47,5 +47,6 @@ public class AnnotationDefaultAttributeTestClass {
 			annotationValue = @SuppressWarnings("noDefault"),
 			arrayClassValue = {Long.class, Boolean.class })
 	public void testMethod() {
+	    // deliberately left empty
 	}
 }

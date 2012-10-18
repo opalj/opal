@@ -31,26 +31,17 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Add float.
- *
- * @author Michael Eichberg
- */
-case object FADD
-extends Instruction {
+  * Add float.
+  *
+  * @author Michael Eichberg
+  */
+case object FADD extends AddInstruction {
 
-	def opcode : Int = 98
+    def opcode: Int = 98
 
-	def mnemonic : String = "fadd"
-
-	lazy val exceptions : List[ObjectType] =  Nil
+    def mnemonic: String = "fadd"
 
 }

@@ -36,10 +36,10 @@ package reader
 import java.io.DataInputStream
 
 /**
- * Defines a template method to read in a class file's constant pool.
- *
- * @author Michael Eichberg
- */
+  * Defines a template method to read in a class file's constant pool.
+  *
+  * @author Michael Eichberg
+  */
 trait Constant_PoolReader extends Constant_PoolAbstractions {
 
     private type ValueAsString = { def value: String } // a structural type
@@ -100,15 +100,14 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
 		 */
         val constant_pool_count = in.readUnsignedShort
         /*
-		 * The format of each constant_pool
-		 * table entry is indicated by its ﬁrst “tag” byte.
+		 * The format of each constant_pool table entry is indicated by its ﬁrst “tag” byte.
 		 * The constant_pool table is indexed from 1 to constant_pool_count−1.
 		 */
         val constant_pool_entries = new Array[Constant_Pool_Entry](constant_pool_count)
         var i = 1
         while (i < constant_pool_count) {
             val tag = in.readUnsignedByte
-            constant_pool_entries(i) = tag match {
+            constant_pool_entries(i) = (tag: @scala.annotation.switch) match {
                 case CONSTANT_Class_ID              ⇒ i += 1; CONSTANT_Class_info(in.readUnsignedShort)
                 case CONSTANT_Fieldref_ID           ⇒ i += 1; CONSTANT_Fieldref_info(in.readUnsignedShort, in.readUnsignedShort)
                 case CONSTANT_Methodref_ID          ⇒ i += 1; CONSTANT_Methodref_info(in.readUnsignedShort, in.readUnsignedShort)
@@ -123,7 +122,7 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
                 case CONSTANT_MethodHandle_ID       ⇒ i += 1; CONSTANT_MethodHandle_info(in.readUnsignedByte, in.readUnsignedShort)
                 case CONSTANT_MethodType_ID         ⇒ i += 1; CONSTANT_MethodType_info(in.readUnsignedShort)
                 case CONSTANT_InvokeDynamic_ID      ⇒ i += 1; CONSTANT_InvokeDynamic_info(in.readUnsignedShort, in.readUnsignedShort)
-                case _                              ⇒ sys.error("unsupported constant pool tag: " + tag)
+                case _                              ⇒ sys.error("unknown constant pool tag: "+tag)
             }
         }
         constant_pool_entries

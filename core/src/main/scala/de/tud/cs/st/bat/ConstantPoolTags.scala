@@ -33,29 +33,28 @@
 package de.tud.cs.st.bat
 
 /**
- * A constant pool tag identifies the type of a specific entry in the 
- * constant pool. 
- *  
- * @author Michael Eichberg
- */
+  * A constant pool tag identifies the type of a specific entry in the constant pool.
+  *
+  * @author Michael Eichberg
+  */
 object ConstantPoolTags extends Enumeration {
 
     // IN THE FOLLOWING THE ORDER IS AS DEFINED IN THE JVM SE SPECIFICATION
-    
-    val CONSTANT_Class_ID = 7
-    val CONSTANT_Fieldref_ID = 9
-    val CONSTANT_Methodref_ID = 10
-    val CONSTANT_InterfaceMethodref_ID = 11
-    val CONSTANT_String_ID = 8
-    val CONSTANT_Integer_ID = 3
-    val CONSTANT_Float_ID = 4
-    val CONSTANT_Long_ID = 5
-    val CONSTANT_Double_ID = 6
-    val CONSTANT_NameAndType_ID = 12
-    val CONSTANT_Utf8_ID = 1
-    val CONSTANT_MethodHandle_ID = 15
-    val CONSTANT_MethodType_ID = 16
-    val CONSTANT_InvokeDynamic_ID = 18
+
+    final val CONSTANT_Class_ID = 7
+    final val CONSTANT_Fieldref_ID = 9
+    final val CONSTANT_Methodref_ID = 10
+    final val CONSTANT_InterfaceMethodref_ID = 11
+    final val CONSTANT_String_ID = 8
+    final val CONSTANT_Integer_ID = 3
+    final val CONSTANT_Float_ID = 4
+    final val CONSTANT_Long_ID = 5
+    final val CONSTANT_Double_ID = 6
+    final val CONSTANT_NameAndType_ID = 12
+    final val CONSTANT_Utf8_ID = 1
+    final val CONSTANT_MethodHandle_ID = 15
+    final val CONSTANT_MethodType_ID = 16
+    final val CONSTANT_InvokeDynamic_ID = 18
 
     val CONSTANT_Class = Value(CONSTANT_Class_ID, "CONSTANT_Class")
     val CONSTANT_Fieldref = Value(CONSTANT_Fieldref_ID, "CONSTANT_Fieldref")

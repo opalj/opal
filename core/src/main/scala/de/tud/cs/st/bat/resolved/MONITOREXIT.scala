@@ -31,26 +31,19 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Exit monitor for object.
- *
- * @author Michael Eichberg
- */
-case object MONITOREXIT
-extends Instruction {
+  * Exit monitor for object.
+  *
+  * @author Michael Eichberg
+  */
+case object MONITOREXIT extends SynchronizationInstruction {
 
-	def opcode : Int = 195
+    def opcode: Int = 195
 
-	def mnemonic : String = "monitorexit"
+    def mnemonic: String = "monitorexit"
 
-	lazy val exceptions : List[ObjectType] =  Nil
+    val runtimeExceptions: List[ObjectType] = List(ObjectType.NullPointerException, ObjectType.IllegalMonitorStateException)
 
 }

@@ -31,29 +31,17 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Branch if int comparison succeeds; succeeds if and only if value1 = value2.
- *
- * @author Michael Eichberg
- */
-case class IF_ICMPEQ (
-	
-	val branchoffset : Int
-)
-extends Instruction {
+  * Branch if int comparison succeeds; succeeds if and only if value1 = value2.
+  *
+  * @author Michael Eichberg
+  */
+case class IF_ICMPEQ(val branchoffset: Int) extends ConditionalBranchInstruction {
 
-	def opcode : Int = 159
+    def opcode: Int = 159
 
-	def mnemonic : String = "if_icmpeq"
-
-	lazy val exceptions : List[ObjectType] =  Nil
+    def mnemonic: String = "if_icmpeq"
 
 }

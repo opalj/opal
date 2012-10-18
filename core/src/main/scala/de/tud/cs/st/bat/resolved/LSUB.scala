@@ -31,8 +31,6 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
 import de.tud.cs.st.util.ControlAbstractions.repeat
@@ -40,17 +38,14 @@ import de.tud.cs.st.util.ControlAbstractions.repeat
 import de.tud.cs.st.bat.resolved.InstructionExceptions._
 
 /**
- * Subtract long.
- *
- * @author Michael Eichberg
- */
-case object LSUB
-extends Instruction {
+  * Subtract long.
+  *
+  * @author Michael Eichberg
+  */
+case object LSUB extends SubtractInstruction {
 
-	def opcode : Int = 101
+    def opcode: Int = 101
 
-	def mnemonic : String = "lsub"
-
-	lazy val exceptions : List[ObjectType] =  Nil
+    def mnemonic: String = "lsub"
 
 }

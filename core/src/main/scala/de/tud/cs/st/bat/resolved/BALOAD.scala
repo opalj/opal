@@ -31,26 +31,17 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Load byte or boolean from array.
- *
- * @author Michael Eichberg
- */
-case object BALOAD
-extends Instruction {
+  * Load byte or boolean from array.
+  *
+  * @author Michael Eichberg
+  */
+case object BALOAD extends ArrayAccessInstruction with PrimitiveArrayAccess {
 
-	def opcode : Int = 51
+    def opcode: Int = 51
 
-	def mnemonic : String = "baload"
-
-	lazy val exceptions : List[ObjectType] =  Nil
+    def mnemonic: String = "baload"
 
 }

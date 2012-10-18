@@ -31,32 +31,24 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Access jump table by key match and jump.
- *
- * @author Michael Eichberg
- */
-case class LOOKUPSWITCH (
-	
-	val defaultOffset : Int, 
-	val npairsCount : Int, 
-	val npairs : IndexedSeq[(Int, Int)]
-		
-)
-extends Instruction {
+  * Access jump table by key match and jump.
+  *
+  * @author Michael Eichberg
+  */
+case class LOOKUPSWITCH(
+    val defaultOffset: Int,
+    val npairsCount: Int,
+    val npairs: IndexedSeq[(Int, Int)])
+        extends CompoundConditionalBranchInstruction {
 
-	def opcode : Int = 171
+    def opcode: Int = 171
 
-	def mnemonic : String = "lookupswitch"
+    def mnemonic: String = "lookupswitch"
 
-	lazy val exceptions : List[ObjectType] =  Nil
-
+    def indexOfNextInstruction(currentPC: Int, code: Code): Int = {
+        currentPC + (3 - (currentPC % 4)) + 8 + npairs.size * 8
+    }
 }

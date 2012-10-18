@@ -31,29 +31,17 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Load int from local variable.
- *
- * @author Michael Eichberg
- */
-case class ILOAD (
-	
-	val lvIndex : Int
-)
-extends Instruction {
+  * Load int from local variable.
+  *
+  * @author Michael Eichberg
+  */
+case class ILOAD(val lvIndex: Int) extends LoadLocalVariableInstruction with ExplicitLocalVariableIndex {
 
-	def opcode : Int = 21
+    def opcode: Int = 21
 
-	def mnemonic : String = "iload"
-
-	lazy val exceptions : List[ObjectType] =  Nil
+    def mnemonic: String = "iload"
 
 }

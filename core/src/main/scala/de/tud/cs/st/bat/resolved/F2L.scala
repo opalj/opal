@@ -31,8 +31,6 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
 import de.tud.cs.st.util.ControlAbstractions.repeat
@@ -40,17 +38,14 @@ import de.tud.cs.st.util.ControlAbstractions.repeat
 import de.tud.cs.st.bat.resolved.InstructionExceptions._
 
 /**
- * Convert float to long.
- *
- * @author Michael Eichberg
- */
-case object F2L
-extends Instruction {
+  * Convert float to long.
+  *
+  * @author Michael Eichberg
+  */
+case object F2L extends NumericConversionInstruction {
 
-	def opcode : Int = 140
+    def opcode: Int = 140
 
-	def mnemonic : String = "f2l"
-
-	lazy val exceptions : List[ObjectType] =  Nil
+    def mnemonic: String = "f2l"
 
 }

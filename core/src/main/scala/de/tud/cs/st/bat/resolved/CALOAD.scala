@@ -31,26 +31,17 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Load char from array.
- *
- * @author Michael Eichberg
- */
-case object CALOAD
-extends Instruction {
+  * Load char from array.
+  *
+  * @author Michael Eichberg
+  */
+case object CALOAD extends ArrayAccessInstruction with PrimitiveArrayAccess {
 
-	def opcode : Int = 52
+    def opcode: Int = 52
 
-	def mnemonic : String = "caload"
-
-	lazy val exceptions : List[ObjectType] =  Nil
+    def mnemonic: String = "caload"
 
 }

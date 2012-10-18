@@ -35,6 +35,7 @@ package dependencies;
 /**
  * @author Thomas Schlosser
  */
+@SuppressWarnings("all")
 public class EnclosingMethodClass {
 
 	public Object enclosingField = new Object() {

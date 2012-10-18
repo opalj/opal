@@ -31,29 +31,18 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Push item from runtime constant pool.
- *
- * @author Michael Eichberg
- */
-case class LDC_W (
-	
-	val constantValue : ConstantValue[_]
-)
-extends Instruction {
+  * Push item from runtime constant pool.
+  *
+  * @author Michael Eichberg
+  */
+case class LDC_W(val constantValue: ConstantValue[_]) extends LoadConstantInstruction {
 
-	def opcode : Int = 19
+    def opcode: Int = 19
 
-	def mnemonic : String = "ldc_w"
+    def mnemonic: String = "ldc_w"
 
-	lazy val exceptions : List[ObjectType] =  Nil
-
+    final def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 3
 }

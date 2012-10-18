@@ -31,26 +31,17 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Store into short array.
- *
- * @author Michael Eichberg
- */
-case object SASTORE
-extends Instruction {
+  * Store into short array.
+  *
+  * @author Michael Eichberg
+  */
+case object SASTORE extends ArrayAccessInstruction with PrimitiveArrayAccess {
 
-	def opcode : Int = 86
+    def opcode: Int = 86
 
-	def mnemonic : String = "sastore"
-
-	lazy val exceptions : List[ObjectType] =  Nil
+    def mnemonic: String = "sastore"
 
 }

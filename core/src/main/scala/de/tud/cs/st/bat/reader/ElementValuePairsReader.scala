@@ -37,9 +37,9 @@ import java.io.DataInputStream
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
 /**
- *
- * @author Michael Eichberg
- */
+  *
+  * @author Michael Eichberg
+  */
 trait ElementValuePairsReader extends Constant_PoolAbstractions {
 
     //
@@ -92,7 +92,7 @@ trait ElementValuePairsReader extends Constant_PoolAbstractions {
 
     def ElementValue(in: DataInputStream, cp: Constant_Pool): ElementValue = {
         val tag = in.readByte
-        tag match {
+        (tag: @scala.annotation.switch) match {
             case 'B' ⇒ ByteValue(in.readUnsignedShort)(cp)
             case 'C' ⇒ CharValue(in.readUnsignedShort)(cp)
             case 'D' ⇒ DoubleValue(in.readUnsignedShort)(cp)

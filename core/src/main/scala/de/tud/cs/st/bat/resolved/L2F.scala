@@ -31,26 +31,17 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Convert long to float.
- *
- * @author Michael Eichberg
- */
-case object L2F
-extends Instruction {
+  * Convert long to float.
+  *
+  * @author Michael Eichberg
+  */
+case object L2F extends NumericConversionInstruction {
 
-	def opcode : Int = 137
+    def opcode: Int = 137
 
-	def mnemonic : String = "l2f"
-
-	lazy val exceptions : List[ObjectType] =  Nil
+    def mnemonic: String = "l2f"
 
 }

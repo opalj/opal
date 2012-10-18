@@ -33,21 +33,15 @@
 */
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
  * Boolean OR long.
  *
  * @author Michael Eichberg
  */
-case object LOR
-extends Instruction {
+case object LOR extends BitwiseInstruction {
 
 	def opcode : Int = 129
 
 	def mnemonic : String = "lor"
-
-	lazy val exceptions : List[ObjectType] =  Nil
 
 }

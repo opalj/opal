@@ -41,7 +41,7 @@ import reader.Java6Framework
 /**
   * @author Michael Eichberg
   */
-object NativeMethodsCounter {
+object NativeMethodsCounter  extends PerformanceEvaluation {
 
     private def printUsage: Unit = {
         println("Usage: java …Bugs <ZIP or JAR file containing class files>+")
@@ -64,14 +64,20 @@ object NativeMethodsCounter {
             }
         }
 
-        println("Reading class files:")
+
+        println("Reading class files: ")
         var project = new Project()
-        for {
-            zipFile ← args if { println("\t"+zipFile); true };
-            classFile ← Java6Framework.ClassFiles(zipFile)
-        } yield {
-            project += classFile
+        time((t : Long) => println("Reading took: "+(t/1000.0/1000.0/1000.0)+" secs.")) {
+            for {
+                zipFile ← args if { println("\t"+zipFile); true };
+                classFile ← Java6Framework.ClassFiles(zipFile)
+            } {
+                project += classFile
+            }
+
         }
+
+
         println("Starting analyses: ")
 
         var nativeMethods = for {
@@ -80,7 +86,7 @@ object NativeMethodsCounter {
         } yield method
 
         println("Number of native methods: "+nativeMethods.size)
-        println(nativeMethods.map((method) => method.name+"("+method.descriptor+")").mkString("\n"))
+        println(nativeMethods.map((method) ⇒ method.name+"("+method.descriptor+")").mkString("\n"))
     }
 
 }

@@ -34,8 +34,6 @@ package de.tud.cs.st
 package bat.resolved
 package analyses
 
-import util.perf.{ Counting, PerformanceEvaluation }
-import util.graphs.{ Node, toDot }
 import reader.Java6Framework
 
 /**
@@ -49,7 +47,10 @@ object Bugs {
     }
 
     val analyses = List(
-        NonSerializableClassHasASerializableInnerClass
+        DP_DO_INSIDE_DO_PRIVILEGED,
+        NonSerializableClassHasASerializableInnerClass,
+        FI_USELESS,
+        UG_SYNC_SET_UNSYNC_GET
     )
 
     def main(args: Array[String]) {
@@ -71,7 +72,9 @@ object Bugs {
         println("Reading class files:")
         var project = new Project()
         for {
-            zipFile ← args if { println("\t"+zipFile); true };
+            zipFile ← args if {
+                println("\t"+zipFile); true
+            };
             classFile ← Java6Framework.ClassFiles(zipFile)
         } yield {
             project += classFile
@@ -79,6 +82,7 @@ object Bugs {
         println("Starting analyses: ")
 
         for (analysis ← analyses) {
+            print(analysis.getClass().getSimpleName()+" : \n")
             println(analysis.analyze(project).mkString("\n"))
         }
     }

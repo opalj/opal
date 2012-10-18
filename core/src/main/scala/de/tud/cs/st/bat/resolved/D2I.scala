@@ -31,26 +31,17 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Convert double to int.
- *
- * @author Michael Eichberg
- */
-case object D2I
-extends Instruction {
+  * Convert double to int.
+  *
+  * @author Michael Eichberg
+  */
+case object D2I extends NumericConversionInstruction {
 
-	def opcode : Int = 142
+    def opcode: Int = 142
 
-	def mnemonic : String = "d2i"
-
-	lazy val exceptions : List[ObjectType] =  Nil
+    def mnemonic: String = "d2i"
 
 }

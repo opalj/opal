@@ -31,30 +31,29 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Check whether object is of given type.
- *
- * @author Michael Eichberg
- */
-case class CHECKCAST (
-	
-	val referenceType : ReferenceType
-)
-extends Instruction {
+  * Check whether object is of given type.
+  *
+  * @author Michael Eichberg
+  */
+case class CHECKCAST(
+    val referenceType: ReferenceType)
+        extends Instruction {
 
-	def opcode : Int = 192
+    def opcode: Int = 192
 
-	def mnemonic : String = "checkcast"
+    def mnemonic: String = "checkcast"
 
-	lazy val exceptions : List[ObjectType] =  Nil
+    def runtimeExceptions: List[ObjectType] = CHECKCAST.runtimeExceptions
 
+    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 3
+
+}
+
+object CHECKCAST {
+
+    val runtimeExceptions = List(ObjectType.ClassCastException)
 
 }

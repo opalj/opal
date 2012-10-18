@@ -31,8 +31,6 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
 import de.tud.cs.st.util.ControlAbstractions.repeat
@@ -40,18 +38,14 @@ import de.tud.cs.st.util.ControlAbstractions.repeat
 import de.tud.cs.st.bat.resolved.InstructionExceptions._
 
 /**
- * Convert int to char.
- *
- * @author Michael Eichberg
- */
-case object I2C
-extends Instruction {
+  * Convert int to char.
+  *
+  * @author Michael Eichberg
+  */
+case object I2C extends NumericConversionInstruction {
 
-	def opcode : Int = 146
+    def opcode: Int = 146
 
-	def mnemonic : String = "i2c"
-
-	lazy val exceptions : List[ObjectType] =  Nil
-
+    def mnemonic: String = "i2c"
 
 }

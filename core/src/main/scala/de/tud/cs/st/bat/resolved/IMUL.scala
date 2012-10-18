@@ -31,8 +31,6 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
 import de.tud.cs.st.util.ControlAbstractions.repeat
@@ -40,17 +38,14 @@ import de.tud.cs.st.util.ControlAbstractions.repeat
 import de.tud.cs.st.bat.resolved.InstructionExceptions._
 
 /**
- * Multiply int.
- *
- * @author Michael Eichberg
- */
-case object IMUL
-extends Instruction {
+  * Multiply int.
+  *
+  * @author Michael Eichberg
+  */
+case object IMUL extends MultiplyInstruction {
 
-	def opcode : Int = 104
+    def opcode: Int = 104
 
-	def mnemonic : String = "imul"
-
-	lazy val exceptions : List[ObjectType] =  Nil
+    def mnemonic: String = "imul"
 
 }

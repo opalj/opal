@@ -31,31 +31,23 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Set field in object.
- *
- * @author Michael Eichberg
- */
-case class PUTFIELD (
-	
-	val declaringClass : ObjectType, // Recall, if we have "Object[] os = ...; os.length" then os.length is translated to the special arraylength instruction
-	val name : String,
-	val fieldType : FieldType
-)
-extends Instruction {
+  * Set field in object.
+  *
+  * @author Michael Eichberg
+  */
+case class PUTFIELD(
+    val declaringClass: ObjectType, // Recall, if we have "Object[] os = ...; os.length" then os.length is translated to the special arraylength instruction
+    val name: String,
+    val fieldType: FieldType)
+        extends FieldAccessInstruction {
 
-	def opcode : Int = 181
+    def opcode: Int = 181
 
-	def mnemonic : String = "putfield"
+    def mnemonic: String = "putfield"
 
-	lazy val exceptions : List[ObjectType] =  Nil
+    def runtimeExceptions: List[ObjectType] = FieldAccessInstruction.runtimeExceptions
 
 }

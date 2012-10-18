@@ -31,26 +31,17 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Remainder int.
- *
- * @author Michael Eichberg
- */
-case object IREM
-extends Instruction {
+  * Remainder int.
+  *
+  * @author Michael Eichberg
+  */
+case object IREM extends IntegerRemainderInstruction {
 
-	def opcode : Int = 112
+    def opcode: Int = 112
 
-	def mnemonic : String = "irem"
-
-	lazy val exceptions : List[ObjectType] =  Nil
+    def mnemonic: String = "irem"
 
 }

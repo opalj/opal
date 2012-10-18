@@ -11,5 +11,5 @@ bin
 *.iml
 *.ipr
 *.iws
-
-demo/src/main/scala/de/tud/cs/st/bat/resolved/analyses/~$Chosing the Findbugs Analyses.xlsx
+.idea
+~*.xlsx

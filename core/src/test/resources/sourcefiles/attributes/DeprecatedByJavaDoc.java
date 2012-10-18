@@ -45,5 +45,5 @@ package attributes;
  * @deprecated Do not use.
  */
 public class DeprecatedByJavaDoc {
-
+    // deliberately left empty
 }

@@ -31,33 +31,26 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Access jump table by index and jump.
- *
- * @author Michael Eichberg
- */
-case class TABLESWITCH (
-	
-	val defaultOffset : Int, 
-	val low : Int, 
-	val high : Int, 
-	val jumpOffsets : IndexedSeq[Int]
-		
-)
-extends Instruction {
+  * Access jump table by index and jump.
+  *
+  * @author Michael Eichberg
+  */
+case class TABLESWITCH(
+    val defaultOffset: Int,
+    val low: Int,
+    val high: Int,
+    val jumpOffsets: IndexedSeq[Int])
+        extends CompoundConditionalBranchInstruction {
 
-	def opcode : Int = 170
+    def opcode: Int = 170
 
-	def mnemonic : String = "tableswitch"
+    def mnemonic: String = "tableswitch"
 
-	lazy val exceptions : List[ObjectType] =  Nil
+    def indexOfNextInstruction(currentPC: Int, code: Code): Int = {
+        currentPC + (3 - (currentPC % 4)) + 12 + jumpOffsets.size * 4
+    }
 
 }

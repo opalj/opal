@@ -31,29 +31,17 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Load double from local variable.
- *
- * @author Michael Eichberg
- */
-case class DLOAD (
-	
-	val lvIndex : Int
-)
-extends Instruction {
+  * Load double from local variable.
+  *
+  * @author Michael Eichberg
+  */
+case class DLOAD(val lvIndex: Int) extends LoadLocalVariableInstruction with ExplicitLocalVariableIndex {
 
-	def opcode : Int = 24
+    def opcode: Int = 24
 
-	def mnemonic : String = "dload"
-
-	lazy val exceptions : List[ObjectType] =  Nil
+    def mnemonic: String = "dload"
 
 }

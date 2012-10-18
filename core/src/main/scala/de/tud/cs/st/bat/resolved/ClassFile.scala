@@ -86,7 +86,7 @@ case class ClassFile(minorVersion: Int,
 
     def isAnnotationDeclaration: Boolean = (accessFlags & classCategoryMask) == annotationMask
 
-    def isInnerClass: Boolean = innerClasses.exists(_.exists((innerClassInfo) ⇒ innerClassInfo.innerClassType == thisClass && innerClassInfo.outerClassType.isDefined))
+    def isInnerClass: Boolean = innerClasses.exists(_.exists(_.innerClassType == thisClass))
 
     def enclosingMethod: Option[EnclosingMethod] =
         attributes collectFirst { case em: EnclosingMethod ⇒ em }

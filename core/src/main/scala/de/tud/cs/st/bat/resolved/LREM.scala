@@ -33,21 +33,15 @@
 */
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Remainder long.
- *
- * @author Michael Eichberg
- */
-case object LREM
-extends Instruction {
+  * Remainder long.
+  *
+  * @author Michael Eichberg
+  */
+case object LREM extends IntegerRemainderInstruction {
 
-	def opcode : Int = 113
+    def opcode: Int = 113
 
-	def mnemonic : String = "lrem"
-
-	lazy val exceptions : List[ObjectType] =  Nil
+    def mnemonic: String = "lrem"
 
 }

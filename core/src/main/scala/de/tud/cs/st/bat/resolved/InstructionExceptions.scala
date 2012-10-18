@@ -45,21 +45,6 @@ object InstructionExceptions {
 
 // TODO move to ObjectType
 	
-	val NullPointerException = ObjectType("java/lang/NullPointerException")
-	
-	val ArrayIndexOutOfBoundsException = ObjectType("java/lang/ArrayIndexOutOfBoundsException")
-	
-	val ArrayStoreException = ObjectType("java/lang/ArrayStoreException")
-	
-	val NegativeArraySizeException = ObjectType("java/lang/NegativeArraySizeException")
-	
-	val IllegalMonitorStateException = ObjectType("java/lang/IllegalMonitorStateException")
-	
-	val ClassCastException = ObjectType("java/lang/ClassCastException")
-	
-	val ExceptionInInitializerError = ObjectType("java/lang/ExceptionInInitializerError")
-	
-	val ArithmeticException = ObjectType("java/lang/ArithmeticException")
 	
 
 }

@@ -31,26 +31,17 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Duplicate the top operand stack value.
- *
- * @author Michael Eichberg
- */
-case object DUP
-extends Instruction {
+  * Duplicate the top operand stack value.
+  *
+  * @author Michael Eichberg
+  */
+case object DUP extends StackManagementInstruction {
 
-	def opcode : Int = 89
+    def opcode: Int = 89
 
-	def mnemonic : String = "dup"
-
-	lazy val exceptions : List[ObjectType] =  Nil
+    def mnemonic: String = "dup"
 
 }

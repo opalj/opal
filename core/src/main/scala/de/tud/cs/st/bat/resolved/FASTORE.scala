@@ -31,26 +31,17 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Store into float array.
- *
- * @author Michael Eichberg
- */
-case object FASTORE
-extends Instruction {
+  * Store into float array.
+  *
+  * @author Michael Eichberg
+  */
+case object FASTORE extends ArrayAccessInstruction with PrimitiveArrayAccess {
 
-	def opcode : Int = 81
+    def opcode: Int = 81
 
-	def mnemonic : String = "fastore"
-
-	lazy val exceptions : List[ObjectType] =  Nil
+    def mnemonic: String = "fastore"
 
 }

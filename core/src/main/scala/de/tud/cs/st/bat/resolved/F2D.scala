@@ -31,8 +31,6 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
 import de.tud.cs.st.util.ControlAbstractions.repeat
@@ -40,17 +38,14 @@ import de.tud.cs.st.util.ControlAbstractions.repeat
 import de.tud.cs.st.bat.resolved.InstructionExceptions._
 
 /**
- * Convert float to double.
- *
- * @author Michael Eichberg
- */
-case object F2D
-extends Instruction {
+  * Convert float to double.
+  *
+  * @author Michael Eichberg
+  */
+case object F2D extends NumericConversionInstruction {
 
-	def opcode : Int = 141
+    def opcode: Int = 141
 
-	def mnemonic : String = "f2d"
-
-	lazy val exceptions : List[ObjectType] =  Nil
+    def mnemonic: String = "f2d"
 
 }

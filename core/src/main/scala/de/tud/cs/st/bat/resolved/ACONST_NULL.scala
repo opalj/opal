@@ -31,25 +31,16 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Push null.
- *
- * @author Michael Eichberg
- */
-case object ACONST_NULL
-extends Instruction {
+  * Push null.
+  *
+  * @author Michael Eichberg
+  */
+case object ACONST_NULL extends LoadConstantInstruction with ImplicitValue {
 
-	def opcode : Int = 1
+    def opcode: Int = 1
 
-	def mnemonic : String = "aconst_null"
-
-	lazy val exceptions : List[ObjectType] =  Nil
+    def mnemonic: String = "aconst_null"
 }

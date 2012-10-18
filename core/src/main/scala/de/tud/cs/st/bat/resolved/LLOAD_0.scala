@@ -31,26 +31,17 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
-
 /**
- * Load long from local variable with index 0.
- *
- * @author Michael Eichberg
- */
-case object LLOAD_0
-extends Instruction {
+  * Load long from local variable with index 0.
+  *
+  * @author Michael Eichberg
+  */
+case object LLOAD_0 extends LoadLocalVariableInstruction with ImplicitLocalVariableIndex {
 
-	def opcode : Int = 30
+    def opcode: Int = 30
 
-	def mnemonic : String = "lload_0"
-
-	lazy val exceptions : List[ObjectType] =  Nil
+    def mnemonic: String = "lload_0"
 
 }

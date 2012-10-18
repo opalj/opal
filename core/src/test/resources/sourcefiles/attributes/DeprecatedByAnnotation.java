@@ -43,5 +43,5 @@ package attributes;
  */
 @java.lang.Deprecated
 public class DeprecatedByAnnotation {
-
+    // deliberately left empty
 }

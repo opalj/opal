@@ -31,24 +31,18 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
 package de.tud.cs.st.bat.resolved
-
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
 
 /**
   * Branch always.
   *
   * @author Michael Eichberg
   */
-case class GOTO(val branchoffset: Int) extends Instruction {
+case class GOTO(val branchoffset: Int) extends UnconditionalBranchInstruction {
 
     def opcode: Int = 167
 
     def mnemonic: String = "goto"
 
-    lazy val exceptions: List[ObjectType] = Nil
-
+    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 3
 }

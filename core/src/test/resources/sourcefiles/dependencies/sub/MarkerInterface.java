@@ -37,5 +37,5 @@ package dependencies.sub;
  * 
  */
 public interface MarkerInterface {
-
+    // deliberately left empty
 }

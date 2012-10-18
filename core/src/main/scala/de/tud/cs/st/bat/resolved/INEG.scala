@@ -31,8 +31,6 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-
-
 package de.tud.cs.st.bat.resolved
 
 import de.tud.cs.st.util.ControlAbstractions.repeat
@@ -40,17 +38,14 @@ import de.tud.cs.st.util.ControlAbstractions.repeat
 import de.tud.cs.st.bat.resolved.InstructionExceptions._
 
 /**
- * Negate int.
- *
- * @author Michael Eichberg
- */
-case object INEG
-extends Instruction {
+  * Negate int.
+  *
+  * @author Michael Eichberg
+  */
+case object INEG extends NegateInstruction {
 
-	def opcode : Int = 116
+    def opcode: Int = 116
 
-	def mnemonic : String = "ineg"
-
-	lazy val exceptions : List[ObjectType] =  Nil
+    def mnemonic: String = "ineg"
 
 }

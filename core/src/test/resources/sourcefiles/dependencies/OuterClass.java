@@ -34,11 +34,11 @@ package dependencies;
 
 /**
  * @author Thomas Schlosser
- * 
  */
 public class OuterClass {
     class InnerClass {
-	public InnerClass(Integer i) {
-	}
+        public InnerClass(Integer i) {
+            // deliberately left empty
+        }
     }
 }
