@@ -37,18 +37,18 @@ package reader
 import de.tud.cs.st.bat.reader.Constant_PoolReader
 
 /**
- * Representation of the constant pool as specified by the JVM Specification.
- * (This representation does not provide any abstraction.)
- *
- * @author Michael Eichberg
- */
+  * Representation of the constant pool as specified by the JVM Specification.
+  * (This representation does not provide any abstraction.)
+  *
+  * @author Michael Eichberg
+  */
 trait Constant_PoolBinding extends Constant_PoolReader {
 
     type Constant_Pool_Entry = ConstantPoolEntries.Constant_Pool_Entry
     val Constant_Pool_EntryManifest: ClassManifest[Constant_Pool_Entry] = implicitly
 
     type CONSTANT_Class_info = ConstantPoolEntries.CONSTANT_Class_info
-    
+
     type CONSTANT_Fieldref_info = ConstantPoolEntries.CONSTANT_Fieldref_info
 
     type CONSTANT_Methodref_info = ConstantPoolEntries.CONSTANT_Methodref_info
@@ -77,26 +77,19 @@ trait Constant_PoolBinding extends Constant_PoolReader {
 
     import ConstantPoolEntries._
 
-    def CONSTANT_Class_info(i: Int): CONSTANT_Class_info =
-        new CONSTANT_Class_info(i)
+    def CONSTANT_Class_info(i: Int): CONSTANT_Class_info = new CONSTANT_Class_info(i)
 
-    def CONSTANT_Double_info(d: Double): CONSTANT_Double_info =
-        new CONSTANT_Double_info(d)
+    def CONSTANT_Double_info(d: Double): CONSTANT_Double_info = new CONSTANT_Double_info(d)
 
-    def CONSTANT_Float_info(f: Float): CONSTANT_Float_info =
-        new CONSTANT_Float_info(f)
+    def CONSTANT_Float_info(f: Float): CONSTANT_Float_info = new CONSTANT_Float_info(f)
 
-    def CONSTANT_Integer_info(i: Int): CONSTANT_Integer_info =
-        new CONSTANT_Integer_info(i)
+    def CONSTANT_Integer_info(i: Int): CONSTANT_Integer_info = new CONSTANT_Integer_info(i)
 
-    def CONSTANT_Long_info(l: Long): CONSTANT_Long_info =
-        new CONSTANT_Long_info(l)
+    def CONSTANT_Long_info(l: Long): CONSTANT_Long_info = new CONSTANT_Long_info(l)
 
-    def CONSTANT_Utf8_info(s: String): CONSTANT_Utf8_info =
-        new CONSTANT_Utf8_info(s)
+    def CONSTANT_Utf8_info(s: String): CONSTANT_Utf8_info = new CONSTANT_Utf8_info(s)
 
-    def CONSTANT_String_info(i: Int): CONSTANT_String_info =
-        new CONSTANT_String_info(i)
+    def CONSTANT_String_info(i: Int): CONSTANT_String_info = new CONSTANT_String_info(i)
 
     def CONSTANT_Fieldref_info(class_index: Int,
                                name_and_type_index: Int): CONSTANT_Fieldref_info =
