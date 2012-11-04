@@ -32,7 +32,7 @@
 */
 package de.tud.cs.st.bat.resolved.analyses.selected
 
-import de.tud.cs.st.bat.resolved.{MethodDescriptor, Method, ObjectType}
+import de.tud.cs.st.bat.resolved.{ClassFile, MethodDescriptor, Method, ObjectType}
 import de.tud.cs.st.bat.resolved.analyses.Project
 
 /**
@@ -41,15 +41,16 @@ import de.tud.cs.st.bat.resolved.analyses.Project
  *
  */
 object CN_IDIOM
+    extends (Project => Iterable[ClassFile])
 {
 
     def apply(project: Project) =
         for {
-            allCloneables ← project.classHierarchy.subtypes(ObjectType("java/lang/Cloneable")).toList
+            allCloneables ← project.classHierarchy.subtypes (ObjectType ("java/lang/Cloneable")).toList
             cloneable ← allCloneables
-            classFile = project.classes(cloneable)
-            if !classFile.methods.exists({
-                case Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object), _) ⇒ true
+            classFile = project.classes (cloneable)
+            if !classFile.methods.exists ({
+                case Method (_, "clone", MethodDescriptor (Seq (), ObjectType.Object), _) ⇒ true
                 case _ ⇒ false
             })
         } yield classFile

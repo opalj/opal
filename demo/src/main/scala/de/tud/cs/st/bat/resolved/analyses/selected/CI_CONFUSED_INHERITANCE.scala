@@ -1,6 +1,7 @@
 package de.tud.cs.st.bat.resolved.analyses.selected
 
 import de.tud.cs.st.bat.resolved.analyses.Project
+import de.tud.cs.st.bat.resolved.{Field, ClassFile}
 
 /**
  *
@@ -8,6 +9,7 @@ import de.tud.cs.st.bat.resolved.analyses.Project
  *
  */
 object CI_CONFUSED_INHERITANCE
+    extends (Project => Iterable[(ClassFile, Field)])
 {
 
     def apply(project: Project) =
