@@ -41,6 +41,6 @@ abstract class ConditionalBranchInstruction extends ControlTransferInstruction {
 
     def branchoffset: Int
 
-    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 1 // this is the fall-through case
+    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 3 
  
 }
