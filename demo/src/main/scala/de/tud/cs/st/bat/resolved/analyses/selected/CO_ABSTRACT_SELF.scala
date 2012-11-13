@@ -47,8 +47,7 @@ object CO_ABSTRACT_SELF
 {
     def apply(project: Project) =
         for {
-            Some (allComparables) ← project.classHierarchy.subtypes (ObjectType ("java/lang/Comparable"))
-            comparable ← allComparables
+            comparable ← project.classHierarchy.subtypes (ObjectType ("java/lang/Comparable")).getOrElse(Nil)
             classFile = project.classes (comparable)
             if (classFile.isAbstract)
             method@Method (_, "compareTo", MethodDescriptor (Seq (parameterType), IntegerType), _) ← classFile.methods

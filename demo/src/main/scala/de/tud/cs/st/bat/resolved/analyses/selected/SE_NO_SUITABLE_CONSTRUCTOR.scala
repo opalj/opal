@@ -47,14 +47,13 @@ object SE_NO_SUITABLE_CONSTRUCTOR
 
     def apply(project: Project) = {
         val serializableClasses = project.classHierarchy.subclasses (ObjectType ("java/io/Serializable")).getOrElse (Set.empty)
-        for (
-            superclass ← project.classHierarchy.superclasses (serializableClasses) if project.classes.isDefinedAt (superclass) && // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available
-            {
-                val superClassFile = project.classes (superclass)
-                !superClassFile.isInterfaceDeclaration &&
-                    !superClassFile.constructors.exists (_.descriptor.parameterTypes.length == 0)
-            }
-        ) yield superclass // there can be at most one method
+        for {
+            superclass ← project.classHierarchy.superclasses (serializableClasses)
+            if project.classes.isDefinedAt (superclass)
+            superClassFile = project.classes (superclass)
+            if !superClassFile.isInterfaceDeclaration &&
+                !superClassFile.constructors.exists (_.descriptor.parameterTypes.length == 0)
+        } yield superClassFile // there can be at most one method
     }
 
 }

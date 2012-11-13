@@ -46,8 +46,7 @@ object CO_SELF_NO_OBJECT extends (Project => Iterable[(ClassFile, Method)])
 {
     def apply(project: Project) =
         for {
-            Some (allComparables) ← project.classHierarchy.subtypes (ObjectType ("java/lang/Comparable"))
-            comparable ← allComparables
+            comparable ← project.classHierarchy.subtypes (ObjectType ("java/lang/Comparable")).getOrElse(Nil)
             classFile = project.classes (comparable)
             method@Method (_, "compareTo", MethodDescriptor (Seq (parameterType), IntegerType), _) ← classFile.methods
             if parameterType != ObjectType ("java/lang/Object")
