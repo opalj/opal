@@ -50,7 +50,7 @@ object IMSE_DONT_CATCH_IMSE
         for (
             classFile ← project.classFiles if classFile.isClassDeclaration;
             method ← classFile.methods if method.body.isDefined;
-            exceptionHandler ← method.body.get.exceptionHandlers if exceptionHandler.catchType == IllegalMonitorStateExceptionType
+            exceptionHandler ← method.body.get.exceptionHandlers if exceptionHandler.catchType == Some(IllegalMonitorStateExceptionType)
         ) yield (classFile, method)
 
 }
