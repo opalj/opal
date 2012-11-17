@@ -48,6 +48,15 @@ object Analyses
         case "CN_IDIOM" => CN_IDIOM
         case "CN_IDIOM_NO_SUPER_CALL" => CN_IDIOM_NO_SUPER_CALL
         case "CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE" => CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE
+        case "CO_ABSTRACT_SELF" => CO_ABSTRACT_SELF
+        case "CO_SELF_NO_OBJECT" => CO_SELF_NO_OBJECT
+        case "DM_GC" => DM_GC
+        case "DM_RUN_FINALIZERS_ON_EXIT" => DM_RUN_FINALIZERS_ON_EXIT
+        case "EQ_ABSTRACT_SELF" => EQ_ABSTRACT_SELF
+        case "FI_PUBLIC_SHOULD_BE_PROTECTED" => FI_PUBLIC_SHOULD_BE_PROTECTED
+        case "IMSE_DONT_CATCH_IMSE" => IMSE_DONT_CATCH_IMSE
+        case "SE_NO_SUITABLE_CONSTRUCTOR" => SE_NO_SUITABLE_CONSTRUCTOR
+        case "UUF_UNUSED_FIELD" => UUF_UNUSED_FIELD
         case _ => throw new IllegalArgumentException ("Unknown analysis: " + analysisName)
     }
 
