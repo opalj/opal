@@ -1,6 +1,7 @@
-package de.tud.cs.st.bat.resolved.analyses
+package de.tud.cs.st.bat.resolved.analyses.random
 
 import de.tud.cs.st.bat.resolved._
+import analyses.{Project, Analysis}
 import de.tud.cs.st.bat.resolved.analyses.BaseAnalyses._
 import de.tud.cs.st.bat.resolved.INVOKEVIRTUAL
 
@@ -12,7 +13,7 @@ import de.tud.cs.st.bat.resolved.INVOKEVIRTUAL
  *
  */
 object DP_DO_INSIDE_DO_PRIVILEGED
-        extends Analysis
+    extends (Project => Iterable[(ClassFile, Method, Int)])
 {
     val reflectionField = ObjectType("java/lang/reflect/Field")
 
@@ -22,9 +23,8 @@ object DP_DO_INSIDE_DO_PRIVILEGED
 
     val priviledgedExceptionAction = ObjectType("java/security/PrivilegedExceptionAction")
 
-    def analyze(project: Project) = {
-        val classFiles: Traversable[ClassFile] = project.classFiles
-        for (classFile ← classFiles
+    def apply(project: Project) = {
+        for (classFile ← project.classFiles
              if !classFile.interfaces.exists {
                  case `priviledgedAction` => true
                  case `priviledgedExceptionAction` => true
@@ -34,10 +34,7 @@ object DP_DO_INSIDE_DO_PRIVILEGED
              (INVOKEVIRTUAL(receiver, "setAccessible", _), idx) ← withIndex(method.body.get.instructions)
              if (receiver == reflectionField || receiver == reflectionMethod)
         ) yield {
-            ("DP_DO_INSIDE_DO_PRIVILEGED",
-                    classFile.thisClass.toJava + "." +
-                            method.name +
-                            method.descriptor.toUMLNotation, idx)
+            (classFile,method, idx)
         }
 
     }

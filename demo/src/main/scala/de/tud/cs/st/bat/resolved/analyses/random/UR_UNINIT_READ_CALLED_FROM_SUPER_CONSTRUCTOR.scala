@@ -1,6 +1,7 @@
-package de.tud.cs.st.bat.resolved.analyses
+package de.tud.cs.st.bat.resolved.analyses.random
 
 import de.tud.cs.st.bat.resolved._
+import analyses.{BaseAnalyses, Project}
 import analyses.BaseAnalyses._
 
 /**
@@ -11,29 +12,28 @@ import analyses.BaseAnalyses._
  *
  */
 object UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR
-        extends Analysis
+    extends (Project => Iterable[(ObjectType, Method, String, FieldType, Int)])
 {
 
 
-    def analyze(project: Project) = {
-        val classFiles: Traversable[ClassFile] = project.classFiles
-        val isOverride = BaseAnalyses.isOverride(project) _
-        val calledSuperConstructor = BaseAnalyses.calledSuperConstructor(project) _
-        for (classFile ← classFiles;
+    def apply(project: Project) = {
+        val isOverride = BaseAnalyses.isOverride (project) _
+        val calledSuperConstructor = BaseAnalyses.calledSuperConstructor (project) _
+        for (classFile ← project.classFiles;
              method ← classFile.methods if (
-                    method.body.isDefined &&
-                            method.name != "<init>" &&
-                            !method.isStatic &&
-                            isOverride(classFile)(method));
-             (GETFIELD(declaringClass, name, fieldType), idx) ← withIndex(method.body.get.instructions);
+                method.body.isDefined &&
+                    method.name != "<init>" &&
+                    !method.isStatic &&
+                    isOverride (classFile)(method));
+             (GETFIELD (declaringClass, fieldName, fieldType), idx) ← withIndex (method.body.get.instructions);
              constructor ← classFile.constructors
-             if declaresField(classFile)(name, fieldType);
-             (superClass, superConstructor) ← calledSuperConstructor(classFile, constructor)
-             if (calls(superConstructor, superClass, method))
+             if declaresField (classFile)(fieldName, fieldType);
+             (superClass, superConstructor) ← calledSuperConstructor (classFile, constructor)
+             if (calls (superConstructor, superClass, method))
 
-        ) yield {
-            ("UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR", declaringClass.toJava + "." + method.name, method
-                    .descriptor.toUMLNotation, name + " : " + fieldType.toJava, idx)
+        ) yield
+        {
+            (declaringClass, method, fieldName, fieldType, idx)
         }
 
     }

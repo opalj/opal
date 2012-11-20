@@ -1,6 +1,7 @@
-package de.tud.cs.st.bat.resolved.analyses
+package de.tud.cs.st.bat.resolved.analyses.random
 
 import de.tud.cs.st.bat.resolved._
+import analyses.Project
 import de.tud.cs.st.bat.resolved.Field
 
 /**
@@ -11,31 +12,31 @@ import de.tud.cs.st.bat.resolved.Field
  *
  */
 object MS_SHOULD_BE_FINAL
-        extends Analysis
+    extends (Project => Iterable[(ClassFile, Field)])
 {
 
-    val hashTableType = ObjectType("java/util/Hashtable")
+    val hashTableType = ObjectType ("java/util/Hashtable")
 
 
     def isHashTable(t: FieldType) = t == hashTableType
 
     def isArray(t: FieldType) = t.isArrayType
 
-    def analyze(project: Project) = {
-        val classFiles: Traversable[ClassFile] = project.classFiles
-        for (classFile ← classFiles if (!classFile.isInterfaceDeclaration);
+    def apply(project: Project) = {
+        for (classFile ← project.classFiles if (!classFile.isInterfaceDeclaration);
              val declaringClass = classFile.thisClass;
              val packageName = declaringClass.packageName;
-             field@Field(_, name, fieldType, _) ← classFile.fields
+             field@Field (_, name, fieldType, _) ← classFile.fields
              if (!field.isFinal &&
-                     field.isStatic &&
-                     !field.isSynthetic &&
-                     !field.isVolatile &&
-                     (field.isPublic || field.isProtected) &&
-                     !isArray(field.fieldType) && !isHashTable(field.fieldType)
-                     )
-        ) yield {
-            ("MS_SHOULD_BE_FINAL", classFile.thisClass.toJava + "." + field.name + " : " + field.fieldType.toJava)
+                 field.isStatic &&
+                 !field.isSynthetic &&
+                 !field.isVolatile &&
+                 (field.isPublic || field.isProtected) &&
+                 !isArray (field.fieldType) && !isHashTable (field.fieldType)
+                 )
+        ) yield
+        {
+            (classFile, field)
         }
     }
 

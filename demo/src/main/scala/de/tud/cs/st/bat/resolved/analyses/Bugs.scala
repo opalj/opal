@@ -37,53 +37,54 @@ package analyses
 import reader.Java6Framework
 
 /**
-  * @author Michael Eichberg
-  */
-object Bugs {
+ * @author Michael Eichberg
+ * @author Ralf Mitschke
+ */
+object Bugs
+{
 
-    private def printUsage: Unit = {
-        println("Usage: java …Bugs <ZIP or JAR file containing class files>+")
-        println("(c) 2012 Michael Eichberg, Ralf Mitschke")
+    private def printUsage() {
+        println ("Usage: java …Bugs <ZIP or JAR file containing class files>+")
+        println ("(c) 2012 Michael Eichberg, Ralf Mitschke")
     }
 
-    val analyses = List(
-        DP_DO_INSIDE_DO_PRIVILEGED,
-        NonSerializableClassHasASerializableInnerClass,
-        FI_USELESS,
-        UG_SYNC_SET_UNSYNC_GET
+    val analyses: List[Project => Iterable[_]] = List (
+
     )
 
     def main(args: Array[String]) {
 
-        if (args.length == 0 || !args.forall(arg ⇒ arg.endsWith(".zip") || arg.endsWith(".jar"))) {
-            printUsage
-            sys.exit(1)
+        if (args.length == 0 || !args.forall (arg ⇒ arg.endsWith (".zip") || arg.endsWith (".jar"))) {
+            printUsage ()
+            sys.exit (1)
         }
 
         for (arg ← args) {
-            val file = new java.io.File(arg)
-            if (!file.canRead() || file.isDirectory()) {
-                println("The file: "+file+" cannot be read.");
-                printUsage
-                sys.exit(1)
+            val file = new java.io.File (arg)
+            if (!file.canRead || file.isDirectory) {
+                println ("The file: " + file + " cannot be read.")
+                printUsage ()
+                sys.exit (1)
             }
         }
 
-        println("Reading class files:")
-        var project = new Project()
+        println ("Reading class files:")
+        var project = new Project ()
         for {
             zipFile ← args if {
-                println("\t"+zipFile); true
-            };
-            classFile ← Java6Framework.ClassFiles(zipFile)
-        } yield {
+            println ("\t" + zipFile)
+            true
+        }
+            classFile ← Java6Framework.ClassFiles (zipFile)
+        } yield
+        {
             project += classFile
         }
-        println("Starting analyses: ")
+        println ("Starting analyses: ")
 
         for (analysis ← analyses) {
-            print(analysis.getClass().getSimpleName()+" : \n")
-            println(analysis.analyze(project).mkString("\n"))
+            print (analysis.getClass.getSimpleName + " : \n")
+            println (analysis (project).mkString ("\n"))
         }
     }
 
