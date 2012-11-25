@@ -53,7 +53,7 @@ object FI_USELESS
             method@Method (_, "finalize", methodDescriptor@MethodDescriptor (Seq (), VoidType), _) ← classFile.methods
             if method.body.isDefined
             instructions = method.body.get.instructions
-            if instructions.length == 5
+            if instructions.filter(_ != null).length == 5
             if instructions.exists (
             {
                 case INVOKESPECIAL (_, "finalize", `methodDescriptor`) ⇒ true
