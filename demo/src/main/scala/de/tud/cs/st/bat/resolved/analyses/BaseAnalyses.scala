@@ -1,6 +1,7 @@
 package de.tud.cs.st.bat.resolved.analyses
 
 import de.tud.cs.st.bat.resolved._
+import scala.Some
 
 /**
  *
@@ -80,12 +81,18 @@ object BaseAnalyses
         if (!superClasses.isDefined) {
             return None
         }
-        val Some((targetType, name, desc)) = constructor.body.get.instructions.collectFirst {
+        val constructorCall = constructor.body.get.instructions.collectFirst {
             case INVOKESPECIAL(trgt, n, d)
                 if superClasses.get.contains(trgt.asInstanceOf[ObjectType]) =>
                 (trgt.asInstanceOf[ObjectType], n, d)
 
         }
+
+        if (!constructorCall.isDefined) {
+            return None
+        }
+
+        val Some((targetType, name, desc)) = constructorCall
         project.lookupMethodDeclaration(targetType, name, desc)
     }
 

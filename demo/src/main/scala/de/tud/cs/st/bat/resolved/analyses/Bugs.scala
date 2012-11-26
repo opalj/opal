@@ -34,6 +34,7 @@ package de.tud.cs.st
 package bat.resolved
 package analyses
 
+import random.UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR
 import reader.Java6Framework
 
 /**
@@ -49,7 +50,7 @@ object Bugs
     }
 
     val analyses: List[Project => Iterable[_]] = List (
-
+        UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR
     )
 
     def main(args: Array[String]) {
@@ -84,8 +85,12 @@ object Bugs
 
         for (analysis ← analyses) {
             print (analysis.getClass.getSimpleName + " : \n")
-            println (analysis (project).mkString ("\n"))
+            val result = analysis (project)
+            println (result.mkString ("\n"))
+            println (result.size)
         }
+
+
     }
 
 }
