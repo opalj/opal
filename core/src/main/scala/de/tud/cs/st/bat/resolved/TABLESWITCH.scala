@@ -50,7 +50,7 @@ case class TABLESWITCH(
     def mnemonic: String = "tableswitch"
 
     def indexOfNextInstruction(currentPC: Int, code: Code): Int = {
-        currentPC + (3 - (currentPC % 4)) + 12 + jumpOffsets.size * 4
+        currentPC + 1 + (3 - (currentPC % 4)) + 12 + jumpOffsets.size * 4
     }
 
 }

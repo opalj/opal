@@ -44,6 +44,6 @@ case class LDC2_W(val constantValue: ConstantValue[_]) extends LoadConstantInstr
 
     def mnemonic: String = "ldc2_w"
 
-    final def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 2
+    final def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 1 + 2
 
 }

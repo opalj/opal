@@ -49,6 +49,6 @@ case class LOOKUPSWITCH(
     def mnemonic: String = "lookupswitch"
 
     def indexOfNextInstruction(currentPC: Int, code: Code): Int = {
-        currentPC + (3 - (currentPC % 4)) + 8 + npairs.size * 8
+        currentPC + 1 + (3 - (currentPC % 4)) + 8 + npairs.size * 8
     }
 }
