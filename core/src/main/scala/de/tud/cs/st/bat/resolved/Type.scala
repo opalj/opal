@@ -383,26 +383,26 @@ object ObjectType {
             className.substring(0, index)
     }
 
-    val Object = ObjectType("java/lang/Object")
-    val String = ObjectType("java/lang/String")
-    val Class = ObjectType("java/lang/Class")
-    val Throwable = ObjectType("java/lang/Throwable")
-    val Error = ObjectType("java/lang/Error")
-    val Exception = ObjectType("java/lang/Exception")
-    val RuntimeException = ObjectType("java/lang/RuntimeException")
-    val IndexOutOfBoundsException = ObjectType("java/lang/IndexOutOfBoundsException")
+    final val Object = ObjectType("java/lang/Object")
+    final val String = ObjectType("java/lang/String")
+    final val Class = ObjectType("java/lang/Class")
+    final val Throwable = ObjectType("java/lang/Throwable")
+    final val Error = ObjectType("java/lang/Error")
+    final val Exception = ObjectType("java/lang/Exception")
+    final val RuntimeException = ObjectType("java/lang/RuntimeException")
+    final val IndexOutOfBoundsException = ObjectType("java/lang/IndexOutOfBoundsException")
 
     // Exceptions and errors that may be throw by the JVM (i.e., instances of these exceptions may be 
     // created at runtime by the JVM)
-    val ExceptionInInitializerError = ObjectType("java/lang/ExceptionInInitializerError")
+    final val ExceptionInInitializerError = ObjectType("java/lang/ExceptionInInitializerError")
 
-    val NullPointerException = ObjectType("java/lang/NullPointerException")
-    val ArrayIndexOutOfBoundsException = ObjectType("java/lang/ArrayIndexOutOfBoundsException")
-    val ArrayStoreException = ObjectType("java/lang/ArrayStoreException")
-    val NegativeArraySizeException = ObjectType("java/lang/NegativeArraySizeException")
-    val IllegalMonitorStateException = ObjectType("java/lang/IllegalMonitorStateException")
-    val ClassCastException = ObjectType("java/lang/ClassCastException")
-    val ArithmeticException = ObjectType("java/lang/ArithmeticException")
+    final val NullPointerException = ObjectType("java/lang/NullPointerException")
+    final val ArrayIndexOutOfBoundsException = ObjectType("java/lang/ArrayIndexOutOfBoundsException")
+    final val ArrayStoreException = ObjectType("java/lang/ArrayStoreException")
+    final val NegativeArraySizeException = ObjectType("java/lang/NegativeArraySizeException")
+    final val IllegalMonitorStateException = ObjectType("java/lang/IllegalMonitorStateException")
+    final val ClassCastException = ObjectType("java/lang/ClassCastException")
+    final val ArithmeticException = ObjectType("java/lang/ArithmeticException")
 
 }
 

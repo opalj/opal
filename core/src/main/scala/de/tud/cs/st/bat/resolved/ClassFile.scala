@@ -96,7 +96,7 @@ case class ClassFile(minorVersion: Int,
 
     /**
       * Each class has at most one explicit, direct outer type.
-      * 
+      *
       * @return The object type of the outer type as well as this inner classes' access flags.
       */
     def outerType: Option[(ObjectType, Int)] = {
@@ -113,13 +113,11 @@ case class ClassFile(minorVersion: Int,
 
     /**
       * The SourceFile attribute is an optional attribute [...]. There can be
-      * at most one SourceFile attribute.
+      * at most one `SourceFile` attribute.
       */
-    def sourceFile: Option[String] =
-        attributes collectFirst { case SourceFile(s) ⇒ s }
+    def sourceFile: Option[String] = attributes collectFirst { case SourceFile(s) ⇒ s }
 
-    def sourceDebugExtension: Option[String] =
-        attributes collectFirst { case SourceDebugExtension(s) ⇒ s }
+    def sourceDebugExtension: Option[String] = attributes collectFirst { case SourceDebugExtension(s) ⇒ s }
 
     /**
       * All constructors/instance initialization methods defined by this class. (This does not include static initializers.)
