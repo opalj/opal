@@ -35,8 +35,8 @@ package de.tud.cs.st.bat
 import scala.collection.immutable.IndexedSeq
 
 /**
-  * This class enumerates the different contexts in which the JVM Spec. uses
-  * access_flags fields and defines which access_flags can be found in which context.
+  * This class is an enumeration of the different contexts in which the JVM Spec. uses
+  * `access_flags` fields and defines which `access_flags` can be found in which context.
   *
   * @author Michael Eichberg
   */
