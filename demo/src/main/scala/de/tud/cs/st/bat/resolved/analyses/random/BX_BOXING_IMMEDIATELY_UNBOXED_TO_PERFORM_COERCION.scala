@@ -1,6 +1,7 @@
-package de.tud.cs.st.bat.resolved.analyses
+package de.tud.cs.st.bat.resolved.analyses.random
 
 import de.tud.cs.st.bat.resolved._
+import analyses.{Project, Analysis}
 import de.tud.cs.st.bat.resolved.analyses.BaseAnalyses._
 
 /**
@@ -11,15 +12,14 @@ import de.tud.cs.st.bat.resolved.analyses.BaseAnalyses._
  *
  */
 object BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION
-        extends Analysis
+    extends (Project => Iterable[(ClassFile, Method, Int)])
 {
     // With the analyzed sequence check FindBugs only finds
     // new Integer(1).doubleValue()
     // and not
     // Integer.valueOf(1).doubleValue()
-    def analyze(project: Project) = {
-        val classFiles: Traversable[ClassFile] = project.classFiles
-        for (classFile ← classFiles if classFile.majorVersion >= 49;
+    def apply(project: Project) = {
+        for (classFile ← project.classFiles if classFile.majorVersion >= 49;
              method ← classFile.methods if method.body.isDefined;
              Seq(
              (INVOKESPECIAL(firstReceiver, _ , MethodDescriptor(Seq(paramType), _)), _),
@@ -33,10 +33,7 @@ object BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION
                              returnType != paramType // coercion to another type performed
                      )
         ) yield {
-            ("BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION",
-                    classFile.thisClass.toJava + "." +
-                            method.name +
-                            method.descriptor.toUMLNotation, idx)
+            (classFile,method, idx)
         }
     }
 

@@ -1,6 +1,7 @@
-package de.tud.cs.st.bat.resolved.analyses
+package de.tud.cs.st.bat.resolved.analyses.random
 
 import de.tud.cs.st.bat.resolved._
+import analyses.Project
 import de.tud.cs.st.bat.resolved.analyses.BaseAnalyses._
 
 /**
@@ -11,31 +12,29 @@ import de.tud.cs.st.bat.resolved.analyses.BaseAnalyses._
  *
  */
 object SW_SWING_METHODS_INVOKED_IN_SWING_THREAD
-        extends Analysis
+    extends (Project => Iterable[(ClassFile, Method, Int)])
 {
-    def analyze(project: Project) = {
-        val classFiles: Traversable[ClassFile] = project.classFiles
-        for (classFile ← classFiles;
+    def apply(project: Project) = {
+        for (classFile ← project.classFiles;
              method ← classFile.methods if (
-                    method.body.isDefined &&
-                            method.isPublic &&
-                            method.isStatic &&
-                            method.name == "main" ||
-                            classFile.thisClass.className.toLowerCase.indexOf("benchmark") >= 0
-                    );
-             (INVOKEVIRTUAL(targetType, name, desc), idx) ← withIndex(method.body.get.instructions)
+                method.body.isDefined &&
+                    method.isPublic &&
+                    method.isStatic &&
+                    method.name == "main" ||
+                    classFile.thisClass.className.toLowerCase.indexOf ("benchmark") >= 0
+                );
+             (INVOKEVIRTUAL (targetType, name, desc), idx) ← withIndex (method.body.get.instructions)
              if (
-                     targetType.isObjectType &&
-                             targetType.asInstanceOf[ObjectType].className.startsWith("javax/swing/")) &&
-                     (
-                             name == "show" && desc == MethodDescriptor(Nil, VoidType) ||
-                                     name == "pack" && desc == MethodDescriptor(Nil, VoidType) ||
-                                     name == "setVisible" && desc == MethodDescriptor(List(BooleanType), VoidType)
-                             )
-        ) yield {
-            ("SW_SWING_METHODS_INVOKED_IN_SWING_THREAD", classFile.thisClass.toJava + "." + method.name + method
-                    .descriptor
-                    .toUMLNotation, idx)
+                 targetType.isObjectType &&
+                     targetType.asInstanceOf[ObjectType].className.startsWith ("javax/swing/")) &&
+                 (
+                     name == "show" && desc == MethodDescriptor (Nil, VoidType) ||
+                         name == "pack" && desc == MethodDescriptor (Nil, VoidType) ||
+                         name == "setVisible" && desc == MethodDescriptor (List (BooleanType), VoidType)
+                     )
+        ) yield
+        {
+            (classFile, method, idx)
         }
 
     }

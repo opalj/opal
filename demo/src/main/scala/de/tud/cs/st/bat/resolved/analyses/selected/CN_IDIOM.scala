@@ -1,5 +1,5 @@
 /* License (BSD Style License):
-*  Copyright (c) 2009, 2012
+*  Copyright (c) 2009, 2011
 *  Software Technology Group
 *  Department of Computer Science
 *  Technische Universität Darmstadt
@@ -30,32 +30,30 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st
-package bat
-package resolved
-package analyses
+package de.tud.cs.st.bat.resolved.analyses.selected
+
+import de.tud.cs.st.bat.resolved.{ClassFile, MethodDescriptor, Method, ObjectType}
+import de.tud.cs.st.bat.resolved.analyses.Project
 
 /**
-  * Finalize just calls super.finalize.
-  *
-  * @author Michael Eichberg
-  */
-object FI_USELESS extends Analysis {
+ *
+ * @author Ralf Mitschke
+ *
+ */
+object CN_IDIOM
+    extends (Project => Iterable[ClassFile])
+{
 
-    def analyze(project: Project) = {
+    def apply(project: Project) =
         for {
-            classFile ← project.classFiles
-            if !classFile.isInterfaceDeclaration // performance optimization
-            method @ Method(_, "finalize", methodDescriptor @ MethodDescriptor(Seq(), VoidType), _) ← classFile.methods
-            if method.body.isDefined
-            instructions = method.body.get.instructions
-            if instructions.length == 5
-            if instructions.exists(
-                {
-                    case INVOKESPECIAL(_, "finalize", `methodDescriptor`) ⇒ true;
-                    case _ ⇒ false
-                }
-            )
-        } yield (classFile.thisClass, method.name, method.descriptor)
-    }
+            allCloneables ← project.classHierarchy.subtypes (ObjectType ("java/lang/Cloneable")).toList
+            cloneable ← allCloneables
+            classFile = project.classes (cloneable)
+            if !classFile.methods.exists ({
+                case Method (_, "clone", MethodDescriptor (Seq (), ObjectType.Object), _) ⇒ true
+                case _ ⇒ false
+            })
+        } yield classFile
+
+
 }

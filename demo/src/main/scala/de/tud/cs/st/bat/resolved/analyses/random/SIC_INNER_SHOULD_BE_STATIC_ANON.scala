@@ -1,7 +1,8 @@
-package de.tud.cs.st.bat.resolved.analyses
+package de.tud.cs.st.bat.resolved.analyses.random
 
 import java.util.regex.Pattern
 import de.tud.cs.st.bat.resolved._
+import analyses.{BaseAnalyses, Project}
 
 /**
  *
@@ -11,37 +12,37 @@ import de.tud.cs.st.bat.resolved._
  *
  */
 object SIC_INNER_SHOULD_BE_STATIC_ANON
-        extends Analysis
+    extends (Project => Iterable[ClassFile])
 {
 
-    val withinAnonymousClass = Pattern.compile("[$][0-9].*[$]")
+    val withinAnonymousClass = Pattern.compile ("[$][0-9].*[$]")
 
     /**
      * A heuristic for determining whether an inner class is inside an anonymous inner class based on the class name
      */
     def isWithinAnonymousInnerClass(classFile: ClassFile): Boolean = {
-        withinAnonymousClass.matcher(classFile.thisClass.className).find()
+        withinAnonymousClass.matcher (classFile.thisClass.className).find ()
     }
 
     def lastIndexOfInnerClassEncoding(classFile: ClassFile): Int = {
         val name = classFile.thisClass.className
-        math.max(name.lastIndexOf('$'), name.lastIndexOf('+'))
+        math.max (name.lastIndexOf ('$'), name.lastIndexOf ('+'))
     }
 
     /**
      * A heuristic for determining inner classes by the encoding in the name
      */
     def isInnerClass(classFile: ClassFile): Boolean = {
-        lastIndexOfInnerClassEncoding(classFile) >= 0
+        lastIndexOfInnerClassEncoding (classFile) >= 0
     }
 
     /**
      * A heuristic for determining anonymous inner classes by the encoding in the name
      */
     def isAnonymousInnerClass(classFile: ClassFile): Boolean = {
-        val lastSpecialChar = lastIndexOfInnerClassEncoding(classFile)
-        isInnerClass(classFile) &&
-                Character.isDigit(classFile.thisClass.className.charAt(lastSpecialChar + 1))
+        val lastSpecialChar = lastIndexOfInnerClassEncoding (classFile)
+        isInnerClass (classFile) &&
+            Character.isDigit (classFile.thisClass.className.charAt (lastSpecialChar + 1))
     }
 
 
@@ -49,14 +50,14 @@ object SIC_INNER_SHOULD_BE_STATIC_ANON
      * A heuristic for determining whether an inner class can be made static
      */
     def canConvertToStaticInnerClass(classFile: ClassFile): Boolean = {
-        !isWithinAnonymousInnerClass(classFile)
+        !isWithinAnonymousInnerClass (classFile)
     }
 
     /**
      * A heuristic for determining whether the field points to the enclosing instance
      */
     def isOuterThisField(field: Field): Boolean = {
-        field.name.startsWith("this$") || field.name.startsWith("this+")
+        field.name.startsWith ("this$") || field.name.startsWith ("this+")
     }
 
     /**
@@ -70,21 +71,21 @@ object SIC_INNER_SHOULD_BE_STATIC_ANON
         ) yield 1).sum > 1
     }
 
-    def analyze(project: Project) = {
-        val classFiles: Traversable[ClassFile] = project.classFiles
-        val readFields = BaseAnalyses.readFields(classFiles).map(_._2)
-        for (classFile ← classFiles
-             if (isAnonymousInnerClass(classFile) &&
-                     canConvertToStaticInnerClass(classFile)
-                     );
-             val declaringClass = classFile.thisClass;
-             field@Field(_, name, fieldType, _) ← classFile.fields
-             if (isOuterThisField(field) &&
-                     !readFields.contains((declaringClass, name, fieldType)) &&
-                     !constructorReadsOuterThisField(classFile)
-                     )
-        ) yield {
-            ("SIC_INNER_SHOULD_BE_STATIC_ANON", classFile.thisClass.toJava)
+    def apply(project: Project) = {
+        val readFields = BaseAnalyses.readFields (project.classFiles).map (_._2)
+        for (classFile ← project.classFiles
+             if (isAnonymousInnerClass (classFile) &&
+                 canConvertToStaticInnerClass (classFile)
+                 );
+             declaringClass = classFile.thisClass;
+             field@Field (_, name, fieldType, _) ← classFile.fields
+             if (isOuterThisField (field) &&
+                 !readFields.contains ((declaringClass, name, fieldType)) &&
+                 !constructorReadsOuterThisField (classFile)
+                 )
+        ) yield
+        {
+            classFile
         }
     }
 

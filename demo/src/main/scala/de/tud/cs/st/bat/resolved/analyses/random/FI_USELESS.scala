@@ -30,34 +30,36 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st
-package bat
-package resolved
-package analyses
+package de.tud.cs.st.bat.resolved.analyses.random
+
+import de.tud.cs.st.bat.resolved.analyses.Project
+import de.tud.cs.st.bat.resolved._
+import de.tud.cs.st.bat.resolved.INVOKESPECIAL
+import de.tud.cs.st.bat.resolved.Method
 
 /**
-  * The set method is synchronized and the get method is not synchronized.
-  *
-  * @author Michael Eichberg
-  */
-object UG_SYNC_SET_UNSYNC_GET extends Analysis {
+ * Finalize just calls super.finalize.
+ *
+ * @author Michael Eichberg
+ */
+object FI_USELESS
+    extends (Project => Iterable[(ClassFile, Method)])
+{
 
-    def analyze(project: Project) = {
-        var unsyncedGetters = Map[String, Method]()
-        var syncedSetters = Map[String, Method]()
+    def apply(project: Project) = {
         for {
-            classFile ← project.classFiles if !classFile.isInterfaceDeclaration
-            method ← classFile.methods if !method.isAbstract && !method.isStatic && !method.isNative && !method.isPrivate
-        } {
-            if (method.name.startsWith("get") && !method.isSynchronized && method.parameterTypes.length == 0 && method.returnType != VoidType) {
-                unsyncedGetters += ((method.name.substring(3), method))
+            classFile ← project.classFiles
+            if !classFile.isInterfaceDeclaration // performance optimization
+            method@Method (_, "finalize", methodDescriptor@MethodDescriptor (Seq (), VoidType), _) ← classFile.methods
+            if method.body.isDefined
+            instructions = method.body.get.instructions
+            if instructions.filter(_ != null).length == 5
+            if instructions.exists (
+            {
+                case INVOKESPECIAL (_, "finalize", `methodDescriptor`) ⇒ true
+                case _ ⇒ false
             }
-            else if (method.name.startsWith("set") && method.isSynchronized && method.parameterTypes.length == 1 && method.returnType == VoidType) {
-                syncedSetters += ((method.name.substring(3), method))
-            }
-        }
-        for (property ← syncedSetters.keySet.intersect(unsyncedGetters.keySet))
-            yield (property, syncedSetters(property), unsyncedGetters(property))
-
+            )
+        } yield (classFile, method)
     }
 }

@@ -42,6 +42,7 @@ import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.matchers.ShouldMatchers
 import java.lang.System
+import org.junit.Ignore
 
 /**
   * Basic tests of the abstract interpreter.
@@ -50,6 +51,7 @@ import java.lang.System
   * @author Dennis Siebert
   */
 @RunWith(classOf[JUnitRunner])
+@Ignore
 class SimpleControlFlowMethodsTest extends FlatSpec with ShouldMatchers /*with BeforeAndAfterAll */ {
  
     class RecordingDomain extends TypeDomain {

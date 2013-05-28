@@ -1,6 +1,10 @@
-package de.tud.cs.st.bat.resolved.analyses
+package de.tud.cs.st.bat.resolved.analyses.random
 
 import de.tud.cs.st.bat.resolved._
+import analyses.{BaseAnalyses, Project, ClassHierarchy}
+import de.tud.cs.st.bat.resolved.INVOKEVIRTUAL
+import de.tud.cs.st.bat.resolved.ANEWARRAY
+import de.tud.cs.st.bat.resolved.INVOKEINTERFACE
 
 /**
  *
@@ -10,45 +14,46 @@ import de.tud.cs.st.bat.resolved._
  *
  */
 object ITA_INEFFICIENT_TO_ARRAY
-        extends Analysis
+    extends (Project => Iterable[(ClassFile, Method, Int)])
 {
 
     import BaseAnalyses.withIndex
 
-    val objectArrayType = ArrayType(ObjectType("java/lang/Object"))
+    val objectArrayType = ArrayType (ObjectType ("java/lang/Object"))
 
-    val toArrayDescriptor = MethodDescriptor(List(objectArrayType), objectArrayType)
+    val toArrayDescriptor = MethodDescriptor (List (objectArrayType), objectArrayType)
 
-    val collectionInterface = ObjectType("java/util/Collection")
+    val collectionInterface = ObjectType ("java/util/Collection")
 
-    val listInterface = ObjectType("java/util/List")
+    val listInterface = ObjectType ("java/util/List")
 
     def isCollectionType(classHierarchy: ClassHierarchy)(t: ReferenceType): Boolean = {
         if (!t.isObjectType) {
             false
-        } else {
-            classHierarchy.isSubtypeOf(t.asInstanceOf[ObjectType], collectionInterface).getOrElse(false) ||
-                    t == listInterface // TODO needs more heuristic or more analysis
+        }
+        else
+        {
+            classHierarchy.isSubtypeOf (t.asInstanceOf[ObjectType], collectionInterface).getOrElse (false) ||
+                t == listInterface // TODO needs more heuristic or more analysis
         }
     }
 
-    def analyze(project: Project): Traversable[Product] = {
-        val classFiles: Traversable[ClassFile] = project.classFiles
+    def apply(project: Project) = {
         val classHierarchy: ClassHierarchy = project.classHierarchy
-        val isCollectionType = this.isCollectionType(classHierarchy) _
-        for (classFile ← classFiles;
+        val isCollectionType = this.isCollectionType (classHierarchy) _
+        for (classFile ← project.classFiles;
              method ← classFile.methods if method.body.isDefined;
-             Seq((ICONST_0, _), (ANEWARRAY(_), _), (instr, idx)) ← withIndex(method.body.get.instructions).sliding(3) if (
-                    instr match {
-                        case INVOKEINTERFACE(targetType, "toArray", `toArrayDescriptor`)
-                            if (isCollectionType(targetType)) => true
-                        case INVOKEVIRTUAL(targetType, "toArray", `toArrayDescriptor`)
-                            if (isCollectionType(targetType)) => true
-                        case _ => false
-                    })
-        ) yield {
-            ("ITA_INEFFICIENT_TO_ARRAY", classFile.thisClass.toJava + "." + method.name + method.descriptor
-                    .toUMLNotation, idx)
+             Seq ((ICONST_0, _), (ANEWARRAY (_), _), (instr, idx)) ← withIndex (method.body.get.instructions).sliding (3) if (
+                instr match {
+                    case INVOKEINTERFACE (targetType, "toArray", `toArrayDescriptor`)
+                        if (isCollectionType (targetType)) => true
+                    case INVOKEVIRTUAL (targetType, "toArray", `toArrayDescriptor`)
+                        if (isCollectionType (targetType)) => true
+                    case _ => false
+                })
+        ) yield
+        {
+            (classFile, method, idx)
         }
     }
 

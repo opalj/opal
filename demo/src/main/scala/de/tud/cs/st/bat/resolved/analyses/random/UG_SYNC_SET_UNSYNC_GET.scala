@@ -1,5 +1,5 @@
 /* License (BSD Style License):
-*  Copyright (c) 2009, 2011
+*  Copyright (c) 2009, 2012
 *  Software Technology Group
 *  Department of Computer Science
 *  Technische Universität Darmstadt
@@ -30,67 +30,37 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st
-package bat.resolved
-package analyses
+package de.tud.cs.st.bat.resolved.analyses.random
 
-import random.UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR
-import reader.Java6Framework
+import de.tud.cs.st.bat.resolved.analyses.Project
+import de.tud.cs.st.bat.resolved.{ClassFile, VoidType, Method}
 
 /**
+ * The set method is synchronized and the get method is not synchronized.
+ *
  * @author Michael Eichberg
- * @author Ralf Mitschke
  */
-object Bugs
+object UG_SYNC_SET_UNSYNC_GET
+    extends (Project => Iterable[(ClassFile, Method, Method)])
 {
 
-    private def printUsage() {
-        println ("Usage: java …Bugs <ZIP or JAR file containing class files>+")
-        println ("(c) 2012 Michael Eichberg, Ralf Mitschke")
-    }
-
-    val analyses: List[Project => Iterable[_]] = List (
-        UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR
-    )
-
-    def main(args: Array[String]) {
-
-        if (args.length == 0 || !args.forall (arg ⇒ arg.endsWith (".zip") || arg.endsWith (".jar"))) {
-            printUsage ()
-            sys.exit (1)
+    def apply(project: Project) = {
+        var unSyncedGetters = Map[String, Method]()
+        var syncedSetters = Map[String, (ClassFile, Method)]()
+        for {
+            classFile ← project.classFiles if !classFile.isInterfaceDeclaration
+            method ← classFile.methods if !method.isAbstract && !method.isStatic && !method.isNative && !method.isPrivate
         }
-
-        for (arg ← args) {
-            val file = new java.io.File (arg)
-            if (!file.canRead || file.isDirectory) {
-                println ("The file: " + file + " cannot be read.")
-                printUsage ()
-                sys.exit (1)
+        {
+            if (method.name.startsWith ("get") && !method.isSynchronized && method.parameterTypes.length == 0 && method.returnType != VoidType) {
+                unSyncedGetters += ((classFile.thisClass.className + "." + method.name.substring (3), method))
+            }
+            else if (method.name.startsWith ("set") && method.isSynchronized && method.parameterTypes.length == 1 && method.returnType == VoidType) {
+                syncedSetters += ((classFile.thisClass.className + "." + method.name.substring (3), (classFile, method)))
             }
         }
-
-        println ("Reading class files:")
-        var project = new Project ()
-        for {
-            zipFile ← args if {
-            println ("\t" + zipFile)
-            true
-        }
-            classFile ← Java6Framework.ClassFiles (zipFile)
-        } yield
-        {
-            project += classFile
-        }
-        println ("Starting analyses: ")
-
-        for (analysis ← analyses) {
-            print (analysis.getClass.getSimpleName + " : \n")
-            val result = analysis (project)
-            println (result.mkString ("\n"))
-            println (result.size)
-        }
-
+        for (property ← syncedSetters.keySet.intersect (unSyncedGetters.keySet))
+        yield (syncedSetters (property)._1, syncedSetters (property)._2, unSyncedGetters (property))
 
     }
-
 }
