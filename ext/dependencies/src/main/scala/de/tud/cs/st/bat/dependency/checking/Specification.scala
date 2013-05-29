@@ -61,7 +61,7 @@ class Specification
         with UseIDOfBaseTypeForArrayTypes
         with Project {
 
-    private[this] var theClassHierarchy = new ClassHierarchy
+    private[this] var theClassHierarchy = new ClassHierarchy()
     override def classHierarchy = theClassHierarchy
 
     private[this] var theClassFiles = Map[ObjectType, ClassFile]()
