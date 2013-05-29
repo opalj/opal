@@ -1,0 +1,2 @@
+name := "BAT-Core"
+
