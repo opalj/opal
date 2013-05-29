@@ -32,6 +32,8 @@
 */
 package de.tud.cs.st.util.graphs
 
+import language.implicitConversions
+
 /**
  * Generates a dot file for the given graph
  *
@@ -48,7 +50,7 @@ trait toDot {
 
         var s = "digraph G {\n"
 
-        while (!(nodesToProcess isEmpty)) {
+        while (!(nodesToProcess.isEmpty)) {
             val n = nodesToProcess.head
             // prepare the next iteration
             processedNodes += n
