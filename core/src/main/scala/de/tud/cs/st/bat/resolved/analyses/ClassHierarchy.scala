@@ -220,6 +220,8 @@ class ClassHierarchy(
     }
 }
 object ClassHierachy {
+	
+    val Empty = new ClassHierarchy()
 
     def readPredefinedClassHierarchy() = {
         var ch = new ClassHierarchy()
