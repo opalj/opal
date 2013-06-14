@@ -48,7 +48,8 @@ import de.tud.cs.st.bat.reader.Constant_PoolReader
   */
 trait ConstantPoolBinding extends Constant_PoolReader {
 
-    implicit def ConstantPoolIndexToConstantPoolEntry(index: Constant_Pool_Index)(implicit cp: Constant_Pool): Constant_Pool_Entry = cp(index)
+    implicit def ConstantPoolIndexToConstantPoolEntry(index: Constant_Pool_Index)(implicit cp: Constant_Pool): Constant_Pool_Entry =
+        cp(index)
 
     trait Constant_Pool_Entry {
         def asString: String = sys.error("conversion to string is not supported")
