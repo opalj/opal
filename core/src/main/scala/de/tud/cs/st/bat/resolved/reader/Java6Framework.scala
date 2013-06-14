@@ -40,10 +40,8 @@ import de.tud.cs.st.bat.reader.AttributesReader
 import de.tud.cs.st.bat.reader.SkipUnknown_attributeReader
 import de.tud.cs.st.bat.reader.CodeReader
 
-
-
 /**
- * This "framework" can be used to read in Java 6 (vesion 50) class files. All
+ * This "framework" can be used to read in Java 6 (version 50) class files. All
  * standard information (as defined in the Java Virtual Machine Specification)
  * is represented.
  *
@@ -56,7 +54,7 @@ object Java6Framework
 		with FieldsReader
 		with MethodsReader
 		with AttributesReader
-		//with Unknown_attributeBinding // If this entire line is commented out: unknown attributes are completely ignored
+		//with Unknown_attributeBinding // If this line is commented out: unknown attributes are completely ignored
 		with SkipUnknown_attributeReader
 		with AnnotationsBinding	
 		with StackMapTable_attributeBinding 
