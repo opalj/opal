@@ -1,6 +1,6 @@
 /*
  License (BSD Style License):
- Copyright (c) 2009, 2011
+ Copyright (c) 2009 - 2013
  Software Technology Group
  Department of Computer Science
  Technische Universität Darmstadt
@@ -32,10 +32,6 @@
  POSSIBILITY OF SUCH DAMAGE.
 */
 package de.tud.cs.st.bat.resolved
-
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
-import de.tud.cs.st.bat.resolved.InstructionExceptions._
 
 /**
   * Convert float to int.
