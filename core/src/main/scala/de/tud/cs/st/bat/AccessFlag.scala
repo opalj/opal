@@ -48,12 +48,12 @@ sealed trait AccessFlag {
     def javaName: Option[String]
 
     /**
-      * The int mask of this access flag as defined by the JVM 7 specification.
+      * The int mask of this access flag as defined by the JVM specification.
       */
     def mask: Int
 
     /**
-      * Determines if this access flag is set in the given access_flags bit vector.
+      * Determines if this access flag is set in the given `access_flags` bit vector.
       * E.g., to determine if a method's static modifier is set it is sufficient
       * to call {{{ACC_STATIC ∈ method.access_flags}}}.
       */

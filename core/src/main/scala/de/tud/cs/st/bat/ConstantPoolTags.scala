@@ -39,7 +39,7 @@ package de.tud.cs.st.bat
   */
 object ConstantPoolTags extends Enumeration {
 
-    // IN THE FOLLOWING THE ORDER IS AS DEFINED IN THE JVM SE SPECIFICATION
+    // IN THE FOLLOWING THE ORDER IS AS DEFINED IN THE JVM SPECIFICATION
 
     final val CONSTANT_Class_ID = 7
     final val CONSTANT_Fieldref_ID = 9
