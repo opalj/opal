@@ -33,6 +33,8 @@
 */
 package de.tud.cs.st.bat.resolved
 
+import scala.language.existentials
+
 /**
   * Push item from runtime constant pool.
   *
