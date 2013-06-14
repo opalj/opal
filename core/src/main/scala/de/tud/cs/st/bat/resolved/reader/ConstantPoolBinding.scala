@@ -34,6 +34,7 @@ package de.tud.cs.st.bat
 package resolved
 package reader
 
+import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import de.tud.cs.st.bat.reader.Constant_PoolReader
 
