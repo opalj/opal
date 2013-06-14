@@ -61,7 +61,7 @@ trait InnerClasses_attributeBinding
                           inner_name_index: Constant_Pool_Index,
                           inner_class_access_flags: Int)(implicit cp: Constant_Pool) = {
         new InnerClassesEntry(
-            /* DELETE ME if (inner_class_info_index == 0) null else*/ inner_class_info_index.asObjectType,
+            inner_class_info_index.asObjectType,
             if (outer_class_info_index == 0) None else Some(outer_class_info_index.asObjectType),
             if (inner_name_index == 0) None else Some(inner_name_index.asString),
             inner_class_access_flags
