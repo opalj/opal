@@ -126,7 +126,7 @@ case class ConstantString(value: String) extends ConstantValue[String] {
 
     def valueToString = value.toString
 
-    def valueType = ObjectType("java/lang/String") // TODO Replace by ObjectType....
+    def valueType = ObjectType.String
 
 }
 
@@ -137,7 +137,7 @@ case class ConstantClass(value: ReferenceType) extends ConstantValue[ReferenceTy
 
     def valueToString = value.toJava
 
-    def valueType = ObjectType("java/lang/Class") // TODO Replace by ObjectType.... // TODO Document if this is correct in case of (multi)anewarray.
+    def valueType = ObjectType.Class // TODO Document if this is correct in case of (multi)anewarray.
 
 }
 
