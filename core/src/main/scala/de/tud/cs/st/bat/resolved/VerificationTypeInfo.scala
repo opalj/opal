@@ -37,42 +37,24 @@ package de.tud.cs.st.bat.resolved
  *
  * @author Michael Eichberg
  */
-sealed trait VerificationTypeInfo {
+sealed trait VerificationTypeInfo 
 
-}
 
-case object TopVariableInfo extends VerificationTypeInfo {
+case object TopVariableInfo extends VerificationTypeInfo 
 
-}
+case object IntegerVariableInfo extends VerificationTypeInfo 
 
-case object IntegerVariableInfo extends VerificationTypeInfo {
+case object FloatVariableInfo extends VerificationTypeInfo 
 
-}
+case object LongVariableInfo extends VerificationTypeInfo 
 
-case object FloatVariableInfo extends VerificationTypeInfo {
+case object DoubleVariableInfo extends VerificationTypeInfo 
 
-}
+case object NullVariableInfo extends VerificationTypeInfo 
 
-case object LongVariableInfo extends VerificationTypeInfo {
+case object UninitializedThisVariableInfo extends VerificationTypeInfo 
 
-}
 
-case object DoubleVariableInfo extends VerificationTypeInfo {
+sealed case class UninitializedVariableInfo(offset: Int) extends VerificationTypeInfo 
 
-}
-
-case object NullVariableInfo extends VerificationTypeInfo {
-
-}
-
-case object UninitializedThisVariableInfo extends VerificationTypeInfo {
-
-}
-
-case class UninitializedVariableInfo(offset: Int) extends VerificationTypeInfo {
-
-}
-
-case class ObjectVariableInfo(clazz: ReferenceType) extends VerificationTypeInfo {
-
-}
+sealed case class ObjectVariableInfo(clazz: ReferenceType) extends VerificationTypeInfo 

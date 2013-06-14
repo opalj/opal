@@ -38,13 +38,9 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case class InnerClassTable(innerClasses: InnerClasses) extends Attribute {
-
-}
+case class InnerClassTable(innerClasses: InnerClasses) extends Attribute 
 
 case class InnerClass(innerClassType: ObjectType,
                       outerClassType: Option[ObjectType],
                       innerName: Option[String],
-                      innerClassAccessFlags: Int) {
-
-}
+                      innerClassAccessFlags: Int) 
