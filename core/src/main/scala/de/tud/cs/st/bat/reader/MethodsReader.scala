@@ -34,6 +34,9 @@ package de.tud.cs.st.bat
 package reader
 
 import java.io.DataInputStream
+
+import scala.reflect.ClassTag
+
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
 /**
@@ -54,7 +57,7 @@ trait MethodsReader extends Constant_PoolAbstractions {
                              in: DataInputStream): Attributes
 
     type Method_Info
-    implicit val Method_InfoManifest: ClassManifest[Method_Info]
+    implicit val Method_InfoManifest: ClassTag[Method_Info]
 
     def Method_Info(accessFlags: Int,
                     name_index: Constant_Pool_Index,

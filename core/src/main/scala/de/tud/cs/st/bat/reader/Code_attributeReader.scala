@@ -35,6 +35,8 @@ package reader
 
 import java.io.DataInputStream
 
+import scala.reflect.ClassTag
+
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
 /**
@@ -67,7 +69,7 @@ import de.tud.cs.st.util.ControlAbstractions.repeat
 trait Code_attributeReader extends AttributeReader {
 
     type ExceptionTableEntry
-    implicit val ExceptionTableEntryManifest: ClassManifest[ExceptionTableEntry]
+    implicit val ExceptionTableEntryManifest: ClassTag[ExceptionTableEntry]
 
     type Instructions
 

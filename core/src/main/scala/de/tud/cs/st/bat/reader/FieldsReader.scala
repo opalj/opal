@@ -35,6 +35,8 @@ package reader
 
 import java.io.DataInputStream
 
+import scala.reflect.ClassTag
+
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
 /**
@@ -48,7 +50,7 @@ trait FieldsReader extends Constant_PoolAbstractions {
     //
 
     type Field_Info
-    implicit val Field_InfoManifest: ClassManifest[Field_Info]
+    implicit val Field_InfoManifest: ClassTag[Field_Info]
 
     type Attributes
 

@@ -33,6 +33,8 @@
 package de.tud.cs.st.bat.resolved
 package reader
 
+import scala.reflect.ClassTag
+
 import de.tud.cs.st.bat.reader.Exceptions_attributeReader
 
 /**
@@ -46,7 +48,7 @@ trait Exceptions_attributeBinding
         with AttributeBinding {
 
     type Exceptions_attribute = de.tud.cs.st.bat.resolved.ExceptionTable
-    val Exceptions_attributeManifest: ClassManifest[Exceptions_attribute] = implicitly
+    val Exceptions_attributeManifest: ClassTag[Exceptions_attribute] = implicitly
 
     def Exceptions_attribute(attribute_name_index: Constant_Pool_Index,
                              attribute_length: Int,

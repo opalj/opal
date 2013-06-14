@@ -34,6 +34,8 @@ package de.tud.cs.st.bat
 package canonical
 package reader
 
+import scala.reflect.ClassTag
+
 import de.tud.cs.st.bat.reader.Constant_PoolReader
 
 /**
@@ -45,7 +47,7 @@ import de.tud.cs.st.bat.reader.Constant_PoolReader
 trait Constant_PoolBinding extends Constant_PoolReader {
 
     type Constant_Pool_Entry = ConstantPoolEntries.Constant_Pool_Entry
-    val Constant_Pool_EntryManifest: ClassManifest[Constant_Pool_Entry] = implicitly
+    val Constant_Pool_EntryManifest: ClassTag[Constant_Pool_Entry] = implicitly
 
     type CONSTANT_Class_info = ConstantPoolEntries.CONSTANT_Class_info
 

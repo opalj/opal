@@ -33,6 +33,8 @@
 package de.tud.cs.st.bat.resolved
 package reader
 
+import scala.reflect.ClassTag
+
 import de.tud.cs.st.bat.reader.LineNumberTable_attributeReader
 
 /**
@@ -46,7 +48,7 @@ trait LineNumberTable_attributeBinding
         with AttributeBinding {
 
     type LineNumberTableEntry = de.tud.cs.st.bat.resolved.LineNumber
-    val LineNumberTableEntryManifest: ClassManifest[LineNumber] = implicitly
+    val LineNumberTableEntryManifest: ClassTag[LineNumber] = implicitly
 
     type LineNumberTable_attribute = de.tud.cs.st.bat.resolved.LineNumberTable
 

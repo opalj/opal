@@ -34,6 +34,8 @@ package de.tud.cs.st.bat.reader
 
 import java.io.DataInputStream
 
+import scala.reflect.ClassTag
+
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
 /**
@@ -47,10 +49,10 @@ trait ElementValuePairsReader extends Constant_PoolAbstractions {
     //
 
     type ElementValue
-    implicit val ElementValueManifest: ClassManifest[ElementValue]
+    implicit val ElementValueManifest: ClassTag[ElementValue]
 
     type ElementValuePair
-    implicit val ElementValuePairManifest: ClassManifest[ElementValuePair]
+    implicit val ElementValuePairManifest: ClassTag[ElementValuePair]
 
     type Annotation
 

@@ -34,6 +34,7 @@ package de.tud.cs.st.bat
 package resolved
 package reader
 
+import scala.reflect.ClassTag
 import de.tud.cs.st.bat.reader.Constant_PoolReader
 
 /**
@@ -69,7 +70,7 @@ trait ConstantPoolBinding extends Constant_PoolReader {
         def asNameAndType: CONSTANT_NameAndType_info = sys.error("conversion to name and type info is not supported")
     }
 
-    val Constant_Pool_EntryManifest: ClassManifest[Constant_Pool_Entry] = implicitly
+    val Constant_Pool_EntryManifest: ClassTag[Constant_Pool_Entry] = implicitly
 
     case class CONSTANT_Class_info(val name_index: Constant_Pool_Index) extends Constant_Pool_Entry {
         override def asConstantValue(implicit cp: Constant_Pool) = ConstantClass(asReferenceType)

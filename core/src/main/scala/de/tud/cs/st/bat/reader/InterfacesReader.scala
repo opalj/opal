@@ -34,6 +34,8 @@ package de.tud.cs.st.bat.reader
 
 import java.io.DataInputStream
 
+import scala.reflect.ClassTag
+
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
 /**
@@ -49,7 +51,7 @@ trait InterfacesReader extends Constant_PoolAbstractions {
     //
 
     type Interface
-    implicit val InterfaceManifest: ClassManifest[Interface]
+    implicit val InterfaceManifest: ClassTag[Interface]
 
     def Interface(interface_index: Constant_Pool_Index)(implicit constant_pool: Constant_Pool): Interface
 

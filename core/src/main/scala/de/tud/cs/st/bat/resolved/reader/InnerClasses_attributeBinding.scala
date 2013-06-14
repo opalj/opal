@@ -33,6 +33,8 @@
 package de.tud.cs.st.bat.resolved
 package reader
 
+import scala.reflect.ClassTag
+
 import de.tud.cs.st.bat.reader.InnerClasses_attributeReader
 
 /**
@@ -47,7 +49,7 @@ trait InnerClasses_attributeBinding
 
     type InnerClasses_attribute = de.tud.cs.st.bat.resolved.InnerClassTable
     type InnerClassesEntry = de.tud.cs.st.bat.resolved.InnerClass
-    val InnerClassesEntryManifest: ClassManifest[InnerClassesEntry] = implicitly
+    val InnerClassesEntryManifest: ClassTag[InnerClassesEntry] = implicitly
 
     def InnerClasses_attribute(attribute_name_index: Constant_Pool_Index,
                                inner_classes: InnerClasses)(

@@ -32,6 +32,8 @@
 */
 package de.tud.cs.st.bat.resolved.reader
 
+import scala.reflect.ClassTag
+
 import de.tud.cs.st.bat.reader.AttributesAbstractions
 
 /**
@@ -43,7 +45,7 @@ trait AttributeBinding extends AttributesAbstractions {
 
     type Attribute = de.tud.cs.st.bat.resolved.Attribute
 
-    val AttributeManifest: ClassManifest[Attribute] = implicitly
+    val AttributeManifest: ClassTag[Attribute] = implicitly
 
 }
 

@@ -35,6 +35,8 @@ package reader
 
 import java.io.DataInputStream
 
+import scala.reflect.ClassTag
+
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
 /**
@@ -56,7 +58,7 @@ import de.tud.cs.st.util.ControlAbstractions.repeat
 trait InnerClasses_attributeReader extends AttributeReader {
 
     type InnerClassesEntry
-    implicit val InnerClassesEntryManifest: ClassManifest[InnerClassesEntry]
+    implicit val InnerClassesEntryManifest: ClassTag[InnerClassesEntry]
 
     type InnerClasses_attribute <: Attribute
 

@@ -33,6 +33,8 @@
 package de.tud.cs.st.bat.resolved
 package reader
 
+import scala.reflect.ClassTag
+
 import de.tud.cs.st.bat.reader.StackMapTable_attributeReader
 import de.tud.cs.st.bat.reader.StackMapFrameReader
 import de.tud.cs.st.bat.reader.VerificationTypeInfoReader
@@ -51,7 +53,7 @@ trait StackMapTable_attributeBinding
         with AttributeBinding {
 
     type VerificationTypeInfo = de.tud.cs.st.bat.resolved.VerificationTypeInfo
-    val VerificationTypeInfoManifest: ClassManifest[VerificationTypeInfo] = implicitly
+    val VerificationTypeInfoManifest: ClassTag[VerificationTypeInfo] = implicitly
     type StackMapTable_attribute = de.tud.cs.st.bat.resolved.StackMapTable
     type StackMapFrame = de.tud.cs.st.bat.resolved.StackMapFrame
     type FullFrame = de.tud.cs.st.bat.resolved.FullFrame
@@ -72,7 +74,7 @@ trait StackMapTable_attributeBinding
     type NullVariableInfo = de.tud.cs.st.bat.resolved.VerificationTypeInfo
     type UninitializedThisVariableInfo = de.tud.cs.st.bat.resolved.VerificationTypeInfo
 
-    val StackMapFrameManifest: ClassManifest[StackMapFrame] = implicitly
+    val StackMapFrameManifest: ClassTag[StackMapFrame] = implicitly
 
     def StackMapTable_attribute(attribute_name_index: Constant_Pool_Index,
                                 attribute_length: Int,

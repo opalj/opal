@@ -35,6 +35,8 @@ package reader
 
 import java.io.DataInputStream
 
+import scala.reflect.ClassTag
+
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
 /**
@@ -51,7 +53,7 @@ trait StackMapTable_attributeReader extends AttributeReader {
     type StackMapTable_attribute <: Attribute
 
     type StackMapFrame
-    implicit val StackMapFrameManifest: ClassManifest[StackMapFrame]
+    implicit val StackMapFrameManifest: ClassTag[StackMapFrame]
 
     def StackMapFrame(in: DataInputStream, cp: Constant_Pool): StackMapFrame
 

@@ -33,6 +33,8 @@
 package de.tud.cs.st.bat.resolved
 package reader
 
+import scala.reflect.ClassTag
+
 import de.tud.cs.st.bat.reader.AnnotationsReader
 import de.tud.cs.st.bat.reader.RuntimeInvisibleAnnotations_attributeReader
 import de.tud.cs.st.bat.reader.RuntimeVisibleAnnotations_attributeReader
@@ -62,7 +64,7 @@ trait AnnotationsBinding
     type Annotation = de.tud.cs.st.bat.resolved.Annotation
     type AnnotationDefault_attribute = de.tud.cs.st.bat.resolved.ElementValue
     type ElementValue = de.tud.cs.st.bat.resolved.ElementValue
-    val ElementValueManifest: ClassManifest[ElementValue] = implicitly
+    val ElementValueManifest: ClassTag[ElementValue] = implicitly
     type EnumValue = de.tud.cs.st.bat.resolved.EnumValue
     type AnnotationValue = de.tud.cs.st.bat.resolved.AnnotationValue
     type ByteValue = de.tud.cs.st.bat.resolved.ByteValue
@@ -76,13 +78,13 @@ trait AnnotationsBinding
     type ClassValue = de.tud.cs.st.bat.resolved.ClassValue
     type BooleanValue = de.tud.cs.st.bat.resolved.BooleanValue
     type ElementValuePair = de.tud.cs.st.bat.resolved.ElementValuePair
-    val ElementValuePairManifest: ClassManifest[ElementValuePair] = implicitly
+    val ElementValuePairManifest: ClassTag[ElementValuePair] = implicitly
     type RuntimeVisibleAnnotations_attribute = de.tud.cs.st.bat.resolved.RuntimeVisibleAnnotationTable
     type RuntimeInvisibleAnnotations_attribute = de.tud.cs.st.bat.resolved.RuntimeInvisibleAnnotationTable
     type RuntimeVisibleParameterAnnotations_attribute = de.tud.cs.st.bat.resolved.RuntimeVisibleParameterAnnotationTable
     type RuntimeInvisibleParameterAnnotations_attribute = de.tud.cs.st.bat.resolved.RuntimeInvisibleParameterAnnotationTable
 
-    val AnnotationManifest: ClassManifest[Annotation] = implicitly
+    val AnnotationManifest: ClassTag[Annotation] = implicitly
 
     def ElementValuePair(element_name_index: Constant_Pool_Index,
                          element_value: ElementValue)(

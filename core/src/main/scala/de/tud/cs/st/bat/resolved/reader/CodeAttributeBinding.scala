@@ -33,6 +33,8 @@
 package de.tud.cs.st.bat.resolved
 package reader
 
+import scala.reflect.ClassTag
+
 import de.tud.cs.st.bat.reader.Code_attributeReader
 
 /**
@@ -47,7 +49,7 @@ trait CodeAttributeBinding
         with AttributeBinding {
 
     type ExceptionTableEntry = de.tud.cs.st.bat.resolved.ExceptionHandler
-    val ExceptionTableEntryManifest: ClassManifest[ExceptionTableEntry] = implicitly
+    val ExceptionTableEntryManifest: ClassTag[ExceptionTableEntry] = implicitly
     type Code_attribute = de.tud.cs.st.bat.resolved.Code
 
     def Code_attribute(attribute_name_index: Constant_Pool_Index,

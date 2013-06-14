@@ -35,6 +35,8 @@ package reader
 
 import java.io.DataInputStream
 
+import scala.reflect.ClassTag
+
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
 /**
@@ -56,10 +58,10 @@ trait BootstrapMethods_attributeReader extends AttributeReader {
     type BootstrapMethods_attribute <: Attribute
 
     type BootstrapMethod
-    implicit val BootstrapMethodManifest: ClassManifest[BootstrapMethod]
+    implicit val BootstrapMethodManifest: ClassTag[BootstrapMethod]
 
     type BootstrapArgument
-    implicit val BootstrapArgumentManifest: ClassManifest[BootstrapArgument]
+    implicit val BootstrapArgumentManifest: ClassTag[BootstrapArgument]
 
 
     def BootstrapMethods_attribute(attribute_name_index: Int,

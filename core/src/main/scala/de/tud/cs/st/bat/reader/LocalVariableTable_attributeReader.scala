@@ -35,6 +35,8 @@ package reader
 
 import java.io.DataInputStream
 
+import scala.reflect.ClassTag
+
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
 /**
@@ -62,7 +64,7 @@ trait LocalVariableTable_attributeReader extends AttributeReader {
     type LocalVariableTable_attribute <: Attribute
 
     type LocalVariableTableEntry
-    implicit val LocalVariableTableEntryManifest: ClassManifest[LocalVariableTableEntry]
+    implicit val LocalVariableTableEntryManifest: ClassTag[LocalVariableTableEntry]
 
     def LocalVariableTableEntry(start_pc: Int,
                                 length: Int,

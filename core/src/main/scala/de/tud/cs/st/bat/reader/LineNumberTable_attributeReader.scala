@@ -35,6 +35,8 @@ package reader
 
 import java.io.DataInputStream
 
+import scala.reflect.ClassTag
+
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
 /**
@@ -56,7 +58,7 @@ trait LineNumberTable_attributeReader extends AttributeReader {
     type LineNumberTable_attribute <: Attribute
 
     type LineNumberTableEntry
-    implicit val LineNumberTableEntryManifest: ClassManifest[LineNumberTableEntry]
+    implicit val LineNumberTableEntryManifest: ClassTag[LineNumberTableEntry]
 
     def LineNumberTable_attribute(attribute_name_index: Constant_Pool_Index,
                                   attribute_length: Int,

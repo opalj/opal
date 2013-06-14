@@ -34,6 +34,8 @@ package de.tud.cs.st.bat.reader
 
 import java.io.DataInputStream
 
+import scala.reflect.ClassTag
+
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
 /**
@@ -48,7 +50,7 @@ trait StackMapFrameReader extends Constant_PoolAbstractions {
 
     type StackMapFrame
     type VerificationTypeInfo
-    implicit val VerificationTypeInfoManifest: ClassManifest[VerificationTypeInfo]
+    implicit val VerificationTypeInfoManifest: ClassTag[VerificationTypeInfo]
 
     def VerificationTypeInfo(in: DataInputStream, cp: Constant_Pool): VerificationTypeInfo
 

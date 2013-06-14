@@ -33,6 +33,8 @@
 package de.tud.cs.st.bat.resolved
 package reader
 
+import scala.reflect.ClassTag
+
 import de.tud.cs.st.bat.reader.ClassFileReader
 
 /**
@@ -48,15 +50,15 @@ trait ClassFileBinding
 
     type Method_Info = de.tud.cs.st.bat.resolved.Method
     type Methods <: IndexedSeq[Method_Info]
-    val Method_InfoManifest: ClassManifest[Method_Info] = implicitly
+    val Method_InfoManifest: ClassTag[Method_Info] = implicitly
 
     type Field_Info = de.tud.cs.st.bat.resolved.Field
     type Fields <: IndexedSeq[Field_Info]
-    val Field_InfoManifest: ClassManifest[Field_Info] = implicitly
+    val Field_InfoManifest: ClassTag[Field_Info] = implicitly
 
     type Interface = ObjectType
     type Interfaces <: IndexedSeq[ObjectType]
-    val InterfaceManifest: ClassManifest[Interface] = implicitly
+    val InterfaceManifest: ClassTag[Interface] = implicitly
 
     def Interface(interface_index: Constant_Pool_Index)(implicit cp: Constant_Pool): Interface =
         interface_index.asObjectType

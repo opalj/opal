@@ -32,6 +32,8 @@
 */
 package de.tud.cs.st.bat.reader
 
+import scala.reflect.ClassTag
+
 /**
  * Defines common abstractions over class file attributes.
  *
@@ -44,7 +46,7 @@ trait AttributesAbstractions {
      */
     type Attribute >: Null
 
-    implicit val AttributeManifest: ClassManifest[Attribute]
+    implicit val AttributeManifest: ClassTag[Attribute]
 
     type Attributes = Seq[Attribute]
 

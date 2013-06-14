@@ -34,6 +34,8 @@ package de.tud.cs.st.bat.reader
 
 import java.io.DataInputStream
 
+import scala.reflect.ClassTag
+
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
 /**
@@ -46,7 +48,7 @@ trait ParameterAnnotationsReader extends Constant_PoolAbstractions {
     //
 
     type Annotation
-    implicit val AnnotationManifest: ClassManifest[Annotation]
+    implicit val AnnotationManifest: ClassTag[Annotation]
 
     def Annotation(in: DataInputStream, cp: Constant_Pool): Annotation
 

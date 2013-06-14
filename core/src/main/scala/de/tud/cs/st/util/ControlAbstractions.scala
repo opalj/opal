@@ -34,6 +34,8 @@ package de.tud.cs.st.util
 
 import java.io.InputStream
 
+import scala.reflect.ClassTag
+
 import scala.collection.mutable.WrappedArray
 
 /**
@@ -60,7 +62,7 @@ object ControlAbstractions {
         }
     }
 
-    def repeat[T: ClassManifest](times: Int)(f: ⇒ T): WrappedArray[T] = {
+    def repeat[T: ClassTag](times: Int)(f: ⇒ T): WrappedArray[T] = {
         val array = new Array[T](times)
         var i = 0
         while (i < times) {

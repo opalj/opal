@@ -35,6 +35,8 @@ package reader
 
 import java.io.DataInputStream
 
+import scala.reflect.ClassTag
+
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
 /**
@@ -51,7 +53,7 @@ import de.tud.cs.st.util.ControlAbstractions.repeat
 trait Exceptions_attributeReader extends AttributeReader {
 
     type Exceptions_attribute <: Attribute
-    implicit val Exceptions_attributeManifest: ClassManifest[Exceptions_attribute]
+    implicit val Exceptions_attributeManifest: ClassTag[Exceptions_attribute]
 
     def Exceptions_attribute(attribute_name_index: Constant_Pool_Index,
                              attribute_length: Int,

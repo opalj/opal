@@ -33,6 +33,8 @@
 package de.tud.cs.st.bat.resolved
 package reader
 
+import scala.reflect.ClassTag
+
 import de.tud.cs.st.bat.reader.LocalVariableTypeTable_attributeReader
 
 /**
@@ -48,7 +50,7 @@ trait LocalVariableTypeTable_attributeBinding
     type LocalVariableTypeTable_attribute = de.tud.cs.st.bat.resolved.LocalVariableTypeTable
 
     type LocalVariableTypeTableEntry = de.tud.cs.st.bat.resolved.LocalVariableType
-    val LocalVariableTypeTableEntryManifest: ClassManifest[LocalVariableTypeTableEntry] = implicitly
+    val LocalVariableTypeTableEntryManifest: ClassTag[LocalVariableTypeTableEntry] = implicitly
 
     def LocalVariableTypeTableEntry(start_pc: Int,
                                     length: Int,

@@ -33,6 +33,7 @@
 package de.tud.cs.st.bat
 package canonical
 
+import scala.reflect.ClassTag
 import de.tud.cs.st.bat.reader.Constant_PoolReader
 
 /**
@@ -49,7 +50,7 @@ trait ConstantPoolEntries {
 
     }
 
-    val Constant_Pool_EntryManifest: ClassManifest[Constant_Pool_Entry] = implicitly
+    val Constant_Pool_EntryManifest: ClassTag[Constant_Pool_Entry] = implicitly
 
     case class CONSTANT_Class_info(val name_index: Int) extends Constant_Pool_Entry {
         def Constant_Type_Value = ConstantPoolTags.CONSTANT_Class

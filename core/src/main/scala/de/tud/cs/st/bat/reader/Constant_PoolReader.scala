@@ -35,6 +35,8 @@ package reader
 
 import java.io.DataInputStream
 
+import scala.reflect.ClassTag
+
 /**
   * Defines a template method to read in a class file's constant pool.
   *
@@ -49,7 +51,7 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
     //
 
     type Constant_Pool_Entry
-    implicit val Constant_Pool_EntryManifest: ClassManifest[Constant_Pool_Entry]
+    implicit val Constant_Pool_EntryManifest: ClassTag[Constant_Pool_Entry]
 
     type CONSTANT_Class_info <: Constant_Pool_Entry
     type CONSTANT_Fieldref_info <: Constant_Pool_Entry
