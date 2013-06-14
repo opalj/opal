@@ -70,16 +70,4 @@ object ControlAbstractions {
         WrappedArray.make[T](array)
     }
 
-    def repeat[T: ClassManifest](f: () ⇒ T)(times: Int): WrappedArray[T] = {
-        repeat(times)(f())
-    }
-
-    /**
-      * @param f a function f that is evaluated
-      * @param times the number of times the result of evaluating f <b>once</b> is stored
-      * in an array of size times.
-      */
-    def repeatResultOfEvaluation[T: ClassManifest](f: ⇒ T)(times: Int): WrappedArray[T] = {
-        repeat(times)(f)
-    }
 }
