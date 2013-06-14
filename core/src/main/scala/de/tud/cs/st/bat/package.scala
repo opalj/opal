@@ -39,8 +39,8 @@ package de.tud.cs.st
   * Common constants and type definitions used across BAT.
   *
   * == General Design Rules ==
-  * Unless explicitly noted, BAT does not make use of null values. I.e., all methods do not take null values
-  * as parameters and will never return null values.
+  * Unless explicitly noted, BAT does not make use of `null` values. I.e., method parameters must not be 
+  * `null` methods and will never return `null` values.
   *
   * @author Michael Eichberg
   */
