@@ -34,6 +34,7 @@ package de.tud.cs.st.bat
 package reader
 
 import java.io.DataInputStream
+
 import de.tud.cs.st.util.ControlAbstractions.repeat
 
 /**
