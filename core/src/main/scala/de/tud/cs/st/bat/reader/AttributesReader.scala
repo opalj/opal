@@ -48,7 +48,6 @@ trait AttributesReader
         with Constant_PoolAbstractions
         with Unknown_attributeAbstractions {
 
-    private type ValueAsString = { def value: String } // a structural type
 
     //
     // ABSTRACT DEFINITIONS
@@ -56,7 +55,7 @@ trait AttributesReader
 
     type Constant_Pool_Entry
 
-    type CONSTANT_Utf8_info <: Constant_Pool_Entry with ValueAsString
+    type CONSTANT_Utf8_info <: Constant_Pool_Entry with ConstantPoolValueAsString
 
     override type Constant_Pool = Array[Constant_Pool_Entry]
 

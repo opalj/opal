@@ -35,6 +35,7 @@ package canonical
 
 import scala.reflect.ClassTag
 import de.tud.cs.st.bat.reader.Constant_PoolReader
+import de.tud.cs.st.bat.ConstantPoolValueAsString
 
 /**
  * Representation of the constant pool as specified by the JVM Specification.
@@ -72,7 +73,7 @@ trait ConstantPoolEntries {
         def Constant_Type_Value = ConstantPoolTags.CONSTANT_Long
     }
 
-    case class CONSTANT_Utf8_info(val value: String) extends Constant_Pool_Entry {
+    case class CONSTANT_Utf8_info(val value: String) extends Constant_Pool_Entry with ConstantPoolValueAsString {
         def Constant_Type_Value = ConstantPoolTags.CONSTANT_Utf8
     }
 

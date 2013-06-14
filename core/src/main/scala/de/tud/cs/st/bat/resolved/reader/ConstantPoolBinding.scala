@@ -100,7 +100,7 @@ trait ConstantPoolBinding extends Constant_PoolReader {
         override def asConstantValue(implicit cp: Constant_Pool) = value
     }
 
-    case class CONSTANT_Utf8_info(val value: String) extends Constant_Pool_Entry {
+    case class CONSTANT_Utf8_info(val value: String) extends Constant_Pool_Entry with ConstantPoolValueAsString {
 
         override def asString = value
 

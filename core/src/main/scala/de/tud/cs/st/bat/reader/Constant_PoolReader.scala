@@ -43,9 +43,7 @@ import scala.reflect.ClassTag
   * @author Michael Eichberg
   */
 trait Constant_PoolReader extends Constant_PoolAbstractions {
-
-    private type ValueAsString = { def value: String } // a structural type
-
+  
     //
     // ABSTRACT DEFINITIONS
     //
@@ -63,7 +61,7 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
     type CONSTANT_Long_info <: Constant_Pool_Entry
     type CONSTANT_Double_info <: Constant_Pool_Entry
     type CONSTANT_NameAndType_info <: Constant_Pool_Entry
-    type CONSTANT_Utf8_info <: Constant_Pool_Entry with ValueAsString
+    type CONSTANT_Utf8_info <: Constant_Pool_Entry with ConstantPoolValueAsString
     type CONSTANT_MethodHandle_info <: Constant_Pool_Entry
     type CONSTANT_MethodType_info <: Constant_Pool_Entry
     type CONSTANT_InvokeDynamic_info <: Constant_Pool_Entry
