@@ -36,7 +36,8 @@ package resolved
 package ai
 
 /**
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de), Dennis Siebert
+ * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * @author Dennis Siebert
  */
 trait Domain {
 
