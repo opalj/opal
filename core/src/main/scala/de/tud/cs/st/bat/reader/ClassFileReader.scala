@@ -33,7 +33,7 @@
 package de.tud.cs.st.bat
 package reader
 
-import java.io.{ InputStream, DataInputStream, BufferedInputStream, ByteArrayInputStream }
+import java.io.{ File, InputStream, DataInputStream, BufferedInputStream, ByteArrayInputStream }
 import java.util.zip.{ ZipFile, ZipEntry }
 import de.tud.cs.st.util.ControlAbstractions.repeat
 import java.rmi.UnexpectedException
@@ -239,13 +239,23 @@ trait ClassFileReader extends Constant_PoolAbstractions {
       * @param zipFileEntryName the name of a class file stored in the specified ZIP/JAR file.
       */
     def ClassFile(zipFileName: String, zipFileEntryName: String): ClassFile = {
-        val zipFile = new ZipFile(zipFileName)
+        ClassFile(new File(zipFileName),zipFileEntryName)
+    }
+    
+    /**
+      * Reads in a single class file from a ZIP/Jar file.
+      *
+      * @param zipFile an existing ZIP/JAR file that contains class files.
+      * @param zipFileEntryName the name of a class file stored in the specified ZIP/JAR file.
+      */
+    def ClassFile(zipFile: File, zipFileEntryName: String): ClassFile = {        
+        val zf = new ZipFile(zipFile)
         try {
-            val zipEntry = zipFile.getEntry(zipFileEntryName)
-            ClassFile(zipFile, zipEntry)
+            val zipEntry = zf.getEntry(zipFileEntryName)
+            ClassFile(zf, zipEntry)
         }
         finally {
-            zipFile.close
+            zf.close
         }
     }
 

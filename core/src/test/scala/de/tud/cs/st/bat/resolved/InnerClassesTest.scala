@@ -33,7 +33,7 @@
 package de.tud.cs.st.bat
 package resolved
 
-import reader.Java6Framework
+import reader.Java6Framework.ClassFiles
 import analyses.Project
 
 import org.junit.runner.RunWith
@@ -49,7 +49,7 @@ import org.scalatest.matchers.ShouldMatchers
   * @author Michael Eichberg
   */
 @RunWith(classOf[JUnitRunner])
-class InnerClassesTest extends FlatSpec with ShouldMatchers /*with BeforeAndAfterAll */ {
+class InnerClassesTest extends FlatSpec with ShouldMatchers /*with BeforeAndAfterAll */ with TestSupport {
 
     //
     //
@@ -57,7 +57,7 @@ class InnerClassesTest extends FlatSpec with ShouldMatchers /*with BeforeAndAfte
     //
     //
 
-    val project = new Project ++ Java6Framework.ClassFiles(ClassLoader.getSystemResource("classfiles/innerclasses.zip").getFile)
+    val project = new Project ++ ClassFiles(locateTestResources("classfiles/innerclasses.zip"))
 
     val myRootClass$Formatter = ObjectType("innerclasses/MyRootClass$Formatter")
     val myRootClass = ObjectType("innerclasses/MyRootClass")

@@ -33,29 +33,33 @@
 package de.tud.cs.st.bat
 package resolved
 
-import reader.Java6Framework
-
 import org.scalatest.FunSuite
 
 /**
- * @author Michael Eichberg
- */
-//@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
-class AttributesTest extends FunSuite {
+  * @author Michael Eichberg
+  */
+@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
+class AttributesTest extends FunSuite with TestSupport {
+
+    import reader.Java6Framework.ClassFile
 
     test("test that the deprecated attribute is present") {
-        val classFile1 = Java6Framework.ClassFile("test/classfiles/Attributes.zip", "attributes/DeprecatedByAnnotation.class")
-        assert(classFile1.isDeprectated)
-        assert(classFile1.runtimeVisibleAnnotations.get.find({ case Annotation(ObjectType("java/lang/Deprecated"), _) ⇒ true; case _ ⇒ false }) != None)
+        val cf1 = ClassFile(locateTestResources("classfiles/Attributes.zip"), "attributes/DeprecatedByAnnotation.class")
+        assert(cf1.isDeprectated)
+        assert(
+            cf1.runtimeVisibleAnnotations.get.find({
+                case Annotation(ObjectType("java/lang/Deprecated"), _) ⇒ true; case _ ⇒ false
+            }).isDefined
+        )
 
-        val classFile2 = Java6Framework.ClassFile("test/classfiles/Attributes.zip", "attributes/DeprecatedByJavaDoc.class")
-        assert(classFile1.isDeprectated)
+        val cf2 = ClassFile(locateTestResources("classfiles/Attributes.zip"), "attributes/DeprecatedByJavaDoc.class")
+        assert(cf2.isDeprectated)
 
     }
 
     test("test that the source file attribute is present") {
-        val classFile1 = Java6Framework.ClassFile("test/classfiles/Attributes.zip", "attributes/DeprecatedByAnnotation.class")
-        assert(classFile1.sourceFile != None)
+        val cf1 = ClassFile(locateTestResources("classfiles/Attributes.zip"), "attributes/DeprecatedByAnnotation.class")
+        assert(cf1.sourceFile != None)
     }
 
 }

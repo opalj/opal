@@ -33,7 +33,7 @@
 package de.tud.cs.st
 package bat
 
-import resolved.reader.Java6Framework
+import resolved.reader.Java6Framework.ClassFile
 
 import java.io.File
 import java.util.zip.ZipFile
@@ -52,12 +52,12 @@ import org.scalatest.junit.JUnitRunner
   * @author Michael Eichberg
   */
 @RunWith(classOf[JUnitRunner])
-class LoadClassFilesTest extends FlatSpec with ShouldMatchers {
+class LoadClassFilesTest extends FlatSpec with ShouldMatchers with TestSupport {
 
    behavior of "BAT"
 
    for {
-      file ← new File(ClassLoader.getSystemClassLoader().getResource("classfiles").getFile).listFiles
+      file ← locateTestResources("classfiles").listFiles
       if (file.isFile && file.canRead && file.getName.endsWith(".zip"))
    } {
       val zipfile = new ZipFile(file)
@@ -67,7 +67,7 @@ class LoadClassFilesTest extends FlatSpec with ShouldMatchers {
          if (!zipentry.isDirectory && zipentry.getName.endsWith(".class")) {
 
             it should ("be able to parse the class file " + zipentry.getName + " in " + zipfile.getName) in {
-               Java6Framework.ClassFile(() ⇒ zipfile.getInputStream(zipentry))
+               ClassFile(() ⇒ zipfile.getInputStream(zipentry))
             }
          }
       }

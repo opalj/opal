@@ -34,6 +34,7 @@ package de.tud.cs.st.bat.resolved
 package reader
 
 import org.scalatest.FunSuite
+import de.tud.cs.st.bat.TestSupport
 
 /**
   * Tests the parsing of signatures.
@@ -41,7 +42,7 @@ import org.scalatest.FunSuite
   * @author Michael Eichberg
   */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
-class SignaturesTest extends FunSuite {
+class SignaturesTest extends FunSuite with TestSupport {
 
     test("traversing a minimal class type signature") {
         var types: Set[Type] = Set()
@@ -59,10 +60,10 @@ class SignaturesTest extends FunSuite {
         assert(types == Set(ObjectType("Default"), ObjectType("de/Collection"), ObjectType("de/Type"), ObjectType("AnotherDefault"), ObjectType("de/MyObject")))
     }
 
-    private val classA = Java6Framework.ClassFile(ClassLoader.getSystemResource("classfiles/Signatures.zip").getFile, "signatures/A.class")
+    private val classA = Java6Framework.ClassFile(locateTestResources("classfiles/Signatures.zip"), "signatures/A.class")
     assert(classA ne null)
 
-    private val classB = Java6Framework.ClassFile(ClassLoader.getSystemResource("classfiles/Signatures.zip").getFile, "signatures/B.class")
+    private val classB = Java6Framework.ClassFile(locateTestResources("classfiles/Signatures.zip"), "signatures/B.class")
     assert(classB ne null)
 
     test("parsing the class signatures") {
