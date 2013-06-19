@@ -54,20 +54,23 @@ trait TestSupport {
             var file = new File("core/src/test/resources/"+resourceName)
             if (file.exists()) return file
         }
-        {
-            // if the current path is set to "core/bin"
+        { // if the current path is set to "core/<BIN>"
             var file = new File("../src/test/resources/"+resourceName)
             if (file.exists()) return file
         }
-        
-        {
-            val userDir = System.getProperty("user.dir")
+
+        val userDir = System.getProperty("user.dir")
+
+        {   // if we are in the sub-project's root folder
             if (userDir.endsWith("/core")) {
                 var file = new File("src/test/resources/"+resourceName)
                 if (file.exists()) return file
             }
+        }
+        {
+            // if the current path is set to "target/scala-.../classes"
             if ("""target/scala\-[\w\.]+/classes$""".r.findFirstIn(userDir).isDefined) {
-                // if the current path is set to "target/scala-.../classes"
+                
                 var file = new File("../../../src/test/resources/"+resourceName)
                 if (file.exists()) return file
             }
