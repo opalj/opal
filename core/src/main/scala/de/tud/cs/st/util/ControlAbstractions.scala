@@ -63,6 +63,15 @@ object ControlAbstractions {
         }
     }
 
+    def withResource[I <: java.io.Closeable, O](r: I)(f: r.type ⇒ O): O = {
+        try {
+            f(r)
+        }
+        finally {
+            r.close
+        }
+    }
+
     def repeat[T: ClassTag](times: Int)(f: ⇒ T): WrappedArray[T] = {
         val array = new Array[T](times)
         var i = 0
