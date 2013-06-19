@@ -48,8 +48,9 @@ object ControlAbstractions {
     /**
       * This function takes care of the correct handling of input streams.
       * The function takes a function <code>f</code> that creates a new <code>InputStream</code>
-      * and a function <code>r</code> that processes an input stream. If f returns
-      * <code>null</code>, <code>null</code> is passed to r.
+      * and a function <code>r</code> that processes an input stream. When `r` has finished processing
+      * the input stream, the stream is closed.
+      * If f returns <code>null</code>, <code>null</code> is passed to r.
       */
     def read[I <: InputStream, T](f: ⇒ I)(r: I ⇒ T): T = {
         val in = f // this calls the function f
