@@ -35,7 +35,8 @@ package reader
 
 import java.io.{ File, InputStream, DataInputStream, BufferedInputStream, ByteArrayInputStream }
 import java.util.zip.{ ZipFile, ZipEntry }
-import de.tud.cs.st.util.ControlAbstractions.repeat
+import de.tud.cs.st.util.ControlAbstractions.read
+import de.tud.cs.st.util.ControlAbstractions.withResource
 import java.rmi.UnexpectedException
 
 /**
@@ -198,34 +199,26 @@ trait ClassFileReader extends Constant_PoolAbstractions {
       *
       * @param create a function that is intended to create a new `InputStream` and
       *  which must not return `null`. If you already do have an open input stream
-      *  which should not be closed after reading the class file use [[de.tud.cs.st.bat.reader.ClassFileReader.ClassFile(DataInputStream)]] instead.
+      *  which should not be closed after reading the class file use
+      *  [[de.tud.cs.st.bat.reader.ClassFileReader.ClassFile(DataInputStream)]] instead.
       *  The (newly created) InputStream returned by calling `create` is closed by this method.
       *  The created input stream will automatically be wrapped by BAT to enable efficient reading of the
       *  class file.
       */
     def ClassFile(create: () ⇒ InputStream): ClassFile = {
-        var dis: DataInputStream = {
-            create() match {
-                case dis: DataInputStream ⇒ dis
-                case is ⇒ {
-                    // TODO needs to be made more robust
-                    val data = new Array[Byte](is.available)
-                    var bytesRead = 0
-                    while (bytesRead < data.length) {
-                        bytesRead = bytesRead + is.read(data, bytesRead, data.length - bytesRead)
-                    }
-                    if (is.available != 0) throw new RuntimeException("unexpected additional data available")
-                    new DataInputStream(new ByteArrayInputStream(data))
+        read(create() match {
+            case dis: DataInputStream ⇒ dis
+            case is ⇒ {
+                // TODO needs to be made more robust
+                val data = new Array[Byte](is.available)
+                var bytesRead = 0
+                while (bytesRead < data.length) {
+                    bytesRead = bytesRead + is.read(data, bytesRead, data.length - bytesRead)
                 }
+                if (is.available != 0) throw new RuntimeException("unexpected additional data available")
+                new DataInputStream(new ByteArrayInputStream(data))
             }
-        }
-
-        try {
-            ClassFile(dis)
-        }
-        finally {
-            dis.close
-        }
+        }) { ClassFile(_) }
     }
 
     protected[this] def ClassFile(zipFile: ZipFile, zipEntry: ZipEntry): ClassFile = {
@@ -239,16 +232,16 @@ trait ClassFileReader extends Constant_PoolAbstractions {
       * @param zipFileEntryName the name of a class file stored in the specified ZIP/JAR file.
       */
     def ClassFile(zipFileName: String, zipFileEntryName: String): ClassFile = {
-        ClassFile(new File(zipFileName),zipFileEntryName)
+        ClassFile(new File(zipFileName), zipFileEntryName)
     }
-    
+
     /**
       * Reads in a single class file from a ZIP/Jar file.
       *
       * @param zipFile an existing ZIP/JAR file that contains class files.
       * @param zipFileEntryName the name of a class file stored in the specified ZIP/JAR file.
       */
-    def ClassFile(zipFile: File, zipFileEntryName: String): ClassFile = {        
+    def ClassFile(zipFile: File, zipFileEntryName: String): ClassFile = {
         val zf = new ZipFile(zipFile)
         try {
             val zipEntry = zf.getEntry(zipFileEntryName)
@@ -260,19 +253,24 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     }
 
     def ClassFiles(zipFile: ZipFile): Seq[ClassFile] = {
-        var classFileEntries: List[ZipEntry] = Nil
+        var classFiles: List[ClassFile] = Nil
+        def addClassFile(zf: ZipFile, ze: ZipEntry, cf: ClassFile) = classFiles = cf :: classFiles
+        ClassFiles(zipFile, addClassFile _)
+        classFiles
+    }
+
+    def ClassFiles(zipFile: ZipFile, f: (ZipFile, ZipEntry, ClassFile) ⇒ _) {
         val zipEntries = (zipFile).entries
         while (zipEntries.hasMoreElements) {
             val zipEntry = zipEntries.nextElement
             if (!zipEntry.isDirectory && zipEntry.getName.endsWith(".class")) {
-                classFileEntries = zipEntry :: classFileEntries
+                f(zipFile, zipEntry, ClassFile(zipFile, zipEntry))
             }
         }
-        classFileEntries.view.map(ClassFile(zipFile, _))
     }
 
     def ClassFiles(zipFileName: String): Seq[ClassFile] = {
-        ClassFiles(new ZipFile(zipFileName))
+        withResource(new ZipFile(zipFileName)) { zf ⇒ ClassFiles(zf) }
     }
 
     def ClassFiles(file: java.io.File): Seq[ClassFile] = {
@@ -281,7 +279,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
 
         if (file.isFile()) {
             if (file.getName.endsWith(".zip") || file.getName.endsWith(".jar"))
-                return ClassFiles(file.getName)
+                return ClassFiles(file.getAbsoluteFile.toString)
 
             if (file.getName.endsWith(".class"))
                 return List(ClassFile(() ⇒ new java.io.FileInputStream(file)))
