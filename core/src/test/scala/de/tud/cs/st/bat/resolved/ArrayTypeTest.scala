@@ -35,10 +35,10 @@ package de.tud.cs.st.bat.resolved
 import org.scalatest.FunSuite
 
 /**
- * Tests that Array types are represented as specified.
- *
- * @author Michael Eichberg
- */
+  * Tests that Array types are represented as specified.
+  *
+  * @author Michael Eichberg
+  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class ArrayTypeTest extends FunSuite {
 

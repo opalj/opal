@@ -35,10 +35,10 @@ package de.tud.cs.st.bat.resolved
 import org.scalatest.FunSuite
 
 /**
- * Tests that the association with IDs works as expected.
- *
- * @author Michael Eichberg
- */
+  * Tests that the association with IDs works as expected.
+  *
+  * @author Michael Eichberg
+  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class SourceElementIDsTest extends FunSuite {
 

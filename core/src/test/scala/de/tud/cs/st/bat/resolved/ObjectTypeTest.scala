@@ -35,8 +35,8 @@ package de.tud.cs.st.bat.resolved
 import org.scalatest.FunSuite
 
 /**
- * @author Michael Eichberg
- */
+  * @author Michael Eichberg
+  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class ObjectTypeTest extends FunSuite {
 

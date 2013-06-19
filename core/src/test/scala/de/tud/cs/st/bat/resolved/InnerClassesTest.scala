@@ -75,7 +75,7 @@ class InnerClassesTest extends FlatSpec with ShouldMatchers /*with BeforeAndAfte
     it should "should return true if isInnerClass is called" in {
         project.classes(myRootClass$Formatter).isInnerClass should be(true)
     }
-    
+
     it should "correctly identify its outer class" in {
         project.classes(myRootClass$Formatter).outerType.get._1 should be(myRootClass)
     }

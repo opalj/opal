@@ -35,10 +35,10 @@ package de.tud.cs.st.bat.resolved
 import org.scalatest.FunSuite
 
 /**
- * Test the construction and analysis of types.
- *
- * @author Michael Eichberg
- */
+  * Test the construction and analysis of types.
+  *
+  * @author Michael Eichberg
+  */
 //@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class FieldTypeTest extends FunSuite {
 
