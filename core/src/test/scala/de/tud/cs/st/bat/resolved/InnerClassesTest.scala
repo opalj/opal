@@ -83,7 +83,6 @@ class InnerClassesTest extends FlatSpec with ShouldMatchers /*with BeforeAndAfte
     behavior of "an anonymous inner class"
 
     it should "should return true when isInnerClass is called" in {
-        println(project.classes(myRootClass$1).innerClasses)
         project.classes(myRootClass$1).isInnerClass should be(true)
     }
 
