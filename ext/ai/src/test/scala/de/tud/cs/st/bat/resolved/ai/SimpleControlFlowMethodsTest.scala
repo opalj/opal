@@ -52,8 +52,8 @@ import org.junit.Ignore
   */
 @RunWith(classOf[JUnitRunner])
 @Ignore
-class SimpleControlFlowMethodsTest extends FlatSpec with ShouldMatchers /*with BeforeAndAfterAll */ {
- 
+class SimpleControlFlowMethodsTest extends FlatSpec with ShouldMatchers /*with BeforeAndAfterAll */ with TestSupport {
+
     class RecordingDomain extends TypeDomain {
         var returnedValues: List[(String, Value)] = List()
         override def areturn(value: Value) { returnedValues = ("areturn", value) :: returnedValues }
@@ -64,9 +64,7 @@ class SimpleControlFlowMethodsTest extends FlatSpec with ShouldMatchers /*with B
         override def returnVoid() { returnedValues = ("return", null) :: returnedValues }
     }
 
-    val resource = ClassLoader.getSystemResource("classfiles/ai.zip")
-    assert(resource ne null, "the zip file with the class files used for testing is not found")
-    val classFiles = Java6Framework.ClassFiles(resource.getFile)
+    val classFiles = Java6Framework.ClassFiles(locateTestResources("classfiles/ai.zip"))
     val classFile = classFiles.find(_.thisClass.className == "ai/ControlFlowMethods").get
     assert(classFile ne null, "class file not found")
 
