@@ -54,22 +54,21 @@ import org.scalatest.junit.JUnitRunner
 @RunWith(classOf[JUnitRunner])
 class LoadClassFilesTest extends FlatSpec with ShouldMatchers with TestSupport {
 
-   behavior of "BAT"
+    behavior of "BAT"
 
-   for {
-      file ← locateTestResources("classfiles").listFiles
-      if (file.isFile && file.canRead && file.getName.endsWith(".zip"))
-   } {
-      val zipfile = new ZipFile(file)
-      val zipentries = (zipfile).entries
-      while (zipentries.hasMoreElements) {
-         val zipentry = zipentries.nextElement
-         if (!zipentry.isDirectory && zipentry.getName.endsWith(".class")) {
-
-            it should ("be able to parse the class file " + zipentry.getName + " in " + zipfile.getName) in {
-               ClassFile(() ⇒ zipfile.getInputStream(zipentry))
+    for {
+        file ← locateTestResources("classfiles").listFiles
+        if (file.isFile && file.canRead && file.getName.endsWith(".zip"))
+    } {
+        val zipfile = new ZipFile(file)
+        val zipentries = (zipfile).entries
+        while (zipentries.hasMoreElements) {
+            val zipentry = zipentries.nextElement
+            if (!zipentry.isDirectory && zipentry.getName.endsWith(".class")) {
+                it should ("be able to parse the class file "+zipentry.getName+" in "+zipfile.getName) in {
+                    ClassFile(() ⇒ zipfile.getInputStream(zipentry))
+                }
             }
-         }
-      }
-   }
+        }
+    }
 }
