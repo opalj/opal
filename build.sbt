@@ -1,6 +1,6 @@
 name := "BAT"
 
-scalaVersion in ThisBuild := "2.10.1"
+scalaVersion in ThisBuild := "2.10.2"
 
 scalacOptions in ThisBuild ++= Seq("-deprecation", "–target:jvm-1.7", "-feature", "-unchecked")
 
