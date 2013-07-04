@@ -1,5 +1,5 @@
 /* License (BSD Style License):
- *  Copyright (c) 2009, 2012
+ *  Copyright (c) 2009, 2011
  *  Software Technology Group
  *  Department of Computer Science
  *  Technische Universität Darmstadt
@@ -30,46 +30,41 @@
  *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st.bat.resolved.analyses.bugs;
+package de.tud.cs.st.bat.resolved
+package analyses
+package findbugs_inspired
 
 /**
- * Demo code for the issue: "A non-seriablizable class has a serializable inner class". This
- * situation is problematic, because the serialization of the inner class would require – due to the
- * link to its outer class – always the serialization of the outer class which will, however, fail.
- * 
- * @author Michael Eichberg
+ *
+ * @author Ralf Mitschke
  */
-public class InnerSerializableClass implements java.io.Serializable {
+object UUF_UNUSED_FIELD extends (Project ⇒ Iterable[(ClassFile, Field)]) {
 
-    private static final long serialVersionUID = -1182351106716239966L;
+    def apply(project: Project) = {
+        var unusedFields: List[(ClassFile, Field)] = Nil
 
-    class SomeInnerClass {
-
-        class InnerInnerClass implements java.io.Serializable {
-
-            private static final long serialVersionUID = 1l;
-
-            public String toString() {
-
-                return InnerSerializableClass.this.toString() + SomeInnerClass.this.toString()
-                        + this.toString();
+        for (classFile ← project.classFiles if !classFile.isInterfaceDeclaration) {
+            val declaringClass = classFile.thisClass
+            var privateFields: Map[String, (ClassFile, Field)] = Map.empty
+            for (field ← classFile.fields if field.isPrivate) {
+                privateFields += field.name -> (classFile, field)
             }
 
+            for (
+                method ← classFile.methods if method.body.isDefined;
+                instruction ← method.body.get.instructions
+            ) {
+                instruction match {
+                    case GETFIELD(`declaringClass`, name, _)  ⇒ privateFields -= name
+                    case GETSTATIC(`declaringClass`, name, _) ⇒ privateFields -= name
+                    case _                                    ⇒
+                }
+            }
+            if (privateFields.size > 0) {
+                unusedFields = unusedFields ::: privateFields.values.toList
+            }
         }
 
-        public String toString() {
-            return "InnerSerializableClass.InnerClass" + InnerSerializableClass.this.hashCode();
-        }
-
+        unusedFields
     }
-
-}
-
-class OuterClass {
-
-    static class SomeStaticInnerClass implements java.io.Serializable {
-        private static final long serialVersionUID = 2l;
-
-    }
-
 }

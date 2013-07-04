@@ -61,7 +61,7 @@ object ClassFileInformation {
                 println
             }
 
-            println("Sourcefile: " + (classFile sourceFile match { case Some(s) ⇒ s; case _ ⇒ "<NOT AVAILABE>" }))
+            println("Sourcefile: " + (classFile.sourceFile match { case Some(s) ⇒ s; case _ ⇒ "<NOT AVAILABE>" }))
             println("Version   : " + classFile.majorVersion + "." + classFile.minorVersion)
             println
         }

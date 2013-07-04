@@ -33,15 +33,15 @@
 package de.tud.cs.st
 package bat.resolved
 
-import util.perf.{ Counting, PerformanceEvaluation }
+import util.debug.{ Counting, PerformanceEvaluation }
 
 import reader.Java6Framework
 
 /**
- * Demonstrates how to implement two very simple checkers using BAT.
- *
- * @author Michael Eichberg
- */
+  * Demonstrates how to implement two very simple checkers using BAT.
+  *
+  * @author Michael Eichberg
+  */
 object SimpleCheckers {
 
     private def printUsage: Unit = {
@@ -60,7 +60,7 @@ object SimpleCheckers {
         for (arg ← args) {
             val file = new java.io.File(arg)
             if (!file.canRead() || file.isDirectory()) {
-                println(arg + " is not a valid ZIP/Jar file.");
+                println(arg+" is not a valid ZIP/Jar file.");
                 printUsage
                 sys.exit(1)
             }
@@ -73,7 +73,7 @@ object SimpleCheckers {
     def analyze(zipFiles: Array[String]) {
         val CountingPerformanceEvaluator = new PerformanceEvaluation with Counting
         import CountingPerformanceEvaluator._
-        import de.tud.cs.st.util.perf._
+
         var problemCount = 0
 
         time('Overall) {
@@ -81,7 +81,6 @@ object SimpleCheckers {
                 zipFile ← zipFiles;
                 classFile ← Java6Framework.ClassFiles(zipFile)
             ) {
-
                 time('EqHcChecker) {
                     var definesEqualsMethod = false
                     var definesHashCodeMethod = false
@@ -93,10 +92,9 @@ object SimpleCheckers {
 
                     if (definesEqualsMethod != definesHashCodeMethod) {
                         problemCount += 1
-                        println("the class: " + classFile.thisClass.className + " does not satisfy java.lang.Object's equals-hashCode contract.")
+                        println("the class: "+classFile.thisClass.className+" does not satisfy java.lang.Object's equals-hashCode contract.")
                     }
                 }
-
                 time('CovEqChecker) {
                     var definesEqualsMethod = false
                     var definesCovariantEqualsMethod = false
@@ -107,14 +105,15 @@ object SimpleCheckers {
                     }
                     if (definesCovariantEqualsMethod && !definesEqualsMethod) {
                         problemCount += 1
-                        println("the class: " + classFile.thisClass.className + " defines a covariant equals method, but does not also define the standard equals method.")
+                        println("the class: "+classFile.thisClass.className+" defines a covariant equals method, but does not also define the standard equals method.")
                     }
                 }
             }
         }
-        println("Equals-HashCode Checker: " + nsToSecs(getTime('EqHcChecker)))
-        println("Covariant Equals Checker: " + nsToSecs(getTime('CovEqChecker)))
-        println("Analyzed all classes in: " + nsToSecs(getTime('Overall)))
-        println("Number of identified violations: " + problemCount)
+        import de.tud.cs.st.util.debug.nsToSecs
+        println("Equals-HashCode Checker: "+nsToSecs(getTime('EqHcChecker)))
+        println("Covariant Equals Checker: "+nsToSecs(getTime('CovEqChecker)))
+        println("Analyzed all classes in: "+nsToSecs(getTime('Overall)))
+        println("Number of identified violations: "+problemCount)
     }
 }

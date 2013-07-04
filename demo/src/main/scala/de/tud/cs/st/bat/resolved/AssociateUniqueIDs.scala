@@ -34,7 +34,7 @@ package de.tud.cs.st
 package bat
 package resolved
 
-import util.perf.PerformanceEvaluation
+import util.debug.PerformanceEvaluation
 import reader.Java6Framework
 
 /**
@@ -46,7 +46,7 @@ import reader.Java6Framework
  */
 object AssociateUniqueIDs extends PerformanceEvaluation {
 
-    import de.tud.cs.st.util.perf._
+    import de.tud.cs.st.util.debug._
     
     val sourceElementIDs = new SourceElementIDsMap
 

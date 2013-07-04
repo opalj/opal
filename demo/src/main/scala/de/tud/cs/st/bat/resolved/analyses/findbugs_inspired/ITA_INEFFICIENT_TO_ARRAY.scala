@@ -1,5 +1,5 @@
 /* License (BSD Style License):
- *  Copyright (c) 2009, 2012
+ *  Copyright (c) 2009 - 2013
  *  Software Technology Group
  *  Department of Computer Science
  *  Technische Universität Darmstadt
@@ -30,46 +30,49 @@
  *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st.bat.resolved.analyses.bugs;
+package de.tud.cs.st.bat.resolved
+package analyses
+package findbugs_inspired
 
 /**
- * Demo code for the issue: "A non-seriablizable class has a serializable inner class". This
- * situation is problematic, because the serialization of the inner class would require – due to the
- * link to its outer class – always the serialization of the outer class which will, however, fail.
- * 
- * @author Michael Eichberg
+ *
+ * @author Ralf Mitschke
  */
-public class InnerSerializableClass implements java.io.Serializable {
+object ITA_INEFFICIENT_TO_ARRAY extends (Project ⇒ Iterable[(ClassFile, Method, Int)]) {
 
-    private static final long serialVersionUID = -1182351106716239966L;
+    import BaseAnalyses.withIndex
 
-    class SomeInnerClass {
+    val objectArrayType = ArrayType(ObjectType("java/lang/Object"))
 
-        class InnerInnerClass implements java.io.Serializable {
+    val toArrayDescriptor = MethodDescriptor(List(objectArrayType), objectArrayType)
 
-            private static final long serialVersionUID = 1l;
+    val collectionInterface = ObjectType("java/util/Collection")
 
-            public String toString() {
+    val listInterface = ObjectType("java/util/List")
 
-                return InnerSerializableClass.this.toString() + SomeInnerClass.this.toString()
-                        + this.toString();
-            }
-
+    def isCollectionType(classHierarchy: ClassHierarchy)(t: ReferenceType): Boolean = {
+        if (!t.isObjectType) {
+            false
+        } else {
+            classHierarchy.isSubtypeOf(t.asInstanceOf[ObjectType], collectionInterface).getOrElse(false) ||
+                t == listInterface // TODO needs more heuristic or more analysis
         }
-
-        public String toString() {
-            return "InnerSerializableClass.InnerClass" + InnerSerializableClass.this.hashCode();
-        }
-
     }
 
-}
-
-class OuterClass {
-
-    static class SomeStaticInnerClass implements java.io.Serializable {
-        private static final long serialVersionUID = 2l;
-
+    def apply(project: Project) = {
+        val classHierarchy: ClassHierarchy = project.classHierarchy
+        val isCollectionType = this.isCollectionType(classHierarchy) _
+        for (
+            classFile ← project.classFiles;
+            method ← classFile.methods if method.body.isDefined;
+            Seq((ICONST_0, _), (ANEWARRAY(_), _), (instr, idx)) ← withIndex(method.body.get.instructions).sliding(3) if (
+                instr match {
+                    case INVOKEINTERFACE(targetType, "toArray", `toArrayDescriptor`) if (isCollectionType(targetType)) ⇒ true
+                    case INVOKEVIRTUAL(targetType, "toArray", `toArrayDescriptor`) if (isCollectionType(targetType)) ⇒ true
+                    case _ ⇒ false
+                })
+        ) yield {
+            (classFile, method, idx)
+        }
     }
-
 }

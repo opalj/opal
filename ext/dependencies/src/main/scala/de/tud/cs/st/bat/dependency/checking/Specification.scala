@@ -261,9 +261,9 @@ class Specification
             }
         }
 
-        val performance = new de.tud.cs.st.util.perf.PerformanceEvaluation {}
+        val performance = new de.tud.cs.st.util.debug.PerformanceEvaluation {}
         import performance._
-        import de.tud.cs.st.util.perf._
+        import de.tud.cs.st.util.debug._
 
         // 1. create and update the support data structures
         Console.print(Console.GREEN+"1. Reading class files and extracting dependencies took ")

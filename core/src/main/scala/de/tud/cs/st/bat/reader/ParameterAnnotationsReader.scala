@@ -30,17 +30,16 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.reader
-
-import java.io.DataInputStream
+package de.tud.cs.st
+package bat.reader
 
 import scala.reflect.ClassTag
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
+import java.io.DataInputStream
 
 /**
- * @author Michael Eichberg
- */
+  * @author Michael Eichberg
+  */
 trait ParameterAnnotationsReader extends Constant_PoolAbstractions {
 
     //
@@ -59,6 +58,8 @@ trait ParameterAnnotationsReader extends Constant_PoolAbstractions {
     type ParameterAnnotations = IndexedSeq[IndexedSeq[Annotation]]
 
     def ParameterAnnotations(in: DataInputStream, cp: Constant_Pool): ParameterAnnotations = {
+        import util.ControlAbstractions.repeat
+
         repeat(in.readUnsignedByte) {
             repeat(in.readUnsignedShort) {
                 Annotation(in, cp)

@@ -34,10 +34,6 @@ package de.tud.cs.st
 package bat.resolved
 package analyses
 
-import util.perf.{ Counting, PerformanceEvaluation }
-import util.graphs.{ Node, toDot }
-import reader.Java6Framework
-
 trait Analysis {
 
     def analyze(project: Project): Traversable[Product]

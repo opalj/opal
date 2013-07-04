@@ -31,30 +31,51 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 */
 package de.tud.cs.st
-package bat
-package resolved
-package analyses
+package bat.resolved
+
+import util.debug.PerformanceEvaluation
+import reader.Java6Framework
 
 /**
-  * An analysis that identifies (non-static) inner classes that are serializable, but where the outer class
-  * is not.
-  *
   * @author Michael Eichberg
   */
-object NonSerializableClassHasASerializableInnerClass extends Analysis {
+object NativeMethodsCounter extends PerformanceEvaluation {
 
-    def analyze(project: Project) = {
-        val serializable = ObjectType("java/io/Serializable")
-        for {
-            objectTypes ← project.classHierarchy.subclasses(serializable).toSeq
-            objectType ← objectTypes
-            classFile = project.classes(objectType)
-            (outerType, thisInnerClassesAccessFlags) ← classFile.outerType if !ACC_STATIC.element_of(thisInnerClassesAccessFlags)
-            if !project.classHierarchy.isSubtypeOf(outerType, serializable).getOrElse(true /* if we don't know anything about the class, then we don't want to generate a warning */ )
-            //outerClass <- project.classes.get(outerType).toSeq                      
-        } yield {
-            (objectType, outerType)
+    private def printUsage: Unit = {
+        println("Usage: java …Bugs <ZIP or JAR file containing class files>+")
+        println("(c) 2012 Michael Eichberg, Ralf Mitschke")
+    }
+
+    def main(args: Array[String]) {
+
+        if (args.length == 0 || !args.forall(arg ⇒ arg.endsWith(".zip") || arg.endsWith(".jar"))) {
+            printUsage
+            sys.exit(1)
         }
+
+        for (arg ← args) {
+            val file = new java.io.File(arg)
+            if (!file.canRead() || file.isDirectory()) {
+                println("The file: "+file+" cannot be read.");
+                printUsage
+                sys.exit(1)
+            }
+        }
+
+        println("Reading class files: ")
+        val nativeMethods = time((t) ⇒ println("Analysis took: "+(t / 1000.0 / 1000.0 / 1000.0)+" secs.")) {
+            for {
+                zipFile ← args if { println("\t"+zipFile); true };
+                classFile ← Java6Framework.ClassFiles(zipFile)
+                method ← classFile.methods if method.isNative
+            } yield {
+                method
+            }
+
+        }
+
+        println("Number of native methods: "+nativeMethods.size)
+        println(nativeMethods.map((method) ⇒ method.name+"("+method.descriptor+")").mkString("\n"))
     }
 
 }

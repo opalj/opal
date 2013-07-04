@@ -30,46 +30,21 @@
  *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st.bat.resolved.analyses.bugs;
+package de.tud.cs.st.util
 
 /**
- * Demo code for the issue: "A non-seriablizable class has a serializable inner class". This
- * situation is problematic, because the serialization of the inner class would require – due to the
- * link to its outer class – always the serialization of the outer class which will, however, fail.
- * 
- * @author Michael Eichberg
- */
-public class InnerSerializableClass implements java.io.Serializable {
+  * Functionality often required when measuring the performance.
+  *
+  * @author Michael Eichberg
+  */
+package object debug {
 
-    private static final long serialVersionUID = -1182351106716239966L;
+    final def nanoSecondsToSeconds(value: Long): Double = value.toDouble / 1000.0d / 1000.0d / 1000.0d
+    final def nsToSecs(value: Long): Double = nanoSecondsToSeconds(value)
 
-    class SomeInnerClass {
+    final def nanoSecondsToMilliseconds(value: Long): Double = value.toDouble / 1000.0d / 1000.0d
 
-        class InnerInnerClass implements java.io.Serializable {
-
-            private static final long serialVersionUID = 1l;
-
-            public String toString() {
-
-                return InnerSerializableClass.this.toString() + SomeInnerClass.this.toString()
-                        + this.toString();
-            }
-
-        }
-
-        public String toString() {
-            return "InnerSerializableClass.InnerClass" + InnerSerializableClass.this.hashCode();
-        }
-
-    }
-
-}
-
-class OuterClass {
-
-    static class SomeStaticInnerClass implements java.io.Serializable {
-        private static final long serialVersionUID = 2l;
-
-    }
+    final def asSeconds(startTimeInNanoSeconds: Long, endTimeInNanoSeconds: Long): Double =
+        nanoSecondsToSeconds(endTimeInNanoSeconds - startTimeInNanoSeconds)
 
 }

@@ -33,7 +33,7 @@
 package de.tud.cs.st.bat.resolved.analyses.bugs;
 
 /**
- * This class contains code related to the "improper synchronization".
+ * This class contains code related to the issue "improper synchronization".
  * 
  * It contains: - a pair of getter and setter methods, where the getter method is not synchronized,
  * but the setter method is synchronized.

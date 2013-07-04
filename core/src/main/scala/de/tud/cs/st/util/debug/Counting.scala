@@ -30,31 +30,34 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st
-package bat
-package resolved
-package analyses
+package de.tud.cs.st.util.debug
 
 /**
-  * An analysis that identifies (non-static) inner classes that are serializable, but where the outer class
-  * is not.
-  *
-  * @author Michael Eichberg
-  */
-object NonSerializableClassHasASerializableInnerClass extends Analysis {
+ * Counts how often some piece of code is executed.
+ *
+ * @author Michael Eichberg
+ */
+trait Counting extends PerformanceEvaluation {
 
-    def analyze(project: Project) = {
-        val serializable = ObjectType("java/io/Serializable")
-        for {
-            objectTypes ← project.classHierarchy.subclasses(serializable).toSeq
-            objectType ← objectTypes
-            classFile = project.classes(objectType)
-            (outerType, thisInnerClassesAccessFlags) ← classFile.outerType if !ACC_STATIC.element_of(thisInnerClassesAccessFlags)
-            if !project.classHierarchy.isSubtypeOf(outerType, serializable).getOrElse(true /* if we don't know anything about the class, then we don't want to generate a warning */ )
-            //outerClass <- project.classes.get(outerType).toSeq                      
-        } yield {
-            (objectType, outerType)
-        }
+    import scala.collection.mutable.Map
+
+    private[this] val count: Map[Symbol, Int] = Map()
+
+    abstract override def time[T](s: Symbol)(f: ⇒ T): T = {
+        count.update(s, count.getOrElseUpdate(s, 0) + 1)
+        super.time(s)(f)
     }
 
+    def getCount(sym: Symbol): Int = {
+        count.getOrElse(sym, 0)
+    }
+
+    abstract override def reset(sym: Symbol) {
+        count.update(sym, 0)
+        super.reset(sym)
+    }
+
+    abstract override def resetAll{
+        count.clear()
+    }
 }

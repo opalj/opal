@@ -39,40 +39,37 @@ import scala.reflect.ClassTag
 import scala.collection.mutable.WrappedArray
 
 /**
-  * Implementation of some control abstractions.
-  *
-  * @author Michael Eichberg
-  */
+ * Implementation of some control abstractions.
+ *
+ * @author Michael Eichberg
+ */
 object ControlAbstractions {
 
     /**
       * This function takes care of the correct handling of input streams.
-      * The function takes a function <code>f</code> that creates a new <code>InputStream</code>
-      * and a function <code>r</code> that processes an input stream. When `r` has finished processing
-      * the input stream, the stream is closed.
-      * If f returns <code>null</code>, <code>null</code> is passed to r.
+      * The function takes a function <code>f</code> that creates a new <code>InputStream</code> (f is a
+      * named parameter) and a function <code>r</code> that processes an input stream. When `r` has
+      * finished processing the input stream, the stream is closed.
+      * If f should return <code>null</code>, <code>null</code> is passed to r.
       */
-    def read[I <: InputStream, T](f: ⇒ I)(r: I ⇒ T): T = {
-        val in = f // this calls the function f
-        try {
-            r(in)
-        }
+    @throws
+    def process[I <: InputStream, T](f: ⇒ I)(r: I ⇒ T): T = {
+        val in = f
+        try { r(in) }
         finally {
-            if (in != null)
-                in.close
+            if (in != null) in.close
         }
     }
 
-    def withResource[I <: java.io.Closeable, O](r: I)(f: r.type ⇒ O): O = {
+    def withResource[I <: java.io.Closeable, O](r: => I)(f: I ⇒ O): O = {
         try {
             f(r)
-        }
-        finally {
+        } finally {
             r.close
         }
     }
 
-    def repeat[T: ClassTag](times: Int)(f: ⇒ T): WrappedArray[T] = {
+    def repeat[T: ClassTag](times: Int)(f: ⇒ T): IndexedSeq[T] = {
         val array = new Array[T](times)
         var i = 0
         while (i < times) {

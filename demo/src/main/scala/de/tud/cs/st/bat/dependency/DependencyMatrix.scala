@@ -34,23 +34,23 @@ package de.tud.cs.st
 package bat
 package dependency
 
-import util.perf.nanoSecondsToMilliseconds
+import util.debug.nanoSecondsToMilliseconds
 
 import resolved._
 import resolved.reader.Java6Framework
 
 /**
-  * This class (the implementation) demonstrates how to load all class files
-  * from a zip file and how to create a dependency matrix.
-  *
-  * @author Michael Eichberg
-  * @author Thomas Schlosser
-  */
+ * This class (the implementation) demonstrates how to load all class files
+ * from a zip file and how to create a dependency matrix.
+ *
+ * @author Michael Eichberg
+ * @author Thomas Schlosser
+ */
 object DependencyMatrix {
 
-    val performance = new util.perf.PerformanceEvaluation {}
+    val performance = new util.debug.PerformanceEvaluation {}
     import performance._
-    import de.tud.cs.st.util.perf._
+    import de.tud.cs.st.util.debug._
 
     private def printUsage: Unit = {
         println("Loads all classes stored in the zip files and creates a dependency matrix.")

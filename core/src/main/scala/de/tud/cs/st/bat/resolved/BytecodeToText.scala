@@ -49,7 +49,7 @@ object BytecodeToText extends UTF8Println {
     def main(args: Array[String]): Unit = {
 
         println("""
-                |BytecodeToTxt (c) 2009, 2001
+                |BytecodeToTxt (c) 2009, 2011
                 |Software Technology Group
 				|Department of Computer Science
                 |Technische Universität Darmstadt

@@ -30,31 +30,67 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st
-package bat
-package resolved
-package analyses
+package de.tud.cs.st.util.debug
+
+import scala.collection.mutable.Map
 
 /**
-  * An analysis that identifies (non-static) inner classes that are serializable, but where the outer class
-  * is not.
+  * Measures the execution time of some code.
   *
   * @author Michael Eichberg
   */
-object NonSerializableClassHasASerializableInnerClass extends Analysis {
+trait PerformanceEvaluation {
 
-    def analyze(project: Project) = {
-        val serializable = ObjectType("java/io/Serializable")
-        for {
-            objectTypes ← project.classHierarchy.subclasses(serializable).toSeq
-            objectType ← objectTypes
-            classFile = project.classes(objectType)
-            (outerType, thisInnerClassesAccessFlags) ← classFile.outerType if !ACC_STATIC.element_of(thisInnerClassesAccessFlags)
-            if !project.classHierarchy.isSubtypeOf(outerType, serializable).getOrElse(true /* if we don't know anything about the class, then we don't want to generate a warning */ )
-            //outerClass <- project.classes.get(outerType).toSeq                      
-        } yield {
-            (objectType, outerType)
-        }
+    /**
+      * Times the execution of a given method f (function literal / code block).
+      *
+      * @param r A function that is passed the time (in nano seconds) that it
+      * 	took to evaluate the function f.
+      */
+    def time[T](r: Long ⇒ Unit)(f: ⇒ T): T = {
+
+        val startTime: Long = System.nanoTime
+        val result = f
+        val endTime: Long = System.nanoTime
+
+        r(endTime - startTime)
+
+        result
     }
 
+    private[this] val times: Map[Symbol, Long] = Map()
+
+    /**
+      * Times the execution of the given method / function literal / code block and
+      * adds it to the execution time of previous methods / function literals/ code blocks
+      * that were measured and for which the same symbol was used. <br/>
+      * E.g. <code>time('base_analysis){ ... do something ... }</code>
+      *
+      * @param s Symbol used to put multiple measurements into relation.
+      * @param f The function that will be evaluated and for which the execution
+      * time will be measured.
+      */
+    def time[T](s: Symbol)(f: ⇒ T): T = {
+        val startTime = System.nanoTime
+        val result = f
+        val endTime = System.nanoTime
+
+        val old = times.getOrElseUpdate(s, 0l)
+        times.update(s, old + (endTime - startTime))
+
+        result
+    }
+
+    def getTime(sym: Symbol): Long = {
+        times.getOrElse(sym, 0l)
+    }
+
+    def reset(s: Symbol) {
+        times.remove(s)
+    }
+
+    def resetAll() {
+        times.clear()
+    }
 }
+

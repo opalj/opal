@@ -1,5 +1,5 @@
 /* License (BSD Style License):
-*  Copyright (c) 2009, 2011
+*  Copyright (c) 2009 - 2013
 *  Software Technology Group
 *  Department of Computer Science
 *  Technische Universität Darmstadt
@@ -34,63 +34,55 @@ package de.tud.cs.st
 package bat.resolved
 package analyses
 
-import random.UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR
+import findbugs_inspired._
 import reader.Java6Framework
 
 /**
  * @author Michael Eichberg
  * @author Ralf Mitschke
  */
-object Bugs
-{
+object Bugs {
 
     private def printUsage() {
-        println ("Usage: java …Bugs <ZIP or JAR file containing class files>+")
-        println ("(c) 2012 Michael Eichberg, Ralf Mitschke")
+        println("Usage: java …Bugs <ZIP or JAR file containing class files>+")
+        println("(c) 2012 Michael Eichberg, Ralf Mitschke")
     }
 
-    val analyses: List[Project => Iterable[_]] = List (
+    val analyses: List[Project ⇒ Iterable[_]] = List(
         UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR
     )
 
     def main(args: Array[String]) {
 
-        if (args.length == 0 || !args.forall (arg ⇒ arg.endsWith (".zip") || arg.endsWith (".jar"))) {
-            printUsage ()
-            sys.exit (1)
+        if (args.length == 0 || !args.forall(arg ⇒ arg.endsWith(".zip") || arg.endsWith(".jar"))) {
+            printUsage()
+            sys.exit(-1)
         }
 
         for (arg ← args) {
-            val file = new java.io.File (arg)
+            val file = new java.io.File(arg)
             if (!file.canRead || file.isDirectory) {
-                println ("The file: " + file + " cannot be read.")
-                printUsage ()
-                sys.exit (1)
+                println("The file: "+file+" cannot be read.")
+                printUsage()
+                sys.exit(-2)
             }
         }
 
-        println ("Reading class files:")
-        var project = new Project ()
+        println("Reading class files:")
+        var project = new Project()
         for {
-            zipFile ← args if {
-            println ("\t" + zipFile)
-            true
-        }
-            classFile ← Java6Framework.ClassFiles (zipFile)
-        } yield
-        {
+            zipFile ← args if { println("\t"+zipFile); true }
+            classFile ← Java6Framework.ClassFiles(zipFile)
+        } yield {
             project += classFile
         }
-        println ("Starting analyses: ")
+        println("Starting analyses: ")
 
         for (analysis ← analyses) {
-            print (analysis.getClass.getSimpleName + " : \n")
-            val result = analysis (project)
-            println (result.mkString ("\n"))
-            println (result.size)
+            print(analysis.getClass.getSimpleName+" : \n")
+            val result = analysis(project)
+            println(result.mkString("\n"))
+            println(result.size)
         }
-
-
     }
-
 }

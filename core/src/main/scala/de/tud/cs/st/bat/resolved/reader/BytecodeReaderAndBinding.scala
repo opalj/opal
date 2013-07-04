@@ -34,8 +34,6 @@
 package de.tud.cs.st.bat.resolved
 package reader
 
-import de.tud.cs.st.util.ControlAbstractions.repeat
-
 /**
   * Defines a method to parse an array of bytes (with Java bytecode instructions) and to return an array
   * of `Instruction`s.
@@ -46,15 +44,16 @@ import de.tud.cs.st.util.ControlAbstractions.repeat
   */
 trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
 
-    import java.io.DataInputStream
-    import java.io.ByteArrayInputStream
-
     override type Constant_Pool = Array[Constant_Pool_Entry]
 
     /**
       * Transforms an array of bytes into an array of [[de.tud.cs.st.bat.resolved.Instruction]]s.
       */
     def Instructions(source: Array[Byte])(implicit cp: Constant_Pool): Instructions = {
+        import java.io.DataInputStream
+        import java.io.ByteArrayInputStream
+        import de.tud.cs.st.util.ControlAbstractions.repeat
+
         val bas = new ByteArrayInputStream(source)
         val in = new DataInputStream(bas)
         val codeLength = source.size
@@ -72,8 +71,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                     if (wide) {
                         wide = false
                         in.readUnsignedShort
-                    }
-                    else {
+                    } else {
                         in.readUnsignedByte
                     }
                 )
@@ -88,8 +86,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                     if (wide) {
                         wide = false
                         in.readUnsignedShort
-                    }
-                    else {
+                    } else {
                         in.readUnsignedByte
                     }
                 )
@@ -120,8 +117,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                         if (wide) {
                             wide = false
                             in.readUnsignedShort
-                        }
-                        else {
+                        } else {
                             in.readUnsignedByte
                         }
                     )
@@ -139,8 +135,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                         if (wide) {
                             wide = false
                             in.readUnsignedShort
-                        }
-                        else {
+                        } else {
                             in.readUnsignedByte
                         }
                     )
@@ -172,8 +167,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                     if (wide) {
                         wide = false
                         in.readUnsignedShort
-                    }
-                    else {
+                    } else {
                         in.readUnsignedByte
                     }
                 )
@@ -190,8 +184,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                         if (wide) {
                             wide = false
                             in.readUnsignedShort
-                        }
-                        else {
+                        } else {
                             in.readUnsignedByte
                         }
                     )
@@ -251,8 +244,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                         val lvIndex = in.readUnsignedShort
                         val constValue = in.readShort
                         IINC(lvIndex, constValue)
-                    }
-                    else {
+                    } else {
                         val lvIndex = in.readUnsignedByte
                         val constValue = in.readByte
                         IINC(lvIndex, constValue)
@@ -263,8 +255,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                         if (wide) {
                             wide = false
                             in.readUnsignedShort
-                        }
-                        else {
+                        } else {
                             in.readUnsignedByte
                         }
                     )
@@ -311,8 +302,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                     if (wide) {
                         wide = false
                         in.readUnsignedShort
-                    }
-                    else {
+                    } else {
                         in.readUnsignedByte
                     }
                 )
@@ -344,8 +334,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                         wide = false
                         val lvIndex = in.readUnsignedShort
                         LLOAD(lvIndex)
-                    }
-                    else {
+                    } else {
                         val lvIndex = in.readUnsignedByte
                         LLOAD(lvIndex)
                     }
@@ -372,8 +361,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                     if (wide) {
                         wide = false
                         in.readUnsignedShort
-                    }
-                    else {
+                    } else {
                         in.readUnsignedByte
                     }
                 )
@@ -408,8 +396,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                     if (wide) {
                         wide = false
                         in.readUnsignedShort
-                    }
-                    else {
+                    } else {
                         in.readUnsignedByte
                     }
                 )

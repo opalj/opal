@@ -30,31 +30,28 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st
-package bat
-package resolved
-package analyses
+package de.tud.cs.st.util.debug
 
 /**
-  * An analysis that identifies (non-static) inner classes that are serializable, but where the outer class
-  * is not.
-  *
-  * @author Michael Eichberg
-  */
-object NonSerializableClassHasASerializableInnerClass extends Analysis {
+ * Methods related to the measuring of an application's memory performance.
+ *
+ * @author Michael Eichberg
+ */
+object MemoryUsage {
 
-    def analyze(project: Project) = {
-        val serializable = ObjectType("java/io/Serializable")
-        for {
-            objectTypes ← project.classHierarchy.subclasses(serializable).toSeq
-            objectType ← objectTypes
-            classFile = project.classes(objectType)
-            (outerType, thisInnerClassesAccessFlags) ← classFile.outerType if !ACC_STATIC.element_of(thisInnerClassesAccessFlags)
-            if !project.classHierarchy.isSubtypeOf(outerType, serializable).getOrElse(true /* if we don't know anything about the class, then we don't want to generate a warning */ )
-            //outerClass <- project.classes.get(outerType).toSeq                      
-        } yield {
-            (objectType, outerType)
-        }
+    /**
+     * Measures the amount of memory that is used as a side-effect
+     * of executing the given method.
+     */
+    def apply[T](mu: (Long) ⇒ Unit)(f: ⇒ T): T = {
+        val memoryMXBean = java.lang.management.ManagementFactory.getMemoryMXBean
+        memoryMXBean.gc()
+        val usedBefore = memoryMXBean.getHeapMemoryUsage.getUsed
+        val r = f
+        memoryMXBean.gc()
+        val usedAfter = memoryMXBean.getHeapMemoryUsage.getUsed
+        mu(usedAfter - usedBefore)
+        r
     }
 
 }

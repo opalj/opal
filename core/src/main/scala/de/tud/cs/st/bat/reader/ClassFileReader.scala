@@ -35,8 +35,7 @@ package reader
 
 import java.io.{ File, InputStream, DataInputStream, BufferedInputStream, ByteArrayInputStream }
 import java.util.zip.{ ZipFile, ZipEntry }
-import de.tud.cs.st.util.ControlAbstractions.read
-import de.tud.cs.st.util.ControlAbstractions.withResource
+import de.tud.cs.st.util.ControlAbstractions.process
 import java.rmi.UnexpectedException
 
 /**
@@ -200,13 +199,13 @@ trait ClassFileReader extends Constant_PoolAbstractions {
       * @param create a function that is intended to create a new `InputStream` and
       *  which must not return `null`. If you already do have an open input stream
       *  which should not be closed after reading the class file use
-      *  [[de.tud.cs.st.bat.reader.ClassFileReader.ClassFile(DataInputStream)]] instead.
+      *  `de.tud.cs.st.bat.reader.ClassFileReader.ClassFile(DataInputStream)` instead.
       *  The (newly created) InputStream returned by calling `create` is closed by this method.
       *  The created input stream will automatically be wrapped by BAT to enable efficient reading of the
       *  class file.
       */
     def ClassFile(create: () ⇒ InputStream): ClassFile = {
-        read(create() match {
+        process(create() match {
             case dis: DataInputStream ⇒ dis
             case is ⇒ {
                 // TODO needs to be made more robust
@@ -246,8 +245,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         try {
             val zipEntry = zf.getEntry(zipFileEntryName)
             ClassFile(zf, zipEntry)
-        }
-        finally {
+        } finally {
             zf.close
         }
     }
@@ -270,6 +268,8 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     }
 
     def ClassFiles(zipFileName: String): Seq[ClassFile] = {
+        import de.tud.cs.st.util.ControlAbstractions.withResource
+
         withResource(new ZipFile(zipFileName)) { zf ⇒ ClassFiles(zf) }
     }
 
@@ -300,8 +300,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
                     //   directories.synchronized {
                     directories = file :: directories
                     //   }
-                }
-                else if (file.getName().endsWith(".class")) {
+                } else if (file.getName().endsWith(".class")) {
                     classFileCount += 1
                     val classFile = ClassFile(() ⇒ new java.io.FileInputStream(file))
                     //   classFiles.synchronized {

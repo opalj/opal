@@ -43,7 +43,7 @@ package resolved
  * @param fieldType The (erased) type of this field.
  * @param attributes The defined attributes. The JVM 7 specification defines the following
  * 	attributes for fields: [[de.tud.cs.st.bat.resolved.ConstantValue]], [[de.tud.cs.st.bat.resolved.Synthetic]], [[de.tud.cs.st.bat.resolved.Signature]],
- * 	[[de.tud.cs.st.bat.resolved.Deprecated]], [[de.tud.cs.st.bat.resolved.RuntimeVisibleAnnotations]] and [[de.tud.cs.st.bat.resolved.RuntimeInvisibleAnnotations]].
+ * 	[[de.tud.cs.st.bat.resolved.Deprecated]], [[de.tud.cs.st.bat.resolved.RuntimeVisibleAnnotationTable]] and [[de.tud.cs.st.bat.resolved.RuntimeInvisibleAnnotationTable]].
  *
  * @author Michael Eichberg
  */

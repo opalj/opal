@@ -1,5 +1,5 @@
 /* License (BSD Style License):
- *  Copyright (c) 2009, 2012
+ *  Copyright (c) 2009 - 2013
  *  Software Technology Group
  *  Department of Computer Science
  *  Technische Universität Darmstadt
@@ -30,46 +30,36 @@
  *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st.bat.resolved.analyses.bugs;
+package de.tud.cs.st.bat.resolved
+package analyses
+package findbugs_inspired
 
 /**
- * Demo code for the issue: "A non-seriablizable class has a serializable inner class". This
- * situation is problematic, because the serialization of the inner class would require – due to the
- * link to its outer class – always the serialization of the outer class which will, however, fail.
- * 
- * @author Michael Eichberg
+ *
+ * @author Ralf Mitschke
  */
-public class InnerSerializableClass implements java.io.Serializable {
+object MS_SHOULD_BE_FINAL extends (Project ⇒ Iterable[(ClassFile, Field)]) {
 
-    private static final long serialVersionUID = -1182351106716239966L;
+    val hashTableType = ObjectType("java/util/Hashtable")
 
-    class SomeInnerClass {
+    def isHashTable(t: FieldType) = t == hashTableType
 
-        class InnerInnerClass implements java.io.Serializable {
+    def isArray(t: FieldType) = t.isArrayType
 
-            private static final long serialVersionUID = 1l;
-
-            public String toString() {
-
-                return InnerSerializableClass.this.toString() + SomeInnerClass.this.toString()
-                        + this.toString();
-            }
-
+    def apply(project: Project) = {
+        for (
+            classFile ← project.classFiles if (!classFile.isInterfaceDeclaration);
+            declaringClass = classFile.thisClass;
+            packageName = declaringClass.packageName;
+            field @ Field(_, name, fieldType, _) ← classFile.fields if (!field.isFinal &&
+                field.isStatic &&
+                !field.isSynthetic &&
+                !field.isVolatile &&
+                (field.isPublic || field.isProtected) &&
+                !isArray(field.fieldType) && !isHashTable(field.fieldType)
+            )
+        ) yield {
+            (classFile, field)
         }
-
-        public String toString() {
-            return "InnerSerializableClass.InnerClass" + InnerSerializableClass.this.hashCode();
-        }
-
     }
-
-}
-
-class OuterClass {
-
-    static class SomeStaticInnerClass implements java.io.Serializable {
-        private static final long serialVersionUID = 2l;
-
-    }
-
 }
