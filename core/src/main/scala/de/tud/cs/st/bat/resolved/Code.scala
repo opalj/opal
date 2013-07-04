@@ -33,10 +33,10 @@
 package de.tud.cs.st.bat.resolved
 
 /**
-  * Representation of a method's code attribute.
-  *
-  * @author Michael Eichberg
-  */
+ * Representation of a method's code attribute.
+ *
+ * @author Michael Eichberg
+ */
 case class Code(maxStack: Int,
                 maxLocals: Int,
                 instructions: Array[Instruction],
@@ -60,6 +60,181 @@ case class Code(maxStack: Int,
         pc > 0 && instructions(pc - 1) == WIDE
     }
 
+    /**
+     * Collects all instructions for which the given function is defined.
+     *
+     * ==Usage scenario==
+     * Use this function if you want to search for and collect specific instructions, but where you do
+     * not immediately require the program counter/index of the instruction in the instruction array.
+     *
+     * ==Examples==
+     * Example usage to collect the declaring class of all get field access where the
+     * field name is "last".
+     * {{{
+     * collect({
+     *  case GETFIELD(declaringClass, "last", _) ⇒ declaringClass
+     * })
+     * }}}
+     *
+     * Example usage to collect all instances of a "DUP" instruction.
+     * {{{
+     * code.collect({ case dup @ DUP ⇒ dup })
+     * }}}
+     *
+     * @return The result of applying the function f to all instructions for which f is defined combined with
+     *  the index (program counter) of the instruction in the code array.
+     */
+    def collect[B](f: PartialFunction[Instruction, B]): Seq[(Int, B)] = {
+        val max_pc = instructions.size
+        var pc = 0
+        var result: List[(Int, B)] = List.empty
+        while (pc < max_pc) {
+            val instruction = instructions(pc)
+            if (instruction ne null) {
+                if (f.isDefinedAt(instruction)) {
+                    result = (pc, f(instruction)) :: result
+                }
+            }
+            pc += 1
+        }
+        result.reverse
+    }
+
+    /**
+     * Applies the given function `f` to all instruction objects for which the function is
+     * defined. The function is passed a tuple consisting of the current program counter/index
+     * in the code array and the corresponding instruction.
+     *
+     * ==Example==
+     * Example usage to collect the program counters (indexes) of all instructions that
+     * are the target of a conditional branch instruction:
+     * {{{
+     * code.collectWithIndex({
+     *  case (pc, cbi: ConditionalBranchInstruction) ⇒
+     *      Seq(cbi.indexOfNextInstruction(pc, code), pc + cbi.branchoffset)
+     *  }) // .flatten should equal (Seq(...))
+     * }}}
+     */
+    def collectWithIndex[B](f: PartialFunction[(Int, Instruction), B]): Seq[B] = {
+        val max_pc = instructions.size
+        var pc = 0
+        var result: List[B] = List.empty
+        while (pc < max_pc) {
+            val instruction = instructions(pc)
+            if (instruction ne null) {
+                if (f.isDefinedAt((pc, instruction))) {
+                    result = f((pc, instruction)) :: result
+                }
+            }
+            pc += 1
+        }
+        result.reverse
+    }
+
+    /**
+     * Applies the given function to the first instruction for which the given function is defined.
+     */
+    def collectFirstWithIndex[B](f: PartialFunction[(Int, Instruction), B]): Option[B] = {
+        val max_pc = instructions.size
+        var pc = 0
+        while (pc < max_pc) {
+            val instruction = instructions(pc)
+            if ((instruction ne null) && f.isDefinedAt((pc, instruction))) {
+                return Some(f(pc, instruction))
+            }
+            pc += 1
+        }
+        return None
+    }
+
+    /**
+     * Tests if an instruction matches the given filter. If so, the index of the first matching
+     * instruction is returned.
+     */
+    def find(f: Instruction ⇒ Boolean): Option[Int] = {
+        val max_pc = instructions.size
+        var pc = 0
+        while (pc < max_pc) {
+            val instruction = instructions(pc)
+            if ((instruction ne null) && f(instruction)) {
+                return Some(pc)
+            }
+            pc += 1
+        }
+        return None
+    }
+
+    def associateWithIndex(): Seq[(Int, Instruction)] = collect { case i ⇒ i }
+
+    /**
+     * Slides over the code array and tries to apply the give function to each sequence of instructions
+     * consisting of `windowSize` elements.
+     *
+     * ==Scenario==
+     * If you want to search for specific patterns of bytecode instructions. Some "bug patterns" are
+     * directly related to specific bytecode sequences and these patterns can easily be identified
+     * using this method.
+     *
+     * ==Example==
+     * Search for sequences of the bytecode instructions PUTFIELD and ALOAD_O in the methods
+     * body and return the list of program counters of the start of the identified sequences.
+     * {{{
+     * code.slidingCollect(2)({
+     *  case (pc, Seq(PUTFIELD(_, _, _), ALOAD_0)) ⇒ (pc)
+     * }) should be(Seq(...))
+     * }}}
+     *
+     * @param windowSize The size of the sequence of instructions that is passed to the partial function.
+     *      It must be larger than 0. **Do not use this method with windowSize "0"** as it is more efficient
+     *      to use the `collect` or `collectWithIndex` methods instead.
+     * @return The list of results of applying the function f for each matching sequence.
+     */
+    def slidingCollect[B](windowSize: Int)(f: PartialFunction[(Int, Seq[Instruction]), B]): Seq[B] = {
+        require(windowSize > 0)
+
+        import scala.collection.immutable.Queue
+
+        val max_pc = instructions.size
+        var instrs: Queue[Instruction] = Queue.empty
+        var firstPC, lastPC = 0
+        var elementsInQueue = 0
+
+        @scala.annotation.tailrec def pcOfNextInstruction(currentPC: Int): Int = {
+            val nextPC = currentPC + 1
+            if (nextPC >= max_pc || (instructions(nextPC) ne null))
+                nextPC
+            else
+                pcOfNextInstruction(nextPC)
+        }
+
+        //
+        // INITIALIZATION
+        //
+        while (elementsInQueue < windowSize - 1 && lastPC < max_pc) {
+            instrs = instrs.enqueue(instructions(lastPC))
+            lastPC = pcOfNextInstruction(lastPC)
+            elementsInQueue += 1
+        }
+
+        // 
+        // SLIDING OVER THE CODE
+        //
+        var result: List[B] = List.empty
+        while (lastPC < max_pc) {
+            instrs = instrs.enqueue(instructions(lastPC))
+
+            if (f.isDefinedAt((firstPC, instrs))) {
+                result = f((firstPC, instrs)) :: result
+            }
+
+            firstPC = pcOfNextInstruction(firstPC)
+            lastPC = pcOfNextInstruction(lastPC)
+            instrs = instrs.tail
+        }
+
+        result.reverse
+    }
+
     // TODO implement CFG algorithm
     case class BBInfo private[Code] (
         val bbID: Int,
@@ -70,9 +245,9 @@ case class Code(maxStack: Int,
         val handlesException: Option[ReferenceType] = None)
 
     /**
-      * @param instrToBBID Associates each instruction (by means of its program counter) with the ID of its
-      * associated basic block.
-      */
+     * @param instrToBBID Associates each instruction (by means of its program counter) with the ID of its
+     * associated basic block.
+     */
     // TODO implement CFG algorithm
     case class CFG private[Code] (
             val instrToBBID: IndexedSeq[Int],
@@ -81,8 +256,8 @@ case class Code(maxStack: Int,
     }
 
     /**
-      * The CFG is calculated under a certain assumption.
-      */
+     * The CFG is calculated under a certain assumption.
+     */
     def cfg = {
         //    /**
         //      * The indexes/program counters of instructions that are (potentially) executed after this
