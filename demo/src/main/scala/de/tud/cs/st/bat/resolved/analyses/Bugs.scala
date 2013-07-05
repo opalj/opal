@@ -62,7 +62,7 @@ object Bugs {
         for (arg ← args) {
             val file = new java.io.File(arg)
             if (!file.canRead || file.isDirectory) {
-                println("The file: "+file+" cannot be read.")
+                println("The file: "+file+" cannot be read or is a directory.")
                 printUsage()
                 sys.exit(-2)
             }
