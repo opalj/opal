@@ -34,7 +34,7 @@ package de.tud.cs.st.bat
 package dependency
 
 import resolved._
-import resolved.reader.Java6Framework
+import resolved.reader.Java7Framework
 
 import java.io.File
 import java.util.zip.ZipFile
@@ -80,7 +80,7 @@ class ExtractDependenciesFromClassFilesTest extends Suite {
             while (zipentries.hasMoreElements) {
                 val zipentry = zipentries.nextElement
                 if (!zipentry.isDirectory && zipentry.getName.endsWith(".class")) {
-                    val testCase = ("Extract dependencies of class file: " + zipfile.getName + " - " + zipentry.getName ->(zipfile, zipentry))
+                    val testCase = ("Extract dependencies of class file: "+zipfile.getName+" - "+zipentry.getName -> (zipfile, zipentry))
                     tcs = tcs + testCase
                 }
             }
@@ -110,13 +110,12 @@ class ExtractDependenciesFromClassFilesTest extends Suite {
 
             val (file, entry) = testCases(testName)
 
-            var classFile = Java6Framework.ClassFile(() ⇒ file.getInputStream(entry))
+            var classFile = Java7Framework.ClassFile(() ⇒ file.getInputStream(entry))
 
             dependencyExtractor.process(classFile)
 
             reporter(TestSucceeded(ordinal, "BasicDependencyExtractorTests", None, testName))
-        }
-        catch {
+        } catch {
             case t: Throwable ⇒ reporter(TestFailed(ordinal, "Failure", "BasicDependencyExtractorTests", None, testName, Some(t)))
         }
     }

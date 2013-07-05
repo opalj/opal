@@ -35,7 +35,7 @@ package bat
 package resolved
 
 import util.debug.PerformanceEvaluation
-import reader.Java6Framework
+import reader.Java7Framework.ClassFiles
 
 /**
  * This snippet shows how to load all class files from a zip file and how to
@@ -67,7 +67,7 @@ object AssociateUniqueIDs extends PerformanceEvaluation {
             sys.exit(2);
         }
 
-        val classFiles: Seq[ClassFile] = Java6Framework.ClassFiles(args(0))
+        val classFiles: Seq[ClassFile] = ClassFiles(args(0))
 
         val loadAllClassFiles = () ⇒ {
             for (classFile ← classFiles) {

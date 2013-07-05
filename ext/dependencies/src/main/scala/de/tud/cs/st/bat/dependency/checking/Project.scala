@@ -35,7 +35,6 @@ package dependency
 package checking
 
 import resolved._
-import resolved.reader.Java6Framework
 import resolved.analyses.ClassHierarchy
 
 /**
@@ -43,6 +42,7 @@ import resolved.analyses.ClassHierarchy
  *
  * @author Michael Eichberg
  */
+// TODO [Refine] Given that the core already defines a Project trait, do we need a seond one?
 trait Project extends SourceElementIDs {
 
     def classHierarchy: ClassHierarchy

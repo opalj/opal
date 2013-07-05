@@ -33,7 +33,7 @@
 package de.tud.cs.st.bat
 package resolved
 
-import reader.Java6Framework.ClassFiles
+import reader.Java7Framework.ClassFiles
 import analyses.Project
 
 import org.junit.runner.RunWith

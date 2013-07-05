@@ -34,7 +34,7 @@ package de.tud.cs.st.bat
 package dependency
 
 import resolved._
-import resolved.reader.Java6Framework
+import resolved.reader.Java7Framework
 import DependencyType._
 
 import org.scalatest.FunSuite
@@ -806,7 +806,7 @@ class DependencyExtractorTest extends FunSuite {
         }
 
         // extract dependencies
-        for (classFile ← Java6Framework.ClassFiles(ClassLoader.getSystemResource("classfiles/Dependencies.zip").getFile)) {
+        for (classFile ← Java7Framework.ClassFiles(ClassLoader.getSystemResource("classfiles/Dependencies.zip").getFile)) {
             dependencyExtractor.process(classFile)
         }
 

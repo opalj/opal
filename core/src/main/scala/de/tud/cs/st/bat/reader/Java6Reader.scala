@@ -41,6 +41,4 @@ trait Java6Reader
         extends Java5Reader
         with StackMapTable_attributeReader
         with StackMapFrameReader
-        with VerificationTypeInfoReader {
-
-}
+        with VerificationTypeInfoReader 

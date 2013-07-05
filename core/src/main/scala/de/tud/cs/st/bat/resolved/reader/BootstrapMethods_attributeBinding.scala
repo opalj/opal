@@ -31,61 +31,44 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package de.tud.cs.st
-package bat.resolved
-package analyses
+package bat
+package resolved
+package reader
 
-import reader.Java7Framework
+import bat.reader.BootstrapMethods_attributeReader
+
+import reflect.ClassTag
 
 /**
+ *
  * @author Michael Eichberg
  */
-trait Analysis[AnalysisResult] {
+trait BootstrapMethods_attributeBinding
+        extends BootstrapMethods_attributeReader
+        with ConstantPoolBinding
+        with AttributeBinding {
 
-    def analyze(project: Project): AnalysisResult
+    type BootstrapMethods_attribute = de.tud.cs.st.bat.resolved.BootstrapMethodTable
 
-    def description: String
+    type BootstrapMethod = de.tud.cs.st.bat.resolved.BootstrapMethod
+    implicit val BootstrapMethodManifest: ClassTag[BootstrapMethod] = implicitly
 
-    def copyright: String
+    type BootstrapArgument = de.tud.cs.st.bat.resolved.BootstrapArgument
+    implicit val BootstrapArgumentManifest: ClassTag[BootstrapArgument] = implicitly
+
+    def BootstrapMethods_attribute(attribute_name_index: Int,
+                                   attribute_length: Int,
+                                   bootstrap_methods: BootstrapMethods)(
+                                       implicit constant_pool: Constant_Pool): BootstrapMethods_attribute =
+        new BootstrapMethodTable(bootstrap_methods)
+
+    
+    def BootstrapMethod(bootstrap_method_ref: Int,
+                        bootstrap_arguments: BootstrapArguments)(
+                            implicit constant_pool: Constant_Pool): BootstrapMethod
+
+    def BootstrapArgument(constant_pool_ref: Int)(implicit constant_pool: Constant_Pool): BootstrapArgument
+
 }
 
-trait AnalysisExecutor extends Analysis[Unit] {
 
-    def printUsage() {
-        println("Usage: java …"+this.getClass().getName()+" <Directory or ZIP/JAR file containing class files>+")
-        println(description)
-        println(copyright)
-    }
-
-    def main(args: Array[String]) {
-        if (args.length == 0) {
-            printUsage()
-            sys.exit(-1)
-        }
-
-        val files = for (arg ← args) yield {
-            val file = new java.io.File(arg)
-            if (!file.canRead ||
-                !(arg.endsWith(".zip") ||
-                    arg.endsWith(".jar") ||
-                    arg.endsWith(".class") ||
-                    file.isDirectory())) {
-                println("The file: "+file+" cannot be read or is not valid.")
-                printUsage()
-                sys.exit(-2)
-            }
-            file
-        }
-
-        println("Reading class files:")
-        var project = new Project()
-        for {
-            file ← files if { println("\t"+file.toString()); true }
-            classFiles = Java7Framework.ClassFiles(file)
-            classFile ← classFiles
-        } {
-            project += classFile
-        }
-        println("Starting analyses: ")
-        analyze(project)
-    }
-}

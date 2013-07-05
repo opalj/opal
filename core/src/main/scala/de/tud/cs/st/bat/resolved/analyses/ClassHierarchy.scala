@@ -35,7 +35,7 @@ package bat.resolved
 package analyses
 
 import util.graphs.{ Node, toDot }
-import reader.Java6Framework
+import reader.Java7Framework
 
 /**
  * Represents the visible part of a project's class hierarchy. The visible part of a project's
@@ -263,8 +263,9 @@ object ClassHierarchy {
         withResource(this.getClass().getResourceAsStream("ClassHierarchyJVMExceptions.ths")) { in ⇒
             var ch = Empty
             val Spec = """(\S+)\s*>\s*(.+)""".r
+            val specLines = new BufferedSource(in).getLines.map(_.trim).filterNot((l) ⇒ l.startsWith("#") || l.length == 0)
             for {
-                Spec(superclass, subclasses) ← new BufferedSource(in).getLines.map(_.trim).filterNot((l) ⇒ l.startsWith("#") || l.length == 0)
+                Spec(superclass, subclasses) ← specLines 
                 superclasses = List(ObjectType(superclass))
                 subclass ← subclasses.split(",").map(_.trim)
             } {
@@ -285,7 +286,7 @@ object ClassHierarchyVisualizer {
             sys.exit(1)
         }
 
-        val classHierarchy = (new ClassHierarchy /: args)(_ ++ Java6Framework.ClassFiles(_))
+        val classHierarchy = (new ClassHierarchy /: args)(_ ++ Java7Framework.ClassFiles(_))
 
         println(toDot.generateDot(Set(classHierarchy.toGraph)))
     }

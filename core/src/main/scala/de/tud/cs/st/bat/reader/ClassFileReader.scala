@@ -251,19 +251,34 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         }
     }
 
+    /**
+     * Reads in parallel all class files stored in the given zip file.
+     */
     def ClassFiles(zipFile: ZipFile): Seq[ClassFile] = {
+        val mutex = new Object
         var classFiles: List[ClassFile] = Nil
-        def addClassFile(zf: ZipFile, ze: ZipEntry, cf: ClassFile) = classFiles = cf :: classFiles
+
+        def addClassFile(zf: ZipFile, ze: ZipEntry, cf: ClassFile) =
+            mutex.synchronized {
+                classFiles = cf :: classFiles
+            }
+
         ClassFiles(zipFile, addClassFile _)
         classFiles
     }
 
+    /**
+     * Reads in parallel all class files stored in the given zip file.
+     *
+     * @param f This function is called for each class file in the given zip file. The zipfile is
+     *      read in parallel, hence **this function has to be thread safe**.
+     */
     def ClassFiles(zipFile: ZipFile, f: (ZipFile, ZipEntry, ClassFile) ⇒ _) {
-        val zipEntries = (zipFile).entries
-        while (zipEntries.hasMoreElements) {
-            val zipEntry = zipEntries.nextElement
+        import collection.JavaConversions._
+        for (zipEntry ← (zipFile).entries.toIterable.par) {
             if (!zipEntry.isDirectory && zipEntry.getName.endsWith(".class")) {
-                f(zipFile, zipEntry, ClassFile(zipFile, zipEntry))
+                val classFile = ClassFile(zipFile, zipEntry)
+                f(zipFile, zipEntry, classFile)
             }
         }
     }
@@ -294,18 +309,17 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         while (directories.nonEmpty) {
             val directory = directories.head
             directories = directories.tail
-            var classFileCount = 0
-            for (file ← directory.listFiles() /*.par*/ ) {
+
+            for (file ← directory.listFiles().par) {
                 if (file.isDirectory()) {
-                    //   directories.synchronized {
-                    directories = file :: directories
-                    //   }
+                    directories.synchronized {
+                        directories = file :: directories
+                    }
                 } else if (file.getName().endsWith(".class")) {
-                    classFileCount += 1
                     val classFile = ClassFile(() ⇒ new java.io.FileInputStream(file))
-                    //   classFiles.synchronized {
-                    classFiles = classFile :: classFiles
-                    //   }
+                    classFiles.synchronized {
+                        classFiles = classFile :: classFiles
+                    }
                 }
             }
         }

@@ -35,7 +35,7 @@ package dependency
 package checking
 
 import resolved._
-import resolved.reader.Java6Framework
+import resolved.reader.Java7Framework
 import resolved.analyses.ClassHierarchy
 
 import scala.collection.immutable.SortedSet
@@ -143,7 +143,7 @@ class Specification
     /**
      * Given
      */
-    implicit def FileToClassFileProvider(file: java.io.File): Seq[ClassFile] = Java6Framework.ClassFiles(file)
+    implicit def FileToClassFileProvider(file: java.io.File): Seq[ClassFile] = Java7Framework.ClassFiles(file)
 
     case class Violation(source: SourceElementID, target: SourceElementID, dependencyType: DependencyType, description: String) {
 
@@ -325,7 +325,7 @@ class Specification
         if (!file.isDirectory)
             throw new SpecificationError("The specified directory is not a directory: "+directoryName+".")
 
-        Java6Framework.ClassFiles(file)
+        Java7Framework.ClassFiles(file)
     }
 
 }

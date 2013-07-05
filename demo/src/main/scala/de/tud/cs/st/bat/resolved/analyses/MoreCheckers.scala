@@ -35,7 +35,7 @@ package bat.resolved
 package analyses
 
 import util.debug.{ Counting, PerformanceEvaluation }
-import reader.Java6Framework
+import reader.Java7Framework.ClassFiles
 
 /**
  * Implementation of some simple static analyses to demonstrate the flexibility
@@ -135,7 +135,7 @@ object MoreCheckers {
             //   time(t ⇒ println("Reading all class files took: "+t/*nsToSecs(t)*/)) {
             for (
                 zipFile ← zipFiles; // if { println("Reading: "+zipFile); true };
-                classFile ← Java6Framework.ClassFiles(zipFile)
+                classFile ← ClassFiles(zipFile)
             ) yield {
                 classFilesCount += 1
                 classHierarchy = classHierarchy + classFile

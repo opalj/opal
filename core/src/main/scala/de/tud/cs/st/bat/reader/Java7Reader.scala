@@ -37,5 +37,6 @@ package de.tud.cs.st.bat.reader
  *
  * @author Michael Eichberg
  */
-trait Java7Reader extends Java6Reader 
-// TODO[Java7] Does Java 7 define new attributes?
+trait Java7Reader
+    extends Java6Reader
+    with BootstrapMethods_attributeReader

@@ -41,13 +41,13 @@ import de.tud.cs.st.bat.reader.SkipUnknown_attributeReader
 import de.tud.cs.st.bat.reader.CodeReader
 
 /**
- * This "framework" can be used to read in Java 6 (version 50) class files. All
+ * This "framework" can be used to read in Java 7 (version 51) class files. All
  * standard information (as defined in the Java Virtual Machine Specification)
  * is represented.
  *
  * @author Michael Eichberg
  */
-class Java6Framework
+class Java7Framework
     extends ConstantPoolBinding
     with ClassFileBinding
     with InterfacesReader
@@ -70,10 +70,11 @@ class Java6Framework
     with LocalVariableTypeTable_attributeBinding
     with Exceptions_attributeBinding
     with ConstantValue_attributeBinding
+    with BootstrapMethods_attributeBinding
     with BytecodeReaderAndBinding
     with CodeAttributeBinding
     with CodeReader
 
-object Java6Framework extends Java6Framework
+object Java7Framework extends Java7Framework
 
 
