@@ -37,10 +37,10 @@ import org.scalatest.FunSuite
 import de.tud.cs.st.bat.TestSupport
 
 /**
-  * Tests the parsing of signatures.
-  *
-  * @author Michael Eichberg
-  */
+ * Tests the parsing of signatures.
+ *
+ * @author Michael Eichberg
+ */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class SignaturesTest extends FunSuite with TestSupport {
 
@@ -94,28 +94,28 @@ class SignaturesTest extends FunSuite with TestSupport {
     // BRUTE FORCE TESTS (WE ARE JUST TRYING TO PARSE A VERY LARGE NUMBER OF SIGNATURES)
     //
 
-    test("parse various class file signatures") {
+    test("parse various class file signatures in parallel") {
         def parse(s: String) {
             val r = SignatureParser.parseClassSignature(s)
             assert(r ne null)
         }
-        ClassFileSignatures.foreach(parse _)
+        ClassFileSignatures.par.foreach(parse _)
     }
 
-    test("parse various field type signatures") {
+    test("parse various field type signatures in parallel") {
         def parse(s: String) {
             val r = SignatureParser.parseFieldTypeSignature(s)
             assert(r ne null)
         }
-        FieldTypeSignatures.foreach(parse _)
+        FieldTypeSignatures.par.foreach(parse _)
     }
 
-    test("parse various method type signatures") {
+    test("parse various method type signatures in parallel") {
         def parse(s: String) {
             val r = SignatureParser.parseMethodTypeSignature(s)
             assert(r ne null)
         }
-        MethodTypeSignatures.foreach(parse _)
+        MethodTypeSignatures.par.foreach(parse _)
     }
 
     //
