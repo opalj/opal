@@ -46,22 +46,23 @@ import scala.collection.mutable.WrappedArray
 object ControlAbstractions {
 
     /**
-      * This function takes care of the correct handling of input streams.
-      * The function takes a function <code>f</code> that creates a new <code>InputStream</code> (f is a
-      * named parameter) and a function <code>r</code> that processes an input stream. When `r` has
-      * finished processing the input stream, the stream is closed.
-      * If f should return <code>null</code>, <code>null</code> is passed to r.
-      */
+     * This function takes care of the correct handling of input streams.
+     * The function takes a function <code>f</code> that creates a new <code>InputStream</code> (f is a
+     * named parameter) and a function <code>r</code> that processes an input stream. When `r` has
+     * finished processing the input stream, the stream is closed.
+     * If f should return <code>null</code>, <code>null</code> is passed to r.
+     */
     @throws
     def process[I <: InputStream, T](f: ⇒ I)(r: I ⇒ T): T = {
         val in = f
-        try { r(in) }
-        finally {
+        try {
+            r(in)
+        } finally {
             if (in != null) in.close
         }
     }
 
-    def withResource[I <: java.io.Closeable, O](r: => I)(f: I ⇒ O): O = {
+    def withResource[I <: java.io.Closeable, O](r: ⇒ I)(f: I ⇒ O): O = {
         try {
             f(r)
         } finally {
