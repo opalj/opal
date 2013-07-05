@@ -164,6 +164,9 @@ case class Code(maxStack: Int,
         return None
     }
 
+    /**
+     * Returns a sequence that pairs the program_counter of an instruction with the instruction.
+     */
     def associateWithIndex(): Seq[(Int, Instruction)] = collect { case i ⇒ i }
 
     /**
