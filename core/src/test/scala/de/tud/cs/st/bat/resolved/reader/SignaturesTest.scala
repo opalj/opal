@@ -30,11 +30,12 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved
+package de.tud.cs.st.bat
+package resolved
 package reader
 
 import org.scalatest.FunSuite
-import de.tud.cs.st.bat.TestSupport
+import org.scalatest.ParallelTestExecution
 
 /**
  * Tests the parsing of signatures.
@@ -42,7 +43,7 @@ import de.tud.cs.st.bat.TestSupport
  * @author Michael Eichberg
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
-class SignaturesTest extends FunSuite with TestSupport {
+class SignaturesTest extends FunSuite with TestSupport with ParallelTestExecution {
 
     test("traversing a minimal class type signature") {
         var types: Set[Type] = Set()
