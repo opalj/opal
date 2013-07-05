@@ -30,12 +30,56 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st
-package bat.resolved
+package de.tud.cs.st.bat
+package resolved
 package analyses
 
-trait Analysis {
+import org.junit.runner.RunWith
+import org.scalatest.junit.JUnitRunner
+import org.scalatest.FlatSpec
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.matchers.ShouldMatchers
 
-    def analyze(project: Project): Traversable[Product]
+import reader.Java6Framework.ClassFiles
 
+/**
+ * Basic tests of the class hierarchy.
+ *
+ * @author Michael Eichberg
+ */
+@RunWith(classOf[JUnitRunner])
+class ClassHierarchyTest extends FlatSpec with ShouldMatchers /*with BeforeAndAfterAll */ with TestSupport {
+
+    //
+    //
+    // Setup
+    //
+    //
+    val ch = ClassHierarchy.createPreInitializedClassHierarchy()
+
+    //
+    //
+    // Verify
+    //
+    //
+
+    behavior of "The ClassHierarchy created using \"readPredefinedHierarchy\""
+
+    it should "correctly reflect the base exception hierarchy" in {
+        val Object = ObjectType("java/lang/Object")
+        val Throwable = ObjectType("java/lang/Throwable")
+        val Exception = ObjectType("java/lang/Exception")
+        val Error = ObjectType("java/lang/Error")
+        val RuntimeException = ObjectType("java/lang/RuntimeException")
+
+        ch.isSubtypeOf(Object, Throwable) should be(Some(false))
+
+        ch.isSubtypeOf(Throwable, Object) should be(Some(true))
+
+        ch.isSubtypeOf(Error, Throwable) should be(Some(true))
+
+        ch.isSubtypeOf(RuntimeException, Exception) should be(Some(true))
+
+        ch.isSubtypeOf(Exception, Throwable) should be(Some(true))
+    }
 }

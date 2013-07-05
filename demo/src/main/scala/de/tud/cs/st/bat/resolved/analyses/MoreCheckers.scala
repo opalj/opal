@@ -61,7 +61,7 @@ import reader.Java6Framework
  *
  * @author Michael Eichberg
  */
-object Main {
+object MoreCheckers {
 
     private val CountingPerformanceEvaluator = new PerformanceEvaluation with Counting
 

@@ -32,45 +32,30 @@
 */
 package de.tud.cs.st
 package bat.resolved
+package analyses
 
 import util.debug.{ Counting, PerformanceEvaluation }
-
 import reader.Java6Framework
+import de.tud.cs.st.bat.resolved.BooleanType
+import de.tud.cs.st.bat.resolved.IntegerType
+import de.tud.cs.st.bat.resolved.Method
+import de.tud.cs.st.bat.resolved.MethodDescriptor
+import de.tud.cs.st.bat.resolved.ObjectType
+import de.tud.cs.st.util.debug.nsToSecs
 
 /**
-  * Demonstrates how to implement two very simple checkers using BAT.
-  *
-  * @author Michael Eichberg
-  */
-object SimpleCheckers {
+ * Demonstrates how to implement two very simple checkers using BAT.
+ *
+ * @author Michael Eichberg
+ */
+object SimpleCheckers extends AnalysisExecutor[Unit] {
 
-    private def printUsage: Unit = {
-        println("Performs some extremely simple checks on class files.")
-        println("Usage: java …SimpleCheckers <ZIP or JAR file containing class files>+")
-        println("(c) 2011 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
-    }
+    def description: String = "Finds violations of the equals-hashCode contract and co-variant equals methods."
 
-    def main(args: Array[String]) {
+    def copyright: String = "(c) 2011-2013 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)"
 
-        if (args.length == 0 || !args.forall(arg ⇒ arg.endsWith(".zip") || arg.endsWith(".jar"))) {
-            printUsage
-            sys.exit(1)
-        }
+    def analyze(project: Project): Unit = {
 
-        for (arg ← args) {
-            val file = new java.io.File(arg)
-            if (!file.canRead() || file.isDirectory()) {
-                println(arg+" is not a valid ZIP/Jar file.");
-                printUsage
-                sys.exit(1)
-            }
-        }
-
-        analyze(args)
-        sys.exit(0)
-    }
-
-    def analyze(zipFiles: Array[String]) {
         val CountingPerformanceEvaluator = new PerformanceEvaluation with Counting
         import CountingPerformanceEvaluator._
 
@@ -78,34 +63,44 @@ object SimpleCheckers {
 
         time('Overall) {
             for (
-                zipFile ← zipFiles;
-                classFile ← Java6Framework.ClassFiles(zipFile)
+                classFile ← project.classFiles
             ) {
                 time('EqHcChecker) {
                     var definesEqualsMethod = false
                     var definesHashCodeMethod = false
                     for (method ← classFile.methods) method match {
-                        case Method(_, "equals", MethodDescriptor(Seq(ObjectType("java/lang/Object")), BooleanType), _) ⇒ definesEqualsMethod = true
-                        case Method(_, "hashCode", MethodDescriptor(Seq(), IntegerType), _) ⇒ definesHashCodeMethod = true
+                        case Method(_, "equals", MethodDescriptor(Seq(ObjectType.Object), BooleanType), _) ⇒
+                            definesEqualsMethod = true
+                        case Method(_, "hashCode", MethodDescriptor(Seq(), IntegerType), _) ⇒
+                            definesHashCodeMethod = true
                         case _ ⇒
                     }
 
                     if (definesEqualsMethod != definesHashCodeMethod) {
                         problemCount += 1
-                        println("the class: "+classFile.thisClass.className+" does not satisfy java.lang.Object's equals-hashCode contract.")
+                        println(
+                            "\tThe class: "+
+                                classFile.thisClass.className+
+                                " does not satisfy java.lang.Object's equals-hashCode contract.")
                     }
                 }
                 time('CovEqChecker) {
                     var definesEqualsMethod = false
                     var definesCovariantEqualsMethod = false
                     for (method ← classFile.methods) method match {
-                        case Method(_, "equals", MethodDescriptor(Seq(ObjectType("java/lang/Object")), BooleanType), _) ⇒ definesEqualsMethod = true
-                        case Method(_, "equals", MethodDescriptor(Seq(ObjectType(_)), BooleanType), _) ⇒ definesCovariantEqualsMethod = true
+                        case Method(_, "equals", MethodDescriptor(Seq(ot), BooleanType), _) ⇒
+                            if (ot == ObjectType.Object)
+                                definesEqualsMethod = true
+                            else
+                                definesCovariantEqualsMethod = true
                         case _ ⇒
                     }
                     if (definesCovariantEqualsMethod && !definesEqualsMethod) {
                         problemCount += 1
-                        println("the class: "+classFile.thisClass.className+" defines a covariant equals method, but does not also define the standard equals method.")
+                        println(
+                            "\tThe class: "+
+                                classFile.thisClass.className+
+                                " defines a covariant equals method, but does not also define the standard equals method.")
                     }
                 }
             }
