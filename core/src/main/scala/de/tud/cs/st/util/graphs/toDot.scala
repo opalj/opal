@@ -35,13 +35,13 @@ package de.tud.cs.st.util.graphs
 import language.implicitConversions
 
 /**
- * Generates a dot file for the given graph
+ * Generates a dot file for the given graph.
  *
  * @author Michael Eichberg
  */
 trait toDot {
 
-    implicit def nodeToInt(n: Node): Int = n.uniqueId
+    protected implicit def nodeToInt(n: Node): Int = n.uniqueId
 
     def generateDot(nodes: Set[Node]): String = {
 
@@ -56,10 +56,10 @@ trait toDot {
             processedNodes += n
             nodesToProcess = nodesToProcess.tail
 
-            if (n.toHRR.isDefined) s += "\t" + n.uniqueId + "[label=\"" + n.toHRR.get + "\"];\n"
+            if (n.toHRR.isDefined) s += "\t"+n.uniqueId+"[label=\""+n.toHRR.get+"\"];\n"
 
-            val f = (sn : Node) => {
-                if (n.toHRR.isDefined) s += "\t" + n.uniqueId + " -> " + sn.uniqueId + ";\n" // +"[dir=none];\n"
+            val f = (sn: Node) ⇒ {
+                if (n.toHRR.isDefined) s += "\t"+n.uniqueId+" -> "+sn.uniqueId+";\n" // +"[dir=none];\n"
 
                 if (!(processedNodes contains sn)) {
                     nodesToProcess = sn :: nodesToProcess

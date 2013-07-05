@@ -33,17 +33,29 @@
 package de.tud.cs.st.util.graphs
 
 /**
+ * Represents a node of a graph.
+ *
+ * ==Example Usage==
+ * See [[de.tud.cs.st.bat.resolved.analysis.ClassHierarchy]]'s `toGraph` method for
+ * an example usage.
+ *
  * @author Michael Eichberg
  */
 trait Node {
 
     /**
-     * @return a textual representation of this node; the encoding has to be UTF8.
+     * Returns a textual representation of this node.
      */
     def toHRR: Option[String]
 
+    /**
+     * A identifier that uniquely identifies this node.
+     */
     def uniqueId: Int
 
+    /**
+     * Applies the given function for each successor node.
+     */
     def foreachSuccessor(f: Node ⇒ _): Unit
 
 }
