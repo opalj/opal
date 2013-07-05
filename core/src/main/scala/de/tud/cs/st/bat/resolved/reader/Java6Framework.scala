@@ -47,35 +47,33 @@ import de.tud.cs.st.bat.reader.CodeReader
  *
  * @author Michael Eichberg
  */
-object Java6Framework
-	extends ConstantPoolBinding
-		with ClassFileBinding
-		with InterfacesReader
-		with FieldsReader
-		with MethodsReader
-		with AttributesReader
-		//with Unknown_attributeBinding // If this line is commented out: unknown attributes are completely ignored
-		with SkipUnknown_attributeReader
-		with AnnotationsBinding	
-		with StackMapTable_attributeBinding 
-		with InnerClasses_attributeBinding
-		with EnclosingMethod_attributeBinding
-		with SourceFile_attributeBinding 
-		with SourceDebugExtension_attributeBinding
-		with Deprecated_attributeBinding
-		with Signature_attributeBinding
-		with Synthetic_attributeBinding
-		with LineNumberTable_attributeBinding
-		with LocalVariableTable_attributeBinding
-		with LocalVariableTypeTable_attributeBinding
-		with Exceptions_attributeBinding
-		with ConstantValue_attributeBinding
-		with BytecodeReaderAndBinding
-		with CodeAttributeBinding
-			with CodeReader
-{
+class Java6Framework
+    extends ConstantPoolBinding
+    with ClassFileBinding
+    with InterfacesReader
+    with FieldsReader
+    with MethodsReader
+    with AttributesReader
+    //with Unknown_attributeBinding // If this line is commented out: unknown attributes are completely ignored
+    with SkipUnknown_attributeReader
+    with AnnotationsBinding
+    with StackMapTable_attributeBinding
+    with InnerClasses_attributeBinding
+    with EnclosingMethod_attributeBinding
+    with SourceFile_attributeBinding
+    with SourceDebugExtension_attributeBinding
+    with Deprecated_attributeBinding
+    with Signature_attributeBinding
+    with Synthetic_attributeBinding
+    with LineNumberTable_attributeBinding
+    with LocalVariableTable_attributeBinding
+    with LocalVariableTypeTable_attributeBinding
+    with Exceptions_attributeBinding
+    with ConstantValue_attributeBinding
+    with BytecodeReaderAndBinding
+    with CodeAttributeBinding
+    with CodeReader
 
-
-}
+object Java6Framework extends Java6Framework
 
 
