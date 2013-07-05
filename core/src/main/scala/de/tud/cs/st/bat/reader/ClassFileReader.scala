@@ -39,44 +39,44 @@ import de.tud.cs.st.util.ControlAbstractions.process
 import java.rmi.UnexpectedException
 
 /**
-  * Abstract trait that implements a template method to read in a Java class file.
-  *
-  * This library supports class files from version 45 (Java 1.1) up to
-  * (including) version 50 (Java 6). Version 51 (Java 7) is currently only
-  * partially supported.
-  *
-  * '''Format'''
-  * {{{
-  * ClassFile {
-  * 	u4 magic;
-  * 	u2 minor_version;
-  * 	u2 major_version;
-  * 	u2 constant_pool_count;
-  * 	cp_info constant_pool[constant_pool_count-1];
-  * 	u2 access_flags;
-  * 	u2 this_class;
-  * 	u2 super_class;
-  * 	u2 interfaces_count;
-  * 	u2 interfaces[interfaces_count];
-  * 	u2 fields_count;
-  * 	field_info fields[fields_count];
-  * 	u2 methods_count;
-  * 	method_info methods[methods_count];
-  * 	u2 attributes_count;
-  * 	attribute_info attributes[attributes_count];
-  * }
-  * }}}
-  *
-  * For details see the JVM Specification: The ClassFile Structure.
-  *
-  * '''Notes for Implementors'''
-  *
-  * Reading of the class file's major structures: the constant pool, fields, methods
-  * the set of implemented interfaces, and the attributes is
-  * delegated to special readers. This enables a very high-level of adaptability.
-  *
-  * @author Michael Eichberg
-  */
+ * Abstract trait that implements a template method to read in a Java class file.
+ *
+ * This library supports class files from version 45 (Java 1.1) up to
+ * (including) version 50 (Java 6). Version 51 (Java 7) is currently only
+ * partially supported.
+ *
+ * '''Format'''
+ * {{{
+ * ClassFile {
+ * 	u4 magic;
+ * 	u2 minor_version;
+ * 	u2 major_version;
+ * 	u2 constant_pool_count;
+ * 	cp_info constant_pool[constant_pool_count-1];
+ * 	u2 access_flags;
+ * 	u2 this_class;
+ * 	u2 super_class;
+ * 	u2 interfaces_count;
+ * 	u2 interfaces[interfaces_count];
+ * 	u2 fields_count;
+ * 	field_info fields[fields_count];
+ * 	u2 methods_count;
+ * 	method_info methods[methods_count];
+ * 	u2 attributes_count;
+ * 	attribute_info attributes[attributes_count];
+ * }
+ * }}}
+ *
+ * For details see the JVM Specification: The ClassFile Structure.
+ *
+ * '''Notes for Implementors'''
+ *
+ * Reading of the class file's major structures: the constant pool, fields, methods
+ * the set of implemented interfaces, and the attributes is
+ * delegated to special readers. This enables a very high-level of adaptability.
+ *
+ * @author Michael Eichberg
+ */
 trait ClassFileReader extends Constant_PoolAbstractions {
 
     //
@@ -84,99 +84,99 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     //
 
     /**
-      * The type of the object that represents a Java class file.
-      */
+     * The type of the object that represents a Java class file.
+     */
     type ClassFile
 
     /**
-      * The type of the object that represents a class's fields.
-      */
+     * The type of the object that represents a class's fields.
+     */
     type Fields
 
     /**
-      * The type of the object that represents all methods of a class.
-      */
+     * The type of the object that represents all methods of a class.
+     */
     type Methods
 
     /**
-      * The type of the object that represents a class declaration's
-      * attributes (e.g., the source file attribute.)
-      */
+     * The type of the object that represents a class declaration's
+     * attributes (e.g., the source file attribute.)
+     */
     type Attributes
 
     /**
-      * The type of the object that represents the interfaces implemented by
-      * a class/interface.
-      */
+     * The type of the object that represents the interfaces implemented by
+     * a class/interface.
+     */
     type Interfaces
 
     // METHODS DELEGATING TO OTHER READERS
     //
 
     /**
-      * Reads the constant pool using the given stream.
-      *
-      * The given stream is positioned
-      * at the very beginning of the constant pool. This method is called by the
-      * template method that reads in a class file to delegate the reading of the
-      * constant pool. Only information belonging to the constant pool are allowed
-      * to be read. The stream must not be closed after reading the constant pool.
-      */
+     * Reads the constant pool using the given stream.
+     *
+     * The given stream is positioned
+     * at the very beginning of the constant pool. This method is called by the
+     * template method that reads in a class file to delegate the reading of the
+     * constant pool. Only information belonging to the constant pool are allowed
+     * to be read. The stream must not be closed after reading the constant pool.
+     */
     protected def Constant_Pool(in: DataInputStream): Constant_Pool
 
     /**
-      * Reads the information which interfaces are implemented/extended.
-      *
-      * The given stream is positioned
-      * directly before a class file's "interfaces_count" field. This method is called by the
-      * template method that reads in a class file to delegate the reading of the
-      * extended interfaces.
-      */
+     * Reads the information which interfaces are implemented/extended.
+     *
+     * The given stream is positioned
+     * directly before a class file's "interfaces_count" field. This method is called by the
+     * template method that reads in a class file to delegate the reading of the
+     * extended interfaces.
+     */
     protected def Interfaces(in: DataInputStream, cp: Constant_Pool): Interfaces
 
     /**
-      * Reads all field declarations using the given stream and constant pool.
-      *
-      * The given stream is positioned
-      * directly before a class file's "fields_count" field. This method is called by the
-      * template method that reads in a class file to delegate the reading of the
-      * declared fields.
-      */
+     * Reads all field declarations using the given stream and constant pool.
+     *
+     * The given stream is positioned
+     * directly before a class file's "fields_count" field. This method is called by the
+     * template method that reads in a class file to delegate the reading of the
+     * declared fields.
+     */
     protected def Fields(in: DataInputStream, cp: Constant_Pool): Fields
 
     /**
-      * Reads all method declarations using the given stream and constant pool.
-      *
-      * The given stream is positioned directly before a class file's "methods_count" field.
-      * This method is called by the
-      * template method that reads in a class file to delegate the reading of the
-      * declared method.
-      */
+     * Reads all method declarations using the given stream and constant pool.
+     *
+     * The given stream is positioned directly before a class file's "methods_count" field.
+     * This method is called by the
+     * template method that reads in a class file to delegate the reading of the
+     * declared method.
+     */
     protected def Methods(in: DataInputStream, cp: Constant_Pool): Methods
 
     /**
-      * Reads all attributes using the given stream and constant pool.
-      *
-      * '''From the Specification'''
-      *
-      * The attributes [...] appearing in the attributes table of a ClassFile
-      * structure are the InnerClasses, EnclosingMethod, Synthetic, Signature,
-      * SourceFile, SourceDebugExtension, Deprecated, RuntimeVisibleAnnotations,
-      * RuntimeInvisibleAnnotations, and BootstrapMethods attributes.
-      *
-      * @note The given stream is positioned directly before a class file's "attributes_count" field.
-      *  This method is called by the template method that reads in a class file to delegate the
-      *  reading of the attributes.
-      */
+     * Reads all attributes using the given stream and constant pool.
+     *
+     * '''From the Specification'''
+     *
+     * The attributes [...] appearing in the attributes table of a ClassFile
+     * structure are the InnerClasses, EnclosingMethod, Synthetic, Signature,
+     * SourceFile, SourceDebugExtension, Deprecated, RuntimeVisibleAnnotations,
+     * RuntimeInvisibleAnnotations, and BootstrapMethods attributes.
+     *
+     * @note The given stream is positioned directly before a class file's "attributes_count" field.
+     *  This method is called by the template method that reads in a class file to delegate the
+     *  reading of the attributes.
+     */
     protected def Attributes(
         ap: AttributesParent,
         cp: Constant_Pool,
         in: DataInputStream): Attributes
 
     /**
-      * Factory method to create the object that represents the class file
-      * as a whole.
-      */
+     * Factory method to create the object that represents the class file
+     * as a whole.
+     */
     protected def ClassFile(
         minor_version: Int,
         major_version: Int,
@@ -192,18 +192,19 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     //
     // IMPLEMENTATION
     //
+    import de.tud.cs.st.util.ControlAbstractions.withResource
 
     /**
-      * Reads in a class file.
-      *
-      * @param create a function that is intended to create a new `InputStream` and
-      *  which must not return `null`. If you already do have an open input stream
-      *  which should not be closed after reading the class file use
-      *  `de.tud.cs.st.bat.reader.ClassFileReader.ClassFile(DataInputStream)` instead.
-      *  The (newly created) InputStream returned by calling `create` is closed by this method.
-      *  The created input stream will automatically be wrapped by BAT to enable efficient reading of the
-      *  class file.
-      */
+     * Reads in a class file.
+     *
+     * @param create a function that is intended to create a new `InputStream` and
+     *  which must not return `null`. If you already do have an open input stream
+     *  which should not be closed after reading the class file use
+     *  `de.tud.cs.st.bat.reader.ClassFileReader.ClassFile(DataInputStream)` instead.
+     *  The (newly created) InputStream returned by calling `create` is closed by this method.
+     *  The created input stream will automatically be wrapped by BAT to enable efficient reading of the
+     *  class file.
+     */
     def ClassFile(create: () ⇒ InputStream): ClassFile = {
         process(create() match {
             case dis: DataInputStream ⇒ dis
@@ -225,21 +226,21 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     }
 
     /**
-      * Reads in a single class file from a ZIP/Jar file.
-      *
-      * @param zipFileName the name of an existing ZIP/JAR file that contains class files.
-      * @param zipFileEntryName the name of a class file stored in the specified ZIP/JAR file.
-      */
+     * Reads in a single class file from a ZIP/Jar file.
+     *
+     * @param zipFileName the name of an existing ZIP/JAR file that contains class files.
+     * @param zipFileEntryName the name of a class file stored in the specified ZIP/JAR file.
+     */
     def ClassFile(zipFileName: String, zipFileEntryName: String): ClassFile = {
         ClassFile(new File(zipFileName), zipFileEntryName)
     }
 
     /**
-      * Reads in a single class file from a ZIP/Jar file.
-      *
-      * @param zipFile an existing ZIP/JAR file that contains class files.
-      * @param zipFileEntryName the name of a class file stored in the specified ZIP/JAR file.
-      */
+     * Reads in a single class file from a ZIP/Jar file.
+     *
+     * @param zipFile an existing ZIP/JAR file that contains class files.
+     * @param zipFileEntryName the name of a class file stored in the specified ZIP/JAR file.
+     */
     def ClassFile(zipFile: File, zipFileEntryName: String): ClassFile = {
         val zf = new ZipFile(zipFile)
         try {
@@ -268,7 +269,6 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     }
 
     def ClassFiles(zipFileName: String): Seq[ClassFile] = {
-        import de.tud.cs.st.util.ControlAbstractions.withResource
 
         withResource(new ZipFile(zipFileName)) { zf ⇒ ClassFiles(zf) }
     }
@@ -314,11 +314,11 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     }
 
     /**
-      * Template method to read in a Java class file from the given input stream.
-      *
-      * @param in the DataInputStream from which the class file will be read. The
-      *  stream is not closed by this method.
-      */
+     * Template method to read in a Java class file from the given input stream.
+     *
+     * @param in the DataInputStream from which the class file will be read. The
+     *  stream is not closed by this method.
+     */
     def ClassFile(in: DataInputStream): ClassFile = {
         // magic
         require(CLASS_FILE_MAGIC == in.readInt, "No class file.")
