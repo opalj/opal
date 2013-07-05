@@ -38,16 +38,19 @@ import util.debug.PerformanceEvaluation
 import reader.Java6Framework
 
 /**
- * Just a very small code snippet that shows how to load all class files
- * from a zip file and how to associate all top-level source elements (class,
+ * This snippet shows how to load all class files from a zip file and how to
+ * associate all top-level source elements (class,
  * field and method declarations) with unique ids.
+ *
+ * For more advanced analysis you can use the [[analysis.AnalysisExectuor]] trait
+ * as a template.
  *
  * @author Michael Eichberg
  */
 object AssociateUniqueIDs extends PerformanceEvaluation {
 
     import de.tud.cs.st.util.debug._
-    
+
     val sourceElementIDs = new SourceElementIDsMap
 
     import sourceElementIDs.{ sourceElementID ⇒ id }
@@ -59,7 +62,7 @@ object AssociateUniqueIDs extends PerformanceEvaluation {
         }
         val file = new java.io.File(args(0))
         if (!file.canRead() || file.isDirectory()) {
-            println("No valid zip file: " + args(0))
+            println("No valid zip file: "+args(0))
             println("You have to specify a zip/jar file containing class files.")
             sys.exit(2);
         }
@@ -80,7 +83,7 @@ object AssociateUniqueIDs extends PerformanceEvaluation {
             }
         }
 
-        time(t ⇒ println("Loading all class files and associating unique ids took: " + nsToSecs(t)+" seconds.")) {
+        time(t ⇒ println("Loading all class files and associating unique ids took: "+nsToSecs(t)+" seconds.")) {
             loadAllClassFiles()
         }
     }
