@@ -31,7 +31,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package de.tud.cs.st
-package bat.resolved
+package bat
+package resolved
 package analyses
 
 import reader.Java7Framework

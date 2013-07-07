@@ -34,31 +34,40 @@ package de.tud.cs.st.bat
 package resolved
 
 /**
-  * Common superclass of all instructions.
-  *
-  * @author Michael Eichberg
-  */
+ * Common superclass of all instructions.
+ *
+ * @author Michael Eichberg
+ */
 trait Instruction {
 
-    /** The opcode of the instruction as defined by the JVM specification. */
+    /**
+     *  The opcode of the instruction as defined by the JVM specification.
+     */
     def opcode: Int
 
-    /** The mnemonic of the instruction as defined by the JVM specification. */
+    /**
+     *  The mnemonic of the instruction as defined by the JVM specification.
+     */
     def mnemonic: String
 
     /**
-      * The exceptions that may be thrown by the JVM at runtime if the execution of this instruction fails.
-      * I.e., these are neither exceptions that are explicitly created and thrown by user code nor errors that
-      * my arise due to an invalid code base.
-      */
+     * The exceptions that may be thrown by the JVM at runtime if the execution of this instruction fails.
+     * I.e., these are neither exceptions that are explicitly created and then thrown by user code nor
+     * errors that my arise due to an invalid code base.
+     */
     def runtimeExceptions: List[ObjectType]
 
     /**
-      * The index of the next instruction in the code array.
-      */
+     * The index of the next instruction in the code array.
+     */
     def indexOfNextInstruction(currentPC: Int, code: Code): Int
 
 }
+/**
+ * Functionality common to instructions.
+ *
+ * @author Michael Eichberg
+ */
 object Instruction {
 
     def unapply(instruction: Instruction): Option[(Int, String, List[ObjectType])] = {

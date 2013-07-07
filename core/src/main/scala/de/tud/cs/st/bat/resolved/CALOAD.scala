@@ -34,10 +34,10 @@
 package de.tud.cs.st.bat.resolved
 
 /**
-  * Load char from array.
-  *
-  * @author Michael Eichberg
-  */
+ * Load char from array.
+ *
+ * @author Michael Eichberg
+ */
 case object CALOAD extends ArrayAccessInstruction with PrimitiveArrayAccess {
 
     def opcode: Int = 52

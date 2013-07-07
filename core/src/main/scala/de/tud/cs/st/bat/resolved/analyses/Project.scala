@@ -31,7 +31,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package de.tud.cs.st
-package bat.resolved
+package bat
+package resolved
 package analyses
 
 import util.graphs.{ Node, toDot }
@@ -46,7 +47,7 @@ import reader.Java7Framework
  *
  * ==Thread Safety==
  * This class is immutable.
- * 
+ *
  * @author Michael Eichberg
  */
 class Project(

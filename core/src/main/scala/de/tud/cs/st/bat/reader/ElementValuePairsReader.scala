@@ -30,18 +30,18 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.reader
+package de.tud.cs.st
+package bat
+package reader
 
 import java.io.DataInputStream
 
-import scala.reflect.ClassTag
-
-import de.tud.cs.st.util.ControlAbstractions.repeat
+import reflect.ClassTag
 
 /**
-  *
-  * @author Michael Eichberg
-  */
+ *
+ * @author Michael Eichberg
+ */
 trait ElementValuePairsReader extends Constant_PoolAbstractions {
 
     //
@@ -58,9 +58,10 @@ trait ElementValuePairsReader extends Constant_PoolAbstractions {
 
     def Annotation(in: DataInputStream, cp: Constant_Pool): Annotation
 
-    def ElementValuePair(element_name_index: Constant_Pool_Index,
-                         element_value: ElementValue)(
-                             implicit constant_pool: Constant_Pool): ElementValuePair
+    def ElementValuePair(
+        element_name_index: Constant_Pool_Index,
+        element_value: ElementValue)(
+            implicit constant_pool: Constant_Pool): ElementValuePair
 
     def ByteValue(const_value_index: Constant_Pool_Index)(implicit constant_pool: Constant_Pool): ElementValue
     def CharValue(const_value_index: Constant_Pool_Index)(implicit constant_pool: Constant_Pool): ElementValue
@@ -80,6 +81,8 @@ trait ElementValuePairsReader extends Constant_PoolAbstractions {
     // IMPLEMENTATION
     //
 
+    import util.ControlAbstractions.repeat
+
     type ElementValues = IndexedSeq[ElementValue]
     type ElementValuePairs = IndexedSeq[ElementValuePair]
 
@@ -92,6 +95,33 @@ trait ElementValuePairsReader extends Constant_PoolAbstractions {
     def ElementValuePair(in: DataInputStream, cp: Constant_Pool): ElementValuePair =
         ElementValuePair(in.readUnsignedShort, ElementValue(in, cp))(cp)
 
+    /**
+     * Reads in an element value.
+     *
+     * '''From the Specification'''
+     * <pre><code>
+     * element_value {
+     *    u1 tag;
+     *    union {
+     *      u2   const_value_index;
+     *
+     *      {
+     *        u2 type_name_index;
+     *        u2 const_name_index;
+     *      } enum_const_value;
+     *
+     *      u2 class_info_index;
+     *
+     *      annotation annotation_value;
+     *
+     *      {
+     *        u2    num_values;
+     *        element_value values[num_values];
+     *      } array_value;
+     *    } value;
+     * }
+     * </code></pre>
+     */
     def ElementValue(in: DataInputStream, cp: Constant_Pool): ElementValue = {
         val tag = in.readByte
         (tag: @scala.annotation.switch) match {
@@ -108,7 +138,6 @@ trait ElementValuePairsReader extends Constant_PoolAbstractions {
             case 'c' ⇒ ClassValue(in.readUnsignedShort)(cp)
             case '@' ⇒ AnnotationValue(Annotation(in, cp))(cp)
             case '[' ⇒ ArrayValue(repeat(in.readUnsignedShort) { ElementValue(in, cp) })(cp)
-            case _   ⇒ sys.error("Unknown element value")
         }
     }
 }

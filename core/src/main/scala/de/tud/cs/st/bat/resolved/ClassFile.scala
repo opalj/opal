@@ -30,9 +30,9 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st.bat
+package de.tud.cs.st
+package bat
 package resolved
-
 
 /**
  * Represents a single class file.
@@ -55,15 +55,16 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case class ClassFile(minorVersion: Int,
-                     majorVersion: Int,
-                     accessFlags: Int,
-                     thisClass: ObjectType,
-                     superClass: Option[ObjectType],
-                     interfaces: Seq[ObjectType],
-                     fields: Fields,
-                     methods: Methods,
-                     attributes: Attributes)
+case class ClassFile(
+    minorVersion: Int,
+    majorVersion: Int,
+    accessFlags: Int,
+    thisClass: ObjectType,
+    superClass: Option[ObjectType],
+    interfaces: Seq[ObjectType],
+    fields: Fields,
+    methods: Methods,
+    attributes: Attributes)
         extends CommonAttributes with SourceElement {
 
     import ClassFile._
@@ -95,7 +96,7 @@ case class ClassFile(minorVersion: Int,
         attributes collectFirst { case InnerClassTable(ice) ⇒ ice }
 
     // TODO should we get rid of constant value attributes... they are resolved?
-    
+
     // TODO [Java 7] should we keep it or should we completely resolve and remove it???
     lazy val bootstrapMethods: Option[BootstrapMethods] =
         attributes collectFirst { case BootstrapMethodTable(bms) ⇒ bms }

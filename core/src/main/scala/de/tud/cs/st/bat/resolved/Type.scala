@@ -1,43 +1,46 @@
 /* License (BSD Style License):
-*  Copyright (c) 2009, 2011
-*  Software Technology Group
-*  Department of Computer Science
-*  Technische Universität Darmstadt
-*  All rights reserved.
-*
-*  Redistribution and use in source and binary forms, with or without
-*  modification, are permitted provided that the following conditions are met:
-*
-*  - Redistributions of source code must retain the above copyright notice,
-*    this list of conditions and the following disclaimer.
-*  - Redistributions in binary form must reproduce the above copyright notice,
-*    this list of conditions and the following disclaimer in the documentation
-*    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische
-*    Universität Darmstadt nor the names of its contributors may be used to
-*    endorse or promote products derived from this software without specific
-*    prior written permission.
-*
-*  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-*  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-*  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-*  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-*  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-*  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-*  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-*  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-*  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-*  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-*  POSSIBILITY OF SUCH DAMAGE.
-*/
-package de.tud.cs.st.bat.resolved
+ * Copyright (c) 2009 - 2013
+ * Software Technology Group
+ * Department of Computer Science
+ * Technische Universität Darmstadt
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *  - Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *  - Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *  - Neither the name of the Software Technology Group or Technische
+ *    Universität Darmstadt nor the names of its contributors may be used to
+ *    endorse or promote products derived from this software without specific
+ *    prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+package de.tud.cs.st
+package bat
+package resolved
 
 import scala.annotation.tailrec
 
 /**
-  * The computational type category of a value on the operand stack. (cf. JVM Spec. 2.11.1 Types and the Java Virtual
-  * Machine).
-  */
+ * The computational type category of a value on the operand stack.
+ *
+ * (cf. JVM Spec. 2.11.1 Types and the Java Virtual Machine).
+ */
 sealed abstract class ComputationalTypeCategory(val operandSize: Byte) {
     def id: Byte
 }
@@ -49,9 +52,10 @@ final case object Category2ComputationalTypeCategory extends ComputationalTypeCa
 }
 
 /**
-  * The computational type of a value on the operand stack. (cf. JVM Spec. 2.11.1 Types and the Java Virtual
-  * Machine).
-  */
+ * The computational type of a value on the operand stack.
+ *
+ * (cf. JVM Spec. 2.11.1 Types and the Java Virtual Machine).
+ */
 sealed abstract class ComputationalType(val computationTypeCategory: ComputationalTypeCategory) {
     def operandSize = computationTypeCategory.operandSize
     def isPrimitiveType: Boolean
@@ -76,27 +80,28 @@ case object ComputationalTypeDouble extends ComputationalType(Category2Computati
 }
 
 /**
-  * A JVM type.
-  *
-  * From the JVM specification:
-  * There are three kinds of reference types: class types, array types, and interface types. Their values are
-  * references to dynamically created class instances, arrays, or class instances or arrays that implement
-  * interfaces, respectively.
-  *
-  * An array type consists of a component type with a single dimension (whose length is not given by the
-  * type). The component type of an array type may itself be an array type. If, starting from any array type,
-  * one considers its component type, and then (if that is also an array type) the component type of that type,
-  * and so on, eventually one must reach a component type that is not an array type; this is called the element
-  * type of the array type. The element type of an array type is necessarily either a primitive type, or a
-  * class type, or an interface type.
-  *
-  * A reference value may also be the special null reference, a reference to no object, which will be denoted
-  * here by null. The null reference initially has no runtime type, but may be cast to any type. The default
-  * value of a reference type is null.
-  * The Java virtual machine specification does not mandate a concrete value encoding null.
-  *
-  * @author Michael Eichberg
-  */
+ * A JVM type.
+ *
+ * '''From the JVM specification''':
+ *
+ * There are three kinds of reference types: class types, array types, and interface types. Their values are
+ * references to dynamically created class instances, arrays, or class instances or arrays that implement
+ * interfaces, respectively.
+ *
+ * An array type consists of a component type with a single dimension (whose length is not given by the
+ * type). The component type of an array type may itself be an array type. If, starting from any array type,
+ * one considers its component type, and then (if that is also an array type) the component type of that type,
+ * and so on, eventually one must reach a component type that is not an array type; this is called the element
+ * type of the array type. The element type of an array type is necessarily either a primitive type, or a
+ * class type, or an interface type.
+ *
+ * A reference value may also be the special null reference, a reference to no object, which will be denoted
+ * here by null. The null reference initially has no runtime type, but may be cast to any type. The default
+ * value of a reference type is null.
+ * The Java virtual machine specification does not mandate a concrete value encoding null.
+ *
+ * @author Michael Eichberg
+ */
 sealed trait Type {
 
     def isFieldType: Boolean = false
@@ -120,7 +125,7 @@ sealed trait Type {
     def toJava: String
 }
 
-final object ReturnType {
+object ReturnType {
 
     def apply(rt: String): Type = if (rt.charAt(0) == 'V') VoidType else FieldType(rt)
 
@@ -141,15 +146,15 @@ sealed trait VoidType extends Type with ReturnTypeSignature {
     override def toString() = "VoidType"
 
 }
-final case object VoidType extends VoidType
+case object VoidType extends VoidType
 
 sealed trait FieldType extends Type {
 
     override final def isFieldType = true
 }
 /**
-  * Factory object to parse field type (descriptors) to get field type objects.
-  */
+ * Factory object to parse field type (descriptors) to get field type objects.
+ */
 object FieldType {
 
     def apply(ft: String): FieldType = {
@@ -358,9 +363,9 @@ object ObjectType {
     private val cache: scala.collection.mutable.Map[String, ObjectType] = scala.collection.mutable.Map()
 
     /**
-      * Factory method to create ObjectTypes.<br />
-      * This method makes sure that every class is represented by exactly one object type.
-      */
+     * Factory method to create ObjectTypes.<br />
+     * This method makes sure that every class is represented by exactly one object type.
+     */
     def apply(className: String) = {
         cache.getOrElseUpdate(className, new ObjectType(className))
     }
@@ -434,10 +439,10 @@ final object ArrayType {
     private val cache: scala.collection.mutable.Map[FieldType, ArrayType] = scala.collection.mutable.Map()
 
     /**
-      * Factory method to create objects of type <code>ArrayType</code>.
-      *
-      * This method makes sure that every array type is represented by exactly one ArrayType object.
-      */
+     * Factory method to create objects of type <code>ArrayType</code>.
+     *
+     * This method makes sure that every array type is represented by exactly one ArrayType object.
+     */
     def apply(componentType: FieldType): ArrayType = {
         cache.getOrElseUpdate(componentType, new ArrayType(componentType))
     }

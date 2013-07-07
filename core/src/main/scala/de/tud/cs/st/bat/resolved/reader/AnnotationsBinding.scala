@@ -33,7 +33,7 @@
 package de.tud.cs.st.bat.resolved
 package reader
 
-import scala.reflect.ClassTag
+import reflect.ClassTag
 
 import de.tud.cs.st.bat.reader.AnnotationsReader
 import de.tud.cs.st.bat.reader.RuntimeInvisibleAnnotations_attributeReader

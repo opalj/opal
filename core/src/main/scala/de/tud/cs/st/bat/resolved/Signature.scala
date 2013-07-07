@@ -1,36 +1,37 @@
 /* License (BSD Style License):
-*  Copyright (c) 2009, 2011
-*  Software Technology Group
-*  Department of Computer Science
-*  Technische Universität Darmstadt
-*  All rights reserved.
-*
-*  Redistribution and use in source and binary forms, with or without
-*  modification, are permitted provided that the following conditions are met:
-*
-*  - Redistributions of source code must retain the above copyright notice,
-*    this list of conditions and the following disclaimer.
-*  - Redistributions in binary form must reproduce the above copyright notice,
-*    this list of conditions and the following disclaimer in the documentation
-*    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische
-*    Universität Darmstadt nor the names of its contributors may be used to
-*    endorse or promote products derived from this software without specific
-*    prior written permission.
-*
-*  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-*  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-*  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-*  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-*  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-*  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-*  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-*  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-*  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-*  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-*  POSSIBILITY OF SUCH DAMAGE.
-*/
-package de.tud.cs.st.bat
+ * Copyright (c) 2009 - 2013
+ * Software Technology Group
+ * Department of Computer Science
+ * Technische Universität Darmstadt
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *  - Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *  - Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *  - Neither the name of the Software Technology Group or Technische
+ *    Universität Darmstadt nor the names of its contributors may be used to
+ *    endorse or promote products derived from this software without specific
+ *    prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+package de.tud.cs.st
+package bat
 package resolved
 
 /**
@@ -59,38 +60,38 @@ sealed trait Signature extends SignatureElement with Attribute {
 
 }
 
-case class ClassSignature(formalTypeParameters: Option[List[FormalTypeParameter]],
-                          superClassSignature: ClassTypeSignature,
-                          superInterfacesSignature: List[ClassTypeSignature])
+case class ClassSignature(
+    formalTypeParameters: Option[List[FormalTypeParameter]],
+    superClassSignature: ClassTypeSignature,
+    superInterfacesSignature: List[ClassTypeSignature])
         extends Signature {
 
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
 }
 
-case class MethodTypeSignature(formalTypeParameters: Option[List[FormalTypeParameter]],
-                               parametersTypeSignatures: List[TypeSignature],
-                               returnTypeSignature: ReturnTypeSignature,
-                               throwsSignature: List[ThrowsSignature])
+case class MethodTypeSignature(
+    formalTypeParameters: Option[List[FormalTypeParameter]],
+    parametersTypeSignatures: List[TypeSignature],
+    returnTypeSignature: ReturnTypeSignature,
+    throwsSignature: List[ThrowsSignature])
         extends Signature {
 
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
 }
 
-trait FieldTypeSignature
-        extends Signature
-        with TypeSignature {
+trait FieldTypeSignature extends Signature with TypeSignature
 
-}
-
-case class ArrayTypeSignature(typeSignature: TypeSignature)
+case class ArrayTypeSignature(
+    typeSignature: TypeSignature)
         extends FieldTypeSignature {
 
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
 }
 
-case class ClassTypeSignature(packageIdentifier: Option[String],
-                              simpleClassTypeSignature: SimpleClassTypeSignature,
-                              classTypeSignatureSuffix: List[SimpleClassTypeSignature])
+case class ClassTypeSignature(
+    packageIdentifier: Option[String],
+    simpleClassTypeSignature: SimpleClassTypeSignature,
+    classTypeSignatureSuffix: List[SimpleClassTypeSignature])
         extends FieldTypeSignature
         with ThrowsSignature {
 
@@ -109,31 +110,34 @@ case class ClassTypeSignature(packageIdentifier: Option[String],
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
 }
 
-case class TypeVariableSignature(identifier: String)
+case class TypeVariableSignature(
+    identifier: String)
         extends FieldTypeSignature
         with ThrowsSignature {
 
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
 }
 
-case class SimpleClassTypeSignature(simpleName: String,
-                                    typeArguments: Option[List[TypeArgument]]) {
+case class SimpleClassTypeSignature(
+        simpleName: String,
+        typeArguments: Option[List[TypeArgument]]) {
 
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
 }
 
-case class FormalTypeParameter(identifier: String,
-                               classBound: Option[FieldTypeSignature],
-                               interfaceBound: Option[FieldTypeSignature]) {
+case class FormalTypeParameter(
+        identifier: String,
+        classBound: Option[FieldTypeSignature],
+        interfaceBound: Option[FieldTypeSignature]) {
 
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
 }
 
-sealed trait TypeArgument extends SignatureElement {
-}
+sealed trait TypeArgument extends SignatureElement
 
-case class ProperTypeArgument(varianceIndicator: Option[VarianceIndicator],
-                              fieldTypeSignature: FieldTypeSignature)
+case class ProperTypeArgument(
+    varianceIndicator: Option[VarianceIndicator],
+    fieldTypeSignature: FieldTypeSignature)
         extends TypeArgument {
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
 }
