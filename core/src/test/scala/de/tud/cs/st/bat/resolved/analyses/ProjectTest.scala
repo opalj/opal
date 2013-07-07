@@ -40,7 +40,7 @@ import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.matchers.ShouldMatchers
 
-import reader.Java6Framework.ClassFiles
+import reader.Java7Framework.ClassFiles
 
 /**
   * Tests the support for "project" related functionality.

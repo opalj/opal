@@ -34,7 +34,7 @@ package de.tud.cs.st.bat
 package resolved
 package ai
 
-import reader.Java6Framework
+import reader.Java7Framework
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.Spec
@@ -64,7 +64,7 @@ class SimpleControlFlowMethodsTest extends FlatSpec with ShouldMatchers /*with B
         override def returnVoid() { returnedValues = ("return", null) :: returnedValues }
     }
 
-    val classFiles = Java6Framework.ClassFiles(locateTestResources("classfiles/ai.zip"))
+    val classFiles = Java7Framework.ClassFiles(locateTestResources("classfiles/ai.zip"))
     val classFile = classFiles.find(_.thisClass.className == "ai/ControlFlowMethods").get
     assert(classFile ne null, "class file not found")
 

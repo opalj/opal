@@ -31,61 +31,50 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package de.tud.cs.st
-package bat.resolved
-package analyses
+package bat
+package resolved
+package reader
 
-import reader.Java7Framework
+import bat.reader.BootstrapMethods_attributeReader
+
+import reflect.ClassTag
 
 /**
+ *
  * @author Michael Eichberg
  */
-trait Analysis[AnalysisResult] {
+trait BootstrapMethods_attributeBinding
+        extends BootstrapMethods_attributeReader
+        with ConstantPoolBinding
+        with AttributeBinding {
 
-    def analyze(project: Project): AnalysisResult
+    type BootstrapMethods_attribute = de.tud.cs.st.bat.resolved.BootstrapMethodTable
 
-    def description: String
+    type BootstrapMethod = de.tud.cs.st.bat.resolved.BootstrapMethod
+    val BootstrapMethodManifest: ClassTag[BootstrapMethod] = implicitly
 
-    def copyright: String
-}
+    type BootstrapArgument = de.tud.cs.st.bat.resolved.BootstrapArgument
+    val BootstrapArgumentManifest: ClassTag[BootstrapArgument] = implicitly
 
-trait AnalysisExecutor extends Analysis[Unit] {
-
-    def printUsage() {
-        println("Usage: java …"+this.getClass().getName()+" <Directory or ZIP/JAR file containing class files>+")
-        println(description)
-        println(copyright)
+    def BootstrapMethods_attribute(
+        attributeNameIndex: Int,
+        attributeLength: Int,
+        bootstrapMethods: BootstrapMethods)(
+            implicit cp: Constant_Pool): BootstrapMethods_attribute = {
+        new BootstrapMethodTable(bootstrapMethods)
     }
 
-    def main(args: Array[String]) {
-        if (args.length == 0) {
-            printUsage()
-            sys.exit(-1)
-        }
-
-        val files = for (arg ← args) yield {
-            val file = new java.io.File(arg)
-            if (!file.canRead ||
-                !(arg.endsWith(".zip") ||
-                    arg.endsWith(".jar") ||
-                    arg.endsWith(".class") ||
-                    file.isDirectory())) {
-                println("The file: "+file+" cannot be read or is not valid.")
-                printUsage()
-                sys.exit(-2)
-            }
-            file
-        }
-
-        println("Reading class files:")
-        var project = new Project()
-        for {
-            file ← files if { println("\t"+file.toString()); true }
-            classFiles = Java7Framework.ClassFiles(file)
-            classFile ← classFiles
-        } {
-            project += classFile
-        }
-        println("Starting analyses: ")
-        analyze(project)
+    def BootstrapMethod(
+        bootstrapMethodRef: Int,
+        bootstrapArguments: BootstrapArguments)(
+            implicit cp: Constant_Pool): BootstrapMethod = {
+        new BootstrapMethod(cp(bootstrapMethodRef).asMethodHandle, bootstrapArguments)
     }
+
+    def BootstrapArgument(constantPoolIndex: Int)(implicit cp: Constant_Pool): BootstrapArgument = {
+        cp(constantPoolIndex).asBootstrapArgument
+    }
+
 }
+
+

@@ -34,13 +34,13 @@ package de.tud.cs.st.bat
 package resolved
 package ai
 
-import reader.Java6Framework
+import reader.Java7Framework.ClassFiles
+
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.matchers.ShouldMatchers
-import java.lang.System
 
 /**
   * Basic tests of the abstract interpreter.
@@ -61,7 +61,7 @@ class SimpleMethodsTest extends FlatSpec with ShouldMatchers /*with BeforeAndAft
         override def returnVoid() { returnedValue = None }
     }
 
-    val classFile = Java6Framework.ClassFiles(locateTestResources("classfiles/ai.zip")).find(_.thisClass.className == "ai/SimpleMethods").get
+    val classFile = ClassFiles(locateTestResources("classfiles/ai.zip")).find(_.thisClass.className == "ai/SimpleMethods").get
 
     behavior of "the basic abstract interpreter"
 

@@ -60,6 +60,8 @@ package object resolved {
     type LineNumbers = IndexedSeq[LineNumber]
     type LocalVariableTypes = IndexedSeq[LocalVariableType]
     type LocalVariables = IndexedSeq[LocalVariable]
+    type BootstrapMethods = IndexedSeq[BootstrapMethod]
+    type BootstrapArguments = IndexedSeq[BootstrapArgument]
     type ParameterAnnotations = IndexedSeq[Annotations]
     type StackMapFrames = IndexedSeq[StackMapFrame]
     type VerificationTypeInfoLocals = IndexedSeq[VerificationTypeInfo]

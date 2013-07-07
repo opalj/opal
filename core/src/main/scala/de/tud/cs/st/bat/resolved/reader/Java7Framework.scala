@@ -41,20 +41,23 @@ import de.tud.cs.st.bat.reader.SkipUnknown_attributeReader
 import de.tud.cs.st.bat.reader.CodeReader
 
 /**
- * This "framework" can be used to read in Java 6 (version 50) class files. All
+ * This "framework" can be used to read in Java 7 (version 51) class files. All
  * standard information (as defined in the Java Virtual Machine Specification)
  * is represented.
  *
  * @author Michael Eichberg
  */
-class Java6Framework
+class Java7Framework
     extends ConstantPoolBinding
     with ClassFileBinding
     with InterfacesReader
     with FieldsReader
     with MethodsReader
     with AttributesReader
-    //with Unknown_attributeBinding // If this line is commented out: unknown attributes are completely ignored
+    with BootstrapMethods_attributeBinding
+    /* If you want unknown attributes to be represented uncomment the following: */
+    // with Unknown_attributeBinding 
+    /* and comment out the following line: */
     with SkipUnknown_attributeReader
     with AnnotationsBinding
     with StackMapTable_attributeBinding
@@ -74,6 +77,6 @@ class Java6Framework
     with CodeAttributeBinding
     with CodeReader
 
-object Java6Framework extends Java6Framework
+object Java7Framework extends Java7Framework
 
 

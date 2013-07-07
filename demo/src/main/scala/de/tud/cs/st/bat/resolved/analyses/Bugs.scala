@@ -35,12 +35,12 @@ package bat.resolved
 package analyses
 
 import findbugs_inspired._
-import reader.Java6Framework
+import reader.Java7Framework.ClassFiles
 
 /**
- * @author Michael Eichberg
- * @author Ralf Mitschke
- */
+  * @author Michael Eichberg
+  * @author Ralf Mitschke
+  */
 object Bugs {
 
     private def printUsage() {
@@ -72,7 +72,7 @@ object Bugs {
         var project = new Project()
         for {
             zipFile ← args if { println("\t"+zipFile); true }
-            classFile ← Java6Framework.ClassFiles(zipFile)
+            classFile ← ClassFiles(zipFile)
         } yield {
             project += classFile
         }

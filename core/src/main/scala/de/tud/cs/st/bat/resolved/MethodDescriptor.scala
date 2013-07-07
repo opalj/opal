@@ -39,7 +39,7 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case class MethodDescriptor(parameterTypes: Seq[FieldType], returnType: Type) {
+case class MethodDescriptor(parameterTypes: Seq[FieldType], returnType: Type) extends BootstrapArgument {
 
     //
     //

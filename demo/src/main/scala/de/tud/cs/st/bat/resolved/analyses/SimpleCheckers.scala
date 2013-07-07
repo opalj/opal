@@ -35,7 +35,7 @@ package bat.resolved
 package analyses
 
 import util.debug.{ Counting, PerformanceEvaluation }
-import reader.Java6Framework
+import reader.Java7Framework
 import de.tud.cs.st.bat.resolved.BooleanType
 import de.tud.cs.st.bat.resolved.IntegerType
 import de.tud.cs.st.bat.resolved.Method
@@ -48,7 +48,7 @@ import de.tud.cs.st.util.debug.nsToSecs
  *
  * @author Michael Eichberg
  */
-object SimpleCheckers extends AnalysisExecutor[Unit] {
+object SimpleCheckers extends AnalysisExecutor {
 
     def description: String = "Finds violations of the equals-hashCode contract and co-variant equals methods."
 

@@ -32,7 +32,7 @@
 */
 package de.tud.cs.st.bat.resolved
 
-import reader.Java6Framework
+import reader.Java7Framework
 
 /**
  * Just a very small code snippet that shows how to load a class file
@@ -49,20 +49,20 @@ object ClassFileInformation {
             sys.exit(1)
         }
 
-        for (classFileName ← args.drop(1)/* drop the name of the zip file */) {
-            val classFile = Java6Framework.ClassFile(args(0), classFileName)
+        for (classFileName ← args.drop(1) /* drop the name of the zip file */ ) {
+            val classFile = Java7Framework.ClassFile(args(0), classFileName)
 
             print(classFile.thisClass.className)
-            classFile.superClass.foreach(t ⇒ print(" extends " + t.className)) // java.lang.Object does not have a super class!
+            classFile.superClass.foreach(t ⇒ print(" extends "+t.className)) // java.lang.Object does not have a super class!
 
             if (classFile.interfaces.length > 0) {
                 print(" implements")
-                classFile.interfaces.foreach(interface ⇒ print(" " + interface.className))
+                classFile.interfaces.foreach(interface ⇒ print(" "+interface.className))
                 println
             }
 
-            println("Sourcefile: " + (classFile.sourceFile match { case Some(s) ⇒ s; case _ ⇒ "<NOT AVAILABE>" }))
-            println("Version   : " + classFile.majorVersion + "." + classFile.minorVersion)
+            println("Sourcefile: "+(classFile.sourceFile match { case Some(s) ⇒ s; case _ ⇒ "<NOT AVAILABE>" }))
+            println("Version   : "+classFile.majorVersion+"."+classFile.minorVersion)
             println
         }
         sys.exit(0)

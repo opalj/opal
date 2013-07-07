@@ -37,7 +37,7 @@ import java.io.FileInputStream
 
 import de.tud.cs.st.util.UTF8Println
 
-import reader.Java6Framework
+import reader.Java7Framework
 
 /**
  * Prints out the object graph using the compiler generated "toString" method.
@@ -57,7 +57,7 @@ object BytecodeToText extends UTF8Println {
         		""".stripMargin)
 
         for (arg ← args) {
-            println(Java6Framework.ClassFile(() ⇒ new FileInputStream(arg)).toString)
+            println(Java7Framework.ClassFile(() ⇒ new FileInputStream(arg)).toString)
         }
     }
 }

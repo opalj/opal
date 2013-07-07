@@ -30,20 +30,18 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat
+package de.tud.cs.st
+package bat
 package reader
 
 import java.io.{ File, InputStream, DataInputStream, BufferedInputStream, ByteArrayInputStream }
 import java.util.zip.{ ZipFile, ZipEntry }
-import de.tud.cs.st.util.ControlAbstractions.process
-import java.rmi.UnexpectedException
 
 /**
- * Abstract trait that implements a template method to read in a Java class file.
+ * Implements several template methods to read in a Java class files.
  *
  * This library supports class files from version 45 (Java 1.1) up to
- * (including) version 50 (Java 6). Version 51 (Java 7) is currently only
- * partially supported.
+ * version 51 (Java 7).
  *
  * '''Format'''
  * {{{
@@ -69,7 +67,7 @@ import java.rmi.UnexpectedException
  *
  * For details see the JVM Specification: The ClassFile Structure.
  *
- * '''Notes for Implementors'''
+ * ==Notes for Implementors==
  *
  * Reading of the class file's major structures: the constant pool, fields, methods
  * the set of implemented interfaces, and the attributes is
@@ -157,16 +155,16 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     /**
      * Reads all attributes using the given stream and constant pool.
      *
+     * The given stream is positioned directly before a class file's "attributes_count" field.
+     * This method is called by the template method that reads in a class file to delegate the
+     * reading of the attributes.
+     *
      * '''From the Specification'''
      *
      * The attributes [...] appearing in the attributes table of a ClassFile
      * structure are the InnerClasses, EnclosingMethod, Synthetic, Signature,
      * SourceFile, SourceDebugExtension, Deprecated, RuntimeVisibleAnnotations,
      * RuntimeInvisibleAnnotations, and BootstrapMethods attributes.
-     *
-     * @note The given stream is positioned directly before a class file's "attributes_count" field.
-     *  This method is called by the template method that reads in a class file to delegate the
-     *  reading of the attributes.
      */
     protected def Attributes(
         ap: AttributesParent,
@@ -174,8 +172,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         in: DataInputStream): Attributes
 
     /**
-     * Factory method to create the object that represents the class file
-     * as a whole.
+     * Factory method to create the object that represents the class file as a whole.
      */
     protected def ClassFile(
         minor_version: Int,
@@ -192,7 +189,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     //
     // IMPLEMENTATION
     //
-    import de.tud.cs.st.util.ControlAbstractions.withResource
+    import util.ControlAbstractions.{ withResource, process }
 
     /**
      * Reads in a class file.
@@ -209,7 +206,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         process(create() match {
             case dis: DataInputStream ⇒ dis
             case is ⇒ {
-                // TODO needs to be made more robust
+                // TODO needs to be made more robust => use BufferedInputStream instead
                 val data = new Array[Byte](is.available)
                 var bytesRead = 0
                 while (bytesRead < data.length) {
@@ -251,19 +248,34 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         }
     }
 
+    /**
+     * Reads in parallel all class files stored in the given zip file.
+     */
     def ClassFiles(zipFile: ZipFile): Seq[ClassFile] = {
+        val mutex = new Object
         var classFiles: List[ClassFile] = Nil
-        def addClassFile(zf: ZipFile, ze: ZipEntry, cf: ClassFile) = classFiles = cf :: classFiles
+
+        def addClassFile(zf: ZipFile, ze: ZipEntry, cf: ClassFile) =
+            mutex.synchronized {
+                classFiles = cf :: classFiles
+            }
+
         ClassFiles(zipFile, addClassFile _)
         classFiles
     }
 
+    /**
+     * Reads in parallel all class files stored in the given zip file.
+     *
+     * @param f This function is called for each class file in the given zip file. The zipfile is
+     *      read in parallel, hence **this function has to be thread safe**.
+     */
     def ClassFiles(zipFile: ZipFile, f: (ZipFile, ZipEntry, ClassFile) ⇒ _) {
-        val zipEntries = (zipFile).entries
-        while (zipEntries.hasMoreElements) {
-            val zipEntry = zipEntries.nextElement
+        import collection.JavaConversions._
+        for (zipEntry ← (zipFile).entries.toIterable.par) {
             if (!zipEntry.isDirectory && zipEntry.getName.endsWith(".class")) {
-                f(zipFile, zipEntry, ClassFile(zipFile, zipEntry))
+                val classFile = ClassFile(zipFile, zipEntry)
+                f(zipFile, zipEntry, classFile)
             }
         }
     }
@@ -294,18 +306,17 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         while (directories.nonEmpty) {
             val directory = directories.head
             directories = directories.tail
-            var classFileCount = 0
-            for (file ← directory.listFiles() /*.par*/ ) {
+
+            for (file ← directory.listFiles().par) {
                 if (file.isDirectory()) {
-                    //   directories.synchronized {
-                    directories = file :: directories
-                    //   }
+                    directories.synchronized {
+                        directories = file :: directories
+                    }
                 } else if (file.getName().endsWith(".class")) {
-                    classFileCount += 1
                     val classFile = ClassFile(() ⇒ new java.io.FileInputStream(file))
-                    //   classFiles.synchronized {
-                    classFiles = classFile :: classFiles
-                    //   }
+                    classFiles.synchronized {
+                        classFiles = classFile :: classFiles
+                    }
                 }
             }
         }

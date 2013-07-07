@@ -37,7 +37,7 @@ package dependency
 import util.debug.nanoSecondsToMilliseconds
 
 import resolved._
-import resolved.reader.Java6Framework
+import resolved.reader.Java7Framework.ClassFiles
 
 /**
  * This class (the implementation) demonstrates how to load all class files
@@ -99,7 +99,7 @@ object DependencyMatrix {
         time(duration = _) {
             for (
                 zipFile ← zipFiles;
-                classFile ← Java6Framework.ClassFiles(zipFile)
+                classFile ← ClassFiles(zipFile)
             ) {
                 require(classFile.thisClass ne null)
                 count += 1

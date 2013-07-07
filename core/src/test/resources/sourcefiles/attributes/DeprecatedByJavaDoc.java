@@ -41,7 +41,7 @@ package attributes;
  *
  * @author Michael Eichberg
  */
-/*
+/**
  * @deprecated Do not use.
  */
 public class DeprecatedByJavaDoc {

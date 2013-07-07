@@ -61,10 +61,10 @@ class SignaturesTest extends FunSuite with TestSupport with ParallelTestExecutio
         assert(types == Set(ObjectType("Default"), ObjectType("de/Collection"), ObjectType("de/Type"), ObjectType("AnotherDefault"), ObjectType("de/MyObject")))
     }
 
-    private val classA = Java6Framework.ClassFile(locateTestResources("classfiles/Signatures.zip"), "signatures/A.class")
+    private val classA = Java7Framework.ClassFile(locateTestResources("classfiles/Signatures.zip"), "signatures/A.class")
     assert(classA ne null)
 
-    private val classB = Java6Framework.ClassFile(locateTestResources("classfiles/Signatures.zip"), "signatures/B.class")
+    private val classB = Java7Framework.ClassFile(locateTestResources("classfiles/Signatures.zip"), "signatures/B.class")
     assert(classB ne null)
 
     test("parsing the class signatures") {

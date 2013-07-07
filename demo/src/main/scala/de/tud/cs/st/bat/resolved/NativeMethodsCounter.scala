@@ -34,11 +34,11 @@ package de.tud.cs.st
 package bat.resolved
 
 import util.debug.PerformanceEvaluation
-import reader.Java6Framework
+import reader.Java7Framework.ClassFiles
 
 /**
-  * @author Michael Eichberg
-  */
+ * @author Michael Eichberg
+ */
 object NativeMethodsCounter extends PerformanceEvaluation {
 
     private def printUsage: Unit = {
@@ -66,7 +66,7 @@ object NativeMethodsCounter extends PerformanceEvaluation {
         val nativeMethods = time((t) ⇒ println("Analysis took: "+(t / 1000.0 / 1000.0 / 1000.0)+" secs.")) {
             for {
                 zipFile ← args if { println("\t"+zipFile); true };
-                classFile ← Java6Framework.ClassFiles(zipFile)
+                classFile ← ClassFiles(zipFile)
                 method ← classFile.methods if method.isNative
             } yield {
                 method

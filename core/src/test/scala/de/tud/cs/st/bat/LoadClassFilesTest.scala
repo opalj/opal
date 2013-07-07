@@ -33,7 +33,7 @@
 package de.tud.cs.st
 package bat
 
-import resolved.reader.Java6Framework.ClassFile
+import resolved.reader.Java7Framework.ClassFile
 
 import java.io.File
 import java.util.zip.ZipFile

@@ -34,7 +34,7 @@ package de.tud.cs.st.bat
 package dependency
 
 import resolved._
-import resolved.reader.Java6Framework
+import resolved.reader.Java7Framework
 import DependencyType._
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
@@ -86,7 +86,7 @@ class DependenciesToPrimitiveTypesTest extends FlatSpec with ShouldMatchers /*wi
    //
    //
    DependencyCollector.process(
-      Java6Framework.ClassFile(ClassLoader.getSystemResource("classfiles/Types.zip").getFile, "types/TypeDeclarations.class")
+      Java7Framework.ClassFile(ClassLoader.getSystemResource("classfiles/Types.zip").getFile, "types/TypeDeclarations.class")
    );
 
    //

@@ -41,7 +41,7 @@ import org.scalatest.FunSuite
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class AttributesTest extends FunSuite with TestSupport {
 
-    import reader.Java6Framework.ClassFile
+    import reader.Java7Framework.ClassFile
 
     test("test that the deprecated attribute is present") {
         val cf1 = ClassFile(locateTestResources("classfiles/Attributes.zip"), "attributes/DeprecatedByAnnotation.class")

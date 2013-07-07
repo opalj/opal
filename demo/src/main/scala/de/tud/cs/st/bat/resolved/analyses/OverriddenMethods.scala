@@ -40,7 +40,7 @@ package analyses
  *
  * @author Michael Eichberg
  */
-object OverriddenMethods extends AnalysisExecutor[Unit] {
+object OverriddenMethods extends AnalysisExecutor {
 
     def description = "Counts the number of overridden methods."
 

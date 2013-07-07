@@ -56,8 +56,8 @@ trait CommonAttributes {
      * Returns true if this (field, method, class) declaration is declared
      * as deprecated.
      *
-     * ==Java==
-     * Note that the deprecated attribute is always set when either the deprecated
+     * ==Note==
+     * The deprecated attribute is always set by the Java compiler when either the deprecated
      * annotation or the JavaDoc tag is used.
      */
     def isDeprectated: Boolean = attributes contains Deprecated

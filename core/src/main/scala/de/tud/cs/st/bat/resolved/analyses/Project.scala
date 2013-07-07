@@ -36,7 +36,7 @@ package analyses
 
 import util.graphs.{ Node, toDot }
 
-import reader.Java6Framework
+import reader.Java7Framework
 
 /**
  * Represents some software project; i.e., all class files of a project.
