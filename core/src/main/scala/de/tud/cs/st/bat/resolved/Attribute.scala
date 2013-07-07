@@ -38,6 +38,4 @@ package resolved
  *
  * @author Michael Eichberg
  */
-trait Attribute {
-
-}
+trait Attribute 

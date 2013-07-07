@@ -54,7 +54,10 @@ class Java7Framework
     with FieldsReader
     with MethodsReader
     with AttributesReader
-    //with Unknown_attributeBinding // If this line is commented out: unknown attributes are completely ignored
+    with BootstrapMethods_attributeBinding
+    /* If you want unknown attributes to be represented uncomment the following: */
+    // with Unknown_attributeBinding 
+    /* and comment out the following line: */
     with SkipUnknown_attributeReader
     with AnnotationsBinding
     with StackMapTable_attributeBinding
@@ -70,7 +73,6 @@ class Java7Framework
     with LocalVariableTypeTable_attributeBinding
     with Exceptions_attributeBinding
     with ConstantValue_attributeBinding
-    with BootstrapMethods_attributeBinding
     with BytecodeReaderAndBinding
     with CodeAttributeBinding
     with CodeReader

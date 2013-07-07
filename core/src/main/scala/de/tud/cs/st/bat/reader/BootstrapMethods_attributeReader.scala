@@ -54,11 +54,11 @@ import de.tud.cs.st.util.ControlAbstractions.repeat
  *  u2 num_bootstrap_methods;
  *  {    u2 bootstrap_method_ref;
  *      u2 num_bootstrap_arguments;
- *      u2 bootstrap_arguments[num_bootstrap_arguments]; 
+ *      u2 bootstrap_arguments[num_bootstrap_arguments];
  *  } bootstrap_methods[num_bootstrap_methods];
  * }
  * }}}
- * 
+ *
  * @author Michael Eichberg
  */
 trait BootstrapMethods_attributeReader extends AttributeReader {
@@ -70,7 +70,7 @@ trait BootstrapMethods_attributeReader extends AttributeReader {
     type BootstrapMethods_attribute <: Attribute
 
     type BootstrapMethod
-    implicit val BootstrapMethodManifest: ClassTag[BootstrapMethod]
+    implicit val BootstrapMethodManifest: ClassTag[BootstrapMethod] 
 
     type BootstrapArgument
     implicit val BootstrapArgumentManifest: ClassTag[BootstrapArgument]

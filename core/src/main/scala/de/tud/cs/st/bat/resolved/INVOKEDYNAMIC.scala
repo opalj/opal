@@ -31,16 +31,17 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved
+package de.tud.cs.st.bat
+package resolved
 
 /**
-  * Invoke instance method; resolve and dispatch based on class.
-  *
-  * @author Michael Eichberg
-  */
+ * Invoke dynamic.
+ *
+ * @author Michael Eichberg
+ */
 case class INVOKEDYNAMIC(
-    // TODO [Java7] "invokedynamic" - resolve valid index into the bootstrap_methods array of the bootstrap method table
-    val name: String,
+    val bootstrapMethodTableIndex: Int,
+    val methodName: String,
     val methodDescriptor: MethodDescriptor // an interface or class type to be precise
     )
         extends MethodInvocationInstruction {

@@ -51,23 +51,29 @@ trait BootstrapMethods_attributeBinding
     type BootstrapMethods_attribute = de.tud.cs.st.bat.resolved.BootstrapMethodTable
 
     type BootstrapMethod = de.tud.cs.st.bat.resolved.BootstrapMethod
-    implicit val BootstrapMethodManifest: ClassTag[BootstrapMethod] = implicitly
+    val BootstrapMethodManifest: ClassTag[BootstrapMethod] = implicitly
 
     type BootstrapArgument = de.tud.cs.st.bat.resolved.BootstrapArgument
-    implicit val BootstrapArgumentManifest: ClassTag[BootstrapArgument] = implicitly
+    val BootstrapArgumentManifest: ClassTag[BootstrapArgument] = implicitly
 
-    def BootstrapMethods_attribute(attribute_name_index: Int,
-                                   attribute_length: Int,
-                                   bootstrap_methods: BootstrapMethods)(
-                                       implicit constant_pool: Constant_Pool): BootstrapMethods_attribute =
-        new BootstrapMethodTable(bootstrap_methods)
+    def BootstrapMethods_attribute(
+        attributeNameIndex: Int,
+        attributeLength: Int,
+        bootstrapMethods: BootstrapMethods)(
+            implicit cp: Constant_Pool): BootstrapMethods_attribute = {
+        new BootstrapMethodTable(bootstrapMethods)
+    }
 
-    
-    def BootstrapMethod(bootstrap_method_ref: Int,
-                        bootstrap_arguments: BootstrapArguments)(
-                            implicit constant_pool: Constant_Pool): BootstrapMethod
+    def BootstrapMethod(
+        bootstrapMethodRef: Int,
+        bootstrapArguments: BootstrapArguments)(
+            implicit cp: Constant_Pool): BootstrapMethod = {
+        new BootstrapMethod(cp(bootstrapMethodRef).asMethodHandle, bootstrapArguments)
+    }
 
-    def BootstrapArgument(constant_pool_ref: Int)(implicit constant_pool: Constant_Pool): BootstrapArgument
+    def BootstrapArgument(constantPoolIndex: Int)(implicit cp: Constant_Pool): BootstrapArgument = {
+        cp(constantPoolIndex).asBootstrapArgument
+    }
 
 }
 

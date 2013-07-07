@@ -33,30 +33,77 @@
 package de.tud.cs.st.bat
 package resolved
 
-
 /**
- * Java 7's BootstrapMethods attribute.
- * 
- * @author Michael Eichberg
- */
-case class BootstrapMethodTable(methods : BootstrapMethods) extends Attribute {
-    
-}
-
-/**
- * A class' optional bootstrap methods attribute.
+ * Java 7's `BootstrapMethods_attribute`.
  *
  * @author Michael Eichberg
  */
-case class BootstrapMethod(clazz: ObjectType,
-                           name: String,
-                           arguments:BootstrapArguments)
-        extends Attribute {
+case class BootstrapMethodTable(methods: BootstrapMethods) extends Attribute
 
-   
+case class BootstrapMethod(methodHandle: MethodHandle, bootstrapArguments: BootstrapArguments)
 
-}
+/**
+ * A marker trait to identify those constant pool values that can be a boot strap method's arguments.
+ *
+ * @author Michael
+ */
+trait BootstrapArgument
 
-sealed class BootstrapArgument {
-    
-}
+sealed trait MethodHandle extends BootstrapArgument
+
+case class GetFieldMethodHandle(
+    declaringType: ObjectType,
+    name: String,
+    fieldType: FieldType)
+        extends MethodHandle
+
+case class GetStaticMethodHandle(
+    declaringType: ObjectType,
+    name: String,
+    fieldType: FieldType)
+        extends MethodHandle
+
+case class PutFieldMethodHandle(
+    declaringType: ObjectType,
+    name: String,
+    fieldType: FieldType)
+        extends MethodHandle
+
+case class PutStaticMethodHandle(
+    declaringType: ObjectType,
+    name: String,
+    fieldType: FieldType)
+        extends MethodHandle
+
+case class InvokeVirtualMethodHandle(
+    receiverType: ReferenceType,
+    name: String,
+    methodDesriptor: MethodDescriptor)
+        extends MethodHandle
+
+case class InvokeStaticMethodHandle(
+    receiverType: ReferenceType,
+    name: String,
+    methodDesriptor: MethodDescriptor)
+        extends MethodHandle
+
+case class InvokeSpecialMethodHandle(
+    receiverType: ReferenceType,
+    name: String,
+    methodDesriptor: MethodDescriptor)
+        extends MethodHandle
+
+case class NewInvokeSpecialMethodHandle(
+    receiverType: ReferenceType,
+    name: String,
+    methodDesriptor: MethodDescriptor)
+        extends MethodHandle
+
+case class InvokeInterfaceMethodHandle(
+    receiverType: ReferenceType,
+    name: String,
+    methodDesriptor: MethodDescriptor)
+        extends MethodHandle
+
+
+
