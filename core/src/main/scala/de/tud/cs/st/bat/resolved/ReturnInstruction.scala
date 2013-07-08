@@ -41,9 +41,9 @@ package resolved
  */
 abstract class ReturnInstruction extends ArithmeticInstruction {
 
-    final def runtimeExceptions(): List[ObjectType] = ReturnInstruction.runtimeExceptions
+    def runtimeExceptions(): List[ObjectType] = ReturnInstruction.runtimeExceptions
 
-    final def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 1
+    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 1
 
 }
 object ReturnInstruction {

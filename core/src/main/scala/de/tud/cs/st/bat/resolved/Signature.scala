@@ -96,7 +96,7 @@ case class ClassTypeSignature(
         with ThrowsSignature {
 
     def objectType: ObjectType = {
-        val className: java.lang.StringBuilder = new java.lang.StringBuilder(packageIdentifier.getOrElse(""))
+        val className = new java.lang.StringBuilder(packageIdentifier.getOrElse(""))
         className.append(simpleClassTypeSignature.simpleName)
         classTypeSignatureSuffix.foreach(
             scts ⇒ {

@@ -43,9 +43,8 @@ package de.tud.cs.st.bat.resolved
  *
  * @author Michael Eichberg
  */
-case class ExceptionHandler(startPC: Int,
-                            endPC: Int,
-                            handlerPC: Int,
-                            catchType: Option[ObjectType]) {
-
-}
+case class ExceptionHandler(
+    startPC: Int,
+    endPC: Int,
+    handlerPC: Int,
+    catchType: Option[ObjectType]) 

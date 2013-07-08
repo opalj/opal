@@ -34,14 +34,13 @@ package de.tud.cs.st
 package bat
 package resolved
 
-
 /**
-  * Trait that can be mixed in if the value of a instruction is implicitly defined.
-  *
-  * @author Michael Eichberg
-  */
+ * Trait that can be mixed in if the value of a instruction is implicitly defined.
+ *
+ * @author Michael Eichberg
+ */
 trait ImplicitValue {
 
-    final def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 1
+    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 1
 
 }

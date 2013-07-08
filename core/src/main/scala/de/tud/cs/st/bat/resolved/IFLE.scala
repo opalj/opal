@@ -34,11 +34,13 @@
 package de.tud.cs.st.bat.resolved
 
 /**
-  * Branch if int comparison with zero succeeds; succeeds if and only if value ≤ 0.
-  *
-  * @author Michael Eichberg
-  */
-case class IFLE(val branchoffset: Int) extends ConditionalBranchInstruction {
+ * Branch if int comparison with zero succeeds; succeeds if and only if value ≤ 0.
+ *
+ * @author Michael Eichberg
+ */
+case class IFLE(
+    branchoffset: Int)
+        extends ConditionalBranchInstruction {
 
     def opcode: Int = 158
 

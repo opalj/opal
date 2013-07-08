@@ -49,6 +49,6 @@ case class LDC2_W(
 
     def mnemonic: String = "ldc2_w"
 
-    final def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 1 + 2
+    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 1 + 2
 
 }
