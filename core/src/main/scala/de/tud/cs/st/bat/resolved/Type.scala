@@ -359,15 +359,28 @@ final class ObjectType private (val className: String) extends ReferenceType {
 }
 object ObjectType {
 
-    // FIXME potential memory leak...
-    private val cache: scala.collection.mutable.Map[String, ObjectType] = scala.collection.mutable.Map()
+    import java.util.WeakHashMap
+    import java.lang.ref.WeakReference
+
+    private val cache = new WeakHashMap[String, WeakReference[ObjectType]]()
 
     /**
-     * Factory method to create ObjectTypes.<br />
-     * This method makes sure that every class is represented by exactly one object type.
+     * Factory method to create ObjectTypes.
+     *
+     * ==Note==
+     * `ObjectType` objects are cached internally to reduce the overall memory requirements.
      */
-    def apply(className: String) = {
-        cache.getOrElseUpdate(className, new ObjectType(className))
+    def apply(className: String): ObjectType = cache.synchronized {
+        val wrOT = cache.get(className)
+        if (wrOT != null) {
+            val OT = wrOT.get()
+            if (OT != null)
+                return OT;
+        }
+        val newOT = new ObjectType(className)
+        val wrNewOT = new WeakReference(newOT)
+        cache.put(className, wrNewOT)
+        newOT
     }
 
     def unapply(ot: ObjectType): Option[String] = Some(ot.className)
@@ -435,16 +448,28 @@ final class ArrayType private (val componentType: FieldType) extends ReferenceTy
 }
 final object ArrayType {
 
-    // FIXME potential memory leak...
-    private val cache: scala.collection.mutable.Map[FieldType, ArrayType] = scala.collection.mutable.Map()
+    import java.util.WeakHashMap
+    import java.lang.ref.WeakReference
+
+    private val cache = new WeakHashMap[FieldType, WeakReference[ArrayType]]()
 
     /**
-     * Factory method to create objects of type <code>ArrayType</code>.
+     * Factory method to create objects of type `ArrayType`.
      *
-     * This method makes sure that every array type is represented by exactly one ArrayType object.
+     * ==Note==
+     * `ArrayType` objects are cached internally to reduce the overall memory requirements.
      */
-    def apply(componentType: FieldType): ArrayType = {
-        cache.getOrElseUpdate(componentType, new ArrayType(componentType))
+    def apply(componentType: FieldType): ArrayType = cache.synchronized {
+        val wrAT = cache.get(componentType)
+        if (wrAT != null) {
+            val AT = wrAT.get()            
+            if (AT != null)
+                return AT;
+        }
+        val newAT = new ArrayType(componentType)
+        val wrNewAT = new WeakReference(newAT)
+        cache.put(componentType, wrNewAT)
+        newAT
     }
 
     def apply(dimension: Int, componentType: FieldType): ArrayType = {
