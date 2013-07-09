@@ -30,39 +30,52 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st.bat
-package resolved
+package de.tud.cs.st
+package bat
 
-import org.scalatest.FunSuite
+import java.io.File
+import java.util.zip.ZipFile
+import java.util.zip.ZipEntry
+import java.io.DataInputStream
+import java.io.ByteArrayInputStream
+
+import org.scalatest.FlatSpec
+import org.scalatest.matchers.ShouldMatchers
+import org.junit.runner.RunWith
+import org.scalatest.junit.JUnitRunner
 import org.scalatest.ParallelTestExecution
 
+import resolved.ClassFile
+import resolved.reader.Java7Framework.ClassFiles
+import util.ControlAbstractions._
+
 /**
+ * This test(suite) just loads a very large number of class files to make sure the library
+ * can handle them and to test the "corner" cases. Basically, we test for NPEs,
+ * ArrayIndexOutOfBoundExceptions and similar issues.
+ *
  * @author Michael Eichberg
  */
-@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
-class AttributesTest extends FunSuite with TestSupport with ParallelTestExecution {
+@RunWith(classOf[JUnitRunner])
+class LoadClassFilesInParallelTest
+        extends FlatSpec
+        with ShouldMatchers
+        with TestSupport
+        with ParallelTestExecution {
 
-    val attributesZipFile = locateTestResources("classfiles/Attributes.zip")
-
-    import reader.Java7Framework.ClassFile
-
-    test("test that the deprecated attribute is present") {
-        val cf1 = ClassFile(attributesZipFile, "attributes/DeprecatedByAnnotation.class")
-        assert(cf1.isDeprectated)
-        assert(
-            cf1.runtimeVisibleAnnotations.get.find({
-                case Annotation(ObjectType("java/lang/Deprecated"), _) ⇒ true; case _ ⇒ false
-            }).isDefined
-        )
-
-        val cf2 = ClassFile(attributesZipFile, "attributes/DeprecatedByJavaDoc.class")
-        assert(cf2.isDeprectated)
-
+    def simpleValidator(classFile: ClassFile) {
+        classFile.thisClass.className should not be null
     }
 
-    test("test that the source file attribute is present") {
-        val cf1 = ClassFile(attributesZipFile, "attributes/DeprecatedByAnnotation.class")
-        assert(cf1.sourceFile != None)
-    }
+    behavior of "BAT"
 
+    for {
+        file ← locateTestResources("classfiles").listFiles
+        if (file.isFile && file.canRead && file.getName.endsWith(".zip"))
+    } {
+        it should ("be able to read the classes in the file"+file.getAbsoluteFile().toString()+" in parallel") in {
+            val zipfile = new ZipFile(file)
+            ClassFiles(file).foreach(simpleValidator)
+        }
+    }
 }
