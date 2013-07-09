@@ -42,6 +42,9 @@ import scala.annotation.tailrec
  * (cf. JVM Spec. 2.11.1 Types and the Java Virtual Machine).
  */
 sealed abstract class ComputationalTypeCategory(val operandSize: Byte) {
+    /**
+     * Identifies the computational type category.
+     */
     def id: Byte
 }
 final case object Category1ComputationalTypeCategory extends ComputationalTypeCategory(1) {
@@ -56,7 +59,8 @@ final case object Category2ComputationalTypeCategory extends ComputationalTypeCa
  *
  * (cf. JVM Spec. 2.11.1 Types and the Java Virtual Machine).
  */
-sealed abstract class ComputationalType(val computationTypeCategory: ComputationalTypeCategory) {
+sealed abstract class ComputationalType(
+        computationTypeCategory: ComputationalTypeCategory) {
     def operandSize = computationTypeCategory.operandSize
     def isPrimitiveType: Boolean
 }
@@ -212,7 +216,7 @@ sealed trait ByteType extends BaseType {
     override def toString() = "ByteType"
 
 }
-final case object ByteType extends ByteType
+case object ByteType extends ByteType
 
 sealed trait CharType extends BaseType {
 
@@ -246,7 +250,7 @@ sealed trait DoubleType extends BaseType {
     override def toString() = "DoubleType"
 
 }
-final case object DoubleType extends DoubleType
+case object DoubleType extends DoubleType
 
 sealed trait FloatType extends BaseType {
 
@@ -263,7 +267,7 @@ sealed trait FloatType extends BaseType {
     override def toString() = "FloatType"
 
 }
-final case object FloatType extends FloatType
+case object FloatType extends FloatType
 
 sealed trait ShortType extends BaseType {
 
@@ -280,7 +284,7 @@ sealed trait ShortType extends BaseType {
     override def toString() = "ShortType"
 
 }
-final case object ShortType extends ShortType
+case object ShortType extends ShortType
 
 sealed trait IntegerType extends BaseType {
 
@@ -297,7 +301,7 @@ sealed trait IntegerType extends BaseType {
     override def toString() = "IntegerType"
 
 }
-final case object IntegerType extends IntegerType
+case object IntegerType extends IntegerType
 
 sealed trait LongType extends BaseType {
 
@@ -314,7 +318,7 @@ sealed trait LongType extends BaseType {
     override def toString() = "LongType"
 
 }
-final case object LongType extends LongType
+case object LongType extends LongType
 
 sealed trait BooleanType extends BaseType {
 
@@ -331,19 +335,20 @@ sealed trait BooleanType extends BaseType {
     override def toString() = "BooleanType"
 
 }
-final case object BooleanType extends BooleanType
+case object BooleanType extends BooleanType
 
-final class ObjectType private (val className: String) extends ReferenceType {
+final class ObjectType private (
+    val className: String)
+        extends ReferenceType {
 
-    override final def isObjectType = true
+    override def isObjectType = true
 
     override lazy val hashCode = className.hashCode * 43
 
     override def equals(other: Any): Boolean =
         other match {
-            case that: ObjectType ⇒
-                equals(that)
-            case _ ⇒ false
+            case that: ObjectType ⇒ equals(that)
+            case _                ⇒ false
         }
 
     def equals(other: ObjectType): Boolean = other.className == this.className
