@@ -42,13 +42,13 @@ import java.io.DataInputStream
  * The SourceFile attribute is an optional fixed-length attribute in the
  * attributes table of a ClassFile structure.
  *
- * {{{
- *   SourceFile_attribute {
- *              u2 attribute_name_index;
- *              u4 attribute_length;
- *              u2 sourcefile_index;
- *   }
- * }}}
+ * <pre>
+ * SourceFile_attribute {
+ *    u2 attribute_name_index;
+ *    u4 attribute_length;
+ *    u2 sourcefile_index;
+ * }
+ * </pre>
  *
  * @author Michael Eichberg
  */

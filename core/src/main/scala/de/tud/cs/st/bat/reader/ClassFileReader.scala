@@ -44,26 +44,26 @@ import java.util.zip.{ ZipFile, ZipEntry }
  * version 51 (Java 7).
  *
  * '''Format'''
- * {{{
+ * <pre>
  * ClassFile {
- * 	u4 magic;
- * 	u2 minor_version;
- * 	u2 major_version;
- * 	u2 constant_pool_count;
- * 	cp_info constant_pool[constant_pool_count-1];
- * 	u2 access_flags;
- * 	u2 this_class;
- * 	u2 super_class;
- * 	u2 interfaces_count;
- * 	u2 interfaces[interfaces_count];
- * 	u2 fields_count;
- * 	field_info fields[fields_count];
- * 	u2 methods_count;
- * 	method_info methods[methods_count];
- * 	u2 attributes_count;
- * 	attribute_info attributes[attributes_count];
+ * 	  u4 magic;
+ * 	  u2 minor_version;
+ * 	  u2 major_version;
+ * 	  u2 constant_pool_count;
+ * 	  cp_info constant_pool[constant_pool_count-1];
+ * 	  u2 access_flags;
+ * 	  u2 this_class;
+ * 	  u2 super_class;
+ * 	  u2 interfaces_count;
+ * 	  u2 interfaces[interfaces_count];
+ *  	u2 fields_count;
+ * 	  field_info fields[fields_count];
+ * 	  u2 methods_count;
+ * 	  method_info methods[methods_count];
+ *    u2 attributes_count;
+ *    attribute_info attributes[attributes_count];
  * }
- * }}}
+ * </pre>
  *
  * For details see the JVM Specification: The ClassFile Structure.
  *
@@ -194,7 +194,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     /**
      * Reads in a class file.
      *
-     * @param create a function that is intended to create a new `InputStream` and
+     * @param create A function that creates a new `InputStream` and
      *  which must not return `null`. If you already do have an open input stream
      *  which should not be closed after reading the class file use
      *  `de.tud.cs.st.bat.reader.ClassFileReader.ClassFile(DataInputStream)` instead.
@@ -316,14 +316,14 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      * Template method to read in a Java class file from the given input stream.
      *
      * @param in the DataInputStream from which the class file will be read. The
-     *  stream is not closed by this method.
+     *    stream is not closed by this method.
      */
     def ClassFile(in: DataInputStream): ClassFile = {
         // magic
         require(CLASS_FILE_MAGIC == in.readInt, "No class file.")
 
-        val minor_version = in.readUnsignedShort // minor_version
-        val major_version = in.readUnsignedShort // major_version
+        val minor_version = in.readUnsignedShort
+        val major_version = in.readUnsignedShort
 
         // let's make sure that we support this class file's version
         require(

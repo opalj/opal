@@ -44,13 +44,14 @@ import java.io.DataInputStream
  * The SourceDebugExtension attribute is an optional attribute in the
  * attributes table of a ClassFile structure.
  *
- * {{{
+ * <pre>
  * SourceDebugExtension_attribute {
  * 	u2 attribute_name_index;
  * 	u4 attribute_length;
  * 	u1 debug_extension[attribute_length];
  * }
- * }}}
+ * </pre>
+ *
  * @author Michael Eichberg
  */
 trait SourceDebugExtension_attributeReader extends AttributeReader {

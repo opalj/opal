@@ -46,7 +46,7 @@ import reflect.ClassTag
  * attributes table of a ClassFile structure. The BootstrapMethods attribute
  * records bootstrap method specifiers referenced by invokedynamic instructions.
  *
- * {{{
+ * <pre>
  * BootstrapMethods_attribute {
  *  u2 attribute_name_index;
  *  u4 attribute_length;
@@ -56,7 +56,7 @@ import reflect.ClassTag
  *      u2 bootstrap_arguments[num_bootstrap_arguments];
  *  } bootstrap_methods[num_bootstrap_methods];
  * }
- * }}}
+ * </pre>
  *
  * @author Michael Eichberg
  */

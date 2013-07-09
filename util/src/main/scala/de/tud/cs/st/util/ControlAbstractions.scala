@@ -41,22 +41,26 @@ import reflect.api.Trees
 
 import java.io.InputStream
 
+/**
+ * Defines generally useful control abstractions.
+ *
+ * @author Michael Eichberg
+ */
 object ControlAbstractions {
 
     /**
-      * This function takes care of the correct handling of input streams.
-      * The function takes a function <code>f</code> that creates a new <code>InputStream</code> (f is a
-      * named parameter) and a function <code>r</code> that processes an input stream. When `r` has
-      * finished processing the input stream, the stream is closed.
-      * If f should return <code>null</code>, <code>null</code> is passed to r.
-      */
-    @throws
+     * This function takes care of the correct handling of input streams.
+     * The function takes a function <code>f</code> that creates a new <code>InputStream</code> (f is a
+     * named parameter) and a function <code>r</code> that processes an input stream. When `r` has
+     * finished processing the input stream, the stream is closed.
+     * If f should return <code>null</code>, <code>null</code> is passed to r.
+     */
+    @throws[java.io.IOException]
     def process[I <: InputStream, T](f: ⇒ I)(r: I ⇒ T): T = {
         val in = f
         try {
             r(in)
-        }
-        finally {
+        } finally {
             if (in != null) in.close
         }
     }
@@ -64,8 +68,7 @@ object ControlAbstractions {
     def withResource[I <: java.io.Closeable, O](r: ⇒ I)(f: I ⇒ O): O = {
         try {
             f(r)
-        }
-        finally {
+        } finally {
             r.close
         }
     }
@@ -81,23 +84,23 @@ object ControlAbstractions {
     }
 
     /**
-      * Evaluates the given expression `f` with type `T` the given number of `times` and stores the
-      * result in an `IndexedSeq[T]`.
-      *
-      * ==Example Usage==
-      * {{{
-      * val result = repeat(15) {
-      *    System.in.read()
-      * }
-      * }}}
-      *
-      * @param times The number of times the expression `f` is evaluated. This expression is evaluated
-      *     exactly once.
-      * @param f An expression that is evaluated the given number of times unless an exception is
-      *     thrown. Hence, even though f is not a by-name parameter, it behaves in the same way.
-      * @return The result of the evaluation of the expression `f` the given number of times. If `times` is
-      *     zero an empty sequence is returned.
-      */
+     * Evaluates the given expression `f` with type `T` the given number of `times` and stores the
+     * result in an `IndexedSeq[T]`.
+     *
+     * ==Example Usage==
+     * {{{
+     * val result = repeat(15) {
+     *    System.in.read()
+     * }
+     * }}}
+     *
+     * @param times The number of times the expression `f` is evaluated. This expression is evaluated
+     *     exactly once.
+     * @param f An expression that is evaluated the given number of times unless an exception is
+     *     thrown. Hence, even though f is not a by-name parameter, it behaves in the same way.
+     * @return The result of the evaluation of the expression `f` the given number of times. If `times` is
+     *     zero an empty sequence is returned.
+     */
     def repeat[T](times: Int)(f: T): IndexedSeq[T] = macro ControlAbstractionsImplementation.repeat[T]
     // OLD IMPLEMENTATION USING HIGHER-ORDER FUNCTIONS
     // (DO NOT DELETE - TO DOCUMENT THE DESIGN DECISION FOR MACROS)
@@ -123,10 +126,9 @@ object ControlAbstractionsImplementation {
 
         reify {
             val size = times.splice // we must not evaluate the expression more than once!
-            if (size == 0) { // TODO [Performance] does this test increase the performance?
+            if (size == 0) {
                 IndexedSeq.empty
-            }
-            else {
+            } else {
                 val array = new scala.collection.mutable.ArrayBuffer[T](size)
                 var i = 0
                 while (i < size) {

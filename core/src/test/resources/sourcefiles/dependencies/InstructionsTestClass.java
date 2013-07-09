@@ -77,7 +77,5 @@ public class InstructionsTestClass {
 
 		// INVOKEVIRTUAL
 		obj.equals(stream);
-
-		// TODO [Java 7] add test for INVOKEDYNAMIC
 	}
 }

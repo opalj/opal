@@ -37,20 +37,20 @@ package reader
 import java.io.DataInputStream
 
 /**
- * Implements the template method to read a signature attribute.
+ * Implements the template method to read signature attributes.
  *
  * '''From the Specification'''
  *
  * The Signature attribute is an optional fixed-length attribute in the
  * attributes table of a ClassFile, field_info or method_info structure.
  *
- * {{{
- *  Signature_attribute {
- *             u2 attribute_name_index;
- *             u4 attribute_length;
- *             u2 signature_index;
- *  }
- * }}}
+ * <pre>
+ * Signature_attribute {
+ *    u2 attribute_name_index;
+ *    u4 attribute_length;
+ *    u2 signature_index;
+ * }
+ * </pre>
  * @author Michael Eichberg
  */
 trait Signature_attributeReader extends AttributeReader {
