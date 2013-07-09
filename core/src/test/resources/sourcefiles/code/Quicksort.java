@@ -54,7 +54,7 @@ public class Quicksort {
 
     private static void exch(double[] a, int i, int j) {
 
-        // TODO Needs to be implemented
+        // Not needed
 
     }
 
