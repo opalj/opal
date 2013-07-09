@@ -113,15 +113,15 @@ trait VerificationTypeInfoReader extends Constant_PoolAbstractions {
 }
 
 object VerificationTypeInfoItem extends Enumeration {
-    val ITEM_Top = Value(0)
-    val ITEM_Integer = Value(1)
-    val ITEM_Float = Value(2)
-    val ITEM_Long = Value(4)
-    val ITEM_Double = Value(3)
-    val ITEM_Null = Value(5)
-    val ITEM_UninitializedThis = Value(6)
-    val ITEM_Object = Value(7)
-    val ITEM_Unitialized = Value(8)
+    final val ITEM_Top = Value(0)
+    final val ITEM_Integer = Value(1)
+    final val ITEM_Float = Value(2)
+    final val ITEM_Long = Value(4)
+    final val ITEM_Double = Value(3)
+    final val ITEM_Null = Value(5)
+    final val ITEM_UninitializedThis = Value(6)
+    final val ITEM_Object = Value(7)
+    final val ITEM_Unitialized = Value(8)
 }
 
 
