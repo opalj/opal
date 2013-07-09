@@ -60,8 +60,6 @@ trait RuntimeVisibleAnnotations_attributeReader extends AttributeReader {
                                             annotations: Annotations)(
                                                 implicit constant_pool: Constant_Pool): RuntimeVisibleAnnotations_attribute
 
-    import util.ControlAbstractions.repeat
-
     register(
         RuntimeVisibleAnnotations_attributeReader.ATTRIBUTE_NAME ->
             ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {

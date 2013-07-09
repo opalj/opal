@@ -70,8 +70,6 @@ trait RuntimeInvisibleParameterAnnotations_attributeReader extends AttributeRead
                                                                  parameter_annotations: ParameterAnnotations)(
                                                                      implicit constant_pool: Constant_Pool): RuntimeInvisibleParameterAnnotations_attribute
 
-    import util.ControlAbstractions.repeat
-
     register(
         RuntimeInvisibleParameterAnnotations_attributeReader.ATTRIBUTE_NAME ->
             ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
