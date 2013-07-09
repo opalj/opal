@@ -80,6 +80,7 @@ trait LocalVariableTable_attributeReader extends AttributeReader {
     //
     // IMPLEMENTATION
     //
+    import util.ControlAbstractions.repeat
 
     type LocalVariables = IndexedSeq[LocalVariableTableEntry]
 
@@ -92,19 +93,16 @@ trait LocalVariableTable_attributeReader extends AttributeReader {
                     attribute_length,
                     {
                         val entriesCount = in.readUnsignedShort
-                        val entries = new Array[LocalVariableTableEntry](entriesCount)
-                        var i = 0
-                        while (i < entriesCount) {
-                            entries(i) = LocalVariableTableEntry(
+                        repeat(entriesCount) {
+                            LocalVariableTableEntry(
                                 in.readUnsignedShort,
                                 in.readUnsignedShort,
                                 in.readUnsignedShort,
                                 in.readUnsignedShort,
                                 in.readUnsignedShort
                             )(cp)
-                            i += 1
                         }
-                        entries
+
                     }
                 )(cp)
             }

@@ -117,13 +117,9 @@ trait AttributesReader
     }
 
     def Attributes(ap: AttributeParent, cp: Constant_Pool, in: DataInputStream): Attributes = {
-        val attributes_count = in.readUnsignedShort
-        if (attributes_count == 0)
-            Nil
-        else
-            repeat(attributes_count) {
-                Attribute(ap, cp, in)
-            } filter (_ != null) // We remove the attributes we do not understand or which we do not need.
+        repeat(in.readUnsignedShort) {
+            Attribute(ap, cp, in)
+        } filter (_ != null) // We remove the attributes we do not understand or which we do not need.
     }
 
     def Attribute(ap: AttributeParent, cp: Constant_Pool, in: DataInputStream): Attribute = {

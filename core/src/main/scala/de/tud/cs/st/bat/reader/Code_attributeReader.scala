@@ -46,7 +46,7 @@ import reflect.ClassTag
  * of a method_info structure.
  *
  * Format
- * {{{
+ * <pre>
  * Code_attribute {
  * 	u2 attribute_name_index; u4 attribute_length;
  * 	u2 max_stack;
@@ -62,7 +62,8 @@ import reflect.ClassTag
  * 	u2 attributes_count;
  * 	attribute_info attributes[attributes_count];
  * }
- * }}}
+ * </pre>
+ *
  * @author Michael Eichberg
  */
 trait Code_attributeReader extends AttributeReader {
@@ -102,8 +103,6 @@ trait Code_attributeReader extends AttributeReader {
 
     type ExceptionHandlers = IndexedSeq[ExceptionTableEntry]
 
-    private val EMPTY_EXCEPTION_TABLE: ExceptionHandlers = Vector.empty
-
     register(
         Code_attributeReader.ATTRIBUTE_NAME ->
             ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
@@ -113,22 +112,15 @@ trait Code_attributeReader extends AttributeReader {
                     in.readUnsignedShort(),
                     in.readUnsignedShort(),
                     Instructions(in, cp),
-                    {
-                        val exception_table_length = in.readUnsignedShort()
-                        if (exception_table_length == 0)
-                            EMPTY_EXCEPTION_TABLE
-                        else
-                            repeat(exception_table_length) { // "exception_table_length" times
-                                ExceptionTableEntry(
-                                    in.readUnsignedShort, in.readUnsignedShort,
-                                    in.readUnsignedShort, in.readUnsignedShort
-                                )(cp)
-                            }
+                    repeat(in.readUnsignedShort()) { // "exception_table_length" times
+                        ExceptionTableEntry(
+                            in.readUnsignedShort, in.readUnsignedShort,
+                            in.readUnsignedShort, in.readUnsignedShort
+                        )(cp)
                     },
                     Attributes(AttributesParent.Code, cp, in)
                 )(cp)
-            }
-            )
+            })
     )
 }
 

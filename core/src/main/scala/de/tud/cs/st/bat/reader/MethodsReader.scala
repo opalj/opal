@@ -74,13 +74,9 @@ trait MethodsReader extends Constant_PoolAbstractions {
 
     def Methods(in: DataInputStream, cp: Constant_Pool): Methods = {
         val methods_count = in.readUnsignedShort
-
-        if (methods_count == 0)
-            IndexedSeq.empty
-        else
-            repeat(methods_count) {
-                Method_Info(in, cp)
-            }
+        repeat(methods_count) {
+            Method_Info(in, cp)
+        }
     }
 
     private def Method_Info(in: DataInputStream, cp: Constant_Pool): Method_Info = {

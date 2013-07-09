@@ -62,12 +62,8 @@ trait InterfacesReader extends Constant_PoolAbstractions {
 
     type Interfaces = IndexedSeq[Interface]
 
-    private val NO_INTERFACES: Interfaces = Vector.empty
-
     def Interfaces(in: DataInputStream, cp: Constant_Pool): Interfaces = {
         val interfaces_count = in.readUnsignedShort
-        if (interfaces_count == 0) return NO_INTERFACES
-
         repeat(interfaces_count) {
             Interface(in.readUnsignedShort)(cp)
         }

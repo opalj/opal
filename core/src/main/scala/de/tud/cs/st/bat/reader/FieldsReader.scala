@@ -69,13 +69,9 @@ trait FieldsReader extends Constant_PoolAbstractions {
 
     type Fields = IndexedSeq[Field_Info]
 
-    private val NO_FIELDS = Vector.empty
-
     // We need the constant pool to look up the attributes' names and other information.
     def Fields(in: DataInputStream, cp: Constant_Pool): Fields = {
         val fields_count = in.readUnsignedShort
-        if (fields_count == 0) return NO_FIELDS
-
         repeat(fields_count) {
             Field_Info(in, cp)
         }

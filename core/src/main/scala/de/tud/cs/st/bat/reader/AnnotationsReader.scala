@@ -78,25 +78,14 @@ trait AnnotationsReader extends Constant_PoolAbstractions {
     // IMPLEMENTATION
     //
 
+    import util.ControlAbstractions.repeat
+
     type Annotations = IndexedSeq[Annotation]
 
     def Annotations(in: DataInputStream, cp: Constant_Pool): Annotations = {
-
-        //repeat(in.readUnsignedShort) {
-        //	Annotation(in,cp)
-        //}
-        //The code given below (Scala 2.8) is much faster than the code seen above,
-        //if we have a loop with few repetitions.
-        // TODO [Repeat Macro] Simplify the code when we have a "repeat" macro!
-
-        val count = in.readUnsignedShort
-        val annotations = new Array[Annotation](count)
-        var i = 0
-        while (i < count) {
-            annotations(i) = Annotation(in, cp)
-            i += 1
+        repeat(in.readUnsignedShort) {
+            Annotation(in, cp)
         }
-        annotations
     }
 
     def Annotation(in: DataInputStream, cp: Constant_Pool): Annotation = {
