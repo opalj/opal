@@ -80,7 +80,27 @@ object ControlAbstractions {
         array
     }
 
+    /**
+      * Evaluates the given expression `f` with type `T` the given number of `times` and stores the
+      * result in an `IndexedSeq[T]`.
+      *
+      * ==Example Usage==
+      * {{{
+      * val result = repeat(15) {
+      *    System.in.read()
+      * }
+      * }}}
+      *
+      * @param times The number of times the expression `f` is evaluated. This expression is evaluated
+      *     exactly once.
+      * @param f An expression that is evaluated the given number of times unless an exception is
+      *     thrown. Hence, even though f is not a by-name parameter, it behaves in the same way.
+      * @return The result of the evaluation of the expression `f` the given number of times. If `times` is
+      *     zero an empty sequence is returned.
+      */
+    def repeat[T](times: Int)(f: T): IndexedSeq[T] = macro ControlAbstractionsImplementation.repeat[T]
     // OLD IMPLEMENTATION USING HIGHER-ORDER FUNCTIONS
+    // (DO NOT DELETE - TO DOCUMENT THE DESIGN DECISION FOR MACROS)
     //        def repeat[T](times: Int)(f: ⇒ T): IndexedSeq[T] = {
     //            val array = new scala.collection.mutable.ArrayBuffer[T](times)
     //            var i = 0
@@ -90,21 +110,10 @@ object ControlAbstractions {
     //            }
     //            array
     //        }
-    // The following macros-based implementation has proven to be approx. 1,3-1,4 times faster when
-    // the number of times that we repeat an operation is small.
+    // The macro-based implementation has proven to be approx. 1,3 to 1,4 times faster when
+    // the number of times that we repeat an operation (5 to 15 times) is small (which is generally the case
+    // when we read in Java class files)
 
-    /**
-      * Evaluates the given expression `f` the given number of `times` and stores the
-      * result in an `IndexedSeq`.
-      *
-      * ==Example Usage==
-      * {{{
-      * val result = repeat(15) {
-      *    System.in.read()
-      * }
-      * }}}
-      */
-    def repeat[T](times: Int)(f: T): IndexedSeq[T] = macro ControlAbstractionsImplementation.repeat[T]
 }
 
 object ControlAbstractionsImplementation {
@@ -114,14 +123,19 @@ object ControlAbstractionsImplementation {
 
         reify {
             val size = times.splice // we must not evaluate the expression more than once!
-            val array = new scala.collection.mutable.ArrayBuffer[T](size)
-            var i = 0
-            while (i < size) {
-                val value = f.splice // we evaluate the expression the given number of times
-                array += value
-                i += 1
+            if (size == 0) { // TODO [Performance] does this test increase the performance?
+                IndexedSeq.empty
             }
-            array
+            else {
+                val array = new scala.collection.mutable.ArrayBuffer[T](size)
+                var i = 0
+                while (i < size) {
+                    val value = f.splice // we evaluate the expression the given number of times
+                    array += value
+                    i += 1
+                }
+                array
+            }
         }
     }
 }
