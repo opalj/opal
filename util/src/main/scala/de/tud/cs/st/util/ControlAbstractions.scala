@@ -33,31 +33,30 @@
 package de.tud.cs.st
 package util
 
-import java.io.InputStream
+import language.experimental.macros
 
 import reflect.ClassTag
-import collection.mutable.WrappedArray
+import reflect.macros.Context
+import reflect.api.Trees
 
-/**
- * Implementation of some control abstractions.
- *
- * @author Michael Eichberg
- */
+import java.io.InputStream
+
 object ControlAbstractions {
 
     /**
-     * This function takes care of the correct handling of input streams.
-     * The function takes a function <code>f</code> that creates a new <code>InputStream</code> (f is a
-     * named parameter) and a function <code>r</code> that processes an input stream. When `r` has
-     * finished processing the input stream, the stream is closed.
-     * If f should return <code>null</code>, <code>null</code> is passed to r.
-     */
+      * This function takes care of the correct handling of input streams.
+      * The function takes a function <code>f</code> that creates a new <code>InputStream</code> (f is a
+      * named parameter) and a function <code>r</code> that processes an input stream. When `r` has
+      * finished processing the input stream, the stream is closed.
+      * If f should return <code>null</code>, <code>null</code> is passed to r.
+      */
     @throws
     def process[I <: InputStream, T](f: ⇒ I)(r: I ⇒ T): T = {
         val in = f
         try {
             r(in)
-        } finally {
+        }
+        finally {
             if (in != null) in.close
         }
     }
@@ -65,19 +64,65 @@ object ControlAbstractions {
     def withResource[I <: java.io.Closeable, O](r: ⇒ I)(f: I ⇒ O): O = {
         try {
             f(r)
-        } finally {
+        }
+        finally {
             r.close
         }
     }
 
-    def repeat[T: ClassTag](times: Int)(f: ⇒ T): IndexedSeq[T] = {
+    def repeatToArray[T: ClassTag](times: Int)(f: ⇒ T): Array[T] = {
         val array = new Array[T](times)
         var i = 0
         while (i < times) {
             array(i) = f
             i += 1
         }
-        WrappedArray.make[T](array)
+        array
     }
 
+    // OLD IMPLEMENTATION USING HIGHER-ORDER FUNCTIONS
+    //        def repeat[T](times: Int)(f: ⇒ T): IndexedSeq[T] = {
+    //            val array = new scala.collection.mutable.ArrayBuffer[T](times)
+    //            var i = 0
+    //            while (i < times) {
+    //                array += f
+    //                i += 1
+    //            }
+    //            array
+    //        }
+    // The following macros-based implementation has proven to be approx. 1,3-1,4 times faster when
+    // the number of times that we repeat an operation is small.
+
+    /**
+      * Evaluates the given expression `f` the given number of `times` and stores the
+      * result in an `IndexedSeq`.
+      *
+      * ==Example Usage==
+      * {{{
+      * val result = repeat(15) {
+      *    System.in.read()
+      * }
+      * }}}
+      */
+    def repeat[T](times: Int)(f: T): IndexedSeq[T] = macro ControlAbstractionsImplementation.repeat[T]
 }
+
+object ControlAbstractionsImplementation {
+
+    def repeat[T: c.WeakTypeTag](c: Context)(times: c.Expr[Int])(f: c.Expr[T]): c.Expr[IndexedSeq[T]] = {
+        import c.universe._
+
+        reify {
+            val size = times.splice // we must not evaluate the expression more than once!
+            val array = new scala.collection.mutable.ArrayBuffer[T](size)
+            var i = 0
+            while (i < size) {
+                val value = f.splice // we evaluate the expression the given number of times
+                array += value
+                i += 1
+            }
+            array
+        }
+    }
+}
+
