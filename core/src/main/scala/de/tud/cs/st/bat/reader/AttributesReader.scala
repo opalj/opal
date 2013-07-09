@@ -51,9 +51,9 @@ trait AttributesReader
     // ABSTRACT DEFINITIONS
     //
 
-    type Constant_Pool_Entry
+    type Constant_Pool_Entry <: ConstantPoolEntry
 
-    type CONSTANT_Utf8_info <: Constant_Pool_Entry with ConstantPoolValueAsString
+    type CONSTANT_Utf8_info <: Constant_Pool_Entry
 
     override type Constant_Pool = Array[Constant_Pool_Entry]
 

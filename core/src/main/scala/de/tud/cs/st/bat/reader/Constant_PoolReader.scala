@@ -48,7 +48,7 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
     //
     // ABSTRACT DEFINITIONS
     //
-    type Constant_Pool_Entry
+    type Constant_Pool_Entry <: ConstantPoolEntry
     implicit val Constant_Pool_EntryManifest: ClassTag[Constant_Pool_Entry]
 
     type CONSTANT_Class_info <: Constant_Pool_Entry
@@ -61,8 +61,7 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
     type CONSTANT_Long_info <: Constant_Pool_Entry
     type CONSTANT_Double_info <: Constant_Pool_Entry
     type CONSTANT_NameAndType_info <: Constant_Pool_Entry
-    type CONSTANT_Utf8_info <: Constant_Pool_Entry with ConstantPoolValueAsString
-    // JAVA 7 Constant Pool Entries
+    type CONSTANT_Utf8_info <: Constant_Pool_Entry
     type CONSTANT_MethodHandle_info <: Constant_Pool_Entry
     type CONSTANT_MethodType_info <: Constant_Pool_Entry
     type CONSTANT_InvokeDynamic_info <: Constant_Pool_Entry

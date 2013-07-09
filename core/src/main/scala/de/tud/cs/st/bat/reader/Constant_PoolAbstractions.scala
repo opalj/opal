@@ -47,3 +47,6 @@ trait Constant_PoolAbstractions {
 
 }
 
+trait ConstantPoolEntry {
+    def asString: String
+}

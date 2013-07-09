@@ -30,7 +30,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st.bat
+package de.tud.cs.st
+package bat
 package resolved
 package reader
 
@@ -55,7 +56,7 @@ trait ConstantPoolBinding extends Constant_PoolReader {
     implicit def cpIndexTocpEntry(index: Constant_Pool_Index)(implicit cp: Constant_Pool): Constant_Pool_Entry =
         cp(index)
 
-    trait Constant_Pool_Entry {
+    trait Constant_Pool_Entry extends bat.reader.ConstantPoolEntry {
         def asString: String = BATError("conversion to string is not supported")
         def asFieldType: FieldType = BATError("conversion to field type is not supported")
         def asMethodDescriptor: MethodDescriptor = BATError("conversion to method descriptor is not supported")
@@ -118,7 +119,9 @@ trait ConstantPoolBinding extends Constant_PoolReader {
         override def asConstantValue(implicit cp: Constant_Pool) = value
     }
 
-    case class CONSTANT_Utf8_info(value: String) extends Constant_Pool_Entry with ConstantPoolValueAsString {
+    case class CONSTANT_Utf8_info(
+        value: String)
+            extends Constant_Pool_Entry {
 
         override def asString = value
 
