@@ -12,3 +12,5 @@ bin
 *.ipr
 *.iws
 .idea
+.worksheet
+*.sc
