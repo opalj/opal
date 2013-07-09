@@ -45,7 +45,7 @@ package bat
  *
  * @author Michael Eichberg
  */
-final class AccessFlagsIterator(
+class AccessFlagsIterator(
     accessFlags: Int,
     ctx: AccessFlagsContext)
         extends Iterator[AccessFlag] {
