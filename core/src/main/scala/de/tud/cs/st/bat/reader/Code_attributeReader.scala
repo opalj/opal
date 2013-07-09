@@ -78,7 +78,7 @@ trait Code_attributeReader extends AttributeReader {
 
     def Instructions(in: DataInputStream, cp: Constant_Pool): Instructions
 
-    protected def Attributes(ap: AttributesParent, cp: Constant_Pool, in: DataInputStream): Attributes
+    protected def Attributes(ap: AttributeParent, cp: Constant_Pool, in: DataInputStream): Attributes
 
     def Code_attribute(attribute_name_index: Constant_Pool_Index,
                        attribute_length: Int,

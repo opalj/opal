@@ -167,7 +167,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      * RuntimeInvisibleAnnotations, and BootstrapMethods attributes.
      */
     protected def Attributes(
-        ap: AttributesParent,
+        ap: AttributeParent,
         cp: Constant_Pool,
         in: DataInputStream): Attributes
 

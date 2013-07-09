@@ -53,7 +53,7 @@ trait FieldsReader extends Constant_PoolAbstractions {
 
     type Attributes
 
-    protected def Attributes(ap: AttributesParent, cp: Constant_Pool, in: DataInputStream): Attributes
+    protected def Attributes(ap: AttributeParent, cp: Constant_Pool, in: DataInputStream): Attributes
 
     def Field_Info(access_flags: Int,
                    name_index: Constant_Pool_Index,

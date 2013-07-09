@@ -53,8 +53,6 @@ package object bat {
 
     type AttributeParent = AttributesParent.Value
 
-    type AttributesParent = AttributesParent.Value
-
     type ConstantPoolTag = ConstantPoolTags.Value
 
     final val CLASS_FILE_MAGIC = 0xCAFEBABE

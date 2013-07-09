@@ -116,7 +116,7 @@ trait AttributesReader
         attributeReaders += r
     }
 
-    def Attributes(ap: AttributesParent, cp: Constant_Pool, in: DataInputStream): Attributes = {
+    def Attributes(ap: AttributeParent, cp: Constant_Pool, in: DataInputStream): Attributes = {
         val attributes_count = in.readUnsignedShort
         if (attributes_count == 0)
             Nil
@@ -128,7 +128,7 @@ trait AttributesReader
 
     def Attribute(ap: AttributeParent, cp: Constant_Pool, in: DataInputStream): Attribute = {
         val attribute_name_index = in.readUnsignedShort()
-        val attribute_name = (cp(attribute_name_index).asInstanceOf[CONSTANT_Utf8_info]).value
+        val attribute_name = cp(attribute_name_index).asString
 
         attributeReaders.getOrElse(
             attribute_name,

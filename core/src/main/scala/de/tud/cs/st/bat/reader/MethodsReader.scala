@@ -51,7 +51,7 @@ trait MethodsReader extends Constant_PoolAbstractions {
 
     type Attributes
 
-    protected def Attributes(ap: AttributesParent,
+    protected def Attributes(ap: AttributeParent,
                              cp: Constant_Pool,
                              in: DataInputStream): Attributes
 
