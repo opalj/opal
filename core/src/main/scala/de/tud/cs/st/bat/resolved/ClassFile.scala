@@ -39,19 +39,30 @@ package resolved
  *
  * @param minorVersion The minor part of this class file's version number.
  * @param majorVersion The major part of this class file's version number.
- * @param accessFlags This class' access flags. To further analyze the access flags
+ * @param accessFlags The access flags of this class. To further analyze the access flags
  *  either use the corresponding convenience methods (e.g., isEnumDeclaration())
  *  or the class [[de.tud.cs.st.bat.AccessFlagsIterator]] or the classes which
  *  inherit from [[de.tud.cs.st.bat.AccessFlag]].
  * @param thisClass The type implemented by this class file.
  * @param superClass The class from which this class inherits. None, if this
- * 	class file represents java.lang.Object.
+ * 	class file represents `java.lang.Object`.
  * @param interfaces The set of implemented interfaces. May be empty.
  * @param fields The set of declared fields. May be empty.
  * @param methods The set of declared methods. May be empty.
  * @param attributes This class file's reified attributes. Which attributes
- *  are reified depends on the configuration of the class file reader; e.g.,
- *  [[de.tud.cs.st.bat.resolved.reader.Java7Framework]].
+ *    are reified depends on the configuration of the class file reader; e.g.,
+ *    [[de.tud.cs.st.bat.resolved.reader.Java7Framework]]. The JVM specification defines the following
+ *    attributes:
+ *    * InnerClasses
+ *    * EnclosingMethod
+ *    * Synthetic
+ *    * Signature
+ *    * SourceFile
+ *    * SourceDebugExtension
+ *    * Deprecated
+ *    * RuntimeVisibleAnnotations
+ *    * RuntimeInvisibleAnnotations
+ *    * BootstrapMethods
  *
  * @author Michael Eichberg
  */
@@ -65,7 +76,8 @@ case class ClassFile(
     fields: Fields,
     methods: Methods,
     attributes: Attributes)
-        extends CommonAttributes with SourceElement {
+        extends CommonAttributes
+        with SourceElement {
 
     import ClassFile._
 
@@ -94,8 +106,6 @@ case class ClassFile(
 
     def innerClasses: Option[InnerClasses] =
         attributes collectFirst { case InnerClassTable(ice) ⇒ ice }
-
-    // TODO should we get rid of constant value attributes... they are resolved?
 
     // TODO [Java 7] should we keep it or should we completely resolve and remove it???
     lazy val bootstrapMethods: Option[BootstrapMethods] =
@@ -127,19 +137,30 @@ case class ClassFile(
     def sourceDebugExtension: Option[String] = attributes collectFirst { case SourceDebugExtension(s) ⇒ s }
 
     /**
-     * All constructors/instance initialization methods defined by this class. (This does not include static initializers.)
+     * All constructors/instance initialization methods defined by this class.
+     *
+     * (This does not include static initializers.)
      */
     def constructors: Seq[Method] = methods.view.filter(_.name == "<init>")
 
-    def staticInitializer: Option[Method] =
+    /**
+     * The static initializer of this class.
+     *
+     * ==Note==
+     * The way which method is identified as the static initializer has changed with Java 7.
+     * In a class file whose version number is 51.0 or above, the method must have its ACC_STATIC flag set.
+     * Other methods named <clinit> in a class file are of no consequence.
+     */
+    def staticInitializer: Option[Method] = {
         methods.collectFirst({
-            case method @ Method(_, "<clinit>", MethodDescriptor(Seq(), VoidType), _) ⇒ method
+            case m @ Method(accessFlags, "<clinit>", MethodDescriptor(Seq(), VoidType), _) if majorVersion < 51 || m.isStatic ⇒ m
         })
+    }
 }
 
 object ClassFile {
 
-    private val classCategoryMask: Int = ACC_INTERFACE.mask | ACC_ANNOTATION.mask | ACC_ENUM.mask
+    val classCategoryMask: Int = ACC_INTERFACE.mask | ACC_ANNOTATION.mask | ACC_ENUM.mask
 
-    private val annotationMask: Int = ACC_INTERFACE.mask | ACC_ANNOTATION.mask
+    val annotationMask: Int = ACC_INTERFACE.mask | ACC_ANNOTATION.mask
 }

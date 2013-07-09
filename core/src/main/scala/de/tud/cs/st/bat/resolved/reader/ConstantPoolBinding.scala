@@ -104,12 +104,17 @@ trait ConstantPoolBinding extends Constant_PoolReader {
     }
 
     case class CONSTANT_Integer_info(value: ConstantInteger) extends ConstantValueBootstrapArgument {
+
         def this(value: Int) { this(ConstantInteger(value)) }
+
         override def asConstantValue(implicit cp: Constant_Pool) = value
+
     }
 
     case class CONSTANT_Long_info(value: ConstantLong) extends ConstantValueBootstrapArgument {
+
         def this(value: Long) { this(ConstantLong(value)) }
+
         override def asConstantValue(implicit cp: Constant_Pool) = value
     }
 
@@ -211,11 +216,11 @@ trait ConstantPoolBinding extends Constant_PoolReader {
     }
 
     case class CONSTANT_MethodHandle_info(
-        val referenceKind: Int,
-        val referenceIndex: Constant_Pool_Index)
+        referenceKind: Int,
+        referenceIndex: Constant_Pool_Index)
             extends Constant_Pool_Entry {
 
-        override def asBootstrapArgument(implicit cp: Constant_Pool): BootstrapArgument = sys.error("conversion to bootstrap argument is not supported")
+        override def asBootstrapArgument(implicit cp: Constant_Pool): BootstrapArgument = asMethodHandle
 
         override def asMethodHandle(implicit cp: Constant_Pool): MethodHandle = {
             (this.referenceKind: @scala.annotation.switch) match {
@@ -264,7 +269,7 @@ trait ConstantPoolBinding extends Constant_PoolReader {
     }
 
     case class CONSTANT_MethodType_info(
-        val descriptorIndex: Constant_Pool_Index)
+        descriptorIndex: Constant_Pool_Index)
             extends Constant_Pool_Entry {
 
         def methodDescriptor(implicit cp: Constant_Pool): MethodDescriptor =

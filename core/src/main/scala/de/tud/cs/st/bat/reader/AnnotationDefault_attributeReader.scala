@@ -30,12 +30,11 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st.bat
+package de.tud.cs.st
+package bat
 package reader
 
 import java.io.DataInputStream
-
-import de.tud.cs.st.util.ControlAbstractions.repeat
 
 /**
  * Reads in an annotation default attribute's data and passes it to a factory

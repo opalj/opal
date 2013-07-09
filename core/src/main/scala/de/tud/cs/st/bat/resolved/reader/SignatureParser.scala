@@ -1,36 +1,38 @@
 /* License (BSD Style License):
-*  Copyright (c) 2009, 2011
-*  Software Technology Group
-*  Department of Computer Science
-*  Technische Universität Darmstadt
-*  All rights reserved.
-*
-*  Redistribution and use in source and binary forms, with or without
-*  modification, are permitted provided that the following conditions are met:
-*
-*  - Redistributions of source code must retain the above copyright notice,
-*    this list of conditions and the following disclaimer.
-*  - Redistributions in binary form must reproduce the above copyright notice,
-*    this list of conditions and the following disclaimer in the documentation
-*    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische
-*    Universität Darmstadt nor the names of its contributors may be used to
-*    endorse or promote products derived from this software without specific
-*    prior written permission.
-*
-*  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-*  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-*  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-*  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-*  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-*  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-*  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-*  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-*  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-*  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-*  POSSIBILITY OF SUCH DAMAGE.
-*/
-package de.tud.cs.st.bat.resolved
+ * Copyright (c) 2009 - 2013
+ * Software Technology Group
+ * Department of Computer Science
+ * Technische Universität Darmstadt
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *  - Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *  - Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *  - Neither the name of the Software Technology Group or Technische
+ *    Universität Darmstadt nor the names of its contributors may be used to
+ *    endorse or promote products derived from this software without specific
+ *    prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+package de.tud.cs.st
+package bat
+package resolved
 package reader
 
 import scala.util.parsing.combinator._
@@ -38,23 +40,23 @@ import scala.util.parsing.combinator._
 // TODO [Improvement] consider making the signature parser abstract and use the factory pattern as in the case of all other major structures
 
 /**
-  * Parses Java class file signature strings.
-  *
-  * ==Thread-Safety==
-  * Using this object is thread-safe.
-  */
+ * Parses Java class file signature strings.
+ *
+ * ==Thread-Safety==
+ * Using this object is thread-safe.
+ */
 object SignatureParser {
 
     /**
-      * Parses Java class file signature strings.
-      *
-      * ==Thread-Safety==
-      * As of Scala 2.10 classes that inherit from `(Regex)Parsers` are not thread-safe. However,
-      * the only class that can create instances of a `SignatureParsers` is its companion object and that
-      * one implements the necessary abstractions for thread-safety use of `SignatureParsers`.
-      *
-      * @author Michael Eichberg
-      */
+     * Parses Java class file signature strings.
+     *
+     * ==Thread-Safety==
+     * As of Scala 2.10 classes that inherit from `(Regex)Parsers` are not thread-safe. However,
+     * the only class that can create instances of a `SignatureParsers` is its companion object and that
+     * one implements the necessary abstractions for thread-safety use of `SignatureParsers`.
+     *
+     * @author Michael Eichberg
+     */
     // TODO [Scala 2.11 - Improvement] investigate if Combinator Parsers are now thread-safe; if so the wrapper object which currently implements the necessary logic for thread safety can be removed 
     class SignatureParsers private[SignatureParser] () extends RegexParsers {
 
@@ -115,14 +117,14 @@ object SignatureParser {
             classTypeSignatureParser
 
         /**
-          * '''From the JVM Specification'''
-          *
-          * A class type signature gives complete type information for a class or
-          * interface type. The class type signature must be formulated such that
-          * it can be reliably mapped to the binary name of the class it denotes
-          * by erasing any type arguments and converting each ‘.’ character in
-          * the signature to a ‘$’ character.
-          */
+         * '''From the JVM Specification'''
+         *
+         * A class type signature gives complete type information for a class or
+         * interface type. The class type signature must be formulated such that
+         * it can be reliably mapped to the binary name of the class it denotes
+         * by erasing any type arguments and converting each ‘.’ character in
+         * the signature to a ‘$’ character.
+         */
         protected def classTypeSignatureParser: Parser[ClassTypeSignature] =
             'L' ~>
                 opt(packageSpecifierParser) ~
@@ -189,8 +191,7 @@ object SignatureParser {
                 def apply(in: Input): ParseResult[BaseType] = {
                     if (in.atEnd) {
                         Failure("signature is incomplete, base type identifier expected", in);
-                    }
-                    else {
+                    } else {
                         (in.first: @scala.annotation.switch) match {
                             case 'B' ⇒ Success(ByteType, in.rest)
                             case 'C' ⇒ Success(CharType, in.rest)

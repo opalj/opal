@@ -30,14 +30,13 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat
+package de.tud.cs.st
+package bat
 package reader
 
 import java.io.DataInputStream
 
-import scala.reflect.ClassTag
-
-import de.tud.cs.st.util.ControlAbstractions.repeat
+import reflect.ClassTag
 
 /**
  * Template method to read the (Java 7) BootstrapMethods attribute.
@@ -70,7 +69,7 @@ trait BootstrapMethods_attributeReader extends AttributeReader {
     type BootstrapMethods_attribute <: Attribute
 
     type BootstrapMethod
-    implicit val BootstrapMethodManifest: ClassTag[BootstrapMethod] 
+    implicit val BootstrapMethodManifest: ClassTag[BootstrapMethod]
 
     type BootstrapArgument
     implicit val BootstrapArgumentManifest: ClassTag[BootstrapArgument]
@@ -89,6 +88,8 @@ trait BootstrapMethods_attributeReader extends AttributeReader {
     //
     // IMPLEMENTATION
     //
+
+    import util.ControlAbstractions.repeat
 
     type BootstrapMethods = IndexedSeq[BootstrapMethod]
 

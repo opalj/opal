@@ -34,9 +34,9 @@ package de.tud.cs.st
 package bat
 package reader
 
-import java.io.DataInputStream
-
 import reflect.ClassTag
+
+import java.io.DataInputStream
 
 /**
  *

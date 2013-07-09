@@ -47,9 +47,8 @@ trait CommonAttributes {
     def runtimeVisibleAnnotations: Option[Annotations] =
         attributes collectFirst { case RuntimeVisibleAnnotationTable(vas) ⇒ vas }
 
-    def runtimeInvisibleAnnotations: Option[Annotations] = {
+    def runtimeInvisibleAnnotations: Option[Annotations] =
         attributes collectFirst { case RuntimeInvisibleAnnotationTable(ias) ⇒ ias }
-    }
 
     def isSynthetic: Boolean = attributes contains Synthetic
 

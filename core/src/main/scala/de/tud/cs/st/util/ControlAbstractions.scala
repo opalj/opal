@@ -70,14 +70,22 @@ object ControlAbstractions {
         }
     }
 
-    def repeat[T: ClassTag](times: Int)(f: ⇒ T): IndexedSeq[T] = {
-        val array = new Array[T](times)
+    //    def repeat[T: ClassTag](times: Int)(f: ⇒ T): IndexedSeq[T] = {
+    //        val array = new Array[T](times)
+    //        var i = 0
+    //        while (i < times) {
+    //            array(i) = f
+    //            i += 1
+    //        }
+    //        array
+    //    }
+    def repeat[T](times: Int)(f: ⇒ T): IndexedSeq[T] = {
+        val array = new scala.collection.mutable.ArrayBuffer[T](times)
         var i = 0
         while (i < times) {
-            array(i) = f
+            array += f
             i += 1
         }
-        WrappedArray.make[T](array)
+        array
     }
-
 }

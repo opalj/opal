@@ -30,14 +30,13 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat
+package de.tud.cs.st
+package bat
 package reader
 
+import reflect.ClassTag
+
 import java.io.DataInputStream
-
-import scala.reflect.ClassTag
-
-import de.tud.cs.st.util.ControlAbstractions.repeat
 
 /**
  * <pre>
@@ -50,7 +49,7 @@ import de.tud.cs.st.util.ControlAbstractions.repeat
  *   }  line_number_table[line_number_table_length];
  * }
  * </pre>
- * 
+ *
  * @author Michael Eichberg
  */
 trait LineNumberTable_attributeReader extends AttributeReader {
@@ -70,6 +69,7 @@ trait LineNumberTable_attributeReader extends AttributeReader {
     //
     // IMPLEMENTATION
     //
+    import util.ControlAbstractions.repeat
 
     type LineNumbers = IndexedSeq[LineNumberTableEntry]
 

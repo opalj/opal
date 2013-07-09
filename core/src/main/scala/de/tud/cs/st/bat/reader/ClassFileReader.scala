@@ -34,7 +34,7 @@ package de.tud.cs.st
 package bat
 package reader
 
-import java.io.{ File, InputStream, DataInputStream, BufferedInputStream, ByteArrayInputStream }
+import java.io.{ File, InputStream, DataInputStream, BufferedInputStream }
 import java.util.zip.{ ZipFile, ZipEntry }
 
 /**
@@ -203,19 +203,12 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      *  class file.
      */
     def ClassFile(create: () ⇒ InputStream): ClassFile = {
-        process(create() match {
-            case dis: DataInputStream ⇒ dis
-            case is ⇒ {
-                // TODO needs to be made more robust => use BufferedInputStream instead
-                val data = new Array[Byte](is.available)
-                var bytesRead = 0
-                while (bytesRead < data.length) {
-                    bytesRead = bytesRead + is.read(data, bytesRead, data.length - bytesRead)
-                }
-                if (is.available != 0) throw new RuntimeException("unexpected additional data available")
-                new DataInputStream(new ByteArrayInputStream(data))
+        process(
+            create() match {
+                case dis: DataInputStream ⇒ dis
+                case is                   ⇒ new DataInputStream(new BufferedInputStream(is))
             }
-        }) { ClassFile(_) }
+        ) { ClassFile(_) }
     }
 
     protected[this] def ClassFile(zipFile: ZipFile, zipEntry: ZipEntry): ClassFile = {
@@ -239,13 +232,10 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      * @param zipFileEntryName the name of a class file stored in the specified ZIP/JAR file.
      */
     def ClassFile(zipFile: File, zipFileEntryName: String): ClassFile = {
-        val zf = new ZipFile(zipFile)
-        try {
+        withResource(new ZipFile(zipFile))(zf ⇒ {
             val zipEntry = zf.getEntry(zipFileEntryName)
             ClassFile(zf, zipEntry)
-        } finally {
-            zf.close
-        }
+        })
     }
 
     /**
@@ -280,10 +270,8 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         }
     }
 
-    def ClassFiles(zipFileName: String): Seq[ClassFile] = {
-
+    def ClassFiles(zipFileName: String): Seq[ClassFile] =
         withResource(new ZipFile(zipFileName)) { zf ⇒ ClassFiles(zf) }
-    }
 
     def ClassFiles(file: java.io.File): Seq[ClassFile] = {
         if (!file.exists())
@@ -338,9 +326,10 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         val major_version = in.readUnsignedShort // major_version
 
         // let's make sure that we support this class file's version
-        require(major_version >= 45 && // at least JDK 1.1.
-            (major_version < 51 ||
-                (major_version == 51 && minor_version == 0))) // Java 6 = 50.0; Java 7 == 51.0
+        require(
+            major_version >= 45 && // at least JDK 1.1
+                (major_version < 51 || // Java 6 = 50.0
+                    (major_version == 51 && minor_version == 0))) // Java 7 == 51.0
 
         val cp = Constant_Pool(in)
         val access_flags = in.readUnsignedShort
