@@ -211,7 +211,7 @@ class ClassHierarchy(
      */
     def toGraph: Node = new Node {
 
-        val sourceElementIDs = new SourceElementIDsMap
+        val sourceElementIDs = new SourceElementIDsMap {}
         import sourceElementIDs.{ sourceElementID ⇒ id }
 
         private val nodes: Map[ObjectType, Node] = Map() ++ subclasses.keys.map(t ⇒ {

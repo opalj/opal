@@ -76,12 +76,14 @@ trait CategorizedSourceElementIDs extends SourceElementIDs {
  * the integer value can be used to encode the dependency kind.
  *
  * ==Implementation Note==
- * This class is not thread safe.
+ * This class is thread safe.
  *
  * @author Michael Eichberg
  * @author Thomas Schlosser
  */
-class SourceElementIDsMap extends CategorizedSourceElementIDs {
+trait SourceElementIDsMap extends CategorizedSourceElementIDs {
+
+    import collection.mutable.WeakHashMap
 
     //
     // Associates each type with a unique ID
@@ -89,13 +91,13 @@ class SourceElementIDsMap extends CategorizedSourceElementIDs {
 
     def LOWEST_TYPE_ID: Int = 0
 
-    import scala.collection.mutable.WeakHashMap
+    private[this] var nextTypeID = LOWEST_TYPE_ID;
 
-    private var nextTypeID = LOWEST_TYPE_ID;
+    private[this] val typeIDs = WeakHashMap[Type, Int]()
 
-    private val typeIDs = WeakHashMap[Type, Int]()
-
-    def sourceElementID(t: Type): Int = typeIDs.getOrElseUpdate(t, { val id = nextTypeID; nextTypeID += 1; id })
+    def sourceElementID(t: Type): Int = typeIDs.synchronized {
+        typeIDs.getOrElseUpdate(t, { val id = nextTypeID; nextTypeID += 1; id })
+    }
 
     //
     // Associates each field with a unique ID
@@ -103,14 +105,15 @@ class SourceElementIDsMap extends CategorizedSourceElementIDs {
 
     def LOWEST_FIELD_ID: Int = 1000000
 
-    private var nextFieldID = LOWEST_FIELD_ID
+    private[this] var nextFieldID = LOWEST_FIELD_ID
 
-    private val fieldIDs = WeakHashMap[ObjectType, WeakHashMap[String, Int]]()
+    private[this] val fieldIDs = WeakHashMap[ObjectType, WeakHashMap[String, Int]]()
 
-    def sourceElementID(definingObjectType: ObjectType, fieldName: String): Int =
+    def sourceElementID(definingObjectType: ObjectType, fieldName: String): Int = fieldIDs.synchronized {
         fieldIDs.
             getOrElseUpdate(definingObjectType, { WeakHashMap[String, Int]() }).
             getOrElseUpdate(fieldName, { val id = nextFieldID; nextFieldID += 1; id })
+    }
 
     //
     // Associates each method with a unique ID
@@ -118,18 +121,27 @@ class SourceElementIDsMap extends CategorizedSourceElementIDs {
 
     def LOWEST_METHOD_ID: Int = 5000000
 
-    private var nextMethodID = LOWEST_METHOD_ID
+    private[this] var nextMethodID = LOWEST_METHOD_ID
 
-    private val methodIDs = WeakHashMap[ReferenceType, WeakHashMap[MethodDescriptor, WeakHashMap[String, Int]]]()
+    private[this] val methodIDs = WeakHashMap[ReferenceType, WeakHashMap[MethodDescriptor, WeakHashMap[String, Int]]]()
 
-    def sourceElementID(definingReferenceType: ReferenceType, methodName: String, methodDescriptor: MethodDescriptor): Int = {
+    def sourceElementID(definingReferenceType: ReferenceType,
+                        methodName: String,
+                        methodDescriptor: MethodDescriptor): Int = methodIDs.synchronized {
         methodIDs.
             getOrElseUpdate(definingReferenceType, { WeakHashMap[MethodDescriptor, WeakHashMap[String, Int]]() }).
             getOrElseUpdate(methodDescriptor, { WeakHashMap[String, Int]() }).
             getOrElseUpdate(methodName, { val id = nextMethodID; nextMethodID += 1; id })
     }
 
-    def allSourceElementIDs() = {
-        typeIDs.values ++ fieldIDs.values.flatMap(_.values) ++ methodIDs.values.flatMap(_.values.flatMap(_.values))
-    }
+    def allSourceElementIDs(): Iterable[Int] =
+        typeIDs.synchronized {
+            fieldIDs.synchronized {
+                methodIDs.synchronized {
+                    typeIDs.values ++
+                        fieldIDs.values.flatMap(_.values) ++
+                        methodIDs.values.flatMap(_.values.flatMap(_.values))
+                }
+            }
+        }
 }

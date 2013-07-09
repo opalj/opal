@@ -34,22 +34,24 @@ package de.tud.cs.st.bat
 package dependency
 package checking
 
+import collection.immutable.SortedSet
+
 import resolved._
-import scala.collection.immutable.SortedSet
+import resolved.analyses._
 
 /**
- * A source element matcher determines a set of source elements that matches a given query.
- *
- * @author Michael Eichberg
- */
+  * A source element matcher determines a set of source elements that matches a given query.
+  *
+  * @author Michael Eichberg
+  */
 trait SourceElementsMatcher { left ⇒
 
-    def extension(project: Project): SortedSet[SourceElementID]
+    def extension(project: Project, srcElemIDs: SourceElementIDsMap): SortedSet[SourceElementID]
 
     def and(right: SourceElementsMatcher): SourceElementsMatcher = {
         new SourceElementsMatcher {
-            def extension(project: Project) = {
-                left.extension(project) ++ right.extension(project)
+            def extension(project: Project, srcElemIDs: SourceElementIDsMap) = {
+                left.extension(project, srcElemIDs) ++ right.extension(project, srcElemIDs)
             }
 
             override def toString() = { //
@@ -60,8 +62,8 @@ trait SourceElementsMatcher { left ⇒
 
     def except(right: SourceElementsMatcher): SourceElementsMatcher = {
         new SourceElementsMatcher {
-            def extension(project: Project) = {
-                left.extension(project) -- right.extension(project)
+            def extension(project: Project, srcElemIDs: SourceElementIDsMap) = {
+                left.extension(project, srcElemIDs) -- right.extension(project, srcElemIDs)
             }
 
             override def toString() = { //
@@ -72,33 +74,35 @@ trait SourceElementsMatcher { left ⇒
 }
 
 /**
- * Matches all classes and their members that are declared in the specified package.
- *
- * @param packageName The name of a package in binary notation. (I.e., "/" are used to separate
- * a package name's segments; e.g., "java/lang/Object").
- * @param matchSubpackages If true, all packages that start with the given package name are matched otherwise
- *  only classes declared in the given package are matched.
- *
- * @author Michael Eichberg
- */
-case class PackageNameBasedMatcher(val packageName: String, val matchSubpackages: Boolean = false)
+  * Matches all classes and their members that are declared in the specified package.
+  *
+  * @param packageName The name of a package in binary notation. (I.e., "/" are used to separate
+  * a package name's segments; e.g., "java/lang/Object").
+  * @param matchSubpackages If true, all packages that start with the given package name are matched otherwise
+  *  only classes declared in the given package are matched.
+  *
+  * @author Michael Eichberg
+  */
+case class PackageNameBasedMatcher(
+    packageName: String,
+    matchSubpackages: Boolean = false)
         extends SourceElementsMatcher {
 
     require(packageName.indexOf('*') == -1)
     require(packageName.indexOf('.') == -1)
 
-    def extension(project: Project): SortedSet[SourceElementID] = {
+    def extension(project: Project, srcElemIds: SourceElementIDsMap): SortedSet[SourceElementID] = {
         var sourceElementIDs: SortedSet[SourceElementID] = SortedSet()
-        project.classFiles.values.filter((classFile) ⇒ {
+        project.classFiles.filter((classFile) ⇒ {
             val thisClassPackageName = classFile.thisClass.packageName
             thisClassPackageName.startsWith(packageName) && (
                 matchSubpackages ||
                 thisClassPackageName.length() == packageName.length()
             )
         }).foreach((classFile) ⇒ {
-            sourceElementIDs += project.sourceElementID(classFile)
-            sourceElementIDs ++= classFile.methods.map(project.sourceElementID(classFile, _))
-            sourceElementIDs ++= classFile.fields.map(project.sourceElementID(classFile, _))
+            sourceElementIDs += srcElemIds.sourceElementID(classFile)
+            sourceElementIDs ++= classFile.methods.map(srcElemIds.sourceElementID(classFile, _))
+            sourceElementIDs ++= classFile.fields.map(srcElemIds.sourceElementID(classFile, _))
         })
         sourceElementIDs
     }
@@ -112,23 +116,26 @@ case class PackageNameBasedMatcher(val packageName: String, val matchSubpackages
     }
 }
 
-case class ClassMatcher(val className: String, val matchPrefix: Boolean = false) extends SourceElementsMatcher {
+case class ClassMatcher(
+    className: String,
+    matchPrefix: Boolean = false)
+        extends SourceElementsMatcher {
 
     require(className.indexOf('*') == -1)
     require(className.indexOf('.') == -1)
 
-    def extension(project: Project): SortedSet[SourceElementID] = {
+    def extension(project: Project, srcElemIds: SourceElementIDsMap): SortedSet[SourceElementID] = {
         var sourceElementIDs: SortedSet[SourceElementID] = SortedSet()
-        project.classFiles.values.filter((classFile) ⇒
+        project.classFiles.filter((classFile) ⇒
             {
                 val otherClassName = classFile.thisClass.className
                 otherClassName.startsWith(className) && (
                     matchPrefix ||
                     otherClassName.length == className.length)
             }).foreach((classFile) ⇒ {
-            sourceElementIDs += project.sourceElementID(classFile)
-            sourceElementIDs ++= classFile.methods.map(project.sourceElementID(classFile, _))
-            sourceElementIDs ++= classFile.fields.map(project.sourceElementID(classFile, _))
+            sourceElementIDs += srcElemIds.sourceElementID(classFile)
+            sourceElementIDs ++= classFile.methods.map(srcElemIds.sourceElementID(classFile, _))
+            sourceElementIDs ++= classFile.fields.map(srcElemIds.sourceElementID(classFile, _))
         })
         sourceElementIDs
     }
@@ -137,6 +144,6 @@ case class ClassMatcher(val className: String, val matchPrefix: Boolean = false)
 }
 
 case object NoSourceElementsMatcher extends SourceElementsMatcher {
-    def extension(project: Project): SortedSet[SourceElementID] = SortedSet();
+    def extension(project: Project, srcElemIds: SourceElementIDsMap): SortedSet[SourceElementID] = SortedSet();
 }
 

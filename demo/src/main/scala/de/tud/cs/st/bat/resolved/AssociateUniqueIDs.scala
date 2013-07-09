@@ -38,20 +38,20 @@ import util.debug.PerformanceEvaluation
 import reader.Java7Framework.ClassFiles
 
 /**
- * This snippet shows how to load all class files from a zip file and how to
- * associate all top-level source elements (class,
- * field and method declarations) with unique ids.
- *
- * For more advanced analysis you can use the [[analysis.AnalysisExectuor]] trait
- * as a template.
- *
- * @author Michael Eichberg
- */
+  * This snippet shows how to load all class files from a zip file and how to
+  * associate all top-level source elements (class,
+  * field and method declarations) with unique ids.
+  *
+  * For more advanced analysis you can use the [[analysis.AnalysisExectuor]] trait
+  * as a template.
+  *
+  * @author Michael Eichberg
+  */
 object AssociateUniqueIDs extends PerformanceEvaluation {
 
     import de.tud.cs.st.util.debug._
 
-    val sourceElementIDs = new SourceElementIDsMap
+    val sourceElementIDs = new SourceElementIDsMap {}
 
     import sourceElementIDs.{ sourceElementID ⇒ id }
 

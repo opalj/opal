@@ -37,60 +37,54 @@ package checking
 import resolved._
 import resolved.reader.Java7Framework
 import resolved.analyses.ClassHierarchy
+import resolved.analyses.Project
 
 import scala.collection.immutable.SortedSet
 
 /**
- * A specification of a project's architectural constraints.
- *
- * ===Usage===
- * First define the ensembles, then the rules and at last specify the
- * class files that should be analyzed. The rules will then be automatically
- * evaluated.
- *
- * ===Hints===
- * One ensemble is predefined: [[Specification.empty]] it represents an ensemble that contains no
- * source elements and which can, e.g., be used to specify that no "real" ensemble is allowed
- * to depend on a specific ensemble.
- *
- * @author Michael Eichberg
- */
+  * A specification of a project's architectural constraints.
+  *
+  * ===Usage===
+  * First define the ensembles, then the rules and at last specify the
+  * class files that should be analyzed. The rules will then be automatically
+  * evaluated.
+  *
+  * ===Hints===
+  * One ensemble is predefined: [[Specification.empty]] it represents an ensemble that contains no
+  * source elements and which can, e.g., be used to specify that no "real" ensemble is allowed
+  * to depend on a specific ensemble.
+  *
+  * @author Michael Eichberg
+  */
 class Specification
         extends SourceElementIDsMap
         with ReverseMapping
-        with UseIDOfBaseTypeForArrayTypes
-        with Project {
-
-    private[this] var theClassHierarchy = new ClassHierarchy()
-    override def classHierarchy = theClassHierarchy
-
-    private[this] var theClassFiles = Map[ObjectType, ClassFile]()
-    override def classFiles = theClassFiles
+        with UseIDOfBaseTypeForArrayTypes {
 
     private[this] var theEnsembles = Map[Symbol, (SourceElementsMatcher, SortedSet[SourceElementID])]()
     /**
-     * The set of defined ensembles. An ensemble is identified by a symbol, a query which matches source
-     * elements and the project's source elements that are matched. The latter is available only after
-     * analyze was called.
-     */
+      * The set of defined ensembles. An ensemble is identified by a symbol, a query which matches source
+      * elements and the project's source elements that are matched. The latter is available only after
+      * analyze was called.
+      */
     def ensembles = theEnsembles
 
     // calculated after all class files have been loaded
     private[this] var theOutgoingDependencies = Map[SourceElementID, Set[(SourceElementID, DependencyType)]]()
     /**
-     * Mapping between a source element and those source elements it depends on/uses.
-     *
-     * This mapping is automatically created when analyze is called.
-     */
+      * Mapping between a source element and those source elements it depends on/uses.
+      *
+      * This mapping is automatically created when analyze is called.
+      */
     def outgoingDependencies = theOutgoingDependencies
 
     // calculated after all class files have been loaded
     private[this] var theIncomingDependencies = Map[SourceElementID, Set[(SourceElementID, DependencyType)]]()
     /**
-     * Mapping between a source element and those source elements that depend on it.
-     *
-     * This mapping is automatically created when analyze is called.
-     */
+      * Mapping between a source element and those source elements that depend on it.
+      *
+      * This mapping is automatically created when analyze is called.
+      */
     def incomingDependencies = theIncomingDependencies
 
     // calculated after the extension of all ensembles is determined
@@ -101,10 +95,10 @@ class Specification
     private[this] var unmatchedSourceElements: Set[SourceElementID] = _
 
     /**
-     * Adds a new ensemble definition to this architecture specification.
-     *
-     * @throws SpecificationError If the ensemble is already defined.
-     */
+      * Adds a new ensemble definition to this architecture specification.
+      *
+      * @throws SpecificationError If the ensemble is already defined.
+      */
     @throws(classOf[SpecificationError])
     def ensemble(ensembleSymbol: Symbol)(sourceElementMatcher: SourceElementsMatcher) {
         if (ensembles.contains(ensembleSymbol))
@@ -114,18 +108,18 @@ class Specification
     }
 
     /**
-     * Represents an ensemble that contains no source elements. This can be used, e.g., to specify that
-     * a (set of) specific source element(s) is not allowed to depend on any other source elements (belonging
-     * to the project).
-     */
+      * Represents an ensemble that contains no source elements. This can be used, e.g., to specify that
+      * a (set of) specific source element(s) is not allowed to depend on any other source elements (belonging
+      * to the project).
+      */
     val empty = {
         ensemble('empty)(NoSourceElementsMatcher)
         'empty
     }
 
     /**
-     * Facilitates the definition of common source element matchers by means of common String patterns.
-     */
+      * Facilitates the definition of common source element matchers by means of common String patterns.
+      */
     @throws(classOf[SpecificationError])
     implicit def StringToSourceElementMatcher(matcher: String): SourceElementsMatcher = {
         if (matcher endsWith ".*")
@@ -141,8 +135,8 @@ class Specification
     }
 
     /**
-     * Given
-     */
+      * Given
+      */
     implicit def FileToClassFileProvider(file: java.io.File): Seq[ClassFile] = Java7Framework.ClassFiles(file)
 
     case class Violation(source: SourceElementID, target: SourceElementID, dependencyType: DependencyType, description: String) {
@@ -228,8 +222,8 @@ class Specification
     }
 
     /**
-     * Returns a textual representation (as defined in a specification file) of an ensemble.
-     */
+      * Returns a textual representation (as defined in a specification file) of an ensemble.
+      */
     def ensembleToString(ensembleSymbol: Symbol): String = {
         var (sourceElementsMatcher, extension) = ensembles(ensembleSymbol)
         ensembleSymbol+"{"+
@@ -265,6 +259,9 @@ class Specification
         import performance._
         import de.tud.cs.st.util.debug._
 
+        var project = new Project
+        val sourceElementIDsMap = new SourceElementIDsMap{}
+        
         // 1. create and update the support data structures
         Console.print(Console.GREEN+"1. Reading class files and extracting dependencies took ")
         time(t ⇒ Console.println(nsToSecs(t).toString+" seconds.")) {
@@ -272,8 +269,7 @@ class Specification
                 classFileProvider ← classFileProviders;
                 classFile ← classFileProvider
             ) {
-                theClassHierarchy = theClassHierarchy + classFile
-                theClassFiles = theClassFiles.updated(classFile.thisClass, classFile)
+                project = project + classFile
                 dependencyExtractor.process(classFile)
             }
         }
@@ -283,7 +279,7 @@ class Specification
         time(t ⇒ Console.println(Console.GREEN+"   ...finished in "+nsToSecs(t).toString+" seconds.")) {
             val instantiatedEnsembles = ensembles.par.map((ensemble) ⇒ {
                 val (ensembleSymbol, (sourceElementMatcher, _)) = ensemble
-                val extension = sourceElementMatcher.extension(this)
+                val extension = sourceElementMatcher.extension(project,sourceElementIDsMap)
                 if (extension.isEmpty && sourceElementMatcher != NoSourceElementsMatcher)
                     Console.println(Console.RED+"   "+ensembleSymbol+" ("+extension.size+")"+Console.BLACK)
                 else

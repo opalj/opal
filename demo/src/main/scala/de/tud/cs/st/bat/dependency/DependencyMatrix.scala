@@ -40,12 +40,12 @@ import resolved._
 import resolved.reader.Java7Framework.ClassFiles
 
 /**
- * This class (the implementation) demonstrates how to load all class files
- * from a zip file and how to create a dependency matrix.
- *
- * @author Michael Eichberg
- * @author Thomas Schlosser
- */
+  * This class (the implementation) demonstrates how to load all class files
+  * from a zip file and how to create a dependency matrix.
+  *
+  * @author Michael Eichberg
+  * @author Thomas Schlosser
+  */
 object DependencyMatrix {
 
     val performance = new util.debug.PerformanceEvaluation {}
@@ -82,7 +82,7 @@ object DependencyMatrix {
         import scala.collection.mutable.Map
         import scala.collection.mutable.Set
         val dependencyMatrix = Map[Int, Set[(Int, DependencyType.Value)]]()
-        val dependencyExtractor = new DependencyExtractor(new SourceElementIDsMap()) with NoSourceElementsVisitor {
+        val dependencyExtractor = new DependencyExtractor(new SourceElementIDsMap {}) with NoSourceElementsVisitor {
             def processDependency(sourceID: Int, targetID: Int, dType: DependencyType.Value) {
                 val emptySet: Set[(Int, DependencyType)] = Set.empty
                 dependencyMatrix.get(sourceID) match {
