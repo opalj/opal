@@ -36,8 +36,7 @@ package resolved
 
 /**
  * Classes that traverse a class file can extend this trait to facilitate
- * reporting the traversed source file elements; e.g., see
- * [[de.tud.cs.st.bat.resolved.dependency.DependencyExtractor]].
+ * reporting the traversed source file elements.
  *
  * @author Michael Eichberg
  */

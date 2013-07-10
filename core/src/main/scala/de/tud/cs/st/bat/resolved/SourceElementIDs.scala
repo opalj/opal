@@ -40,11 +40,7 @@ package resolved
  *
  * ==Adaptation==
  * If you want to be able to efficiently retrieve a source element if you have an id, consider mixing
- * in the [[de.tud.cs.st.bat.resolved.dependency.ReverseMapping]] trait.
- *
- * ==Used By==
- * The [[de.tud.cs.st.bat.resolved.dependency.DependencyExtractor]] uses it to assign
- * source element ids to source elements.
+ * in the [[de.tud.cs.st.bat.resolved.ReverseMapping]] trait.
  *
  * @author Michael Eichberg
  */
@@ -54,10 +50,6 @@ trait SourceElementIDs {
      * Returns the ID associated with the given type. This ID uniquely identifies this
      * type declaration. If the type does not yet has an associated id, a
      * new id is created and returned.
-     *
-     * ==Usage==
-     * Called, e.g., by the [[de.tud.cs.st.bat.resolved.dependency.DependencyExtractor]] to get the id of
-     * a specific type.
      *
      * @return The ID associated with the given type.
      */
