@@ -36,18 +36,19 @@ package resolved
 package analyses
 
 /**
- * Counts the number of methods and the number of overridden methods.
- *
- * @author Michael Eichberg
- */
+  * Counts the number of methods and the number of overridden methods.
+  *
+  * @author Michael Eichberg
+  */
 object OverriddenMethods extends AnalysisExecutor {
 
     def description = "Counts the number of overridden methods."
 
     def copyright = "(c) Michael Eichberg, Technische Universität Darmstadt"
 
-    def analyze(project: Project) {
-        project.classHierarchy.rootTypes // TODO!!!
+    def analyze(project: Project): ReportableAnalysisResult = {
+        project.classHierarchy.rootTypes // TODO !!!
+        null
     }
 
 }
