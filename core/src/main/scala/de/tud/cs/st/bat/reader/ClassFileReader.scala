@@ -189,7 +189,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     //
     // IMPLEMENTATION
     //
-    import util.ControlAbstractions.{ withResource, process }
+    import util.ControlAbstractions._
 
     /**
      * Reads in a class file.
@@ -255,21 +255,45 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     }
 
     /**
-     * Reads in parallel all class files stored in the given zip file.
+     * Reads '''in parallel''' all class files stored in the given zip file. For each
+     * successfully read class file the function `f` is called.
      *
-     * @param f This function is called for each class file in the given zip file. The zipfile is
-     *      read in parallel, hence **this function has to be thread safe**.
+     * @param zipFile A valid zip or jar file that contains `.class` files other files
+     *      are ignored.
+     * @param f The function that is called for each class file in the given zip file.
+     *      Given that the zipfile is read in parallel '''this function has to be thread safe'''.
      */
-    def ClassFiles(zipFile: ZipFile, f: (ZipFile, ZipEntry, ClassFile) ⇒ _) {
+    def ClassFiles(
+        zipFile: ZipFile,
+        f: (ZipFile, ZipEntry, ClassFile) ⇒ _,
+        // TODO    recursiveDecent: Boolean = true,
+        exceptionHandler: Option[(Exception) ⇒ _] = defaultExceptionHandler) {
+
         import collection.JavaConversions._
         for (zipEntry ← (zipFile).entries.toIterable.par) {
-            if (!zipEntry.isDirectory && zipEntry.getName.endsWith(".class")) {
-                val classFile = ClassFile(zipFile, zipEntry)
-                f(zipFile, zipEntry, classFile)
+            if (!zipEntry.isDirectory) {
+                val zipEntryName = zipEntry.getName
+                if (zipEntryName.endsWith(".class")) {
+                    onException(exceptionHandler) {
+                        val classFile = ClassFile(zipFile, zipEntry)
+                        f(zipFile, zipEntry, classFile)
+                    }
+                }
+                // TODO [Improvement] support recursive decent
+                //                else if (recursiveDecent &&
+                //                    (zipEntryName.endsWith(".zip") ||
+                //                        zipEntryName.endsWith(".jar"))) {
+                //                    onException(exceptionHandler) {
+                //                        new ZipFile(...)
+                //                    }
+                //                }
             }
         }
     }
 
+    /**
+     * Reads all class files from the given zip file.
+     */
     def ClassFiles(zipFileName: String): Seq[ClassFile] =
         withResource(new ZipFile(zipFileName)) { zf ⇒ ClassFiles(zf) }
 
