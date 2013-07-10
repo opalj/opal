@@ -48,6 +48,69 @@ import java.io.InputStream
  */
 object ControlAbstractions {
 
+    def rethrowException[T](e: Exception): T = throw e;
+
+    def defaultExceptionHandler: Some[(Exception) ⇒ _] = Some((e: Exception) ⇒ rethrowException(e))
+
+    /**
+     * Calls the given `exceptionHandler` when an exception is thrown while
+     * evaluating the expression/function `f` but does not (re)throw
+     * the underlying exception. I.e., unless the exception handler (re)throws
+     * (the)an exception the program will continue with the expression after `f` –
+     * the exception is swallowed.
+     *
+     * If the exception is of type `java.lang.Error` or is an instance of
+     * `java.lang.Throwable`, the exception will not be caught and is directly
+     * rethrown.
+     *
+     * If no exception handler is registered (exceptionHandler == None)
+     * the exception is silently swallowed.
+     *
+     * If you simply want to rethrow the exception you can use the method
+     * `rethrowException` as the `exceptionHandler`. This is particularly
+     * meaningful if you have a method that is parameterized by an
+     * exception handler and you want to provide a sensible default.
+     *
+     * ==Examples==
+     *
+     * ===Basic Usage===
+     * {{{
+     * val files = new java.io.File(System.getProperty("user.dir")).listFiles
+     * for (file <- files) {
+     *     onException(Some((e:Exception) => println(e.getMessage))){
+     *         println(file.getName)
+     *     }
+     * }
+     * }}}
+     *
+     * ===Complex Example===
+     * {{{
+     * def doIt(zipFile: ZipFile,
+     *          f: (ZipFile, ZipEntry, ClassFile) ⇒ _,
+     *          exceptionHandler: Option[(Exception) ⇒ _] = defaultExceptionHandler) {
+     *     import collection.JavaConversions._
+     *     for (zipEntry ← (zipFile).entries.toIterable) {
+     *         onException(exceptionHandler){
+     *             println(zipFile.toString+ " "+zipEntry.toString)
+     *         }
+     *     }
+     * }
+     * }}}
+     */
+    def onException(exceptionHandler: Option[(Exception) ⇒ _])(f: ⇒ Unit) {
+        try {
+            f
+        } catch {
+            case e: Exception ⇒ {
+                exceptionHandler match {
+                    case Some(eh) ⇒ eh(e)
+                    case None     ⇒ /* we deliberately swallow the exception */ ;
+                }
+            }
+            case t: Throwable ⇒ throw t
+        }
+    }
+
     /**
      * This function takes care of the correct handling of input streams.
      * The function takes a function <code>f</code> that creates a new <code>InputStream</code> (f is a
@@ -90,16 +153,16 @@ object ControlAbstractions {
      * ==Example Usage==
      * {{{
      * val result = repeat(15) {
-     *    System.in.read()
+     *      System.in.read()
      * }
      * }}}
      *
-     * @param times The number of times the expression `f` is evaluated. This expression is evaluated
+     * @param times The number of times the expression `f` is evaluated. The `times` expression is evaluated
      *     exactly once.
      * @param f An expression that is evaluated the given number of times unless an exception is
-     *     thrown. Hence, even though f is not a by-name parameter, it behaves in the same way.
-     * @return The result of the evaluation of the expression `f` the given number of times. If `times` is
-     *     zero an empty sequence is returned.
+     *     thrown. Hence, even though `f` is not a by-name parameter, it behaves in the same way.
+     * @return The result of the evaluation of the expression `f` the given number of times stored in an
+     *      `IndexedSeq`. If `times` is zero an empty sequence is returned.
      */
     def repeat[T](times: Int)(f: T): IndexedSeq[T] = macro ControlAbstractionsImplementation.repeat[T]
     // OLD IMPLEMENTATION USING HIGHER-ORDER FUNCTIONS
@@ -119,7 +182,10 @@ object ControlAbstractions {
 
 }
 
-object ControlAbstractionsImplementation {
+/**
+ * Implementation of the macros.
+ */
+private object ControlAbstractionsImplementation {
 
     def repeat[T: c.WeakTypeTag](c: Context)(times: c.Expr[Int])(f: c.Expr[T]): c.Expr[IndexedSeq[T]] = {
         import c.universe._
