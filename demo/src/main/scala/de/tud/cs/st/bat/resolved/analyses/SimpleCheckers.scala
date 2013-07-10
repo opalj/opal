@@ -42,19 +42,20 @@ import de.tud.cs.st.bat.resolved.Method
 import de.tud.cs.st.bat.resolved.MethodDescriptor
 import de.tud.cs.st.bat.resolved.ObjectType
 import de.tud.cs.st.util.debug.nsToSecs
+import de.tud.cs.st.bat.resolved.analyses.ReportableAnalysisResult
 
 /**
- * Demonstrates how to implement two very simple checkers using BAT.
- *
- * @author Michael Eichberg
- */
+  * Demonstrates how to implement two very simple checkers using BAT.
+  *
+  * @author Michael Eichberg
+  */
 object SimpleCheckers extends AnalysisExecutor {
 
     def description: String = "Finds violations of the equals-hashCode contract and co-variant equals methods."
 
     def copyright: String = "(c) 2011-2013 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)"
 
-    def analyze(project: Project): Unit = {
+    def analyze(project: Project): ReportableAnalysisResult = {
 
         val CountingPerformanceEvaluator = new PerformanceEvaluation with Counting
         import CountingPerformanceEvaluator._
@@ -110,5 +111,7 @@ object SimpleCheckers extends AnalysisExecutor {
         println("Covariant Equals Checker: "+nsToSecs(getTime('CovEqChecker)))
         println("Analyzed all classes in: "+nsToSecs(getTime('Overall)))
         println("Number of identified violations: "+problemCount)
+
+        null // FIXME we have to report something meaningful!
     }
 }
