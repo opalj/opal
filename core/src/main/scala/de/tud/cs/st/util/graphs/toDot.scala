@@ -41,10 +41,7 @@ package graphs
  */
 trait toDot {
 
-    protected def nodeToInt(n: Node): Int = n.uniqueId
-
     def generateDot(nodes: Set[Node]): String = {
-
         var nodesToProcess = nodes.toList
         var processedNodes = Set[Int]()
 
@@ -53,7 +50,7 @@ trait toDot {
         while (!(nodesToProcess.isEmpty)) {
             val n = nodesToProcess.head
             // prepare the next iteration
-            processedNodes += nodeToInt(n)
+            processedNodes += n.uniqueId
             nodesToProcess = nodesToProcess.tail
 
             if (n.toHRR.isDefined) s += "\t"+n.uniqueId+"[label=\""+n.toHRR.get+"\"];\n"
@@ -61,7 +58,7 @@ trait toDot {
             val f = (sn: Node) ⇒ {
                 if (n.toHRR.isDefined) s += "\t"+n.uniqueId+" -> "+sn.uniqueId+";\n" // +"[dir=none];\n"
 
-                if (!(processedNodes contains nodeToInt(sn))) {
+                if (!(processedNodes contains sn.uniqueId)) {
                     nodesToProcess = sn :: nodesToProcess
                 }
             }
