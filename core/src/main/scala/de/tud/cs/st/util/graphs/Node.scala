@@ -38,7 +38,7 @@ package graphs
  * Represents a node of a graph.
  *
  * ==Example Usage==
- * See [[de.tud.cs.st.bat.resolved.analysis.ClassHierarchy]]'s `toGraph` method for
+ * See [[de.tud.cs.st.bat.resolved.analyses.ClassHierarchy]]'s `toGraph` method for
  * an example usage.
  *
  * @author Michael Eichberg
