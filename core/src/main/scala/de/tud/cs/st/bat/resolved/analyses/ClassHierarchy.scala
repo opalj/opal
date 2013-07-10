@@ -41,7 +41,7 @@ import reader.Java7Framework
 /**
  * Represents the visible part of a project's class hierarchy. The visible part of a project's
  * class hierarchy consists of all classes defined in the analyzed class files and all
- * boundary class/interfaces. I.e., those classes which are seen when analyzing a specific
+ * boundary classes/interfaces. I.e., those classes which are seen when analyzing a specific
  * class file, but for which the respective class file is not seen.
  *
  * ==Usage==
@@ -101,7 +101,7 @@ class ClassHierarchy(
 
     /**
      * The classes (and interfaces if the given type is an interface type)
-     * that **directly** inherit from the given type.
+     * that '''directly''' inherit from the given type.
      *
      * If we have not (yet) analyzed the class file implementing the given
      * type (i.e., the class file was not yet passed to `+`) or if
@@ -112,7 +112,7 @@ class ClassHierarchy(
      * set is returned. I.e., if you analyzed all class files of a project
      * and then ask for the subclasses of a specific type and an
      * empty set is returned, then you have the guarantee that no class in the
-     * project **directly** inherits form the given type.
+     * project '''directly''' inherits form the given type.
      *
      * @return The direct subtypes of the given type or `None` if the analysis
      *      is not conclusive.
@@ -123,7 +123,7 @@ class ClassHierarchy(
      * The set of all classes (and interfaces) that(directly or indirectly)
      * inherit from the given type.
      *
-     * @see subclasses(ObjectType) For general remarks about the precision of
+     * @see ClassHierarchy.subclasses(ObjectType) for general remarks about the precision of
      *      the analysis.
      * @return The set of all direct and indirect subtypes of the given type.
      */
