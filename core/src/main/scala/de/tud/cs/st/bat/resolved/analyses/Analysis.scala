@@ -37,7 +37,12 @@ package analyses
 
 import reader.Java7Framework
 
+import java.io.File
+
 /**
+ * Common trait that needs to be mixed in by analyses that want to use the general
+ * analysis framework [[de.tud.cs.st.bat.resolved.analyses.AnalysisExecutor]].
+ *
  * @author Michael Eichberg
  */
 trait Analysis[AnalysisResult] {
@@ -49,7 +54,42 @@ trait Analysis[AnalysisResult] {
     def copyright: String
 }
 
-trait AnalysisExecutor extends Analysis[Unit] {
+/**
+ * Trait that identifies analysis results that can be reported to the (end-)user.
+ */
+trait ReportableAnalysisResult {
+
+    /**
+     * The results of the analysis in a form suitable for printing it to the
+     * command line.
+     *
+     * If you are generating output related to (a line in) a class file use the
+     * following format (as used by other compilers, e.g., CLANG and GCC):
+     * <pre>
+     * FILENAME[:LINE[:COLUMN]]: TYPE: MESSAGE
+     * </pre>
+     * where FILENAME denotes the name of the file, LINE is the line number if available,
+     * COLUMN is the column – which is usually not available when you analyze class files
+     * and TYPE identifies the type of the message (e.g., "note", "warning", "error",
+     * "fatal error").
+     *
+     * Line and column information is optional.
+     *
+     * If the real filename is not available, use the fully qualified name of the class
+     * in binary notation (i.e., using "/" to seperate the package qualifiers)
+     * with the suffice ".class" appended.
+     *
+     * Note that the space after the location information is required!
+     *
+     * ==Example==
+     * <pre>
+     * demo/Buggy.class:100: warning: protected field in final class
+     * </pre>
+     */
+    def consoleReport: String
+}
+
+trait AnalysisExecutor extends Analysis[ReportableAnalysisResult] {
 
     def printUsage() {
         println("Usage: java …"+this.getClass().getName()+" <Directory or ZIP/JAR file containing class files>+")
@@ -63,8 +103,11 @@ trait AnalysisExecutor extends Analysis[Unit] {
             sys.exit(-1)
         }
 
+        //
+        // 1. check arguments
+        //
         val files = for (arg ← args) yield {
-            val file = new java.io.File(arg)
+            val file = new File(arg)
             if (!file.canRead ||
                 !(arg.endsWith(".zip") ||
                     arg.endsWith(".jar") ||
@@ -77,6 +120,20 @@ trait AnalysisExecutor extends Analysis[Unit] {
             file
         }
 
+        //
+        // 2. setup project context
+        //
+        val project = setupProject(files)
+        println()
+
+        // 
+        // 3. execute analyses
+        //
+        println("Executing analyses.")
+        println(analyze(project).consoleReport)
+    }
+
+    def setupProject(files: Iterable[File]): Project = {
         println("Reading class files:")
         var project = new Project()
         for {
@@ -86,7 +143,6 @@ trait AnalysisExecutor extends Analysis[Unit] {
         } {
             project += classFile
         }
-        println("Starting analyses: ")
-        analyze(project)
+        project
     }
 }
