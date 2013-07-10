@@ -38,12 +38,12 @@ package resolved
  * An annotation of a class, field, method or method parameter.
  *
  * Annotations are associated with a class, field, or method using a
- * [[de.tud.cs.st.bat.resolved.RuntimeInvisibleAnnotations]] or a
- * [[de.tud.cs.st.bat.resolved.RuntimeVisibleAnnotations]] attribute.
+ * [[de.tud.cs.st.bat.resolved.RuntimeInvisibleAnnotationTable]] or a
+ * [[de.tud.cs.st.bat.resolved.RuntimeVisibleAnnotationTable]] attribute.
  *
  * Annotations are associated with a method parameter using a
- * [[de.tud.cs.st.bat.resolved.RuntimeInvisibleParameterAnnotations]] or
- * a [[de.tud.cs.st.bat.resolved.RuntimeVisibleParameterAnnotations]] attribute.
+ * [[de.tud.cs.st.bat.resolved.RuntimeInvisibleParameterAnnotationTable]] or
+ * a [[de.tud.cs.st.bat.resolved.RuntimeVisibleParameterAnnotationTable]] attribute.
  *
  * @author Michael Eichberg
  */
