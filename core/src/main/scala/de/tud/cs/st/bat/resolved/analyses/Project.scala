@@ -40,7 +40,7 @@ import util.graphs.{ Node, toDot }
 import reader.Java7Framework
 
 /**
- * Represents some software project; i.e., all class files of a project.
+ * Container for all class files of a project and the resulting class hierarchy.
  *
  * ==Usage==
  * To create a representation of a project use the `++` and `+` method.
@@ -130,8 +130,18 @@ class Project(
         }
     }
 }
+/**
+ * Factory for [[de.tud.cs.st.bat.resolved.analyses.Project]] objects.
+ *
+ * @author Michael Eichberg
+ */
 object Project {
 
+    /**
+     * Creates a project that contains no class files, but where the class hierarchy
+     * already contains the information about the exceptions thrown by JVM
+     * instructions.
+     */
     def empty() = new Project(classHierarchy = ClassHierarchy.createPreInitializedClassHierarchy)
 
 }
