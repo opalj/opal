@@ -8,11 +8,15 @@ provides extensive support for pattern-matching on Java Bytecode to facilitate t
 
 # Structure
 BAT consists of four main projects:
-* Core: This project defines the core functionality necessary for reading and analyzing Java class files.  
+
+* **Core**: This project defines the core functionality necessary for reading and analyzing Java class files.  
 Util: Technically belongs to the Core project, but contains some sources that need to be compiled before we can 
 compile core. It contains in particular Scala Macros.  
 **Core** and **Util** are mature.
-* AI: This project will implement a small abstract interpretation framework (This is work in progress.)
-* Dependencies: This project is concerned with checking a project's source code dependencies (This project is currently under revision.)
-* Demo: Depends on all the other projects and contains fully working code that demonstrates how to use BAT.
+
+* **AI**: This project will implement a small abstract interpretation framework (This is work in progress.)
+
+* **Dependencies**: This project is concerned with checking a project's source code dependencies (This project is currently under revision.)
+
+* **Demo**: Depends on all the other projects and contains fully working code that demonstrates how to use BAT.
 	
