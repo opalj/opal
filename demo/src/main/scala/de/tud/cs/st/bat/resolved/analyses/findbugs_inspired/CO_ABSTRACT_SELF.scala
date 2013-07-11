@@ -36,12 +36,12 @@ package findbugs_inspired
 
 /**
  * FINDBUGS: Co: Abstract class defines covariant compareTo() method (CO_ABSTRACT_SELF)
- * 
+ *
  * @author Ralf Mitschke
  */
-object CO_ABSTRACT_SELF extends (Project ⇒ Iterable[(ClassFile, Method)]) {
+object CO_ABSTRACT_SELF extends (Project[_] ⇒ Iterable[(ClassFile, Method)]) {
 
-    def apply(project: Project) =
+    def apply(project: Project[_]) =
         for {
             comparable ← project.classHierarchy.subtypes(ObjectType("java/lang/Comparable")).getOrElse(Nil)
             classFile = project.classes(comparable)

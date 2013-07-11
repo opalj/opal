@@ -67,16 +67,16 @@ class LoadClassFilesTest extends FlatSpec with ShouldMatchers with TestSupport {
 
     for {
         file ← locateTestResources("classfiles").listFiles
-        if (file.isFile && file.canRead && file.getName.endsWith(".zip"))
+        if (file.isFile && file.canRead && file.getName.endsWith(".jar"))
     } {
-        val zipfile = new ZipFile(file)
-        val zipentries = (zipfile).entries
-        while (zipentries.hasMoreElements) {
-            val zipentry = zipentries.nextElement
-            if (!zipentry.isDirectory && zipentry.getName.endsWith(".class")) {
-                val data = new Array[Byte](zipentry.getSize().toInt)
-                process(new DataInputStream(zipfile.getInputStream(zipentry))) { _.readFully(data) }
-                it should ("be able to parse the class file "+zipentry.getName+" in "+zipfile.getName) in {
+        val jarFile = new ZipFile(file)
+        val jarEntries = (jarFile).entries
+        while (jarEntries.hasMoreElements) {
+            val jarEntry = jarEntries.nextElement
+            if (!jarEntry.isDirectory && jarEntry.getName.endsWith(".class")) {
+                val data = new Array[Byte](jarEntry.getSize().toInt)
+                process(new DataInputStream(jarFile.getInputStream(jarEntry))) { _.readFully(data) }
+                it should ("be able to parse the class file "+jarEntry.getName+" in "+jarFile.getName) in {
                     simpleValidator(ClassFile(new DataInputStream(new ByteArrayInputStream(data))))
                 }
             }

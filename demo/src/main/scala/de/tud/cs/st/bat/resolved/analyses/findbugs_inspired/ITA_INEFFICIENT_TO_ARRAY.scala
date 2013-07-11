@@ -38,7 +38,7 @@ package findbugs_inspired
  *
  * @author Ralf Mitschke
  */
-object ITA_INEFFICIENT_TO_ARRAY extends (Project ⇒ Iterable[(ClassFile, Method, Int)]) {
+object ITA_INEFFICIENT_TO_ARRAY extends (Project[_] ⇒ Iterable[(ClassFile, Method, Int)]) {
 
     import BaseAnalyses.withIndex
 
@@ -59,7 +59,7 @@ object ITA_INEFFICIENT_TO_ARRAY extends (Project ⇒ Iterable[(ClassFile, Method
         }
     }
 
-    def apply(project: Project) = {
+    def apply(project: Project[_]) = {
         val classHierarchy: ClassHierarchy = project.classHierarchy
         val isCollectionType = this.isCollectionType(classHierarchy) _
         for (

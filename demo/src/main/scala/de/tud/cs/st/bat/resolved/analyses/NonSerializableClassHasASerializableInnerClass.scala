@@ -35,26 +35,30 @@ package bat
 package resolved
 package analyses
 
+import java.net.URL
+
 /**
  * An analysis that identifies (non-static) inner classes that are serializable, but where the outer class
  * is not.
  *
  * @author Michael Eichberg
  */
-object NonSerializableClassHasASerializableInnerClass extends Analysis[Traversable[(ObjectType, ObjectType)]] {
+object NonSerializableClassHasASerializableInnerClass extends Analysis[URL, Traversable[(ObjectType, ObjectType)]] {
+
+    val Serializable = ObjectType("java/io/Serializable")
 
     def description = "Identifies (non-static) inner classes that are serializable, but where the outer class is not."
 
     def copyright = "(c) 2013 Michael Eichberg et al."
 
-    def analyze(project: Project) = {
-        val serializable = ObjectType("java/io/Serializable")
+    def analyze(project: Project[URL]) = {
+
         for {
-            objectTypes ← project.classHierarchy.subclasses(serializable).toSeq
+            objectTypes ← project.classHierarchy.subclasses(Serializable).toSeq
             objectType ← objectTypes
             classFile = project.classes(objectType)
             (outerType, thisInnerClassesAccessFlags) ← classFile.outerType if !ACC_STATIC.element_of(thisInnerClassesAccessFlags)
-            if !project.classHierarchy.isSubtypeOf(outerType, serializable).getOrElse(true /* if we don't know anything about the class, then we don't want to generate a warning */ )
+            if !project.classHierarchy.isSubtypeOf(outerType, Serializable).getOrElse(true /* if we don't know anything about the class, then we don't want to generate a warning */ )
             //outerClass <- project.classes.get(outerType).toSeq                      
         } yield {
             (objectType, outerType)

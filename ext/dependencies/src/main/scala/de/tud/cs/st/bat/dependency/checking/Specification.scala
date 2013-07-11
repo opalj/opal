@@ -41,6 +41,8 @@ import resolved.analyses.Project
 
 import scala.collection.immutable.SortedSet
 
+import java.net.URL
+
 /**
   * A specification of a project's architectural constraints.
   *
@@ -49,7 +51,7 @@ import scala.collection.immutable.SortedSet
   * class files that should be analyzed. The rules will then be automatically
   * evaluated.
   *
-  * ===Hints===
+  * ===Note===
   * One ensemble is predefined: [[Specification.empty]] it represents an ensemble that contains no
   * source elements and which can, e.g., be used to specify that no "real" ensemble is allowed
   * to depend on a specific ensemble.
@@ -137,7 +139,7 @@ class Specification
     /**
       * Given
       */
-    implicit def FileToClassFileProvider(file: java.io.File): Seq[ClassFile] = Java7Framework.ClassFiles(file)
+    implicit def FileToClassFileProvider(file: java.io.File): Seq[(ClassFile, URL)] = Java7Framework.ClassFiles(file)
 
     case class Violation(source: SourceElementID, target: SourceElementID, dependencyType: DependencyType, description: String) {
 
@@ -238,7 +240,7 @@ class Specification
             }+"}"
     }
 
-    def analyze(classFileProviders: Traversable[ClassFile]*) {
+    def analyze(classFileProviders: Traversable[(ClassFile, URL)]*) {
 
         val dependencyExtractor = new DependencyExtractor(Specification.this) with NoSourceElementsVisitor {
 
@@ -259,17 +261,17 @@ class Specification
         import performance._
         import de.tud.cs.st.util.debug._
 
-        var project = new Project
-        val sourceElementIDsMap = new SourceElementIDsMap{}
-        
+        var project = Project.empty[URL]
+        val sourceElementIDsMap = new SourceElementIDsMap {}
+
         // 1. create and update the support data structures
         Console.print(Console.GREEN+"1. Reading class files and extracting dependencies took ")
         time(t ⇒ Console.println(nsToSecs(t).toString+" seconds.")) {
             for (
                 classFileProvider ← classFileProviders;
-                classFile ← classFileProvider
+                cs @ (classFile, source) ← classFileProvider
             ) {
-                project = project + classFile
+                project = project + cs
                 dependencyExtractor.process(classFile)
             }
         }
@@ -279,7 +281,7 @@ class Specification
         time(t ⇒ Console.println(Console.GREEN+"   ...finished in "+nsToSecs(t).toString+" seconds.")) {
             val instantiatedEnsembles = ensembles.par.map((ensemble) ⇒ {
                 val (ensembleSymbol, (sourceElementMatcher, _)) = ensemble
-                val extension = sourceElementMatcher.extension(project,sourceElementIDsMap)
+                val extension = sourceElementMatcher.extension(project, sourceElementIDsMap)
                 if (extension.isEmpty && sourceElementMatcher != NoSourceElementsMatcher)
                     Console.println(Console.RED+"   "+ensembleSymbol+" ("+extension.size+")"+Console.BLACK)
                 else
@@ -312,7 +314,7 @@ class Specification
     }
 
     @throws(classOf[SpecificationError])
-    def Directory(directoryName: String): Seq[ClassFile] = {
+    def Directory(directoryName: String): Seq[(ClassFile, URL)] = {
         val file = new java.io.File(directoryName)
         if (!file.exists)
             throw new SpecificationError("The specified directory does not exist: "+directoryName+".")

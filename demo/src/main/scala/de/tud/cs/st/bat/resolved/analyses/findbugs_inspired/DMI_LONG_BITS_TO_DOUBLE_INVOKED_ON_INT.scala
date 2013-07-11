@@ -38,7 +38,7 @@ package findbugs_inspired
  *
  * @author Ralf Mitschke
  */
-object DMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT extends (Project ⇒ Iterable[(ClassFile, Method, Int)]) {
+object DMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT extends (Project[_] ⇒ Iterable[(ClassFile, Method, Int)]) {
 
     import BaseAnalyses.withIndex
 
@@ -46,7 +46,7 @@ object DMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT extends (Project ⇒ Iterable[(Cla
 
     val longBitsToDoubleDescriptor = MethodDescriptor(List(LongType), DoubleType)
 
-    def apply(project: Project) = {
+    def apply(project: Project[_]) = {
         for (
             classFile ← project.classFiles;
             method ← classFile.methods if method.body.isDefined;

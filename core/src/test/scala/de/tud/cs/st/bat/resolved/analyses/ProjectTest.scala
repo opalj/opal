@@ -61,7 +61,7 @@ class ProjectTest
     // Setup
     //
     //
-    val resources = locateTestResources("classfiles/Methods.zip")
+    val resources = locateTestResources("classfiles/Methods.jar")
     val project = new Project ++ ClassFiles(resources)
 
     val SuperType = ObjectType("methods/a/Super")
@@ -76,16 +76,18 @@ class ProjectTest
 
     behavior of "Project's classes repository"
 
+    import project._
+    
     it should "find the class methods.a.Super" in {
-        project.classes.get(SuperType) should be('Defined)
+        classes.get(SuperType) should be('Defined)
     }
 
     it should "find the class methods.b.AbstractB" in {
-        project.classes.get(AbstractB) should be('Defined)
+        classes.get(AbstractB) should be('Defined)
     }
 
     it should "not find the class java.lang.Object" in {
-        project.classes.get(ObjectType.Object) should not be ('Defined)
+        classes.get(ObjectType.Object) should not be ('Defined)
     }
 
     behavior of "Project's lookupMethodDeclaration method"

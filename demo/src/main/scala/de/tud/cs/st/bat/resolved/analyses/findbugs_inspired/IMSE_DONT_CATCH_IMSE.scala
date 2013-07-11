@@ -38,11 +38,11 @@ package findbugs_inspired
  *
  * @author Ralf Mitschke
  */
-object IMSE_DONT_CATCH_IMSE extends (Project ⇒ Iterable[(ClassFile, Method)]) {
+object IMSE_DONT_CATCH_IMSE extends (Project[_] ⇒ Iterable[(ClassFile, Method)]) {
 
     val IllegalMonitorStateExceptionType = ObjectType("java/lang/IllegalMonitorStateException")
 
-    def apply(project: Project) =
+    def apply(project: Project[_]) =
         for {
             classFile ← project.classFiles if classFile.isClassDeclaration;
             method ← classFile.methods if method.body.isDefined

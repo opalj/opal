@@ -38,7 +38,7 @@ package findbugs_inspired
  *
  * @author Ralf Mitschke
  */
-object MS_PKGPROTECT extends (Project ⇒ Iterable[(ClassFile, Field)]) {
+object MS_PKGPROTECT extends (Project[_] ⇒ Iterable[(ClassFile, Field)]) {
 
     val hashTableType = ObjectType("java/util/Hashtable")
 
@@ -46,7 +46,7 @@ object MS_PKGPROTECT extends (Project ⇒ Iterable[(ClassFile, Field)]) {
 
     def isArray(t: FieldType) = t.isArrayType
 
-    def apply(project: Project) = {
+    def apply(project: Project[_]) = {
         // list of tuples in the form (packageName, FieldEntry)
         val readFieldsFromPackage = BaseAnalyses.readFields(project.classFiles)
             .map(entry ⇒ (entry._1._1.thisClass.packageName, entry._2))

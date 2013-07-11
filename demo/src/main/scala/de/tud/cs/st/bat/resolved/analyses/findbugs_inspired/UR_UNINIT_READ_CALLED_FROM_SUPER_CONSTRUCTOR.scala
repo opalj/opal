@@ -39,9 +39,9 @@ package findbugs_inspired
  * @author Ralf Mitschke
  */
 object UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR
-        extends (Project ⇒ Iterable[(ObjectType, Method, String, FieldType, Int)]) {
+        extends (Project[_] ⇒ Iterable[(ObjectType, Method, String, FieldType, Int)]) {
 
-    def apply(project: Project) = {
+    def apply(project: Project[_]) = {
         import BaseAnalyses._
 
         val isOverride = BaseAnalyses.isOverride(project) _

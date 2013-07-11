@@ -61,7 +61,7 @@ class CodeAttributeTest
     //
     //
 
-    val project = new Project ++ ClassFiles(locateTestResources("classfiles/Code.zip"))
+    val project = new Project ++ ClassFiles(locateTestResources("classfiles/Code.jar"))
 
     val boundedBufferClass = ObjectType("code/BoundedBuffer")
     val immutbleListClass = ObjectType("code/ImmutableList")

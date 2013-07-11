@@ -39,9 +39,9 @@ package findbugs_inspired
  *
  * @author Ralf Mitschke
  */
-object CO_SELF_NO_OBJECT extends (Project ⇒ Iterable[(ClassFile, Method)]) {
+object CO_SELF_NO_OBJECT extends (Project[_] ⇒ Iterable[(ClassFile, Method)]) {
 
-    def apply(project: Project) =
+    def apply(project: Project[_]) =
         for {
             comparable ← project.classHierarchy.subtypes(ObjectType("java/lang/Comparable")).getOrElse(Nil)
             classFile = project.classes(comparable)

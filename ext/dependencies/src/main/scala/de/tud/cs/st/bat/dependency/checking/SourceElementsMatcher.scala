@@ -39,6 +39,8 @@ import collection.immutable.SortedSet
 import resolved._
 import resolved.analyses._
 
+import java.net.URL
+
 /**
   * A source element matcher determines a set of source elements that matches a given query.
   *
@@ -46,11 +48,11 @@ import resolved.analyses._
   */
 trait SourceElementsMatcher { left ⇒
 
-    def extension(project: Project, srcElemIDs: SourceElementIDsMap): SortedSet[SourceElementID]
+    def extension(project: Project[URL], srcElemIDs: SourceElementIDsMap): SortedSet[SourceElementID]
 
     def and(right: SourceElementsMatcher): SourceElementsMatcher = {
         new SourceElementsMatcher {
-            def extension(project: Project, srcElemIDs: SourceElementIDsMap) = {
+            def extension(project: Project[URL], srcElemIDs: SourceElementIDsMap) = {
                 left.extension(project, srcElemIDs) ++ right.extension(project, srcElemIDs)
             }
 
@@ -62,7 +64,7 @@ trait SourceElementsMatcher { left ⇒
 
     def except(right: SourceElementsMatcher): SourceElementsMatcher = {
         new SourceElementsMatcher {
-            def extension(project: Project, srcElemIDs: SourceElementIDsMap) = {
+            def extension(project: Project[URL], srcElemIDs: SourceElementIDsMap) = {
                 left.extension(project, srcElemIDs) -- right.extension(project, srcElemIDs)
             }
 
@@ -91,7 +93,7 @@ case class PackageNameBasedMatcher(
     require(packageName.indexOf('*') == -1)
     require(packageName.indexOf('.') == -1)
 
-    def extension(project: Project, srcElemIds: SourceElementIDsMap): SortedSet[SourceElementID] = {
+    def extension(project: Project[URL], srcElemIds: SourceElementIDsMap): SortedSet[SourceElementID] = {
         var sourceElementIDs: SortedSet[SourceElementID] = SortedSet()
         project.classFiles.filter((classFile) ⇒ {
             val thisClassPackageName = classFile.thisClass.packageName
@@ -124,7 +126,7 @@ case class ClassMatcher(
     require(className.indexOf('*') == -1)
     require(className.indexOf('.') == -1)
 
-    def extension(project: Project, srcElemIds: SourceElementIDsMap): SortedSet[SourceElementID] = {
+    def extension(project: Project[URL], srcElemIds: SourceElementIDsMap): SortedSet[SourceElementID] = {
         var sourceElementIDs: SortedSet[SourceElementID] = SortedSet()
         project.classFiles.filter((classFile) ⇒
             {
@@ -144,6 +146,6 @@ case class ClassMatcher(
 }
 
 case object NoSourceElementsMatcher extends SourceElementsMatcher {
-    def extension(project: Project, srcElemIds: SourceElementIDsMap): SortedSet[SourceElementID] = SortedSet();
+    def extension(project: Project[URL], srcElemIds: SourceElementIDsMap): SortedSet[SourceElementID] = SortedSet();
 }
 

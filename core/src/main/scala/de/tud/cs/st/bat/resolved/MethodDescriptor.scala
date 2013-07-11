@@ -40,13 +40,24 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case class MethodDescriptor(parameterTypes: Seq[FieldType], returnType: Type) extends BootstrapArgument {
+case class MethodDescriptor(
+    parameterTypes: Seq[FieldType],
+    returnType: Type)
+        extends BootstrapArgument {
 
     //
     //
     // SUPPORT FOR SPECIAL REPRESENTATIONS
     //
     //
+
+    def toJava(methodName: String): String = {
+        returnType.toJava+" "+
+            methodName+
+            "("+
+            parameterTypes.map(_.toJava).mkString(",")+
+            ")"
+    }
 
     def toUMLNotation: String = {
         "("+{

@@ -36,7 +36,6 @@ package resolved
 package analyses
 
 import util.graphs.{ Node, toDot }
-import reader.Java7Framework
 
 /**
  * Represents the visible part of a project's class hierarchy. The visible part of a project's
@@ -261,12 +260,14 @@ object ClassHierarchy {
         import scala.io.BufferedSource
         import util.ControlAbstractions._
 
-        withResource(this.getClass().getResourceAsStream("ClassHierarchyJVMExceptions.ths")) { in ⇒
+        val classHierarchyInputStream = this.getClass().getResourceAsStream("ClassHierarchyJVMExceptions.ths")
+        withResource(classHierarchyInputStream) { in ⇒
             var ch = Empty
-            val Spec = """(\S+)\s*>\s*(.+)""".r
-            val specLines = new BufferedSource(in).getLines.map(_.trim).filterNot((l) ⇒ l.startsWith("#") || l.length == 0)
+            val specLineExtractor = """(\S+)\s*>\s*(.+)""".r
+            val source = new BufferedSource(in)
+            val specLines = source.getLines.map(_.trim).filterNot((l) ⇒ l.startsWith("#") || l.length == 0)
             for {
-                Spec(superclass, subclasses) ← specLines
+                specLineExtractor(superclass, subclasses) ← specLines
                 superclasses = List(ObjectType(superclass))
                 subclass ← subclasses.split(",").map(_.trim)
             } {
@@ -281,13 +282,15 @@ object ClassHierarchyVisualizer {
 
     def main(args: Array[String]) {
 
-        if (args.length == 0 || !args.forall(arg ⇒ arg.endsWith(".zip") || arg.endsWith(".jar"))) {
-            println("Usage: java …ClassHierarchy <ZIP or JAR file containing class files>+")
-            println("(c) 2011 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
-            sys.exit(1)
+        import reader.Java7Framework.ClassFiles
+
+        if (args.length == 0 || !args.forall(_.endsWith(".jar"))) {
+            println("Usage: java …ClassHierarchy <JAR files containing class files>+")
+            println("(c) 2013 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
+            sys.exit(-1)
         }
 
-        val classHierarchy = (new ClassHierarchy /: args)(_ ++ Java7Framework.ClassFiles(_))
+        val classHierarchy = (new ClassHierarchy /: args)(_ ++ ClassFiles(_).map(_._1))
 
         println(toDot.generateDot(Set(classHierarchy.toGraph)))
     }

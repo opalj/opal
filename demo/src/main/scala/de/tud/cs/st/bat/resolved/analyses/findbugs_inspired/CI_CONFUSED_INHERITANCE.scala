@@ -39,9 +39,9 @@ package findbugs_inspired
  * @author Ralf Mitschke
  *
  */
-object CI_CONFUSED_INHERITANCE extends (Project ⇒ Iterable[(ClassFile, Field)]) {
+object CI_CONFUSED_INHERITANCE extends (Project[_] ⇒ Iterable[(ClassFile, Field)]) {
 
-    def apply(project: Project) =
+    def apply(project: Project[_]) =
         for (
             classFile ← project.classFiles if classFile.isFinal;
             field ← classFile.fields if field.isProtected

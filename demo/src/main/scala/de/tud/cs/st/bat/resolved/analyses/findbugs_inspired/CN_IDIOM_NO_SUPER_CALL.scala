@@ -39,9 +39,9 @@ package findbugs_inspired
  * @author Ralf Mitschke
  *
  */
-object CN_IDIOM_NO_SUPER_CALL extends (Project ⇒ Iterable[(ClassFile, Method)]) {
+object CN_IDIOM_NO_SUPER_CALL extends (Project[_] ⇒ Iterable[(ClassFile, Method)]) {
 
-    def apply(project: Project) =
+    def apply(project: Project[_]) =
         for {
             classFile ← project.classFiles
             if !classFile.isInterfaceDeclaration && !classFile.isAnnotationDeclaration

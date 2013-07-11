@@ -86,4 +86,6 @@ case class Method(
     def exceptionTable: Option[ExceptionTable] =
         attributes collectFirst { case et: ExceptionTable ⇒ et }
 
+    def toJava(): String = descriptor.toJava(name)
+
 }

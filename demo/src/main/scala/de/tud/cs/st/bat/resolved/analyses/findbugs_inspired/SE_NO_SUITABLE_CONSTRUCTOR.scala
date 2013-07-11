@@ -38,9 +38,9 @@ package findbugs_inspired
  *
  * @author Ralf Mitschke
  */
-object SE_NO_SUITABLE_CONSTRUCTOR extends (Project ⇒ Iterable[ClassFile]) {
+object SE_NO_SUITABLE_CONSTRUCTOR extends (Project[_] ⇒ Iterable[ClassFile]) {
 
-    def apply(project: Project) = {
+    def apply(project: Project[_]) = {
         val serializable = ObjectType("java/io/Serializable")
         val serializableClasses = project.classHierarchy.subclasses(serializable).getOrElse(Set.empty)
         for {

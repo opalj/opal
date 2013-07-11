@@ -39,7 +39,7 @@ package findbugs_inspired
  * @author Ralf Mitschke
  */
 object BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION
-        extends (Project ⇒ Iterable[(ClassFile, Method, Int)]) {
+        extends (Project[_] ⇒ Iterable[(ClassFile, Method, Int)]) {
 
     import BaseAnalyses._
 
@@ -53,7 +53,7 @@ object BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION
      * Integer.valueOf(1).doubleValue()
      * }}}
      */
-    def apply(project: Project) = {
+    def apply(project: Project[_]) = {
         for (
             classFile ← project.classFiles if classFile.majorVersion >= 49;
             method ← classFile.methods if method.body.isDefined;

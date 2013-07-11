@@ -62,7 +62,7 @@ class InnerClassesTest
     //
     //
 
-    val project = new Project ++ ClassFiles(locateTestResources("classfiles/innerclasses.zip"))
+    val project = new Project ++ ClassFiles(locateTestResources("classfiles/Innerclasses.jar"))
 
     val myRootClass$Formatter = ObjectType("innerclasses/MyRootClass$Formatter")
     val myRootClass = ObjectType("innerclasses/MyRootClass")

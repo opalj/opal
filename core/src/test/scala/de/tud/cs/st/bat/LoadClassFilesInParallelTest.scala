@@ -71,11 +71,10 @@ class LoadClassFilesInParallelTest
 
     for {
         file ← locateTestResources("classfiles").listFiles
-        if (file.isFile && file.canRead && file.getName.endsWith(".zip"))
+        if (file.isFile && file.canRead && file.getName.endsWith(".jar"))
     } {
-        it should ("be able to read the classes in the file"+file.getAbsoluteFile().toString()+" in parallel") in {
-            val zipfile = new ZipFile(file)
-            ClassFiles(file).foreach(simpleValidator)
+        it should ("be able to read the classes in the jar file"+file.getPath+" in parallel") in {
+            ClassFiles(file).foreach(cs ⇒ { val (cf, _) = cs; simpleValidator(cf) })
         }
     }
 }

@@ -48,25 +48,43 @@ import reader.Java7Framework
  * ==Thread Safety==
  * This class is immutable.
  *
+ * @tparam S The type of the source of the class file. E.g., a `URL`, a `File` object,
+ *    a `String` or a Pair `(JarFile,JarEntry)`. This information is needed for, e.g.,
+ *    presenting the user meaningful message w.r.t. the location of some analyis.
+ * @param classes A mapping of `ObjectType`s to `ClassFile`s. When the analysis does not
+ *    load all classes related to a project, it is possible that no class file is
+ *    associated with a specific `ObjectType`.
+ * @param sources A mapping of an `ObjectType` to its defining source.
+ * @param classHierarchy The current class hierarchy.
+ *
  * @author Michael Eichberg
  */
-class Project(
-        val classes: Map[ObjectType, ClassFile] = Map(),
+class Project[S](
+        val classes: Map[ObjectType, ClassFile],
+        val sources: Map[ObjectType, S],
         val classHierarchy: ClassHierarchy = new ClassHierarchy()) {
+
+    def this(classHierarchy: ClassHierarchy = new ClassHierarchy()) {
+        this(Map[ObjectType, ClassFile](), Map[ObjectType, S](), classHierarchy)
+    }
 
     /**
      * Adds the class files to this project by calling the simple "+" method
      * for each class file.
      */
-    def ++(classFiles: Traversable[ClassFile]): Project = (this /: classFiles)(_ + _)
+    def ++(classFiles: Traversable[(ClassFile, S)]): Project[S] = (this /: classFiles)(_ + _)
 
     /**
      * Adds the given class file to this project. If the class defines an object
      * type that was previously added, the old class file will be replaced
      * by the given one.
      */
-    def +(classFile: ClassFile): Project = {
-        new Project(classes + ((classFile.thisClass, classFile)), classHierarchy + classFile)
+    def +(cs: (ClassFile, S)): Project[S] = {
+        val (classFile, source) = cs
+        new Project(
+            classes + ((classFile.thisClass, classFile)),
+            sources + ((classFile.thisClass, source)),
+            classHierarchy + classFile)
     }
 
     /**
@@ -130,6 +148,7 @@ class Project(
         }
     }
 }
+
 /**
  * Factory for [[de.tud.cs.st.bat.resolved.analyses.Project]] objects.
  *
@@ -142,6 +161,7 @@ object Project {
      * already contains the information about the exceptions thrown by JVM
      * instructions.
      */
-    def empty() = new Project(classHierarchy = ClassHierarchy.createPreInitializedClassHierarchy)
+    def empty[S]() =
+        new Project[S](classHierarchy = ClassHierarchy.createPreInitializedClassHierarchy)
 
 }

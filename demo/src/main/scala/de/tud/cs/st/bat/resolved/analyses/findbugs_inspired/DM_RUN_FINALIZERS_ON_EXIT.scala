@@ -38,9 +38,9 @@ package findbugs_inspired
  *
  * @author Ralf Mitschke
  */
-object DM_RUN_FINALIZERS_ON_EXIT extends (Project ⇒ Iterable[(ClassFile, Method, Instruction)]) {
+object DM_RUN_FINALIZERS_ON_EXIT extends (Project[_] ⇒ Iterable[(ClassFile, Method, Instruction)]) {
 
-    def apply(project: Project) = {
+    def apply(project: Project[_]) = {
         var methodsThatCallRunFinalizersOnExit: List[(ClassFile, Method, Instruction)] = Nil
         for (
             classFile ← project.classFiles;

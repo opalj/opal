@@ -64,8 +64,8 @@ class SimpleControlFlowMethodsTest extends FlatSpec with ShouldMatchers /*with B
         override def returnVoid() { returnedValues = ("return", null) :: returnedValues }
     }
 
-    val classFiles = Java7Framework.ClassFiles(locateTestResources("classfiles/ai.zip"))
-    val classFile = classFiles.find(_.thisClass.className == "ai/ControlFlowMethods").get
+    val classFiles = Java7Framework.ClassFiles(locateTestResources("classfiles/ai.jar"))
+    val classFile = classFiles.map(_._1).find(_.thisClass.className == "ai/ControlFlowMethods").get
     assert(classFile ne null, "class file not found")
 
     behavior of "the basic abstract interpreter"

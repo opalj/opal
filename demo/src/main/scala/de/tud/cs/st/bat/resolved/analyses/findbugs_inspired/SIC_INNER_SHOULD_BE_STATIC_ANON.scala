@@ -38,7 +38,7 @@ package findbugs_inspired
  *
  * @author Ralf Mitschke
  */
-object SIC_INNER_SHOULD_BE_STATIC_ANON extends (Project ⇒ Iterable[ClassFile]) {
+object SIC_INNER_SHOULD_BE_STATIC_ANON extends (Project[_] ⇒ Iterable[ClassFile]) {
 
     val withinAnonymousClass = "[$][0-9].*[$]".r
 
@@ -96,7 +96,7 @@ object SIC_INNER_SHOULD_BE_STATIC_ANON extends (Project ⇒ Iterable[ClassFile])
         ) yield 1).sum > 1
     }
 
-    def apply(project: Project) = {
+    def apply(project: Project[_]) = {
         val readFields = BaseAnalyses.readFields(project.classFiles).map(_._2)
         for (
             classFile ← project.classFiles if (isAnonymousInnerClass(classFile) &&

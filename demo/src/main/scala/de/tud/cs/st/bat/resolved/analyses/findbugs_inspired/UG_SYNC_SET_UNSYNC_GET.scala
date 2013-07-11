@@ -39,9 +39,9 @@ package findbugs_inspired
  *
  * @author Michael Eichberg
  */
-object UG_SYNC_SET_UNSYNC_GET extends (Project ⇒ Iterable[(ClassFile, Method, Method)]) {
+object UG_SYNC_SET_UNSYNC_GET extends (Project[_] ⇒ Iterable[(ClassFile, Method, Method)]) {
 
-    def apply(project: Project) = {
+    def apply(project: Project[_]) = {
         var unSyncedGetters = Map[String, Method]()
         var syncedSetters = Map[String, (ClassFile, Method)]()
         for {

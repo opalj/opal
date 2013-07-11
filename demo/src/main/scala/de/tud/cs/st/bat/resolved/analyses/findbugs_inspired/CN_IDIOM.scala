@@ -39,9 +39,9 @@ package findbugs_inspired
  * @author Ralf Mitschke
  *
  */
-object CN_IDIOM extends (Project ⇒ Iterable[ClassFile]) {
+object CN_IDIOM extends (Project[_] ⇒ Iterable[ClassFile]) {
 
-    def apply(project: Project) =
+    def apply(project: Project[_]) =
         for {
             allCloneables ← project.classHierarchy.subtypes(ObjectType("java/lang/Cloneable")).toList
             cloneable ← allCloneables

@@ -38,9 +38,9 @@ package findbugs_inspired
  *
  * @author Ralf Mitschke
  */
-object EQ_ABSTRACT_SELF extends (Project ⇒ Iterable[(ClassFile, Method)]) {
+object EQ_ABSTRACT_SELF extends (Project[_] ⇒ Iterable[(ClassFile, Method)]) {
 
-    def apply(project: Project) =
+    def apply(project: Project[_]) =
         for (
             classFile ← project.classFiles;
             method @ Method(_, "equals", MethodDescriptor(Seq(classFile.thisClass), BooleanType), _) ← classFile.methods if method.isAbstract

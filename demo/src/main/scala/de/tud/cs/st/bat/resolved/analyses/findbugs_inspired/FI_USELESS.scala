@@ -39,9 +39,9 @@ package findbugs_inspired
  *
  * @author Michael Eichberg
  */
-object FI_USELESS extends (Project ⇒ Iterable[(ClassFile, Method)]) {
+object FI_USELESS extends (Project[_] ⇒ Iterable[(ClassFile, Method)]) {
 
-    def apply(project: Project) = {
+    def apply(project: Project[_]) = {
         for {
             classFile ← project.classFiles
             if !classFile.isInterfaceDeclaration // performance optimization

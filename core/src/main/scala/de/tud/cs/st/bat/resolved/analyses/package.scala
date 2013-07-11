@@ -26,26 +26,18 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st.bat.resolved
-package analyses
-package findbugs_inspired
+package de.tud.cs.st
+package bat
+package resolved
 
-/**
- *
- * @author Ralf Mitschke
- */
-object CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE extends (Project[_] ⇒ Iterable[(ClassFile, Method)]) {
-
-    def apply(project: Project[_]) =
-        for {
-            classFile ← project.classFiles if !classFile.isAnnotationDeclaration && classFile.superClass.isDefined
-            method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object), _) ← classFile.methods
-            if !project.classHierarchy.isSubtypeOf(classFile.thisClass, ObjectType("java/lang/Cloneable"))
-                .getOrElse(false)
-        } yield (classFile, method)
+package object analyses {
 
 }
+
+
+
+

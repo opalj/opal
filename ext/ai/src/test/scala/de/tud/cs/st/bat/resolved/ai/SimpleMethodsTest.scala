@@ -61,7 +61,9 @@ class SimpleMethodsTest extends FlatSpec with ShouldMatchers /*with BeforeAndAft
         override def returnVoid() { returnedValue = None }
     }
 
-    val classFile = ClassFiles(locateTestResources("classfiles/ai.zip")).find(_.thisClass.className == "ai/SimpleMethods").get
+    val classFile =
+        ClassFiles(locateTestResources("classfiles/ai.jar")).map(_._1).
+            find(_.thisClass.className == "ai/SimpleMethods").get
 
     behavior of "the basic abstract interpreter"
 

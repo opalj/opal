@@ -38,7 +38,7 @@ package findbugs_inspired
  *
  * @author Ralf Mitschke
  */
-object MS_SHOULD_BE_FINAL extends (Project ⇒ Iterable[(ClassFile, Field)]) {
+object MS_SHOULD_BE_FINAL extends (Project[_] ⇒ Iterable[(ClassFile, Field)]) {
 
     val hashTableType = ObjectType("java/util/Hashtable")
 
@@ -46,7 +46,7 @@ object MS_SHOULD_BE_FINAL extends (Project ⇒ Iterable[(ClassFile, Field)]) {
 
     def isArray(t: FieldType) = t.isArrayType
 
-    def apply(project: Project) = {
+    def apply(project: Project[_]) = {
         for (
             classFile ← project.classFiles if (!classFile.isInterfaceDeclaration);
             declaringClass = classFile.thisClass;

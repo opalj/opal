@@ -83,7 +83,7 @@ object MoreCheckers {
 
     def main(args: Array[String]) {
 
-        if (args.length == 0 || !args.forall(arg ⇒ arg.endsWith(".zip") || arg.endsWith(".jar"))) {
+        if (args.length == 0 || !args.forall(arg ⇒ arg.endsWith(".jar"))) {
             printUsage
             sys.exit(1)
         }
@@ -127,15 +127,15 @@ object MoreCheckers {
     // The following code is meant to show how easy it is to write analyses;
     // it is not meant to demonstrate how to write such analyses in an efficient
     // manner. (However, the performance is still acceptable.)
-    def analyze(zipFiles: Array[String]) {
+    def analyze(jarFiles: Array[String]) {
         var classHierarchy = new ClassHierarchy
 
         var classFilesCount = 0
         val classFiles = //MemoryUsage(mu ⇒ println("Memory required for the bytecode representation: "+(mu / 1024.0 / 1024.0)+" MByte")) {
             //   time(t ⇒ println("Reading all class files took: "+t/*nsToSecs(t)*/)) {
             for (
-                zipFile ← zipFiles; // if { println("Reading: "+zipFile); true };
-                classFile ← ClassFiles(zipFile)
+                zipFile ← jarFiles; // if { println("Reading: "+zipFile); true };
+                (classFile, _) ← ClassFiles(zipFile)
             ) yield {
                 classFilesCount += 1
                 classHierarchy = classHierarchy + classFile

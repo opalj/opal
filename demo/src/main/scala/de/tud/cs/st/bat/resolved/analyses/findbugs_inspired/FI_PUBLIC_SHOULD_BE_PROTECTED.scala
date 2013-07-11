@@ -38,9 +38,9 @@ package findbugs_inspired
  *
  * @author Ralf Mitschke
  */
-object FI_PUBLIC_SHOULD_BE_PROTECTED extends (Project ⇒ Iterable[ClassFile]) {
+object FI_PUBLIC_SHOULD_BE_PROTECTED extends (Project[_] ⇒ Iterable[ClassFile]) {
 
-    def apply(project: Project) =
+    def apply(project: Project[_]) =
         for {
             classFile ← project.classFiles
             if classFile.methods.exists(method ⇒

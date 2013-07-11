@@ -36,6 +36,7 @@ package reader
 
 import java.io.{ File, InputStream, DataInputStream, BufferedInputStream }
 import java.util.zip.{ ZipFile, ZipEntry }
+import java.net.URL
 
 /**
  * Implements several template methods to read in a Java class files.
@@ -192,151 +193,6 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     import util.ControlAbstractions._
 
     /**
-     * Reads in a class file.
-     *
-     * @param create A function that creates a new `InputStream` and
-     *  which must not return `null`. If you already do have an open input stream
-     *  which should not be closed after reading the class file use
-     *  `de.tud.cs.st.bat.reader.ClassFileReader.ClassFile(DataInputStream)` instead.
-     *  The (newly created) InputStream returned by calling `create` is closed by this method.
-     *  The created input stream will automatically be wrapped by BAT to enable efficient reading of the
-     *  class file.
-     */
-    def ClassFile(create: () ⇒ InputStream): ClassFile = {
-        process(
-            create() match {
-                case dis: DataInputStream ⇒ dis
-                case is                   ⇒ new DataInputStream(new BufferedInputStream(is))
-            }
-        ) { ClassFile(_) }
-    }
-
-    protected[this] def ClassFile(zipFile: ZipFile, zipEntry: ZipEntry): ClassFile = {
-        ClassFile(() ⇒ zipFile.getInputStream(zipEntry))
-    }
-
-    /**
-     * Reads in a single class file from a ZIP/Jar file.
-     *
-     * @param zipFileName the name of an existing ZIP/JAR file that contains class files.
-     * @param zipFileEntryName the name of a class file stored in the specified ZIP/JAR file.
-     */
-    def ClassFile(zipFileName: String, zipFileEntryName: String): ClassFile = {
-        ClassFile(new File(zipFileName), zipFileEntryName)
-    }
-
-    /**
-     * Reads in a single class file from a ZIP/Jar file.
-     *
-     * @param zipFile an existing ZIP/JAR file that contains class files.
-     * @param zipFileEntryName the name of a class file stored in the specified ZIP/JAR file.
-     */
-    def ClassFile(zipFile: File, zipFileEntryName: String): ClassFile = {
-        withResource(new ZipFile(zipFile))(zf ⇒ {
-            val zipEntry = zf.getEntry(zipFileEntryName)
-            ClassFile(zf, zipEntry)
-        })
-    }
-
-    /**
-     * Reads in parallel all class files stored in the given zip file.
-     */
-    def ClassFiles(zipFile: ZipFile): Seq[ClassFile] = {
-        val mutex = new Object
-        var classFiles: List[ClassFile] = Nil
-
-        def addClassFile(zf: ZipFile, ze: ZipEntry, cf: ClassFile) =
-            mutex.synchronized {
-                classFiles = cf :: classFiles
-            }
-
-        ClassFiles(zipFile, addClassFile _)
-        classFiles
-    }
-
-    /**
-     * Reads '''in parallel''' all class files stored in the given zip file. For each
-     * successfully read class file the function `f` is called.
-     *
-     * @param zipFile A valid zip or jar file that contains `.class` files other files
-     *      are ignored.
-     * @param f The function that is called for each class file in the given zip file.
-     *      Given that the zipfile is read in parallel '''this function has to be thread safe'''.
-     */
-    def ClassFiles(
-        zipFile: ZipFile,
-        f: (ZipFile, ZipEntry, ClassFile) ⇒ _,
-        // TODO    recursiveDecent: Boolean = true,
-        exceptionHandler: Option[(Exception) ⇒ _] = defaultExceptionHandler) {
-
-        import collection.JavaConversions._
-        for (zipEntry ← (zipFile).entries.toIterable.par) {
-            if (!zipEntry.isDirectory) {
-                val zipEntryName = zipEntry.getName
-                if (zipEntryName.endsWith(".class")) {
-                    onException(exceptionHandler) {
-                        val classFile = ClassFile(zipFile, zipEntry)
-                        f(zipFile, zipEntry, classFile)
-                    }
-                }
-                // TODO [Improvement] support recursive decent
-                //                else if (recursiveDecent &&
-                //                    (zipEntryName.endsWith(".zip") ||
-                //                        zipEntryName.endsWith(".jar"))) {
-                //                    onException(exceptionHandler) {
-                //                        new ZipFile(...)
-                //                    }
-                //                }
-            }
-        }
-    }
-
-    /**
-     * Reads all class files from the given zip file.
-     */
-    def ClassFiles(zipFileName: String): Seq[ClassFile] =
-        withResource(new ZipFile(zipFileName)) { zf ⇒ ClassFiles(zf) }
-
-    def ClassFiles(file: java.io.File): Seq[ClassFile] = {
-        if (!file.exists())
-            return Nil
-
-        if (file.isFile()) {
-            if (file.getName.endsWith(".zip") || file.getName.endsWith(".jar"))
-                return ClassFiles(file.getAbsoluteFile.toString)
-
-            if (file.getName.endsWith(".class"))
-                return List(ClassFile(() ⇒ new java.io.FileInputStream(file)))
-
-            return Nil
-        }
-
-        // file.isDirectory
-        var classFiles: List[ClassFile] = Nil
-        var directories: List[java.io.File] = List(file) // our work list
-
-        while (directories.nonEmpty) {
-            val directory = directories.head
-            directories = directories.tail
-
-            for (file ← directory.listFiles().par) {
-                if (file.isDirectory()) {
-                    directories.synchronized {
-                        directories = file :: directories
-                    }
-                } else if (file.getName().endsWith(".class")) {
-                    val classFile = ClassFile(() ⇒ new java.io.FileInputStream(file))
-                    classFiles.synchronized {
-                        classFiles = classFile :: classFiles
-                    }
-                }
-            }
-        }
-
-        return classFiles;
-    }
-
-    /**
      * Template method to read in a Java class file from the given input stream.
      *
      * @param in the DataInputStream from which the class file will be read. The
@@ -373,5 +229,162 @@ trait ClassFileReader extends Constant_PoolAbstractions {
             attributes
         )(cp)
     }
+
+    //
+    // CONVENIENCE METHODS TO LOAD CLASS FILES FROM VARIOUS SOURCES
+    //
+
+    /**
+     * Reads in a class file from `InputStream`.
+     *
+     * @param create A function that creates a new `InputStream` and
+     *  which must not return `null`. If you already do have an open input stream
+     *  which should not be closed after reading the class file use
+     *  `de.tud.cs.st.bat.reader.ClassFileReader.ClassFile(DataInputStream)` instead.
+     *  The (newly created) InputStream returned by calling `create` is closed by this method.
+     *  The created input stream will automatically be wrapped by BAT to enable efficient reading of the
+     *  class file.
+     */
+    def ClassFile(create: () ⇒ InputStream): ClassFile = {
+        process(create() match {
+            case dis: DataInputStream ⇒ dis
+            case is                   ⇒ new DataInputStream(new BufferedInputStream(is))
+        }) {
+            ClassFile(_)
+        }
+    }
+
+    protected[this] def ClassFile(jarFile: ZipFile, jarEntry: ZipEntry): ClassFile = {
+        ClassFile(() ⇒ jarFile.getInputStream(jarEntry))
+    }
+
+    /**
+     * Reads in a single class file from a Jar file.
+     *
+     * @param jarFileName the name of an existing ZIP/JAR file that contains class files.
+     * @param jarFileEntryName the name of a class file stored in the specified ZIP/JAR file.
+     */
+    def ClassFile(jarFileName: String, jarFileEntryName: String): ClassFile = {
+        ClassFile(new File(jarFileName), jarFileEntryName)
+    }
+
+    /**
+     * Reads in a single class file from a Jar file.
+     *
+     * @param jarFile an existing ZIP/JAR file that contains class files.
+     * @param jarFileEntryName the name of a class file stored in the specified ZIP/JAR file.
+     */
+    def ClassFile(jarFile: File, jarFileEntryName: String): ClassFile = {
+        withResource(new ZipFile(jarFile))(zf ⇒ {
+            val jarEntry = zf.getEntry(jarFileEntryName)
+            ClassFile(zf, jarEntry)
+        })
+    }
+
+    /**
+     * Reads in parallel all class files stored in the given zip file.
+     */
+    def ClassFiles(jarFile: ZipFile): Seq[(ClassFile, URL)] = {
+        val mutex = new Object
+        var classFiles: List[(ClassFile, URL)] = Nil
+
+        def addClassFile(jf: ZipFile, je: ZipEntry, cf: ClassFile) = {
+            val jarFileURL = new File(jf.getName()).toURI().toURL().toExternalForm()
+            val url = new URL("jar:"+jarFileURL+"!/"+je.getName())
+            mutex.synchronized {
+                classFiles = (cf, url) :: classFiles
+            }
+        }
+
+        ClassFiles(jarFile, addClassFile _)
+        classFiles
+    }
+
+    /**
+     * Reads '''in parallel''' all class files stored in the given zip file. For each
+     * successfully read class file the function `f` is called.
+     *
+     * @param zipFile A valid zip or jar file that contains `.class` files other files
+     *      are ignored.
+     * @param f The function that is called for each class file in the given zip file.
+     *      Given that the zipfile is read in parallel '''this function has to be thread safe'''.
+     */
+    def ClassFiles(
+        jarFile: ZipFile,
+        f: (ZipFile, ZipEntry, ClassFile) ⇒ _,
+        // TODO    recursiveDecent: Boolean = true,
+        exceptionHandler: Option[(Exception) ⇒ _] = defaultExceptionHandler) {
+
+        import collection.JavaConversions._
+        for (jarEntry ← (jarFile).entries.toIterable.par) {
+            if (!jarEntry.isDirectory) {
+                val jarEntryName = jarEntry.getName
+                if (jarEntryName.endsWith(".class")) {
+                    onException(exceptionHandler) {
+                        val classFile = ClassFile(jarFile, jarEntry)
+                        f(jarFile, jarEntry, classFile)
+                    }
+                }
+                
+                // TODO [Improvement] support recursive decent
+                //                else if (recursiveDecent && jarEntryName.endsWith(".jar")) {
+                //                    onException(exceptionHandler) {
+                //                        new ZipFile(...)
+                //                    }
+                //                }
+            }
+        }
+    }
+
+    /**
+     * Reads all class files from the given zip file.
+     */
+    def ClassFiles(jarFileName: String): Seq[(ClassFile, URL)] =
+        withResource(new ZipFile(jarFileName)) { zf ⇒ ClassFiles(zf) }
+
+    /**
+     * Loads class files from the given file location. If the file denotes
+     * a single ".class" file this class file is loaded. If the file
+     * object denotes a ".jar" file, all class files in the jar file will be loaded.
+     * If the file object specifies a directory object, all ".class" files
+     * in the directory and in all subdirectories are loaded as well as all
+     * class files stored in ".jar" files in one of the directories.
+     */
+    def ClassFiles(file: File): Seq[(ClassFile, URL)] = {
+        if (file.isFile()) {
+            if (file.getName.endsWith(".jar"))
+                return ClassFiles(file.getAbsoluteFile.getPath)
+
+            if (file.getName.endsWith(".class"))
+                return List((ClassFile(() ⇒ new java.io.FileInputStream(file)), file.toURI().toURL()))
+
+            return Nil
+        }
+
+        // file.isDirectory
+        var classFiles: List[(ClassFile, URL)] = Nil
+        var directories: List[java.io.File] = List(file) // our work list
+
+        while (directories.nonEmpty) {
+            val directory = directories.head
+            directories = directories.tail
+
+            for (file ← directory.listFiles().par) {
+                if (file.isDirectory()) {
+                    directories.synchronized {
+                        directories = file :: directories
+                    }
+                } else if (file.getName().endsWith(".class")) {
+                    val classFile = ClassFile(() ⇒ new java.io.FileInputStream(file))
+                    classFiles.synchronized {
+                        classFiles = (classFile, file.toURI().toURL()) :: classFiles
+                    }
+                }
+            }
+        }
+
+        return classFiles;
+    }
+
 }
 

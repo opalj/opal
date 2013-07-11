@@ -38,7 +38,7 @@ package findbugs_inspired
  *
  * @author Ralf Mitschke
  */
-object DP_DO_INSIDE_DO_PRIVILEGED extends (Project ⇒ Iterable[(ClassFile, Method, Int)]) {
+object DP_DO_INSIDE_DO_PRIVILEGED extends (Project[_] ⇒ Iterable[(ClassFile, Method, Int)]) {
 
     val reflectionField = ObjectType("java/lang/reflect/Field")
 
@@ -48,7 +48,7 @@ object DP_DO_INSIDE_DO_PRIVILEGED extends (Project ⇒ Iterable[(ClassFile, Meth
 
     val priviledgedExceptionAction = ObjectType("java/security/PrivilegedExceptionAction")
 
-    def apply(project: Project) = {
+    def apply(project: Project[_]) = {
         import BaseAnalyses._
 
         for (

@@ -38,9 +38,9 @@ package findbugs_inspired
  *
  * @author Ralf Mitschke
  */
-object DM_GC extends (Project ⇒ Iterable[(ClassFile, Method, Instruction)]) {
+object DM_GC extends (Project[_] ⇒ Iterable[(ClassFile, Method, Instruction)]) {
 
-    def apply(project: Project) = {
+    def apply(project: Project[_]) = {
         var garbageCollectingMethods: List[(ClassFile, Method, Instruction)] = Nil
 
         for ( // we don't care about gc calls in java.lang and also about gc calls that happen inside of methods related to garbage collection (heuristic)

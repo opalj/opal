@@ -38,9 +38,9 @@ package findbugs_inspired
  *
  * @author Ralf Mitschke
  */
-object SW_SWING_METHODS_INVOKED_IN_SWING_THREAD extends (Project ⇒ Iterable[(ClassFile, Method, Int)]) {
+object SW_SWING_METHODS_INVOKED_IN_SWING_THREAD extends (Project[_] ⇒ Iterable[(ClassFile, Method, Int)]) {
 
-    def apply(project: Project) = {
+    def apply(project: Project[_]) = {
 
         import BaseAnalyses._
 

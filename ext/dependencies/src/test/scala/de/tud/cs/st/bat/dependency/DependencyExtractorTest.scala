@@ -34,18 +34,20 @@ package de.tud.cs.st.bat
 package dependency
 
 import resolved._
-import resolved.reader.Java7Framework
+import resolved.reader.Java7Framework.ClassFiles
 import DependencyType._
 
 import org.scalatest.FunSuite
 
+import java.net.URL
+
 /**
- * Tests that the dependency extractor does not miss some dependencies and
- * that it does not extract "unexpected" dependencies.
- *
- * @author Thomas Schlosser
- * @author Michael Eichberg
- */
+  * Tests that the dependency extractor does not miss some dependencies and
+  * that it does not extract "unexpected" dependencies.
+  *
+  * @author Thomas Schlosser
+  * @author Michael Eichberg
+  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class DependencyExtractorTest extends FunSuite {
 
@@ -806,7 +808,7 @@ class DependencyExtractorTest extends FunSuite {
         }
 
         // extract dependencies
-        for (classFile ← Java7Framework.ClassFiles(ClassLoader.getSystemResource("classfiles/Dependencies.zip").getFile)) {
+        for (cs @ (classFile, _) ← ClassFiles(ClassLoader.getSystemResource("classfiles/Dependencies.jar").getFile)) {
             dependencyExtractor.process(classFile)
         }
 

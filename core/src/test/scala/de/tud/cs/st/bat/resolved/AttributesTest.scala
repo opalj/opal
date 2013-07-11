@@ -42,7 +42,7 @@ import org.scalatest.ParallelTestExecution
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class AttributesTest extends FunSuite with TestSupport with ParallelTestExecution {
 
-    val attributesZipFile = locateTestResources("classfiles/Attributes.zip")
+    val attributesZipFile = locateTestResources("classfiles/Attributes.jar")
 
     import reader.Java7Framework.ClassFile
 

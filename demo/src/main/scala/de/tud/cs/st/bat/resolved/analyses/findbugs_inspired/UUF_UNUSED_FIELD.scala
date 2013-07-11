@@ -38,9 +38,9 @@ package findbugs_inspired
  *
  * @author Ralf Mitschke
  */
-object UUF_UNUSED_FIELD extends (Project ⇒ Iterable[(ClassFile, Field)]) {
+object UUF_UNUSED_FIELD extends (Project[_] ⇒ Iterable[(ClassFile, Field)]) {
 
-    def apply(project: Project) = {
+    def apply(project: Project[_]) = {
         var unusedFields: List[(ClassFile, Field)] = Nil
 
         for (classFile ← project.classFiles if !classFile.isInterfaceDeclaration) {

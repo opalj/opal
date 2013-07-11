@@ -47,8 +47,46 @@ case class Code(
     attributes: Attributes)
         extends Attribute {
 
-    def lineNumberTable: Option[LineNumbers] =
-        attributes collectFirst { case LineNumberTable(lnt) ⇒ lnt }
+    /**
+     * Collects all line number tables.
+     *
+     * The JVM specification does not prescribe that there has to be at most one
+     * line number table.
+     */
+    def lineNumberTables: Seq[LineNumbers] =
+        attributes collect { case LineNumberTable(lnt) ⇒ lnt }
+
+    /**
+     * @param pc The program counter/the index of an instruction in the code array for
+     *    which we want to determine the source line.
+     */
+    def lookupLineNumber(pc: Int): Option[Int] = {
+        import scala.util.control.Breaks
+        val breaks = new Breaks
+        import breaks.{ break, breakable }
+
+        // though the spec explicitly states that a class file can have multiple
+        // line number table attributes, we have never seen this in practice...
+        val mergedTables = lineNumberTables.flatten
+        val sortedTable = mergedTables.sortWith((ltA, ltB) ⇒ ltA.startPC < ltB.startPC)
+        val lnsIterator = sortedTable.iterator
+        var lastLineNumber: LineNumber = null
+        breakable {
+            while (lnsIterator.hasNext) {
+                var currentLineNumber = lnsIterator.next
+                if (currentLineNumber.startPC <= pc) {
+                    lastLineNumber = currentLineNumber
+                } else {
+                    break
+                }
+            }
+        }
+
+        if (lastLineNumber eq null)
+            return None
+        else
+            return Some(lastLineNumber.lineNumber)
+    }
 
     def localVariableTable: Option[LocalVariables] =
         attributes collectFirst { case LocalVariableTable(lvt) ⇒ lvt }
