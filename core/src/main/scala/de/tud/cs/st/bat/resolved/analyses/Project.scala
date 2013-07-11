@@ -48,6 +48,10 @@ import reader.Java7Framework
  * ==Thread Safety==
  * This class is immutable.
  *
+ * @param classes Maps an `ObjectType` to its defining `ClassFile`, if the class file
+ *      was loaded.
+ * @param classHierarchy This project's class hierarchy.
+ *
  * @author Michael Eichberg
  */
 class Project(
