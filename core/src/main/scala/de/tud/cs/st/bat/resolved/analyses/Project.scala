@@ -55,7 +55,7 @@ import reader.Java7Framework
  *    load all classes related to a project, it is possible that no class file is
  *    associated with a specific `ObjectType`.
  * @param sources A mapping of an `ObjectType` to its defining source.
- * @param classHierarchy The current class hierarchy.
+ * @param classHierarchy This project's class hierarchy.
  *
  * @author Michael Eichberg
  */
