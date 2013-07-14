@@ -86,62 +86,104 @@ object ReportableAnalysisResult {
 
 }
 
-/**
- * Encapsulates a basic report of some issue related to a specific method or line of code.
- */
 case class BasicReport(
-    source: Option[String],
-    line: Option[Int],
-    column: Option[Int],
-    messageType: String,
     message: String)
         extends ReportableAnalysisResult {
 
-    def consoleReport(): String = {
-        source.getOrElse("!<PROJECT_EXTERNAL>:") +
+    def consoleReport() = {
+        message
+    }
+}
+
+/**
+ * Common superclass of all reporters that depend on the source file's of a specific
+ * class file.
+ */
+abstract class SourceLocationBasedReport[+S] {
+
+    def source: Option[S]
+
+    def consoleReport(locationIdentifier: (S) ⇒ String): String
+}
+
+/**
+ * Encapsulates a basic report of some issue related to a specific method or line of code.
+ */
+case class ClassBasedReport[+S](
+    source: Option[S],
+    className: String,
+    messageType: Option[String],
+    message: String)
+        extends SourceLocationBasedReport[S] {
+
+    def consoleReport(locationIdentifier: (S) ⇒ String): String = {
+        source.getOrElse("!PROJECT_EXTERNAL:")+
+            ":!CLASS<"+className+">: "+
+            messageType.map(_+": ").getOrElse("") +
+            message
+    }
+}
+
+case class MethodBasedReport[+S](
+    source: Option[S],
+    methodSignature: String,
+    messageType: Option[String],
+    message: String)
+        extends SourceLocationBasedReport[S] {
+
+    def consoleReport(locationIdentifier: (S) ⇒ String): String = {
+        source.getOrElse("!PROJECT_EXTERNAL:")+
+            ":!METHOD<"+methodSignature+">: "+
+            messageType.map(_+": ").getOrElse("") +
+            message
+    }
+}
+
+case class FieldBasedReport[+S](
+    source: Option[S],
+    fieldSignature: String,
+    messageType: Option[String],
+    message: String)
+        extends SourceLocationBasedReport[S] {
+
+    def consoleReport(locationIdentifier: (S) ⇒ String): String = {
+        source.getOrElse("!PROJECT_EXTERNAL:")+
+            ":!FIELD<"+fieldSignature+">: "+
+            messageType.map(_+": ").getOrElse("") +
+            message
+    }
+}
+
+case class LineAndColumnBasedReport[+S](
+    source: Option[S],
+    line: Option[Int],
+    column: Option[Int],
+    messageType: Option[String],
+    message: String)
+        extends SourceLocationBasedReport[S] {
+
+    def consoleReport(locationIdentifier: (S) ⇒ String): String = {
+        source.getOrElse("!PROJECT_EXTERNAL:") +
             line.map(_+":").getOrElse("") +
             column.map(_+": ").getOrElse(" ") +
-            messageType+": "+
+            messageType.map(_+": ").getOrElse("") +
             message
-
     }
 }
 
-object BasicReport {
+/**
+ * @see [[de.tud.cs.st.bat.resolved.analyses]] for several predefined converter functions.
+ */
+case class ReportableAnalysisAdapter[Source, AnalysisResult](
+    analysis: Analysis[Source, AnalysisResult],
+    converter: AnalysisResult ⇒ String)
+        extends Analysis[Source, ReportableAnalysisResult] {
 
-    implicit def URLtoSomeString(url: URL): Some[String] = {
-        if (url.getProtocol() == "file") {
-            Some(url.getFile)
-        } else {
-            Some(url.toExternalForm())
-        }
+    def description = analysis.description
+    def title = analysis.title
+    def copyright = analysis.copyright
+    def analyze(project: Project[Source]): ReportableAnalysisResult = {
+        new BasicReport(converter(analysis.analyze(project)))
     }
-
-    def apply(source: String, messageType: String, message: String) {
-
-        BasicReport(Some(source), None, None, messageType, message)
-    }
-
-    /**
-     *
-     */
-    def apply(
-        source: String,
-        method: Option[Method],
-        code: Code,
-        pc: Int,
-        messageType: String, message: String) {
-
-        val location = code.lookupLineNumber(pc)
-        if (location.isDefined)
-            BasicReport(Some(source), location, None, messageType, message)
-        else if (method.isDefined)
-            BasicReport(Some(source+":!<"+method.get.toJava+">: "), None, None, messageType, message)
-        else
-            BasicReport(Some(source), None, None, messageType, message)
-    }
-
 }
-
-
 

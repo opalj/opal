@@ -34,7 +34,89 @@ package de.tud.cs.st
 package bat
 package resolved
 
+import java.io.File
+import java.net.URL
+
+/**
+ * Defines implicit conversions to wrap some common types of analyses to generate
+ * (command-line) reportable results.
+ *
+ */
 package object analyses {
+
+    import language.implicitConversions
+
+    def urlToLocationIdentifier(url: URL): String = {
+        if (url.getProtocol() == "file")
+            url.getFile()
+        else
+            "!URL<"+url.toExternalForm()+">"
+    }
+
+    def fileToLocationIdentifier(file: File): String = file.getAbsolutePath()
+
+    implicit def fileBasedAnalysisToAnalysisWithReportableResults(
+        analysis: Analysis[File, Iterable[SourceLocationBasedReport[File]]]): Analysis[File, ReportableAnalysisResult] = {
+
+        new ReportableAnalysisAdapter[File, Iterable[SourceLocationBasedReport[File]]](
+            analysis,
+            results ⇒ results.map(_.consoleReport(fileToLocationIdentifier)).mkString("\n")
+        )
+    }
+
+    implicit def fileBasedAnalysisWithOptionalResultToAnalysisWithReportableResults(
+        analysis: Analysis[File, Option[SourceLocationBasedReport[File]]]): Analysis[File, ReportableAnalysisResult] = {
+
+        new ReportableAnalysisAdapter[File, Option[SourceLocationBasedReport[File]]](
+            analysis,
+            results ⇒ results.map(_.consoleReport(fileToLocationIdentifier)).mkString("\n")
+        )
+    }
+
+    implicit def fileBasedAnalysisToAnalysisWithReportableResult(
+        analysis: Analysis[File, SourceLocationBasedReport[File]]): Analysis[File, ReportableAnalysisResult] = {
+
+        new ReportableAnalysisAdapter[File, SourceLocationBasedReport[File]](
+            analysis,
+            results ⇒ results.consoleReport(fileToLocationIdentifier)
+        )
+    }
+
+    implicit def urlBasedReportableAnalysesToAnalysisWithReportableResults(
+        analysis: Analysis[URL, Iterable[ReportableAnalysisResult]]): Analysis[URL, ReportableAnalysisResult] = {
+
+        new ReportableAnalysisAdapter[URL, Iterable[ReportableAnalysisResult]](
+            analysis,
+            results ⇒ results.map(_.consoleReport).mkString("\"")
+        )
+    }
+
+    implicit def urlBasedAnalysisToAnalysisWithReportableResults(
+        analysis: Analysis[URL, Iterable[SourceLocationBasedReport[URL]]]): Analysis[URL, ReportableAnalysisResult] = {
+
+        new ReportableAnalysisAdapter[URL, Iterable[SourceLocationBasedReport[URL]]](
+            analysis,
+            results ⇒ results.map(_.consoleReport(urlToLocationIdentifier)).mkString("\n")
+        )
+    }
+
+    implicit def urlBasedAnalysisToAnalysisWithReportableResult(
+        analysis: Analysis[URL, SourceLocationBasedReport[URL]]): Analysis[URL, ReportableAnalysisResult] = {
+
+        new ReportableAnalysisAdapter[URL, SourceLocationBasedReport[URL]](
+            analysis,
+            result ⇒ result.consoleReport(urlToLocationIdentifier)
+        )
+    }
+
+    implicit def urlBasedAnalysisWithOptionalResultToAnalysisWithReportableResults(
+        analysis: Analysis[URL, Option[SourceLocationBasedReport[URL]]]): Analysis[URL, ReportableAnalysisResult] = {
+
+        new ReportableAnalysisAdapter[URL, Option[SourceLocationBasedReport[URL]]](
+            analysis,
+            results ⇒ results.map(_.consoleReport(urlToLocationIdentifier)).mkString("\n")
+        )
+    }
 
 }
 

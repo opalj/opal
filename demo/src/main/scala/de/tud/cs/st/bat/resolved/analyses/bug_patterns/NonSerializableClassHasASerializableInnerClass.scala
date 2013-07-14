@@ -34,34 +34,66 @@ package de.tud.cs.st
 package bat
 package resolved
 package analyses
-
-import java.net.URL
+package bug_patterns
 
 /**
- * An analysis that identifies (non-static) inner classes that are serializable, but where the outer class
+ * Identifies (non-static) inner classes that are serializable, but where the outer class
  * is not.
  *
  * @author Michael Eichberg
  */
-object NonSerializableClassHasASerializableInnerClass extends Analysis[URL, Traversable[(ObjectType, ObjectType)]] {
+class NonSerializableClassHasASerializableInnerClass[Source]
+        extends MultipleResultsAnalysis[Source, ClassBasedReport[Source]] {
 
-    val Serializable = ObjectType("java/io/Serializable")
+    //
+    // Meta-data
+    //
 
     def description = "Identifies (non-static) inner classes that are serializable, but where the outer class is not."
 
-    def copyright = "(c) 2013 Michael Eichberg et al."
+    def copyright = "(c)2013 Michael Eichberg et al. (Findbugs inspired)"
 
-    def analyze(project: Project[URL]) = {
+    def title = "SS-NSChaSIC" // StaticStructure-NonSerializableClassHasASerializableInnerClass
+
+    // 
+    // Implementation
+    // 
+
+    def analyze(project: Project[Source]): Iterable[ClassBasedReport[Source]] = {
+
+        import project.classHierarchy.isSubtypeOf
+
+        val Serializable = ObjectType("java/io/Serializable")
 
         for {
             objectTypes ← project.classHierarchy.subclasses(Serializable).toSeq
             objectType ← objectTypes
             classFile = project.classes(objectType)
-            (outerType, thisInnerClassesAccessFlags) ← classFile.outerType if !ACC_STATIC.element_of(thisInnerClassesAccessFlags)
-            if !project.classHierarchy.isSubtypeOf(outerType, Serializable).getOrElse(true /* if we don't know anything about the class, then we don't want to generate a warning */ )
+            (outerType, thisInnerClassesAccessFlags) ← classFile.outerType
+            if !ACC_STATIC.element_of(thisInnerClassesAccessFlags)
+            /* if we know nothing about the class, then we never generate a warning */
+            if !isSubtypeOf(outerType, Serializable).getOrElse(true)
             //outerClass <- project.classes.get(outerType).toSeq                      
         } yield {
-            (objectType, outerType)
+            // BASIC RESULT: (objectType, outerType)
+            ClassBasedReport(
+                project.sources.get(objectType),
+                objectType.toJava,
+                Some("note"),
+                "The non-static inner class: "+
+                    objectType.toJava+
+                    " is seriablizable, but the outer class: "+outerType.toJava+" is not."
+            )
         }
     }
 }
+
+import java.net.URL
+
+object NonSerializableClassHasASerializableInnerClassAnalysis extends AnalysisExecutor {
+
+    val analysis = urlBasedAnalysisToAnalysisWithReportableResults(
+        new NonSerializableClassHasASerializableInnerClass[URL]
+    )
+}
+    

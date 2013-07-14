@@ -1,5 +1,5 @@
 /* License (BSD Style License):
- * Copyright (c) 2013
+ * Copyright (c) 2009 - 2013
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -34,23 +34,19 @@ package de.tud.cs.st
 package bat
 package resolved
 package analyses
+package bug_patterns
 
 import java.net.URL
 
-/**
- * Counts the number of methods and the number of overridden methods.
- *
- * @author Michael Eichberg
- */
-object OverriddenMethods extends AnalysisExecutor {
+object FindMoreBugs extends AnalysisExecutor {
 
-    def description = "Counts the number of overridden methods."
+    val aggregator = new AnalysisAggregator[URL, ReportableAnalysisResult]
 
-    def copyright = "(c) Michael Eichberg, Technische Universität Darmstadt"
+    val analysis: Analysis[URL, ReportableAnalysisResult] = aggregator
 
-    def analyze(project: Project[URL]): ReportableAnalysisResult = {
-        project.classHierarchy.rootTypes // TODO !!!
-        null
-    }
+    aggregator.register(new NonSerializableClassHasASerializableInnerClass[URL])
+    aggregator.register(new CovariantEqualsMethodDefined[URL])
+    aggregator.register(new EqualsHashCodeContract[URL])
 
-}
+} 
+  
