@@ -34,7 +34,7 @@ package de.tud.cs.st
 package bat
 package reader
 
-import java.io.{ File, InputStream, DataInputStream, BufferedInputStream }
+import java.io.{ File, FileInputStream, InputStream, DataInputStream, BufferedInputStream }
 import java.util.zip.{ ZipFile, ZipEntry }
 import java.net.URL
 
@@ -325,7 +325,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
                         f(jarFile, jarEntry, classFile)
                     }
                 }
-                
+
                 // TODO [Improvement] support recursive decent
                 //                else if (recursiveDecent && jarEntryName.endsWith(".jar")) {
                 //                    onException(exceptionHandler) {
@@ -348,7 +348,9 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      * object denotes a ".jar" file, all class files in the jar file will be loaded.
      * If the file object specifies a directory object, all ".class" files
      * in the directory and in all subdirectories are loaded as well as all
-     * class files stored in ".jar" files in one of the directories.
+     * class files stored in ".jar" files in one of the directories. This class loads
+     * all class files in parallel. However, this does not effect analyses working on the
+     * resulting `Seq`.
      */
     def ClassFiles(file: File): Seq[(ClassFile, URL)] = {
         if (file.isFile()) {
@@ -356,34 +358,13 @@ trait ClassFileReader extends Constant_PoolAbstractions {
                 return ClassFiles(file.getAbsoluteFile.getPath)
 
             if (file.getName.endsWith(".class"))
-                return List((ClassFile(() ⇒ new java.io.FileInputStream(file)), file.toURI().toURL()))
+                return List((ClassFile(() ⇒ new FileInputStream(file)), file.toURI().toURL()))
 
             return Nil
         }
 
         // file.isDirectory
-        var classFiles: List[(ClassFile, URL)] = Nil
-        var directories: List[java.io.File] = List(file) // our work list
-
-        while (directories.nonEmpty) {
-            val directory = directories.head
-            directories = directories.tail
-
-            for (file ← directory.listFiles().par) {
-                if (file.isDirectory()) {
-                    directories.synchronized {
-                        directories = file :: directories
-                    }
-                } else if (file.getName().endsWith(".class")) {
-                    val classFile = ClassFile(() ⇒ new java.io.FileInputStream(file))
-                    classFiles.synchronized {
-                        classFiles = (classFile, file.toURI().toURL()) :: classFiles
-                    }
-                }
-            }
-        }
-
-        return classFiles;
+        (for (innerFile ← file.listFiles().par) yield ClassFiles(innerFile)).seq.flatten
     }
 
 }
