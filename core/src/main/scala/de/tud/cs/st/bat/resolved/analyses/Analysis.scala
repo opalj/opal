@@ -35,11 +35,6 @@ package bat
 package resolved
 package analyses
 
-import reader.Java7Framework
-
-import java.net.URL
-import java.io.File
-
 /**
  * Common trait that needs to be mixed in by analyses that want to use the general
  * analysis framework [[de.tud.cs.st.bat.resolved.analyses.AnalysisExecutor]].
@@ -56,7 +51,7 @@ import java.io.File
  * @see [[de.tud.cs.st.bat.resolved.analyses.MultipleResultsAnalysis]]
  * @author Michael Eichberg
  */
-trait Analysis[Source, AnalysisResult] {
+trait Analysis[-Source, +AnalysisResult] {
 
     /**
      * Analyzes the given project and reports the result(s).
@@ -90,62 +85,60 @@ trait Analysis[Source, AnalysisResult] {
     def title: String
 }
 
-trait AnalysisExecutor extends Analysis[URL, ReportableAnalysisResult] {
+trait SingleOptionalResultAnalysis[-Source, +AnalysisResult]
+        extends Analysis[Source, Option[AnalysisResult]] {
+}
 
-    def printUsage() {
-        println("Usage: java …"+
-            this.getClass().getName()+
-            " <Directories or JAR files containing class files>")
-        println(description)
-        println(copyright)
+trait MultipleResultsAnalysis[-Source, +AnalysisResult]
+        extends Analysis[Source, Iterable[AnalysisResult]] {
+}
+
+import java.net.URL
+
+/**
+ * Aggregates several analyses such that they are treated as one afterwards.
+ *
+ * ==Thread Safety==
+ * This class is thread safe.
+ */
+class AnalysisAggregator[Source, AnalysisResult]
+        extends Analysis[Source, Iterable[AnalysisResult]] {
+
+    import scala.collection.mutable.Set
+
+    protected[this] val analyses = Set[Analysis[Source, AnalysisResult]]()
+
+    protected[this] var analyzeInParallel = false
+
+    def register(analysis: Analysis[Source, AnalysisResult]) {
+        analyses.synchronized(analyses += analysis)
     }
 
-    def main(args: Array[String]) {
-        if (args.length == 0) {
-            printUsage()
-            sys.exit(-1)
-        }
+    def setAnalyzeInParallel(analyzeInParallel: Boolean) {
+        analyses.synchronized(this.analyzeInParallel = analyzeInParallel)
+    }
 
-        //
-        // 1. check arguments
-        //
-        val files = for (arg ← args) yield {
-            val file = new File(arg)
-            if (!file.exists ||
-                !file.canRead ||
-                !(arg.endsWith(".jar") ||
-                    arg.endsWith(".class") ||
-                    file.isDirectory())) {
-                println("The file: "+file+" cannot be read or is not valid.")
-                printUsage()
-                sys.exit(-2)
+    def analyze(project: Project[Source]): Iterable[AnalysisResult] =
+        analyses.synchronized {
+            if (analyzeInParallel) {
+                (for (analysis ← analyses.par) yield { analysis.analyze(project) }).seq
+            } else {
+                for (analysis ← analyses) yield { analysis.analyze(project) }
             }
-            file
         }
 
-        //
-        // 2. setup project context
-        //
-        val project = setupProject(files)
-        println()
+    def title: String = "Analysis Collection"
 
-        // 
-        // 3. execute analyses
-        //
-        println("Executing analyses.")
-        println(analyze(project).consoleReport)
-    }
-
-    def setupProject(files: Iterable[File]): Project[URL] = {
-        println("Reading class files:")
-        var project = Project.empty[URL]
-        for {
-            file ← files if { println("\t"+file.toString()); true }
-            classFiles = Java7Framework.ClassFiles(file)
-            classFile ← classFiles
-        } {
-            project += classFile
+    def description: String =
+        analyses.synchronized {
+            "Executes the following analyses:\n"+analyses.map("\t"+_.title).mkString("\n")
         }
-        project
-    }
+
+    def copyright: String =
+        analyses.synchronized {
+            "Copyrights of the analyses;\n"+
+                analyses.map("\t"+_.copyright).mkString("\"")
+
+        }
+
 }
