@@ -36,7 +36,6 @@ package resolved
 
 import java.net.URL
 
-import util.debug.PerformanceEvaluation
 import reader.Java7Framework.ClassFiles
 
 /**
@@ -46,9 +45,7 @@ import reader.Java7Framework.ClassFiles
  *
  * @author Michael Eichberg
  */
-object AssociateUniqueIDs extends PerformanceEvaluation {
-
-    import de.tud.cs.st.util.debug._
+object AssociateUniqueIDs {
 
     val sourceElementIDs = new SourceElementIDsMap {}
 
@@ -82,7 +79,9 @@ object AssociateUniqueIDs extends PerformanceEvaluation {
             }
         }
 
-        time(t ⇒ println("Loading all class files and associating unique ids took: "+nsToSecs(t)+" seconds.")) {
+        import util.debug.PerformanceEvaluation.time
+        import util.debug.nsToSecs
+        time(t ⇒ println("Loading classes and generating ids took: "+nsToSecs(t)+" secs.")) {
             loadAllClassFiles()
         }
     }
