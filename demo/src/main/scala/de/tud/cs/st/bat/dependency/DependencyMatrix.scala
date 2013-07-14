@@ -54,8 +54,7 @@ object DependencyMatrix {
 
     private def printUsage: Unit = {
         println("Loads all classes stored in the jar files and creates a dependency matrix.")
-        println("Usage: java …DependencyMatrix <JAR file containing class files>+")
-        println("(c) 2011, 2012 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
+        println("Usage: java …DependencyMatrix <JAR file containing class files>+")        
     }
 
     def main(args: Array[String]) {

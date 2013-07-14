@@ -47,7 +47,6 @@ object ClassFileInformation {
 
         if (args.length < 2) {
             println("Usage: java …ClassFileInformation <JAR file containing class files> <Name of classfile (incl. path information) contained in the JAR file>+")
-            println("(c) 2011 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
             sys.exit(-1)
         }
 
