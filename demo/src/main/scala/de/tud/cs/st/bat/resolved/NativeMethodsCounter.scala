@@ -33,7 +33,6 @@
 package de.tud.cs.st
 package bat.resolved
 
-import util.debug.PerformanceEvaluation
 import reader.Java7Framework.ClassFiles
 
 /**
@@ -41,7 +40,7 @@ import reader.Java7Framework.ClassFiles
  *
  * @author Michael Eichberg
  */
-object NativeMethodsCounter extends PerformanceEvaluation {
+object NativeMethodsCounter {
 
     private def printUsage: Unit = {
         println("Usage: java …NativeMethodsCounter <JAR file containing class files>+")
@@ -65,8 +64,10 @@ object NativeMethodsCounter extends PerformanceEvaluation {
         }
 
         println("Reading class files: ")
+        import util.debug._
+        import PerformanceEvaluation._
         val nativeMethods =
-            time((t) ⇒ println("Analysis took: "+(t / 1000.0 / 1000.0 / 1000.0)+" secs.")) {
+            time((t) ⇒ println("Analysis took: "+nsToSecs(t)+" secs.")) {
                 for {
                     file ← args if { println("\t"+file); true };
                     (classFile, _) ← ClassFiles(file)
