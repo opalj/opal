@@ -88,12 +88,28 @@ case class Code(
             return Some(lastLineNumber.lineNumber)
     }
 
-    def localVariableTable: Option[LocalVariables] =
-        attributes collectFirst { case LocalVariableTable(lvt) ⇒ lvt }
+    /**
+     * Collects all local variable tables.
+     *
+     * The JVM specification mandates that per local-variable at most one local variable
+     * table exist.
+     */
+    def localVariableTable: Seq[LocalVariables] =
+        attributes collect { case LocalVariableTable(lvt) ⇒ lvt }
 
-    def localVariableTypeTable: Option[LocalVariableTypes] =
-        attributes collectFirst { case LocalVariableTypeTable(lvtt) ⇒ lvtt }
+    /**
+     * Collects all local variable type tables.
+     *
+     * The JVM specification mandates that per local-variable at most one local variable
+     * type table exist.
+     */
+    def localVariableTypeTable: Seq[LocalVariableTypes] =
+        attributes collect { case LocalVariableTypeTable(lvtt) ⇒ lvtt }
 
+    /**
+     * The JVM specification mandates that a Code attribute has at most one
+     * StackMapTable attribute.
+     */
     def stackMapTable: Option[StackMapFrames] =
         attributes collectFirst { case StackMapTable(smf) ⇒ smf }
 
