@@ -30,39 +30,38 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st.bat.resolved
+package de.tud.cs.st
+package bat
+package resolved
 
 import reader.Java7Framework
 
 /**
- * Just a very small code snippet that shows how to load a class file
- * and how to access the most basic information.
+ * Loads class files form a JAR archive and prints the signatures of the classes.
  *
  * @author Michael Eichberg
  */
 object ClassFileInformation {
 
     def main(args: Array[String]) {
+
         if (args.length < 2) {
-            println("Usage: java …ClassFileInformation <JAR file containing class files> <Name of classfile (incl. path information) contained in the ZIP/JAR file>+")
+            println("Usage: java …ClassFileInformation <JAR file containing class files> <Name of classfile (incl. path information) contained in the JAR file>+")
             println("(c) 2011 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
             sys.exit(-1)
         }
 
-        for (classFileName ← args.drop(1) /* drop the name of the zip file */ ) {
+        for (classFileName ← args.drop(1) /* drop the name of the jar file */ ) {
             val classFile = Java7Framework.ClassFile(args(0), classFileName)
+            import classFile._
 
-            print(classFile.thisClass.className)
-            classFile.superClass.foreach(t ⇒ print(" extends "+t.className)) // java.lang.Object does not have a super class!
-
-            if (classFile.interfaces.length > 0) {
-                print(" implements")
-                classFile.interfaces.foreach(interface ⇒ print(" "+interface.className))
-                println
+            print(thisClass.toJava)
+            superClass.map(s ⇒ println(" extends "+s.toJava)) // java.lang.Object does not have a super class!
+            if (interfaces.length > 0) {
+                print(interfaces.map(_.toJava).mkString(" implements", " ", "\n"))
             }
-
-            println("Sourcefile: "+(classFile.sourceFile match { case Some(s) ⇒ s; case _ ⇒ "<NOT AVAILABE>" }))
-            println("Version   : "+classFile.majorVersion+"."+classFile.minorVersion)
+            sourceFile.map(s ⇒ println(" sourcefile: "+s))
+            println(" version   : "+majorVersion+"."+minorVersion)
             println
         }
         sys.exit(0)
