@@ -61,7 +61,8 @@ class ClassHierarchy(
         protected val superclasses: Map[ObjectType, Set[ObjectType]] = Map(),
         protected val subclasses: Map[ObjectType, Set[ObjectType]] = Map()) {
 
-    def ++(classFiles: Traversable[ClassFile]): ClassHierarchy = (this /: classFiles)(_ + _)
+    def ++(classFiles: Traversable[ClassFile]): ClassHierarchy = 
+        (this /: classFiles)(_ + _)
 
     def +(classFile: ClassFile): ClassHierarchy = {
         this.+(classFile.thisClass, classFile.superClass.toSeq ++ classFile.interfaces)
@@ -116,14 +117,15 @@ class ClassHierarchy(
      * @return The direct subtypes of the given type or `None` if the analysis
      *      is not conclusive.
      */
-    def subclasses(objectType: ObjectType): Option[Set[ObjectType]] = subclasses.get(objectType)
+    def subclasses(objectType: ObjectType): Option[Set[ObjectType]] = 
+        subclasses.get(objectType)
 
     /**
      * The set of all classes (and interfaces) that(directly or indirectly)
      * inherit from the given type.
      *
-     * @see ClassHierarchy.subclasses(ObjectType) for general remarks about the precision of
-     *      the analysis.
+     * @see ClassHierarchy.subclasses(ObjectType) for general remarks about the 
+     *    precision of the analysis.
      * @return The set of all direct and indirect subtypes of the given type.
      */
     def subtypes(objectType: ObjectType): Option[Set[ObjectType]] = {
@@ -182,8 +184,8 @@ class ClassHierarchy(
                     case Some(false)        ⇒ /* let's continue the search */ ;
                     case found @ Some(true) ⇒ return found;
                     case None ⇒
-                        // It is still possible that we are able to determine that currentType 
-                        // is a subtype of supertype. 
+                        // It is still possible that we are able to determine that 
+                        // currentType is a subtype of supertype. 
                         nonConclusive = true;
                 }
             }
