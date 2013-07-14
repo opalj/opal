@@ -44,15 +44,50 @@ import java.io.File
  * Common trait that needs to be mixed in by analyses that want to use the general
  * analysis framework [[de.tud.cs.st.bat.resolved.analyses.AnalysisExecutor]].
  *
+ * ==Conceptual Idea==
+ * Each analysis can produce some result. E.g., a text describing a scenario that
+ * leads to a bug, a graph, a report that identifies a specific line or a combination
+ * thereof.
+ *
+ * However, an analysis should never rely on the location of a resource. If an analysis
+ * needs access to further resource, it should use the `Project` class.
+ *
+ * @see [[de.tud.cs.st.bat.resolved.analyses.SingleOptionalResultAnalysis]]
+ * @see [[de.tud.cs.st.bat.resolved.analyses.MultipleResultsAnalysis]]
  * @author Michael Eichberg
  */
 trait Analysis[Source, AnalysisResult] {
 
+    /**
+     * Analyzes the given project and reports the result(s).
+     */
     def analyze(project: Project[Source]): AnalysisResult
 
+    /**
+     * A textual description of this analysis.
+     *
+     * The description should discuss:
+     *  * the goal of the analysis
+     *  * weaknesses of the analysis; i.e., whether the analysis may report false
+     *    positives or may not report existing bugs (i.e., whether the analysis is
+     *    subject to false negatives.)
+     *  * if applicable, it should discuss what the developer could/should do in general
+     *    to remedy the situation
+     *  * if applicable it should discuss the severeness of the found results. I.e.,
+     *    if immediate action is typically required, because a bug was found that will
+     *    show up at runtime or whether it is a security bug.
+     */
     def description: String
 
+    /**
+     * The copyright statement less than 124 character with no line-breaks.
+     */
     def copyright: String
+
+    /**
+     * A short descriptive title less than 64 characters with no line-breaks.
+     */
+    def title: String
 }
 
 trait AnalysisExecutor extends Analysis[URL, ReportableAnalysisResult] {
