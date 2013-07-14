@@ -73,6 +73,8 @@ class CodeAttributeTest
     //
     //
 
+    val codeOfConstructor = project.classes(boundedBufferClass).methods.find(_.name == "<init>").get.body.get
+
     val codeOfPut = project.classes(boundedBufferClass).methods.find(_.name == "put").get.body.get
     // The code of the "put" method is excepted to have the following bytecode:
     // Method descriptor #13 (I)V
@@ -227,6 +229,23 @@ class CodeAttributeTest
                 (1, GETFIELD(immutbleListClass, "e", ObjectType.Object)),
                 (4, ARETURN))
         )
+    }
+
+    behavior of "the \"Code\" attribute's lookupLineNumber method"
+
+    it should "be able to correctly extract the line number for the first instruction" in {
+        codeOfConstructor.lookupLineNumber(0) should be(Some(41))
+    }
+    it should "be able to correctly extract the line number of some intermediate instruction" in {
+        codeOfConstructor.lookupLineNumber(14) should be(Some(44))
+    }
+
+    it should "be able to correctly extract the line number of an instruction that is not directly associated with a line number" in {
+        codeOfConstructor.lookupLineNumber(5) should be(Some(39))
+    }
+
+    it should "be able to correctly extract the line number of the last instruction" in {
+        codeOfConstructor.lookupLineNumber(34) should be(Some(46))
     }
 
 }
