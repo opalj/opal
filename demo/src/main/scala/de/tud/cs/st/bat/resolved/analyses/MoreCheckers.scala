@@ -66,7 +66,7 @@ object MoreCheckers {
     private val CountingPerformanceEvaluator = new PerformanceEvaluation with Counting
 
     private def printUsage: Unit = {
-        println("Usage: java …Main <ZIP or JAR file containing class files>+")
+        println("Usage: java …Main <JAR file containing class files>+")
         println("(c) 2011 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
     }
 
