@@ -39,6 +39,8 @@ import util.graphs.{ Node, toDot }
 
 import reader.Java7Framework
 
+import java.net.URL
+
 /**
  * Container for all class files of a project and the resulting class hierarchy.
  *
@@ -63,27 +65,30 @@ import reader.Java7Framework
  *
  * @author Michael Eichberg
  */
-class Project[S](
+class Project[+Source](
         val classes: Map[ObjectType, ClassFile],
-        val sources: Map[ObjectType, S],
+        val sources: Map[ObjectType, Source],
         val classHierarchy: ClassHierarchy = new ClassHierarchy()) {
 
     def this(classHierarchy: ClassHierarchy = new ClassHierarchy()) {
-        this(Map[ObjectType, ClassFile](), Map[ObjectType, S](), classHierarchy)
+        this(Map[ObjectType, ClassFile](), Map[ObjectType, Source](), classHierarchy)
     }
 
     /**
      * Adds the class files to this project by calling the simple "+" method
      * for each class file.
      */
-    def ++(classFiles: Traversable[(ClassFile, S)]): Project[S] = (this /: classFiles)(_ + _)
+    def ++[NewS >: Source](classFiles: Traversable[(ClassFile, NewS)]): Project[NewS] = {
+        val newProject: Project[NewS] = this
+        (newProject /: classFiles)(_ + _)
+    }
 
     /**
      * Adds the given class file to this project. If the class defines an object
      * type that was previously added, the old class file will be replaced
      * by the given one.
      */
-    def +(cs: (ClassFile, S)): Project[S] = {
+    def +[NewS >: Source](cs: (ClassFile, NewS)): Project[NewS] = {
         val (classFile, source) = cs
         new Project(
             classes + ((classFile.thisClass, classFile)),
