@@ -56,13 +56,13 @@ object AssociateUniqueIDs extends PerformanceEvaluation {
 
     def main(args: Array[String]) {
         if (args.length != 1) {
-            println("You have to specify a zip/jar file containing class files.")
+            println("You have to specify a jar file containing class files.")
             sys.exit(1)
         }
         val file = new java.io.File(args(0))
         if (!file.canRead() || file.isDirectory()) {
-            println("No valid zip file: "+args(0))
-            println("You have to specify a zip/jar file containing class files.")
+            println("No valid jar file: "+args(0))
+            println("You have to specify a jar file containing class files.")
             sys.exit(2);
         }
 
