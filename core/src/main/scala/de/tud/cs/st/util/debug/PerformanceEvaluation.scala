@@ -96,3 +96,4 @@ trait PerformanceEvaluation {
     }
 }
 
+object PerformanceEvaluation extends PerformanceEvaluation
