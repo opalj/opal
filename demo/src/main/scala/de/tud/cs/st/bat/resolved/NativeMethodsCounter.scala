@@ -43,8 +43,8 @@ import reader.Java7Framework.ClassFiles
 object NativeMethodsCounter {
 
     private def printUsage: Unit = {
-        println("Usage: java …NativeMethodsCounter <JAR file containing class files>+")
         println("(c) 2013 Michael Eichberg")
+        println("Usage: java …NativeMethodsCounter <JAR files containing class files>")
     }
 
     def main(args: Array[String]) {
