@@ -166,7 +166,7 @@ object Project {
      * already contains the information about the exceptions thrown by JVM
      * instructions.
      */
-    def empty[S]() =
-        new Project[S](classHierarchy = ClassHierarchy.createPreInitializedClassHierarchy)
+    def initial[Source]() =
+        new Project[Source](classHierarchy = ClassHierarchy.createPreInitializedClassHierarchy)
 
 }

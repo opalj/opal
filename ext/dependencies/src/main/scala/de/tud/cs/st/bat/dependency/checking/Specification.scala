@@ -261,7 +261,7 @@ class Specification
         import performance._
         import de.tud.cs.st.util.debug._
 
-        var project = Project.empty[URL]
+        var project = Project.initial[URL]
         val sourceElementIDsMap = new SourceElementIDsMap {}
 
         // 1. create and update the support data structures
