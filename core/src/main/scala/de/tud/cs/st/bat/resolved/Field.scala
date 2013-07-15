@@ -80,4 +80,7 @@ case class Field(
     def constantValue: Option[ConstantValue[_]] =
         attributes collectFirst { case cv: ConstantValue[_] ⇒ cv }
 
+    def toJavaSignature: String = {
+        fieldType.toJava+" "+name
+    }
 }
