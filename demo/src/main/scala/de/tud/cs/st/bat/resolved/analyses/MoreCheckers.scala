@@ -142,7 +142,7 @@ object MoreCheckers {
             }
         //   }
         //}
-        val getClassFile: Map[ObjectType, ClassFile] = classFiles.map(cf ⇒ (cf.thisClass, cf)).toMap
+        val getClassFile: Map[ObjectType, ClassFile] = classFiles.map(cf ⇒ (cf.thisClass, cf)).toMap // SAME AS IN PROJECT
         //println("Number of class files: "+classFilesCount)
 
         //MemoryUsage(mu ⇒ println("Memory still used after executing the queries: "+(mu / 1024.0 / 1024.0)+" MByte")) {
