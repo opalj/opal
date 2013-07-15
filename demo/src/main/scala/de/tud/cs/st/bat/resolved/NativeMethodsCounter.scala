@@ -33,8 +33,6 @@
 package de.tud.cs.st
 package bat.resolved
 
-import reader.Java7Framework.ClassFiles
-
 /**
  * Counts the number of native methods.
  *
@@ -63,8 +61,11 @@ object NativeMethodsCounter {
         }
 
         println("Reading class files: ")
+
+        import reader.Java7Framework.ClassFiles
         import util.debug._
         import PerformanceEvaluation._
+
         val nativeMethods =
             time((t) ⇒ println("Analysis took: "+nsToSecs(t)+" secs.")) {
                 for {
@@ -77,7 +78,7 @@ object NativeMethodsCounter {
             }
 
         println("Number of native methods: "+nativeMethods.size)
-        println(nativeMethods.map((method) ⇒ method.name+"("+method.descriptor+")").mkString("\n"))
+        println(nativeMethods.map(m ⇒ m.name+"("+m.descriptor+")").mkString("\n"))
     }
 
 }

@@ -34,16 +34,17 @@ package de.tud.cs.st
 package bat
 package resolved
 
-import reader.Java7Framework
-
 /**
- * Loads class files form a JAR archive and prints the signatures of the classes.
+ * Loads well identified class files form a JAR archive and prints the signatures of the
+ * classes.
  *
  * @author Michael Eichberg
  */
 object ClassFileInformation {
 
     def main(args: Array[String]) {
+
+        import reader.Java7Framework
 
         if (args.length < 2) {
             println("Usage: java …ClassFileInformation <JAR file containing class files> <Name of classfile (incl. path information) contained in the JAR file>+")

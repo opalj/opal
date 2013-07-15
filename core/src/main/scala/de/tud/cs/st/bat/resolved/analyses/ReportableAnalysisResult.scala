@@ -41,7 +41,7 @@ import java.net.URL
 import java.io.File
 
 /**
- * Marker trait for analysis results that can be reported to the (end-)user.
+ * Result of analyses that can be meaningfully represented using text.
  *
  * @author Michael Eichberg
  */
@@ -86,6 +86,9 @@ object ReportableAnalysisResult {
 
 }
 
+/**
+ * Result of some analysis that just consists of some text.
+ */
 case class BasicReport(
     message: String)
         extends ReportableAnalysisResult {

@@ -34,10 +34,6 @@ package de.tud.cs.st
 package bat
 package resolved
 
-import java.net.URL
-
-import reader.Java7Framework.ClassFiles
-
 /**
  * This snippet shows how to load all class files from a jar file and how to
  * associate all top-level source elements (class, field and method declarations)
@@ -62,6 +58,9 @@ object AssociateUniqueIDs {
             println("You have to specify a jar file containing class files.")
             sys.exit(2);
         }
+
+        import reader.Java7Framework.ClassFiles
+        import java.net.URL
 
         val classFiles: Seq[(ClassFile, URL)] = ClassFiles(args(0))
 

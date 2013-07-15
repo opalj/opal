@@ -38,14 +38,16 @@ import java.io.File
 import java.net.URL
 
 /**
- * Defines implicit conversions to wrap some common types of analyses to generate
- * (command-line) reportable results.
- *
+ * Defines implicit conversions to wrap some common types of analyses such that they
+ * generate results of type [[de.tud.cs.st.bat.resolved.analyses.ReportableAnalysisResult]].
  */
 package object analyses {
 
     import language.implicitConversions
 
+    /**
+     * Converts a URL in a location identifier.
+     */
     def urlToLocationIdentifier(url: URL): String = {
         if (url.getProtocol() == "file")
             url.getFile()
@@ -54,6 +56,17 @@ package object analyses {
     }
 
     def fileToLocationIdentifier(file: File): String = file.getAbsolutePath()
+
+    /**
+     * An analysis that may produce a result.
+     */
+    type SingleOptionalResultAnalysis[-Source, +AnalysisResult] = Analysis[Source, Option[AnalysisResult]]
+
+    /**
+     * An analysis that may produce multiple results. E.g., an analysis that looks for
+     * instances of bug patterns.
+     */
+    type MultipleResultsAnalysis[-Source, +AnalysisResult] = Analysis[Source, Iterable[AnalysisResult]]
 
     implicit def fileBasedAnalysisToAnalysisWithReportableResults(
         analysis: Analysis[File, Iterable[SourceLocationBasedReport[File]]]): Analysis[File, ReportableAnalysisResult] = {
