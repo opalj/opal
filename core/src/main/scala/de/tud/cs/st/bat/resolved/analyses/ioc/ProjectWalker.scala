@@ -34,13 +34,14 @@ package de.tud.cs.st
 package bat
 package resolved
 package analyses
-package directed
+package ioc
 
 /**
- * Manages the execution of analyses; i.e., the director takes care of traversing all
- * resource of a project and calling the individual analyses to perform certain steps of
- * the analysis. This inversion of control make the implementation of many analyses easier
- * and also enable several types of optimizations to speed up the overall processing.
+ * Controls the execution of multiiple analyses; i.e., the director takes care of
+ * traversing all resources of a project and calling the individual analyses to perform
+ * certain steps of the analysis. This inversion of control make the implementation of
+ * many analyses easier and also enable several types of optimizations to speed up the
+ * overall processing.
  */
 trait AnalysesDirector[Source] extends Analysis[Source, Iterable[ReportableAnalysisResult]] {
 
