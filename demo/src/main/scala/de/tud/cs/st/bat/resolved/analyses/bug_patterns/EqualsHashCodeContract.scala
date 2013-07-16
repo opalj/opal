@@ -40,6 +40,10 @@ package bug_patterns
  * Finds violations of the contract defined in `java.lang.Object` w.r.t. the methods
  * `equals` and `hashcode`.
  *
+ * ==Implementation Note==
+ * This analysis is implemented using the traditional approach where each analysis 
+ * analyzes the project's resources on its own and fully controls the process. 
+ * 
  * @author Michael Eichberg
  */
 class EqualsHashCodeContract[Source]
@@ -65,7 +69,6 @@ class EqualsHashCodeContract[Source]
         var reports = List[ClassBasedReport[Source]]()
 
         for (classFile ← project.classFiles.par) yield {
-
             var definesEqualsMethod = false
             var definesHashCodeMethod = false
             for (method ← classFile.methods) method match {
@@ -94,8 +97,10 @@ class EqualsHashCodeContract[Source]
 
 import java.net.URL
 
+/**
+ * Enables the stand alone execution of this analysis.
+ */
 object EqualsHashCodeContractAnalysis extends AnalysisExecutor {
-
     val analysis = urlBasedAnalysisToAnalysisWithReportableResults(
         new EqualsHashCodeContract[URL]
     )

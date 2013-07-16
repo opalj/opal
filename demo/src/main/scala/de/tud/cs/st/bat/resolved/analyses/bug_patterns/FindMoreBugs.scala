@@ -38,6 +38,9 @@ package bug_patterns
 
 import java.net.URL
 
+/**
+ * Executed the registered analyses against the specified class files.
+ */
 object FindMoreBugs extends AnalysisExecutor {
 
     val aggregator = new AnalysisAggregator[URL, ReportableAnalysisResult]

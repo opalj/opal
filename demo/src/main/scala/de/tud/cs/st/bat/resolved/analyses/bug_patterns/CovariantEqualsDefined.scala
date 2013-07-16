@@ -38,7 +38,11 @@ package bug_patterns
 
 /**
  * Finds classes that define a co-variant equals method, but not "standard" equals method.
- *
+ * 
+ * ==Implementation Note==
+ * This analysis is implemented using the traditional approach where each analysis 
+ * analyzes the project's resources on its own and fully controls the process. 
+ * 
  * @author Michael Eichberg
  */
 class CovariantEqualsMethodDefined[Source]
@@ -91,6 +95,9 @@ class CovariantEqualsMethodDefined[Source]
 
 import java.net.URL
 
+/**
+ * Enables the stand alone execution of this analysis.
+ */
 object CovariantEqualsMethodDefinedAnalysis extends AnalysisExecutor {
 
     val analysis = urlBasedAnalysisToAnalysisWithReportableResults(
