@@ -36,10 +36,11 @@ package resolved
 package reader
 
 /**
- * Defines a method to parse an array of bytes (with Java bytecode instructions) and to return an array
- * of `Instruction`s.
+ * Defines a method to parse an array of bytes (containing Java bytecode instructions) and
+ * to return an array of [[de.tud.cs.st.bat.resolved.Instruction]]`s.
  *
- * The target array has the same size to make sure that branch offsets etc. point to the correct instruction.
+ * The target array has the same size as the source array to make sure that branch offsets
+ * etc. point to the correct instruction.
  *
  * @author Michael Eichberg
  */
