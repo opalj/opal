@@ -40,10 +40,11 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case class MethodDescriptor(
-    parameterTypes: Seq[FieldType],
-    returnType: Type)
-        extends BootstrapArgument {
+sealed abstract class MethodDescriptor extends BootstrapArgument {
+
+    def parameterTypes: Seq[FieldType]
+
+    def returnType: Type
 
     //
     //
@@ -67,14 +68,50 @@ case class MethodDescriptor(
                 (parameterTypes.head.toJava /: parameterTypes.tail)(_+", "+_.toJava)
         }+") : "+returnType.toJava
     }
-
 }
+
+// 
+// To optimize the overall memory consumption, we have specialized the MethodDescriptor
+// (Done after a study of the heap memory usage)
+//
+
+case class NoArgumentsMethodDescriptor(
+    returnType: Type)
+        extends MethodDescriptor {
+
+    def parameterTypes = Nil
+}
+
+case class SingleArgumentsMethodDescriptor(
+    fieldType: FieldType,
+    returnType: Type)
+        extends MethodDescriptor {
+
+    def parameterTypes = List(fieldType)
+}
+
+case class MultiArgumentsMethodDescriptor(
+    parameterTypes: Seq[FieldType],
+    returnType: Type)
+        extends MethodDescriptor
+
 object MethodDescriptor {
 
+    def unapply(md: MethodDescriptor) = Some(md.parameterTypes, md.returnType)
+
+    def apply(parameterTypes: List[FieldType], returnType: Type): MethodDescriptor = {
+        parameterTypes match {
+            case Nil ⇒
+                NoArgumentsMethodDescriptor(returnType)
+            case Seq(parameterType) ⇒
+                SingleArgumentsMethodDescriptor(parameterType, returnType)
+            case parameterTypes ⇒
+                MultiArgumentsMethodDescriptor(parameterTypes, returnType)
+        }
+    }
+
     def apply(md: String): MethodDescriptor = {
-
         var index = 1 // we are not interested in the leading '('
-
         var parameterTypes: List[FieldType] = Nil
         while (md.charAt(index) != ')') {
             val (ft, nextIndex) = parseParameterType(md, index)
@@ -83,7 +120,9 @@ object MethodDescriptor {
         }
         parameterTypes = parameterTypes.reverse
 
-        MethodDescriptor(parameterTypes, ReturnType(md.substring(index + 1)))
+        val returnType = ReturnType(md.substring(index + 1))
+
+        apply(parameterTypes, returnType)
     }
 
     private def parseParameterType(md: String, startIndex: Int): (FieldType, Int) = {
