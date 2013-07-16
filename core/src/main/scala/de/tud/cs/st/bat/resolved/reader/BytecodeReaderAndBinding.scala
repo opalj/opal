@@ -49,7 +49,8 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
     override type Constant_Pool = Array[Constant_Pool_Entry]
 
     /**
-     * Transforms an array of bytes into an array of [[de.tud.cs.st.bat.resolved.Instruction]]s.
+     * Transforms an array of bytes into an array of
+     * [[de.tud.cs.st.bat.resolved.Instruction]]s.
      */
     def Instructions(source: Array[Byte])(implicit cp: Constant_Pool): Instructions = {
         import java.io.DataInputStream
@@ -197,12 +198,10 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                 case 70  ⇒ { FSTORE_3 }
                 case 102 ⇒ { FSUB }
                 case 180 ⇒ {
-                    // TODO [Performance] instead of creating a tuple use the approach as in case of invokedynamic
                     val (declaringClass, name, fieldType) /*: (ObjectType,String,FieldType)*/ = cp(in.readUnsignedShort).asFieldref(cp) // fieldref
                     GETFIELD(declaringClass, name, fieldType)
                 }
                 case 178 ⇒ {
-                    // TODO [Performance] instead of creating a tuple use the approach as in case of invokedynamic
                     val (declaringClass, name, fieldType) /*: (ObjectType,String,FieldType)*/ = cp(in.readUnsignedShort).asFieldref(cp) // fieldref
                     GETSTATIC(declaringClass, name, fieldType)
                 }
@@ -278,25 +277,19 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                     INVOKEDYNAMIC(cpe.bootstrapMethodAttributeIndex, cpe.methodName, cpe.methodDescriptor)
                 }
                 case 185 ⇒ {
-                    // TODO [Performance] instead of creating a tuple use the approach as in case of invokedynamic
                     val (declaringClass, name, methodDescriptor) /*: (ReferenceType,String,MethodDescriptor)*/ = cp(in.readUnsignedShort).asMethodref(cp) // methodRef
                     in.readByte // ignored; fixed value
                     in.readByte // ignored; fixed value
                     INVOKEINTERFACE(declaringClass, name, methodDescriptor)
                 }
                 case 183 ⇒ {
-                    // TODO [Performance] instead of creating a tuple use the approach as in case of invokedynamic
-                    //        val (declaringClass, name, methodDescriptor) /*: (ReferenceType,String,MethodDescriptor)*/ = cp(in.readUnsignedShort).asMethodref(cp) // methodRef
-                    //        INVOKESPECIAL(declaringClass, name, methodDescriptor)
                     cp(in.readUnsignedShort).asInvoke(INVOKESPECIAL)(cp)
                 }
                 case 184 ⇒ {
-                    // TODO [Performance] instead of creating a tuple use the approach as in case of invokedynamic
                     val (declaringClass, name, methodDescriptor) /*: (ReferenceType,String,MethodDescriptor)*/ = cp(in.readUnsignedShort).asMethodref(cp) // methodRef
                     INVOKESTATIC(declaringClass, name, methodDescriptor)
                 }
                 case 182 ⇒ {
-                    // TODO [Performance] instead of creating a tuple use the approach as in case of invokedynamic
                     val (declaringClass, name, methodDescriptor) /*: (ReferenceType,String,MethodDescriptor)*/ = cp(in.readUnsignedShort).asMethodref(cp) // methodRef
                     INVOKEVIRTUAL(declaringClass, name, methodDescriptor)
                 }
@@ -392,12 +385,10 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                 case 87  ⇒ { POP }
                 case 88  ⇒ { POP2 }
                 case 181 ⇒ {
-                    // TODO [Performance] instead of creating a tuple use the approach as in case of invokedynamic
                     val (declaringClass, name, fieldType) /*: (ObjectType,String,FieldType)*/ = cp(in.readUnsignedShort).asFieldref(cp) // fieldref
                     PUTFIELD(declaringClass, name, fieldType)
                 }
                 case 179 ⇒ {
-                    // TODO [Performance] instead of creating a tuple use the approach as in case of invokedynamic
                     val (declaringClass, name, fieldType) /*: (ObjectType,String,FieldType)*/ = cp(in.readUnsignedShort).asFieldref(cp) // fieldref
                     PUTSTATIC(declaringClass, name, fieldType)
                 }
@@ -427,7 +418,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                     WIDE
                 }
 
-                // case opcode ⇒ sys.error("unsupported opcode: "+opcode)
+                case opcode ⇒ BATError("unsupported opcode: "+opcode)
             }
 
         }
