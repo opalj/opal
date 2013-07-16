@@ -75,9 +75,11 @@ trait AttributesReader
     import util.ControlAbstractions.repeat
 
     /**
-     * This map associates attribute names with functions to read the corresponding attribute.
-     * <p>
-     * <b>Java 2</b>Attributes:<br/>
+     * This map associates attribute names with functions to read the corresponding
+     * attribute
+     *
+     * ==Names of the Attributes==
+     * <b>Java 1/2</b>Attributes:<br/>
      * <ul>
      * <li> ConstantValue_attribute </li>
      * <li> Exceptions_attribute </li>
@@ -116,10 +118,24 @@ trait AttributesReader
         attributeReaders += r
     }
 
+    private var attributesProcessors: List[(Attributes) ⇒ Attributes] = List()
+
+    /**
+     * Registers a new processor for the list of all attributes of a given class file
+     * element (class, field, method, code). This can be used to post-process attributes.
+     * E.g., to merge multiple line number tables if they exist.
+     */
+    def attributesProcessor(p: (Attributes) ⇒ Attributes): Unit = {
+        attributesProcessors = p :: attributesProcessors
+    }
+
     def Attributes(ap: AttributeParent, cp: Constant_Pool, in: DataInputStream): Attributes = {
-        repeat(in.readUnsignedShort) {
+        var attributes: Attributes = repeat(in.readUnsignedShort) {
             Attribute(ap, cp, in)
         } filter (_ != null) // We remove the attributes we do not understand or which we do not need.
+
+        attributesProcessors.foreach(p ⇒ attributes = p(attributes))
+        attributes
     }
 
     def Attribute(ap: AttributeParent, cp: Constant_Pool, in: DataInputStream): Attribute = {

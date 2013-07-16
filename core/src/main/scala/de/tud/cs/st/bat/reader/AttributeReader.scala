@@ -49,8 +49,8 @@ trait AttributeReader
 
     /**
      * Register a reader for a concrete attribute. This function is intended to
-     * be provided/implemented by an `AttributesReader` that manages the attributes of a class,
-     * method_info, field_info or code_attribute structure.
+     * be provided/implemented by an `AttributesReader` that manages the attributes of a
+     * class, method_info, field_info or code_attribute structure.
      *
      * @param reader A map where the key is the name of an attribute and the value is
      *  a function that given a data input stream that is positioned directly
@@ -59,4 +59,10 @@ trait AttributeReader
      */
     def register(reader: (String, (AttributeParent, Constant_Pool, /* attribute name */ Constant_Pool_Index, DataInputStream) ⇒ Attribute)): Unit
 
+    /**
+     * Registers a new processor for the list of all attributes of a given class file
+     * structure (class, field_info, method_info, code_attribute). This can be used to
+     * post-process attributes. E.g., to merge multiple line number tables if they exist.
+     */
+    def attributesProcessor(p: (Attributes) ⇒ Attributes): Unit
 }
