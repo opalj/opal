@@ -65,4 +65,19 @@ package object bat {
 
     @throws[RuntimeException]
     final def BATError(message: String) = throw new RuntimeException(generalBATErrorMessage + message)
+
+    //
+    // Common matchers for access flags
+    // Use:
+    // case Method(PUBLIC_STATIC(),...) =>
+    // case Field(PUBLIC_STATIC_FINAL(),...) =>
+    //
+    val PUBLIC_INTERFACE = ACC_PUBLIC & ACC_INTERFACE
+    val PUBLIC_ABSTRACT = ACC_PUBLIC & ACC_ABSTRACT
+    val PUBLIC_FINAL = ACC_PUBLIC & ACC_FINAL
+    val PUBLIC_STATIC = ACC_PUBLIC & ACC_STATIC
+    val PUBLIC_STATIC_FINAL = PUBLIC_FINAL & ACC_STATIC
+    val NOT_STATIC = !ACC_STATIC
+    val NOT_PRIVATE = !ACC_PRIVATE
+    val NOT_FINAL = !ACC_FINAL
 }

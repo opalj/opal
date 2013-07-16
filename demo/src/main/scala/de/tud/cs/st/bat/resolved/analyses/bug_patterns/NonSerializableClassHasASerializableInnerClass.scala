@@ -40,6 +40,10 @@ package bug_patterns
  * Identifies (non-static) inner classes that are serializable, but where the outer class
  * is not.
  *
+ * ==Implementation Note==
+ * This analysis is implemented using the traditional approach where each analysis
+ * analyzes the project's resources on its own and fully controls the process.
+ *
  * @author Michael Eichberg
  */
 class NonSerializableClassHasASerializableInnerClass[Source]
@@ -69,8 +73,7 @@ class NonSerializableClassHasASerializableInnerClass[Source]
             objectTypes ← project.classHierarchy.subclasses(Serializable).toSeq
             objectType ← objectTypes
             classFile = project.classes(objectType)
-            (outerType, thisInnerClassesAccessFlags) ← classFile.outerType
-            if !ACC_STATIC.element_of(thisInnerClassesAccessFlags)
+            (outerType, NOT_STATIC()) ← classFile.outerType
             /* if we know nothing about the class, then we never generate a warning */
             if !isSubtypeOf(outerType, Serializable).getOrElse(true)
             //outerClass <- project.classes.get(outerType).toSeq                      
@@ -90,6 +93,9 @@ class NonSerializableClassHasASerializableInnerClass[Source]
 
 import java.net.URL
 
+/**
+ * Enables the stand alone execution of this analysis.
+ */
 object NonSerializableClassHasASerializableInnerClassAnalysis extends AnalysisExecutor {
 
     val analysis = urlBasedAnalysisToAnalysisWithReportableResults(
