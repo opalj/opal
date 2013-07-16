@@ -75,14 +75,14 @@ sealed abstract class MethodDescriptor extends BootstrapArgument {
 // (Done after a study of the heap memory usage)
 //
 
-case class NoArgumentsMethodDescriptor(
+private[resolved] case class NoArgumentsMethodDescriptor(
     returnType: Type)
         extends MethodDescriptor {
 
     def parameterTypes = Nil
 }
 
-case class SingleArgumentsMethodDescriptor(
+private[resolved] case class SingleArgumentsMethodDescriptor(
     fieldType: FieldType,
     returnType: Type)
         extends MethodDescriptor {
@@ -90,7 +90,7 @@ case class SingleArgumentsMethodDescriptor(
     def parameterTypes = List(fieldType)
 }
 
-case class MultiArgumentsMethodDescriptor(
+private[resolved] case class MultiArgumentsMethodDescriptor(
     parameterTypes: Seq[FieldType],
     returnType: Type)
         extends MethodDescriptor
