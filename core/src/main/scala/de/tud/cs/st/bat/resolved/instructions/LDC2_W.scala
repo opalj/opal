@@ -41,14 +41,32 @@ import scala.language.existentials
  *
  * @author Michael Eichberg
  */
-case class LDC2_W(
-    constantValue: ConstantValue[_])
-        extends LoadConstantInstruction {
+sealed abstract class LDC2_W[T <: Any] extends LoadConstantInstruction {
+
+    def value: T
 
     def opcode: Int = 20
 
     def mnemonic: String = "ldc2_w"
 
     def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 1 + 2
+
+}
+
+case class LoadLong(value: Long) extends LDC2_W[Long]
+
+case class LoadDouble(value: Double) extends LDC2_W[Double]
+
+object LDC2_W {
+
+    def apply(constantValue: ConstantValue[_]): LDC2_W[_] = {
+        constantValue.value match {
+            case v: Long   ⇒ LoadLong(v)
+            case d: Double ⇒ LoadDouble(d)
+            case _         ⇒ BATError("unsupported LDC2_W constant value: "+constantValue)
+        }
+    }
+
+    def unapply[T](ldc: LDC2_W[T]): Option[T] = Some(ldc.value)
 
 }

@@ -41,13 +41,36 @@ import scala.language.existentials
  *
  * @author Michael Eichberg
  */
-case class LDC(
-    constantValue: ConstantValue[_]) // TODO [Optimization(Result of the analysis of the HEAP of rt.jar)] Specialize the LDC instruction (LDC_Float,LDC_Class,...) to get rid of the constant value intermediate object?
-        extends LoadConstantInstruction {
+sealed abstract class LDC[T] extends LoadConstantInstruction {
+
+    def value: T
 
     def opcode: Int = 18
 
     def mnemonic: String = "ldc"
 
     def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 2
+}
+
+case class LoadInt(value: Int) extends LDC[Int]
+
+case class LoadFloat(value: Float) extends LDC[Float]
+
+case class LoadClass(value: ReferenceType) extends LDC[ReferenceType]
+
+case class LoadString(value: String) extends LDC[String]
+
+object LDC {
+
+    def apply(constantValue: ConstantValue[_]): LDC[_] = {
+        constantValue.value match {
+            case i: Int           ⇒ LoadInt(i)
+            case f: Float         ⇒ LoadFloat(f)
+            case r: ReferenceType ⇒ LoadClass(r)
+            case s: String        ⇒ LoadString(s)
+            case _                ⇒ BATError("unsupported constant value: "+constantValue)
+        }
+    }
+
+    def unapply[T](ldc: LDC[T]): Option[T] = Some(ldc.value)
 }

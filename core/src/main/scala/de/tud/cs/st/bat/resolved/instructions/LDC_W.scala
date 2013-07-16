@@ -41,9 +41,9 @@ import scala.language.existentials
  *
  * @author Michael Eichberg
  */
-case class LDC_W(
-    constantValue: ConstantValue[_])
-        extends LoadConstantInstruction {
+sealed abstract class LDC_W[T] extends LoadConstantInstruction {
+
+    def value: T
 
     def opcode: Int = 19
 
@@ -51,3 +51,28 @@ case class LDC_W(
 
     def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 3
 }
+
+case class LoadInt_W(value: Int) extends LDC_W[Int]
+
+case class LoadFloat_W(value: Float) extends LDC_W[Float]
+
+case class LoadClass_W(value: ReferenceType) extends LDC_W[ReferenceType]
+
+case class LoadString_W(value: String) extends LDC_W[String]
+
+object LDC_W {
+
+    def apply(constantValue: ConstantValue[_]): LDC_W[_] = {
+        constantValue.value match {
+            case i: Int           ⇒ LoadInt_W(i)
+            case f: Float         ⇒ LoadFloat_W(f)
+            case r: ReferenceType ⇒ LoadClass_W(r)
+            case s: String        ⇒ LoadString_W(s)
+            case _                ⇒ BATError("unsupported constant value: "+constantValue)
+        }
+    }
+
+    def unapply[T](ldc: LDC_W[T]): Option[T] = Some(ldc.value)
+}
+
+
