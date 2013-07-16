@@ -467,7 +467,7 @@ final object ArrayType {
     def apply(componentType: FieldType): ArrayType = cache.synchronized {
         val wrAT = cache.get(componentType)
         if (wrAT != null) {
-            val AT = wrAT.get()            
+            val AT = wrAT.get()
             if (AT != null)
                 return AT;
         }
@@ -496,6 +496,12 @@ final object ArrayType {
     }
 }
 
+/**
+ * Defines an extractor to match against any `ObjectType` except `java.lang.Object`.
+ */
+object NotJavaLangObject {
 
+    def unapply(objectType: ObjectType): Boolean = objectType != ObjectType.Object
+}
 
 
