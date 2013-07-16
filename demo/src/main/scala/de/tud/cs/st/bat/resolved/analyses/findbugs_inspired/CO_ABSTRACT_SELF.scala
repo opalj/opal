@@ -46,8 +46,7 @@ object CO_ABSTRACT_SELF extends (Project[_] ⇒ Iterable[(ClassFile, Method)]) {
             comparable ← project.classHierarchy.subtypes(ObjectType("java/lang/Comparable")).getOrElse(Nil)
             classFile = project.classes(comparable)
             if (classFile.isAbstract)
-            method @ Method(_, "compareTo", MethodDescriptor(Seq(parameterType), IntegerType), _) ← classFile.methods
-            if parameterType != ObjectType("java/lang/Object")
+            method @ Method(_, "compareTo", MethodDescriptor(Seq(NotJavaLangObject()), IntegerType), _) ← classFile.methods
         } yield (classFile, method)
 
 }
