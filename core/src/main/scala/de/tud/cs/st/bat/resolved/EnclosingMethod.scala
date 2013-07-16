@@ -35,7 +35,7 @@ package bat
 package resolved
 
 /**
- * A class' optional enclosing method attribute.
+ * The optional enclosing method attribute of a class.
  *
  * @author Michael Eichberg
  */
