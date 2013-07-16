@@ -31,15 +31,17 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st.bat
+package de.tud.cs.st
+package bat
 package resolved
 package ai
 
 /**
-  * Models the current execution context of a method. I.e., the operand stack as well as the current values of
-  * the registers. The memorylayout is automatically maintained by BAT while analyzing a method. If specific
-  * knowledge about a value is required, the domain is queried to get the necessary information. This callback
-  * mechanism enables the domain to use an arbitrary mechanism to represent values.
+  * Models the current execution context of a method. I.e., the operand stack as well as
+  * the current values of the registers. The memorylayout is automatically maintained by 
+  * BAT while analyzing a method. If specific knowledge about a value is required, the 
+  * domain is queried to get the necessary information. This callback mechanism enables 
+  * the domain to use an arbitrary mechanism to represent values.
   *
   * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
   * @author Dennis Siebert
@@ -52,50 +54,50 @@ final class MemoryLayout(
     import MemoryLayout._
 
     /**
-      * Updates this memory layout with the given memory layout. Returns this memory layout if this memory 
+      * Updates this memory layout with the given memory layout. Returns this memory layout if this memory
       * layout already subsumes the given memory layout.
       */
     def update(other: MemoryLayout): MemoryLayout = {
         throw new Error("Not yet implemented")
-//        val maxLocals = this.locals.size
-//        require(this.operands.size == other.operands.size, "cannot update this memory layout with the given memory layout because the stack size is different (this is in violation of the JVM spec.)")
-//        require(maxLocals == other.locals.size, "this memory layout and the given memory layout cannot be merged due to different number of local variables (registers)")
-//
-//        var thisRemainingOperands = this.operands
-//        var otherRemainingOperands = other.operands
-//        var newOperands = List[Value]() // during the update we build the operands stack in reverse order
-//        var operandsUpdated = false
-//        while (thisRemainingOperands.nonEmpty /* the number of operands of both memory layouts is equal */ ) {
-//            val thisOperand = thisRemainingOperands.head
-//            val otherOperand = otherRemainingOperands.head
-//            otherRemainingOperands = otherRemainingOperands.tail
-//            thisRemainingOperands = thisRemainingOperands.tail
-//
-//            val newOperand = domain.update(thisOperand, otherOperand)
-//            newOperands = newOperand :: newOperands
-//            if (newOperand != thisOperand) operandsUpdated
-//        }
-//
-//        val localsUpdated = false
-//        
-//        val newLocals = new Array[Value](maxLocals)
-//        var i = 0;
-//        while (i < maxLocals) {
-//            // TODO Improve this by analyzing the lifeness of the register variables
-//            // if one of the value
-//            val thisLocal = this.locals(i)
-//            val otherLocal = other.locals(i)
-//            val newLocal = domain.update(thisLocal,otherLocal)
-//            i += 1
-//        }
-//
-//        // return the "new" memory layout
-//        if (operandsUpdated || localsUpdated) {
-//            new MemoryLayout(newOperands.reverse, newLocals)
-//        }
-//        else {
-//            this
-//        }
+        //        val maxLocals = this.locals.size
+        //        require(this.operands.size == other.operands.size, "cannot update this memory layout with the given memory layout because the stack size is different (this is in violation of the JVM spec.)")
+        //        require(maxLocals == other.locals.size, "this memory layout and the given memory layout cannot be merged due to different number of local variables (registers)")
+        //
+        //        var thisRemainingOperands = this.operands
+        //        var otherRemainingOperands = other.operands
+        //        var newOperands = List[Value]() // during the update we build the operands stack in reverse order
+        //        var operandsUpdated = false
+        //        while (thisRemainingOperands.nonEmpty /* the number of operands of both memory layouts is equal */ ) {
+        //            val thisOperand = thisRemainingOperands.head
+        //            val otherOperand = otherRemainingOperands.head
+        //            otherRemainingOperands = otherRemainingOperands.tail
+        //            thisRemainingOperands = thisRemainingOperands.tail
+        //
+        //            val newOperand = domain.update(thisOperand, otherOperand)
+        //            newOperands = newOperand :: newOperands
+        //            if (newOperand != thisOperand) operandsUpdated
+        //        }
+        //
+        //        val localsUpdated = false
+        //        
+        //        val newLocals = new Array[Value](maxLocals)
+        //        var i = 0;
+        //        while (i < maxLocals) {
+        //            // TODO Improve this by analyzing the lifeness of the register variables
+        //            // if one of the value
+        //            val thisLocal = this.locals(i)
+        //            val otherLocal = other.locals(i)
+        //            val newLocal = domain.update(thisLocal,otherLocal)
+        //            i += 1
+        //        }
+        //
+        //        // return the "new" memory layout
+        //        if (operandsUpdated || localsUpdated) {
+        //            new MemoryLayout(newOperands.reverse, newLocals)
+        //        }
+        //        else {
+        //            this
+        //        }
 
     }
 
@@ -322,28 +324,28 @@ final class MemoryLayout(
             case 10 /*lconst_1*/ ⇒ new MemoryLayout(domain.longValue(1l) :: operands, locals)
 
             case 18 /*ldc*/ ⇒ {
-                instruction.asInstanceOf[LDC].constantValue match {
-                    case ConstantInteger(v) ⇒ new MemoryLayout(domain.intValue(v) :: operands, locals)
-                    case ConstantFloat(v)   ⇒ new MemoryLayout(domain.floatValue(v) :: operands, locals)
-                    case ConstantString(v)  ⇒ new MemoryLayout(domain.stringValue(v) :: operands, locals)
-                    case ConstantClass(v)   ⇒ new MemoryLayout(domain.classValue(v) :: operands, locals)
-                    case _                  ⇒ sys.error("internal implementation error or invalid bytecode")
+                instruction match {
+                    case LoadInt(v)    ⇒ new MemoryLayout(domain.intValue(v) :: operands, locals)
+                    case LoadFloat(v)  ⇒ new MemoryLayout(domain.floatValue(v) :: operands, locals)
+                    case LoadString(v) ⇒ new MemoryLayout(domain.stringValue(v) :: operands, locals)
+                    case LoadClass(v)  ⇒ new MemoryLayout(domain.classValue(v) :: operands, locals)
+                    case _             ⇒ sys.error("internal implementation error or invalid bytecode")
                 }
             }
             case 19 /*ldc_w*/ ⇒ {
-                instruction.asInstanceOf[LDC_W].constantValue match {
-                    case ConstantInteger(v) ⇒ new MemoryLayout(domain.intValue(v) :: operands, locals)
-                    case ConstantFloat(v)   ⇒ new MemoryLayout(domain.floatValue(v) :: operands, locals)
-                    case ConstantString(v)  ⇒ new MemoryLayout(domain.stringValue(v) :: operands, locals)
-                    case ConstantClass(v)   ⇒ new MemoryLayout(domain.classValue(v) :: operands, locals)
-                    case _                  ⇒ sys.error("internal implementation error or invalid bytecode")
+                instruction match {
+                    case LoadInt(v)    ⇒ new MemoryLayout(domain.intValue(v) :: operands, locals)
+                    case LoadFloat(v)  ⇒ new MemoryLayout(domain.floatValue(v) :: operands, locals)
+                    case LoadString(v) ⇒ new MemoryLayout(domain.stringValue(v) :: operands, locals)
+                    case LoadClass(v)  ⇒ new MemoryLayout(domain.classValue(v) :: operands, locals)
+                    case _             ⇒ sys.error("internal implementation error or invalid bytecode")
                 }
             }
             case 20 /*ldc2_w*/ ⇒ {
-                instruction.asInstanceOf[LDC2_W].constantValue match {
-                    case ConstantLong(v)   ⇒ new MemoryLayout(domain.longValue(v) :: operands, locals)
-                    case ConstantDouble(v) ⇒ new MemoryLayout(domain.doubleValue(v) :: operands, locals)
-                    case _                 ⇒ sys.error("internal implementation error or invalid bytecode")
+                instruction match {
+                    case LoadLong(v)   ⇒ new MemoryLayout(domain.longValue(v) :: operands, locals)
+                    case LoadDouble(v) ⇒ new MemoryLayout(domain.doubleValue(v) :: operands, locals)
+                    case _             ⇒ sys.error("internal implementation error or invalid bytecode")
                 }
             }
 
