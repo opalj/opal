@@ -36,6 +36,7 @@ package analyses
 
 import util.debug.{ Counting, PerformanceEvaluation }
 import reader.Java7Framework.ClassFiles
+import de.tud.cs.st.util.debug.MemoryUsage
 
 /**
  * Implementation of some simple static analyses to demonstrate the flexibility
@@ -66,7 +67,7 @@ object MoreCheckers {
     private val CountingPerformanceEvaluator = new PerformanceEvaluation with Counting
 
     private def printUsage: Unit = {
-        println("Usage: java …Main <JAR file containing class files>+")        
+        println("Usage: java …Main <JAR file containing class files>+")
     }
 
     val results = scala.collection.mutable.Map[String, List[Long]]();
@@ -104,6 +105,7 @@ object MoreCheckers {
             println("\n\n\n\n\n\n\n"+i+"======================================================================="+i);
             //time(t ⇒ println("Performing all analyses took: "+nsToSecs(t))) {
             analyze(args)
+            System.gc();
             //}
         }
         results.foreach(X ⇒ { var (id, times) = X; println(id+","+times.mkString(",")) })
@@ -130,9 +132,9 @@ object MoreCheckers {
         var classHierarchy = new ClassHierarchy
 
         var classFilesCount = 0
-        val classFiles = //MemoryUsage(mu ⇒ println("Memory required for the bytecode representation: "+(mu / 1024.0 / 1024.0)+" MByte")) {
+        val classFiles = MemoryUsage(mu ⇒ println("Memory required for the bytecode representation ("+classFilesCount+"): "+(mu / 1024.0 / 1024.0)+" MByte")) {
             //   time(t ⇒ println("Reading all class files took: "+t/*nsToSecs(t)*/)) {
-            for (
+            val cf = for (
                 zipFile ← jarFiles; // if { println("Reading: "+zipFile); true };
                 (classFile, _) ← ClassFiles(zipFile)
             ) yield {
@@ -140,8 +142,10 @@ object MoreCheckers {
                 classHierarchy = classHierarchy + classFile
                 classFile
             }
-        //   }
-        //}
+            //   }
+            println("Press return to continue.");System.in.read()
+            cf
+        }
         val getClassFile: Map[ObjectType, ClassFile] = classFiles.map(cf ⇒ (cf.thisClass, cf)).toMap // SAME AS IN PROJECT
         //println("Number of class files: "+classFilesCount)
 
