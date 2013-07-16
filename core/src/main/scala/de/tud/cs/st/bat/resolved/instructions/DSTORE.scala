@@ -39,7 +39,10 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case class DSTORE(val lvIndex: Int) extends StoreLocalVariableInstruction with ExplicitLocalVariableIndex {
+case class DSTORE(
+    lvIndex: Int)
+        extends StoreLocalVariableInstruction
+        with ExplicitLocalVariableIndex {
 
     def opcode: Int = 57
 

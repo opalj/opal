@@ -40,7 +40,7 @@ package resolved
  * @author Michael Eichberg
  */
 case class ANEWARRAY(
-    val componentType: ReferenceType)
+    componentType: ReferenceType)
         extends CreateNewArrayInstruction {
 
     def opcode: Int = 189

@@ -40,7 +40,7 @@ package resolved
  * @author Michael Eichberg
  */
 case class CHECKCAST(
-    val referenceType: ReferenceType)
+    referenceType: ReferenceType)
         extends Instruction {
 
     def opcode: Int = 192

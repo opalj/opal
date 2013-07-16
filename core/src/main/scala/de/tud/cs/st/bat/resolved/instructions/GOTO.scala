@@ -40,7 +40,7 @@ package resolved
  * @author Michael Eichberg
  */
 case class GOTO(
-        branchoffset: Int)
+    branchoffset: Int)
         extends UnconditionalBranchInstruction {
 
     def opcode: Int = 167

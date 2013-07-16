@@ -39,7 +39,9 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case class BIPUSH(val value: Int) extends LoadConstantInstruction {
+case class BIPUSH(
+    value: Int)
+        extends LoadConstantInstruction {
 
     def opcode: Int = 16
 

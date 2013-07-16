@@ -35,10 +35,10 @@ package bat
 package resolved
 
 /**
-  * Store into float array.
-  *
-  * @author Michael Eichberg
-  */
+ * Store into float array.
+ *
+ * @author Michael Eichberg
+ */
 case object FASTORE extends ArrayAccessInstruction with PrimitiveArrayAccess {
 
     def opcode: Int = 81

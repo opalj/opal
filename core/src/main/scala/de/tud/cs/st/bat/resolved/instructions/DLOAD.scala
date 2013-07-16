@@ -39,7 +39,10 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case class DLOAD(val lvIndex: Int) extends LoadLocalVariableInstruction with ExplicitLocalVariableIndex {
+case class DLOAD(
+    lvIndex: Int)
+        extends LoadLocalVariableInstruction
+        with ExplicitLocalVariableIndex {
 
     def opcode: Int = 24
 

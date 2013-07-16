@@ -39,7 +39,8 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case class IF_ICMPEQ(branchoffset: Int)
+case class IF_ICMPEQ(
+    branchoffset: Int)
         extends ConditionalBranchInstruction {
 
     def opcode: Int = 159
