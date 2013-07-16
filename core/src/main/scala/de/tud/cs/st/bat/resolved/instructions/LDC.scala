@@ -42,7 +42,7 @@ import scala.language.existentials
  * @author Michael Eichberg
  */
 case class LDC(
-    constantValue: ConstantValue[_])
+    constantValue: ConstantValue[_]) // TODO [Optimization(Result of the analysis of the HEAP of rt.jar)] Specialize the LDC instruction (LDC_Float,LDC_Class,...) to get rid of the constant value intermediate object?
         extends LoadConstantInstruction {
 
     def opcode: Int = 18
