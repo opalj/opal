@@ -54,6 +54,8 @@ import java.io.DataInputStream
  */
 trait LineNumberTable_attributeReader extends AttributeReader {
 
+    // TODO [Optimization] Find out whether we want something like a compact LineNumberTable (e.g., one where the whole table is kept as is in memory and unpacked/split up on demand.) 
+    
     type LineNumberTable_attribute <: Attribute
 
     type LineNumberTableEntry
