@@ -44,7 +44,8 @@ package bat
 sealed trait AccessFlag extends AccessFlagsMatcher {
 
     /**
-     * The Java (source code) name of the access flag if it exists. E.g., "public", "native", etc.
+     * The Java (source code) name of the access flag if it exists. E.g., "public",
+     * "native", etc.
      */
     def javaName: Option[String]
 
@@ -53,6 +54,18 @@ sealed trait AccessFlag extends AccessFlagsMatcher {
      */
     def mask: Int
 
+    /**
+     * Facilitates pattern matching against this AccessFlag.
+     *
+     * ==Example==
+     * {{{
+     *  case ClassFile(ACC_PUBLIC(),...)
+     * }}}
+     *
+     * To create more complex matchers, use the `&` and `!` methods.
+     *
+     * @return `True` iff all specified flags are set in the given access flags bit vector.
+     */
     def unapply(accessFlags: Int): Boolean = (accessFlags & mask) == mask
 
     /**
@@ -60,9 +73,7 @@ sealed trait AccessFlag extends AccessFlagsMatcher {
      * E.g., to determine if a method's static modifier is set it is sufficient
      * to call {{{ACC_STATIC ∈ method.access_flags}}}.
      */
-    def element_of(access_flags: Int): Boolean = (access_flags & mask) != 0
-
-    final def ∈(access_flags: Int): Boolean = element_of(access_flags)
+    def isElementOf(access_flags: Int): Boolean = (access_flags & mask) != 0
 
 }
 
