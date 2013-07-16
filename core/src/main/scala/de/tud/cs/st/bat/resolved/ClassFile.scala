@@ -85,11 +85,11 @@ case class ClassFile(
 
     override def asClassFile = this
 
-    def isAbstract: Boolean = ACC_ABSTRACT element_of accessFlags
+    def isAbstract: Boolean = ACC_ABSTRACT isElementOf accessFlags
 
-    def isFinal: Boolean = ACC_FINAL element_of accessFlags
+    def isFinal: Boolean = ACC_FINAL isElementOf accessFlags
 
-    def isPublic: Boolean = ACC_PUBLIC element_of accessFlags
+    def isPublic: Boolean = ACC_PUBLIC isElementOf accessFlags
 
     def isClassDeclaration: Boolean = (accessFlags & classCategoryMask) == 0
 

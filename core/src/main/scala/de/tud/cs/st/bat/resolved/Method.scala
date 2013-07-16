@@ -56,17 +56,17 @@ case class Method(
     def runtimeInvisibleParameterAnnotations: Option[ParameterAnnotations] =
         attributes collectFirst { case RuntimeInvisibleParameterAnnotationTable(pas) ⇒ pas }
 
-    def isVarargs: Boolean = ACC_VARARGS element_of accessFlags
+    def isVarargs: Boolean = ACC_VARARGS isElementOf accessFlags
 
-    def isSynchronized: Boolean = ACC_SYNCHRONIZED element_of accessFlags
+    def isSynchronized: Boolean = ACC_SYNCHRONIZED isElementOf accessFlags
 
-    def isBridge: Boolean = ACC_BRIDGE element_of accessFlags
+    def isBridge: Boolean = ACC_BRIDGE isElementOf accessFlags
 
-    def isNative: Boolean = ACC_NATIVE element_of accessFlags
+    def iisElementOfoolean = ACC_NATIVE isElementOf accessFlags
 
-    def isStrict: Boolean = ACC_STRICT element_of accessFlags
+    def isStrict: Boolean = ACC_STRICT isElementOf accessFlags
 
-    def isAbstract: Boolean = ACC_ABSTRACT element_of accessFlags
+    def isAbstract: Boolean = ACC_ABSTRACT isElementOf accessFlags
 
     def returnType = descriptor.returnType
 

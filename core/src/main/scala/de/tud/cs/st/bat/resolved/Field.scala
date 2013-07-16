@@ -65,9 +65,9 @@ case class Field(
 
     override def asField = this
 
-    def isTransient: Boolean = ACC_TRANSIENT element_of accessFlags
+    def isTransient: Boolean = ACC_TRANSIENT isElementOf accessFlags
 
-    def isVolatile: Boolean = ACC_VOLATILE element_of accessFlags
+    def isVolatile: Boolean = ACC_VOLATILE isElementOf accessFlags
 
     /**
      * Returns this field's type signature.
