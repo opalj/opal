@@ -59,7 +59,7 @@ package object bat {
 
     private final val generalBATErrorMessage: String =
         """While reading a class file an unexpected error occured.
-          |Either the class file is corrupt or internal BAT error was found.
+          |Either the class file is corrupt or an internal error was found.
           |The underlying problem is:
           |""".stripMargin('|')
 
