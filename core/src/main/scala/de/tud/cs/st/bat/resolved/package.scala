@@ -60,7 +60,7 @@ package object resolved {
     type Methods = IndexedSeq[Method]
     type Exceptions = Seq[ObjectType]
     type ExceptionHandlers = IndexedSeq[ExceptionHandler]
-    type LineNumbers = IndexedSeq[LineNumber]
+    type LineNumbers = Seq[LineNumber]
     type LocalVariableTypes = IndexedSeq[LocalVariableType]
     type LocalVariables = IndexedSeq[LocalVariable]
     type BootstrapMethods = IndexedSeq[BootstrapMethod]

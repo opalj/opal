@@ -40,7 +40,7 @@ import reflect.ClassTag
 import de.tud.cs.st.bat.reader.LineNumberTable_attributeReader
 
 /**
- * The factory methods to create line number tables and their entries.
+ * Implements the factory methods to create line number tables and their entries.
  *
  * @author Michael Eichberg
  */
@@ -63,6 +63,27 @@ trait LineNumberTable_attributeBinding
     def LineNumberTableEntry(start_pc: Int, line_number: Int) =
         new LineNumber(start_pc, line_number)
 
+    /**
+     * Merge all line number tables and create a single sorted line number table.
+     */
+    attributesProcessor(attributes ⇒ {
+        val (lineNumberTables, otherAttributes) =
+            attributes partition {
+                _ match {
+                    case lnt: LineNumberTable ⇒ true
+                    case _                    ⇒ false
+                }
+            }
+        lineNumberTables match {
+            case Seq()    ⇒ attributes
+            case Seq(lnt) ⇒ attributes
+            case lnts ⇒ {
+                val mergedTables = lnts.map(_.asInstanceOf[LineNumberTable].lineNumbers).flatten
+                val sortedTable = mergedTables.sortWith((ltA, ltB) ⇒ ltA.startPC < ltB.startPC)
+                new LineNumberTable(sortedTable) +: otherAttributes
+            }
+        }
+    })
 }
 
 

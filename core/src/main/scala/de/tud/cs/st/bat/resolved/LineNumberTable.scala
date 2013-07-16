@@ -40,7 +40,42 @@ package resolved
  * @author Michael Eichberg
  */
 case class LineNumberTable(
-    lineNumbers: LineNumbers) extends Attribute
+    lineNumbers: LineNumbers)
+        extends Attribute {
+
+    /**
+     * Looks up the line number of the instruction with the given pc.
+     *
+     * @param pc The program counter/the index of an instruction in the code array for
+     *    which we want to determine the source line.
+     * @return The line number of the instruction with the given pc, if the this
+     *    information is available.
+     */
+    def lookupLineNumber(pc: Int): Option[Int] = {
+        import scala.util.control.Breaks
+        val breaks = new Breaks
+        import breaks.{ break, breakable }
+
+        val lnsIterator = lineNumbers.iterator
+        var lastLineNumber: LineNumber = null
+        breakable {
+            while (lnsIterator.hasNext) {
+                var currentLineNumber = lnsIterator.next
+                if (currentLineNumber.startPC <= pc) {
+                    lastLineNumber = currentLineNumber
+                } else {
+                    break
+                }
+            }
+        }
+
+        if (lastLineNumber eq null)
+            return None
+        else
+            return Some(lastLineNumber.lineNumber)
+    }
+
+}
 
 /**
  * An entry in a line number table.

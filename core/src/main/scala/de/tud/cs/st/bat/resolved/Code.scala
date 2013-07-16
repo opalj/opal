@@ -48,49 +48,14 @@ case class Code(
         extends Attribute {
 
     /**
-     * Collects all line number tables.
+     * Returns the line number table - if any.
      *
-     * The JVM specification does not prescribe that there has to be at most one
-     * line number table.
+     * ==Note==
+     * A code attribute is allowed to have multiple line number tables. However, all
+     * tables are merged into one by BAT at class loading time.
      */
-    def lineNumberTables: Seq[LineNumbers] =
-        attributes collect { case LineNumberTable(lnt) ⇒ lnt }
-
-    /**
-     * Looks up the line number of the instruction with the given pc.
-     *
-     * @param pc The program counter/the index of an instruction in the code array for
-     *    which we want to determine the source line.
-     * @return The line number of the instruction with the given pc, if the this
-     *    information is available.
-     */
-    def lookupLineNumber(pc: Int): Option[Int] = {
-        import scala.util.control.Breaks
-        val breaks = new Breaks
-        import breaks.{ break, breakable }
-
-        // though the spec explicitly states that a class file can have multiple
-        // line number table attributes, we have never seen this in practice...
-        val mergedTables = lineNumberTables.flatten
-        val sortedTable = mergedTables.sortWith((ltA, ltB) ⇒ ltA.startPC < ltB.startPC)
-        val lnsIterator = sortedTable.iterator
-        var lastLineNumber: LineNumber = null
-        breakable {
-            while (lnsIterator.hasNext) {
-                var currentLineNumber = lnsIterator.next
-                if (currentLineNumber.startPC <= pc) {
-                    lastLineNumber = currentLineNumber
-                } else {
-                    break
-                }
-            }
-        }
-
-        if (lastLineNumber eq null)
-            return None
-        else
-            return Some(lastLineNumber.lineNumber)
-    }
+    def lineNumberTable: Option[LineNumberTable] =
+        attributes collectFirst { case lnt: LineNumberTable ⇒ lnt }
 
     /**
      * Collects all local variable tables.
