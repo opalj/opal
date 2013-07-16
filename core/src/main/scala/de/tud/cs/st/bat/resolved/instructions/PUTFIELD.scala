@@ -37,18 +37,20 @@ package resolved
 /**
  * Set field in object.
  *
+ * @see [[de.tud.cs.st.bat.resolved.FieldAccess]] for additional pattern matching support.
+ *
  * @author Michael Eichberg
  */
 case class PUTFIELD(
     declaringClass: ObjectType,
     name: String,
     fieldType: FieldType)
-        extends FieldAccessInstruction {
+        extends FieldWriteAccess {
 
     def opcode: Int = 181
 
     def mnemonic: String = "putfield"
 
-    def runtimeExceptions: List[ObjectType] = FieldAccessInstruction.runtimeExceptions
+    def runtimeExceptions: List[ObjectType] = FieldAccess.runtimeExceptions
 
 }

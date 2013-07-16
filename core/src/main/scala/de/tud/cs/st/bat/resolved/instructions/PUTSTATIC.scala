@@ -36,14 +36,16 @@ package resolved
 
 /**
  * Set static field in class.
+ *
+ * @see [[de.tud.cs.st.bat.resolved.FieldAccess]] for additional pattern matching support.
  * 
  * @author Michael Eichberg
  */
 case class PUTSTATIC(
-    declaringClass: ObjectType, 
+    declaringClass: ObjectType,
     name: String,
     fieldType: FieldType)
-        extends FieldAccessInstruction {
+        extends FieldWriteAccess {
 
     def opcode: Int = 179
 

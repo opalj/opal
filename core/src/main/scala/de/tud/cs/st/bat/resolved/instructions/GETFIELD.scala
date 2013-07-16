@@ -38,8 +38,14 @@ package resolved
  * Fetch ﬁeld from object.
  *
  * ==NOTE==
- * Getting an Array's length is translated to the special arraylength instruction.
- * E.g., as in the following case: {{{Object[] os = ...; os.length}}} then os.length
+ * Getting an Array's length is translated to the special `arraylength` instruction.
+ * E.g., in the following case:
+ * {{{
+ * Object[] os = ...; os.length
+ * }}}
+ * `os.length` is determined using the special `arraylength` instruction.
+ *
+ * @see [[de.tud.cs.st.bat.resolved.FieldAccess]] for additional pattern matching support.
  *
  * @author Michael Eichberg
  */
@@ -47,12 +53,12 @@ case class GETFIELD(
     declaringClass: ObjectType,
     name: String,
     fieldType: FieldType)
-        extends FieldAccessInstruction {
+        extends FieldReadAccess {
 
     def opcode: Int = 180
 
     def mnemonic: String = "getfield"
 
-    def runtimeExceptions: List[ObjectType] = FieldAccessInstruction.runtimeExceptions
+    def runtimeExceptions: List[ObjectType] = FieldAccess.runtimeExceptions
 
 }

@@ -37,13 +37,15 @@ package resolved
 /**
  * Getstatic ﬁeld from class.
  *
+ * @see [[de.tud.cs.st.bat.resolved.FieldAccess]] for additional pattern matching support.
+ *
  * @author Michael Eichberg
  */
 case class GETSTATIC(
     declaringClass: ObjectType,
     name: String,
     fieldType: FieldType)
-        extends FieldAccessInstruction {
+        extends FieldReadAccess {
 
     def opcode: Int = 178
 

@@ -55,9 +55,9 @@ object UUF_UNUSED_FIELD extends (Project[_] ⇒ Iterable[(ClassFile, Field)]) {
                 instruction ← method.body.get.instructions
             ) {
                 instruction match {
-                    case GETFIELD(`declaringClass`, name, _)  ⇒ privateFields -= name
+                    case FieldReadAccess(`declaringClass`, name, _) ⇒ privateFields -= name
                     case GETSTATIC(`declaringClass`, name, _) ⇒ privateFields -= name
-                    case _                                    ⇒
+                    case _ ⇒
                 }
             }
             if (privateFields.size > 0) {

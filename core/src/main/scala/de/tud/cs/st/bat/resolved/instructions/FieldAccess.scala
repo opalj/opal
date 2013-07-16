@@ -39,13 +39,44 @@ package resolved
  *
  * @author Michael Eichberg
  */
-abstract class FieldAccessInstruction extends Instruction {
+sealed abstract class FieldAccess extends Instruction {
+
+    def declaringClass: ObjectType
+
+    def name: String
+
+    def fieldType: FieldType
 
     def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 3
 
 }
-object FieldAccessInstruction {
+
+/**
+ * Defines an extractor to facilitate pattern matching on field access instructions.
+ */
+object FieldAccess {
 
     val runtimeExceptions = List(ObjectType.NullPointerException)
 
+    def unapply(fa: FieldAccess) = Some(fa.declaringClass, fa.name, fa.fieldType)
+}
+
+abstract class FieldReadAccess extends FieldAccess
+
+/**
+ * Defines an extractor to facilitate pattern matching on field read access instructions.
+ */
+object FieldReadAccess {
+
+    def unapply(fa: FieldReadAccess) = FieldAccess.unapply(fa)
+}
+
+abstract class FieldWriteAccess extends FieldAccess
+
+/**
+ * Defines an extractor to facilitate pattern matching on field write access instructions.
+ */
+object FieldWriteAccess {
+
+    def unapply(fa: FieldWriteAccess) = FieldAccess.unapply(fa)
 }
