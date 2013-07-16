@@ -44,3 +44,17 @@ abstract class SynchronizationInstruction extends Instruction {
     def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 1
 
 }
+
+object SynchronizationInstruction {
+
+    /**
+     * Extractor to match SynchronizationInstructions.
+     * 
+     * ==Example== 
+     * To use this matcher, do not forget the parentheses. E.g.,
+     * {{{
+     * case SynchronizationInstruction() => ...
+     * }}}
+     */
+    def unapply(si: SynchronizationInstruction): Boolean = si ne null
+}
