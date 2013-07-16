@@ -10,7 +10,7 @@ provides extensive support for pattern-matching on Java Bytecode to facilitate t
 BAT consists of four main projects:
 
 * **Core**: This project defines the core functionality necessary for reading and analyzing Java class files.  
-Util: Technically belongs to the Core project, but contains some sources that need to be compiled before we can 
+**Util**: Technically belongs to the Core project, but contains some sources that need to be compiled before we can 
 compile core. It contains in particular Scala Macros.  
 **Core** and **Util** are mature.
 
