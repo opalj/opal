@@ -35,8 +35,6 @@ package bat
 package resolved
 package analyses
 
-import reader.Java7Framework
-
 import java.net.URL
 import java.io.File
 
