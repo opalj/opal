@@ -43,4 +43,6 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case class SourceFile(sourceFile: String) extends Attribute 
+case class SourceFile(
+    sourceFile: String)
+        extends Attribute 

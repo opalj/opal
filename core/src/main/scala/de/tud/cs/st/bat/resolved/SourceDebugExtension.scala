@@ -41,4 +41,5 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case class SourceDebugExtension(debug_extension: String) extends Attribute 
+case class SourceDebugExtension(
+    debug_extension: String) extends Attribute 
