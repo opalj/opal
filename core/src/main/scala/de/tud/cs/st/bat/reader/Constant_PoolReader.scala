@@ -66,7 +66,9 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
     type CONSTANT_MethodType_info <: Constant_Pool_Entry
     type CONSTANT_InvokeDynamic_info <: Constant_Pool_Entry
 
-    // FACTORY METHODS:
+    //
+    // FACTORY METHODS
+    //
 
     protected def CONSTANT_Class_info(i: Int): CONSTANT_Class_info
     protected def CONSTANT_Fieldref_info(class_index: Int, name_and_type_index: Int): CONSTANT_Fieldref_info
@@ -103,7 +105,9 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
         val constant_pool_count = in.readUnsignedShort
 
         /**
-         * The format of each constant_pool table entry is indicated by its ﬁrst “tag” byte.
+         * The format of each constant_pool table entry is indicated by its ﬁrst 
+         * “tag” byte.
+         * 
          * The constant_pool table is indexed from 1 to constant_pool_count−1.
          */
         val constant_pool_entries = new Array[Constant_Pool_Entry](constant_pool_count)
@@ -140,7 +144,7 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
                     i += 1; CONSTANT_MethodType_info(in.readUnsignedShort)
                 case CONSTANT_InvokeDynamic_ID ⇒
                     i += 1; CONSTANT_InvokeDynamic_info(in.readUnsignedShort, in.readUnsignedShort)
-                case _ ⇒ sys.error("unknown constant pool tag: "+tag)
+                case _ ⇒ BATError("unknown constant pool tag: "+tag)
             }
         }
         constant_pool_entries
