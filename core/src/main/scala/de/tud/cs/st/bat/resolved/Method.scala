@@ -62,7 +62,7 @@ case class Method(
 
     def isBridge: Boolean = ACC_BRIDGE isElementOf accessFlags
 
-    def iisElementOfoolean = ACC_NATIVE isElementOf accessFlags
+    def isNative = ACC_NATIVE isElementOf accessFlags
 
     def isStrict: Boolean = ACC_STRICT isElementOf accessFlags
 
