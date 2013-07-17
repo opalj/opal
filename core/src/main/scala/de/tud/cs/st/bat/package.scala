@@ -85,4 +85,7 @@ package object bat {
     val NOT_PRIVATE = !ACC_PRIVATE
     val NOT_FINAL = !ACC_FINAL
     val NOT_SYNCHRONIZED = !ACC_SYNCHRONIZED
+    val NOT_NATIVE = !ACC_NATIVE
+    val NOT_ABSTRACT = !ACC_ABSTRACT
+
 }
