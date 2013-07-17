@@ -32,19 +32,29 @@
  */
 package de.tud.cs.st.bat.resolved
 package analyses
-package findbugs_inspired
+package bug_patterns.ioc
 
 /**
  *
  * @author Ralf Mitschke
- *
  */
-object CI_CONFUSED_INHERITANCE extends (Project[_] ⇒ Iterable[(ClassFile, Field)]) {
+object DM_RUN_FINALIZERS_ON_EXIT extends (Project[_] ⇒ Iterable[(ClassFile, Method, Instruction)]) {
 
-    def apply(project: Project[_]) =
+    def apply(project: Project[_]) = {
+        var methodsThatCallRunFinalizersOnExit: List[(ClassFile, Method, Instruction)] = Nil
         for (
-            classFile ← project.classFiles if classFile.isFinal;
-            field ← classFile.fields if field.isProtected
-        ) yield (classFile, field)
+            classFile ← project.classFiles;
+            method ← classFile.methods if method.body.isDefined;
+            instruction ← method.body.get.instructions
+        ) {
+            instruction match {
+                case INVOKESTATIC(ObjectType("java/lang/System"), "runFinalizersOnExit", MethodDescriptor(Seq(BooleanType), VoidType)) |
+                    INVOKESTATIC(ObjectType("java/lang/Runtime"), "runFinalizersOnExit", MethodDescriptor(Seq(BooleanType), VoidType)) ⇒
+                    methodsThatCallRunFinalizersOnExit = (classFile, method, instruction) :: methodsThatCallRunFinalizersOnExit
+                case _ ⇒
+            }
+        }
+        methodsThatCallRunFinalizersOnExit
+    }
 
 }

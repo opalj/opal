@@ -32,36 +32,20 @@
  */
 package de.tud.cs.st.bat.resolved
 package analyses
-package findbugs_inspired
+package bug_patterns.ioc
 
 /**
  *
  * @author Ralf Mitschke
  */
-object DP_DO_INSIDE_DO_PRIVILEGED extends (Project[_] ⇒ Iterable[(ClassFile, Method, Int)]) {
+object CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE extends (Project[_] ⇒ Iterable[(ClassFile, Method)]) {
 
-    val reflectionField = ObjectType("java/lang/reflect/Field")
+    def apply(project: Project[_]) =
+        for {
+            classFile ← project.classFiles if !classFile.isAnnotationDeclaration && classFile.superClass.isDefined
+            method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object), _) ← classFile.methods
+            if !project.classHierarchy.isSubtypeOf(classFile.thisClass, ObjectType("java/lang/Cloneable"))
+                .getOrElse(false)
+        } yield (classFile, method)
 
-    val reflectionMethod = ObjectType("java/lang/reflect/Method")
-
-    val priviledgedAction = ObjectType("java/security/PrivilegedAction")
-
-    val priviledgedExceptionAction = ObjectType("java/security/PrivilegedExceptionAction")
-
-    def apply(project: Project[_]) = {
-        import BaseAnalyses._
-
-        for (
-            classFile ← project.classFiles if !classFile.interfaces.exists {
-                case `priviledgedAction`          ⇒ true
-                case `priviledgedExceptionAction` ⇒ true
-                case _                            ⇒ false
-            };
-            method ← classFile.methods if method.body.isDefined;
-            (INVOKEVIRTUAL(receiver, "setAccessible", _), idx) ← withIndex(method.body.get.instructions) if (receiver == reflectionField || receiver == reflectionMethod)
-        ) yield {
-            (classFile, method, idx)
-        }
-
-    }
 }

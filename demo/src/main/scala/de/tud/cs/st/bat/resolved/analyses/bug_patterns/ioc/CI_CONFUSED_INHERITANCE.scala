@@ -32,20 +32,19 @@
  */
 package de.tud.cs.st.bat.resolved
 package analyses
-package findbugs_inspired
+package bug_patterns.ioc
 
 /**
  *
  * @author Ralf Mitschke
+ *
  */
-object CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE extends (Project[_] ⇒ Iterable[(ClassFile, Method)]) {
+object CI_CONFUSED_INHERITANCE extends (Project[_] ⇒ Iterable[(ClassFile, Field)]) {
 
     def apply(project: Project[_]) =
-        for {
-            classFile ← project.classFiles if !classFile.isAnnotationDeclaration && classFile.superClass.isDefined
-            method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object), _) ← classFile.methods
-            if !project.classHierarchy.isSubtypeOf(classFile.thisClass, ObjectType("java/lang/Cloneable"))
-                .getOrElse(false)
-        } yield (classFile, method)
+        for (
+            classFile ← project.classFiles if classFile.isFinal;
+            field ← classFile.fields if field.isProtected
+        ) yield (classFile, field)
 
 }

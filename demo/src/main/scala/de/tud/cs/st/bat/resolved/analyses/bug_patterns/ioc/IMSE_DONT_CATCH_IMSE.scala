@@ -32,24 +32,23 @@
  */
 package de.tud.cs.st.bat.resolved
 package analyses
-package findbugs_inspired
+package bug_patterns.ioc
 
 /**
  *
  * @author Ralf Mitschke
  */
-object SE_NO_SUITABLE_CONSTRUCTOR extends (Project[_] ⇒ Iterable[ClassFile]) {
+object IMSE_DONT_CATCH_IMSE extends (Project[_] ⇒ Iterable[(ClassFile, Method)]) {
 
-    def apply(project: Project[_]) = {
-        val serializable = ObjectType("java/io/Serializable")
-        val serializableClasses = project.classHierarchy.subclasses(serializable).getOrElse(Set.empty)
+    val IllegalMonitorStateExceptionType = ObjectType("java/lang/IllegalMonitorStateException")
+
+    def apply(project: Project[_]) =
         for {
-            superclass ← project.classHierarchy.superclasses(serializableClasses)
-            if project.classes.isDefinedAt(superclass)
-            superClassFile = project.classes(superclass)
-            if !superClassFile.isInterfaceDeclaration &&
-                !superClassFile.constructors.exists(_.descriptor.parameterTypes.length == 0)
-        } yield superClassFile // there can be at most one method
-    }
-
+            classFile ← project.classFiles if classFile.isClassDeclaration;
+            method ← classFile.methods if method.body.isDefined
+            if method.body.get.exceptionHandlers.exists({
+                case ExceptionHandler(_, _, _, Some(IllegalMonitorStateExceptionType)) ⇒ true
+                case _ ⇒ false
+            })
+        } yield (classFile, method)
 }

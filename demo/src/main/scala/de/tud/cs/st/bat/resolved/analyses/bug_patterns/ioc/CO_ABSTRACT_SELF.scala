@@ -32,20 +32,21 @@
  */
 package de.tud.cs.st.bat.resolved
 package analyses
-package findbugs_inspired
+package bug_patterns.ioc
 
 /**
- * FINDBUGS: Co: Covariant compareTo() method defined (CO_SELF_NO_OBJECT)
+ * FINDBUGS: Co: Abstract class defines covariant compareTo() method (CO_ABSTRACT_SELF)
  *
  * @author Ralf Mitschke
  */
-object CO_SELF_NO_OBJECT extends (Project[_] ⇒ Iterable[(ClassFile, Method)]) {
+object CO_ABSTRACT_SELF extends (Project[_] ⇒ Iterable[(ClassFile, Method)]) {
 
     def apply(project: Project[_]) =
         for {
             comparable ← project.classHierarchy.subtypes(ObjectType("java/lang/Comparable")).getOrElse(Nil)
             classFile = project.classes(comparable)
-            method @ Method(_, "compareTo", MethodDescriptor(Seq(parameterType), IntegerType), _) ← classFile.methods
-            if parameterType != ObjectType("java/lang/Object")
+            if (classFile.isAbstract)
+            method @ Method(_, "compareTo", MethodDescriptor(Seq(NotJavaLangObject()), IntegerType), _) ← classFile.methods
         } yield (classFile, method)
+
 }

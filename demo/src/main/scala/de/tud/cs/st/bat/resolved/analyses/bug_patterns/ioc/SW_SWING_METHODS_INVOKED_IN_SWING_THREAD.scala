@@ -32,29 +32,38 @@
  */
 package de.tud.cs.st.bat.resolved
 package analyses
-package findbugs_inspired
+package bug_patterns.ioc
 
 /**
  *
  * @author Ralf Mitschke
  */
-object DM_RUN_FINALIZERS_ON_EXIT extends (Project[_] ⇒ Iterable[(ClassFile, Method, Instruction)]) {
+object SW_SWING_METHODS_INVOKED_IN_SWING_THREAD extends (Project[_] ⇒ Iterable[(ClassFile, Method, Int)]) {
 
     def apply(project: Project[_]) = {
-        var methodsThatCallRunFinalizersOnExit: List[(ClassFile, Method, Instruction)] = Nil
+
+        import BaseAnalyses._
+
         for (
             classFile ← project.classFiles;
-            method ← classFile.methods if method.body.isDefined;
-            instruction ← method.body.get.instructions
-        ) {
-            instruction match {
-                case INVOKESTATIC(ObjectType("java/lang/System"), "runFinalizersOnExit", MethodDescriptor(Seq(BooleanType), VoidType)) |
-                    INVOKESTATIC(ObjectType("java/lang/Runtime"), "runFinalizersOnExit", MethodDescriptor(Seq(BooleanType), VoidType)) ⇒
-                    methodsThatCallRunFinalizersOnExit = (classFile, method, instruction) :: methodsThatCallRunFinalizersOnExit
-                case _ ⇒
-            }
+            method ← classFile.methods if (
+                method.body.isDefined &&
+                method.isPublic &&
+                method.isStatic &&
+                method.name == "main" ||
+                classFile.thisClass.className.toLowerCase.indexOf("benchmark") >= 0
+            );
+            (INVOKEVIRTUAL(targetType, name, desc), idx) ← withIndex(method.body.get.instructions) if (
+                targetType.isObjectType &&
+                targetType.asInstanceOf[ObjectType].className.startsWith("javax/swing/")) &&
+                (
+                    name == "show" && desc == MethodDescriptor(Nil, VoidType) ||
+                    name == "pack" && desc == MethodDescriptor(Nil, VoidType) ||
+                    name == "setVisible" && desc == MethodDescriptor(List(BooleanType), VoidType)
+                )
+        ) yield {
+            (classFile, method, idx)
         }
-        methodsThatCallRunFinalizersOnExit
-    }
 
+    }
 }

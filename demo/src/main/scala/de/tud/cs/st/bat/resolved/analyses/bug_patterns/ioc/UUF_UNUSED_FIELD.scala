@@ -32,20 +32,39 @@
  */
 package de.tud.cs.st.bat.resolved
 package analyses
-package findbugs_inspired
+package bug_patterns.ioc
 
 /**
  *
  * @author Ralf Mitschke
  */
-object FI_PUBLIC_SHOULD_BE_PROTECTED extends (Project[_] ⇒ Iterable[ClassFile]) {
+object UUF_UNUSED_FIELD extends (Project[_] ⇒ Iterable[(ClassFile, Field)]) {
 
-    def apply(project: Project[_]) =
-        for {
-            classFile ← project.classFiles
-            if classFile.methods.exists(method ⇒
-                method.name == "finalize" && method.isPublic && method.descriptor.returnType == VoidType && method.descriptor.parameterTypes.size == 0
-            )
-        } yield classFile
+    def apply(project: Project[_]) = {
+        var unusedFields: List[(ClassFile, Field)] = Nil
 
+        for (classFile ← project.classFiles if !classFile.isInterfaceDeclaration) {
+            val declaringClass = classFile.thisClass
+            var privateFields: Map[String, (ClassFile, Field)] = Map.empty
+            for (field ← classFile.fields if field.isPrivate) {
+                privateFields += field.name -> (classFile, field)
+            }
+
+            for (
+                method ← classFile.methods if method.body.isDefined;
+                instruction ← method.body.get.instructions
+            ) {
+                instruction match {
+                    case FieldReadAccess(`declaringClass`, name, _) ⇒ privateFields -= name
+                    case GETSTATIC(`declaringClass`, name, _) ⇒ privateFields -= name
+                    case _ ⇒
+                }
+            }
+            if (privateFields.size > 0) {
+                unusedFields = unusedFields ::: privateFields.values.toList
+            }
+        }
+
+        unusedFields
+    }
 }

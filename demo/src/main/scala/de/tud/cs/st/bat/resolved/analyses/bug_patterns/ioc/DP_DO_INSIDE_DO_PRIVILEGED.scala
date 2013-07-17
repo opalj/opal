@@ -32,37 +32,36 @@
  */
 package de.tud.cs.st.bat.resolved
 package analyses
-package findbugs_inspired
+package bug_patterns.ioc
 
 /**
- * The set method is synchronized and the get method is not synchronized.
  *
- * @author Michael Eichberg
+ * @author Ralf Mitschke
  */
-object UG_SYNC_SET_UNSYNC_GET extends (Project[_] ⇒ Iterable[(ClassFile, Method, Method)]) {
+object DP_DO_INSIDE_DO_PRIVILEGED extends (Project[_] ⇒ Iterable[(ClassFile, Method, Int)]) {
+
+    val reflectionField = ObjectType("java/lang/reflect/Field")
+
+    val reflectionMethod = ObjectType("java/lang/reflect/Method")
+
+    val priviledgedAction = ObjectType("java/security/PrivilegedAction")
+
+    val priviledgedExceptionAction = ObjectType("java/security/PrivilegedExceptionAction")
 
     def apply(project: Project[_]) = {
-        var unSyncedGetters = Map[String, Method]()
-        var syncedSetters = Map[String, (ClassFile, Method)]()
-        for {
-            classFile ← project.classFiles if !classFile.isInterfaceDeclaration
-            method ← classFile.methods
-            if !method.isAbstract && !method.isStatic && !method.isNative && !method.isPrivate
-        } {
-            if (method.name.startsWith("get") &&
-                !method.isSynchronized &&
-                method.parameterTypes.length == 0 &&
-                method.returnType != VoidType) {
-                unSyncedGetters += ((classFile.thisClass.className+"."+method.name.substring(3), method))
-            } else if (method.name.startsWith("set") &&
-                method.isSynchronized &&
-                method.parameterTypes.length == 1 &&
-                method.returnType == VoidType) {
-                syncedSetters += ((classFile.thisClass.className+"."+method.name.substring(3), (classFile, method)))
-            }
+        import BaseAnalyses._
+
+        for (
+            classFile ← project.classFiles if !classFile.interfaces.exists {
+                case `priviledgedAction`          ⇒ true
+                case `priviledgedExceptionAction` ⇒ true
+                case _                            ⇒ false
+            };
+            method ← classFile.methods if method.body.isDefined;
+            (INVOKEVIRTUAL(receiver, "setAccessible", _), idx) ← withIndex(method.body.get.instructions) if (receiver == reflectionField || receiver == reflectionMethod)
+        ) yield {
+            (classFile, method, idx)
         }
-        for (property ← syncedSetters.keySet.intersect(unSyncedGetters.keySet))
-            yield (syncedSetters(property)._1, syncedSetters(property)._2, unSyncedGetters(property))
 
     }
 }

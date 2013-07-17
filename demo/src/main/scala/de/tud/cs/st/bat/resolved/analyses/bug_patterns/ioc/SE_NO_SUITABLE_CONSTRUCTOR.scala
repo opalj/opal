@@ -32,44 +32,24 @@
  */
 package de.tud.cs.st.bat.resolved
 package analyses
-package findbugs_inspired
+package bug_patterns.ioc
 
 /**
  *
  * @author Ralf Mitschke
  */
-object BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION
-        extends (Project[_] ⇒ Iterable[(ClassFile, Method, Int)]) {
+object SE_NO_SUITABLE_CONSTRUCTOR extends (Project[_] ⇒ Iterable[ClassFile]) {
 
-    import BaseAnalyses._
-
-    /**
-     * This analysis only finds sequences of instructions resulting from:
-     * {{{
-     * new Integer(1).doubleValue()
-     * }}}
-     * and not
-     * {{{
-     * Integer.valueOf(1).doubleValue()
-     * }}}
-     */
     def apply(project: Project[_]) = {
-        for (
-            classFile ← project.classFiles if classFile.majorVersion >= 49;
-            method ← classFile.methods if method.body.isDefined;
-            Seq(
-                (INVOKESPECIAL(firstReceiver, _, MethodDescriptor(Seq(paramType), _)), _),
-                (INVOKEVIRTUAL(secondReceiver, name, MethodDescriptor(Seq(), returnType)), idx)
-                ) ← withIndex(method.body.get.instructions).sliding(2) if (
-                !paramType.isReferenceType &&
-                firstReceiver.asInstanceOf[ObjectType].className.startsWith("java/lang") &&
-                firstReceiver == secondReceiver &&
-                name.endsWith("Value") &&
-                returnType != paramType // coercion to another type performed
-            )
-        ) yield {
-            (classFile, method, idx)
-        }
+        val serializable = ObjectType("java/io/Serializable")
+        val serializableClasses = project.classHierarchy.subclasses(serializable).getOrElse(Set.empty)
+        for {
+            superclass ← project.classHierarchy.superclasses(serializableClasses)
+            if project.classes.isDefinedAt(superclass)
+            superClassFile = project.classes(superclass)
+            if !superClassFile.isInterfaceDeclaration &&
+                !superClassFile.constructors.exists(_.descriptor.parameterTypes.length == 0)
+        } yield superClassFile // there can be at most one method
     }
 
 }

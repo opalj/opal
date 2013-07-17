@@ -32,6 +32,7 @@
  */
 package de.tud.cs.st.bat.resolved
 package analyses
+package bug_patterns.ioc
 
 /**
  *

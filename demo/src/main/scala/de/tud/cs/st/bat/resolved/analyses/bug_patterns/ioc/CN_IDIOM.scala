@@ -32,30 +32,24 @@
  */
 package de.tud.cs.st.bat.resolved
 package analyses
-package findbugs_inspired
+package bug_patterns.ioc
 
 /**
  *
  * @author Ralf Mitschke
+ *
  */
-object DM_GC extends (Project[_] ⇒ Iterable[(ClassFile, Method, Instruction)]) {
+object CN_IDIOM extends (Project[_] ⇒ Iterable[ClassFile]) {
 
-    def apply(project: Project[_]) = {
-        var garbageCollectingMethods: List[(ClassFile, Method, Instruction)] = Nil
-
-        for ( // we don't care about gc calls in java.lang and also about gc calls that happen inside of methods related to garbage collection (heuristic)
-            classFile ← project.classFiles if !classFile.thisClass.className.startsWith("java/lang");
-            method ← classFile.methods if method.body.isDefined && !"(^gc)|(gc$)".r.findFirstIn(method.name).isDefined;
-            instruction ← method.body.get.instructions
-        ) {
-            instruction match {
-                case INVOKESTATIC(ObjectType("java/lang/System"), "gc", MethodDescriptor(Seq(), VoidType)) |
-                    INVOKEVIRTUAL(ObjectType("java/lang/Runtime"), "gc", MethodDescriptor(Seq(), VoidType)) ⇒
-                    garbageCollectingMethods = (classFile, method, instruction) :: garbageCollectingMethods
-                case _ ⇒
-            }
-        }
-        garbageCollectingMethods
-    }
+    def apply(project: Project[_]) =
+        for {
+            allCloneables ← project.classHierarchy.subtypes(ObjectType("java/lang/Cloneable")).toList
+            cloneable ← allCloneables
+            classFile = project.classes(cloneable)
+            if !classFile.methods.exists({
+                case Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object), _) ⇒ true
+                case _ ⇒ false
+            })
+        } yield classFile
 
 }

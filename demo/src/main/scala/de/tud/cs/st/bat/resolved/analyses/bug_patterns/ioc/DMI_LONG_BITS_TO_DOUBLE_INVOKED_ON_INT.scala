@@ -32,18 +32,30 @@
  */
 package de.tud.cs.st.bat.resolved
 package analyses
-package findbugs_inspired
+package bug_patterns.ioc
 
 /**
  *
  * @author Ralf Mitschke
  */
-object EQ_ABSTRACT_SELF extends (Project[_] ⇒ Iterable[(ClassFile, Method)]) {
+object DMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT extends (Project[_] ⇒ Iterable[(ClassFile, Method, Int)]) {
 
-    def apply(project: Project[_]) =
+    import BaseAnalyses.withIndex
+
+    val doubleClass = ObjectType("java/lang/Double")
+
+    val longBitsToDoubleDescriptor = MethodDescriptor(List(LongType), DoubleType)
+
+    def apply(project: Project[_]) = {
         for (
             classFile ← project.classFiles;
-            method @ Method(_, "equals", MethodDescriptor(Seq(classFile.thisClass), BooleanType), _) ← classFile.methods if method.isAbstract
-        ) yield (classFile, method);
-
+            method ← classFile.methods if method.body.isDefined;
+            Seq(
+                (I2L, _),
+                (INVOKESTATIC(`doubleClass`, "longBitsToDouble", `longBitsToDoubleDescriptor`), idx)
+                ) ← withIndex(method.body.get.instructions).sliding(2)
+        ) yield {
+            (classFile, method, idx)
+        }
+    }
 }

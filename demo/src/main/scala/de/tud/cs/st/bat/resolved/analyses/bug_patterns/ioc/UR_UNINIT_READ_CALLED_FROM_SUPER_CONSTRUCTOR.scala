@@ -32,27 +32,34 @@
  */
 package de.tud.cs.st.bat.resolved
 package analyses
-package findbugs_inspired
+package bug_patterns.ioc
 
 /**
- * Finalize just calls super.finalize.
  *
- * @author Michael Eichberg
+ * @author Ralf Mitschke
  */
-object FI_USELESS extends (Project[_] ⇒ Iterable[(ClassFile, Method)]) {
+object UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR
+        extends (Project[_] ⇒ Iterable[(ObjectType, Method, String, FieldType, Int)]) {
 
     def apply(project: Project[_]) = {
-        for {
-            classFile ← project.classFiles
-            if !classFile.isInterfaceDeclaration // performance optimization
-            method @ Method(_, "finalize", methodDescriptor @ MethodDescriptor(Seq(), VoidType), _) ← classFile.methods
-            if method.body.isDefined
-            instructions = method.body.get.instructions
-            if instructions.filter(_ != null).length == 5
-            if instructions.exists({
-                case INVOKESPECIAL(_, "finalize", `methodDescriptor`) ⇒ true
-                case _ ⇒ false
-            })
-        } yield (classFile, method)
+        import BaseAnalyses._
+
+        val isOverride = BaseAnalyses.isOverride(project) _
+        val calledSuperConstructor = BaseAnalyses.calledSuperConstructor(project) _
+        for (
+            classFile ← project.classFiles;
+            method ← classFile.methods if (
+                method.body.isDefined &&
+                method.name != "<init>" &&
+                !method.isStatic &&
+                isOverride(classFile)(method));
+            (idx, GETFIELD(declaringClass, fieldName, fieldType)) ← method.body.get.associateWithIndex();
+            //(GETFIELD(declaringClass, fieldName, fieldType), idx) ← withIndex(method.body.get.instructions);
+            constructor ← classFile.constructors if declaresField(classFile)(fieldName, fieldType);
+            (superClass, superConstructor) ← calledSuperConstructor(classFile, constructor) if (calls(superConstructor, superClass, method))
+
+        ) yield {
+            (declaringClass, method, fieldName, fieldType, idx)
+        }
     }
 }

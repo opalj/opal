@@ -32,24 +32,44 @@
  */
 package de.tud.cs.st.bat.resolved
 package analyses
-package findbugs_inspired
+package bug_patterns.ioc
 
 /**
  *
  * @author Ralf Mitschke
- *
  */
-object CN_IDIOM extends (Project[_] ⇒ Iterable[ClassFile]) {
+object BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION
+        extends (Project[_] ⇒ Iterable[(ClassFile, Method, Int)]) {
 
-    def apply(project: Project[_]) =
-        for {
-            allCloneables ← project.classHierarchy.subtypes(ObjectType("java/lang/Cloneable")).toList
-            cloneable ← allCloneables
-            classFile = project.classes(cloneable)
-            if !classFile.methods.exists({
-                case Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object), _) ⇒ true
-                case _ ⇒ false
-            })
-        } yield classFile
+    import BaseAnalyses._
+
+    /**
+     * This analysis only finds sequences of instructions resulting from:
+     * {{{
+     * new Integer(1).doubleValue()
+     * }}}
+     * and not
+     * {{{
+     * Integer.valueOf(1).doubleValue()
+     * }}}
+     */
+    def apply(project: Project[_]) = {
+        for (
+            classFile ← project.classFiles if classFile.majorVersion >= 49;
+            method ← classFile.methods if method.body.isDefined;
+            Seq(
+                (INVOKESPECIAL(firstReceiver, _, MethodDescriptor(Seq(paramType), _)), _),
+                (INVOKEVIRTUAL(secondReceiver, name, MethodDescriptor(Seq(), returnType)), idx)
+                ) ← withIndex(method.body.get.instructions).sliding(2) if (
+                !paramType.isReferenceType &&
+                firstReceiver.asInstanceOf[ObjectType].className.startsWith("java/lang") &&
+                firstReceiver == secondReceiver &&
+                name.endsWith("Value") &&
+                returnType != paramType // coercion to another type performed
+            )
+        ) yield {
+            (classFile, method, idx)
+        }
+    }
 
 }

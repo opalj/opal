@@ -32,38 +32,20 @@
  */
 package de.tud.cs.st.bat.resolved
 package analyses
-package findbugs_inspired
+package bug_patterns.ioc
 
 /**
+ * FINDBUGS: Co: Covariant compareTo() method defined (CO_SELF_NO_OBJECT)
  *
  * @author Ralf Mitschke
  */
-object SW_SWING_METHODS_INVOKED_IN_SWING_THREAD extends (Project[_] ⇒ Iterable[(ClassFile, Method, Int)]) {
+object CO_SELF_NO_OBJECT extends (Project[_] ⇒ Iterable[(ClassFile, Method)]) {
 
-    def apply(project: Project[_]) = {
-
-        import BaseAnalyses._
-
-        for (
-            classFile ← project.classFiles;
-            method ← classFile.methods if (
-                method.body.isDefined &&
-                method.isPublic &&
-                method.isStatic &&
-                method.name == "main" ||
-                classFile.thisClass.className.toLowerCase.indexOf("benchmark") >= 0
-            );
-            (INVOKEVIRTUAL(targetType, name, desc), idx) ← withIndex(method.body.get.instructions) if (
-                targetType.isObjectType &&
-                targetType.asInstanceOf[ObjectType].className.startsWith("javax/swing/")) &&
-                (
-                    name == "show" && desc == MethodDescriptor(Nil, VoidType) ||
-                    name == "pack" && desc == MethodDescriptor(Nil, VoidType) ||
-                    name == "setVisible" && desc == MethodDescriptor(List(BooleanType), VoidType)
-                )
-        ) yield {
-            (classFile, method, idx)
-        }
-
-    }
+    def apply(project: Project[_]) =
+        for {
+            comparable ← project.classHierarchy.subtypes(ObjectType("java/lang/Comparable")).getOrElse(Nil)
+            classFile = project.classes(comparable)
+            method @ Method(_, "compareTo", MethodDescriptor(Seq(parameterType), IntegerType), _) ← classFile.methods
+            if parameterType != ObjectType("java/lang/Object")
+        } yield (classFile, method)
 }
