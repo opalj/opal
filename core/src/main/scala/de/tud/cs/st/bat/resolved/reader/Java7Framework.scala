@@ -35,12 +35,12 @@ package bat
 package resolved
 package reader
 
-import de.tud.cs.st.bat.reader.InterfacesReader
-import de.tud.cs.st.bat.reader.FieldsReader
-import de.tud.cs.st.bat.reader.MethodsReader
-import de.tud.cs.st.bat.reader.AttributesReader
-import de.tud.cs.st.bat.reader.SkipUnknown_attributeReader
-import de.tud.cs.st.bat.reader.CodeReader
+import bat.reader.InterfacesReader
+import bat.reader.FieldsReader
+import bat.reader.MethodsReader
+import bat.reader.AttributesReader
+import bat.reader.SkipUnknown_attributeReader
+import bat.reader.CodeReader
 
 /**
  * This "framework" can be used to read in Java 7 (version 51) class files. All
