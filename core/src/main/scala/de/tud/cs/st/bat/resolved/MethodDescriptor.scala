@@ -44,6 +44,8 @@ sealed abstract class MethodDescriptor extends BootstrapArgument {
 
     def parameterTypes: Seq[FieldType]
 
+    def parameterCount: Int
+
     def returnType: Type
 
     //
@@ -75,25 +77,43 @@ sealed abstract class MethodDescriptor extends BootstrapArgument {
 // (Done after a study of the heap memory usage)
 //
 
-private[resolved] case class NoArgumentsMethodDescriptor(
+case class NoArgumentMethodDescriptor private[resolved] (
     returnType: Type)
         extends MethodDescriptor {
 
     def parameterTypes = Nil
+
+    def parameterCount: Int = 0
 }
 
-private[resolved] case class SingleArgumentsMethodDescriptor(
+case class SingleArgumentMethodDescriptor private[resolved] (
     fieldType: FieldType,
     returnType: Type)
         extends MethodDescriptor {
 
     def parameterTypes = List(fieldType)
+
+    def parameterCount: Int = 1
 }
 
-private[resolved] case class MultiArgumentsMethodDescriptor(
+case class MultiArgumentsMethodDescriptor private[resolved] (
     parameterTypes: Seq[FieldType],
     returnType: Type)
-        extends MethodDescriptor
+        extends MethodDescriptor {
+
+    def parameterCount: Int = parameterTypes.size
+}
+
+object NoArgsAndReturnVoid {
+
+    def unapply(md: MethodDescriptor): Boolean = {
+        md match {
+            case NoArgumentMethodDescriptor(VoidType) ⇒ true
+            case _                                    ⇒ false
+        }
+    }
+
+}
 
 object MethodDescriptor {
 
@@ -102,9 +122,9 @@ object MethodDescriptor {
     def apply(parameterTypes: List[FieldType], returnType: Type): MethodDescriptor = {
         parameterTypes match {
             case Nil ⇒
-                NoArgumentsMethodDescriptor(returnType)
+                NoArgumentMethodDescriptor(returnType)
             case Seq(parameterType) ⇒
-                SingleArgumentsMethodDescriptor(parameterType, returnType)
+                SingleArgumentMethodDescriptor(parameterType, returnType)
             case parameterTypes ⇒
                 MultiArgumentsMethodDescriptor(parameterTypes, returnType)
         }

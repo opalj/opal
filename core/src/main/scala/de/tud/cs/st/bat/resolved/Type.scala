@@ -504,4 +504,7 @@ object NotJavaLangObject {
     def unapply(objectType: ObjectType): Boolean = objectType != ObjectType.Object
 }
 
+object NotVoid {
+    def unapply(someType: Type): Boolean = someType ne VoidType
+}
 
