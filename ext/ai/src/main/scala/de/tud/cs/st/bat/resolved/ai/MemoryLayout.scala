@@ -36,18 +36,21 @@ package bat
 package resolved
 package ai
 
+//import collection.immutable.Stack
+
 /**
   * Models the current execution context of a method. I.e., the operand stack as well as
-  * the current values of the registers. The memorylayout is automatically maintained by 
-  * BAT while analyzing a method. If specific knowledge about a value is required, the 
-  * domain is queried to get the necessary information. This callback mechanism enables 
-  * the domain to use an arbitrary mechanism to represent values.
+  * the current values of the registers. The memory layout is automatically maintained by
+  * BAT while analyzing a method. If specific knowledge about a value is required, the
+  * domain is queried to get the necessary information. This callback mechanism enables
+  * the domain to use an arbitrary mechanism to represent values and to steer the
+  * analysis.
   *
   * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
   * @author Dennis Siebert
   */
 final class MemoryLayout(
-        val operands: List[Value],
+        val operands: List[Value], // TODO use Stack
         val locals: IndexedSeq[Value])(
                 implicit domain: Domain) {
 
@@ -130,15 +133,20 @@ final class MemoryLayout(
             // STORE OPERAND IN LOCAL VARIABLE
             //
             case 58 /*astore*/ ⇒
-                new MemoryLayout(operands.tail, locals.updated(instruction.asInstanceOf[ASTORE].lvIndex, operands.head))
+                new MemoryLayout(operands.tail,
+                    locals.updated(instruction.asInstanceOf[ASTORE].lvIndex, operands.head))
             case 57 /*dstore*/ ⇒
-                new MemoryLayout(operands.tail, locals.updated(instruction.asInstanceOf[DSTORE].lvIndex, operands.head))
+                new MemoryLayout(operands.tail,
+                    locals.updated(instruction.asInstanceOf[DSTORE].lvIndex, operands.head))
             case 56 /*fstore*/ ⇒
-                new MemoryLayout(operands.tail, locals.updated(instruction.asInstanceOf[FSTORE].lvIndex, operands.head))
+                new MemoryLayout(operands.tail,
+                    locals.updated(instruction.asInstanceOf[FSTORE].lvIndex, operands.head))
             case 54 /*istore*/ ⇒
-                new MemoryLayout(operands.tail, locals.updated(instruction.asInstanceOf[ISTORE].lvIndex, operands.head))
+                new MemoryLayout(operands.tail,
+                    locals.updated(instruction.asInstanceOf[ISTORE].lvIndex, operands.head))
             case 55 /*lstore*/ ⇒
-                new MemoryLayout(operands.tail, locals.updated(instruction.asInstanceOf[LSTORE].lvIndex, operands.head))
+                new MemoryLayout(operands.tail,
+                    locals.updated(instruction.asInstanceOf[LSTORE].lvIndex, operands.head))
             case 75 /*astore_0*/
                 | 71 /*dstore_0*/
                 | 67 /*fstore_0*/

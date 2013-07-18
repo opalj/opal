@@ -36,9 +36,9 @@ package resolved
 package ai
 
 /**
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
- * @author Dennis Siebert
- */
+  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+  * @author Dennis Siebert
+  */
 trait Domain {
 
     //
@@ -84,8 +84,8 @@ trait Domain {
     def doubleValue(value: Double): Value
     def stringValue(value: String): Value
     /**
-     * @return A value that represents a runtime value of type "Class<t>"
-     */
+      * @return A value that represents a runtime value of type "Class<t>"
+      */
     def classValue(t: ReferenceType): Value
 
     //
@@ -129,18 +129,42 @@ trait Domain {
     //
     // ACCESSING FIELDS
     //
-    def getfield(objectref: Value, declaringClass: ObjectType, name: String, fieldType: FieldType): Value
-    def getstatic(declaringClass: ObjectType, name: String, fieldType: FieldType): Value
-    def putfield(objectref: Value, value: Value, declaringClass: ObjectType, name: String, fieldType: FieldType): Unit
-    def putstatic(value: Value, declaringClass: ObjectType, name: String, fieldType: FieldType): Unit
+    def getfield(objectref: Value,
+                 declaringClass: ObjectType,
+                 name: String,
+                 fieldType: FieldType): Value
+    def getstatic(declaringClass: ObjectType,
+                  name: String,
+                  fieldType: FieldType): Value
+    def putfield(objectref: Value,
+                 value: Value,
+                 declaringClass: ObjectType,
+                 name: String,
+                 fieldType: FieldType): Unit
+    def putstatic(value: Value,
+                  declaringClass: ObjectType,
+                  name: String,
+                  fieldType: FieldType): Unit
 
     //
     // METHOD INVOCATIONS
     //
-    def invokeinterface(declaringClass: ReferenceType, name: String, methodDescriptor: MethodDescriptor, params: List[Value]): Option[Value]
-    def invokevirtual(declaringClass: ReferenceType, name: String, methodDescriptor: MethodDescriptor, params: List[Value]): Option[Value]
-    def invokespecial(declaringClass: ReferenceType, name: String, methodDescriptor: MethodDescriptor, params: List[Value]): Option[Value]
-    def invokestatic(declaringClass: ReferenceType, name: String, methodDescriptor: MethodDescriptor, params: List[Value]): Option[Value]
+    def invokeinterface(declaringClass: ReferenceType,
+                        name: String,
+                        methodDescriptor: MethodDescriptor,
+                        params: List[Value]): Option[Value]
+    def invokevirtual(declaringClass: ReferenceType,
+                      name: String,
+                      methodDescriptor: MethodDescriptor,
+                      params: List[Value]): Option[Value]
+    def invokespecial(declaringClass: ReferenceType,
+                      name: String,
+                      methodDescriptor: MethodDescriptor,
+                      params: List[Value]): Option[Value]
+    def invokestatic(declaringClass: ReferenceType,
+                     name: String,
+                     methodDescriptor: MethodDescriptor,
+                     params: List[Value]): Option[Value]
 
     //
     // RELATIONAL OPERATORS

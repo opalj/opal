@@ -948,7 +948,7 @@ class SimpleMethodsTest
         val t = ObjectType("some/Foo")
         val locals = new Array[Value](1)
         locals(0) = TypedValue(t)
-        AI(method.body.get.instructions, locals)
+        AI(method.body.get, locals)
 
         domain.returnedValue should be(Some(TypedValue(t)))
     }

@@ -44,10 +44,11 @@ class TypeDomain extends Domain {
     //
     // CREATE ARRAY
     //
-    def newarray(count: Value, componentType: FieldType): Value = TypedValue(ArrayType(componentType))
-    def multianewarray(counts: List[Value], arrayType: FieldType) = {
+    def newarray(count: Value, componentType: FieldType): Value =
+        TypedValue(ArrayType(componentType))
+
+    def multianewarray(counts: List[Value], arrayType: FieldType) =
         TypedValue(arrayType)
-    }
 
     //
     // LOAD FROM AND STORE VALUE IN ARRAYS
@@ -150,10 +151,26 @@ class TypeDomain extends Domain {
     //
     // METHOD INVOCATIONS
     //
-    def invokeinterface(declaringClass: ReferenceType, name: String, methodDescriptor: MethodDescriptor, params: List[Value]) = handleInvoke(methodDescriptor)
-    def invokevirtual(declaringClass: ReferenceType, name: String, methodDescriptor: MethodDescriptor, params: List[Value]) = handleInvoke(methodDescriptor)
-    def invokespecial(declaringClass: ReferenceType, name: String, methodDescriptor: MethodDescriptor, params: List[Value]) = handleInvoke(methodDescriptor)
-    def invokestatic(declaringClass: ReferenceType, name: String, methodDescriptor: MethodDescriptor, params: List[Value]) = handleInvoke(methodDescriptor)
+    def invokeinterface(declaringClass: ReferenceType,
+                        name: String,
+                        methodDescriptor: MethodDescriptor,
+                        params: List[Value]) =
+        handleInvoke(methodDescriptor)
+    def invokevirtual(declaringClass: ReferenceType,
+                      name: String,
+                      methodDescriptor: MethodDescriptor,
+                      params: List[Value]) =
+        handleInvoke(methodDescriptor)
+    def invokespecial(declaringClass: ReferenceType,
+                      name: String,
+                      methodDescriptor: MethodDescriptor,
+                      params: List[Value]) =
+        handleInvoke(methodDescriptor)
+    def invokestatic(declaringClass: ReferenceType,
+                     name: String,
+                     methodDescriptor: MethodDescriptor,
+                     params: List[Value]) =
+        handleInvoke(methodDescriptor)
     private def handleInvoke(methodDescriptor: MethodDescriptor) = {
         if (methodDescriptor.returnType.isVoidType)
             None
