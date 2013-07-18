@@ -84,7 +84,7 @@ trait LocalVariableTable_attributeReader extends AttributeReader {
 
     type LocalVariables = IndexedSeq[LocalVariableTableEntry]
 
-    register(
+    registerAttributeReader(
         LocalVariableTable_attributeReader.ATTRIBUTE_NAME ->
             ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 val attribute_length = in.readInt()

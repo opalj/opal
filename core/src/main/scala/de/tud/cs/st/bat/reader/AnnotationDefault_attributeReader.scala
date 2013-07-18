@@ -79,7 +79,7 @@ trait AnnotationDefault_attributeReader extends AttributeReader {
     // IMPLEMENTATION
     //
 
-    register(AnnotationDefault_attributeReader.ATTRIBTUE_NAME ->
+    registerAttributeReader(AnnotationDefault_attributeReader.ATTRIBTUE_NAME ->
         ((ap: AttributeParent, cp: Constant_Pool, attributeNameIndex: Constant_Pool_Index, in: DataInputStream) ⇒ {
             val attributeLength = in.readInt()
             AnnotationDefault_attribute(

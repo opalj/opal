@@ -63,7 +63,7 @@ trait SourceDebugExtension_attributeReader extends AttributeReader {
                                        debug_extension: String)(
                                            implicit constant_pool: Constant_Pool): SourceDebugExtension_attribute
 
-    register(
+    registerAttributeReader(
         SourceDebugExtension_attributeReader.ATTRIBUTE_NAME ->
             ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 val attribute_length = in.readInt

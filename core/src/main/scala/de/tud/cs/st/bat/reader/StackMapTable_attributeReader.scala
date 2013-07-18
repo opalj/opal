@@ -68,7 +68,7 @@ trait StackMapTable_attributeReader extends AttributeReader {
                                 stack_map_frames: StackMapFrames)(
                                     implicit constant_pool: Constant_Pool): StackMapTable_attribute
 
-    register(
+    registerAttributeReader(
         StackMapTable_attributeReader.ATTRIBUTE_NAME ->
             ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 StackMapTable_attribute(

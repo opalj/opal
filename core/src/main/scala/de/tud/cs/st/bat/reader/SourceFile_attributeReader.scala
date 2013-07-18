@@ -68,7 +68,7 @@ trait SourceFile_attributeReader extends AttributeReader {
     // IMPLEMENTATION
     //
 
-    register(
+    registerAttributeReader(
         SourceFile_attributeReader.ATTRIBUTE_NAME ->
             ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 val attribute_length = in.readInt

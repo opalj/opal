@@ -75,7 +75,7 @@ trait LineNumberTable_attributeReader extends AttributeReader {
 
     type LineNumbers = IndexedSeq[LineNumberTableEntry]
 
-    register(LineNumberTable_attributeReader.ATTRIBUTE_NAME ->
+    registerAttributeReader(LineNumberTable_attributeReader.ATTRIBUTE_NAME ->
         ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
             val attribute_length = in.readInt()
             LineNumberTable_attribute(

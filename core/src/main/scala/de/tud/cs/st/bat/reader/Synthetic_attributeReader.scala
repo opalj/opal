@@ -54,7 +54,7 @@ trait Synthetic_attributeReader extends AttributeReader {
 
     def Synthetic_attribute(attributeNameIndex: Constant_Pool_Index)(implicit cp: Constant_Pool): Synthetic_attribute
 
-    register(
+    registerAttributeReader(
         Synthetic_attributeReader.ATTRIBUTE_NAME ->
             ((ap: AttributeParent, cp: Constant_Pool, attributeNameIndex: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 val attribute_length = in.readInt

@@ -103,7 +103,7 @@ trait Code_attributeReader extends AttributeReader {
 
     type ExceptionHandlers = IndexedSeq[ExceptionTableEntry]
 
-    register(
+    registerAttributeReader(
         Code_attributeReader.ATTRIBUTE_NAME ->
             ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 Code_attribute(

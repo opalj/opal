@@ -112,21 +112,21 @@ trait AttributesReader
      * <li> BootstrapMethods_attribute </li>
      * </ul>
      */
-    private var attributeReaders: Map[String, (AttributeParent, Constant_Pool, Constant_Pool_Index, DataInputStream) ⇒ Attribute] = Map()
+    private[this] var attributeReaders: Map[String, (AttributeParent, Constant_Pool, Constant_Pool_Index, DataInputStream) ⇒ Attribute] = Map()
 
-    def register(r: (String, (AttributeParent, Constant_Pool, Constant_Pool_Index, DataInputStream) ⇒ Attribute)): Unit = {
+    def registerAttributeReader(r: (String, (AttributeParent, Constant_Pool, Constant_Pool_Index, DataInputStream) ⇒ Attribute)): Unit = {
         attributeReaders += r
     }
 
-    private var attributesProcessors: List[(Attributes) ⇒ Attributes] = List()
+    private[this] var attributesPostProcessors: List[(Attributes) ⇒ Attributes] = List()
 
     /**
      * Registers a new processor for the list of all attributes of a given class file
      * element (class, field, method, code). This can be used to post-process attributes.
      * E.g., to merge multiple line number tables if they exist.
      */
-    def attributesProcessor(p: (Attributes) ⇒ Attributes): Unit = {
-        attributesProcessors = p :: attributesProcessors
+    def registerAttributesPostProcessor(p: (Attributes) ⇒ Attributes): Unit = {
+        attributesPostProcessors = p :: attributesPostProcessors
     }
 
     def Attributes(ap: AttributeParent, cp: Constant_Pool, in: DataInputStream): Attributes = {
@@ -134,7 +134,7 @@ trait AttributesReader
             Attribute(ap, cp, in)
         } filter (_ != null) // We remove the attributes we do not understand or which we do not need.
 
-        attributesProcessors.foreach(p ⇒ attributes = p(attributes))
+        attributesPostProcessors.foreach(p ⇒ attributes = p(attributes))
         attributes
     }
 

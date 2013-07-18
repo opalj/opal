@@ -66,7 +66,7 @@ trait LineNumberTable_attributeBinding
     /**
      * Merge all line number tables and create a single sorted line number table.
      */
-    attributesProcessor(attributes ⇒ {
+    registerAttributesPostProcessor(attributes ⇒ {
         val (lineNumberTables, otherAttributes) =
             attributes partition {
                 _ match {
@@ -78,8 +78,10 @@ trait LineNumberTable_attributeBinding
             case Seq()    ⇒ attributes
             case Seq(lnt) ⇒ attributes
             case lnts ⇒ {
-                val mergedTables = lnts.map(_.asInstanceOf[LineNumberTable].lineNumbers).flatten
-                val sortedTable = mergedTables.sortWith((ltA, ltB) ⇒ ltA.startPC < ltB.startPC)
+                val mergedTables =
+                    lnts.map(_.asInstanceOf[LineNumberTable].lineNumbers).flatten
+                val sortedTable =
+                    mergedTables.sortWith((ltA, ltB) ⇒ ltA.startPC < ltB.startPC)
                 new LineNumberTable(sortedTable) +: otherAttributes
             }
         }

@@ -57,12 +57,13 @@ trait AttributeReader
      *  at the beginning of the attribute, the constant pool, the index of the attribute's
      *  name and the parent of the attribute reads in the attribute and returns it.
      */
-    def register(reader: (String, (AttributeParent, Constant_Pool, /* attribute name */ Constant_Pool_Index, DataInputStream) ⇒ Attribute)): Unit
+    def registerAttributeReader(reader: (String, (AttributeParent, Constant_Pool, /* attribute name */ Constant_Pool_Index, DataInputStream) ⇒ Attribute)): Unit
 
     /**
      * Registers a new processor for the list of all attributes of a given class file
      * structure (class, field_info, method_info, code_attribute). This can be used to
-     * post-process attributes. E.g., to merge multiple line number tables if they exist.
+     * post-process attributes. E.g., to merge multiple line number tables if they exist
+     * or to removed attributes if they are completely resolved.
      */
-    def attributesProcessor(p: (Attributes) ⇒ Attributes): Unit
+    def registerAttributesPostProcessor(p: (Attributes) ⇒ Attributes): Unit
 }

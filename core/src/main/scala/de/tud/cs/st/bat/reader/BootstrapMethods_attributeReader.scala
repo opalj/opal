@@ -108,7 +108,7 @@ trait BootstrapMethods_attributeReader extends AttributeReader {
         )(cp)
     }
 
-    register(
+    registerAttributeReader(
         BootstrapMethods_attributeReader.ATTRIBUTE_NAME ->
             ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 BootstrapMethods_attribute(
