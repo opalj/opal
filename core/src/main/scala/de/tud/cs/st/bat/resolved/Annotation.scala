@@ -48,5 +48,5 @@ package resolved
  * @author Michael Eichberg
  */
 case class Annotation(
-    val annotationType: FieldType,
-    val elementValuePairs: ElementValuePairs) 
+    annotationType: FieldType,
+    elementValuePairs: ElementValuePairs) 

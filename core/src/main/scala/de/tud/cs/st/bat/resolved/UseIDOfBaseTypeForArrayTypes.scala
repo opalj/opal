@@ -35,12 +35,14 @@ package bat
 package resolved
 
 /**
- * Use this trait to assign a dependency to an array's base type instead of the array itself.
+ * Use this trait to assign a dependency to an array's base type instead of the array
+ * itself.
  *
  * @author Michael Eichberg
  */
 trait UseIDOfBaseTypeForArrayTypes extends SourceElementIDs {
 
-    abstract override def sourceElementID(t: Type): Int = super.sourceElementID(ArrayType.baseType(t))
+    abstract override def sourceElementID(t: Type): Int =
+        super.sourceElementID(ArrayType.baseType(t))
 
 }

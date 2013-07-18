@@ -56,16 +56,35 @@ sealed trait ConstantValue[T >: Nothing] extends Attribute with BootstrapArgumen
      */
     def valueToString: String
 
-    def toBoolean: Boolean = BATError("This constant value ("+this+") cannot be converted to a boolean value.")
-    def toByte: Byte = BATError("This constant value ("+this+") cannot be converted to a byte value.")
-    def toChar: Char = BATError("This constant value ("+this+") cannot be converted to an char value.")
-    def toShort: Short = BATError("This constant value ("+this+") cannot be converted to a short value.")
-    def toInt: Int = BATError("This constant value ("+this+") cannot be converted to an int value.")
-    def toLong: Long = BATError("This constant value ("+this+") cannot be converted to a long value.")
-    def toFloat: Float = BATError("This constant value ("+this+") cannot be converted to a float value.")
-    def toDouble: Double = BATError("This constant value ("+this+") cannot be converted to a double value.")
-    def toUTF8: String = BATError("This constant value ("+this+") cannot be converted to a String(UTF8) value.")
-    def toClass: ReferenceType = BATError("This constant value ("+this+") cannot be converted to a class value.")
+    def toBoolean: Boolean =
+        BATError("This value ("+this+") cannot be converted to a boolean value.")
+
+    def toByte: Byte =
+        BATError("This value ("+this+") cannot be converted to a byte value.")
+
+    def toChar: Char =
+        BATError("This value ("+this+") cannot be converted to an char value.")
+
+    def toShort: Short =
+        BATError("This value ("+this+") cannot be converted to a short value.")
+
+    def toInt: Int =
+        BATError("This value ("+this+") cannot be converted to an int value.")
+
+    def toLong: Long =
+        BATError("This value ("+this+") cannot be converted to a long value.")
+
+    def toFloat: Float =
+        BATError("This value ("+this+") cannot be converted to a float value.")
+
+    def toDouble: Double =
+        BATError("This value ("+this+") cannot be converted to a double value.")
+
+    def toUTF8: String =
+        BATError("This value ("+this+") cannot be converted to a String(UTF8) value.")
+
+    def toClass: ReferenceType =
+        BATError("This value ("+this+") cannot be converted to a class value.")
 
 }
 object ConstantValue {

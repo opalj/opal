@@ -35,8 +35,7 @@ package bat
 package resolved
 
 /**
- * Loads well identified class files form a JAR archive and prints the signatures of the
- * classes.
+ * Loads class files form a JAR archive and prints the signatures of the classes.
  *
  * @author Michael Eichberg
  */
@@ -47,23 +46,32 @@ object ClassFileInformation {
         import reader.Java7Framework
 
         if (args.length < 2) {
-            println("Usage: java …ClassFileInformation <JAR file containing class files> <Name of classfile (incl. path information) contained in the JAR file>+")
+            println("Usage: java …ClassFileInformation "+
+                "<JAR file containing class files> "+
+                "<Name of classfile (incl. path) contained in the JAR file>+")
             sys.exit(-1)
         }
 
         for (classFileName ← args.drop(1) /* drop the name of the jar file */ ) {
+
+            // Load class file (the class file name has to correspond to the name of 
+            // the file inside the archive.)
             val classFile = Java7Framework.ClassFile(args(0), classFileName)
             import classFile._
 
+            // print the name of the type defined by this class file
             print(thisClass.toJava)
+
             superClass.map(s ⇒ println(" extends "+s.toJava)) // java.lang.Object does not have a super class!
             if (interfaces.length > 0) {
                 print(interfaces.map(_.toJava).mkString(" implements", " ", "\n"))
             }
+
             sourceFile.map(s ⇒ println(" sourcefile: "+s))
+
             println(" version   : "+majorVersion+"."+minorVersion)
+
             println
         }
-        sys.exit(0)
     }
 }

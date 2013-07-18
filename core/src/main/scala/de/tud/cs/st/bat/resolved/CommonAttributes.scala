@@ -50,6 +50,9 @@ trait CommonAttributes {
     def runtimeInvisibleAnnotations: Option[Annotations] =
         attributes collectFirst { case RuntimeInvisibleAnnotationTable(ias) ⇒ ias }
 
+    /**
+     * True if this element was created by the compiler.
+     */
     def isSynthetic: Boolean = attributes contains Synthetic
 
     /**
@@ -57,8 +60,8 @@ trait CommonAttributes {
      * as deprecated.
      *
      * ==Note==
-     * The deprecated attribute is always set by the Java compiler when either the deprecated
-     * annotation or the JavaDoc tag is used.
+     * The deprecated attribute is always set by the Java compiler when either the
+     * deprecated annotation or the JavaDoc tag is used.
      */
     def isDeprectated: Boolean = attributes contains Deprecated
 

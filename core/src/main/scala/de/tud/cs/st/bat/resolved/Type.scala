@@ -34,23 +34,24 @@ package de.tud.cs.st
 package bat
 package resolved
 
-import scala.annotation.tailrec
-
 /**
  * The computational type category of a value on the operand stack.
  *
  * (cf. JVM Spec. 2.11.1 Types and the Java Virtual Machine).
  */
-sealed abstract class ComputationalTypeCategory(val operandSize: Byte) {
+sealed abstract class ComputationalTypeCategory(
+        val operandSize: Byte) {
     /**
      * Identifies the computational type category.
      */
     def id: Byte
 }
-final case object Category1ComputationalTypeCategory extends ComputationalTypeCategory(1) {
+final case object Category1ComputationalTypeCategory
+        extends ComputationalTypeCategory(1) {
     def id = 1
 }
-final case object Category2ComputationalTypeCategory extends ComputationalTypeCategory(2) {
+final case object Category2ComputationalTypeCategory
+        extends ComputationalTypeCategory(2) {
     def id = 2
 }
 
@@ -64,22 +65,28 @@ sealed abstract class ComputationalType(
     def operandSize = computationTypeCategory.operandSize
     def isPrimitiveType: Boolean
 }
-case object ComputationalTypeInt extends ComputationalType(Category1ComputationalTypeCategory) {
+case object ComputationalTypeInt
+        extends ComputationalType(Category1ComputationalTypeCategory) {
     def isPrimitiveType = true
 }
-case object ComputationalTypeFloat extends ComputationalType(Category1ComputationalTypeCategory) {
+case object ComputationalTypeFloat
+        extends ComputationalType(Category1ComputationalTypeCategory) {
     def isPrimitiveType = true
 }
-case object ComputationalTypeReference extends ComputationalType(Category1ComputationalTypeCategory) {
+case object ComputationalTypeReference
+        extends ComputationalType(Category1ComputationalTypeCategory) {
     def isPrimitiveType = true
 }
-case object ComputationalTypeReturnAddress extends ComputationalType(Category1ComputationalTypeCategory) {
+case object ComputationalTypeReturnAddress
+        extends ComputationalType(Category1ComputationalTypeCategory) {
     def isPrimitiveType = false
 }
-case object ComputationalTypeLong extends ComputationalType(Category2ComputationalTypeCategory) {
+case object ComputationalTypeLong
+        extends ComputationalType(Category2ComputationalTypeCategory) {
     def isPrimitiveType = true
 }
-case object ComputationalTypeDouble extends ComputationalType(Category2ComputationalTypeCategory) {
+case object ComputationalTypeDouble
+        extends ComputationalType(Category2ComputationalTypeCategory) {
     def isPrimitiveType = true
 }
 
@@ -88,20 +95,21 @@ case object ComputationalTypeDouble extends ComputationalType(Category2Computati
  *
  * '''From the JVM specification''':
  *
- * There are three kinds of reference types: class types, array types, and interface types. Their values are
- * references to dynamically created class instances, arrays, or class instances or arrays that implement
- * interfaces, respectively.
+ * There are three kinds of reference types: class types, array types, and interface
+ * types. Their values are references to dynamically created class instances, arrays,
+ * or class instances or arrays that implement interfaces, respectively.
  *
- * An array type consists of a component type with a single dimension (whose length is not given by the
- * type). The component type of an array type may itself be an array type. If, starting from any array type,
- * one considers its component type, and then (if that is also an array type) the component type of that type,
- * and so on, eventually one must reach a component type that is not an array type; this is called the element
- * type of the array type. The element type of an array type is necessarily either a primitive type, or a
- * class type, or an interface type.
+ * An array type consists of a component type with a single dimension (whose length is
+ * not given by the type). The component type of an array type may itself be an array
+ * type. If, starting from any array type, one considers its component type, and then
+ * (if that is also an array type) the component type of that type, and so on, eventually
+ * one must reach a component type that is not an array type; this is called the element
+ * type of the array type. The element type of an array type is necessarily either a
+ * primitive type, or a class type, or an interface type.
  *
- * A reference value may also be the special null reference, a reference to no object, which will be denoted
- * here by null. The null reference initially has no runtime type, but may be cast to any type. The default
- * value of a reference type is null.
+ * A reference value may also be the special null reference, a reference to no object,
+ * which will be denoted here by null. The null reference initially has no runtime type,
+ * but may be cast to any type. The default value of a reference type is null.
  * The Java virtual machine specification does not mandate a concrete value encoding null.
  *
  * @author Michael Eichberg
@@ -429,7 +437,9 @@ object ObjectType {
 
 }
 
-final class ArrayType private (val componentType: FieldType) extends ReferenceType {
+final class ArrayType private (
+    val componentType: FieldType)
+        extends ReferenceType {
 
     override final def isArrayType = true
 
@@ -479,7 +489,7 @@ final object ArrayType {
     }
 
     def apply(dimension: Int, componentType: FieldType): ArrayType = {
-        @tailrec
+        @annotation.tailrec
         val at = apply(componentType)
         if (dimension > 1)
             apply(dimension - 1, at)

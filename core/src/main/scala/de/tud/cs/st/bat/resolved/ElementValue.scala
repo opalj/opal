@@ -39,7 +39,7 @@ package resolved
  *
  * @author Michael Eichberg
  */
-sealed trait ElementValue extends Attribute // TODO [Check] does this class have to implement Attribute??
+sealed trait ElementValue extends Attribute 
 
 case class ByteValue(
     value: Byte)

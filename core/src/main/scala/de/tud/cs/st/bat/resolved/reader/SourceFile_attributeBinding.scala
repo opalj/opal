@@ -35,7 +35,7 @@ package bat
 package resolved
 package reader
 
-import de.tud.cs.st.bat.reader.SourceFile_attributeReader
+import bat.reader.SourceFile_attributeReader
 
 /**
  * The factory method to create the source file attribute.
