@@ -75,4 +75,9 @@ package object resolved {
     type Instructions = Array[Instruction]
 
     type SourceElementID = Int
+
+    @throws[RuntimeException]
+    final def CodeError(message: String, code: Code, pc: Int) =
+        throw new RuntimeException(generalBATErrorMessage + message)
+
 }
