@@ -89,7 +89,8 @@ sealed trait ConstantValue[T >: Nothing] extends Attribute with BootstrapArgumen
 }
 object ConstantValue {
 
-    def unapply(constantValue: ConstantValue[_]): Option[Type] = Some(constantValue.valueType)
+    def unapply[T](constantValue: ConstantValue[T]): Option[(T,Type)] = 
+        Some((constantValue.value,constantValue.valueType))
 }
 
 case class ConstantLong(value: Long) extends ConstantValue[Long] {

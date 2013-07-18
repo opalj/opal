@@ -35,7 +35,7 @@ package bat
 package resolved
 
 /**
- * Abstractions over the common properties of class members.
+ * Abstractions over the common properties of class members (Methods and Fields).
  *
  * @author Michael Eichberg
  */
@@ -54,6 +54,6 @@ trait ClassMember extends SourceElement with CommonAttributes {
 
 object ClassMember {
 
-    def unapply(classMember: ClassMember): Option[VisibilityModifier] =
-        VisibilityModifier.get(classMember.accessFlags)
+    def unapply(classMember: ClassMember): Option[Int] = Some(classMember.accessFlags)
+    
 }
