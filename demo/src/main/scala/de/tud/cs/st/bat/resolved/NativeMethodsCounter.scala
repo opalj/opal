@@ -31,54 +31,34 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package de.tud.cs.st
-package bat.resolved
+package bat
+package resolved
+
+import analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
+import java.net.URL
 
 /**
  * Counts the number of native methods.
  *
  * @author Michael Eichberg
  */
-object NativeMethodsCounter {
+object NativeMethodsCounter extends AnalysisExecutor {
 
-    private def printUsage: Unit = {
-        println("Usage: java …NativeMethodsCounter <JAR files containing class files>")
-    }
+    val analysis = new Analysis[URL, BasicReport] {
 
-    def main(args: Array[String]) {
+        def description: String = "Counts the number of native methods."
 
-        if (args.length == 0 || !args.forall(arg ⇒ arg.endsWith(".jar"))) {
-            printUsage
-            sys.exit(1)
-        }
-
-        for (arg ← args) {
-            val file = new java.io.File(arg)
-            if (!file.canRead()) {
-                println("The file: "+file+" cannot be read.");
-                printUsage
-                sys.exit(1)
-            }
-        }
-
-        println("Reading class files: ")
-
-        import reader.Java7Framework.ClassFiles
-        import util.debug._
-        import PerformanceEvaluation._
-
-        val nativeMethods =
-            time((t) ⇒ println("Analysis took: "+nsToSecs(t)+" secs.")) {
-                for {
-                    file ← args if { println("\t"+file); true };
-                    (classFile, _) ← ClassFiles(file)
+        def analyze(project: Project[URL]) = {
+            val nativeMethods =
+                for (
+                    classFile ← project.classFiles;
                     method ← classFile.methods if method.isNative
-                } yield {
-                    method
-                }
-            }
+                ) yield classFile.thisClass.toJava+"."+method.toJava
 
-        println("Number of native methods: "+nativeMethods.size)
-        println(nativeMethods.map(m ⇒ m.name+"("+m.descriptor+")").mkString("\n"))
+            BasicReport(
+                "Native methods found ("+nativeMethods.size+")\n"+
+                    nativeMethods.mkString("\t", "\n\t", "\n")
+            )
+        }
     }
-
 }
