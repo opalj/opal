@@ -146,9 +146,9 @@ abstract class DependencyExtractor(val sourceElementIDs: SourceElementIDs)
                 annotations foreach {
                     process(_, fieldID)
                 }
-            case ConstantValue(ot: ObjectType) ⇒
+            case ConstantValue(_, ot: ObjectType) ⇒
                 processDependency(fieldID, ot, USES_CONSTANT_VALUE_OF_TYPE)
-            case ConstantValue(at: ArrayType) ⇒
+            case ConstantValue(_, at: ArrayType) ⇒
                 processDependency(fieldID, at, USES_CONSTANT_VALUE_OF_TYPE)
             case signature: Signature ⇒
                 processSignature(signature, fieldID)
@@ -202,7 +202,7 @@ abstract class DependencyExtractor(val sourceElementIDs: SourceElementIDs)
                 // the generated InstructionDependencyExtractor super class.
                 process(methodID, instructions)
                 // add dependencies from the method to all throwables that are used in catch statements
-                for (exceptionHandler ← exceptionTable if  exceptionHandler.catchType.isDefined) {
+                for (exceptionHandler ← exceptionTable if exceptionHandler.catchType.isDefined) {
                     processDependency(methodID, exceptionHandler.catchType.get, CATCHES)
                 }
                 // The Java 5 specification defines the following attributes:
@@ -523,8 +523,11 @@ abstract class DependencyExtractor(val sourceElementIDs: SourceElementIDs)
      * if dependencies to primitive types should be reported to a [[de.tud.cs.st.bat.resolved.dependency.DependencyProcessor]].
      */
     protected def processDependency(id: Int, aType: Type, dType: DependencyType) {
-        if (aType.isObjectType || (aType.isArrayType && aType.asInstanceOf[ArrayType].baseType.isObjectType)) {
-            processDependency(id, sourceElementID(aType), dType)
+        def process = processDependency(id, sourceElementID(aType), dType)
+        aType match {
+            case t: ObjectType                   ⇒ process
+            case ArrayElementType(t: ObjectType) ⇒ process
+            case _                               ⇒ /*Nothing to do.*/
         }
     }
 }

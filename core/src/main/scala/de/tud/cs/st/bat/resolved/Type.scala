@@ -442,9 +442,10 @@ final class ArrayType private (val componentType: FieldType) extends ReferenceTy
         }
     }
 
-    @scala.deprecated("use \"elementType\" instead", "August 2012") def baseType: Type = elementType
-
-    def elementType: Type = componentType match { case at: ArrayType ⇒ at.elementType; case _ ⇒ componentType }
+    def elementType: FieldType = componentType match {
+        case at: ArrayType ⇒ at.elementType
+        case _             ⇒ componentType
+    }
 
     def toJava: String = componentType.toJava+"[]"
 
@@ -494,6 +495,9 @@ final object ArrayType {
             case _             ⇒ t
         }
     }
+}
+object ArrayElementType {
+    def unapply(at: ArrayType): Option[FieldType] = Some(at.elementType)
 }
 
 /**

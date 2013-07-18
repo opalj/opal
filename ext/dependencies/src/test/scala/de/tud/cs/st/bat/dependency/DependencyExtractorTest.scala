@@ -85,7 +85,7 @@ class DependencyExtractorTest extends FunSuite {
 
             private def getNameOfUnderlyingType(obj: Type): String =
                 if (obj.isArrayType)
-                    obj.asInstanceOf[ArrayType].baseType.toJava
+                    obj.asInstanceOf[ArrayType].elementType.toJava
                 else
                     obj.toJava
         }
