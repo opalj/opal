@@ -52,7 +52,6 @@ import org.scalatest.ParallelTestExecution
 class CodeAttributeTest
         extends FlatSpec
         with ShouldMatchers /*with BeforeAndAfterAll */
-        with TestSupport
         with ParallelTestExecution {
 
     //
@@ -61,7 +60,7 @@ class CodeAttributeTest
     //
     //
 
-    val project = new Project ++ ClassFiles(locateTestResources("classfiles/Code.jar"))
+    val project = new Project ++ ClassFiles(TestSupport.locateTestResources("classfiles/Code.jar"))
 
     val boundedBufferClass = ObjectType("code/BoundedBuffer")
     val immutbleListClass = ObjectType("code/ImmutableList")

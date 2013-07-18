@@ -57,7 +57,7 @@ import util.ControlAbstractions._
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class LoadClassFilesTest extends FlatSpec with ShouldMatchers with TestSupport {
+class LoadClassFilesTest extends FlatSpec with ShouldMatchers{
 
     def simpleValidator(classFile: ClassFile) {
         assert(!(classFile.thisClass.className eq null))
@@ -66,7 +66,7 @@ class LoadClassFilesTest extends FlatSpec with ShouldMatchers with TestSupport {
     behavior of "BAT"
 
     for {
-        file ← locateTestResources("classfiles").listFiles
+        file ← TestSupport.locateTestResources("classfiles").listFiles
         if (file.isFile && file.canRead && file.getName.endsWith(".jar"))
     } {
         val jarFile = new ZipFile(file)

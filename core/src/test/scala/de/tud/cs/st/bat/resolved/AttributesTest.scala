@@ -40,14 +40,14 @@ import org.scalatest.ParallelTestExecution
  * @author Michael Eichberg
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
-class AttributesTest extends FunSuite with TestSupport with ParallelTestExecution {
+class AttributesTest extends FunSuite with ParallelTestExecution {
 
-    val attributesZipFile = locateTestResources("classfiles/Attributes.jar")
+    val attributesJARFile = TestSupport.locateTestResources("classfiles/Attributes.jar")
 
     import reader.Java7Framework.ClassFile
 
     test("test that the deprecated attribute is present") {
-        val cf1 = ClassFile(attributesZipFile, "attributes/DeprecatedByAnnotation.class")
+        val cf1 = ClassFile(attributesJARFile, "attributes/DeprecatedByAnnotation.class")
         assert(cf1.isDeprectated)
         assert(
             cf1.runtimeVisibleAnnotations.get.find({
@@ -55,13 +55,13 @@ class AttributesTest extends FunSuite with TestSupport with ParallelTestExecutio
             }).isDefined
         )
 
-        val cf2 = ClassFile(attributesZipFile, "attributes/DeprecatedByJavaDoc.class")
+        val cf2 = ClassFile(attributesJARFile, "attributes/DeprecatedByJavaDoc.class")
         assert(cf2.isDeprectated)
 
     }
 
     test("test that the source file attribute is present") {
-        val cf1 = ClassFile(attributesZipFile, "attributes/DeprecatedByAnnotation.class")
+        val cf1 = ClassFile(attributesJARFile, "attributes/DeprecatedByAnnotation.class")
         assert(cf1.sourceFile != None)
     }
 

@@ -60,7 +60,6 @@ import util.ControlAbstractions._
 class LoadClassFilesInParallelTest
         extends FlatSpec
         with ShouldMatchers
-        with TestSupport
         with ParallelTestExecution {
 
     def simpleValidator(classFile: ClassFile) {
@@ -70,7 +69,7 @@ class LoadClassFilesInParallelTest
     behavior of "BAT"
 
     for {
-        file ← locateTestResources("classfiles").listFiles
+        file ← TestSupport.locateTestResources("classfiles").listFiles
         if (file.isFile && file.canRead && file.getName.endsWith(".jar"))
     } {
         it should ("be able to read the classes in the jar file"+file.getPath+" in parallel") in {

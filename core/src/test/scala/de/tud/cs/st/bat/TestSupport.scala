@@ -40,7 +40,7 @@ import java.io.File
  *
  * @author Michael Eichberg
  */
-trait TestSupport {
+object TestSupport {
 
     /**
      * This function tries to locate resources (at runtime) that are used by tests and

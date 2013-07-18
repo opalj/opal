@@ -52,8 +52,6 @@ import reader.Java7Framework.ClassFiles
 class ProjectTest
         extends FlatSpec
         with ShouldMatchers
-        /*with BeforeAndAfterAll */
-        with TestSupport
         with ParallelTestExecution {
 
     //
@@ -61,7 +59,7 @@ class ProjectTest
     // Setup
     //
     //
-    val resources = locateTestResources("classfiles/Methods.jar")
+    val resources = TestSupport.locateTestResources("classfiles/Methods.jar")
     val project = new Project ++ ClassFiles(resources)
 
     val SuperType = ObjectType("methods/a/Super")

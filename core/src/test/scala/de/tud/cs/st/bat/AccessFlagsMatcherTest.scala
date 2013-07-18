@@ -49,7 +49,6 @@ import org.scalatest.ParallelTestExecution
 class AccessFlagsMatcherTest
         extends FlatSpec
         with ShouldMatchers /*with BeforeAndAfterAll */
-        with TestSupport
         with ParallelTestExecution {
 
     behavior of "a simple access flags matcher"

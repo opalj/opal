@@ -48,7 +48,9 @@ import reader.Java7Framework.ClassFiles
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class ClassHierarchyTest extends FlatSpec with ShouldMatchers /*with BeforeAndAfterAll */ with TestSupport {
+class ClassHierarchyTest
+        extends FlatSpec
+        with ShouldMatchers /*with BeforeAndAfterAll */ {
 
     //
     //

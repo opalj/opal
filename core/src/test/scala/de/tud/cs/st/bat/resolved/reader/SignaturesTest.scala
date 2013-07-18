@@ -43,7 +43,7 @@ import org.scalatest.ParallelTestExecution
  * @author Michael Eichberg
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
-class SignaturesTest extends FunSuite with TestSupport with ParallelTestExecution {
+class SignaturesTest extends FunSuite with ParallelTestExecution {
 
     import SignatureParser.parseClassSignature
 
@@ -70,10 +70,10 @@ class SignaturesTest extends FunSuite with TestSupport with ParallelTestExecutio
     }
 
     import Java7Framework.ClassFile
-    private val classA = ClassFile(locateTestResources("classfiles/Signatures.jar"), "signatures/A.class")
+    private val classA = ClassFile(TestSupport.locateTestResources("classfiles/Signatures.jar"), "signatures/A.class")
     assert(classA ne null)
 
-    private val classB = ClassFile(locateTestResources("classfiles/Signatures.jar"), "signatures/B.class")
+    private val classB = ClassFile(TestSupport.locateTestResources("classfiles/Signatures.jar"), "signatures/B.class")
     assert(classB ne null)
 
     test("parsing the class signatures") {

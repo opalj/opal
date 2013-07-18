@@ -53,7 +53,6 @@ import org.scalatest.ParallelTestExecution
 class InnerClassesTest
         extends FlatSpec
         with ShouldMatchers /*with BeforeAndAfterAll */
-        with TestSupport
         with ParallelTestExecution {
 
     //
@@ -62,7 +61,7 @@ class InnerClassesTest
     //
     //
 
-    val project = new Project ++ ClassFiles(locateTestResources("classfiles/Innerclasses.jar"))
+    val project = new Project ++ ClassFiles(TestSupport.locateTestResources("classfiles/Innerclasses.jar"))
 
     val myRootClass$Formatter = ObjectType("innerclasses/MyRootClass$Formatter")
     val myRootClass = ObjectType("innerclasses/MyRootClass")
