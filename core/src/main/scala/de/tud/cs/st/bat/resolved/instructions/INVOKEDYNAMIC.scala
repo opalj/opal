@@ -34,13 +34,27 @@ package de.tud.cs.st
 package bat
 package resolved
 
+case object UNRESOLVED_INVOKEDYNAMIC extends MethodInvocationInstruction {
+
+    private def error = BATError("invokedynamic instruction was not correctly resolved")
+
+    def opcode: Int = error
+
+    def mnemonic: String = error
+
+    def indexOfNextInstruction(currentPC: Int, code: Code): Int = error
+
+    def runtimeExceptions: List[ObjectType] = error
+
+}
+
 /**
  * Invoke dynamic.
  *
  * @author Michael Eichberg
  */
 case class INVOKEDYNAMIC(
-    bootstrapMethodTableIndex: Int,
+    bootstrapMethod: BootstrapMethod,
     methodName: String,
     methodDescriptor: MethodDescriptor)
         extends MethodInvocationInstruction {

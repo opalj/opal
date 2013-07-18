@@ -55,7 +55,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
     def Instructions(source: Array[Byte])(implicit cp: Constant_Pool): Instructions = {
         import java.io.DataInputStream
         import java.io.ByteArrayInputStream
-        import de.tud.cs.st.util.ControlAbstractions.repeat
+        import util.ControlAbstractions.repeat
 
         val bas = new ByteArrayInputStream(source)
         val in = new DataInputStream(bas)
@@ -274,7 +274,19 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                     val cpe = cp(in.readUnsignedShort).asInvokeDynamic
                     in.readByte // ignored; fixed value
                     in.readByte // ignored; fixed value
-                    INVOKEDYNAMIC(cpe.bootstrapMethodAttributeIndex, cpe.methodName, cpe.methodDescriptor)
+                    registerDeferredAction(
+                        classFile ⇒ {
+                            val invokeDynamic = INVOKEDYNAMIC(
+                                classFile.bootstrapMethods.get(cpe.bootstrapMethodAttributeIndex),
+                                cpe.methodName,
+                                cpe.methodDescriptor
+                            )
+                            instructions(index) = invokeDynamic
+                            classFile
+                        }
+                    )
+                    //INVOKEDYNAMIC(cpe.bootstrapMethodAttributeIndex, cpe.methodName, cpe.methodDescriptor)
+                    UNRESOLVED_INVOKEDYNAMIC
                 }
                 case 185 ⇒ {
                     val (declaringClass, name, methodDescriptor) /*: (ReferenceType,String,MethodDescriptor)*/ = cp(in.readUnsignedShort).asMethodref(cp) // methodRef
