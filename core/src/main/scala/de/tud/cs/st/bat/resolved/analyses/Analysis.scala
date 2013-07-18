@@ -54,9 +54,8 @@ package analyses
  * @author Michael Eichberg
  */
 trait Analysis[-Source /*, SomeProject <: Project[Source]*/ , +AnalysisResult] {
-// TODO Consider to also abstract over projects. This would enable us to specify that some analyses may required, e.g., a Project class that provides more/other information  
- 
-    
+    // TODO Consider to also abstract over projects. This would enable us to specify that some analyses may required, e.g., a Project class that provides more/other information  
+
     /**
      * Analyzes the given project and reports the result(s).
      */
@@ -83,14 +82,14 @@ trait Analysis[-Source /*, SomeProject <: Project[Source]*/ , +AnalysisResult] {
     /**
      * The copyright statement which contains less than 124 character and no line-breaks.
      */
-    def copyright: String
+    def copyright: String = "See project documentation."
 
     /**
-     * A short descriptive title which contains less than 64 characters and no line-breaks.
+     * A short descriptive title which should contain less than 64 characters and no
+     * line-breaks.
      */
-    def title: String
+    def title: String = this.getClass().getSimpleName()
 }
-
 
 import java.net.URL
 
@@ -130,18 +129,19 @@ class AnalysisAggregator[Source, AnalysisResult]
             }
         }
 
-    def title: String = "Analysis Collection"
-
+    override def title: String = "Analysis Collection"
+        
+    override def copyright: String =
+        analyses.synchronized {
+            "Copyrights of the analyses;\n"+
+                analyses.map("\t"+_.copyright).mkString("\"")
+        }
+    
     def description: String =
         analyses.synchronized {
             "Executes the following analyses:\n"+analyses.map("\t"+_.title).mkString("\n")
         }
 
-    def copyright: String =
-        analyses.synchronized {
-            "Copyrights of the analyses;\n"+
-                analyses.map("\t"+_.copyright).mkString("\"")
 
-        }
 
 }

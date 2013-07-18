@@ -51,10 +51,6 @@ trait AnalysesDirector[Source] extends Analysis[Source, Iterable[ReportableAnaly
 
     def description: String = " TODO "
 
-    def copyright: String = " TODO "
-
-    def title: String = " TODO "
-
     protected[this] val results = collection.mutable.Buffer[ReportableAnalysisResult]()
 
     def result(result: ReportableAnalysisResult): Unit = results.synchronized {

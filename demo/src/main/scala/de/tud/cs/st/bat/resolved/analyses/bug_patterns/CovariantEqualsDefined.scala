@@ -38,11 +38,11 @@ package bug_patterns
 
 /**
  * Finds classes that define a co-variant equals method, but not "standard" equals method.
- * 
+ *
  * ==Implementation Note==
- * This analysis is implemented using the traditional approach where each analysis 
- * analyzes the project's resources on its own and fully controls the process. 
- * 
+ * This analysis is implemented using the traditional approach where each analysis
+ * analyzes the project's resources on its own and fully controls the process.
+ *
  * @author Michael Eichberg
  */
 class CovariantEqualsMethodDefined[Source]
@@ -53,10 +53,6 @@ class CovariantEqualsMethodDefined[Source]
     //
 
     def description: String = "Finds classes that define a co-variant equals method."
-
-    def copyright: String = "(c)2011-2013 Michael Eichberg"
-
-    def title: String = "SS-CoVariantEquals"
 
     // 
     // Implementation

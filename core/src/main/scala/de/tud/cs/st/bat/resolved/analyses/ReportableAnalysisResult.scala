@@ -96,6 +96,13 @@ case class BasicReport(
     }
 }
 
+object BasicReport {
+
+    def apply(messages: Iterable[String]): BasicReport = {
+        BasicReport(messages.mkString("\""))
+    }
+}
+
 /**
  * Common superclass of all reporters that depend on the source file's of a specific
  * class file.
@@ -181,8 +188,8 @@ case class ReportableAnalysisAdapter[Source, AnalysisResult](
         extends Analysis[Source, ReportableAnalysisResult] {
 
     def description = analysis.description
-    def title = analysis.title
-    def copyright = analysis.copyright
+    override def title = analysis.title
+    override def copyright = analysis.copyright
     def analyze(project: Project[Source]): ReportableAnalysisResult = {
         new BasicReport(converter(analysis.analyze(project)))
     }

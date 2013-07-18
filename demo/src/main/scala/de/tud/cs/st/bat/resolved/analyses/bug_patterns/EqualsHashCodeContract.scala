@@ -41,9 +41,9 @@ package bug_patterns
  * `equals` and `hashcode`.
  *
  * ==Implementation Note==
- * This analysis is implemented using the traditional approach where each analysis 
- * analyzes the project's resources on its own and fully controls the process. 
- * 
+ * This analysis is implemented using the traditional approach where each analysis
+ * analyzes the project's resources on its own and fully controls the process.
+ *
  * @author Michael Eichberg
  */
 class EqualsHashCodeContract[Source]
@@ -54,10 +54,6 @@ class EqualsHashCodeContract[Source]
     //
 
     def description: String = "Finds violations of the equals-hashCode contract."
-
-    def copyright: String = "(c)2011-2013 Michael Eichberg"
-
-    def title: String = "SS-EqualsHashCode"
 
     // 
     // Implementation

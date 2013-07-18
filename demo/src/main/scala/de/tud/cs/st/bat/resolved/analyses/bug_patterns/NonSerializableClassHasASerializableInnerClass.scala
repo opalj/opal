@@ -54,11 +54,7 @@ class NonSerializableClassHasASerializableInnerClass[Source]
     //
 
     def description = "Identifies (non-static) inner classes that are serializable, but where the outer class is not."
-
-    def copyright = "(c)2013 Michael Eichberg et al. (Findbugs inspired)"
-
-    def title = "SS-NSChaSIC" // StaticStructure-NonSerializableClassHasASerializableInnerClass
-
+   
     // 
     // Implementation
     // 
