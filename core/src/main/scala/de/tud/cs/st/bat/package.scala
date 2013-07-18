@@ -61,14 +61,15 @@ package object bat {
 
     final val CLASS_FILE_MAGIC = 0xCAFEBABE
 
-    private final val generalBATErrorMessage: String =
-        """While reading a class file an unexpected error occured.
+    final val generalBATErrorMessage: String =
+        """While reading/analyzing a class file an unexpected error occured.
           |Either the class file is corrupt or an internal error was found.
           |The underlying problem is:
           |""".stripMargin('|')
 
     @throws[RuntimeException]
-    final def BATError(message: String) = throw new RuntimeException(generalBATErrorMessage + message)
+    final def BATError(message: String) =
+        throw new RuntimeException(generalBATErrorMessage + message)
 
     //
     // Common matchers for access flags
