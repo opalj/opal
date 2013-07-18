@@ -30,28 +30,32 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st.bat
+package de.tud.cs.st
+package bat
 
 import java.io.File
 
 /**
-  * Common functionality required by all test.
-  *
-  * @author Michael Eichberg
-  */
+ * Common functionality required by all test.
+ *
+ * @author Michael Eichberg
+ */
 trait TestSupport {
 
     /**
-      * This function tries to locate resources (at runtime) that are used by tests and which are stored in the
-      * `core/src/test/resources` folder. I.e., when the test suite is executed, the current folder may be
-      * either Eclipse's `bin` bolder or BAT's root folder when we use sbt to build the project.
-      *
-      * @param resourceName The name of the resource relative to the test/resources folder. The name must not
-      * begin with a "/".
-      */
-    def locateTestResources(resourceName: String): File = {
+     * This function tries to locate resources (at runtime) that are used by tests and
+     * which are stored in the `SUBPROJECT-ROOT-FOLDER/src/test/resources` folder.
+     * I.e., when the test suite is executed, the current folder may be either Eclipse's
+     * `bin` bolder or BAT's root folder when we use sbt to build the project.
+     *
+     * @param resourceName The name of the resource relative to the test/resources
+     *      folder. The name must not begin with a "/".
+     * @param subProjectFoler The root folder of the BAT subproject; e.g., "ext/ai".
+     *      (Default: "core").
+     */
+    def locateTestResources(resourceName: String, subProjectFolder: String = "core"): File = {
         { // if the current path is set to BAT's root folder
-            var file = new File("core/src/test/resources/"+resourceName)
+            var file = new File(subProjectFolder+"/src/test/resources/"+resourceName)
             if (file.exists()) return file
         }
         { // if the current path is set to "<SUB-PROJECT>/<BIN>"
