@@ -45,6 +45,17 @@ trait Constant_PoolAbstractions {
 
     type Constant_Pool_Index = Int
 
+    // The following definitions were introduced to enable the post transformation
+    // of a class file after it was (successfully) loaded. In particular to resolve
+    // referenced to the `BootstrapMethods` attribute. 
+    // The underlying idea is that the class file specific transformations are stored
+    // in the class file's constant pool since the constant pool is passed aroud 
+    // after loading.
+
+    type ClassFile
+
+    def applyDeferredActions(classFile: ClassFile, cp: Constant_Pool): ClassFile
+
 }
 
 trait ConstantPoolEntry {

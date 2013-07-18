@@ -192,6 +192,16 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     //
     import util.ControlAbstractions._
 
+    private[this] var classFilePostProcessors: List[ClassFile ⇒ ClassFile] = Nil
+
+    /**
+     * Register a class file post processor. A class file post processor
+     * can transform the completely read and reified class file.
+     */
+    def registerClassFilePostProcessor(p: ClassFile ⇒ ClassFile): Unit = {
+        classFilePostProcessors = p :: classFilePostProcessors
+    }
+
     /**
      * Template method to read in a Java class file from the given input stream.
      *
@@ -221,13 +231,21 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         val methods = Methods(in, cp)
         val attributes = Attributes(AttributesParent.ClassFile, cp, in)
 
-        ClassFile(
+        var classFile = ClassFile(
             minor_version, major_version,
             access_flags,
             this_class, super_class, interfaces,
             fields, methods,
             attributes
         )(cp)
+
+        // perform transformations that are specific to this class file
+        classFile = applyDeferredActions(classFile, cp)
+
+        // perform general transformations on class files
+        classFilePostProcessors.foreach(p ⇒ { classFile = p(classFile) })
+
+        classFile
     }
 
     //
@@ -304,15 +322,16 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      * Reads '''in parallel''' all class files stored in the given zip file. For each
      * successfully read class file the function `f` is called.
      *
-     * @param zipFile A valid zip or jar file that contains `.class` files other files
+     * @param jarFile A valid jar file that contains `.class` files; other files
      *      are ignored.
-     * @param f The function that is called for each class file in the given zip file.
-     *      Given that the zipfile is read in parallel '''this function has to be thread safe'''.
+     * @param f The function that is called for each class file in the given jar file.
+     *      Given that the jarFile is read in parallel '''this function has to be thread safe'''.
      */
     def ClassFiles(
         jarFile: ZipFile,
         f: (ZipFile, ZipEntry, ClassFile) ⇒ _,
-        // TODO    recursiveDecent: Boolean = true,
+        // TODO  [Improvement] support recursive decent
+        // recursiveDecent: Boolean = true,
         exceptionHandler: Option[(Exception) ⇒ _] = defaultExceptionHandler) {
 
         import collection.JavaConversions._
@@ -326,7 +345,6 @@ trait ClassFileReader extends Constant_PoolAbstractions {
                     }
                 }
 
-                // TODO [Improvement] support recursive decent
                 //                else if (recursiveDecent && jarEntryName.endsWith(".jar")) {
                 //                    onException(exceptionHandler) {
                 //                        new ZipFile(...)

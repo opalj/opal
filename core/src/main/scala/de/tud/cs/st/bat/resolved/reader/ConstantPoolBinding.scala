@@ -53,6 +53,8 @@ import de.tud.cs.st.bat.reader.Constant_PoolReader
  */
 trait ConstantPoolBinding extends Constant_PoolReader {
 
+    type ClassFile <: bat.resolved.ClassFile
+    
     implicit def cpIndexTocpEntry(index: Constant_Pool_Index)(implicit cp: Constant_Pool): Constant_Pool_Entry =
         cp(index)
 
@@ -348,6 +350,10 @@ trait ConstantPoolBinding extends Constant_PoolReader {
     def CONSTANT_InvokeDynamic_info(bootstrap_method_attr_index: Constant_Pool_Index,
                                     name_and_type_index: Constant_Pool_Index): CONSTANT_InvokeDynamic_info =
         new CONSTANT_InvokeDynamic_info(bootstrap_method_attr_index, name_and_type_index)
+    
+    protected def StorageForDeferredActions(): collection.mutable.Buffer[ClassFile ⇒ ClassFile] with Constant_Pool_Entry = {
+        new collection.mutable.ArrayBuffer[ClassFile => ClassFile] with Constant_Pool_Entry { }
+    }
 
 }
 

@@ -86,9 +86,39 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
     protected def CONSTANT_MethodType_info(descriptor_index: Int): CONSTANT_MethodType_info
     protected def CONSTANT_InvokeDynamic_info(bootstrap_method_attr_index: Int, name_and_type_index: Int): CONSTANT_InvokeDynamic_info
 
+    // The following type definitions is required to be able to register functions
+    // that want to perform post load actions. E.g., to resolve references to attributes.
+    // (The constant pool is the only structure is passed around and hence it is the
+    // only place where to store information/functions related to a specific class file).
+    protected type DeferredActionsStore = collection.mutable.Buffer[ClassFile ⇒ ClassFile] with Constant_Pool_Entry
+
+    /**
+     * Creates a storage area for functions that will be called after the class file was
+     * completely loaded. This makes it possible to register functions that are newly
+     * created for a special class file object to perform actions related to that specific
+     * class file object. For further information study the resolving process for
+     * `invokedynamic`.
+     */
+    protected def StorageForDeferredActions(): DeferredActionsStore
+
     //
     // IMPLEMENTATION
     //
+
+    def registerDeferredAction(da: ClassFile ⇒ ClassFile)(implicit cp: Constant_Pool) {
+        val store = cp(0).asInstanceOf[DeferredActionsStore]
+        store.synchronized {
+            store += da
+        }
+    }
+
+    def applyDeferredActions(classFile: ClassFile, cp: Constant_Pool): ClassFile = {
+        var transformedClassFile = classFile
+        cp(0).asInstanceOf[DeferredActionsStore].foreach(da ⇒ {
+            transformedClassFile = da(transformedClassFile)
+        })
+        transformedClassFile
+    }
 
     import ConstantPoolTags._
 
@@ -100,17 +130,25 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
          * The value of the constant_pool_count item is equal to the
          * number of entries in the constant_pool table plus one. A
          * constant_pool index is considered valid if it is greater than zero
-         * and less than constant_pool_count
+         * and less than constant_pool_count.
+         *
+         * We use position zero in the constant pool table to store functions that need
+         * to be performed after the entire class is loaded.
+         *
+         * E.g., the references of `invokedynamic` instructions can only be resolved after
+         * the `BootstrapMethods` attribute was loaded.
          */
         val constant_pool_count = in.readUnsignedShort
 
         /**
-         * The format of each constant_pool table entry is indicated by its ﬁrst 
+         * The format of each constant_pool table entry is indicated by its ﬁrst
          * “tag” byte.
-         * 
+         *
          * The constant_pool table is indexed from 1 to constant_pool_count−1.
          */
         val constant_pool_entries = new Array[Constant_Pool_Entry](constant_pool_count)
+
+        constant_pool_entries(0) = StorageForDeferredActions()
 
         var i = 1
         while (i < constant_pool_count) {
