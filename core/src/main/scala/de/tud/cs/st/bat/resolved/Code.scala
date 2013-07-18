@@ -59,19 +59,15 @@ case class Code(
 
     /**
      * Collects all local variable tables.
-     *
-     * The JVM specification mandates that per local-variable at most one local variable
-     * table exist.
      */
+    // TODO Merge local variable tables
     def localVariableTable: Seq[LocalVariables] =
         attributes collect { case LocalVariableTable(lvt) ⇒ lvt }
 
     /**
      * Collects all local variable type tables.
-     *
-     * The JVM specification mandates that per local-variable at most one local variable
-     * type table exist.
      */
+    // TODO Merge local variable type tables
     def localVariableTypeTable: Seq[LocalVariableTypes] =
         attributes collect { case LocalVariableTypeTable(lvtt) ⇒ lvtt }
 
@@ -93,8 +89,10 @@ case class Code(
      * Collects all instructions for which the given function is defined.
      *
      * ==Usage scenario==
-     * Use this function if you want to search for and collect specific instructions, but where you do
-     * not immediately require the program counter/index of the instruction in the instruction array.
+     * Use this function if you want to search for and collect specific instructions, but
+     * where you do not immediately require the program counter/index of the instruction
+     * in the instruction array to make the decision whether you want to collect the
+     * instruction.
      *
      * ==Examples==
      * Example usage to collect the declaring class of all get field accesses where the
@@ -110,8 +108,9 @@ case class Code(
      * code.collect({ case dup @ DUP ⇒ dup })
      * }}}
      *
-     * @return The result of applying the function f to all instructions for which f is defined combined with
-     *  the index (program counter) of the instruction in the code array.
+     * @return The result of applying the function f to all instructions for which f is
+     *      defined combined with the index (program counter) of the instruction in the
+     *      code array.
      */
     def collect[B](f: PartialFunction[Instruction, B]): Seq[(Int, B)] = {
         val max_pc = instructions.size
@@ -131,8 +130,8 @@ case class Code(
 
     /**
      * Applies the given function `f` to all instruction objects for which the function is
-     * defined. The function is passed a tuple consisting of the current program counter/index
-     * in the code array and the corresponding instruction.
+     * defined. The function is passed a tuple consisting of the current program
+     * counter/index in the code array and the corresponding instruction.
      *
      * ==Example==
      * Example usage to collect the program counters (indexes) of all instructions that
@@ -161,7 +160,8 @@ case class Code(
     }
 
     /**
-     * Applies the given function to the first instruction for which the given function is defined.
+     * Applies the given function to the first instruction for which the given function
+     * is defined.
      */
     def collectFirstWithIndex[B](f: PartialFunction[(Int, Instruction), B]): Option[B] = {
         val max_pc = instructions.size
@@ -177,8 +177,8 @@ case class Code(
     }
 
     /**
-     * Tests if an instruction matches the given filter. If so, the index of the first matching
-     * instruction is returned.
+     * Tests if an instruction matches the given filter. If so, the index of the first
+     * matching instruction is returned.
      */
     def find(f: Instruction ⇒ Boolean): Option[Int] = {
         val max_pc = instructions.size
@@ -194,37 +194,41 @@ case class Code(
     }
 
     /**
-     * Returns a new sequence that pairs the program_counter of an instruction with the instruction.
+     * Returns a new sequence that pairs the program_counter of an instruction with the
+     * instruction.
      */
     def associateWithIndex(): Seq[(Int, Instruction)] = collect { case i ⇒ i }
 
     /**
-     * Slides over the code array and tries to apply the given function to each sequence of instructions
-     * consisting of `windowSize` elements.
+     * Slides over the code array and tries to apply the given function to each sequence
+     * of instructions consisting of `windowSize` elements.
      *
      * ==Scenario==
-     * If you want to search for specific patterns of bytecode instructions. Some "bug patterns" are
-     * directly related to specific bytecode sequences and these patterns can easily be identified
-     * using this method.
+     * If you want to search for specific patterns of bytecode instructions. Some "bug
+     * patterns" are directly related to specific bytecode sequences and these patterns
+     * can easily be identified using this method.
      *
      * ==Example==
-     * Search for sequences of the bytecode instructions PUTFIELD and ALOAD_O in the methods
-     * body and return the list of program counters of the start of the identified sequences.
+     * Search for sequences of the bytecode instructions `PUTFIELD` and `ALOAD_O` in the
+     * method's body and return the list of program counters of the start of the
+     * identified sequences.
      * {{{
      * code.slidingCollect(2)({
      *  case (pc, Seq(PUTFIELD(_, _, _), ALOAD_0)) ⇒ (pc)
      * }) should be(Seq(...))
      * }}}
      *
-     * @param windowSize The size of the sequence of instructions that is passed to the partial function.
-     *      It must be larger than 0. **Do not use this method with windowSize "0"** as it is more efficient
-     *      to use the `collect` or `collectWithIndex` methods instead.
+     * @param windowSize The size of the sequence of instructions that is passed to the
+     *      partial function.
+     *      It must be larger than 0. **Do not use this method with windowSize "1"**;
+     *      it is more efficient to use the `collect` or `collectWithIndex` methods
+     *      instead.
      * @return The list of results of applying the function f for each matching sequence.
      */
     def slidingCollect[B](windowSize: Int)(f: PartialFunction[(Int, Seq[Instruction]), B]): Seq[B] = {
         require(windowSize > 0)
 
-        import scala.collection.immutable.Queue
+        import collection.immutable.Queue
 
         val max_pc = instructions.size
         var instrs: Queue[Instruction] = Queue.empty
@@ -265,82 +269,6 @@ case class Code(
         }
 
         result.reverse
-    }
-
-    // TODO implement CFG algorithm
-    case class BBInfo private[Code] (
-        val bbID: Int,
-        val firstInstructionPC: Int,
-        val lastInstructionPC: Int,
-        val succBBIDs: List[Int],
-        val predBBIDs: List[Int],
-        val handlesException: Option[ReferenceType] = None)
-
-    /**
-     * @param instrToBBID Associates each instruction (by means of its program counter) with the ID of its
-     * associated basic block.
-     */
-    // TODO implement CFG algorithm
-    case class CFG private[Code] (
-            val instrToBBID: IndexedSeq[Int],
-            val bbInfo: IndexedSeq[BBInfo],
-            val exitBBIDs: Seq[Int]) {
-    }
-
-    /**
-     * The CFG is calculated under a certain assumption.
-     */
-    def cfg = {
-        //    /**
-        //      * The indexes/program counters of instructions that are (potentially) executed after this
-        //      * instruction at runtime. (I.e., this is (in case of control transfer instructions) not the
-        //      * index of the next instruction in the code array).
-        //      *
-        //      * @param currentPC The current pc; i.e., the current index in the code array.
-        //      * @param code This instruction's code block. This information is required to determine the next
-        //      * instruction, e.g., in case of a throw instruction or a "wide instruction".
-        //      */
-        //    def successorPCs(currentPC: Int, code: Code): Traversable[Int]
-
-        // ATHROW
-        //        def successorPCs(currentPC: Int, code: Code): Traversable[Int] = {
-        //            for (exceptionHandler ← code.exceptionHandlers if exceptionHandler.startPC <= currentPC and exceptionHandler.endPC > currentPC) {
-        //
-        //            }
-        //        }
-
-        // ConditionalBranchInstruction
-        //        def successorPCs(currentPC: Int, code: Code): Traversable[Int] = {
-        //            new Traversable[Int] {
-        //                def foreach[U](f: Int ⇒ U) {
-        //                    f(currentPC + 1)
-        //                    f(currentPC + branchoffset)
-        //                }
-        //            }
-        //        }
-
-        // UnconditionalBranchInstruction
-        // def successorPCs(currentPC: Int, code: Code): Traversable[Int] = List(currentPC + branchoffset)
-
-        // LOOKUPSWITCH
-        //        def successorPCs(currentPC: Int, code: Code): Traversable[Int] = {
-        //            new Traversable[Int] {
-        //                def foreach[U](f: Int ⇒ U) {
-        //                    f(currentPC + defaultOffset)
-        //                    npairs.foreach(kv ⇒ f(currentPC + kv._2))
-        //                }
-        //            }
-        //        }
-
-        // TABLESWITCH
-        //        def successorPCs(currentPC: Int, code: Code): Traversable[Int] = {
-        //        new Traversable[Int] {
-        //            def foreach[U](f: Int ⇒ U) {
-        //                f(currentPC + defaultOffset)
-        //                jumpOffsets.foreach(offset ⇒ f(currentPC + offset))
-        //            }
-        //        }
-        //    }
     }
 
     override def toString = {
