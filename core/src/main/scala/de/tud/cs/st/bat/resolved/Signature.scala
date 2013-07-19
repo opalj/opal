@@ -152,7 +152,7 @@ sealed trait VarianceIndicator extends SignatureElement {
  * If you have declaration such as <? extends Entry> then the "? extends" part
  * is represented by the CovariantIndicator.
  */
-trait CovariantIndicator extends VarianceIndicator {
+sealed trait CovariantIndicator extends VarianceIndicator {
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
 }
 case object CovariantIndicator extends CovariantIndicator
@@ -161,7 +161,7 @@ case object CovariantIndicator extends CovariantIndicator
  * A declaration such as <? super Entry> is represented in class file signatures
  * by the ContravariantIndicator ("? super") and a FieldTypeSignature.
  */
-trait ContravariantIndicator extends VarianceIndicator {
+sealed trait ContravariantIndicator extends VarianceIndicator {
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
 }
 case object ContravariantIndicator extends ContravariantIndicator
@@ -170,7 +170,7 @@ case object ContravariantIndicator extends ContravariantIndicator
  * If a type argument is not further specified (e.g. List<?> l = …) then the
  * type argument "?" is represented by this object.
  */
-trait Wildcard extends TypeArgument {
+sealed trait Wildcard extends TypeArgument {
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
 }
 case object Wildcard extends Wildcard

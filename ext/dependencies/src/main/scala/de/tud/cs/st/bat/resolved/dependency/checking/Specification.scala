@@ -1,12 +1,12 @@
 /* License (BSD Style License):
- *  Copyright (c) 2009, 2011
- *  Software Technology Group
- *  Department of Computer Science
- *  Technische Universität Darmstadt
- *  All rights reserved.
+ * Copyright (c) 2009 - 2013
+ * Software Technology Group
+ * Department of Computer Science
+ * Technische Universität Darmstadt
+ * All rights reserved.
  *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions are met:
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
  *
  *  - Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
@@ -18,46 +18,47 @@
  *    endorse or promote products derived from this software without specific
  *    prior written permission.
  *
- *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- *  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- *  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- *  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- *  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- *  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- *  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- *  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- *  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- *  POSSIBILITY OF SUCH DAMAGE.
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st.bat
+package de.tud.cs.st
+package bat
+package resolved
 package dependency
 package checking
 
-import resolved._
-import resolved.reader.Java7Framework
-import resolved.analyses.ClassHierarchy
-import resolved.analyses.Project
-
-import scala.collection.immutable.SortedSet
+import reader.Java7Framework
+import analyses.{ ClassHierarchy, Project }
 
 import java.net.URL
 
+import collection.immutable.SortedSet
+import language.implicitConversions
+
 /**
-  * A specification of a project's architectural constraints.
-  *
-  * ===Usage===
-  * First define the ensembles, then the rules and at last specify the
-  * class files that should be analyzed. The rules will then be automatically
-  * evaluated.
-  *
-  * ===Note===
-  * One ensemble is predefined: [[Specification.empty]] it represents an ensemble that contains no
-  * source elements and which can, e.g., be used to specify that no "real" ensemble is allowed
-  * to depend on a specific ensemble.
-  *
-  * @author Michael Eichberg
-  */
+ * A specification of a project's architectural constraints.
+ *
+ * ===Usage===
+ * First define the ensembles, then the rules and at last specify the
+ * class files that should be analyzed. The rules will then be automatically
+ * evaluated.
+ *
+ * ===Note===
+ * One ensemble is predefined: [[Specification.empty]] it represents an ensemble that
+ * contains no source elements and which can, e.g., be used to specify that no "real"
+ * ensemble is allowed to depend on a specific ensemble.
+ *
+ * @author Michael Eichberg
+ */
 class Specification
         extends SourceElementIDsMap
         with ReverseMapping
@@ -65,28 +66,28 @@ class Specification
 
     private[this] var theEnsembles = Map[Symbol, (SourceElementsMatcher, SortedSet[SourceElementID])]()
     /**
-      * The set of defined ensembles. An ensemble is identified by a symbol, a query which matches source
-      * elements and the project's source elements that are matched. The latter is available only after
-      * analyze was called.
-      */
+     * The set of defined ensembles. An ensemble is identified by a symbol, a query which matches source
+     * elements and the project's source elements that are matched. The latter is available only after
+     * analyze was called.
+     */
     def ensembles = theEnsembles
 
     // calculated after all class files have been loaded
     private[this] var theOutgoingDependencies = Map[SourceElementID, Set[(SourceElementID, DependencyType)]]()
     /**
-      * Mapping between a source element and those source elements it depends on/uses.
-      *
-      * This mapping is automatically created when analyze is called.
-      */
+     * Mapping between a source element and those source elements it depends on/uses.
+     *
+     * This mapping is automatically created when analyze is called.
+     */
     def outgoingDependencies = theOutgoingDependencies
 
     // calculated after all class files have been loaded
     private[this] var theIncomingDependencies = Map[SourceElementID, Set[(SourceElementID, DependencyType)]]()
     /**
-      * Mapping between a source element and those source elements that depend on it.
-      *
-      * This mapping is automatically created when analyze is called.
-      */
+     * Mapping between a source element and those source elements that depend on it.
+     *
+     * This mapping is automatically created when analyze is called.
+     */
     def incomingDependencies = theIncomingDependencies
 
     // calculated after the extension of all ensembles is determined
@@ -97,10 +98,10 @@ class Specification
     private[this] var unmatchedSourceElements: Set[SourceElementID] = _
 
     /**
-      * Adds a new ensemble definition to this architecture specification.
-      *
-      * @throws SpecificationError If the ensemble is already defined.
-      */
+     * Adds a new ensemble definition to this architecture specification.
+     *
+     * @throws SpecificationError If the ensemble is already defined.
+     */
     @throws(classOf[SpecificationError])
     def ensemble(ensembleSymbol: Symbol)(sourceElementMatcher: SourceElementsMatcher) {
         if (ensembles.contains(ensembleSymbol))
@@ -110,18 +111,18 @@ class Specification
     }
 
     /**
-      * Represents an ensemble that contains no source elements. This can be used, e.g., to specify that
-      * a (set of) specific source element(s) is not allowed to depend on any other source elements (belonging
-      * to the project).
-      */
+     * Represents an ensemble that contains no source elements. This can be used, e.g., to specify that
+     * a (set of) specific source element(s) is not allowed to depend on any other source elements (belonging
+     * to the project).
+     */
     val empty = {
         ensemble('empty)(NoSourceElementsMatcher)
         'empty
     }
 
     /**
-      * Facilitates the definition of common source element matchers by means of common String patterns.
-      */
+     * Facilitates the definition of common source element matchers by means of common String patterns.
+     */
     @throws(classOf[SpecificationError])
     implicit def StringToSourceElementMatcher(matcher: String): SourceElementsMatcher = {
         if (matcher endsWith ".*")
@@ -137,8 +138,8 @@ class Specification
     }
 
     /**
-      * Given
-      */
+     * Given
+     */
     implicit def FileToClassFileProvider(file: java.io.File): Seq[(ClassFile, URL)] = Java7Framework.ClassFiles(file)
 
     case class Violation(source: SourceElementID, target: SourceElementID, dependencyType: DependencyType, description: String) {
@@ -224,8 +225,8 @@ class Specification
     }
 
     /**
-      * Returns a textual representation (as defined in a specification file) of an ensemble.
-      */
+     * Returns a textual representation (as defined in a specification file) of an ensemble.
+     */
     def ensembleToString(ensembleSymbol: Symbol): String = {
         var (sourceElementsMatcher, extension) = ensembles(ensembleSymbol)
         ensembleSymbol+"{"+
