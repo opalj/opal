@@ -33,12 +33,11 @@
 package ai;
 
 /**
- * A very large number of methods that do not contain any control-flow statements.
+ * Just a very large number of methods that do contain control-flow statements.
  * 
- * <h2>NOTE</h2>
- * This class is not meant to be (automatically) recompiled; it just serves documentation 
- * purposes. The compiled class that is used by the tests is found in the test-classfiles 
- * directory.
+ * <h2>NOTE</h2> This class is not meant to be (automatically) recompiled; it just serves
+ * documentation purposes. The compiled class that is used by the tests is found in the
+ * test-classfiles directory.
  * 
  * @author Michael Eichberg
  */
@@ -46,7 +45,7 @@ public class ControlFlowMethods {
 
     //
     // COMPARISON
-    
+
     public static boolean nullComp(Object o) {
         if (o == null)
             return true;
@@ -61,9 +60,38 @@ public class ControlFlowMethods {
             return false;
     }
 
+    //
+    // MULTIPLE COMPARISONS
+
+    /**
+     * <pre>
+     * public static boolean multipleComp(java.lang.Object a, java.lang.Object b);
+     *      0  aload_0 [a]
+     *      1  ifnull 17
+     *      4  aload_1 [b]
+     *      5  ifnull 17
+     *      8  aload_0 [a]
+     *      9  aload_1 [b]
+     *     10  if_acmpne 15
+     *     13  iconst_1
+     *     14  ireturn
+     *     15  iconst_0
+     *     16  ireturn
+     *     17  iconst_0
+     *     18  ireturn
+     * </pre>
+     */
+    public static boolean multipleComp(Object a, Object b) {
+        if (a != null && b != null) {
+            return a == b;
+        } else {
+            return false;
+        }
+
+    }
 
     // RELATIONAL OPERATORS
-    // Comparing two values also invokes some kind of "IF" byte code operations which is 
+    // Comparing two values also invokes some kind of "IF" byte code operations which is
     // a simple control flow.
 
     /*
