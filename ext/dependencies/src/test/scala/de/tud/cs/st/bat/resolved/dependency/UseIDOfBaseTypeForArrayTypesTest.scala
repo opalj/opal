@@ -30,11 +30,12 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st.bat
+package de.tud.cs.st
+package bat
+package resolved
 package dependency
 
-import resolved._
-import resolved.reader.Java7Framework
+import reader.Java7Framework
 import DependencyType._
 
 import org.junit.runner.RunWith

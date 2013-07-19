@@ -32,10 +32,10 @@
  */
 package de.tud.cs.st
 package bat
+package resolved
 package dependency
 
-import resolved._
-import resolved.reader.Java7Framework.ClassFiles
+import reader.Java7Framework.ClassFiles
 import DependencyType._
 
 import org.scalatest.FunSuite

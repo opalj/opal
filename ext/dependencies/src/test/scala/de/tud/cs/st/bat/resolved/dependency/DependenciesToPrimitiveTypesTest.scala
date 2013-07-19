@@ -32,11 +32,12 @@
  */
 package de.tud.cs.st
 package bat
+package resolved
 package dependency
 
-import resolved._
-import resolved.reader.Java7Framework
+import reader.Java7Framework
 import DependencyType._
+
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.Spec

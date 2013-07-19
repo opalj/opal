@@ -32,6 +32,7 @@
  */
 package de.tud.cs.st
 package bat
+package resolved
 package dependency
 package checking
 

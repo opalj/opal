@@ -32,12 +32,12 @@
  */
 package de.tud.cs.st
 package bat
+package resolved
 package dependency
 
 import util.debug.nanoSecondsToMilliseconds
 
-import resolved._
-import resolved.reader.Java7Framework.ClassFiles
+import reader.Java7Framework.ClassFiles
 
 /**
  * This class (the implementation) demonstrates how to load all class files
@@ -54,7 +54,7 @@ object DependencyMatrix {
 
     private def printUsage: Unit = {
         println("Loads all classes stored in the jar files and creates a dependency matrix.")
-        println("Usage: java …DependencyMatrix <JAR file containing class files>+")        
+        println("Usage: java …DependencyMatrix <JAR file containing class files>+")
     }
 
     def main(args: Array[String]) {

@@ -30,35 +30,40 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st.bat
+package de.tud.cs.st
+package bat
+package resolved
 package dependency
 
-import resolved._
 import DependencyType._
 
 /**
- * Traverses a class file and identifies all dependencies between the element (class, field, method
- * declaration) that is traversed and any element the traversed element depends on.
+ * Traverses a class file and identifies all dependencies between the element (class,
+ * field, method declaration) that is traversed and any element the traversed element
+ * depends on.
  *
- * By default, self dependencies will be reported (e.g. a method that calls itself). If necessary or undesired, self dependencies can
- * easily be filtered by a [[de.tud.cs.st.bat.resolved.dependency.DependencyProcessor]]'s
- * processDependency method (which is called by the dependency extractor, but whose implementation needs
+ * By default, self dependencies will be reported (e.g. a method that calls itself). If
+ * necessary or undesired, self dependencies can easily be filtered by a
+ * [[de.tud.cs.st.bat.resolved.dependency.DependencyProcessor]]'s processDependency method
+ * (which is called by the dependency extractor, but whose implementation needs
  * to be provided.)
  *
  * ==Usage==
- * The demo class [[de.tud.cs.st.bat.resolved.dependency.DependencyMatrix]] (see the implementation) provides
- * an example how to use the dependency extractor.
+ * The demo class `de.tud.cs.st.bat.resolved.dependency.DependencyMatrix` (see the
+ * implementation) provides an example how to use the dependency extractor.
  *
  * To assign ids to source elements the dependency extractor relies on source element ids as
- * provided by implementations of [[de.tud.cs.st.bat.resolved.dependency.SourceElementIDs]].
- * After getting the ids of the depending source elements, a [[de.tud.cs.st.bat.resolved.dependency.DependencyProcessor]]'s
- * processDependency method is called with the ids and the type of the dependency as a parameter.
+ * provided by implementations of `de.tud.cs.st.bat.resolved.SourceElementIDs`.
+ * After getting the ids of the depending source elements, a
+ * [[de.tud.cs.st.bat.resolved.dependency.DependencyProcessor]]'s
+ * processDependency method is called with the ids and the type of the dependency as a
+ * parameter.
  *
  *
  * ==Implementation Note==
  * Only attributes defined by the JVM 6 specification are considered in this implementation.
- *
- *
+ * TODO [DependencyExtractor] Update for Java 7 (Method Handles..) 
+ * 
  * @author Thomas Schlosser
  * @author Michael Eichberg
  */

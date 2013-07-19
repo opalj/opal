@@ -34,62 +34,13 @@ package de.tud.cs.st
 package bat
 package resolved
 
-import dependency._
-import dependency.checking._
-
-import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.Spec
-import org.scalatest.FlatSpec
-import org.scalatest.BeforeAndAfterAll
-import org.scalatest.matchers.ShouldMatchers
-
 /**
- * Tests that BAT's architectural constraints are satisfied.
+ * Functionality to extract dependencies between class files.
  *
  * @author Michael Eichberg
  */
-@RunWith(classOf[JUnitRunner])
-class Architecture extends FlatSpec with ShouldMatchers with BeforeAndAfterAll {
+package object dependency {
 
-    val configuration = new Specification {
+    type DependencyType = DependencyType.Value
 
-        ensemble('Root) {
-            "de.tud.cs.st.bat.*"
-        }
-
-        ensemble('canonical) {
-            "de.tud.cs.st.bat.canonical.*"
-        }
-
-        ensemble('canonical_reader) {
-            "de.tud.cs.st.bat.canonical.reader.*"
-        }
-
-        ensemble('reader) {
-            "de.tud.cs.st.bat.reader.*"
-        }
-
-        ensemble('resolved_representation) {
-            "de.tud.cs.st.bat.resolved.**"
-        }
-
-        //        ensemble('support) {
-        //            "de.tud.cs.st.util.**" union "de.tud.cs.st.prolog.*"
-        //        }
-
-        ensemble('util) {
-            "de.tud.cs.st.util.**"
-        }
-
-        ensemble('prolog) {
-            "de.tud.cs.st.prolog.*"
-        }
-
-        //        ensemble('empty) {
-        //            "<EMPTY>.*"
-        //        }
-
-        //  only('empty) is_allowed_to_depend_on 'prolog
-    }
 }
