@@ -1,3 +1,4 @@
+version := "TBD"
 
 scalacOptions in (Compile, doc) := Seq("-deprecation", "-feature", "-unchecked")
 
