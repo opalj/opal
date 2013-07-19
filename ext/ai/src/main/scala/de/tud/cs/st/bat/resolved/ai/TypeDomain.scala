@@ -39,7 +39,7 @@ package ai
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  * @author Dennis Siebert
  */
-class TypeDomain extends Domain {
+trait TypeDomain extends Domain {
 
     //
     // CREATE ARRAY
@@ -63,7 +63,7 @@ class TypeDomain extends Domain {
     def baload(index: Value, arrayref: Value): Value = { // byte or boolean load...
         arrayref match {
             case TypedValue(ArrayType(componentType)) ⇒ TypedValue(componentType)
-            case _                                    ⇒ CTIntegerValue
+            case _                                    ⇒ CTIntegerValue()
         }
     }
     def bastore(value: Value, index: Value, arrayref: Value) { /* Nothing to do. */ }
@@ -143,10 +143,31 @@ class TypeDomain extends Domain {
     //
     // ACCESSING FIELDS
     //
-    def getfield(objectref: Value, declaringClass: ObjectType, name: String, fieldType: FieldType) = TypedValue(fieldType)
-    def getstatic(declaringClass: ObjectType, name: String, fieldType: FieldType) = TypedValue(fieldType)
-    def putfield(objectref: Value, value: Value, declaringClass: ObjectType, name: String, fieldType: FieldType) { /* Nothing to do. */ }
-    def putstatic(value: Value, declaringClass: ObjectType, name: String, fieldType: FieldType) { /* Nothing to do. */ }
+    def getfield(objectref: Value,
+                 declaringClass: ObjectType,
+                 name: String,
+                 fieldType: FieldType) =
+        TypedValue(fieldType)
+
+    def getstatic(declaringClass: ObjectType,
+                  name: String,
+                  fieldType: FieldType) =
+        TypedValue(fieldType)
+
+    def putfield(objectref: Value,
+                 value: Value,
+                 declaringClass: ObjectType,
+                 name: String,
+                 fieldType: FieldType) {
+        /* Nothing to do. */
+    }
+
+    def putstatic(value: Value,
+                  declaringClass: ObjectType,
+                  name: String,
+                  fieldType: FieldType) {
+        /* Nothing to do. */
+    }
 
     //
     // METHOD INVOCATIONS
@@ -155,27 +176,31 @@ class TypeDomain extends Domain {
                         name: String,
                         methodDescriptor: MethodDescriptor,
                         params: List[Value]) =
-        handleInvoke(methodDescriptor)
+        asTypedValue(methodDescriptor.returnType)
+
     def invokevirtual(declaringClass: ReferenceType,
                       name: String,
                       methodDescriptor: MethodDescriptor,
                       params: List[Value]) =
-        handleInvoke(methodDescriptor)
+        asTypedValue(methodDescriptor.returnType)
+
     def invokespecial(declaringClass: ReferenceType,
                       name: String,
                       methodDescriptor: MethodDescriptor,
                       params: List[Value]) =
-        handleInvoke(methodDescriptor)
+        asTypedValue(methodDescriptor.returnType)
+
     def invokestatic(declaringClass: ReferenceType,
                      name: String,
                      methodDescriptor: MethodDescriptor,
                      params: List[Value]) =
-        handleInvoke(methodDescriptor)
-    private def handleInvoke(methodDescriptor: MethodDescriptor) = {
-        if (methodDescriptor.returnType.isVoidType)
+        asTypedValue(methodDescriptor.returnType)
+
+    private def asTypedValue(someType: Type) = {
+        if (someType.isVoidType)
             None
         else
-            Some(TypedValue(methodDescriptor.returnType))
+            Some(TypedValue(someType))
     }
 
     //
@@ -260,6 +285,7 @@ class TypeDomain extends Domain {
     def addIsNullConstraint(value: Value, memoryLayout: MemoryLayout): MemoryLayout = {
         memoryLayout
     }
+
     def addIsNonNullConstraint(value: Value, memoryLayout: MemoryLayout): MemoryLayout = {
         memoryLayout
     }

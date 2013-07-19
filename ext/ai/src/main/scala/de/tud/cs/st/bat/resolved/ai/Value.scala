@@ -53,7 +53,40 @@ sealed trait Value {
      * The computational type of the value.
      */
     def computationalType: ComputationalType
+
+    /**
+     * Merges this value with the given value; has to return `this` when this value
+     * subsumes the given value or is structurally identical to the given
+     * value.
+     */
+    def merge(value: Value): Value
+
+    @throws[AIImplementationError]
+    protected def impossibleToMergeWith(other: Value): AIImplementationError =
+        new AIImplementationError(
+            "missing support for merging: "+
+                this.getClass().getName()+
+                " and "+
+                other.getClass().getName())
+
+    @throws[BATError]
+    protected def incompatibleValue(other: Value): BATError =
+        new BATError(
+            "incompatible values: "+
+                this.getClass().getName()+
+                " and "+
+                other.getClass().getName())
+
 }
+
+case class NoLegalValue(initialReason: RuntimeException) extends Value {
+
+    def computationalType: ComputationalType =
+        BATError("the value \"NoLegalValue\" does not have a computational type (underlying initial reason:"+initialReason+")")
+
+    def merge(value: Value): Value = this
+}
+
 /**
  * Trait that is mixed in by values for which we have more precise type information.
  *
@@ -97,73 +130,174 @@ sealed trait ComputationalTypeCategory1Value extends Value
  *
  * @author Michael Eichberg
  */
-sealed class CTIntegerValue extends ComputationalTypeCategory1Value {
+sealed trait CTIntegerValue extends ComputationalTypeCategory1Value {
     final def computationalType: ComputationalType = ComputationalTypeInt
-}
-final object CTIntegerValue extends CTIntegerValue
 
-class SomeBooleanValue extends CTIntegerValue with TypedValue {
+    def merge(value: Value): Value = value match { case CTIntegerValue() ⇒ this }
+}
+object CTIntegerValue {
+    private[this] val instance = new CTIntegerValue {}
+    def apply() = instance
+    def unapply(ctIntVal: CTIntegerValue): Boolean = ctIntVal ne null
+}
+
+trait SomeBooleanValue extends CTIntegerValue with TypedValue {
     def valueType = BooleanType
-}
-final object SomeBooleanValue extends SomeBooleanValue
 
-class SomeByteValue extends CTIntegerValue with TypedValue {
+    // Note, we cannot implement some general merging over here!
+    // E.g., if the other value is of type CTIntegerValue and represents 
+    // other values than 0 and 1 then some special handling needs to be performed!
+}
+case object SomeBooleanValue extends SomeBooleanValue {
+    override def merge(value: Value): Value = value match {
+        case other: SomeBooleanValue  ⇒ this
+        case other @ SomeByteValue    ⇒ other
+        case other @ SomeShortValue   ⇒ other
+        case other @ SomeIntegerValue ⇒ other
+        case other @ SomeCharValue    ⇒ other
+        case other: CTIntegerValue    ⇒ NoLegalValue(impossibleToMergeWith(other))
+        case other                    ⇒ NoLegalValue(incompatibleValue(other))
+    }
+}
+
+trait SomeByteValue extends CTIntegerValue with TypedValue {
     def valueType = ByteType
 }
-final object SomeByteValue extends SomeByteValue
+case object SomeByteValue extends SomeByteValue {
+    override def merge(value: Value): Value = value match {
+        case other: SomeByteValue     ⇒ this
+        case other: SomeBooleanValue  ⇒ this
+        case other @ SomeShortValue   ⇒ other
+        case other @ SomeIntegerValue ⇒ other
+        case other @ SomeCharValue    ⇒ other
+        case other: CTIntegerValue    ⇒ NoLegalValue(impossibleToMergeWith(other))
+        case other                    ⇒ NoLegalValue(incompatibleValue(other))
+    }
+}
 
-class SomeShortValue extends CTIntegerValue with TypedValue {
+trait SomeShortValue extends CTIntegerValue with TypedValue {
     def valueType = ShortType
 }
-final object SomeShortValue extends SomeShortValue
+case object SomeShortValue extends SomeShortValue {
+    override def merge(value: Value): Value = value match {
+        case other: SomeShortValue    ⇒ this
+        case other: SomeBooleanValue  ⇒ this
+        case other: SomeByteValue     ⇒ this
+        case other @ SomeIntegerValue ⇒ other
+        case other @ SomeCharValue    ⇒ SomeIntegerValue
+        case other: CTIntegerValue    ⇒ NoLegalValue(impossibleToMergeWith(other))
+        case other                    ⇒ NoLegalValue(incompatibleValue(other))
+    }
+}
 
-class SomeCharValue extends CTIntegerValue with TypedValue {
+trait SomeCharValue extends CTIntegerValue with TypedValue {
     def valueType = CharType
 }
-final object SomeCharValue extends SomeCharValue
+case object SomeCharValue extends SomeCharValue {
+    override def merge(value: Value): Value = value match {
+        case other: SomeCharValue     ⇒ this
+        case other: SomeBooleanValue  ⇒ this
+        case other: SomeByteValue     ⇒ this
+        case other @ SomeShortValue   ⇒ SomeIntegerValue
+        case other @ SomeIntegerValue ⇒ other
+        case other: CTIntegerValue    ⇒ NoLegalValue(impossibleToMergeWith(other))
+        case other                    ⇒ NoLegalValue(incompatibleValue(other))
+    }
+}
 
-class SomeIntegerValue extends CTIntegerValue with TypedValue {
+trait SomeIntegerValue extends CTIntegerValue with TypedValue {
     def valueType = IntegerType
 }
-final object SomeIntegerValue extends SomeIntegerValue
+case object SomeIntegerValue extends SomeIntegerValue {
+    override def merge(value: Value): Value = value match {
+        case other: CTIntegerValue ⇒ this
+        case other                 ⇒ NoLegalValue(incompatibleValue(other))
+    }
+}
 
 /**
  * Abstracts over all values with computational type `float`.
  *
  * @author Michael Eichberg
  */
-class SomeFloatValue extends ComputationalTypeCategory1Value with TypedValue {
+trait SomeFloatValue extends ComputationalTypeCategory1Value with TypedValue {
     final def computationalType: ComputationalType = ComputationalTypeFloat
     final def valueType = FloatType
 }
-final object SomeFloatValue extends SomeFloatValue
+case object SomeFloatValue extends SomeFloatValue {
+    override def merge(value: Value): Value = value match {
+        case other: SomeFloatValue ⇒ this
+        case other                 ⇒ NoLegalValue(incompatibleValue(other))
+    }
+}
 
 /**
  * Abstracts over all values with computational type `reference`.
  *
  * @author Michael Eichberg
  */
-sealed class CTReferenceValue extends ComputationalTypeCategory1Value {
+sealed trait CTReferenceValue extends ComputationalTypeCategory1Value {
     final def computationalType: ComputationalType = ComputationalTypeReference
 }
-final object CTReferenceValue extends CTReferenceValue
+case object CTReferenceValue extends CTReferenceValue {
+    override def merge(value: Value): Value = value match {
+        case other: CTReferenceValue ⇒ this
+        case other                   ⇒ NoLegalValue(incompatibleValue(other))
+    }
+}
+case object NullValue extends CTReferenceValue {
 
-final case object NullValue extends CTReferenceValue
+    // TODO [AI] We need some support to consult the domain to decide what we want to do.
+    override def merge(value: Value): Value = value match {
+        case NullValue               ⇒ this
+        case other: CTReferenceValue ⇒ this
+        case other                   ⇒ NoLegalValue(incompatibleValue(other))
+    }
+}
 
-class SomeReferenceTypeValue extends CTReferenceValue with TypedValue {
+trait SomeReferenceTypeValue extends CTReferenceValue with TypedValue {
     def valueType: ReferenceType = ObjectType.Object
 }
-case class AReferenceTypeValue(override val valueType: ReferenceType) extends SomeReferenceTypeValue
+case class AReferenceTypeValue(
+    override val valueType: ReferenceType)
+        extends SomeReferenceTypeValue {
+    // TODO [AI] We need some support to consult the domain to decide what we want to do.
+
+    override def merge(value: Value): Value = value match {
+        // What we do here is extremely simplistic, but this is basically all we can
+        // do when we do not have the class hierarchy available.
+        case AReferenceTypeValue(`valueType`) ⇒ this
+        case other: SomeReferenceTypeValue    ⇒ AReferenceTypeValue(ObjectType.Object)
+        case other: CTReferenceValue          ⇒ CTReferenceValue
+        case other                            ⇒ NoLegalValue(incompatibleValue(other))
+    }
+}
 
 /**
  * Represents a value of type return address.
  *
  * @note The framework completely handles all aspects related to return address values.
  */
-sealed class CTReturnAddressValue extends ComputationalTypeCategory1Value {
+sealed trait CTReturnAddressValue extends ComputationalTypeCategory1Value {
     final def computationalType: ComputationalType = ComputationalTypeReturnAddress
 }
-final case class ReturnAddressValue(address: Int) extends CTReturnAddressValue
+final case class ReturnAddressValue(
+    addresses: Set[Int])
+        extends CTReturnAddressValue {
+
+    override def merge(value: Value): Value = value match {
+        case ReturnAddressValue(otherAddresses) ⇒ {
+            if (otherAddresses subsetOf this.addresses)
+                this
+            else
+                ReturnAddressValue(this.addresses ++ otherAddresses)
+        }
+        case other ⇒ NoLegalValue(incompatibleValue(other))
+    }
+}
+object ReturnAddressValue {
+    def apply(address: Int) = new ReturnAddressValue(Set(address))
+}
 
 /**
  * Abstracts over all values with computational type category `2`.
@@ -172,19 +306,27 @@ final case class ReturnAddressValue(address: Int) extends CTReturnAddressValue
  */
 sealed trait ComputationalTypeCategory2Value extends Value
 
-class SomeLongValue extends ComputationalTypeCategory2Value with TypedValue {
+trait SomeLongValue extends ComputationalTypeCategory2Value with TypedValue {
     final def computationalType: ComputationalType = ComputationalTypeLong
     final def valueType = LongType
 }
+case object SomeLongValue extends SomeLongValue {
+    override def merge(value: Value): Value = value match {
+        case other: SomeLongValue ⇒ this
+        case other                ⇒ NoLegalValue(incompatibleValue(other))
+    }
+}
 
-final object SomeLongValue extends SomeLongValue
-
-class SomeDoubleValue extends ComputationalTypeCategory2Value with TypedValue {
+trait SomeDoubleValue extends ComputationalTypeCategory2Value with TypedValue {
     final def computationalType: ComputationalType = ComputationalTypeDouble
     final def valueType = DoubleType
 }
-final object SomeDoubleValue extends SomeDoubleValue
-
+case object SomeDoubleValue extends SomeDoubleValue {
+    override def merge(value: Value): Value = value match {
+        case other: SomeDoubleValue ⇒ this
+        case other                  ⇒ NoLegalValue(incompatibleValue(other))
+    }
+}
 
 
 

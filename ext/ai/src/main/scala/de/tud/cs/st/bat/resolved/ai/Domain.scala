@@ -36,11 +36,29 @@ package resolved
 package ai
 
 /**
-  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
-  * @author Dennis Siebert
-  */
-trait Domain {
-
+ * A domain contains all information about a program's types and values.
+ *
+ * The AI framework controls the process of evaluating the program, but requires the
+ * domain to perform the actual computations of an operations result. The minimal
+ * information that every domain needs to maintain is the type of a value
+ * (cf. [[de.tud.cs.st.bat.resolved.ai.Value]]).
+ * The framework assumes that every method/code block is associated with its own
+ * domain object.
+ *
+ * ==Thread Safety==
+ * When every method is associated with a unique Domain instance and – given that BAT
+ * only uses one thread to analyze a given method at a time – no special care has to
+ * be taken. However, if a domain needs to consult a domain which is associated with
+ * a Project as a whole (called in BAT "World") it is then the responsibility of the
+ * domain to make sure that everything is thread safe.
+ *
+ * @see [[de.tud.cs.st.bat.resolved.ai.TypeDomain]]
+ *
+ * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * @author Dennis Siebert
+ */
+trait Domain { 
+    
     //
     // CREATE ARRAY
     //
@@ -84,8 +102,8 @@ trait Domain {
     def doubleValue(value: Double): Value
     def stringValue(value: String): Value
     /**
-      * @return A value that represents a runtime value of type "Class<t>"
-      */
+     * @return A value that represents a runtime value of type "Class<t>"
+     */
     def classValue(t: ReferenceType): Value
 
     //
@@ -149,6 +167,7 @@ trait Domain {
     //
     // METHOD INVOCATIONS
     //
+    // TODO [AI] Add support Java7's Invokedynamic to the Domain.
     def invokeinterface(declaringClass: ReferenceType,
                         name: String,
                         methodDescriptor: MethodDescriptor,
@@ -241,7 +260,12 @@ trait Domain {
     //
     // HANDLING CONSTRAINTS
     //
-    def addIsNullConstraint(value: Value, memoryLayout: MemoryLayout): MemoryLayout
-    def addIsNonNullConstraint(value: Value, memoryLayout: MemoryLayout): MemoryLayout
+    def addIsNullConstraint(
+        value: Value,
+        memoryLayout: MemoryLayout): MemoryLayout
+
+    def addIsNonNullConstraint(
+        value: Value,
+        memoryLayout: MemoryLayout): MemoryLayout
 
 }

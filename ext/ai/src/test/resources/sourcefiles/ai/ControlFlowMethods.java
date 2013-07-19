@@ -55,10 +55,10 @@ public class ControlFlowMethods {
     }
 
     public static boolean nonnullComp(Object o) {
-        if (o == null)
-            return false;
-        else
+        if (o != null)
             return true;
+        else
+            return false;
     }
 
 

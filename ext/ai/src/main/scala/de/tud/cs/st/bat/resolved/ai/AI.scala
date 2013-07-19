@@ -36,25 +36,30 @@ package resolved
 package ai
 
 /**
-  * @author Michael Eichberg
-  */
+ * @author Michael Eichberg
+ */
 object AI {
 
     /**
-      * Analyzes the given method using the given domain.
-      *
-      * @param classFile Some class file.
-      * @param method A non-abstract, non-native method of the given class file.
-      * @param domain The abstract domain that is used during the interpretation.
-      * @param someLocals If the values passed to a method are already known, the
-      *     abstract interpretation will be performed under that assumption.
-      * @return The memory layout that was in effect before the execution of each
-      *     instruction while performing the abstract interpretation of the method.
-      */
-    def apply(classFile: ClassFile,
-              method: Method,
-              someLocals: Option[IndexedSeq[Value]] = None)(
-                  implicit domain: Domain): IndexedSeq[MemoryLayout] = {
+     * Analyzes the given method using the given domain.
+     *
+     * @param classFile Some class file; needed to determine the type of `this` if
+     *      the method is an instance method.
+     * @param method A non-abstract, non-native method of the given class file.
+     * @param domain The abstract domain that is used during the interpretation.
+     * @param someLocals If the values passed to a method are already known, the
+     *     abstract interpretation will be performed under that assumption.
+     * @return The memory layout that was in effect before the execution of each
+     *     instruction while performing the abstract interpretation of the method.
+     */
+    def apply(
+        classFile: ClassFile,
+        method: Method,
+        someLocals: Option[IndexedSeq[Value]] = None)(
+            implicit domain: Domain): IndexedSeq[MemoryLayout] = {
+
+        import domain._
+
         val code = method.body.get
         val initialLocals = (
             someLocals.map(l ⇒ {
@@ -78,17 +83,21 @@ object AI {
                 locals
             })
         )
-        apply(code, initialLocals)
+        apply(code, initialLocals)(domain)
     }
 
-    def apply(code: Code,
-              initialLocals: IndexedSeq[Value])(
-                  implicit domain: Domain): Array[MemoryLayout] = {
+    def apply(
+        code: Code,
+        initialLocals: IndexedSeq[Value])(
+            implicit domain: Domain): IndexedSeq[MemoryLayout] = {
+
+        import domain._
 
         val instructions: Array[Instruction] = code.instructions
 
+        // The memory lacout that we associate with each instruction
         val memoryLayouts = new Array[MemoryLayout](instructions.length)
-        memoryLayouts(0) = new MemoryLayout(Nil, initialLocals)
+        memoryLayouts(0) = new MemoryLayout(Nil, initialLocals)(domain)
 
         // true if the instruction with the respective program counter is already transformed
         var worklist: List[Int /*program counter*/ ] = List(0)
@@ -99,8 +108,7 @@ object AI {
             if (memoryLayouts(nextPC) == null) {
                 worklist = nextPC :: worklist
                 memoryLayouts(nextPC) = nextPCMemoryLayout
-            }
-            else {
+            } else {
                 val mergedMemoryLayout = memoryLayouts(nextPC) update nextPCMemoryLayout
                 if (mergedMemoryLayout != memoryLayouts(nextPC)) {
                     worklist = nextPC :: worklist
@@ -108,7 +116,7 @@ object AI {
                 }
             }
         }
-        def gotoTargets(nextPCs: Seq[Int], nextPCMemoryLayout: MemoryLayout) {
+        def gotoTargets(nextPCs: Iterable[Int], nextPCMemoryLayout: MemoryLayout) {
             for (nextPC ← nextPCs) {
                 gotoTarget(nextPC, nextPCMemoryLayout)
             }
@@ -140,7 +148,7 @@ object AI {
                     val lvIndex = instruction.asInstanceOf[RET].lvIndex
                     memoryLayout.locals(lvIndex) match {
                         case ReturnAddressValue(returnAddress) ⇒
-                            gotoTarget(returnAddress, memoryLayout.update(pc, instruction))
+                            gotoTargets(returnAddress, memoryLayout.update(pc, instruction))
                         case _ ⇒
                             CodeError("the local variable ("+
                                 lvIndex+
@@ -225,6 +233,17 @@ object AI {
                         }
                     }
                 }
+
+                case 172 /*ireturn*/
+                    | 173 /*lreturn*/
+                    | 174 /*freturn*/
+                    | 175 /*dreturn*/
+                    | 176 /*areturn*/
+                    | 177 /*return*/ ⇒ memoryLayout.update(pc, instruction)
+
+                case 191 /*athrow*/ ⇒
+                    sys.error("well ... some support is needed")
+
                 case _ ⇒ {
                     val nextPC = pcOfNextInstruction
                     val nextMemoryLayout = memoryLayout.update(pc, instruction)

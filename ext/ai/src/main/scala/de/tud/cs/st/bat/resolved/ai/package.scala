@@ -47,4 +47,16 @@ package resolved
  */
 package object ai {
 
+    /**
+     * Exception that is thrown if the framework identifies an error in the concrete
+     * implementation of a specific domain. I.e., the error is related to an error in
+     * user code.
+     */
+    class AIImplementationError(message: String) extends RuntimeException(message)
+
+    @throws[AIImplementationError]
+    def AIImplementationError(message: String): Nothing = {
+        throw new AIImplementationError(message)
+    }
+       
 }

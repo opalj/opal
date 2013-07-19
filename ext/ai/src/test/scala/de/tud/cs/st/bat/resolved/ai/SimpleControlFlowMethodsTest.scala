@@ -45,13 +45,13 @@ import java.lang.System
 import org.junit.Ignore
 
 /**
- * Basic tests of the abstract interpreter.
+ * Basic tests of the abstract interpreter in the presence of simple control flow
+ * instructions (if).
  *
  * @author Michael Eichberg
  * @author Dennis Siebert
  */
 @RunWith(classOf[JUnitRunner])
-@Ignore
 class SimpleControlFlowMethodsTest
         extends FlatSpec
         with ShouldMatchers {
@@ -68,18 +68,17 @@ class SimpleControlFlowMethodsTest
 
     val classFiles = Java7Framework.ClassFiles(TestSupport.locateTestResources("classfiles/ai.jar", "ext/ai"))
     val classFile = classFiles.map(_._1).find(_.thisClass.className == "ai/ControlFlowMethods").get
-    assert(classFile ne null, "class file not found")
 
-    behavior of "the basic abstract interpreter"
+    behavior of "the abstract interpreter"
 
     //
     // RETURNS
-    it should "be able to analyze a method that does nothing" in {
+    it should "be able to analyze a method that performs a comarision with null" in {
         val domain = new RecordingDomain
         val method = classFile.methods.find(_.name == "nullComp").get
         /*val result =*/ AI(classFile, method)(domain)
 
-        domain.returnedValues should be(List("ireturn", SomeIntegerValue))
+        domain.returnedValues should be(List(("ireturn", SomeIntegerValue), ("ireturn", SomeIntegerValue)))
     }
 
 }

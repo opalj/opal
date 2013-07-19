@@ -36,72 +36,84 @@ package bat
 package resolved
 package ai
 
-//import collection.immutable.Stack
-
 /**
-  * Models the current execution context of a method. I.e., the operand stack as well as
-  * the current values of the registers. The memory layout is automatically maintained by
-  * BAT while analyzing a method. If specific knowledge about a value is required, the
-  * domain is queried to get the necessary information. This callback mechanism enables
-  * the domain to use an arbitrary mechanism to represent values and to steer the
-  * analysis.
-  *
-  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
-  * @author Dennis Siebert
-  */
+ * Models the current execution context of a method. I.e., the operand stack as well as
+ * the current values of the registers. The memory layout is automatically maintained by
+ * BAT while analyzing a method. If specific knowledge about a value is required, the
+ * domain is queried to get the necessary information. This callback mechanism enables
+ * the domain to use an arbitrary mechanism to represent values and to steer the
+ * analysis.
+ *
+ * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * @author Dennis Siebert
+ */
+// TODO [AI] We need some mechanism to bind values to the domain. But, given the dependent method types are not supported for 
 final class MemoryLayout(
         val operands: List[Value], // TODO use Stack
         val locals: IndexedSeq[Value])(
-                implicit domain: Domain) {
+                implicit val domain: Domain) {
 
-    import MemoryLayout._
+    override def toString: String = {
+        "MemoryLayout[(domain="+domain.getClass.getName+")\n"+
+            operands.mkString("\toperands:", ", ", "\n") +
+            locals.zipWithIndex.map(l ⇒ l._2+" -> "+l._1).mkString("\tlocals:\n\t\t", "\n\t\t", "\n")+
+            "]"
+    }
+
+    private type CTC1 = ComputationalTypeCategory1Value
+    private type CTC2 = ComputationalTypeCategory2Value
 
     /**
-      * Updates this memory layout with the given memory layout. Returns this memory layout if this memory
-      * layout already subsumes the given memory layout.
-      */
+     * Updates this memory layout with the given memory layout. Returns this memory
+     * layout if this memory layout already subsumes the given memory layout.
+     */
     def update(other: MemoryLayout): MemoryLayout = {
-        throw new Error("Not yet implemented")
-        //        val maxLocals = this.locals.size
-        //        require(this.operands.size == other.operands.size, "cannot update this memory layout with the given memory layout because the stack size is different (this is in violation of the JVM spec.)")
-        //        require(maxLocals == other.locals.size, "this memory layout and the given memory layout cannot be merged due to different number of local variables (registers)")
-        //
-        //        var thisRemainingOperands = this.operands
-        //        var otherRemainingOperands = other.operands
-        //        var newOperands = List[Value]() // during the update we build the operands stack in reverse order
-        //        var operandsUpdated = false
-        //        while (thisRemainingOperands.nonEmpty /* the number of operands of both memory layouts is equal */ ) {
-        //            val thisOperand = thisRemainingOperands.head
-        //            val otherOperand = otherRemainingOperands.head
-        //            otherRemainingOperands = otherRemainingOperands.tail
-        //            thisRemainingOperands = thisRemainingOperands.tail
-        //
-        //            val newOperand = domain.update(thisOperand, otherOperand)
-        //            newOperands = newOperand :: newOperands
-        //            if (newOperand != thisOperand) operandsUpdated
-        //        }
-        //
-        //        val localsUpdated = false
-        //        
-        //        val newLocals = new Array[Value](maxLocals)
-        //        var i = 0;
-        //        while (i < maxLocals) {
-        //            // TODO Improve this by analyzing the lifeness of the register variables
-        //            // if one of the value
-        //            val thisLocal = this.locals(i)
-        //            val otherLocal = other.locals(i)
-        //            val newLocal = domain.update(thisLocal,otherLocal)
-        //            i += 1
-        //        }
-        //
-        //        // return the "new" memory layout
-        //        if (operandsUpdated || localsUpdated) {
-        //            new MemoryLayout(newOperands.reverse, newLocals)
-        //        }
-        //        else {
-        //            this
-        //        }
+        assume(this.operands.size == other.operands.size, "cannot update this memory layout with the given memory layout because the stack size is different (this is in violation of the JVM spec.)")
+        assume(this.locals.size == other.locals.size, "this memory layout and the given memory layout cannot be merged due to different number of local variables (registers)")
 
+        var thisRemainingOperands = this.operands
+        var otherRemainingOperands = other.operands
+        var newOperands = List[Value]() // during the update we build the operands stack in reverse order
+        var operandsUpdated = false
+        while (thisRemainingOperands.nonEmpty /* the number of operands of both memory layouts is equal */ ) {
+            val thisOperand = thisRemainingOperands.head
+            val otherOperand = otherRemainingOperands.head
+            otherRemainingOperands = otherRemainingOperands.tail
+            thisRemainingOperands = thisRemainingOperands.tail
+
+            val newOperand = thisOperand.merge(otherOperand)
+            assume(!newOperand.isInstanceOf[NoLegalValue], "merging of stack values led to an illegal value")
+            newOperands = newOperand :: newOperands
+            if (newOperand ne thisOperand)
+                operandsUpdated = true
+        }
+
+        var localsUpdated = false
+
+        val maxLocals = locals.size
+        val newLocals = new Array[Value](maxLocals)
+        var i = 0;
+        while (i < maxLocals) {
+            val thisLocal = this.locals(i)
+            val otherLocal = other.locals(i)
+            // The value calculated by "merge" may be the value "NoLegalValue" which means
+            // the values in the corresponding register were different (path dependent)
+            // on the different paths.
+            // If we would have a liveness analysis, we could avoid the use of 
+            // "NoLegalValue"
+            val newLocal = thisLocal merge otherLocal
+            newLocals(i) = newLocal
+            if (newLocal ne thisLocal)
+                localsUpdated = true
+            i += 1
+        }
+
+        // return the "new" memory layout
+        if (operandsUpdated || localsUpdated) {
+            new MemoryLayout(newOperands.reverse, newLocals)
+        } else {
+            this
+        }
     }
 
     def update(currentPC: Int, instruction: Instruction): MemoryLayout = {
@@ -421,6 +433,11 @@ final class MemoryLayout(
                 domain.returnVoid()
                 new MemoryLayout(List.empty, IndexedSeq.empty)
             }
+            
+            //
+            // THROWING EXCEPTION
+            //
+            
             case 191 /*athrow*/ ⇒
                 new MemoryLayout(List(domain.athrow(operands.head)), locals)
 
@@ -816,15 +833,12 @@ final class MemoryLayout(
 
 object MemoryLayout {
 
-    private type CTC1 = ComputationalTypeCategory1Value
-
-    private type CTC2 = ComputationalTypeCategory2Value
-
     /**
-      * @note If you use this method to copy values from the stack into local variables, make
-      * sure that you first reverse the order of operands.
-      */
-    def mapToLocals(params: List[Value], locals: IndexedSeq[Value]): IndexedSeq[Value] = {
+     * ==Note==
+     * If you use this method to copy values from the stack into local variables, make
+     * sure that you first reverse the order of operands.
+     */
+    def mapToLocals[V <: Value](params: List[V], locals: IndexedSeq[V]): IndexedSeq[V] = {
         var index = 0
         var initializedLocals = locals
         for (param ← params) {
