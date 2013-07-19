@@ -423,9 +423,10 @@ object ObjectType {
     final val RuntimeException = ObjectType("java/lang/RuntimeException")
     final val IndexOutOfBoundsException = ObjectType("java/lang/IndexOutOfBoundsException")
 
-    // Exceptions and errors that may be throw by the JVM (i.e., instances of these exceptions may be 
-    // created at runtime by the JVM)
+    // Exceptions and errors that may be throw by the JVM (i.e., instances of these 
+    // exceptions may be created at runtime by the JVM)
     final val ExceptionInInitializerError = ObjectType("java/lang/ExceptionInInitializerError")
+    final val BootstrapMethodError = ObjectType("java/lang/BootstrapMethodError")
 
     final val NullPointerException = ObjectType("java/lang/NullPointerException")
     final val ArrayIndexOutOfBoundsException = ObjectType("java/lang/ArrayIndexOutOfBoundsException")

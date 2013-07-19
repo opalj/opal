@@ -36,7 +36,7 @@ package resolved
 
 case object UNRESOLVED_INVOKEDYNAMIC extends MethodInvocationInstruction {
 
-    private def error = BATError("invokedynamic instruction was not correctly resolved")
+    private def error = BATError("this invokedynamic instruction was not correctly resolved")
 
     def opcode: Int = error
 
@@ -65,6 +65,14 @@ case class INVOKEDYNAMIC(
 
     def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 5
 
-    def runtimeExceptions: List[ObjectType] = Nil /* never throws a "NullPointerException"... */
+    def runtimeExceptions: List[ObjectType] = INVOKEDYNAMIC.runtimeExceptions
 
 }
+
+object INVOKEDYNAMIC {
+    
+    val runtimeExceptions = List(ObjectType.BootstrapMethodError)
+    
+}
+
+
