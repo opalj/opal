@@ -93,6 +93,7 @@ case class FieldIdentifier(
     declaringObjectType: ObjectType,
     fieldName: String)
         extends StructureIdentifier {
+    
     def toHRR = declaringObjectType.toJava+"."+fieldName
 
     def declaringPackage = Some(declaringObjectType.packageName)

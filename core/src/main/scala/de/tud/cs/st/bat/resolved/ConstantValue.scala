@@ -151,7 +151,10 @@ case class ConstantString(value: String) extends ConstantValue[String] {
 
 }
 
-// ConstantClass is used by anewarray and multianewarray
+/**
+ *
+ * ConstantClass is, e.g., used by `anewarray` and `multianewarray` instructions.
+ */
 case class ConstantClass(value: ReferenceType) extends ConstantValue[ReferenceType] {
 
     override def toClass = value

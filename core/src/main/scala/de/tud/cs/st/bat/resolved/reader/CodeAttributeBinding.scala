@@ -37,10 +37,10 @@ package reader
 
 import reflect.ClassTag
 
-import de.tud.cs.st.bat.reader.Code_attributeReader
+import bat.reader.Code_attributeReader
 
 /**
- *
+ * Binding for the code attribute.
  *
  * @author Michael Eichberg
  */
@@ -52,6 +52,7 @@ trait CodeAttributeBinding
 
     type ExceptionTableEntry = de.tud.cs.st.bat.resolved.ExceptionHandler
     val ExceptionTableEntryManifest: ClassTag[ExceptionTableEntry] = implicitly
+
     type Code_attribute = de.tud.cs.st.bat.resolved.Code
 
     def Code_attribute(attribute_name_index: Constant_Pool_Index,
