@@ -46,7 +46,9 @@ case class BootstrapMethodTable(methods: BootstrapMethods) extends Attribute
  *
  * @author Michael Eichberg
  */
-case class BootstrapMethod(methodHandle: MethodHandle, bootstrapArguments: BootstrapArguments)
+case class BootstrapMethod(
+    methodHandle: MethodHandle,
+    bootstrapArguments: BootstrapArguments)
 
 /**
  * A marker trait to identify those constant pool values that can be arguments of boot strap methods.
