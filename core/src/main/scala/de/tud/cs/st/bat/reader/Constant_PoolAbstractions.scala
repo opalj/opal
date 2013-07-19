@@ -63,7 +63,7 @@ trait Constant_PoolAbstractions {
      * only place where to store information/functions related to a specific class file).
      *
      */
-    protected[bat] type DeferredActionsStore = collection.mutable.Buffer[ClassFile ⇒ ClassFile] with Constant_Pool_Entry
+    protected[bat]type DeferredActionsStore = collection.mutable.Buffer[ClassFile ⇒ ClassFile] with Constant_Pool_Entry
 
     /**
      * This method is called/needs to be called after the class file was completely
