@@ -86,12 +86,6 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
     protected def CONSTANT_MethodType_info(descriptor_index: Int): CONSTANT_MethodType_info
     protected def CONSTANT_InvokeDynamic_info(bootstrap_method_attr_index: Int, name_and_type_index: Int): CONSTANT_InvokeDynamic_info
 
-    // The following type definitions is required to be able to register functions
-    // that want to perform post load actions. E.g., to resolve references to attributes.
-    // (The constant pool is the only structure is passed around and hence it is the
-    // only place where to store information/functions related to a specific class file).
-    protected type DeferredActionsStore = collection.mutable.Buffer[ClassFile ⇒ ClassFile] with Constant_Pool_Entry
-
     /**
      * Creates a storage area for functions that will be called after the class file was
      * completely loaded. This makes it possible to register functions that are newly
@@ -99,24 +93,26 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
      * class file object. For further information study the resolving process for
      * `invokedynamic`.
      */
-    protected def StorageForDeferredActions(): DeferredActionsStore
+    protected[bat] def createDeferredActionsStore(): DeferredActionsStore
 
     //
     // IMPLEMENTATION
     //
 
-    def registerDeferredAction(da: ClassFile ⇒ ClassFile)(implicit cp: Constant_Pool) {
+    protected[bat] def registerDeferredAction(da: ClassFile ⇒ ClassFile)(implicit cp: Constant_Pool) {
         val store = cp(0).asInstanceOf[DeferredActionsStore]
         store.synchronized {
             store += da
         }
     }
 
-    def applyDeferredActions(classFile: ClassFile, cp: Constant_Pool): ClassFile = {
+    protected[bat] def applyDeferredActions(classFile: ClassFile, cp: Constant_Pool): ClassFile = {
         var transformedClassFile = classFile
-        cp(0).asInstanceOf[DeferredActionsStore].foreach(da ⇒ {
+        val das = cp(0).asInstanceOf[DeferredActionsStore]
+        das.foreach(da ⇒ {
             transformedClassFile = da(transformedClassFile)
         })
+        das.clear
         transformedClassFile
     }
 
@@ -148,7 +144,7 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
          */
         val constant_pool_entries = new Array[Constant_Pool_Entry](constant_pool_count)
 
-        constant_pool_entries(0) = StorageForDeferredActions()
+        constant_pool_entries(0) = createDeferredActionsStore()
 
         var i = 1
         while (i < constant_pool_count) {
