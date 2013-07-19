@@ -67,9 +67,15 @@ package object bat {
           |The underlying problem is:
           |""".stripMargin('|')
 
-    @throws[RuntimeException]
+    /**
+     * Exception that is thrown if some error is detected that is most likely the
+     * result of a bug in BAT (or an invalid class file).
+     */
+    class BATError(message: String) extends RuntimeException(message)
+
+    @throws[BATError]
     final def BATError(message: String) =
-        throw new RuntimeException(generalBATErrorMessage + message)
+        throw new BATError(generalBATErrorMessage + message)
 
     //
     // Common matchers for access flags
