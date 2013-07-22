@@ -43,6 +43,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.matchers.ShouldMatchers
 import java.lang.System
 import org.junit.Ignore
+import org.scalatest.ParallelTestExecution
 
 /**
  * Basic tests of the abstract interpreter in the presence of simple control flow
@@ -52,9 +53,10 @@ import org.junit.Ignore
  * @author Dennis Siebert
  */
 @RunWith(classOf[JUnitRunner])
-class SimpleControlFlowMethodsTest
+class MethodsWithBranchesTest
         extends FlatSpec
-        with ShouldMatchers {
+        with ShouldMatchers
+        with ParallelTestExecution {
 
     import util.Util.dumpOnFailure
 
@@ -76,7 +78,7 @@ class SimpleControlFlowMethodsTest
     }
 
     val classFiles = Java7Framework.ClassFiles(TestSupport.locateTestResources("classfiles/ai.jar", "ext/ai"))
-    val classFile = classFiles.map(_._1).find(_.thisClass.className == "ai/ControlFlowMethods").get
+    val classFile = classFiles.map(_._1).find(_.thisClass.className == "ai/MethodsWithBranches").get
 
     private def evaluateMethod(name: String, f: RecordingDomain ⇒ Unit) {
         val domain = new RecordingDomain; import domain._

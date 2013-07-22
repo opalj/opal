@@ -45,7 +45,7 @@ import java.lang.reflect.Array;
  * @author Dennis Siebert
  */
 @SuppressWarnings("all")
-public class SimpleMethods {
+public class MethodsPlain {
 
     //
     // RETURNS
@@ -197,7 +197,7 @@ public class SimpleMethods {
     public static double dRem(double i, double j) {
         return i % j;
     }
-    
+
     public static double square(double i) {
         return i * i;
     }
@@ -312,20 +312,19 @@ public class SimpleMethods {
 
     //
     // TYPE CHECKS
-    public static SimpleMethods asSimpleMethods(Object o) {
-        return (SimpleMethods) o; // this is deliberately not (type) safe
+    public static MethodsPlain asSimpleMethods(Object o) {
+        return (MethodsPlain) o; // this is deliberately not (type) safe
     }
 
     public static boolean asSimpleMethodsInstance(Object o) {
-        return o instanceof SimpleMethods; // this is deliberately not (type) safe
+        return o instanceof MethodsPlain; // this is deliberately not (type) safe
     }
 
     //
     // TYPE CONVERSIONS
-   public static double twice(double i) {
+    public static double twice(double i) {
         return 2 * i;
     }
-
 
     public static String objectToString(Object o) {
         return o.toString();
@@ -348,7 +347,7 @@ public class SimpleMethods {
     private static float sValue;
 
     public void setSValue(float value) {
-        SimpleMethods.sValue = value;
+        MethodsPlain.sValue = value;
     }
 
     public float getSValue() {
@@ -422,14 +421,13 @@ public class SimpleMethods {
     }
 
     // ALOAD 1-5 & ASTORE 1-5
-    public SimpleMethods localSimpleMethod() {
-        SimpleMethods simpleMethods1 = new SimpleMethods();
-        SimpleMethods simpleMethods2 = simpleMethods1;
-        SimpleMethods simpleMethods3 = simpleMethods2;
-        SimpleMethods simpleMethods4 = simpleMethods3;
-        SimpleMethods simpleMethods5 = simpleMethods4;
+    public MethodsPlain localSimpleMethod() {
+        MethodsPlain simpleMethods1 = new MethodsPlain();
+        MethodsPlain simpleMethods2 = simpleMethods1;
+        MethodsPlain simpleMethods3 = simpleMethods2;
+        MethodsPlain simpleMethods4 = simpleMethods3;
+        MethodsPlain simpleMethods5 = simpleMethods4;
         return simpleMethods5;
-
     }
 
     //
@@ -544,13 +542,13 @@ public class SimpleMethods {
         return ls;
     }
 
-    public SimpleMethods[] createNewSimpleMethodsArray() {
-        SimpleMethods[] ls = new SimpleMethods[1];
+    public MethodsPlain[] createNewSimpleMethodsArray() {
+        MethodsPlain[] ls = new MethodsPlain[1];
         return ls;
     }
 
-    public SimpleMethods[][] createNewMultiSimpleMethodsArray() {
-        SimpleMethods[][] ls = new SimpleMethods[1][2];
+    public MethodsPlain[][] createNewMultiSimpleMethodsArray() {
+        MethodsPlain[][] ls = new MethodsPlain[1][2];
         return ls;
     }
 
@@ -564,8 +562,8 @@ public class SimpleMethods {
     // LOAD FROM AND STORE VALUE IN ARRAYS
     //
 
-    public static SimpleMethods objectArray(SimpleMethods[] simpleMethods) {
-        simpleMethods[0] = new SimpleMethods();
+    public static MethodsPlain objectArray(MethodsPlain[] simpleMethods) {
+        simpleMethods[0] = new MethodsPlain();
         return simpleMethods[0];
     }
 

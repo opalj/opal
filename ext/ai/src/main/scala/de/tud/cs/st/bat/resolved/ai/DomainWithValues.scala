@@ -45,23 +45,6 @@ import reflect.ClassTag
  */
 trait DomainWithValues extends Domain {
 
-    protected class NoLegalValue(
-        val initialReason: String)
-            extends super[Domain].NoLegalValue {
-        this: DomainValue ⇒
-
-        override def computationalType: ComputationalType =
-            BATError(
-                "the value \"NoLegalValue\" does not have a computational type "+
-                    "(underlying initial reason:"+initialReason+")")
-
-    }
-    object NoLegalValue {
-        def unapply(value: NoLegalValue): Option[String] = Some(value.initialReason)
-    }
-    type DomainNoLegalValue <: NoLegalValue with DomainValue
-    def NoLegalValue(initialReason: String): DomainNoLegalValue
-
     /**
      * Trait that is mixed in by values for which we have more precise type information,
      * but no/limited concrete value information.
@@ -198,11 +181,11 @@ trait DomainWithValues extends Domain {
         Unknown
     }
 
-    def isLess(smallerValue: DomainValue, largerValue: DomainValue): Answer = {
+    def isLessThan(smallerValue: DomainValue, largerValue: DomainValue): Answer = {
         Unknown
     }
 
-    def isLessOrEqual(smallerOrEqualValue: DomainValue, equalOrLargerValue: DomainValue): Answer = {
+    def isLessThanOrEqualTo(smallerOrEqualValue: DomainValue, equalOrLargerValue: DomainValue): Answer = {
         Unknown
     }
 

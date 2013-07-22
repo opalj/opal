@@ -116,13 +116,22 @@ sealed abstract class UpdateType {
      * the given value.
      */
     def apply[V](value: ⇒ V): Update[V]
+
+    def &:(updateType: UpdateType): UpdateType
 }
 case object NoUpdateType extends UpdateType {
     def apply[V](value: ⇒ V): Update[V] = NoUpdate
+    def &:(updateType: UpdateType): UpdateType = updateType
 }
 case object MetaInformationUpdateType extends UpdateType {
     def apply[V](value: ⇒ V): Update[V] = MetaInformationUpdate(value)
+    def &:(updateType: UpdateType): UpdateType =
+        if (updateType == StructuralUpdateType)
+            StructuralUpdateType
+        else
+            this
 }
 case object StructuralUpdateType extends UpdateType {
     def apply[V](value: ⇒ V): Update[V] = StructuralUpdate(value)
+    def &:(updateType: UpdateType): UpdateType = StructuralUpdateType
 }

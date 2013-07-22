@@ -171,15 +171,22 @@ trait Domain {
      * live) and, hence, are actually allowed to contain incompatible values.
      * (`Not live` means that the value will not be used in the future.)
      */
-    trait NoLegalValue extends Value { this: DomainValue ⇒
+    class NoLegalValue(val initialReason: String) extends Value { this: DomainValue ⇒
 
         def computationalType: ComputationalType =
-            BATError("a value that is not legal does not have a computational type ")
+            BATError(
+                "the value \"NoLegalValue\" does not have a computational type "+
+                    "(underlying initial reason:"+initialReason+")")
 
         final def merge(value: DomainValue): Update[DomainValue] = NoUpdate
 
         override def toString = "NoLegalValue"
     }
+    object NoLegalValue {
+        def unapply(value: NoLegalValue): Option[String] = Some(value.initialReason)
+    }
+    type DomainNoLegalValue <: NoLegalValue with DomainValue
+    def NoLegalValue(initialReason: String): DomainNoLegalValue
 
     /**
      * Represents a set of concrete values that store return addresses (i.e., a program
@@ -232,26 +239,39 @@ trait Domain {
     //
     // QUESTION'S ABOUT VALUES
     //
-    def isNull(value: DomainValue): Answer
+    /*ABSTRACT*/ def isNull(value: DomainValue): Answer
+
     def isNonNull(value: DomainValue): Answer = isNull(value).negate
 
     /**
      * Are equal compares the values represented by the given values. If the values
      * are representing "ReferenceType" values - the object reference needs to be compared.
      */
-    def areEqual(value1: DomainValue, value2: DomainValue): Answer
+    /*ABSTRACT*/ def areEqual(value1: DomainValue, value2: DomainValue): Answer
+
     def areNotEqual(value1: DomainValue, value2: DomainValue): Answer = areEqual(value1, value2).negate
 
-    def isLess(smallerValue: DomainValue, largerValue: DomainValue): Answer
-    def isLessOrEqual(smallerOrEqualValue: DomainValue, equalOrLargerValue: DomainValue): Answer
-    def isGreater(largerValue: DomainValue, smallerValue: DomainValue): Answer = isLess(smallerValue, largerValue)
-    def isGreaterOrEqual(largerValue: DomainValue, smallerValue: DomainValue): Answer = isLessOrEqual(smallerValue, largerValue)
+    /*ABSTRACT*/ def isLessThan(smallerValue: DomainValue, largerValue: DomainValue): Answer
+
+    /*ABSTRACT*/ def isLessThanOrEqualTo(smallerOrEqualValue: DomainValue, equalOrLargerValue: DomainValue): Answer
+
+    def isGreaterThan(largerValue: DomainValue, smallerValue: DomainValue): Answer =
+        isLessThan(smallerValue, largerValue)
+
+    def isGreaterThanOrEqualTo(largerValue: DomainValue, smallerValue: DomainValue): Answer =
+        isLessThanOrEqualTo(smallerValue, largerValue)
 
     def is0(value: DomainValue): Answer = areEqual(value, IntegerConstant0)
+
     def isNot0(value: DomainValue): Answer = areNotEqual(value, IntegerConstant0)
-    def isLessThan0(value: DomainValue): Answer = isLess(value, IntegerConstant0)
-    def isGreaterThan0(value: DomainValue): Answer = isLess(IntegerConstant0, value)
-    def isGreaterOrEqual0(value: DomainValue): Answer = isLessOrEqual(value, IntegerConstant0)
+
+    def isLessThan0(value: DomainValue): Answer = isLessThan(value, IntegerConstant0)
+
+    def isLessThanOrEqualTo0(value: DomainValue): Answer = isLessThanOrEqualTo(value, IntegerConstant0)
+
+    def isGreaterThan0(value: DomainValue): Answer = isGreaterThan(value, IntegerConstant0)
+
+    def isGreaterThanOrEqualTo0(value: DomainValue): Answer = isGreaterThanOrEqualTo(value, IntegerConstant0)
 
     //
     // HANDLING CONSTRAINTS
@@ -263,12 +283,19 @@ trait Domain {
     sealed trait ValueConstraint {
         // Nothing (yet)
     }
-    case class IsNull(val value: DomainValue) extends ValueConstraint
+    case class IsNull(value: DomainValue) extends ValueConstraint
     case class IsNonNull(value: DomainValue) extends ValueConstraint
     case class AreEqual(value1: DomainValue, value2: DomainValue) extends ValueConstraint
     case class AreNotEqual(value1: DomainValue, value2: DomainValue) extends ValueConstraint
-    case class IsLess(smallerValue: DomainValue, largerValue: DomainValue) extends ValueConstraint
-    case class IsLessOrEqual(smallerOrEqualValue: DomainValue, equalOrLargerValue: DomainValue) extends ValueConstraint
+    case class IsLessThan(smallerValue: DomainValue, largerValue: DomainValue) extends ValueConstraint
+    case class IsLessThanOrEqualTo(smallerOrEqualValue: DomainValue, equalOrLargerValue: DomainValue) extends ValueConstraint
+
+    val Is0 = (value: DomainValue) ⇒ AreEqual(value, IntegerConstant0)
+    val IsNot0 = (value: DomainValue) ⇒ AreNotEqual(value, IntegerConstant0)
+    val IsLessThan0 = (value: DomainValue) ⇒ IsLessThan(value, IntegerConstant0)
+    val IsLessThanOrEqualTo0 = (value: DomainValue) ⇒ IsLessThanOrEqualTo(value, IntegerConstant0)
+    val IsGreaterThan0 = (value: DomainValue) ⇒ IsLessThan(IntegerConstant0, value)
+    val IsGreaterThanOrEqualTo0 = (value: DomainValue) ⇒ IsLessThanOrEqualTo(IntegerConstant0, value)
 
     /**
      * The AI framework determined that some constraint applies to a value at a

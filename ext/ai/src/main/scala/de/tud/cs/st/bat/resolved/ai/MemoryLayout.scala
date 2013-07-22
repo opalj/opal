@@ -89,7 +89,7 @@ object MemoryLayout {
 
         import domain.DomainValueTag
 
-        var updateType : UpdateType = NoUpdateType
+        var updateType: UpdateType = NoUpdateType
 
         var thisRemainingOperands = thisOperands
         var otherRemainingOperands = otherOperands
@@ -106,7 +106,7 @@ object MemoryLayout {
                 case SomeUpdate(operand) ⇒ operand
                 case NoUpdate            ⇒ thisOperand
             }
-            assume(!newOperand.isInstanceOf[domain.NoLegalValue], "merging of stack values led to an illegal value")
+            assume(!newOperand.isInstanceOf[Domain#NoLegalValue], "merging of stack values ("+thisOperand+" and "+otherOperand+") led to an illegal value")
             updateType = updateType &: updatedOperand
             newOperands = newOperand :: newOperands
         }
@@ -123,16 +123,23 @@ object MemoryLayout {
             // on the different paths.
             // If we would have a liveness analysis, we could avoid the use of 
             // "NoLegalValue"
-            val updatedLocal = thisLocal merge otherLocal
-            val newLocal = updatedLocal match {
-                case SomeUpdate(operand) => operand
-                case NoUpdate           => thisLocal
-            }
-            updateType = updateType &: updatedLocal
+            val newLocal =
+                if ((thisLocal eq null) || (otherLocal eq null)) {
+                    updateType = updateType &: MetaInformationUpdateType
+                    domain.NoLegalValue("a register/local did not contain any value")
+                } else {
+                    val updatedLocal = thisLocal merge otherLocal
+                    updateType = updateType &: updatedLocal
+                    updatedLocal match {
+                        case SomeUpdate(operand) ⇒ operand
+                        case NoUpdate            ⇒ thisLocal
+                    }
+
+                }
             newLocals(i) = newLocal
             i += 1
         }
-        
+
         updateType(new MemoryLayout(domain, newOperands.reverse, newLocals))
     }
 
@@ -386,23 +393,23 @@ object MemoryLayout {
                     case LoadFloat(v)  ⇒ MemoryLayout(domain.floatValue(v) :: operands, locals)
                     case LoadString(v) ⇒ MemoryLayout(domain.stringValue(v) :: operands, locals)
                     case LoadClass(v)  ⇒ MemoryLayout(domain.classValue(v) :: operands, locals)
-                    case _             ⇒ sys.error("internal implementation error or invalid bytecode")
+                    case _             ⇒ BATError("internal implementation error or invalid bytecode")
                 }
             }
             case 19 /*ldc_w*/ ⇒ {
                 instruction match {
-                    case LoadInt(v)    ⇒ MemoryLayout(domain.intValue(v) :: operands, locals)
-                    case LoadFloat(v)  ⇒ MemoryLayout(domain.floatValue(v) :: operands, locals)
-                    case LoadString(v) ⇒ MemoryLayout(domain.stringValue(v) :: operands, locals)
-                    case LoadClass(v)  ⇒ MemoryLayout(domain.classValue(v) :: operands, locals)
-                    case _             ⇒ sys.error("internal implementation error or invalid bytecode")
+                    case LoadInt_W(v)    ⇒ MemoryLayout(domain.intValue(v) :: operands, locals)
+                    case LoadFloat_W(v)  ⇒ MemoryLayout(domain.floatValue(v) :: operands, locals)
+                    case LoadString_W(v) ⇒ MemoryLayout(domain.stringValue(v) :: operands, locals)
+                    case LoadClass_W(v)  ⇒ MemoryLayout(domain.classValue(v) :: operands, locals)
+                    case _               ⇒ BATError("internal implementation error or invalid bytecode")
                 }
             }
             case 20 /*ldc2_w*/ ⇒ {
                 instruction match {
                     case LoadLong(v)   ⇒ MemoryLayout(domain.longValue(v) :: operands, locals)
                     case LoadDouble(v) ⇒ MemoryLayout(domain.doubleValue(v) :: operands, locals)
-                    case _             ⇒ sys.error("internal implementation error or invalid bytecode")
+                    case _             ⇒ BATError("internal implementation error or invalid bytecode")
                 }
             }
 

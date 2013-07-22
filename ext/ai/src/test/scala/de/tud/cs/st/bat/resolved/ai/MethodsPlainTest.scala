@@ -36,12 +36,12 @@ package resolved
 package ai
 
 import reader.Java7Framework.ClassFiles
-
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.ParallelTestExecution
 
 /**
  * Basic tests of the abstract interpreter.
@@ -50,9 +50,10 @@ import org.scalatest.matchers.ShouldMatchers
  * @author Dennis Siebert
  */
 @RunWith(classOf[JUnitRunner])
-class SimpleMethodsTest
+class MethodsPlainTest
         extends FlatSpec
-        with ShouldMatchers /*with BeforeAndAfterAll */ {
+        with ShouldMatchers /*with BeforeAndAfterAll */
+        with ParallelTestExecution {
 
     import util.Util.dumpOnFailure
 
@@ -68,7 +69,7 @@ class SimpleMethodsTest
 
     val classFile =
         ClassFiles(TestSupport.locateTestResources("classfiles/ai.jar", "ext/ai")).map(_._1).
-            find(_.thisClass.className == "ai/SimpleMethods").get
+            find(_.thisClass.className == "ai/MethodsPlain").get
 
     behavior of "the abstract interpreter"
 
@@ -552,7 +553,7 @@ class SimpleMethodsTest
         val method = classFile.methods.find(_.name == "asSimpleMethods").get
         /*val result =*/ AI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(TypedValue(ObjectType("ai/SimpleMethods"))))
+        domain.returnedValue should be(Some(TypedValue(ObjectType("ai/MethodsPlain"))))
     }
 
     it should "be able to correctly handle an instance of" in {
@@ -654,7 +655,7 @@ class SimpleMethodsTest
         val method = classFile.methods.find(_.name == "localSimpleMethod").get
         /*val result =*/ AI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(ReferenceValue(ObjectType("ai/SimpleMethods"))))
+        domain.returnedValue should be(Some(ReferenceValue(ObjectType("ai/MethodsPlain"))))
     }
 
     //
@@ -844,7 +845,7 @@ class SimpleMethodsTest
         val method = classFile.methods.find(_.name == "createNewSimpleMethodsArray").get
         /*val result =*/ AI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(ReferenceValue(ArrayType(ObjectType("ai/SimpleMethods")))))
+        domain.returnedValue should be(Some(ReferenceValue(ArrayType(ObjectType("ai/MethodsPlain")))))
     }
 
     it should "be able to analyze a new multidimensional Object array" in {
@@ -852,7 +853,7 @@ class SimpleMethodsTest
         val method = classFile.methods.find(_.name == "createNewMultiSimpleMethodsArray").get
         /*val result =*/ AI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(ReferenceValue(ArrayType(ArrayType(ObjectType("ai/SimpleMethods"))))))
+        domain.returnedValue should be(Some(ReferenceValue(ArrayType(ArrayType(ObjectType("ai/MethodsPlain"))))))
     }
 
     //
@@ -863,7 +864,7 @@ class SimpleMethodsTest
         val result = AI(classFile, method, domain)
 
         dumpOnFailure(Some(classFile), Some(method), method.body.get, result) {
-            domain.returnedValue should be(Some(ReferenceValue(ObjectType("ai/SimpleMethods"))))
+            domain.returnedValue should be(Some(ReferenceValue(ObjectType("ai/MethodsPlain"))))
         }
     }
 

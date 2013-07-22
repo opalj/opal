@@ -100,6 +100,7 @@ object AI {
             initialLocals: IndexedSeq[domain.DomainValue]): IndexedSeq[domain.DomainMemoryLayout] = { // TODO [AI Performance] Figure out if it is worth using an Array instead of an IndexedSeq
 
         assume(code.maxLocals == initialLocals.size, "code.maxLocals and initialLocals.size differ")
+        val currentThread = Thread.currentThread()
 
         import domain._
 
@@ -190,7 +191,9 @@ object AI {
                 {
                     val thisML = memoryLayouts(nextPC)
                     val nextML = nextPCMemoryLayout
-                    MemoryLayout.merge(domain)(thisML.operands, thisML.locals, nextML.operands, nextML.locals)
+                    MemoryLayout.merge(domain)(
+                        thisML.operands, thisML.locals,
+                        nextML.operands, nextML.locals)
                 } match {
                     case NoUpdate ⇒ /* Nothing to do */
                     case StructuralUpdate(memoryLayout) ⇒ {
@@ -209,7 +212,14 @@ object AI {
             }
         }
 
+        var interpretedInstructions = -1;
         while (worklist.nonEmpty) {
+            interpretedInstructions += 1;
+            if (currentThread.isInterrupted()) {
+                /*DEBUG ONLY*/ util.Util.writeAndOpenDump(util.Util.dump(None, None, code, memoryLayouts, Some("\n\n\nEvaluation after "+interpretedInstructions+" interpretations aborted (Worklist: "+worklist.mkString(", ")+")")))
+                throw new RuntimeException("the abstract interpreter was interrupted after interpreating "+interpretedInstructions+" instructions")
+            }
+
             val pc = worklist.head
             worklist = worklist.tail
             val instruction = instructions(pc)
@@ -273,12 +283,30 @@ object AI {
                 //               | 162 /*if_icmpge*/
                 //               | 163 /*if_icmpgt*/
                 //               | 164 /*if_icmple*/ ⇒ new MemoryLayout(operands.drop(2), locals)
-                //            case 153 /*ifeq*/
-                //               | 154 /*ifne*/
-                //               | 155 /*iflt*/
-                //               | 156 /*ifge*/
-                //               | 157 /*ifgt*/
-                //               | 158 /*ifle */
+                case 153 /*ifeq*/ ⇒
+                    comparisonWithFixedValue(
+                        memoryLayout, pc, instruction,
+                        domain.is0 _,
+                        pc + instruction.asInstanceOf[ConditionalBranchInstruction].branchoffset, domain.Is0,
+                        pcOfNextInstruction, domain.IsNot0)
+
+                case 154 /*ifne*/ ⇒
+                    comparisonWithFixedValue(
+                        memoryLayout, pc, instruction,
+                        domain.isNot0 _,
+                        pc + instruction.asInstanceOf[ConditionalBranchInstruction].branchoffset, domain.IsNot0,
+                        pcOfNextInstruction, domain.Is0)
+
+                case 155 /*iflt*/ ⇒
+                case 156 /*ifge*/ ⇒
+                case 157 /*ifgt*/ ⇒
+                case 158 /*ifle */ ⇒
+                    comparisonWithFixedValue(
+                        memoryLayout, pc, instruction,
+                        domain.isLessThanOrEqualTo0 _,
+                        pc + instruction.asInstanceOf[ConditionalBranchInstruction].branchoffset, domain.IsLessThanOrEqualTo0,
+                        pcOfNextInstruction, domain.IsGreaterThan0)
+
                 case 198 /*ifnull*/ ⇒
                     comparisonWithFixedValue(
                         memoryLayout, pc, instruction,
