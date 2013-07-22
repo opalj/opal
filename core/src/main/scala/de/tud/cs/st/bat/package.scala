@@ -74,7 +74,7 @@ package object bat {
     class BATError(message: String) extends RuntimeException(message)
 
     @throws[BATError]
-    final def BATError(message: String) =
+    final def BATError(message: String) : Nothing =
         throw new BATError(generalBATErrorMessage + message)
 
     //
