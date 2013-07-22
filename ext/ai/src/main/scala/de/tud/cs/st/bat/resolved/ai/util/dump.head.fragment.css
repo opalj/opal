@@ -1,0 +1,32 @@
+
+table {
+	width:100%;
+	min-width: 1000px;
+	font-size: 0.9em;
+	font-family: HelveticaNeue;
+	margin-top: 3em;
+	border: 1px solid gray;
+}
+thead {
+	font-weight: bold;
+	color: white;
+	background-color: gray;
+}
+caption{
+	font-weight: light;
+	font-size: 1.1em;
+	border: 1px solid gray;
+	padding: 0.2em;
+	margin: 0;
+	background-color: gray;
+	color : white;
+}
+th{
+	vertical-align: top;
+}
+td{
+	vertical-align: top;
+}
+tr.not_evaluated td {
+	background-color: #FFDBDB;
+}

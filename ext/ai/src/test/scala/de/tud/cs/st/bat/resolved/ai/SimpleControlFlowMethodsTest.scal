@@ -85,8 +85,8 @@ class SimpleControlFlowMethodsTest
     it should "be able to analyze a method that performs a comparison with notnull" in {
         val domain = new RecordingDomain
         val method = classFile.methods.find(_.name == "nonnullComp").get
-        /*val result =*/ AI(classFile, method)(domain)
-
+        val result = AI(classFile, method)(domain)
+        
         domain.returnedValues should be(
             List(("ireturn", SomeIntegerValue), ("ireturn", SomeIntegerValue)))
     }
@@ -94,7 +94,10 @@ class SimpleControlFlowMethodsTest
     it should "be able to analyze methods that perform multiple comparisons" in {
         val domain = new RecordingDomain
         val method = classFile.methods.find(_.name == "multipleComp").get
-        /*val result =*/ AI(classFile, method)(domain)
+        val result = AI(classFile, method)(domain)
+
+        val dump = util.Util.dump(Some(classFile), Some(method), method.body.get, result)
+        util.Util.writeAndOpenDump(dump)//.map(_.deleteOnExit)
 
         domain.returnedValues should be(
             List(("ireturn", SomeIntegerValue),

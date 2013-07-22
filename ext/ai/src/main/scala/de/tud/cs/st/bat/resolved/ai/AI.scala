@@ -35,28 +35,38 @@ package bat
 package resolved
 package ai
 
+import scala.xml.Node
+
 /**
  * @author Michael Eichberg
  */
 object AI {
 
-    /**
-     * Analyzes the given method using the given domain.
-     *
-     * @param classFile Some class file; needed to determine the type of `this` if
-     *      the method is an instance method.
-     * @param method A non-abstract, non-native method of the given class file.
-     * @param domain The abstract domain that is used during the interpretation.
-     * @param someLocals If the values passed to a method are already known, the
-     *     abstract interpretation will be performed under that assumption.
-     * @return The memory layout that was in effect before the execution of each
-     *     instruction while performing the abstract interpretation of the method.
-     */
     def apply(
         classFile: ClassFile,
         method: Method,
-        someLocals: Option[IndexedSeq[Value]] = None)(
-            implicit domain: Domain): IndexedSeq[MemoryLayout] = {
+        domain: Domain) = perform(classFile, method, domain)(None)
+
+    /**
+     * Analyzes the given method using the given domain and parameter values (if any).
+     *
+     * @param classFile Some class file; needed to determine the type of `this` if
+     *    the method is an instance method.
+     * @param method A non-abstract, non-native method of the given class file.
+     * @param domain The abstract domain that is used during the interpretation to perform
+     *    calculations w.r.t. the domain's values.
+     * @param someLocals If the values passed to a method are already known, the
+     *    abstract interpretation will be performed under that assumption.
+     * @return The memory layout that was in effect before the execution of each
+     *    instruction while performing the abstract interpretation of the method.
+     */
+    def perform(
+        classFile: ClassFile,
+        method: Method,
+        domain: Domain)(
+            someLocals: Option[IndexedSeq[domain.DomainValue]] = None): IndexedSeq[MemoryLayout[domain.type, domain.DomainValue]] = {
+
+        assume(method.body.isDefined, "The method ("+method.toJava+") has no body.")
 
         import domain._
 
@@ -66,12 +76,12 @@ object AI {
                 assume(l.size == method.body.get.maxLocals)
                 l.toArray
             }).getOrElse({
-                var locals: Array[Value] = new Array[Value](method.body.get.maxLocals)
+                var locals = new Array[domain.DomainValue](method.body.get.maxLocals)
                 var localVariableIndex = 0
 
                 if (!method.isStatic) {
                     val thisType = classFile.thisClass
-                    locals = locals.updated(localVariableIndex, AReferenceTypeValue(thisType))
+                    locals = locals.updated(localVariableIndex, ReferenceValue(thisType))
                     localVariableIndex += 1 /*==thisType.computationalType.operandSize*/
                 }
 
@@ -83,36 +93,51 @@ object AI {
                 locals
             })
         )
-        apply(code, initialLocals)(domain)
+        perform(code, domain)(initialLocals)
     }
 
-    def apply(
+    def perform(
         code: Code,
-        initialLocals: IndexedSeq[Value])(
-            implicit domain: Domain): IndexedSeq[MemoryLayout] = {
+        domain: Domain)(
+            initialLocals: IndexedSeq[domain.DomainValue]): IndexedSeq[MemoryLayout[domain.type, domain.DomainValue]] = { // TODO [AI Performance] Figure out if it is worth using an Array instead of an IndexedSeq
+
+        assume(code.maxLocals == initialLocals.size, "code.maxLocals and initialLocals.size differ")
 
         import domain._
 
+        type MemoryLayout = ai.MemoryLayout[domain.type, domain.DomainValue]
+
         val instructions: Array[Instruction] = code.instructions
 
-        // The memory lacout that we associate with each instruction
+        // The memory layout that we associate with each instruction
         val memoryLayouts = new Array[MemoryLayout](instructions.length)
-        memoryLayouts(0) = new MemoryLayout(Nil, initialLocals)(domain)
+        memoryLayouts(0) = new MemoryLayout(domain, Nil, initialLocals)
 
         // true if the instruction with the respective program counter is already transformed
         var worklist: List[Int /*program counter*/ ] = List(0)
 
+        def update(memoryLayout: MemoryLayout,
+                   pc: Int,
+                   instruction: Instruction): MemoryLayout = {
+
+            ai.MemoryLayout.update(domain)(memoryLayout.operands, memoryLayout.locals, pc, instruction)
+        }
+
         def gotoTarget(nextPC: Int, nextPCMemoryLayout: MemoryLayout) {
-            if (nextPC >= instructions.length) return ; // we have reached the end of the code
+            assume(nextPC < instructions.length, "interpretation beyond code boundary")
 
             if (memoryLayouts(nextPC) == null) {
                 worklist = nextPC :: worklist
                 memoryLayouts(nextPC) = nextPCMemoryLayout
             } else {
-                val mergedMemoryLayout = memoryLayouts(nextPC) update nextPCMemoryLayout
-                if (mergedMemoryLayout != memoryLayouts(nextPC)) {
+                val mergedMemoryLayout = {
+                    val thisML = memoryLayouts(nextPC)
+                    val nextML = nextPCMemoryLayout
+                    MemoryLayout.merge(domain)(thisML.operands, thisML.locals, nextML.operands, nextML.locals)
+                }
+                if (mergedMemoryLayout.isDefined) {
                     worklist = nextPC :: worklist
-                    memoryLayouts(nextPC) = mergedMemoryLayout
+                    memoryLayouts(nextPC) = mergedMemoryLayout.get
                 }
             }
         }
@@ -138,17 +163,17 @@ object AI {
                 case 167 /*goto*/ ⇒
                     gotoTarget(
                         pc + instruction.asInstanceOf[GOTO].branchoffset,
-                        memoryLayout.update(pc, instruction))
+                        update(memoryLayout, pc, instruction))
                 case 200 /*goto_w*/ ⇒
                     gotoTarget(
                         pc + instruction.asInstanceOf[GOTO_W].branchoffset,
-                        memoryLayout.update(pc, instruction))
+                        update(memoryLayout, pc, instruction))
 
                 case 169 /*ret*/ ⇒ {
                     val lvIndex = instruction.asInstanceOf[RET].lvIndex
                     memoryLayout.locals(lvIndex) match {
                         case ReturnAddressValue(returnAddress) ⇒
-                            gotoTargets(returnAddress, memoryLayout.update(pc, instruction))
+                            gotoTargets(returnAddress, update(memoryLayout, pc, instruction))
                         case _ ⇒
                             CodeError("the local variable ("+
                                 lvIndex+
@@ -158,11 +183,11 @@ object AI {
                 case 168 /*jsr*/ ⇒
                     gotoTarget(
                         pc + instruction.asInstanceOf[JSR].branchoffset,
-                        memoryLayout.update(pc, instruction))
+                        update(memoryLayout, pc, instruction))
                 case 201 /*jsr_w*/ ⇒
                     gotoTarget(
                         pc + instruction.asInstanceOf[JSR_W].branchoffset,
-                        memoryLayout.update(pc, instruction))
+                        update(memoryLayout, pc, instruction))
                 //
                 //            case 171 /*lookupswitch*/
                 //               | 170 /*tableswitch*/ ⇒ new MemoryLayout(operands.tail, locals)
@@ -187,23 +212,23 @@ object AI {
                         case BooleanAnswer.YES ⇒
                             gotoTarget(
                                 pcOfNextInstruction,
-                                memoryLayout.update(pc, instruction))
+                                update(memoryLayout, pc, instruction))
                         case BooleanAnswer.NO ⇒
                             gotoTarget(
                                 pc + instruction.asInstanceOf[IFNONNULL].branchoffset,
-                                memoryLayout.update(pc, instruction))
+                                update(memoryLayout, pc, instruction))
                         case BooleanAnswer.UNKNOWN ⇒ {
                             gotoTarget(
                                 pc + instruction.asInstanceOf[IFNONNULL].branchoffset,
                                 domain.addIsNonNullConstraint(
                                     operand,
-                                    memoryLayout.update(pc, instruction)))
+                                    update(memoryLayout, pc, instruction)))
 
                             gotoTarget(
                                 pcOfNextInstruction,
                                 domain.addIsNullConstraint(
                                     operand,
-                                    memoryLayout.update(pc, instruction)))
+                                    update(memoryLayout, pc, instruction)))
                         }
                     }
                 }
@@ -213,23 +238,23 @@ object AI {
                         case BooleanAnswer.YES ⇒
                             gotoTarget(
                                 pc + instruction.asInstanceOf[IFNULL].branchoffset,
-                                memoryLayout.update(pc, instruction))
+                                update(memoryLayout, pc, instruction))
                         case BooleanAnswer.NO ⇒
                             gotoTarget(
                                 pcOfNextInstruction,
-                                memoryLayout.update(pc, instruction))
+                                update(memoryLayout, pc, instruction))
                         case BooleanAnswer.UNKNOWN ⇒ {
                             gotoTarget(
                                 pc + instruction.asInstanceOf[IFNULL].branchoffset,
                                 domain.addIsNullConstraint(
                                     operand,
-                                    memoryLayout.update(pc, instruction)))
+                                    update(memoryLayout, pc, instruction)))
 
                             gotoTarget(
                                 pcOfNextInstruction,
                                 domain.addIsNonNullConstraint(
                                     operand,
-                                    memoryLayout.update(pc, instruction)))
+                                    update(memoryLayout, pc, instruction)))
                         }
                     }
                 }
@@ -239,14 +264,14 @@ object AI {
                     | 174 /*freturn*/
                     | 175 /*dreturn*/
                     | 176 /*areturn*/
-                    | 177 /*return*/ ⇒ memoryLayout.update(pc, instruction)
+                    | 177 /*return*/ ⇒ update(memoryLayout, pc, instruction)
 
                 case 191 /*athrow*/ ⇒
                     sys.error("well ... some support is needed")
 
                 case _ ⇒ {
                     val nextPC = pcOfNextInstruction
-                    val nextMemoryLayout = memoryLayout.update(pc, instruction)
+                    val nextMemoryLayout = update(memoryLayout, pc, instruction)
                     gotoTarget(nextPC, nextMemoryLayout)
                 }
             }
