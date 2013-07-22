@@ -56,7 +56,6 @@ trait AbstractDefaultDomain extends DomainWithValues {
     // LOAD FROM AND STORE VALUE IN ARRAYS
     //
     def aaload(index: DomainValue, arrayref: DomainValue): DomainValue = {
-        println(arrayref)
         arrayref match {
             case TypedValue(ArrayType(componentType)) ⇒ TypedValue(componentType)
             case _                                    ⇒ SomeReferenceValue
