@@ -44,7 +44,7 @@ case class INVOKESPECIAL(
     declaringClass: ReferenceType, // an interface or class type to be precise
     name: String, // an interface or class type to be precise
     methodDescriptor: MethodDescriptor)
-        extends MethodInvocationInstruction {
+        extends StaticMethodInvocationInstruction {
 
     def opcode: Int = 183
 
@@ -54,4 +54,6 @@ case class INVOKESPECIAL(
 
     def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 3
 
+    override def toString = super.toString
+    
 }

@@ -41,6 +41,24 @@ package resolved
  */
 abstract class MethodInvocationInstruction extends Instruction
 
+abstract class DynamicMethodInvocationInstruction extends MethodInvocationInstruction
+
+abstract class StaticMethodInvocationInstruction extends MethodInvocationInstruction {
+
+    def declaringClass: ReferenceType
+
+    def name: String
+
+    def methodDescriptor: MethodDescriptor
+
+    override def toString: String =
+        this.getClass().getSimpleName()+
+            "("+
+            declaringClass.toJava + name + methodDescriptor.toUMLNotation+
+            ")"
+
+}
+
 object MethodInvocationInstruction {
 
     val runtimeExceptions = List(ObjectType.NullPointerException)

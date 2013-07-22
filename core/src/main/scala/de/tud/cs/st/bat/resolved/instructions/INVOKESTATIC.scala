@@ -43,7 +43,7 @@ case class INVOKESTATIC(
     declaringClass: ReferenceType, // an interface or class type to be precise
     name: String, // an interface or class type to be precise
     methodDescriptor: MethodDescriptor)
-        extends MethodInvocationInstruction {
+        extends StaticMethodInvocationInstruction {
 
     def opcode: Int = 184
 
@@ -53,4 +53,5 @@ case class INVOKESTATIC(
 
     def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 3
 
+    override def toString = super.toString
 }

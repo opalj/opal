@@ -64,6 +64,7 @@ sealed abstract class ComputationalType(
         computationTypeCategory: ComputationalTypeCategory) {
     def operandSize = computationTypeCategory.operandSize
     def isPrimitiveType: Boolean
+    def category = computationTypeCategory.id
 }
 case object ComputationalTypeInt
         extends ComputationalType(Category1ComputationalTypeCategory) {
@@ -367,7 +368,7 @@ final class ObjectType private (
 
     def toJava: String = className.replace('/', '.')
 
-    override def toString = "ObjectType(className=\""+className+"\")"
+    override def toString = "ObjectType("+className+")"
 
 }
 object ObjectType {
