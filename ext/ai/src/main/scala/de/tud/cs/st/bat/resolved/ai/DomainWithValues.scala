@@ -38,31 +38,15 @@ package ai
 import reflect.ClassTag
 
 /**
- * The values modules of a [[de.tud.cs.st.bat.resolved.ai.Domain]].
+ * The values module of a [[de.tud.cs.st.bat.resolved.ai.Domain]].
  *
  * Some of the value types are fixed and cannot be directly extended. This
  * part is required by BATAI to perform the abstract interpretation.
  */
 trait DomainWithValues extends Domain {
 
-    @throws[AIImplementationError]
-    protected def impossibleToMergeWith(other: DomainValue): AIImplementationError =
-        new AIImplementationError(
-            "missing support for merging: "+
-                this.getClass().getName()+
-                " and "+
-                other.getClass().getName())
-
-    @throws[BATError]
-    protected def incompatibleValue(other: DomainValue): BATError =
-        new BATError(
-            "incompatible values: "+
-                this.getClass().getName()+
-                " and "+
-                other.getClass().getName())
-
     protected class NoLegalValue(
-        val initialReason: RuntimeException)
+        val initialReason: String)
             extends super[Domain].NoLegalValue {
         this: DomainValue ⇒
 
@@ -73,10 +57,10 @@ trait DomainWithValues extends Domain {
 
     }
     object NoLegalValue {
-        def unapply(value: NoLegalValue): Option[RuntimeException] = Some(value.initialReason)
+        def unapply(value: NoLegalValue): Option[String] = Some(value.initialReason)
     }
-    type DomainNoLegalValue <: DomainValue with NoLegalValue
-    def NoLegalValue(initialReason: RuntimeException): DomainNoLegalValue
+    type DomainNoLegalValue <: NoLegalValue with DomainValue
+    def NoLegalValue(initialReason: String): DomainNoLegalValue
 
     /**
      * Trait that is mixed in by values for which we have more precise type information,
@@ -198,6 +182,46 @@ trait DomainWithValues extends Domain {
     trait SomeDoubleValue extends ComputationalTypeCategory2Value with TypedValue {
         final def computationalType: ComputationalType = ComputationalTypeDouble
         final def valueType = DoubleType
+    }
+
+    //
+    // QUESTION'S ABOUT VALUES
+    //
+    def isNull(value: DomainValue): Answer = {
+        if (value == NullValue)
+            Yes
+        else
+            Unknown
+    }
+
+    def areEqual(value1: DomainValue, value2: DomainValue): Answer = {
+        Unknown
+    }
+
+    def isLess(smallerValue: DomainValue, largerValue: DomainValue): Answer = {
+        Unknown
+    }
+
+    def isLessOrEqual(smallerOrEqualValue: DomainValue, equalOrLargerValue: DomainValue): Answer = {
+        Unknown
+    }
+
+    //
+    // HANDLING CONSTRAINTS
+    //
+    // The default domain does not handle constraints; i.e. does not update the 
+    // memory layout.
+    //
+    /**
+     * ==Note==
+     * Returning a plain `NullValue` may not be the optimal solution as the type
+     * information is lost.
+     */
+    def addConstraint(
+        constraint: ValueConstraint,
+        pc: Int,
+        memoryLayout: DomainMemoryLayout): DomainMemoryLayout = {
+        memoryLayout
     }
 
 }

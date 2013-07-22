@@ -54,6 +54,8 @@ class SimpleMethodsTest
         extends FlatSpec
         with ShouldMatchers /*with BeforeAndAfterAll */ {
 
+    import util.Util.dumpOnFailure
+
     class RecordingDomain extends DefaultDomain {
         var returnedValue: Option[DomainValue] = _
         override def areturn(value: DomainValue) { returnedValue = Some(value) }
@@ -860,9 +862,9 @@ class SimpleMethodsTest
         val method = classFile.methods.find(_.name == "objectArray").get
         val result = AI(classFile, method, domain)
 
-        util.Util.writeAndOpenDump(util.Util.dump(Some(classFile), Some(method), method.body.get, result))
-
-        domain.returnedValue should be(Some(ReferenceValue(ObjectType("ai/SimpleMethods"))))
+        dumpOnFailure(Some(classFile), Some(method), method.body.get, result) {
+            domain.returnedValue should be(Some(ReferenceValue(ObjectType("ai/SimpleMethods"))))
+        }
     }
 
     it should "be able to analyze to load and store a byte in an array" in {
@@ -870,9 +872,9 @@ class SimpleMethodsTest
         val method = classFile.methods.find(_.name == "byteArray").get
         val result = AI(classFile, method, domain)
 
-        util.Util.writeAndOpenDump(util.Util.dump(Some(classFile), Some(method), method.body.get, result))
-
-        domain.returnedValue should be(Some(SomeByteValue))
+        dumpOnFailure(Some(classFile), Some(method), method.body.get, result) {
+            domain.returnedValue should be(Some(SomeByteValue))
+        }
     }
 
     it should "be able to analyze to load and store a char in an array" in {

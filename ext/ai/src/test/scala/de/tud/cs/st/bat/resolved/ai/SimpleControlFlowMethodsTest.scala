@@ -56,7 +56,9 @@ class SimpleControlFlowMethodsTest
         extends FlatSpec
         with ShouldMatchers {
 
-    class RecordingDomain extends TypeDomain {
+    import util.Util.dumpOnFailure
+
+    class RecordingDomain extends DefaultDomain {
         var returnedValues: List[(String, Value)] = List()
         override def areturn(value: Value) { returnedValues = ("areturn", value) :: returnedValues }
         override def dreturn(value: Value) { returnedValues = ("dreturn", value) :: returnedValues }
@@ -64,45 +66,95 @@ class SimpleControlFlowMethodsTest
         override def ireturn(value: Value) { returnedValues = ("ireturn", value) :: returnedValues }
         override def lreturn(value: Value) { returnedValues = ("lreturn", value) :: returnedValues }
         override def returnVoid() { returnedValues = ("return", null) :: returnedValues }
+
+        var constraints: List[(Int, ValueConstraint)] = List()
+
+        override def addConstraint(constraint: ValueConstraint, pc: Int, memoryLayout: DomainMemoryLayout) = {
+            constraints = (pc, constraint) :: constraints
+            memoryLayout
+        }
     }
 
     val classFiles = Java7Framework.ClassFiles(TestSupport.locateTestResources("classfiles/ai.jar", "ext/ai"))
     val classFile = classFiles.map(_._1).find(_.thisClass.className == "ai/ControlFlowMethods").get
+
+    private def evaluateMethod(name: String, f: RecordingDomain ⇒ Unit) {
+        val domain = new RecordingDomain; import domain._
+        val method = classFile.methods.find(_.name == name).get
+        val result = AI(classFile, method, domain)
+
+        dumpOnFailure(Some(classFile), Some(method), method.body.get, result) {
+            f(domain)
+        }
+    }
 
     behavior of "the abstract interpreter"
 
     //
     // RETURNS
     it should "be able to analyze a method that performs a comparison with null" in {
-        val domain = new RecordingDomain
-        val method = classFile.methods.find(_.name == "nullComp").get
-        /*val result =*/ AI(classFile, method)(domain)
+        evaluateMethod("nullComp", domain ⇒ {
+            //    0  aload_0 [o]
+            //    1  ifnonnull 6
+            //    4  iconst_1
+            //    5  ireturn
+            //    6  iconst_0
+            //    7  ireturn 
+            import domain._
+            domain.returnedValues should be(
+                List(("ireturn", SomeIntegerValue), ("ireturn", SomeIntegerValue)))
 
-        domain.returnedValues should be(
-            List(("ireturn", SomeIntegerValue), ("ireturn", SomeIntegerValue)))
+            domain.constraints should be(
+                List(
+                    (4, IsNull(domain.TypedValue(ObjectType.Object))),
+                    (6, IsNonNull(domain.TypedValue(ObjectType.Object)))
+                )
+            )
+        })
     }
 
     it should "be able to analyze a method that performs a comparison with notnull" in {
-        val domain = new RecordingDomain
-        val method = classFile.methods.find(_.name == "nonnullComp").get
-        val result = AI(classFile, method)(domain)
-        
-        domain.returnedValues should be(
-            List(("ireturn", SomeIntegerValue), ("ireturn", SomeIntegerValue)))
+        evaluateMethod("nonnullComp", domain ⇒ {
+            //    0  aload_0 [o]
+            //    1  ifnull 6
+            //    4  iconst_1
+            //    5  ireturn
+            //    6  iconst_0
+            //    7  ireturn
+            import domain._
+            domain.returnedValues should be(
+                List(("ireturn", SomeIntegerValue), ("ireturn", SomeIntegerValue)))
+
+            domain.constraints should be(
+                List(
+                    (4, IsNonNull(domain.TypedValue(ObjectType.Object))),
+                    (6, IsNull(domain.TypedValue(ObjectType.Object)))
+                )
+            )
+        })
     }
 
     it should "be able to analyze methods that perform multiple comparisons" in {
-        val domain = new RecordingDomain
-        val method = classFile.methods.find(_.name == "multipleComp").get
-        val result = AI(classFile, method)(domain)
-
-        val dump = util.Util.dump(Some(classFile), Some(method), method.body.get, result)
-        util.Util.writeAndOpenDump(dump)//.map(_.deleteOnExit)
-
-        domain.returnedValues should be(
-            List(("ireturn", SomeIntegerValue),
-                ("ireturn", SomeIntegerValue),
-                ("ireturn", SomeIntegerValue)))
+        evaluateMethod("multipleComp", domain ⇒ {
+            //     0  aload_0 [a]
+            //     1  ifnull 17
+            //     4  aload_1 [b]
+            //     5  ifnull 17
+            //     8  aload_0 [a]
+            //     9  aload_1 [b]
+            //    10  if_acmpne 15
+            //    13  iconst_1
+            //    14  ireturn
+            //    15  iconst_0
+            //    16  ireturn
+            //    17  iconst_0
+            //    18  ireturn
+            import domain._
+            domain.returnedValues should be(
+                List(("ireturn", SomeIntegerValue),
+                    ("ireturn", SomeIntegerValue),
+                    ("ireturn", SomeIntegerValue)))
+        })
     }
 
 }

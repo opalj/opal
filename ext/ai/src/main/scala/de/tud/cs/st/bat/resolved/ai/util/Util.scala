@@ -50,10 +50,29 @@ object Util {
 
     import de.tud.cs.st.util.ControlAbstractions._
 
+    def dumpOnFailure[T](
+        classFile: Option[ClassFile],
+        method: Option[Method],
+        code: Code,
+        memoryLayouts: IndexedSeq[MemoryLayout[_ <: AnyRef, _ <: AnyRef]])(
+            f: ⇒ T): T = {
+        try {
+            f
+        } catch {
+            case e: Throwable ⇒ {
+                val title = Some("Generated due to exception: "+e.getMessage())
+                val dump = util.Util.dump(classFile, method, code, memoryLayouts, title)
+                util.Util.writeAndOpenDump(dump) //.map(_.deleteOnExit)
+                throw e
+            }
+        }
+    }
+
     def dump(classFile: Option[ClassFile],
              method: Option[Method],
              code: Code,
-             memoryLayouts: IndexedSeq[MemoryLayout[_ <: AnyRef, _ <: AnyRef]]): Node = {
+             memoryLayouts: IndexedSeq[MemoryLayout[_ <: AnyRef, _ <: AnyRef]],
+             title: Option[String] = None): Node = {
         // HTML 5 XML serialization (XHTML 5)
         <html xmlns="http://www.w3.org/1999/xhtml">
         <head>
@@ -63,6 +82,7 @@ object Util {
         </style>
         </head>
         <body>
+        { title.getOrElse("") }
         { dumpTable(classFile, method, code, memoryLayouts) }
         </body>
         </html>

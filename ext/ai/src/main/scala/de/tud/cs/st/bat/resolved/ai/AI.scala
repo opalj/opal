@@ -35,8 +35,6 @@ package bat
 package resolved
 package ai
 
-import scala.xml.Node
-
 /**
  * @author Michael Eichberg
  */
@@ -81,7 +79,7 @@ object AI {
 
                 if (!method.isStatic) {
                     val thisType = classFile.thisClass
-                    locals = locals.updated(localVariableIndex, ReferenceValue(thisType))
+                    locals = locals.updated(localVariableIndex, TypedValue(thisType))
                     localVariableIndex += 1 /*==thisType.computationalType.operandSize*/
                 }
 
@@ -120,7 +118,66 @@ object AI {
                    pc: Int,
                    instruction: Instruction): MemoryLayout = {
 
-            ai.MemoryLayout.update(domain)(memoryLayout.operands, memoryLayout.locals, pc, instruction)
+            MemoryLayout.update(domain)(memoryLayout.operands, memoryLayout.locals, pc, instruction)
+        }
+
+        def comparisonWithFixedValue(
+            memoryLayout: MemoryLayout,
+            pc: Int,
+            instruction: Instruction,
+            domainTest: (domain.DomainValue) ⇒ Answer,
+            yesPC: Int, yesConstraint: (domain.DomainValue) ⇒ domain.ValueConstraint,
+            noPC: Int, noConstraint: (domain.DomainValue) ⇒ domain.ValueConstraint) {
+
+            val operand = memoryLayout.operands.head
+            domainTest(operand) match {
+                case Yes ⇒ gotoTarget(yesPC, update(memoryLayout, pc, instruction))
+                case No  ⇒ gotoTarget(noPC, update(memoryLayout, pc, instruction))
+                case Unknown ⇒ {
+                    gotoTarget(
+                        yesPC,
+                        domain.addConstraint(
+                            yesConstraint(operand),
+                            yesPC,
+                            update(memoryLayout, pc, instruction)))
+                    gotoTarget(
+                        noPC,
+                        domain.addConstraint(
+                            noConstraint(operand),
+                            noPC,
+                            update(memoryLayout, pc, instruction)))
+                }
+            }
+        }
+
+        def comparisonOfTwoValues(
+            memoryLayout: MemoryLayout,
+            pc: Int,
+            instruction: Instruction,
+            domainTest: (domain.DomainValue, domain.DomainValue) ⇒ Answer,
+            yesPC: Int, yesConstraint: (domain.DomainValue, domain.DomainValue) ⇒ domain.ValueConstraint,
+            noPC: Int, noConstraint: (domain.DomainValue, domain.DomainValue) ⇒ domain.ValueConstraint) {
+
+            val value2 = memoryLayout.operands.head
+            val value1 = memoryLayout.operands.tail.head
+            domainTest(value1, value2) match {
+                case Yes ⇒ gotoTarget(yesPC, update(memoryLayout, pc, instruction))
+                case No  ⇒ gotoTarget(noPC, update(memoryLayout, pc, instruction))
+                case Unknown ⇒ {
+                    gotoTarget(
+                        yesPC,
+                        domain.addConstraint(
+                            yesConstraint(value1, value2),
+                            yesPC,
+                            update(memoryLayout, pc, instruction)))
+                    gotoTarget(
+                        noPC,
+                        domain.addConstraint(
+                            noConstraint(value1, value2),
+                            noPC,
+                            update(memoryLayout, pc, instruction)))
+                }
+            }
         }
 
         def gotoTarget(nextPC: Int, nextPCMemoryLayout: MemoryLayout) {
@@ -130,14 +187,19 @@ object AI {
                 worklist = nextPC :: worklist
                 memoryLayouts(nextPC) = nextPCMemoryLayout
             } else {
-                val mergedMemoryLayout = {
+                {
                     val thisML = memoryLayouts(nextPC)
                     val nextML = nextPCMemoryLayout
                     MemoryLayout.merge(domain)(thisML.operands, thisML.locals, nextML.operands, nextML.locals)
-                }
-                if (mergedMemoryLayout.isDefined) {
-                    worklist = nextPC :: worklist
-                    memoryLayouts(nextPC) = mergedMemoryLayout.get
+                } match {
+                    case NoUpdate ⇒ /* Nothing to do */
+                    case StructuralUpdate(memoryLayout) ⇒ {
+                        worklist = nextPC :: worklist
+                        memoryLayouts(nextPC) = memoryLayout
+                    }
+                    case MetaInformationUpdate(memoryLayout) ⇒ {
+                        memoryLayouts(nextPC) = memoryLayout
+                    }
                 }
             }
         }
@@ -192,9 +254,20 @@ object AI {
                 //            case 171 /*lookupswitch*/
                 //               | 170 /*tableswitch*/ ⇒ new MemoryLayout(operands.tail, locals)
                 //
-                //            case 165 /*if_acmpeq*/
-                //               | 166 /*if_acmpne*/
-                //               | 159 /*if_icmpeq*/
+                case 165 /*if_acmpeq*/ ⇒
+                    comparisonOfTwoValues(
+                        memoryLayout, pc, instruction,
+                        domain.areEqual _,
+                        pc + instruction.asInstanceOf[ConditionalBranchInstruction].branchoffset, domain.AreEqual,
+                        pcOfNextInstruction, domain.AreNotEqual)
+                case 166 /*if_acmpne*/ ⇒
+                    comparisonOfTwoValues(
+                        memoryLayout, pc, instruction,
+                        domain.areNotEqual _,
+                        pc + instruction.asInstanceOf[ConditionalBranchInstruction].branchoffset, domain.AreNotEqual,
+                        pcOfNextInstruction, domain.AreEqual)
+
+                //             case 159 /*if_icmpeq*/
                 //               | 160 /*if_icmpne*/
                 //               | 161 /*if_icmplt*/
                 //               | 162 /*if_icmpge*/
@@ -206,58 +279,18 @@ object AI {
                 //               | 156 /*ifge*/
                 //               | 157 /*ifgt*/
                 //               | 158 /*ifle */
-                case 199 /*ifnonnull*/ ⇒ {
-                    val operand = memoryLayout.operands.head
-                    domain.isNull(operand) match {
-                        case BooleanAnswer.YES ⇒
-                            gotoTarget(
-                                pcOfNextInstruction,
-                                update(memoryLayout, pc, instruction))
-                        case BooleanAnswer.NO ⇒
-                            gotoTarget(
-                                pc + instruction.asInstanceOf[IFNONNULL].branchoffset,
-                                update(memoryLayout, pc, instruction))
-                        case BooleanAnswer.UNKNOWN ⇒ {
-                            gotoTarget(
-                                pc + instruction.asInstanceOf[IFNONNULL].branchoffset,
-                                domain.addIsNonNullConstraint(
-                                    operand,
-                                    update(memoryLayout, pc, instruction)))
-
-                            gotoTarget(
-                                pcOfNextInstruction,
-                                domain.addIsNullConstraint(
-                                    operand,
-                                    update(memoryLayout, pc, instruction)))
-                        }
-                    }
-                }
-                case 198 /*ifnull*/ ⇒ {
-                    val operand = memoryLayout.operands.head
-                    domain.isNull(operand) match {
-                        case BooleanAnswer.YES ⇒
-                            gotoTarget(
-                                pc + instruction.asInstanceOf[IFNULL].branchoffset,
-                                update(memoryLayout, pc, instruction))
-                        case BooleanAnswer.NO ⇒
-                            gotoTarget(
-                                pcOfNextInstruction,
-                                update(memoryLayout, pc, instruction))
-                        case BooleanAnswer.UNKNOWN ⇒ {
-                            gotoTarget(
-                                pc + instruction.asInstanceOf[IFNULL].branchoffset,
-                                domain.addIsNullConstraint(
-                                    operand,
-                                    update(memoryLayout, pc, instruction)))
-
-                            gotoTarget(
-                                pcOfNextInstruction,
-                                domain.addIsNonNullConstraint(
-                                    operand,
-                                    update(memoryLayout, pc, instruction)))
-                        }
-                    }
-                }
+                case 198 /*ifnull*/ ⇒
+                    comparisonWithFixedValue(
+                        memoryLayout, pc, instruction,
+                        domain.isNull _,
+                        pc + instruction.asInstanceOf[ConditionalBranchInstruction].branchoffset, domain.IsNull,
+                        pcOfNextInstruction, domain.IsNonNull)
+                case 199 /*ifnonnull*/ ⇒
+                    comparisonWithFixedValue(
+                        memoryLayout, pc, instruction,
+                        domain.isNonNull _,
+                        pc + instruction.asInstanceOf[ConditionalBranchInstruction].branchoffset, domain.IsNonNull,
+                        pcOfNextInstruction, domain.IsNull)
 
                 case 172 /*ireturn*/
                     | 173 /*lreturn*/
@@ -267,8 +300,9 @@ object AI {
                     | 177 /*return*/ ⇒ update(memoryLayout, pc, instruction)
 
                 case 191 /*athrow*/ ⇒
-                    sys.error("well ... some support is needed")
+                    BATError("throws are not yet supported")
 
+                // all non-control flow related instructions are handled here
                 case _ ⇒ {
                     val nextPC = pcOfNextInstruction
                     val nextMemoryLayout = update(memoryLayout, pc, instruction)

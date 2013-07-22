@@ -58,5 +58,5 @@ package object ai {
     def AIImplementationError(message: String): Nothing = {
         throw new AIImplementationError(message)
     }
-       
+
 }

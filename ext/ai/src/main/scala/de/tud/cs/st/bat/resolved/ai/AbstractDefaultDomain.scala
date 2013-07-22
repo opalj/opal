@@ -274,40 +274,6 @@ trait AbstractDefaultDomain extends DomainWithValues {
 
     def newObject(t: ObjectType) = TypedValue(t)
 
-    //
-    // QUESTION'S ABOUT VALUES
-    //
-    def isNull(value: DomainValue): BooleanAnswer = {
-        if (value == NullValue)
-            return BooleanAnswer.YES // TODO should we refine this?
-        else
-            return BooleanAnswer.UNKNOWN
-    }
-
-    def isNonNull(value: DomainValue): BooleanAnswer = {
-        return BooleanAnswer.UNKNOWN
-    }
-
-    //
-    // HANDLING CONSTRAINTS
-    //
-    // The default domain does not handle constraints; i.e. does not update the 
-    // memory layout.
-    //
-    /**
-     * ==Note==
-     * Returning a plain `NullValue` may not be the optimal solution as the type
-     * information is lost.
-     */
-    def addIsNullConstraint(value: DomainValue,
-                            memoryLayout: MemoryLayout[this.type, this.type#DomainValue]): MemoryLayout[this.type, this.type#DomainValue] = {
-        memoryLayout
-    }
-
-    def addIsNonNullConstraint(
-        value: DomainValue,
-        memoryLayout: MemoryLayout[this.type, this.type#DomainValue]): MemoryLayout[this.type, this.type#DomainValue] = {
-        memoryLayout
-    }
+   
 
 }

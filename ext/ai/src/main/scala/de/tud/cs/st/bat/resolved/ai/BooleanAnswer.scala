@@ -35,14 +35,23 @@ package bat
 package resolved
 package ai
 
-trait Answer[A] {
-    trait Value { self: A ⇒ }
+/**
+ * Models a three state answer.
+ *
+ * @author Michael Eichberg
+ */
+sealed trait Answer {
+    def negate: Answer
+}
+final case object Yes extends Answer {
+    def negate = No
+}
+final case object No extends Answer {
+    def negate = Yes
+}
+final case object Unknown extends Answer {
+    def negate = this
 }
 
-sealed trait BooleanAnswer extends BooleanAnswer.Value
 
-object BooleanAnswer extends Answer[BooleanAnswer] {
-    case object YES extends BooleanAnswer
-    case object NO extends BooleanAnswer
-    case object UNKNOWN extends BooleanAnswer
-}
+

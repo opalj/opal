@@ -49,12 +49,13 @@ class DefaultDomain extends AbstractDefaultDomain {
     val DomainValueTag: ClassTag[DomainValue] = implicitly
 
     type DomainNoLegalValue = NoLegalValue
-    def NoLegalValue(initialReason: RuntimeException): DomainNoLegalValue = new NoLegalValue(initialReason)
+    def NoLegalValue(initialReason: String): DomainNoLegalValue =
+        new NoLegalValue(initialReason)
 
     trait CTIntegerValue extends super.CTIntegerValue {
 
-        def merge(value: DomainValue): DomainValue =
-            value match { case CTIntegerValue() ⇒ this }
+        def merge(value: DomainValue): Update[DomainValue] =
+            value match { case CTIntegerValue() ⇒ NoUpdate }
     }
     object CTIntegerValue extends CTIntegerValue {
         private[this] val instance = new CTIntegerValue {}
@@ -69,69 +70,70 @@ class DefaultDomain extends AbstractDefaultDomain {
         // E.g., if the other value is of type CTIntegerValue and represents 
         // other values than 0 and 1 then some special handling needs to be performed!
 
-        override def merge(value: DomainValue): DomainValue = value match {
-            case SomeBooleanValue         ⇒ this
-            case other @ SomeByteValue    ⇒ other
-            case other @ SomeShortValue   ⇒ other
-            case other @ SomeIntegerValue ⇒ other
-            case other @ SomeCharValue    ⇒ other
-            case other: CTIntegerValue    ⇒ NoLegalValue(impossibleToMergeWith(other))
-            case other                    ⇒ NoLegalValue(incompatibleValue(other))
+        override def merge(value: DomainValue): Update[DomainValue] = value match {
+            case SomeBooleanValue         ⇒ NoUpdate
+            case other @ SomeByteValue    ⇒ StructuralUpdate(other)
+            case other @ SomeShortValue   ⇒ StructuralUpdate(other)
+            case other @ SomeIntegerValue ⇒ StructuralUpdate(other)
+            case other @ SomeCharValue    ⇒ StructuralUpdate(other)
+            case other: CTIntegerValue    ⇒ StructuralUpdate(NoLegalValue(missingSupport(other)))
+            case other                    ⇒ StructuralUpdate(NoLegalValue(incompatibleValues(other)))
         }
     }
     case object SomeByteValue extends CTIntegerValue with TypedValue {
         final def valueType = ByteType
 
-        override def merge(value: Value): Value = value match {
-            case other @ SomeByteValue    ⇒ this
-            case other @ SomeBooleanValue ⇒ this
-            case other @ SomeShortValue   ⇒ other
-            case other @ SomeIntegerValue ⇒ other
-            case other @ SomeCharValue    ⇒ other
-            case other: CTIntegerValue    ⇒ NoLegalValue(impossibleToMergeWith(other))
-            case other                    ⇒ NoLegalValue(incompatibleValue(other))
+        override def merge(value: DomainValue): Update[DomainValue] = value match {
+            case other @ SomeByteValue    ⇒ NoUpdate
+            case other @ SomeBooleanValue ⇒ NoUpdate
+            case other @ SomeShortValue   ⇒ StructuralUpdate(other)
+            case other @ SomeIntegerValue ⇒ StructuralUpdate(other)
+            case other @ SomeCharValue    ⇒ StructuralUpdate(other)
+            case other: CTIntegerValue    ⇒ StructuralUpdate(NoLegalValue(missingSupport(other)))
+            case other                    ⇒ StructuralUpdate(NoLegalValue(incompatibleValues(other)))
         }
     }
 
     case object SomeShortValue extends CTIntegerValue with TypedValue {
         final def valueType = ShortType
-        override def merge(value: Value): Value = value match {
-            case other @ SomeShortValue   ⇒ this
-            case other @ SomeBooleanValue ⇒ this
-            case other @ SomeByteValue    ⇒ this
-            case other @ SomeIntegerValue ⇒ other
-            case other @ SomeCharValue    ⇒ SomeIntegerValue
-            case other: CTIntegerValue    ⇒ NoLegalValue(impossibleToMergeWith(other))
-            case other                    ⇒ NoLegalValue(incompatibleValue(other))
+        override def merge(value: DomainValue): Update[DomainValue] = value match {
+            case other @ SomeShortValue   ⇒ NoUpdate
+            case other @ SomeBooleanValue ⇒ NoUpdate
+            case other @ SomeByteValue    ⇒ NoUpdate
+            case other @ SomeIntegerValue ⇒ StructuralUpdate(other)
+            case other @ SomeCharValue    ⇒ StructuralUpdate(SomeIntegerValue)
+            case other: CTIntegerValue    ⇒ StructuralUpdate(NoLegalValue(missingSupport(other)))
+            case other                    ⇒ StructuralUpdate(NoLegalValue(incompatibleValues(other)))
         }
     }
 
     case object SomeCharValue extends CTIntegerValue with TypedValue {
         final def valueType = CharType
 
-        override def merge(value: Value): Value = value match {
-            case other @ SomeCharValue    ⇒ this
-            case other @ SomeBooleanValue ⇒ this
-            case other @ SomeByteValue    ⇒ this
-            case other @ SomeShortValue   ⇒ SomeIntegerValue
-            case other @ SomeIntegerValue ⇒ other
-            case other: CTIntegerValue    ⇒ NoLegalValue(impossibleToMergeWith(other))
-            case other                    ⇒ NoLegalValue(incompatibleValue(other))
+        override def merge(value: DomainValue): Update[DomainValue] = value match {
+            case other @ SomeCharValue    ⇒ NoUpdate
+            case other @ SomeBooleanValue ⇒ NoUpdate
+            case other @ SomeByteValue    ⇒ NoUpdate
+            case other @ SomeShortValue   ⇒ StructuralUpdate(SomeIntegerValue)
+            case other @ SomeIntegerValue ⇒ StructuralUpdate(other)
+            case other: CTIntegerValue    ⇒ StructuralUpdate(NoLegalValue(missingSupport(other)))
+            case other                    ⇒ StructuralUpdate(NoLegalValue(incompatibleValues(other)))
         }
     }
     case object SomeIntegerValue extends CTIntegerValue with TypedValue {
 
         final def valueType = ShortType
 
-        override def merge(value: Value): Value = value match {
-            case other: CTIntegerValue ⇒ this
-            case other                 ⇒ NoLegalValue(incompatibleValue(other))
+        override def merge(value: DomainValue): Update[DomainValue] = value match {
+            case other: CTIntegerValue ⇒ NoUpdate
+            case other                 ⇒ StructuralUpdate(NoLegalValue(incompatibleValues(other)))
         }
     }
+    val IntegerConstant0 = SomeIntegerValue
     case object SomeFloatValue extends SomeFloatValue {
-        override def merge(value: Value): Value = value match {
-            case other: SomeFloatValue ⇒ this
-            case other                 ⇒ NoLegalValue(incompatibleValue(other))
+        override def merge(value: DomainValue): Update[DomainValue] = value match {
+            case other: SomeFloatValue ⇒ NoUpdate
+            case other                 ⇒ StructuralUpdate(NoLegalValue(incompatibleValues(other)))
         }
     }
 
@@ -143,16 +145,16 @@ class DefaultDomain extends AbstractDefaultDomain {
     trait SomeReferenceValue extends ReferenceValue
 
     case object SomeReferenceValue extends SomeReferenceValue {
-        override def merge(value: Value): Value = value match {
-            case other: ReferenceValue ⇒ this
-            case other                 ⇒ NoLegalValue(incompatibleValue(other))
+        override def merge(value: DomainValue): Update[DomainValue] = value match {
+            case other: ReferenceValue ⇒ NoUpdate
+            case other                 ⇒ StructuralUpdate(NoLegalValue(incompatibleValues(other)))
         }
     }
 
     case object NullValue extends SomeReferenceValue {
-        override def merge(value: Value): Value = value match {
-            case other: ReferenceValue ⇒ other
-            case other                 ⇒ NoLegalValue(incompatibleValue(other))
+        override def merge(value: Value): Update[DomainValue] = value match {
+            case other: ReferenceValue ⇒ StructuralUpdate(other)
+            case other                 ⇒ StructuralUpdate(NoLegalValue(incompatibleValues(other)))
         }
     }
     def nullValue = NullValue
@@ -163,13 +165,13 @@ class DefaultDomain extends AbstractDefaultDomain {
 
         // TODO [AI] We need some support to consult the domain to decide what we want to do.
 
-        override def merge(value: Value): Value = value match {
+        override def merge(value: DomainValue): Update[DomainValue] = value match {
             // What we do here is extremely simplistic, but this is basically all we can
             // do when we do not have the class hierarchy available.
-            case AReferenceValue(`valueType`) ⇒ this
-            case other @ SomeReferenceValue       ⇒ other
-            case other: ReferenceValue            ⇒ BATError("cannot yet merge reference values!")
-            case other                            ⇒ NoLegalValue(incompatibleValue(other))
+            case AReferenceValue(`valueType`) ⇒ NoUpdate
+            case other @ SomeReferenceValue   ⇒ StructuralUpdate(other)
+            case other: ReferenceValue        ⇒ BATError("cannot yet merge reference values!")
+            case other                        ⇒ StructuralUpdate(NoLegalValue(incompatibleValues(other)))
         }
 
         override def equals(other: Any): Boolean = {
@@ -189,16 +191,16 @@ class DefaultDomain extends AbstractDefaultDomain {
         new AReferenceValue(referenceType)
 
     case object SomeLongValue extends SomeLongValue {
-        override def merge(value: Value): Value = value match {
-            case other: SomeLongValue ⇒ this
-            case other                ⇒ NoLegalValue(incompatibleValue(other))
+        override def merge(value: DomainValue): Update[DomainValue] = value match {
+            case other: SomeLongValue ⇒ NoUpdate
+            case other                ⇒ StructuralUpdate(NoLegalValue(incompatibleValues(other)))
         }
     }
 
     case object SomeDoubleValue extends SomeDoubleValue {
-        override def merge(value: Value): Value = value match {
-            case other: SomeDoubleValue ⇒ this
-            case other                  ⇒ NoLegalValue(incompatibleValue(other))
+        override def merge(value: DomainValue): Update[DomainValue] = value match {
+            case other: SomeDoubleValue ⇒ NoUpdate
+            case other                  ⇒ StructuralUpdate(NoLegalValue(incompatibleValues(other)))
         }
     }
 
@@ -206,19 +208,24 @@ class DefaultDomain extends AbstractDefaultDomain {
         val addresses: Set[Int])
             extends super.ReturnAddressValue {
 
-        override def merge(value: Value): Value = value match {
+        override def merge(value: DomainValue): Update[DomainValue] = value match {
             case ReturnAddressValue(otherAddresses) ⇒ {
                 if (otherAddresses subsetOf this.addresses)
-                    this
+                    NoUpdate
                 else
-                    ReturnAddressValue(this.addresses ++ otherAddresses)
+                    StructuralUpdate(ReturnAddressValue(this.addresses ++ otherAddresses))
             }
-            case other ⇒ NoLegalValue(incompatibleValue(other))
+            case other ⇒ StructuralUpdate(NoLegalValue(incompatibleValues(other)))
         }
     }
+
     type DomainReturnAddressValue = ReturnAddressValue
-    def ReturnAddressValue(addresses: Set[Int]): DomainReturnAddressValue = new ReturnAddressValue(addresses)
-    def ReturnAddressValue(address: Int): DomainReturnAddressValue = new ReturnAddressValue(Set(address))
+
+    def ReturnAddressValue(addresses: Set[Int]): DomainReturnAddressValue =
+        new ReturnAddressValue(addresses)
+
+    def ReturnAddressValue(address: Int): DomainReturnAddressValue =
+        new ReturnAddressValue(Set(address))
 
 }
 

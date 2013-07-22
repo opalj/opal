@@ -37,17 +37,22 @@ package resolved
 package ai
 
 /**
- * Models the current execution context of a method. I.e., the operand stack as well as
- * the current values of the registers. The memory layout is automatically maintained by
- * BATAI while analyzing a method. If specific knowledge about a value is required, the
- * domain is queried to get the necessary information. This callback mechanism enables
- * the domain to use an arbitrary mechanism to represent values and to steer the
- * analysis.
+ * Represents the current execution context of a method. I.e., the operand stack
+ * as well as the current values of the registers/locals. The memory layout is
+ * automatically maintained by BATAI while analyzing a method. If specific knowledge
+ * about a value is required, the domain is queried to get the necessary information.
+ * This callback mechanism enables the domain to use an arbitrary mechanism to
+ * represent values and to steer the analysis.
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  * @author Dennis Siebert
  */
-// the following design is the result of a lack of a feature for "constructor dependent types"
+/* The following design is the result of a lack of a feature for "constructor 
+ * dependent types". If we would be able to express that the objects that are 
+ * stored in the operands and locals lists are belonging to the given domain 
+ * (and not just "some" domain, it would be possible to move the methods defined
+ * in the companion object to this class.
+ */
 protected[ai] final class MemoryLayout[D <: Domain, V <: D#DomainValue](
         val domain: D,
         val operands: List[V],
@@ -59,7 +64,6 @@ protected[ai] final class MemoryLayout[D <: Domain, V <: D#DomainValue](
             locals.zipWithIndex.map(l ⇒ l._2+" -> "+l._1).mkString("\tlocals:\n\t\t", "\n\t\t", "\n")+
             "]"
     }
-
 }
 
 /**
@@ -68,40 +72,44 @@ protected[ai] final class MemoryLayout[D <: Domain, V <: D#DomainValue](
 object MemoryLayout {
 
     /**
-     * Updates this memory layout with the given memory layout. Returns this memory
-     * layout if this memory layout already subsumes the given memory layout.
+     * Updates this memory layout with the given memory layout. Returns `None` if this
+     * memory layout already subsumes the given memory layout and returns
+     * `Some(new MemoryLayout(...))` otherwise.
      */
     def merge(domain: Domain)(
         thisOperands: List[domain.DomainValue],
         thisLocals: IndexedSeq[domain.DomainValue],
         otherOperands: List[domain.DomainValue],
-        otherLocals: IndexedSeq[domain.DomainValue]): Option[MemoryLayout[domain.type, domain.DomainValue]] = {
+        otherLocals: IndexedSeq[domain.DomainValue]): Update[MemoryLayout[domain.type, domain.DomainValue]] = {
 
         assume(thisOperands.size == otherOperands.size,
-            "cannot update this memory layout with the given memory layout because the stack size is different (this is in violation of the JVM spec.)")
+            "merging the memory layouts is not possible due to different stack sizes")
         assume(thisLocals.size == otherLocals.size,
-            "this memory layout and the given memory layout cannot be merged due to different number of local variables (registers)")
+            "merging the memory layouts is not possible due to different numbers of locals")
 
         import domain.DomainValueTag
+
+        var updateType : UpdateType = NoUpdateType
 
         var thisRemainingOperands = thisOperands
         var otherRemainingOperands = otherOperands
         var newOperands = List[domain.DomainValue]() // during the update we build the operands stack in reverse order
-        var operandsUpdated = false
+
         while (thisRemainingOperands.nonEmpty /* the number of operands of both memory layouts is equal */ ) {
             val thisOperand = thisRemainingOperands.head
             val otherOperand = otherRemainingOperands.head
             otherRemainingOperands = otherRemainingOperands.tail
             thisRemainingOperands = thisRemainingOperands.tail
 
-            val newOperand = thisOperand.merge(otherOperand)
+            val updatedOperand = thisOperand merge otherOperand
+            val newOperand = updatedOperand match {
+                case SomeUpdate(operand) ⇒ operand
+                case NoUpdate            ⇒ thisOperand
+            }
             assume(!newOperand.isInstanceOf[domain.NoLegalValue], "merging of stack values led to an illegal value")
+            updateType = updateType &: updatedOperand
             newOperands = newOperand :: newOperands
-            if (newOperand == thisOperand)
-                operandsUpdated = true
         }
-
-        var localsUpdated = false
 
         val maxLocals = thisLocals.size
 
@@ -115,19 +123,17 @@ object MemoryLayout {
             // on the different paths.
             // If we would have a liveness analysis, we could avoid the use of 
             // "NoLegalValue"
-            val newLocal = thisLocal merge otherLocal
+            val updatedLocal = thisLocal merge otherLocal
+            val newLocal = updatedLocal match {
+                case SomeUpdate(operand) => operand
+                case NoUpdate           => thisLocal
+            }
+            updateType = updateType &: updatedLocal
             newLocals(i) = newLocal
-            if (newLocal == thisLocal)
-                localsUpdated = true
             i += 1
         }
-
-        // return the "new" memory layout
-        if (operandsUpdated || localsUpdated) {
-            Some(new MemoryLayout(domain, newOperands.reverse, newLocals))
-        } else {
-            None
-        }
+        
+        updateType(new MemoryLayout(domain, newOperands.reverse, newLocals))
     }
 
     def update(

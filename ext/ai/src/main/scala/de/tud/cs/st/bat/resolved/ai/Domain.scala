@@ -67,9 +67,19 @@ import reflect.ClassTag
  */
 trait Domain {
 
+    // -----------------------------------------------------------------------------------
+    //
+    // ABSTRACTIONS RELATED TO HANDLING VALUES
+    //
+    // -----------------------------------------------------------------------------------
+
     /**
      * Abstracts over a concrete operand stack value or a value stored in one of the local
      * variables.
+     *
+     * ==Extending Value==
+     * If you extend this trait, make sure that you also extend all classes/traits that
+     * inherit from this type (this may require a deep mixin composition).
      */
     trait Value {
         /**
@@ -99,10 +109,46 @@ trait Domain {
          * The termination of the abstract interpretation directly depends on the fact
          * that at some point all values are fixed and don't change anymore.
          */
-        def merge(value: DomainValue): DomainValue
+        def merge(value: DomainValue): Update[DomainValue]
 
+        /**
+         * Returns a string that states that this value and the given value are
+         * structurally incompatible and, hence, merging or comparing them doesn't
+         * make sense.
+         */
+        protected def incompatibleValues(other: DomainValue): String =
+            "incompatible: "+this.toString()+" and "+other.toString()
+
+        /**
+         * Returns a string that states that merging and comparing this value with
+         * the given could makes sense, but is not yet implemented.
+         */
+        protected def missingSupport(other: DomainValue): String =
+            "the value \""+this.toString()+"\" and \""+other.toString()+"\" are "+
+                "structurally comparable, but no support for comparing/merging them "+
+                "is implemented (the domain implementation is probably incomplete)"
     }
+    /**
+     * Abstracts over the concrete type of `Value`. Needs to be refined by traits that
+     * inherit from Domain and which extend `Domain`'s `Value` trait.
+     */
     type DomainValue <: Value
+
+    type DomainMemoryLayout = MemoryLayout[this.type, this.type#DomainValue]
+
+    /**
+     * The class tag
+     *
+     * ==Initialization==
+     * In the sub-trait or class that fixes the type of `DomainValue` it is necessary
+     * to implement this abstract `val`. Please note, that it has to be implemented
+     * using:
+     * {{{
+     * val DomainValueTag : ClassTag[DomainValue] = implicitly
+     * }}}
+     * (As of Scala 2.10 it is necessary that you do not use `implicit` - it will
+     * compile, but fail at runtime.)
+     */
     implicit val DomainValueTag: ClassTag[DomainValue]
 
     /**
@@ -120,19 +166,25 @@ trait Domain {
 
     /**
      * If BATAI tries to merge two values that are incompatible the result has
-     * to be an instance of `NoLegalValue`
+     * to be an instance of `NoLegalValue`. This may happen when BATAI tries to
+     * merge two register values/locals that are not live (i.e., which should not be
+     * live) and, hence, are actually allowed to contain incompatible values.
+     * (`Not live` means that the value will not be used in the future.)
      */
     trait NoLegalValue extends Value { this: DomainValue ⇒
 
         def computationalType: ComputationalType =
             BATError("a value that is not legal does not have a computational type ")
 
-        def merge(value: DomainValue): DomainValue = this
+        final def merge(value: DomainValue): Update[DomainValue] = NoUpdate
 
         override def toString = "NoLegalValue"
     }
 
-    type DomainReturnAddressValue <: ReturnAddressValue with DomainValue
+    /**
+     * Represents a set of concrete values that store return addresses (i.e., a program
+     * counter/index into the code array).
+     */
     trait ReturnAddressValue extends Value {
         def addresses: Set[Int]
 
@@ -141,14 +193,110 @@ trait Domain {
         override def toString = "ReturnAddresses: "+addresses.mkString(", ")
 
     }
+    /**
+     * Abstracts over the concrete type of `ReturnAddressValue`. Needs to be fixed
+     * by some sub-trait /sub-class. In the simplest case (i.e., when neither the
+     * `Value` trait nor the `ReturnAddressValue` trait is refined it is sufficient
+     * to write:
+     * {{{
+     * type DomainReturnAddressValue = ReturnAddressValue
+     * }}}
+     */
+    type DomainReturnAddressValue <: ReturnAddressValue with DomainValue
+    /**
+     * Factory method to create instances of `ReturnAddressValue`s
+     */
     def ReturnAddressValue(addresses: Set[Int]): DomainReturnAddressValue
+    /**
+     * Factory method to create instances of `ReturnAddressValue`s
+     */
     def ReturnAddressValue(address: Int): DomainReturnAddressValue
+    /**
+     * Facilitates matching of `ReturnAddressValue`'s.
+     */
     object ReturnAddressValue {
         def unapply(value: ReturnAddressValue): Option[Set[Int]] = Some(value.addresses)
     }
 
-    def ReferenceValue(referenceType: ReferenceType): DomainValue
+    /**
+     * Factory method to create `TypedValue`s; i.e., values for which we have (more)
+     * precise type information.
+     */
     def TypedValue(someType: Type): DomainValue
+
+    /**
+     * Returns a representation of the integer constant value 0
+     */
+    val IntegerConstant0: DomainValue
+
+    //
+    // QUESTION'S ABOUT VALUES
+    //
+    def isNull(value: DomainValue): Answer
+    def isNonNull(value: DomainValue): Answer = isNull(value).negate
+
+    /**
+     * Are equal compares the values represented by the given values. If the values
+     * are representing "ReferenceType" values - the object reference needs to be compared.
+     */
+    def areEqual(value1: DomainValue, value2: DomainValue): Answer
+    def areNotEqual(value1: DomainValue, value2: DomainValue): Answer = areEqual(value1, value2).negate
+
+    def isLess(smallerValue: DomainValue, largerValue: DomainValue): Answer
+    def isLessOrEqual(smallerOrEqualValue: DomainValue, equalOrLargerValue: DomainValue): Answer
+    def isGreater(largerValue: DomainValue, smallerValue: DomainValue): Answer = isLess(smallerValue, largerValue)
+    def isGreaterOrEqual(largerValue: DomainValue, smallerValue: DomainValue): Answer = isLessOrEqual(smallerValue, largerValue)
+
+    def is0(value: DomainValue): Answer = areEqual(value, IntegerConstant0)
+    def isNot0(value: DomainValue): Answer = areNotEqual(value, IntegerConstant0)
+    def isLessThan0(value: DomainValue): Answer = isLess(value, IntegerConstant0)
+    def isGreaterThan0(value: DomainValue): Answer = isLess(IntegerConstant0, value)
+    def isGreaterOrEqual0(value: DomainValue): Answer = isLessOrEqual(value, IntegerConstant0)
+
+    //
+    // HANDLING CONSTRAINTS
+    //
+
+    /**
+     * Identifies a constraint on a value.
+     */
+    sealed trait ValueConstraint {
+        // Nothing (yet)
+    }
+    case class IsNull(val value: DomainValue) extends ValueConstraint
+    case class IsNonNull(value: DomainValue) extends ValueConstraint
+    case class AreEqual(value1: DomainValue, value2: DomainValue) extends ValueConstraint
+    case class AreNotEqual(value1: DomainValue, value2: DomainValue) extends ValueConstraint
+    case class IsLess(smallerValue: DomainValue, largerValue: DomainValue) extends ValueConstraint
+    case class IsLessOrEqual(smallerOrEqualValue: DomainValue, equalOrLargerValue: DomainValue) extends ValueConstraint
+
+    /**
+     * The AI framework determined that some constraint applies to a value at a
+     * given program counter.
+     *
+     * Handling constraints is at the discretion of the domain; a simple domain
+     * may ignore calls to addConstraint.
+     *
+     * ==Example==
+     * An `ifnull` check was performed against the given value and the AI will next analyze
+     * the `true` branch – i.e., the branch that would be executed if the check succeeded.
+     *
+     * @param constraint The constraint that models the type of the constraint.
+     * @param pc The program counter of the first instruction where we know that the value
+     *      is `null`.
+     * @param memoryLayout The memory layout that is in effect at the given location (pc) and
+     *      which can be refined.
+     */
+    def addConstraint(
+        constraint: this.type#ValueConstraint,
+        pc: Int,
+        memoryLayout: DomainMemoryLayout): DomainMemoryLayout
+
+    // -----------------------------------------------------------------------------------
+    //
+    // ABSTRACTIONS RELATED TO INSTRUCTIONS
+    //
+    // -----------------------------------------------------------------------------------
 
     //
     // CREATE ARRAY
@@ -343,29 +491,10 @@ trait Domain {
 
     def newObject(t: ObjectType): DomainValue
 
-    //
-    // QUESTION'S ABOUT VALUES
-    //
-    def isNull(value: DomainValue): BooleanAnswer
-    def isNonNull(value: DomainValue): BooleanAnswer
+}
 
-    //
-    // HANDLING CONSTRAINTS
-    //
-
-    /**
-     * The AI framework determined that the value is guaranteed to be null.
-     *
-     * ==Example""
-     * An `ifnull` check was performed against the given value and the AI will next analyze
-     * the `true` branch – i.e., the branch that would be executed if the check succeeded.
-     */
-    def addIsNullConstraint(
-        value: DomainValue,
-        memoryLayout: MemoryLayout[this.type, this.type#DomainValue]): MemoryLayout[this.type, this.type#DomainValue]
-
-    def addIsNonNullConstraint(
-        value: DomainValue,
-        memoryLayout: MemoryLayout[this.type, this.type#DomainValue]): MemoryLayout[this.type, this.type#DomainValue]
-
+object Domain {
+    final val YES: Some[Boolean] = Some(true)
+    final val NO: Some[Boolean] = Some(false)
+    final val UNKNOWN = None
 }
