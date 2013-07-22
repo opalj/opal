@@ -97,7 +97,7 @@ object AI {
     def perform(
         code: Code,
         domain: Domain)(
-            initialLocals: IndexedSeq[domain.DomainValue]): IndexedSeq[MemoryLayout[domain.type, domain.DomainValue]] = { // TODO [AI Performance] Figure out if it is worth using an Array instead of an IndexedSeq
+            initialLocals: IndexedSeq[domain.DomainValue]): IndexedSeq[domain.DomainMemoryLayout] = { // TODO [AI Performance] Figure out if it is worth using an Array instead of an IndexedSeq
 
         assume(code.maxLocals == initialLocals.size, "code.maxLocals and initialLocals.size differ")
 
