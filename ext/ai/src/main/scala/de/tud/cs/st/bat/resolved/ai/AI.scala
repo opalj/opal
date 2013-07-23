@@ -371,8 +371,8 @@ object AI {
                 // STATEMENTS THAT CAN CAUSE EXCEPTIONELL TRANSFER OF CONTROL FLOW
                 // 
 
-                // case ... IDIV        
-                //case ... INVOKE
+                // TODO[AI] case ... IDIV        
+                // TODO[AI] case ... INVOKE
 
                 case 191 /*athrow*/ ⇒
                     BATError("throws are not yet supported")
@@ -405,6 +405,11 @@ object AI {
     }
 }
 
+/*
+ * Design:
+ * Here, we use a builder to construct a Result object in two steps. This is necessary
+ * to correctly type the `MemoryLayout` structure, which depends on the given domain. 
+ */
 object AIResultBuilder {
 
     type MemoryLayout[D <: Domain] = ai.MemoryLayout[D, D#DomainValue]
@@ -437,11 +442,19 @@ object AIResultBuilder {
     }
 }
 
+/*
+ * Design:
+ * We use an explicit type parameter to avoid a path dependency on a concrete AIResult
+ * instance. I.e., if we remove the type parameter and redefine the method memoryLayouts
+ * to "memoryLayouts: IndexedSeq[MemoryLayout[domain.type, domain.DomainValue]]" 
+ * we would introduce a path dependence to a particular AIResult's instance and the actual 
+ * type would be "this.domain.type" and "this.domain.DomainValue". 
+ */
 sealed abstract class AIResult[D <: Domain](val code: Code, val domain: D) {
     def memoryLayouts: IndexedSeq[MemoryLayout[D, D#DomainValue]]
     def workList: List[Int]
     def wasAborted: Boolean
-    
+
     type BoundAIResult = AIResult[domain.type]
 }
 
@@ -455,31 +468,3 @@ abstract class AICompleted[D <: Domain](code: Code, domain: D) extends AIResult(
     def workList: List[Int] = List(0)
     def restartInterpretation(): BoundAIResult
 }
-
-
-
-//sealed class AIResult[D <: Domain](val domain : D) {
-//    
-//    protected type MemoryLayout = ai.MemoryLayout[domain.type,domain.DomainValue]
-//    
-//    def memoryLayouts: scala.collection.mutable.IndexedSeq[MemoryLayout]
-//    
-//    def isAborted: Boolean
-//    def completedNormally = !isAborted
-//}
-//
-//case class AIAborted[D <: Domain](
-//        code: Code,
-//        domain: D) extends AIResult[D](domain) {
-//
-//    var memoryLayouts: scala.collection.mutable.IndexedSeq[MemoryLayout] = _
-//    var workList: List[Int] = _
-//
-//    def isAborted = true
-//}
-//
-//case class AICompleted[D](
-//    memoryLayouts: IndexedSeq[MemoryLayout[D, V]])
-//        extends AIResult[D] {
-//    def isAborted = false
-//}

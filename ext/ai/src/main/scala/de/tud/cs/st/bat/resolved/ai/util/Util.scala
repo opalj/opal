@@ -67,6 +67,7 @@ object Util {
         domain: Domain)(
             f: AIResult[domain.type] ⇒ T): T = {
         val result = AI(classFile, method, domain)
+        val memoryLayouts: IndexedSeq[MemoryLayout[domain.type, domain.DomainValue]] = result.memoryLayouts
         try {
             if (result.wasAborted) throw new RuntimeException("interpretation aborted")
             f(result)
@@ -76,7 +77,7 @@ object Util {
                 if ((currentTime - lastDump) > timeInMillisBetweenDumps) {
                     lastDump = currentTime
                     val title = Some("Generated due to exception: "+e.getMessage())
-                    val dump = util.Util.dump(Some(classFile), Some(method), method.body.get, result.memoryLayouts, title)
+                    val dump = util.Util.dump(Some(classFile), Some(method), method.body.get, memoryLayouts, title)
                     util.Util.writeAndOpenDump(dump) //.map(_.deleteOnExit)
                 } else {
                     System.err.println("Dump suppressed: "+e.getMessage())
