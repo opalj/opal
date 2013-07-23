@@ -158,11 +158,7 @@ object AI {
                    pc: Int,
                    instruction: Instruction): MemoryLayout = {
 
-            MemoryLayout.update(domain)(
-                memoryLayout.operands,
-                memoryLayout.locals,
-                pc,
-                instruction)
+            MemoryLayout.update(domain)(memoryLayout, pc, instruction)
         }
 
         def comparisonWithFixedValue(

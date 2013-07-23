@@ -139,10 +139,13 @@ object MemoryLayout {
         updateType(new MemoryLayout(domain, newOperands.reverse, newLocals))
     }
 
+    /**
+     * Models the effect of the instruction with the given program counter on the
+     * stack and the locals.
+     */
     def update(
         domain: Domain)(
-            operands: List[domain.DomainValue],
-            locals: IndexedSeq[domain.DomainValue],
+            memoryLayout: MemoryLayout[domain.type, domain.DomainValue],
             currentPC: Int,
             instruction: Instruction): MemoryLayout[domain.type, domain.DomainValue] = {
 
@@ -154,8 +157,9 @@ object MemoryLayout {
             locals: IndexedSeq[domain.DomainValue]): MemoryLayout[domain.type, domain.DomainValue] =
             new MemoryLayout(domain, operands, locals)
 
-        def self(): MemoryLayout[domain.type, domain.DomainValue] =
-            new MemoryLayout(domain, operands, locals)
+        val operands: List[domain.DomainValue] = memoryLayout.operands
+        val locals: IndexedSeq[domain.DomainValue] = memoryLayout.locals
+        val self = memoryLayout
 
         (instruction.opcode: @annotation.switch) match {
 
@@ -389,7 +393,7 @@ object MemoryLayout {
                     case LoadFloat(v)  ⇒ MemoryLayout(domain.floatValue(v) :: operands, locals)
                     case LoadString(v) ⇒ MemoryLayout(domain.stringValue(v) :: operands, locals)
                     case LoadClass(v)  ⇒ MemoryLayout(domain.classValue(v) :: operands, locals)
-                    case _             ⇒ BATError("internal implementation error or invalid bytecode")
+                    case _             ⇒ BATError("unknown type of ldc instruction")
                 }
             }
             case 19 /*ldc_w*/ ⇒ {
@@ -398,14 +402,14 @@ object MemoryLayout {
                     case LoadFloat_W(v)  ⇒ MemoryLayout(domain.floatValue(v) :: operands, locals)
                     case LoadString_W(v) ⇒ MemoryLayout(domain.stringValue(v) :: operands, locals)
                     case LoadClass_W(v)  ⇒ MemoryLayout(domain.classValue(v) :: operands, locals)
-                    case _               ⇒ BATError("internal implementation error or invalid bytecode")
+                    case _               ⇒ BATError("unknown type of ldc_w instruction")
                 }
             }
             case 20 /*ldc2_w*/ ⇒ {
                 instruction match {
                     case LoadLong(v)   ⇒ MemoryLayout(domain.longValue(v) :: operands, locals)
                     case LoadDouble(v) ⇒ MemoryLayout(domain.doubleValue(v) :: operands, locals)
-                    case _             ⇒ BATError("internal implementation error or invalid bytecode")
+                    case _             ⇒ BATError("unknown type of ldc2_w instruction")
                 }
             }
 
