@@ -41,28 +41,79 @@ import scala.xml.Node
 import java.io.File
 
 /**
- * Several utility methods to faciliate the development of the abstract interpreter/
+ * Several utility methods to facilitate the development of the abstract interpreter/
  * new domains for the abstract interpreter.
  *
  * @author Michael Eichberg
  */
 object Util {
 
+    import language.existentials
     import de.tud.cs.st.util.ControlAbstractions._
 
+    /**
+     * We generate dumps only after the given time (default: 2500 Millis) have passed.
+     *
+     * If you want to generate more dumps set this value to a lower value or to -1l if
+     * do never want to miss dump.
+     */
+    @volatile
+    var timeInMillisBetweenDumps: Long = 2500l
+    private var lastDump: Long = 0l
+
     def dumpOnFailure[T](
+        classFile: ClassFile,
+        method: Method,
+        domain: Domain)(
+            f: AIResult[domain.type] ⇒ T): T = {
+        val result = AI(classFile, method, domain)
+        try {
+            if (result.wasAborted) throw new RuntimeException("interpretation aborted")
+            f(result)
+        } catch {
+            case e: Throwable ⇒ {
+                val currentTime = System.currentTimeMillis()
+                if ((currentTime - lastDump) > timeInMillisBetweenDumps) {
+                    lastDump = currentTime
+                    val title = Some("Generated due to exception: "+e.getMessage())
+                    val dump = util.Util.dump(Some(classFile), Some(method), method.body.get, result.memoryLayouts, title)
+                    util.Util.writeAndOpenDump(dump) //.map(_.deleteOnExit)
+                } else {
+                    System.err.println("Dump suppressed: "+e.getMessage())
+                }
+                throw e
+            }
+        }
+    }
+
+    /**
+     * In case that during the validation some exception is thrown, a dump of
+     * the current memory layout is written to a temporary file and opened in a
+     * browser; the number of dumps that are generated is controlled by
+     * `timeInMillisBetweenDumps`. If a dump is suppressed a short message is
+     * printed on the console.
+     */
+    def dumpOnFailureDuringValidation[T](
         classFile: Option[ClassFile],
         method: Option[Method],
         code: Code,
-        memoryLayouts: IndexedSeq[MemoryLayout[_ <: AnyRef, _ <: AnyRef]])(
+        result: AIResult[_ <: AnyRef])(
             f: ⇒ T): T = {
+        val memoryLayouts = result.memoryLayouts
         try {
+            if (result.wasAborted) throw new RuntimeException("interpretation aborted")
             f
         } catch {
             case e: Throwable ⇒ {
-                val title = Some("Generated due to exception: "+e.getMessage())
-                val dump = util.Util.dump(classFile, method, code, memoryLayouts, title)
-                util.Util.writeAndOpenDump(dump) //.map(_.deleteOnExit)
+                val currentTime = System.currentTimeMillis()
+                if ((currentTime - lastDump) > timeInMillisBetweenDumps) {
+                    lastDump = currentTime
+                    val title = Some("Generated due to exception: "+e.getMessage())
+                    val dump = util.Util.dump(classFile, method, code, memoryLayouts, title)
+                    util.Util.writeAndOpenDump(dump) //.map(_.deleteOnExit)
+                } else {
+                    System.err.println("Dump suppressed: "+e.getMessage())
+                }
                 throw e
             }
         }

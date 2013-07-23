@@ -177,7 +177,11 @@ trait DomainWithValues extends Domain {
             Unknown
     }
 
-    def areEqual(value1: DomainValue, value2: DomainValue): Answer = {
+    def areEqualReferences(value1: DomainValue, value2: DomainValue): Answer = {
+        Unknown
+    }
+    
+    def areEqualIntegers(value1: DomainValue, value2: DomainValue): Answer = {
         Unknown
     }
 

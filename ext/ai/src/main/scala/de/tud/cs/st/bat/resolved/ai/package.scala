@@ -35,12 +35,13 @@ package bat
 package resolved
 
 /**
- * This package defines classes and traits used by BAT's abstract interpretation framework.
+ * This package defines classes and traits used by BAT's abstract interpretation
+ * framework – called BATAI in the following.
  *
  * ==Note==
  * This framework assumes that the analyzed bytecode is valid; i.e., the JVM's
  * bytecode verifier would verify the code. If the presented bytecode is not valid,
- * the result is undefined (i.e., BAT may report meaningless results, crash or run
+ * the result is undefined (i.e., BATAI may report meaningless results, crash or run
  * indefinitely.
  *
  * @author Michael Eichberg
@@ -50,7 +51,7 @@ package object ai {
     /**
      * Exception that is thrown if the framework identifies an error in the concrete
      * implementation of a specific domain. I.e., the error is related to an error in
-     * user code.
+     * user code in the implementation of the domain.
      */
     class AIImplementationError(message: String) extends RuntimeException(message)
 

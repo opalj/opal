@@ -34,28 +34,25 @@ package de.tud.cs.st
 package bat
 package resolved
 package ai
+package comprehensive
 
-import java.io.File
+import de.tud.cs.st.util.ControlAbstractions._
+import reader.Java7Framework.ClassFile
+
 import java.util.zip.ZipFile
-import java.util.zip.ZipEntry
 import java.io.DataInputStream
 import java.io.ByteArrayInputStream
 
-import org.scalatest.FlatSpec
-import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
-import org.scalatest.ParallelTestExecution
+import org.scalatest.FlatSpec
+import org.scalatest.matchers.ShouldMatchers
 import org.scalatest.concurrent.TimeLimitedTests
 import org.scalatest.time._
 
-import resolved.reader.Java7Framework.ClassFile
-import de.tud.cs.st.util.ControlAbstractions._
-
 /**
  * This test(suite) just loads a very large number of class files and performs
- * a basic abstract interpretation.
+ * an abstract interpretation of the methods.
  *
  * @author Michael Eichberg
  */
@@ -65,25 +62,34 @@ class InterpretManyMethodsTest
         with ShouldMatchers
         with TimeLimitedTests {
 
+    import collection.JavaConversions._
+
     val timeLimit = Span(250, Millis)
+    val directoryWithJARs = "../../../../../core/src/test/resources/classfiles"
 
     behavior of "BAT"
 
     for {
-        file ← TestSupport.locateTestResources("../../../../../core/src/test/resources/classfiles").listFiles
-        if (file.isFile && file.canRead && file.getName.endsWith(".jar"))
+        file ← TestSupport.locateTestResources(directoryWithJARs, "ext/ai").listFiles
+        if file.isFile && file.canRead && file.getName.endsWith(".jar")
+        jarFile = new ZipFile(file)
+        jarEntry ← (jarFile).entries
+        if !jarEntry.isDirectory && jarEntry.getName.endsWith(".class")
     } {
-        val jarFile = new ZipFile(file)
-        val jarEntries = (jarFile).entries
-        while (jarEntries.hasMoreElements) {
-            val jarEntry = jarEntries.nextElement
-            if (!jarEntry.isDirectory && jarEntry.getName.endsWith(".class")) {
-                val data = new Array[Byte](jarEntry.getSize().toInt)
-                process(new DataInputStream(jarFile.getInputStream(jarEntry))) { _.readFully(data) }
-                val classFile = ClassFile(new DataInputStream(new ByteArrayInputStream(data)))
-                for (method ← classFile.methods; if method.body.isDefined) {
-                    it should ("be able to perform an abstract interpretation of the method "+classFile.thisClass.toJava + method.toJava+" in "+jarFile.getName) in {
-                        AI(classFile, method, new DefaultDomain)
+        val data = new Array[Byte](jarEntry.getSize().toInt)
+        process(new DataInputStream(jarFile.getInputStream(jarEntry))) { _.readFully(data) }
+        analyzeClassFile(file.getName(), data)
+    }
+
+    def analyzeClassFile(resource: String, data: Array[Byte]) {
+        val classFile = ClassFile(new DataInputStream(new ByteArrayInputStream(data)))
+        for (method ← classFile.methods; if method.body.isDefined) {
+
+            it should ("be able to perform an abstract interpretation of the method "+classFile.thisClass.toJava + method.toJava+" in "+resource) in {
+                val domain = new DefaultDomain()
+                util.Util.dumpOnFailure[Unit](classFile, method, domain) { result: AIResult[domain.type] ⇒
+                    {
+                        // Nothing else to do? Checkt that all instructions are interpreted?    
                     }
                 }
             }

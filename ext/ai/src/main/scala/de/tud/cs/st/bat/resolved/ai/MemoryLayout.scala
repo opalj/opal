@@ -38,19 +38,16 @@ package ai
 
 /**
  * Represents the current execution context of a method. I.e., the operand stack
- * as well as the current values of the registers/locals. The memory layout is
- * automatically maintained by BATAI while analyzing a method. If specific knowledge
- * about a value is required, the domain is queried to get the necessary information.
- * This callback mechanism enables the domain to use an arbitrary mechanism to
- * represent values and to steer the analysis.
+ * as well as the current values stored in the registers/locals. The memory layout is
+ * automatically maintained by BATAI while analyzing a method. For further details
+ * consult the documentation of [[de.tud.cs.st.bat.resolved.ai.Domain]].
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
- * @author Dennis Siebert
  */
 /* The following design is the result of a lack of a feature for "constructor 
  * dependent types". If we would be able to express that the objects that are 
  * stored in the operands and locals lists are belonging to the given domain 
- * (and not just "some" domain, it would be possible to move the methods defined
+ * (and not just "some" domain), it would be possible to move the methods defined
  * in the companion object to this class.
  */
 protected[ai] final class MemoryLayout[D <: Domain, V <: D#DomainValue](
@@ -72,9 +69,8 @@ protected[ai] final class MemoryLayout[D <: Domain, V <: D#DomainValue](
 object MemoryLayout {
 
     /**
-     * Updates this memory layout with the given memory layout. Returns `None` if this
-     * memory layout already subsumes the given memory layout and returns
-     * `Some(new MemoryLayout(...))` otherwise.
+     * Merges this memory layout with the given memory layout. Returns `NoUpdate` if this
+     * memory layout already subsumes the given memory layout.
      */
     def merge(domain: Domain)(
         thisOperands: List[domain.DomainValue],

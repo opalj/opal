@@ -34,14 +34,16 @@ package de.tud.cs.st
 package bat
 package resolved
 package ai
+package base
 
 import reader.Java7Framework.ClassFiles
+
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
-import org.scalatest.matchers.ShouldMatchers
 import org.scalatest.ParallelTestExecution
+import org.scalatest.matchers.ShouldMatchers
 
 /**
  * Basic tests of the abstract interpreter.
@@ -55,7 +57,7 @@ class MethodsPlainTest
         with ShouldMatchers /*with BeforeAndAfterAll */
         with ParallelTestExecution {
 
-    import util.Util.dumpOnFailure
+    import util.Util.dumpOnFailureDuringValidation
 
     class RecordingDomain extends DefaultDomain {
         var returnedValue: Option[DomainValue] = _
@@ -863,7 +865,7 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "objectArray").get
         val result = AI(classFile, method, domain)
 
-        dumpOnFailure(Some(classFile), Some(method), method.body.get, result) {
+        dumpOnFailureDuringValidation(Some(classFile), Some(method), method.body.get, result) {
             domain.returnedValue should be(Some(ReferenceValue(ObjectType("ai/MethodsPlain"))))
         }
     }
@@ -873,7 +875,7 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "byteArray").get
         val result = AI(classFile, method, domain)
 
-        dumpOnFailure(Some(classFile), Some(method), method.body.get, result) {
+        dumpOnFailureDuringValidation(Some(classFile), Some(method), method.body.get, result) {
             domain.returnedValue should be(Some(SomeByteValue))
         }
     }

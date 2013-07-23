@@ -36,33 +36,59 @@ package resolved
 package ai
 
 /**
+ * Entry point into the abstract interpreter.
+ *
  * @author Michael Eichberg
  */
 object AI {
 
+    /**
+     *  Performs an abstract interpretation of the given method with the given domain.
+     *
+     *  @param classFile The method's defining class file.
+     *  @param method A non-native, non-abstrat method of the given class file that
+     *      will be analyzed.
+     *  @param domain The domain that will be used for the abstract interpretation.
+     */
     def apply(
         classFile: ClassFile,
         method: Method,
         domain: Domain) = perform(classFile, method, domain)(None)
 
     /**
-     * Analyzes the given method using the given domain and parameter values (if any).
+     * Analyzes the given method using the given domain and the pre-initialized parameter
+     * values (if any).
+     *
+     * ==Controlling the AI==
+     * To abort the abstract interpretation of a method just call the interpreter's
+     * `Thread`'s `interrupt` method.
      *
      * @param classFile Some class file; needed to determine the type of `this` if
-     *    the method is an instance method.
-     * @param method A non-abstract, non-native method of the given class file.
-     * @param domain The abstract domain that is used during the interpretation to perform
-     *    calculations w.r.t. the domain's values.
+     *      the method is an instance method.
+     * @param method A non-abstract, non-native method of the given class file; i.e.,
+     *      a method with a body.
+     * @param domain The abstract domain that is used to perform "abstract" calculations
+     *      w.r.t. the domain's values. This framework assumes that the same domain
+     *      instance is not used for the abstract interpretation of other methods.
      * @param someLocals If the values passed to a method are already known, the
-     *    abstract interpretation will be performed under that assumption.
-     * @return The memory layout that was in effect before the execution of each
-     *    instruction while performing the abstract interpretation of the method.
+     *      abstract interpretation will be performed under that assumption.
+     * @return The result of the abstract interpretation. Basically, the calculated
+     *      memory layouts. Each calculated memory layout represents
+     *      the layout before the instruction with the corresponding program counter
+     *      was interpreted. If the interpretation was aborted, the returned result
+     *      object contains all necessary information to continue the interpretation
+     *      if needed.
+     *      ==Note==
+     *      If you are just interested in the values that are returned or passed to other
+     *      functions/fields it may be effective (code and performance wise) to implement
+     *      your own domain that just records the values. For an example take a look at
+     *      the test cases of BATAI.
      */
     def perform(
         classFile: ClassFile,
         method: Method,
         domain: Domain)(
-            someLocals: Option[IndexedSeq[domain.DomainValue]] = None): IndexedSeq[MemoryLayout[domain.type, domain.DomainValue]] = {
+            someLocals: Option[IndexedSeq[domain.DomainValue]] = None): AIResult[domain.type] = {
 
         assume(method.body.isDefined, "The method ("+method.toJava+") has no body.")
 
@@ -97,29 +123,46 @@ object AI {
     def perform(
         code: Code,
         domain: Domain)(
-            initialLocals: IndexedSeq[domain.DomainValue]): IndexedSeq[domain.DomainMemoryLayout] = { // TODO [AI Performance] Figure out if it is worth using an Array instead of an IndexedSeq
+            initialLocals: IndexedSeq[domain.DomainValue]): AIResult[domain.type] = { // TODO [AI Performance] Figure out if it is worth using an Array instead of an IndexedSeq
 
         assume(code.maxLocals == initialLocals.size, "code.maxLocals and initialLocals.size differ")
-        val currentThread = Thread.currentThread()
 
-        import domain._
+        type MemoryLayout = ai.MemoryLayout[domain.type, domain.DomainValue]
+
+        val memoryLayouts = new Array[MemoryLayout](code.instructions.length)
+        memoryLayouts(0) = new MemoryLayout(domain, Nil, initialLocals)
+
+        continueInterpretation(
+            code,
+            domain)(
+                /*worklist = */ List(0),
+                memoryLayouts)
+    }
+
+    def continueInterpretation(
+        code: Code,
+        domain: Domain)(
+            currentWorklist: List[Int],
+            currentMemoryLayouts: Array[MemoryLayout[domain.type, domain.DomainValue]]): AIResult[domain.type] = { // TODO [AI Performance] Figure out if it is worth using an Array instead of an IndexedSeq
 
         type MemoryLayout = ai.MemoryLayout[domain.type, domain.DomainValue]
 
         val instructions: Array[Instruction] = code.instructions
+        val memoryLayouts = currentMemoryLayouts
+        var worklist = currentWorklist
+        var interpretedInstructions = 0; // to collect some statistics
 
-        // The memory layout that we associate with each instruction
-        val memoryLayouts = new Array[MemoryLayout](instructions.length)
-        memoryLayouts(0) = new MemoryLayout(domain, Nil, initialLocals)
-
-        // true if the instruction with the respective program counter is already transformed
-        var worklist: List[Int /*program counter*/ ] = List(0)
+        import domain._
 
         def update(memoryLayout: MemoryLayout,
                    pc: Int,
                    instruction: Instruction): MemoryLayout = {
 
-            MemoryLayout.update(domain)(memoryLayout.operands, memoryLayout.locals, pc, instruction)
+            MemoryLayout.update(domain)(
+                memoryLayout.operands,
+                memoryLayout.locals,
+                pc,
+                instruction)
         }
 
         def comparisonWithFixedValue(
@@ -127,25 +170,28 @@ object AI {
             pc: Int,
             instruction: Instruction,
             domainTest: (domain.DomainValue) ⇒ Answer,
-            yesPC: Int, yesConstraint: (domain.DomainValue) ⇒ domain.ValueConstraint,
-            noPC: Int, noConstraint: (domain.DomainValue) ⇒ domain.ValueConstraint) {
+            yesConstraint: (domain.DomainValue) ⇒ domain.ValueConstraint,
+            noConstraint: (domain.DomainValue) ⇒ domain.ValueConstraint) {
+
+            val branchTarget = pc + instruction.asInstanceOf[ConditionalBranchInstruction].branchoffset
+            val nextPC = instructions(pc).indexOfNextInstruction(pc, code)
 
             val operand = memoryLayout.operands.head
             domainTest(operand) match {
-                case Yes ⇒ gotoTarget(yesPC, update(memoryLayout, pc, instruction))
-                case No  ⇒ gotoTarget(noPC, update(memoryLayout, pc, instruction))
+                case Yes ⇒ gotoTarget(branchTarget, update(memoryLayout, pc, instruction))
+                case No  ⇒ gotoTarget(nextPC, update(memoryLayout, pc, instruction))
                 case Unknown ⇒ {
                     gotoTarget(
-                        yesPC,
+                        branchTarget,
                         domain.addConstraint(
                             yesConstraint(operand),
-                            yesPC,
+                            branchTarget,
                             update(memoryLayout, pc, instruction)))
                     gotoTarget(
-                        noPC,
+                        nextPC,
                         domain.addConstraint(
                             noConstraint(operand),
-                            noPC,
+                            nextPC,
                             update(memoryLayout, pc, instruction)))
                 }
             }
@@ -156,26 +202,29 @@ object AI {
             pc: Int,
             instruction: Instruction,
             domainTest: (domain.DomainValue, domain.DomainValue) ⇒ Answer,
-            yesPC: Int, yesConstraint: (domain.DomainValue, domain.DomainValue) ⇒ domain.ValueConstraint,
-            noPC: Int, noConstraint: (domain.DomainValue, domain.DomainValue) ⇒ domain.ValueConstraint) {
+            yesConstraint: (domain.DomainValue, domain.DomainValue) ⇒ domain.ValueConstraint,
+            noConstraint: (domain.DomainValue, domain.DomainValue) ⇒ domain.ValueConstraint) {
+
+            val branchTarget = pc + instruction.asInstanceOf[ConditionalBranchInstruction].branchoffset
+            val nextPC = instructions(pc).indexOfNextInstruction(pc, code)
 
             val value2 = memoryLayout.operands.head
             val value1 = memoryLayout.operands.tail.head
             domainTest(value1, value2) match {
-                case Yes ⇒ gotoTarget(yesPC, update(memoryLayout, pc, instruction))
-                case No  ⇒ gotoTarget(noPC, update(memoryLayout, pc, instruction))
+                case Yes ⇒ gotoTarget(branchTarget, update(memoryLayout, pc, instruction))
+                case No  ⇒ gotoTarget(nextPC, update(memoryLayout, pc, instruction))
                 case Unknown ⇒ {
                     gotoTarget(
-                        yesPC,
+                        branchTarget,
                         domain.addConstraint(
                             yesConstraint(value1, value2),
-                            yesPC,
+                            branchTarget,
                             update(memoryLayout, pc, instruction)))
                     gotoTarget(
-                        noPC,
+                        nextPC,
                         domain.addConstraint(
                             noConstraint(value1, value2),
-                            noPC,
+                            nextPC,
                             update(memoryLayout, pc, instruction)))
                 }
             }
@@ -201,6 +250,8 @@ object AI {
                         memoryLayouts(nextPC) = memoryLayout
                     }
                     case MetaInformationUpdate(memoryLayout) ⇒ {
+                        // => the evaluation context didn't change, hence
+                        // it is not necessary to enque the instruction
                         memoryLayouts(nextPC) = memoryLayout
                     }
                 }
@@ -212,12 +263,13 @@ object AI {
             }
         }
 
-        var interpretedInstructions = -1;
+        //
+        // Main loop of the abstract interpreter
+        //
+
         while (worklist.nonEmpty) {
-            interpretedInstructions += 1;
-            if (currentThread.isInterrupted()) {
-                /*DEBUG ONLY*/ util.Util.writeAndOpenDump(util.Util.dump(None, None, code, memoryLayouts, Some("\n\n\nEvaluation after "+interpretedInstructions+" interpretations aborted (Worklist: "+worklist.mkString(", ")+")")))
-                throw new RuntimeException("the abstract interpreter was interrupted after interpreating "+interpretedInstructions+" instructions")
+            if (Thread.interrupted()) {
+                return AIResultBuilder.aborted(code, domain)(memoryLayouts, worklist)
             }
 
             val pc = worklist.head
@@ -233,15 +285,13 @@ object AI {
                 // UNCONDITIONAL TRANSFER OF CONTROL
                 //
                 case 167 /*goto*/ ⇒
-                    gotoTarget(
-                        pc + instruction.asInstanceOf[GOTO].branchoffset,
-                        update(memoryLayout, pc, instruction))
+                    val branchtarget = pc + instruction.asInstanceOf[GOTO].branchoffset
+                    gotoTarget(branchtarget, update(memoryLayout, pc, instruction))
                 case 200 /*goto_w*/ ⇒
-                    gotoTarget(
-                        pc + instruction.asInstanceOf[GOTO_W].branchoffset,
-                        update(memoryLayout, pc, instruction))
+                    val branchtarget = pc + instruction.asInstanceOf[GOTO_W].branchoffset
+                    gotoTarget(branchtarget, update(memoryLayout, pc, instruction))
 
-                case 169 /*ret*/ ⇒ {
+                case 169 /*ret*/ ⇒
                     val lvIndex = instruction.asInstanceOf[RET].lvIndex
                     memoryLayout.locals(lvIndex) match {
                         case ReturnAddressValue(returnAddress) ⇒
@@ -251,74 +301,85 @@ object AI {
                                 lvIndex+
                                 ") does not contain a return address value", code, lvIndex)
                     }
-                }
                 case 168 /*jsr*/ ⇒
-                    gotoTarget(
-                        pc + instruction.asInstanceOf[JSR].branchoffset,
-                        update(memoryLayout, pc, instruction))
+                    val branchtarget = pc + instruction.asInstanceOf[JSR].branchoffset
+                    gotoTarget(branchtarget, update(memoryLayout, pc, instruction))
                 case 201 /*jsr_w*/ ⇒
-                    gotoTarget(
-                        pc + instruction.asInstanceOf[JSR_W].branchoffset,
-                        update(memoryLayout, pc, instruction))
+                    val branchtarget = pc + instruction.asInstanceOf[JSR_W].branchoffset
+                    gotoTarget(branchtarget, update(memoryLayout, pc, instruction))
+
+                //
+                // CONDITIONAL TRANSFER OF CONTROL
+                //
+
+                case 165 /*if_acmpeq*/ ⇒
+                    comparisonOfTwoValues(memoryLayout, pc, instruction,
+                        areEqualReferences _, AreEqualReferences, AreNotEqualReferences)
+                case 166 /*if_acmpne*/ ⇒
+                    comparisonOfTwoValues(memoryLayout, pc, instruction,
+                        areNotEqualReferences _, AreNotEqualReferences, AreEqualReferences)
+                case 198 /*ifnull*/ ⇒
+                    comparisonWithFixedValue(memoryLayout, pc, instruction,
+                        isNull _, IsNull, IsNonNull)
+                case 199 /*ifnonnull*/ ⇒
+                    comparisonWithFixedValue(memoryLayout, pc, instruction,
+                        isNonNull _, IsNonNull, IsNull)
+
+                case 159 /*if_icmpeq*/ ⇒
+                    comparisonOfTwoValues(memoryLayout, pc, instruction,
+                        areEqualIntegers _, AreEqualIntegers, AreNotEqualIntegers)
+                case 160 /*if_icmpne*/ ⇒
+                    comparisonOfTwoValues(memoryLayout, pc, instruction,
+                        areNotEqualIntegers _, AreNotEqualIntegers, AreEqualIntegers)
+                case 161 /*if_icmplt*/ ⇒
+                    comparisonOfTwoValues(memoryLayout, pc, instruction,
+                        isLessThan _, IsLessThan, IsGreaterThanOrEqualTo)
+                case 162 /*if_icmpge*/ ⇒
+                    comparisonOfTwoValues(memoryLayout, pc, instruction,
+                        isGreaterThanOrEqualTo _, IsGreaterThanOrEqualTo, IsLessThan)
+                case 163 /*if_icmpgt*/ ⇒
+                    comparisonOfTwoValues(memoryLayout, pc, instruction,
+                        isGreaterThan _, IsGreaterThan, IsLessThanOrEqualTo)
+                case 164 /*if_icmple*/ ⇒
+                    comparisonOfTwoValues(memoryLayout, pc, instruction,
+                        isLessThanOrEqualTo _, IsLessThanOrEqualTo, IsGreaterThan)
+                case 153 /*ifeq*/ ⇒
+                    comparisonWithFixedValue(memoryLayout, pc, instruction,
+                        is0 _, Is0, IsNot0)
+                case 154 /*ifne*/ ⇒
+                    comparisonWithFixedValue(memoryLayout, pc, instruction,
+                        isNot0 _, IsNot0, Is0)
+                case 155 /*iflt*/ ⇒
+                    comparisonWithFixedValue(memoryLayout, pc, instruction,
+                        isLessThan0 _, IsLessThan0, IsGreaterThanOrEqualTo0)
+                case 156 /*ifge*/ ⇒
+                    comparisonWithFixedValue(memoryLayout, pc, instruction,
+                        isGreaterThanOrEqualTo0 _, IsGreaterThanOrEqualTo0, IsLessThan0)
+                case 157 /*ifgt*/ ⇒
+                    comparisonWithFixedValue(memoryLayout, pc, instruction,
+                        isGreaterThan0 _, IsGreaterThan0, IsLessThanOrEqualTo0)
+                case 158 /*ifle */ ⇒
+                    comparisonWithFixedValue(memoryLayout, pc, instruction,
+                        isLessThanOrEqualTo0 _, IsLessThanOrEqualTo0, IsGreaterThan0)
+
                 //
                 //            case 171 /*lookupswitch*/
                 //               | 170 /*tableswitch*/ ⇒ new MemoryLayout(operands.tail, locals)
                 //
-                case 165 /*if_acmpeq*/ ⇒
-                    comparisonOfTwoValues(
-                        memoryLayout, pc, instruction,
-                        domain.areEqual _,
-                        pc + instruction.asInstanceOf[ConditionalBranchInstruction].branchoffset, domain.AreEqual,
-                        pcOfNextInstruction, domain.AreNotEqual)
-                case 166 /*if_acmpne*/ ⇒
-                    comparisonOfTwoValues(
-                        memoryLayout, pc, instruction,
-                        domain.areNotEqual _,
-                        pc + instruction.asInstanceOf[ConditionalBranchInstruction].branchoffset, domain.AreNotEqual,
-                        pcOfNextInstruction, domain.AreEqual)
 
-                //             case 159 /*if_icmpeq*/
-                //               | 160 /*if_icmpne*/
-                //               | 161 /*if_icmplt*/
-                //               | 162 /*if_icmpge*/
-                //               | 163 /*if_icmpgt*/
-                //               | 164 /*if_icmple*/ ⇒ new MemoryLayout(operands.drop(2), locals)
-                case 153 /*ifeq*/ ⇒
-                    comparisonWithFixedValue(
-                        memoryLayout, pc, instruction,
-                        domain.is0 _,
-                        pc + instruction.asInstanceOf[ConditionalBranchInstruction].branchoffset, domain.Is0,
-                        pcOfNextInstruction, domain.IsNot0)
+                //
+                // STATEMENTS THAT CAN CAUSE EXCEPTIONELL TRANSFER OF CONTROL FLOW
+                // 
 
-                case 154 /*ifne*/ ⇒
-                    comparisonWithFixedValue(
-                        memoryLayout, pc, instruction,
-                        domain.isNot0 _,
-                        pc + instruction.asInstanceOf[ConditionalBranchInstruction].branchoffset, domain.IsNot0,
-                        pcOfNextInstruction, domain.Is0)
+                // case ... IDIV        
+                //case ... INVOKE
 
-                case 155 /*iflt*/ ⇒
-                case 156 /*ifge*/ ⇒
-                case 157 /*ifgt*/ ⇒
-                case 158 /*ifle */ ⇒
-                    comparisonWithFixedValue(
-                        memoryLayout, pc, instruction,
-                        domain.isLessThanOrEqualTo0 _,
-                        pc + instruction.asInstanceOf[ConditionalBranchInstruction].branchoffset, domain.IsLessThanOrEqualTo0,
-                        pcOfNextInstruction, domain.IsGreaterThan0)
+                case 191 /*athrow*/ ⇒
+                    BATError("throws are not yet supported")
 
-                case 198 /*ifnull*/ ⇒
-                    comparisonWithFixedValue(
-                        memoryLayout, pc, instruction,
-                        domain.isNull _,
-                        pc + instruction.asInstanceOf[ConditionalBranchInstruction].branchoffset, domain.IsNull,
-                        pcOfNextInstruction, domain.IsNonNull)
-                case 199 /*ifnonnull*/ ⇒
-                    comparisonWithFixedValue(
-                        memoryLayout, pc, instruction,
-                        domain.isNonNull _,
-                        pc + instruction.asInstanceOf[ConditionalBranchInstruction].branchoffset, domain.IsNonNull,
-                        pcOfNextInstruction, domain.IsNull)
+                //
+                // RETURN INSTRUCTIONS
+                //
 
                 case 172 /*ireturn*/
                     | 173 /*lreturn*/
@@ -327,18 +388,98 @@ object AI {
                     | 176 /*areturn*/
                     | 177 /*return*/ ⇒ update(memoryLayout, pc, instruction)
 
-                case 191 /*athrow*/ ⇒
-                    BATError("throws are not yet supported")
-
-                // all non-control flow related instructions are handled here
+                // 
+                // INSTRUCTIONS THAT FALL THROUGH / THAT DO NOT CONTROL THE 
+                // CONTROL FLOW
+                //
                 case _ ⇒ {
                     val nextPC = pcOfNextInstruction
                     val nextMemoryLayout = update(memoryLayout, pc, instruction)
                     gotoTarget(nextPC, nextMemoryLayout)
                 }
             }
+            interpretedInstructions += 1;
         }
 
-        memoryLayouts
+        AIResultBuilder.complete(code, domain)(memoryLayouts)
     }
 }
+
+object AIResultBuilder {
+
+    type MemoryLayout[D <: Domain] = ai.MemoryLayout[D, D#DomainValue]
+
+    def aborted[D <: Domain](
+        theCode: Code,
+        theDomain: D): (Array[MemoryLayout[theDomain.type]], List[Int]) ⇒ AIResult[theDomain.type] = {
+
+        (theMemoryLayouts: Array[MemoryLayout[theDomain.type]], theWorkList: List[Int]) ⇒
+            new AIAborted[theDomain.type](theCode, theDomain) {
+                def workList = theWorkList
+                def memoryLayouts = theMemoryLayouts
+                def continueInterpretation(): AIResult[domain.type] = {
+                    AI.continueInterpretation(code, theDomain)(workList, theMemoryLayouts)
+                }
+            }
+    }
+
+    def complete[D <: Domain](
+        theCode: Code,
+        theDomain: D): (Array[MemoryLayout[theDomain.type]]) ⇒ AIResult[theDomain.type] = {
+
+        (theMemoryLayouts: Array[MemoryLayout[theDomain.type]]) ⇒
+            new AICompleted[theDomain.type](theCode, theDomain) {
+                def memoryLayouts = theMemoryLayouts
+                def restartInterpretation(): AIResult[theDomain.type] = {
+                    AI.continueInterpretation(code, domain)(workList, theMemoryLayouts)
+                }
+            }
+    }
+}
+
+sealed abstract class AIResult[D <: Domain](val code: Code, val domain: D) {
+    def memoryLayouts: IndexedSeq[MemoryLayout[domain.type, domain.DomainValue]]
+    def workList: List[Int]
+    def wasAborted: Boolean
+    
+    type BoundAIResult = AIResult[domain.type]
+}
+
+abstract class AIAborted[D <: Domain](code: Code, domain: D) extends AIResult(code, domain) {
+    final def wasAborted: Boolean = true
+    def continueInterpretation(): BoundAIResult
+}
+
+abstract class AICompleted[D <: Domain](code: Code, domain: D) extends AIResult(code, domain) {
+    final def wasAborted: Boolean = false
+    def workList: List[Int] = List(0)
+    def restartInterpretation(): BoundAIResult
+}
+
+
+
+//sealed class AIResult[D <: Domain](val domain : D) {
+//    
+//    protected type MemoryLayout = ai.MemoryLayout[domain.type,domain.DomainValue]
+//    
+//    def memoryLayouts: scala.collection.mutable.IndexedSeq[MemoryLayout]
+//    
+//    def isAborted: Boolean
+//    def completedNormally = !isAborted
+//}
+//
+//case class AIAborted[D <: Domain](
+//        code: Code,
+//        domain: D) extends AIResult[D](domain) {
+//
+//    var memoryLayouts: scala.collection.mutable.IndexedSeq[MemoryLayout] = _
+//    var workList: List[Int] = _
+//
+//    def isAborted = true
+//}
+//
+//case class AICompleted[D](
+//    memoryLayouts: IndexedSeq[MemoryLayout[D, V]])
+//        extends AIResult[D] {
+//    def isAborted = false
+//}

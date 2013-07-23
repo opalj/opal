@@ -37,7 +37,7 @@ package ai
 
 /**
  * Encapsulates an updated value, primarily used to indicate in which way a given
- * structure was updated.
+ * value was updated.
  *
  * @author Michael Eichberg
  */
@@ -71,11 +71,14 @@ final case class StructuralUpdate[V](val value: V) extends SomeUpdate[V] {
 }
 /**
  * Used to indicate that a new value is returned, but only meta-information
- * that is not directly relevant to abstract interpreter was changed.
- * For example, if we merge two values seen on two paths that represent the
+ * that is not directly relevant to the abstract interpreter was changed.
+ *
+ * ==Example==
+ * If two values are merged that are seen on two different paths that represent the
  * same abstract value, we may want to update the meta-information about
  * the origin of the current value, but this information is not relevant
- * for the abstract interpreter itself.
+ * for the abstract interpreter itself and it will not reschedule the abstract
+ * interpretation of subsequent instructions.
  */
 final case class MetaInformationUpdate[V](val value: V) extends SomeUpdate[V] {
 
@@ -90,7 +93,7 @@ final case class MetaInformationUpdate[V](val value: V) extends SomeUpdate[V] {
 }
 
 /**
- * Indicates that the (given) memory structure was not updated.
+ * Indicates that the (given) structure was not updated.
  */
 case object NoUpdate extends Update[Nothing] {
 
@@ -100,9 +103,10 @@ case object NoUpdate extends Update[Nothing] {
 }
 
 /**
- * Specifies the type of an update. The type hierarchy of `Update` and `UpdateType`
- * correspond and it is possible to conveniently switch between them. Contrary to
- * an `Update` object an `UpdateType` object never has any payload.
+ * Specifies the type of an update. The type hierarchies of `Update` and `UpdateType`
+ * are aligned and it is possible to conveniently switch between them. Contrary to
+ * an `Update` object an `UpdateType` object never has any payload it just characterize
+ * an update.
  *
  * ==Example==
  * {{{

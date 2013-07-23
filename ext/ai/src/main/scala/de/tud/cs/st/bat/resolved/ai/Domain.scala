@@ -49,13 +49,15 @@ import reflect.ClassTag
  * ==Control Flow==
  * BATI controls the process of evaluating the program, but requires a
  * domain to perform the actual computations of an instruction's result.
+ * Handling of instructions that directly manipulate the stack/the locals
+ * is completely embedded into BATAI.
  *
- * The framework assumes that every method/code block is associated with its own instance
- * of a domain object.
+ * The framework assumes that every method/code block is associated with its
+ * own instance of a domain object.
  *
  * ==Thread Safety==
- * When every method is associated with a unique `Domain` instance as suggested and – given
- * that BAT only uses one thread to analyze a given method at a time – no special care
+ * When every method is associated with a unique `Domain` instance as proposed and – given
+ * that BATAI only uses one thread to analyze a given method at a time – no special care
  * has to be taken. However, if a domain needs to consult a domain which is associated with
  * a Project as a whole, which we will refer to as "World" in BATAI, it is then the
  * responsibility of the domain to make sure that everything is thread safe.
@@ -236,9 +238,12 @@ trait Domain {
      */
     val IntegerConstant0: DomainValue
 
+    // -----------------------------------------------------------------------------------
     //
     // QUESTION'S ABOUT VALUES
     //
+    // -----------------------------------------------------------------------------------
+
     /*ABSTRACT*/ def isNull(value: DomainValue): Answer
 
     def isNonNull(value: DomainValue): Answer = isNull(value).negate
@@ -247,9 +252,13 @@ trait Domain {
      * Are equal compares the values represented by the given values. If the values
      * are representing "ReferenceType" values - the object reference needs to be compared.
      */
-    /*ABSTRACT*/ def areEqual(value1: DomainValue, value2: DomainValue): Answer
+    /*ABSTRACT*/ def areEqualReferences(value1: DomainValue, value2: DomainValue): Answer
 
-    def areNotEqual(value1: DomainValue, value2: DomainValue): Answer = areEqual(value1, value2).negate
+    def areNotEqualReferences(value1: DomainValue, value2: DomainValue): Answer = areEqualReferences(value1, value2).negate
+
+    /*ABSTRACT*/ def areEqualIntegers(value1: DomainValue, value2: DomainValue): Answer
+
+    def areNotEqualIntegers(value1: DomainValue, value2: DomainValue): Answer = areEqualIntegers(value1, value2).negate
 
     /*ABSTRACT*/ def isLessThan(smallerValue: DomainValue, largerValue: DomainValue): Answer
 
@@ -261,9 +270,9 @@ trait Domain {
     def isGreaterThanOrEqualTo(largerValue: DomainValue, smallerValue: DomainValue): Answer =
         isLessThanOrEqualTo(smallerValue, largerValue)
 
-    def is0(value: DomainValue): Answer = areEqual(value, IntegerConstant0)
+    def is0(value: DomainValue): Answer = areEqualIntegers(value, IntegerConstant0)
 
-    def isNot0(value: DomainValue): Answer = areNotEqual(value, IntegerConstant0)
+    def isNot0(value: DomainValue): Answer = areNotEqualIntegers(value, IntegerConstant0)
 
     def isLessThan0(value: DomainValue): Answer = isLessThan(value, IntegerConstant0)
 
@@ -273,25 +282,32 @@ trait Domain {
 
     def isGreaterThanOrEqualTo0(value: DomainValue): Answer = isGreaterThanOrEqualTo(value, IntegerConstant0)
 
+    // -----------------------------------------------------------------------------------
     //
-    // HANDLING CONSTRAINTS
+    // HANDLING CONSTRAINTS RELATED TO VALUES
     //
+    // -----------------------------------------------------------------------------------
 
     /**
      * Identifies a constraint on a value.
      */
-    sealed trait ValueConstraint {
-        // Nothing (yet)
-    }
+    sealed trait ValueConstraint { /* Nothing (yet) */ }
+    //
+    // W.r.t Reference Values
     case class IsNull(value: DomainValue) extends ValueConstraint
     case class IsNonNull(value: DomainValue) extends ValueConstraint
-    case class AreEqual(value1: DomainValue, value2: DomainValue) extends ValueConstraint
-    case class AreNotEqual(value1: DomainValue, value2: DomainValue) extends ValueConstraint
+    case class AreEqualReferences(value1: DomainValue, value2: DomainValue) extends ValueConstraint
+    case class AreNotEqualReferences(value1: DomainValue, value2: DomainValue) extends ValueConstraint
+    //
+    // W.r.t. Integer values
+    case class AreEqualIntegers(value1: DomainValue, value2: DomainValue) extends ValueConstraint
+    case class AreNotEqualIntegers(value1: DomainValue, value2: DomainValue) extends ValueConstraint
     case class IsLessThan(smallerValue: DomainValue, largerValue: DomainValue) extends ValueConstraint
     case class IsLessThanOrEqualTo(smallerOrEqualValue: DomainValue, equalOrLargerValue: DomainValue) extends ValueConstraint
-
-    val Is0 = (value: DomainValue) ⇒ AreEqual(value, IntegerConstant0)
-    val IsNot0 = (value: DomainValue) ⇒ AreNotEqual(value, IntegerConstant0)
+    val IsGreaterThan = (largerValue: DomainValue, smallerValue: DomainValue) ⇒ IsLessThan(smallerValue, largerValue)
+    val IsGreaterThanOrEqualTo = (largerValue: DomainValue, smallerValue: DomainValue) ⇒ IsLessThanOrEqualTo(smallerValue, largerValue)
+    val Is0 = (value: DomainValue) ⇒ AreEqualIntegers(value, IntegerConstant0)
+    val IsNot0 = (value: DomainValue) ⇒ AreNotEqualIntegers(value, IntegerConstant0)
     val IsLessThan0 = (value: DomainValue) ⇒ IsLessThan(value, IntegerConstant0)
     val IsLessThanOrEqualTo0 = (value: DomainValue) ⇒ IsLessThanOrEqualTo(value, IntegerConstant0)
     val IsGreaterThan0 = (value: DomainValue) ⇒ IsLessThan(IntegerConstant0, value)
@@ -302,17 +318,20 @@ trait Domain {
      * given program counter.
      *
      * Handling constraints is at the discretion of the domain; a simple domain
-     * may ignore calls to addConstraint.
+     * may ignore calls to addConstraint and just return the memoryLayout as is.
      *
-     * ==Example==
-     * An `ifnull` check was performed against the given value and the AI will next analyze
-     * the `true` branch – i.e., the branch that would be executed if the check succeeded.
+     * ==Example Scenario==
+     * An `ifnull` check was performed against the given value and the domain's answer was that
+     * it is not known whether the value was `null` or not. In this case BATAI will
+     * call this method with the program counter (pc) set to the first instruction on the
+     * `true` branch and specify that this value now can safely be assumed to be null.
+     * Additionally, BATAI will also add a constraint for the `false` branch.
      *
      * @param constraint The constraint that models the type of the constraint.
-     * @param pc The program counter of the first instruction where we know that the value
-     *      is `null`.
-     * @param memoryLayout The memory layout that is in effect at the given location (pc) and
-     *      which can be refined.
+     * @param pc The program counter of the first instruction where the constraint is
+     *      effective.
+     * @param memoryLayout The memory layout that is in effect at the given location (pc)
+     *      and which can be refined.
      */
     def addConstraint(
         constraint: this.type#ValueConstraint,
@@ -433,7 +452,7 @@ trait Domain {
     //
     // METHOD INVOCATIONS
     //
-    // TODO [AI] Add support Java7's Invokedynamic to the Domain.
+    // TODO [AI] Add support for Java7's Invokedynamic to the Domain.
     def invokeinterface(declaringClass: ReferenceType,
                         name: String,
                         methodDescriptor: MethodDescriptor,
@@ -518,10 +537,4 @@ trait Domain {
 
     def newObject(t: ObjectType): DomainValue
 
-}
-
-object Domain {
-    final val YES: Some[Boolean] = Some(true)
-    final val NO: Some[Boolean] = Some(false)
-    final val UNKNOWN = None
 }

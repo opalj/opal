@@ -33,24 +33,22 @@
 package de.tud.cs.st.bat
 package resolved
 package ai
+package base
 
 import reader.Java7Framework
+
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
-import org.scalatest.Spec
 import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
-import org.scalatest.matchers.ShouldMatchers
-import java.lang.System
-import org.junit.Ignore
 import org.scalatest.ParallelTestExecution
+import org.scalatest.matchers.ShouldMatchers
 
 /**
  * Basic tests of the abstract interpreter in the presence of simple control flow
  * instructions (if).
  *
  * @author Michael Eichberg
- * @author Dennis Siebert
  */
 @RunWith(classOf[JUnitRunner])
 class MethodsWithLoopsTest
@@ -58,7 +56,7 @@ class MethodsWithLoopsTest
         with ShouldMatchers
         with ParallelTestExecution {
 
-    import util.Util.dumpOnFailure
+    import util.Util.dumpOnFailureDuringValidation
 
     class RecordingDomain extends DefaultDomain {
         var returnedValues: List[(String, Value)] = List()
@@ -89,7 +87,7 @@ class MethodsWithLoopsTest
         val method = classFile.methods.find(_.name == name).get
         val result = AI(classFile, method, domain)
 
-        dumpOnFailure(Some(classFile), Some(method), method.body.get, result) {
+        dumpOnFailureDuringValidation(Some(classFile), Some(method), method.body.get, result) {
             f(domain)
         }
     }
