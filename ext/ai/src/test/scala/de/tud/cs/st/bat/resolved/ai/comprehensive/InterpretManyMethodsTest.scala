@@ -87,10 +87,11 @@ class InterpretManyMethodsTest
 
             it should ("be able to perform an abstract interpretation of the method "+classFile.thisClass.toJava + method.toJava+" in "+resource) in {
                 val domain = new DefaultDomain()
-                util.Util.dumpOnFailure[Unit](classFile, method, domain) { result: AIResult[domain.type] ⇒
-                    {
-                        // Nothing else to do? Checkt that all instructions are interpreted?    
-                    }
+                util.Util.dumpOnFailure[Unit](classFile, method, domain) {
+                    result: AIResult[domain.type] ⇒
+                        {
+                            // Nothing else to do? Checkt that all instructions are interpreted?    
+                        }
                 }
             }
         }

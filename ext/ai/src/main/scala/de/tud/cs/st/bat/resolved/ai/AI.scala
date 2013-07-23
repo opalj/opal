@@ -418,7 +418,7 @@ object AIResultBuilder {
                 def workList = theWorkList
                 def memoryLayouts = theMemoryLayouts
                 def continueInterpretation(): AIResult[domain.type] = {
-                    AI.continueInterpretation(code, theDomain)(workList, theMemoryLayouts)
+                    AI.continueInterpretation(code, domain)(workList, theMemoryLayouts)
                 }
             }
     }
@@ -438,7 +438,7 @@ object AIResultBuilder {
 }
 
 sealed abstract class AIResult[D <: Domain](val code: Code, val domain: D) {
-    def memoryLayouts: IndexedSeq[MemoryLayout[domain.type, domain.DomainValue]]
+    def memoryLayouts: IndexedSeq[MemoryLayout[D, D#DomainValue]]
     def workList: List[Int]
     def wasAborted: Boolean
     
