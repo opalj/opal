@@ -77,7 +77,7 @@ object AI {
      *      the layout before the instruction with the corresponding program counter
      *      was interpreted. If the interpretation was aborted, the returned result
      *      object contains all necessary information to continue the interpretation
-     *      if needed.
+     *      if needed/desired.
      *      ==Note==
      *      If you are just interested in the values that are returned or passed to other
      *      functions/fields it may be effective (code and performance wise) to implement
@@ -230,8 +230,8 @@ object AI {
             assume(nextPC < instructions.length, "interpretation beyond code boundary")
 
             if (memoryLayouts(nextPC) == null) {
-                worklist = nextPC :: worklist
                 memoryLayouts(nextPC) = nextPCMemoryLayout
+                worklist = nextPC :: worklist
             } else {
                 {
                     val thisML = memoryLayouts(nextPC)
@@ -239,15 +239,13 @@ object AI {
                     thisML.merge(nextML)
                 } match {
                     case NoUpdate ⇒ /* Nothing to do */
-                    case StructuralUpdate(memoryLayout) ⇒ {
+                    case StructuralUpdate(memoryLayout) ⇒
                         worklist = nextPC :: worklist
                         memoryLayouts(nextPC) = memoryLayout
-                    }
-                    case MetaInformationUpdate(memoryLayout) ⇒ {
+                    case MetaInformationUpdate(memoryLayout) ⇒
                         // => the evaluation context didn't change, hence
-                        // it is not necessary to enque the instruction
+                        // it is not necessary to enqueue the instruction
                         memoryLayouts(nextPC) = memoryLayout
-                    }
                 }
             }
         }
@@ -356,17 +354,31 @@ object AI {
                     comparisonWithFixedValue(memoryLayout, pc, instruction,
                         isLessThanOrEqualTo0 _, IsLessThanOrEqualTo0, IsGreaterThan0)
 
-                //
-                //            case 171 /*lookupswitch*/
-                //               | 170 /*tableswitch*/ ⇒ new MemoryLayout(operands.tail, locals)
-                //
+                // TODO case 171 /*lookupswitch*/ ⇒ 
+
+                // TODO case 170 /*tableswitch*/ ⇒
+                //                    val tableswitch = instructions(pc).asInstanceOf[TABLESWITCH]
+                //                    val index = memoryLayout.operands.head
+                //                    val low = tableswitch.low
+                //                    val high = tableswitch.high
+                //                            domain.concreteValue(index) match {
+                //                                case Some(value) => 
+                //                                case _ =>
+                //                            }
 
                 //
                 // STATEMENTS THAT CAN CAUSE EXCEPTIONELL TRANSFER OF CONTROL FLOW
                 // 
 
-                // TODO[AI] case ... IDIV        
+                // TOOD[AI] case ... newarray
+                // TOOD[AI] case ... multianewarray
+                // TODO[AI] case ... "ARRAYSTORE/ARRAYLOAD INSTRUCTIONS"
+                // TODO[AI] case ... IDIV/LDIV (ISHR/ISHL/IREM...?)        
                 // TODO[AI] case ... INVOKE
+                // TODO[AI] case ... MONITORENTER/MONITOREXIT
+                // TODO[AI] case ... arraylength (=> NullPointerException)
+                // TODO[AI] case ... GETField/PUTFIELD (NullPointerExceptoin)
+                // TODO[AI] case ... checkcast
 
                 case 191 /*athrow*/ ⇒
                     // In general, we either have a control flow to an exception handler 
@@ -378,9 +390,13 @@ object AI {
                      * they appear in the corresponding exception handler table. 
                      */
                     val exception = memoryLayout.operands.head
-                    // TODO [AI] handle the case that exception is Null => ExceptionType is NullPointerException
                     val nextMemoryLayout = update(memoryLayout, pc, instruction)
-                    domain.types(exception) match {
+                    val exceptionTypes = domain.isNull(exception) match {
+                        case Yes     ⇒ Values(Set(ObjectType.NullPointerException))
+                        case No      ⇒ domain.types(exception)
+                        case Unknown ⇒ Values(domain.types(exception).values + ObjectType.NullPointerException)
+                    }
+                    exceptionTypes match {
                         case ValuesUnknown ⇒
                             code.exceptionHandlersFor(pc).foreach(eh ⇒ {
                                 val branchTarget = eh.handlerPC
@@ -399,6 +415,8 @@ object AI {
 
                         case Values(types) ⇒
                             val isHandled =
+                                // find the exception handler that matches the given 
+                                // exception
                                 code.exceptionHandlersFor(pc).find(eh ⇒ {
                                     val branchTarget = eh.handlerPC
                                     val catchType = eh.catchType
@@ -425,6 +443,9 @@ object AI {
                                     }
                                 }).isDefined
 
+                            // If "isHandled" is true, we are sure that at least one 
+                            // handler will catch the exception... hence the method
+                            // will not return abnormally
                             if (!isHandled)
                                 domain.abnormalReturn(exception)
                     }
@@ -442,7 +463,7 @@ object AI {
 
                 // 
                 // INSTRUCTIONS THAT FALL THROUGH / THAT DO NOT CONTROL THE 
-                // CONTROL FLOW
+                // CONTROL FLOW (WHICH WILL NEVER THROW AN EXCEPTION)
                 //
                 case _ ⇒ {
                     val nextPC = pcOfNextInstruction
@@ -457,11 +478,8 @@ object AI {
     }
 }
 
-/*
- * Design:
- * Here, we use a builder to construct a Result object in two steps. This is necessary
- * to correctly type the `MemoryLayout` structure, which depends on the given domain. 
- */
+/* Design - We use a builder to construct a Result object in two steps. This is necessary
+ * to correctly type the `MemoryLayout` structure, which depends on the given domain. */
 object AIResultBuilder {
 
     type MemoryLayout[D <: Domain] = ai.MemoryLayout[D]
@@ -494,14 +512,11 @@ object AIResultBuilder {
     }
 }
 
-/*
- * Design:
- * We use an explicit type parameter to avoid a path dependency on a concrete AIResult
+/* Design - We use an explicit type parameter to avoid a path dependency on a concrete AIResult
  * instance. I.e., if we remove the type parameter and redefine the method memoryLayouts
  * to "memoryLayouts: IndexedSeq[MemoryLayout[domain.type, domain.DomainValue]]" 
  * we would introduce a path dependence to a particular AIResult's instance and the actual 
- * type would be "this.domain.type" and "this.domain.DomainValue". 
- */
+ * type would be "this.domain.type" and "this.domain.DomainValue". */
 sealed abstract class AIResult[D <: Domain](val code: Code, val domain: D) {
     def memoryLayouts: IndexedSeq[MemoryLayout[D]]
     def workList: List[Int]

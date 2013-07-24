@@ -202,18 +202,22 @@ class DefaultDomain extends AbstractDefaultDomain {
         override def toString: String = "ReferenceTypeValue: "+valueType.toJava
     }
 
-    def types(value: DomainValue): ValuesAnswer[Type] = {
+    def types(value: DomainValue): ValuesAnswer[Set[Type]] = {
         value match {
-            case AReferenceValue(valueType) ⇒ Values[Type](List(valueType))
+            case AReferenceValue(valueType) ⇒ Values[Set[Type]](Set(valueType))
             case _                          ⇒ ValuesUnknown
         }
     }
 
-    def isSubtypeOf(value: DomainValue, someType: Type): Answer = {
+    def isSubtypeOf(value: DomainValue, supertype: Type): Answer = {
         value match {
-            case AReferenceValue(refType) ⇒ if (refType == someType) Yes else Unknown
+            case AReferenceValue(subtype) ⇒ isSubtypeOf(subtype, supertype)
             case _                        ⇒ Unknown
         }
+    }
+
+    def isSubtypeOf(subtype: Type, supertype: Type): Answer = {
+        if (subtype == supertype) Yes else Unknown
     }
 
     def ReferenceValue(referenceType: ReferenceType): AReferenceValue =

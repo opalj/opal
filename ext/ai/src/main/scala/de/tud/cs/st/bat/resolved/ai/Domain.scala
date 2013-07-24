@@ -36,6 +36,7 @@ package resolved
 package ai
 
 import reflect.ClassTag
+import collection.immutable.Range
 
 /**
  * A domain contains all information about a program's types and values and determines
@@ -244,6 +245,9 @@ trait Domain {
     //
     // -----------------------------------------------------------------------------------
 
+    //    def concreteValue(value : DomainValue) : Option[Int]
+    //    def overlaps(range : Range)
+
     /*ABSTRACT*/ def isNull(value: DomainValue): Answer
 
     def isNonNull(value: DomainValue): Answer = isNull(value).negate
@@ -252,23 +256,25 @@ trait Domain {
      * Are equal compares the values represented by the given values. If the values
      * are representing "ReferenceType" values - the object reference needs to be compared.
      */
-    /*ABSTRACT*/ def areEqualReferences(value1: DomainValue, value2: DomainValue): Answer 
+    /*ABSTRACT*/ def areEqualReferences(value1: DomainValue, value2: DomainValue): Answer
 
     def areNotEqualReferences(value1: DomainValue, value2: DomainValue): Answer = areEqualReferences(value1, value2).negate
 
     /**
-     * Returns the type(s) of the value(s). Depending on the control flow the same 
+     * Returns the type(s) of the value(s). Depending on the control flow the same
      * DomainValue can represent different values with different types.
      */
-    def types(value : DomainValue) : ValuesAnswer[Type]     
+    /*ABSTRACT*/ def types(value: DomainValue): ValuesAnswer[Set[Type]]
+
+    /*ABSTRACT*/ def isSubtypeOf(value: DomainValue, someType: Type): Answer
     
-    def isSubtypeOf(value : DomainValue, someType : Type) : Answer
-    
+    /*ABSTRACT*/ def isSubtypeOf(subType : Type, superType : Type) : Answer
+
     /*ABSTRACT*/ def areEqualIntegers(value1: DomainValue, value2: DomainValue): Answer
 
     def areNotEqualIntegers(value1: DomainValue, value2: DomainValue): Answer = areEqualIntegers(value1, value2).negate
 
-    /*ABSTRACT*/ def isLessThan(smallerValue: DomainValue, largerValue: DomainValue): Answer 
+    /*ABSTRACT*/ def isLessThan(smallerValue: DomainValue, largerValue: DomainValue): Answer
 
     /*ABSTRACT*/ def isLessThanOrEqualTo(smallerOrEqualValue: DomainValue, equalOrLargerValue: DomainValue): Answer
 
@@ -289,7 +295,6 @@ trait Domain {
     def isGreaterThan0(value: DomainValue): Answer = isGreaterThan(value, IntegerConstant0)
 
     def isGreaterThanOrEqualTo0(value: DomainValue): Answer = isGreaterThanOrEqualTo(value, IntegerConstant0)
-    
 
     // -----------------------------------------------------------------------------------
     //
@@ -300,16 +305,16 @@ trait Domain {
     /**
      * Called by BATAI when an exception is thrown that is not handled within the
      * same method.
-     * 
+     *
      * ==Note==
      * If the value has a specific type but is actually the value "null", then
      * the exception that is actually thrown is a `NullPointerException`. This
-     * situation needs to be handled by the domain if necessary. 
-     * 
-     * This method is intended to be overridden; by default this method does nothing. 
+     * situation needs to be handled by the domain if necessary.
+     *
+     * This method is intended to be overridden; by default this method does nothing.
      */
-    def abnormalReturn(exception : DomainValue) : Unit = {}
-    
+    def abnormalReturn(exception: DomainValue): Unit = {}
+
     /**
      * Identifies a constraint on a value.
      */
@@ -320,7 +325,7 @@ trait Domain {
     case class IsNonNull(value: DomainValue) extends ValueConstraint
     case class AreEqualReferences(value1: DomainValue, value2: DomainValue) extends ValueConstraint
     case class AreNotEqualReferences(value1: DomainValue, value2: DomainValue) extends ValueConstraint
-    case class UpperBound(value : DomainValue, referenceType : ReferenceType) extends ValueConstraint
+    case class UpperBound(value: DomainValue, referenceType: ReferenceType) extends ValueConstraint
     //
     // W.r.t. Integer values
     case class AreEqualIntegers(value1: DomainValue, value2: DomainValue) extends ValueConstraint
