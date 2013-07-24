@@ -47,13 +47,13 @@ package ai
 /* The following design is the result of a lack of a feature for "constructor 
  * dependent types". If we would be able to express that the objects that are 
  * stored in the operands and locals lists are belonging to the given domain 
- * (and not just "some" domain), it would be possible to move the methods defined
- * in the companion object to this class.
+ * (and not just "some" domain) when creating the class, it would be possible 
+ * to use a simple class over here.
  */
-protected[ai] final class MemoryLayout[D <: Domain, V <: D#DomainValue](
-        val domain: D,
-        val operands: List[V],
-        val locals: IndexedSeq[V]) {
+trait MemoryLayout[D <: Domain] { base ⇒
+    val domain: D
+    val operands: List[domain.DomainValue]
+    val locals: IndexedSeq[domain.DomainValue]
 
     override def toString: String = {
         "MemoryLayout[(domain="+domain.getClass.getName+")\n"+
@@ -61,22 +61,17 @@ protected[ai] final class MemoryLayout[D <: Domain, V <: D#DomainValue](
             locals.zipWithIndex.map(l ⇒ l._2+" -> "+l._1).mkString("\tlocals:\n\t\t", "\n\t\t", "\n")+
             "]"
     }
-}
-
-/**
- * Methods to create and update memory layouts.
- */
-object MemoryLayout {
 
     /**
      * Merges this memory layout with the given memory layout. Returns `NoUpdate` if this
      * memory layout already subsumes the given memory layout.
      */
-    def merge(domain: Domain)(
-        thisOperands: List[domain.DomainValue],
-        thisLocals: IndexedSeq[domain.DomainValue],
-        otherOperands: List[domain.DomainValue],
-        otherLocals: IndexedSeq[domain.DomainValue]): Update[MemoryLayout[domain.type, domain.DomainValue]] = {
+    def merge(other: MemoryLayout[domain.type]): Update[MemoryLayout[domain.type]] = {
+
+        val thisOperands: List[domain.DomainValue] = this.operands
+        val thisLocals: IndexedSeq[domain.DomainValue] = this.locals
+        val otherOperands: List[domain.DomainValue] = other.operands
+        val otherLocals: IndexedSeq[domain.DomainValue] = other.locals
 
         assume(thisOperands.size == otherOperands.size,
             "merging the memory layouts is not possible due to different stack sizes")
@@ -136,30 +131,32 @@ object MemoryLayout {
             i += 1
         }
 
-        updateType(new MemoryLayout(domain, newOperands.reverse, newLocals))
+        updateType(MemoryLayout(newOperands.reverse, newLocals))
     }
+
+    def MemoryLayout(
+        newOperands: List[domain.DomainValue],
+        newLocals: IndexedSeq[domain.DomainValue]): MemoryLayout[domain.type] =
+        new MemoryLayout[domain.type] {
+            val domain: base.domain.type = base.domain
+            val operands = newOperands
+            val locals = newLocals
+        }
 
     /**
      * Models the effect of the instruction with the given program counter on the
      * stack and the locals.
      */
     def update(
-        domain: Domain)(
-            memoryLayout: MemoryLayout[domain.type, domain.DomainValue],
-            currentPC: Int,
-            instruction: Instruction): MemoryLayout[domain.type, domain.DomainValue] = {
+        currentPC: Int,
+        instruction: Instruction): MemoryLayout[domain.type] = {
 
         import domain.CTC1
         import domain.CTC2
 
-        def MemoryLayout(
-            operands: List[domain.DomainValue],
-            locals: IndexedSeq[domain.DomainValue]): MemoryLayout[domain.type, domain.DomainValue] =
-            new MemoryLayout(domain, operands, locals)
-
-        val operands: List[domain.DomainValue] = memoryLayout.operands
-        val locals: IndexedSeq[domain.DomainValue] = memoryLayout.locals
-        val self = memoryLayout
+        val operands: List[domain.DomainValue] = this.operands
+        val locals: IndexedSeq[domain.DomainValue] = this.locals
+        lazy val self = MemoryLayout(operands, locals)
 
         (instruction.opcode: @annotation.switch) match {
 
@@ -888,4 +885,15 @@ object MemoryLayout {
         }
         initializedLocals
     }
+}
+
+object MemoryLayout {
+    def apply(theDomain: Domain)(
+        newOperands: List[theDomain.DomainValue],
+        newLocals: IndexedSeq[theDomain.DomainValue]): MemoryLayout[theDomain.type] =
+        new MemoryLayout[theDomain.type] {
+            val domain: theDomain.type = theDomain
+            val operands = newOperands
+            val locals = newLocals
+        }
 }

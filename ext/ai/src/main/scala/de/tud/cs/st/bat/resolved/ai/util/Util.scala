@@ -67,7 +67,7 @@ object Util {
         domain: Domain)(
             f: AIResult[domain.type] ⇒ T): T = {
         val result = AI(classFile, method, domain)
-        val memoryLayouts: IndexedSeq[MemoryLayout[domain.type, domain.DomainValue]] = result.memoryLayouts
+        val memoryLayouts: IndexedSeq[MemoryLayout[domain.type]] = result.memoryLayouts
         try {
             if (result.wasAborted) throw new RuntimeException("interpretation aborted")
             f(result)
@@ -98,7 +98,7 @@ object Util {
         classFile: Option[ClassFile],
         method: Option[Method],
         code: Code,
-        result: AIResult[_ <: AnyRef])(
+        result: AIResult[_])(
             f: ⇒ T): T = {
         val memoryLayouts = result.memoryLayouts
         try {
@@ -123,7 +123,7 @@ object Util {
     def dump(classFile: Option[ClassFile],
              method: Option[Method],
              code: Code,
-             memoryLayouts: IndexedSeq[MemoryLayout[_ <: AnyRef, _ <: AnyRef]],
+             memoryLayouts: IndexedSeq[MemoryLayout[_]],
              title: Option[String] = None): Node = {
         // HTML 5 XML serialization (XHTML 5)
         <html xmlns="http://www.w3.org/1999/xhtml">
@@ -173,7 +173,7 @@ object Util {
     def dumpTable(classFile: Option[ClassFile],
                   method: Option[Method],
                   code: Code,
-                  memoryLayouts: IndexedSeq[MemoryLayout[_ <: AnyRef, _ <: AnyRef]]): Node = {
+                  memoryLayouts: IndexedSeq[MemoryLayout[_ ]]): Node = {
 
         <table>
             <caption>{ caption(classFile, method) }</caption>
@@ -195,7 +195,7 @@ object Util {
     }
 
     private def dumpInstructions(code: Code,
-                                 memoryLayouts: IndexedSeq[MemoryLayout[_ <: AnyRef, _ <: AnyRef]]) = {
+                                 memoryLayouts: IndexedSeq[MemoryLayout[_ ]]) = {
         val instrs = code.instructions.zipWithIndex.zip(memoryLayouts).filter(_._1._1 ne null)
         for (((instruction, pc), memoryLayout) ← instrs) yield {
             <tr class={ if (memoryLayout eq null) "not_evaluated" else "evaluated" }>
@@ -207,7 +207,7 @@ object Util {
         }
     }
 
-    private def dumpStack(memoryLayout: MemoryLayout[_ <: AnyRef, _ <: AnyRef]) = {
+    private def dumpStack(memoryLayout: MemoryLayout[_ ]) = {
         if (memoryLayout eq null)
             <em>Memory layout not available.</em>
         else {
@@ -217,7 +217,7 @@ object Util {
         }
     }
 
-    private def dumpLocals(memoryLayout: MemoryLayout[_ <: AnyRef, _ <: AnyRef]) = {
+    private def dumpLocals(memoryLayout: MemoryLayout[_ ]) = {
         if (memoryLayout eq null)
             <em>Memory layout not available.</em>
         else {

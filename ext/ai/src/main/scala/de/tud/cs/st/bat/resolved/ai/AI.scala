@@ -127,10 +127,10 @@ object AI {
 
         assume(code.maxLocals == initialLocals.size, "code.maxLocals and initialLocals.size differ")
 
-        type MemoryLayout = ai.MemoryLayout[domain.type, domain.DomainValue]
+        type MemoryLayout = ai.MemoryLayout[domain.type]
 
         val memoryLayouts = new Array[MemoryLayout](code.instructions.length)
-        memoryLayouts(0) = new MemoryLayout(domain, Nil, initialLocals)
+        memoryLayouts(0) = MemoryLayout(domain)(Nil, initialLocals)
 
         continueInterpretation(
             code,
@@ -143,9 +143,9 @@ object AI {
         code: Code,
         domain: Domain)(
             currentWorklist: List[Int],
-            currentMemoryLayouts: Array[MemoryLayout[domain.type, domain.DomainValue]]): AIResult[domain.type] = { // TODO [AI Performance] Figure out if it is worth using an Array instead of an IndexedSeq
+            currentMemoryLayouts: Array[MemoryLayout[domain.type]]): AIResult[domain.type] = { // TODO [AI Performance] Figure out if it is worth using an Array instead of an IndexedSeq
 
-        type MemoryLayout = ai.MemoryLayout[domain.type, domain.DomainValue]
+        type MemoryLayout = ai.MemoryLayout[domain.type]
 
         val instructions: Array[Instruction] = code.instructions
         val memoryLayouts = currentMemoryLayouts
@@ -158,7 +158,7 @@ object AI {
                    pc: Int,
                    instruction: Instruction): MemoryLayout = {
 
-            MemoryLayout.update(domain)(memoryLayout, pc, instruction)
+            memoryLayout.update( pc, instruction)
         }
 
         def comparisonWithFixedValue(
@@ -236,9 +236,7 @@ object AI {
                 {
                     val thisML = memoryLayouts(nextPC)
                     val nextML = nextPCMemoryLayout
-                    MemoryLayout.merge(domain)(
-                        thisML.operands, thisML.locals,
-                        nextML.operands, nextML.locals)
+                    thisML.merge(nextML)
                 } match {
                     case NoUpdate ⇒ /* Nothing to do */
                     case StructuralUpdate(memoryLayout) ⇒ {
@@ -408,7 +406,7 @@ object AI {
  */
 object AIResultBuilder {
 
-    type MemoryLayout[D <: Domain] = ai.MemoryLayout[D, D#DomainValue]
+    type MemoryLayout[D <: Domain] = ai.MemoryLayout[D]
 
     def aborted[D <: Domain](
         theCode: Code,
@@ -447,7 +445,7 @@ object AIResultBuilder {
  * type would be "this.domain.type" and "this.domain.DomainValue". 
  */
 sealed abstract class AIResult[D <: Domain](val code: Code, val domain: D) {
-    def memoryLayouts: IndexedSeq[MemoryLayout[D, D#DomainValue]]
+    def memoryLayouts: IndexedSeq[MemoryLayout[domain.type]]
     def workList: List[Int]
     def wasAborted: Boolean
 

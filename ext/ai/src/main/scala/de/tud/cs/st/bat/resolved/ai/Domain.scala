@@ -136,7 +136,7 @@ trait Domain {
      */
     type DomainValue <: Value
 
-    type DomainMemoryLayout = MemoryLayout[this.type, this.type#DomainValue]
+    type DomainMemoryLayout = MemoryLayout[this.type]
 
     /**
      * The class tag
