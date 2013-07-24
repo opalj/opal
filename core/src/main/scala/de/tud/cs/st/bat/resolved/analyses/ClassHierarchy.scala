@@ -61,7 +61,7 @@ class ClassHierarchy(
         protected val superclasses: Map[ObjectType, Set[ObjectType]] = Map(),
         protected val subclasses: Map[ObjectType, Set[ObjectType]] = Map()) {
 
-    def ++(classFiles: Traversable[ClassFile]): ClassHierarchy = 
+    def ++(classFiles: Traversable[ClassFile]): ClassHierarchy =
         (this /: classFiles)(_ + _)
 
     def +(classFile: ClassFile): ClassHierarchy = {
@@ -117,14 +117,14 @@ class ClassHierarchy(
      * @return The direct subtypes of the given type or `None` if the analysis
      *      is not conclusive.
      */
-    def subclasses(objectType: ObjectType): Option[Set[ObjectType]] = 
+    def subclasses(objectType: ObjectType): Option[Set[ObjectType]] =
         subclasses.get(objectType)
 
     /**
      * The set of all classes (and interfaces) that(directly or indirectly)
      * inherit from the given type.
      *
-     * @see ClassHierarchy.subclasses(ObjectType) for general remarks about the 
+     * @see ClassHierarchy.subclasses(ObjectType) for general remarks about the
      *    precision of the analysis.
      * @return The set of all direct and indirect subtypes of the given type.
      */
@@ -295,6 +295,47 @@ object ClassHierarchyVisualizer {
         val classHierarchy = (new ClassHierarchy /: args)(_ ++ ClassFiles(_).map(_._1))
 
         println(toDot.generateDot(Set(classHierarchy.toGraph)))
+    }
+}
+
+object ClassHierarchyExtractor {
+
+    def main(args: Array[String]) {
+
+        import reader.Java7Framework.ClassFiles
+
+        if (args.length < 3 || !args.drop(2).forall(_.endsWith(".jar"))) {
+            println("Usage: java …ClassHierarchy supertype filterprefix <JAR files containing class files>+")
+            println("(c) 2013 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
+            sys.exit(-1)
+        }
+
+        val supertypeName = args(0)
+        val filterPrefix = args(1)
+        val jars = args.drop(2)
+
+        val classHierarchy = (new ClassHierarchy /: jars)(_ ++ ClassFiles(_).map(_._1))
+
+        val supertype = ObjectType(supertypeName)
+        val subtypes = classHierarchy.subclasses(supertype).getOrElse(Set.empty)
+        
+        println("# Class hierarchy for: "+supertypeName+ " limited to subclasses that start with: "+filterPrefix)
+        var worklist = List((supertype, subtypes))
+        while (worklist.nonEmpty) {
+            val (supertype, allSubtypes) = worklist.head
+            worklist = worklist.tail
+            val subtypes = allSubtypes.filter(_.className.startsWith(filterPrefix))
+            if (subtypes.nonEmpty) {                
+                println(supertype.className+" > "+subtypes.map(_.className).mkString(", "))
+                for (
+                    subtype ← subtypes;
+                    someSubsubtypes ← classHierarchy.subclasses(subtype)
+                ) {
+                    worklist = (subtype, someSubsubtypes) :: worklist
+                }
+            }
+        }
+        println("# Generated for: "+jars.mkString(", "))
     }
 }
 
