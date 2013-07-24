@@ -562,7 +562,10 @@ trait Domain {
 
 }
 
-
-sealed trait ValuesAnswer[+T]
-case class Values[T](val values : Iterable[T]) extends ValuesAnswer[T]
-case object ValuesUnknown extends ValuesAnswer[Nothing]
+sealed trait ValuesAnswer[+T] {
+    def values: T
+}
+case class Values[+T](val values: T) extends ValuesAnswer[T]
+case object ValuesUnknown extends ValuesAnswer[Nothing] {
+    def values : Nothing =  AIImplementationError("the values are unknown")
+}
