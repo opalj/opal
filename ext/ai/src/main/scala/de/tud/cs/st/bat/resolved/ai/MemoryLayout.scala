@@ -157,7 +157,7 @@ trait MemoryLayout[D <: Domain] { base ⇒
         val operands: List[domain.DomainValue] = this.operands
         val locals: IndexedSeq[domain.DomainValue] = this.locals
         lazy val self = MemoryLayout(operands, locals)
-
+       
         (instruction.opcode: @annotation.switch) match {
 
             //

@@ -44,7 +44,7 @@ package ai
 sealed trait Update[+V] {
 
     /**
-     * Merges a given `updateType` value with type of this update and returns a
+     * Merges a given `updateType` value with the type of this update and returns a
      * new `UpdateType` value.
      */
     def &:(updateType: UpdateType): UpdateType

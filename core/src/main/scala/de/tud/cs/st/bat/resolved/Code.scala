@@ -47,18 +47,31 @@ case class Code(
     attributes: Attributes)
         extends Attribute {
 
+    def exceptionHandlersFor(pc: Int): Iterable[ExceptionHandler] = {
+        exceptionHandlers.view.filter(handler ⇒ {
+            handler.startPC <= pc && handler.endPC > pc
+        })
+    }
+
     /**
      * Returns the line number table - if any.
      *
      * ==Note==
      * A code attribute is allowed to have multiple line number tables. However, all
      * tables are merged into one by BAT at class loading time.
+     *
+     * Depending on the configuration of the reader for `ClassFile`s this
+     * attribute may not be reified.
      */
     def lineNumberTable: Option[LineNumberTable] =
         attributes collectFirst { case lnt: LineNumberTable ⇒ lnt }
 
     /**
      * Collects all local variable tables.
+     *
+     * ==Note==
+     * Depending on the configuration of the reader for `ClassFile`s this
+     * attribute may not be reified.
      */
     // TODO Merge local variable tables
     def localVariableTable: Seq[LocalVariables] =
@@ -66,6 +79,10 @@ case class Code(
 
     /**
      * Collects all local variable type tables.
+     *
+     * ==Note==
+     * Depending on the configuration of the reader for `ClassFile`s this
+     * attribute may not be reified.
      */
     // TODO Merge local variable type tables
     def localVariableTypeTable: Seq[LocalVariableTypes] =
@@ -74,6 +91,10 @@ case class Code(
     /**
      * The JVM specification mandates that a Code attribute has at most one
      * StackMapTable attribute.
+     *
+     * ==Note==
+     * Depending on the configuration of the reader for `ClassFile`s this
+     * attribute may not be reified.
      */
     def stackMapTable: Option[StackMapFrames] =
         attributes collectFirst { case StackMapTable(smf) ⇒ smf }

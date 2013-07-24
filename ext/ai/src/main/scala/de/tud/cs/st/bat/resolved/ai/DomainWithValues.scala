@@ -192,7 +192,7 @@ trait DomainWithValues extends Domain {
     def isLessThanOrEqualTo(smallerOrEqualValue: DomainValue, equalOrLargerValue: DomainValue): Answer = {
         Unknown
     }
-
+   
     //
     // HANDLING CONSTRAINTS
     //
@@ -212,6 +212,7 @@ trait DomainWithValues extends Domain {
     }
 
 }
+
 
 
 

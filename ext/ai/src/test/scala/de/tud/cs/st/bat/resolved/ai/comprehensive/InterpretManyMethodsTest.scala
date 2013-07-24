@@ -38,17 +38,16 @@ package comprehensive
 
 import de.tud.cs.st.util.ControlAbstractions._
 import reader.Java7Framework.ClassFile
-
 import java.util.zip.ZipFile
 import java.io.DataInputStream
 import java.io.ByteArrayInputStream
-
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.matchers.ShouldMatchers
 import org.scalatest.concurrent.TimeLimitedTests
 import org.scalatest.time._
+import org.scalatest.BeforeAndAfterAll
 
 /**
  * This test(suite) just loads a very large number of class files and performs
@@ -60,9 +59,12 @@ import org.scalatest.time._
 class InterpretManyMethodsTest
         extends FlatSpec
         with ShouldMatchers
-        with TimeLimitedTests {
+        with TimeLimitedTests
+        with BeforeAndAfterAll {
 
     import collection.JavaConversions._
+
+    import de.tud.cs.st.util.debug.PerformanceEvaluation._
 
     val timeLimit = Span(250, Millis)
     val directoryWithJARs = "../../../../../core/src/test/resources/classfiles"
@@ -85,15 +87,25 @@ class InterpretManyMethodsTest
         val classFile = ClassFile(new DataInputStream(new ByteArrayInputStream(data)))
         for (method ← classFile.methods; if method.body.isDefined) {
 
-            it should ("be able to perform an abstract interpretation of the method "+classFile.thisClass.toJava + method.toJava+" in "+resource) in {
-                val domain = new DefaultDomain()
-                util.Util.dumpOnFailure[Unit](classFile, method, domain) {
-                    result: AIResult[domain.type] ⇒
-                        {
-                            // Nothing else to do? Checkt that all instructions are interpreted?    
+            it should (
+                "be able to perform an abstract interpretation of the method "+
+                classFile.thisClass.toJava + method.toJava+
+                " in "+resource) in {
+
+                    time('AI) {
+                        val domain = new DefaultDomain()
+                        util.Util.dumpOnFailure[Unit](classFile, method, domain) {
+                            result: AIResult[domain.type] ⇒
+                                {
+                                    // Nothing else to do? Checkt that all instructions are interpreted?    
+                                }
                         }
+                    }
                 }
-            }
         }
+    }
+
+    override def afterAll(configMap: Map[String, Any]) {
+        println("Overall time: "+getTime('AI))
     }
 }

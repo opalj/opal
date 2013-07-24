@@ -158,7 +158,7 @@ object AI {
                    pc: Int,
                    instruction: Instruction): MemoryLayout = {
 
-            memoryLayout.update( pc, instruction)
+            memoryLayout.update(pc, instruction)
         }
 
         def comparisonWithFixedValue(
@@ -369,7 +369,65 @@ object AI {
                 // TODO[AI] case ... INVOKE
 
                 case 191 /*athrow*/ ⇒
-                    BATError("throws are not yet supported")
+                    // In general, we either have a control flow to an exception handler 
+                    // or we abort the method.
+                    /* EXCERPT FROM THE SPEC:
+                     * Within a class file the exception handlers for each method are 
+                     * stored in a table. At runtime the Java virtual machine searches 
+                     * the exception handlers of the current method in the order that 
+                     * they appear in the corresponding exception handler table. 
+                     */
+                    val exception = memoryLayout.operands.head
+                    // TODO [AI] handle the case that exception is Null => ExceptionType is NullPointerException
+                    val nextMemoryLayout = update(memoryLayout, pc, instruction)
+                    domain.types(exception) match {
+                        case ValuesUnknown ⇒
+                            code.exceptionHandlersFor(pc).foreach(eh ⇒ {
+                                val branchTarget = eh.handlerPC
+
+                                gotoTarget(branchTarget, nextMemoryLayout)
+                                // unless we have a "finally" handler, we can state
+                                // a constraint
+                                eh.catchType.map(catchType ⇒
+                                    addConstraint(
+                                        UpperBound(exception, catchType),
+                                        branchTarget,
+                                        nextMemoryLayout)
+                                )
+                            })
+                            domain.abnormalReturn(exception)
+
+                        case Values(types) ⇒
+                            val isHandled =
+                                code.exceptionHandlersFor(pc).find(eh ⇒ {
+                                    val branchTarget = eh.handlerPC
+                                    val catchType = eh.catchType
+                                    if (catchType.isEmpty) {
+                                        gotoTarget(branchTarget, nextMemoryLayout)
+                                        // we have found a finally handler
+                                        true
+                                    } else {
+                                        domain.isSubtypeOf(exception, catchType.get) match {
+                                            case No ⇒
+                                                false
+                                            case Yes ⇒
+                                                gotoTarget(branchTarget, nextMemoryLayout)
+                                                true
+                                            case Unknown ⇒
+                                                gotoTarget(branchTarget, nextMemoryLayout)
+                                                addConstraint(
+                                                    UpperBound(exception, catchType.get),
+                                                    branchTarget,
+                                                    nextMemoryLayout)
+                                                false
+                                        }
+
+                                    }
+                                }).isDefined
+
+                            if (!isHandled)
+                                domain.abnormalReturn(exception)
+                    }
 
                 //
                 // RETURN INSTRUCTIONS
@@ -445,7 +503,7 @@ object AIResultBuilder {
  * type would be "this.domain.type" and "this.domain.DomainValue". 
  */
 sealed abstract class AIResult[D <: Domain](val code: Code, val domain: D) {
-    def memoryLayouts: IndexedSeq[MemoryLayout[domain.type]]
+    def memoryLayouts: IndexedSeq[MemoryLayout[D]]
     def workList: List[Int]
     def wasAborted: Boolean
 
