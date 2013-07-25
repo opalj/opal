@@ -34,14 +34,14 @@ package de.tud.cs.st
 package util
 package debug
 
-import scala.collection.mutable.Map
-
 /**
  * Measures the execution time of some code.
  *
  * @author Michael Eichberg
  */
 trait PerformanceEvaluation {
+
+    import collection.mutable.Map
 
     /**
      * Times the execution of a given method f (function literal / code block).
@@ -52,12 +52,13 @@ trait PerformanceEvaluation {
     def time[T](r: Long ⇒ Unit)(f: ⇒ T): T = {
 
         val startTime: Long = System.nanoTime
-        val result = f
-        val endTime: Long = System.nanoTime
+        try {
+            f
+        } finally {
+            val endTime: Long = System.nanoTime
 
-        r(endTime - startTime)
-
-        result
+            r(endTime - startTime)
+        }
     }
 
     private[this] val times: Map[Symbol, Long] = Map()
@@ -74,13 +75,14 @@ trait PerformanceEvaluation {
      */
     def time[T](s: Symbol)(f: ⇒ T): T = {
         val startTime = System.nanoTime
-        val result = f
-        val endTime = System.nanoTime
+        try {
+            f
+        } finally {
+            val endTime = System.nanoTime
 
-        val old = times.getOrElseUpdate(s, 0l)
-        times.update(s, old + (endTime - startTime))
-
-        result
+            val old = times.getOrElseUpdate(s, 0l)
+            times.update(s, old + (endTime - startTime))
+        }
     }
 
     def getTime(sym: Symbol): Long = {
