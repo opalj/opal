@@ -267,8 +267,8 @@ trait Domain {
     /*ABSTRACT*/ def types(value: DomainValue): ValuesAnswer[Set[Type]]
 
     /*ABSTRACT*/ def isSubtypeOf(value: DomainValue, someType: Type): Answer
-    
-    /*ABSTRACT*/ def isSubtypeOf(subType : Type, superType : Type) : Answer
+
+    /*ABSTRACT*/ def isSubtypeOf(subType: Type, superType: Type): Answer
 
     /*ABSTRACT*/ def areEqualIntegers(value1: DomainValue, value2: DomainValue): Answer
 
@@ -301,19 +301,6 @@ trait Domain {
     // HANDLING CONSTRAINTS RELATED TO VALUES
     //
     // -----------------------------------------------------------------------------------
-
-    /**
-     * Called by BATAI when an exception is thrown that is not handled within the
-     * same method.
-     *
-     * ==Note==
-     * If the value has a specific type but is actually the value "null", then
-     * the exception that is actually thrown is a `NullPointerException`. This
-     * situation needs to be handled by the domain if necessary.
-     *
-     * This method is intended to be overridden; by default this method does nothing.
-     */
-    def abnormalReturn(exception: DomainValue): Unit = {}
 
     /**
      * Identifies a constraint on a value.
@@ -455,7 +442,18 @@ trait Domain {
     def lreturn(value: DomainValue): Unit
     def returnVoid(): Unit
 
-    def athrow(objectref: DomainValue): DomainValue
+    /**
+     * Called by BATAI when an exception is thrown that is not handled within the
+     * same method.
+     *
+     * ==Note==
+     * If the value has a specific type but is actually the value "null", then
+     * the exception that is actually thrown is a `NullPointerException`. This
+     * situation needs to be handled by the domain if necessary.
+     *
+     * This method is intended to be overridden; by default this method does nothing.
+     */
+    def abnormalReturn(exception: DomainValue): Unit = {}
 
     //
     // ACCESSING FIELDS
@@ -572,5 +570,5 @@ sealed trait ValuesAnswer[+T] {
 }
 case class Values[+T](val values: T) extends ValuesAnswer[T]
 case object ValuesUnknown extends ValuesAnswer[Nothing] {
-    def values : Nothing =  AIImplementationError("the values are unknown")
+    def values: Nothing = AIImplementationError("the values are unknown")
 }

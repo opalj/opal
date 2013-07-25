@@ -48,6 +48,7 @@ import org.scalatest.matchers.ShouldMatchers
 import org.scalatest.concurrent.TimeLimitedTests
 import org.scalatest.time._
 import org.scalatest.BeforeAndAfterAll
+import scala.util.control.ControlThrowable
 
 /**
  * This test(suite) just loads a very large number of class files and performs
@@ -58,54 +59,18 @@ import org.scalatest.BeforeAndAfterAll
 @RunWith(classOf[JUnitRunner])
 class InterpretManyMethodsTest
         extends FlatSpec
-        with ShouldMatchers
-        with TimeLimitedTests
-        with BeforeAndAfterAll {
-
-    import collection.JavaConversions._
-
-    import de.tud.cs.st.util.debug.PerformanceEvaluation._
-
-    val timeLimit = Span(250, Millis)
-    val directoryWithJARs = "../../../../../core/src/test/resources/classfiles"
+        with ShouldMatchers {
 
     behavior of "BAT"
 
-    for {
-        file ← TestSupport.locateTestResources(directoryWithJARs, "ext/ai").listFiles
-        if file.isFile && file.canRead && file.getName.endsWith(".jar")
-        jarFile = new ZipFile(file)
-        jarEntry ← (jarFile).entries
-        if !jarEntry.isDirectory && jarEntry.getName.endsWith(".class")
-    } {
-        val data = new Array[Byte](jarEntry.getSize().toInt)
-        process(new DataInputStream(jarFile.getInputStream(jarEntry))) { _.readFully(data) }
-        analyzeClassFile(file.getName(), data)
+    // The jars of the "BAT core" project
+    val directoryWithJARs = "../../../../../core/src/test/resources/classfiles"
+    val files =
+        TestSupport.locateTestResources(directoryWithJARs, "ext/ai").listFiles.
+            filter(file ⇒ file.isFile && file.canRead() && file.getName.endsWith(".jar"))
+
+    it should ("be able to interpret all methods in "+files.map(_.getName).mkString("\n\t\t", "\n\t\t", "\n")) in {
+        util.InterpretMethods.interpret(files).map(fail(_))
     }
 
-    def analyzeClassFile(resource: String, data: Array[Byte]) {
-        val classFile = ClassFile(new DataInputStream(new ByteArrayInputStream(data)))
-        for (method ← classFile.methods; if method.body.isDefined) {
-
-            it should (
-                "be able to perform an abstract interpretation of the method "+
-                classFile.thisClass.toJava + method.toJava+
-                " in "+resource) in {
-
-                    time('AI) {
-                        val domain = new DefaultDomain()
-                        util.Util.dumpOnFailure[Unit](classFile, method, domain) {
-                            result: AIResult[domain.type] ⇒
-                                {
-                                    // Nothing else to do? Checkt that all instructions are interpreted?    
-                                }
-                        }
-                    }
-                }
-        }
-    }
-
-    override def afterAll(configMap: Map[String, Any]) {
-        println("Overall time: "+getTime('AI))
-    }
 }

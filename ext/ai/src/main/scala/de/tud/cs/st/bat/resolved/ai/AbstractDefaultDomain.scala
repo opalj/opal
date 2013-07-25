@@ -126,7 +126,8 @@ trait AbstractDefaultDomain extends DomainWithValues {
     def l2i(value: DomainValue): DomainValue = SomeIntegerValue
 
     //
-    // RETURN FROM METHOD
+    // RETURN FROM METHOD 
+    // The domain is called to inform it about the values that are returned
     //
     def areturn(value: DomainValue) { /* Nothing to do. */ }
     def dreturn(value: DomainValue) { /* Nothing to do. */ }
@@ -134,15 +135,6 @@ trait AbstractDefaultDomain extends DomainWithValues {
     def ireturn(value: DomainValue) { /* Nothing to do. */ }
     def lreturn(value: DomainValue) { /* Nothing to do. */ }
     def returnVoid() { /* Nothing to do. */ }
-
-    def athrow(value: DomainValue): DomainValue = {
-        // FIXME [AI] if the value of an athrow instruction is null, a NullPointerException is thrown
-        //        value match {
-        //            case NullValue ⇒ TypedValue(ObjectType.NullPointerException)
-        //            case _         ⇒ value
-        //        }
-        value
-    }
 
     //
     // ACCESSING FIELDS
@@ -272,7 +264,5 @@ trait AbstractDefaultDomain extends DomainWithValues {
     def monitorexit(value: DomainValue) { /* Nothing to do. */ }
 
     def newObject(t: ObjectType) = TypedValue(t)
-
-   
 
 }

@@ -390,6 +390,7 @@ object AI {
                      * they appear in the corresponding exception handler table. 
                      */
                     val exception = memoryLayout.operands.head
+                    // TODO THIS WILL FAIL... 
                     val nextMemoryLayout = update(memoryLayout, pc, instruction)
                     val exceptionTypes = domain.isNull(exception) match {
                         case Yes     ⇒ Values(Set(ObjectType.NullPointerException))

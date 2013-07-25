@@ -50,7 +50,7 @@ import language.existentials
  * dependent types". If we would be able to express that the objects that are 
  * stored in the operands and locals lists are belonging to the given domain 
  * (and not just "some" domain) when creating the class, it would be possible 
- * to use a simple class over here.
+ * to use a simple class over here instead of a trait and some factory.
  */
 trait MemoryLayout[D <: Domain] { base ⇒
     val domain: D
@@ -158,11 +158,11 @@ trait MemoryLayout[D <: Domain] { base ⇒
 
         val operands: List[domain.DomainValue] = this.operands
         val locals: IndexedSeq[domain.DomainValue] = this.locals
-        
+
         //val self = this.asInstanceOf[MemoryLayout[domain.type]]
         type selfType = MemoryLayout[D forSome { type D <: domain.type }]
         val self = this.asInstanceOf[selfType]
-        
+
         (instruction.opcode: @annotation.switch) match {
             //
             // PUT LOCAL VARIABLE VALUE ONTO STACK
@@ -484,7 +484,8 @@ trait MemoryLayout[D <: Domain] { base ⇒
             //
 
             case 191 /*athrow*/ ⇒
-                MemoryLayout(List(domain.athrow(operands.head)), locals)
+                BATError("in case of the athrow exception the memory layout depends"+
+                    "on the current value and, hence, need to be handled by the AI directly.")
 
             //
             // UNCONDITIONAL TRANSFER OF CONTROL
@@ -624,7 +625,13 @@ trait MemoryLayout[D <: Domain] { base ⇒
             //
             // METHOD INVOCATIONS
             //
-            case 186 /*invokedynamic*/ ⇒ sys.error("invokedynamic is not yet supported")
+            case 186 /*invokedynamic*/ ⇒
+                //                val invoke = instruction.asInstanceOf[INVOKEDYNAMIC]
+                //                val bootstrapMethod = invoke.bootstrapMethod
+                //                val bootbootstrapMethod.bootstrapArguments
+                //                //methodHandle.
+                sys.error("invokedynamic is not yet supported")
+
             case 185 /*invokeinterface*/ ⇒ {
                 val invoke = instruction.asInstanceOf[INVOKEINTERFACE]
                 val argsCount = invoke.methodDescriptor.parameterTypes.length
@@ -632,7 +639,8 @@ trait MemoryLayout[D <: Domain] { base ⇒
                     invoke.declaringClass,
                     invoke.name,
                     invoke.methodDescriptor,
-                    operands.take(argsCount + 1).reverse) match {
+                    operands.take(argsCount + 1).reverse
+                ) match {
                         case Some(v) ⇒ MemoryLayout(v :: (operands.drop(argsCount + 1)), locals)
                         case None    ⇒ MemoryLayout(operands.drop(argsCount + 1), locals)
                     }
@@ -644,7 +652,8 @@ trait MemoryLayout[D <: Domain] { base ⇒
                     invoke.declaringClass,
                     invoke.name,
                     invoke.methodDescriptor,
-                    operands.take(argsCount + 1).reverse) match {
+                    operands.take(argsCount + 1).reverse
+                ) match {
                         case Some(v) ⇒ MemoryLayout(v :: (operands.drop(argsCount + 1)), locals)
                         case None    ⇒ MemoryLayout(operands.drop(argsCount + 1), locals)
                     }
@@ -656,7 +665,8 @@ trait MemoryLayout[D <: Domain] { base ⇒
                     invoke.declaringClass,
                     invoke.name,
                     invoke.methodDescriptor,
-                    operands.take(argsCount)) match {
+                    operands.take(argsCount)
+                ) match {
                         case Some(v) ⇒ MemoryLayout(v :: (operands.drop(argsCount)), locals)
                         case None    ⇒ MemoryLayout(operands.drop(argsCount), locals)
                     }
@@ -668,7 +678,8 @@ trait MemoryLayout[D <: Domain] { base ⇒
                     invoke.declaringClass,
                     invoke.name,
                     invoke.methodDescriptor,
-                    operands.take(argsCount + 1)) match {
+                    operands.take(argsCount + 1)
+                ) match {
                         case Some(v) ⇒ MemoryLayout(v :: (operands.drop(argsCount + 1)), locals)
                         case None    ⇒ MemoryLayout(operands.drop(argsCount + 1), locals)
                     }
@@ -874,27 +885,16 @@ trait MemoryLayout[D <: Domain] { base ⇒
             case 196 /*wide*/ ⇒ self // the instructions which are modified by a wide instruction already take care of the effect of wide
         }
     }
-
-    /**
-     * ==Note==
-     * If you use this method to copy values from the stack into local variables, make
-     * sure that you first reverse the order of operands.
-     */
-    def mapToLocals[V <: Domain#DomainValue](params: List[V], locals: IndexedSeq[V]): IndexedSeq[V] = {
-        var index = 0
-        var initializedLocals = locals
-        for (param ← params) {
-            initializedLocals.updated(index, param)
-            index += param.computationalType.operandSize
-        }
-        initializedLocals
-    }
 }
 
+/**
+ * Provides factory methods for creating `MemoryLayout` objects.
+ */
 object MemoryLayout {
-    def apply(theDomain: Domain)(
-        newOperands: List[theDomain.DomainValue],
-        newLocals: IndexedSeq[theDomain.DomainValue]): MemoryLayout[theDomain.type] =
+    def apply(
+        theDomain: Domain)(
+            newOperands: List[theDomain.DomainValue],
+            newLocals: IndexedSeq[theDomain.DomainValue]): MemoryLayout[theDomain.type] =
         new MemoryLayout[theDomain.type] {
             val domain: theDomain.type = theDomain
             val operands = newOperands
