@@ -36,6 +36,8 @@ package bat
 package resolved
 package ai
 
+import language.existentials
+
 /**
  * Represents the current execution context of a method. I.e., the operand stack
  * as well as the current values stored in the registers/locals. The memory layout is
@@ -97,7 +99,7 @@ trait MemoryLayout[D <: Domain] { base ⇒
                 case SomeUpdate(operand) ⇒ operand
                 case NoUpdate            ⇒ thisOperand
             }
-            assume(!newOperand.isInstanceOf[Domain#NoLegalValue], "merging of stack values ("+thisOperand+" and "+otherOperand+") led to an illegal value")
+            assume(!newOperand.isInstanceOf[domain.NoLegalValue], "merging of stack values ("+thisOperand+" and "+otherOperand+") led to an illegal value")
             updateType = updateType &: updatedOperand
             newOperands = newOperand :: newOperands
         }
@@ -156,10 +158,12 @@ trait MemoryLayout[D <: Domain] { base ⇒
 
         val operands: List[domain.DomainValue] = this.operands
         val locals: IndexedSeq[domain.DomainValue] = this.locals
-        lazy val self = MemoryLayout(operands, locals)
-       
+        
+        //val self = this.asInstanceOf[MemoryLayout[domain.type]]
+        type selfType = MemoryLayout[D forSome { type D <: domain.type }]
+        val self = this.asInstanceOf[selfType]
+        
         (instruction.opcode: @annotation.switch) match {
-
             //
             // PUT LOCAL VARIABLE VALUE ONTO STACK
             //
