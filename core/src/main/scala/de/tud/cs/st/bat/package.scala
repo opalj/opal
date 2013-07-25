@@ -61,11 +61,11 @@ package object bat {
 
     final val CLASS_FILE_MAGIC = 0xCAFEBABE
 
-    final val generalBATErrorMessage: String =
+    final val generalBATErrorMessage: String = "\n"+(
         """While reading/analyzing a class file an unexpected error occured.
           |Either the class file is corrupt or an internal error was found.
           |The underlying problem is:
-          |""".stripMargin('|')
+          |""".stripMargin('|'))
 
     /**
      * Exception that is thrown if some error is detected that is most likely the
@@ -74,7 +74,7 @@ package object bat {
     class BATError(message: String) extends RuntimeException(message)
 
     @throws[BATError]
-    final def BATError(message: String) : Nothing =
+    final def BATError(message: String): Nothing =
         throw new BATError(generalBATErrorMessage + message)
 
     //
