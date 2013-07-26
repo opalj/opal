@@ -35,12 +35,17 @@ package bat
 package resolved
 
 /**
- * Common super class of all bytecode instructions that always jump to a specific target instruction.
+ * Super class of all bytecode instructions that always jump to a specific
+ * target instruction.
  *
  * @author Michael Eichberg
  */
 abstract class UnconditionalBranchInstruction extends ControlTransferInstruction {
 
     def branchoffset: Int
+
+}
+object UnconditionalBranch {
+    def unapply(i: UnconditionalBranchInstruction): Option[Int] = Some(i.branchoffset)
 
 }

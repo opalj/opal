@@ -59,7 +59,7 @@ class MethodsWithBranchesTest
 
     import util.Util.dumpOnFailureDuringValidation
 
-    class RecordingDomain extends DefaultDomain {
+    class RecordingDomain extends DefaultDomain with ConstraintManifestation {
         var returnedValues: List[(String, Value)] = List()
         override def areturn(value: Value) { returnedValues = ("areturn", value) :: returnedValues }
         override def dreturn(value: Value) { returnedValues = ("dreturn", value) :: returnedValues }
@@ -68,11 +68,10 @@ class MethodsWithBranchesTest
         override def lreturn(value: Value) { returnedValues = ("lreturn", value) :: returnedValues }
         override def returnVoid() { returnedValues = ("return", null) :: returnedValues }
 
-        var constraints: List[(Int, ValueConstraint)] = List()
+        var constraints: List[ReifiedConstraint] = List()
 
-        override def addConstraint(constraint: ValueConstraint, pc: Int, memoryLayout: DomainMemoryLayout) = {
-            constraints = (pc, constraint) :: constraints
-            memoryLayout
+        def addConstraint(constraint: ReifiedConstraint) {
+            constraints = constraint :: constraints
         }
     }
 
@@ -107,8 +106,8 @@ class MethodsWithBranchesTest
 
             domain.constraints should be(
                 List(
-                    (4, IsNull(domain.TypedValue(ObjectType.Object))),
-                    (6, IsNonNull(domain.TypedValue(ObjectType.Object)))
+                    IsNullConstraint(4, domain.TypedValue(ObjectType.Object)),
+                    IsNonNullConstraint(6, domain.TypedValue(ObjectType.Object))
                 )
             )
         })
@@ -128,8 +127,8 @@ class MethodsWithBranchesTest
 
             domain.constraints should be(
                 List(
-                    (4, IsNonNull(domain.TypedValue(ObjectType.Object))),
-                    (6, IsNull(domain.TypedValue(ObjectType.Object)))
+                    IsNonNullConstraint(4, domain.TypedValue(ObjectType.Object)),
+                    IsNullConstraint(6, domain.TypedValue(ObjectType.Object))
                 )
             )
         })

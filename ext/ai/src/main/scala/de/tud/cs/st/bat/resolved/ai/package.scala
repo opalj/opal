@@ -44,7 +44,7 @@ package resolved
  * the result is undefined (i.e., BATAI may report meaningless results, crash or run
  * indefinitely.
  *
- * @see [[de.tud.cs.st.bat.resolved.AI]] - the main class
+ * @see [[de.tud.cs.st.bat.resolved.ai.AI]] - the main class
  * 
  * @author Michael Eichberg
  */

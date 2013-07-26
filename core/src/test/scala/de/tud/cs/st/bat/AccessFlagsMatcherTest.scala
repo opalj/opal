@@ -53,7 +53,7 @@ class AccessFlagsMatcherTest
 
     behavior of "a simple access flags matcher"
 
-    it should "be able to correctly match a class files access flags (PUBLIC)" in {
+    it should "be able to correctly match a class file's access flags (PUBLIC)" in {
         val accessFlags = ACC_PUBLIC.mask
 
         accessFlags match {

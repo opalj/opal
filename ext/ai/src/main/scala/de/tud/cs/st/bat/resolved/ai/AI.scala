@@ -40,7 +40,7 @@ package ai
  *
  * @author Michael Eichberg
  */
-object AI {
+trait AI {
 
     /**
      *  Performs an abstract interpretation of the given method with the given domain.
@@ -73,9 +73,10 @@ object AI {
      * @param someLocals If the values passed to a method are already known, the
      *      abstract interpretation will be performed under that assumption.
      * @return The result of the abstract interpretation. Basically, the calculated
-     *      memory layouts. Each calculated memory layout represents
-     *      the layout before the instruction with the corresponding program counter
-     *      was interpreted. If the interpretation was aborted, the returned result
+     *      memory layouts; i.e., the list of pairs of stack and operands. Each calculated
+     *      memory layout represents the layout before the instruction with the
+     *      corresponding program counter was interpreted.
+     *      If the interpretation was aborted, the returned result
      *      object contains all necessary information to continue the interpretation
      *      if needed/desired.
      *      ==Note==
@@ -127,131 +128,141 @@ object AI {
 
         assume(code.maxLocals == initialLocals.size, "code.maxLocals and initialLocals.size differ")
 
-        type MemoryLayout = ai.MemoryLayout[domain.type]
+        import domain.DomainValueTag
 
-        val memoryLayouts = new Array[MemoryLayout](code.instructions.length)
-        memoryLayouts(0) = MemoryLayout(domain)(Nil, initialLocals)
+        val currentLocalsArray = new Array[IndexedSeq[domain.DomainValue]](code.instructions.length)
+        currentLocalsArray(0) = initialLocals
+        val currentOperandsArray = new Array[List[domain.DomainValue]](code.instructions.length)
+        currentOperandsArray(0) = Nil
 
         continueInterpretation(
             code,
             domain)(
                 /*worklist = */ List(0),
-                memoryLayouts)
+                currentOperandsArray,
+                currentLocalsArray)
     }
 
     def continueInterpretation(
         code: Code,
         domain: Domain)(
             currentWorklist: List[Int],
-            currentMemoryLayouts: Array[MemoryLayout[domain.type]]): AIResult[domain.type] = { // TODO [AI Performance] Figure out if it is worth using an Array instead of an IndexedSeq
-
-        type MemoryLayout = ai.MemoryLayout[domain.type]
-
-        val instructions: Array[Instruction] = code.instructions
-        val memoryLayouts = currentMemoryLayouts
-        var worklist = currentWorklist
-        var interpretedInstructions = 0; // to collect some statistics
+            currentOperandsArray: Array[List[domain.DomainValue]],
+            currentLocalsArray: Array[IndexedSeq[domain.DomainValue]]): AIResult[domain.type] = {
 
         import domain._
 
-        def update(memoryLayout: MemoryLayout,
-                   pc: Int,
-                   instruction: Instruction): MemoryLayout = {
+        type SingleValueDomainTest = (DomainValue) ⇒ Answer
+        type TwoValuesDomainTest = (DomainValue, DomainValue) ⇒ Answer
 
-            memoryLayout.update(pc, instruction)
-        }
+        val instructions: Array[Instruction] = code.instructions
 
-        def comparisonWithFixedValue(
-            memoryLayout: MemoryLayout,
+        var worklist = currentWorklist
+        val operandsArray = currentOperandsArray.clone
+        val localsArray = currentLocalsArray.clone
+
+        def ifXX(
             pc: Int,
             instruction: Instruction,
-            domainTest: (domain.DomainValue) ⇒ Answer,
-            yesConstraint: (domain.DomainValue) ⇒ domain.ValueConstraint,
-            noConstraint: (domain.DomainValue) ⇒ domain.ValueConstraint) {
+            domainTest: SingleValueDomainTest,
+            yesConstraint: SingleValueConstraint,
+            noConstraint: SingleValueConstraint) {
 
             val branchTarget = pc + instruction.asInstanceOf[ConditionalBranchInstruction].branchoffset
             val nextPC = instructions(pc).indexOfNextInstruction(pc, code)
+            val operand = operandsArray(pc).head
+            val remainingOperands = operandsArray(pc).tail
 
-            val operand = memoryLayout.operands.head
             domainTest(operand) match {
-                case Yes ⇒ gotoTarget(branchTarget, update(memoryLayout, pc, instruction))
-                case No  ⇒ gotoTarget(nextPC, update(memoryLayout, pc, instruction))
+                case Yes ⇒
+                    gotoTarget(branchTarget, remainingOperands, localsArray(pc))
+                case No ⇒
+                    gotoTarget(nextPC, remainingOperands, localsArray(pc))
                 case Unknown ⇒ {
-                    gotoTarget(
-                        branchTarget,
-                        domain.addConstraint(
-                            yesConstraint(operand),
-                            branchTarget,
-                            update(memoryLayout, pc, instruction)))
-                    gotoTarget(
-                        nextPC,
-                        domain.addConstraint(
-                            noConstraint(operand),
-                            nextPC,
-                            update(memoryLayout, pc, instruction)))
+                    {
+                        val (newOperands, newLocals) = yesConstraint(branchTarget, operand, remainingOperands, localsArray(pc))
+                        gotoTarget(branchTarget, newOperands, newLocals)
+                    }
+                    {
+                        val (newOperands, newLocals) = noConstraint(nextPC, operand, remainingOperands, localsArray(pc))
+                        gotoTarget(nextPC, newOperands, newLocals)
+                    }
                 }
             }
         }
 
-        def comparisonOfTwoValues(
-            memoryLayout: MemoryLayout,
+        def ifTcmpXX(
             pc: Int,
             instruction: Instruction,
-            domainTest: (domain.DomainValue, domain.DomainValue) ⇒ Answer,
-            yesConstraint: (domain.DomainValue, domain.DomainValue) ⇒ domain.ValueConstraint,
-            noConstraint: (domain.DomainValue, domain.DomainValue) ⇒ domain.ValueConstraint) {
+            domainTest: TwoValuesDomainTest,
+            yesConstraint: TwoValuesConstraint,
+            noConstraint: TwoValuesConstraint) {
 
             val branchTarget = pc + instruction.asInstanceOf[ConditionalBranchInstruction].branchoffset
             val nextPC = instructions(pc).indexOfNextInstruction(pc, code)
 
-            val value2 = memoryLayout.operands.head
-            val value1 = memoryLayout.operands.tail.head
+            val value2 = operandsArray(pc).head
+            var remainingOperands = operandsArray(pc).tail
+            val value1 = remainingOperands.head
+            remainingOperands = remainingOperands.tail
+
             domainTest(value1, value2) match {
-                case Yes ⇒ gotoTarget(branchTarget, update(memoryLayout, pc, instruction))
-                case No  ⇒ gotoTarget(nextPC, update(memoryLayout, pc, instruction))
+                case Yes ⇒ gotoTarget(branchTarget, remainingOperands, localsArray(pc))
+                case No  ⇒ gotoTarget(nextPC, remainingOperands, localsArray(pc))
                 case Unknown ⇒ {
-                    gotoTarget(
-                        branchTarget,
-                        domain.addConstraint(
-                            yesConstraint(value1, value2),
-                            branchTarget,
-                            update(memoryLayout, pc, instruction)))
-                    gotoTarget(
-                        nextPC,
-                        domain.addConstraint(
-                            noConstraint(value1, value2),
-                            nextPC,
-                            update(memoryLayout, pc, instruction)))
+                    {
+                        val (newOperands, newLocals) =
+                            yesConstraint(branchTarget, value1, value2, remainingOperands, localsArray(pc))
+                        gotoTarget(branchTarget, newOperands, newLocals)
+                    }
+                    {
+                        val (newOperands, newLocals) =
+                            noConstraint(nextPC, value1, value2, remainingOperands, localsArray(pc))
+                        gotoTarget(nextPC, newOperands, newLocals)
+                    }
                 }
             }
         }
 
-        def gotoTarget(nextPC: Int, nextPCMemoryLayout: MemoryLayout) {
-            assume(nextPC < instructions.length, "interpretation beyond code boundary")
+        def gotoTarget(targetPC: Int, operands: Operands, locals: Locals) {
+            assume(targetPC < instructions.length, "interpretation beyond code boundary")
 
-            if (memoryLayouts(nextPC) == null) {
-                memoryLayouts(nextPC) = nextPCMemoryLayout
-                worklist = nextPC :: worklist
+            if (operandsArray(targetPC) == null /* || localsArray(targetPC) == null )*/ ) {
+                operandsArray(targetPC) = operands
+                localsArray(targetPC) = locals
+                worklist = targetPC :: worklist
             } else {
-                {
-                    val thisML = memoryLayouts(nextPC)
-                    val nextML = nextPCMemoryLayout
-                    thisML.merge(nextML)
-                } match {
-                    case NoUpdate ⇒ /* Nothing to do */
-                    case StructuralUpdate(memoryLayout) ⇒
-                        worklist = nextPC :: worklist
-                        memoryLayouts(nextPC) = memoryLayout
-                    case MetaInformationUpdate(memoryLayout) ⇒
-                        // => the evaluation context didn't change, hence
-                        // it is not necessary to enqueue the instruction
-                        memoryLayouts(nextPC) = memoryLayout
+                try {
+
+                    {
+                        domain.merge(
+                            operandsArray(targetPC),
+                            localsArray(targetPC),
+                            operands,
+                            locals)
+                    } match {
+                        case NoUpdate ⇒ /* Nothing to do */
+                        case StructuralUpdate((updatedOperands, updatedLocals)) ⇒
+                            worklist = targetPC :: worklist
+                            operandsArray(targetPC) = updatedOperands
+                            localsArray(targetPC) = updatedLocals
+                        case MetaInformationUpdate((updatedOperands, updatedLocals)) ⇒
+                            // => the evaluation context didn't change, hence
+                            // it is not necessary to enqueue the instruction
+                            operandsArray(targetPC) = updatedOperands
+                            localsArray(targetPC) = updatedLocals
+                    }
+                } catch {
+                    case ae: AssertionError ⇒
+                        val dump = util.Util.dump(None, None, code, operandsArray, localsArray, Some(ae.getMessage()+" targetPC: "+targetPC))
+                        util.Util.writeAndOpenDump(dump)
+                        throw ae
                 }
             }
         }
-        def gotoTargets(nextPCs: Iterable[Int], nextPCMemoryLayout: MemoryLayout) {
-            for (nextPC ← nextPCs) {
-                gotoTarget(nextPC, nextPCMemoryLayout)
+        def gotoTargets(targetPCs: Iterable[Int], operands: Operands, locals: Locals) {
+            for (targetPC ← targetPCs) {
+                gotoTarget(targetPC, operands, locals)
             }
         }
 
@@ -261,124 +272,149 @@ object AI {
 
         while (worklist.nonEmpty) {
             if (Thread.interrupted()) {
-                return AIResultBuilder.aborted(code, domain)(memoryLayouts, worklist)
+                return AIResultBuilder.aborted(code, domain)(worklist, operandsArray, localsArray)
             }
 
             val pc = worklist.head
             worklist = worklist.tail
             val instruction = instructions(pc)
             // the memory layout before executing the instruction with the given pc
-            val memoryLayout = memoryLayouts(pc)
+            val operands = operandsArray(pc)
+            val locals = localsArray(pc)
 
             def pcOfNextInstruction = instructions(pc).indexOfNextInstruction(pc, code)
+
+            def fallThrough() {
+                gotoTarget(pcOfNextInstruction, operands, locals)
+            }
+            def fallThroughO(operands: Operands) {
+                gotoTarget(pcOfNextInstruction, operands, locals)
+            }
+            def fallThroughOL(operands: Operands, locals: Locals) {
+                gotoTarget(pcOfNextInstruction, operands, locals)
+            }
 
             (instruction.opcode: @annotation.switch) match {
                 //
                 // UNCONDITIONAL TRANSFER OF CONTROL
                 //
-                case 167 /*goto*/ ⇒
-                    val branchtarget = pc + instruction.asInstanceOf[GOTO].branchoffset
-                    gotoTarget(branchtarget, update(memoryLayout, pc, instruction))
-                case 200 /*goto_w*/ ⇒
-                    val branchtarget = pc + instruction.asInstanceOf[GOTO_W].branchoffset
-                    gotoTarget(branchtarget, update(memoryLayout, pc, instruction))
+                case 167 /*goto*/
+                    | 200 /*goto_w*/ ⇒
+                    val branchtarget = pc + instruction.asInstanceOf[UnconditionalBranchInstruction].branchoffset
+                    gotoTarget(branchtarget, operands, locals)
 
                 case 169 /*ret*/ ⇒
                     val lvIndex = instruction.asInstanceOf[RET].lvIndex
-                    memoryLayout.locals(lvIndex) match {
+                    localsArray(pc)(lvIndex) match {
                         case ReturnAddressValue(returnAddress) ⇒
-                            gotoTargets(returnAddress, update(memoryLayout, pc, instruction))
+                            gotoTargets(returnAddress, operands, locals)
                         case _ ⇒
                             CodeError("the local variable ("+
                                 lvIndex+
                                 ") does not contain a return address value", code, lvIndex)
                     }
-                case 168 /*jsr*/ ⇒
-                    val branchtarget = pc + instruction.asInstanceOf[JSR].branchoffset
-                    gotoTarget(branchtarget, update(memoryLayout, pc, instruction))
-                case 201 /*jsr_w*/ ⇒
-                    val branchtarget = pc + instruction.asInstanceOf[JSR_W].branchoffset
-                    gotoTarget(branchtarget, update(memoryLayout, pc, instruction))
+                case 168 /*jsr*/
+                    | 201 /*jsr_w*/ ⇒
+                    val branchtarget = pc + instruction.asInstanceOf[JSRInstruction].branchoffset
+                    gotoTarget(branchtarget, domain.ReturnAddressValue(pc + 3) :: operands, locals)
 
                 //
                 // CONDITIONAL TRANSFER OF CONTROL
                 //
 
                 case 165 /*if_acmpeq*/ ⇒
-                    comparisonOfTwoValues(memoryLayout, pc, instruction,
+                    ifTcmpXX(pc, instruction,
                         areEqualReferences _, AreEqualReferences, AreNotEqualReferences)
                 case 166 /*if_acmpne*/ ⇒
-                    comparisonOfTwoValues(memoryLayout, pc, instruction,
+                    ifTcmpXX(pc, instruction,
                         areNotEqualReferences _, AreNotEqualReferences, AreEqualReferences)
                 case 198 /*ifnull*/ ⇒
-                    comparisonWithFixedValue(memoryLayout, pc, instruction,
-                        isNull _, IsNull, IsNonNull)
+                    ifXX(pc, instruction, isNull _, IsNull, IsNonNull)
                 case 199 /*ifnonnull*/ ⇒
-                    comparisonWithFixedValue(memoryLayout, pc, instruction,
+                    ifXX(pc, instruction,
                         isNonNull _, IsNonNull, IsNull)
 
                 case 159 /*if_icmpeq*/ ⇒
-                    comparisonOfTwoValues(memoryLayout, pc, instruction,
+                    ifTcmpXX(pc, instruction,
                         areEqualIntegers _, AreEqualIntegers, AreNotEqualIntegers)
                 case 160 /*if_icmpne*/ ⇒
-                    comparisonOfTwoValues(memoryLayout, pc, instruction,
+                    ifTcmpXX(pc, instruction,
                         areNotEqualIntegers _, AreNotEqualIntegers, AreEqualIntegers)
                 case 161 /*if_icmplt*/ ⇒
-                    comparisonOfTwoValues(memoryLayout, pc, instruction,
+                    ifTcmpXX(pc, instruction,
                         isLessThan _, IsLessThan, IsGreaterThanOrEqualTo)
                 case 162 /*if_icmpge*/ ⇒
-                    comparisonOfTwoValues(memoryLayout, pc, instruction,
+                    ifTcmpXX(pc, instruction,
                         isGreaterThanOrEqualTo _, IsGreaterThanOrEqualTo, IsLessThan)
                 case 163 /*if_icmpgt*/ ⇒
-                    comparisonOfTwoValues(memoryLayout, pc, instruction,
+                    ifTcmpXX(pc, instruction,
                         isGreaterThan _, IsGreaterThan, IsLessThanOrEqualTo)
                 case 164 /*if_icmple*/ ⇒
-                    comparisonOfTwoValues(memoryLayout, pc, instruction,
+                    ifTcmpXX(pc, instruction,
                         isLessThanOrEqualTo _, IsLessThanOrEqualTo, IsGreaterThan)
                 case 153 /*ifeq*/ ⇒
-                    comparisonWithFixedValue(memoryLayout, pc, instruction,
-                        is0 _, Is0, IsNot0)
+                    ifXX(pc, instruction, is0 _, Is0, IsNot0)
                 case 154 /*ifne*/ ⇒
-                    comparisonWithFixedValue(memoryLayout, pc, instruction,
-                        isNot0 _, IsNot0, Is0)
+                    ifXX(pc, instruction, isNot0 _, IsNot0, Is0)
                 case 155 /*iflt*/ ⇒
-                    comparisonWithFixedValue(memoryLayout, pc, instruction,
-                        isLessThan0 _, IsLessThan0, IsGreaterThanOrEqualTo0)
+                    ifXX(pc, instruction, isLessThan0 _, IsLessThan0, IsGreaterThanOrEqualTo0)
                 case 156 /*ifge*/ ⇒
-                    comparisonWithFixedValue(memoryLayout, pc, instruction,
+                    ifXX(pc, instruction,
                         isGreaterThanOrEqualTo0 _, IsGreaterThanOrEqualTo0, IsLessThan0)
                 case 157 /*ifgt*/ ⇒
-                    comparisonWithFixedValue(memoryLayout, pc, instruction,
+                    ifXX(pc, instruction,
                         isGreaterThan0 _, IsGreaterThan0, IsLessThanOrEqualTo0)
                 case 158 /*ifle */ ⇒
-                    comparisonWithFixedValue(memoryLayout, pc, instruction,
+                    ifXX(pc, instruction,
                         isLessThanOrEqualTo0 _, IsLessThanOrEqualTo0, IsGreaterThan0)
 
-                // TODO case 171 /*lookupswitch*/ ⇒ 
+                case 171 /*lookupswitch*/ ⇒
+                    val switch = instructions(pc).asInstanceOf[LOOKUPSWITCH]
+                    val index = operands.head
+                    val remainingOperands = operands.tail
+                    val firstKey = switch.npairs(0)._1
+                    var previousKey = firstKey
+                    var branchToDefaultRequired = false
+                    for ((key, offset) ← switch.npairs) {
+                        if (!branchToDefaultRequired && (key - previousKey) > 1) {
+                            if ((previousKey until key).exists(v ⇒ domain.isValueInRange(index, v, v).maybe)) {
+                                branchToDefaultRequired = true
+                            } else {
+                                previousKey = key
+                            }
+                        }
+                        if (domain.isValueInRange(index, key, key).maybe) {
+                            val branchTarget = pc + offset
+                            val (updatedOperands, updatedLocals) = domain.hasValue(branchTarget, key, index, remainingOperands, locals)
+                            gotoTarget(branchTarget, updatedOperands, updatedLocals)
+                        }
+                    }
+                    if (branchToDefaultRequired || domain.isValueNotInRange(index, firstKey, switch.npairs(switch.npairs.size - 1)._1).maybe) {
+                        gotoTarget(pc + switch.defaultOffset, remainingOperands, locals)
+                    }
 
-                // TODO case 170 /*tableswitch*/ ⇒
-                //                    val tableswitch = instructions(pc).asInstanceOf[TABLESWITCH]
-                //                    val index = memoryLayout.operands.head
-                //                    val low = tableswitch.low
-                //                    val high = tableswitch.high
-                //                            domain.concreteValue(index) match {
-                //                                case Some(value) => 
-                //                                case _ =>
-                //                            }
+                case 170 /*tableswitch*/ ⇒
+                    val tableswitch = instructions(pc).asInstanceOf[TABLESWITCH]
+                    val index = operands.head
+                    val remainingOperands = operands.tail
+                    val low = tableswitch.low
+                    val high = tableswitch.high
+                    var v = low
+                    while (v < high) {
+                        if (domain.isValueInRange(index, v, v).maybe) {
+                            val branchTarget = pc + tableswitch.jumpOffsets(v - low)
+                            val (updatedOperands, updatedLocals) = domain.hasValue(branchTarget, v, index, remainingOperands, locals)
+                            gotoTarget(branchTarget, updatedOperands, updatedLocals)
+                        }
+                        v = v + 1
+                    }
+                    if (domain.isValueNotInRange(index, low, high).maybe) {
+                        gotoTarget(pc + tableswitch.defaultOffset, remainingOperands, locals)
+                    }
 
                 //
                 // STATEMENTS THAT CAN CAUSE EXCEPTIONELL TRANSFER OF CONTROL FLOW
                 // 
-
-                // TOOD[AI] case ... newarray
-                // TOOD[AI] case ... multianewarray
-                // TODO[AI] case ... "ARRAYSTORE/ARRAYLOAD INSTRUCTIONS"
-                // TODO[AI] case ... IDIV/LDIV (ISHR/ISHL/IREM...?)        
-                // TODO[AI] case ... INVOKE
-                // TODO[AI] case ... MONITORENTER/MONITOREXIT
-                // TODO[AI] case ... arraylength (=> NullPointerException)
-                // TODO[AI] case ... GETField/PUTFIELD (NullPointerExceptoin)
-                // TODO[AI] case ... checkcast
 
                 case 191 /*athrow*/ ⇒
                     // In general, we either have a control flow to an exception handler 
@@ -389,30 +425,36 @@ object AI {
                      * the exception handlers of the current method in the order that 
                      * they appear in the corresponding exception handler table. 
                      */
-                    val exception = memoryLayout.operands.head
-                    // TODO THIS WILL FAIL... 
-                    val nextMemoryLayout = update(memoryLayout, pc, instruction)
-                    val exceptionTypes = domain.isNull(exception) match {
-                        case Yes     ⇒ Values(Set(ObjectType.NullPointerException))
-                        case No      ⇒ domain.types(exception)
-                        case Unknown ⇒ Values(domain.types(exception).values + ObjectType.NullPointerException)
+                    val exceptionValue = operandsArray(pc).head
+                    val exceptionValueIsNull = domain.isNull(exceptionValue)
+
+                    // TODO add null handler!
+                    var nextOperands: List[domain.DomainValue] = null
+                    val exceptionTypes = exceptionValueIsNull match {
+                        case Yes ⇒
+                            nextOperands = List(nullValue)
+                            Values(Set(ObjectType.NullPointerException))
+                        case No | Unknown ⇒
+                            nextOperands = List(exceptionValue)
+                            domain.types(exceptionValue)
                     }
                     exceptionTypes match {
                         case ValuesUnknown ⇒
                             code.exceptionHandlersFor(pc).foreach(eh ⇒ {
                                 val branchTarget = eh.handlerPC
 
-                                gotoTarget(branchTarget, nextMemoryLayout)
                                 // unless we have a "finally" handler, we can state
                                 // a constraint
-                                eh.catchType.map(catchType ⇒
-                                    addConstraint(
-                                        UpperBound(exception, catchType),
-                                        branchTarget,
-                                        nextMemoryLayout)
-                                )
+                                if (eh.catchType.isDefined) {
+                                    eh.catchType.map(catchType ⇒ {
+                                        val (updatedOperands, updatedLocals) =
+                                            UpperBound(branchTarget, catchType, exceptionValue, nextOperands, locals)
+                                        gotoTarget(branchTarget, updatedOperands, updatedLocals)
+                                    })
+                                } else
+                                    gotoTarget(branchTarget, nextOperands, locals)
                             })
-                            domain.abnormalReturn(exception)
+                            domain.abnormalReturn(exceptionValue)
 
                         case Values(types) ⇒
                             val isHandled =
@@ -422,22 +464,20 @@ object AI {
                                     val branchTarget = eh.handlerPC
                                     val catchType = eh.catchType
                                     if (catchType.isEmpty) {
-                                        gotoTarget(branchTarget, nextMemoryLayout)
-                                        // we have found a finally handler
+                                        gotoTarget(branchTarget, nextOperands, locals)
+                                        // this is a finally handler
                                         true
                                     } else {
-                                        domain.isSubtypeOf(exception, catchType.get) match {
+                                        domain.isSubtypeOf(exceptionValue, catchType.get) match {
                                             case No ⇒
                                                 false
                                             case Yes ⇒
-                                                gotoTarget(branchTarget, nextMemoryLayout)
+                                                gotoTarget(branchTarget, nextOperands, locals)
                                                 true
                                             case Unknown ⇒
-                                                gotoTarget(branchTarget, nextMemoryLayout)
-                                                addConstraint(
-                                                    UpperBound(exception, catchType.get),
-                                                    branchTarget,
-                                                    nextMemoryLayout)
+                                                val (updatedOperands, updatedLocals) =
+                                                    UpperBound(branchTarget, catchType.get, exceptionValue, nextOperands, locals)
+                                                gotoTarget(branchTarget, updatedOperands, updatedLocals)
                                                 false
                                         }
 
@@ -448,91 +488,681 @@ object AI {
                             // handler will catch the exception... hence the method
                             // will not return abnormally
                             if (!isHandled)
-                                domain.abnormalReturn(exception)
+                                domain.abnormalReturn(exceptionValue)
                     }
 
+                ///////////////////////// TODO WE NEED TO DEAL WITH EXCEPTIONELL CONTROL FLOW
+
                 //
-                // RETURN INSTRUCTIONS
+                // CREATE ARRAY
                 //
 
-                case 172 /*ireturn*/
-                    | 173 /*lreturn*/
-                    | 174 /*freturn*/
-                    | 175 /*dreturn*/
-                    | 176 /*areturn*/
-                    | 177 /*return*/ ⇒ update(memoryLayout, pc, instruction)
+                case 188 /*newarray*/ ⇒ {
+                    val count :: rest = operands
+                    val newOperands = ((instruction.asInstanceOf[NEWARRAY].atype: @annotation.switch) match {
+                        case 4 /*BooleanType.atype*/  ⇒ domain.newarray(count, BooleanType)
+                        case 5 /*CharType.atype*/     ⇒ domain.newarray(count, CharType)
+                        case 6 /*FloatType.atype*/    ⇒ domain.newarray(count, FloatType)
+                        case 7 /*DoubleType.atype*/   ⇒ domain.newarray(count, DoubleType)
+                        case 8 /*ByteType.atype*/     ⇒ domain.newarray(count, ByteType)
+                        case 9 /*ShortType.atype*/    ⇒ domain.newarray(count, ShortType)
+                        case 10 /*IntegerType.atype*/ ⇒ domain.newarray(count, IntegerType)
+                        case 11 /*LongType.atype*/    ⇒ domain.newarray(count, LongType)
+                        case _                        ⇒ sys.error("internal implementation error or invalid bytecode")
+                    }) :: rest
+                    fallThroughOL(newOperands, locals)
+                }
+                case 189 /*anewarray*/ ⇒ {
+                    val count :: rest = operands
+                    val newOperands = domain.newarray(count, instruction.asInstanceOf[ANEWARRAY].componentType) :: rest
+                    fallThroughOL(newOperands, locals)
+                }
 
-                // 
+                case 197 /*multianewarray*/ ⇒ {
+                    val multianewarray = instruction.asInstanceOf[MULTIANEWARRAY]
+                    val initDimensions = operands.take(multianewarray.dimensions)
+                    fallThroughOL(
+                        domain.multianewarray(initDimensions, multianewarray.componentType) :: (operands.drop(multianewarray.dimensions)),
+                        locals)
+                }
+
+                //
+                // LOAD FROM AND STORE VALUE IN ARRAYS
+                //
+
+                case 50 /*aaload*/ ⇒ {
+                    val index :: arrayref :: rest = operands
+                    val newOperands = domain.aaload(index, arrayref) :: rest
+                    fallThroughOL(newOperands, locals)
+                }
+                case 83 /*aastore*/ ⇒ {
+                    val value :: index :: arrayref :: rest = operands
+                    domain.aastore(value, index, arrayref)
+                    fallThroughOL(rest, locals)
+                }
+
+                case 51 /*baload*/ ⇒ {
+                    val index :: arrayref :: rest = operands
+                    val newOperands = domain.baload(index, arrayref) :: rest
+                    fallThroughOL(newOperands, locals)
+                }
+                case 84 /*bastore*/ ⇒ {
+                    val value :: index :: arrayref :: rest = operands
+                    domain.bastore(value, index, arrayref)
+                    fallThroughOL(rest, locals)
+                }
+
+                case 52 /*caload*/ ⇒ {
+                    val index :: arrayref :: rest = operands
+                    val newOperands = domain.caload(index, arrayref) :: rest
+                    fallThroughOL(newOperands, locals)
+                }
+                case 85 /*castore*/ ⇒ {
+                    val value :: index :: arrayref :: rest = operands
+                    domain.castore(value, index, arrayref)
+                    fallThroughOL(rest, locals)
+                }
+
+                case 49 /*daload*/ ⇒ {
+                    val index :: arrayref :: rest = operands
+                    val newOperands = domain.daload(index, arrayref) :: rest
+                    fallThroughOL(newOperands, locals)
+                }
+                case 82 /*dastore*/ ⇒ {
+                    val value :: index :: arrayref :: rest = operands
+                    domain.dastore(value, index, arrayref)
+                    fallThroughOL(rest, locals)
+                }
+
+                case 48 /*faload*/ ⇒ {
+                    val index :: arrayref :: rest = operands
+                    fallThroughOL(domain.faload(index, arrayref) :: rest, locals)
+                }
+                case 81 /*fastore*/ ⇒ {
+                    val value :: index :: arrayref :: rest = operands
+                    domain.fastore(value, index, arrayref)
+                    fallThroughOL(rest, locals)
+                }
+
+                case 46 /*iaload*/ ⇒ {
+                    val index :: arrayref :: rest = operands
+                    fallThroughOL(domain.iaload(index, arrayref) :: rest, locals)
+                }
+                case 79 /*iastore*/ ⇒ {
+                    val value :: index :: arrayref :: rest = operands
+                    domain.iastore(value, index, arrayref)
+                    fallThroughOL(rest, locals)
+                }
+
+                case 47 /*laload*/ ⇒ {
+                    val index :: arrayref :: rest = operands
+                    fallThroughOL(domain.laload(index, arrayref) :: rest, locals)
+                }
+                case 80 /*lastore*/ ⇒ {
+                    val value :: index :: arrayref :: rest = operands
+                    domain.lastore(value, index, arrayref)
+                    fallThroughOL(rest, locals)
+                }
+
+                case 53 /*saload*/ ⇒ {
+                    val index :: arrayref :: rest = operands
+                    fallThroughOL(domain.saload(index, arrayref) :: rest, locals)
+                }
+                case 86 /*sastore*/ ⇒ {
+                    val value :: index :: arrayref :: rest = operands
+                    domain.sastore(value, index, arrayref)
+                    fallThroughOL(rest, locals)
+                }
+
+                //
+                // LENGTH OF AN ARRAY
+                //
+
+                case 190 /*arraylength*/ ⇒ {
+                    val arrayref = operands.head
+                    val newOperands = domain.arraylength(arrayref) :: operands.tail
+                    fallThroughOL(newOperands, locals)
+                }
+
+                //
+
+                //
+                // ACCESSING FIELDS
+                //
+                case 180 /*getfield*/ ⇒ {
+                    val getfield = instruction.asInstanceOf[GETFIELD]
+                    fallThroughOL(
+                        domain.getfield(
+                            operands.head,
+                            getfield.declaringClass,
+                            getfield.name,
+                            getfield.fieldType) :: (operands.tail),
+                        locals)
+                }
+                case 178 /*getstatic*/ ⇒ {
+                    val getstatic = instruction.asInstanceOf[GETSTATIC]
+                    fallThroughOL(
+                        domain.getstatic(
+                            getstatic.declaringClass,
+                            getstatic.name,
+                            getstatic.fieldType) :: operands,
+                        locals)
+                }
+                case 181 /*putfield*/ ⇒ {
+                    val putfield = instruction.asInstanceOf[PUTFIELD]
+                    val value :: objectref :: rest = operands
+                    domain.putfield(
+                        objectref,
+                        value,
+                        putfield.declaringClass,
+                        putfield.name,
+                        putfield.fieldType)
+                    fallThroughOL(rest, locals)
+                }
+                case 179 /*putstatic*/ ⇒ {
+                    val putstatic = instruction.asInstanceOf[PUTSTATIC]
+                    val value :: rest = operands
+                    domain.putstatic(
+                        value,
+                        putstatic.declaringClass,
+                        putstatic.name,
+                        putstatic.fieldType)
+                    fallThroughOL(rest, locals)
+                }
+
+                //
+                // METHOD INVOCATIONS
+                //
+                case 186 /*invokedynamic*/ ⇒
+                    //                val invoke = instruction.asInstanceOf[INVOKEDYNAMIC]
+                    //                val bootstrapMethod = invoke.bootstrapMethod
+                    //                val bootbootstrapMethod.bootstrapArguments
+                    //                //methodHandle.
+                    sys.error("invokedynamic is not yet supported")
+
+                case 185 /*invokeinterface*/ ⇒ {
+                    val invoke = instruction.asInstanceOf[INVOKEINTERFACE]
+                    val argsCount = invoke.methodDescriptor.parameterTypes.length
+                    domain.invokeinterface(
+                        invoke.declaringClass,
+                        invoke.name,
+                        invoke.methodDescriptor,
+                        operands.take(argsCount + 1).reverse
+                    ) match {
+                            case Some(v) ⇒ fallThroughOL(v :: (operands.drop(argsCount + 1)), locals)
+                            case None    ⇒ fallThroughOL(operands.drop(argsCount + 1), locals)
+                        }
+                }
+                case 183 /*invokespecial*/ ⇒ {
+                    val invoke = instruction.asInstanceOf[INVOKESPECIAL]
+                    val argsCount = invoke.methodDescriptor.parameterTypes.length
+                    domain.invokespecial(
+                        invoke.declaringClass,
+                        invoke.name,
+                        invoke.methodDescriptor,
+                        operands.take(argsCount + 1).reverse
+                    ) match {
+                            case Some(v) ⇒ fallThroughOL(v :: (operands.drop(argsCount + 1)), locals)
+                            case None    ⇒ fallThroughOL(operands.drop(argsCount + 1), locals)
+                        }
+                }
+                case 184 /*invokestatic*/ ⇒ {
+                    val invoke = instruction.asInstanceOf[INVOKESTATIC]
+                    val argsCount = invoke.methodDescriptor.parameterTypes.length
+                    domain.invokestatic(
+                        invoke.declaringClass,
+                        invoke.name,
+                        invoke.methodDescriptor,
+                        operands.take(argsCount)
+                    ) match {
+                            case Some(v) ⇒ fallThroughOL(v :: (operands.drop(argsCount)), locals)
+                            case None    ⇒ fallThroughOL(operands.drop(argsCount), locals)
+                        }
+                }
+                case 182 /*invokevirtual*/ ⇒ {
+                    val invoke = instruction.asInstanceOf[INVOKEVIRTUAL]
+                    val argsCount = invoke.methodDescriptor.parameterTypes.length
+                    domain.invokevirtual(
+                        invoke.declaringClass,
+                        invoke.name,
+                        invoke.methodDescriptor,
+                        operands.take(argsCount + 1)
+                    ) match {
+                            case Some(v) ⇒ fallThroughOL(v :: (operands.drop(argsCount + 1)), locals)
+                            case None    ⇒ fallThroughOL(operands.drop(argsCount + 1), locals)
+                        }
+                }
+                case 192 /*checkcast*/ ⇒ {
+                    val objectref :: rest = operands
+                    val newOperands = domain.checkcast(objectref, instruction.asInstanceOf[CHECKCAST].referenceType) :: rest
+                    fallThroughOL(newOperands, locals)
+                }
+
+                case 194 /*monitorenter*/ ⇒ {
+                    domain.monitorenter(operands.head)
+                    fallThroughO(operands.tail)
+                }
+                case 195 /*monitorexit*/ ⇒ {
+                    domain.monitorexit(operands.head)
+                    fallThroughO(operands.tail)
+                }
+
+                //
+                // RETURN FROM METHOD
+                //
+                case 176 /*areturn*/ ⇒ domain.areturn(operandsArray(pc).head)
+                case 175 /*dreturn*/ ⇒ domain.dreturn(operandsArray(pc).head)
+                case 174 /*freturn*/ ⇒ domain.freturn(operandsArray(pc).head)
+                case 172 /*ireturn*/ ⇒ domain.ireturn(operandsArray(pc).head)
+                case 173 /*lreturn*/ ⇒ domain.lreturn(operandsArray(pc).head)
+                case 177 /*return*/  ⇒ domain.returnVoid()
+
+                // -----------------------------------------------------------------------
+                //
                 // INSTRUCTIONS THAT FALL THROUGH / THAT DO NOT CONTROL THE 
                 // CONTROL FLOW (WHICH WILL NEVER THROW AN EXCEPTION)
                 //
-                case _ ⇒ {
-                    val nextPC = pcOfNextInstruction
-                    val nextMemoryLayout = update(memoryLayout, pc, instruction)
-                    gotoTarget(nextPC, nextMemoryLayout)
+                // -----------------------------------------------------------------------
+
+                //
+                // PUT LOCAL VARIABLE VALUE ONTO STACK
+                //
+                case 25 /*aload*/ ⇒
+                    fallThroughOL(locals(instruction.asInstanceOf[ALOAD].lvIndex) :: operands, locals)
+                case 24 /*dload*/ ⇒
+                    fallThroughOL(locals(instruction.asInstanceOf[DLOAD].lvIndex) :: operands, locals)
+                case 23 /*fload*/ ⇒
+                    fallThroughOL(locals(instruction.asInstanceOf[FLOAD].lvIndex) :: operands, locals)
+                case 21 /*iload*/ ⇒
+                    fallThroughOL(locals(instruction.asInstanceOf[ILOAD].lvIndex) :: operands, locals)
+                case 22 /*lload*/ ⇒
+                    fallThroughOL(locals(instruction.asInstanceOf[LLOAD].lvIndex) :: operands, locals)
+                case 42 /*aload_0*/ | 38 /*dload_0*/ | 34 /*fload_0*/ | 26 /*iload_0*/ | 30 /*lload_0*/ ⇒
+                    fallThroughOL(locals(0) :: operands, locals)
+                case 43 /*aload_1*/ | 39 /*dload_1*/ | 35 /*fload_1*/ | 27 /*iload_1*/ | 31 /*lload_1*/ ⇒
+                    fallThroughOL(locals(1) :: operands, locals)
+                case 44 /*aload_2*/ | 40 /*dload_2*/ | 36 /*fload_2*/ | 28 /*iload_2*/ | 32 /*lload_2*/ ⇒
+                    fallThroughOL(locals(2) :: operands, locals)
+                case 45 /*aload_3*/ | 41 /*dload_3*/ | 37 /*fload_3*/ | 29 /*iload_3*/ | 33 /*lload_3*/ ⇒
+                    fallThroughOL(locals(3) :: operands, locals)
+
+                //
+                // STORE OPERAND IN LOCAL VARIABLE
+                //
+                case 58 /*astore*/ ⇒
+                    fallThroughOL(operands.tail,
+                        locals.updated(instruction.asInstanceOf[ASTORE].lvIndex, operands.head))
+                case 57 /*dstore*/ ⇒
+                    fallThroughOL(operands.tail,
+                        locals.updated(instruction.asInstanceOf[DSTORE].lvIndex, operands.head))
+                case 56 /*fstore*/ ⇒
+                    fallThroughOL(operands.tail,
+                        locals.updated(instruction.asInstanceOf[FSTORE].lvIndex, operands.head))
+                case 54 /*istore*/ ⇒
+                    fallThroughOL(operands.tail,
+                        locals.updated(instruction.asInstanceOf[ISTORE].lvIndex, operands.head))
+                case 55 /*lstore*/ ⇒
+                    fallThroughOL(operands.tail,
+                        locals.updated(instruction.asInstanceOf[LSTORE].lvIndex, operands.head))
+                case 75 /*astore_0*/
+                    | 71 /*dstore_0*/
+                    | 67 /*fstore_0*/
+                    | 63 /*lstore_0*/
+                    | 59 /*istore_0*/ ⇒
+                    fallThroughOL(operands.tail, locals.updated(0, operands.head))
+                case 76 /*astore_1*/
+                    | 72 /*dstore_1*/
+                    | 68 /*fstore_1*/
+                    | 64 /*lstore_1*/
+                    | 60 /*istore_1*/ ⇒
+                    fallThroughOL(operands.tail, locals.updated(1, operands.head))
+                case 77 /*astore_2*/
+                    | 73 /*dstore_2*/
+                    | 69 /*fstore_2*/
+                    | 65 /*lstore_2*/
+                    | 61 /*istore_2*/ ⇒
+                    fallThroughOL(operands.tail, locals.updated(2, operands.head))
+                case 78 /*astore_3*/
+                    | 74 /*dstore_3*/
+                    | 70 /*fstore_3*/
+                    | 66 /*lstore_3*/
+                    | 62 /*istore_3*/ ⇒
+                    fallThroughOL(operands.tail, locals.updated(3, operands.head))
+
+                //
+                // PUSH CONSTANT VALUE
+                //
+
+                case 1 /*aconst_null*/ ⇒
+                    fallThroughOL(domain.nullValue :: operands, locals)
+
+                case 16 /*bipush*/ ⇒
+                    fallThroughOL(domain.byteValue(instruction.asInstanceOf[BIPUSH].value) :: operands, locals)
+
+                case 14 /*dconst_0*/ ⇒ fallThroughOL(domain.doubleValue(0.0d) :: operands, locals)
+                case 15 /*dconst_1*/ ⇒ fallThroughOL(domain.doubleValue(1.0d) :: operands, locals)
+
+                case 11 /*fconst_0*/ ⇒ fallThroughOL(domain.floatValue(0.0f) :: operands, locals)
+                case 12 /*fconst_1*/ ⇒ fallThroughOL(domain.floatValue(1.0f) :: operands, locals)
+                case 13 /*fconst_2*/ ⇒ fallThroughOL(domain.floatValue(2.0f) :: operands, locals)
+
+                case 2 /*iconst_m1*/ ⇒ fallThroughOL(domain.intValue(-1) :: operands, locals)
+                case 3 /*iconst_0*/  ⇒ fallThroughOL(domain.intValue(0) :: operands, locals)
+                case 4 /*iconst_1*/  ⇒ fallThroughOL(domain.intValue(1) :: operands, locals)
+                case 5 /*iconst_2*/  ⇒ fallThroughOL(domain.intValue(2) :: operands, locals)
+                case 6 /*iconst_3*/  ⇒ fallThroughOL(domain.intValue(3) :: operands, locals)
+                case 7 /*iconst_4*/  ⇒ fallThroughOL(domain.intValue(4) :: operands, locals)
+                case 8 /*iconst_5*/  ⇒ fallThroughOL(domain.intValue(5) :: operands, locals)
+
+                case 9 /*lconst_0*/  ⇒ fallThroughOL(domain.longValue(0l) :: operands, locals)
+                case 10 /*lconst_1*/ ⇒ fallThroughOL(domain.longValue(1l) :: operands, locals)
+
+                case 18 /*ldc*/ ⇒ {
+                    instruction match {
+                        case LoadInt(v)    ⇒ fallThroughOL(domain.intValue(v) :: operands, locals)
+                        case LoadFloat(v)  ⇒ fallThroughOL(domain.floatValue(v) :: operands, locals)
+                        case LoadString(v) ⇒ fallThroughOL(domain.stringValue(v) :: operands, locals)
+                        case LoadClass(v)  ⇒ fallThroughOL(domain.classValue(v) :: operands, locals)
+                        case _             ⇒ BATError("unknown type of ldc instruction")
+                    }
                 }
+                case 19 /*ldc_w*/ ⇒ {
+                    instruction match {
+                        case LoadInt_W(v)    ⇒ fallThroughOL(domain.intValue(v) :: operands, locals)
+                        case LoadFloat_W(v)  ⇒ fallThroughOL(domain.floatValue(v) :: operands, locals)
+                        case LoadString_W(v) ⇒ fallThroughOL(domain.stringValue(v) :: operands, locals)
+                        case LoadClass_W(v)  ⇒ fallThroughOL(domain.classValue(v) :: operands, locals)
+                        case _               ⇒ BATError("unknown type of ldc_w instruction")
+                    }
+                }
+                case 20 /*ldc2_w*/ ⇒ {
+                    instruction match {
+                        case LoadLong(v)   ⇒ fallThroughOL(domain.longValue(v) :: operands, locals)
+                        case LoadDouble(v) ⇒ fallThroughOL(domain.doubleValue(v) :: operands, locals)
+                        case _             ⇒ BATError("unknown type of ldc2_w instruction")
+                    }
+                }
+
+                case 17 /*sipush*/ ⇒
+                    fallThroughOL(domain.shortValue(instruction.asInstanceOf[SIPUSH].value) :: operands, locals)
+
+                //
+                // RELATIONAL OPERATORS
+                //
+                case 150 /*fcmpg*/ ⇒ {
+                    val value2 :: value1 :: rest = operands
+                    fallThroughOL(domain.fcmpg(value1, value2) :: rest, locals)
+                }
+                case 149 /*fcmpl*/ ⇒ {
+                    val value2 :: value1 :: rest = operands
+                    fallThroughOL(domain.fcmpl(value1, value2) :: rest, locals)
+                }
+                case 152 /*dcmpg*/ ⇒ {
+                    val value2 :: value1 :: rest = operands
+                    fallThroughOL(domain.dcmpg(value1, value2) :: rest, locals)
+                }
+                case 151 /*dcmpl*/ ⇒ {
+                    val value2 :: value1 :: rest = operands
+                    fallThroughOL(domain.dcmpl(value1, value2) :: rest, locals)
+                }
+                case 148 /*lcmp*/ ⇒ {
+                    val value2 :: value1 :: rest = operands
+                    fallThroughOL(domain.lcmp(value1, value2) :: rest, locals)
+                }
+
+                //
+                // UNARY EXPRESSIONS
+                //
+                case 119 /*dneg*/ ⇒
+                    fallThroughOL(domain.dneg(operands.head) :: (operands.tail), locals)
+                case 118 /*fneg*/ ⇒
+                    fallThroughOL(domain.fneg(operands.head) :: (operands.tail), locals)
+                case 117 /*lneg*/ ⇒
+                    fallThroughOL(domain.lneg(operands.head) :: (operands.tail), locals)
+                case 116 /*ineg*/ ⇒
+                    fallThroughOL(domain.ineg(operands.head) :: (operands.tail), locals)
+
+                //
+                // BINARY EXPRESSIONS
+                //
+
+                case 99 /*dadd*/ ⇒ {
+                    val value2 :: value1 :: rest = operands
+                    fallThroughOL(domain.dadd(value1, value2) :: rest, locals)
+                }
+                case 111 /*ddiv*/ ⇒ {
+                    val value2 :: value1 :: rest = operands
+                    fallThroughOL(domain.ddiv(value1, value2) :: rest, locals)
+                }
+                case 107 /*dmul*/ ⇒ {
+                    val value2 :: value1 :: rest = operands
+                    fallThroughOL(domain.dmul(value1, value2) :: rest, locals)
+                }
+                case 115 /*drem*/ ⇒ {
+                    val value2 :: value1 :: rest = operands
+                    fallThroughOL(domain.drem(value1, value2) :: rest, locals)
+                }
+                case 103 /*dsub*/ ⇒ {
+                    val value2 :: value1 :: rest = operands
+                    fallThroughOL(domain.dsub(value1, value2) :: rest, locals)
+                }
+
+                case 98 /*fadd*/ ⇒ {
+                    val value2 :: value1 :: rest = operands
+                    fallThroughOL(domain.fadd(value1, value2) :: rest, locals)
+                }
+                case 110 /*fdiv*/ ⇒ {
+                    val value2 :: value1 :: rest = operands
+                    fallThroughOL(domain.fdiv(value1, value2) :: rest, locals)
+                }
+                case 106 /*fmul*/ ⇒ {
+                    val value2 :: value1 :: rest = operands
+                    fallThroughOL(domain.fmul(value1, value2) :: rest, locals)
+                }
+                case 114 /*frem*/ ⇒ {
+                    val value2 :: value1 :: rest = operands
+                    fallThroughOL(domain.frem(value1, value2) :: rest, locals)
+                }
+                case 102 /*fsub*/ ⇒ {
+                    val value2 :: value1 :: rest = operands
+                    fallThroughOL(domain.fsub(value1, value2) :: rest, locals)
+                }
+
+                case 96 /*iadd*/ ⇒ {
+                    val value2 :: value1 :: rest = operands
+                    fallThroughOL(domain.iadd(value1, value2) :: rest, locals)
+                }
+                case 126 /*iand*/ ⇒ {
+                    val value2 :: value1 :: rest = operands
+                    fallThroughOL(domain.iand(value1, value2) :: rest, locals)
+                }
+                case 108 /*idiv*/ ⇒ {
+                    val value2 :: value1 :: rest = operands
+                    fallThroughOL(domain.idiv(value1, value2) :: rest, locals)
+                }
+                case 104 /*imul*/ ⇒ {
+                    val value2 :: value1 :: rest = operands
+                    fallThroughOL(domain.imul(value1, value2) :: rest, locals)
+                }
+                case 128 /*ior*/ ⇒ {
+                    val value2 :: value1 :: rest = operands
+                    fallThroughOL(domain.ior(value1, value2) :: rest, locals)
+                }
+                case 112 /*irem*/ ⇒ {
+                    val value2 :: value1 :: rest = operands
+                    fallThroughOL(domain.irem(value1, value2) :: rest, locals)
+                }
+                case 120 /*ishl*/ ⇒ {
+                    val value2 :: value1 :: rest = operands
+                    fallThroughOL(domain.ishl(value1, value2) :: rest, locals)
+                }
+                case 122 /*ishr*/ ⇒ {
+                    val value2 :: value1 :: rest = operands
+                    fallThroughOL(domain.ishr(value1, value2) :: rest, locals)
+                }
+                case 100 /*isub*/ ⇒ {
+                    val value2 :: value1 :: rest = operands
+                    fallThroughOL(domain.isub(value1, value2) :: rest, locals)
+                }
+                case 124 /*iushr*/ ⇒ {
+                    val value2 :: value1 :: rest = operands
+                    fallThroughOL(domain.iushr(value1, value2) :: rest, locals)
+                }
+                case 130 /*ixor*/ ⇒ {
+                    val value2 :: value1 :: rest = operands
+                    fallThroughOL(domain.ixor(value1, value2) :: rest, locals)
+                }
+
+                case 97 /*ladd*/ ⇒ {
+                    val value2 :: value1 :: rest = operands
+                    fallThroughOL(domain.ladd(value1, value2) :: rest, locals)
+                }
+                case 127 /*land*/ ⇒ {
+                    val value2 :: value1 :: rest = operands
+                    fallThroughOL(domain.land(value1, value2) :: rest, locals)
+                }
+                case 109 /*ldiv*/ ⇒ {
+                    val value2 :: value1 :: rest = operands
+                    fallThroughOL(domain.ldiv(value1, value2) :: rest, locals)
+                }
+                case 105 /*lmul*/ ⇒ {
+                    val value2 :: value1 :: rest = operands
+                    fallThroughOL(domain.lmul(value1, value2) :: rest, locals)
+                }
+                case 129 /*lor*/ ⇒ {
+                    val value2 :: value1 :: rest = operands
+                    fallThroughOL(domain.lor(value1, value2) :: rest, locals)
+                }
+                case 113 /*lrem*/ ⇒ {
+                    val value2 :: value1 :: rest = operands
+                    fallThroughOL(domain.lrem(value1, value2) :: rest, locals)
+                }
+                case 121 /*lshl*/ ⇒ {
+                    val value2 :: value1 :: rest = operands
+                    fallThroughOL(domain.lshl(value1, value2) :: rest, locals)
+                }
+                case 123 /*lshr*/ ⇒ {
+                    val value2 :: value1 :: rest = operands
+                    fallThroughOL(domain.lshr(value1, value2) :: rest, locals)
+                }
+                case 101 /*lsub*/ ⇒ {
+                    val value2 :: value1 :: rest = operands
+                    fallThroughOL(domain.lsub(value1, value2) :: rest, locals)
+                }
+                case 125 /*lushr*/ ⇒ {
+                    val value2 :: value1 :: rest = operands
+                    fallThroughOL(domain.lushr(value1, value2) :: rest, locals)
+                }
+                case 131 /*lxor*/ ⇒ {
+                    val value2 :: value1 :: rest = operands
+                    fallThroughOL(domain.lxor(value1, value2) :: rest, locals)
+                }
+                //
+                // GENERIC STACK MANIPULATION
+                //
+                case 89 /*dup*/ ⇒
+                    fallThroughOL((operands.head) :: operands, locals)
+                case 90 /*dup_x1*/ ⇒
+                    val v1 :: v2 :: rest = operands
+                    fallThroughOL(v1 :: v2 :: v1 :: rest, locals)
+                case 91 /*dup_x2*/ ⇒ operands match {
+                    case (v1 /*@ CTC1()*/ ) :: (v2 @ CTC1()) :: (v3 /*@ CTC1()*/ ) :: rest ⇒
+                        fallThroughOL(v1 :: v2 :: v3 :: v1 :: rest, locals)
+                    case (v1 /*@ CTC1()*/ ) :: v2 /* @ CTC2()*/ :: rest ⇒
+                        fallThroughOL(v1 :: v2 :: v1 :: rest, locals)
+                    case _ ⇒ BATError("stack layout invalid")
+                }
+                case 92 /*dup2*/ ⇒ operands match {
+                    case (v1 @ CTC1()) :: (v2 /*@ CTC1()*/ ) :: _ ⇒
+                        fallThroughOL(v1 :: v2 :: operands, locals)
+                    case (v /*@ CTC2()*/ ) :: _ ⇒
+                        fallThroughOL(v :: operands, locals)
+                    case _ ⇒ BATError("stack layout invalid")
+                }
+                case 93 /*dup2_x1*/ ⇒ operands match {
+                    case (v1 @ CTC1()) :: (v2 /*@ CTC1()*/ ) :: (v3 /*@ CTC1()*/ ) :: rest ⇒
+                        fallThroughOL(v1 :: v2 :: v3 :: v1 :: v2 :: rest, locals)
+                    case (v1 @ CTC2()) :: (v2 /*@ CTC1()*/ ) :: rest ⇒
+                        fallThroughOL(v1 :: v2 :: v1 :: rest, locals)
+                    case _ ⇒ BATError("stack layout invalid")
+                }
+                case 94 /*dup2_x2*/ ⇒ operands match {
+                    case (v1 @ CTC1()) :: (v2 @ CTC1()) :: (v3 @ CTC1()) :: (v4 /*@ CTC1()*/ ) :: rest ⇒
+                        fallThroughOL(v1 :: v2 :: v3 :: v4 :: v1 :: v2 :: rest, locals)
+                    case (v1 @ CTC2()) :: (v2 @ CTC1()) :: (v3 @ CTC1()) :: rest ⇒
+                        fallThroughOL(v1 :: v2 :: v3 :: v1 :: rest, locals)
+                    case (v1 @ CTC1()) :: (v2 @ CTC1()) :: (v3 @ CTC2()) :: rest ⇒
+                        fallThroughOL(v1 :: v2 :: v3 :: v1 :: v2 :: rest, locals)
+                    case (v1 @ CTC2()) :: (v2 /*@ CTC1()*/ ) :: rest ⇒
+                        fallThroughOL(v1 :: v2 :: v1 :: rest, locals)
+                    case _ ⇒ BATError("stack layout invalid")
+                }
+
+                case 87 /*pop*/ ⇒
+                    fallThroughOL(operands.tail, locals)
+                case 88 /*pop2*/ ⇒
+                    operands.head match {
+                        case _@ CTC1() ⇒ fallThroughOL(operands.drop(2), locals)
+                        case _@ CTC2() ⇒ fallThroughOL(operands.tail, locals)
+                    }
+
+                case 95 /*swap*/ ⇒ {
+                    val v1 :: v2 :: rest = operands
+                    fallThroughOL(v2 :: v1 :: rest, locals)
+                }
+
+                //
+                // TYPE CONVERSION
+                //
+
+                case 193 /*instanceof*/ ⇒ {
+                    val objectref :: rest = operands
+                    val newOperands = domain.instanceof(objectref, instruction.asInstanceOf[INSTANCEOF].referenceType) :: rest
+                    fallThroughOL(newOperands, locals)
+                }
+
+                case 144 /*d2f*/ ⇒ fallThroughOL(domain.d2f(operands.head) :: (operands.tail), locals)
+                case 142 /*d2i*/ ⇒ fallThroughOL(domain.d2i(operands.head) :: (operands.tail), locals)
+                case 143 /*d2l*/ ⇒ fallThroughOL(domain.d2l(operands.head) :: (operands.tail), locals)
+
+                case 141 /*f2d*/ ⇒ fallThroughOL(domain.f2d(operands.head) :: (operands.tail), locals)
+                case 139 /*f2i*/ ⇒ fallThroughOL(domain.f2i(operands.head) :: (operands.tail), locals)
+                case 140 /*f2l*/ ⇒ fallThroughOL(domain.f2l(operands.head) :: (operands.tail), locals)
+
+                case 145 /*i2b*/ ⇒ fallThroughOL(domain.i2b(operands.head) :: (operands.tail), locals)
+                case 146 /*i2c*/ ⇒ fallThroughOL(domain.i2c(operands.head) :: (operands.tail), locals)
+                case 135 /*i2d*/ ⇒ fallThroughOL(domain.i2d(operands.head) :: (operands.tail), locals)
+                case 134 /*i2f*/ ⇒ fallThroughOL(domain.i2f(operands.head) :: (operands.tail), locals)
+                case 133 /*i2l*/ ⇒ fallThroughOL(domain.i2l(operands.head) :: (operands.tail), locals)
+                case 147 /*i2s*/ ⇒ fallThroughOL(domain.i2s(operands.head) :: (operands.tail), locals)
+
+                case 138 /*l2d*/ ⇒ fallThroughOL(domain.l2d(operands.head) :: (operands.tail), locals)
+                case 137 /*l2f*/ ⇒ fallThroughOL(domain.l2f(operands.head) :: (operands.tail), locals)
+                case 136 /*l2i*/ ⇒ fallThroughOL(domain.l2i(operands.head) :: (operands.tail), locals)
+
+                //
+                // "OTHER" INSTRUCTIONS
+                //
+                case 132 /*iinc*/ ⇒ {
+                    val iinc = instruction.asInstanceOf[IINC]
+                    val newValue = domain.iinc(locals(iinc.lvIndex), iinc.constValue)
+                    fallThroughOL(operandsArray(pc), locals.updated(iinc.lvIndex, newValue))
+                }
+
+                case 187 /*new*/ ⇒ {
+                    val newObject = instruction.asInstanceOf[NEW]
+                    fallThroughO(domain.newObject(newObject.objectType) :: operands)
+                }
+
+                case 0 /*nop*/    ⇒ fallThrough()
+                case 196 /*wide*/ ⇒ fallThrough()
+
+                case opcode       ⇒ BATError("instruction with unsupported opcode: "+opcode)
             }
-            interpretedInstructions += 1;
         }
 
-        AIResultBuilder.complete(code, domain)(memoryLayouts)
+        AIResultBuilder.complete(code, domain)(operandsArray, localsArray)
     }
 }
 
-/* Design - We use a builder to construct a Result object in two steps. This is necessary
- * to correctly type the `MemoryLayout` structure, which depends on the given domain. */
-object AIResultBuilder {
-
-    type MemoryLayout[D <: Domain] = ai.MemoryLayout[D]
-
-    def aborted[D <: Domain](
-        theCode: Code,
-        theDomain: D): (Array[MemoryLayout[theDomain.type]], List[Int]) ⇒ AIResult[theDomain.type] = {
-
-        (theMemoryLayouts: Array[MemoryLayout[theDomain.type]], theWorkList: List[Int]) ⇒
-            new AIAborted[theDomain.type](theCode, theDomain) {
-                def workList = theWorkList
-                def memoryLayouts = theMemoryLayouts
-                def continueInterpretation(): AIResult[domain.type] = {
-                    AI.continueInterpretation(code, domain)(workList, theMemoryLayouts)
-                }
-            }
-    }
-
-    def complete[D <: Domain](
-        theCode: Code,
-        theDomain: D): (Array[MemoryLayout[theDomain.type]]) ⇒ AIResult[theDomain.type] = {
-
-        (theMemoryLayouts: Array[MemoryLayout[theDomain.type]]) ⇒
-            new AICompleted[theDomain.type](theCode, theDomain) {
-                def memoryLayouts = theMemoryLayouts
-                def restartInterpretation(): AIResult[theDomain.type] = {
-                    AI.continueInterpretation(code, domain)(workList, theMemoryLayouts)
-                }
-            }
-    }
-}
-
-/* Design - We use an explicit type parameter to avoid a path dependency on a concrete AIResult
- * instance. I.e., if we remove the type parameter and redefine the method memoryLayouts
- * to "memoryLayouts: IndexedSeq[MemoryLayout[domain.type, domain.DomainValue]]" 
- * we would introduce a path dependence to a particular AIResult's instance and the actual 
- * type would be "this.domain.type" and "this.domain.DomainValue". */
-sealed abstract class AIResult[D <: Domain](val code: Code, val domain: D) {
-    def memoryLayouts: IndexedSeq[MemoryLayout[D]]
-    def workList: List[Int]
-    def wasAborted: Boolean
-
-    type BoundAIResult = AIResult[domain.type]
-}
-
-abstract class AIAborted[D <: Domain](code: Code, domain: D) extends AIResult(code, domain) {
-    final def wasAborted: Boolean = true
-    def continueInterpretation(): BoundAIResult
-}
-
-abstract class AICompleted[D <: Domain](code: Code, domain: D) extends AIResult(code, domain) {
-    final def wasAborted: Boolean = false
-    def workList: List[Int] = List(0)
-    def restartInterpretation(): BoundAIResult
-}
+object AI extends AI 

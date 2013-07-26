@@ -41,7 +41,7 @@ package resolved
  */
 case class JSR_W(
     branchoffset: Int)
-        extends ControlTransferInstruction {
+        extends JSRInstruction {
 
     def opcode: Int = 201
 

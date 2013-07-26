@@ -67,7 +67,8 @@ object Util {
         domain: Domain)(
             f: AIResult[domain.type] ⇒ T): T = {
         val result = AI(classFile, method, domain)
-        val memoryLayouts: IndexedSeq[MemoryLayout[domain.type]] = result.memoryLayouts
+        val operandsArray = result.operandsArray
+        val localsArray = result.localsArray
         try {
             if (result.wasAborted) throw new RuntimeException("interpretation aborted")
             f(result)
@@ -77,7 +78,14 @@ object Util {
                 if ((currentTime - lastDump) > timeInMillisBetweenDumps) {
                     lastDump = currentTime
                     val title = Some("Generated due to exception: "+e.getMessage())
-                    val dump = util.Util.dump(Some(classFile), Some(method), method.body.get, memoryLayouts, title)
+                    val dump =
+                        util.Util.dump(
+                            Some(classFile),
+                            Some(method),
+                            method.body.get,
+                            operandsArray,
+                            localsArray,
+                            title)
                     util.Util.writeAndOpenDump(dump) //.map(_.deleteOnExit)
                 } else {
                     System.err.println("Dump suppressed: "+e.getMessage())
@@ -100,7 +108,8 @@ object Util {
         code: Code,
         result: AIResult[_])(
             f: ⇒ T): T = {
-        val memoryLayouts = result.memoryLayouts
+        val operandsArray = result.operandsArray
+        val localsArray = result.localsArray
         try {
             if (result.wasAborted) throw new RuntimeException("interpretation aborted")
             f
@@ -110,7 +119,7 @@ object Util {
                 if ((currentTime - lastDump) > timeInMillisBetweenDumps) {
                     lastDump = currentTime
                     val title = Some("Generated due to exception: "+e.getMessage())
-                    val dump = util.Util.dump(classFile, method, code, memoryLayouts, title)
+                    val dump = util.Util.dump(classFile, method, code, operandsArray, localsArray, title)
                     util.Util.writeAndOpenDump(dump) //.map(_.deleteOnExit)
                 } else {
                     System.err.println("Dump suppressed: "+e.getMessage())
@@ -123,7 +132,8 @@ object Util {
     def dump(classFile: Option[ClassFile],
              method: Option[Method],
              code: Code,
-             memoryLayouts: IndexedSeq[MemoryLayout[_]],
+             operandsArray: IndexedSeq[List[_ <: AnyRef]],
+             localsArray: IndexedSeq[IndexedSeq[_ <: AnyRef]],
              title: Option[String] = None): Node = {
         // HTML 5 XML serialization (XHTML 5)
         <html xmlns="http://www.w3.org/1999/xhtml">
@@ -135,7 +145,7 @@ object Util {
         </head>
         <body>
         { title.getOrElse("") }
-        { dumpTable(classFile, method, code, memoryLayouts) }
+        { dumpTable(classFile, method, code, operandsArray, localsArray) }
         </body>
         </html>
     }
@@ -173,7 +183,8 @@ object Util {
     def dumpTable(classFile: Option[ClassFile],
                   method: Option[Method],
                   code: Code,
-                  memoryLayouts: IndexedSeq[MemoryLayout[_ ]]): Node = {
+                  operandsArray: IndexedSeq[List[_ <: AnyRef]],
+                  localsArray: IndexedSeq[IndexedSeq[_ <: AnyRef]]): Node = {
 
         <table>
             <caption>{ caption(classFile, method) }</caption>
@@ -181,7 +192,7 @@ object Util {
             <tr><th>PC</th><th>Instruction</th><th>Operand Stack</th><th>Registers</th></tr>
             </thead>
             <tbody>
-            { dumpInstructions(code, memoryLayouts) }
+            { dumpInstructions(code, operandsArray, localsArray) }
             </tbody>
         </table>
     }
@@ -195,33 +206,33 @@ object Util {
     }
 
     private def dumpInstructions(code: Code,
-                                 memoryLayouts: IndexedSeq[MemoryLayout[_ ]]) = {
-        val instrs = code.instructions.zipWithIndex.zip(memoryLayouts).filter(_._1._1 ne null)
-        for (((instruction, pc), memoryLayout) ← instrs) yield {
-            <tr class={ if (memoryLayout eq null) "not_evaluated" else "evaluated" }>
+                                 operandsArray: IndexedSeq[List[_ <: AnyRef]],
+                                 localsArray: IndexedSeq[IndexedSeq[_ <: AnyRef]]) = {
+        val instrs = code.instructions.zipWithIndex.zip(operandsArray zip localsArray).filter(_._1._1 ne null)
+        for (((instruction, pc), (operands, locals)) ← instrs) yield {
+            <tr class={ if (operands eq null /*||/&& locals eq null*/ ) "not_evaluated" else "evaluated" }>
               <td>{ pc }</td>
               <td>{ instruction }</td>
-              <td>{ dumpStack(memoryLayout) }</td>
-              <td>{ dumpLocals(memoryLayout) }</td>
+              <td>{ dumpStack(operands) }</td>
+              <td>{ dumpLocals(locals) }</td>
             </tr >
         }
     }
 
-    private def dumpStack(memoryLayout: MemoryLayout[_ ]) = {
-        if (memoryLayout eq null)
-            <em>Memory layout not available.</em>
+    private def dumpStack(operands: List[_ <: AnyRef]) = {
+        if (operands eq null)
+            <em>Operands are not available.</em>
         else {
             <ul style="list-style:none;margin-left:0;padding-left:0">
-            { memoryLayout.operands.map(op ⇒ <li>{ op.toString }</li>) }
+            { operands.map(op ⇒ <li>{ op.toString }</li>) }
             </ul>
         }
     }
 
-    private def dumpLocals(memoryLayout: MemoryLayout[_ ]) = {
-        if (memoryLayout eq null)
-            <em>Memory layout not available.</em>
+    private def dumpLocals(locals: IndexedSeq[_ <: AnyRef]) = {
+        if (locals eq null)
+            <em>Local variables assignment is not available.</em>
         else {
-            val locals = memoryLayout.locals
             <ol start="0">
             { locals.map(l ⇒ if (l eq null) "UNUSED" else l.toString()).map(l ⇒ <li>{ l }</li>) }
             </ol>

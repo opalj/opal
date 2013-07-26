@@ -58,7 +58,7 @@ class MethodsWithLoopsTest
 
     import util.Util.dumpOnFailureDuringValidation
 
-    class RecordingDomain extends DefaultDomain {
+    class RecordingDomain extends DefaultDomain with ConstraintManifestation {
         var returnedValues: List[(String, Value)] = List()
         override def areturn(value: Value) { returnedValues = ("areturn", value) :: returnedValues }
         override def dreturn(value: Value) { returnedValues = ("dreturn", value) :: returnedValues }
@@ -67,11 +67,10 @@ class MethodsWithLoopsTest
         override def lreturn(value: Value) { returnedValues = ("lreturn", value) :: returnedValues }
         override def returnVoid() { returnedValues = ("return", null) :: returnedValues }
 
-        var constraints: List[(Int, ValueConstraint)] = List()
+        var constraints: List[ReifiedConstraint] = List()
 
-        override def addConstraint(constraint: ValueConstraint, pc: Int, memoryLayout: DomainMemoryLayout) = {
-            constraints = (pc, constraint) :: constraints
-            memoryLayout
+        def addConstraint(constraint: ReifiedConstraint) {
+            constraints = constraint :: constraints
         }
     }
 

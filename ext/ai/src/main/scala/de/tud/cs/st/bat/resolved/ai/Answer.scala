@@ -42,15 +42,19 @@ package ai
  */
 sealed trait Answer {
     def negate: Answer
+    def maybe : Boolean
 }
 final case object Yes extends Answer {
     def negate = No
+    def maybe : Boolean = true
 }
 final case object No extends Answer {
     def negate = Yes
+    def maybe : Boolean = false
 }
 final case object Unknown extends Answer {
     def negate = this
+    def maybe : Boolean = true
 }
 
 

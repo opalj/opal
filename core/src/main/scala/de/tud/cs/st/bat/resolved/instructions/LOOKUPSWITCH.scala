@@ -41,7 +41,6 @@ package resolved
  */
 case class LOOKUPSWITCH(
     defaultOffset: Int,
-    npairsCount: Int,
     npairs: IndexedSeq[(Int, Int)])
         extends CompoundConditionalBranchInstruction {
 

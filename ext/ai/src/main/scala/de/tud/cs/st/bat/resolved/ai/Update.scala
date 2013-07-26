@@ -37,7 +37,7 @@ package ai
 
 /**
  * Encapsulates an updated value, primarily used to indicate in which way a given
- * value was updated.
+ * value was updated. 
  *
  * @author Michael Eichberg
  */
@@ -54,7 +54,12 @@ sealed trait Update[+V] {
      */
     def updateType: UpdateType
 }
-
+/**
+ * Identifies updates where something was updated without qualifying the update.
+ *
+ * ==Usage==
+ * This class (its companion object) is primarily used for pattern matching purposes.
+ */
 sealed abstract class SomeUpdate[V] extends Update[V] {
     def value: V
 }
@@ -65,7 +70,9 @@ object SomeUpdate {
  * Some part of the structure was updated such that it is required to
  * continue the abstract interpretation.
  */
-final case class StructuralUpdate[V](val value: V) extends SomeUpdate[V] {
+final case class StructuralUpdate[V](
+    value: V)
+        extends SomeUpdate[V] {
     def updateType = StructuralUpdateType
     def &:(updateType: UpdateType): UpdateType = StructuralUpdateType
 }
@@ -74,13 +81,15 @@ final case class StructuralUpdate[V](val value: V) extends SomeUpdate[V] {
  * that is not directly relevant to the abstract interpreter was changed.
  *
  * ==Example==
- * If two values are merged that are seen on two different paths that represent the
+ * If two values are merged that are seen on two different paths, but which represent the
  * same abstract value, we may want to update the meta-information about
  * the origin of the current value, but this information is not relevant
  * for the abstract interpreter itself and it will not reschedule the abstract
  * interpretation of subsequent instructions.
  */
-final case class MetaInformationUpdate[V](val value: V) extends SomeUpdate[V] {
+final case class MetaInformationUpdate[V](
+    value: V)
+        extends SomeUpdate[V] {
 
     def updateType = MetaInformationUpdateType
 

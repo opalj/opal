@@ -362,7 +362,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                     val defaultOffset = in.readInt
                     val npairsCount = in.readInt
                     val npairs: IndexedSeq[(Int, Int)] = repeat(npairsCount) { (in.readInt, in.readInt) }
-                    LOOKUPSWITCH(defaultOffset, npairsCount, npairs)
+                    LOOKUPSWITCH(defaultOffset, npairs)
                 }
                 case 129 ⇒ { LOR }
                 case 113 ⇒ { LREM }

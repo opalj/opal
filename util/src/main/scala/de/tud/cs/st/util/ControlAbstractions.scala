@@ -130,7 +130,6 @@ object ControlAbstractions {
 
     def withResource[I <: java.io.Closeable, O](r: ⇒ I)(f: I ⇒ O): O = {
         val resource = r
-        require(resource ne null)
         try {
             f(resource)
         } finally {

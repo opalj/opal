@@ -78,28 +78,29 @@ object InterpretMethods {
                 val classFile = time('PARSING) {
                     ClassFile(new DataInputStream(new ByteArrayInputStream(data)))
                 }
-                if (beVerbose) println("Analyzing: "+classFile.thisClass.className)
+                if (beVerbose) println(classFile.thisClass.className)
                 for (method ← classFile.methods; if method.body.isDefined) {
-//                    val runnable = new Runnable {
-//                        def run() {
-                            try {
-                                time('AI) {
-                                    if (AI(classFile, method, new DefaultDomain()).wasAborted)
-                                        throw new InterruptedException();
-                                }
-                            } catch {
-                                case ct: ControlThrowable ⇒ throw ct
-                                case t: Throwable ⇒ { // we want to catch all types of exceptions, but also (assertion) error
-                                    collectedExceptions = (classFile, method, t) :: collectedExceptions
-                                }
-                            }
-//                        }
-//                    }
-//                    val thread = new Thread(runnable)
-//                    thread.start
-//                    thread.join(timeLimit)
-//                    thread.interrupt
-//                    thread.join()
+                    if (beVerbose) println("  =>  "+method.toJava)
+                    //                    val runnable = new Runnable {
+                    //                        def run() {
+                    try {
+                        time('AI) {
+                            if (AI(classFile, method, new DefaultDomain()).wasAborted)
+                                throw new InterruptedException();
+                        }
+                    } catch {
+                        case ct: ControlThrowable ⇒ throw ct
+                        case t: Throwable ⇒ { // we want to catch all types of exceptions, but also (assertion) error
+                            collectedExceptions = (classFile, method, t) :: collectedExceptions
+                        }
+                    }
+                    //                        }
+                    //                    }
+                    //                    val thread = new Thread(runnable)
+                    //                    thread.start
+                    //                    thread.join(timeLimit)
+                    //                    thread.interrupt
+                    //                    thread.join()
                 }
             }
         }
@@ -113,9 +114,11 @@ object InterpretMethods {
             var groupedExceptions = collectedExceptions.groupBy(e ⇒ e._3.getClass().getName())
             groupedExceptions.map(ge ⇒ {
                 val (exClass, exInstances) = ge
-                report += "\n\t"+exClass+"("+exInstances.size+")\n"
+                report += "\n\t"+exClass+"("+exInstances.size+")__________________________\n"
                 for ((classFile, method, ex) ← exInstances) {
-                    report += "\t\t"+classFile.thisClass.className+" => "+method.toJava+"\n"
+                    report += "\t\t"+classFile.thisClass.className
+                    report += " => "+method.toJava+"\n"
+                    report += ex.getMessage().trim
                 }
             })
             Some(report)

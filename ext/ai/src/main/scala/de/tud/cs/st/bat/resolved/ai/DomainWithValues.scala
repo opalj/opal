@@ -180,7 +180,7 @@ trait DomainWithValues extends Domain {
     def areEqualReferences(value1: DomainValue, value2: DomainValue): Answer = {
         Unknown
     }
-    
+
     def areEqualIntegers(value1: DomainValue, value2: DomainValue): Answer = {
         Unknown
     }
@@ -192,28 +192,88 @@ trait DomainWithValues extends Domain {
     def isLessThanOrEqualTo(smallerOrEqualValue: DomainValue, equalOrLargerValue: DomainValue): Answer = {
         Unknown
     }
-   
+
+    def isValueInRange(value: DomainValue, lowerBound: Int, upperBound: Int): Answer =
+        Unknown
+
+    def isValueNotInRange(value: DomainValue, lowerBound: Int, upperBound: Int): Answer =
+        Unknown
+
     //
     // HANDLING CONSTRAINTS
     //
     // The default domain does not handle constraints; i.e. does not update the 
     // memory layout.
     //
-    /**
-     * ==Note==
-     * Returning a plain `NullValue` may not be the optimal solution as the type
-     * information is lost.
-     */
-    def addConstraint(
-        constraint: ValueConstraint,
-        pc: Int,
-        memoryLayout: DomainMemoryLayout): DomainMemoryLayout = {
-        memoryLayout
+
+    object IgnoreSingleValueConstraint extends SingleValueConstraint {
+        def apply(pc: Int, value: DomainValue, operands: Operands, locals: Locals): (Operands, Locals) = {
+            (operands, locals)
+        }
+    }
+    class IgnoreSingleValueConstraintWithBound[Bound] extends SingleValueConstraintWithBound[Bound] {
+        def apply(pc: Int, bound: Bound, value: DomainValue, operands: Operands, locals: Locals): (Operands, Locals) = {
+            (operands, locals)
+        }
+    }
+    object IgnoreSingleValueConstraintWithReferenceTypeBound extends IgnoreSingleValueConstraintWithBound[ReferenceType]
+    object IgnoreSingleValueConstraintWithIntegerValueBound extends IgnoreSingleValueConstraintWithBound[Int]
+
+    object IgnoreTwoValuesConstraint extends TwoValuesConstraint {
+        def apply(pc: Int, value1: DomainValue, value2: DomainValue, operands: Operands, locals: Locals): (Operands, Locals) = {
+            (operands, locals)
+        }
     }
 
+    def IsNull: SingleValueConstraint = IgnoreSingleValueConstraint
+    def IsNonNull: SingleValueConstraint = IgnoreSingleValueConstraint
+    def AreEqualReferences: TwoValuesConstraint = IgnoreTwoValuesConstraint
+    def AreNotEqualReferences: TwoValuesConstraint = IgnoreTwoValuesConstraint
+    def UpperBound: SingleValueConstraintWithBound[ReferenceType] = IgnoreSingleValueConstraintWithReferenceTypeBound
+    //
+    // W.r.t. Integer values
+    def hasValue: SingleValueConstraintWithBound[Int] = IgnoreSingleValueConstraintWithIntegerValueBound
+    def AreEqualIntegers: TwoValuesConstraint = IgnoreTwoValuesConstraint
+    def AreNotEqualIntegers: TwoValuesConstraint = IgnoreTwoValuesConstraint
+    def IsLessThan: TwoValuesConstraint = IgnoreTwoValuesConstraint
+    def IsLessThanOrEqualTo: TwoValuesConstraint = IgnoreTwoValuesConstraint
 }
 
+trait ConstraintManifestation extends Domain {
 
+    trait ReifiedConstraint
+
+    case class IsNullConstraint(pc: Int, value: Value) extends ReifiedConstraint
+    case class IsNonNullConstraint(pc: Int, value: Value) extends ReifiedConstraint
+
+    case class SingleValueReifiedConstraint(
+        r: (Int, DomainValue) ⇒ ReifiedConstraint,
+        sv: ( /* pc :*/ Int, DomainValue, Operands, Locals) ⇒ (Operands, Locals))
+            extends SingleValueConstraint {
+
+        def apply(pc: Int, v: DomainValue, o: Operands, l: Locals) = {
+            addConstraint(r(pc, v))
+            sv(pc, v, o, l)
+        }
+    }
+
+    abstract override def IsNull: SingleValueConstraint =
+        SingleValueReifiedConstraint(IsNullConstraint, super.IsNull)
+
+    abstract override def IsNonNull: SingleValueConstraint =
+        SingleValueReifiedConstraint(IsNonNullConstraint, super.IsNonNull)
+
+    //    abstract override def UpperBound: SingleValueConstraintWithBound[ReferenceType]
+    //
+    //    abstract override def AreEqualReferences: TwoValuesConstraint
+    //    abstract override def AreNotEqualReferences: TwoValuesConstraint
+    //    abstract override def AreEqualIntegers: TwoValuesConstraint
+    //    abstract override def AreNotEqualIntegers: TwoValuesConstraint
+    //    abstract override def IsLessThan: TwoValuesConstraint
+    //    abstract override def IsLessThanOrEqualTo: TwoValuesConstraint
+
+    def addConstraint(constraint: ReifiedConstraint)
+}
 
 
 

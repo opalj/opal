@@ -39,14 +39,5 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case class JSR(
-    branchoffset: Int)
-        extends JSRInstruction {
+abstract class JSRInstruction extends UnconditionalBranchInstruction 
 
-    def opcode: Int = 168
-
-    def mnemonic: String = "jsr"
-
-    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 3
-
-}

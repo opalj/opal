@@ -63,8 +63,6 @@ import collection.immutable.Range
  * a Project as a whole, which we will refer to as "World" in BATAI, it is then the
  * responsibility of the domain to make sure that everything is thread safe.
  *
- * @see [[de.tud.cs.st.bat.resolved.ai.TypeDomain]]
- *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  * @author Dennis Siebert
  */
@@ -136,8 +134,6 @@ trait Domain {
      * inherit from Domain and which extend `Domain`'s `Value` trait.
      */
     type DomainValue <: Value
-
-    type DomainMemoryLayout = MemoryLayout[this.type]
 
     /**
      * The class tag
@@ -245,12 +241,31 @@ trait Domain {
     //
     // -----------------------------------------------------------------------------------
 
-    //    def concreteValue(value : DomainValue) : Option[Int]
-    //    def overlaps(range : Range)
+    /**
+     * Returns `true` iff at least one possible extension of given value is in the
+     * specified range; that is if the intersection of the range of values captured
+     * by the given value and the specified range is non-empty.
+     * For example, if the given value captures all positive integer values and the
+     * specified range is [-1,1] then the answer has to be Yes.
+     *
+     * Both bounds are inclusive.
+     */
+    def isValueInRange(value: DomainValue, lowerBound: Int, upperBound: Int): Answer 
+
+    /**
+     * Returns `true` iff at least one possible extension of given value is not in the
+     * specified range; that is, if the range of values captured by the give value is 
+     * not a strict subset of the specified range.
+     * For example, if the given value is `10` and the
+     * specified range is [0,Integer.MAX_VALUE] then the answer has to be No.
+     *
+     * Both bounds are inclusive.
+     */
+    def isValueNotInRange(value: DomainValue, lowerBound: Int, upperBound: Int): Answer 
 
     /*ABSTRACT*/ def isNull(value: DomainValue): Answer
 
-    def isNonNull(value: DomainValue): Answer = isNull(value).negate
+    final private[ai] def isNonNull(value: DomainValue): Answer = isNull(value).negate
 
     /**
      * Are equal compares the values represented by the given values. If the values
@@ -258,7 +273,8 @@ trait Domain {
      */
     /*ABSTRACT*/ def areEqualReferences(value1: DomainValue, value2: DomainValue): Answer
 
-    def areNotEqualReferences(value1: DomainValue, value2: DomainValue): Answer = areEqualReferences(value1, value2).negate
+    final private[ai] def areNotEqualReferences(value1: DomainValue, value2: DomainValue): Answer =
+        areEqualReferences(value1, value2).negate
 
     /**
      * Returns the type(s) of the value(s). Depending on the control flow the same
@@ -272,29 +288,29 @@ trait Domain {
 
     /*ABSTRACT*/ def areEqualIntegers(value1: DomainValue, value2: DomainValue): Answer
 
-    def areNotEqualIntegers(value1: DomainValue, value2: DomainValue): Answer = areEqualIntegers(value1, value2).negate
+    final private[ai] def areNotEqualIntegers(value1: DomainValue, value2: DomainValue): Answer = areEqualIntegers(value1, value2).negate
 
     /*ABSTRACT*/ def isLessThan(smallerValue: DomainValue, largerValue: DomainValue): Answer
 
     /*ABSTRACT*/ def isLessThanOrEqualTo(smallerOrEqualValue: DomainValue, equalOrLargerValue: DomainValue): Answer
 
-    def isGreaterThan(largerValue: DomainValue, smallerValue: DomainValue): Answer =
+    final private[ai] def isGreaterThan(largerValue: DomainValue, smallerValue: DomainValue): Answer =
         isLessThan(smallerValue, largerValue)
 
-    def isGreaterThanOrEqualTo(largerValue: DomainValue, smallerValue: DomainValue): Answer =
+    final private[ai] def isGreaterThanOrEqualTo(largerValue: DomainValue, smallerValue: DomainValue): Answer =
         isLessThanOrEqualTo(smallerValue, largerValue)
 
-    def is0(value: DomainValue): Answer = areEqualIntegers(value, IntegerConstant0)
+    final private[ai] def is0(value: DomainValue): Answer = areEqualIntegers(value, IntegerConstant0)
 
-    def isNot0(value: DomainValue): Answer = areNotEqualIntegers(value, IntegerConstant0)
+    final private[ai] def isNot0(value: DomainValue): Answer = areNotEqualIntegers(value, IntegerConstant0)
 
-    def isLessThan0(value: DomainValue): Answer = isLessThan(value, IntegerConstant0)
+    final private[ai] def isLessThan0(value: DomainValue): Answer = isLessThan(value, IntegerConstant0)
 
-    def isLessThanOrEqualTo0(value: DomainValue): Answer = isLessThanOrEqualTo(value, IntegerConstant0)
+    final private[ai] def isLessThanOrEqualTo0(value: DomainValue): Answer = isLessThanOrEqualTo(value, IntegerConstant0)
 
-    def isGreaterThan0(value: DomainValue): Answer = isGreaterThan(value, IntegerConstant0)
+    final private[ai] def isGreaterThan0(value: DomainValue): Answer = isGreaterThan(value, IntegerConstant0)
 
-    def isGreaterThanOrEqualTo0(value: DomainValue): Answer = isGreaterThanOrEqualTo(value, IntegerConstant0)
+    final private[ai] def isGreaterThanOrEqualTo0(value: DomainValue): Answer = isGreaterThanOrEqualTo(value, IntegerConstant0)
 
     // -----------------------------------------------------------------------------------
     //
@@ -302,56 +318,54 @@ trait Domain {
     //
     // -----------------------------------------------------------------------------------
 
-    /**
-     * Identifies a constraint on a value.
-     */
-    sealed trait ValueConstraint { /* Nothing (yet) */ }
+    type Operands = List[DomainValue]
+    type Locals = IndexedSeq[DomainValue]
+
+    trait ValuesConstraint
+
+    trait SingleValueConstraint extends (( /* pc :*/ Int, DomainValue, Operands, Locals) ⇒ (Operands, Locals)) with ValuesConstraint
+
+    trait SingleValueConstraintWithBound[Bound] extends (( /* pc :*/ Int, /*bound :*/ Bound, DomainValue, Operands, Locals) ⇒ (Operands, Locals)) with ValuesConstraint
+
+    trait TwoValuesConstraint extends (( /* pc :*/ Int, DomainValue, DomainValue, Operands, Locals) ⇒ (Operands, Locals)) with ValuesConstraint
+
+    final private[ai] class ChangedOrderTwoValuesConstraint(f: () ⇒ TwoValuesConstraint) extends TwoValuesConstraint {
+        def apply(pc: Int, value1: DomainValue, value2: DomainValue, operands: Operands, locals: Locals): (Operands, Locals) =
+            f()(pc, value2, value1, operands, locals)
+    }
+
+    final private[ai] class TwoValuesConstraintWithFixedSecondValue(f: () ⇒ TwoValuesConstraint, value2: DomainValue) extends SingleValueConstraint {
+        def apply(pc: Int, value1: DomainValue, operands: Operands, locals: Locals): (Operands, Locals) =
+            f()(pc, value2, value1, operands, locals)
+    }
+
+    final private[ai] class TwoValuesConstraintWithFixedFirstValue(f: () ⇒ TwoValuesConstraint, value1: DomainValue) extends SingleValueConstraint {
+        def apply(pc: Int, value2: DomainValue, operands: Operands, locals: Locals): (Operands, Locals) =
+            f()(pc, value2, value1, operands, locals)
+    }
+
     //
     // W.r.t Reference Values
-    case class IsNull(value: DomainValue) extends ValueConstraint
-    case class IsNonNull(value: DomainValue) extends ValueConstraint
-    case class AreEqualReferences(value1: DomainValue, value2: DomainValue) extends ValueConstraint
-    case class AreNotEqualReferences(value1: DomainValue, value2: DomainValue) extends ValueConstraint
-    case class UpperBound(value: DomainValue, referenceType: ReferenceType) extends ValueConstraint
+    def IsNull: SingleValueConstraint
+    def IsNonNull: SingleValueConstraint
+    def AreEqualReferences: TwoValuesConstraint
+    def AreNotEqualReferences: TwoValuesConstraint
+    def UpperBound: SingleValueConstraintWithBound[ReferenceType]
     //
     // W.r.t. Integer values
-    case class AreEqualIntegers(value1: DomainValue, value2: DomainValue) extends ValueConstraint
-    case class AreNotEqualIntegers(value1: DomainValue, value2: DomainValue) extends ValueConstraint
-    case class IsLessThan(smallerValue: DomainValue, largerValue: DomainValue) extends ValueConstraint
-    case class IsLessThanOrEqualTo(smallerOrEqualValue: DomainValue, equalOrLargerValue: DomainValue) extends ValueConstraint
-    val IsGreaterThan = (largerValue: DomainValue, smallerValue: DomainValue) ⇒ IsLessThan(smallerValue, largerValue)
-    val IsGreaterThanOrEqualTo = (largerValue: DomainValue, smallerValue: DomainValue) ⇒ IsLessThanOrEqualTo(smallerValue, largerValue)
-    val Is0 = (value: DomainValue) ⇒ AreEqualIntegers(value, IntegerConstant0)
-    val IsNot0 = (value: DomainValue) ⇒ AreNotEqualIntegers(value, IntegerConstant0)
-    val IsLessThan0 = (value: DomainValue) ⇒ IsLessThan(value, IntegerConstant0)
-    val IsLessThanOrEqualTo0 = (value: DomainValue) ⇒ IsLessThanOrEqualTo(value, IntegerConstant0)
-    val IsGreaterThan0 = (value: DomainValue) ⇒ IsLessThan(IntegerConstant0, value)
-    val IsGreaterThanOrEqualTo0 = (value: DomainValue) ⇒ IsLessThanOrEqualTo(IntegerConstant0, value)
-
-    /**
-     * The AI framework determined that some constraint applies to a value at a
-     * given program counter.
-     *
-     * Handling constraints is at the discretion of the domain; a simple domain
-     * may ignore calls to addConstraint and just return the memoryLayout as is.
-     *
-     * ==Example Scenario==
-     * An `ifnull` check was performed against the given value and the domain's answer was that
-     * it is not known whether the value was `null` or not. In this case BATAI will
-     * call this method with the program counter (pc) set to the first instruction on the
-     * `true` branch and specify that this value now can safely be assumed to be null.
-     * Additionally, BATAI will also add a constraint for the `false` branch.
-     *
-     * @param constraint The constraint that models the type of the constraint.
-     * @param pc The program counter of the first instruction where the constraint is
-     *      effective.
-     * @param memoryLayout The memory layout that is in effect at the given location (pc)
-     *      and which can be refined.
-     */
-    def addConstraint(
-        constraint: this.type#ValueConstraint,
-        pc: Int,
-        memoryLayout: DomainMemoryLayout): DomainMemoryLayout
+    def hasValue: SingleValueConstraintWithBound[Int]
+    def AreEqualIntegers: TwoValuesConstraint
+    def AreNotEqualIntegers: TwoValuesConstraint
+    def IsLessThan: TwoValuesConstraint
+    def IsLessThanOrEqualTo: TwoValuesConstraint
+    private[ai] val IsGreaterThan: TwoValuesConstraint = new ChangedOrderTwoValuesConstraint(IsLessThan _)
+    private[ai] val IsGreaterThanOrEqualTo: TwoValuesConstraint = new ChangedOrderTwoValuesConstraint(IsLessThanOrEqualTo _)
+    private[ai] val Is0: SingleValueConstraint = new TwoValuesConstraintWithFixedSecondValue(AreEqualIntegers _, IntegerConstant0)
+    private[ai] val IsNot0: SingleValueConstraint = new TwoValuesConstraintWithFixedSecondValue(AreNotEqualIntegers _, IntegerConstant0)
+    private[ai] val IsLessThan0: SingleValueConstraint = new TwoValuesConstraintWithFixedSecondValue(IsLessThan _, IntegerConstant0)
+    private[ai] val IsLessThanOrEqualTo0: SingleValueConstraint = new TwoValuesConstraintWithFixedSecondValue(IsLessThanOrEqualTo _, IntegerConstant0)
+    private[ai] val IsGreaterThan0: SingleValueConstraint = new TwoValuesConstraintWithFixedFirstValue(IsLessThan _, IntegerConstant0)
+    private[ai] val IsGreaterThanOrEqualTo0: SingleValueConstraint = new TwoValuesConstraintWithFixedFirstValue(IsLessThanOrEqualTo _, IntegerConstant0)
 
     // -----------------------------------------------------------------------------------
     //
@@ -563,12 +577,75 @@ trait Domain {
 
     def newObject(t: ObjectType): DomainValue
 
+    /**
+     * Merges the two given memory layouts. Returns `NoUpdate` if this
+     * memory layout already subsumes the given memory layout.
+     */
+    def merge(
+        thisOperands: Operands,
+        thisLocals: Locals,
+        otherOperands: Operands,
+        otherLocals: Locals): Update[(Operands, Locals)] = {
+
+        assume(thisOperands.size == otherOperands.size,
+            "merging the memory layouts (A:"+thisOperands+"and B:"+otherOperands+" ) is not possible due to different stack sizes")
+
+        assume(thisLocals.size == otherLocals.size,
+            "merging the memory layouts is not possible due to different numbers of locals")
+
+        var updateType: UpdateType = NoUpdateType
+
+        var thisRemainingOperands = thisOperands
+        var otherRemainingOperands = otherOperands
+        var newOperands = List[DomainValue]() // during the update we build the operands stack in reverse order
+
+        while (thisRemainingOperands.nonEmpty /* the number of operands of both memory layouts is equal */ ) {
+            val thisOperand = thisRemainingOperands.head
+            val otherOperand = otherRemainingOperands.head
+            otherRemainingOperands = otherRemainingOperands.tail
+            thisRemainingOperands = thisRemainingOperands.tail
+
+            val updatedOperand = thisOperand merge otherOperand
+            val newOperand = updatedOperand match {
+                case SomeUpdate(operand) ⇒ operand
+                case NoUpdate            ⇒ thisOperand
+            }
+            assume(!newOperand.isInstanceOf[NoLegalValue], "merging of stack values ("+thisOperand+" and "+otherOperand+") led to an illegal value")
+            updateType = updateType &: updatedOperand
+            newOperands = newOperand :: newOperands
+        }
+
+        val maxLocals = thisLocals.size
+
+        val newLocals = new Array[DomainValue](maxLocals)
+        var i = 0;
+        while (i < maxLocals) {
+            val thisLocal = thisLocals(i)
+            val otherLocal = otherLocals(i)
+            // The value calculated by "merge" may be the value "NoLegalValue" which means
+            // the values in the corresponding register were different (path dependent)
+            // on the different paths.
+            // If we would have a liveness analysis, we could avoid the use of 
+            // "NoLegalValue"
+            val newLocal =
+                if ((thisLocal eq null) || (otherLocal eq null)) {
+                    updateType = updateType &: MetaInformationUpdateType
+                    NoLegalValue("a register/local did not contain any value")
+                } else {
+                    val updatedLocal = thisLocal merge otherLocal
+                    updateType = updateType &: updatedLocal
+                    updatedLocal match {
+                        case SomeUpdate(operand) ⇒ operand
+                        case NoUpdate            ⇒ thisLocal
+                    }
+
+                }
+            newLocals(i) = newLocal
+            i += 1
+        }
+
+        updateType((newOperands.reverse, newLocals))
+    }
 }
 
-sealed trait ValuesAnswer[+T] {
-    def values: T
-}
-case class Values[+T](val values: T) extends ValuesAnswer[T]
-case object ValuesUnknown extends ValuesAnswer[Nothing] {
-    def values: Nothing = AIImplementationError("the values are unknown")
-}
+

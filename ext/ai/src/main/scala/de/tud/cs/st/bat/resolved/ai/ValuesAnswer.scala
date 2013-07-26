@@ -33,20 +33,22 @@
 package de.tud.cs.st
 package bat
 package resolved
+package ai
 
 /**
- * Jump subroutine.
+ * Encapsulates the answer of the domain w.r.t. the concrete value(s) of
+ * a DomainValue (abstraction).
  *
  * @author Michael Eichberg
  */
-case class JSR(
-    branchoffset: Int)
-        extends JSRInstruction {
-
-    def opcode: Int = 168
-
-    def mnemonic: String = "jsr"
-
-    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 3
-
+sealed trait ValuesAnswer[+T] {
+    def values: T
 }
+case class Values[+T](
+    values: T)
+        extends ValuesAnswer[T]
+case object ValuesUnknown extends ValuesAnswer[Nothing] {
+    def values: Nothing = AIImplementationError("the values are unknown")
+}
+
+
