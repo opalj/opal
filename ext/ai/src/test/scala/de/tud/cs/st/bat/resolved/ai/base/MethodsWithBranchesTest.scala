@@ -59,7 +59,7 @@ class MethodsWithBranchesTest
 
     import util.Util.dumpOnFailureDuringValidation
 
-    class RecordingDomain extends DefaultDomain with ConstraintManifestation {
+    class RecordingDomain extends DefaultDomain with ReifiedConstraints {
         var returnedValues: List[(String, Value)] = List()
         override def areturn(value: Value) { returnedValues = ("areturn", value) :: returnedValues }
         override def dreturn(value: Value) { returnedValues = ("dreturn", value) :: returnedValues }

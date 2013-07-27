@@ -63,10 +63,6 @@ class DefaultDomain extends AbstractDefaultDomain {
             case SomeBooleanValue         ⇒ NoUpdate
             case other @ SomeIntegerValue ⇒ StructuralUpdate(other)
             case TheNoLegalValue          ⇒ MetaInformationUpdateNoLegalValue
-            //            case other @ SomeByteValue    ⇒ StructuralUpdate(other)
-            //            case other @ SomeShortValue   ⇒ StructuralUpdate(other)
-            //            case other @ SomeCharValue    ⇒ StructuralUpdate(other)
-            //            case other: CTIntegerValue    ⇒ AIImplementationError(missingSupport(other))
             case _                        ⇒ MetaInformationUpdateNoLegalValue
         }
     }
@@ -77,10 +73,8 @@ class DefaultDomain extends AbstractDefaultDomain {
             case SomeByteValue            ⇒ NoUpdate
             case TheNoLegalValue          ⇒ MetaInformationUpdateNoLegalValue
             case other @ SomeIntegerValue ⇒ StructuralUpdate(other)
-            //            case SomeBooleanValue         ⇒ NoUpdate
             case other @ SomeShortValue   ⇒ StructuralUpdate(other)
             case other @ SomeCharValue    ⇒ StructuralUpdate(other)
-            //            case other: CTIntegerValue    ⇒ AIImplementationError(missingSupport(other))
             case other                    ⇒ MetaInformationUpdateNoLegalValue
         }
     }
@@ -91,10 +85,8 @@ class DefaultDomain extends AbstractDefaultDomain {
             case SomeShortValue           ⇒ NoUpdate
             case TheNoLegalValue          ⇒ MetaInformationUpdateNoLegalValue
             case other @ SomeIntegerValue ⇒ StructuralUpdate(other)
-            //            case SomeBooleanValue         ⇒ NoUpdate
             case SomeByteValue            ⇒ NoUpdate
             case other @ SomeCharValue    ⇒ StructuralUpdate(SomeIntegerValue)
-            //            case other: CTIntegerValue    ⇒ AIImplementationError(missingSupport(other))
             case other                    ⇒ MetaInformationUpdateNoLegalValue
         }
     }
@@ -105,11 +97,9 @@ class DefaultDomain extends AbstractDefaultDomain {
         override def merge(value: DomainValue): Update[DomainValue] = value match {
             case SomeCharValue            ⇒ NoUpdate
             case TheNoLegalValue          ⇒ MetaInformationUpdateNoLegalValue
-            //            case SomeBooleanValue         ⇒ NoUpdate
             case SomeByteValue            ⇒ NoUpdate
             case SomeShortValue           ⇒ StructuralUpdate(SomeIntegerValue)
             case other @ SomeIntegerValue ⇒ StructuralUpdate(other)
-            //            case other: CTIntegerValue    ⇒ AIImplementationError(missingSupport(other))
             case other                    ⇒ MetaInformationUpdateNoLegalValue
         }
     }
@@ -125,8 +115,6 @@ class DefaultDomain extends AbstractDefaultDomain {
             case SomeByteValue    ⇒ NoUpdate
             case SomeCharValue    ⇒ NoUpdate
             case SomeShortValue   ⇒ NoUpdate
-            // the following cases are just defined to catch errors/to help debug the AI
-            //            case other: CTIntegerValue ⇒ AIImplementationError(missingSupport(other))
             case other            ⇒ MetaInformationUpdateNoLegalValue
         }
     }
@@ -154,7 +142,6 @@ class DefaultDomain extends AbstractDefaultDomain {
         override def merge(value: Value): Update[DomainValue] = value match {
             case NullValue             ⇒ NoUpdate
             case other: ReferenceValue ⇒ StructuralUpdate(other)
-            //            case other @ SomeReferenceValue ⇒ StructuralUpdate(other)
             case _                     ⇒ MetaInformationUpdateNoLegalValue
         }
     }
@@ -170,7 +157,6 @@ class DefaultDomain extends AbstractDefaultDomain {
             // What we do here is extremely simplistic, but this is basically all we can
             // do when we do not have the class hierarchy available.
             case AReferenceValue(`valueType`) ⇒ NoUpdate
-            //            case other @ SomeReferenceValue   ⇒ StructuralUpdate(other)
             case NullValue                    ⇒ NoUpdate
             case TheNoLegalValue              ⇒ MetaInformationUpdateNoLegalValue
             case other: ReferenceValue        ⇒ StructuralUpdate(SomeReferenceValue)

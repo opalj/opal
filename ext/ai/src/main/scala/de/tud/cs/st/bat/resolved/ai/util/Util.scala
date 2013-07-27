@@ -206,7 +206,7 @@ object Util {
     }
 
     private def dumpInstructions(code: Code,
-                                 operandsArray: Array[_<: List[_ <: AnyRef]],
+                                 operandsArray: Array[_ <: List[_ <: AnyRef]],
                                  localsArray: Array[_ <: Array[_ <: AnyRef]]) = {
         val instrs = code.instructions.zipWithIndex.zip(operandsArray zip localsArray).filter(_._1._1 ne null)
         for (((instruction, pc), (operands, locals)) ← instrs) yield {
