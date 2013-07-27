@@ -54,4 +54,11 @@ case class TABLESWITCH(
         currentPC + 1 + (3 - (currentPC % 4)) + 12 + jumpOffsets.size * 4
     }
 
+    override def toString =
+        "switch\n"+
+            (low to high).zip(jumpOffsets).map(keyOffset ⇒ {
+                val (key, offset) = keyOffset
+                "\t"+key+" ⇒ "+offset
+            }).mkString("\n")
+
 }

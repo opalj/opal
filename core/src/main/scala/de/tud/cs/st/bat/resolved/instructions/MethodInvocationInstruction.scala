@@ -52,10 +52,8 @@ abstract class StaticMethodInvocationInstruction extends MethodInvocationInstruc
     def methodDescriptor: MethodDescriptor
 
     override def toString: String =
-        this.getClass().getSimpleName()+
-            "("+
-            declaringClass.toJava+"." + name + methodDescriptor.toUMLNotation+
-            ")"
+        this.getClass().getSimpleName()+"\n"+
+            declaringClass.toJava+"\n"+name+" "+methodDescriptor.toUMLNotation
 
 }
 

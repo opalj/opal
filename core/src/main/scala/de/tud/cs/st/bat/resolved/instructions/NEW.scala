@@ -51,5 +51,5 @@ case class NEW(
 
     def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 3
 
-    override def toString: String = "NEW("+objectType.toJava+")"
+    override def toString: String = "NEW "+objectType.toJava
 }

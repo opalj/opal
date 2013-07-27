@@ -53,4 +53,6 @@ case class GETSTATIC(
 
     def runtimeExceptions: List[ObjectType] = Nil
 
+    override def toString = "get static "+declaringClass.toJava+"."+name+" : "+fieldType.toJava
+    
 }

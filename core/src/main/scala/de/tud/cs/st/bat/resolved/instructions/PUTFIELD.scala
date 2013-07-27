@@ -53,4 +53,6 @@ case class PUTFIELD(
 
     def runtimeExceptions: List[ObjectType] = FieldAccess.runtimeExceptions
 
+    override def toString = "put "+declaringClass.toJava+"."+name+" : "+fieldType.toJava
+    
 }

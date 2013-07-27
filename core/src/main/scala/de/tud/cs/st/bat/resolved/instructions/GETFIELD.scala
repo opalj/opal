@@ -61,4 +61,6 @@ case class GETFIELD(
 
     def runtimeExceptions: List[ObjectType] = FieldAccess.runtimeExceptions
 
+    override def toString = "get "+declaringClass.toJava+"."+name+" : "+fieldType.toJava  
+    
 }

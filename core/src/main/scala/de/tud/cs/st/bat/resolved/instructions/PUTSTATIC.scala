@@ -38,7 +38,7 @@ package resolved
  * Set static field in class.
  *
  * @see [[de.tud.cs.st.bat.resolved.FieldAccess]] for additional pattern matching support.
- * 
+ *
  * @author Michael Eichberg
  */
 case class PUTSTATIC(
@@ -53,4 +53,5 @@ case class PUTSTATIC(
 
     def runtimeExceptions: List[ObjectType] = Nil
 
+    override def toString = "put static "+declaringClass.toJava+"."+name+" : "+fieldType.toJava
 }
