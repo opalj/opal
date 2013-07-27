@@ -132,8 +132,8 @@ object Util {
     def dump(classFile: Option[ClassFile],
              method: Option[Method],
              code: Code,
-             operandsArray: IndexedSeq[List[_ <: AnyRef]],
-             localsArray: IndexedSeq[IndexedSeq[_ <: AnyRef]],
+             operandsArray: Array[_ <: List[_ <: AnyRef]],
+             localsArray: Array[_ <: Array[_ <: AnyRef]],
              title: Option[String] = None): Node = {
         // HTML 5 XML serialization (XHTML 5)
         <html xmlns="http://www.w3.org/1999/xhtml">
@@ -183,13 +183,13 @@ object Util {
     def dumpTable(classFile: Option[ClassFile],
                   method: Option[Method],
                   code: Code,
-                  operandsArray: IndexedSeq[List[_ <: AnyRef]],
-                  localsArray: IndexedSeq[IndexedSeq[_ <: AnyRef]]): Node = {
+                  operandsArray: Array[_ <: List[_ <: AnyRef]],
+                  localsArray: Array[_ <: Array[_ <: AnyRef]]): Node = {
 
         <table>
             <caption>{ caption(classFile, method) }</caption>
             <thead>
-            <tr><th>PC</th><th>Instruction</th><th>Operand Stack</th><th>Registers</th></tr>
+            <tr><th class="pc">PC</th><th class="instruction">Instruction</th><th class="stack">Operand Stack</th><th class="registers">Registers</th></tr>
             </thead>
             <tbody>
             { dumpInstructions(code, operandsArray, localsArray) }
@@ -206,15 +206,15 @@ object Util {
     }
 
     private def dumpInstructions(code: Code,
-                                 operandsArray: IndexedSeq[List[_ <: AnyRef]],
-                                 localsArray: IndexedSeq[IndexedSeq[_ <: AnyRef]]) = {
+                                 operandsArray: Array[_<: List[_ <: AnyRef]],
+                                 localsArray: Array[_ <: Array[_ <: AnyRef]]) = {
         val instrs = code.instructions.zipWithIndex.zip(operandsArray zip localsArray).filter(_._1._1 ne null)
         for (((instruction, pc), (operands, locals)) ← instrs) yield {
             <tr class={ if (operands eq null /*||/&& locals eq null*/ ) "not_evaluated" else "evaluated" }>
-              <td>{ pc }</td>
-              <td>{ instruction }</td>
-              <td>{ dumpStack(operands) }</td>
-              <td>{ dumpLocals(locals) }</td>
+              <td class="pc">{ pc }</td>
+              <td class="instruction">{ scala.xml.Unparsed(instruction.toString.replace("\n", "<br>")) }</td>
+              <td class="stack">{ dumpStack(operands) }</td>
+              <td class="locals">{ dumpLocals(locals) }</td>
             </tr >
         }
     }
@@ -223,17 +223,17 @@ object Util {
         if (operands eq null)
             <em>Operands are not available.</em>
         else {
-            <ul style="list-style:none;margin-left:0;padding-left:0">
+            <ul class="Stack">
             { operands.map(op ⇒ <li>{ op.toString }</li>) }
             </ul>
         }
     }
 
-    private def dumpLocals(locals: IndexedSeq[_ <: AnyRef]) = {
+    private def dumpLocals(locals: Array[_ <: AnyRef]) = {
         if (locals eq null)
             <em>Local variables assignment is not available.</em>
         else {
-            <ol start="0">
+            <ol start="0" class="registers">
             { locals.map(l ⇒ if (l eq null) "UNUSED" else l.toString()).map(l ⇒ <li>{ l }</li>) }
             </ol>
         }

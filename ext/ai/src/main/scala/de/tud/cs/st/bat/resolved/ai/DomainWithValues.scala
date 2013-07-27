@@ -92,15 +92,11 @@ trait DomainWithValues extends Domain {
 
     /**
      * Abstracts over all values with computational type category `1`.
-     *
-     * @author Michael Eichberg
      */
     trait ComputationalTypeCategory1Value extends Value
 
     /**
      * Abstracts over all values with computational type `integer`.
-     *
-     * @author Michael Eichberg
      */
     trait CTIntegerValue
             extends ComputationalTypeCategory1Value {
@@ -108,15 +104,9 @@ trait DomainWithValues extends Domain {
         final def computationalType: ComputationalType = ComputationalTypeInt
     }
 
-    /**
-     * Represents some unknown value of computational type Integer.
-     */
-    val CTIntegerValue: CTIntegerValue with DomainValue
 
     /**
      * Abstracts over all values with computational type `float`.
-     *
-     * @author Michael Eichberg
      */
     trait SomeFloatValue
             extends ComputationalTypeCategory1Value
@@ -129,15 +119,13 @@ trait DomainWithValues extends Domain {
 
     /**
      * Abstracts over all values with computational type `reference`.
-     *
-     * @author Michael Eichberg
      */
     trait ReferenceValue extends ComputationalTypeCategory1Value with TypedValue {
         final def computationalType: ComputationalType = ComputationalTypeReference
         def valueType: ReferenceType = ObjectType.Object
     }
 
-    val SomeReferenceValue: ReferenceValue with DomainValue
+//    val SomeReferenceValue: ReferenceValue with DomainValue
 
     val NullValue: ReferenceValue with DomainValue
 
@@ -152,8 +140,6 @@ trait DomainWithValues extends Domain {
 
     /**
      * Abstracts over all values with computational type category `2`.
-     *
-     * @author Michael Eichberg
      */
     trait ComputationalTypeCategory2Value extends Value
 
@@ -239,6 +225,9 @@ trait DomainWithValues extends Domain {
     def IsLessThanOrEqualTo: TwoValuesConstraint = IgnoreTwoValuesConstraint
 }
 
+/**
+ * Mixin this trait if you want to reify the stated constraints.
+ */
 trait ConstraintManifestation extends Domain {
 
     trait ReifiedConstraint

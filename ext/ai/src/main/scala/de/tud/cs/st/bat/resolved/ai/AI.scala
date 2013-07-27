@@ -91,7 +91,7 @@ trait AI {
         domain: Domain)(
             someLocals: Option[IndexedSeq[domain.DomainValue]] = None): AIResult[domain.type] = {
 
-        assume(method.body.isDefined, "The method ("+method.toJava+") has no body.")
+        assume(method.body.isDefined, "ai perform - the method ("+method.toJava+") has no body")
 
         import domain._
 
@@ -124,13 +124,13 @@ trait AI {
     def perform(
         code: Code,
         domain: Domain)(
-            initialLocals: IndexedSeq[domain.DomainValue]): AIResult[domain.type] = { // TODO [AI Performance] Figure out if it is worth using an Array instead of an IndexedSeq
+            initialLocals: Array[domain.DomainValue]): AIResult[domain.type] = { // TODO [AI Performance] Figure out if it is worth using an Array instead of an IndexedSeq
 
-        assume(code.maxLocals == initialLocals.size, "code.maxLocals and initialLocals.size differ")
+        assume(code.maxLocals == initialLocals.size, "ai perform - code.maxLocals and initialLocals.size differ")
 
         import domain.DomainValueTag
 
-        val currentLocalsArray = new Array[IndexedSeq[domain.DomainValue]](code.instructions.length)
+        val currentLocalsArray = new Array[Array[domain.DomainValue]](code.instructions.length)
         currentLocalsArray(0) = initialLocals
         val currentOperandsArray = new Array[List[domain.DomainValue]](code.instructions.length)
         currentOperandsArray(0) = Nil
@@ -148,7 +148,7 @@ trait AI {
         domain: Domain)(
             currentWorklist: List[Int],
             currentOperandsArray: Array[List[domain.DomainValue]],
-            currentLocalsArray: Array[IndexedSeq[domain.DomainValue]]): AIResult[domain.type] = {
+            currentLocalsArray: Array[Array[domain.DomainValue]]): AIResult[domain.type] = {
 
         import domain._
 
@@ -158,8 +158,8 @@ trait AI {
         val instructions: Array[Instruction] = code.instructions
 
         var worklist = currentWorklist
-        val operandsArray = currentOperandsArray.clone
-        val localsArray = currentLocalsArray.clone
+        val operandsArray = currentOperandsArray
+        val localsArray = currentLocalsArray
 
         def ifXX(
             pc: Int,
@@ -174,10 +174,8 @@ trait AI {
             val remainingOperands = operandsArray(pc).tail
 
             domainTest(operand) match {
-                case Yes ⇒
-                    gotoTarget(branchTarget, remainingOperands, localsArray(pc))
-                case No ⇒
-                    gotoTarget(nextPC, remainingOperands, localsArray(pc))
+                case Yes ⇒ gotoTarget(branchTarget, remainingOperands, localsArray(pc))
+                case No  ⇒ gotoTarget(nextPC, remainingOperands, localsArray(pc))
                 case Unknown ⇒ {
                     {
                         val (newOperands, newLocals) = yesConstraint(branchTarget, operand, remainingOperands, localsArray(pc))
@@ -225,22 +223,16 @@ trait AI {
         }
 
         def gotoTarget(targetPC: Int, operands: Operands, locals: Locals) {
-            assume(targetPC < instructions.length, "interpretation beyond code boundary")
+            val currentOperands = operandsArray(targetPC)
+            val currentLocals = localsArray(targetPC)
 
-            if (operandsArray(targetPC) == null /* || localsArray(targetPC) == null )*/ ) {
+            if (currentOperands == null /* || localsArray(targetPC) == null )*/ ) {
                 operandsArray(targetPC) = operands
                 localsArray(targetPC) = locals
                 worklist = targetPC :: worklist
             } else {
                 try {
-
-                    {
-                        domain.merge(
-                            operandsArray(targetPC),
-                            localsArray(targetPC),
-                            operands,
-                            locals)
-                    } match {
+                    domain.merge(currentOperands, currentLocals, operands, locals) match {
                         case NoUpdate ⇒ /* Nothing to do */
                         case StructuralUpdate((updatedOperands, updatedLocals)) ⇒
                             worklist = targetPC :: worklist
@@ -254,8 +246,9 @@ trait AI {
                     }
                 } catch {
                     case ae: AssertionError ⇒
-                        val dump = util.Util.dump(None, None, code, operandsArray, localsArray, Some(ae.getMessage()+" targetPC: "+targetPC))
+                        val dump = util.Util.dump(None, None, code, operandsArray, localsArray, Some(ae.getMessage()+" targetPC: "+targetPC+" remaining worklist: "+worklist.mkString(", ")))
                         util.Util.writeAndOpenDump(dump)
+                        println("Press enter to continue..."); System.in.read()
                         throw ae
                 }
             }
@@ -280,6 +273,13 @@ trait AI {
             val instruction = instructions(pc)
             // the memory layout before executing the instruction with the given pc
             val operands = operandsArray(pc)
+            assume(
+                operands.forall(!_.isInstanceOf[NoLegalValue]),
+                {
+                    val dump = util.Util.dump(None, None, code, operandsArray, localsArray, Some("stack is corrupted - remaining worklist: "+worklist.mkString(", ")))
+                    util.Util.writeAndOpenDump(dump)
+                    "ai continueInterpretation - stack corrupt (pc="+pc+"): "+operands.mkString("\n")
+                })
             val locals = localsArray(pc)
 
             def pcOfNextInstruction = instructions(pc).indexOfNextInstruction(pc, code)
@@ -432,7 +432,7 @@ trait AI {
                     var nextOperands: List[domain.DomainValue] = null
                     val exceptionTypes = exceptionValueIsNull match {
                         case Yes ⇒
-                            nextOperands = List(nullValue)
+                            nextOperands = List(theNullValue)
                             Values(Set(ObjectType.NullPointerException))
                         case No | Unknown ⇒
                             nextOperands = List(exceptionValue)
@@ -491,7 +491,7 @@ trait AI {
                                 domain.abnormalReturn(exceptionValue)
                     }
 
-                ///////////////////////// TODO WE NEED TO DEAL WITH EXCEPTIONELL CONTROL FLOW
+                ///////////////////////// TODO [AI] WE NEED TO DEAL WITH EXCEPTIONELL CONTROL FLOW
 
                 //
                 // CREATE ARRAY
@@ -508,7 +508,7 @@ trait AI {
                         case 9 /*ShortType.atype*/    ⇒ domain.newarray(count, ShortType)
                         case 10 /*IntegerType.atype*/ ⇒ domain.newarray(count, IntegerType)
                         case 11 /*LongType.atype*/    ⇒ domain.newarray(count, LongType)
-                        case _                        ⇒ sys.error("internal implementation error or invalid bytecode")
+                        case _                        ⇒ BATError("newarray of unsupported \"atype\"")
                     }) :: rest
                     fallThroughOL(newOperands, locals)
                 }
@@ -834,7 +834,7 @@ trait AI {
                 //
 
                 case 1 /*aconst_null*/ ⇒
-                    fallThroughOL(domain.nullValue :: operands, locals)
+                    fallThroughOL(domain.theNullValue :: operands, locals)
 
                 case 16 /*bipush*/ ⇒
                     fallThroughOL(domain.byteValue(instruction.asInstanceOf[BIPUSH].value) :: operands, locals)

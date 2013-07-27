@@ -57,15 +57,18 @@ trait AbstractDefaultDomain extends DomainWithValues {
     //
     def aaload(index: DomainValue, arrayref: DomainValue): DomainValue = {
         arrayref match {
-            case TypedValue(ArrayType(componentType)) ⇒ TypedValue(componentType)
-            case _                                    ⇒ SomeReferenceValue
+            case TypedValue(ArrayType(componentType)) ⇒
+                TypedValue(componentType)
+            case _ ⇒
+                AIImplementationError("aaload - tracking of array type failed; array contains reference values of unknown type")
         }
     }
     def aastore(value: DomainValue, index: DomainValue, arrayref: DomainValue) { /* Nothing to do. */ }
     def baload(index: DomainValue, arrayref: DomainValue): DomainValue = { // byte or boolean load...
         arrayref match {
             case TypedValue(ArrayType(componentType)) ⇒ TypedValue(componentType)
-            case _                                    ⇒ CTIntegerValue
+            case _ ⇒
+                AIImplementationError("baload - tracking of array type failed; array may contain booleans or byte values")
         }
     }
     def bastore(value: DomainValue, index: DomainValue, arrayref: DomainValue) { /* Nothing to do. */ }

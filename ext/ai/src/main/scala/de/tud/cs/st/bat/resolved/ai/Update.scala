@@ -53,6 +53,8 @@ sealed trait Update[+V] {
      * The type of this update.
      */
     def updateType: UpdateType
+    
+    def value : V
 }
 /**
  * Identifies updates where something was updated without qualifying the update.
@@ -109,6 +111,8 @@ case object NoUpdate extends Update[Nothing] {
     def updateType = NoUpdateType
 
     def &:(updateType: UpdateType): UpdateType = updateType
+    
+    def value = throw new IllegalStateException("a NoUpdate contains no value")
 }
 
 /**
@@ -129,15 +133,20 @@ sealed abstract class UpdateType {
      * the given value.
      */
     def apply[V](value: ⇒ V): Update[V]
+    
+    def noUpdate: Boolean
 
     def &:(updateType: UpdateType): UpdateType
+    
 }
 case object NoUpdateType extends UpdateType {
     def apply[V](value: ⇒ V): Update[V] = NoUpdate
     def &:(updateType: UpdateType): UpdateType = updateType
+    def noUpdate : Boolean = true
 }
 case object MetaInformationUpdateType extends UpdateType {
     def apply[V](value: ⇒ V): Update[V] = MetaInformationUpdate(value)
+    def noUpdate : Boolean = false
     def &:(updateType: UpdateType): UpdateType =
         if (updateType == StructuralUpdateType)
             StructuralUpdateType
@@ -146,5 +155,6 @@ case object MetaInformationUpdateType extends UpdateType {
 }
 case object StructuralUpdateType extends UpdateType {
     def apply[V](value: ⇒ V): Update[V] = StructuralUpdate(value)
+    def noUpdate : Boolean = false
     def &:(updateType: UpdateType): UpdateType = StructuralUpdateType
 }

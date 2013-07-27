@@ -113,14 +113,6 @@ trait Domain {
         def merge(value: DomainValue): Update[DomainValue]
 
         /**
-         * Returns a string that states that this value and the given value are
-         * structurally incompatible and, hence, merging or comparing them doesn't
-         * make sense.
-         */
-        protected def incompatibleValues(other: DomainValue): String =
-            "incompatible: "+this.toString()+" and "+other.toString()
-
-        /**
          * Returns a string that states that merging and comparing this value with
          * the given could makes sense, but is not yet implemented.
          */
@@ -170,22 +162,33 @@ trait Domain {
      * live) and, hence, are actually allowed to contain incompatible values.
      * (`Not live` means that the value will not be used in the future.)
      */
-    class NoLegalValue(val initialReason: String) extends Value { this: DomainValue ⇒
+    class NoLegalValue extends Value { this: DomainValue ⇒
 
         def computationalType: ComputationalType =
-            BATError(
-                "the value \"NoLegalValue\" does not have a computational type "+
-                    "(underlying initial reason:"+initialReason+")")
+            BATError("the value \"NoLegalValue\" does not have a computational type")
 
-        final def merge(value: DomainValue): Update[DomainValue] = NoUpdate
+        final def merge(value: DomainValue): Update[DomainValue] = {
+            if (value == TheNoLegalValue)
+                NoUpdate
+            else
+                MetaInformationUpdateNoLegalValue
+        }
 
         override def toString = "NoLegalValue"
     }
+
     object NoLegalValue {
-        def unapply(value: NoLegalValue): Option[String] = Some(value.initialReason)
+        def unapply(value: NoLegalValue): Boolean = value ne null
     }
+
     type DomainNoLegalValue <: NoLegalValue with DomainValue
-    def NoLegalValue(initialReason: String): DomainNoLegalValue
+
+    val TheNoLegalValue: DomainNoLegalValue
+
+    val MetaInformationUpdateNoLegalValue: MetaInformationUpdate[DomainNoLegalValue]
+
+    final def StructuralUpdateNoLegalValue: StructuralUpdate[Nothing] =
+        BATError("the merging of a value with an incompatible value always has to be a MetaInformationUpdate and not more")
 
     /**
      * Represents a set of concrete values that store return addresses (i.e., a program
@@ -250,18 +253,18 @@ trait Domain {
      *
      * Both bounds are inclusive.
      */
-    def isValueInRange(value: DomainValue, lowerBound: Int, upperBound: Int): Answer 
+    def isValueInRange(value: DomainValue, lowerBound: Int, upperBound: Int): Answer
 
     /**
      * Returns `true` iff at least one possible extension of given value is not in the
-     * specified range; that is, if the range of values captured by the give value is 
+     * specified range; that is, if the range of values captured by the give value is
      * not a strict subset of the specified range.
      * For example, if the given value is `10` and the
      * specified range is [0,Integer.MAX_VALUE] then the answer has to be No.
      *
      * Both bounds are inclusive.
      */
-    def isValueNotInRange(value: DomainValue, lowerBound: Int, upperBound: Int): Answer 
+    def isValueNotInRange(value: DomainValue, lowerBound: Int, upperBound: Int): Answer
 
     /*ABSTRACT*/ def isNull(value: DomainValue): Answer
 
@@ -319,7 +322,7 @@ trait Domain {
     // -----------------------------------------------------------------------------------
 
     type Operands = List[DomainValue]
-    type Locals = IndexedSeq[DomainValue]
+    type Locals = Array[DomainValue]
 
     trait ValuesConstraint
 
@@ -407,7 +410,7 @@ trait Domain {
     // 
     // PUSH CONSTANT VALUE
     //
-    def nullValue: DomainValue
+    val theNullValue: DomainValue
     def byteValue(value: Int): DomainValue
     def shortValue(value: Int): DomainValue
     def intValue(value: Int): DomainValue
@@ -457,8 +460,8 @@ trait Domain {
     def returnVoid(): Unit
 
     /**
-     * Called by BATAI when an exception is thrown that is not handled within the
-     * same method.
+     * Called by BATAI when an exception is thrown that is not guaranteed to be handled
+     * within the same method.
      *
      * ==Note==
      * If the value has a specific type but is actually the value "null", then
@@ -588,63 +591,82 @@ trait Domain {
         otherLocals: Locals): Update[(Operands, Locals)] = {
 
         assume(thisOperands.size == otherOperands.size,
-            "merging the memory layouts (A:"+thisOperands+"and B:"+otherOperands+" ) is not possible due to different stack sizes")
+            "domain merge - the stack sizes are different: "+thisOperands+" <=> "+otherOperands)
 
         assume(thisLocals.size == otherLocals.size,
-            "merging the memory layouts is not possible due to different numbers of locals")
+            "domain merge - the number of registers differ: "+thisLocals+" <=> "+otherLocals)
 
-        var updateType: UpdateType = NoUpdateType
+        var operandsUpdated: UpdateType = NoUpdateType
+        val newOperands =
+            if (thisOperands eq otherOperands) {
+                thisOperands
+            } else {
+                var thisRemainingOperands = thisOperands
+                var otherRemainingOperands = otherOperands
+                var newOperands = List[DomainValue]() // during the update we build the operands stack in reverse order
 
-        var thisRemainingOperands = thisOperands
-        var otherRemainingOperands = otherOperands
-        var newOperands = List[DomainValue]() // during the update we build the operands stack in reverse order
+                while (thisRemainingOperands.nonEmpty /* && both stacks contain the same number of elements */ ) {
+                    val thisOperand = thisRemainingOperands.head
+                    thisRemainingOperands = thisRemainingOperands.tail
+                    val otherOperand = otherRemainingOperands.head
+                    otherRemainingOperands = otherRemainingOperands.tail
 
-        while (thisRemainingOperands.nonEmpty /* the number of operands of both memory layouts is equal */ ) {
-            val thisOperand = thisRemainingOperands.head
-            val otherOperand = otherRemainingOperands.head
-            otherRemainingOperands = otherRemainingOperands.tail
-            thisRemainingOperands = thisRemainingOperands.tail
-
-            val updatedOperand = thisOperand merge otherOperand
-            val newOperand = updatedOperand match {
-                case SomeUpdate(operand) ⇒ operand
-                case NoUpdate            ⇒ thisOperand
-            }
-            assume(!newOperand.isInstanceOf[NoLegalValue], "merging of stack values ("+thisOperand+" and "+otherOperand+") led to an illegal value")
-            updateType = updateType &: updatedOperand
-            newOperands = newOperand :: newOperands
-        }
-
-        val maxLocals = thisLocals.size
-
-        val newLocals = new Array[DomainValue](maxLocals)
-        var i = 0;
-        while (i < maxLocals) {
-            val thisLocal = thisLocals(i)
-            val otherLocal = otherLocals(i)
-            // The value calculated by "merge" may be the value "NoLegalValue" which means
-            // the values in the corresponding register were different (path dependent)
-            // on the different paths.
-            // If we would have a liveness analysis, we could avoid the use of 
-            // "NoLegalValue"
-            val newLocal =
-                if ((thisLocal eq null) || (otherLocal eq null)) {
-                    updateType = updateType &: MetaInformationUpdateType
-                    NoLegalValue("a register/local did not contain any value")
-                } else {
-                    val updatedLocal = thisLocal merge otherLocal
-                    updateType = updateType &: updatedLocal
-                    updatedLocal match {
+                    val updatedOperand = thisOperand merge otherOperand
+                    val newOperand = updatedOperand match {
                         case SomeUpdate(operand) ⇒ operand
-                        case NoUpdate            ⇒ thisLocal
+                        case NoUpdate            ⇒ thisOperand
                     }
-
+                    assume(!newOperand.isInstanceOf[NoLegalValue],
+                        "domain merge - merging of stack values ("+thisOperand+" and "+otherOperand+") led to an illegal value")
+                    operandsUpdated = operandsUpdated &: updatedOperand
+                    newOperands = newOperand :: newOperands
                 }
-            newLocals(i) = newLocal
-            i += 1
-        }
+                if (operandsUpdated.noUpdate) {
+                    thisOperands
+                } else {
+                    newOperands.reverse
+                }
+            }
 
-        updateType((newOperands.reverse, newLocals))
+        var localsUpdated: UpdateType = NoUpdateType
+        val newLocals: Array[DomainValue] =
+            if (thisLocals eq otherLocals) {
+                thisLocals
+            } else {
+                val maxLocals = thisLocals.size
+                val newLocals = new Array[DomainValue](maxLocals)
+                var i = 0;
+                while (i < maxLocals) {
+                    val thisLocal = thisLocals(i)
+                    val otherLocal = otherLocals(i)
+                    // The value calculated by "merge" may be the value "NoLegalValue" 
+                    // which means the values in the corresponding register were 
+                    // different (path dependent) on the different paths.
+                    // If we would have a liveness analysis, we could avoid the use of 
+                    // "NoLegalValue"
+                    val newLocal =
+                        if ((thisLocal eq null) || (otherLocal eq null)) {
+                            localsUpdated = localsUpdated &: MetaInformationUpdateType
+                            TheNoLegalValue
+                        } else {
+                            val updatedLocal = thisLocal merge otherLocal
+                            if (updatedLocal == NoUpdate) {
+                                thisLocal
+                            } else {
+                                localsUpdated = localsUpdated &: updatedLocal
+                                updatedLocal.value
+                            }
+                        }
+                    newLocals(i) = newLocal
+                    i += 1
+                }
+                if (localsUpdated.noUpdate)
+                    thisLocals
+                else
+                    newLocals
+            }
+
+        (operandsUpdated &: localsUpdated)((newOperands, newLocals))
     }
 }
 
