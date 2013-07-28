@@ -41,14 +41,75 @@ package ai
  *
  * @author Michael Eichberg
  */
-sealed trait ValuesAnswer[+T] {
-    def values: T
+sealed trait ValuesAnswer[+V] {
+    def values: V
 }
-case class Values[+T](
-    values: T)
-        extends ValuesAnswer[T]
+
+case class Values[+V](
+    values: V)
+        extends ValuesAnswer[V]
+
 case object ValuesUnknown extends ValuesAnswer[Nothing] {
     def values: Nothing = AIImplementationError("the values are unknown")
 }
+
+private[ai] sealed trait ComputationWithValue[+V] {
+
+    def values: V
+
+}
+
+private[ai] sealed trait ComputationWithException[+E] {
+
+    def exceptions: E
+
+}
+
+/**
+ * Encapsulates the result of a computation in a domain. In general, the
+ * result is either some value(s) V or some exception(s). In some cases, however,
+ * when the domain cannot "precisely" determine the result, it may be both: some
+ * exceptional value(s) and a value.
+ */
+sealed trait Computation[+V, +E] {
+
+    def values: V
+
+    def exceptions: E
+
+}
+
+case class ComputedValue[+V](
+    values: V)
+        extends Computation[V, Nothing] {
+
+    def exceptions = AIImplementationError("the computation succeeded without an exception")
+
+}
+
+case class ComputedValueAndException[+V, +E](
+    values: V,
+    exceptions: E)
+        extends Computation[V, E] {
+
+}
+
+case class ThrowsException[+E](
+    exceptions: E)
+        extends Computation[Nothing, E] {
+
+    def values = AIImplementationError("the computation resulted in an exception")
+
+}
+
+case object ComputationWithSideEffectOnly
+        extends Computation[Nothing, Nothing] {
+
+    def exceptions = AIImplementationError("the computation succeeded without an exception")
+
+    def values = AIImplementationError("the computation was executed for its side effect only")
+
+}
+      
 
 

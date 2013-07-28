@@ -37,7 +37,7 @@ package ai
 
 /**
  * Encapsulates an updated value, primarily used to indicate in which way a given
- * value was updated. 
+ * value was updated.
  *
  * @author Michael Eichberg
  */
@@ -46,6 +46,8 @@ sealed trait Update[+V] {
     /**
      * Merges a given `updateType` value with the type of this update and returns a
      * new `UpdateType` value.
+     *
+     * @see [[de.tud.cs.st.bat.resolved.ai.UpdateType]] for further details.
      */
     def &:(updateType: UpdateType): UpdateType
 
@@ -53,21 +55,28 @@ sealed trait Update[+V] {
      * The type of this update.
      */
     def updateType: UpdateType
-    
-    def value : V
+
+    /**
+     * The updated value; if available.
+     */
+    def value: V
 }
+
 /**
  * Identifies updates where something was updated without qualifying the update.
  *
  * ==Usage==
- * This class (its companion object) is primarily used for pattern matching purposes.
+ * This class (and its companion object) are primarily used for pattern matching purposes.
  */
-sealed abstract class SomeUpdate[V] extends Update[V] {
-    def value: V
-}
+sealed abstract class SomeUpdate[V] extends Update[V]
+
+/**
+ * Facilitates matching against updated the actually encapsulate an updated value.
+ */
 object SomeUpdate {
     def unapply[V](update: SomeUpdate[V]): Option[V] = Some(update.value)
 }
+
 /**
  * Some part of the structure was updated such that it is required to
  * continue the abstract interpretation.
@@ -75,12 +84,15 @@ object SomeUpdate {
 final case class StructuralUpdate[V](
     value: V)
         extends SomeUpdate[V] {
+
     def updateType = StructuralUpdateType
+
     def &:(updateType: UpdateType): UpdateType = StructuralUpdateType
+
 }
 /**
  * Used to indicate that a new value is returned, but only meta-information
- * that is not directly relevant to the abstract interpreter was changed.
+ * was changed that is not directly relevant to the abstract interprete.
  *
  * ==Example==
  * If two values are merged that are seen on two different paths, but which represent the
@@ -111,7 +123,7 @@ case object NoUpdate extends Update[Nothing] {
     def updateType = NoUpdateType
 
     def &:(updateType: UpdateType): UpdateType = updateType
-    
+
     def value = throw new IllegalStateException("a NoUpdate contains no value")
 }
 
@@ -119,7 +131,8 @@ case object NoUpdate extends Update[Nothing] {
  * Specifies the type of an update. The type hierarchies of `Update` and `UpdateType`
  * are aligned and it is possible to conveniently switch between them. Contrary to
  * an `Update` object an `UpdateType` object never has any payload it just characterize
- * an update.
+ * an update. However, by passing a value to an `UpdateType` the `UpdateType`
+ * is turned into a corresponding [[de.tud.cs.st.bat.resolved.ai.Update]] object.
  *
  * ==Example==
  * {{{
@@ -133,28 +146,39 @@ sealed abstract class UpdateType {
      * the given value.
      */
     def apply[V](value: ⇒ V): Update[V]
-    
+
+    /**
+     * Returns `true` if `this` UpdateType represents the `NoUpdateType`.
+     */
     def noUpdate: Boolean
 
+    /**
+     * Merges this `UpdateType` with the given one. That is, it is determined which
+     * type is the more qualified one (`NoUpdateType` < `MetaInformationUpdateType` <
+     * `StructuralUpdateType`) and that one is returned.
+     */
     def &:(updateType: UpdateType): UpdateType
-    
+
 }
+
 case object NoUpdateType extends UpdateType {
     def apply[V](value: ⇒ V): Update[V] = NoUpdate
     def &:(updateType: UpdateType): UpdateType = updateType
-    def noUpdate : Boolean = true
+    def noUpdate: Boolean = true
 }
+
 case object MetaInformationUpdateType extends UpdateType {
     def apply[V](value: ⇒ V): Update[V] = MetaInformationUpdate(value)
-    def noUpdate : Boolean = false
+    def noUpdate: Boolean = false
     def &:(updateType: UpdateType): UpdateType =
         if (updateType == StructuralUpdateType)
             StructuralUpdateType
         else
             this
 }
+
 case object StructuralUpdateType extends UpdateType {
     def apply[V](value: ⇒ V): Update[V] = StructuralUpdate(value)
-    def noUpdate : Boolean = false
+    def noUpdate: Boolean = false
     def &:(updateType: UpdateType): UpdateType = StructuralUpdateType
 }

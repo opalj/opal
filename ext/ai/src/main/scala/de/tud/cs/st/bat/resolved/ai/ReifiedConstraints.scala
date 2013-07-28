@@ -35,11 +35,10 @@ package bat
 package resolved
 package ai
 
-
 /**
  * Mixin this trait if you want to reify the stated constraints. This is particular
  * useful for testing and debugging purposes.
- * 
+ *
  * @author Michael Eichberg
  */
 trait ReifiedConstraints extends Domain {

@@ -38,6 +38,8 @@ package ai
 import reflect.ClassTag
 import collection.immutable.Range
 
+import language.higherKinds
+
 /**
  * A domain contains all information about a program's types and values and determines
  * how a domain's values are calculated.
@@ -128,12 +130,11 @@ trait Domain {
     type DomainValue <: Value
 
     /**
-     * The class tag
+     * The class tag for the type `DomainValue`.
      *
      * ==Initialization==
      * In the sub-trait or class that fixes the type of `DomainValue` it is necessary
-     * to implement this abstract `val`. Please note, that it has to be implemented
-     * using:
+     * to implement this abstract `val` using:
      * {{{
      * val DomainValueTag : ClassTag[DomainValue] = implicitly
      * }}}
@@ -144,12 +145,23 @@ trait Domain {
 
     /**
      * Facilitates matching against values of computational type category 1.
+     *
+     * ==Example==
+     * {{{
+     * case v @ CTC1() => ...
+     * }}}
      */
     object CTC1 {
         def unapply(v: Value): Boolean = v.computationalType.category == 1
     }
+
     /**
      * Facilitates matching against values of computational type category 2.
+     *
+     * ==Example==
+     * {{{
+     * case v @ CTC2() => ...
+     * }}}
      */
     object CTC2 {
         def unapply(v: Value): Boolean = v.computationalType.category == 2
@@ -228,15 +240,29 @@ trait Domain {
     }
 
     /**
+     * Trait that is mixed in by values for which we have more precise type information.
+     */
+    trait TypedValue[+T <: Type] extends Value {
+
+        def valueType: T
+    }
+
+    object TypedValue {
+        def unapply[T <: Type](tv: TypedValue[T]): Option[T] = Some(tv.valueType)
+    }
+
+    type DomainTypedValue[T <: Type] <: TypedValue[T] with DomainValue
+
+    /**
      * Factory method to create `TypedValue`s; i.e., values for which we have (more)
      * precise type information.
      */
-    def TypedValue(someType: Type): DomainValue
+    def TypedValue(someType: Type): DomainTypedValue[someType.type]
 
     /**
      * Returns a representation of the integer constant value 0
      */
-    val IntegerConstant0: DomainValue
+    val IntegerConstant0: DomainValue = intValue(0)
 
     // -----------------------------------------------------------------------------------
     //
@@ -427,6 +453,9 @@ trait Domain {
     // TYPE CHECKS AND CONVERSION
     //
 
+    /**
+     *
+     */
     def checkcast(objectref: DomainValue, resolvedType: ReferenceType): DomainValue
     def instanceof(objectref: DomainValue, resolvedType: ReferenceType): DomainValue
 
@@ -575,16 +604,45 @@ trait Domain {
 
     def iinc(value: DomainValue, increment: Int): DomainValue
 
-    def monitorenter(value: DomainValue): Unit
-    def monitorexit(value: DomainValue): Unit
-
-    def newObject(t: ObjectType): DomainValue
+    protected def nullPointerExceptionOnNullValue(value: DomainValue): Computation[DomainValue, DomainTypedValue[ObjectType.NullPointerException.type]] = {
+        isNull(value) match {
+            case Yes     ⇒ ThrowsException(newObject(ObjectType.NullPointerException))
+            case No      ⇒ ComputedValue(value)
+            case Unknown ⇒ ComputedValueAndException(value, newObject(ObjectType.NullPointerException))
+        }
+    }
 
     /**
-     * Merges the two given memory layouts. Returns `NoUpdate` if this
-     * memory layout already subsumes the given memory layout.
+     * Handles a `monitorenter` instruction.
+     *
+     * ==Default Behavior==
+     * The default implementation just checks if the given value is `null` and raises
+     * an exception if it is `null` or maybe `null`. In the later case or in case that
+     * the value is known not to be `null` the given value is (also) returned.
      */
-    def merge(
+    def monitorenter(value: DomainValue): Computation[DomainValue, DomainTypedValue[ObjectType.NullPointerException.type]] = {
+        nullPointerExceptionOnNullValue(value)
+    }
+
+    /**
+     * Handles a `monitorenter` instruction.
+     *
+     * ==Default Behavior==
+     * The default implementation just checks if the given value is `null` and raises
+     * an exception if it is `null` or maybe `null`. In the later case or in case that
+     * the value is known not to be `null` the given value is (also) returned.
+     */
+    def monitorexit(value: DomainValue): Computation[DomainValue, DomainTypedValue[ObjectType.NullPointerException.type]] = {
+        nullPointerExceptionOnNullValue(value)
+    }
+
+    def newObject(t: ObjectType): DomainTypedValue[t.type] = TypedValue(t)
+
+    /**
+     * Merges the two given memory layouts. Returns `NoUpdate` if this  memory layout
+     * already subsumes the given memory layout.
+     */
+    private[ai] final def merge(
         thisOperands: Operands,
         thisLocals: Locals,
         otherOperands: Operands,
@@ -641,14 +699,19 @@ trait Domain {
                     val otherLocal = otherLocals(i)
                     // The value calculated by "merge" may be the value "NoLegalValue" 
                     // which means the values in the corresponding register were 
-                    // different (path dependent) on the different paths.
+                    // different (path dependent) on the different paths and which 
+                    // subsequently means that they are no longer useful.
                     // If we would have a liveness analysis, we could avoid the use of 
-                    // "NoLegalValue"
+                    // "NoLegalValue" and would avoid the useless merging of 
+                    // dead values.
                     val newLocal =
                         if ((thisLocal eq null) || (otherLocal eq null)) {
                             localsUpdated = localsUpdated &: MetaInformationUpdateType
                             TheNoLegalValue
-                        } else {
+                        } else if (thisLocal == otherLocal) {
+                            thisLocal
+                        } 
+                        else {
                             val updatedLocal = thisLocal merge otherLocal
                             if (updatedLocal == NoUpdate) {
                                 thisLocal

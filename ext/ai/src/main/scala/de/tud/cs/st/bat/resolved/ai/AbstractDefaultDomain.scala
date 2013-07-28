@@ -195,7 +195,7 @@ trait AbstractDefaultDomain extends DomainWithValues {
                      params: List[DomainValue]): Option[DomainValue] =
         asTypedValue(methodDescriptor.returnType)
 
-    private def asTypedValue(someType: Type): Option[DomainValue] = {
+    private def asTypedValue(someType: Type): Option[DomainTypedValue[someType.type]] = {
         if (someType.isVoidType)
             None
         else
@@ -262,10 +262,5 @@ trait AbstractDefaultDomain extends DomainWithValues {
     // "OTHER" INSTRUCTIONS
     //
     def iinc(value: DomainValue, increment: Int) = SomeIntegerValue
-
-    def monitorenter(value: DomainValue) { /* Nothing to do. */ }
-    def monitorexit(value: DomainValue) { /* Nothing to do. */ }
-
-    def newObject(t: ObjectType) = TypedValue(t)
 
 }

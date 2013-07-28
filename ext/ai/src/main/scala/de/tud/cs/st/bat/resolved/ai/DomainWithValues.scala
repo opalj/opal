@@ -45,21 +45,8 @@ import reflect.ClassTag
  */
 trait DomainWithValues extends Domain {
 
-    /**
-     * Trait that is mixed in by values for which we have more precise type information,
-     * but no/limited concrete value information.
-     *
-     * @author Michael Eichberg
-     */
-    trait TypedValue extends Value {
-        def valueType: Type
-    }
-    object TypedValue {
-        def unapply(tv: TypedValue): Option[Type] = Some(tv.valueType)
-    }
-
-    def TypedValue(someType: Type): TypedDomainValue = {
-        someType match {
+    def TypedValue(someType: Type): DomainTypedValue[someType.type] = {
+        (someType match {
             case BooleanType       ⇒ SomeBooleanValue
             case ByteType          ⇒ SomeByteValue
             case ShortType         ⇒ SomeShortValue
@@ -70,21 +57,19 @@ trait DomainWithValues extends Domain {
             case DoubleType        ⇒ SomeDoubleValue
             case rt: ReferenceType ⇒ ReferenceValue(rt)
             case VoidType          ⇒ AIImplementationError("it is not possible to create a typed value of type VoidType")
-        }
+        }).asInstanceOf[DomainTypedValue[someType.type]]
     }
 
-    type TypedDomainValue = TypedValue with DomainValue
+    val SomeBooleanValue: DomainTypedValue[BooleanType]
+    val SomeByteValue: DomainTypedValue[ByteType]
+    val SomeShortValue: DomainTypedValue[ShortType]
+    val SomeCharValue: DomainTypedValue[CharType]
+    val SomeIntegerValue: DomainTypedValue[IntegerType]
+    val SomeFloatValue: DomainTypedValue[FloatType]
+    val SomeLongValue: DomainTypedValue[LongType]
+    val SomeDoubleValue: DomainTypedValue[DoubleType]
 
-    val SomeBooleanValue: TypedDomainValue
-    val SomeByteValue: TypedDomainValue
-    val SomeShortValue: TypedDomainValue
-    val SomeCharValue: TypedDomainValue
-    val SomeIntegerValue: TypedDomainValue
-    val SomeFloatValue: TypedDomainValue
-    val SomeLongValue: TypedDomainValue
-    val SomeDoubleValue: TypedDomainValue
-
-    def ReferenceValue(referenceType: ReferenceType): TypedDomainValue
+    def ReferenceValue(referenceType: ReferenceType): DomainTypedValue[referenceType.type]
 
     val AString = ReferenceValue(ObjectType.String)
     val AClass = ReferenceValue(ObjectType.Class)
@@ -104,13 +89,12 @@ trait DomainWithValues extends Domain {
         final def computationalType: ComputationalType = ComputationalTypeInt
     }
 
-
     /**
      * Abstracts over all values with computational type `float`.
      */
     trait SomeFloatValue
             extends ComputationalTypeCategory1Value
-            with TypedValue {
+            with TypedValue[FloatType] {
 
         final def computationalType: ComputationalType = ComputationalTypeFloat
         final def valueType = FloatType
@@ -120,14 +104,12 @@ trait DomainWithValues extends Domain {
     /**
      * Abstracts over all values with computational type `reference`.
      */
-    trait ReferenceValue extends ComputationalTypeCategory1Value with TypedValue {
+    trait ReferenceValue[T <: ReferenceType] extends ComputationalTypeCategory1Value with TypedValue[T] {
         final def computationalType: ComputationalType = ComputationalTypeReference
-        def valueType: ReferenceType = ObjectType.Object
+
     }
 
-//    val SomeReferenceValue: ReferenceValue with DomainValue
-
-    val NullValue: ReferenceValue with DomainValue
+    val NullValue: ReferenceValue[ReferenceType] with DomainTypedValue[ReferenceType]
 
     /**
      * Represents a value of type return address.
@@ -143,12 +125,12 @@ trait DomainWithValues extends Domain {
      */
     trait ComputationalTypeCategory2Value extends Value
 
-    trait SomeLongValue extends ComputationalTypeCategory2Value with TypedValue {
+    trait SomeLongValue extends ComputationalTypeCategory2Value with TypedValue[LongType] {
         final def computationalType: ComputationalType = ComputationalTypeLong
         final def valueType = LongType
     }
 
-    trait SomeDoubleValue extends ComputationalTypeCategory2Value with TypedValue {
+    trait SomeDoubleValue extends ComputationalTypeCategory2Value with TypedValue[DoubleType] {
         final def computationalType: ComputationalType = ComputationalTypeDouble
         final def valueType = DoubleType
     }

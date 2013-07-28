@@ -46,6 +46,7 @@ import reflect.ClassTag
 class DefaultDomain extends AbstractDefaultDomain {
 
     type DomainValue = Value
+    type DomainTypedValue[T <: Type] = TypedValue[T]
     val DomainValueTag: ClassTag[DomainValue] = implicitly
 
     type DomainNoLegalValue = NoLegalValue
@@ -56,7 +57,8 @@ class DefaultDomain extends AbstractDefaultDomain {
 
     sealed trait CTIntegerValue extends super.CTIntegerValue
 
-    case object SomeBooleanValue extends CTIntegerValue with TypedValue {
+    case object SomeBooleanValue extends CTIntegerValue with TypedValue[BooleanType] {
+
         final def valueType = BooleanType
 
         override def merge(value: DomainValue): Update[DomainValue] = value match {
@@ -66,7 +68,8 @@ class DefaultDomain extends AbstractDefaultDomain {
             case _                        ⇒ MetaInformationUpdateNoLegalValue
         }
     }
-    case object SomeByteValue extends CTIntegerValue with TypedValue {
+    case object SomeByteValue extends CTIntegerValue with TypedValue[ByteType] {
+
         final def valueType = ByteType
 
         override def merge(value: DomainValue): Update[DomainValue] = value match {
@@ -79,8 +82,10 @@ class DefaultDomain extends AbstractDefaultDomain {
         }
     }
 
-    case object SomeShortValue extends CTIntegerValue with TypedValue {
+    case object SomeShortValue extends CTIntegerValue with TypedValue[ShortType] {
+
         final def valueType = ShortType
+
         override def merge(value: DomainValue): Update[DomainValue] = value match {
             case SomeShortValue           ⇒ NoUpdate
             case TheNoLegalValue          ⇒ MetaInformationUpdateNoLegalValue
@@ -91,7 +96,8 @@ class DefaultDomain extends AbstractDefaultDomain {
         }
     }
 
-    case object SomeCharValue extends CTIntegerValue with TypedValue {
+    case object SomeCharValue extends CTIntegerValue with TypedValue[CharType] {
+
         final def valueType = CharType
 
         override def merge(value: DomainValue): Update[DomainValue] = value match {
@@ -104,9 +110,9 @@ class DefaultDomain extends AbstractDefaultDomain {
         }
     }
 
-    case object SomeIntegerValue extends CTIntegerValue with TypedValue {
+    case object SomeIntegerValue extends CTIntegerValue with TypedValue[IntegerType] {
 
-        final def valueType = ShortType
+        final def valueType = IntegerType
 
         override def merge(value: DomainValue): Update[DomainValue] = value match {
             case SomeIntegerValue ⇒ NoUpdate
@@ -118,7 +124,6 @@ class DefaultDomain extends AbstractDefaultDomain {
             case other            ⇒ MetaInformationUpdateNoLegalValue
         }
     }
-    val IntegerConstant0 = SomeIntegerValue
 
     case object SomeFloatValue extends SomeFloatValue {
         override def merge(value: DomainValue): Update[DomainValue] = value match {
@@ -131,25 +136,31 @@ class DefaultDomain extends AbstractDefaultDomain {
      * Abstracts over all values with computational type `reference`.
      */
 
-    case object SomeReferenceValue extends ReferenceValue {
+    case object SomeReferenceValue extends ReferenceValue[ObjectType] {
+
+        def valueType: ObjectType = ObjectType.Object
+
         override def merge(value: DomainValue): Update[DomainValue] = value match {
-            case other: ReferenceValue ⇒ NoUpdate
-            case _                     ⇒ MetaInformationUpdateNoLegalValue
+            case other: ReferenceValue[_] ⇒ NoUpdate
+            case _                        ⇒ MetaInformationUpdateNoLegalValue
         }
     }
 
-    case object NullValue extends ReferenceValue {
+    case object NullValue extends ReferenceValue[ReferenceType] {
+
+        def valueType: ReferenceType = ObjectType.Object
+
         override def merge(value: Value): Update[DomainValue] = value match {
-            case NullValue             ⇒ NoUpdate
-            case other: ReferenceValue ⇒ StructuralUpdate(other)
-            case _                     ⇒ MetaInformationUpdateNoLegalValue
+            case NullValue                ⇒ NoUpdate
+            case other: ReferenceValue[_] ⇒ StructuralUpdate(other)
+            case _                        ⇒ MetaInformationUpdateNoLegalValue
         }
     }
     val theNullValue = NullValue
 
-    case class AReferenceValue(
-        override val valueType: ReferenceType)
-            extends ReferenceValue {
+    case class AReferenceValue[T <: ReferenceType](
+        valueType: T)
+            extends ReferenceValue[T] {
 
         // TODO [AI] We need some support to consult the domain to decide what we want to do.
 
@@ -159,14 +170,14 @@ class DefaultDomain extends AbstractDefaultDomain {
             case AReferenceValue(`valueType`) ⇒ NoUpdate
             case NullValue                    ⇒ NoUpdate
             case TheNoLegalValue              ⇒ MetaInformationUpdateNoLegalValue
-            case other: ReferenceValue        ⇒ StructuralUpdate(SomeReferenceValue)
+            case other: ReferenceValue[_]     ⇒ StructuralUpdate(SomeReferenceValue)
             case other                        ⇒ MetaInformationUpdateNoLegalValue
         }
 
         override def equals(other: Any): Boolean = {
-            if (other.isInstanceOf[AReferenceValue]) {
+            if (other.isInstanceOf[AReferenceValue[_]]) {
                 this.valueType ==
-                    other.asInstanceOf[AReferenceValue].valueType
+                    other.asInstanceOf[AReferenceValue[_]].valueType
             } else {
                 false
             }
@@ -194,7 +205,7 @@ class DefaultDomain extends AbstractDefaultDomain {
         if (subtype == supertype) Yes else Unknown
     }
 
-    def ReferenceValue(referenceType: ReferenceType): AReferenceValue =
+    def ReferenceValue(referenceType: ReferenceType): AReferenceValue[referenceType.type] =
         new AReferenceValue(referenceType)
 
     case object SomeLongValue extends SomeLongValue {
