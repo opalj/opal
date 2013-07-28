@@ -604,6 +604,12 @@ trait Domain {
 
     def iinc(value: DomainValue, increment: Int): DomainValue
 
+    /**
+     * Tests if the given value is `null` and returns a newly created
+     * `NullPointerException` if it is the case. If the value is determined to
+     * not be `null`, the given value is just wrapped and returned as
+     * this computation's result.
+     */
     protected def nullPointerExceptionOnNullValue(value: DomainValue): Computation[DomainValue, DomainTypedValue[ObjectType.NullPointerException.type]] = {
         isNull(value) match {
             case Yes     ⇒ ThrowsException(newObject(ObjectType.NullPointerException))
@@ -669,14 +675,20 @@ trait Domain {
                     val otherOperand = otherRemainingOperands.head
                     otherRemainingOperands = otherRemainingOperands.tail
 
-                    val updatedOperand = thisOperand merge otherOperand
-                    val newOperand = updatedOperand match {
-                        case SomeUpdate(operand) ⇒ operand
-                        case NoUpdate            ⇒ thisOperand
-                    }
-                    assume(!newOperand.isInstanceOf[NoLegalValue],
-                        "domain merge - merging of stack values ("+thisOperand+" and "+otherOperand+") led to an illegal value")
-                    operandsUpdated = operandsUpdated &: updatedOperand
+                    val newOperand =
+                        if (thisOperand == otherOperand) {
+                            thisOperand
+                        } else {
+                            val updatedOperand = thisOperand merge otherOperand
+                            val newOperand = updatedOperand match {
+                                case SomeUpdate(operand) ⇒ operand
+                                case NoUpdate            ⇒ thisOperand
+                            }
+                            assume(!newOperand.isInstanceOf[NoLegalValue],
+                                "domain merge - merging of stack values ("+thisOperand+" and "+otherOperand+") led to an illegal value")
+                            operandsUpdated = operandsUpdated &: updatedOperand
+                            newOperand
+                        }
                     newOperands = newOperand :: newOperands
                 }
                 if (operandsUpdated.noUpdate) {
@@ -710,8 +722,7 @@ trait Domain {
                             TheNoLegalValue
                         } else if (thisLocal == otherLocal) {
                             thisLocal
-                        } 
-                        else {
+                        } else {
                             val updatedLocal = thisLocal merge otherLocal
                             if (updatedLocal == NoUpdate) {
                                 thisLocal
