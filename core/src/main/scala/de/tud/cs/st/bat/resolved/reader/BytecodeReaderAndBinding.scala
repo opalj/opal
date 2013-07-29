@@ -388,7 +388,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                 case 195 ⇒ { MONITOREXIT }
                 case 197 ⇒ {
                     MULTIANEWARRAY(
-                        cp(in.readUnsignedShort).asConstantValue(cp).toClass /* componentType */ ,
+                        cp(in.readUnsignedShort).asConstantValue(cp).toClass.asInstanceOf[ArrayType] /* componentType */ ,
                         in.readUnsignedByte /* dimensions */ )
                 }
                 case 187 ⇒ NEW(cp(in.readUnsignedShort).asObjectType(cp))

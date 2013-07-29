@@ -191,6 +191,10 @@ sealed trait ReferenceType extends FieldType {
     override final def isReferenceType = true
 
     def computationalType = ComputationalTypeReference
+
+    def asObjectType: ObjectType = throw new ClassCastException("this ReferenceType cannot be cast to ObjecType")
+
+    def asArrayType: ArrayType = throw new ClassCastException("this ReferenceType cannot be cast to ArrayType")
 }
 object ReferenceType {
 
@@ -352,6 +356,8 @@ final class ObjectType private (
 
     override def isObjectType = true
 
+    override def asObjectType = this
+
     override lazy val hashCode = className.hashCode * 43
 
     override def equals(other: Any): Boolean =
@@ -444,6 +450,8 @@ final class ArrayType private (
         extends ReferenceType {
 
     override final def isArrayType = true
+
+    override def asArrayType = this
 
     override def hashCode = 13 * (componentType.hashCode + 7)
 

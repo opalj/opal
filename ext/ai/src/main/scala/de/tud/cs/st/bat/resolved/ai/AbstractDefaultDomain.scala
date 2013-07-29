@@ -42,15 +42,18 @@ import reflect.ClassTag
  * @author Dennis Siebert
  */
 trait AbstractDefaultDomain extends DomainWithValues {
-
+    
     //
     // CREATE ARRAY
     //
-    def newarray(count: DomainValue, componentType: FieldType): DomainValue =
-        TypedValue(ArrayType(componentType))
+    def newarray(count: DomainValue, componentType: FieldType): NewArrayOrNegativeArraySizeException =
+        ComputedValueAndException(TypedValue(ArrayType(componentType)), TypedValue(ObjectType.ArithmeticException))
 
-    def multianewarray(counts: List[DomainValue], arrayType: FieldType) =
-        TypedValue(arrayType)
+    /**
+     * @note The componentType may be (again) an array type.
+     */
+    def multianewarray(counts: List[DomainValue], arrayType: ArrayType): NewArrayOrNegativeArraySizeException =
+        ComputedValueAndException(TypedValue(arrayType), TypedValue(ObjectType.ArithmeticException))
 
     //
     // LOAD FROM AND STORE VALUE IN ARRAYS
@@ -99,8 +102,8 @@ trait AbstractDefaultDomain extends DomainWithValues {
     def longValue(vlaue: Long) = SomeLongValue
     def floatValue(value: Float) = SomeFloatValue
     def doubleValue(value: Double) = SomeDoubleValue
-    def stringValue(value: String) = AString
-    def classValue(t: ReferenceType) = AClass
+    def stringValue(value: String) = AStringObject
+    def classValue(t: ReferenceType) = AClassObject
 
     //
     // TYPE CHECKS AND CONVERSION

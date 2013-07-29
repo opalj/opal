@@ -166,9 +166,16 @@ class ClassHierarchy(
      *      completely available and hence precise information about a type's supertypes
      *      is not available.
      */
-    def isSubtypeOf(currentType: ObjectType, supertype: ObjectType): Option[Boolean] = {
+    def isSubtypeOf(currentType: ReferenceType, supertype: ReferenceType): Answer = {
         if (currentType == supertype) {
-            Some(true);
+            Yes
+        } else if (currentType.isArrayType) {
+            if (supertype == ObjectType.Object)
+                Yes
+            else
+                No // the types are guaranteed to be not equal
+        } else if (supertype.isArrayType) {
+            No
         } else {
             // If we don't have the complete hierarchy available and we
             // are not able to identify that the current type is actually
@@ -177,22 +184,22 @@ class ClassHierarchy(
             // analysis is considered to be not conclusive.
             var nonConclusive = false;
             for {
-                superclasses ← superclasses.get(currentType).toList
+                superclasses ← superclasses.get(currentType.asObjectType).toList
                 superclass ← superclasses
             } {
                 isSubtypeOf(superclass, supertype) match {
-                    case Some(false)        ⇒ /* let's continue the search */ ;
-                    case found @ Some(true) ⇒ return found;
-                    case None ⇒
+                    case No  ⇒ /* let's continue the search */ ;
+                    case Yes ⇒ return Yes;
+                    case Unknown ⇒
                         // It is still possible that we are able to determine that 
                         // currentType is a subtype of supertype. 
                         nonConclusive = true;
                 }
             }
             if (nonConclusive) {
-                None
+                Unknown
             } else {
-                Some(false)
+                No
             }
         }
     }
@@ -318,14 +325,14 @@ object ClassHierarchyExtractor {
 
         val supertype = ObjectType(supertypeName)
         val subtypes = classHierarchy.subclasses(supertype).getOrElse(Set.empty)
-        
-        println("# Class hierarchy for: "+supertypeName+ " limited to subclasses that start with: "+filterPrefix)
+
+        println("# Class hierarchy for: "+supertypeName+" limited to subclasses that start with: "+filterPrefix)
         var worklist = List((supertype, subtypes))
         while (worklist.nonEmpty) {
             val (supertype, allSubtypes) = worklist.head
             worklist = worklist.tail
             val subtypes = allSubtypes.filter(_.className.startsWith(filterPrefix))
-            if (subtypes.nonEmpty) {                
+            if (subtypes.nonEmpty) {
                 println(supertype.className+" > "+subtypes.map(_.className).mkString(", "))
                 for (
                     subtype ← subtypes;

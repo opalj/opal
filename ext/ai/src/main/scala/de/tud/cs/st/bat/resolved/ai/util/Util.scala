@@ -186,6 +186,9 @@ object Util {
                   operandsArray: Array[_ <: List[_ <: AnyRef]],
                   localsArray: Array[_ <: Array[_ <: AnyRef]]): Node = {
 
+        val indexedExceptionHandlers = indexExceptionHandlers(code)
+
+        <div>
         <table>
             <caption>{ caption(classFile, method) }</caption>
             <thead>
@@ -195,6 +198,10 @@ object Util {
             { dumpInstructions(code, operandsArray, localsArray) }
             </tbody>
         </table>
+        { for ((eh, index) ← indexedExceptionHandlers) yield <p>
+                   { "⚡: " + index + " " + eh.catchType.map(_.toJava).getOrElse("<finally>") + " [" + eh.startPC + "," + eh.endPC + ")" + " => " + eh.handlerPC }
+           </p> }
+        </div>
     }
 
     private def caption(classFile: Option[ClassFile],
@@ -205,18 +212,31 @@ object Util {
             "Results"
     }
 
+    private def indexExceptionHandlers(code: Code) = Map() ++ code.exceptionHandlers.zipWithIndex
+
     private def dumpInstructions(code: Code,
                                  operandsArray: Array[_ <: List[_ <: AnyRef]],
                                  localsArray: Array[_ <: Array[_ <: AnyRef]]) = {
+        val indexedExceptionHandlers = indexExceptionHandlers(code)
         val instrs = code.instructions.zipWithIndex.zip(operandsArray zip localsArray).filter(_._1._1 ne null)
         for (((instruction, pc), (operands, locals)) ← instrs) yield {
-            <tr class={ if (operands eq null /*||/&& locals eq null*/ ) "not_evaluated" else "evaluated" }>
-              <td class="pc">{ pc }</td>
-              <td class="instruction">{ scala.xml.Unparsed(instruction.toString.replace("\n", "<br>")) }</td>
-              <td class="stack">{ dumpStack(operands) }</td>
-              <td class="locals">{ dumpLocals(locals) }</td>
-            </tr >
+            var exceptionHandlers = code.exceptionHandlersFor(pc).map(indexedExceptionHandlers(_)).mkString(",")
+            if (exceptionHandlers.size > 0) exceptionHandlers = "⚡: "+exceptionHandlers
+            dumpInstruction(pc, instruction, operands, locals, Some(exceptionHandlers))
         }
+    }
+
+    def dumpInstruction(pc: Int,
+                        instruction: Instruction,
+                        operands: List[_ <: AnyRef],
+                        locals: Array[_ <: AnyRef],
+                        exceptionHandlers: Option[String]) = {
+        <tr class={ if (operands eq null /*||/&& locals eq null*/ ) "not_evaluated" else "evaluated" }>
+            <td class="pc">{ scala.xml.Unparsed(pc.toString + "<br>" + exceptionHandlers.getOrElse("")) }</td>
+            <td class="instruction">{ scala.xml.Unparsed(instruction.toString.replace("\n", "<br>")) }</td>
+            <td class="stack">{ dumpStack(operands) }</td>
+            <td class="locals">{ dumpLocals(locals) }</td>
+        </tr >
     }
 
     private def dumpStack(operands: List[_ <: AnyRef]) = {

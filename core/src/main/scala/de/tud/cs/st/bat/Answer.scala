@@ -32,8 +32,6 @@
  */
 package de.tud.cs.st
 package bat
-package resolved
-package ai
 
 /**
  * Models a three state answer.
@@ -42,19 +40,33 @@ package ai
  */
 sealed trait Answer {
     def negate: Answer
-    def maybe : Boolean
+    def maybeYes: Boolean
+    def maybeNo: Boolean
+    def yes: Boolean
+    def no: Boolean
 }
 final case object Yes extends Answer {
     def negate = No
-    def maybe : Boolean = true
+    def maybeYes: Boolean = true
+    def maybeNo: Boolean = false
+    def yes: Boolean = true
+    def no: Boolean = false
+
 }
 final case object No extends Answer {
     def negate = Yes
-    def maybe : Boolean = false
+    def maybeYes: Boolean = false
+    def maybeNo: Boolean = true
+    def yes: Boolean = false
+    def no: Boolean = true
+
 }
 final case object Unknown extends Answer {
     def negate = this
-    def maybe : Boolean = true
+    def maybeYes: Boolean = true
+    def maybeNo: Boolean = true
+    def yes: Boolean = false
+    def no: Boolean = false
 }
 
 

@@ -42,7 +42,15 @@ package ai
  */
 trait AI {
 
+    /**
+     * Called during the abstract interpretation of a method to determine whether
+     * the computation should be aborted. When the abstract interpreter is currently
+     * waiting on the result of the interpretation of a called method, it may take
+     * some time before the interpretation of the current method is actually aborted.
+     */
     def isInterrupted(): Boolean
+
+    def tracer: Option[AITracer]
 
     /**
      *  Performs an abstract interpretation of the given method with the given domain.
@@ -75,13 +83,13 @@ trait AI {
      * @param someLocals If the values passed to a method are already known, the
      *      abstract interpretation will be performed under that assumption.
      * @return The result of the abstract interpretation. Basically, the calculated
-     *      memory layouts; i.e., the list of pairs of stack and operands. Each calculated
+     *      memory layouts; i.e., the list of operands and locals. Each calculated
      *      memory layout represents the layout before the instruction with the
      *      corresponding program counter was interpreted.
      *      If the interpretation was aborted, the returned result
      *      object contains all necessary information to continue the interpretation
      *      if needed/desired.
-     *      ==Note==
+     * @note
      *      If you are just interested in the values that are returned or passed to other
      *      functions/fields it may be effective (code and performance wise) to implement
      *      your own domain that just records the values. For an example take a look at
@@ -145,6 +153,10 @@ trait AI {
                 currentLocalsArray)
     }
 
+    /**
+     * Continues the interpretation of the given method implementation (code) using
+     * the given domain.
+     */
     def continueInterpretation(
         code: Code,
         domain: Domain)(
@@ -248,22 +260,72 @@ trait AI {
                     }
                 } catch {
                     case ae: AssertionError ⇒
-//                        val dump = util.Util.dump(None, None, code, operandsArray, localsArray, Some(ae.getMessage()+" targetPC: "+targetPC+" remaining worklist: "+worklist.mkString(", ")))
-//                        util.Util.writeAndOpenDump(dump)
-//                        println("Press enter to continue..."); System.in.read()
+                        //                        val dump = util.Util.dump(None, None, code, operandsArray, localsArray, Some(ae.getMessage()+" targetPC: "+targetPC+" remaining worklist: "+worklist.mkString(", ")))
+                        //                        util.Util.writeAndOpenDump(dump)
+                        //                        println("Press enter to continue..."); System.in.read()
                         throw ae
                 }
             }
         }
+
         def gotoTargets(targetPCs: Iterable[Int], operands: Operands, locals: Locals) {
             for (targetPC ← targetPCs) {
                 gotoTarget(targetPC, operands, locals)
             }
         }
 
+        /**
+         * Handles the control-flow when an (new) exception was raised.
+         *
+         * Called when an exception was (potentially) raised during the interpretation
+         * of the method. In this case the corresponding handler is searched and then
+         * the control is transfered to it. If no handler is found the domain is
+         * informed about an abnormal return.
+         *
+         * @note The operand stack will only contain the raised exception.
+         * @param currentPC The program counter of the instruction that raised the
+         *      exception.
+         * @param exception A guaranteed non-null value that represents an instance of
+         *      an object that inherits from `java.lang.Throwable`.
+         */
+        def handleException(currentPC: Int, exception: DomainTypedValue[ObjectType], locals: Locals) {
+            val nextOperands: List[domain.DomainValue] = List(exception)
+            val isHandled =
+                // find the exception handler that matches the given exception
+                code.exceptionHandlersFor(currentPC).exists(eh ⇒ {
+                    val branchTarget = eh.handlerPC
+                    val catchType = eh.catchType
+                    if (catchType.isEmpty) { // this is a finally handler
+                        gotoTarget(branchTarget, nextOperands, locals)
+                        true
+                    } else {
+                        domain.isSubtypeOf(exception, catchType.get) match {
+                            case No ⇒
+                                false
+                            case Yes ⇒
+                                gotoTarget(branchTarget, nextOperands, locals)
+                                true
+                            case Unknown ⇒
+                                val (updatedOperands, updatedLocals) =
+                                    UpperBound(branchTarget, catchType.get, exception, nextOperands, locals)
+                                gotoTarget(branchTarget, updatedOperands, updatedLocals)
+                                false
+                        }
+                    }
+                })
+
+            // If "isHandled" is true, we are sure that at least one 
+            // handler will catch the exception... hence the method
+            // will not return abnormally
+            if (!isHandled)
+                domain.abnormalReturn(exception)
+        }
+
+        // -------------------------------------------------------------------------------
         //
         // Main loop of the abstract interpreter
         //
+        // -------------------------------------------------------------------------------
 
         while (worklist.nonEmpty) {
             if (isInterrupted()) {
@@ -277,14 +339,9 @@ trait AI {
             val operands = operandsArray(pc)
             val locals = localsArray(pc)
 
-            def pcOfNextInstruction = {
-                // TODO [AI] Remap instructions to make it possible to just add +1 to go to the next instruction
-                // instructions(pc).indexOfNextInstruction(pc, code)
-                var nextPC = pc + 1
-                val maxPC = instructions.size
-                while ((nextPC < maxPC) && (instructions(nextPC) eq null)) { nextPC += 1 }
-                nextPC
-            }
+            tracer.map(_.traceInstructionEvalution(pc, instruction, operands, locals))
+
+            def pcOfNextInstruction = code.indexOfNextInstruction(pc)
 
             def fallThrough() {
                 gotoTarget(pcOfNextInstruction, operands, locals)
@@ -381,19 +438,19 @@ trait AI {
                     var branchToDefaultRequired = false
                     for ((key, offset) ← switch.npairs) {
                         if (!branchToDefaultRequired && (key - previousKey) > 1) {
-                            if ((previousKey until key).exists(v ⇒ domain.isValueInRange(index, v, v).maybe)) {
+                            if ((previousKey until key).exists(v ⇒ domain.isValueInRange(index, v, v))) {
                                 branchToDefaultRequired = true
                             } else {
                                 previousKey = key
                             }
                         }
-                        if (domain.isValueInRange(index, key, key).maybe) {
+                        if (domain.isValueInRange(index, key, key)) {
                             val branchTarget = pc + offset
                             val (updatedOperands, updatedLocals) = domain.hasValue(branchTarget, key, index, remainingOperands, locals)
                             gotoTarget(branchTarget, updatedOperands, updatedLocals)
                         }
                     }
-                    if (branchToDefaultRequired || domain.isValueNotInRange(index, firstKey, switch.npairs(switch.npairs.size - 1)._1).maybe) {
+                    if (branchToDefaultRequired || domain.isValueNotInRange(index, firstKey, switch.npairs(switch.npairs.size - 1)._1)) {
                         gotoTarget(pc + switch.defaultOffset, remainingOperands, locals)
                     }
 
@@ -405,14 +462,14 @@ trait AI {
                     val high = tableswitch.high
                     var v = low
                     while (v < high) {
-                        if (domain.isValueInRange(index, v, v).maybe) {
+                        if (domain.isValueInRange(index, v, v)) {
                             val branchTarget = pc + tableswitch.jumpOffsets(v - low)
                             val (updatedOperands, updatedLocals) = domain.hasValue(branchTarget, v, index, remainingOperands, locals)
                             gotoTarget(branchTarget, updatedOperands, updatedLocals)
                         }
                         v = v + 1
                     }
-                    if (domain.isValueNotInRange(index, low, high).maybe) {
+                    if (domain.isValueNotInRange(index, low, high)) {
                         gotoTarget(pc + tableswitch.defaultOffset, remainingOperands, locals)
                     }
 
@@ -429,73 +486,66 @@ trait AI {
                      * the exception handlers of the current method in the order that 
                      * they appear in the corresponding exception handler table. 
                      */
-                    val exceptionValue = operandsArray(pc).head
-                    val exceptionValueIsNull = domain.isNull(exceptionValue)
-
-                    // TODO add null handler!
-                    var nextOperands: List[domain.DomainValue] = null
-                    val exceptionTypes = exceptionValueIsNull match {
-                        case Yes ⇒
-                            nextOperands = List(theNullValue)
-                            Values(Set(ObjectType.NullPointerException))
-                        case No | Unknown ⇒
-                            nextOperands = List(exceptionValue)
-                            domain.types(exceptionValue)
+                    val computation = domain.athrow(operandsArray(pc).head)
+                    if (computation.throwsException) {
+                        handleException(pc, computation.exceptions, locals)
                     }
-                    exceptionTypes match {
-                        case ValuesUnknown ⇒
-                            code.exceptionHandlersFor(pc).foreach(eh ⇒ {
-                                val branchTarget = eh.handlerPC
+                    if (computation.hasValues) {
+                        val exception = computation.values
+                        val nextOperands = List(exception)
 
-                                // unless we have a "finally" handler, we can state
-                                // a constraint
-                                if (eh.catchType.isDefined) {
-                                    eh.catchType.map(catchType ⇒ {
-                                        val (updatedOperands, updatedLocals) =
-                                            UpperBound(branchTarget, catchType, exceptionValue, nextOperands, locals)
-                                        gotoTarget(branchTarget, updatedOperands, updatedLocals)
-                                    })
-                                } else
-                                    gotoTarget(branchTarget, nextOperands, locals)
-                            })
-                            domain.abnormalReturn(exceptionValue)
-
-                        case Values(types) ⇒
-                            val isHandled =
-                                // find the exception handler that matches the given 
-                                // exception
-                                code.exceptionHandlersFor(pc).find(eh ⇒ {
+                        domain.types(exception) match {
+                            case ValuesUnknown ⇒
+                                code.exceptionHandlersFor(pc).foreach(eh ⇒ {
                                     val branchTarget = eh.handlerPC
-                                    val catchType = eh.catchType
-                                    if (catchType.isEmpty) {
+                                    // unless we have a "finally" handler, we can state
+                                    // a constraint
+                                    if (eh.catchType.isDefined) {
+                                        eh.catchType.map(catchType ⇒ {
+                                            val (updatedOperands, updatedLocals) =
+                                                UpperBound(branchTarget, catchType, exception, nextOperands, locals)
+                                            gotoTarget(branchTarget, updatedOperands, updatedLocals)
+                                        })
+                                    } else
                                         gotoTarget(branchTarget, nextOperands, locals)
-                                        // this is a finally handler
-                                        true
-                                    } else {
-                                        domain.isSubtypeOf(exceptionValue, catchType.get) match {
-                                            case No ⇒
-                                                false
-                                            case Yes ⇒
-                                                gotoTarget(branchTarget, nextOperands, locals)
-                                                true
-                                            case Unknown ⇒
-                                                val (updatedOperands, updatedLocals) =
-                                                    UpperBound(branchTarget, catchType.get, exceptionValue, nextOperands, locals)
-                                                gotoTarget(branchTarget, updatedOperands, updatedLocals)
-                                                false
+                                })
+                                domain.abnormalReturn(exception)
+
+                            case Values(exceptionTypes) ⇒
+                                val isHandled = exceptionTypes.forall(exceptionType ⇒
+                                    // find the exception handler that matches the given 
+                                    // exception
+                                    code.exceptionHandlersFor(pc).exists(eh ⇒ {
+                                        val branchTarget = eh.handlerPC
+                                        val catchType = eh.catchType
+                                        if (catchType.isEmpty) {
+                                            gotoTarget(branchTarget, nextOperands, locals)
+                                            // this is a finally handler
+                                            true
+                                        } else {
+                                            domain.isSubtypeOf(exceptionType.asInstanceOf[ReferenceType], catchType.get) match {
+                                                case No ⇒
+                                                    false
+                                                case Yes ⇒
+                                                    gotoTarget(branchTarget, nextOperands, locals)
+                                                    true
+                                                case Unknown ⇒
+                                                    val (updatedOperands, updatedLocals) =
+                                                        UpperBound(branchTarget, catchType.get, exception, nextOperands, locals)
+                                                    gotoTarget(branchTarget, updatedOperands, updatedLocals)
+                                                    false
+                                            }
                                         }
-
                                     }
-                                }).isDefined
-
-                            // If "isHandled" is true, we are sure that at least one 
-                            // handler will catch the exception... hence the method
-                            // will not return abnormally
-                            if (!isHandled)
-                                domain.abnormalReturn(exceptionValue)
+                                    )
+                                )
+                                // If "isHandled" is true, we are sure that at least one 
+                                // handler will catch the exception(s)... hence the method
+                                // will not return abnormally
+                                if (!isHandled)
+                                    domain.abnormalReturn(exception)
+                        }
                     }
-
-                ///////////////////////// TODO [AI] WE NEED TO DEAL WITH EXCEPTIONELL CONTROL FLOW
 
                 //
                 // CREATE ARRAY
@@ -503,7 +553,7 @@ trait AI {
 
                 case 188 /*newarray*/ ⇒ {
                     val count :: rest = operands
-                    val newOperands = ((instruction.asInstanceOf[NEWARRAY].atype: @annotation.switch) match {
+                    val computation = ((instruction.asInstanceOf[NEWARRAY].atype: @annotation.switch) match {
                         case 4 /*BooleanType.atype*/  ⇒ domain.newarray(count, BooleanType)
                         case 5 /*CharType.atype*/     ⇒ domain.newarray(count, CharType)
                         case 6 /*FloatType.atype*/    ⇒ domain.newarray(count, FloatType)
@@ -513,22 +563,39 @@ trait AI {
                         case 10 /*IntegerType.atype*/ ⇒ domain.newarray(count, IntegerType)
                         case 11 /*LongType.atype*/    ⇒ domain.newarray(count, LongType)
                         case _                        ⇒ BATError("newarray of unsupported \"atype\"")
-                    }) :: rest
-                    fallThroughOL(newOperands, locals)
+                    })
+                    if (computation.hasValues) {
+                        fallThroughO(computation.values :: rest)
+                    }
+                    if (computation.throwsException) {
+                        handleException(pc, computation.exceptions, locals)
+                    }
                 }
+
                 case 189 /*anewarray*/ ⇒ {
                     val count :: rest = operands
-                    val newOperands = domain.newarray(count, instruction.asInstanceOf[ANEWARRAY].componentType) :: rest
-                    fallThroughOL(newOperands, locals)
+                    val computation = domain.newarray(count, instruction.asInstanceOf[ANEWARRAY].componentType)
+                    if (computation.hasValues) {
+                        fallThroughO(computation.values :: rest)
+                    }
+                    if (computation.throwsException) {
+                        handleException(pc, computation.exceptions, locals)
+                    }
                 }
 
                 case 197 /*multianewarray*/ ⇒ {
                     val multianewarray = instruction.asInstanceOf[MULTIANEWARRAY]
                     val initDimensions = operands.take(multianewarray.dimensions)
-                    fallThroughOL(
-                        domain.multianewarray(initDimensions, multianewarray.componentType) :: (operands.drop(multianewarray.dimensions)),
-                        locals)
+                    val computation = domain.multianewarray(initDimensions, multianewarray.componentType)
+                    if (computation.hasValues) {
+                        fallThroughO(computation.values :: (operands.drop(multianewarray.dimensions)))
+                    }
+                    if (computation.throwsException) {
+                        handleException(pc, computation.exceptions, locals)
+                    }
                 }
+
+                ///////////////////////// TODO [AI] WE NEED TO DEAL WITH EXCEPTIONELL CONTROL FLOW
 
                 //
                 // LOAD FROM AND STORE VALUE IN ARRAYS
@@ -741,12 +808,18 @@ trait AI {
                 }
 
                 case 194 /*monitorenter*/ ⇒ {
-                    domain.monitorenter(operands.head)
-                    fallThroughO(operands.tail)
+                    val computation = domain.monitorenter(operands.head)
+                    if (computation.throwsException)
+                        handleException(pc, computation.exceptions, locals)
+                    if (computation.hasValues)
+                        fallThroughO(operands.tail)
                 }
                 case 195 /*monitorexit*/ ⇒ {
-                    domain.monitorexit(operands.head)
-                    fallThroughO(operands.tail)
+                    val computation = domain.monitorexit(operands.head)
+                    if (computation.throwsException)
+                        handleException(pc, computation.exceptions, locals)
+                    if (computation.hasValues /*<=> returns normally */ )
+                        fallThroughO(operands.tail)
                 }
 
                 //
@@ -1182,4 +1255,22 @@ object AI extends AI {
 
     def isInterrupted = Thread.interrupted()
 
-} 
+    val tracer = Some(new ConsoleTracer {})
+}
+
+trait AITracer {
+
+    def traceInstructionEvalution(pc: Int,
+                                  instruction: Instruction,
+                                  operands: List[_ <: AnyRef],
+                                  locals: Array[_ <: AnyRef]): Unit
+}
+
+trait ConsoleTracer extends AITracer {
+    def traceInstructionEvalution(pc: Int,
+                                  instruction: Instruction,
+                                  operands: List[_ <: AnyRef],
+                                  locals: Array[_ <: AnyRef]): Unit = {
+        println(pc+":"+instruction+" ["+operands+";"+locals+"]")
+    }
+}

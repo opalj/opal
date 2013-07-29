@@ -45,7 +45,7 @@ import reflect.ClassTag
  */
 trait DomainWithValues extends Domain {
 
-    def TypedValue(someType: Type): DomainTypedValue[someType.type] = {
+    def TypedValue[T <: Type](someType: T): DomainTypedValue[T] = {
         (someType match {
             case BooleanType       ⇒ SomeBooleanValue
             case ByteType          ⇒ SomeByteValue
@@ -57,7 +57,7 @@ trait DomainWithValues extends Domain {
             case DoubleType        ⇒ SomeDoubleValue
             case rt: ReferenceType ⇒ ReferenceValue(rt)
             case VoidType          ⇒ AIImplementationError("it is not possible to create a typed value of type VoidType")
-        }).asInstanceOf[DomainTypedValue[someType.type]]
+        }).asInstanceOf[DomainTypedValue[T]]
     }
 
     val SomeBooleanValue: DomainTypedValue[BooleanType]
@@ -71,8 +71,8 @@ trait DomainWithValues extends Domain {
 
     def ReferenceValue(referenceType: ReferenceType): DomainTypedValue[referenceType.type]
 
-    val AString = ReferenceValue(ObjectType.String)
-    val AClass = ReferenceValue(ObjectType.Class)
+    val AStringObject = ReferenceValue(ObjectType.String)
+    val AClassObject = ReferenceValue(ObjectType.Class)
     val AnObject = ReferenceValue(ObjectType.Object)
 
     /**
@@ -138,12 +138,7 @@ trait DomainWithValues extends Domain {
     //
     // QUESTION'S ABOUT VALUES
     //
-    def isNull(value: DomainValue): Answer = {
-        if (value == NullValue)
-            Yes
-        else
-            Unknown
-    }
+ 
 
     def areEqualReferences(value1: DomainValue, value2: DomainValue): Answer = {
         Unknown
@@ -161,11 +156,11 @@ trait DomainWithValues extends Domain {
         Unknown
     }
 
-    def isValueInRange(value: DomainValue, lowerBound: Int, upperBound: Int): Answer =
-        Unknown
+    def isValueInRange(value: DomainValue, lowerBound: Int, upperBound: Int): Boolean =
+        true
 
-    def isValueNotInRange(value: DomainValue, lowerBound: Int, upperBound: Int): Answer =
-        Unknown
+    def isValueNotInRange(value: DomainValue, lowerBound: Int, upperBound: Int): Boolean =
+        true
 
     //
     // HANDLING CONSTRAINTS

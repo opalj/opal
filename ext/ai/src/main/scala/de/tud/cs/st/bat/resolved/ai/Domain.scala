@@ -45,18 +45,17 @@ import language.higherKinds
  * how a domain's values are calculated.
  *
  * This trait defines the interface between the abstract interpretation framework (BATAI)
- * and some domain. I.e., all that is required by BATAI is an implementation of this
- * trait. However, several classes/traits are pre-defined to facilitate the usage of
- * BATAI.
+ * and some (user defined) domain. I.e., all that is required by BATAI is an 
+ * implementation of this trait. 
+ * 
+ * To facilitate the usage of BATAI several classes/traits that implement parts of 
+ * the Domain trait are pre-defined.
  *
  * ==Control Flow==
- * BATI controls the process of evaluating the program, but requires a
+ * BATAI controls the process of evaluating the program, but requires a
  * domain to perform the actual computations of an instruction's result.
- * Handling of instructions that directly manipulate the stack/the locals
+ * Handling of instructions that move values between the stack/the locals
  * is completely embedded into BATAI.
- *
- * The framework assumes that every method/code block is associated with its
- * own instance of a domain object.
  *
  * ==Thread Safety==
  * When every method is associated with a unique `Domain` instance as proposed and – given
@@ -64,7 +63,8 @@ import language.higherKinds
  * has to be taken. However, if a domain needs to consult a domain which is associated with
  * a Project as a whole, which we will refer to as "World" in BATAI, it is then the
  * responsibility of the domain to make sure that everything is thread safe.
- *
+ * @note The framework assumes that every method/code block is associated with its
+ *      own instance of a domain object.
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  * @author Dennis Siebert
  */
@@ -82,7 +82,8 @@ trait Domain {
      *
      * ==Extending Value==
      * If you extend this trait, make sure that you also extend all classes/traits that
-     * inherit from this type (this may require a deep mixin composition).
+     * inherit from this type (this may require a deep mixin composition) and that you
+     * refine the type `DomainType` accordingly.
      */
     trait Value {
         /**
@@ -101,13 +102,13 @@ trait Domain {
          * Merges this value with the given value; has to return `this` when this value
          * subsumes the given value or is structurally identical to the given
          * value; has to return an instance of
-         * [[de.tud.cs.st.bat.resolved.ai.Domain.NoLegalValue]] when the two values
-         * are incompatible.
+         * [[de.tud.cs.st.bat.resolved.ai.Domain.NoLegalValue]] when this value and 
+         * the given value are incompatible.
          *
          * For example, merging a `DomainValue` that represents the integer value 0
          * with a `DomainValue` that represents the integer value 1 may return a new
-         * `DomainValue` that precisely captures the range, that capture all positive
-         * integer value or just some integer value.
+         * `DomainValue` that precisely captures the range or that captures all positive
+         * integer values or just '''some integer value'''.
          *
          * The termination of the abstract interpretation directly depends on the fact
          * that at some point all values are fixed and don't change anymore.
@@ -146,7 +147,7 @@ trait Domain {
     /**
      * Facilitates matching against values of computational type category 1.
      *
-     * ==Example==
+     * @example
      * {{{
      * case v @ CTC1() => ...
      * }}}
@@ -158,7 +159,7 @@ trait Domain {
     /**
      * Facilitates matching against values of computational type category 2.
      *
-     * ==Example==
+     * @example
      * {{{
      * case v @ CTC2() => ...
      * }}}
@@ -179,7 +180,7 @@ trait Domain {
         def computationalType: ComputationalType =
             BATError("the value \"NoLegalValue\" does not have a computational type")
 
-        final def merge(value: DomainValue): Update[DomainValue] = {
+        def merge(value: DomainValue): Update[DomainValue] = {
             if (value == TheNoLegalValue)
                 NoUpdate
             else
@@ -189,10 +190,19 @@ trait Domain {
         override def toString = "NoLegalValue"
     }
 
+    /**
+     * Facilitates matching against `NoLegalValues`
+     */
     object NoLegalValue {
         def unapply(value: NoLegalValue): Boolean = value ne null
     }
 
+    /**
+     * Abstracts over the concrete type of `NoLegalValue`. 
+     * 
+     * This type needs to be refined whenever the class `NoLegalValue` 
+     * is refined or the type `DomainValue` is refined.
+     */ 
     type DomainNoLegalValue <: NoLegalValue with DomainValue
 
     val TheNoLegalValue: DomainNoLegalValue
@@ -240,24 +250,27 @@ trait Domain {
     }
 
     /**
-     * Trait that is mixed in by values for which we have more precise type information.
+     * Trait that is mixed in by values for which we have more precise type information
+     * than just the computational type.
      */
     trait TypedValue[+T <: Type] extends Value {
-
         def valueType: T
     }
 
+    /**
+     * Enables matching against `TypedValues`.
+     */
     object TypedValue {
         def unapply[T <: Type](tv: TypedValue[T]): Option[T] = Some(tv.valueType)
     }
 
-    type DomainTypedValue[T <: Type] <: TypedValue[T] with DomainValue
+    type DomainTypedValue[+T <: Type] <: TypedValue[T] with DomainValue
 
     /**
      * Factory method to create `TypedValue`s; i.e., values for which we have (more)
      * precise type information.
      */
-    def TypedValue(someType: Type): DomainTypedValue[someType.type]
+    def TypedValue[T <: Type](someType: T): DomainTypedValue[T]
 
     /**
      * Returns a representation of the integer constant value 0
@@ -271,34 +284,39 @@ trait Domain {
     // -----------------------------------------------------------------------------------
 
     /**
-     * Returns `true` iff at least one possible extension of given value is in the
+     * Returns `true` iff at least one possible extension of given `value` is in the
      * specified range; that is if the intersection of the range of values captured
-     * by the given value and the specified range is non-empty.
+     * by the given `value` and the specified range is non-empty.
      * For example, if the given value captures all positive integer values and the
      * specified range is [-1,1] then the answer has to be Yes.
      *
-     * Both bounds are inclusive.
+     * @note Both bounds are inclusive.
      */
-    def isValueInRange(value: DomainValue, lowerBound: Int, upperBound: Int): Answer
+    def isValueInRange(value: DomainValue, lowerBound: Int, upperBound: Int): Boolean
 
     /**
      * Returns `true` iff at least one possible extension of given value is not in the
-     * specified range; that is, if the range of values captured by the give value is
-     * not a strict subset of the specified range.
-     * For example, if the given value is `10` and the
+     * specified range; that is, if the set difference of the range of values captured
+     * by the given `value` and  the specified range is non-empty.
+     * For example, if the given value represents the integer value `10` and the
      * specified range is [0,Integer.MAX_VALUE] then the answer has to be No.
      *
-     * Both bounds are inclusive.
+     * @note Both bounds are inclusive.
      */
-    def isValueNotInRange(value: DomainValue, lowerBound: Int, upperBound: Int): Answer
+    def isValueNotInRange(value: DomainValue, lowerBound: Int, upperBound: Int): Boolean
 
+    /**
+     * Determines whether the given value is `null`, maybe `null` or is known not to be
+     * `null`.
+     */
     /*ABSTRACT*/ def isNull(value: DomainValue): Answer
 
     final private[ai] def isNonNull(value: DomainValue): Answer = isNull(value).negate
 
     /**
-     * Are equal compares the values represented by the given values. If the values
-     * are representing "ReferenceType" values - the object reference needs to be compared.
+     * Compares the given values for reference equality. Returns `Yes` if both values
+     * point to the same instance and returns `No` if both objects are known not to
+     * point to the same instance. Otherwise `Unknown` is returned.
      */
     /*ABSTRACT*/ def areEqualReferences(value1: DomainValue, value2: DomainValue): Answer
 
@@ -311,9 +329,9 @@ trait Domain {
      */
     /*ABSTRACT*/ def types(value: DomainValue): ValuesAnswer[Set[Type]]
 
-    /*ABSTRACT*/ def isSubtypeOf(value: DomainValue, someType: Type): Answer
+    /*ABSTRACT*/ def isSubtypeOf(value: DomainValue, someType: ReferenceType): Answer
 
-    /*ABSTRACT*/ def isSubtypeOf(subType: Type, superType: Type): Answer
+    /*ABSTRACT*/ def isSubtypeOf(subType: ReferenceType, superType: ReferenceType): Answer
 
     /*ABSTRACT*/ def areEqualIntegers(value1: DomainValue, value2: DomainValue): Answer
 
@@ -398,15 +416,40 @@ trait Domain {
 
     // -----------------------------------------------------------------------------------
     //
+    // HELPER TYPES AND FUNCTIONS
+    //
+    // -----------------------------------------------------------------------------------
+
+    type SomeValueOrNullPointerException = Computation[DomainValue, DomainTypedValue[ObjectType.NullPointerException.type]]
+
+    /**
+     * Tests if the given value is `null` and returns a newly created
+     * `NullPointerException` if it is the case. If the value is not `null`,
+     * the given value is just wrapped and returned as this computation's result.
+     */
+    protected def givenValueOrNullPointerException(value: DomainValue): SomeValueOrNullPointerException = {
+        isNull(value) match {
+            case Yes     ⇒ ThrowsException(newObject(ObjectType.NullPointerException))
+            case No      ⇒ ComputedValue(value)
+            case Unknown ⇒ ComputedValueAndException(value, newObject(ObjectType.NullPointerException))
+        }
+    }
+
+    type NewArrayOrNegativeArraySizeException = Computation[DomainTypedValue[ArrayType], DomainTypedValue[ObjectType.ArithmeticException.type]]
+
+    // -----------------------------------------------------------------------------------
+    //
     // ABSTRACTIONS RELATED TO INSTRUCTIONS
     //
     // -----------------------------------------------------------------------------------
 
+    def athrow(exception : DomainValue) : SomeValueOrNullPointerException = givenValueOrNullPointerException(exception)
+    
     //
     // CREATE ARRAY
     //
-    def newarray(count: DomainValue, componentType: FieldType): DomainValue
-    def multianewarray(counts: List[DomainValue], arrayType: FieldType): DomainValue
+    def newarray(count: DomainValue, componentType: FieldType): NewArrayOrNegativeArraySizeException 
+    def multianewarray(counts: List[DomainValue], arrayType: ArrayType): NewArrayOrNegativeArraySizeException 
 
     //
     // LOAD FROM AND STORE VALUE IN ARRAYS
@@ -492,8 +535,7 @@ trait Domain {
      * Called by BATAI when an exception is thrown that is not guaranteed to be handled
      * within the same method.
      *
-     * ==Note==
-     * If the value has a specific type but is actually the value "null", then
+     * @note If the value has a specific type but is actually the value `null`, then
      * the exception that is actually thrown is a `NullPointerException`. This
      * situation needs to be handled by the domain if necessary.
      *
@@ -605,50 +647,55 @@ trait Domain {
     def iinc(value: DomainValue, increment: Int): DomainValue
 
     /**
-     * Tests if the given value is `null` and returns a newly created
-     * `NullPointerException` if it is the case. If the value is determined to
-     * not be `null`, the given value is just wrapped and returned as
-     * this computation's result.
+     * Handles a `monitorenter` instruction.
+     *
+     * @note The default implementation checks if the given value is `null` and raises
+     * an exception if it is `null` or maybe `null`. In the later case or in case that
+     * the value is known not to be `null` the given value is (also) returned as this
+     * computation's results.
      */
-    protected def nullPointerExceptionOnNullValue(value: DomainValue): Computation[DomainValue, DomainTypedValue[ObjectType.NullPointerException.type]] = {
-        isNull(value) match {
-            case Yes     ⇒ ThrowsException(newObject(ObjectType.NullPointerException))
-            case No      ⇒ ComputedValue(value)
-            case Unknown ⇒ ComputedValueAndException(value, newObject(ObjectType.NullPointerException))
-        }
+    def monitorenter(value: DomainValue): SomeValueOrNullPointerException = {
+        givenValueOrNullPointerException(value)
     }
 
     /**
      * Handles a `monitorenter` instruction.
      *
-     * ==Default Behavior==
-     * The default implementation just checks if the given value is `null` and raises
+     * @note The default implementation checks if the given value is `null` and raises
      * an exception if it is `null` or maybe `null`. In the later case or in case that
-     * the value is known not to be `null` the given value is (also) returned.
+     * the value is known not to be `null` the given value is (also) returned as this
+     * computation's results.
      */
-    def monitorenter(value: DomainValue): Computation[DomainValue, DomainTypedValue[ObjectType.NullPointerException.type]] = {
-        nullPointerExceptionOnNullValue(value)
+    def monitorexit(value: DomainValue): SomeValueOrNullPointerException = {
+        givenValueOrNullPointerException(value)
     }
 
     /**
-     * Handles a `monitorenter` instruction.
+     * Creates a new `DomainTypeValue` that represents an (new) instance of an
+     * object of the given type.
+     */
+    def newObject(t: ObjectType): DomainTypedValue[t.type] 
+
+    //
+    //
+    // GENERAL METHODS
+    //
+    //
+
+    /**
+     * Merges the two given memory layouts.
      *
-     * ==Default Behavior==
-     * The default implementation just checks if the given value is `null` and raises
-     * an exception if it is `null` or maybe `null`. In the later case or in case that
-     * the value is known not to be `null` the given value is (also) returned.
-     */
-    def monitorexit(value: DomainValue): Computation[DomainValue, DomainTypedValue[ObjectType.NullPointerException.type]] = {
-        nullPointerExceptionOnNullValue(value)
-    }
-
-    def newObject(t: ObjectType): DomainTypedValue[t.type] = TypedValue(t)
-
-    /**
-     * Merges the two given memory layouts. Returns `NoUpdate` if this  memory layout
+     * @return The merged memory layout. Returns `NoUpdate` if this memory layout
      * already subsumes the given memory layout.
+     * @note The size of the operands stacks and the number of registers/locals
+     * has to be the same.
+     * @note The operand stacks have to contain compatible values. I.e., it has to be
+     * possible to merge operand stack values without getting a `NoLegalValue`. In the
+     * latter case – i.e., if the result of the merging of two operand stacks is
+     * a `NoLegalValue` – either the bytecode is valid, which is extremely unlikely,
+     * or the implementation of the domain is incomplete.
      */
-    private[ai] final def merge(
+    def merge(
         thisOperands: Operands,
         thisLocals: Locals,
         otherOperands: Operands,
@@ -685,7 +732,7 @@ trait Domain {
                                 case NoUpdate            ⇒ thisOperand
                             }
                             assume(!newOperand.isInstanceOf[NoLegalValue],
-                                "domain merge - merging of stack values ("+thisOperand+" and "+otherOperand+") led to an illegal value")
+                                "domain merge - the result of merging the operands "+thisOperand+" and "+otherOperand+" is a NoLegalValue")
                             operandsUpdated = operandsUpdated &: updatedOperand
                             newOperand
                         }
@@ -711,8 +758,8 @@ trait Domain {
                     val otherLocal = otherLocals(i)
                     // The value calculated by "merge" may be the value "NoLegalValue" 
                     // which means the values in the corresponding register were 
-                    // different (path dependent) on the different paths and which 
-                    // subsequently means that they are no longer useful.
+                    // different (path dependent) on the different paths. Hence, the
+                    // values are no longer useful.
                     // If we would have a liveness analysis, we could avoid the use of 
                     // "NoLegalValue" and would avoid the useless merging of 
                     // dead values.

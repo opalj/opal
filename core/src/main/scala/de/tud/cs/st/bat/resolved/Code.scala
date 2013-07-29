@@ -52,6 +52,10 @@ case class Code(
             handler.startPC <= pc && handler.endPC > pc
         })
     }
+    
+    def indexOfNextInstruction(pc : Int)= {
+        instructions(pc).indexOfNextInstruction(pc, this)
+    }
 
     /**
      * Returns the line number table - if any.

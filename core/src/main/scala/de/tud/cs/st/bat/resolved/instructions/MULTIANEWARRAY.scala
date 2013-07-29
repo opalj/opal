@@ -40,7 +40,7 @@ package resolved
  * @author Michael Eichberg
  */
 case class MULTIANEWARRAY(
-    componentType: ReferenceType,
+    componentType: ArrayType,
     dimensions: Int)
         extends CreateNewArrayInstruction {
 

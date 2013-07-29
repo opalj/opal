@@ -941,7 +941,7 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "objectToString").get
         /*val result =*/ AI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(AString))
+        domain.returnedValue should be(Some(AStringObject))
     }
 
     it should "be able to analyze a method that squares a given double value" in {

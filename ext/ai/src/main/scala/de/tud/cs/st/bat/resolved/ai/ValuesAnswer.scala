@@ -75,7 +75,11 @@ sealed trait Computation[+V, +E] {
 
     def values: V
 
+    def hasValues: Boolean
+
     def exceptions: E
+
+    def throwsException: Boolean
 
 }
 
@@ -83,8 +87,11 @@ case class ComputedValue[+V](
     values: V)
         extends Computation[V, Nothing] {
 
-    def exceptions = AIImplementationError("the computation succeeded without an exception")
+    def hasValues: Boolean = true
 
+    def exceptions = AIImplementationError("ValuesAnswer - the computation succeeded without an exception")
+
+    def throwsException: Boolean = false
 }
 
 case class ComputedValueAndException[+V, +E](
@@ -92,23 +99,33 @@ case class ComputedValueAndException[+V, +E](
     exceptions: E)
         extends Computation[V, E] {
 
+    def hasValues: Boolean = true
+
+    def throwsException: Boolean = true
+
 }
 
 case class ThrowsException[+E](
     exceptions: E)
         extends Computation[Nothing, E] {
 
-    def values = AIImplementationError("the computation resulted in an exception")
+    def values = AIImplementationError("ValuesAnswer - the computation resulted in an exception")
 
+    def hasValues: Boolean = false
+
+    def throwsException: Boolean = true
 }
 
 case object ComputationWithSideEffectOnly
         extends Computation[Nothing, Nothing] {
 
-    def exceptions = AIImplementationError("the computation succeeded without an exception")
+    def values = AIImplementationError("ValuesAnswer - the computation was executed for its side effect only")
 
-    def values = AIImplementationError("the computation was executed for its side effect only")
+    def hasValues: Boolean = false
 
+    def exceptions = AIImplementationError("ValuesAnswer - the computation succeeded without an exception")
+
+    def throwsException: Boolean = false
 }
       
 

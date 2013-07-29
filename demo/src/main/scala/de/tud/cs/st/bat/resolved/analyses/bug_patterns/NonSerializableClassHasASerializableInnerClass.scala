@@ -71,7 +71,7 @@ class NonSerializableClassHasASerializableInnerClass[Source]
             classFile = project.classes(objectType)
             (outerType, NOT_STATIC()) ← classFile.outerType
             /* if we know nothing about the class, then we never generate a warning */
-            if !isSubtypeOf(outerType, Serializable).getOrElse(true)
+            if isSubtypeOf(outerType, Serializable).no
         } yield {
             ClassBasedReport(
                 project.sources.get(objectType),

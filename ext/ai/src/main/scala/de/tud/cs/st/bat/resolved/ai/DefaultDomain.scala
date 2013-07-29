@@ -46,7 +46,7 @@ import reflect.ClassTag
 class DefaultDomain extends AbstractDefaultDomain {
 
     type DomainValue = Value
-    type DomainTypedValue[T <: Type] = TypedValue[T]
+    type DomainTypedValue[+T <: Type] = TypedValue[T]
     val DomainValueTag: ClassTag[DomainValue] = implicitly
 
     type DomainNoLegalValue = NoLegalValue
@@ -132,10 +132,52 @@ class DefaultDomain extends AbstractDefaultDomain {
         }
     }
 
+    case object SomeLongValue extends SomeLongValue {
+        override def merge(value: DomainValue): Update[DomainValue] = value match {
+            case SomeLongValue ⇒ NoUpdate
+            case _             ⇒ MetaInformationUpdateNoLegalValue
+        }
+    }
+
+    case object SomeDoubleValue extends SomeDoubleValue {
+        override def merge(value: DomainValue): Update[DomainValue] = value match {
+            case SomeDoubleValue ⇒ NoUpdate
+            case _               ⇒ MetaInformationUpdateNoLegalValue
+        }
+    }
+
+    class ReturnAddressValue(
+        val addresses: Set[Int])
+            extends super.ReturnAddressValue {
+
+        override def merge(value: DomainValue): Update[DomainValue] = value match {
+            case ReturnAddressValue(otherAddresses) ⇒ {
+                if (otherAddresses subsetOf this.addresses)
+                    NoUpdate
+                else
+                    StructuralUpdate(ReturnAddressValue(this.addresses ++ otherAddresses))
+            }
+            case _ ⇒ MetaInformationUpdateNoLegalValue
+        }
+    }
+
+    type DomainReturnAddressValue = ReturnAddressValue
+
+    def ReturnAddressValue(addresses: Set[Int]): DomainReturnAddressValue =
+        new ReturnAddressValue(addresses)
+
+    def ReturnAddressValue(address: Int): DomainReturnAddressValue =
+        new ReturnAddressValue(Set(address))
+
+    //
+    //
+    // HANDLING OF REFERENCE VALUES
+    //
+    //
+
     /**
      * Abstracts over all values with computational type `reference`.
      */
-
     case object SomeReferenceValue extends ReferenceValue[ObjectType] {
 
         def valueType: ObjectType = ObjectType.Object
@@ -157,6 +199,15 @@ class DefaultDomain extends AbstractDefaultDomain {
         }
     }
     val theNullValue = NullValue
+
+    def newObject(t: ObjectType): DomainTypedValue[t.type] = TypedValue(t)
+
+    def isNull(value: DomainValue): Answer = {
+        if (value == NullValue)
+            Yes
+        else
+            Unknown
+    }
 
     case class AReferenceValue[T <: ReferenceType](
         valueType: T)
@@ -194,56 +245,24 @@ class DefaultDomain extends AbstractDefaultDomain {
         }
     }
 
-    def isSubtypeOf(value: DomainValue, supertype: Type): Answer = {
+    /**
+     * '''This method is intended to be overridden.'''
+     */
+    def classHierarchy: analyses.ClassHierarchy = analyses.ClassHierarchy.createPreInitializedClassHierarchy
+
+    def isSubtypeOf(value: DomainValue, supertype: ReferenceType): Answer = {
         value match {
             case AReferenceValue(subtype) ⇒ isSubtypeOf(subtype, supertype)
             case _                        ⇒ Unknown
         }
     }
 
-    def isSubtypeOf(subtype: Type, supertype: Type): Answer = {
-        if (subtype == supertype) Yes else Unknown
+    def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer = {
+        classHierarchy.isSubtypeOf(subtype, supertype)
     }
 
     def ReferenceValue(referenceType: ReferenceType): AReferenceValue[referenceType.type] =
         new AReferenceValue(referenceType)
-
-    case object SomeLongValue extends SomeLongValue {
-        override def merge(value: DomainValue): Update[DomainValue] = value match {
-            case SomeLongValue ⇒ NoUpdate
-            case _             ⇒ MetaInformationUpdateNoLegalValue
-        }
-    }
-
-    case object SomeDoubleValue extends SomeDoubleValue {
-        override def merge(value: DomainValue): Update[DomainValue] = value match {
-            case SomeDoubleValue ⇒ NoUpdate
-            case _               ⇒ MetaInformationUpdateNoLegalValue
-        }
-    }
-
-    class ReturnAddressValue(
-        val addresses: Set[Int])
-            extends super.ReturnAddressValue {
-
-        override def merge(value: DomainValue): Update[DomainValue] = value match {
-            case ReturnAddressValue(otherAddresses) ⇒ {
-                if (otherAddresses subsetOf this.addresses)
-                    NoUpdate
-                else
-                    StructuralUpdate(ReturnAddressValue(this.addresses ++ otherAddresses))
-            }
-            case _ ⇒ MetaInformationUpdateNoLegalValue
-        }
-    }
-
-    type DomainReturnAddressValue = ReturnAddressValue
-
-    def ReturnAddressValue(addresses: Set[Int]): DomainReturnAddressValue =
-        new ReturnAddressValue(addresses)
-
-    def ReturnAddressValue(address: Int): DomainReturnAddressValue =
-        new ReturnAddressValue(Set(address))
 
 }
 
