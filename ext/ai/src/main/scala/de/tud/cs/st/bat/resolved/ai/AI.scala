@@ -46,17 +46,21 @@ trait AI {
      * Called during the abstract interpretation of a method to determine whether
      * the computation should be aborted. When the abstract interpreter is currently
      * waiting on the result of the interpretation of a called method, it may take
-     * some time before the interpretation of the current method is actually aborted.
+     * some time before the interpretation of the current method (this abstract
+     * interpreter) is actually aborted.
      */
     def isInterrupted(): Boolean
 
+    /**
+     * Returns the object that is used for tracing the abstract interpretation.
+     */
     def tracer: Option[AITracer]
 
     /**
      *  Performs an abstract interpretation of the given method with the given domain.
      *
      *  @param classFile The method's defining class file.
-     *  @param method A non-native, non-abstrat method of the given class file that
+     *  @param method A non-native, non-abstract method of the given class file that
      *      will be analyzed.
      *  @param domain The domain that will be used for the abstract interpretation.
      */
@@ -70,8 +74,8 @@ trait AI {
      * values (if any).
      *
      * ==Controlling the AI==
-     * To abort the abstract interpretation of a method just call the interpreter's
-     * `Thread`'s `interrupt` method.
+     * The abstract interpretation of a method is aborted it the AI's `isInterrupted`
+     * method returns true.
      *
      * @param classFile Some class file; needed to determine the type of `this` if
      *      the method is an instance method.
@@ -175,6 +179,44 @@ trait AI {
         val operandsArray = currentOperandsArray
         val localsArray = currentLocalsArray
 
+        def gotoTarget(targetPC: Int, operands: Operands, locals: Locals) {
+            val currentOperands = operandsArray(targetPC)
+            val currentLocals = localsArray(targetPC)
+
+            if (currentOperands == null /* || localsArray(targetPC) == null )*/ ) {
+                operandsArray(targetPC) = operands
+                localsArray(targetPC) = locals
+                worklist = targetPC :: worklist
+            } else {
+                try {
+                    domain.merge(currentOperands, currentLocals, operands, locals) match {
+                        case NoUpdate ⇒ /* Nothing to do */
+                        case StructuralUpdate((updatedOperands, updatedLocals)) ⇒
+                            worklist = targetPC :: worklist
+                            operandsArray(targetPC) = updatedOperands
+                            localsArray(targetPC) = updatedLocals
+                        case MetaInformationUpdate((updatedOperands, updatedLocals)) ⇒
+                            // => the evaluation context didn't change, hence
+                            // it is not necessary to enqueue the instruction
+                            operandsArray(targetPC) = updatedOperands
+                            localsArray(targetPC) = updatedLocals
+                    }
+                } catch {
+                    case ae: AssertionError ⇒
+                        //                        val dump = util.Util.dump(None, None, code, operandsArray, localsArray, Some(ae.getMessage()+" targetPC: "+targetPC+" remaining worklist: "+worklist.mkString(", ")))
+                        //                        util.Util.writeAndOpenDump(dump)
+                        //                        println("Press enter to continue..."); System.in.read()
+                        throw ae
+                }
+            }
+        }
+
+        def gotoTargets(targetPCs: Iterable[Int], operands: Operands, locals: Locals) {
+            for (targetPC ← targetPCs) {
+                gotoTarget(targetPC, operands, locals)
+            }
+        }
+
         def ifXX(
             pc: Int,
             instruction: Instruction,
@@ -236,44 +278,6 @@ trait AI {
             }
         }
 
-        def gotoTarget(targetPC: Int, operands: Operands, locals: Locals) {
-            val currentOperands = operandsArray(targetPC)
-            val currentLocals = localsArray(targetPC)
-
-            if (currentOperands == null /* || localsArray(targetPC) == null )*/ ) {
-                operandsArray(targetPC) = operands
-                localsArray(targetPC) = locals
-                worklist = targetPC :: worklist
-            } else {
-                try {
-                    domain.merge(currentOperands, currentLocals, operands, locals) match {
-                        case NoUpdate ⇒ /* Nothing to do */
-                        case StructuralUpdate((updatedOperands, updatedLocals)) ⇒
-                            worklist = targetPC :: worklist
-                            operandsArray(targetPC) = updatedOperands
-                            localsArray(targetPC) = updatedLocals
-                        case MetaInformationUpdate((updatedOperands, updatedLocals)) ⇒
-                            // => the evaluation context didn't change, hence
-                            // it is not necessary to enqueue the instruction
-                            operandsArray(targetPC) = updatedOperands
-                            localsArray(targetPC) = updatedLocals
-                    }
-                } catch {
-                    case ae: AssertionError ⇒
-                        //                        val dump = util.Util.dump(None, None, code, operandsArray, localsArray, Some(ae.getMessage()+" targetPC: "+targetPC+" remaining worklist: "+worklist.mkString(", ")))
-                        //                        util.Util.writeAndOpenDump(dump)
-                        //                        println("Press enter to continue..."); System.in.read()
-                        throw ae
-                }
-            }
-        }
-
-        def gotoTargets(targetPCs: Iterable[Int], operands: Operands, locals: Locals) {
-            for (targetPC ← targetPCs) {
-                gotoTarget(targetPC, operands, locals)
-            }
-        }
-
         /**
          * Handles the control-flow when an (new) exception was raised.
          *
@@ -316,7 +320,7 @@ trait AI {
 
             // If "isHandled" is true, we are sure that at least one 
             // handler will catch the exception... hence the method
-            // will not return abnormally
+            // will not return abnormally w.r.t. the given exception
             if (!isHandled)
                 domain.abnormalReturn(exception)
         }
@@ -332,7 +336,12 @@ trait AI {
 
         while (worklist.nonEmpty) {
             if (isInterrupted()) {
-                return AIResultBuilder.aborted(code, domain)(worklist, operandsArray, localsArray)
+                return AIResultBuilder.aborted(
+                    code,
+                    domain)(
+                        worklist,
+                        operandsArray,
+                        localsArray)
             }
 
             val pc = worklist.head
@@ -382,10 +391,8 @@ trait AI {
                                 lvIndex+
                                 ") does not contain a return address value", code, lvIndex)
                     }
-                case 168 /*jsr*/ ⇒
-                    val branchtarget = pc + instruction.asInstanceOf[JSRInstruction].branchoffset
-                    gotoTarget(branchtarget, domain.ReturnAddressValue(pcOfNextInstruction) :: operands, locals)
-                case 201 /*jsr_w*/ ⇒
+                case 168 /*jsr*/
+                    | 201 /*jsr_w*/ ⇒
                     val branchtarget = pc + instruction.asInstanceOf[JSRInstruction].branchoffset
                     gotoTarget(branchtarget, domain.ReturnAddressValue(pcOfNextInstruction) :: operands, locals)
 
