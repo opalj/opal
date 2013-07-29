@@ -315,10 +315,12 @@ trait AI {
                                 lvIndex+
                                 ") does not contain a return address value", code, lvIndex)
                     }
-                case 168 /*jsr*/
-                    | 201 /*jsr_w*/ ⇒
+                case 168 /*jsr*/ ⇒
                     val branchtarget = pc + instruction.asInstanceOf[JSRInstruction].branchoffset
-                    gotoTarget(branchtarget, domain.ReturnAddressValue(pc + 3) :: operands, locals)
+                    gotoTarget(branchtarget, domain.ReturnAddressValue(pcOfNextInstruction) :: operands, locals)
+                case 201 /*jsr_w*/ ⇒
+                    val branchtarget = pc + instruction.asInstanceOf[JSRInstruction].branchoffset
+                    gotoTarget(branchtarget, domain.ReturnAddressValue(pcOfNextInstruction) :: operands, locals)
 
                 //
                 // CONDITIONAL TRANSFER OF CONTROL
