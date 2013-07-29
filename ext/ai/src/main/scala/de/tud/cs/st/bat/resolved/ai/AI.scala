@@ -320,6 +320,9 @@ trait AI {
             if (!isHandled)
                 domain.abnormalReturn(exception)
         }
+        def handleExceptions(pc: Int, exceptions: Set[DomainTypedValue[ObjectType]], locals: Locals) {
+            exceptions.foreach(handleException(pc, _, locals))
+        }
 
         // -------------------------------------------------------------------------------
         //
@@ -351,6 +354,13 @@ trait AI {
             }
             def fallThroughOL(operands: Operands, locals: Locals) {
                 gotoTarget(pcOfNextInstruction, operands, locals)
+            }
+
+            def handleStackBasedComputation(computation: Computation[DomainValue, Set[DomainTypedValue[ObjectType]]], rest: Operands) {
+                if (computation.hasValue)
+                    fallThroughO(computation.value :: rest)
+                if (computation.throwsException)
+                    handleExceptions(pc, computation.exceptions, locals)
             }
 
             (instruction.opcode: @annotation.switch) match {
@@ -490,8 +500,8 @@ trait AI {
                     if (computation.throwsException) {
                         handleException(pc, computation.exceptions, locals)
                     }
-                    if (computation.hasValues) {
-                        val exception = computation.values
+                    if (computation.hasValue) {
+                        val exception = computation.value
                         val nextOperands = List(exception)
 
                         domain.types(exception) match {
@@ -564,8 +574,8 @@ trait AI {
                         case 11 /*LongType.atype*/    ⇒ domain.newarray(count, LongType)
                         case _                        ⇒ BATError("newarray of unsupported \"atype\"")
                     })
-                    if (computation.hasValues) {
-                        fallThroughO(computation.values :: rest)
+                    if (computation.hasValue) {
+                        fallThroughO(computation.value :: rest)
                     }
                     if (computation.throwsException) {
                         handleException(pc, computation.exceptions, locals)
@@ -575,8 +585,8 @@ trait AI {
                 case 189 /*anewarray*/ ⇒ {
                     val count :: rest = operands
                     val computation = domain.newarray(count, instruction.asInstanceOf[ANEWARRAY].componentType)
-                    if (computation.hasValues) {
-                        fallThroughO(computation.values :: rest)
+                    if (computation.hasValue) {
+                        fallThroughO(computation.value :: rest)
                     }
                     if (computation.throwsException) {
                         handleException(pc, computation.exceptions, locals)
@@ -587,8 +597,8 @@ trait AI {
                     val multianewarray = instruction.asInstanceOf[MULTIANEWARRAY]
                     val initDimensions = operands.take(multianewarray.dimensions)
                     val computation = domain.multianewarray(initDimensions, multianewarray.componentType)
-                    if (computation.hasValues) {
-                        fallThroughO(computation.values :: (operands.drop(multianewarray.dimensions)))
+                    if (computation.hasValue) {
+                        fallThroughO(computation.value :: (operands.drop(multianewarray.dimensions)))
                     }
                     if (computation.throwsException) {
                         handleException(pc, computation.exceptions, locals)
@@ -603,19 +613,17 @@ trait AI {
 
                 case 50 /*aaload*/ ⇒ {
                     val index :: arrayref :: rest = operands
-                    val newOperands = domain.aaload(index, arrayref) :: rest
-                    fallThroughO(newOperands)
+                    handleStackBasedComputation(domain.aaload(index, arrayref), rest)
                 }
                 case 83 /*aastore*/ ⇒ {
                     val value :: index :: arrayref :: rest = operands
                     domain.aastore(value, index, arrayref)
-                    fallThroughO(rest)
+                    fallThroughO(rest) // <<<<<<===== TOTOTOTOTOTTOTOTOTOT RESULT
                 }
 
                 case 51 /*baload*/ ⇒ {
                     val index :: arrayref :: rest = operands
-                    val newOperands = domain.baload(index, arrayref) :: rest
-                    fallThroughO(newOperands)
+                    handleStackBasedComputation(domain.baload(index, arrayref), rest)
                 }
                 case 84 /*bastore*/ ⇒ {
                     val value :: index :: arrayref :: rest = operands
@@ -625,8 +633,7 @@ trait AI {
 
                 case 52 /*caload*/ ⇒ {
                     val index :: arrayref :: rest = operands
-                    val newOperands = domain.caload(index, arrayref) :: rest
-                    fallThroughO(newOperands)
+                    handleStackBasedComputation(domain.caload(index, arrayref), rest)
                 }
                 case 85 /*castore*/ ⇒ {
                     val value :: index :: arrayref :: rest = operands
@@ -636,8 +643,7 @@ trait AI {
 
                 case 49 /*daload*/ ⇒ {
                     val index :: arrayref :: rest = operands
-                    val newOperands = domain.daload(index, arrayref) :: rest
-                    fallThroughO(newOperands)
+                    handleStackBasedComputation(domain.daload(index, arrayref), rest)
                 }
                 case 82 /*dastore*/ ⇒ {
                     val value :: index :: arrayref :: rest = operands
@@ -647,7 +653,7 @@ trait AI {
 
                 case 48 /*faload*/ ⇒ {
                     val index :: arrayref :: rest = operands
-                    fallThroughO(domain.faload(index, arrayref) :: rest)
+                    handleStackBasedComputation(domain.faload(index, arrayref), rest)
                 }
                 case 81 /*fastore*/ ⇒ {
                     val value :: index :: arrayref :: rest = operands
@@ -657,7 +663,7 @@ trait AI {
 
                 case 46 /*iaload*/ ⇒ {
                     val index :: arrayref :: rest = operands
-                    fallThroughO(domain.iaload(index, arrayref) :: rest)
+                    handleStackBasedComputation(domain.iaload(index, arrayref), rest)
                 }
                 case 79 /*iastore*/ ⇒ {
                     val value :: index :: arrayref :: rest = operands
@@ -667,7 +673,7 @@ trait AI {
 
                 case 47 /*laload*/ ⇒ {
                     val index :: arrayref :: rest = operands
-                    fallThroughO(domain.laload(index, arrayref) :: rest)
+                    handleStackBasedComputation(domain.laload(index, arrayref), rest)
                 }
                 case 80 /*lastore*/ ⇒ {
                     val value :: index :: arrayref :: rest = operands
@@ -677,7 +683,7 @@ trait AI {
 
                 case 53 /*saload*/ ⇒ {
                     val index :: arrayref :: rest = operands
-                    fallThroughO(domain.saload(index, arrayref) :: rest)
+                    handleStackBasedComputation(domain.laload(index, arrayref), rest)
                 }
                 case 86 /*sastore*/ ⇒ {
                     val value :: index :: arrayref :: rest = operands
@@ -691,8 +697,14 @@ trait AI {
 
                 case 190 /*arraylength*/ ⇒ {
                     val arrayref = operands.head
-                    val newOperands = domain.arraylength(arrayref) :: operands.tail
-                    fallThroughO(newOperands)
+                    val computation = domain.arraylength(arrayref)
+                    if (computation.hasValue) {
+                        val newOperands = computation.value :: operands.tail
+                        fallThroughO(newOperands)
+                    }
+                    if (computation.throwsException) {
+                        handleException(pc, computation.exceptions, locals)
+                    }
                 }
 
                 //
@@ -811,14 +823,14 @@ trait AI {
                     val computation = domain.monitorenter(operands.head)
                     if (computation.throwsException)
                         handleException(pc, computation.exceptions, locals)
-                    if (computation.hasValues)
+                    if (computation.returnsNormally)
                         fallThroughO(operands.tail)
                 }
                 case 195 /*monitorexit*/ ⇒ {
                     val computation = domain.monitorexit(operands.head)
                     if (computation.throwsException)
                         handleException(pc, computation.exceptions, locals)
-                    if (computation.hasValues /*<=> returns normally */ )
+                    if (computation.returnsNormally)
                         fallThroughO(operands.tail)
                 }
 
@@ -1066,84 +1078,92 @@ trait AI {
                 }
                 case 108 /*idiv*/ ⇒ {
                     val value2 :: value1 :: rest = operands
-                    fallThroughOL(domain.idiv(value1, value2) :: rest, locals)
+                    val computation = domain.idiv(value1, value2)
+                    if (computation.hasValue)
+                        fallThroughO(computation.value :: rest)
+                    if (computation.throwsException)
+                        handleException(pc, computation.exceptions, locals)
                 }
                 case 104 /*imul*/ ⇒ {
                     val value2 :: value1 :: rest = operands
-                    fallThroughOL(domain.imul(value1, value2) :: rest, locals)
+                    fallThroughO(domain.imul(value1, value2) :: rest)
                 }
                 case 128 /*ior*/ ⇒ {
                     val value2 :: value1 :: rest = operands
-                    fallThroughOL(domain.ior(value1, value2) :: rest, locals)
+                    fallThroughO(domain.ior(value1, value2) :: rest)
                 }
                 case 112 /*irem*/ ⇒ {
                     val value2 :: value1 :: rest = operands
-                    fallThroughOL(domain.irem(value1, value2) :: rest, locals)
+                    fallThroughO(domain.irem(value1, value2) :: rest)
                 }
                 case 120 /*ishl*/ ⇒ {
                     val value2 :: value1 :: rest = operands
-                    fallThroughOL(domain.ishl(value1, value2) :: rest, locals)
+                    fallThroughO(domain.ishl(value1, value2) :: rest)
                 }
                 case 122 /*ishr*/ ⇒ {
                     val value2 :: value1 :: rest = operands
-                    fallThroughOL(domain.ishr(value1, value2) :: rest, locals)
+                    fallThroughO(domain.ishr(value1, value2) :: rest)
                 }
                 case 100 /*isub*/ ⇒ {
                     val value2 :: value1 :: rest = operands
-                    fallThroughOL(domain.isub(value1, value2) :: rest, locals)
+                    fallThroughO(domain.isub(value1, value2) :: rest)
                 }
                 case 124 /*iushr*/ ⇒ {
                     val value2 :: value1 :: rest = operands
-                    fallThroughOL(domain.iushr(value1, value2) :: rest, locals)
+                    fallThroughO(domain.iushr(value1, value2) :: rest)
                 }
                 case 130 /*ixor*/ ⇒ {
                     val value2 :: value1 :: rest = operands
-                    fallThroughOL(domain.ixor(value1, value2) :: rest, locals)
+                    fallThroughO(domain.ixor(value1, value2) :: rest)
                 }
 
                 case 97 /*ladd*/ ⇒ {
                     val value2 :: value1 :: rest = operands
-                    fallThroughOL(domain.ladd(value1, value2) :: rest, locals)
+                    fallThroughO(domain.ladd(value1, value2) :: rest)
                 }
                 case 127 /*land*/ ⇒ {
                     val value2 :: value1 :: rest = operands
-                    fallThroughOL(domain.land(value1, value2) :: rest, locals)
+                    fallThroughO(domain.land(value1, value2) :: rest)
                 }
                 case 109 /*ldiv*/ ⇒ {
                     val value2 :: value1 :: rest = operands
-                    fallThroughOL(domain.ldiv(value1, value2) :: rest, locals)
+                    val computation = domain.idiv(value1, value2)
+                    if (computation.hasValue)
+                        fallThroughO(computation.value :: rest)
+                    if (computation.throwsException)
+                        handleException(pc, computation.exceptions, locals)
                 }
                 case 105 /*lmul*/ ⇒ {
                     val value2 :: value1 :: rest = operands
-                    fallThroughOL(domain.lmul(value1, value2) :: rest, locals)
+                    fallThroughO(domain.lmul(value1, value2) :: rest)
                 }
                 case 129 /*lor*/ ⇒ {
                     val value2 :: value1 :: rest = operands
-                    fallThroughOL(domain.lor(value1, value2) :: rest, locals)
+                    fallThroughO(domain.lor(value1, value2) :: rest)
                 }
                 case 113 /*lrem*/ ⇒ {
                     val value2 :: value1 :: rest = operands
-                    fallThroughOL(domain.lrem(value1, value2) :: rest, locals)
+                    fallThroughO(domain.lrem(value1, value2) :: rest)
                 }
                 case 121 /*lshl*/ ⇒ {
                     val value2 :: value1 :: rest = operands
-                    fallThroughOL(domain.lshl(value1, value2) :: rest, locals)
+                    fallThroughO(domain.lshl(value1, value2) :: rest)
                 }
                 case 123 /*lshr*/ ⇒ {
                     val value2 :: value1 :: rest = operands
-                    fallThroughOL(domain.lshr(value1, value2) :: rest, locals)
+                    fallThroughO(domain.lshr(value1, value2) :: rest)
                 }
                 case 101 /*lsub*/ ⇒ {
                     val value2 :: value1 :: rest = operands
-                    fallThroughOL(domain.lsub(value1, value2) :: rest, locals)
+                    fallThroughO(domain.lsub(value1, value2) :: rest)
                 }
                 case 125 /*lushr*/ ⇒ {
                     val value2 :: value1 :: rest = operands
-                    fallThroughOL(domain.lushr(value1, value2) :: rest, locals)
+                    fallThroughO(domain.lushr(value1, value2) :: rest)
                 }
                 case 131 /*lxor*/ ⇒ {
                     val value2 :: value1 :: rest = operands
-                    fallThroughOL(domain.lxor(value1, value2) :: rest, locals)
+                    fallThroughO(domain.lxor(value1, value2) :: rest)
                 }
                 //
                 // GENERIC STACK MANIPULATION
@@ -1184,8 +1204,8 @@ trait AI {
 
                 case 87 /*pop*/ ⇒ fallThroughO(operands.tail)
                 case 88 /*pop2*/ ⇒ operands.head match {
-                    case _@ CTC1() ⇒ fallThroughO(operands.drop(2))
-                    case _@ CTC2() ⇒ fallThroughO(operands.tail)
+                    case CTC1() ⇒ fallThroughO(operands.drop(2))
+                    case CTC2() ⇒ fallThroughO(operands.tail)
                 }
 
                 case 95 /*swap*/ ⇒ {

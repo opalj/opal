@@ -73,35 +73,40 @@ private[ai] sealed trait ComputationWithException[+E] {
  */
 sealed trait Computation[+V, +E] {
 
-    def values: V
+    def value: V
 
-    def hasValues: Boolean
+    def hasValue: Boolean
 
     def exceptions: E
 
     def throwsException: Boolean
 
+    def returnsNormally: Boolean
 }
 
 case class ComputedValue[+V](
-    values: V)
+    value: V)
         extends Computation[V, Nothing] {
 
-    def hasValues: Boolean = true
+    def hasValue: Boolean = true
 
     def exceptions = AIImplementationError("ValuesAnswer - the computation succeeded without an exception")
 
     def throwsException: Boolean = false
+
+    def returnsNormally: Boolean = true
 }
 
 case class ComputedValueAndException[+V, +E](
-    values: V,
+    value: V,
     exceptions: E)
         extends Computation[V, E] {
 
-    def hasValues: Boolean = true
+    def hasValue: Boolean = true
 
     def throwsException: Boolean = true
+
+    def returnsNormally: Boolean = true
 
 }
 
@@ -109,23 +114,40 @@ case class ThrowsException[+E](
     exceptions: E)
         extends Computation[Nothing, E] {
 
-    def values = AIImplementationError("ValuesAnswer - the computation resulted in an exception")
+    def value = AIImplementationError("ValuesAnswer - the computation resulted in an exception")
 
-    def hasValues: Boolean = false
+    def hasValue: Boolean = false
 
     def throwsException: Boolean = true
+
+    def returnsNormally: Boolean = false
+}
+
+case class ComputationWithSideEffectOrException[+E](
+    exceptions: E)
+        extends Computation[Nothing, E] {
+
+    def value = AIImplementationError("ValuesAnswer - the computation was executed for its side effect only")
+
+    def hasValue: Boolean = false
+
+    def throwsException: Boolean = true
+
+    def returnsNormally: Boolean = true
 }
 
 case object ComputationWithSideEffectOnly
         extends Computation[Nothing, Nothing] {
 
-    def values = AIImplementationError("ValuesAnswer - the computation was executed for its side effect only")
+    def value = AIImplementationError("ValuesAnswer - the computation was executed for its side effect only")
 
-    def hasValues: Boolean = false
+    def hasValue: Boolean = false
 
     def exceptions = AIImplementationError("ValuesAnswer - the computation succeeded without an exception")
 
     def throwsException: Boolean = false
+
+    def returnsNormally: Boolean = true
 }
       
 
