@@ -351,7 +351,7 @@ trait AI {
             val operands = operandsArray(pc)
             val locals = localsArray(pc)
 
-            tracer.map(_.traceInstructionEvalution(pc, instruction, operands, locals))
+            tracer.map(_.traceInstructionEvalution(domain)(pc, instruction, operands, locals))
 
             def pcOfNextInstruction = code.indexOfNextInstruction(pc)
 
@@ -365,7 +365,21 @@ trait AI {
                 gotoTarget(pcOfNextInstruction, operands, locals)
             }
 
-            def handleStackBasedComputation(computation: Computation[DomainValue, Set[DomainTypedValue[ObjectType]]], rest: Operands) {
+            def computationWithException(computation: Computation[Nothing, DomainTypedValue[ObjectType]], rest: Operands) {
+                if (computation.throwsException)
+                    handleException(pc, computation.exceptions, locals)
+                if (computation.returnsNormally)
+                    fallThroughO(rest)
+            }
+
+            def computationWithReturnValueAndException(computation: Computation[DomainValue, DomainTypedValue[ObjectType]], rest: Operands) {
+                if (computation.hasValue)
+                    fallThroughO(computation.value :: rest)
+                if (computation.throwsException)
+                    handleException(pc, computation.exceptions, locals)
+            }
+
+            def computationWithReturnValueAndExceptions(computation: Computation[DomainValue, Set[DomainTypedValue[ObjectType]]], rest: Operands) {
                 if (computation.hasValue)
                     fallThroughO(computation.value :: rest)
                 if (computation.throwsException)
@@ -620,7 +634,7 @@ trait AI {
 
                 case 50 /*aaload*/ ⇒ {
                     val index :: arrayref :: rest = operands
-                    handleStackBasedComputation(domain.aaload(index, arrayref), rest)
+                    computationWithReturnValueAndExceptions(domain.aaload(index, arrayref), rest)
                 }
                 case 83 /*aastore*/ ⇒ {
                     val value :: index :: arrayref :: rest = operands
@@ -630,7 +644,7 @@ trait AI {
 
                 case 51 /*baload*/ ⇒ {
                     val index :: arrayref :: rest = operands
-                    handleStackBasedComputation(domain.baload(index, arrayref), rest)
+                    computationWithReturnValueAndExceptions(domain.baload(index, arrayref), rest)
                 }
                 case 84 /*bastore*/ ⇒ {
                     val value :: index :: arrayref :: rest = operands
@@ -640,7 +654,7 @@ trait AI {
 
                 case 52 /*caload*/ ⇒ {
                     val index :: arrayref :: rest = operands
-                    handleStackBasedComputation(domain.caload(index, arrayref), rest)
+                    computationWithReturnValueAndExceptions(domain.caload(index, arrayref), rest)
                 }
                 case 85 /*castore*/ ⇒ {
                     val value :: index :: arrayref :: rest = operands
@@ -650,7 +664,7 @@ trait AI {
 
                 case 49 /*daload*/ ⇒ {
                     val index :: arrayref :: rest = operands
-                    handleStackBasedComputation(domain.daload(index, arrayref), rest)
+                    computationWithReturnValueAndExceptions(domain.daload(index, arrayref), rest)
                 }
                 case 82 /*dastore*/ ⇒ {
                     val value :: index :: arrayref :: rest = operands
@@ -660,7 +674,8 @@ trait AI {
 
                 case 48 /*faload*/ ⇒ {
                     val index :: arrayref :: rest = operands
-                    handleStackBasedComputation(domain.faload(index, arrayref), rest)
+                    val computation = domain.faload(index, arrayref)
+                    computationWithReturnValueAndExceptions(computation, rest)
                 }
                 case 81 /*fastore*/ ⇒ {
                     val value :: index :: arrayref :: rest = operands
@@ -670,7 +685,8 @@ trait AI {
 
                 case 46 /*iaload*/ ⇒ {
                     val index :: arrayref :: rest = operands
-                    handleStackBasedComputation(domain.iaload(index, arrayref), rest)
+                    val computation = domain.iaload(index, arrayref)
+                    computationWithReturnValueAndExceptions(computation, rest)
                 }
                 case 79 /*iastore*/ ⇒ {
                     val value :: index :: arrayref :: rest = operands
@@ -680,7 +696,8 @@ trait AI {
 
                 case 47 /*laload*/ ⇒ {
                     val index :: arrayref :: rest = operands
-                    handleStackBasedComputation(domain.laload(index, arrayref), rest)
+                    val computation = domain.laload(index, arrayref)
+                    computationWithReturnValueAndExceptions(computation, rest)
                 }
                 case 80 /*lastore*/ ⇒ {
                     val value :: index :: arrayref :: rest = operands
@@ -690,7 +707,8 @@ trait AI {
 
                 case 53 /*saload*/ ⇒ {
                     val index :: arrayref :: rest = operands
-                    handleStackBasedComputation(domain.laload(index, arrayref), rest)
+                    val computation = domain.saload(index, arrayref)
+                    computationWithReturnValueAndExceptions(computation, rest)
                 }
                 case 86 /*sastore*/ ⇒ {
                     val value :: index :: arrayref :: rest = operands
@@ -705,13 +723,7 @@ trait AI {
                 case 190 /*arraylength*/ ⇒ {
                     val arrayref = operands.head
                     val computation = domain.arraylength(arrayref)
-                    if (computation.hasValue) {
-                        val newOperands = computation.value :: operands.tail
-                        fallThroughO(newOperands)
-                    }
-                    if (computation.throwsException) {
-                        handleException(pc, computation.exceptions, locals)
-                    }
+                    computationWithReturnValueAndException(computation, operands.tail)
                 }
 
                 //
@@ -721,12 +733,12 @@ trait AI {
                 //
                 case 180 /*getfield*/ ⇒ {
                     val getfield = instruction.asInstanceOf[GETFIELD]
-                    fallThroughO(
+                    computationWithReturnValueAndException(
                         domain.getfield(
                             operands.head,
                             getfield.declaringClass,
                             getfield.name,
-                            getfield.fieldType) :: (operands.tail))
+                            getfield.fieldType), operands.tail)
                 }
                 case 178 /*getstatic*/ ⇒ {
                     val getstatic = instruction.asInstanceOf[GETSTATIC]
@@ -739,13 +751,13 @@ trait AI {
                 case 181 /*putfield*/ ⇒ {
                     val putfield = instruction.asInstanceOf[PUTFIELD]
                     val value :: objectref :: rest = operands
-                    domain.putfield(
-                        objectref,
-                        value,
-                        putfield.declaringClass,
-                        putfield.name,
-                        putfield.fieldType)
-                    fallThroughO(rest)
+                    computationWithException(
+                        domain.putfield(
+                            objectref,
+                            value,
+                            putfield.declaringClass,
+                            putfield.name,
+                            putfield.fieldType), rest)
                 }
                 case 179 /*putstatic*/ ⇒ {
                     val putstatic = instruction.asInstanceOf[PUTSTATIC]
@@ -820,25 +832,20 @@ trait AI {
                             case None    ⇒ fallThroughO(operands.drop(argsCount + 1))
                         }
                 }
+
                 case 192 /*checkcast*/ ⇒ {
-                    val objectref :: rest = operands
-                    val newOperands = domain.checkcast(objectref, instruction.asInstanceOf[CHECKCAST].referenceType) :: rest
-                    fallThroughO(newOperands)
+                    val objectref = operands.head
+                    val computation = domain.checkcast(objectref, instruction.asInstanceOf[CHECKCAST].referenceType)
+                    computationWithReturnValueAndException(computation, operands.tail)
                 }
 
                 case 194 /*monitorenter*/ ⇒ {
                     val computation = domain.monitorenter(operands.head)
-                    if (computation.throwsException)
-                        handleException(pc, computation.exceptions, locals)
-                    if (computation.returnsNormally)
-                        fallThroughO(operands.tail)
+                    computationWithException(computation, operands.tail)
                 }
                 case 195 /*monitorexit*/ ⇒ {
                     val computation = domain.monitorexit(operands.head)
-                    if (computation.throwsException)
-                        handleException(pc, computation.exceptions, locals)
-                    if (computation.returnsNormally)
-                        fallThroughO(operands.tail)
+                    computationWithException(computation, operands.tail)
                 }
 
                 //
@@ -1285,19 +1292,23 @@ object AI extends AI {
     val tracer = Some(new ConsoleTracer {})
 }
 
+/**
+ * Defines the interface between the abstract interpreter and the module for
+ * tracing the interpreter's behavior.
+ */
 trait AITracer {
 
-    def traceInstructionEvalution(pc: Int,
+    def traceInstructionEvalution(domain : Domain)(pc: Int,
                                   instruction: Instruction,
-                                  operands: List[_ <: AnyRef],
-                                  locals: Array[_ <: AnyRef]): Unit
+                                  operands: List[domain.DomainValue],
+                                  locals: Array[domain.DomainValue]): Unit
 }
 
 trait ConsoleTracer extends AITracer {
-    def traceInstructionEvalution(pc: Int,
+    def traceInstructionEvalution(domain.DomainValue)(pc: Int,
                                   instruction: Instruction,
-                                  operands: List[_ <: AnyRef],
-                                  locals: Array[_ <: AnyRef]): Unit = {
+                                  operands: List[domain.DomainValue],
+                                  locals: Array[domain.DomainValue]): Unit = {
         println(pc+":"+instruction+" ["+operands+";"+locals+"]")
     }
 }
