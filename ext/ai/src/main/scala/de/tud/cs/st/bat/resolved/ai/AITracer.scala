@@ -33,16 +33,29 @@
 package de.tud.cs.st
 package bat
 package resolved
+package ai
 
 /**
- * An instruction that stores the top-most stack value in a local variable.
- *
- * @author Michael Eichberg
+ * Defines the interface between the abstract interpreter and the module for
+ * tracing the interpreter's behavior.
  */
-abstract class StoreLocalVariableInstruction extends Instruction {
+trait AITracer {
 
-    def lvIndex: Int
+    def traceInstructionEvalution(
+        domain: Domain)(
+            pc: Int,
+            instruction: Instruction,
+            operands: List[domain.DomainValue],
+            locals: Array[domain.DomainValue]): Unit
+}
 
-    def runtimeExceptions(): List[ObjectType] = Nil
-
+trait ConsoleTracer extends AITracer {
+    def traceInstructionEvalution(
+        domain: Domain)(
+            pc: Int,
+            instruction: Instruction,
+            operands: List[domain.DomainValue],
+            locals: Array[domain.DomainValue]): Unit = {
+        println(pc+":"+instruction+" ["+operands.mkString(", ")+";"+locals.mkString(", ")+"]")
+    }
 }

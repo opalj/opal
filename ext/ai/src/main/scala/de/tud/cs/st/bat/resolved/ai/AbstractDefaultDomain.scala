@@ -42,56 +42,61 @@ import reflect.ClassTag
  * @author Dennis Siebert
  */
 trait AbstractDefaultDomain extends DomainWithValues {
-    
+
+    // (BY default we ignore ArrayIndexOutOfBoundsExceptions and NegativeArraySizeExceptions.)
+
     //
     // CREATE ARRAY
     //
     def newarray(count: DomainValue, componentType: FieldType): NewArrayOrNegativeArraySizeException =
-        ComputedValueAndException(TypedValue(ArrayType(componentType)), TypedValue(ObjectType.ArithmeticException))
+        //ComputedValueAndException(TypedValue(ArrayType(componentType)), TypedValue(ObjectType.ArithmeticException))
+        ComputedValue(TypedValue(ArrayType(componentType)))
 
     /**
      * @note The componentType may be (again) an array type.
      */
     def multianewarray(counts: List[DomainValue], arrayType: ArrayType): NewArrayOrNegativeArraySizeException =
-        ComputedValueAndException(TypedValue(arrayType), TypedValue(ObjectType.ArithmeticException))
+        //ComputedValueAndException(TypedValue(arrayType), TypedValue(ObjectType.ArithmeticException))
+        ComputedValue(TypedValue(arrayType))
 
     //
     // LOAD FROM AND STORE VALUE IN ARRAYS
     //
-    def aaload(index: DomainValue, arrayref: DomainValue): DomainValue = {
+    def aaload(index: DomainValue, arrayref: DomainValue): ArrayLoadResult = {
         arrayref match {
             case TypedValue(ArrayType(componentType)) ⇒
-                TypedValue(componentType)
+                ComputedValue(TypedValue(componentType))
             case _ ⇒
                 AIImplementationError("aaload - tracking of array type failed; array contains reference values of unknown type")
         }
     }
-    def aastore(value: DomainValue, index: DomainValue, arrayref: DomainValue) { /* Nothing to do. */ }
-    def baload(index: DomainValue, arrayref: DomainValue): DomainValue = { // byte or boolean load...
+    def aastore(value: DomainValue, index: DomainValue, arrayref: DomainValue) = { ComputationWithSideEffectOnly }
+    def baload(index: DomainValue, arrayref: DomainValue): ArrayLoadResult = { // byte or boolean load...
         arrayref match {
-            case TypedValue(ArrayType(componentType)) ⇒ TypedValue(componentType)
+            case TypedValue(ArrayType(componentType)) ⇒ ComputedValue(TypedValue(componentType))
             case _ ⇒
                 AIImplementationError("baload - tracking of array type failed; array may contain booleans or byte values")
         }
     }
-    def bastore(value: DomainValue, index: DomainValue, arrayref: DomainValue) { /* Nothing to do. */ }
-    def caload(index: DomainValue, arrayref: DomainValue): DomainValue = SomeCharValue
-    def castore(value: DomainValue, index: DomainValue, arrayref: DomainValue) { /* Nothing to do. */ }
-    def daload(index: DomainValue, arrayref: DomainValue): DomainValue = SomeDoubleValue
-    def dastore(value: DomainValue, index: DomainValue, arrayref: DomainValue) { /* Nothing to do. */ }
-    def faload(index: DomainValue, arrayref: DomainValue): DomainValue = SomeFloatValue
-    def fastore(value: DomainValue, index: DomainValue, arrayref: DomainValue) { /* Nothing to do. */ }
-    def iaload(index: DomainValue, arrayref: DomainValue): DomainValue = SomeIntegerValue
-    def iastore(value: DomainValue, index: DomainValue, arrayref: DomainValue) { /* Nothing to do. */ }
-    def laload(index: DomainValue, arrayref: DomainValue): DomainValue = SomeLongValue
-    def lastore(value: DomainValue, index: DomainValue, arrayref: DomainValue) { /* Nothing to do. */ }
-    def saload(index: DomainValue, arrayref: DomainValue): DomainValue = SomeShortValue
-    def sastore(value: DomainValue, index: DomainValue, arrayref: DomainValue) { /* Nothing to do. */ }
+    def bastore(value: DomainValue, index: DomainValue, arrayref: DomainValue) = ComputationWithSideEffectOnly
+    def caload(index: DomainValue, arrayref: DomainValue): ArrayLoadResult = ComputedValue(SomeCharValue)
+    def castore(value: DomainValue, index: DomainValue, arrayref: DomainValue) = ComputationWithSideEffectOnly
+    def daload(index: DomainValue, arrayref: DomainValue): ArrayLoadResult = ComputedValue(SomeDoubleValue)
+    def dastore(value: DomainValue, index: DomainValue, arrayref: DomainValue) = ComputationWithSideEffectOnly
+    def faload(index: DomainValue, arrayref: DomainValue): ArrayLoadResult = ComputedValue(SomeFloatValue)
+    def fastore(value: DomainValue, index: DomainValue, arrayref: DomainValue) = ComputationWithSideEffectOnly
+    def iaload(index: DomainValue, arrayref: DomainValue): ArrayLoadResult = ComputedValue(SomeIntegerValue)
+    def iastore(value: DomainValue, index: DomainValue, arrayref: DomainValue) = ComputationWithSideEffectOnly
+    def laload(index: DomainValue, arrayref: DomainValue): ArrayLoadResult = ComputedValue(SomeLongValue)
+    def lastore(value: DomainValue, index: DomainValue, arrayref: DomainValue) = ComputationWithSideEffectOnly
+    def saload(index: DomainValue, arrayref: DomainValue): ArrayLoadResult = ComputedValue(SomeShortValue)
+    def sastore(value: DomainValue, index: DomainValue, arrayref: DomainValue) = ComputationWithSideEffectOnly
 
     //
     // LENGTH OF AN ARRAY
     //
-    def arraylength(value: DomainValue): DomainValue = SomeIntegerValue
+    def arraylength(value: DomainValue): ComputationWithReturnValueOrNullPointerException =
+        ComputedValue(SomeIntegerValue)
 
     //
     // PUSH CONSTANT VALUE
@@ -109,8 +114,11 @@ trait AbstractDefaultDomain extends DomainWithValues {
     // TYPE CHECKS AND CONVERSION
     //
 
-    def checkcast(value: DomainValue, resolvedType: ReferenceType) = TypedValue(resolvedType)
-    def instanceof(value: DomainValue, resolvedType: ReferenceType) = SomeBooleanValue
+    def checkcast(value: DomainValue, resolvedType: ReferenceType) =
+        ComputedValue(TypedValue(resolvedType))
+
+    def instanceof(value: DomainValue, resolvedType: ReferenceType) =
+        SomeBooleanValue
 
     def d2f(value: DomainValue): DomainValue = SomeFloatValue
     def d2i(value: DomainValue): DomainValue = SomeIntegerValue
@@ -149,7 +157,7 @@ trait AbstractDefaultDomain extends DomainWithValues {
                  declaringClass: ObjectType,
                  name: String,
                  fieldType: FieldType) =
-        TypedValue(fieldType)
+        ComputedValue(TypedValue(fieldType))
 
     def getstatic(declaringClass: ObjectType,
                   name: String,
@@ -160,7 +168,8 @@ trait AbstractDefaultDomain extends DomainWithValues {
                  value: DomainValue,
                  declaringClass: ObjectType,
                  name: String,
-                 fieldType: FieldType) {
+                 fieldType: FieldType) = {
+        ComputationWithSideEffectOnly
         /* Nothing to do. */
     }
 
@@ -177,26 +186,26 @@ trait AbstractDefaultDomain extends DomainWithValues {
     def invokeinterface(declaringClass: ReferenceType,
                         name: String,
                         methodDescriptor: MethodDescriptor,
-                        params: List[DomainValue]): Option[DomainValue] =
-        asTypedValue(methodDescriptor.returnType)
+                        params: List[DomainValue]) =
+        ComputedValue(asTypedValue(methodDescriptor.returnType))
 
     def invokevirtual(declaringClass: ReferenceType,
                       name: String,
                       methodDescriptor: MethodDescriptor,
-                      params: List[DomainValue]): Option[DomainValue] =
-        asTypedValue(methodDescriptor.returnType)
+                      params: List[DomainValue]) =
+        ComputedValue(asTypedValue(methodDescriptor.returnType))
 
     def invokespecial(declaringClass: ReferenceType,
                       name: String,
                       methodDescriptor: MethodDescriptor,
-                      params: List[DomainValue]): Option[DomainValue] =
-        asTypedValue(methodDescriptor.returnType)
+                      params: List[DomainValue]) =
+        ComputedValue(asTypedValue(methodDescriptor.returnType))
 
     def invokestatic(declaringClass: ReferenceType,
                      name: String,
                      methodDescriptor: MethodDescriptor,
-                     params: List[DomainValue]): Option[DomainValue] =
-        asTypedValue(methodDescriptor.returnType)
+                     params: List[DomainValue]) =
+        ComputedValue(asTypedValue(methodDescriptor.returnType))
 
     private def asTypedValue(someType: Type): Option[DomainTypedValue[someType.type]] = {
         if (someType.isVoidType)
@@ -239,7 +248,7 @@ trait AbstractDefaultDomain extends DomainWithValues {
 
     def iadd(value1: DomainValue, value2: DomainValue): DomainValue = SomeIntegerValue
     def iand(value1: DomainValue, value2: DomainValue): DomainValue = SomeIntegerValue
-    def idiv(value1: DomainValue, value2: DomainValue): DomainValue = SomeIntegerValue
+    def idiv(value1: DomainValue, value2: DomainValue) = ComputedValue(SomeIntegerValue)
     def imul(value1: DomainValue, value2: DomainValue): DomainValue = SomeIntegerValue
     def ior(value1: DomainValue, value2: DomainValue): DomainValue = SomeIntegerValue
     def irem(value1: DomainValue, value2: DomainValue): DomainValue = SomeIntegerValue
@@ -251,7 +260,7 @@ trait AbstractDefaultDomain extends DomainWithValues {
 
     def ladd(value1: DomainValue, value2: DomainValue): DomainValue = SomeLongValue
     def land(value1: DomainValue, value2: DomainValue): DomainValue = SomeLongValue
-    def ldiv(value1: DomainValue, value2: DomainValue): DomainValue = SomeLongValue
+    def ldiv(value1: DomainValue, value2: DomainValue) = ComputedValue(SomeLongValue)
     def lmul(value1: DomainValue, value2: DomainValue): DomainValue = SomeLongValue
     def lor(value1: DomainValue, value2: DomainValue): DomainValue = SomeLongValue
     def lrem(value1: DomainValue, value2: DomainValue): DomainValue = SomeLongValue

@@ -45,11 +45,10 @@ import language.higherKinds
  * how a domain's values are calculated.
  *
  * This trait defines the interface between the abstract interpretation framework (BATAI)
- * and some (user defined) domain. I.e., all that is required by BATAI is an 
- * implementation of this trait. 
- * 
- * To facilitate the usage of BATAI several classes/traits that implement parts of 
- * the Domain trait are pre-defined.
+ * and some (user defined) domain.
+ *
+ * To facilitate the usage of BATAI several classes/traits that implement parts of
+ * the `Domain` trait are pre-defined.
  *
  * ==Control Flow==
  * BATAI controls the process of evaluating the program, but requires a
@@ -61,10 +60,13 @@ import language.higherKinds
  * When every method is associated with a unique `Domain` instance as proposed and – given
  * that BATAI only uses one thread to analyze a given method at a time – no special care
  * has to be taken. However, if a domain needs to consult a domain which is associated with
- * a Project as a whole, which we will refer to as "World" in BATAI, it is then the
- * responsibility of the domain to make sure that everything is thread safe.
+ * a project as a whole, which we will refer to as "World" in BATAI, it is then the
+ * responsibility of the domain to make sure that coordination with the world is thread
+ * safe.
+ *
  * @note The framework assumes that every method/code block is associated with its
  *      own instance of a domain object.
+ *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  * @author Dennis Siebert
  */
@@ -91,10 +93,11 @@ trait Domain {
          *
          * The precise computational type is needed by BATAI to calculate the effect
          * of generic stack manipulation instructions (e.g., `dup_...` and swap)
-         * on the stack. This in turn is in particular required to calculate the
-         * jump targets of RET instructions.
+         * on the stack. This is required to calculate the
+         * jump targets of RET instructions and to determine which values are
+         * acutally copied by the dupXX instructions.
          *
-         * '''W.r.t. the computationalType no abstraction is allowed.'''
+         * '''W.r.t. the computational type no abstraction is allowed.'''
          */
         def computationalType: ComputationalType
 
@@ -102,7 +105,7 @@ trait Domain {
          * Merges this value with the given value; has to return `this` when this value
          * subsumes the given value or is structurally identical to the given
          * value; has to return an instance of
-         * [[de.tud.cs.st.bat.resolved.ai.Domain.NoLegalValue]] when this value and 
+         * [[de.tud.cs.st.bat.resolved.ai.Domain.NoLegalValue]] when this value and
          * the given value are incompatible.
          *
          * For example, merging a `DomainValue` that represents the integer value 0
@@ -126,7 +129,7 @@ trait Domain {
     }
     /**
      * Abstracts over the concrete type of `Value`. Needs to be refined by traits that
-     * inherit from Domain and which extend `Domain`'s `Value` trait.
+     * inherit from `Domain` and which extend `Domain`'s `Value` trait.
      */
     type DomainValue <: Value
 
@@ -198,11 +201,11 @@ trait Domain {
     }
 
     /**
-     * Abstracts over the concrete type of `NoLegalValue`. 
-     * 
-     * This type needs to be refined whenever the class `NoLegalValue` 
+     * Abstracts over the concrete type of `NoLegalValue`.
+     *
+     * This type needs to be refined whenever the class `NoLegalValue`
      * is refined or the type `DomainValue` is refined.
-     */ 
+     */
     type DomainNoLegalValue <: NoLegalValue with DomainValue
 
     val TheNoLegalValue: DomainNoLegalValue
@@ -329,13 +332,22 @@ trait Domain {
      */
     /*ABSTRACT*/ def types(value: DomainValue): ValuesAnswer[Set[Type]]
 
+    /**
+     * Tries to determine if the given value is a subtype of the specified reference
+     * type.
+     */
     /*ABSTRACT*/ def isSubtypeOf(value: DomainValue, someType: ReferenceType): Answer
 
+    /**
+     * Tries to determine if the type referred to as `subType` is a subtype of the
+     * specified reference type `superType`.
+     */
     /*ABSTRACT*/ def isSubtypeOf(subType: ReferenceType, superType: ReferenceType): Answer
 
     /*ABSTRACT*/ def areEqualIntegers(value1: DomainValue, value2: DomainValue): Answer
 
-    final private[ai] def areNotEqualIntegers(value1: DomainValue, value2: DomainValue): Answer = areEqualIntegers(value1, value2).negate
+    final private[ai] def areNotEqualIntegers(value1: DomainValue, value2: DomainValue): Answer =
+        areEqualIntegers(value1, value2).negate
 
     /*ABSTRACT*/ def isLessThan(smallerValue: DomainValue, largerValue: DomainValue): Answer
 
@@ -347,17 +359,23 @@ trait Domain {
     final private[ai] def isGreaterThanOrEqualTo(largerValue: DomainValue, smallerValue: DomainValue): Answer =
         isLessThanOrEqualTo(smallerValue, largerValue)
 
-    final private[ai] def is0(value: DomainValue): Answer = areEqualIntegers(value, IntegerConstant0)
+    final private[ai] def is0(value: DomainValue): Answer =
+        areEqualIntegers(value, IntegerConstant0)
 
-    final private[ai] def isNot0(value: DomainValue): Answer = areNotEqualIntegers(value, IntegerConstant0)
+    final private[ai] def isNot0(value: DomainValue): Answer =
+        areNotEqualIntegers(value, IntegerConstant0)
 
-    final private[ai] def isLessThan0(value: DomainValue): Answer = isLessThan(value, IntegerConstant0)
+    final private[ai] def isLessThan0(value: DomainValue): Answer =
+        isLessThan(value, IntegerConstant0)
 
-    final private[ai] def isLessThanOrEqualTo0(value: DomainValue): Answer = isLessThanOrEqualTo(value, IntegerConstant0)
+    final private[ai] def isLessThanOrEqualTo0(value: DomainValue): Answer =
+        isLessThanOrEqualTo(value, IntegerConstant0)
 
-    final private[ai] def isGreaterThan0(value: DomainValue): Answer = isGreaterThan(value, IntegerConstant0)
+    final private[ai] def isGreaterThan0(value: DomainValue): Answer =
+        isGreaterThan(value, IntegerConstant0)
 
-    final private[ai] def isGreaterThanOrEqualTo0(value: DomainValue): Answer = isGreaterThanOrEqualTo(value, IntegerConstant0)
+    final private[ai] def isGreaterThanOrEqualTo0(value: DomainValue): Answer =
+        isGreaterThanOrEqualTo(value, IntegerConstant0)
 
     // -----------------------------------------------------------------------------------
     //
@@ -416,18 +434,18 @@ trait Domain {
 
     // -----------------------------------------------------------------------------------
     //
-    // HELPER TYPES AND FUNCTIONS
+    // HELPER TYPES AND FUNCTIONS RELATED TO THE RESULT OF INSTRUCTIONS
     //
     // -----------------------------------------------------------------------------------
 
-    type SomeValueOrNullPointerException = Computation[DomainValue, DomainTypedValue[ObjectType.NullPointerException.type]]
+    type ComputationWithReturnValueOrNullPointerException = Computation[DomainValue, DomainTypedValue[ObjectType.NullPointerException.type]]
 
     /**
      * Tests if the given value is `null` and returns a newly created
      * `NullPointerException` if it is the case. If the value is not `null`,
      * the given value is just wrapped and returned as this computation's result.
      */
-    protected def givenValueOrNullPointerException(value: DomainValue): SomeValueOrNullPointerException = {
+    protected def givenValueOrNullPointerException(value: DomainValue): ComputationWithReturnValueOrNullPointerException = {
         isNull(value) match {
             case Yes     ⇒ ThrowsException(newObject(ObjectType.NullPointerException))
             case No      ⇒ ComputedValue(value)
@@ -435,7 +453,15 @@ trait Domain {
         }
     }
 
-    type NewArrayOrNegativeArraySizeException = Computation[DomainTypedValue[ArrayType], DomainTypedValue[ObjectType.ArithmeticException.type]]
+    type SideEffectOnlyOrNullPointerException = Computation[Nothing, DomainTypedValue[ObjectType.NullPointerException.type]]
+
+    protected def sideEffectOnlyOrNullPointerException(value: DomainValue): SideEffectOnlyOrNullPointerException = {
+        isNull(value) match {
+            case Yes     ⇒ ThrowsException(newObject(ObjectType.NullPointerException))
+            case No      ⇒ ComputationWithSideEffectOnly
+            case Unknown ⇒ ComputationWithSideEffectOrException(newObject(ObjectType.NullPointerException))
+        }
+    }
 
     // -----------------------------------------------------------------------------------
     //
@@ -443,38 +469,53 @@ trait Domain {
     //
     // -----------------------------------------------------------------------------------
 
-    def athrow(exception : DomainValue) : SomeValueOrNullPointerException = givenValueOrNullPointerException(exception)
-    
+    def athrow(exception: DomainValue): ComputationWithReturnValueOrNullPointerException =
+        givenValueOrNullPointerException(exception)
+
     //
     // CREATE ARRAY
     //
-    def newarray(count: DomainValue, componentType: FieldType): NewArrayOrNegativeArraySizeException 
-    def multianewarray(counts: List[DomainValue], arrayType: ArrayType): NewArrayOrNegativeArraySizeException 
+    type NewArrayOrNegativeArraySizeException = Computation[DomainTypedValue[ArrayType], DomainTypedValue[ObjectType.ArithmeticException.type]]
+
+    def newarray(count: DomainValue, componentType: FieldType): NewArrayOrNegativeArraySizeException
+    def multianewarray(counts: List[DomainValue], arrayType: ArrayType): NewArrayOrNegativeArraySizeException
 
     //
     // LOAD FROM AND STORE VALUE IN ARRAYS
     //
-    def aaload(index: DomainValue, arrayref: DomainValue): DomainValue
-    def aastore(value: DomainValue, index: DomainValue, arrayref: DomainValue): Unit
-    def baload(index: DomainValue, arrayref: DomainValue): DomainValue
-    def bastore(value: DomainValue, index: DomainValue, arrayref: DomainValue): Unit
-    def caload(index: DomainValue, arrayref: DomainValue): DomainValue
-    def castore(value: DomainValue, index: DomainValue, arrayref: DomainValue): Unit
-    def daload(index: DomainValue, arrayref: DomainValue): DomainValue
-    def dastore(value: DomainValue, index: DomainValue, arrayref: DomainValue): Unit
-    def faload(index: DomainValue, arrayref: DomainValue): DomainValue
-    def fastore(value: DomainValue, index: DomainValue, arrayref: DomainValue): Unit
-    def iaload(index: DomainValue, arrayref: DomainValue): DomainValue
-    def iastore(value: DomainValue, index: DomainValue, arrayref: DomainValue): Unit
-    def laload(index: DomainValue, arrayref: DomainValue): DomainValue
-    def lastore(value: DomainValue, index: DomainValue, arrayref: DomainValue): Unit
-    def saload(index: DomainValue, arrayref: DomainValue): DomainValue
-    def sastore(value: DomainValue, index: DomainValue, arrayref: DomainValue): Unit
+
+    /**
+     * The exceptions that may be thrown are: `NullPointerException` and
+     * `ArrayIndexOutOfBoundsException`.
+     */
+    type ArrayLoadResult = Computation[DomainValue, Set[DomainTypedValue[ObjectType]]]
+    /**
+     * The exceptions that may be thrown are: `NullPointerException`,
+     * `ArrayIndexOutOfBoundsException` and `ArrayStoreException`.
+     */
+    type ArrayStoreResult = Computation[Nothing, Set[DomainTypedValue[ObjectType]]]
+
+    def aaload(index: DomainValue, arrayref: DomainValue): ArrayLoadResult
+    def aastore(value: DomainValue, index: DomainValue, arrayref: DomainValue): ArrayStoreResult
+    def baload(index: DomainValue, arrayref: DomainValue): ArrayLoadResult
+    def bastore(value: DomainValue, index: DomainValue, arrayref: DomainValue): ArrayStoreResult
+    def caload(index: DomainValue, arrayref: DomainValue): ArrayLoadResult
+    def castore(value: DomainValue, index: DomainValue, arrayref: DomainValue): ArrayStoreResult
+    def daload(index: DomainValue, arrayref: DomainValue): ArrayLoadResult
+    def dastore(value: DomainValue, index: DomainValue, arrayref: DomainValue): ArrayStoreResult
+    def faload(index: DomainValue, arrayref: DomainValue): ArrayLoadResult
+    def fastore(value: DomainValue, index: DomainValue, arrayref: DomainValue): ArrayStoreResult
+    def iaload(index: DomainValue, arrayref: DomainValue): ArrayLoadResult
+    def iastore(value: DomainValue, index: DomainValue, arrayref: DomainValue): ArrayStoreResult
+    def laload(index: DomainValue, arrayref: DomainValue): ArrayLoadResult
+    def lastore(value: DomainValue, index: DomainValue, arrayref: DomainValue): ArrayStoreResult
+    def saload(index: DomainValue, arrayref: DomainValue): ArrayLoadResult
+    def sastore(value: DomainValue, index: DomainValue, arrayref: DomainValue): ArrayStoreResult
 
     //
     // LENGTH OF AN ARRAY
     //
-    def arraylength(arrayref: DomainValue): DomainValue
+    def arraylength(arrayref: DomainValue): ComputationWithReturnValueOrNullPointerException
 
     // 
     // PUSH CONSTANT VALUE
@@ -496,10 +537,7 @@ trait Domain {
     // TYPE CHECKS AND CONVERSION
     //
 
-    /**
-     *
-     */
-    def checkcast(objectref: DomainValue, resolvedType: ReferenceType): DomainValue
+    def checkcast(objectref: DomainValue, resolvedType: ReferenceType): Computation[DomainValue, DomainTypedValue[ObjectType.ClassCastException.type]]
     def instanceof(objectref: DomainValue, resolvedType: ReferenceType): DomainValue
 
     def d2f(value: DomainValue): DomainValue
@@ -549,7 +587,7 @@ trait Domain {
     def getfield(objectref: DomainValue,
                  declaringClass: ObjectType,
                  name: String,
-                 fieldType: FieldType): DomainValue
+                 fieldType: FieldType): ComputationWithReturnValueOrNullPointerException
     def getstatic(declaringClass: ObjectType,
                   name: String,
                   fieldType: FieldType): DomainValue
@@ -557,7 +595,7 @@ trait Domain {
                  value: DomainValue,
                  declaringClass: ObjectType,
                  name: String,
-                 fieldType: FieldType): Unit
+                 fieldType: FieldType): SideEffectOnlyOrNullPointerException
     def putstatic(value: DomainValue,
                   declaringClass: ObjectType,
                   name: String,
@@ -566,23 +604,24 @@ trait Domain {
     //
     // METHOD INVOCATIONS
     //
+    type InvokeResult = Computation[Option[DomainValue], Set[DomainTypedValue[ObjectType]]]
     // TODO [AI] Add support for Java7's Invokedynamic to the Domain.
     def invokeinterface(declaringClass: ReferenceType,
                         name: String,
                         methodDescriptor: MethodDescriptor,
-                        params: List[DomainValue]): Option[DomainValue]
+                        params: List[DomainValue]): InvokeResult
     def invokevirtual(declaringClass: ReferenceType,
                       name: String,
                       methodDescriptor: MethodDescriptor,
-                      params: List[DomainValue]): Option[DomainValue]
+                      params: List[DomainValue]): InvokeResult
     def invokespecial(declaringClass: ReferenceType,
                       name: String,
                       methodDescriptor: MethodDescriptor,
-                      params: List[DomainValue]): Option[DomainValue]
+                      params: List[DomainValue]): InvokeResult
     def invokestatic(declaringClass: ReferenceType,
                      name: String,
                      methodDescriptor: MethodDescriptor,
-                     params: List[DomainValue]): Option[DomainValue]
+                     params: List[DomainValue]): InvokeResult
 
     //
     // RELATIONAL OPERATORS
@@ -604,6 +643,9 @@ trait Domain {
     //
     // BINARY EXPRESSIONS
     //
+
+    type IntegerDivisionResult = Computation[DomainValue, DomainTypedValue[ObjectType.ArithmeticException.type]]
+
     def dadd(value1: DomainValue, value2: DomainValue): DomainValue
     def ddiv(value1: DomainValue, value2: DomainValue): DomainValue
     def dmul(value1: DomainValue, value2: DomainValue): DomainValue
@@ -618,7 +660,7 @@ trait Domain {
 
     def iadd(value1: DomainValue, value2: DomainValue): DomainValue
     def iand(value1: DomainValue, value2: DomainValue): DomainValue
-    def idiv(value1: DomainValue, value2: DomainValue): DomainValue
+    def idiv(value1: DomainValue, value2: DomainValue): IntegerDivisionResult
     def imul(value1: DomainValue, value2: DomainValue): DomainValue
     def ior(value1: DomainValue, value2: DomainValue): DomainValue
     def irem(value1: DomainValue, value2: DomainValue): DomainValue
@@ -630,7 +672,7 @@ trait Domain {
 
     def ladd(value1: DomainValue, value2: DomainValue): DomainValue
     def land(value1: DomainValue, value2: DomainValue): DomainValue
-    def ldiv(value1: DomainValue, value2: DomainValue): DomainValue
+    def ldiv(value1: DomainValue, value2: DomainValue): IntegerDivisionResult
     def lmul(value1: DomainValue, value2: DomainValue): DomainValue
     def lor(value1: DomainValue, value2: DomainValue): DomainValue
     def lrem(value1: DomainValue, value2: DomainValue): DomainValue
@@ -654,8 +696,8 @@ trait Domain {
      * the value is known not to be `null` the given value is (also) returned as this
      * computation's results.
      */
-    def monitorenter(value: DomainValue): SomeValueOrNullPointerException = {
-        givenValueOrNullPointerException(value)
+    def monitorenter(value: DomainValue): SideEffectOnlyOrNullPointerException = {
+        sideEffectOnlyOrNullPointerException(value)
     }
 
     /**
@@ -666,15 +708,15 @@ trait Domain {
      * the value is known not to be `null` the given value is (also) returned as this
      * computation's results.
      */
-    def monitorexit(value: DomainValue): SomeValueOrNullPointerException = {
-        givenValueOrNullPointerException(value)
+    def monitorexit(value: DomainValue): SideEffectOnlyOrNullPointerException = {
+        sideEffectOnlyOrNullPointerException(value)
     }
 
     /**
      * Creates a new `DomainTypeValue` that represents an (new) instance of an
      * object of the given type.
      */
-    def newObject(t: ObjectType): DomainTypedValue[t.type] 
+    def newObject(t: ObjectType): DomainTypedValue[t.type]
 
     //
     //

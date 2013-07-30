@@ -36,8 +36,7 @@ package resolved
 package ai
 
 /**
- * Encapsulates an updated value, primarily used to indicate in which way a given
- * value was updated.
+ * Encapsulates an updated value and qualifies the update.
  *
  * @author Michael Eichberg
  */

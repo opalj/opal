@@ -39,7 +39,11 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case object ISTORE_0 extends StoreLocalVariableInstruction with ImplicitLocalVariableIndex {
+case object ISTORE_0
+        extends StoreLocalVariableInstruction
+        with ImplicitLocalVariableIndex {
+
+    def lvIndex = 0
 
     def opcode: Int = 59
 
