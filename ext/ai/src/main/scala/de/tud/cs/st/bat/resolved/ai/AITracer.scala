@@ -36,34 +36,26 @@ package resolved
 package ai
 
 /**
- * Encapsulates an answer of a domain w.r.t. the concrete value(s) captured by
- * a `DomainValue` (abstraction).
- *
- * @tparam V The type of the answer's value. Typically, a `DomainValue`,
- *      a `DomainTypedValue`, a `de.tud.cs.st.bat.resolved.Type` or a `Set` thereof.
- *
- * @author Michael Eichberg
+ * Defines the interface between the abstract interpreter and the module for
+ * tracing the interpreter's behavior.
  */
-sealed trait ValuesAnswer[+V] {
-    def values: V
+trait AITracer {
+
+    def traceInstructionEvalution(
+        domain: Domain)(
+            pc: Int,
+            instruction: Instruction,
+            operands: List[domain.DomainValue],
+            locals: Array[domain.DomainValue]): Unit
 }
 
-/**
- * A domain's answer to a question w.r.t. a `DomainValue` that represents the 
- * values in such a way that the AI can interpret them.
- */
-case class Values[+V](
-    values: V)
-        extends ValuesAnswer[V]
-
-/**
- * A domain's answer to a question w.r.t. a `DomainValue` where the captured values
- * (beyond the computational type) are not known.
- */
-case object ValuesUnknown extends ValuesAnswer[Nothing] {
-    
-    def values: Nothing = AIImplementationError("the values are unknown")
-    
+trait ConsoleTracer extends AITracer {
+    def traceInstructionEvalution(
+        domain: Domain)(
+            pc: Int,
+            instruction: Instruction,
+            operands: List[domain.DomainValue],
+            locals: Array[domain.DomainValue]): Unit = {
+        println(pc+":"+instruction+" ["+operands.mkString(", ")+";"+locals.mkString(", ")+"]")
+    }
 }
-
-

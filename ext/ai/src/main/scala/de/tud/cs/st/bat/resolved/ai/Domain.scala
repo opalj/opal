@@ -45,11 +45,10 @@ import language.higherKinds
  * how a domain's values are calculated.
  *
  * This trait defines the interface between the abstract interpretation framework (BATAI)
- * and some (user defined) domain. I.e., all that is required by BATAI is an
- * implementation of this trait.
+ * and some (user defined) domain.
  *
  * To facilitate the usage of BATAI several classes/traits that implement parts of
- * the Domain trait are pre-defined.
+ * the `Domain` trait are pre-defined.
  *
  * ==Control Flow==
  * BATAI controls the process of evaluating the program, but requires a
@@ -61,10 +60,13 @@ import language.higherKinds
  * When every method is associated with a unique `Domain` instance as proposed and – given
  * that BATAI only uses one thread to analyze a given method at a time – no special care
  * has to be taken. However, if a domain needs to consult a domain which is associated with
- * a Project as a whole, which we will refer to as "World" in BATAI, it is then the
- * responsibility of the domain to make sure that everything is thread safe.
+ * a project as a whole, which we will refer to as "World" in BATAI, it is then the
+ * responsibility of the domain to make sure that coordination with the world is thread
+ * safe.
+ *
  * @note The framework assumes that every method/code block is associated with its
  *      own instance of a domain object.
+ *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  * @author Dennis Siebert
  */
@@ -91,10 +93,11 @@ trait Domain {
          *
          * The precise computational type is needed by BATAI to calculate the effect
          * of generic stack manipulation instructions (e.g., `dup_...` and swap)
-         * on the stack. This in turn is in particular required to calculate the
-         * jump targets of RET instructions.
+         * on the stack. This is required to calculate the
+         * jump targets of RET instructions and to determine which values are
+         * acutally copied by the dupXX instructions.
          *
-         * '''W.r.t. the computationalType no abstraction is allowed.'''
+         * '''W.r.t. the computational type no abstraction is allowed.'''
          */
         def computationalType: ComputationalType
 
@@ -126,7 +129,7 @@ trait Domain {
     }
     /**
      * Abstracts over the concrete type of `Value`. Needs to be refined by traits that
-     * inherit from Domain and which extend `Domain`'s `Value` trait.
+     * inherit from `Domain` and which extend `Domain`'s `Value` trait.
      */
     type DomainValue <: Value
 
@@ -329,13 +332,22 @@ trait Domain {
      */
     /*ABSTRACT*/ def types(value: DomainValue): ValuesAnswer[Set[Type]]
 
+    /**
+     * Tries to determine if the given value is a subtype of the specified reference
+     * type.
+     */
     /*ABSTRACT*/ def isSubtypeOf(value: DomainValue, someType: ReferenceType): Answer
 
+    /**
+     * Tries to determine if the type referred to as `subType` is a subtype of the
+     * specified reference type `superType`.
+     */
     /*ABSTRACT*/ def isSubtypeOf(subType: ReferenceType, superType: ReferenceType): Answer
 
     /*ABSTRACT*/ def areEqualIntegers(value1: DomainValue, value2: DomainValue): Answer
 
-    final private[ai] def areNotEqualIntegers(value1: DomainValue, value2: DomainValue): Answer = areEqualIntegers(value1, value2).negate
+    final private[ai] def areNotEqualIntegers(value1: DomainValue, value2: DomainValue): Answer =
+        areEqualIntegers(value1, value2).negate
 
     /*ABSTRACT*/ def isLessThan(smallerValue: DomainValue, largerValue: DomainValue): Answer
 
@@ -347,17 +359,23 @@ trait Domain {
     final private[ai] def isGreaterThanOrEqualTo(largerValue: DomainValue, smallerValue: DomainValue): Answer =
         isLessThanOrEqualTo(smallerValue, largerValue)
 
-    final private[ai] def is0(value: DomainValue): Answer = areEqualIntegers(value, IntegerConstant0)
+    final private[ai] def is0(value: DomainValue): Answer =
+        areEqualIntegers(value, IntegerConstant0)
 
-    final private[ai] def isNot0(value: DomainValue): Answer = areNotEqualIntegers(value, IntegerConstant0)
+    final private[ai] def isNot0(value: DomainValue): Answer =
+        areNotEqualIntegers(value, IntegerConstant0)
 
-    final private[ai] def isLessThan0(value: DomainValue): Answer = isLessThan(value, IntegerConstant0)
+    final private[ai] def isLessThan0(value: DomainValue): Answer =
+        isLessThan(value, IntegerConstant0)
 
-    final private[ai] def isLessThanOrEqualTo0(value: DomainValue): Answer = isLessThanOrEqualTo(value, IntegerConstant0)
+    final private[ai] def isLessThanOrEqualTo0(value: DomainValue): Answer =
+        isLessThanOrEqualTo(value, IntegerConstant0)
 
-    final private[ai] def isGreaterThan0(value: DomainValue): Answer = isGreaterThan(value, IntegerConstant0)
+    final private[ai] def isGreaterThan0(value: DomainValue): Answer =
+        isGreaterThan(value, IntegerConstant0)
 
-    final private[ai] def isGreaterThanOrEqualTo0(value: DomainValue): Answer = isGreaterThanOrEqualTo(value, IntegerConstant0)
+    final private[ai] def isGreaterThanOrEqualTo0(value: DomainValue): Answer =
+        isGreaterThanOrEqualTo(value, IntegerConstant0)
 
     // -----------------------------------------------------------------------------------
     //
@@ -420,14 +438,14 @@ trait Domain {
     //
     // -----------------------------------------------------------------------------------
 
-    type SomeValueOrNullPointerException = Computation[DomainValue, DomainTypedValue[ObjectType.NullPointerException.type]]
+    type ComputationWithReturnValueOrNullPointerException = Computation[DomainValue, DomainTypedValue[ObjectType.NullPointerException.type]]
 
     /**
      * Tests if the given value is `null` and returns a newly created
      * `NullPointerException` if it is the case. If the value is not `null`,
      * the given value is just wrapped and returned as this computation's result.
      */
-    protected def givenValueOrNullPointerException(value: DomainValue): SomeValueOrNullPointerException = {
+    protected def givenValueOrNullPointerException(value: DomainValue): ComputationWithReturnValueOrNullPointerException = {
         isNull(value) match {
             case Yes     ⇒ ThrowsException(newObject(ObjectType.NullPointerException))
             case No      ⇒ ComputedValue(value)
@@ -451,7 +469,7 @@ trait Domain {
     //
     // -----------------------------------------------------------------------------------
 
-    def athrow(exception: DomainValue): SomeValueOrNullPointerException =
+    def athrow(exception: DomainValue): ComputationWithReturnValueOrNullPointerException =
         givenValueOrNullPointerException(exception)
 
     //
@@ -497,7 +515,7 @@ trait Domain {
     //
     // LENGTH OF AN ARRAY
     //
-    def arraylength(arrayref: DomainValue): SomeValueOrNullPointerException
+    def arraylength(arrayref: DomainValue): ComputationWithReturnValueOrNullPointerException
 
     // 
     // PUSH CONSTANT VALUE
@@ -519,7 +537,7 @@ trait Domain {
     // TYPE CHECKS AND CONVERSION
     //
 
-    def checkcast(objectref: DomainValue, resolvedType: ReferenceType): Computation[DomainValue,DomainTypedValue[ObjectType.ClassCastException.type]]
+    def checkcast(objectref: DomainValue, resolvedType: ReferenceType): Computation[DomainValue, DomainTypedValue[ObjectType.ClassCastException.type]]
     def instanceof(objectref: DomainValue, resolvedType: ReferenceType): DomainValue
 
     def d2f(value: DomainValue): DomainValue
@@ -569,7 +587,7 @@ trait Domain {
     def getfield(objectref: DomainValue,
                  declaringClass: ObjectType,
                  name: String,
-                 fieldType: FieldType): SomeValueOrNullPointerException
+                 fieldType: FieldType): ComputationWithReturnValueOrNullPointerException
     def getstatic(declaringClass: ObjectType,
                   name: String,
                   fieldType: FieldType): DomainValue

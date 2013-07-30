@@ -39,6 +39,7 @@ package ai
  * Mixin this trait if you want to reify the stated constraints. This is particular
  * useful for testing and debugging purposes.
  *
+ * @todo Currently we only refine Is(Non)NullConstraints and nothing else...
  * @author Michael Eichberg
  */
 trait ReifiedConstraints extends Domain {
