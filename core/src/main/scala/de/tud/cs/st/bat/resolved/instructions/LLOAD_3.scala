@@ -39,7 +39,11 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case object LLOAD_3 extends LoadLocalVariableInstruction with ImplicitLocalVariableIndex {
+case object LLOAD_3
+        extends LoadLocalVariableInstruction
+        with ImplicitLocalVariableIndex {
+
+    def lvIndex: Int = 3
 
     def opcode: Int = 33
 

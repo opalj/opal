@@ -41,6 +41,8 @@ package resolved
  */
 abstract class StoreLocalVariableInstruction extends Instruction {
 
+    def lvIndex: Int
+
     def runtimeExceptions(): List[ObjectType] = Nil
 
 }

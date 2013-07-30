@@ -39,8 +39,12 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case object LLOAD_2 extends LoadLocalVariableInstruction with ImplicitLocalVariableIndex {
+case object LLOAD_2
+        extends LoadLocalVariableInstruction
+        with ImplicitLocalVariableIndex {
 
+    def lvIndex: Int = 2
+    
     def opcode: Int = 32
 
     def mnemonic: String = "lload_2"

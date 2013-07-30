@@ -39,7 +39,11 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case object DLOAD_2 extends LoadLocalVariableInstruction with ImplicitLocalVariableIndex {
+case object DLOAD_2
+        extends LoadLocalVariableInstruction
+        with ImplicitLocalVariableIndex {
+
+    def lvIndex: Int = 2
 
     def opcode: Int = 40
 

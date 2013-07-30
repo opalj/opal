@@ -41,7 +41,8 @@ package resolved
  */
 case class LLOAD(
     lvIndex: Int)
-        extends LoadLocalVariableInstruction with ExplicitLocalVariableIndex {
+        extends LoadLocalVariableInstruction 
+        with ExplicitLocalVariableIndex {
 
     def opcode: Int = 22
 
