@@ -74,14 +74,14 @@ class ClassHierarchyTest
         val Error = ObjectType("java/lang/Error")
         val RuntimeException = ObjectType("java/lang/RuntimeException")
 
-        ch.isSubtypeOf(Object, Throwable) should be(Some(false))
+        ch.isSubtypeOf(Object, Throwable) should be(No)
 
-        ch.isSubtypeOf(Throwable, Object) should be(Some(true))
+        ch.isSubtypeOf(Throwable, Object) should be(Yes)
 
-        ch.isSubtypeOf(Error, Throwable) should be(Some(true))
+        ch.isSubtypeOf(Error, Throwable) should be(Yes)
 
-        ch.isSubtypeOf(RuntimeException, Exception) should be(Some(true))
+        ch.isSubtypeOf(RuntimeException, Exception) should be(Yes)
 
-        ch.isSubtypeOf(Exception, Throwable) should be(Some(true))
+        ch.isSubtypeOf(Exception, Throwable) should be(Yes)
     }
 }
