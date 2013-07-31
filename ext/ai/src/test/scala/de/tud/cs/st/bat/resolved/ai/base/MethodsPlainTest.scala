@@ -124,7 +124,7 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "sLDC").get
         /*val result =*/ AI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(ReferenceValue(ObjectType("java/lang/String"))))
+        domain.returnedValue should be(Some(SomeReferenceValue(ObjectType("java/lang/String"))))
     }
 
     //
@@ -141,7 +141,7 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "sOne").get
         /*val result =*/ AI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(ReferenceValue(ObjectType("java/lang/String"))))
+        domain.returnedValue should be(Some(SomeReferenceValue(ObjectType("java/lang/String"))))
     }
 
     //
@@ -657,7 +657,7 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "localSimpleMethod").get
         /*val result =*/ AI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(ReferenceValue(ObjectType("ai/MethodsPlain"))))
+        domain.returnedValue should be(Some(SomeReferenceValue(ObjectType("ai/MethodsPlain"))))
     }
 
     //
@@ -789,21 +789,21 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "createNewBooleanArray").get
         /*val result =*/ AI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(ReferenceValue(ArrayType(BooleanType))))
+        domain.returnedValue should be(Some(SomeReferenceValue(ArrayType(BooleanType))))
     }
     it should "be able to analyze a new char array" in {
         val domain = new RecordingDomain; import domain._
         val method = classFile.methods.find(_.name == "createNewCharArray").get
         /*val result =*/ AI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(ReferenceValue(ArrayType(CharType))))
+        domain.returnedValue should be(Some(SomeReferenceValue(ArrayType(CharType))))
     }
     it should "be able to analyze a new float array" in {
         val domain = new RecordingDomain; import domain._
         val method = classFile.methods.find(_.name == "createNewFloatArray").get
         /*val result =*/ AI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(ReferenceValue(ArrayType(FloatType))))
+        domain.returnedValue should be(Some(SomeReferenceValue(ArrayType(FloatType))))
     }
 
     it should "be able to analyze a new double array" in {
@@ -811,35 +811,35 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "createNewDoubleArray").get
         /*val result =*/ AI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(ReferenceValue(ArrayType(DoubleType))))
+        domain.returnedValue should be(Some(SomeReferenceValue(ArrayType(DoubleType))))
     }
     it should "be able to analyze a new byte array" in {
         val domain = new RecordingDomain; import domain._
         val method = classFile.methods.find(_.name == "createNewByteArray").get
         /*val result =*/ AI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(ReferenceValue(ArrayType(ByteType))))
+        domain.returnedValue should be(Some(SomeReferenceValue(ArrayType(ByteType))))
     }
     it should "be able to analyze a new short array" in {
         val domain = new RecordingDomain; import domain._
         val method = classFile.methods.find(_.name == "createNewShortArray").get
         /*val result =*/ AI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(ReferenceValue(ArrayType(ShortType))))
+        domain.returnedValue should be(Some(SomeReferenceValue(ArrayType(ShortType))))
     }
     it should "be able to analyze a new int array" in {
         val domain = new RecordingDomain; import domain._
         val method = classFile.methods.find(_.name == "createNewIntArray").get
         /*val result =*/ AI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(ReferenceValue(ArrayType(IntegerType))))
+        domain.returnedValue should be(Some(SomeReferenceValue(ArrayType(IntegerType))))
     }
     it should "be able to analyze a new long array" in {
         val domain = new RecordingDomain; import domain._
         val method = classFile.methods.find(_.name == "createNewLongArray").get
         /*val result =*/ AI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(ReferenceValue(ArrayType(LongType))))
+        domain.returnedValue should be(Some(SomeReferenceValue(ArrayType(LongType))))
     }
 
     it should "be able to analyze a new Object array" in {
@@ -847,7 +847,7 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "createNewSimpleMethodsArray").get
         /*val result =*/ AI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(ReferenceValue(ArrayType(ObjectType("ai/MethodsPlain")))))
+        domain.returnedValue should be(Some(SomeReferenceValue(ArrayType(ObjectType("ai/MethodsPlain")))))
     }
 
     it should "be able to analyze a new multidimensional Object array" in {
@@ -855,7 +855,7 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "createNewMultiSimpleMethodsArray").get
         /*val result =*/ AI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(ReferenceValue(ArrayType(ArrayType(ObjectType("ai/MethodsPlain"))))))
+        domain.returnedValue should be(Some(SomeReferenceValue(ArrayType(ArrayType(ObjectType("ai/MethodsPlain"))))))
     }
 
     //
@@ -866,7 +866,7 @@ class MethodsPlainTest
         val result = AI(classFile, method, domain)
 
         dumpOnFailureDuringValidation(Some(classFile), Some(method), method.body.get, result) {
-            domain.returnedValue should be(Some(ReferenceValue(ObjectType("ai/MethodsPlain"))))
+            domain.returnedValue should be(Some(SomeReferenceValue(ObjectType("ai/MethodsPlain"))))
         }
     }
 

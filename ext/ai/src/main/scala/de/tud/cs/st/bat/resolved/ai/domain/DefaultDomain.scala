@@ -261,7 +261,7 @@ class DefaultDomain extends AbstractDefaultDomain {
         classHierarchy.isSubtypeOf(subtype, supertype)
     }
 
-    def ReferenceValue(referenceType: ReferenceType): AReferenceValue[referenceType.type] =
+    def SomeReferenceValue(referenceType: ReferenceType): AReferenceValue[referenceType.type] =
         new AReferenceValue(referenceType)
 
 }
