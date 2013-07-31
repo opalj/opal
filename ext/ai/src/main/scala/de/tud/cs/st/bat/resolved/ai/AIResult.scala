@@ -39,40 +39,44 @@ package ai
  * Factory to creating `AIResult` objects.
  */
 /* Design - We use a builder to construct a Result object in two steps. This is necessary
- * to correctly type the data structures that store the memory layout, which depends on the given domain. */
+ * to correctly type the data structures that store the memory layout and which depend on
+ * the given domain. */
 object AIResultBuilder {
 
     def aborted[D <: Domain](
         theCode: Code,
-        theDomain: D): (List[Int], Array[List[theDomain.DomainValue]], Array[Array[theDomain.DomainValue]]) ⇒ AIResult[theDomain.type] = {
+        theDomain: D)(
+            theWorkList: List[Int],
+            theOperandsArray: Array[List[theDomain.DomainValue]],
+            theLocalsArray: Array[Array[theDomain.DomainValue]]): AIResult[theDomain.type] = {
 
-        (theWorkList: List[Int], theOperandsArray: Array[List[theDomain.DomainValue]], theLocalsArray: Array[Array[theDomain.DomainValue]]) ⇒
-            new AIAborted[theDomain.type] {
-                val code: Code = theCode
-                val domain: theDomain.type = theDomain
-                val operandsArray: Array[List[theDomain.DomainValue]] = theOperandsArray
-                val localsArray: Array[Array[theDomain.DomainValue]] = theLocalsArray
-                val workList: List[Int] = theWorkList
-                def continueInterpretation(): AIResult[domain.type] = {
-                    AI.continueInterpretation(code, domain)(workList, operandsArray, localsArray)
-                }
+        new AIAborted[theDomain.type] {
+            val code: Code = theCode
+            val domain: theDomain.type = theDomain
+            val operandsArray: Array[List[theDomain.DomainValue]] = theOperandsArray
+            val localsArray: Array[Array[theDomain.DomainValue]] = theLocalsArray
+            val workList: List[Int] = theWorkList
+            def continueInterpretation(): AIResult[domain.type] = {
+                AI.continueInterpretation(code, domain)(workList, operandsArray, localsArray)
             }
+        }
     }
 
     def complete[D <: Domain](
         theCode: Code,
-        theDomain: D): (Array[List[theDomain.DomainValue]], Array[Array[theDomain.DomainValue]]) ⇒ AIResult[theDomain.type] = {
+        theDomain: D)(
+            theOperandsArray: Array[List[theDomain.DomainValue]],
+            theLocalsArray: Array[Array[theDomain.DomainValue]]): AIResult[theDomain.type] = {
 
-        (theOperandsArray: Array[List[theDomain.DomainValue]], theLocalsArray: Array[Array[theDomain.DomainValue]]) ⇒
-            new AICompleted[theDomain.type] {
-                val code: Code = theCode
-                val domain: theDomain.type = theDomain
-                val operandsArray: Array[List[theDomain.DomainValue]] = theOperandsArray
-                val localsArray: Array[Array[theDomain.DomainValue]] = theLocalsArray
-                def restartInterpretation(): AIResult[theDomain.type] = {
-                    AI.continueInterpretation(code, domain)(workList, operandsArray, localsArray)
-                }
+        new AICompleted[theDomain.type] {
+            val code: Code = theCode
+            val domain: theDomain.type = theDomain
+            val operandsArray: Array[List[theDomain.DomainValue]] = theOperandsArray
+            val localsArray: Array[Array[theDomain.DomainValue]] = theLocalsArray
+            def restartInterpretation(): AIResult[theDomain.type] = {
+                AI.continueInterpretation(code, domain)(workList, operandsArray, localsArray)
             }
+        }
     }
 }
 

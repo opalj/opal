@@ -61,13 +61,13 @@ class MethodsWithExceptionsTest
 
     class RecordingDomain extends DefaultDomain {
         var returnedValues: Set[(String, Value)] = Set()
-        override def areturn(value: Value) { returnedValues += (("areturn", value)) }
-        override def dreturn(value: Value) { returnedValues += (("dreturn", value)) }
-        override def freturn(value: Value) { returnedValues += (("freturn", value)) }
-        override def ireturn(value: Value) { returnedValues += (("ireturn", value)) }
-        override def lreturn(value: Value) { returnedValues += (("lreturn", value)) }
-        override def returnVoid() { returnedValues += (("return", null)) }
-        override def abnormalReturn(exception: Value) { returnedValues += (("throws", exception)) }
+        override def areturn(pc: Int, value: Value) { returnedValues += (("areturn", value)) }
+        override def dreturn(pc: Int, value: Value) { returnedValues += (("dreturn", value)) }
+        override def freturn(pc: Int, value: Value) { returnedValues += (("freturn", value)) }
+        override def ireturn(pc: Int, value: Value) { returnedValues += (("ireturn", value)) }
+        override def lreturn(pc: Int, value: Value) { returnedValues += (("lreturn", value)) }
+        override def returnVoid(pc: Int) { returnedValues += (("return", null)) }
+        override def abnormalReturn(pc: Int, exception: Value) { returnedValues += (("throws", exception)) }
     }
 
     val classFiles = Java7Framework.ClassFiles(TestSupport.locateTestResources("classfiles/ai.jar", "ext/ai"))
@@ -109,8 +109,8 @@ class MethodsWithExceptionsTest
             import domain._
             domain.returnedValues should be(
                 Set(("return", null), // <= return value 
-                        ("throws", "java/lang/Throwable"), // <= if exception
-                        ("throws", SomeReferenceValue))
+                    ("throws", "java/lang/Throwable"), // <= if exception
+                    ("throws", SomeReferenceValue))
             )
         })
     }

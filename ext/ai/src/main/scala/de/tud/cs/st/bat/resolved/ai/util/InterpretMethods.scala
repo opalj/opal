@@ -53,6 +53,8 @@ object InterpretMethods {
     import collection.JavaConversions._
 
     def main(args: Array[String]) {
+        System.out.println("Sleeping for 30secs")
+        Thread.sleep(30*1000)
         interpret(args.map(new java.io.File(_)), true).map(System.err.println(_))
     }
 

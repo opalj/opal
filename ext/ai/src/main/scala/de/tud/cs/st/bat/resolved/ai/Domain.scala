@@ -172,8 +172,8 @@ trait Domain {
     }
 
     /**
-     * If BATAI tries to merge two values that are incompatible the result has
-     * to be an instance of `NoLegalValue`. This may happen when BATAI tries to
+     * If the AI framework tries to merge two values that are incompatible the result has
+     * to be an instance of `NoLegalValue`. This may happen, e.g., when BATAI tries to
      * merge two register values/locals that are not live (i.e., which should not be
      * live) and, hence, are actually allowed to contain incompatible values.
      * (`Not live` means that the value will not be used in the future.)
@@ -208,6 +208,9 @@ trait Domain {
      */
     type DomainNoLegalValue <: NoLegalValue with DomainValue
 
+    /**
+     * The singleton instance of a `NoLegalVAlue`.
+     */
     val TheNoLegalValue: DomainNoLegalValue
 
     val MetaInformationUpdateNoLegalValue: MetaInformationUpdate[DomainNoLegalValue]
@@ -271,14 +274,42 @@ trait Domain {
 
     /**
      * Factory method to create `TypedValue`s; i.e., values for which we have (more)
-     * precise type information.
+     * precise type information but no value information. I.e., if the type value
+     * represents a reference type it may be possible that the value is `null`.
+     *
+     * The abstract interpreter uses this method only to create the initial domain
+     * values that represent a method's potential parameter assignment.
      */
-    def TypedValue[T <: Type](someType: T): DomainTypedValue[T]
+    def TypedValue[T <: Type](valueType: T): DomainTypedValue[T] = {
+        (valueType match {
+            case BooleanType       ⇒ SomeBooleanValue
+            case ByteType          ⇒ SomeByteValue
+            case ShortType         ⇒ SomeShortValue
+            case CharType          ⇒ SomeCharValue
+            case IntegerType       ⇒ SomeIntegerValue
+            case FloatType         ⇒ SomeFloatValue
+            case LongType          ⇒ SomeLongValue
+            case DoubleType        ⇒ SomeDoubleValue
+            case rt: ReferenceType ⇒ SomeReferenceValue(rt)
+            case VoidType          ⇒ AIImplementationError("it is not possible to create a typed value of type VoidType")
+        }).asInstanceOf[DomainTypedValue[T]]
+    }
+
+    def SomeBooleanValue: DomainTypedValue[BooleanType]
+    def SomeByteValue: DomainTypedValue[ByteType]
+    def SomeShortValue: DomainTypedValue[ShortType]
+    def SomeCharValue: DomainTypedValue[CharType]
+    def SomeIntegerValue: DomainTypedValue[IntegerType]
+    def SomeFloatValue: DomainTypedValue[FloatType]
+    def SomeLongValue: DomainTypedValue[LongType]
+    def SomeDoubleValue: DomainTypedValue[DoubleType]
+    def SomeReferenceValue(referenceType: ReferenceType): DomainTypedValue[referenceType.type]
 
     /**
-     * Returns a representation of the integer constant value 0
+     * Returns a representation of the integer constant value 0 which is used
+     * by BATAI for comparisons (e.g., for if_XX instructions.
      */
-    val IntegerConstant0: DomainValue = intValue(0)
+    val IntegerConstant0: DomainValue
 
     // -----------------------------------------------------------------------------------
     //
@@ -293,6 +324,9 @@ trait Domain {
      * For example, if the given value captures all positive integer values and the
      * specified range is [-1,1] then the answer has to be Yes.
      *
+     * The JVM semantics guarantee that the given domain value represents a value
+     * of computational type integer.
+     *
      * @note Both bounds are inclusive.
      */
     def isValueInRange(value: DomainValue, lowerBound: Int, upperBound: Int): Boolean
@@ -304,13 +338,19 @@ trait Domain {
      * For example, if the given value represents the integer value `10` and the
      * specified range is [0,Integer.MAX_VALUE] then the answer has to be No.
      *
+     * The JVM semantics guarantee that the given domain value represents a value
+     * of computational type integer.
+     *
      * @note Both bounds are inclusive.
      */
     def isValueNotInRange(value: DomainValue, lowerBound: Int, upperBound: Int): Boolean
 
     /**
-     * Determines whether the given value is `null`, maybe `null` or is known not to be
-     * `null`.
+     * Determines whether the given value is `null` (`Yes`), maybe `null` (`Unkown`) or
+     * is known not to be `null` (`No`).
+     *
+     * The JVM semantics guarantee that the given domain value represents a value
+     * of computational type reference.
      */
     /*ABSTRACT*/ def isNull(value: DomainValue): Answer
 
@@ -328,15 +368,19 @@ trait Domain {
 
     /**
      * Returns the type(s) of the value(s). Depending on the control flow the same
-     * DomainValue can represent different values with different types.
+     * `DomainValue` can represent different values with different types. However,
+     * all types that the domain value represents have to belong to the same
+     * computational type category. I.e., it is possible that the value captures the
+     * types "`NullPointerException` or `IllegalArgumentException`", but it will not
+     * capture the types `Integer` and `Long`.
      */
     /*ABSTRACT*/ def types(value: DomainValue): ValuesAnswer[Set[Type]]
 
     /**
-     * Tries to determine if the given value is a subtype of the specified reference
-     * type.
+     * Tries to determine if the given value is a sub-type of the specified reference
+     * type (`superType`).
      */
-    /*ABSTRACT*/ def isSubtypeOf(value: DomainValue, someType: ReferenceType): Answer
+    /*ABSTRACT*/ def isSubtypeOf(value: DomainValue, superType: ReferenceType): Answer
 
     /**
      * Tries to determine if the type referred to as `subType` is a subtype of the
@@ -394,17 +438,28 @@ trait Domain {
 
     trait TwoValuesConstraint extends (( /* pc :*/ Int, DomainValue, DomainValue, Operands, Locals) ⇒ (Operands, Locals)) with ValuesConstraint
 
-    final private[ai] class ChangedOrderTwoValuesConstraint(f: () ⇒ TwoValuesConstraint) extends TwoValuesConstraint {
+    final private[ai] class ChangedOrderTwoValuesConstraint(
+        f: () ⇒ TwoValuesConstraint)
+            extends TwoValuesConstraint {
+
         def apply(pc: Int, value1: DomainValue, value2: DomainValue, operands: Operands, locals: Locals): (Operands, Locals) =
             f()(pc, value2, value1, operands, locals)
     }
 
-    final private[ai] class TwoValuesConstraintWithFixedSecondValue(f: () ⇒ TwoValuesConstraint, value2: DomainValue) extends SingleValueConstraint {
+    final private[ai] class TwoValuesConstraintWithFixedSecondValue(
+        f: () ⇒ TwoValuesConstraint,
+        value2: DomainValue)
+            extends SingleValueConstraint {
+
         def apply(pc: Int, value1: DomainValue, operands: Operands, locals: Locals): (Operands, Locals) =
             f()(pc, value2, value1, operands, locals)
     }
 
-    final private[ai] class TwoValuesConstraintWithFixedFirstValue(f: () ⇒ TwoValuesConstraint, value1: DomainValue) extends SingleValueConstraint {
+    final private[ai] class TwoValuesConstraintWithFixedFirstValue(
+        f: () ⇒ TwoValuesConstraint,
+        value1: DomainValue)
+            extends SingleValueConstraint {
+
         def apply(pc: Int, value2: DomainValue, operands: Operands, locals: Locals): (Operands, Locals) =
             f()(pc, value2, value1, operands, locals)
     }
@@ -423,14 +478,14 @@ trait Domain {
     def AreNotEqualIntegers: TwoValuesConstraint
     def IsLessThan: TwoValuesConstraint
     def IsLessThanOrEqualTo: TwoValuesConstraint
-    private[ai] val IsGreaterThan: TwoValuesConstraint = new ChangedOrderTwoValuesConstraint(IsLessThan _)
-    private[ai] val IsGreaterThanOrEqualTo: TwoValuesConstraint = new ChangedOrderTwoValuesConstraint(IsLessThanOrEqualTo _)
-    private[ai] val Is0: SingleValueConstraint = new TwoValuesConstraintWithFixedSecondValue(AreEqualIntegers _, IntegerConstant0)
-    private[ai] val IsNot0: SingleValueConstraint = new TwoValuesConstraintWithFixedSecondValue(AreNotEqualIntegers _, IntegerConstant0)
-    private[ai] val IsLessThan0: SingleValueConstraint = new TwoValuesConstraintWithFixedSecondValue(IsLessThan _, IntegerConstant0)
-    private[ai] val IsLessThanOrEqualTo0: SingleValueConstraint = new TwoValuesConstraintWithFixedSecondValue(IsLessThanOrEqualTo _, IntegerConstant0)
-    private[ai] val IsGreaterThan0: SingleValueConstraint = new TwoValuesConstraintWithFixedFirstValue(IsLessThan _, IntegerConstant0)
-    private[ai] val IsGreaterThanOrEqualTo0: SingleValueConstraint = new TwoValuesConstraintWithFixedFirstValue(IsLessThanOrEqualTo _, IntegerConstant0)
+    protected[ai] val IsGreaterThan: TwoValuesConstraint = new ChangedOrderTwoValuesConstraint(IsLessThan _)
+    protected[ai] val IsGreaterThanOrEqualTo: TwoValuesConstraint = new ChangedOrderTwoValuesConstraint(IsLessThanOrEqualTo _)
+    protected[ai] val Is0: SingleValueConstraint = new TwoValuesConstraintWithFixedSecondValue(AreEqualIntegers _, IntegerConstant0)
+    protected[ai] val IsNot0: SingleValueConstraint = new TwoValuesConstraintWithFixedSecondValue(AreNotEqualIntegers _, IntegerConstant0)
+    protected[ai] val IsLessThan0: SingleValueConstraint = new TwoValuesConstraintWithFixedSecondValue(IsLessThan _, IntegerConstant0)
+    protected[ai] val IsLessThanOrEqualTo0: SingleValueConstraint = new TwoValuesConstraintWithFixedSecondValue(IsLessThanOrEqualTo _, IntegerConstant0)
+    protected[ai] val IsGreaterThan0: SingleValueConstraint = new TwoValuesConstraintWithFixedFirstValue(IsLessThan _, IntegerConstant0)
+    protected[ai] val IsGreaterThanOrEqualTo0: SingleValueConstraint = new TwoValuesConstraintWithFixedFirstValue(IsLessThanOrEqualTo _, IntegerConstant0)
 
     // -----------------------------------------------------------------------------------
     //
@@ -445,21 +500,21 @@ trait Domain {
      * `NullPointerException` if it is the case. If the value is not `null`,
      * the given value is just wrapped and returned as this computation's result.
      */
-    protected def givenValueOrNullPointerException(value: DomainValue): ComputationWithReturnValueOrNullPointerException = {
+    protected def givenValueOrNullPointerException(pc: Int, value: DomainValue): ComputationWithReturnValueOrNullPointerException = {
         isNull(value) match {
-            case Yes     ⇒ ThrowsException(newObject(ObjectType.NullPointerException))
+            case Yes     ⇒ ThrowsException(newObject(pc, ObjectType.NullPointerException))
             case No      ⇒ ComputedValue(value)
-            case Unknown ⇒ ComputedValueAndException(value, newObject(ObjectType.NullPointerException))
+            case Unknown ⇒ ComputedValueAndException(value, newObject(pc, ObjectType.NullPointerException))
         }
     }
 
-    type SideEffectOnlyOrNullPointerException = Computation[Nothing, DomainTypedValue[ObjectType.NullPointerException.type]]
+    type ComputationWithNullPointerException = Computation[Nothing, DomainTypedValue[ObjectType.NullPointerException.type]]
 
-    protected def sideEffectOnlyOrNullPointerException(value: DomainValue): SideEffectOnlyOrNullPointerException = {
+    protected def sideEffectOnlyOrNullPointerException(pc: Int, value: DomainValue): ComputationWithNullPointerException = {
         isNull(value) match {
-            case Yes     ⇒ ThrowsException(newObject(ObjectType.NullPointerException))
+            case Yes     ⇒ ThrowsException(newObject(pc, ObjectType.NullPointerException))
             case No      ⇒ ComputationWithSideEffectOnly
-            case Unknown ⇒ ComputationWithSideEffectOrException(newObject(ObjectType.NullPointerException))
+            case Unknown ⇒ ComputationWithSideEffectOrException(newObject(pc, ObjectType.NullPointerException))
         }
     }
 
@@ -469,16 +524,16 @@ trait Domain {
     //
     // -----------------------------------------------------------------------------------
 
-    def athrow(exception: DomainValue): ComputationWithReturnValueOrNullPointerException =
-        givenValueOrNullPointerException(exception)
+    def athrow(pc: Int, exception: DomainValue): ComputationWithReturnValueOrNullPointerException =
+        givenValueOrNullPointerException(pc, exception)
 
     //
     // CREATE ARRAY
     //
     type NewArrayOrNegativeArraySizeException = Computation[DomainTypedValue[ArrayType], DomainTypedValue[ObjectType.ArithmeticException.type]]
 
-    def newarray(count: DomainValue, componentType: FieldType): NewArrayOrNegativeArraySizeException
-    def multianewarray(counts: List[DomainValue], arrayType: ArrayType): NewArrayOrNegativeArraySizeException
+    def newarray(pc: Int, count: DomainValue, componentType: FieldType): NewArrayOrNegativeArraySizeException
+    def multianewarray(pc: Int, counts: List[DomainValue], arrayType: ArrayType): NewArrayOrNegativeArraySizeException
 
     //
     // LOAD FROM AND STORE VALUE IN ARRAYS
@@ -495,79 +550,79 @@ trait Domain {
      */
     type ArrayStoreResult = Computation[Nothing, Set[DomainTypedValue[ObjectType]]]
 
-    def aaload(index: DomainValue, arrayref: DomainValue): ArrayLoadResult
-    def aastore(value: DomainValue, index: DomainValue, arrayref: DomainValue): ArrayStoreResult
-    def baload(index: DomainValue, arrayref: DomainValue): ArrayLoadResult
-    def bastore(value: DomainValue, index: DomainValue, arrayref: DomainValue): ArrayStoreResult
-    def caload(index: DomainValue, arrayref: DomainValue): ArrayLoadResult
-    def castore(value: DomainValue, index: DomainValue, arrayref: DomainValue): ArrayStoreResult
-    def daload(index: DomainValue, arrayref: DomainValue): ArrayLoadResult
-    def dastore(value: DomainValue, index: DomainValue, arrayref: DomainValue): ArrayStoreResult
-    def faload(index: DomainValue, arrayref: DomainValue): ArrayLoadResult
-    def fastore(value: DomainValue, index: DomainValue, arrayref: DomainValue): ArrayStoreResult
-    def iaload(index: DomainValue, arrayref: DomainValue): ArrayLoadResult
-    def iastore(value: DomainValue, index: DomainValue, arrayref: DomainValue): ArrayStoreResult
-    def laload(index: DomainValue, arrayref: DomainValue): ArrayLoadResult
-    def lastore(value: DomainValue, index: DomainValue, arrayref: DomainValue): ArrayStoreResult
-    def saload(index: DomainValue, arrayref: DomainValue): ArrayLoadResult
-    def sastore(value: DomainValue, index: DomainValue, arrayref: DomainValue): ArrayStoreResult
+    def aaload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
+    def aastore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue): ArrayStoreResult
+    def baload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
+    def bastore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue): ArrayStoreResult
+    def caload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
+    def castore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue): ArrayStoreResult
+    def daload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
+    def dastore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue): ArrayStoreResult
+    def faload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
+    def fastore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue): ArrayStoreResult
+    def iaload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
+    def iastore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue): ArrayStoreResult
+    def laload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
+    def lastore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue): ArrayStoreResult
+    def saload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
+    def sastore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue): ArrayStoreResult
 
     //
     // LENGTH OF AN ARRAY
     //
-    def arraylength(arrayref: DomainValue): ComputationWithReturnValueOrNullPointerException
+    def arraylength(pc: Int, arrayref: DomainValue): ComputationWithReturnValueOrNullPointerException
 
     // 
     // PUSH CONSTANT VALUE
     //
-    val theNullValue: DomainValue
-    def byteValue(value: Int): DomainValue
-    def shortValue(value: Int): DomainValue
-    def intValue(value: Int): DomainValue
-    def longValue(vlaue: Long): DomainValue
-    def floatValue(value: Float): DomainValue
-    def doubleValue(value: Double): DomainValue
-    def stringValue(value: String): DomainValue
+    def theNullValue(pc: Int): DomainValue
+    def byteValue(pc: Int, value: Int): DomainValue
+    def shortValue(pc: Int, value: Int): DomainValue
+    def intValue(pc: Int, value: Int): DomainValue
+    def longValue(pc: Int, value: Long): DomainValue
+    def floatValue(pc: Int, value: Float): DomainValue
+    def doubleValue(pc: Int, value: Double): DomainValue
+    def stringValue(pc: Int, value: String): DomainValue
     /**
      * @return A value that represents a runtime value of type "Class<t>"
      */
-    def classValue(t: ReferenceType): DomainValue
+    def classValue(pc: Int, t: ReferenceType): DomainValue
 
     //
     // TYPE CHECKS AND CONVERSION
     //
 
-    def checkcast(objectref: DomainValue, resolvedType: ReferenceType): Computation[DomainValue, DomainTypedValue[ObjectType.ClassCastException.type]]
-    def instanceof(objectref: DomainValue, resolvedType: ReferenceType): DomainValue
+    def checkcast(pc: Int, objectref: DomainValue, resolvedType: ReferenceType): Computation[DomainValue, DomainTypedValue[ObjectType.ClassCastException.type]]
+    def instanceof(pc: Int, objectref: DomainValue, resolvedType: ReferenceType): DomainValue
 
-    def d2f(value: DomainValue): DomainValue
-    def d2i(value: DomainValue): DomainValue
-    def d2l(value: DomainValue): DomainValue
+    def d2f(pc: Int, value: DomainValue): DomainValue
+    def d2i(pc: Int, value: DomainValue): DomainValue
+    def d2l(pc: Int, value: DomainValue): DomainValue
 
-    def f2d(value: DomainValue): DomainValue
-    def f2i(value: DomainValue): DomainValue
-    def f2l(value: DomainValue): DomainValue
+    def f2d(pc: Int, value: DomainValue): DomainValue
+    def f2i(pc: Int, value: DomainValue): DomainValue
+    def f2l(pc: Int, value: DomainValue): DomainValue
 
-    def i2b(value: DomainValue): DomainValue
-    def i2c(value: DomainValue): DomainValue
-    def i2d(value: DomainValue): DomainValue
-    def i2f(value: DomainValue): DomainValue
-    def i2l(value: DomainValue): DomainValue
-    def i2s(value: DomainValue): DomainValue
+    def i2b(pc: Int, value: DomainValue): DomainValue
+    def i2c(pc: Int, value: DomainValue): DomainValue
+    def i2d(pc: Int, value: DomainValue): DomainValue
+    def i2f(pc: Int, value: DomainValue): DomainValue
+    def i2l(pc: Int, value: DomainValue): DomainValue
+    def i2s(pc: Int, value: DomainValue): DomainValue
 
-    def l2d(value: DomainValue): DomainValue
-    def l2f(value: DomainValue): DomainValue
-    def l2i(value: DomainValue): DomainValue
+    def l2d(pc: Int, value: DomainValue): DomainValue
+    def l2f(pc: Int, value: DomainValue): DomainValue
+    def l2i(pc: Int, value: DomainValue): DomainValue
 
     //
     // RETURN FROM METHOD
     //
-    def areturn(value: DomainValue): Unit
-    def dreturn(value: DomainValue): Unit
-    def freturn(value: DomainValue): Unit
-    def ireturn(value: DomainValue): Unit
-    def lreturn(value: DomainValue): Unit
-    def returnVoid(): Unit
+    def areturn(pc: Int, value: DomainValue): Unit
+    def dreturn(pc: Int, value: DomainValue): Unit
+    def freturn(pc: Int, value: DomainValue): Unit
+    def ireturn(pc: Int, value: DomainValue): Unit
+    def lreturn(pc: Int, value: DomainValue): Unit
+    def returnVoid(pc: Int): Unit
 
     /**
      * Called by BATAI when an exception is thrown that is not guaranteed to be handled
@@ -579,24 +634,28 @@ trait Domain {
      *
      * This method is intended to be overridden; by default this method does nothing.
      */
-    def abnormalReturn(exception: DomainValue): Unit = {}
+    def abnormalReturn(pc: Int, exception: DomainValue): Unit = {}
 
     //
     // ACCESSING FIELDS
     //
-    def getfield(objectref: DomainValue,
+    def getfield(pc: Int,
+                 objectref: DomainValue,
                  declaringClass: ObjectType,
                  name: String,
                  fieldType: FieldType): ComputationWithReturnValueOrNullPointerException
-    def getstatic(declaringClass: ObjectType,
+    def getstatic(pc: Int,
+                  declaringClass: ObjectType,
                   name: String,
                   fieldType: FieldType): DomainValue
-    def putfield(objectref: DomainValue,
+    def putfield(pc: Int,
+                 objectref: DomainValue,
                  value: DomainValue,
                  declaringClass: ObjectType,
                  name: String,
-                 fieldType: FieldType): SideEffectOnlyOrNullPointerException
-    def putstatic(value: DomainValue,
+                 fieldType: FieldType): ComputationWithNullPointerException
+    def putstatic(pc: Int,
+                  value: DomainValue,
                   declaringClass: ObjectType,
                   name: String,
                   fieldType: FieldType): Unit
@@ -604,41 +663,45 @@ trait Domain {
     //
     // METHOD INVOCATIONS
     //
-    type InvokeResult = Computation[Option[DomainValue], Set[DomainTypedValue[ObjectType]]]
+    type ComputationWithOptionalReturnValueAndExceptions = Computation[Option[DomainValue], Set[DomainTypedValue[ObjectType]]]
     // TODO [AI] Add support for Java7's Invokedynamic to the Domain.
-    def invokeinterface(declaringClass: ReferenceType,
+    def invokeinterface(pc: Int,
+                        declaringClass: ReferenceType,
                         name: String,
                         methodDescriptor: MethodDescriptor,
-                        params: List[DomainValue]): InvokeResult
-    def invokevirtual(declaringClass: ReferenceType,
+                        params: List[DomainValue]): ComputationWithOptionalReturnValueAndExceptions
+    def invokevirtual(pc: Int,
+                      declaringClass: ReferenceType,
                       name: String,
                       methodDescriptor: MethodDescriptor,
-                      params: List[DomainValue]): InvokeResult
-    def invokespecial(declaringClass: ReferenceType,
+                      params: List[DomainValue]): ComputationWithOptionalReturnValueAndExceptions
+    def invokespecial(pc: Int,
+                      declaringClass: ReferenceType,
                       name: String,
                       methodDescriptor: MethodDescriptor,
-                      params: List[DomainValue]): InvokeResult
-    def invokestatic(declaringClass: ReferenceType,
+                      params: List[DomainValue]): ComputationWithOptionalReturnValueAndExceptions
+    def invokestatic(pc: Int,
+                     declaringClass: ReferenceType,
                      name: String,
                      methodDescriptor: MethodDescriptor,
-                     params: List[DomainValue]): InvokeResult
+                     params: List[DomainValue]): ComputationWithOptionalReturnValueAndExceptions
 
     //
     // RELATIONAL OPERATORS
     //
-    def fcmpg(value1: DomainValue, value2: DomainValue): DomainValue
-    def fcmpl(value1: DomainValue, value2: DomainValue): DomainValue
-    def dcmpg(value1: DomainValue, value2: DomainValue): DomainValue
-    def dcmpl(value1: DomainValue, value2: DomainValue): DomainValue
-    def lcmp(value1: DomainValue, value2: DomainValue): DomainValue
+    def fcmpg(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def fcmpl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def dcmpg(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def dcmpl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def lcmp(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
 
     //
     // UNARY EXPRESSIONS
     //
-    def fneg(value: DomainValue): DomainValue
-    def dneg(value: DomainValue): DomainValue
-    def lneg(value: DomainValue): DomainValue
-    def ineg(value: DomainValue): DomainValue
+    def fneg(pc: Int, value: DomainValue): DomainValue
+    def dneg(pc: Int, value: DomainValue): DomainValue
+    def lneg(pc: Int, value: DomainValue): DomainValue
+    def ineg(pc: Int, value: DomainValue): DomainValue
 
     //
     // BINARY EXPRESSIONS
@@ -646,47 +709,47 @@ trait Domain {
 
     type IntegerDivisionResult = Computation[DomainValue, DomainTypedValue[ObjectType.ArithmeticException.type]]
 
-    def dadd(value1: DomainValue, value2: DomainValue): DomainValue
-    def ddiv(value1: DomainValue, value2: DomainValue): DomainValue
-    def dmul(value1: DomainValue, value2: DomainValue): DomainValue
-    def drem(value1: DomainValue, value2: DomainValue): DomainValue
-    def dsub(value1: DomainValue, value2: DomainValue): DomainValue
+    def dadd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def ddiv(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def dmul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def drem(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def dsub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
 
-    def fadd(value1: DomainValue, value2: DomainValue): DomainValue
-    def fdiv(value1: DomainValue, value2: DomainValue): DomainValue
-    def fmul(value1: DomainValue, value2: DomainValue): DomainValue
-    def frem(value1: DomainValue, value2: DomainValue): DomainValue
-    def fsub(value1: DomainValue, value2: DomainValue): DomainValue
+    def fadd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def fdiv(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def fmul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def frem(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def fsub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
 
-    def iadd(value1: DomainValue, value2: DomainValue): DomainValue
-    def iand(value1: DomainValue, value2: DomainValue): DomainValue
-    def idiv(value1: DomainValue, value2: DomainValue): IntegerDivisionResult
-    def imul(value1: DomainValue, value2: DomainValue): DomainValue
-    def ior(value1: DomainValue, value2: DomainValue): DomainValue
-    def irem(value1: DomainValue, value2: DomainValue): DomainValue
-    def ishl(value1: DomainValue, value2: DomainValue): DomainValue
-    def ishr(value1: DomainValue, value2: DomainValue): DomainValue
-    def isub(value1: DomainValue, value2: DomainValue): DomainValue
-    def iushr(value1: DomainValue, value2: DomainValue): DomainValue
-    def ixor(value1: DomainValue, value2: DomainValue): DomainValue
+    def iadd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def iand(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def idiv(pc: Int, value1: DomainValue, value2: DomainValue): IntegerDivisionResult
+    def imul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def ior(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def irem(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def ishl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def ishr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def isub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def iushr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def ixor(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
 
-    def ladd(value1: DomainValue, value2: DomainValue): DomainValue
-    def land(value1: DomainValue, value2: DomainValue): DomainValue
-    def ldiv(value1: DomainValue, value2: DomainValue): IntegerDivisionResult
-    def lmul(value1: DomainValue, value2: DomainValue): DomainValue
-    def lor(value1: DomainValue, value2: DomainValue): DomainValue
-    def lrem(value1: DomainValue, value2: DomainValue): DomainValue
-    def lshl(value1: DomainValue, value2: DomainValue): DomainValue
-    def lshr(value1: DomainValue, value2: DomainValue): DomainValue
-    def lsub(value1: DomainValue, value2: DomainValue): DomainValue
-    def lushr(value1: DomainValue, value2: DomainValue): DomainValue
-    def lxor(value1: DomainValue, value2: DomainValue): DomainValue
+    def ladd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def land(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def ldiv(pc: Int, value1: DomainValue, value2: DomainValue): IntegerDivisionResult
+    def lmul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def lor(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def lrem(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def lshl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def lshr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def lsub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def lushr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def lxor(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
 
     //
     // "OTHER" INSTRUCTIONS
     //
 
-    def iinc(value: DomainValue, increment: Int): DomainValue
+    def iinc(pc: Int, value: DomainValue, increment: Int): DomainValue
 
     /**
      * Handles a `monitorenter` instruction.
@@ -696,8 +759,8 @@ trait Domain {
      * the value is known not to be `null` the given value is (also) returned as this
      * computation's results.
      */
-    def monitorenter(value: DomainValue): SideEffectOnlyOrNullPointerException = {
-        sideEffectOnlyOrNullPointerException(value)
+    def monitorenter(pc: Int, value: DomainValue): ComputationWithNullPointerException = {
+        sideEffectOnlyOrNullPointerException(pc, value)
     }
 
     /**
@@ -708,15 +771,15 @@ trait Domain {
      * the value is known not to be `null` the given value is (also) returned as this
      * computation's results.
      */
-    def monitorexit(value: DomainValue): SideEffectOnlyOrNullPointerException = {
-        sideEffectOnlyOrNullPointerException(value)
+    def monitorexit(pc: Int, value: DomainValue): ComputationWithNullPointerException = {
+        sideEffectOnlyOrNullPointerException(pc, value)
     }
 
     /**
      * Creates a new `DomainTypeValue` that represents an (new) instance of an
      * object of the given type.
      */
-    def newObject(t: ObjectType): DomainTypedValue[t.type]
+    def newObject(pc: Int, t: ObjectType): DomainTypedValue[t.type]
 
     //
     //
@@ -756,7 +819,7 @@ trait Domain {
             } else {
                 var thisRemainingOperands = thisOperands
                 var otherRemainingOperands = otherOperands
-                var newOperands = List[DomainValue]() // during the update we build the operands stack in reverse order
+                var newOperands: List[DomainValue] = List.empty // during the update we build the operands stack in reverse order
 
                 while (thisRemainingOperands.nonEmpty /* && both stacks contain the same number of elements */ ) {
                     val thisOperand = thisRemainingOperands.head

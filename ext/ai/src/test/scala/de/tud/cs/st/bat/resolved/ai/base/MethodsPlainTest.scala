@@ -61,12 +61,12 @@ class MethodsPlainTest
 
     class RecordingDomain extends DefaultDomain {
         var returnedValue: Option[DomainValue] = _
-        override def areturn(value: DomainValue) { returnedValue = Some(value) }
-        override def dreturn(value: DomainValue) { returnedValue = Some(value) }
-        override def freturn(value: DomainValue) { returnedValue = Some(value) }
-        override def ireturn(value: DomainValue) { returnedValue = Some(value) }
-        override def lreturn(value: DomainValue) { returnedValue = Some(value) }
-        override def returnVoid() { returnedValue = None }
+        override def areturn(pc: Int, value: DomainValue) { returnedValue = Some(value) }
+        override def dreturn(pc: Int, value: DomainValue) { returnedValue = Some(value) }
+        override def freturn(pc: Int, value: DomainValue) { returnedValue = Some(value) }
+        override def ireturn(pc: Int, value: DomainValue) { returnedValue = Some(value) }
+        override def lreturn(pc: Int, value: DomainValue) { returnedValue = Some(value) }
+        override def returnVoid(pc: Int) { returnedValue = None }
     }
 
     val classFile =
@@ -957,10 +957,11 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "asIs").get
         val t = ObjectType("some/Foo")
         val locals = new Array[Value](1)
-        locals(0) = TypedValue(t)
+        val theObject = TypedValue(t)
+        locals(0) = theObject
         AI.perform(method.body.get, domain)(locals)
 
-        domain.returnedValue should be(Some(TypedValue(t)))
+        domain.returnedValue should be(Some(theObject))
     }
 
     it should "be able to analyze a method that creates an instance of an object using reflection" in {

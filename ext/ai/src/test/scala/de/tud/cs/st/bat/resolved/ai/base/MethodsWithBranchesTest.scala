@@ -61,12 +61,12 @@ class MethodsWithBranchesTest
 
     class RecordingDomain extends DefaultDomain with ReifiedConstraints {
         var returnedValues: List[(String, Value)] = List()
-        override def areturn(value: Value) { returnedValues = ("areturn", value) :: returnedValues }
-        override def dreturn(value: Value) { returnedValues = ("dreturn", value) :: returnedValues }
-        override def freturn(value: Value) { returnedValues = ("freturn", value) :: returnedValues }
-        override def ireturn(value: Value) { returnedValues = ("ireturn", value) :: returnedValues }
-        override def lreturn(value: Value) { returnedValues = ("lreturn", value) :: returnedValues }
-        override def returnVoid() { returnedValues = ("return", null) :: returnedValues }
+        override def areturn(pc: Int, value: Value) { returnedValues = ("areturn", value) :: returnedValues }
+        override def dreturn(pc: Int, value: Value) { returnedValues = ("dreturn", value) :: returnedValues }
+        override def freturn(pc: Int, value: Value) { returnedValues = ("freturn", value) :: returnedValues }
+        override def ireturn(pc: Int, value: Value) { returnedValues = ("ireturn", value) :: returnedValues }
+        override def lreturn(pc: Int, value: Value) { returnedValues = ("lreturn", value) :: returnedValues }
+        override def returnVoid(pc: Int) { returnedValues = ("return", null) :: returnedValues }
 
         var constraints: List[ReifiedConstraint] = List()
 

@@ -45,35 +45,10 @@ import reflect.ClassTag
  */
 trait DomainWithValues extends Domain {
 
-    def TypedValue[T <: Type](someType: T): DomainTypedValue[T] = {
-        (someType match {
-            case BooleanType       ⇒ SomeBooleanValue
-            case ByteType          ⇒ SomeByteValue
-            case ShortType         ⇒ SomeShortValue
-            case CharType          ⇒ SomeCharValue
-            case IntegerType       ⇒ SomeIntegerValue
-            case FloatType         ⇒ SomeFloatValue
-            case LongType          ⇒ SomeLongValue
-            case DoubleType        ⇒ SomeDoubleValue
-            case rt: ReferenceType ⇒ ReferenceValue(rt)
-            case VoidType          ⇒ AIImplementationError("it is not possible to create a typed value of type VoidType")
-        }).asInstanceOf[DomainTypedValue[T]]
-    }
-
-    val SomeBooleanValue: DomainTypedValue[BooleanType]
-    val SomeByteValue: DomainTypedValue[ByteType]
-    val SomeShortValue: DomainTypedValue[ShortType]
-    val SomeCharValue: DomainTypedValue[CharType]
-    val SomeIntegerValue: DomainTypedValue[IntegerType]
-    val SomeFloatValue: DomainTypedValue[FloatType]
-    val SomeLongValue: DomainTypedValue[LongType]
-    val SomeDoubleValue: DomainTypedValue[DoubleType]
-
-    def ReferenceValue(referenceType: ReferenceType): DomainTypedValue[referenceType.type]
-
-    val AStringObject = ReferenceValue(ObjectType.String)
-    val AClassObject = ReferenceValue(ObjectType.Class)
-    val AnObject = ReferenceValue(ObjectType.Object)
+    val IntegerConstant0: DomainValue = intValue(Int.MinValue,0)
+    val AStringObject = SomeReferenceValue(ObjectType.String)
+    val AClassObject = SomeReferenceValue(ObjectType.Class)
+    val AnObject = SomeReferenceValue(ObjectType.Object)
 
     /**
      * Abstracts over all values with computational type category `1`.
@@ -138,7 +113,6 @@ trait DomainWithValues extends Domain {
     //
     // QUESTION'S ABOUT VALUES
     //
- 
 
     def areEqualReferences(value1: DomainValue, value2: DomainValue): Answer = {
         Unknown

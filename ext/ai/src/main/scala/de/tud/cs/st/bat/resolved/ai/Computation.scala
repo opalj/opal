@@ -37,7 +37,7 @@ package ai
 
 /**
  * Encapsulates the result of a computation in a domain. In general, the
- * result is either some value V or some exception(s). In some cases, however,
+ * result is either some value `V` or some exception(s) `E`. In some cases, however,
  * when the domain cannot "precisely" determine the result, it may be both: some
  * exceptional value(s) and a value. In the latter case BATAI will follow all
  * possible paths.
@@ -45,7 +45,7 @@ package ai
  * @tparam V The result of the computation. Typically a `DomainValue` or a
  *      `DomainTypedValue`. If the computation is primarily executed for its side
  *      effect (e.g., as in case of a `monitorenter` or `monitorexit` instruction)
- *      the type of V maybe nothing.
+ *      the type of `V` maybe `Nothing`.
  * @tparam E The exception(s) that maybe thrown by the computation. Typically,
  *      a `DomainTypedValue[ObjectType]` or a set thereof.
  */
@@ -63,10 +63,10 @@ sealed trait Computation[+V, +E] {
     def hasResult: Boolean
 
     /**
-     * The exception or exceptions when the computation raised an exception.
+     * The exception or exceptions when the computation raised an exception;
+     * defined if and only if `throwsException` returns `true`.
      *
-     * E.g., the invocation of a method may lead to
-     * several (checked/unchecked) exceptions.
+     * E.g., the invocation of a method may lead to several (checked/unchecked) exceptions.
      */
     def exceptions: E
 
@@ -150,8 +150,7 @@ case class ComputationWithSideEffectOrException[+E](
 }
 
 /**
- * Encapsulates the result of a computation that returned normally (but which
- * did not return some value).
+ * Represents computations that completed normally.
  */
 case object ComputationWithSideEffectOnly
         extends Computation[Nothing, Nothing] {

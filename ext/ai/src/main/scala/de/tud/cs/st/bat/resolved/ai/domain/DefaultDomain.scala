@@ -198,9 +198,9 @@ class DefaultDomain extends AbstractDefaultDomain {
             case _                        ⇒ MetaInformationUpdateNoLegalValue
         }
     }
-    val theNullValue = NullValue
+    def theNullValue(pc: Int) = NullValue
 
-    def newObject(t: ObjectType): DomainTypedValue[t.type] = TypedValue(t)
+    def newObject(pc: Int, t: ObjectType): DomainTypedValue[t.type] = TypedValue(t)
 
     def isNull(value: DomainValue): Answer = {
         if (value == NullValue)
