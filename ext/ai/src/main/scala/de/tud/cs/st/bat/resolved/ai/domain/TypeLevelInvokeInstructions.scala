@@ -34,50 +34,48 @@ package de.tud.cs.st
 package bat
 package resolved
 package ai
+package domain
 
 /**
- * Mixin this trait if you want to reify the stated constraints. This is particular
- * useful for testing and debugging purposes.
  *
- * @todo Currently we only refine Is(Non)NullConstraints and nothing else...
- * @author Michael Eichberg
  */
-trait ReifiedConstraints extends Domain {
+trait TypeLevelInvokeInstructions { this: Domain ⇒
 
-    trait ReifiedConstraint
+    def invokeinterface(pc: Int,
+                        declaringClass: ReferenceType,
+                        name: String,
+                        methodDescriptor: MethodDescriptor,
+                        params: List[DomainValue]) =
+        ComputedValue(asTypedValue(methodDescriptor.returnType))
 
-    case class IsNullConstraint(pc: Int, value: Value) extends ReifiedConstraint
-    case class IsNonNullConstraint(pc: Int, value: Value) extends ReifiedConstraint
+    def invokevirtual(pc: Int,
+                      declaringClass: ReferenceType,
+                      name: String,
+                      methodDescriptor: MethodDescriptor,
+                      params: List[DomainValue]) =
+        ComputedValue(asTypedValue(methodDescriptor.returnType))
 
-    case class SingleValueReifiedConstraint(
-        r: (Int, DomainValue) ⇒ ReifiedConstraint,
-        sv: ( /* pc :*/ Int, DomainValue, Operands, Locals) ⇒ (Operands, Locals))
-            extends SingleValueConstraint {
+    def invokespecial(pc: Int,
+                      declaringClass: ReferenceType,
+                      name: String,
+                      methodDescriptor: MethodDescriptor,
+                      params: List[DomainValue]) =
+        ComputedValue(asTypedValue(methodDescriptor.returnType))
 
-        def apply(pc: Int, v: DomainValue, o: Operands, l: Locals) = {
-            addConstraint(r(pc, v))
-            sv(pc, v, o, l)
-        }
+    def invokestatic(pc: Int,
+                     declaringClass: ReferenceType,
+                     name: String,
+                     methodDescriptor: MethodDescriptor,
+                     params: List[DomainValue]) =
+        ComputedValue(asTypedValue(methodDescriptor.returnType))
+
+    protected def asTypedValue(someType: Type): Option[DomainTypedValue[someType.type]] = {
+        if (someType.isVoidType)
+            None
+        else
+            Some(TypedValue(someType))
     }
-
-    abstract override def IsNull: SingleValueConstraint =
-        SingleValueReifiedConstraint(IsNullConstraint, super.IsNull)
-
-    abstract override def IsNonNull: SingleValueConstraint =
-        SingleValueReifiedConstraint(IsNonNullConstraint, super.IsNonNull)
-
-    //    abstract override def UpperBound: SingleValueConstraintWithBound[ReferenceType]
-    //
-    //    abstract override def AreEqualReferences: TwoValuesConstraint
-    //    abstract override def AreNotEqualReferences: TwoValuesConstraint
-    //    abstract override def AreEqualIntegers: TwoValuesConstraint
-    //    abstract override def AreNotEqualIntegers: TwoValuesConstraint
-    //    abstract override def IsLessThan: TwoValuesConstraint
-    //    abstract override def IsLessThanOrEqualTo: TwoValuesConstraint
-
-    def addConstraint(constraint: ReifiedConstraint)
 }
-
 
 
 

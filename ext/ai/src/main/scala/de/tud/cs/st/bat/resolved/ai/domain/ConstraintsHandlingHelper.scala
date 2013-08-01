@@ -34,11 +34,11 @@ package de.tud.cs.st
 package bat
 package resolved
 package ai
-
-import reflect.ClassTag
+package domain
 
 /**
- * Helper methods and classes to support the handling of constraints stated by BATAI.
+ * Helper methods and classes to support the handling of constraints stated by BATAI
+ * during the interpretation of a method.
  */
 trait ConstraintsHandlingHelper { this: Domain ⇒
 

@@ -257,7 +257,7 @@ trait AI {
             val operands = operandsArray(pc)
             val locals = localsArray(pc)
 
-            if (tracer.isDefined) 
+            if (tracer.isDefined)
                 tracer.get.traceInstructionEvalution(domain)(pc, instruction, operands, locals)
 
             def pcOfNextInstruction = code.indexOfNextInstruction(pc)
@@ -1355,8 +1355,9 @@ trait AI {
 }
 
 /**
- * Base abstract interpreter usefull for testing and debugging purposes. The base
- * interpreter can be interrupted by calling the `interrupt` method of the AI's thread.
+ * A base abstract interpreter useful for testing and debugging purposes. The base
+ * interpreter can be interrupted by calling the `interrupt` method of the
+ * AI's thread.
  */
 object AI extends AI {
 

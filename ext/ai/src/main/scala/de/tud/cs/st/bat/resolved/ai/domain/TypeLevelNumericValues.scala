@@ -34,8 +34,7 @@ package de.tud.cs.st
 package bat
 package resolved
 package ai
-
-import reflect.ClassTag
+package domain
 
 /**
  * Support for handling of numeric values at the type-level.

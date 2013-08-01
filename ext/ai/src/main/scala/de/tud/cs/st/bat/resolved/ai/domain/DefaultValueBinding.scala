@@ -34,11 +34,12 @@ package de.tud.cs.st
 package bat
 package resolved
 package ai
+package domain
 
 import reflect.ClassTag
 
 /**
- * Final binding of the Value trait.
+ * Final binding of the [[de.tud.cs.st.bat.resolved.ai.Domain.Value]] trait.
  */
 trait DefaultValueBinding { this : Domain =>
 

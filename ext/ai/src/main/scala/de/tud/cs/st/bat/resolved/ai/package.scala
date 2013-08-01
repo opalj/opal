@@ -38,14 +38,15 @@ package resolved
  * This package defines classes and traits used by BAT's abstract interpretation
  * framework – called BATAI in the following.
  *
- * ==Note==
- * This framework assumes that the analyzed bytecode is valid; i.e., the JVM's
- * bytecode verifier would verify the code. If the presented bytecode is not valid,
+ * @note This framework assumes that the analyzed bytecode is valid; i.e., the JVM's
+ * bytecode verifier would verify the code. Furthermore, load-time errors
+ * (e.g., `LinkageErrors`) are completely ignored to facilitate the analysis of
+ * parts of a project. In general, if the presented bytecode is not valid,
  * the result is undefined (i.e., BATAI may report meaningless results, crash or run
  * indefinitely.
  *
  * @see [[de.tud.cs.st.bat.resolved.ai.AI]] - the main class
- * 
+ *
  * @author Michael Eichberg
  */
 package object ai {
@@ -53,12 +54,14 @@ package object ai {
     /**
      * Exception that is thrown if the framework identifies an error in the concrete
      * implementation of a specific domain. I.e., the error is related to an error in
-     * user code in the implementation of the domain.
+     * a user's implementation of a domain.
      */
     class AIImplementationError(message: String) extends RuntimeException(message)
 
-    @throws[AIImplementationError]
-    def AIImplementationError(message: String): Nothing = {
+    /**
+     * Creates and immediately throws an `AIImplementationError`.
+     */
+    @throws[AIImplementationError] def AIImplementationError(message: String): Nothing = {
         throw new AIImplementationError(message)
     }
 

@@ -59,7 +59,7 @@ class MethodsWithExceptionsTest
 
     import util.Util.dumpOnFailureDuringValidation
 
-    class RecordingDomain extends DefaultDomain {
+    class RecordingDomain extends domain.DefaultDomain {
         var returnedValues: Set[(String, Value)] = Set()
         override def areturn(pc: Int, value: Value) { returnedValues += (("areturn", value)) }
         override def dreturn(pc: Int, value: Value) { returnedValues += (("dreturn", value)) }

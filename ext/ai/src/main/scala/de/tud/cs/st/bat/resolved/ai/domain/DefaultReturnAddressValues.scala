@@ -34,47 +34,19 @@ package de.tud.cs.st
 package bat
 package resolved
 package ai
+package domain
 
-import reflect.ClassTag
+trait DefaultReturnAddressValues
+        extends Domain
+        with DefaultValueBinding {
 
-/**
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
- * @author Dennis Siebert
- */
-trait TypeLevelFieldAccessInstructions { this: Domain ⇒
+    type DomainReturnAddressValue = ReturnAddressValue
 
-    //
-    // ACCESSING FIELDS
-    //
-    def getfield(pc: Int,
-                 objectref: DomainValue,
-                 declaringClass: ObjectType,
-                 name: String,
-                 fieldType: FieldType) =
-        ComputedValue(TypedValue(fieldType))
-
-    def getstatic(pc: Int,
-                  declaringClass: ObjectType,
-                  name: String,
-                  fieldType: FieldType) =
-        TypedValue(fieldType)
-
-    def putfield(pc: Int,
-                 objectref: DomainValue,
-                 value: DomainValue,
-                 declaringClass: ObjectType,
-                 name: String,
-                 fieldType: FieldType) = {
-        ComputationWithSideEffectOnly
-        /* Nothing to do. */
-    }
-
-    def putstatic(pc: Int,
-                  value: DomainValue,
-                  declaringClass: ObjectType,
-                  name: String,
-                  fieldType: FieldType) {
-        /* Nothing to do. */
-    }
+    def ReturnAddressValue(addresses: Set[Int]): DomainReturnAddressValue =
+        new ReturnAddressValue(addresses)
 
 }
+
+
+
+

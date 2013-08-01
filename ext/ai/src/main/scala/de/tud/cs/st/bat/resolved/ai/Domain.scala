@@ -48,10 +48,14 @@ import language.higherKinds
  * and some (user defined) domain.
  *
  * To facilitate the usage of BATAI several classes/traits that implement parts of
- * the `Domain` trait are pre-defined.
+ * the `Domain` trait are pre-defined and can be mixed in when needed.
+ *
+ * - [[de.tud.cs.st.bat.resolved.ai.domain.ConstraintsHandlingHelper]]
+ * - [[de.tud.cs.st.bat.resolved.ai.domain.BaseDomain]]
+ * - [[de.tud.cs.st.bat.resolved.ai.domain.DefaultDomain]]
  *
  * ==Control Flow==
- * BATAI controls the process of evaluating the program, but requires a
+ * BATAI controls the process of evaluating the code of a method, but requires a
  * domain to perform the actual computations of an instruction's result.
  * Handling of instructions that move values between the stack/the locals
  * is completely embedded into BATAI.
@@ -194,7 +198,7 @@ trait Domain {
     }
 
     /**
-     * Facilitates matching against `NoLegalValues`
+     * Facilitates matching against `NoLegalValues`.
      */
     object NoLegalValue {
         def unapply(value: NoLegalValue): Boolean = value ne null
@@ -292,9 +296,6 @@ trait Domain {
      * Factory method to create `TypedValue`s; i.e., values for which we have (more)
      * precise type information but no value information. I.e., if the type value
      * represents a reference type it may be possible that the value is `null`.
-     *
-     * The abstract interpreter uses this method only to create the initial domain
-     * values that represent a method's potential parameter assignment.
      */
     def TypedValue[T >: Null <: Type](valueType: T): DomainTypedValue[T] = {
         (valueType match {
@@ -311,6 +312,9 @@ trait Domain {
         }).asInstanceOf[DomainTypedValue[T]]
     }
 
+    /**
+     * Represents some boolean value, where the source of the value is not known. 
+     */
     def SomeBooleanValue: DomainTypedValue[BooleanType]
     def SomeByteValue: DomainTypedValue[ByteType]
     def SomeShortValue: DomainTypedValue[ShortType]
@@ -322,8 +326,10 @@ trait Domain {
     def SomeReferenceValue(referenceType: ReferenceType): DomainTypedValue[referenceType.type]
 
     /**
-     * Returns a representation of the integer constant value 0 which is used
-     * by BATAI for comparisons (e.g., for if_XX instructions).
+     * Returns a representation of the integer constant value 0.
+     *
+     * BATAI uses this special value for comparisons against the fixed value 0.
+     * (e.g., for if_XX instructions).
      */
     val IntegerConstant0: DomainValue
 

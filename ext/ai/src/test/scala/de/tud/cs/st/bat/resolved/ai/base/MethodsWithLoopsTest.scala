@@ -58,7 +58,7 @@ class MethodsWithLoopsTest
 
     import util.Util.dumpOnFailureDuringValidation
 
-    class RecordingDomain extends DefaultDomain with ReifiedConstraints {
+    class RecordingDomain extends domain.DefaultDomain with domain.ReifiedConstraints {
         var returnedValues: List[(String, Value)] = List()
         override def areturn(pc: Int, value: Value) { returnedValues = ("areturn", value) :: returnedValues }
         override def dreturn(pc: Int, value: Value) { returnedValues = ("dreturn", value) :: returnedValues }

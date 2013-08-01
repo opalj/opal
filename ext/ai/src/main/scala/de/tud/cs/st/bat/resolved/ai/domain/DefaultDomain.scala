@@ -34,13 +34,13 @@ package de.tud.cs.st
 package bat
 package resolved
 package ai
-
-import reflect.ClassTag
+package domain
 
 /**
- * BATAI's default domain, which can be used as a foundation for building
- * you own `Domain` in particular if you are just interested in tracing
- * the application's dependencies and which values flow in which direction.
+ * This domain can be used as a foundation for building your own `Domain`.
+ *
+ * By doing all computations at the type level, BATAI is effectively forced
+ * to explore all possible paths.
  */
 trait BaseDomain
     extends DefaultValueBinding
