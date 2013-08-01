@@ -221,9 +221,22 @@ trait Domain {
     /**
      * Represents a set of concrete values that store return addresses (i.e., a program
      * counter/index into the code array).
+     *
+     * @note The framework completely handles all aspects related to return address values.
      */
-    trait ReturnAddressValue extends Value {
-        def addresses: Set[Int]
+    class ReturnAddressValue(
+        val addresses: Set[Int])
+            extends Value {
+
+        override def merge(value: DomainValue): Update[DomainValue] = value match {
+            case ReturnAddressValue(otherAddresses) ⇒ {
+                if (otherAddresses subsetOf this.addresses)
+                    NoUpdate
+                else
+                    StructuralUpdate(ReturnAddressValue(this.addresses ++ otherAddresses))
+            }
+            case _ ⇒ MetaInformationUpdateNoLegalValue
+        }
 
         final def computationalType: ComputationalType = ComputationalTypeReturnAddress
 
@@ -247,7 +260,9 @@ trait Domain {
     /**
      * Factory method to create instances of `ReturnAddressValue`s
      */
-    def ReturnAddressValue(address: Int): DomainReturnAddressValue
+    def ReturnAddressValue(address: Int): DomainReturnAddressValue =
+        ReturnAddressValue(Set(address))
+
     /**
      * Facilitates matching of `ReturnAddressValue`'s.
      */
@@ -259,7 +274,7 @@ trait Domain {
      * Trait that is mixed in by values for which we have more precise type information
      * than just the computational type.
      */
-    trait TypedValue[+T <: Type] extends Value {
+    trait TypedValue[+T >: Null <: Type] extends Value {
         def valueType: T
     }
 
@@ -267,10 +282,11 @@ trait Domain {
      * Enables matching against `TypedValues`.
      */
     object TypedValue {
-        def unapply[T <: Type](tv: TypedValue[T]): Option[T] = Some(tv.valueType)
+        def unapply[T >: Null <: Type](tv: TypedValue[T]): Option[T] =
+            Some(tv.valueType)
     }
 
-    type DomainTypedValue[+T <: Type] <: TypedValue[T] with DomainValue
+    type DomainTypedValue[+T >: Null <: Type] <: TypedValue[T] with DomainValue
 
     /**
      * Factory method to create `TypedValue`s; i.e., values for which we have (more)
@@ -280,7 +296,7 @@ trait Domain {
      * The abstract interpreter uses this method only to create the initial domain
      * values that represent a method's potential parameter assignment.
      */
-    def TypedValue[T <: Type](valueType: T): DomainTypedValue[T] = {
+    def TypedValue[T >: Null <: Type](valueType: T): DomainTypedValue[T] = {
         (valueType match {
             case BooleanType       ⇒ SomeBooleanValue
             case ByteType          ⇒ SomeByteValue
@@ -307,7 +323,7 @@ trait Domain {
 
     /**
      * Returns a representation of the integer constant value 0 which is used
-     * by BATAI for comparisons (e.g., for if_XX instructions.
+     * by BATAI for comparisons (e.g., for if_XX instructions).
      */
     val IntegerConstant0: DomainValue
 
@@ -630,11 +646,9 @@ trait Domain {
      *
      * @note If the value has a specific type but is actually the value `null`, then
      * the exception that is actually thrown is a `NullPointerException`. This
-     * situation needs to be handled by the domain if necessary.
-     *
-     * This method is intended to be overridden; by default this method does nothing.
+     * situation is, however, completely handled by BATAI.
      */
-    def abnormalReturn(pc: Int, exception: DomainValue): Unit = {}
+    def abnormalReturn(pc: Int, exception: DomainValue): Unit
 
     //
     // ACCESSING FIELDS

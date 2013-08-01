@@ -38,22 +38,24 @@ package ai
 import reflect.ClassTag
 
 /**
- * BATAI's default domain, which can be used as a foundation for building
- * you own `Domain` in particular if you are just interested in tracing
- * the application's dependencies and which values flow in which direction.
+ * Final binding of the Value trait.
  */
-trait BaseDomain
-    extends DefaultValueBinding
-    with DefaultTypeLevelReferenceValues
-    with DefaultTypeLevelNumericValues
-    with DefaultReturnAddressValues
+trait DefaultValueBinding { this : Domain =>
 
-class DefaultDomain
-    extends BaseDomain
-    with TypeLevelArrayInstructions
-    with TypeLevelFieldAccessInstructions
-    with TypeLevelInvokeInstructions
-    with DoNothingOnReturnFromMethod
+    type DomainValue = Value
+    
+    type DomainTypedValue[+T >: Null <: Type] = TypedValue[T]
+    
+    val DomainValueTag: ClassTag[DomainValue] = implicitly
+
+    type DomainNoLegalValue = NoLegalValue
+    
+    final val TheNoLegalValue: DomainNoLegalValue = new NoLegalValue
+    
+    final val MetaInformationUpdateNoLegalValue = MetaInformationUpdate(TheNoLegalValue)
+  
+}
+
 
 
 

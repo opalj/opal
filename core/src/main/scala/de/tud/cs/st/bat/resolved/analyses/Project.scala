@@ -172,6 +172,6 @@ object Project {
      * instructions.
      */
     def initial[Source]() =
-        new Project[Source](classHierarchy = ClassHierarchy.createPreInitializedClassHierarchy)
+        new Project[Source](classHierarchy = ClassHierarchy.preInitializedClassHierarchy)
 
 }

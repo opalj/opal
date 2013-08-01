@@ -258,20 +258,20 @@ object ClassHierarchy {
     /**
      * Creates a new empty class hierarchy.
      */
-    def Empty = new ClassHierarchy()
+    val empty = new ClassHierarchy()
 
     /**
      * Creates a new ClassHierarchy object that predefines the type hierarchy related to
      * the exceptions thrown by specific Java bytecode instructions. See the file
      * ClassHierarchyJVMExceptions.ths (text file) for further details.
      */
-    def createPreInitializedClassHierarchy(): ClassHierarchy = {
+    lazy val preInitializedClassHierarchy: ClassHierarchy = {
         import scala.io.BufferedSource
         import util.ControlAbstractions._
 
         val classHierarchyInputStream = this.getClass().getResourceAsStream("ClassHierarchyJVMExceptions.ths")
         withResource(classHierarchyInputStream) { in ⇒
-            var ch = Empty
+            var ch = empty
             val specLineExtractor = """(\S+)\s*>\s*(.+)""".r
             val source = new BufferedSource(in)
             val specLines = source.getLines.map(_.trim).filterNot((l) ⇒ l.startsWith("#") || l.length == 0)

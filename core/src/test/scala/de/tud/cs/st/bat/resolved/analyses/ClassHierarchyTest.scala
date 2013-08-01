@@ -57,7 +57,7 @@ class ClassHierarchyTest
     // Setup
     //
     //
-    val ch = ClassHierarchy.createPreInitializedClassHierarchy()
+    val ch = ClassHierarchy.preInitializedClassHierarchy
 
     //
     //

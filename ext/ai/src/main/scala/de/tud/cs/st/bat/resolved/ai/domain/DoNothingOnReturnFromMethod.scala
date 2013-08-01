@@ -37,23 +37,23 @@ package ai
 
 import reflect.ClassTag
 
-/**
- * BATAI's default domain, which can be used as a foundation for building
- * you own `Domain` in particular if you are just interested in tracing
- * the application's dependencies and which values flow in which direction.
- */
-trait BaseDomain
-    extends DefaultValueBinding
-    with DefaultTypeLevelReferenceValues
-    with DefaultTypeLevelNumericValues
-    with DefaultReturnAddressValues
+trait DoNothingOnReturnFromMethod { this: Domain ⇒
 
-class DefaultDomain
-    extends BaseDomain
-    with TypeLevelArrayInstructions
-    with TypeLevelFieldAccessInstructions
-    with TypeLevelInvokeInstructions
-    with DoNothingOnReturnFromMethod
+    def areturn(pc: Int, value: DomainValue): Unit = { /* Nothing to do. */ }
+
+    def dreturn(pc: Int, value: DomainValue): Unit = { /* Nothing to do. */ }
+
+    def freturn(pc: Int, value: DomainValue): Unit = { /* Nothing to do. */ }
+
+    def ireturn(pc: Int, value: DomainValue): Unit = { /* Nothing to do. */ }
+
+    def lreturn(pc: Int, value: DomainValue): Unit = { /* Nothing to do. */ }
+
+    def returnVoid(pc: Int): Unit = { /* Nothing to do. */ }
+
+    def abnormalReturn(pc: Int, exception: DomainValue): Unit = { /* Nothing to do. */ }
+}
+
 
 
 

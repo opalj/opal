@@ -38,82 +38,57 @@ package ai
 import reflect.ClassTag
 
 /**
+ * Support for handling of numeric values at the type-level.
  *
+ * This trait provides support for handling numeric calculations
+ * at the type level. I.e., if you mix in this trait, all Integer,
+ * Float, Long and Double values will be represented as such.
  */
-trait TypeLevelNumerics extends Domain {
-   
-    val IntegerConstant0: DomainValue = intValue(Int.MinValue,0)
-    val AStringObject = SomeReferenceValue(ObjectType.String)
-    val AClassObject = SomeReferenceValue(ObjectType.Class)
-    val AnObject = SomeReferenceValue(ObjectType.Object)
+trait TypeLevelNumericValues extends ConstraintsHandlingHelper { this: Domain ⇒
+
+    // -----------------------------------------------------------------------------------
+    //
+    // HANDLING OF VALUES
+    //
+    // -----------------------------------------------------------------------------------
+
+    val IntegerConstant0: DomainValue = intValue(Int.MinValue, 0)
 
     /**
-     * Abstracts over all values with computational type category `1`.
+     * Abstracts over all values with computational type `integer` and also
+     * represents Integer values.
      */
-    trait ComputationalTypeCategory1Value extends Value
-
-    /**
-     * Abstracts over all values with computational type `integer`.
-     */
-    trait CTIntegerValue
-            extends ComputationalTypeCategory1Value {
-
+    trait CTIntegerValue extends Value {
         final def computationalType: ComputationalType = ComputationalTypeInt
     }
 
     /**
      * Abstracts over all values with computational type `float`.
      */
-    trait SomeFloatValue
-            extends ComputationalTypeCategory1Value
-            with TypedValue[FloatType] {
+    trait SomeFloatValue extends TypedValue[FloatType] {
 
         final def computationalType: ComputationalType = ComputationalTypeFloat
+
         final def valueType = FloatType
-
     }
 
-    /**
-     * Abstracts over all values with computational type `reference`.
-     */
-    trait ReferenceValue[T <: ReferenceType] extends ComputationalTypeCategory1Value with TypedValue[T] {
-        final def computationalType: ComputationalType = ComputationalTypeReference
+    trait SomeLongValue extends TypedValue[LongType] {
 
-    }
-
-    val NullValue: ReferenceValue[ReferenceType] with DomainTypedValue[ReferenceType]
-
-    /**
-     * Represents a value of type return address.
-     *
-     * @note The framework completely handles all aspects related to return address values.
-     */
-    sealed trait CTReturnAddressValue extends ComputationalTypeCategory1Value {
-        final def computationalType: ComputationalType = ComputationalTypeReturnAddress
-    }
-
-    /**
-     * Abstracts over all values with computational type category `2`.
-     */
-    trait ComputationalTypeCategory2Value extends Value
-
-    trait SomeLongValue extends ComputationalTypeCategory2Value with TypedValue[LongType] {
         final def computationalType: ComputationalType = ComputationalTypeLong
+
         final def valueType = LongType
     }
 
-    trait SomeDoubleValue extends ComputationalTypeCategory2Value with TypedValue[DoubleType] {
+    trait SomeDoubleValue extends TypedValue[DoubleType] {
+
         final def computationalType: ComputationalType = ComputationalTypeDouble
+
         final def valueType = DoubleType
     }
 
     //
     // QUESTION'S ABOUT VALUES
     //
-
-    def areEqualReferences(value1: DomainValue, value2: DomainValue): Answer = {
-        Unknown
-    }
 
     def areEqualIntegers(value1: DomainValue, value2: DomainValue): Answer = {
         Unknown
@@ -133,46 +108,222 @@ trait TypeLevelNumerics extends Domain {
     def isValueNotInRange(value: DomainValue, lowerBound: Int, upperBound: Int): Boolean =
         true
 
+    // -----------------------------------------------------------------------------------
     //
-    // HANDLING CONSTRAINTS
+    // HANDLING OF CONSTRAINTS
     //
-    // The default domain does not handle constraints; i.e. does not update the 
-    // memory layout.
+    // -----------------------------------------------------------------------------------
+
+    def hasValue: SingleValueConstraintWithBound[Int] =
+        IgnoreSingleValueConstraintWithIntegerValueBound
+
+    def AreEqualIntegers: TwoValuesConstraint =
+        IgnoreTwoValuesConstraint
+
+    def AreNotEqualIntegers: TwoValuesConstraint =
+        IgnoreTwoValuesConstraint
+
+    def IsLessThan: TwoValuesConstraint =
+        IgnoreTwoValuesConstraint
+
+    def IsLessThanOrEqualTo: TwoValuesConstraint =
+        IgnoreTwoValuesConstraint
+
+    // -----------------------------------------------------------------------------------
+    //
+    // HANDLING OF COMPUTATIONS
+    //
+    // -----------------------------------------------------------------------------------
+
+    //
+    // PUSH CONSTANT VALUE
+    //
+    def byteValue(pc: Int, value: Int) = SomeByteValue
+    def shortValue(pc: Int, value: Int) = SomeShortValue
+    def intValue(pc: Int, value: Int) = SomeIntegerValue
+    def longValue(pc: Int, value: Long) = SomeLongValue
+    def floatValue(pc: Int, value: Float) = SomeFloatValue
+    def doubleValue(pc: Int, value: Double) = SomeDoubleValue
+
+    //
+    // TYPE CONVERSIONS
     //
 
-    object IgnoreSingleValueConstraint extends SingleValueConstraint {
-        def apply(pc: Int, value: DomainValue, operands: Operands, locals: Locals): (Operands, Locals) = {
-            (operands, locals)
-        }
-    }
-    class IgnoreSingleValueConstraintWithBound[Bound] extends SingleValueConstraintWithBound[Bound] {
-        def apply(pc: Int, bound: Bound, value: DomainValue, operands: Operands, locals: Locals): (Operands, Locals) = {
-            (operands, locals)
-        }
-    }
-    object IgnoreSingleValueConstraintWithReferenceTypeBound extends IgnoreSingleValueConstraintWithBound[ReferenceType]
-    object IgnoreSingleValueConstraintWithIntegerValueBound extends IgnoreSingleValueConstraintWithBound[Int]
+    def d2f(pc: Int, value: DomainValue): DomainValue = SomeFloatValue
+    def d2i(pc: Int, value: DomainValue): DomainValue = SomeIntegerValue
+    def d2l(pc: Int, value: DomainValue): DomainValue = SomeLongValue
 
-    object IgnoreTwoValuesConstraint extends TwoValuesConstraint {
-        def apply(pc: Int, value1: DomainValue, value2: DomainValue, operands: Operands, locals: Locals): (Operands, Locals) = {
-            (operands, locals)
-        }
-    }
+    def f2d(pc: Int, value: DomainValue): DomainValue = SomeDoubleValue
+    def f2i(pc: Int, value: DomainValue): DomainValue = SomeIntegerValue
+    def f2l(pc: Int, value: DomainValue): DomainValue = SomeLongValue
 
-    def IsNull: SingleValueConstraint = IgnoreSingleValueConstraint
-    def IsNonNull: SingleValueConstraint = IgnoreSingleValueConstraint
-    def AreEqualReferences: TwoValuesConstraint = IgnoreTwoValuesConstraint
-    def AreNotEqualReferences: TwoValuesConstraint = IgnoreTwoValuesConstraint
-    def UpperBound: SingleValueConstraintWithBound[ReferenceType] = IgnoreSingleValueConstraintWithReferenceTypeBound
+    def i2b(pc: Int, value: DomainValue): DomainValue = SomeByteValue
+    def i2c(pc: Int, value: DomainValue): DomainValue = SomeCharValue
+    def i2d(pc: Int, value: DomainValue): DomainValue = SomeDoubleValue
+    def i2f(pc: Int, value: DomainValue): DomainValue = SomeFloatValue
+    def i2l(pc: Int, value: DomainValue): DomainValue = SomeLongValue
+    def i2s(pc: Int, value: DomainValue): DomainValue = SomeShortValue
+
+    def l2d(pc: Int, value: DomainValue): DomainValue = SomeDoubleValue
+    def l2f(pc: Int, value: DomainValue): DomainValue = SomeFloatValue
+    def l2i(pc: Int, value: DomainValue): DomainValue = SomeIntegerValue
+
     //
-    // W.r.t. Integer values
-    def hasValue: SingleValueConstraintWithBound[Int] = IgnoreSingleValueConstraintWithIntegerValueBound
-    def AreEqualIntegers: TwoValuesConstraint = IgnoreTwoValuesConstraint
-    def AreNotEqualIntegers: TwoValuesConstraint = IgnoreTwoValuesConstraint
-    def IsLessThan: TwoValuesConstraint = IgnoreTwoValuesConstraint
-    def IsLessThanOrEqualTo: TwoValuesConstraint = IgnoreTwoValuesConstraint
+    // RELATIONAL OPERATORS
+    //
+    def fcmpg(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeIntegerValue
+    def fcmpl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeIntegerValue
+    def dcmpg(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeIntegerValue
+    def dcmpl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeIntegerValue
+    def lcmp(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeIntegerValue
+
+    //
+    // UNARY EXPRESSIONS
+    //
+    def dneg(pc: Int, value: DomainValue) = SomeDoubleValue
+    def fneg(pc: Int, value: DomainValue) = SomeFloatValue
+    def ineg(pc: Int, value: DomainValue) = SomeIntegerValue
+    def lneg(pc: Int, value: DomainValue) = SomeLongValue
+
+    //
+    // BINARY EXPRESSIONS
+    //
+    def dadd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeDoubleValue
+    def ddiv(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeDoubleValue
+    def dmul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeDoubleValue
+    def drem(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeDoubleValue
+    def dsub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeDoubleValue
+
+    def fadd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeFloatValue
+    def fdiv(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeFloatValue
+    def fmul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeFloatValue
+    def frem(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeFloatValue
+    def fsub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeFloatValue
+
+    def iadd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeIntegerValue
+    def iand(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeIntegerValue
+    def idiv(pc: Int, value1: DomainValue, value2: DomainValue) = ComputedValue(SomeIntegerValue)
+    def imul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeIntegerValue
+    def ior(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeIntegerValue
+    def irem(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeIntegerValue
+    def ishl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeIntegerValue
+    def ishr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeIntegerValue
+    def isub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeIntegerValue
+    def iushr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeIntegerValue
+    def ixor(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeIntegerValue
+
+    def ladd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeLongValue
+    def land(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeLongValue
+    def ldiv(pc: Int, value1: DomainValue, value2: DomainValue) = ComputedValue(SomeLongValue)
+    def lmul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeLongValue
+    def lor(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeLongValue
+    def lrem(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeLongValue
+    def lshl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeLongValue
+    def lshr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeLongValue
+    def lsub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeLongValue
+    def lushr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeLongValue
+    def lxor(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeLongValue
+
+    //
+    // "OTHER" INSTRUCTIONS
+    //
+    def iinc(pc: Int, value: DomainValue, increment: Int) = SomeIntegerValue
 }
 
+trait DefaultTypeLevelNumericValues
+        extends Domain
+        with DefaultValueBinding
+        with TypeLevelNumericValues {
 
+    case object SomeBooleanValue extends CTIntegerValue with TypedValue[BooleanType] {
+
+        final def valueType = BooleanType
+
+        override def merge(value: DomainValue): Update[DomainValue] = value match {
+            case SomeBooleanValue         ⇒ NoUpdate
+            case other @ SomeIntegerValue ⇒ StructuralUpdate(other)
+            case TheNoLegalValue          ⇒ MetaInformationUpdateNoLegalValue
+            case _                        ⇒ MetaInformationUpdateNoLegalValue
+        }
+    }
+    case object SomeByteValue extends CTIntegerValue with TypedValue[ByteType] {
+
+        final def valueType = ByteType
+
+        override def merge(value: DomainValue): Update[DomainValue] = value match {
+            case SomeByteValue            ⇒ NoUpdate
+            case TheNoLegalValue          ⇒ MetaInformationUpdateNoLegalValue
+            case other @ SomeIntegerValue ⇒ StructuralUpdate(other)
+            case other @ SomeShortValue   ⇒ StructuralUpdate(other)
+            case other @ SomeCharValue    ⇒ StructuralUpdate(other)
+            case other                    ⇒ MetaInformationUpdateNoLegalValue
+        }
+    }
+
+    case object SomeShortValue extends CTIntegerValue with TypedValue[ShortType] {
+
+        final def valueType = ShortType
+
+        override def merge(value: DomainValue): Update[DomainValue] = value match {
+            case SomeShortValue           ⇒ NoUpdate
+            case TheNoLegalValue          ⇒ MetaInformationUpdateNoLegalValue
+            case other @ SomeIntegerValue ⇒ StructuralUpdate(other)
+            case SomeByteValue            ⇒ NoUpdate
+            case other @ SomeCharValue    ⇒ StructuralUpdate(SomeIntegerValue)
+            case other                    ⇒ MetaInformationUpdateNoLegalValue
+        }
+    }
+
+    case object SomeCharValue extends CTIntegerValue with TypedValue[CharType] {
+
+        final def valueType = CharType
+
+        override def merge(value: DomainValue): Update[DomainValue] = value match {
+            case SomeCharValue            ⇒ NoUpdate
+            case TheNoLegalValue          ⇒ MetaInformationUpdateNoLegalValue
+            case SomeByteValue            ⇒ NoUpdate
+            case SomeShortValue           ⇒ StructuralUpdate(SomeIntegerValue)
+            case other @ SomeIntegerValue ⇒ StructuralUpdate(other)
+            case other                    ⇒ MetaInformationUpdateNoLegalValue
+        }
+    }
+
+    case object SomeIntegerValue extends CTIntegerValue with TypedValue[IntegerType] {
+
+        final def valueType = IntegerType
+
+        override def merge(value: DomainValue): Update[DomainValue] = value match {
+            case SomeIntegerValue ⇒ NoUpdate
+            case TheNoLegalValue  ⇒ MetaInformationUpdateNoLegalValue
+            case SomeBooleanValue ⇒ NoUpdate
+            case SomeByteValue    ⇒ NoUpdate
+            case SomeCharValue    ⇒ NoUpdate
+            case SomeShortValue   ⇒ NoUpdate
+            case other            ⇒ MetaInformationUpdateNoLegalValue
+        }
+    }
+
+    case object SomeFloatValue extends SomeFloatValue {
+        override def merge(value: DomainValue): Update[DomainValue] = value match {
+            case SomeFloatValue ⇒ NoUpdate
+            case _              ⇒ MetaInformationUpdateNoLegalValue
+        }
+    }
+
+    case object SomeLongValue extends SomeLongValue {
+        override def merge(value: DomainValue): Update[DomainValue] = value match {
+            case SomeLongValue ⇒ NoUpdate
+            case _             ⇒ MetaInformationUpdateNoLegalValue
+        }
+    }
+
+    case object SomeDoubleValue extends SomeDoubleValue {
+        override def merge(value: DomainValue): Update[DomainValue] = value match {
+            case SomeDoubleValue ⇒ NoUpdate
+            case _               ⇒ MetaInformationUpdateNoLegalValue
+        }
+    }
+
+}
 
 

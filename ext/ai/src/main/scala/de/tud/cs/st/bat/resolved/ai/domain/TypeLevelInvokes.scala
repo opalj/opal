@@ -38,23 +38,45 @@ package ai
 import reflect.ClassTag
 
 /**
- * BATAI's default domain, which can be used as a foundation for building
- * you own `Domain` in particular if you are just interested in tracing
- * the application's dependencies and which values flow in which direction.
+ *
  */
-trait BaseDomain
-    extends DefaultValueBinding
-    with DefaultTypeLevelReferenceValues
-    with DefaultTypeLevelNumericValues
-    with DefaultReturnAddressValues
+trait TypeLevelInvokeInstructions { this: Domain ⇒
 
-class DefaultDomain
-    extends BaseDomain
-    with TypeLevelArrayInstructions
-    with TypeLevelFieldAccessInstructions
-    with TypeLevelInvokeInstructions
-    with DoNothingOnReturnFromMethod
+    def invokeinterface(pc: Int,
+                        declaringClass: ReferenceType,
+                        name: String,
+                        methodDescriptor: MethodDescriptor,
+                        params: List[DomainValue]) =
+        ComputedValue(asTypedValue(methodDescriptor.returnType))
 
+    def invokevirtual(pc: Int,
+                      declaringClass: ReferenceType,
+                      name: String,
+                      methodDescriptor: MethodDescriptor,
+                      params: List[DomainValue]) =
+        ComputedValue(asTypedValue(methodDescriptor.returnType))
+
+    def invokespecial(pc: Int,
+                      declaringClass: ReferenceType,
+                      name: String,
+                      methodDescriptor: MethodDescriptor,
+                      params: List[DomainValue]) =
+        ComputedValue(asTypedValue(methodDescriptor.returnType))
+
+    def invokestatic(pc: Int,
+                     declaringClass: ReferenceType,
+                     name: String,
+                     methodDescriptor: MethodDescriptor,
+                     params: List[DomainValue]) =
+        ComputedValue(asTypedValue(methodDescriptor.returnType))
+
+    protected def asTypedValue(someType: Type): Option[DomainTypedValue[someType.type]] = {
+        if (someType.isVoidType)
+            None
+        else
+            Some(TypedValue(someType))
+    }
+}
 
 
 
