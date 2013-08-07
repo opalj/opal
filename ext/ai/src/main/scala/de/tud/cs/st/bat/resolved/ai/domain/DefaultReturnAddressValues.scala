@@ -36,6 +36,12 @@ package resolved
 package ai
 package domain
 
+/**
+ * Final bindings for a `Domain`'s `ReturnAddressValue` trait that can be
+ * mixed in if `Domain`'s values was not extended.
+ * 
+ * @author Michael Eichberg
+ */
 trait DefaultReturnAddressValues
         extends Domain
         with DefaultValueBinding {

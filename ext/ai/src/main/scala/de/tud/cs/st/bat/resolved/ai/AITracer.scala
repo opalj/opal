@@ -50,12 +50,14 @@ trait AITracer {
 }
 
 trait ConsoleTracer extends AITracer {
+    
     def traceInstructionEvalution(
         domain: Domain)(
             pc: Int,
             instruction: Instruction,
             operands: List[domain.DomainValue],
             locals: Array[domain.DomainValue]): Unit = {
+        
         println(pc+":"+instruction+" ["+operands.mkString(", ")+";"+locals.mkString(", ")+"]")
     }
 }

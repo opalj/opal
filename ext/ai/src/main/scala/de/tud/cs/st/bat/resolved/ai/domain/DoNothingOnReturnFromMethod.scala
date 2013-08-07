@@ -36,6 +36,9 @@ package resolved
 package ai
 package domain
 
+/**
+ * Provides default implementations for a `Domain`'s return methods.
+ */
 trait DoNothingOnReturnFromMethod { this: Domain ⇒
 
     def areturn(pc: Int, value: DomainValue): Unit = { /* Nothing to do. */ }

@@ -39,22 +39,23 @@ package domain
 import reflect.ClassTag
 
 /**
- * Final binding of the [[de.tud.cs.st.bat.resolved.ai.Domain.Value]] trait.
+ * Final binding of the [[de.tud.cs.st.bat.resolved.ai.Domain.Value]] trait
+ * and its immediate subtypes: `DomainTypedValue` and `DomainNoLegalValue`.
  */
-trait DefaultValueBinding { this : Domain =>
+trait DefaultValueBinding { this: Domain ⇒
 
     type DomainValue = Value
-    
+
     type DomainTypedValue[+T >: Null <: Type] = TypedValue[T]
-    
+
     val DomainValueTag: ClassTag[DomainValue] = implicitly
 
     type DomainNoLegalValue = NoLegalValue
-    
+
     final val TheNoLegalValue: DomainNoLegalValue = new NoLegalValue
-    
+
     final val MetaInformationUpdateNoLegalValue = MetaInformationUpdate(TheNoLegalValue)
-  
+
 }
 
 

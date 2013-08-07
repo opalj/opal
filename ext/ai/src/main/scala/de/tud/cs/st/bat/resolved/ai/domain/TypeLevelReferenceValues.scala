@@ -39,7 +39,8 @@ package domain
 /**
  *
  */
-trait TypeLevelReferenceValues extends ConstraintsHandlingHelper { this: Domain ⇒
+trait TypeLevelReferenceValues
+        extends ConstraintsHandlingHelper { this: Domain ⇒
 
     /**
      * Abstracts over all values with computational type `reference`.
@@ -54,11 +55,8 @@ trait TypeLevelReferenceValues extends ConstraintsHandlingHelper { this: Domain 
             Some(value.valueType)
     }
 
-    val NullValue: ReferenceValue[ReferenceType] with DomainTypedValue[ReferenceType]
-
-    val AStringObject = SomeReferenceValue(ObjectType.String)
-    val AClassObject = SomeReferenceValue(ObjectType.Class)
-    val AnObject = SomeReferenceValue(ObjectType.Object)
+    protected val AStringObject = SomeReferenceValue(ObjectType.String)
+    protected val AClassObject = SomeReferenceValue(ObjectType.Class)
 
     //
     // QUESTION'S ABOUT VALUES
@@ -68,15 +66,9 @@ trait TypeLevelReferenceValues extends ConstraintsHandlingHelper { this: Domain 
         Unknown
     }
 
-    def IsNull: SingleValueConstraint = IgnoreSingleValueConstraint
-    def IsNonNull: SingleValueConstraint = IgnoreSingleValueConstraint
-    def AreEqualReferences: TwoValuesConstraint = IgnoreTwoValuesConstraint
-    def AreNotEqualReferences: TwoValuesConstraint = IgnoreTwoValuesConstraint
-    def UpperBound: SingleValueConstraintWithBound[ReferenceType] = IgnoreSingleValueConstraintWithReferenceTypeBound
-
     /**
-     * This project's class hierarchy; unless explicitly overridden the default
-     * (pre-initialized class hierarchy) is used which only reflects the type-hierarchy
+     * This project's class hierarchy; unless explicitly overridden, the built-in default
+     * class hierarchy is used which only reflects the type-hierarchy
      * between the exception types used by JVM exceptions.
      *
      * @note '''This method is intended to be overridden.'''
@@ -95,12 +87,28 @@ trait TypeLevelReferenceValues extends ConstraintsHandlingHelper { this: Domain 
         classHierarchy.isSubtypeOf(subtype, supertype)
     }
 
-    //    def SomeReferenceValue(referenceType: ReferenceType): AReferenceValue[referenceType.type] =
-    //        new AReferenceValue(referenceType)
+    // -----------------------------------------------------------------------------------
+    //
+    // HANDLING OF CONSTRAINTS
+    //
+    // -----------------------------------------------------------------------------------
+
+    def IsNull: SingleValueConstraint = IgnoreSingleValueConstraint
+    def IsNonNull: SingleValueConstraint = IgnoreSingleValueConstraint
+    def AreEqualReferences: TwoValuesConstraint = IgnoreTwoValuesConstraint
+    def AreNotEqualReferences: TwoValuesConstraint = IgnoreTwoValuesConstraint
+    def UpperBound: SingleValueConstraintWithBound[ReferenceType] = IgnoreSingleValueConstraintWithReferenceTypeBound
+
+    // -----------------------------------------------------------------------------------
+    //
+    // HANDLING OF COMPUTATIONS
+    //
+    // -----------------------------------------------------------------------------------
 
     //
     // PUSH CONSTANT VALUE
     //
+
     def stringValue(pc: Int, value: String) = AStringObject
 
     def classValue(pc: Int, t: ReferenceType) = AClassObject
@@ -152,15 +160,6 @@ trait DefaultTypeLevelReferenceValues
     }
     def theNullValue(pc: Int) = NullValue
 
-    def newObject(pc: Int, t: ObjectType): DomainTypedValue[t.type] = TypedValue(t)
-
-    def isNull(value: DomainValue): Answer = {
-        if (value == NullValue)
-            Yes
-        else
-            Unknown
-    }
-
     case class AReferenceValue[+T >: Null <: ReferenceType](
         valueType: T)
             extends ReferenceValue[T] {
@@ -193,12 +192,22 @@ trait DefaultTypeLevelReferenceValues
     def SomeReferenceValue(referenceType: ReferenceType): DomainTypedValue[referenceType.type] =
         AReferenceValue(referenceType)
 
+    def isNull(value: DomainValue): Answer = {
+        if (value == NullValue)
+            Yes
+        else
+            Unknown
+    }
+
     def types(value: DomainValue): ValuesAnswer[Set[Type]] = {
         value match {
             case AReferenceValue(valueType) ⇒ Values[Set[Type]](Set(valueType))
             case _                          ⇒ ValuesUnknown
         }
     }
+
+    def newObject(pc: Int, t: ObjectType): DomainTypedValue[t.type] = TypedValue(t)
+
 }
 
 

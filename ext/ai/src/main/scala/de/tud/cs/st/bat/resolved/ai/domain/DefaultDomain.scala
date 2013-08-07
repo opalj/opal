@@ -37,10 +37,16 @@ package ai
 package domain
 
 /**
- * This domain can be used as a foundation for building your own `Domain`.
+ * This domain performs all computations basically at the type level and does
+ * not track the flow of values. Given the very high level of abstraction,
+ * an abstract interpretation using this domain terminates quickly.
  *
- * By doing all computations at the type level, BATAI is effectively forced
- * to explore all possible paths.
+ * It can be used as a foundation/as
+ * an inspiration for building your own `Domain`. For example, it is useful to,
+ *  e.g., track which types of values are actually
+ * created to calculate a more precise call graph.
+ *
+ * @author Michael Eichberg
  */
 trait BaseDomain
     extends DefaultValueBinding
@@ -48,6 +54,12 @@ trait BaseDomain
     with DefaultTypeLevelNumericValues
     with DefaultReturnAddressValues
 
+/**
+ * This is a ready to use domain that is primarily useful for testing and
+ * debugging purposes.
+ *
+ * @author Michael Eichberg
+ */
 class DefaultDomain
     extends BaseDomain
     with TypeLevelArrayInstructions

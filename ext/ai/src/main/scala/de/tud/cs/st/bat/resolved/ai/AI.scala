@@ -48,7 +48,7 @@ trait AI {
 
     /**
      * Called during the abstract interpretation of a method to determine whether
-     * the computation should be aborted. This method is called before the evaluation
+     * the computation should be aborted. This method is called before every evaluation
      * of an instruction.
      *
      * @note When the abstract interpreter is currently
