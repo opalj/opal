@@ -55,8 +55,8 @@ trait TypeLevelReferenceValues
             Some(value.valueType)
     }
 
-    protected val AStringObject = SomeReferenceValue(ObjectType.String)
-    protected val AClassObject = SomeReferenceValue(ObjectType.Class)
+    val AStringObject = SomeReferenceValue(ObjectType.String)
+    val AClassObject = SomeReferenceValue(ObjectType.Class)
 
     //
     // QUESTION'S ABOUT VALUES
