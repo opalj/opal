@@ -110,8 +110,8 @@ object InterpretMethods {
         if (collectedExceptions.nonEmpty) {
             var report = "During the interpretation (overall: "+nsToSecs(getTime('OVERALL))+
                 "secs. (reading: "+nsToSecs(getTime('READING))+
-                "secs. parsing: "+nsToSecs(getTime('PARSING))+
-                "secs.; ai: "+nsToSecs(getTime('AI))+
+                "secs., parsing: "+nsToSecs(getTime('PARSING))+
+                "secs., ai: "+nsToSecs(getTime('AI))+
                 "secs.)) the following exceptions occured:"
             var groupedExceptions = collectedExceptions.groupBy(e ⇒ e._3.getClass().getName())
             groupedExceptions.map(ge ⇒ {
