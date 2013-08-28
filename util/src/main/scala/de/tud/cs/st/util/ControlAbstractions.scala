@@ -50,7 +50,8 @@ object ControlAbstractions {
 
     def rethrowException[T](e: Exception): T = throw e;
 
-    def defaultExceptionHandler: Some[(Exception) ⇒ _] = Some((e: Exception) ⇒ rethrowException(e))
+    def defaultExceptionHandler: Some[(Exception) ⇒ _] =
+        Some((e: Exception) ⇒ rethrowException(e))
 
     /**
      * Calls the given `exceptionHandler` when an exception is thrown while
@@ -114,8 +115,8 @@ object ControlAbstractions {
     /**
      * This function takes care of the correct handling of input streams.
      * The function takes a function <code>f</code> that creates a new <code>InputStream</code> (f is a
-     * named parameter) and a function <code>r</code> that processes an input stream. When `r` has
-     * finished processing the input stream, the stream is closed.
+     * named parameter) and a function <code>r</code> that processes an input stream. 
+     * When `r` has finished processing the input stream, the stream is closed.
      * If f should return <code>null</code>, <code>null</code> is passed to r.
      */
     @throws[java.io.IOException]
