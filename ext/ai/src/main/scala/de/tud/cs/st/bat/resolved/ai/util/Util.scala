@@ -122,7 +122,7 @@ object Util {
                     val dump = util.Util.dump(classFile, method, code, operandsArray, localsArray, title)
                     util.Util.writeAndOpenDump(dump) //.map(_.deleteOnExit)
                 } else {
-                    System.err.println("Dump suppressed: "+e.getMessage())
+                    System.err.println("[Util.dumpOnFailureDuringValidation] Dump suppressed: "+e.getMessage())
                 }
                 throw e
             }
