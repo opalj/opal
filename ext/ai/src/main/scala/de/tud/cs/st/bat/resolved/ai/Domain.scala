@@ -99,18 +99,14 @@ trait Domain {
          * of generic stack manipulation instructions (e.g., `dup_...` and swap)
          * on the stack. This is required to calculate the
          * jump targets of RET instructions and to determine which values are
-         * acutally copied by the dupXX instructions.
+         * actually copied by the dupXX instructions.
          *
-         * '''W.r.t. the computational type no abstraction is allowed.'''
+         * '''W.r.t. the computational type no kind of furhter abstraction is allowed.'''
          */
         def computationalType: ComputationalType
 
         /**
-         * Merges this value with the given value; has to return `this` when this value
-         * subsumes the given value or is structurally identical to the given
-         * value; has to return an instance of
-         * [[de.tud.cs.st.bat.resolved.ai.Domain.NoLegalValue]] when this value and
-         * the given value are incompatible.
+         * Merges this value with the given value.
          *
          * For example, merging a `DomainValue` that represents the integer value 0
          * with a `DomainValue` that represents the integer value 1 may return a new
@@ -118,13 +114,15 @@ trait Domain {
          * integer values or just '''some integer value'''.
          *
          * The termination of the abstract interpretation directly depends on the fact
-         * that at some point all values are fixed and don't change anymore.
+         * that at some point all values are fixed and don't change anymore. Hence,
+         * it is important that the type of the update is only a
+         * [[de.tud.cs.st.bat.resolved.ai.StructuralUpdate]] if the value has changed.
          */
         def merge(value: DomainValue): Update[DomainValue]
 
         /**
          * Returns a string that states that merging and comparing this value with
-         * the given could makes sense, but is not yet implemented.
+         * the given one could makes sense, but is not yet implemented.
          */
         protected def missingSupport(other: DomainValue): String =
             "the value \""+this.toString()+"\" and \""+other.toString()+"\" are "+
@@ -146,8 +144,8 @@ trait Domain {
      * {{{
      * val DomainValueTag : ClassTag[DomainValue] = implicitly
      * }}}
-     * (As of Scala 2.10 it is necessary that you do not use `implicit` - it will
-     * compile, but fail at runtime.)
+     * (As of Scala 2.10 it is necessary that you do not use `implicit` in the subclass -
+     * it will compile, but fail at runtime.)
      */
     implicit val DomainValueTag: ClassTag[DomainValue]
 
@@ -294,8 +292,9 @@ trait Domain {
 
     /**
      * Factory method to create `TypedValue`s; i.e., values for which we have (more)
-     * precise type information but no value information. I.e., if the type value
-     * represents a reference type it may be possible that the value is `null`.
+     * precise type information but no value or location information. I.e., if a `TypedValue`
+     * represents a reference type it may be possible that the value is `null`, but
+     * such knowledge ist not available.
      */
     def TypedValue[T >: Null <: Type](valueType: T): DomainTypedValue[T] = {
         (valueType match {
@@ -313,7 +312,7 @@ trait Domain {
     }
 
     /**
-     * Represents some boolean value, where the source of the value is not known. 
+     * Represents some boolean value, where the source of the value is not known.
      */
     def SomeBooleanValue: DomainTypedValue[BooleanType]
     def SomeByteValue: DomainTypedValue[ByteType]
@@ -340,7 +339,7 @@ trait Domain {
     // -----------------------------------------------------------------------------------
 
     /**
-     * Returns `true` iff at least one possible extension of given `value` is in the
+     * Returns `true` iff at least one possible extension of the given `value` is in the
      * specified range; that is if the intersection of the range of values captured
      * by the given `value` and the specified range is non-empty.
      * For example, if the given value captures all positive integer values and the
@@ -351,21 +350,23 @@ trait Domain {
      *
      * @note Both bounds are inclusive.
      */
-    def isValueInRange(value: DomainValue, lowerBound: Int, upperBound: Int): Boolean
+    /*ABSTRACT*/ def isValueInRange(value: DomainValue, lowerBound: Int, upperBound: Int): Boolean
 
     /**
      * Returns `true` iff at least one possible extension of given value is not in the
      * specified range; that is, if the set difference of the range of values captured
      * by the given `value` and  the specified range is non-empty.
      * For example, if the given value represents the integer value `10` and the
-     * specified range is [0,Integer.MAX_VALUE] then the answer has to be No.
+     * specified range is [0,Integer.MAX_VALUE] then the answer has to be `false`. But,
+     * if the given value represents the range [-5,Integer.MAX_VALUE] and the specified
+     * range is again [0,Integer.MAX_VALUE] then the answer has to be `true`.
      *
      * The JVM semantics guarantee that the given domain value represents a value
      * of computational type integer.
      *
      * @note Both bounds are inclusive.
      */
-    def isValueNotInRange(value: DomainValue, lowerBound: Int, upperBound: Int): Boolean
+    /*ABSTRACT*/ def isValueNotInRange(value: DomainValue, lowerBound: Int, upperBound: Int): Boolean
 
     /**
      * Determines whether the given value is `null` (`Yes`), maybe `null` (`Unkown`) or
@@ -381,7 +382,8 @@ trait Domain {
     /**
      * Compares the given values for reference equality. Returns `Yes` if both values
      * point to the same instance and returns `No` if both objects are known not to
-     * point to the same instance. Otherwise `Unknown` is returned.
+     * point to the same instance (which is, e.g., trivially the case when both
+     * values have a different concrete type). Otherwise `Unknown` is returned.
      */
     /*ABSTRACT*/ def areEqualReferences(value1: DomainValue, value2: DomainValue): Answer
 
@@ -389,11 +391,11 @@ trait Domain {
         areEqualReferences(value1, value2).negate
 
     /**
-     * Returns the type(s) of the value(s). Depending on the control flow the same
+     * Returns the type(s) of the value(s). Depending on the control flow, the same
      * `DomainValue` can represent different values with different types. However,
      * all types that the domain value represents have to belong to the same
      * computational type category. I.e., it is possible that the value captures the
-     * types "`NullPointerException` or `IllegalArgumentException`", but it will not
+     * types "`NullPointerException` or `IllegalArgumentException`", but it will never
      * capture the types `Integer` and `Long`.
      */
     /*ABSTRACT*/ def types(value: DomainValue): ValuesAnswer[Set[Type]]

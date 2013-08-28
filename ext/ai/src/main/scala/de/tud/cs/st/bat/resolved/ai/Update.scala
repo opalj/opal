@@ -36,7 +36,12 @@ package resolved
 package ai
 
 /**
- * Encapsulates an updated value and qualifies the update.
+ * Encapsulates an updated value and qualifies the type of the update.
+ * 
+ * In general BATAI distinguishes between updates to a value that are relevant w.r.t.
+ * the abstract interpretation and those updates that just update some meta-information
+ * and which do not affect the abstract interpretation and – in particular – should not
+ * force BATAI to continue the abstract interpretation.
  *
  * @author Michael Eichberg
  */
@@ -62,7 +67,7 @@ sealed trait Update[+V] {
 }
 
 /**
- * Identifies updates where something was updated without qualifying the update.
+ * Identifies updates where something was updated without further qualifying the update.
  *
  * ==Usage==
  * This class (and its companion object) are primarily used for pattern matching purposes.
@@ -70,7 +75,7 @@ sealed trait Update[+V] {
 sealed abstract class SomeUpdate[V] extends Update[V]
 
 /**
- * Facilitates matching against updated the actually encapsulate an updated value.
+ * Facilitates matching against updates that actually encapsulate an updated value.
  */
 object SomeUpdate {
     def unapply[V](update: SomeUpdate[V]): Option[V] = Some(update.value)
@@ -91,7 +96,7 @@ final case class StructuralUpdate[V](
 }
 /**
  * Used to indicate that a new value is returned, but only meta-information
- * was changed that is not directly relevant to the abstract interprete.
+ * was changed that is not directly relevant to the abstract interpreter.
  *
  * ==Example==
  * If two values are merged that are seen on two different paths, but which represent the
@@ -129,7 +134,7 @@ case object NoUpdate extends Update[Nothing] {
 /**
  * Specifies the type of an update. The type hierarchies of `Update` and `UpdateType`
  * are aligned and it is possible to conveniently switch between them. Contrary to
- * an `Update` object an `UpdateType` object never has any payload it just characterize
+ * an `Update` object an `UpdateType` object never has any payload, it just characterizes
  * an update. However, by passing a value to an `UpdateType` the `UpdateType`
  * is turned into a corresponding [[de.tud.cs.st.bat.resolved.ai.Update]] object.
  *
@@ -147,7 +152,7 @@ sealed abstract class UpdateType {
     def apply[V](value: ⇒ V): Update[V]
 
     /**
-     * Returns `true` if `this` UpdateType represents the `NoUpdateType`.
+     * Returns `true` if `this` `UpdateType` represents the `NoUpdateType`.
      */
     def noUpdate: Boolean
 

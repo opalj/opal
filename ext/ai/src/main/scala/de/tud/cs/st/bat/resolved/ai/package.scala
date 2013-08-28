@@ -43,7 +43,7 @@ package resolved
  * (e.g., `LinkageErrors`) are completely ignored to facilitate the analysis of
  * parts of a project. In general, if the presented bytecode is not valid,
  * the result is undefined (i.e., BATAI may report meaningless results, crash or run
- * indefinitely.
+ * indefinitely).
  *
  * @see [[de.tud.cs.st.bat.resolved.ai.AI]] - the main class
  *

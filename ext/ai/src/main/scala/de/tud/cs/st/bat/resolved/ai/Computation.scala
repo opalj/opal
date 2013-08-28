@@ -43,7 +43,7 @@ package ai
  * possible paths.
  *
  * @tparam V The result of the computation. Typically a `DomainValue` or a
- *      `DomainTypedValue`. If the computation is primarily executed for its side
+ *      `DomainTypedValue`. If the computation is executed for its side
  *      effect (e.g., as in case of a `monitorenter` or `monitorexit` instruction)
  *      the type of `V` maybe `Nothing`.
  * @tparam E The exception(s) that maybe thrown by the computation. Typically,
@@ -58,7 +58,7 @@ sealed trait Computation[+V, +E] {
     def result: V
 
     /**
-     * `True` if this computation may have a return value, false otherwise.
+     * Returns `true` if this computation may have a return value, `false` otherwise.
      */
     def hasResult: Boolean
 
@@ -71,12 +71,12 @@ sealed trait Computation[+V, +E] {
     def exceptions: E
 
     /**
-     * `True` if this computation may have raised an exception.
+     * Returns `true` if this computation may have raised an exception.
      */
     def throwsException: Boolean
 
     /**
-     * `True` if this computation may have returned normally without
+     * Returns `true` if this computation may have returned normally without
      * throwing an exception.
      */
     def returnsNormally: Boolean
