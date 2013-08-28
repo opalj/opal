@@ -108,9 +108,20 @@ class MethodsWithExceptionsTest
         evaluateMethod("withFinallyAndThrows", domain ⇒ {
             import domain._
             domain.returnedValues should be(
-                Set(("return", null), // <= return value 
-                    ("throws", "java/lang/Throwable"), // <= if exception
-                    ("throws", SomeReferenceValue))
+                Set(("return", null), // <= void return 
+                    ("throws", SomeReferenceValue), // <= finally
+                    ("throws", AReferenceValue(ObjectType.NullPointerException))) // <= if t is null
+            )
+        })
+    }
+
+    it should "be able to analyze a method that catches the thrown exceptions" in {
+        evaluateMethod("throwsNoException", domain ⇒ {
+            import domain._
+            domain.returnedValues should be(
+                Set(("return", null),
+                    ("throws", SomeReferenceValue) // <= when the domain is too simple, we simply cannot infer that we did catch all types of exceptions
+                )
             )
         })
     }
