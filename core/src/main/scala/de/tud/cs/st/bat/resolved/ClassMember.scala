@@ -50,10 +50,12 @@ trait ClassMember extends SourceElement with CommonAttributes {
     def isStatic: Boolean = ACC_STATIC isElementOf accessFlags
 
     def isFinal: Boolean = ACC_FINAL isElementOf accessFlags
+
+    def isNonFinal: Boolean = !isFinal
 }
 
 object ClassMember {
 
     def unapply(classMember: ClassMember): Option[Int] = Some(classMember.accessFlags)
-    
+
 }

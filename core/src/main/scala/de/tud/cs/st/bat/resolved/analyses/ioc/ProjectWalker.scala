@@ -37,14 +37,13 @@ package analyses
 package ioc
 
 /**
- * WORK IN PROGRESS (NOT COMPLETE!)
- *
  * Controls the execution of multiple analyses; i.e., the director takes care of
  * traversing all resources of a project and calling the individual analyses to perform
  * certain steps of the analysis. This inversion of control makes the implementation of
  * many analyses easier and also enables several types of optimizations to speed up the
  * overall processing.
  *
+ * @todo This implementation is not yet usable.
  * @author Michael Eichberg
  */
 trait AnalysesDirector[Source] extends Analysis[Source, Iterable[ReportableAnalysisResult]] {
