@@ -84,12 +84,14 @@ object PublicMethodsInNonRestrictedPackagesCounter extends AnalysisExecutor {
                     if classFile.isPublic
                     if !restrictedPackages.exists(classFile.thisClass.className.startsWith(_))
                     method ← classFile.methods
-                    if method.isPublic || (method.isProtected && method.isNonFinal)
-                } yield classFile.thisClass.toJava+"."+method.toJava
+                    if (method.isPublic || (method.isProtected && !classFile.isFinal))
+                    if method.body.isDefined
+                } yield (classFile.thisClass, method, method.parameterTypes.filter(_.isReferenceType).size)
 
             BasicReport(
                 "Public methods in non-restricted packages found ("+methods.size+")\n"+
-                    methods.mkString("\t", "\n\t", "\n")
+                    methods.map(t ⇒ t._1.toJava+" -> "+t._2.toJava+" ("+t._3+")").mkString("\t", "\n\t", "\n")+
+                    "Overall non-native method parameters: "+(methods.map(_._3).foldLeft(0)(_ + _))
             )
         }
     }
