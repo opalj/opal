@@ -37,33 +37,49 @@ package ai
 package domain
 
 /**
- *
+ * @author Michael Eichberg
  */
 trait TypeLevelReferenceValues
-        extends ConstraintsHandlingHelper { this: Domain ⇒
+        extends ConstraintsHandlingHelper { this: Domain[_] ⇒
 
     /**
      * Abstracts over all values with computational type `reference`.
      */
     trait ReferenceValue[+T >: Null <: ReferenceType] extends TypedValue[T] {
-
         final def computationalType: ComputationalType = ComputationalTypeReference
-
     }
+
+    /**
+     * Defines an extractor method to facilitate pattern matching.
+     */
     object ReferenceValue {
+
         def unapply[T >: Null <: ReferenceType](value: ReferenceValue[T]): Some[T] =
             Some(value.valueType)
     }
-
-    val AStringObject = SomeReferenceValue(ObjectType.String)
-    val AClassObject = SomeReferenceValue(ObjectType.Class)
 
     //
     // QUESTION'S ABOUT VALUES
     //
 
+    /**
+     * Tests if both values refer to the same object instance.
+     *
+     * This implementation completely handles the case where at least one value
+     * definitively represents the `null` value.
+     *
+     * If both values represent non-null values (or just maybe `null`) `Unknown` is
+     * returned.
+     */
     def areEqualReferences(value1: DomainValue, value2: DomainValue): Answer = {
-        Unknown
+        val value1IsNull = isNull(value1)
+        val value2IsNull = isNull(value2)
+        if (value1IsNull.isDefined &&
+            value2IsNull.isDefined &&
+            (value1IsNull.yes || value2IsNull.yes))
+            Answer(value1IsNull == value2IsNull)
+        else
+            Unknown
     }
 
     /**
@@ -109,9 +125,11 @@ trait TypeLevelReferenceValues
     // PUSH CONSTANT VALUE
     //
 
-    def stringValue(pc: Int, value: String) = AStringObject
+    /*new*/ val AStringObject = SomeReferenceValue(ObjectType.String)
+    def stringValue(pc: Int, value: String): DomainValue = AStringObject
 
-    def classValue(pc: Int, t: ReferenceType) = AClassObject
+    /*new*/ val AClassObject = SomeReferenceValue(ObjectType.Class)
+    def classValue(pc: Int, t: ReferenceType): DomainValue = AClassObject
 
     //
     // TYPE CHECKS AND CONVERSION
@@ -124,8 +142,41 @@ trait TypeLevelReferenceValues
         SomeBooleanValue
 }
 
-trait DefaultTypeLevelReferenceValues
-        extends Domain
+trait StringValuesTracing[I]
+        extends Domain[I]
+        with DefaultValueBinding
+        with TypeLevelReferenceValues {
+
+    protected trait ConcreteStringValue extends ReferenceValue[ObjectType] {
+        def valueType: ObjectType = ObjectType.String
+    }
+
+    case object SomeConcreteString extends ConcreteStringValue {
+        override def merge(value: DomainValue): Update[DomainValue] = value match {
+            case SomeConcreteString       ⇒ NoUpdate
+            case other: ReferenceValue[_] ⇒ StructuralUpdate(other)
+            case _                        ⇒ MetaInformationUpdateNoLegalValue
+        }
+    }
+
+    case class AConcreteString(val theString: String) extends ConcreteStringValue {
+        override def merge(value: DomainValue): Update[DomainValue] = value match {
+            case AConcreteString(`theString`) ⇒ NoUpdate
+            case other: ReferenceValue[_]     ⇒ StructuralUpdate(other)
+            case _                            ⇒ MetaInformationUpdateNoLegalValue
+        }
+    }
+
+    override def stringValue(pc: Int, value: String) =
+        if (value eq null)
+            AIImplementationError("it is not possible to create a concrete string given a null value")
+        else
+            AConcreteString(value)
+
+}
+
+trait DefaultTypeLevelReferenceValues[I]
+        extends Domain[I]
         with DefaultValueBinding
         with TypeLevelReferenceValues {
 
@@ -148,9 +199,9 @@ trait DefaultTypeLevelReferenceValues
         }
     }
 
-    case object NullValue extends ReferenceValue[ReferenceType] {
+    case object NullValue extends ReferenceValue[Null] {
 
-        def valueType: ReferenceType = ObjectType.Object
+        def valueType: Null = null
 
         override def merge(value: Value): Update[DomainValue] = value match {
             case NullValue                ⇒ NoUpdate
@@ -169,11 +220,11 @@ trait DefaultTypeLevelReferenceValues
         override def merge(value: DomainValue): Update[DomainValue] = value match {
             // What we do here is extremely simplistic, but this is basically all we can
             // do when we do not have the class hierarchy available.
-            case AReferenceValue(`valueType`) ⇒ NoUpdate
-            case NullValue                    ⇒ NoUpdate
-            case TheNoLegalValue              ⇒ MetaInformationUpdateNoLegalValue
-            case other: ReferenceValue[_]     ⇒ StructuralUpdate(SomeReferenceValue)
-            case other                        ⇒ MetaInformationUpdateNoLegalValue
+            case ReferenceValue(`valueType`) ⇒ NoUpdate
+            case NullValue                   ⇒ NoUpdate
+            case TheNoLegalValue             ⇒ MetaInformationUpdateNoLegalValue
+            case other: ReferenceValue[_]    ⇒ StructuralUpdate(SomeReferenceValue)
+            case other                       ⇒ MetaInformationUpdateNoLegalValue
         }
 
         override def equals(other: Any): Boolean = {
@@ -201,8 +252,8 @@ trait DefaultTypeLevelReferenceValues
 
     def types(value: DomainValue): ValuesAnswer[Set[Type]] = {
         value match {
-            case AReferenceValue(valueType) ⇒ Values[Set[Type]](Set(valueType))
-            case _                          ⇒ ValuesUnknown
+            case ReferenceValue(valueType) ⇒ Values[Set[Type]](Set(valueType))
+            case _                         ⇒ ValuesUnknown
         }
     }
 

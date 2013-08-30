@@ -38,8 +38,10 @@ package domain
 
 /**
  * Provides default implementations for a `Domain`'s return methods.
+ * 
+ * @author Michael Eichberg
  */
-trait DoNothingOnReturnFromMethod { this: Domain ⇒
+trait DoNothingOnReturnFromMethod { this: Domain[_] ⇒
 
     def areturn(pc: Int, value: DomainValue): Unit = { /* Nothing to do. */ }
 

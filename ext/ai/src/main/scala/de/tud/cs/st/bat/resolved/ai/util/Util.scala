@@ -64,7 +64,7 @@ object Util {
     def dumpOnFailure[T](
         classFile: ClassFile,
         method: Method,
-        domain: Domain)(
+        domain: Domain[_])(
             f: AIResult[domain.type] ⇒ T): T = {
         val result = AI(classFile, method, domain)
         val operandsArray = result.operandsArray

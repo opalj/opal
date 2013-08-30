@@ -92,7 +92,12 @@ object InterpretMethods {
                     //                        def run() {
                     try {
                         time('AI) {
-                            if (AI(classFile, method, new domain.DefaultDomain()).wasAborted)
+                            if (AI(
+                                classFile,
+                                method,
+                                new domain.DefaultDomain[(ClassFile, Method)] {
+                                    val identifier = (classFile, method)
+                                }).wasAborted)
                                 throw new InterruptedException();
                         }
                     } catch {

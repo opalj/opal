@@ -39,7 +39,7 @@ package domain
 /**
  *
  */
-trait TypeLevelInvokeInstructions { this: Domain ⇒
+trait TypeLevelInvokeInstructions { this: Domain[_] ⇒
 
     def invokeinterface(pc: Int,
                         declaringClass: ReferenceType,

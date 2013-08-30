@@ -42,7 +42,7 @@ package ai
 trait AITracer {
 
     def traceInstructionEvalution(
-        domain: Domain)(
+        domain: Domain[_])(
             pc: Int,
             instruction: Instruction,
             operands: List[domain.DomainValue],
@@ -52,7 +52,7 @@ trait AITracer {
 trait ConsoleTracer extends AITracer {
     
     def traceInstructionEvalution(
-        domain: Domain)(
+        domain: Domain[_])(
             pc: Int,
             instruction: Instruction,
             operands: List[domain.DomainValue],

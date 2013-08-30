@@ -41,7 +41,7 @@ package domain
  *
  *
  */
-trait TypeLevelArrayInstructions { this: Domain ⇒
+trait TypeLevelArrayInstructions { this: Domain[_] ⇒
 
     //
     // CREATE ARRAY

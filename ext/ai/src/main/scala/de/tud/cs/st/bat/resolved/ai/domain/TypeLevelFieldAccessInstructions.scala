@@ -44,7 +44,7 @@ import reflect.ClassTag
  * 
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
-trait TypeLevelFieldAccessInstructions { this: Domain ⇒
+trait TypeLevelFieldAccessInstructions { this: Domain[_] ⇒
  
     def getfield(pc: Int,
                  objectref: DomainValue,

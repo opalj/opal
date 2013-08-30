@@ -42,7 +42,7 @@ package domain
  * 
  * @author Michael Eichberg
  */
-trait ConstraintsHandlingHelper { this: Domain ⇒
+trait ConstraintsHandlingHelper { this: Domain[_] ⇒
 
     object IgnoreSingleValueConstraint
             extends SingleValueConstraint {

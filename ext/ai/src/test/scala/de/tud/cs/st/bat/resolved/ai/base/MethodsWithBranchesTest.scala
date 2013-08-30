@@ -59,7 +59,9 @@ class MethodsWithBranchesTest
 
     import util.Util.dumpOnFailureDuringValidation
 
-    class RecordingDomain extends domain.DefaultDomain with domain.ReifiedConstraints {
+    class RecordingDomain(val identifier: None.type = None)
+            extends domain.DefaultDomain[None.type]
+            with domain.ReifiedConstraints[None.type] {
         var returnedValues: List[(String, Value)] = List()
         override def areturn(pc: Int, value: Value) { returnedValues = ("areturn", value) :: returnedValues }
         override def dreturn(pc: Int, value: Value) { returnedValues = ("dreturn", value) :: returnedValues }

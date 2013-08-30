@@ -43,7 +43,8 @@ package domain
  * at the type level. I.e., if you mix in this trait, all Integer,
  * Float, Long and Double values will be represented as such.
  */
-trait TypeLevelNumericValues extends ConstraintsHandlingHelper { this: Domain ⇒
+trait TypeLevelIntegerValues
+        extends ConstraintsHandlingHelper { this: Domain[_] ⇒
 
     // -----------------------------------------------------------------------------------
     //
@@ -61,37 +62,19 @@ trait TypeLevelNumericValues extends ConstraintsHandlingHelper { this: Domain �
         final def computationalType: ComputationalType = ComputationalTypeInt
     }
 
-    /**
-     * Abstracts over all values with computational type `float`.
-     */
-    trait SomeFloatValue extends TypedValue[FloatType] {
-
-        final def computationalType: ComputationalType = ComputationalTypeFloat
-
-        final def valueType = FloatType
-    }
-
-    trait SomeLongValue extends TypedValue[LongType] {
-
-        final def computationalType: ComputationalType = ComputationalTypeLong
-
-        final def valueType = LongType
-    }
-
-    trait SomeDoubleValue extends TypedValue[DoubleType] {
-
-        final def computationalType: ComputationalType = ComputationalTypeDouble
-
-        final def valueType = DoubleType
-    }
-
     //
     // QUESTION'S ABOUT VALUES
     //
 
-    def areEqualIntegers(value1: DomainValue, value2: DomainValue): Answer = {
+    def areEqual(value1: DomainValue, value2: DomainValue): Answer = {
         Unknown
     }
+
+    def isSomeValueInRange(value: DomainValue, lowerBound: Int, upperBound: Int): Boolean =
+        true
+
+    def isSomeValueNotInRange(value: DomainValue, lowerBound: Int, upperBound: Int): Boolean =
+        true
 
     def isLessThan(smallerValue: DomainValue, largerValue: DomainValue): Answer = {
         Unknown
@@ -101,25 +84,19 @@ trait TypeLevelNumericValues extends ConstraintsHandlingHelper { this: Domain �
         Unknown
     }
 
-    def isValueInRange(value: DomainValue, lowerBound: Int, upperBound: Int): Boolean =
-        true
-
-    def isValueNotInRange(value: DomainValue, lowerBound: Int, upperBound: Int): Boolean =
-        true
-
     // -----------------------------------------------------------------------------------
     //
-    // HANDLING OF CONSTRAINTS
+    // HANDLING OF CONSTRAINTS RELATED TO INTEGER VALUES
     //
     // -----------------------------------------------------------------------------------
 
     def hasValue: SingleValueConstraintWithBound[Int] =
         IgnoreSingleValueConstraintWithIntegerValueBound
 
-    def AreEqualIntegers: TwoValuesConstraint =
+    def AreEqual: TwoValuesConstraint =
         IgnoreTwoValuesConstraint
 
-    def AreNotEqualIntegers: TwoValuesConstraint =
+    def AreNotEqual: TwoValuesConstraint =
         IgnoreTwoValuesConstraint
 
     def IsLessThan: TwoValuesConstraint =
@@ -140,64 +117,15 @@ trait TypeLevelNumericValues extends ConstraintsHandlingHelper { this: Domain �
     def byteValue(pc: Int, value: Int) = SomeByteValue
     def shortValue(pc: Int, value: Int) = SomeShortValue
     def intValue(pc: Int, value: Int) = SomeIntegerValue
-    def longValue(pc: Int, value: Long) = SomeLongValue
-    def floatValue(pc: Int, value: Float) = SomeFloatValue
-    def doubleValue(pc: Int, value: Double) = SomeDoubleValue
-
-    //
-    // TYPE CONVERSIONS
-    //
-
-    def d2f(pc: Int, value: DomainValue): DomainValue = SomeFloatValue
-    def d2i(pc: Int, value: DomainValue): DomainValue = SomeIntegerValue
-    def d2l(pc: Int, value: DomainValue): DomainValue = SomeLongValue
-
-    def f2d(pc: Int, value: DomainValue): DomainValue = SomeDoubleValue
-    def f2i(pc: Int, value: DomainValue): DomainValue = SomeIntegerValue
-    def f2l(pc: Int, value: DomainValue): DomainValue = SomeLongValue
-
-    def i2b(pc: Int, value: DomainValue): DomainValue = SomeByteValue
-    def i2c(pc: Int, value: DomainValue): DomainValue = SomeCharValue
-    def i2d(pc: Int, value: DomainValue): DomainValue = SomeDoubleValue
-    def i2f(pc: Int, value: DomainValue): DomainValue = SomeFloatValue
-    def i2l(pc: Int, value: DomainValue): DomainValue = SomeLongValue
-    def i2s(pc: Int, value: DomainValue): DomainValue = SomeShortValue
-
-    def l2d(pc: Int, value: DomainValue): DomainValue = SomeDoubleValue
-    def l2f(pc: Int, value: DomainValue): DomainValue = SomeFloatValue
-    def l2i(pc: Int, value: DomainValue): DomainValue = SomeIntegerValue
-
-    //
-    // RELATIONAL OPERATORS
-    //
-    def fcmpg(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeIntegerValue
-    def fcmpl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeIntegerValue
-    def dcmpg(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeIntegerValue
-    def dcmpl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeIntegerValue
-    def lcmp(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeIntegerValue
 
     //
     // UNARY EXPRESSIONS
     //
-    def dneg(pc: Int, value: DomainValue) = SomeDoubleValue
-    def fneg(pc: Int, value: DomainValue) = SomeFloatValue
     def ineg(pc: Int, value: DomainValue) = SomeIntegerValue
-    def lneg(pc: Int, value: DomainValue) = SomeLongValue
 
     //
     // BINARY EXPRESSIONS
     //
-    def dadd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeDoubleValue
-    def ddiv(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeDoubleValue
-    def dmul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeDoubleValue
-    def drem(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeDoubleValue
-    def dsub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeDoubleValue
-
-    def fadd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeFloatValue
-    def fdiv(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeFloatValue
-    def fmul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeFloatValue
-    def frem(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeFloatValue
-    def fsub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeFloatValue
 
     def iadd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeIntegerValue
     def iand(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeIntegerValue
@@ -211,28 +139,16 @@ trait TypeLevelNumericValues extends ConstraintsHandlingHelper { this: Domain �
     def iushr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeIntegerValue
     def ixor(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeIntegerValue
 
-    def ladd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeLongValue
-    def land(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeLongValue
-    def ldiv(pc: Int, value1: DomainValue, value2: DomainValue) = ComputedValue(SomeLongValue)
-    def lmul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeLongValue
-    def lor(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeLongValue
-    def lrem(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeLongValue
-    def lshl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeLongValue
-    def lshr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeLongValue
-    def lsub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeLongValue
-    def lushr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeLongValue
-    def lxor(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeLongValue
-
     //
     // "OTHER" INSTRUCTIONS
     //
     def iinc(pc: Int, value: DomainValue, increment: Int) = SomeIntegerValue
 }
 
-trait DefaultTypeLevelNumericValues
-        extends Domain
+trait DefaultTypeLevelIntegerValues[I]
+        extends Domain[I]
         with DefaultValueBinding
-        with TypeLevelNumericValues {
+        with TypeLevelIntegerValues {
 
     case object SomeBooleanValue extends CTIntegerValue with TypedValue[BooleanType] {
 
@@ -301,13 +217,66 @@ trait DefaultTypeLevelNumericValues
             case other            ⇒ MetaInformationUpdateNoLegalValue
         }
     }
+}
 
-    case object SomeFloatValue extends SomeFloatValue {
-        override def merge(value: DomainValue): Update[DomainValue] = value match {
-            case SomeFloatValue ⇒ NoUpdate
-            case _              ⇒ MetaInformationUpdateNoLegalValue
-        }
+trait TypeLevelLongValues extends ConstraintsHandlingHelper { this: Domain[_] ⇒
+
+    // -----------------------------------------------------------------------------------
+    //
+    // HANDLING OF VALUES
+    //
+    // -----------------------------------------------------------------------------------
+
+    trait SomeLongValue extends TypedValue[LongType] {
+
+        final def computationalType: ComputationalType = ComputationalTypeLong
+
+        final def valueType = LongType
     }
+
+    // -----------------------------------------------------------------------------------
+    //
+    // HANDLING OF COMPUTATIONS
+    //
+    // -----------------------------------------------------------------------------------
+
+    //
+    // PUSH CONSTANT VALUE
+    //
+    def longValue(pc: Int, value: Long) = SomeLongValue
+
+    //
+    // RELATIONAL OPERATORS
+    //
+    def lcmp(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeIntegerValue
+
+    //
+    // UNARY EXPRESSIONS
+    //
+    def lneg(pc: Int, value: DomainValue) = SomeLongValue
+
+    //
+    // BINARY EXPRESSIONS
+    //
+
+    def ladd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeLongValue
+    def land(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeLongValue
+    def ldiv(pc: Int, value1: DomainValue, value2: DomainValue) = ComputedValue(SomeLongValue)
+    def lmul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeLongValue
+    def lor(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeLongValue
+    def lrem(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeLongValue
+    def lshl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeLongValue
+    def lshr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeLongValue
+    def lsub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeLongValue
+    def lushr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeLongValue
+    def lxor(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeLongValue
+
+}
+
+trait DefaultTypeLevelLongValues[I]
+        extends Domain[I]
+        with DefaultValueBinding
+        with TypeLevelLongValues {
 
     case object SomeLongValue extends SomeLongValue {
         override def merge(value: DomainValue): Update[DomainValue] = value match {
@@ -315,6 +284,125 @@ trait DefaultTypeLevelNumericValues
             case _             ⇒ MetaInformationUpdateNoLegalValue
         }
     }
+}
+
+trait TypeLevelFloatValues extends ConstraintsHandlingHelper { this: Domain[_] ⇒
+
+    // -----------------------------------------------------------------------------------
+    //
+    // HANDLING OF VALUES
+    //
+    // -----------------------------------------------------------------------------------
+
+    /**
+     * Abstracts over all values with computational type `float`.
+     */
+    trait SomeFloatValue extends TypedValue[FloatType] {
+
+        final def computationalType: ComputationalType = ComputationalTypeFloat
+
+        final def valueType = FloatType
+    }
+
+    // -----------------------------------------------------------------------------------
+    //
+    // HANDLING OF COMPUTATIONS
+    //
+    // -----------------------------------------------------------------------------------
+
+    //
+    // PUSH CONSTANT VALUE
+    //
+    def floatValue(pc: Int, value: Float) = SomeFloatValue
+
+    //
+    // RELATIONAL OPERATORS
+    //
+    def fcmpg(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeIntegerValue
+    def fcmpl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeIntegerValue
+
+    //
+    // UNARY EXPRESSIONS
+    //
+    def fneg(pc: Int, value: DomainValue) = SomeFloatValue
+
+    //
+    // BINARY EXPRESSIONS
+    //
+
+    def fadd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeFloatValue
+    def fdiv(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeFloatValue
+    def fmul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeFloatValue
+    def frem(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeFloatValue
+    def fsub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeFloatValue
+
+}
+
+trait DefaultTypeLevelFloatValues[I]
+        extends Domain[I]
+        with DefaultValueBinding
+        with TypeLevelFloatValues {
+
+    case object SomeFloatValue extends SomeFloatValue {
+        override def merge(value: DomainValue): Update[DomainValue] = value match {
+            case SomeFloatValue ⇒ NoUpdate
+            case _              ⇒ MetaInformationUpdateNoLegalValue
+        }
+    }
+}
+
+trait TypeLevelDoubleValues extends ConstraintsHandlingHelper { this: Domain[_] ⇒
+
+    // -----------------------------------------------------------------------------------
+    //
+    // HANDLING OF VALUES
+    //
+    // -----------------------------------------------------------------------------------
+
+    trait SomeDoubleValue extends TypedValue[DoubleType] {
+
+        final def computationalType: ComputationalType = ComputationalTypeDouble
+
+        final def valueType = DoubleType
+    }
+
+    // -----------------------------------------------------------------------------------
+    //
+    // HANDLING OF COMPUTATIONS
+    //
+    // -----------------------------------------------------------------------------------
+
+    //
+    // PUSH CONSTANT VALUE
+    //
+    def doubleValue(pc: Int, value: Double) = SomeDoubleValue
+
+    //
+    // RELATIONAL OPERATORS
+    //
+    def dcmpg(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeIntegerValue
+    def dcmpl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeIntegerValue
+
+    //
+    // UNARY EXPRESSIONS
+    //
+    def dneg(pc: Int, value: DomainValue) = SomeDoubleValue
+
+    //
+    // BINARY EXPRESSIONS
+    //
+    def dadd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeDoubleValue
+    def ddiv(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeDoubleValue
+    def dmul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeDoubleValue
+    def drem(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeDoubleValue
+    def dsub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = SomeDoubleValue
+
+}
+
+trait DefaultTypeLevelDoubleValues[I]
+        extends Domain[I]
+        with DefaultValueBinding
+        with TypeLevelDoubleValues {
 
     case object SomeDoubleValue extends SomeDoubleValue {
         override def merge(value: DomainValue): Update[DomainValue] = value match {
@@ -322,6 +410,39 @@ trait DefaultTypeLevelNumericValues
             case _               ⇒ MetaInformationUpdateNoLegalValue
         }
     }
+}
+
+trait TypeLevelConversionInstructions
+        extends ConstraintsHandlingHelper { this: Domain[_] ⇒
+
+    // -----------------------------------------------------------------------------------
+    //
+    // HANDLING OF COMPUTATIONS
+    //
+    // -----------------------------------------------------------------------------------
+
+    //
+    // TYPE CONVERSIONS
+    //
+
+    def d2f(pc: Int, value: DomainValue): DomainValue = SomeFloatValue
+    def d2i(pc: Int, value: DomainValue): DomainValue = SomeIntegerValue
+    def d2l(pc: Int, value: DomainValue): DomainValue = SomeLongValue
+
+    def f2d(pc: Int, value: DomainValue): DomainValue = SomeDoubleValue
+    def f2i(pc: Int, value: DomainValue): DomainValue = SomeIntegerValue
+    def f2l(pc: Int, value: DomainValue): DomainValue = SomeLongValue
+
+    def i2b(pc: Int, value: DomainValue): DomainValue = SomeByteValue
+    def i2c(pc: Int, value: DomainValue): DomainValue = SomeCharValue
+    def i2d(pc: Int, value: DomainValue): DomainValue = SomeDoubleValue
+    def i2f(pc: Int, value: DomainValue): DomainValue = SomeFloatValue
+    def i2l(pc: Int, value: DomainValue): DomainValue = SomeLongValue
+    def i2s(pc: Int, value: DomainValue): DomainValue = SomeShortValue
+
+    def l2d(pc: Int, value: DomainValue): DomainValue = SomeDoubleValue
+    def l2f(pc: Int, value: DomainValue): DomainValue = SomeFloatValue
+    def l2i(pc: Int, value: DomainValue): DomainValue = SomeIntegerValue
 
 }
 

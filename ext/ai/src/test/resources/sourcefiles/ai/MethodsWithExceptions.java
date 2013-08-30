@@ -32,6 +32,9 @@
  */
 package ai;
 
+import java.io.File;
+import java.io.IOException;
+
 /**
  * Just a very large number of methods that does something related to exception handling.
  * 
@@ -71,6 +74,21 @@ public class MethodsWithExceptions {
             throw new NullPointerException();
         else
             throw new IllegalArgumentException();
+    }
+
+    public static void leverageException(String message) {
+        try {
+            File f = new File("foo.bar");
+            f.createNewFile();
+        } /*
+           * catch (Exception e) { throw e; }
+           */
+        catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        } catch (SecurityException se) {
+            throw new RuntimeException(se);
+        }
+
     }
 
     public static void throwsSomeException(String message) throws Exception {

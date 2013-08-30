@@ -40,7 +40,11 @@ package ai
  * representation of Java bytecode.
  *
  * ==Thread Safety==
- * This class is thread-safe as long as the ai tracer (if any) is thread-safe.
+ * This class is thread-safe as long as the ai tracer (if any) is thread-safe. Hence,
+ * it is possible to use a single instance to analyze multiple methods in parallel.
+ * However, if you want to be able to selectively abort the abstract interpretation
+ * of some methods or selectively trace the interpretation of some methods, then you
+ * should use multiple instances.
  *
  * @author Michael Eichberg
  */
@@ -69,12 +73,13 @@ trait AI {
      *  @param classFile The method's defining class file.
      *  @param method A non-native, non-abstract method of the given class file that
      *      will be analyzed.
-     *  @param domain The domain that will be used for the abstract interpretation.
+     *  @param domain The domain that will be used for the abstract interpretation. BATAI
+     *      assumes that every method is analyzed using its (new) own `Domain` instance.
      */
     def apply(
         classFile: ClassFile,
         method: Method,
-        domain: Domain) = perform(classFile, method, domain)(None)
+        domain: Domain[_]) = perform(classFile, method, domain)(None)
 
     /**
      * Analyzes the given method using the given domain and the pre-initialized parameter
@@ -110,7 +115,7 @@ trait AI {
     def perform(
         classFile: ClassFile,
         method: Method,
-        domain: Domain)(
+        domain: Domain[_])(
             someLocals: Option[IndexedSeq[domain.DomainValue]] = None): AIResult[domain.type] = {
 
         assume(method.body.isDefined, "ai perform - the method ("+method.toJava+") has no body")
@@ -147,10 +152,12 @@ trait AI {
 
     def perform(
         code: Code,
-        domain: Domain)(
+        domain: Domain[_])(
             initialLocals: Array[domain.DomainValue]): AIResult[domain.type] = {
 
-        assume(code.maxLocals == initialLocals.size, "ai perform - code.maxLocals and initialLocals.size differ")
+        assume(
+            code.maxLocals == initialLocals.size,
+            "AI.perform(...) - code.maxLocals and initialLocals.size differ")
 
         import domain.DomainValueTag
         val codeLength = code.instructions.length
@@ -169,7 +176,7 @@ trait AI {
      * the given domain.
      *
      * @param initialWorklist The list of program counters with which the interpretation
-     *      will continue. If the method was never analyzed before, the list just
+     *      will continue. If the method was never analyzed before, the list should just
      *      contains the value "0"; i.e., we start with the interpretation of the
      *      code block with the first instruction.
      * @param operandsArray The array that contains the operand stacks. Each value
@@ -184,7 +191,7 @@ trait AI {
      */
     def continueInterpretation(
         code: Code,
-        domain: Domain)(
+        domain: Domain[_])(
             initialWorkList: List[Int],
             operandsArray: Array[List[domain.DomainValue]],
             localsArray: Array[Array[domain.DomainValue]]): AIResult[domain.type] = {
@@ -387,40 +394,50 @@ trait AI {
                 gotoTarget(pcOfNextInstruction, operands, locals)
             }
 
-            def computationWithException(computation: Computation[Nothing, DomainTypedValue[ObjectType]],
-                                         rest: Operands) {
+            def computationWithException(
+                computation: Computation[Nothing, DomainTypedValue[ObjectType]],
+                rest: Operands) {
+
                 if (computation.throwsException)
                     handleException(computation.exceptions)
                 if (computation.returnsNormally)
                     fallThroughO(rest)
             }
 
-            def computationWithExceptions(computation: Computation[Nothing, Set[DomainTypedValue[ObjectType]]],
-                                          rest: Operands) {
+            def computationWithExceptions(
+                computation: Computation[Nothing, Set[DomainTypedValue[ObjectType]]],
+                rest: Operands) {
+
                 if (computation.throwsException)
                     handleExceptions(computation.exceptions)
                 if (computation.returnsNormally)
                     fallThroughO(rest)
             }
 
-            def computationWithReturnValueAndException(computation: Computation[DomainValue, DomainTypedValue[ObjectType]],
-                                                       rest: Operands) {
+            def computationWithReturnValueAndException(
+                computation: Computation[DomainValue, DomainTypedValue[ObjectType]],
+                rest: Operands) {
+
                 if (computation.hasResult)
                     fallThroughO(computation.result :: rest)
                 if (computation.throwsException)
                     handleException(computation.exceptions)
             }
 
-            def computationWithReturnValueAndExceptions(computation: Computation[DomainValue, Set[DomainTypedValue[ObjectType]]],
-                                                        rest: Operands) {
+            def computationWithReturnValueAndExceptions(
+                computation: Computation[DomainValue, Set[DomainTypedValue[ObjectType]]],
+                rest: Operands) {
+
                 if (computation.hasResult)
                     fallThroughO(computation.result :: rest)
                 if (computation.throwsException)
                     handleExceptions(computation.exceptions)
             }
 
-            def computationWithOptionalReturnValueAndExceptions(computation: Computation[Option[DomainValue], Set[DomainTypedValue[ObjectType]]],
-                                                                rest: Operands) {
+            def computationWithOptionalReturnValueAndExceptions(
+                computation: Computation[Option[DomainValue], Set[DomainTypedValue[ObjectType]]],
+                rest: Operands) {
+
                 if (computation.hasResult) {
                     computation.result match {
                         case Some(value) ⇒ fallThroughO(value :: rest)
@@ -455,6 +472,7 @@ trait AI {
                     val branchtarget = pc + instruction.asInstanceOf[UnconditionalBranchInstruction].branchoffset
                     gotoTarget(branchtarget, operands, locals)
 
+                // FIXME The handling of JSR/RET needs to be revised. Merging the operand stacks/local variables ist not meaningful! I.e., we need to reset them!
                 case 169 /*ret*/ ⇒
                     val lvIndex = instruction.asInstanceOf[RET].lvIndex
                     locals(lvIndex) match {
@@ -484,9 +502,9 @@ trait AI {
                     ifXX(isNonNull _, IsNonNull, IsNull)
 
                 case 159 /*if_icmpeq*/ ⇒
-                    ifTcmpXX(areEqualIntegers _, AreEqualIntegers, AreNotEqualIntegers)
+                    ifTcmpXX(areEqual _, AreEqual, AreNotEqual)
                 case 160 /*if_icmpne*/ ⇒
-                    ifTcmpXX(areNotEqualIntegers _, AreNotEqualIntegers, AreEqualIntegers)
+                    ifTcmpXX(areNotEqual _, AreNotEqual, AreEqual)
                 case 161 /*if_icmplt*/ ⇒
                     ifTcmpXX(isLessThan _, IsLessThan, IsGreaterThanOrEqualTo)
                 case 162 /*if_icmpge*/ ⇒
@@ -517,20 +535,20 @@ trait AI {
                     var branchToDefaultRequired = false
                     for ((key, offset) ← switch.npairs) {
                         if (!branchToDefaultRequired && (key - previousKey) > 1) {
-                            if ((previousKey until key).exists(v ⇒ domain.isValueInRange(index, v, v))) {
+                            if ((previousKey until key).exists(v ⇒ domain.isSomeValueInRange(index, v, v))) {
                                 branchToDefaultRequired = true
                             } else {
                                 previousKey = key
                             }
                         }
-                        if (domain.isValueInRange(index, key, key)) {
+                        if (domain.isSomeValueInRange(index, key, key)) {
                             val branchTarget = pc + offset
                             val (updatedOperands, updatedLocals) =
                                 domain.hasValue(branchTarget, key, index, remainingOperands, locals)
                             gotoTarget(branchTarget, updatedOperands, updatedLocals)
                         }
                     }
-                    if (branchToDefaultRequired || domain.isValueNotInRange(index, firstKey, switch.npairs(switch.npairs.size - 1)._1)) {
+                    if (branchToDefaultRequired || domain.isSomeValueNotInRange(index, firstKey, switch.npairs(switch.npairs.size - 1)._1)) {
                         gotoTarget(pc + switch.defaultOffset, remainingOperands, locals)
                     }
 
@@ -542,7 +560,7 @@ trait AI {
                     val high = tableswitch.high
                     var v = low
                     while (v < high) {
-                        if (domain.isValueInRange(index, v, v)) {
+                        if (domain.isSomeValueInRange(index, v, v)) {
                             val branchTarget = pc + tableswitch.jumpOffsets(v - low)
                             val (updatedOperands, updatedLocals) =
                                 domain.hasValue(branchTarget, v, index, remainingOperands, locals)
@@ -550,7 +568,7 @@ trait AI {
                         }
                         v = v + 1
                     }
-                    if (domain.isValueNotInRange(index, low, high)) {
+                    if (domain.isSomeValueNotInRange(index, low, high)) {
                         gotoTarget(pc + tableswitch.defaultOffset, remainingOperands, locals)
                     }
 
@@ -568,7 +586,8 @@ trait AI {
                      * they appear in the corresponding exception handler table. 
                      */
                     val computation = domain.athrow(pc, operands.head)
-                    if (computation.throwsException) {
+                    if (computation.throwsException) { 
+                        // if the operand of the athrow exception is null, a new NullPointerException is raised
                         handleException(computation.exceptions)
                     }
                     if (computation.hasResult) {

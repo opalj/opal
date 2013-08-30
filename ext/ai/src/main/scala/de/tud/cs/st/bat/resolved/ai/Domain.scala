@@ -70,12 +70,19 @@ import language.higherKinds
  *
  * @note The framework assumes that every method/code block is associated with its
  *      own instance of a domain object.
- *
+ * @tparam I The type which is used to identify this domain's context. E.g., if a new 
+ *      object is created it may be associated with the instruction that created it and
+ *      this domain's identifier.
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  * @author Dennis Siebert
  */
-trait Domain {
-
+trait Domain[I] {
+    
+    /**
+     * Returns the value the identifies this domain (method).
+     */ 
+    def identifier : I
+    
     // -----------------------------------------------------------------------------------
     //
     // ABSTRACTIONS RELATED TO HANDLING VALUES
@@ -117,6 +124,12 @@ trait Domain {
          * that at some point all values are fixed and don't change anymore. Hence,
          * it is important that the type of the update is only a
          * [[de.tud.cs.st.bat.resolved.ai.StructuralUpdate]] if the value has changed.
+         *
+         * @note ***This value*** is always the value that was used by BATAI for
+         *      subsequent computations. Hence, the merge operator is not commutative!
+         *      Furthermore, if ***this value*** subsumes the given value the result
+         *      has to be either `NoUpdate` or a `MetaInformationUpdate`; it must not
+         *      be a `StructuralUpdate`.
          */
         def merge(value: DomainValue): Update[DomainValue]
 
@@ -350,7 +363,7 @@ trait Domain {
      *
      * @note Both bounds are inclusive.
      */
-    /*ABSTRACT*/ def isValueInRange(value: DomainValue, lowerBound: Int, upperBound: Int): Boolean
+    /*ABSTRACT*/ def isSomeValueInRange(value: DomainValue, lowerBound: Int, upperBound: Int): Boolean
 
     /**
      * Returns `true` iff at least one possible extension of given value is not in the
@@ -366,7 +379,7 @@ trait Domain {
      *
      * @note Both bounds are inclusive.
      */
-    /*ABSTRACT*/ def isValueNotInRange(value: DomainValue, lowerBound: Int, upperBound: Int): Boolean
+    /*ABSTRACT*/ def isSomeValueNotInRange(value: DomainValue, lowerBound: Int, upperBound: Int): Boolean
 
     /**
      * Determines whether the given value is `null` (`Yes`), maybe `null` (`Unkown`) or
@@ -412,36 +425,102 @@ trait Domain {
      */
     /*ABSTRACT*/ def isSubtypeOf(subType: ReferenceType, superType: ReferenceType): Answer
 
-    /*ABSTRACT*/ def areEqualIntegers(value1: DomainValue, value2: DomainValue): Answer
+    /**
+     * Tests if the two given values are equal.
+     *
+     * @param value1 A value with computational type integer.
+     * @param value2 A value with computational type integer.
+     */
+    /*ABSTRACT*/ def areEqual(value1: DomainValue, value2: DomainValue): Answer
 
-    final private[ai] def areNotEqualIntegers(value1: DomainValue, value2: DomainValue): Answer =
-        areEqualIntegers(value1, value2).negate
+    /**
+     * Tests if the two given values are not equal.
+     *
+     * @param value1 A value with computational type integer.
+     * @param value2 A value with computational type integer.
+     */
+    final private[ai] def areNotEqual(value1: DomainValue, value2: DomainValue): Answer =
+        areEqual(value1, value2).negate
 
+    /**
+     * Tests if the first value is smaller than the second value.
+     *
+     * @param smallerValue A value with computational type integer.
+     * @param largerValue A value with computational type integer.
+     */
     /*ABSTRACT*/ def isLessThan(smallerValue: DomainValue, largerValue: DomainValue): Answer
 
+    /**
+     * Tests if the first value is less than or equal to the second value.
+     *
+     * @param smallerOrEqualValue A value with computational type integer.
+     * @param equalOrLargerValue A value with computational type integer.
+     */
     /*ABSTRACT*/ def isLessThanOrEqualTo(smallerOrEqualValue: DomainValue, equalOrLargerValue: DomainValue): Answer
 
+    /**
+     * Tests if the first value is larger than the second value.
+     *
+     * @param largerValue A value with computational type integer.
+     * @param smallerValue A value with computational type integer.
+     */
     final private[ai] def isGreaterThan(largerValue: DomainValue, smallerValue: DomainValue): Answer =
         isLessThan(smallerValue, largerValue)
 
-    final private[ai] def isGreaterThanOrEqualTo(largerValue: DomainValue, smallerValue: DomainValue): Answer =
-        isLessThanOrEqualTo(smallerValue, largerValue)
+    /**
+     * Tests if the first value is larger than or equal to the second value.
+     *
+     * @param largerOrEqualValue A value with computational type integer.
+     * @param smallerOrEqualValue A value with computational type integer.
+     */
+    final private[ai] def isGreaterThanOrEqualTo(largerOrEqualValue: DomainValue, smallerOrEqualValue: DomainValue): Answer =
+        isLessThanOrEqualTo(smallerOrEqualValue, largerOrEqualValue)
 
+    /**
+     * Tests if the given value is 0 or maybe 0.
+     *
+     * @param value A value with computational type integer.
+     */
     final private[ai] def is0(value: DomainValue): Answer =
-        areEqualIntegers(value, IntegerConstant0)
+        areEqual(value, IntegerConstant0)
 
+    /**
+     * Tests if the given value is not 0 or maybe not 0.
+     *
+     * @param value A value with computational type integer.
+     */
     final private[ai] def isNot0(value: DomainValue): Answer =
-        areNotEqualIntegers(value, IntegerConstant0)
+        areNotEqual(value, IntegerConstant0)
 
+    /**
+     * Tests if the given value is &lt; 0 or maybe &lt; 0.
+     *
+     * @param value A value with computational type integer.
+     */
     final private[ai] def isLessThan0(value: DomainValue): Answer =
         isLessThan(value, IntegerConstant0)
 
+    /**
+     * Tests if the given value is less than or equal to 0 or maybe less than or equal to0.
+     *
+     * @param value A value with computational type integer.
+     */
     final private[ai] def isLessThanOrEqualTo0(value: DomainValue): Answer =
         isLessThanOrEqualTo(value, IntegerConstant0)
 
+    /**
+     * Tests if the given value is &gt; 0 or maybe &gt; 0.
+     *
+     * @param value A value with computational type integer.
+     */
     final private[ai] def isGreaterThan0(value: DomainValue): Answer =
         isGreaterThan(value, IntegerConstant0)
 
+    /**
+     * Tests if the given value is greater than or equla to 0 or maybe greater than or equal to 0.
+     *
+     * @param value A value with computational type integer.
+     */
     final private[ai] def isGreaterThanOrEqualTo0(value: DomainValue): Answer =
         isGreaterThanOrEqualTo(value, IntegerConstant0)
 
@@ -498,14 +577,14 @@ trait Domain {
     //
     // W.r.t. Integer values
     def hasValue: SingleValueConstraintWithBound[Int]
-    def AreEqualIntegers: TwoValuesConstraint
-    def AreNotEqualIntegers: TwoValuesConstraint
+    def AreEqual: TwoValuesConstraint
+    def AreNotEqual: TwoValuesConstraint
     def IsLessThan: TwoValuesConstraint
     def IsLessThanOrEqualTo: TwoValuesConstraint
     protected[ai] val IsGreaterThan: TwoValuesConstraint = new ChangedOrderTwoValuesConstraint(IsLessThan _)
     protected[ai] val IsGreaterThanOrEqualTo: TwoValuesConstraint = new ChangedOrderTwoValuesConstraint(IsLessThanOrEqualTo _)
-    protected[ai] val Is0: SingleValueConstraint = new TwoValuesConstraintWithFixedSecondValue(AreEqualIntegers _, IntegerConstant0)
-    protected[ai] val IsNot0: SingleValueConstraint = new TwoValuesConstraintWithFixedSecondValue(AreNotEqualIntegers _, IntegerConstant0)
+    protected[ai] val Is0: SingleValueConstraint = new TwoValuesConstraintWithFixedSecondValue(AreEqual _, IntegerConstant0)
+    protected[ai] val IsNot0: SingleValueConstraint = new TwoValuesConstraintWithFixedSecondValue(AreNotEqual _, IntegerConstant0)
     protected[ai] val IsLessThan0: SingleValueConstraint = new TwoValuesConstraintWithFixedSecondValue(IsLessThan _, IntegerConstant0)
     protected[ai] val IsLessThanOrEqualTo0: SingleValueConstraint = new TwoValuesConstraintWithFixedSecondValue(IsLessThanOrEqualTo _, IntegerConstant0)
     protected[ai] val IsGreaterThan0: SingleValueConstraint = new TwoValuesConstraintWithFixedFirstValue(IsLessThan _, IntegerConstant0)

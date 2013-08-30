@@ -36,13 +36,13 @@ package ai
 package base
 
 import reader.Java7Framework
-
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.ParallelTestExecution
 import org.scalatest.matchers.ShouldMatchers
+import de.tud.cs.st.bat.resolved.ai.domain.DoNothingOnReturnFromMethod
 
 /**
  * Basic tests of the abstract interpreter in the presence of simple control flow
@@ -59,7 +59,10 @@ class MethodsWithExceptionsTest
 
     import util.Util.dumpOnFailureDuringValidation
 
-    class RecordingDomain extends domain.DefaultDomain {
+    class RecordingDomain
+            extends domain.DefaultDomain[None.type] {
+        val identifier = None
+
         var returnedValues: Set[(String, Value)] = Set()
         override def areturn(pc: Int, value: Value) { returnedValues += (("areturn", value)) }
         override def dreturn(pc: Int, value: Value) { returnedValues += (("dreturn", value)) }
@@ -67,7 +70,9 @@ class MethodsWithExceptionsTest
         override def ireturn(pc: Int, value: Value) { returnedValues += (("ireturn", value)) }
         override def lreturn(pc: Int, value: Value) { returnedValues += (("lreturn", value)) }
         override def returnVoid(pc: Int) { returnedValues += (("return", null)) }
-        override def abnormalReturn(pc: Int, exception: Value) { returnedValues += (("throws", exception)) }
+        override def abnormalReturn(pc: Int, exception: Value) {
+            returnedValues += (("throws", exception))
+        }
     }
 
     val classFiles = Java7Framework.ClassFiles(TestSupport.locateTestResources("classfiles/ai.jar", "ext/ai"))
@@ -90,7 +95,8 @@ class MethodsWithExceptionsTest
             import domain._
             domain.returnedValues should be(
                 Set(("throws", AReferenceValue(ObjectType.RuntimeException)),
-                    ("throws", AReferenceValue(ObjectType.NullPointerException)))
+                    ("throws", AReferenceValue(ObjectType.NullPointerException)) // <- the default domain does not distinguish values that are (not) null from those that maybe null
+                )
             )
         })
     }
@@ -115,12 +121,33 @@ class MethodsWithExceptionsTest
         })
     }
 
+    it should "be able to identify all potentially thrown exceptions" in {
+        evaluateMethod("throwsThisOrThatException", domain ⇒ {
+            import domain._
+            domain.returnedValues should be(
+                Set(("throws", AReferenceValue(ObjectType("java/lang/IllegalArgumentException"))), // <= finally
+                    ("throws", AReferenceValue(ObjectType.NullPointerException))) // <= if t is null
+            )
+        })
+    }
+
+    it should "be able to identify all potentially thrown exceptions if an exception is caught and rethrown" in {
+        evaluateMethod("leverageException", domain ⇒ {
+            import domain._
+            domain.returnedValues should be(
+                Set(("return", null), // <= void return 
+                    ("throws", AReferenceValue(ObjectType("java/lang/RuntimeException"))), // <= finally
+                    ("throws", AReferenceValue(ObjectType.NullPointerException))) // <= if t is null
+            )
+        })
+    }
+
     it should "be able to analyze a method that catches the thrown exceptions" in {
         evaluateMethod("throwsNoException", domain ⇒ {
             import domain._
             domain.returnedValues should be(
                 Set(("return", null),
-                    ("throws", SomeReferenceValue) // <= when the domain is too simple, we simply cannot infer that we did catch all types of exceptions
+                    ("throws", SomeReferenceValue) // <= the default domain is too simple to infer that we did catch all types of exceptions
                 )
             )
         })

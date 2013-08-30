@@ -42,7 +42,7 @@ import reflect.ClassTag
  * Final binding of the [[de.tud.cs.st.bat.resolved.ai.Domain.Value]] trait
  * and its immediate subtypes: `DomainTypedValue` and `DomainNoLegalValue`.
  */
-trait DefaultValueBinding { this: Domain ⇒
+trait DefaultValueBinding { this: Domain[_] ⇒
 
     type DomainValue = Value
 

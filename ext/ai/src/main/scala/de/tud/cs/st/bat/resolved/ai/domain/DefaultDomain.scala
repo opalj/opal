@@ -48,11 +48,14 @@ package domain
  *
  * @author Michael Eichberg
  */
-trait BaseDomain
+trait BaseDomain[I]
     extends DefaultValueBinding
-    with DefaultTypeLevelReferenceValues
-    with DefaultTypeLevelNumericValues
-    with DefaultReturnAddressValues
+    with DefaultTypeLevelReferenceValues[I]
+    with DefaultTypeLevelIntegerValues[I]
+    with DefaultTypeLevelLongValues[I]
+    with DefaultTypeLevelFloatValues[I]
+    with DefaultTypeLevelDoubleValues[I]
+    with DefaultReturnAddressValues[I]
 
 /**
  * This is a ready to use domain that is primarily useful for testing and
@@ -60,11 +63,12 @@ trait BaseDomain
  *
  * @author Michael Eichberg
  */
-class DefaultDomain
-    extends BaseDomain
+abstract class DefaultDomain[I]
+    extends BaseDomain[I]
     with TypeLevelArrayInstructions
     with TypeLevelFieldAccessInstructions
     with TypeLevelInvokeInstructions
+    with TypeLevelConversionInstructions
     with DoNothingOnReturnFromMethod
 
 

@@ -38,7 +38,7 @@ package ai
 import analyses._
 
 /**
- *
+ * @author Michael Eichberg
  */
 abstract class AIProject(
         val project: Project[_]) {
@@ -55,15 +55,15 @@ abstract class AIProject(
      * events, keyboard events etc.)
      *
      * In case of a framework, the set of entry points typically encompasses
-     * all non-private constructors and all non-private static methods.
-     * Additionally, listeners for system-level
+     * all non-private constructors, all non-private static methods and all
+     * static initializers.
+     * Additionally, listeners for system-level events are also entry points.
      *
      * @return All methods that are potential entry points.
-     *
      */
     def entryPoints(): Iterable[(ClassFile, Method)]
 
-    def analyze(f: ⇒ Domain) {
+    def analyze(f: ⇒ Domain[_]) {
         for ((classFile, method) ← entryPoints) {
             AI(classFile, method, f)
         }

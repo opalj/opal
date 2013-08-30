@@ -43,7 +43,7 @@ package ai
  * the given domain. */
 object AIResultBuilder {
 
-    def aborted[D <: Domain](
+    def aborted[D <: Domain[_]](
         theCode: Code,
         theDomain: D)(
             theWorkList: List[Int],
@@ -62,7 +62,7 @@ object AIResultBuilder {
         }
     }
 
-    def complete[D <: Domain](
+    def complete[D <: Domain[_]](
         theCode: Code,
         theDomain: D)(
             theOperandsArray: Array[List[theDomain.DomainValue]],
@@ -85,7 +85,7 @@ object AIResultBuilder {
  * to "memoryLayouts: IndexedSeq[MemoryLayout[domain.type, domain.DomainValue]]" 
  * we would introduce a path dependence to a particular AIResult's instance and the actual 
  * type would be "this.domain.type" and "this.domain.DomainValue". */
-sealed abstract class AIResult[D <: Domain] {
+sealed abstract class AIResult[D <: Domain[_]] {
     val code: Code
     val domain: D
     val operandsArray: Array[List[domain.DomainValue]]
@@ -97,14 +97,14 @@ sealed abstract class AIResult[D <: Domain] {
     type BoundAIResult = AIResult[domain.type]
 }
 
-abstract class AIAborted[D <: Domain] extends AIResult[D] {
+abstract class AIAborted[D <: Domain[_]] extends AIResult[D] {
 
     final def wasAborted: Boolean = true
 
     def continueInterpretation(): BoundAIResult
 }
 
-abstract class AICompleted[D <: Domain] extends AIResult[D] {
+abstract class AICompleted[D <: Domain[_]] extends AIResult[D] {
 
     final def wasAborted: Boolean = false
 

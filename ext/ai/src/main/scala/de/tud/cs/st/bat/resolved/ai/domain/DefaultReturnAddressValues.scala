@@ -42,8 +42,8 @@ package domain
  * 
  * @author Michael Eichberg
  */
-trait DefaultReturnAddressValues
-        extends Domain
+trait DefaultReturnAddressValues[I]
+        extends Domain[I]
         with DefaultValueBinding {
 
     type DomainReturnAddressValue = ReturnAddressValue
