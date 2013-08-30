@@ -44,6 +44,13 @@ sealed trait Answer {
     def maybeNo: Boolean
     def yes: Boolean
     def no: Boolean
+    def isDefined: Boolean
+}
+/**
+ * Defines factory methods for answer objects.
+ */
+object Answer {
+    def apply(value: Boolean): Answer = if (value) Yes else No
 }
 final case object Yes extends Answer {
     def negate = No
@@ -51,7 +58,7 @@ final case object Yes extends Answer {
     def maybeNo: Boolean = false
     def yes: Boolean = true
     def no: Boolean = false
-
+    def isDefined: Boolean = true
 }
 final case object No extends Answer {
     def negate = Yes
@@ -59,7 +66,7 @@ final case object No extends Answer {
     def maybeNo: Boolean = true
     def yes: Boolean = false
     def no: Boolean = true
-
+    def isDefined: Boolean = true
 }
 final case object Unknown extends Answer {
     def negate = this
@@ -67,6 +74,7 @@ final case object Unknown extends Answer {
     def maybeNo: Boolean = true
     def yes: Boolean = false
     def no: Boolean = false
+    def isDefined: Boolean = false
 }
 
 
