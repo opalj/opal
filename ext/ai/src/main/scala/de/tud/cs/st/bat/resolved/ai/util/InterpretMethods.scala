@@ -62,6 +62,9 @@ object InterpretMethods {
 
     def interpret(files: Seq[java.io.File], beVerbose: Boolean = false): Option[String] = {
         var collectedExceptions: List[(ClassFile, Method, Throwable)] = List()
+        var classesCount = 0
+        var methodsCount = 0
+
         time('OVERALL) {
             for {
                 file ← files
@@ -80,8 +83,10 @@ object InterpretMethods {
                 val classFile = time('PARSING) {
                     ClassFile(new DataInputStream(new ByteArrayInputStream(data)))
                 }
+                classesCount += 1
                 if (beVerbose) println(classFile.thisClass.className)
                 for (method ← classFile.methods; if method.body.isDefined) {
+                    methodsCount += 1
                     if (beVerbose) println("  =>  "+method.toJava)
                     //                    val runnable = new Runnable {
                     //                        def run() {
@@ -108,7 +113,9 @@ object InterpretMethods {
         }
 
         if (collectedExceptions.nonEmpty) {
-            var report = "During the interpretation (overall: "+nsToSecs(getTime('OVERALL))+
+            var report = "During the interpretation of "+
+                methodsCount+" methods in "+
+                classesCount+" classes (overall: "+nsToSecs(getTime('OVERALL))+
                 "secs. (reading: "+nsToSecs(getTime('READING))+
                 "secs., parsing: "+nsToSecs(getTime('PARSING))+
                 "secs., ai: "+nsToSecs(getTime('AI))+
