@@ -44,7 +44,7 @@ import java.io.File
  * Provides the necessary infrastructure to easily execute a given analysis that
  * generates some analysis result that can be printed on the command line.
  *
- * This trait is particularly useful to execute (single) analyses using the command line.
+ * This trait is particularly useful to execute an analysis using the command line.
  *
  * To facilitate the usage of this trait several implicit conversions are defined that
  * wrap standard analyses ([[de.tud.cs.st.bat.resolved.analyses]]) such that they report
