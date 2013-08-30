@@ -99,7 +99,7 @@ case class BasicReport(
 object BasicReport {
 
     def apply(messages: Iterable[String]): BasicReport = {
-        BasicReport(messages.mkString("\""))
+        BasicReport(messages.mkString("\n"))
     }
 }
 
