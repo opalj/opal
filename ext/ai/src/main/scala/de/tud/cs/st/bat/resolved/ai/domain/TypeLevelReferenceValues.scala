@@ -63,12 +63,12 @@ trait TypeLevelReferenceValues
     //
 
     /**
-     * Tests if both values refer to the same object instance.
+     * Tests if both values refer to the same object instance. Though this is in general
+     * intractable, there are some cases where a definitive answer is possible.
      *
      * This implementation completely handles the case where at least one value
      * definitively represents the `null` value.
-     *
-     * If both values represent non-null values (or just maybe `null`) `Unknown` is
+     * If both values represent non-null values (or just maybe `null` values) `Unknown` is
      * returned.
      */
     def areEqualReferences(value1: DomainValue, value2: DomainValue): Answer = {
@@ -85,7 +85,7 @@ trait TypeLevelReferenceValues
     /**
      * This project's class hierarchy; unless explicitly overridden, the built-in default
      * class hierarchy is used which only reflects the type-hierarchy
-     * between the exception types used by JVM exceptions.
+     * between the exception used by JVM instructions.
      *
      * @note '''This method is intended to be overridden.'''
      */
@@ -99,6 +99,9 @@ trait TypeLevelReferenceValues
         }
     }
 
+    /**
+     * @see [[de.tud.cs.st.bat.resolved.analyses.ClassHierarchy]] isSubtypeOf
+     */
     def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer = {
         classHierarchy.isSubtypeOf(subtype, supertype)
     }
@@ -187,7 +190,9 @@ trait DefaultTypeLevelReferenceValues[I]
     //
 
     /**
-     * Abstracts over all values with computational type `reference`.
+     * Abstracts over all values with computational type `reference`. In this case
+     * we only now the type of the value. But we don't know any potential origin of
+     * that value or if it maybe `null`. 
      */
     case object SomeReferenceValue extends ReferenceValue[ObjectType] {
 

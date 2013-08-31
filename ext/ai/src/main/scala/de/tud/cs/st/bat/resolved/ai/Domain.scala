@@ -70,19 +70,23 @@ import language.higherKinds
  *
  * @note The framework assumes that every method/code block is associated with its
  *      own instance of a domain object.
- * @tparam I The type which is used to identify this domain's context. E.g., if a new 
+ * @tparam I The type which is used to identify this domain's context. E.g., if a new
  *      object is created it may be associated with the instruction that created it and
  *      this domain's identifier.
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  * @author Dennis Siebert
  */
-trait Domain[I] {
-    
+trait Domain[@specialized(Int, Long) I] {
+
     /**
-     * Returns the value the identifies this domain (method).
-     */ 
-    def identifier : I
-    
+     * Returns the value that identifies this domain (method).
+     *
+     * This value may subsequently be used to identify/track object instances but – if
+     * so – this happens at the sole responsibility of the domain. BATAI does
+     * not require any kind of tracking.
+     */
+    def identifier: I
+
     // -----------------------------------------------------------------------------------
     //
     // ABSTRACTIONS RELATED TO HANDLING VALUES
