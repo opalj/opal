@@ -37,13 +37,14 @@ package ai
 package base
 
 import reader.Java7Framework.ClassFiles
-
+import domain._
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.ParallelTestExecution
 import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.matchers.MatchResult
 
 /**
  * Basic tests of the abstract interpreter.
@@ -125,7 +126,10 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "sLDC").get
         /*val result =*/ AI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(SomeReferenceValue(ObjectType("java/lang/String"))))
+        domain.returnedValue should be(
+            Some(
+                SomeReferenceValue(0, Set(PreciseType(ObjectType("java/lang/String"))), No)
+            ))
     }
 
     //
@@ -668,7 +672,7 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "pushNull").get
         /*val result =*/ AI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(NullValue))
+        assert(domain.isNull(domain.returnedValue.get).yes, "returned value was not null")
     }
     it should "be able to analyze a push of byte value" in {
         val domain = new RecordingDomain; import domain._
@@ -942,7 +946,13 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "objectToString").get
         /*val result =*/ AI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(AStringObject))
+        assert(
+            domain.returnedValue match {
+                case r: DefaultTypeLevelReferenceValues[_]#ReferenceValue ⇒
+                    r.valueTypes.equals(PreciseType(ObjectType.String))
+                case _ ⇒ false
+            },
+            "returned value is not a string")
     }
 
     it should "be able to analyze a method that squares a given double value" in {
@@ -960,7 +970,7 @@ class MethodsPlainTest
         val locals = new Array[Value](1)
         val theObject = TypedValue(t)
         locals(0) = theObject
-        AI.perform(method.body.get, domain)(locals)
+        AI.perform(classFile, method, domain)(Some(locals))
 
         domain.returnedValue should be(Some(theObject))
     }

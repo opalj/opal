@@ -70,6 +70,7 @@ abstract class DefaultDomain[I]
     with TypeLevelInvokeInstructions
     with TypeLevelConversionInstructions
     with DoNothingOnReturnFromMethod
+    with DefaultTypeHierarchyBinding
 
 
 

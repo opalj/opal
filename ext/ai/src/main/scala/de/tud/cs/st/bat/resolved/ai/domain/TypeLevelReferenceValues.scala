@@ -45,17 +45,11 @@ trait TypeLevelReferenceValues
     /**
      * Abstracts over all values with computational type `reference`.
      */
-    trait ReferenceValue[+T >: Null <: ReferenceType] extends TypedValue[T] {
+    trait ReferenceValue extends Value {
+
         final def computationalType: ComputationalType = ComputationalTypeReference
-    }
 
-    /**
-     * Defines an extractor method to facilitate pattern matching.
-     */
-    object ReferenceValue {
-
-        def unapply[T >: Null <: ReferenceType](value: ReferenceValue[T]): Some[T] =
-            Some(value.valueType)
+        def isNull: Answer
     }
 
     //
@@ -82,28 +76,9 @@ trait TypeLevelReferenceValues
             Unknown
     }
 
-    /**
-     * This project's class hierarchy; unless explicitly overridden, the built-in default
-     * class hierarchy is used which only reflects the type-hierarchy
-     * between the exception used by JVM instructions.
-     *
-     * @note '''This method is intended to be overridden.'''
-     */
-    def classHierarchy: analyses.ClassHierarchy =
-        analyses.ClassHierarchy.preInitializedClassHierarchy
-
-    def isSubtypeOf(value: DomainValue, supertype: ReferenceType): Answer = {
-        value match {
-            case ReferenceValue(subtype) ⇒ isSubtypeOf(subtype, supertype)
-            case _                       ⇒ Unknown
-        }
-    }
-
-    /**
-     * @see [[de.tud.cs.st.bat.resolved.analyses.ClassHierarchy]] isSubtypeOf
-     */
-    def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer = {
-        classHierarchy.isSubtypeOf(subtype, supertype)
+    def isNull(value: DomainValue): Answer = value match {
+        case r: ReferenceValue ⇒ r.isNull
+        case _                 ⇒ AIImplementationError("a non-reference value cannot be (non-)null")
     }
 
     // -----------------------------------------------------------------------------------
@@ -113,9 +88,13 @@ trait TypeLevelReferenceValues
     // -----------------------------------------------------------------------------------
 
     def IsNull: SingleValueConstraint = IgnoreSingleValueConstraint
+
     def IsNonNull: SingleValueConstraint = IgnoreSingleValueConstraint
+
     def AreEqualReferences: TwoValuesConstraint = IgnoreTwoValuesConstraint
+
     def AreNotEqualReferences: TwoValuesConstraint = IgnoreTwoValuesConstraint
+
     def UpperBound: SingleValueConstraintWithBound[ReferenceType] = IgnoreSingleValueConstraintWithReferenceTypeBound
 
     // -----------------------------------------------------------------------------------
@@ -128,11 +107,11 @@ trait TypeLevelReferenceValues
     // PUSH CONSTANT VALUE
     //
 
-    /*new*/ val AStringObject = SomeReferenceValue(ObjectType.String)
-    def stringValue(pc: Int, value: String): DomainValue = AStringObject
+    def stringValue(pc: Int, value: String): DomainValue =
+        SomeReferenceValue(ObjectType.String)
 
-    /*new*/ val AClassObject = SomeReferenceValue(ObjectType.Class)
-    def classValue(pc: Int, t: ReferenceType): DomainValue = AClassObject
+    def classValue(pc: Int, t: ReferenceType): DomainValue =
+        SomeReferenceValue(ObjectType.Class)
 
     //
     // TYPE CHECKS AND CONVERSION
@@ -145,43 +124,11 @@ trait TypeLevelReferenceValues
         SomeBooleanValue
 }
 
-trait StringValuesTracing[I]
-        extends Domain[I]
-        with DefaultValueBinding
-        with TypeLevelReferenceValues {
-
-    protected trait ConcreteStringValue extends ReferenceValue[ObjectType] {
-        def valueType: ObjectType = ObjectType.String
-    }
-
-    case object SomeConcreteString extends ConcreteStringValue {
-        override def merge(value: DomainValue): Update[DomainValue] = value match {
-            case SomeConcreteString       ⇒ NoUpdate
-            case other: ReferenceValue[_] ⇒ StructuralUpdate(other)
-            case _                        ⇒ MetaInformationUpdateNoLegalValue
-        }
-    }
-
-    case class AConcreteString(val theString: String) extends ConcreteStringValue {
-        override def merge(value: DomainValue): Update[DomainValue] = value match {
-            case AConcreteString(`theString`) ⇒ NoUpdate
-            case other: ReferenceValue[_]     ⇒ StructuralUpdate(other)
-            case _                            ⇒ MetaInformationUpdateNoLegalValue
-        }
-    }
-
-    override def stringValue(pc: Int, value: String) =
-        if (value eq null)
-            AIImplementationError("it is not possible to create a concrete string given a null value")
-        else
-            AConcreteString(value)
-
-}
-
 trait DefaultTypeLevelReferenceValues[I]
-        extends Domain[I]
-        with DefaultValueBinding
-        with TypeLevelReferenceValues {
+        extends DefaultValueBinding
+        with TypeLevelReferenceValues { domain: Domain[I] ⇒
+
+    import language.existentials
 
     //
     //
@@ -189,81 +136,188 @@ trait DefaultTypeLevelReferenceValues[I]
     //
     //
 
+    trait TypeBound {
+        def valueTypes: Set[_ <: ReferenceType]
+    }
+
+    case class PreciseType private (valueTypes: Set[_ <: ReferenceType]) extends TypeBound
+
+    object PreciseType {
+        def apply(valueType: ReferenceType): PreciseType =
+            new PreciseType(Set.empty[ReferenceType] + valueType)
+
+    }
+
+    case class UnionType(valueTypes: Set[_ <: ReferenceType]) extends TypeBound {
+        assume(valueTypes.size >= 2, "a union type with only one bound is meaningless")
+    }
+
     /**
-     * Abstracts over all values with computational type `reference`. In this case
-     * we only now the type of the value. But we don't know any potential origin of
-     * that value or if it maybe `null`. 
+     * @note Subclasses are not expected to add further state. If so, the implementation
+     * of equals and hashCode need to be revised.
      */
-    case object SomeReferenceValue extends ReferenceValue[ObjectType] {
+    trait ReferenceValue extends super.ReferenceValue { outer ⇒
 
-        def valueType: ObjectType = ObjectType.Object
+        def pc: Int
 
-        override def merge(value: DomainValue): Update[DomainValue] = value match {
-            case other: ReferenceValue[_] ⇒ NoUpdate
-            case _                        ⇒ MetaInformationUpdateNoLegalValue
-        }
-    }
+        def valueTypes: Set[TypeBound] // Basically, we have to distinguish two situations: (1) a value that may have (depending on the control flow) different independent types (2) a type for which we have multiple bounds (i.e., we don't know the precise type, but we know (e.g., due to typechecks) that it implements multiple interfaces) 
 
-    case object NullValue extends ReferenceValue[Null] {
+        def isNull: Answer
 
-        def valueType: Null = null
+        final val context: I = domain.identifier
 
-        override def merge(value: Value): Update[DomainValue] = value match {
-            case NullValue                ⇒ NoUpdate
-            case other: ReferenceValue[_] ⇒ StructuralUpdate(other)
-            case _                        ⇒ MetaInformationUpdateNoLegalValue
-        }
-    }
-    def theNullValue(pc: Int) = NullValue
+        override def merge(mergePC: Int, value: DomainValue): Update[DomainValue] = {
+            if (this eq value)
+                return NoUpdate
 
-    case class AReferenceValue[+T >: Null <: ReferenceType](
-        valueType: T)
-            extends ReferenceValue[T] {
-
-        // TODO [AI] We need some support to consult the domain to decide what we want to do.
-
-        override def merge(value: DomainValue): Update[DomainValue] = value match {
-            // What we do here is extremely simplistic, but this is basically all we can
-            // do when we do not have the class hierarchy available.
-            case ReferenceValue(`valueType`) ⇒ NoUpdate
-            case NullValue                   ⇒ NoUpdate
-            case TheNoLegalValue             ⇒ MetaInformationUpdateNoLegalValue
-            case other: ReferenceValue[_]    ⇒ StructuralUpdate(SomeReferenceValue)
-            case other                       ⇒ MetaInformationUpdateNoLegalValue
+            value match {
+                case other: ReferenceValue if this.valueTypes == other.valueTypes && this.isNull == other.isNull ⇒ {
+                    if (this.pc == other.pc) {
+                        NoUpdate
+                    } else {
+                        MetaInformationUpdate(
+                            new ReferenceValue {
+                                def pc = mergePC
+                                def isNull = outer.isNull
+                                def valueTypes = outer.valueTypes
+                            }
+                        )
+                    }
+                }
+                case other: ReferenceValue ⇒ {
+                    StructuralUpdate(
+                        new ReferenceValue {
+                            def pc = mergePC
+                            def isNull = outer.isNull.merge(other.isNull)
+                            def valueTypes = outer.valueTypes ++ other.valueTypes
+                        }
+                    )
+                }
+                case _ ⇒ MetaInformationUpdateNoLegalValue
+            }
         }
 
         override def equals(other: Any): Boolean = {
-            if (other.isInstanceOf[AReferenceValue[_]]) {
-                this.valueType ==
-                    other.asInstanceOf[AReferenceValue[_]].valueType
-            } else {
-                false
+            other match {
+                case other: ReferenceValue ⇒
+                    this.context == other.context &&
+                        this.pc == other.pc &&
+                        this.isNull == other.isNull &&
+                        this.valueTypes == other.valueTypes
+                case _ ⇒ false
             }
         }
-        override def hashCode: Int = -valueType.hashCode()
 
-        override def toString: String = "ReferenceTypeValue: "+valueType.toJava
+        override def hashCode(): Int = {
+            valueTypes.hashCode() ^ isNull.hashCode() ^ (pc << 16)
+        }
+
+        override def toString: String =
+            "ReferenceValue(isNull="+isNull+"; pc="+pc+"; types="+
+                valueTypes.map(
+                    _.valueTypes.map(_.toJava).mkString("(", ", ", ")")
+                ).mkString(", ")
     }
 
-    def SomeReferenceValue(referenceType: ReferenceType): DomainTypedValue[referenceType.type] =
-        AReferenceValue(referenceType)
-
-    def isNull(value: DomainValue): Answer = {
-        if (value == NullValue)
-            Yes
-        else
-            Unknown
+    object ReferenceValue {
+        def unapply(rv: ReferenceValue): Option[(Int, Set[_ <: TypeBound], Answer)] =
+            Some((rv.pc, rv.valueTypes, rv.isNull))
     }
 
-    def types(value: DomainValue): ValuesAnswer[Set[Type]] = {
-        value match {
-            case ReferenceValue(valueType) ⇒ Values[Set[Type]](Set(valueType))
-            case _                         ⇒ ValuesUnknown
+    def SomeReferenceValue(t: ReferenceType): DomainTypedValue[t.type] =
+        new ReferenceValue with TypedValue[t.type] {
+            def pc = -1
+            val valueTypes: Set[TypeBound] = Set.empty + PreciseType(t)
+            val isNull = Unknown
+            def valueType: t.type = t
+        }
+
+    def SomeReferenceValue(thePC: Int,
+                           theValueTypes: Set[TypeBound],
+                           theIsNull: Answer): ReferenceValue = {
+        new ReferenceValue {
+            def pc = thePC
+            def valueTypes = theValueTypes
+            val isNull = theIsNull
         }
     }
 
-    def newObject(pc: Int, t: ObjectType): DomainTypedValue[t.type] = TypedValue(t)
+    // FIXME It doesn't make sense to convert type bounds to types ... BATAI should directly calculate with type bounds
+    def types(value: DomainValue): ValuesAnswer[Set[_ <: Type]] = {
+        value match {
+            case r: ReferenceValue ⇒ Values(r.valueTypes.map(_.valueTypes).flatten)
+            case t: TypedValue[_]  ⇒ Values(Set(t.valueType))
+        }
+    }
+
+    def isSubtypeOf(value: DomainValue, superType: ReferenceType): Answer = {
+        Unknown // TODO make this MORE meaningful
+    }
+
+    def newObject(newObjectPC: Int, t: ObjectType): DomainTypedValue[t.type] =
+        new ReferenceValue with TypedValue[t.type] {
+            def pc = newObjectPC
+            def valueTypes = Set.empty + PreciseType(t)
+            def isNull = No
+            def valueType: t.type = t
+        }
+
+    def theNullValue(nullValuePC: Int): DomainValue =
+        new ReferenceValue {
+            def pc: Int = nullValuePC
+            def valueTypes: Set[TypeBound] = Set.empty
+            def isNull: Answer = Yes
+        }
+
+    override def stringValue(loadStringPC: Int, value: String): DomainValue =
+        new ReferenceValue with TypedValue[ObjectType.String.type] {
+            def pc = loadStringPC
+            def valueTypes = Set.empty + PreciseType(ObjectType.String)
+            def isNull = No
+            def valueType = ObjectType.String
+        }
+
+    override def classValue(loadClassPC: Int, t: ReferenceType): DomainValue =
+        new ReferenceValue with TypedValue[ObjectType.Class.type] {
+            def pc = loadClassPC
+            def valueTypes = Set.empty + PreciseType(ObjectType.Class)
+            def isNull: Answer = No
+            def valueType: ObjectType.Class.type = ObjectType.Class
+        }
 
 }
+
+//trait StringValuesTracing[I]
+//        extends Domain[I]
+//        with DefaultValueBinding
+//        with TypeLevelReferenceValues {
+//
+//    protected trait ConcreteStringValue extends ReferenceValue[ObjectType] {
+//        def valueType: ObjectType = ObjectType.String
+//    }
+//
+//    case object SomeConcreteString extends ConcreteStringValue {
+//        override def merge(value: DomainValue): Update[DomainValue] = value match {
+//            case SomeConcreteString       ⇒ NoUpdate
+//            case other: ReferenceValue[_] ⇒ StructuralUpdate(other)
+//            case _                        ⇒ MetaInformationUpdateNoLegalValue
+//        }
+//    }
+//
+//    case class AConcreteString(val theString: String) extends ConcreteStringValue {
+//        override def merge(value: DomainValue): Update[DomainValue] = value match {
+//            case AConcreteString(`theString`) ⇒ NoUpdate
+//            case other: ReferenceValue[_]     ⇒ StructuralUpdate(other)
+//            case _                            ⇒ MetaInformationUpdateNoLegalValue
+//        }
+//    }
+//
+//    override def stringValue(pc: Int, value: String) =
+//        if (value eq null)
+//            AIImplementationError("it is not possible to create a concrete string given a null value")
+//        else
+//            AConcreteString(value)
+//
+//}
 
 

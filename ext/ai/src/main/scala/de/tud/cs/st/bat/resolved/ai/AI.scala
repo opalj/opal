@@ -81,6 +81,8 @@ trait AI {
         method: Method,
         domain: Domain[_]) = perform(classFile, method, domain)(None)
 
+    private final val initialWorkList = List(0)
+
     /**
      * Analyzes the given method using the given domain and the pre-initialized parameter
      * values (if any).
@@ -121,8 +123,11 @@ trait AI {
         assume(method.body.isDefined, "ai perform - the method ("+method.toJava+") has no body")
 
         import domain._
+        import domain.DomainValueTag
 
         val code = method.body.get
+        val codeLength = code.instructions.length
+
         val initialLocals = (
             someLocals.map(l ⇒ {
                 assume(l.size == method.body.get.maxLocals)
@@ -133,7 +138,8 @@ trait AI {
 
                 if (!method.isStatic) {
                     val thisType = classFile.thisClass
-                    locals.update(localVariableIndex, TypedValue(thisType))
+                    val thisValue = TypedValue(thisType)
+                    locals.update(localVariableIndex, thisValue)
                     localVariableIndex += 1 /*==thisType.computationalType.operandSize*/
                 }
 
@@ -142,33 +148,26 @@ trait AI {
                     locals.update(localVariableIndex, TypedValue(parameterType))
                     localVariableIndex += ct.operandSize
                 }
+
                 locals
             })
         )
-        perform(code, domain)(initialLocals)
-    }
 
-    private final val initialWorkList = List(0)
-
-    def perform(
-        code: Code,
-        domain: Domain[_])(
-            initialLocals: Array[domain.DomainValue]): AIResult[domain.type] = {
-
-        assume(
-            code.maxLocals == initialLocals.size,
-            "AI.perform(...) - code.maxLocals and initialLocals.size differ")
-
-        import domain.DomainValueTag
-        val codeLength = code.instructions.length
-        val localsArray = new Array[Array[domain.DomainValue]](codeLength)
-        localsArray(0) = initialLocals
+        val updatedMemoryLayout: Tuple2[List[DomainValue], Array[DomainValue]] = {
+            if (!method.isStatic) {
+                domain.IsNonNull(0, initialLocals(0), List.empty[DomainValue], initialLocals)
+            } else
+                (List.empty[DomainValue], initialLocals)
+        }
         val operandsArray = new Array[List[domain.DomainValue]](codeLength)
-        operandsArray(0) = Nil
+        operandsArray(0) = updatedMemoryLayout._1
+        val localsArray = new Array[Array[domain.DomainValue]](codeLength)
+        localsArray(0) = updatedMemoryLayout._2
 
         continueInterpretation(
             code, domain)(
                 initialWorkList, operandsArray, localsArray)
+
     }
 
     /**
@@ -222,7 +221,7 @@ trait AI {
                 worklist = targetPC :: worklist
             } else {
                 val currentLocals = localsArray(targetPC)
-                domain.merge(currentOperands, currentLocals, operands, locals) match {
+                domain.merge(targetPC, currentOperands, currentLocals, operands, locals) match {
                     case NoUpdate ⇒ /* Nothing to do */
                     case StructuralUpdate((updatedOperands, updatedLocals)) ⇒
                         operandsArray(targetPC) = updatedOperands
@@ -586,7 +585,7 @@ trait AI {
                      * they appear in the corresponding exception handler table. 
                      */
                     val computation = domain.athrow(pc, operands.head)
-                    if (computation.throwsException) { 
+                    if (computation.throwsException) {
                         // if the operand of the athrow exception is null, a new NullPointerException is raised
                         handleException(computation.exceptions)
                     }

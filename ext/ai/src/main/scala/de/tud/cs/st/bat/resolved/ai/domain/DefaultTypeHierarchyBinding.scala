@@ -32,58 +32,38 @@
  */
 package de.tud.cs.st
 package bat
+package resolved
+package ai
+package domain
 
 /**
- * Models a three state answer.
+ * Provides a default implementation for answering type hierarchy related
+ * questions.
  *
  * @author Michael Eichberg
  */
-sealed trait Answer {
-    def negate: Answer
-    def maybeYes: Boolean
-    def maybeNo: Boolean
-    def yes: Boolean
-    def no: Boolean
-    def isDefined: Boolean
+trait DefaultTypeHierarchyBinding { this: Domain[_] ⇒
 
-    def merge(other: Answer): Answer
-}
-/**
- * Defines factory methods for answer objects.
- */
-object Answer {
-    def apply(value: Boolean): Answer = if (value) Yes else No
-}
-final case object Yes extends Answer {
-    def negate = No
-    def maybeYes: Boolean = true
-    def maybeNo: Boolean = false
-    def yes: Boolean = true
-    def no: Boolean = false
-    def isDefined: Boolean = true
+    /**
+     * This project's class hierarchy; unless explicitly overridden, the built-in default
+     * class hierarchy is used which only reflects the type-hierarchy
+     * between the exception used by JVM instructions.
+     *
+     * @note '''This method is intended to be overridden.'''
+     */
+    protected def classHierarchy: analyses.ClassHierarchy =
+        analyses.ClassHierarchy.preInitializedClassHierarchy
 
-    def merge(other: Answer) = if (other eq Yes) Yes else Unknown
-}
-final case object No extends Answer {
-    def negate = Yes
-    def maybeYes: Boolean = false
-    def maybeNo: Boolean = true
-    def yes: Boolean = false
-    def no: Boolean = true
-    def isDefined: Boolean = true
+    /**
+     * @see [[de.tud.cs.st.bat.resolved.analyses.ClassHierarchy]] isSubtypeOf
+     */
+    def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer = {
+        classHierarchy.isSubtypeOf(subtype, supertype)
+    }
 
-    def merge(other: Answer) = if (other eq No) No else Unknown
 }
-final case object Unknown extends Answer {
-    def negate = this
-    def maybeYes: Boolean = true
-    def maybeNo: Boolean = true
-    def yes: Boolean = false
-    def no: Boolean = false
-    def isDefined: Boolean = false
 
-    def merge(other: Answer) = Unknown
-}
+
 
 
 

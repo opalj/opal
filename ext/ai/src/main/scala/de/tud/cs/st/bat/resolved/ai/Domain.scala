@@ -135,7 +135,7 @@ trait Domain[@specialized(Int, Long) I] {
          *      has to be either `NoUpdate` or a `MetaInformationUpdate`; it must not
          *      be a `StructuralUpdate`.
          */
-        def merge(value: DomainValue): Update[DomainValue]
+        def merge(pc: Int, value: DomainValue): Update[DomainValue]
 
         /**
          * Returns a string that states that merging and comparing this value with
@@ -202,7 +202,7 @@ trait Domain[@specialized(Int, Long) I] {
         def computationalType: ComputationalType =
             BATError("the value \"NoLegalValue\" does not have a computational type")
 
-        def merge(value: DomainValue): Update[DomainValue] = {
+        def merge(pc: Int, value: DomainValue): Update[DomainValue] = {
             if (value == TheNoLegalValue)
                 NoUpdate
             else
@@ -247,7 +247,7 @@ trait Domain[@specialized(Int, Long) I] {
         val addresses: Set[Int])
             extends Value {
 
-        override def merge(value: DomainValue): Update[DomainValue] = value match {
+        override def merge(pc: Int, value: DomainValue): Update[DomainValue] = value match {
             case ReturnAddressValue(otherAddresses) ⇒ {
                 if (otherAddresses subsetOf this.addresses)
                     NoUpdate
@@ -415,7 +415,7 @@ trait Domain[@specialized(Int, Long) I] {
      * types "`NullPointerException` or `IllegalArgumentException`", but it will never
      * capture the types `Integer` and `Long`.
      */
-    /*ABSTRACT*/ def types(value: DomainValue): ValuesAnswer[Set[Type]]
+    /*ABSTRACT*/ def types(value: DomainValue): ValuesAnswer[Set[_ <: Type]]
 
     /**
      * Tries to determine if the given value is a sub-type of the specified reference
@@ -682,6 +682,9 @@ trait Domain[@specialized(Int, Long) I] {
     // 
     // PUSH CONSTANT VALUE
     //
+    /**
+     * Called by BATAI iff when an `aconst_null` instruction is interpreted.
+     */
     def theNullValue(pc: Int): DomainValue
     def byteValue(pc: Int, value: Int): DomainValue
     def shortValue(pc: Int, value: Int): DomainValue
@@ -906,6 +909,7 @@ trait Domain[@specialized(Int, Long) I] {
      * or the implementation of the domain is incomplete.
      */
     def merge(
+        pc: Int,
         thisOperands: Operands,
         thisLocals: Locals,
         otherOperands: Operands,
@@ -936,7 +940,7 @@ trait Domain[@specialized(Int, Long) I] {
                         if (thisOperand == otherOperand) {
                             thisOperand
                         } else {
-                            val updatedOperand = thisOperand merge otherOperand
+                            val updatedOperand = thisOperand.merge(pc, otherOperand)
                             val newOperand = updatedOperand match {
                                 case SomeUpdate(operand) ⇒ operand
                                 case NoUpdate            ⇒ thisOperand
@@ -980,7 +984,7 @@ trait Domain[@specialized(Int, Long) I] {
                         } else if (thisLocal == otherLocal) {
                             thisLocal
                         } else {
-                            val updatedLocal = thisLocal merge otherLocal
+                            val updatedLocal = thisLocal.merge(pc, otherLocal)
                             if (updatedLocal == NoUpdate) {
                                 thisLocal
                             } else {
