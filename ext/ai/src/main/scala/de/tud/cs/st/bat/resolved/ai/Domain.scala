@@ -99,8 +99,8 @@ trait Domain[@specialized(Int, Long) I] {
      *
      * ==Extending Value==
      * If you extend this trait, make sure that you also extend all classes/traits that
-     * inherit from this type (this may require a deep mixin composition) and that you
-     * refine the type `DomainType` accordingly.
+     * inherit from this type (this may require a deep mixin composition and that you
+     * refine the type `DomainType` accordingly).
      */
     trait Value {
         /**
@@ -134,6 +134,8 @@ trait Domain[@specialized(Int, Long) I] {
          *      Furthermore, if ***this value*** subsumes the given value the result
          *      has to be either `NoUpdate` or a `MetaInformationUpdate`; it must not
          *      be a `StructuralUpdate`.
+         * @param pc The program counter of the instruction where the paths converge.
+         * @param value The "new" domain value.
          */
         def merge(pc: Int, value: DomainValue): Update[DomainValue]
 
@@ -153,7 +155,7 @@ trait Domain[@specialized(Int, Long) I] {
     type DomainValue <: Value
 
     /**
-     * The class tag for the type `DomainValue`.
+     * The class tag for the type `DomainValue`. Required to generate Array instances.
      *
      * ==Initialization==
      * In the sub-trait or class that fixes the type of `DomainValue` it is necessary
@@ -191,7 +193,9 @@ trait Domain[@specialized(Int, Long) I] {
     }
 
     /**
-     * If the AI framework tries to merge two values that are incompatible the result has
+     * Represents a value that has no well defined state/type.
+     * 
+     * If the AI framework tries to merge two values that are incompatible, the result has
      * to be an instance of `NoLegalValue`. This may happen, e.g., when BATAI tries to
      * merge two register values/locals that are not live (i.e., which should not be
      * live) and, hence, are actually allowed to contain incompatible values.
@@ -228,12 +232,22 @@ trait Domain[@specialized(Int, Long) I] {
     type DomainNoLegalValue <: NoLegalValue with DomainValue
 
     /**
-     * The singleton instance of a `NoLegalVAlue`.
+     * The **singleton** instance of a `NoLegalVAlue`.
      */
     val TheNoLegalValue: DomainNoLegalValue
 
+    /**
+     * If the result of the merge of two values is a non-legal value. The result has
+     * to be reported as a `MetaInformationUpdate`.
+     */ 
     val MetaInformationUpdateNoLegalValue: MetaInformationUpdate[DomainNoLegalValue]
 
+    /**
+     * The result of the the merging of two values should never be reported as a 
+     * `StructuralUpdate` if the computer value is a `NoLegalValue`. 
+     * 
+     * This method is solely defined to catch implementation errors early on.
+     */ 
     final def StructuralUpdateNoLegalValue: StructuralUpdate[Nothing] =
         BATError("the merging of a value with an incompatible value always has to be a MetaInformationUpdate and not more")
 
