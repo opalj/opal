@@ -50,6 +50,8 @@ trait TypeLevelReferenceValues
         final def computationalType: ComputationalType = ComputationalTypeReference
 
         def isNull: Answer
+
+        def updateIsNull(pc: Int, isNull: Answer): DomainValue
     }
 
     //
@@ -87,9 +89,43 @@ trait TypeLevelReferenceValues
     //
     // -----------------------------------------------------------------------------------
 
-    def IsNull: SingleValueConstraint = IgnoreSingleValueConstraint
+    def IsNonNull: SingleValueConstraint = new SingleValueConstraint {
+        def apply(
+            pc: Int,
+            value: DomainValue,
+            operands: Operands,
+            locals: Locals): (Operands, Locals) = {
 
-    def IsNonNull: SingleValueConstraint = IgnoreSingleValueConstraint
+            value match {
+                case r: ReferenceValue ⇒ {
+                    val newReferenceValue = r.updateIsNull(pc, No)
+                    (
+                        operands.map(op ⇒ if (op eq value) newReferenceValue else op),
+                        locals.map(l ⇒ if (l eq value) newReferenceValue else l)
+                    )
+                }
+            }
+        }
+    }
+
+    def IsNull: SingleValueConstraint = new SingleValueConstraint {
+        def apply(
+            pc: Int,
+            value: DomainValue,
+            operands: Operands,
+            locals: Locals): (Operands, Locals) = {
+
+            value match {
+                case r: ReferenceValue ⇒ {
+                    val newReferenceValue = r.updateIsNull(pc, Yes)
+                    (
+                        operands.map(op ⇒ if (op eq value) newReferenceValue else op),
+                        locals.map(l ⇒ if (l eq value) newReferenceValue else l)
+                    )
+                }
+            }
+        }
+    }
 
     def AreEqualReferences: TwoValuesConstraint = IgnoreTwoValuesConstraint
 
@@ -125,8 +161,8 @@ trait TypeLevelReferenceValues
 }
 
 trait DefaultTypeLevelReferenceValues[I]
-        extends DefaultValueBinding
-        with TypeLevelReferenceValues { domain: Domain[I] ⇒
+        extends DefaultValueBinding[I]
+        with TypeLevelReferenceValues { domain ⇒
 
     import language.existentials
 
@@ -135,18 +171,6 @@ trait DefaultTypeLevelReferenceValues[I]
     // HANDLING OF REFERENCE VALUES
     //
     //
-
-    trait TypeBound {
-        def valueTypes: Set[_ <: ReferenceType]
-    }
-
-    case class PreciseType private (valueTypes: Set[_ <: ReferenceType]) extends TypeBound
-
-    object PreciseType {
-        def apply(valueType: ReferenceType): PreciseType =
-            new PreciseType(Set.empty[ReferenceType] + valueType)
-
-    }
 
     case class UnionType(valueTypes: Set[_ <: ReferenceType]) extends TypeBound {
         assume(valueTypes.size >= 2, "a union type with only one bound is meaningless")
@@ -160,9 +184,12 @@ trait DefaultTypeLevelReferenceValues[I]
 
         def pc: Int
 
-        def valueTypes: Set[TypeBound] // Basically, we have to distinguish two situations: (1) a value that may have (depending on the control flow) different independent types (2) a type for which we have multiple bounds (i.e., we don't know the precise type, but we know (e.g., due to typechecks) that it implements multiple interfaces) 
+        type ValueType = Set[TypeBound]
+        def valueType: Set[TypeBound] // Basically, we have to distinguish two situations: (1) a value that may have (depending on the control flow) different independent types (2) a type for which we have multiple bounds (i.e., we don't know the precise type, but we know (e.g., due to typechecks) that it implements multiple interfaces) 
 
         def isNull: Answer
+        def updateIsNull(pc: Int, isNull: Answer): ReferenceValue =
+            AIImplementationError("implementation missing or constraint stated on a definitive value")
 
         final val context: I = domain.identifier
 
@@ -171,28 +198,24 @@ trait DefaultTypeLevelReferenceValues[I]
                 return NoUpdate
 
             value match {
-                case other: ReferenceValue if this.valueTypes == other.valueTypes && this.isNull == other.isNull ⇒ {
-                    if (this.pc == other.pc) {
-                        NoUpdate
+                case other: ReferenceValue ⇒
+                    if (this.isNull == other.isNull && this.valueType == other.valueType) {
+                        if (this.pc == other.pc) {
+                            NoUpdate
+                        } else {
+                            MetaInformationUpdate(
+                                SomeReferenceValue(mergePC, outer.valueType, outer.isNull)
+                            )
+                        }
                     } else {
-                        MetaInformationUpdate(
-                            new ReferenceValue {
-                                def pc = mergePC
-                                def isNull = outer.isNull
-                                def valueTypes = outer.valueTypes
-                            }
+                        StructuralUpdate(
+                            SomeReferenceValue(
+                                mergePC,
+                                outer.valueType ++ other.valueType,
+                                outer.isNull.merge(other.isNull)
+                            )
                         )
                     }
-                }
-                case other: ReferenceValue ⇒ {
-                    StructuralUpdate(
-                        new ReferenceValue {
-                            def pc = mergePC
-                            def isNull = outer.isNull.merge(other.isNull)
-                            def valueTypes = outer.valueTypes ++ other.valueTypes
-                        }
-                    )
-                }
                 case _ ⇒ MetaInformationUpdateNoLegalValue
             }
         }
@@ -203,87 +226,124 @@ trait DefaultTypeLevelReferenceValues[I]
                     this.context == other.context &&
                         this.pc == other.pc &&
                         this.isNull == other.isNull &&
-                        this.valueTypes == other.valueTypes
+                        this.valueType == other.valueType
                 case _ ⇒ false
             }
         }
 
         override def hashCode(): Int = {
-            valueTypes.hashCode() ^ isNull.hashCode() ^ (pc << 16)
+            valueType.hashCode() ^ isNull.hashCode() ^ (pc << 16)
         }
 
         override def toString: String =
             "ReferenceValue(isNull="+isNull+"; pc="+pc+"; types="+
-                valueTypes.map(
-                    _.valueTypes.map(_.toJava).mkString("(", ", ", ")")
-                ).mkString(", ")
+                valueType.map(
+                    _.valueTypes.map(_.toJava).mkString("{", ", ", "}")
+                ).mkString("{", ", ", "}")
     }
 
     object ReferenceValue {
         def unapply(rv: ReferenceValue): Option[(Int, Set[_ <: TypeBound], Answer)] =
-            Some((rv.pc, rv.valueTypes, rv.isNull))
+            Some((rv.pc, rv.valueType, rv.isNull))
     }
 
-    def SomeReferenceValue(t: ReferenceType): DomainTypedValue[t.type] =
-        new ReferenceValue with TypedValue[t.type] {
-            def pc = -1
-            val valueTypes: Set[TypeBound] = Set.empty + PreciseType(t)
-            val isNull = Unknown
-            def valueType: t.type = t
-        }
+    //
+    // REPRESENTATIONS OF CONCRETE REFERENCE VALUES
+    //    
+    protected class NullValue(
+        val pc: Int)
+            extends ReferenceValue {
 
-    def SomeReferenceValue(thePC: Int,
-                           theValueTypes: Set[TypeBound],
-                           theIsNull: Answer): ReferenceValue = {
-        new ReferenceValue {
-            def pc = thePC
-            def valueTypes = theValueTypes
-            val isNull = theIsNull
+        def valueType: Set[TypeBound] = Set.empty
+        def isNull: Yes.type = Yes
+    }
+
+    protected class NonNullReferenceValue(
+        val pc: Int,
+        val referenceValueType: PreciseType)
+            extends ReferenceValue {
+        def valueType: Set[TypeBound] = Set.empty + referenceValueType
+        def isNull: No.type = No
+    }
+
+    protected class TypedReferenceValue(
+        val referenceValueType: PreciseType)
+            extends ReferenceValue {
+
+        def pc = -1
+        def valueType: Set[TypeBound] = Set.empty + referenceValueType
+        def isNull: Unknown.type = Unknown
+
+        override def updateIsNull(pc: Int, isNull: Answer): ReferenceValue = {
+            assume(isNull.isDefined)
+            if (isNull.no) {
+                new NonNullReferenceValue(this.pc, referenceValueType)
+            } else {
+                new NullValue(this.pc)
+            }
         }
     }
 
-    // FIXME It doesn't make sense to convert type bounds to types ... BATAI should directly calculate with type bounds
-    def types(value: DomainValue): ValuesAnswer[Set[_ <: Type]] = {
+    protected class GenericReferenceValue(
+        val pc: Int,
+        val valueType: Set[TypeBound],
+        val isNull: Answer)
+            extends ReferenceValue {
+
+        override def updateIsNull(pc: Int, isNull: Answer): ReferenceValue = {
+            assume(this.isNull.isUndefined)
+            assume(isNull.isDefined)
+            assume(this.isNull != isNull)
+
+            new GenericReferenceValue(this.pc, valueType, isNull)
+        }
+    }
+
+    //
+    // FACTORY METHODS
+    //
+
+    override def nullValue(pc: Int): DomainValue =
+        new NullValue(pc)
+
+    def SomeReferenceValue(referenceType: ReferenceType): DomainValue =
+        new TypedReferenceValue(PreciseType(referenceType))
+
+    def SomeReferenceValue(
+        pc: Int,
+        valueType: Set[TypeBound],
+        isNull: Answer): DomainValue =
+        new GenericReferenceValue(pc, valueType, isNull)
+
+    def SomeReferenceValue(
+        pc: Int,
+        theType: ReferenceType,
+        isNull: Answer): DomainValue =
+        SomeReferenceValue(pc, Set[TypeBound](PreciseType(theType)), isNull)
+
+    def newObject(pc: Int, objectType: ObjectType): DomainValue =
+        new NonNullReferenceValue(pc, PreciseType(objectType))
+
+    override def stringValue(pc: Int, value: String): DomainValue =
+        new NonNullReferenceValue(pc, PreciseType(ObjectType.String))
+
+    override def classValue(pc: Int, t: Type): DomainValue =
+        new NonNullReferenceValue(pc, PreciseType(ObjectType.Class))
+
+    //
+    // QUESTION'S ABOUT VALUES
+    // 
+
+    abstract override def types(value: DomainValue): ValuesAnswer[Set[TypeBound]] = {
         value match {
-            case r: ReferenceValue ⇒ Values(r.valueTypes.map(_.valueTypes).flatten)
-            case t: TypedValue[_]  ⇒ Values(Set(t.valueType))
+            case r: ReferenceValue ⇒ Values(r.valueType)
+            case _                 ⇒ super.types(value)
         }
     }
 
     def isSubtypeOf(value: DomainValue, superType: ReferenceType): Answer = {
         Unknown // TODO make this MORE meaningful
     }
-
-    def newObject(newObjectPC: Int, t: ObjectType): DomainTypedValue[t.type] =
-        new ReferenceValue with TypedValue[t.type] {
-            def pc = newObjectPC
-            def valueTypes = Set.empty + PreciseType(t)
-            def isNull = No
-            def valueType: t.type = t
-        }
-
-    def theNullValue(nullValuePC: Int): DomainValue =
-        new ReferenceValue {
-            def pc: Int = nullValuePC
-            def valueTypes: Set[TypeBound] = Set.empty
-            def isNull: Answer = Yes
-        }
-
-    override def stringValue(loadStringPC: Int, value: String): DomainValue =
-        new ReferenceValue with TypedValue[ObjectType.String.type] {
-            def pc = loadStringPC
-            def valueTypes = Set.empty + PreciseType(ObjectType.String)
-            def isNull = No
-            def valueType = ObjectType.String
-        }
-
-    override def classValue(loadClassPC: Int, t: ReferenceType): DomainValue =
-        new ReferenceValue with TypedValue[ObjectType.Class.type] {
-            def pc = loadClassPC
-            def valueTypes = Set.empty + PreciseType(ObjectType.Class)
-            def isNull: Answer = No
-            def valueType: ObjectType.Class.type = ObjectType.Class
-        }
 
 }
 

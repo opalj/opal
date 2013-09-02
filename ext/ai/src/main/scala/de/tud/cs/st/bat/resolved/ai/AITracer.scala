@@ -38,6 +38,8 @@ package ai
 /**
  * Defines the interface between the abstract interpreter and the module for
  * tracing the interpreter's behavior.
+ * 
+ * @author Michael Eichberg
  */
 trait AITracer {
 

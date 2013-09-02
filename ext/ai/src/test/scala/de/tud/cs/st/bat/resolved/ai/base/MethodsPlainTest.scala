@@ -128,7 +128,7 @@ class MethodsPlainTest
 
         domain.returnedValue should be(
             Some(
-                SomeReferenceValue(0, Set(PreciseType(ObjectType("java/lang/String"))), No)
+                SomeReferenceValue(0, Set[TypeBound](PreciseType(ObjectType("java/lang/String"))), No)
             ))
     }
 
@@ -662,7 +662,9 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "localSimpleMethod").get
         /*val result =*/ AI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(SomeReferenceValue(ObjectType("ai/MethodsPlain"))))
+        domain.returnedValue should be(
+            Some(SomeReferenceValue(0, ObjectType("ai/MethodsPlain"), No))
+        )
     }
 
     //
@@ -946,13 +948,8 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "objectToString").get
         /*val result =*/ AI(classFile, method, domain)
 
-        assert(
-            domain.returnedValue match {
-                case r: DefaultTypeLevelReferenceValues[_]#ReferenceValue ⇒
-                    r.valueTypes.equals(PreciseType(ObjectType.String))
-                case _ ⇒ false
-            },
-            "returned value is not a string")
+        domain.returnedValue should be(Some(SomeReferenceValue(ObjectType.String)))
+
     }
 
     it should "be able to analyze a method that squares a given double value" in {

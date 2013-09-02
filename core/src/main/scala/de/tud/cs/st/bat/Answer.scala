@@ -45,6 +45,7 @@ sealed trait Answer {
     def yes: Boolean
     def no: Boolean
     def isDefined: Boolean
+    def isUndefined: Boolean
 
     def merge(other: Answer): Answer
 }
@@ -61,6 +62,7 @@ final case object Yes extends Answer {
     def yes: Boolean = true
     def no: Boolean = false
     def isDefined: Boolean = true
+    def isUndefined: Boolean = false
 
     def merge(other: Answer) = if (other eq Yes) Yes else Unknown
 }
@@ -71,6 +73,7 @@ final case object No extends Answer {
     def yes: Boolean = false
     def no: Boolean = true
     def isDefined: Boolean = true
+    def isUndefined: Boolean = false
 
     def merge(other: Answer) = if (other eq No) No else Unknown
 }
@@ -81,6 +84,7 @@ final case object Unknown extends Answer {
     def yes: Boolean = false
     def no: Boolean = false
     def isDefined: Boolean = false
+    def isUndefined: Boolean = true
 
     def merge(other: Answer) = Unknown
 }

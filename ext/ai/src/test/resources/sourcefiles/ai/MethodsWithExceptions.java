@@ -46,10 +46,23 @@ import java.io.IOException;
  */
 public class MethodsWithExceptions {
 
+    // 0 new java.lang.RuntimeException [16]
+    // 3 dup
+    // 4 aload_0 [message]
+    // 5 invokespecial java.lang.RuntimeException(java.lang.String) [18]
+    // 8 athrow
     public static void alwaysThrows(String message) {
         throw new RuntimeException(message);
     }
 
+    // 0 aload_0 [t]
+    // 1 athrow
+    // 2 pop
+    // 3 aload_0 [t]
+    // 4 invokevirtual java.lang.Throwable.printStackTrace() : void [24]
+    // 7 return
+    // Exception Table:
+    // [pc: 0, pc: 2] -> 2 when : java.lang.Throwable
     public static void alwaysCatch(Throwable t) {
         try {
             throw t;
@@ -58,6 +71,24 @@ public class MethodsWithExceptions {
         }
     }
 
+    // 0 aload_0 [t]
+    // 1 ifnull 6
+    // 4 aload_0 [t]
+    // 5 athrow
+    // 6 getstatic java.lang.System.out : java.io.PrintStream [34]
+    // 9 ldc <String "Nothing happening"> [40]
+    // 11 invokevirtual java.io.PrintStream.println(java.lang.String) : void [42]
+    // 14 goto 24
+    // 17 astore_1
+    // 18 aload_0 [t]
+    // 19 invokevirtual java.lang.Throwable.printStackTrace() : void [24]
+    // 22 aload_1
+    // 23 athrow
+    // 24 aload_0 [t]
+    // 25 invokevirtual java.lang.Throwable.printStackTrace() : void [24]
+    // 28 return
+    // Exception Table:
+    // [pc: 0, pc: 17] -> 17 when : any
     public static void withFinallyAndThrows(Throwable t) throws Throwable {
         try {
             if (t != null)

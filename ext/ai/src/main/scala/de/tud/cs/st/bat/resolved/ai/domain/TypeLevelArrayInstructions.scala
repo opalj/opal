@@ -39,7 +39,7 @@ package domain
 /**
  * (BY default we ignore ArrayIndexOutOfBoundsExceptions and NegativeArraySizeExceptions.)
  *
- *
+ * @author Michael Eichberg
  */
 trait TypeLevelArrayInstructions { this: Domain[_] ⇒
 
@@ -65,21 +65,28 @@ trait TypeLevelArrayInstructions { this: Domain[_] ⇒
     // LOAD FROM AND STORE VALUE IN ARRAYS
     //
     def aaload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
-        arrayref match {
-            case TypedValue(ArrayType(componentType)) ⇒
-                ComputedValue(TypedValue(componentType))
-            case _ ⇒
-                AIImplementationError("aaload - tracking of array type failed; array contains reference values of unknown type")
-        }
-    def aastore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
+//        types(arrayref) match {
+//    case Values(values) => values. 
+//    case _ => 
+        AIImplementationError("aaload - tracking of array type failed; array contains reference values of unknown type")
+//}
+        
+//        arrayref match {
+//            case TypedValue(ArrayType(componentType)) ⇒
+//                ComputedValue(TypedValue(componentType))
+//            case _ ⇒
+//                AIImplementationError("aaload - tracking of array type failed; array contains reference values of unknown type")
+//        }
+
+        def aastore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
         ComputationWithSideEffectOnly
 
     def baload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
-        arrayref match { // byte or boolean load...
-            case TypedValue(ArrayType(componentType)) ⇒ ComputedValue(TypedValue(componentType))
-            case _ ⇒
+//        arrayref match { // byte or boolean load...
+//            case TypedValue(ArrayType(componentType)) ⇒ ComputedValue(TypedValue(componentType))
+//            case _ ⇒
                 AIImplementationError("baload - tracking of array type failed; array may contain booleans or byte values")
-        }
+//        }
 
     def bastore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
         ComputationWithSideEffectOnly

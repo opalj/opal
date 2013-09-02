@@ -146,26 +146,27 @@ trait TypeLevelIntegerValues
 }
 
 trait DefaultTypeLevelIntegerValues[I]
-        extends Domain[I]
-        with DefaultValueBinding
+        extends DefaultValueBinding[I]
         with TypeLevelIntegerValues {
 
-    case object SomeBooleanValue extends CTIntegerValue with TypedValue[BooleanType] {
+    case object SomeBooleanValue extends CTIntegerValue {
 
+        type ValueType = BooleanType
         final def valueType = BooleanType
 
-        override def merge(pc : Int, value: DomainValue): Update[DomainValue] = value match {
+        override def merge(pc: Int, value: DomainValue): Update[DomainValue] = value match {
             case SomeBooleanValue         ⇒ NoUpdate
             case other @ SomeIntegerValue ⇒ StructuralUpdate(other)
             case TheNoLegalValue          ⇒ MetaInformationUpdateNoLegalValue
             case _                        ⇒ MetaInformationUpdateNoLegalValue
         }
     }
-    case object SomeByteValue extends CTIntegerValue with TypedValue[ByteType] {
+    case object SomeByteValue extends CTIntegerValue {
 
+        type ValueType = ByteType
         final def valueType = ByteType
 
-        override def merge(pc : Int, value: DomainValue): Update[DomainValue] = value match {
+        override def merge(pc: Int, value: DomainValue): Update[DomainValue] = value match {
             case SomeByteValue            ⇒ NoUpdate
             case TheNoLegalValue          ⇒ MetaInformationUpdateNoLegalValue
             case other @ SomeIntegerValue ⇒ StructuralUpdate(other)
@@ -175,11 +176,12 @@ trait DefaultTypeLevelIntegerValues[I]
         }
     }
 
-    case object SomeShortValue extends CTIntegerValue with TypedValue[ShortType] {
+    case object SomeShortValue extends CTIntegerValue {
 
+        type ValueType = ShortType
         final def valueType = ShortType
 
-        override def merge(pc : Int, value: DomainValue): Update[DomainValue] = value match {
+        override def merge(pc: Int, value: DomainValue): Update[DomainValue] = value match {
             case SomeShortValue           ⇒ NoUpdate
             case TheNoLegalValue          ⇒ MetaInformationUpdateNoLegalValue
             case other @ SomeIntegerValue ⇒ StructuralUpdate(other)
@@ -189,11 +191,12 @@ trait DefaultTypeLevelIntegerValues[I]
         }
     }
 
-    case object SomeCharValue extends CTIntegerValue with TypedValue[CharType] {
+    case object SomeCharValue extends CTIntegerValue {
 
+        type ValueType = CharType
         final def valueType = CharType
 
-        override def merge(pc : Int, value: DomainValue): Update[DomainValue] = value match {
+        override def merge(pc: Int, value: DomainValue): Update[DomainValue] = value match {
             case SomeCharValue            ⇒ NoUpdate
             case TheNoLegalValue          ⇒ MetaInformationUpdateNoLegalValue
             case SomeByteValue            ⇒ NoUpdate
@@ -203,11 +206,12 @@ trait DefaultTypeLevelIntegerValues[I]
         }
     }
 
-    case object SomeIntegerValue extends CTIntegerValue with TypedValue[IntegerType] {
+    case object SomeIntegerValue extends CTIntegerValue {
 
+        type ValueType = IntegerType
         final def valueType = IntegerType
 
-        override def merge(pc : Int, value: DomainValue): Update[DomainValue] = value match {
+        override def merge(pc: Int, value: DomainValue): Update[DomainValue] = value match {
             case SomeIntegerValue ⇒ NoUpdate
             case TheNoLegalValue  ⇒ MetaInformationUpdateNoLegalValue
             case SomeBooleanValue ⇒ NoUpdate
@@ -215,6 +219,33 @@ trait DefaultTypeLevelIntegerValues[I]
             case SomeCharValue    ⇒ NoUpdate
             case SomeShortValue   ⇒ NoUpdate
             case other            ⇒ MetaInformationUpdateNoLegalValue
+        }
+    }
+
+    private val valuesAnswerBoolean: ValuesAnswer[Set[TypeBound]] =
+        Values(Set(PreciseType(BooleanType)))
+        
+    private val valuesAnswerByte: ValuesAnswer[Set[TypeBound]] =
+        Values(Set(PreciseType(ByteType)))
+
+    private val valuesAnswerChar: ValuesAnswer[Set[TypeBound]] =
+        Values(Set(PreciseType(CharType)))
+
+    private val valuesAnswerShort: ValuesAnswer[Set[TypeBound]] =
+        Values(Set(PreciseType(ShortType)))
+
+    private val valuesAnswerInteger: ValuesAnswer[Set[TypeBound]] =
+        Values(Set(PreciseType(IntegerType)))
+
+    abstract override def types(value: DomainValue): ValuesAnswer[Set[TypeBound]] = {
+        value match {
+            case SomeBooleanValue ⇒ valuesAnswerBoolean
+            case SomeByteValue    ⇒ valuesAnswerByte
+            case SomeCharValue    ⇒ valuesAnswerChar
+            case SomeShortValue   ⇒ valuesAnswerShort
+            case SomeIntegerValue ⇒ valuesAnswerInteger
+
+            case _                ⇒ super.types(value)
         }
     }
 }
@@ -227,10 +258,11 @@ trait TypeLevelLongValues extends ConstraintsHandlingHelper { this: Domain[_] �
     //
     // -----------------------------------------------------------------------------------
 
-    trait SomeLongValue extends TypedValue[LongType] {
+    trait SomeLongValue extends Value {
 
         final def computationalType: ComputationalType = ComputationalTypeLong
 
+        type ValueType = LongType
         final def valueType = LongType
     }
 
@@ -274,14 +306,23 @@ trait TypeLevelLongValues extends ConstraintsHandlingHelper { this: Domain[_] �
 }
 
 trait DefaultTypeLevelLongValues[I]
-        extends Domain[I]
-        with DefaultValueBinding
+        extends DefaultValueBinding[I]
         with TypeLevelLongValues {
 
     case object SomeLongValue extends SomeLongValue {
-        override def merge(pc : Int, value: DomainValue): Update[DomainValue] = value match {
+        override def merge(pc: Int, value: DomainValue): Update[DomainValue] = value match {
             case SomeLongValue ⇒ NoUpdate
             case _             ⇒ MetaInformationUpdateNoLegalValue
+        }
+    }
+
+    private val valuesAnswer: ValuesAnswer[Set[TypeBound]] =
+        Values(Set(PreciseType(LongType)))
+
+    abstract override def types(value: DomainValue): ValuesAnswer[Set[TypeBound]] = {
+        value match {
+            case r: SomeLongValue ⇒ valuesAnswer
+            case _                ⇒ super.types(value)
         }
     }
 }
@@ -297,10 +338,11 @@ trait TypeLevelFloatValues extends ConstraintsHandlingHelper { this: Domain[_] �
     /**
      * Abstracts over all values with computational type `float`.
      */
-    trait SomeFloatValue extends TypedValue[FloatType] {
+    trait SomeFloatValue extends Value {
 
         final def computationalType: ComputationalType = ComputationalTypeFloat
 
+        type ValueType = FloatType
         final def valueType = FloatType
     }
 
@@ -339,14 +381,23 @@ trait TypeLevelFloatValues extends ConstraintsHandlingHelper { this: Domain[_] �
 }
 
 trait DefaultTypeLevelFloatValues[I]
-        extends Domain[I]
-        with DefaultValueBinding
+        extends DefaultValueBinding[I]
         with TypeLevelFloatValues {
 
     case object SomeFloatValue extends SomeFloatValue {
-        override def merge(pc : Int, value: DomainValue): Update[DomainValue] = value match {
+        override def merge(pc: Int, value: DomainValue): Update[DomainValue] = value match {
             case SomeFloatValue ⇒ NoUpdate
             case _              ⇒ MetaInformationUpdateNoLegalValue
+        }
+    }
+
+    private val valuesAnswer: ValuesAnswer[Set[TypeBound]] =
+        Values(Set(PreciseType(FloatType)))
+
+    abstract override def types(value: DomainValue): ValuesAnswer[Set[TypeBound]] = {
+        value match {
+            case r: SomeFloatValue ⇒ valuesAnswer
+            case _                 ⇒ super.types(value)
         }
     }
 }
@@ -359,10 +410,11 @@ trait TypeLevelDoubleValues extends ConstraintsHandlingHelper { this: Domain[_] 
     //
     // -----------------------------------------------------------------------------------
 
-    trait SomeDoubleValue extends TypedValue[DoubleType] {
+    trait SomeDoubleValue extends Value {
 
         final def computationalType: ComputationalType = ComputationalTypeDouble
 
+        type ValueType = DoubleType
         final def valueType = DoubleType
     }
 
@@ -400,14 +452,23 @@ trait TypeLevelDoubleValues extends ConstraintsHandlingHelper { this: Domain[_] 
 }
 
 trait DefaultTypeLevelDoubleValues[I]
-        extends Domain[I]
-        with DefaultValueBinding
+        extends DefaultValueBinding[I]
         with TypeLevelDoubleValues {
 
     case object SomeDoubleValue extends SomeDoubleValue {
-        override def merge(pc : Int, value: DomainValue): Update[DomainValue] = value match {
+        override def merge(pc: Int, value: DomainValue): Update[DomainValue] = value match {
             case SomeDoubleValue ⇒ NoUpdate
             case _               ⇒ MetaInformationUpdateNoLegalValue
+        }
+    }
+
+    private val valuesAnswer: ValuesAnswer[Set[TypeBound]] =
+        Values(Set(PreciseType(DoubleType)))
+
+    abstract override def types(value: DomainValue): ValuesAnswer[Set[TypeBound]] = {
+        value match {
+            case r: SomeDoubleValue ⇒ valuesAnswer
+            case _                  ⇒ super.types(value)
         }
     }
 }

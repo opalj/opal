@@ -42,12 +42,14 @@ package ai
  * exceptional value(s) and a value. In the latter case BATAI will follow all
  * possible paths.
  *
- * @tparam V The result of the computation. Typically a `DomainValue` or a
- *      `DomainTypedValue`. If the computation is executed for its side
+ * @tparam V The result of the computation. Typically a `DomainValue`.
+ *      If the computation is executed for its side
  *      effect (e.g., as in case of a `monitorenter` or `monitorexit` instruction)
  *      the type of `V` maybe `Nothing`.
  * @tparam E The exception(s) that maybe thrown by the computation. Typically,
- *      a `DomainTypedValue[ObjectType]` or a set thereof.
+ *      a `DomainValue` which represents a reference value with type
+ *      `java.lang.Throwable` or a subtype thereof. If multiple exceptions may be
+ *      thrown it may also be a set of `DomainValues`.
  */
 sealed trait Computation[+V, +E] {
 
@@ -82,17 +84,18 @@ sealed trait Computation[+V, +E] {
     def returnsNormally: Boolean
 }
 
+
 /**
  * Encapsulates the result of a computation that returned normally and
  * that did not throw an exception.
  */
-case class ComputedValue[+V](
+final case class ComputedValue[+V](
     result: V)
         extends Computation[V, Nothing] {
 
     def hasResult: Boolean = true
 
-    def exceptions = AIImplementationError("ValuesAnswer - the computation succeeded without an exception")
+    def exceptions = AIImplementationError("the computation succeeded without an exception")
 
     def throwsException: Boolean = false
 
@@ -103,7 +106,7 @@ case class ComputedValue[+V](
  * Encapsulates the result of a computation that either returned normally
  * or threw an exception.
  */
-case class ComputedValueAndException[+V, +E](
+final case class ComputedValueAndException[+V, +E](
     result: V,
     exceptions: E)
         extends Computation[V, E] {
@@ -119,11 +122,11 @@ case class ComputedValueAndException[+V, +E](
 /**
  * Encapsulates the result of a computation that threw an exception.
  */
-case class ThrowsException[+E](
+final case class ThrowsException[+E](
     exceptions: E)
         extends Computation[Nothing, E] {
 
-    def result = AIImplementationError("ValuesAnswer - the computation resulted in an exception")
+    def result = AIImplementationError("the computation resulted in an exception")
 
     def hasResult: Boolean = false
 
@@ -136,11 +139,11 @@ case class ThrowsException[+E](
  * Encapsulates the result of a computation that returned normally (but which
  * did not return some value) or that threw an exception.
  */
-case class ComputationWithSideEffectOrException[+E](
+final case class ComputationWithSideEffectOrException[+E](
     exceptions: E)
         extends Computation[Nothing, E] {
 
-    def result = AIImplementationError("ValuesAnswer - the computation was executed for its side effect only")
+    def result = AIImplementationError("the computation was executed for its side effect only")
 
     def hasResult: Boolean = false
 
@@ -150,16 +153,16 @@ case class ComputationWithSideEffectOrException[+E](
 }
 
 /**
- * Represents computations that completed normally.
+ * Represents a computation that completed normally.
  */
 case object ComputationWithSideEffectOnly
         extends Computation[Nothing, Nothing] {
 
-    def result = AIImplementationError("ValuesAnswer - the computation was executed for its side effect only")
+    def result = AIImplementationError("the computation was executed for its side effect only")
 
     def hasResult: Boolean = false
 
-    def exceptions = AIImplementationError("ValuesAnswer - the computation succeeded without an exception")
+    def exceptions = AIImplementationError("the computation succeeded without an exception")
 
     def throwsException: Boolean = false
 

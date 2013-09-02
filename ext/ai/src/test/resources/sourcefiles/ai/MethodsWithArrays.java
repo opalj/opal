@@ -30,40 +30,49 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
-package ai
+package ai;
 
 /**
- * Encapsulates an answer of a domain w.r.t. the concrete value(s) captured by
- * a `DomainValue` (abstraction).
- *
- * @tparam V The type of the answer's value. Typically, a `DomainValue`,
- *       a `de.tud.cs.st.bat.resolved.Type` or a `Set` thereof.
- *
+ * Just a very large number of methods that do array related stuff.
+ * 
+ * <h2>NOTE</h2> This class is not meant to be (automatically) recompiled; it just serves
+ * documentation purposes. The compiled class that is used by the tests is found in the
+ * test-classfiles directory.
+ * 
  * @author Michael Eichberg
  */
-sealed trait ValuesAnswer[+V] {
-    def values: V
+public class MethodsWithArrays {
+
+    //
+    // COMPARISON
+
+    public static Object[] wrap(java.io.Serializable o) {
+        if (o == null)
+            return new Object[0];
+        else
+            return new java.io.Serializable[] { o };
+    }
+
+    public static boolean instanceOf(java.io.Serializable o) {
+        Object result = wrap(o);
+        if (result instanceof java.io.Serializable[]) {
+            return true;
+        }
+        if (result instanceof Object[]) {
+            return false;
+        } else {
+            throw new RuntimeException();
+        }
+    }
+
+    public static void main(String[] args) {
+        Object o = new java.util.ArrayList[0];
+
+        System.out.println(o instanceof Object[]); // true
+        System.out.println(o instanceof java.io.Serializable[]); // true
+        System.out.println(o instanceof java.util.List[]); // true
+
+        System.out.println(o instanceof java.util.Set[]); // false
+        System.out.println(o instanceof int[]);// false
+    }
 }
-
-/**
- * A domain's answer to a question w.r.t. a `DomainValue` that represents the 
- * values in such a way that the AI can interpret them.
- */
-final case class Values[+V](
-    values: V)
-        extends ValuesAnswer[V]
-
-/**
- * A domain's answer to a question w.r.t. a `DomainValue` where the captured values
- * (beyond the computational type) are not known.
- */
-case object ValuesUnknown extends ValuesAnswer[Nothing] {
-    
-    def values: Nothing = AIImplementationError("the values are unknown")
-    
-}
-
-

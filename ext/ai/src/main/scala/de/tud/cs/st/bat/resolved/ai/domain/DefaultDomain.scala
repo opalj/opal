@@ -49,7 +49,7 @@ package domain
  * @author Michael Eichberg
  */
 trait BaseDomain[I]
-    extends DefaultValueBinding
+    extends DefaultValueBinding[I]
     with DefaultTypeLevelReferenceValues[I]
     with DefaultTypeLevelIntegerValues[I]
     with DefaultTypeLevelLongValues[I]

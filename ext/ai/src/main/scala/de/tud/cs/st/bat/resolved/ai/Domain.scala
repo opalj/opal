@@ -101,6 +101,7 @@ trait Domain[@specialized(Int, Long) I] {
      * If you extend this trait, make sure that you also extend all classes/traits that
      * inherit from this type (this may require a deep mixin composition and that you
      * refine the type `DomainType` accordingly).
+     *
      */
     trait Value {
         /**
@@ -112,7 +113,7 @@ trait Domain[@specialized(Int, Long) I] {
          * jump targets of RET instructions and to determine which values are
          * actually copied by the dupXX instructions.
          *
-         * '''W.r.t. the computational type no kind of furhter abstraction is allowed.'''
+         * '''W.r.t. the computational type no kind of further abstraction is allowed.'''
          */
         def computationalType: ComputationalType
 
@@ -138,6 +139,19 @@ trait Domain[@specialized(Int, Long) I] {
          * @param value The "new" domain value.
          */
         def merge(pc: Int, value: DomainValue): Update[DomainValue]
+
+        /**
+         * The type of the represented value (e.g., ByteType).
+         *      If the value represents some reference typed value, the type maybe some
+         *      TypeBound or a set thereof. Imagine, e.g., a method that declares to
+         *      return a `java.util.List` object. In this case (i.e., if we don't analyze
+         *      the called method) we only have a type bound. However, if we analyze the
+         *      called method, we may determine that the type of the returned object is
+         *      always either a `java.util.ArrayList` or `java.util.LinkedList`.
+         */
+        type ValueType <: AnyRef
+
+        def valueType: ValueType
 
         /**
          * Returns a string that states that merging and comparing this value with
@@ -194,7 +208,7 @@ trait Domain[@specialized(Int, Long) I] {
 
     /**
      * Represents a value that has no well defined state/type.
-     * 
+     *
      * If the AI framework tries to merge two values that are incompatible, the result has
      * to be an instance of `NoLegalValue`. This may happen, e.g., when BATAI tries to
      * merge two register values/locals that are not live (i.e., which should not be
@@ -212,6 +226,9 @@ trait Domain[@specialized(Int, Long) I] {
             else
                 MetaInformationUpdateNoLegalValue
         }
+
+        type ValueType = Nothing
+        def valueType = AIImplementationError("a non-legal value has no type")
 
         override def toString = "NoLegalValue"
     }
@@ -239,15 +256,15 @@ trait Domain[@specialized(Int, Long) I] {
     /**
      * If the result of the merge of two values is a non-legal value. The result has
      * to be reported as a `MetaInformationUpdate`.
-     */ 
+     */
     val MetaInformationUpdateNoLegalValue: MetaInformationUpdate[DomainNoLegalValue]
 
     /**
-     * The result of the the merging of two values should never be reported as a 
-     * `StructuralUpdate` if the computer value is a `NoLegalValue`. 
-     * 
+     * The result of the the merging of two values should never be reported as a
+     * `StructuralUpdate` if the computer value is a `NoLegalValue`.
+     *
      * This method is solely defined to catch implementation errors early on.
-     */ 
+     */
     final def StructuralUpdateNoLegalValue: StructuralUpdate[Nothing] =
         BATError("the merging of a value with an incompatible value always has to be a MetaInformationUpdate and not more")
 
@@ -270,6 +287,9 @@ trait Domain[@specialized(Int, Long) I] {
             }
             case _ ⇒ MetaInformationUpdateNoLegalValue
         }
+
+        type ValueType = Nothing
+        def valueType = AIImplementationError("ReturnAddressValues are not associated with a type")
 
         final def computationalType: ComputationalType = ComputationalTypeReturnAddress
 
@@ -304,31 +324,13 @@ trait Domain[@specialized(Int, Long) I] {
     }
 
     /**
-     * Trait that is mixed in by values for which we have more precise type information
-     * than just the computational type.
-     */
-    trait TypedValue[+T >: Null <: Type] extends Value {
-        def valueType: T
-    }
-
-    /**
-     * Enables matching against `TypedValues`.
-     */
-    object TypedValue {
-        def unapply[T >: Null <: Type](tv: TypedValue[T]): Option[T] =
-            Some(tv.valueType)
-    }
-
-    type DomainTypedValue[+T >: Null <: Type] <: TypedValue[T] with DomainValue
-
-    /**
      * Factory method to create `TypedValue`s; i.e., values for which we have (more)
      * precise type information but no value or location information. I.e., if a `TypedValue`
      * represents a reference type it may be possible that the value is `null`, but
      * such knowledge ist not available.
      */
-    def TypedValue[T >: Null <: Type](valueType: T): DomainTypedValue[T] = {
-        (valueType match {
+    def TypedValue(valueType: Type): DomainValue = {
+        val newValue = (valueType match {
             case BooleanType       ⇒ SomeBooleanValue
             case ByteType          ⇒ SomeByteValue
             case ShortType         ⇒ SomeShortValue
@@ -338,22 +340,24 @@ trait Domain[@specialized(Int, Long) I] {
             case LongType          ⇒ SomeLongValue
             case DoubleType        ⇒ SomeDoubleValue
             case rt: ReferenceType ⇒ SomeReferenceValue(rt)
-            case VoidType          ⇒ AIImplementationError("it is not possible to create a typed value of type VoidType")
-        }).asInstanceOf[DomainTypedValue[T]]
+            case VoidType ⇒
+                AIImplementationError("it is not possible to create a void typed value")
+        })
+        newValue
     }
 
     /**
      * Represents some boolean value, where the source of the value is not known.
      */
-    def SomeBooleanValue: DomainTypedValue[BooleanType]
-    def SomeByteValue: DomainTypedValue[ByteType]
-    def SomeShortValue: DomainTypedValue[ShortType]
-    def SomeCharValue: DomainTypedValue[CharType]
-    def SomeIntegerValue: DomainTypedValue[IntegerType]
-    def SomeFloatValue: DomainTypedValue[FloatType]
-    def SomeLongValue: DomainTypedValue[LongType]
-    def SomeDoubleValue: DomainTypedValue[DoubleType]
-    def SomeReferenceValue(referenceType: ReferenceType): DomainTypedValue[referenceType.type]
+    def SomeBooleanValue: DomainValue
+    def SomeByteValue: DomainValue
+    def SomeShortValue: DomainValue
+    def SomeCharValue: DomainValue
+    def SomeIntegerValue: DomainValue
+    def SomeFloatValue: DomainValue
+    def SomeLongValue: DomainValue
+    def SomeDoubleValue: DomainValue
+    def SomeReferenceValue(referenceType: ReferenceType): DomainValue
 
     /**
      * Returns a representation of the integer constant value 0.
@@ -422,14 +426,25 @@ trait Domain[@specialized(Int, Long) I] {
         areEqualReferences(value1, value2).negate
 
     /**
+     * A type bound represents the available information about a value's type. A
+     * type bound is generally precise in case of primitive types. However, in case
+     * of reference types, a type bound may, e.g., be a set of interface types which are
+     * known to be implemented by the current object. Even if the type contains a class
+     * type it may just be a super class of the concrete type.
+     */
+    trait TypeBound {
+        def valueTypes: Set[_ <: Type]
+    }
+
+    /**
      * Returns the type(s) of the value(s). Depending on the control flow, the same
      * `DomainValue` can represent different values with different types. However,
      * all types that the domain value represents have to belong to the same
      * computational type category. I.e., it is possible that the value captures the
      * types "`NullPointerException` or `IllegalArgumentException`", but it will never
-     * capture the types `Integer` and `Long`.
+     * capture the (Java) types `int` and `long`.
      */
-    /*ABSTRACT*/ def types(value: DomainValue): ValuesAnswer[Set[_ <: Type]]
+    /*ABSTRACT*/ def types(value: DomainValue): ValuesAnswer[Set[TypeBound]]
 
     /**
      * Tries to determine if the given value is a sub-type of the specified reference
@@ -614,7 +629,7 @@ trait Domain[@specialized(Int, Long) I] {
     //
     // -----------------------------------------------------------------------------------
 
-    type ComputationWithReturnValueOrNullPointerException = Computation[DomainValue, DomainTypedValue[ObjectType.NullPointerException.type]]
+    type ComputationWithReturnValueOrNullPointerException = Computation[DomainValue, DomainValue]
 
     /**
      * Tests if the given value is `null` and returns a newly created
@@ -629,7 +644,7 @@ trait Domain[@specialized(Int, Long) I] {
         }
     }
 
-    type ComputationWithNullPointerException = Computation[Nothing, DomainTypedValue[ObjectType.NullPointerException.type]]
+    type ComputationWithNullPointerException = Computation[Nothing, DomainValue]
 
     protected def sideEffectOnlyOrNullPointerException(pc: Int, value: DomainValue): ComputationWithNullPointerException = {
         isNull(value) match {
@@ -651,7 +666,7 @@ trait Domain[@specialized(Int, Long) I] {
     //
     // CREATE ARRAY
     //
-    type NewArrayOrNegativeArraySizeException = Computation[DomainTypedValue[ArrayType], DomainTypedValue[ObjectType.ArithmeticException.type]]
+    type NewArrayOrNegativeArraySizeException = Computation[DomainValue, DomainValue]
 
     def newarray(pc: Int, count: DomainValue, componentType: FieldType): NewArrayOrNegativeArraySizeException
     def multianewarray(pc: Int, counts: List[DomainValue], arrayType: ArrayType): NewArrayOrNegativeArraySizeException
@@ -664,12 +679,12 @@ trait Domain[@specialized(Int, Long) I] {
      * The exceptions that may be thrown are: `NullPointerException` and
      * `ArrayIndexOutOfBoundsException`.
      */
-    type ArrayLoadResult = Computation[DomainValue, Set[DomainTypedValue[ObjectType]]]
+    type ArrayLoadResult = Computation[DomainValue, Set[DomainValue]]
     /**
      * The exceptions that may be thrown are: `NullPointerException`,
      * `ArrayIndexOutOfBoundsException` and `ArrayStoreException`.
      */
-    type ArrayStoreResult = Computation[Nothing, Set[DomainTypedValue[ObjectType]]]
+    type ArrayStoreResult = Computation[Nothing, Set[DomainValue]]
 
     def aaload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
     def aastore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue): ArrayStoreResult
@@ -699,7 +714,7 @@ trait Domain[@specialized(Int, Long) I] {
     /**
      * Called by BATAI iff when an `aconst_null` instruction is interpreted.
      */
-    def theNullValue(pc: Int): DomainValue
+    def nullValue(pc: Int): DomainValue
     def byteValue(pc: Int, value: Int): DomainValue
     def shortValue(pc: Int, value: Int): DomainValue
     def intValue(pc: Int, value: Int): DomainValue
@@ -708,15 +723,15 @@ trait Domain[@specialized(Int, Long) I] {
     def doubleValue(pc: Int, value: Double): DomainValue
     def stringValue(pc: Int, value: String): DomainValue
     /**
-     * @return A value that represents a runtime value of type "Class<t>"
+     * @return A value that represents a runtime value of type "Class<T>"
      */
-    def classValue(pc: Int, t: ReferenceType): DomainValue
+    def classValue(pc: Int, t: Type): DomainValue
 
     //
     // TYPE CHECKS AND CONVERSION
     //
 
-    def checkcast(pc: Int, objectref: DomainValue, resolvedType: ReferenceType): Computation[DomainValue, DomainTypedValue[ObjectType.ClassCastException.type]]
+    def checkcast(pc: Int, objectref: DomainValue, resolvedType: ReferenceType): Computation[DomainValue, DomainValue]
     def instanceof(pc: Int, objectref: DomainValue, resolvedType: ReferenceType): DomainValue
 
     def d2f(pc: Int, value: DomainValue): DomainValue
@@ -785,28 +800,28 @@ trait Domain[@specialized(Int, Long) I] {
     //
     // METHOD INVOCATIONS
     //
-    type ComputationWithOptionalReturnValueAndExceptions = Computation[Option[DomainValue], Set[DomainTypedValue[ObjectType]]]
+    type ComputationWithOptionalReturnValueAndExceptions = Computation[Option[DomainValue], Set[DomainValue]]
     // TODO [AI] Add support for Java7's Invokedynamic to the Domain.
     def invokeinterface(pc: Int,
                         declaringClass: ReferenceType,
                         name: String,
                         methodDescriptor: MethodDescriptor,
-                        params: List[DomainValue]): ComputationWithOptionalReturnValueAndExceptions
+                        operands: List[DomainValue]): ComputationWithOptionalReturnValueAndExceptions
     def invokevirtual(pc: Int,
                       declaringClass: ReferenceType,
                       name: String,
                       methodDescriptor: MethodDescriptor,
-                      params: List[DomainValue]): ComputationWithOptionalReturnValueAndExceptions
+                      operands: List[DomainValue]): ComputationWithOptionalReturnValueAndExceptions
     def invokespecial(pc: Int,
                       declaringClass: ReferenceType,
                       name: String,
                       methodDescriptor: MethodDescriptor,
-                      params: List[DomainValue]): ComputationWithOptionalReturnValueAndExceptions
+                      operands: List[DomainValue]): ComputationWithOptionalReturnValueAndExceptions
     def invokestatic(pc: Int,
                      declaringClass: ReferenceType,
                      name: String,
                      methodDescriptor: MethodDescriptor,
-                     params: List[DomainValue]): ComputationWithOptionalReturnValueAndExceptions
+                     operands: List[DomainValue]): ComputationWithOptionalReturnValueAndExceptions
 
     //
     // RELATIONAL OPERATORS
@@ -829,7 +844,10 @@ trait Domain[@specialized(Int, Long) I] {
     // BINARY EXPRESSIONS
     //
 
-    type IntegerDivisionResult = Computation[DomainValue, DomainTypedValue[ObjectType.ArithmeticException.type]]
+    /**
+     * The type of the exceptions may be: `ObjectType.ArithmeticException`s.
+     */
+    type IntegerDivisionResult = Computation[DomainValue, DomainValue]
 
     def dadd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
     def ddiv(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
@@ -898,10 +916,10 @@ trait Domain[@specialized(Int, Long) I] {
     }
 
     /**
-     * Creates a new `DomainTypeValue` that represents an (new) instance of an
+     * Creates a new `DomainValue` that represents an (new) instance of an
      * object of the given type.
      */
-    def newObject(pc: Int, t: ObjectType): DomainTypedValue[t.type]
+    def newObject(pc: Int, t: ObjectType): DomainValue
 
     //
     //
@@ -993,8 +1011,12 @@ trait Domain[@specialized(Int, Long) I] {
                     // dead values.
                     val newLocal =
                         if ((thisLocal eq null) || (otherLocal eq null)) {
-                            localsUpdated = localsUpdated &: MetaInformationUpdateType
-                            TheNoLegalValue
+                            if (thisLocal eq otherLocal /* <=> both are null*/ ) {
+                                thisLocal
+                            } else {
+                                localsUpdated = localsUpdated &: MetaInformationUpdateType
+                                TheNoLegalValue
+                            }
                         } else if (thisLocal == otherLocal) {
                             thisLocal
                         } else {

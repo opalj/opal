@@ -36,16 +36,16 @@ package resolved
 package ai
 
 /**
- * Factory to creating `AIResult` objects.
+ * Factory to create `AIResult` objects.
  */
 /* Design - We use a builder to construct a Result object in two steps. This is necessary
  * to correctly type the data structures that store the memory layout and which depend on
  * the given domain. */
 object AIResultBuilder {
 
-    def aborted[D <: Domain[_]](
+    def aborted(
         theCode: Code,
-        theDomain: D)(
+        theDomain: Domain[_])(
             theWorkList: List[Int],
             theOperandsArray: Array[List[theDomain.DomainValue]],
             theLocalsArray: Array[Array[theDomain.DomainValue]]): AIResult[theDomain.type] = {
@@ -62,9 +62,9 @@ object AIResultBuilder {
         }
     }
 
-    def complete[D <: Domain[_]](
+    def completed(
         theCode: Code,
-        theDomain: D)(
+        theDomain: Domain[_])(
             theOperandsArray: Array[List[theDomain.DomainValue]],
             theLocalsArray: Array[Array[theDomain.DomainValue]]): AIResult[theDomain.type] = {
 

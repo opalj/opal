@@ -39,12 +39,11 @@ package domain
 /**
  * Final bindings for a `Domain`'s `ReturnAddressValue` trait that can be
  * mixed in if `Domain`'s values was not extended.
- * 
+ *
  * @author Michael Eichberg
  */
 trait DefaultReturnAddressValues[I]
-        extends Domain[I]
-        with DefaultValueBinding {
+        extends DefaultValueBinding[I] {
 
     type DomainReturnAddressValue = ReturnAddressValue
 

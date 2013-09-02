@@ -153,21 +153,19 @@ trait AI {
             })
         )
 
-        val updatedMemoryLayout: Tuple2[List[DomainValue], Array[DomainValue]] = {
-            if (!method.isStatic) {
-                domain.IsNonNull(0, initialLocals(0), List.empty[DomainValue], initialLocals)
-            } else
-                (List.empty[DomainValue], initialLocals)
-        }
         val operandsArray = new Array[List[domain.DomainValue]](codeLength)
-        operandsArray(0) = updatedMemoryLayout._1
         val localsArray = new Array[Array[domain.DomainValue]](codeLength)
-        localsArray(0) = updatedMemoryLayout._2
+        if (!method.isStatic) {
+            val (updatedOperands, updatedLocals) = domain.IsNonNull(0, initialLocals(0), List.empty[DomainValue], initialLocals)
+            operandsArray(0) = updatedOperands
+            localsArray(0) = updatedLocals
+        } else {
+            operandsArray(0) = List.empty[DomainValue]
+            localsArray(0) = initialLocals
+        }
 
-        continueInterpretation(
-            code, domain)(
-                initialWorkList, operandsArray, localsArray)
-
+        continueInterpretation(code, domain)(
+            initialWorkList, operandsArray, localsArray)
     }
 
     /**
@@ -347,7 +345,7 @@ trait AI {
              * @param exception A guaranteed non-null value that represents an instance of
              *      an object that inherits from `java.lang.Throwable`.
              */
-            def handleException(exception: DomainTypedValue[ObjectType]) {
+            def handleException(exception: DomainValue) {
                 val nextOperands: List[domain.DomainValue] = List(exception)
                 val isHandled =
                     // find the exception handler that matches the given exception
@@ -379,7 +377,7 @@ trait AI {
                 if (!isHandled)
                     domain.abnormalReturn(pc, exception)
             }
-            def handleExceptions(exceptions: Set[DomainTypedValue[ObjectType]]) {
+            def handleExceptions(exceptions: Set[DomainValue]) {
                 exceptions.foreach(handleException(_))
             }
 
@@ -394,7 +392,7 @@ trait AI {
             }
 
             def computationWithException(
-                computation: Computation[Nothing, DomainTypedValue[ObjectType]],
+                computation: Computation[Nothing, DomainValue],
                 rest: Operands) {
 
                 if (computation.throwsException)
@@ -404,7 +402,7 @@ trait AI {
             }
 
             def computationWithExceptions(
-                computation: Computation[Nothing, Set[DomainTypedValue[ObjectType]]],
+                computation: Computation[Nothing, Set[DomainValue]],
                 rest: Operands) {
 
                 if (computation.throwsException)
@@ -414,7 +412,7 @@ trait AI {
             }
 
             def computationWithReturnValueAndException(
-                computation: Computation[DomainValue, DomainTypedValue[ObjectType]],
+                computation: Computation[DomainValue, DomainValue],
                 rest: Operands) {
 
                 if (computation.hasResult)
@@ -424,7 +422,7 @@ trait AI {
             }
 
             def computationWithReturnValueAndExceptions(
-                computation: Computation[DomainValue, Set[DomainTypedValue[ObjectType]]],
+                computation: Computation[DomainValue, Set[DomainValue]],
                 rest: Operands) {
 
                 if (computation.hasResult)
@@ -434,7 +432,7 @@ trait AI {
             }
 
             def computationWithOptionalReturnValueAndExceptions(
-                computation: Computation[Option[DomainValue], Set[DomainTypedValue[ObjectType]]],
+                computation: Computation[Option[DomainValue], Set[DomainValue]],
                 rest: Operands) {
 
                 if (computation.hasResult) {
@@ -611,7 +609,7 @@ trait AI {
                                 domain.abnormalReturn(pc, exception)
 
                             case Values(exceptionTypes) ⇒
-                                val isHandled = exceptionTypes.forall(exceptionType ⇒
+                                val isHandled = exceptionTypes.forall(_.valueTypes.forall(exceptionType ⇒
                                     // find the exception handler that matches the given 
                                     // exception
                                     code.exceptionHandlersFor(pc).exists(eh ⇒ {
@@ -636,8 +634,7 @@ trait AI {
                                             }
                                         }
                                     }
-                                    )
-                                )
+                                    )))
                                 // If "isHandled" is true, we are sure that at least one 
                                 // handler will catch the exception(s)... hence the method
                                 // will not return abnormally
@@ -847,7 +844,7 @@ trait AI {
                             invoke.declaringClass,
                             invoke.name,
                             invoke.methodDescriptor,
-                            operands.take(argsCount + 1).reverse
+                            operands.take(argsCount + 1)
                         )
                     computationWithOptionalReturnValueAndExceptions(
                         computation,
@@ -862,7 +859,7 @@ trait AI {
                             invoke.declaringClass,
                             invoke.name,
                             invoke.methodDescriptor,
-                            operands.take(argsCount + 1).reverse
+                            operands.take(argsCount + 1)
                         )
                     computationWithOptionalReturnValueAndExceptions(
                         computation,
@@ -1004,7 +1001,7 @@ trait AI {
                 //
 
                 case 1 /*aconst_null*/ ⇒
-                    fallThroughO(domain.theNullValue(pc) :: operands)
+                    fallThroughO(domain.nullValue(pc) :: operands)
 
                 case 16 /*bipush*/ ⇒
                     val value = instruction.asInstanceOf[BIPUSH].value
@@ -1368,7 +1365,7 @@ trait AI {
             }
         }
 
-        AIResultBuilder.complete(code, domain)(operandsArray, localsArray)
+        AIResultBuilder.completed(code, domain)(operandsArray, localsArray)
     }
 }
 
