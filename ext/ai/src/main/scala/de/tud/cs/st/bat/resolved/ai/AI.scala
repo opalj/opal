@@ -345,8 +345,8 @@ trait AI {
              * @param exception A guaranteed non-null value that represents an instance of
              *      an object that inherits from `java.lang.Throwable`.
              */
-            def handleException(exception: DomainValue) {
-                val nextOperands: List[domain.DomainValue] = List(exception)
+            def handleException(exceptionValue: DomainValue) {
+                val nextOperands: List[domain.DomainValue] = List(exceptionValue)
                 val isHandled =
                     // find the exception handler that matches the given exception
                     code.exceptionHandlersFor(pc).exists(eh ⇒ {
@@ -356,17 +356,25 @@ trait AI {
                             gotoTarget(branchTarget, nextOperands, locals)
                             true
                         } else {
-                            domain.isSubtypeOf(exception, catchType.get) match {
-                                case No ⇒
-                                    false
-                                case Yes ⇒
-                                    gotoTarget(branchTarget, nextOperands, locals)
-                                    true
-                                case Unknown ⇒
-                                    val (updatedOperands, updatedLocals) =
-                                        UpperBound(branchTarget, catchType.get, exception, nextOperands, locals)
-                                    gotoTarget(branchTarget, updatedOperands, updatedLocals)
-                                    false
+                            types(exceptionValue) match {
+                                case ValuesUnknown ⇒
+                                    AIImplementationError("handleException requires concrete exception values")
+                                case Values(exceptions) ⇒
+                                    exceptions.forall(_.valueTypes.forall(
+                                        (exceptionType: Type) ⇒
+                                            domain.isSubtypeOf(exceptionType.asObjectType, catchType.get) match {
+                                                case No ⇒
+                                                    false
+                                                case Yes ⇒
+                                                    gotoTarget(branchTarget, nextOperands, locals)
+                                                    true
+                                                case Unknown ⇒
+                                                    val (updatedOperands, updatedLocals) =
+                                                        UpperBound(branchTarget, catchType.get, exceptionValue, nextOperands, locals)
+                                                    gotoTarget(branchTarget, updatedOperands, updatedLocals)
+                                                    false
+                                            })
+                                    )
                             }
                         }
                     })
@@ -375,7 +383,7 @@ trait AI {
                 // handler will catch the exception... hence the method
                 // will not return abnormally w.r.t. the given exception
                 if (!isHandled)
-                    domain.abnormalReturn(pc, exception)
+                    domain.abnormalReturn(pc, exceptionValue)
             }
             def handleExceptions(exceptions: Set[DomainValue]) {
                 exceptions.foreach(handleException(_))
@@ -588,10 +596,10 @@ trait AI {
                         handleException(computation.exceptions)
                     }
                     if (computation.hasResult) {
-                        val exception = computation.result
-                        val nextOperands = List(exception)
+                        val exceptionValue = computation.result
+                        val nextOperands = List(exceptionValue)
 
-                        domain.types(exception) match {
+                        domain.types(exceptionValue) match {
                             case ValuesUnknown ⇒
                                 code.exceptionHandlersFor(pc).foreach(eh ⇒ {
                                     val branchTarget = eh.handlerPC
@@ -600,13 +608,13 @@ trait AI {
                                     if (eh.catchType.isDefined) {
                                         eh.catchType.map(catchType ⇒ {
                                             val (updatedOperands, updatedLocals) =
-                                                UpperBound(branchTarget, catchType, exception, nextOperands, locals)
+                                                UpperBound(branchTarget, catchType, exceptionValue, nextOperands, locals)
                                             gotoTarget(branchTarget, updatedOperands, updatedLocals)
                                         })
                                     } else
                                         gotoTarget(branchTarget, nextOperands, locals)
                                 })
-                                domain.abnormalReturn(pc, exception)
+                                domain.abnormalReturn(pc, exceptionValue)
 
                             case Values(exceptionTypes) ⇒
                                 val isHandled = exceptionTypes.forall(_.valueTypes.forall(exceptionType ⇒
@@ -628,7 +636,7 @@ trait AI {
                                                     true
                                                 case Unknown ⇒
                                                     val (updatedOperands, updatedLocals) =
-                                                        UpperBound(branchTarget, catchType.get, exception, nextOperands, locals)
+                                                        UpperBound(branchTarget, catchType.get, exceptionValue, nextOperands, locals)
                                                     gotoTarget(branchTarget, updatedOperands, updatedLocals)
                                                     false
                                             }
@@ -639,7 +647,7 @@ trait AI {
                                 // handler will catch the exception(s)... hence the method
                                 // will not return abnormally
                                 if (!isHandled)
-                                    domain.abnormalReturn(pc, exception)
+                                    domain.abnormalReturn(pc, exceptionValue)
                         }
                     }
 
