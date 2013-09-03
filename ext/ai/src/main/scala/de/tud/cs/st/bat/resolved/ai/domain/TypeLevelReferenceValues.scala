@@ -133,31 +133,6 @@ trait TypeLevelReferenceValues
 
     def UpperBound: SingleValueConstraintWithBound[ReferenceType] = IgnoreSingleValueConstraintWithReferenceTypeBound
 
-    // -----------------------------------------------------------------------------------
-    //
-    // HANDLING OF COMPUTATIONS
-    //
-    // -----------------------------------------------------------------------------------
-
-    //
-    // PUSH CONSTANT VALUE
-    //
-
-    def stringValue(pc: Int, value: String): DomainValue =
-        SomeReferenceValue(ObjectType.String)
-
-    def classValue(pc: Int, t: ReferenceType): DomainValue =
-        SomeReferenceValue(ObjectType.Class)
-
-    //
-    // TYPE CHECKS AND CONVERSION
-    //
-
-    def checkcast(pc: Int, value: DomainValue, resolvedType: ReferenceType) =
-        ComputedValue(TypedValue(resolvedType))
-
-    def instanceof(pc: Int, value: DomainValue, resolvedType: ReferenceType) =
-        SomeBooleanValue
 }
 
 trait DefaultTypeLevelReferenceValues[I]
@@ -165,6 +140,8 @@ trait DefaultTypeLevelReferenceValues[I]
         with TypeLevelReferenceValues { domain ⇒
 
     import language.existentials
+
+    def intValuesRange(pc: Int, start: Int, end: Int): DomainValue
 
     //
     //
@@ -239,7 +216,7 @@ trait DefaultTypeLevelReferenceValues[I]
             "ReferenceValue(isNull="+isNull+"; pc="+pc+"; types="+
                 valueType.map(
                     _.valueTypes.map(_.toJava).mkString("{", ", ", "}")
-                ).mkString("{", ", ", "}")
+                ).mkString("{", ", ", "}")+")"
     }
 
     object ReferenceValue {
@@ -276,6 +253,7 @@ trait DefaultTypeLevelReferenceValues[I]
 
         override def updateIsNull(pc: Int, isNull: Answer): ReferenceValue = {
             assume(isNull.isDefined)
+            // we keep the old pcs because it is basically the old value
             if (isNull.no) {
                 new NonNullReferenceValue(this.pc, referenceValueType)
             } else {
@@ -321,13 +299,23 @@ trait DefaultTypeLevelReferenceValues[I]
         isNull: Answer): DomainValue =
         SomeReferenceValue(pc, Set[TypeBound](PreciseType(theType)), isNull)
 
+    // -----------------------------------------------------------------------------------
+    //
+    // HANDLING OF COMPUTATIONS
+    //
+    // -----------------------------------------------------------------------------------
+
+    //
+    // PUSH CONSTANT VALUE
+    //
+
     def newObject(pc: Int, objectType: ObjectType): DomainValue =
         new NonNullReferenceValue(pc, PreciseType(objectType))
 
-    override def stringValue(pc: Int, value: String): DomainValue =
+    def stringValue(pc: Int, value: String): DomainValue =
         new NonNullReferenceValue(pc, PreciseType(ObjectType.String))
 
-    override def classValue(pc: Int, t: Type): DomainValue =
+    def classValue(pc: Int, t: Type): DomainValue =
         new NonNullReferenceValue(pc, PreciseType(ObjectType.Class))
 
     //
@@ -344,6 +332,25 @@ trait DefaultTypeLevelReferenceValues[I]
     def isSubtypeOf(value: DomainValue, superType: ReferenceType): Answer = {
         Unknown // TODO make this MORE meaningful
     }
+
+    //
+    // TYPE CHECKS AND CONVERSION
+    //
+
+    def checkcast(pc: Int, value: DomainValue, resolvedType: ReferenceType) =
+        isNull(value) match {
+            case Yes ⇒ /* => UNCHANGED (see spec. for details) */ ComputedValue(value)
+            case _ /* <=> No | Unknown */ ⇒
+                /* We need to check... */ ComputedValue(SomeReferenceValue(resolvedType))
+
+        }
+
+    def instanceof(pc: Int, value: DomainValue, resolvedType: ReferenceType) =
+        isNull(value) match {
+            case Yes ⇒ /* => FALSE */ intValue(pc, 0)
+            case No  ⇒ /* We need to check... */ intValuesRange(pc, 0, 1)
+            case _   ⇒ /* => FALSE, but also TRUE?*/ intValuesRange(pc, 0, 1)
+        }
 
 }
 
