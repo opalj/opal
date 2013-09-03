@@ -50,7 +50,15 @@ trait AITracer {
         operands: List[D#DomainValue],
         locals: Array[D#DomainValue]): Unit
 
+    def merge[D <: Domain[_]](
+        pc: Int,
+        thisOperands: D#Operands,
+        thisLocals: D#Locals,
+        otherOperands: D#Operands,
+        otherLocals: D#Locals, result: Update[(D#Operands, D#Locals)])
+
     def abnormalReturn[D <: Domain[_]](pc: Int, exception: D#DomainValue)
+
 }
 
 trait ConsoleTracer extends AITracer {
@@ -64,14 +72,53 @@ trait ConsoleTracer extends AITracer {
 
         println(
             pc+":"+instruction+" [\n"+
-                operands.mkString("\toperands:\n\t\t", ",\n\t\t ", "\n\t;\n") +
+                operands.mkString("\toperands:\n\t\t", ",\n\t\t", "\n\t;\n") +
                 locals.map(l ⇒ if (l eq null) "-" else l.toString).zipWithIndex.map(v ⇒ v._2+":"+v._1).
                 mkString("\tlocals:\n\t\t", ",\n\t\t", "\n")+"\t]")
     }
 
-    def abnormalReturn[D <: Domain[_]](pc: Int, exception: D#DomainValue) {
-        println(pc+": RETURN FROM METHOD DUE TO UNHANDLED EXCEPTION :"+exception)
+    def merge[D <: Domain[_]](
+        pc: Int,
+        thisOperands: D#Operands,
+        thisLocals: D#Locals,
+        otherOperands: D#Operands,
+        otherLocals: D#Locals, result: Update[(D#Operands, D#Locals)]) {
+
+        print(Console.BLUE + pc+": MERGE :")
+        result match {
+            case NoUpdate ⇒ println("no changes")
+            case u @ SomeUpdate((updatedOperands, updatedLocals)) ⇒
+                println(u.updateType)
+                println(
+                    thisOperands.
+                        zip(otherOperands).
+                        map(v ⇒ "given "+v._1+"\n\t\tmerge "+v._2).
+                        zip(updatedOperands).
+                        map(v ⇒ v._1+"\n\t\t=>    "+v._2).
+                        mkString("\tOperands:\n\t\t", "\n\t\t----------------\n\t\t", "")
+                )
+                println(
+                    thisLocals.
+                        zipWithIndex.
+                        filter(v ⇒ v._1 ne null).
+                        map(v ⇒ v._2+":\n\t\tgiven "+v._1).
+                        zip(otherLocals).
+                        map(v ⇒ v._1+"\n\t\tmerge "+v._2).
+                        zip(updatedLocals).
+                        map(v ⇒ v._1+"\n\t\t=>    "+v._2).mkString("\tLocals:\n\t\t", ",\n\t\t", "")
+                )
+        }
+        println(Console.RESET)
+
     }
+
+    def abnormalReturn[D <: Domain[_]](pc: Int, exception: D#DomainValue) {
+        println(Console.BOLD +
+            Console.RED +
+            pc+": RETURN FROM METHOD DUE TO UNHANDLED EXCEPTION :"+exception +
+            Console.RESET)
+    }
+
 }
 
 object InterpretMethod {

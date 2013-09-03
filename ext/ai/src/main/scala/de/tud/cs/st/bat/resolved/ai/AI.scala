@@ -228,7 +228,15 @@ trait AI {
                 worklist = targetPC :: worklist
             } else {
                 val currentLocals = localsArray(targetPC)
-                domain.merge(targetPC, currentOperands, currentLocals, operands, locals) match {
+                val mergeResult = domain.merge(
+                    targetPC, currentOperands, currentLocals, operands, locals
+                )
+                if (tracer.isDefined)
+                    tracer.get.merge[domain.type](
+                        targetPC, currentOperands, currentLocals, operands, locals, mergeResult
+                    )
+
+                mergeResult match {
                     case NoUpdate ⇒ /* Nothing to do */
                     case StructuralUpdate((updatedOperands, updatedLocals)) ⇒
                         operandsArray(targetPC) = updatedOperands
