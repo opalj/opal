@@ -430,7 +430,8 @@ trait Domain[@specialized(Int, Long) I] {
      * type bound is generally precise in case of primitive types. However, in case
      * of reference types, a type bound may, e.g., be a set of interface types which are
      * known to be implemented by the current object. Even if the type contains a class
-     * type it may just be a super class of the concrete type.
+     * type it may just be a super class of the concrete type and, hence, just represents
+     * an abstraction.
      */
     trait TypeBound {
         def valueTypes: Set[_ <: Type]
@@ -459,7 +460,10 @@ trait Domain[@specialized(Int, Long) I] {
     /*ABSTRACT*/ def isSubtypeOf(subType: ReferenceType, superType: ReferenceType): Answer
 
     /**
-     * Tests if the two given values are equal.
+     * Tests if the two given integer values are equal.
+     *
+     * To return meaningful results a domain is required that is able to track the
+     * flow of concrete integer values.
      *
      * @param value1 A value with computational type integer.
      * @param value2 A value with computational type integer.
@@ -467,7 +471,10 @@ trait Domain[@specialized(Int, Long) I] {
     /*ABSTRACT*/ def areEqual(value1: DomainValue, value2: DomainValue): Answer
 
     /**
-     * Tests if the two given values are not equal.
+     * Tests if the two given integer values are not equal.
+     *
+     * To return meaningful results a domain is required that is able to track the
+     * flow of concrete integer values.
      *
      * @param value1 A value with computational type integer.
      * @param value2 A value with computational type integer.
@@ -476,7 +483,7 @@ trait Domain[@specialized(Int, Long) I] {
         areEqual(value1, value2).negate
 
     /**
-     * Tests if the first value is smaller than the second value.
+     * Tests if the first integer value is smaller than the second value.
      *
      * @param smallerValue A value with computational type integer.
      * @param largerValue A value with computational type integer.
@@ -484,33 +491,36 @@ trait Domain[@specialized(Int, Long) I] {
     /*ABSTRACT*/ def isLessThan(smallerValue: DomainValue, largerValue: DomainValue): Answer
 
     /**
-     * Tests if the first value is less than or equal to the second value.
+     * Tests if the first integer value is less than or equal to the second value.
      *
      * @param smallerOrEqualValue A value with computational type integer.
      * @param equalOrLargerValue A value with computational type integer.
      */
-    /*ABSTRACT*/ def isLessThanOrEqualTo(smallerOrEqualValue: DomainValue, equalOrLargerValue: DomainValue): Answer
+    /*ABSTRACT*/ def isLessThanOrEqualTo(smallerOrEqualValue: DomainValue,
+                                         equalOrLargerValue: DomainValue): Answer
 
     /**
-     * Tests if the first value is larger than the second value.
+     * Tests if the first integer value is larger than the second value.
      *
      * @param largerValue A value with computational type integer.
      * @param smallerValue A value with computational type integer.
      */
-    final private[ai] def isGreaterThan(largerValue: DomainValue, smallerValue: DomainValue): Answer =
+    final private[ai] def isGreaterThan(largerValue: DomainValue,
+                                        smallerValue: DomainValue): Answer =
         isLessThan(smallerValue, largerValue)
 
     /**
-     * Tests if the first value is larger than or equal to the second value.
+     * Tests if the first integer value is larger than or equal to the second value.
      *
      * @param largerOrEqualValue A value with computational type integer.
      * @param smallerOrEqualValue A value with computational type integer.
      */
-    final private[ai] def isGreaterThanOrEqualTo(largerOrEqualValue: DomainValue, smallerOrEqualValue: DomainValue): Answer =
+    final private[ai] def isGreaterThanOrEqualTo(largerOrEqualValue: DomainValue,
+                                                 smallerOrEqualValue: DomainValue): Answer =
         isLessThanOrEqualTo(smallerOrEqualValue, largerOrEqualValue)
 
     /**
-     * Tests if the given value is 0 or maybe 0.
+     * Tests if the given integer value is 0 or maybe 0.
      *
      * @param value A value with computational type integer.
      */
@@ -518,7 +528,7 @@ trait Domain[@specialized(Int, Long) I] {
         areEqual(value, IntegerConstant0)
 
     /**
-     * Tests if the given value is not 0 or maybe not 0.
+     * Tests if the given integer value is not 0 or maybe not 0.
      *
      * @param value A value with computational type integer.
      */
@@ -526,7 +536,7 @@ trait Domain[@specialized(Int, Long) I] {
         areNotEqual(value, IntegerConstant0)
 
     /**
-     * Tests if the given value is &lt; 0 or maybe &lt; 0.
+     * Tests if the given integer value is &lt; 0 or maybe &lt; 0.
      *
      * @param value A value with computational type integer.
      */
@@ -534,7 +544,8 @@ trait Domain[@specialized(Int, Long) I] {
         isLessThan(value, IntegerConstant0)
 
     /**
-     * Tests if the given value is less than or equal to 0 or maybe less than or equal to0.
+     * Tests if the given integer value is less than or equal to 0 or maybe
+     * less than or equal to 0.
      *
      * @param value A value with computational type integer.
      */
@@ -542,7 +553,7 @@ trait Domain[@specialized(Int, Long) I] {
         isLessThanOrEqualTo(value, IntegerConstant0)
 
     /**
-     * Tests if the given value is &gt; 0 or maybe &gt; 0.
+     * Tests if the given integer value is &gt; 0 or maybe &gt; 0.
      *
      * @param value A value with computational type integer.
      */
@@ -550,7 +561,8 @@ trait Domain[@specialized(Int, Long) I] {
         isGreaterThan(value, IntegerConstant0)
 
     /**
-     * Tests if the given value is greater than or equla to 0 or maybe greater than or equal to 0.
+     * Tests if the given value is greater than or equal to 0 or maybe greater
+     * than or equal to 0.
      *
      * @param value A value with computational type integer.
      */
@@ -563,7 +575,14 @@ trait Domain[@specialized(Int, Long) I] {
     //
     // -----------------------------------------------------------------------------------
 
+    /**
+     * An instruction's operands are represented using a list where the first
+     * element of the list represents the top level operand stack value.
+     */
     type Operands = List[DomainValue]
+    /**
+     * An instruction's current register values/locals are represented using an array.
+     */
     type Locals = Array[DomainValue]
 
     trait ValuesConstraint
@@ -625,11 +644,18 @@ trait Domain[@specialized(Int, Long) I] {
 
     // -----------------------------------------------------------------------------------
     //
-    // HELPER TYPES AND FUNCTIONS RELATED TO THE RESULT OF INSTRUCTIONS
+    // ABSTRACTIONS RELATED TO INSTRUCTIONS
     //
     // -----------------------------------------------------------------------------------
 
-    type ComputationWithReturnValueOrNullPointerException = Computation[DomainValue, DomainValue]
+    //
+    // HELPER TYPES AND FUNCTIONS RELATED TO THE RESULT OF INSTRUCTIONS
+    //
+
+    type SucceedsOrNullPointerException = Computation[Nothing, DomainValue]
+    type OptionalReturnValueOrExceptions = Computation[Option[DomainValue], Set[DomainValue]]
+    type NumericValueOrNullPointerException = Computation[DomainValue, DomainValue]
+    type ReferenceValueOrNullPointerException = Computation[DomainValue, DomainValue]
 
     /**
      * Tests if the given reference value is `null` and returns a newly created
@@ -638,7 +664,7 @@ trait Domain[@specialized(Int, Long) I] {
      */
     protected def givenValueOrNullPointerException(
         pc: Int,
-        value: DomainValue): ComputationWithReturnValueOrNullPointerException = {
+        value: DomainValue): ReferenceValueOrNullPointerException = {
         isNull(value) match {
             case Yes ⇒ ThrowsException(newObject(pc, ObjectType.NullPointerException))
             case No  ⇒ ComputedValue(value)
@@ -649,11 +675,9 @@ trait Domain[@specialized(Int, Long) I] {
         }
     }
 
-    type ComputationWithNullPointerException = Computation[Nothing, DomainValue]
-
     protected def sideEffectOnlyOrNullPointerException(
         pc: Int,
-        value: DomainValue): ComputationWithNullPointerException = {
+        value: DomainValue): SucceedsOrNullPointerException = {
         isNull(value) match {
             case Yes ⇒ ThrowsException(newObject(pc, ObjectType.NullPointerException))
             case No  ⇒ ComputationWithSideEffectOnly
@@ -663,13 +687,20 @@ trait Domain[@specialized(Int, Long) I] {
         }
     }
 
-    // -----------------------------------------------------------------------------------
     //
-    // ABSTRACTIONS RELATED TO INSTRUCTIONS
+    // METHODS TO IMPLEMENT THE SEMANTICS OF INSTRUCTIONS
     //
-    // -----------------------------------------------------------------------------------
 
-    def athrow(pc: Int, exception: DomainValue): ComputationWithReturnValueOrNullPointerException =
+    //
+    // THROW EXCEPTION
+    //
+
+    /**
+     * The normal result is the given value unless it is `null`. If the value is `null` a
+     * new instance of a `NullPointerException` is created and returned as the thrown
+     * exception.
+     */
+    def athrow(pc: Int, exception: DomainValue): Computation[DomainValue, DomainValue] =
         givenValueOrNullPointerException(pc, exception)
 
     //
@@ -677,21 +708,28 @@ trait Domain[@specialized(Int, Long) I] {
     //
     type NewArrayOrNegativeArraySizeException = Computation[DomainValue, DomainValue]
 
-    def newarray(pc: Int, count: DomainValue, componentType: FieldType): NewArrayOrNegativeArraySizeException
-    def multianewarray(pc: Int, counts: List[DomainValue], arrayType: ArrayType): NewArrayOrNegativeArraySizeException
+    def newarray(pc: Int,
+                 count: DomainValue,
+                 componentType: FieldType): NewArrayOrNegativeArraySizeException
+
+    def multianewarray(pc: Int,
+                       counts: List[DomainValue],
+                       arrayType: ArrayType): NewArrayOrNegativeArraySizeException
 
     //
     // LOAD FROM AND STORE VALUE IN ARRAYS
     //
 
     /**
-     * The exceptions that may be thrown are: `NullPointerException` and
+     * Computation that returns the value stored in an array at a given index or an
+     * exception. The exceptions that may be thrown are: `NullPointerException` and
      * `ArrayIndexOutOfBoundsException`.
      */
     type ArrayLoadResult = Computation[DomainValue, Set[DomainValue]]
     /**
-     * The exceptions that may be thrown are: `NullPointerException`,
-     * `ArrayIndexOutOfBoundsException` and `ArrayStoreException`.
+     * Computation that succeeds (updates the value stored in the array at the given
+     * index) or that throws an exception. The exceptions that may be thrown are:
+     * `NullPointerException`, `ArrayIndexOutOfBoundsException` and `ArrayStoreException`.
      */
     type ArrayStoreResult = Computation[Nothing, Set[DomainValue]]
 
@@ -715,7 +753,11 @@ trait Domain[@specialized(Int, Long) I] {
     //
     // LENGTH OF AN ARRAY
     //
-    def arraylength(pc: Int, arrayref: DomainValue): ComputationWithReturnValueOrNullPointerException
+
+    /**
+     * Returns the array's length or throws a `NullPointerException`.
+     */
+    def arraylength(pc: Int, arrayref: DomainValue): NumericValueOrNullPointerException
 
     // 
     // PUSH CONSTANT VALUE
@@ -785,11 +827,13 @@ trait Domain[@specialized(Int, Long) I] {
     //
     // ACCESSING FIELDS
     //
+    type FieldValueOrNullPointerException = Computation[DomainValue, DomainValue]
+
     def getfield(pc: Int,
                  objectref: DomainValue,
                  declaringClass: ObjectType,
                  name: String,
-                 fieldType: FieldType): ComputationWithReturnValueOrNullPointerException
+                 fieldType: FieldType): FieldValueOrNullPointerException
     def getstatic(pc: Int,
                   declaringClass: ObjectType,
                   name: String,
@@ -799,7 +843,7 @@ trait Domain[@specialized(Int, Long) I] {
                  value: DomainValue,
                  declaringClass: ObjectType,
                  name: String,
-                 fieldType: FieldType): ComputationWithNullPointerException
+                 fieldType: FieldType): SucceedsOrNullPointerException
     def putstatic(pc: Int,
                   value: DomainValue,
                   declaringClass: ObjectType,
@@ -809,28 +853,28 @@ trait Domain[@specialized(Int, Long) I] {
     //
     // METHOD INVOCATIONS
     //
-    type ComputationWithOptionalReturnValueAndExceptions = Computation[Option[DomainValue], Set[DomainValue]]
+
     // TODO [AI] Add support for Java7's Invokedynamic to the Domain.
     def invokeinterface(pc: Int,
                         declaringClass: ReferenceType,
                         name: String,
                         methodDescriptor: MethodDescriptor,
-                        operands: List[DomainValue]): ComputationWithOptionalReturnValueAndExceptions
+                        operands: List[DomainValue]): OptionalReturnValueOrExceptions
     def invokevirtual(pc: Int,
                       declaringClass: ReferenceType,
                       name: String,
                       methodDescriptor: MethodDescriptor,
-                      operands: List[DomainValue]): ComputationWithOptionalReturnValueAndExceptions
+                      operands: List[DomainValue]): OptionalReturnValueOrExceptions
     def invokespecial(pc: Int,
                       declaringClass: ReferenceType,
                       name: String,
                       methodDescriptor: MethodDescriptor,
-                      operands: List[DomainValue]): ComputationWithOptionalReturnValueAndExceptions
+                      operands: List[DomainValue]): OptionalReturnValueOrExceptions
     def invokestatic(pc: Int,
                      declaringClass: ReferenceType,
                      name: String,
                      methodDescriptor: MethodDescriptor,
-                     operands: List[DomainValue]): ComputationWithOptionalReturnValueAndExceptions
+                     operands: List[DomainValue]): OptionalReturnValueOrExceptions
 
     //
     // RELATIONAL OPERATORS
@@ -854,7 +898,7 @@ trait Domain[@specialized(Int, Long) I] {
     //
 
     /**
-     * The type of the exceptions may be: `ObjectType.ArithmeticException`s.
+     * Computation that returns a numeric value or an `ObjectType.ArithmeticException`.
      */
     type IntegerDivisionResult = Computation[DomainValue, DomainValue]
 
@@ -908,7 +952,7 @@ trait Domain[@specialized(Int, Long) I] {
      * the value is known not to be `null` the given value is (also) returned as this
      * computation's results.
      */
-    def monitorenter(pc: Int, value: DomainValue): ComputationWithNullPointerException = {
+    def monitorenter(pc: Int, value: DomainValue): SucceedsOrNullPointerException = {
         sideEffectOnlyOrNullPointerException(pc, value)
     }
 
@@ -920,7 +964,7 @@ trait Domain[@specialized(Int, Long) I] {
      * the value is known not to be `null` the given value is (also) returned as this
      * computation's results.
      */
-    def monitorexit(pc: Int, value: DomainValue): ComputationWithNullPointerException = {
+    def monitorexit(pc: Int, value: DomainValue): SucceedsOrNullPointerException = {
         sideEffectOnlyOrNullPointerException(pc, value)
     }
 

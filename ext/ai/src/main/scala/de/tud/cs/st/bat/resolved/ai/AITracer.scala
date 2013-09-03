@@ -37,19 +37,27 @@ package ai
 
 /**
  * Defines the interface between the abstract interpreter and the module for
- * tracing the interpreter's behavior.
+ * tracing the interpreter's behavior. In general, BATAI calls the defined methods
+ * at the specified point in time.
  *
  * @author Michael Eichberg
  */
 trait AITracer {
 
-    def traceInstructionEvalution[D <: Domain[_]](
+    /**
+     * Called by BATAI before an instruction is evaluated.
+     */
+    def instructionEvalution[D <: Domain[_]](
         domain: D,
         pc: Int,
         instruction: Instruction,
         operands: List[D#DomainValue],
         locals: Array[D#DomainValue]): Unit
 
+    /**
+     * Called whenever two paths converge and, hence, two values need
+     * to be merged.
+     */
     def merge[D <: Domain[_]](
         pc: Int,
         thisOperands: D#Operands,
@@ -57,13 +65,21 @@ trait AITracer {
         otherOperands: D#Operands,
         otherLocals: D#Locals, result: Update[(D#Operands, D#Locals)])
 
+    /**
+     * Called when the analyzed method throws an exception that is not catched.
+     */
     def abnormalReturn[D <: Domain[_]](pc: Int, exception: D#DomainValue)
 
 }
 
+/**
+ * A tracer that prints out a trace's results on the console.
+ *
+ * @author Michael Eichberg
+ */
 trait ConsoleTracer extends AITracer {
 
-    def traceInstructionEvalution[D <: Domain[_]](
+    def instructionEvalution[D <: Domain[_]](
         domain: D,
         pc: Int,
         instruction: Instruction,
@@ -105,11 +121,11 @@ trait ConsoleTracer extends AITracer {
                         zip(otherLocals).
                         map(v ⇒ v._1+"\n\t\tmerge "+v._2).
                         zip(updatedLocals).
-                        map(v ⇒ v._1+"\n\t\t=>    "+v._2).mkString("\tLocals:\n\t\t", ",\n\t\t", "")
+                        map(v ⇒ v._1+"\n\t\t=>    "+v._2).
+                        mkString("\tLocals:\n\t\t", ",\n\t\t", "")
                 )
         }
         println(Console.RESET)
-
     }
 
     def abnormalReturn[D <: Domain[_]](pc: Int, exception: D#DomainValue) {
@@ -121,9 +137,17 @@ trait ConsoleTracer extends AITracer {
 
 }
 
+/**
+ * A small interpreter that enables us to easily perform the abstract interpretation of a
+ * method.
+ *
+ * @author Michael Eichberg
+ */
 object InterpretMethod {
 
-    object AI extends AI {
+    import de.tud.cs.st.util.ControlAbstractions._
+
+    private object AI extends AI {
 
         def isInterrupted = Thread.interrupted()
 
@@ -133,16 +157,39 @@ object InterpretMethod {
     def main(args: Array[String]) {
         if (args.size != 3) {
             println("You have to specify the method that should be interpreted.")
-            println("\tFirst parameter: a jar or class file or a directory containing thereof")
+            println("\tFirst parameter: a jar file or class file or a directory containing jar files or class files")
             println("\tSecond parameter: the name of a class in binary notation (use \"/\" as the package separator")
             println("\tThird parameter: the name of a method of the class")
             return ;
         }
+        val fileName = args(0)
+        val className = args(1)
+        val methodName = args(2)
 
-        val classFiles = reader.Java7Framework.ClassFiles(new java.io.File(args(0)))
-        val classFile = classFiles.map(_._1).find(_.thisClass.className == args(1)).get
+        val file = new java.io.File(fileName)
+        val classFiles =
+            try {
+                reader.Java7Framework.ClassFiles(file)
+            } catch {
+                case e: Exception ⇒
+                    println(Console.RED+"cannot read file: "+e.getMessage() + Console.RESET)
+                    return ;
+            }
+        val classFile =
+            classFiles.map(_._1).find(_.thisClass.className == className) match {
+                case Some(classFile) ⇒ classFile
+                case None ⇒
+                    println(Console.RED+"cannot find the class: "+className + Console.RESET)
+                    return ;
+            }
+        val method =
+            classFile.methods.find(_.name == methodName) match {
+                case Some(method) ⇒ method
+                case None ⇒
+                    println(Console.RED+"cannot find the method: "+methodName + Console.RESET)
+                    return ;
+            }
 
-        val method = classFile.methods.find(_.name == args(2)).get
         val result = AI(classFile, method, new domain.ConfigurableDefaultDomain((classFile, method)))
         println(result)
 

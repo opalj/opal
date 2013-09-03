@@ -38,13 +38,12 @@ package domain
 
 /**
  * This domain performs all computations basically at the type level and does
- * not track the flow of values. Given the very high level of abstraction,
- * an abstract interpretation using this domain terminates quickly.
+ * not track the flow of concrete values. Given the very high level of abstraction,
+ * an abstract interpretation using this domain typically terminates quickly.
  *
- * It can be used as a foundation/as
- * an inspiration for building your own `Domain`. For example, it is useful to,
- *  e.g., track which types of values are actually
- * created to calculate a more precise call graph.
+ * This domain can be used as a foundation/as an inspiration for building your 
+ * own `Domain`. For example, it is useful to, e.g., track which types of values 
+ * are actually created to calculate a more precise call graph.
  *
  * @author Michael Eichberg
  */

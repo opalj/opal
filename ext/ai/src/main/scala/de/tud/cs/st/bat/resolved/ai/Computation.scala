@@ -39,8 +39,8 @@ package ai
  * Encapsulates the result of a computation in a domain. In general, the
  * result is either some value `V` or some exception(s) `E`. In some cases, however,
  * when the domain cannot "precisely" determine the result, it may be both: some
- * exceptional value(s) and a value. In the latter case BATAI will follow all
- * possible paths.
+ * exceptional value(s) and a value. In the latter case BATAI will generally follow all
+ * conceivable paths.
  *
  * @tparam V The result of the computation. Typically a `DomainValue`.
  *      If the computation is executed for its side
@@ -50,6 +50,8 @@ package ai
  *      a `DomainValue` which represents a reference value with type
  *      `java.lang.Throwable` or a subtype thereof. If multiple exceptions may be
  *      thrown it may also be a set of `DomainValues`.
+ *
+ * @author Michael Eichberg
  */
 sealed trait Computation[+V, +E] {
 
@@ -83,7 +85,6 @@ sealed trait Computation[+V, +E] {
      */
     def returnsNormally: Boolean
 }
-
 
 /**
  * Encapsulates the result of a computation that returned normally and

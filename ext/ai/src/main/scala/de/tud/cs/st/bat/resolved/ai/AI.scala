@@ -58,8 +58,8 @@ trait AI {
 
     /**
      * Called during the abstract interpretation of a method to determine whether
-     * the computation should be aborted. This method is called before every evaluation
-     * of an instruction.
+     * the computation should be aborted. This method is always called before the
+     * evaluation of an instruction.
      *
      * @note When the abstract interpreter is currently waiting on the result of the
      *    interpretation of a called method, it may take some time before the
@@ -117,8 +117,7 @@ trait AI {
      *      object contains all necessary information to continue the interpretation
      *      if needed/desired.
      * @note $UseOfDomain
-     * @note
-     *      If you are just interested in the values that are returned or passed to other
+     * @note If you are just interested in the values that are returned or passed to other
      *      functions/fields it may be effective (code and performance wise) to implement
      *      your own domain that just records the values. For an example take a look at
      *      the test cases of BATAI.
@@ -183,8 +182,8 @@ trait AI {
      *
      * @param initialWorklist The list of program counters with which the interpretation
      *      will continue. If the method was never analyzed before, the list should just
-     *      contains the value "0"; i.e., we start with the interpretation of the
-     *      code block with the first instruction.
+     *      contain the value "0"; i.e., we start with the interpretation of the
+     *      first instruction.
      * @param operandsArray The array that contains the operand stacks. Each value
      *      in the array contains the operand stack before the instruction with the
      *      corresponding index is executed. This array can be empty except of the
@@ -194,6 +193,7 @@ trait AI {
      *      Each value in the array contains the local variable assignments before
      *      the instruction with the corresponding program counter is executed.
      *      '''The `localsArray` data structure is mutated.'''
+     * @note $UseOfDomain
      */
     def continueInterpretation(
         code: Code,
@@ -223,6 +223,7 @@ trait AI {
         def gotoTarget(targetPC: Int, operands: Operands, locals: Locals) {
             val currentOperands = operandsArray(targetPC)
             if (currentOperands == null /* || localsArray(targetPC) == null )*/ ) {
+                // we analyze the instruction for the first time ...
                 operandsArray(targetPC) = operands
                 localsArray(targetPC) = locals
                 worklist = targetPC :: worklist
@@ -233,9 +234,9 @@ trait AI {
                 )
                 if (tracer.isDefined)
                     tracer.get.merge[domain.type](
-                        targetPC, currentOperands, currentLocals, operands, locals, mergeResult
+                        targetPC, currentOperands, currentLocals, operands, locals,
+                        mergeResult
                     )
-
                 mergeResult match {
                     case NoUpdate ⇒ /* Nothing to do */
                     case StructuralUpdate((updatedOperands, updatedLocals)) ⇒
@@ -246,7 +247,7 @@ trait AI {
                         operandsArray(targetPC) = updatedOperands
                         localsArray(targetPC) = updatedLocals
                     // => the evaluation context didn't change, hence
-                    // it is not necessary to enqueue the instruction
+                    // it is not necessary to enqueue the instruction's pc
                 }
             }
         }
@@ -279,9 +280,8 @@ trait AI {
             val locals = localsArray(pc)
 
             if (tracer.isDefined)
-                tracer.get.traceInstructionEvalution[domain.type](
-                    domain,
-                    pc, instruction, operands, locals
+                tracer.get.instructionEvalution[domain.type](
+                    domain, pc, instruction, operands, locals
                 )
 
             def pcOfNextInstruction = code.indexOfNextInstruction(pc)

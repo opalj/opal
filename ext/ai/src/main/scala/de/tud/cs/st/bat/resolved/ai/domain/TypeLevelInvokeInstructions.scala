@@ -72,7 +72,7 @@ trait TypeLevelInvokeInstructions { this: Domain[_] ⇒
                       declaringClass: ReferenceType,
                       name: String,
                       methodDescriptor: MethodDescriptor,
-                      operands: List[DomainValue]): ComputationWithOptionalReturnValueAndExceptions =
+                      operands: List[DomainValue]): OptionalReturnValueOrExceptions =
         handleInstanceBasedInvoke(pc, methodDescriptor, operands)
 
     def invokespecial(pc: Int,

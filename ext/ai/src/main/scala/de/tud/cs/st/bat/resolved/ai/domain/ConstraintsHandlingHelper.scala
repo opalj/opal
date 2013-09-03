@@ -37,8 +37,9 @@ package ai
 package domain
 
 /**
- * Helper methods and classes to support the handling of constraints stated by BATAI
- * during the interpretation of a method.
+ * Helper methods and classes that implement base constraint handlers for constraints 
+ * stated by BATAI during the interpretation of a method. The base constraint handlers
+ * basically just swallow the constraint.
  * 
  * @author Michael Eichberg
  */

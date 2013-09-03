@@ -323,7 +323,7 @@ trait DefaultTypeLevelReferenceValues[I]
 
     override protected def givenValueOrNullPointerException(
         pc: Int,
-        value: DomainValue): ComputationWithReturnValueOrNullPointerException = {
+        value: DomainValue): ReferenceValueOrNullPointerException = {
 
         isNull(value) match {
             case Yes ⇒ ThrowsException(newObject(pc, ObjectType.NullPointerException))

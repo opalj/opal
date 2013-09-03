@@ -41,6 +41,8 @@ import reflect.ClassTag
 /**
  * Final binding of the [[de.tud.cs.st.bat.resolved.ai.Domain.Value]] trait
  * and its immediate subtypes: `DomainTypedValue` and `DomainNoLegalValue`.
+ *
+ * @author Michael Eichberg
  */
 trait DefaultValueBinding[I] extends Domain[I] {
 

@@ -65,28 +65,28 @@ trait TypeLevelArrayInstructions { this: Domain[_] ⇒
     // LOAD FROM AND STORE VALUE IN ARRAYS
     //
     def aaload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
-//        types(arrayref) match {
-//    case Values(values) => values. 
-//    case _ => 
+        //        types(arrayref) match {
+        //    case Values(values) => values. 
+        //    case _ => 
         AIImplementationError("aaload - tracking of array type failed; array contains reference values of unknown type")
-//}
-        
-//        arrayref match {
-//            case TypedValue(ArrayType(componentType)) ⇒
-//                ComputedValue(TypedValue(componentType))
-//            case _ ⇒
-//                AIImplementationError("aaload - tracking of array type failed; array contains reference values of unknown type")
-//        }
+    //}
 
-        def aastore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
+    //        arrayref match {
+    //            case TypedValue(ArrayType(componentType)) ⇒
+    //                ComputedValue(TypedValue(componentType))
+    //            case _ ⇒
+    //                AIImplementationError("aaload - tracking of array type failed; array contains reference values of unknown type")
+    //        }
+
+    def aastore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
         ComputationWithSideEffectOnly
 
     def baload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
-//        arrayref match { // byte or boolean load...
-//            case TypedValue(ArrayType(componentType)) ⇒ ComputedValue(TypedValue(componentType))
-//            case _ ⇒
-                AIImplementationError("baload - tracking of array type failed; array may contain booleans or byte values")
-//        }
+        //        arrayref match { // byte or boolean load...
+        //            case TypedValue(ArrayType(componentType)) ⇒ ComputedValue(TypedValue(componentType))
+        //            case _ ⇒
+        AIImplementationError("baload - tracking of array type failed; array may contain booleans or byte values")
+    //        }
 
     def bastore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
         ComputationWithSideEffectOnly
@@ -124,7 +124,7 @@ trait TypeLevelArrayInstructions { this: Domain[_] ⇒
     //
     // LENGTH OF AN ARRAY
     //
-    def arraylength(pc: Int, value: DomainValue): ComputationWithReturnValueOrNullPointerException =
+    def arraylength(pc: Int, value: DomainValue): NumericValueOrNullPointerException =
         ComputedValue(SomeIntegerValue)
 }
 

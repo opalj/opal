@@ -45,9 +45,9 @@ package domain
 trait DefaultTypeHierarchyBinding { this: Domain[_] ⇒
 
     /**
-     * This project's class hierarchy; unless explicitly overridden, the built-in default
-     * class hierarchy is used which only reflects the type-hierarchy
-     * between the exception used by JVM instructions.
+     * This project's class hierarchy; unless explicitly overridden, BAT's
+     * built-in default class hierarchy is used which only reflects the type-hierarchy
+     * between the exceptions used by JVM instructions.
      *
      * @note '''This method is intended to be overridden.'''
      */
@@ -55,11 +55,10 @@ trait DefaultTypeHierarchyBinding { this: Domain[_] ⇒
         analyses.ClassHierarchy.preInitializedClassHierarchy
 
     /**
-     * @see [[de.tud.cs.st.bat.resolved.analyses.ClassHierarchy]] isSubtypeOf
+     * @see `de.tud.cs.st.bat.resolved.analyses.ClassHierarch.isSubtypeOf(...)
      */
-    def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer = {
+    def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer =
         classHierarchy.isSubtypeOf(subtype, supertype)
-    }
 
 }
 
