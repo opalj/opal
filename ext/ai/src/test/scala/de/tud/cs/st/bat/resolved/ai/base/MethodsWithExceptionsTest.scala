@@ -143,14 +143,12 @@ class MethodsWithExceptionsTest
         })
     }
 
-    //    it should "be able to analyze a method that catches the thrown exceptions" in {
-    //        evaluateMethod("throwsNoException", domain ⇒ {
-    //            import domain._
-    //            domain.returnedValues should be(
-    //                Set(("return", null),
-    //                    ("throws", SomeReferenceValue) // <= the default domain is too simple to infer that we did catch all types of exceptions
-    //                )
-    //            )
-    //        })
-    //    }
+    it should "be able to analyze a method that catches the thrown exceptions" in {
+        evaluateMethod("throwsNoException", domain ⇒ {
+            import domain._
+            domain.returnedValues should be(
+                Set(("return", null))
+            )
+        })
+    }
 }
