@@ -95,7 +95,7 @@ object InterpretMethods {
                             if (AI(
                                 classFile,
                                 method,
-                                new domain.DefaultDomain[(ClassFile, Method)] {
+                                new domain.AbstractDefaultDomain[(ClassFile, Method)] {
                                     val identifier = (classFile, method)
                                 }).wasAborted)
                                 throw new InterruptedException();

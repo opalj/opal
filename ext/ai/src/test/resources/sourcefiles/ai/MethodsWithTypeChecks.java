@@ -30,60 +30,46 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
-package ai
-package domain
+package ai;
+
+import java.io.File;
+import java.io.IOException;
 
 /**
- * This domain performs all computations basically at the type level and does
- * not track the flow of values. Given the very high level of abstraction,
- * an abstract interpretation using this domain terminates quickly.
- *
- * It can be used as a foundation/as
- * an inspiration for building your own `Domain`. For example, it is useful to,
- *  e.g., track which types of values are actually
- * created to calculate a more precise call graph.
- *
+ * Just a very large number of methods that does something related to type
+ * checking.
+ * 
+ * <h2>NOTE</h2> This class is not meant to be (automatically) recompiled; it
+ * just serves documentation purposes. The compiled class that is used by the
+ * tests is found in the test-classfiles directory.
+ * 
  * @author Michael Eichberg
  */
-trait BaseDomain[I]
-    extends DefaultValueBinding[I]
-    with DefaultTypeLevelReferenceValues[I]
-    with DefaultTypeLevelIntegerValues[I]
-    with DefaultTypeLevelLongValues[I]
-    with DefaultTypeLevelFloatValues[I]
-    with DefaultTypeLevelDoubleValues[I]
-    with DefaultReturnAddressValues[I]
+public class MethodsWithTypeChecks {
 
-/**
- * A complete definition of a domain except of the domain's identifier.
- *
- * @author Michael Eichberg
- */
-abstract class AbstractDefaultDomain[I]
-    extends BaseDomain[I]
-    with TypeLevelArrayInstructions
-    with TypeLevelFieldAccessInstructions
-    with TypeLevelInvokeInstructions
-    with TypeLevelConversionInstructions
-    with DoNothingOnReturnFromMethod
-    with DefaultTypeHierarchyBinding
+  public static java.util.List<Integer> get() {
+    if (System.currentTimeMillis() > 0)
+      return null;
+    else
+      return new java.util.ArrayList<Integer>();
+  }
 
-/**
- * This is a ready to use domain that is primarily useful for testing and
- * debugging purposes.
- *
- * @author Michael Eichberg
- */
-class DefaultDomain extends AbstractDefaultDomain[String] {
+  public static void main(String[] args) {
 
-    def identifier = "DefaultDomain"
+    java.util.List<Integer> l = get(); // <= effectively always "null"
 
+    System.out.println(l instanceof java.util.List);
+    System.out.println(null instanceof Object);
+    System.out.println(l instanceof Object);
+    System.out.println(l instanceof java.util.Set<?>);
+    System.out.println(l instanceof File);
+
+    Object o = l;
+
+    IOException ioe = (IOException) o;
+    System.out.println(ioe);
+    System.out.println(ioe instanceof IOException);
+
+    System.out.println("End of type frenzy.");
+  }
 }
-
-class ConfigurableDefaultDomain[I](val identifier: I) extends AbstractDefaultDomain[I]
-
-
-

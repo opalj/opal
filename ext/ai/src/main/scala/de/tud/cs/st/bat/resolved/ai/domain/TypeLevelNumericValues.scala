@@ -54,6 +54,8 @@ trait TypeLevelIntegerValues
 
     val IntegerConstant0: DomainValue = intValue(Int.MinValue, 0)
 
+    def intValuesRange(pc: Int, start: Int, end: Int): DomainValue = SomeIntegerValue
+
     /**
      * Abstracts over all values with computational type `integer` and also
      * represents Integer values.
@@ -224,7 +226,7 @@ trait DefaultTypeLevelIntegerValues[I]
 
     private val valuesAnswerBoolean: ValuesAnswer[Set[TypeBound]] =
         Values(Set(PreciseType(BooleanType)))
-        
+
     private val valuesAnswerByte: ValuesAnswer[Set[TypeBound]] =
         Values(Set(PreciseType(ByteType)))
 

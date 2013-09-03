@@ -40,11 +40,17 @@ package ai
  * representation of Java bytecode.
  *
  * ==Thread Safety==
- * This class is thread-safe as long as the ai tracer (if any) is thread-safe. Hence,
- * it is possible to use a single instance to analyze multiple methods in parallel.
+ * This class is thread-safe as long as the ai tracer (if any) and the used domain
+ * is thread-safe.
+ * Hence, it is possible to use a single instance to analyze multiple methods in parallel.
  * However, if you want to be able to selectively abort the abstract interpretation
  * of some methods or selectively trace the interpretation of some methods, then you
  * should use multiple instances.
+ *
+ * @define UseOfDomain
+ *     BATAI does not make assumptions about the number of domain objects that
+ *     are used. However, if a domain is used by multiple abstract interpreters,
+ *     the domain has to be thread-safe.
  *
  * @author Michael Eichberg
  */
@@ -55,15 +61,15 @@ trait AI {
      * the computation should be aborted. This method is called before every evaluation
      * of an instruction.
      *
-     * @note When the abstract interpreter is currently
-     *      waiting on the result of the interpretation of a called method, it may take
-     *      some time before the interpretation of the current method (this abstract
-     *      interpreter) is actually aborted.
+     * @note When the abstract interpreter is currently waiting on the result of the
+     *    interpretation of a called method, it may take some time before the
+     *    interpretation of the current method (this abstract interpreter) is actually
+     *    aborted.
      */
     def isInterrupted: Boolean
 
     /**
-     * Returns the object that is used for tracing the abstract interpretation.
+     * Returns the object that is used by BATAI for tracing the abstract interpretation.
      */
     def tracer: Option[AITracer]
 
@@ -73,14 +79,17 @@ trait AI {
      *  @param classFile The method's defining class file.
      *  @param method A non-native, non-abstract method of the given class file that
      *      will be analyzed.
-     *  @param domain The domain that will be used for the abstract interpretation. BATAI
-     *      assumes that every method is analyzed using its (new) own `Domain` instance.
+     *  @param domain The domain that will be used for the abstract interpretation.
+     *  @note $UseOfDomain
      */
     def apply(
         classFile: ClassFile,
         method: Method,
         domain: Domain[_]) = perform(classFile, method, domain)(None)
 
+    /**
+     * The worklist that is used when the analysis of a method starts.
+     */
     private final val initialWorkList = List(0)
 
     /**
@@ -97,8 +106,7 @@ trait AI {
      * @param method A non-abstract, non-native method of the given class file; i.e.,
      *      a method with a body.
      * @param domain The abstract domain that is used to perform "abstract" calculations
-     *      w.r.t. the domain's values. This framework assumes that the same domain
-     *      instance is not used for the abstract interpretation of other methods.
+     *      w.r.t. the domain's values.
      * @param someLocals If the values passed to a method are already known, the
      *      abstract interpretation will be performed under that assumption.
      * @return The result of the abstract interpretation. Basically, the calculated
@@ -108,6 +116,7 @@ trait AI {
      *      If the interpretation was aborted, the returned result
      *      object contains all necessary information to continue the interpretation
      *      if needed/desired.
+     * @note $UseOfDomain
      * @note
      *      If you are just interested in the values that are returned or passed to other
      *      functions/fields it may be effective (code and performance wise) to implement
@@ -262,7 +271,10 @@ trait AI {
             val locals = localsArray(pc)
 
             if (tracer.isDefined)
-                tracer.get.traceInstructionEvalution(domain)(pc, instruction, operands, locals)
+                tracer.get.traceInstructionEvalution[domain.type](
+                    domain,
+                    pc, instruction, operands, locals
+                )
 
             def pcOfNextInstruction = code.indexOfNextInstruction(pc)
 
@@ -343,7 +355,7 @@ trait AI {
              * @note The operand stack will only contain the raised exception.
              *
              * @param exception A guaranteed non-null value that represents an instance of
-             *      an object that inherits from `java.lang.Throwable`.
+             *      an object that is a subtype of `java.lang.Throwable`.
              */
             def handleException(exceptionValue: DomainValue) {
                 val nextOperands: List[domain.DomainValue] = List(exceptionValue)
@@ -383,10 +395,17 @@ trait AI {
                 // handler will catch the exception... hence the method
                 // will not return abnormally w.r.t. the given exception
                 if (!isHandled)
-                    domain.abnormalReturn(pc, exceptionValue)
+                    abnormalReturn(pc, exceptionValue)
             }
             def handleExceptions(exceptions: Set[DomainValue]) {
                 exceptions.foreach(handleException(_))
+            }
+
+            def abnormalReturn(pc: Int, exception: DomainValue) {
+                if (tracer.isDefined)
+                    tracer.get.abnormalReturn[domain.type](pc, exception)
+
+                domain.abnormalReturn(pc, exception)
             }
 
             def fallThrough() {
@@ -477,7 +496,7 @@ trait AI {
                     val branchtarget = pc + instruction.asInstanceOf[UnconditionalBranchInstruction].branchoffset
                     gotoTarget(branchtarget, operands, locals)
 
-                // FIXME The handling of JSR/RET needs to be revised. Merging the operand stacks/local variables ist not meaningful! I.e., we need to reset them!
+                // FIXME The handling of JSR/RET needs to be revised. Merging the operand stacks/local variables is not meaningful! I.e., we need to reset them!
                 case 169 /*ret*/ ⇒
                     val lvIndex = instruction.asInstanceOf[RET].lvIndex
                     locals(lvIndex) match {
@@ -614,7 +633,7 @@ trait AI {
                                     } else
                                         gotoTarget(branchTarget, nextOperands, locals)
                                 })
-                                domain.abnormalReturn(pc, exceptionValue)
+                                abnormalReturn(pc, exceptionValue)
 
                             case Values(exceptionTypes) ⇒
                                 val isHandled = exceptionTypes.forall(_.valueTypes.forall(exceptionType ⇒
@@ -647,7 +666,7 @@ trait AI {
                                 // handler will catch the exception(s)... hence the method
                                 // will not return abnormally
                                 if (!isHandled)
-                                    domain.abnormalReturn(pc, exceptionValue)
+                                    abnormalReturn(pc, exceptionValue)
                         }
                     }
 
@@ -1387,6 +1406,6 @@ object AI extends AI {
     def isInterrupted = Thread.interrupted()
 
     val tracer = None
-    //val tracer = Some(new ConsoleTracer {})
+
 }
 
