@@ -138,8 +138,8 @@ public class MethodsWithExceptions {
             e = new NullPointerException();
         else
             e = new IllegalArgumentException();
-        System.out.println(e);
         try {
+            System.out.println(e);
             throw e;
         } catch (NullPointerException npe) {
             // ...
