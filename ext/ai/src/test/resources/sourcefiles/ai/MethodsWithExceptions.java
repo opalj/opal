@@ -55,18 +55,18 @@ public class MethodsWithExceptions {
         throw new RuntimeException(message);
     }
 
-    // 0 aload_0 [t]
+    // 0 aload_0 [someThrowable]
     // 1 athrow
-    // 2 pop
-    // 3 aload_0 [t]
+    // 2 astore_1 [t]
+    // 3 aload_1 [t]
     // 4 invokevirtual java.lang.Throwable.printStackTrace() : void [24]
     // 7 return
     // Exception Table:
     // [pc: 0, pc: 2] -> 2 when : java.lang.Throwable
-    public static void alwaysCatch(Throwable t) {
+    public static void alwaysCatch(Throwable someThrowable) {
         try {
-            throw t;
-        } catch (Throwable throwable) {
+            throw someThrowable;
+        } catch (Throwable t) {
             t.printStackTrace();
         }
     }
@@ -92,11 +92,16 @@ public class MethodsWithExceptions {
     public static void withFinallyAndThrows(Throwable t) throws Throwable {
         try {
             if (t != null)
-                throw t;
-            else
+                throw t; // <= will throw t (non-null!)
+            else {
                 System.out.println("Nothing happening");
+                // <= may throw NullPointerException which
+                // will be replaced by a
+                // NullPointerException in the finally
+                // clause because t is null
+            }
         } finally {
-            t.printStackTrace();
+            t.printStackTrace(); // <= t may be null => may throw NullPointerException
         }
     }
 

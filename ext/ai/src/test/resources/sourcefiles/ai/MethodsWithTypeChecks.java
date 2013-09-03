@@ -36,40 +36,40 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * Just a very large number of methods that does something related to type
- * checking.
+ * Just a very large number of methods that does something related to type checking.
  * 
- * <h2>NOTE</h2> This class is not meant to be (automatically) recompiled; it
- * just serves documentation purposes. The compiled class that is used by the
- * tests is found in the test-classfiles directory.
+ * <h2>NOTE</h2> This class is not meant to be (automatically) recompiled; it just serves
+ * documentation purposes. The compiled class that is used by the tests is found in the
+ * test-classfiles directory.
  * 
  * @author Michael Eichberg
  */
 public class MethodsWithTypeChecks {
 
-  public static java.util.List<Integer> get() {
-    if (System.currentTimeMillis() > 0)
-      return null;
-    else
-      return new java.util.ArrayList<Integer>();
-  }
+    public static java.util.List<Integer> get() {
+        if (System.currentTimeMillis() > 0)
+            return null;
+        else
+            return new java.util.ArrayList<Integer>();
+    }
 
-  public static void main(String[] args) {
+    @SuppressWarnings("cast")
+    public static void main(String[] args) {
 
-    java.util.List<Integer> l = get(); // <= effectively always "null"
+        java.util.List<Integer> l = get(); // <= effectively always "null"
 
-    System.out.println(l instanceof java.util.List);
-    System.out.println(null instanceof Object);
-    System.out.println(l instanceof Object);
-    System.out.println(l instanceof java.util.Set<?>);
-    System.out.println(l instanceof File);
+        System.out.println(l instanceof java.util.List);
+        System.out.println(null instanceof Object);
+        System.out.println(l instanceof Object);
+        System.out.println(l instanceof java.util.Set<?>);
+        System.out.println(l instanceof File);
 
-    Object o = l;
+        Object o = l;
 
-    IOException ioe = (IOException) o;
-    System.out.println(ioe);
-    System.out.println(ioe instanceof IOException);
+        IOException ioe = (IOException) o;
+        System.out.println(ioe);
+        System.out.println(ioe instanceof IOException);
 
-    System.out.println("End of type frenzy.");
-  }
+        System.out.println("End of type frenzy.");
+    }
 }

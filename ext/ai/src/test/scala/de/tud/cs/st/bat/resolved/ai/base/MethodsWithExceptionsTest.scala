@@ -101,42 +101,17 @@ class MethodsWithExceptionsTest
         evaluateMethod("alwaysCatch", domain ⇒ {
             import domain._
             domain.returnedValues should be(
-                Set(("return", null),
-                    ("throws", SomeReferenceValue(4, ObjectType.NullPointerException, No)),
-                    ("throws", SomeReferenceValue(1, ObjectType.NullPointerException, No)))
+                Set(("return", null))
             )
         })
     }
 
-    it should "be able to analyze a method that may return normally or throw an exception" in {
-        evaluateMethod("withFinallyAndThrows", domain ⇒ {
+    it should "be able to identify all potentially thrown exceptions when different exceptions are stored in a variable which is then passed to a throw statement" in {
+        evaluateMethod("throwsThisOrThatException", domain ⇒ {
             import domain._
             domain.returnedValues should be(
-                Set(("return", null), // <= void return 
-                    //("throws", SomeReferenceValue(1, ObjectType.NullPointerException, No))) // <= when the invoke fails... but we are not good enough
-                    ("throws", SomeReferenceValue(4, ObjectType.Throwable, No))) // <= if t is null
-            )
-        })
-    }
-    //
-    //    it should "be able to identify all potentially thrown exceptions" in {
-    //        evaluateMethod("throwsThisOrThatException", domain ⇒ {
-    //            import domain._
-    //            domain.returnedValues should be(
-    //                Set(("throws", AReferenceValue(ObjectType("java/lang/IllegalArgumentException"))), // <= finally
-    //                    ("throws", AReferenceValue(ObjectType.NullPointerException))) // <= if t is null
-    //            )
-    //        })
-    //    }
-
-    it should "be able to identify all potentially thrown exceptions if an exception is caught and rethrown" in {
-        evaluateMethod("leverageException", domain ⇒ {
-            import domain._
-            domain.returnedValues should be(
-                Set(("return", null)) // <= void return
-            // Due to the simplicity of the domain we cannot determine that the following two exceptions may also be thrown:
-            // ("throws", AReferenceValue(ObjectType("java/lang/RuntimeException"))) 
-            // ("throws", AReferenceValue(ObjectType.NullPointerException))) 
+                Set(("throws", SomeReferenceValue(12, ObjectType("java/lang/IllegalArgumentException"), No)), // <= finally
+                    ("throws", SomeReferenceValue(4, ObjectType.NullPointerException, No))) // <= if t is null
             )
         })
     }
@@ -149,4 +124,31 @@ class MethodsWithExceptionsTest
             )
         })
     }
+
+    it should "be able to handle the pattern where some (checked) exceptions are caught and then rethrown as an unchecked exception" in {
+        evaluateMethod("leverageException", domain ⇒ {
+            import domain._
+            domain.returnedValues should be(
+                Set(("return", null)) // <= void return
+            // Due to the simplicity of the domain (the exceptions of called methods are 
+            // not yet analyze) we cannot determine that the following exception 
+            // (among others?) may also be thrown:
+            // ("throws", SomeReferenceValue(...,ObjectType("java/lang/RuntimeException"),No)) 
+            )
+        })
+    }
+
+    it should "be able to analyze a method that may return normally or throw an exception" in {
+        evaluateMethod("withFinallyAndThrows", domain ⇒ {
+            import domain._
+            domain.returnedValues should be(
+                Set(("throws", SomeReferenceValue(-1, ObjectType.Throwable, No)),
+                    ("throws", SomeReferenceValue(19, ObjectType.NullPointerException, No)),
+                    ("throws", SomeReferenceValue(23, Set[TypeBound](PreciseType(ObjectType.NullPointerException),PreciseType(ObjectType.Throwable)), No)),
+                    ("throws", SomeReferenceValue(25, ObjectType.NullPointerException, No))
+                )
+            )
+        })
+    }
+
 }
