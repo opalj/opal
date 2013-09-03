@@ -131,6 +131,14 @@ object InterpretMethod {
     }
 
     def main(args: Array[String]) {
+        if (args.size != 3) {
+            println("You have to specify the method that should be interpreted.")
+            println("\tFirst parameter: a jar or class file or a directory containing thereof")
+            println("\tSecond parameter: the name of a class in binary notation (use \"/\" as the package separator")
+            println("\tThird parameter: the name of a method of the class")
+            return ;
+        }
+
         val classFiles = reader.Java7Framework.ClassFiles(new java.io.File(args(0)))
         val classFile = classFiles.map(_._1).find(_.thisClass.className == args(1)).get
 
