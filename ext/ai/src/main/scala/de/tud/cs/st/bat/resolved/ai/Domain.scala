@@ -632,25 +632,34 @@ trait Domain[@specialized(Int, Long) I] {
     type ComputationWithReturnValueOrNullPointerException = Computation[DomainValue, DomainValue]
 
     /**
-     * Tests if the given value is `null` and returns a newly created
+     * Tests if the given reference value is `null` and returns a newly created
      * `NullPointerException` if it is the case. If the value is not `null`,
      * the given value is just wrapped and returned as this computation's result.
      */
-    protected def givenValueOrNullPointerException(pc: Int, value: DomainValue): ComputationWithReturnValueOrNullPointerException = {
+    protected def givenValueOrNullPointerException(
+        pc: Int,
+        value: DomainValue): ComputationWithReturnValueOrNullPointerException = {
         isNull(value) match {
-            case Yes     ⇒ ThrowsException(newObject(pc, ObjectType.NullPointerException))
-            case No      ⇒ ComputedValue(value)
-            case Unknown ⇒ ComputedValueAndException(value, newObject(pc, ObjectType.NullPointerException))
+            case Yes ⇒ ThrowsException(newObject(pc, ObjectType.NullPointerException))
+            case No  ⇒ ComputedValue(value)
+            case Unknown ⇒ ComputedValueAndException(
+                value,
+                newObject(pc, ObjectType.NullPointerException)
+            )
         }
     }
 
     type ComputationWithNullPointerException = Computation[Nothing, DomainValue]
 
-    protected def sideEffectOnlyOrNullPointerException(pc: Int, value: DomainValue): ComputationWithNullPointerException = {
+    protected def sideEffectOnlyOrNullPointerException(
+        pc: Int,
+        value: DomainValue): ComputationWithNullPointerException = {
         isNull(value) match {
-            case Yes     ⇒ ThrowsException(newObject(pc, ObjectType.NullPointerException))
-            case No      ⇒ ComputationWithSideEffectOnly
-            case Unknown ⇒ ComputationWithSideEffectOrException(newObject(pc, ObjectType.NullPointerException))
+            case Yes ⇒ ThrowsException(newObject(pc, ObjectType.NullPointerException))
+            case No  ⇒ ComputationWithSideEffectOnly
+            case Unknown ⇒ ComputationWithSideEffectOrException(
+                newObject(pc, ObjectType.NullPointerException)
+            )
         }
     }
 
