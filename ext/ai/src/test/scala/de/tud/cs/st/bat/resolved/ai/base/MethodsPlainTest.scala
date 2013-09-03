@@ -60,8 +60,7 @@ class MethodsPlainTest
 
     import util.Util.dumpOnFailureDuringValidation
 
-    class RecordingDomain(val identifier: None.type = None)
-            extends domain.DefaultDomain[None.type] {
+    class RecordingDomain extends domain.DefaultDomain {
         var returnedValue: Option[DomainValue] = _
         override def areturn(pc: Int, value: DomainValue) { returnedValue = Some(value) }
         override def dreturn(pc: Int, value: DomainValue) { returnedValue = Some(value) }

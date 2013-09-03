@@ -58,12 +58,11 @@ trait BaseDomain[I]
     with DefaultReturnAddressValues[I]
 
 /**
- * This is a ready to use domain that is primarily useful for testing and
- * debugging purposes.
+ * A complete definition of a domain except of the domain's identifier.
  *
  * @author Michael Eichberg
  */
-abstract class DefaultDomain[I]
+abstract class AbstractDefaultDomain[I]
     extends BaseDomain[I]
     with TypeLevelArrayInstructions
     with TypeLevelFieldAccessInstructions
@@ -72,6 +71,19 @@ abstract class DefaultDomain[I]
     with DoNothingOnReturnFromMethod
     with DefaultTypeHierarchyBinding
 
+/**
+ * This is a ready to use domain that is primarily useful for testing and
+ * debugging purposes.
+ *
+ * @author Michael Eichberg
+ */
+class DefaultDomain extends AbstractDefaultDomain[String] {
+
+    def identifier = "DefaultDomain"
+
+}
+
+class ConfigurableDefaultDomain[I](val identifier: I) extends AbstractDefaultDomain[I]
 
 
 
