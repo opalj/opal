@@ -176,14 +176,24 @@ trait DefaultTypeLevelReferenceValues[I]
 
             value match {
                 case other: ReferenceValue ⇒
-                    if (this.isNull == other.isNull && this.valueType == other.valueType) {
-                        if (this.pc == other.pc) {
+                    if (this.pc == other.pc) {
+                        // REMARK we are coalescing reference value information
+                        // both values have the same origin, i.e., we are effectively
+                        // merging two views (w.r.t. its nullness property and
+                        // the seen types) of the same value
+                        if (this.isNull == other.isNull && this.valueType == other.valueType) {
                             NoUpdate
                         } else {
-                            MetaInformationUpdate(
-                                SomeReferenceValue(mergePC, outer.valueType, outer.isNull)
-                            )
+                            StructuralUpdate(SomeReferenceValue(
+                                this.pc,
+                                this.valueType ++ other.valueType,
+                                outer.isNull.merge(other.isNull)
+                            ))
                         }
+                    } else if (this.isNull == other.isNull && this.valueType == other.valueType) {
+                        MetaInformationUpdate(
+                            SomeReferenceValue(mergePC, outer.valueType, outer.isNull)
+                        )
                     } else {
                         StructuralUpdate(
                             SomeReferenceValue(
@@ -290,20 +300,40 @@ trait DefaultTypeLevelReferenceValues[I]
     def SomeReferenceValue(
         pc: Int,
         valueType: Set[TypeBound],
-        isNull: Answer): DomainValue =
+        isNull: Answer): DomainValue = {
         new GenericReferenceValue(pc, valueType, isNull)
+    }
 
     def SomeReferenceValue(
         pc: Int,
         theType: ReferenceType,
-        isNull: Answer): DomainValue =
-        SomeReferenceValue(pc, Set[TypeBound](PreciseType(theType)), isNull)
+        isNull: Answer): DomainValue = {
+        isNull match {
+            case Yes     ⇒ nullValue(pc)
+            case No      ⇒ new NonNullReferenceValue(pc, PreciseType(theType))
+            case Unknown ⇒ SomeReferenceValue(pc, Set[TypeBound](PreciseType(theType)), isNull)
+        }
+    }
 
     // -----------------------------------------------------------------------------------
     //
     // HANDLING OF COMPUTATIONS
     //
     // -----------------------------------------------------------------------------------
+
+    override protected def givenValueOrNullPointerException(
+        pc: Int,
+        value: DomainValue): ComputationWithReturnValueOrNullPointerException = {
+
+        isNull(value) match {
+            case Yes ⇒ ThrowsException(newObject(pc, ObjectType.NullPointerException))
+            case No  ⇒ ComputedValue(value)
+            case Unknown ⇒ ComputedValueAndException(
+                value.asInstanceOf[ReferenceValue].updateIsNull(pc, No),
+                newObject(pc, ObjectType.NullPointerException)
+            )
+        }
+    }
 
     //
     // PUSH CONSTANT VALUE
