@@ -38,28 +38,59 @@ package ai
 /**
  * Defines the interface between the abstract interpreter and the module for
  * tracing the interpreter's behavior.
- * 
+ *
  * @author Michael Eichberg
  */
 trait AITracer {
 
-    def traceInstructionEvalution(
-        domain: Domain[_])(
-            pc: Int,
-            instruction: Instruction,
-            operands: List[domain.DomainValue],
-            locals: Array[domain.DomainValue]): Unit
+    def traceInstructionEvalution[D <: Domain[_]](
+        domain: D,
+        pc: Int,
+        instruction: Instruction,
+        operands: List[D#DomainValue],
+        locals: Array[D#DomainValue]): Unit
+
+    def abnormalReturn[D <: Domain[_]](pc: Int, exception: D#DomainValue)
 }
 
 trait ConsoleTracer extends AITracer {
-    
-    def traceInstructionEvalution(
-        domain: Domain[_])(
-            pc: Int,
-            instruction: Instruction,
-            operands: List[domain.DomainValue],
-            locals: Array[domain.DomainValue]): Unit = {
-        
-        println(pc+":"+instruction+" ["+operands.mkString(", ")+";"+locals.mkString(", ")+"]")
+
+    def traceInstructionEvalution[D <: Domain[_]](
+        domain: D,
+        pc: Int,
+        instruction: Instruction,
+        operands: List[D#DomainValue],
+        locals: Array[D#DomainValue]): Unit = {
+
+        println(
+            pc+":"+instruction+" [\n"+
+                operands.mkString("\toperands:\n\t\t", ",\n\t\t ", "\n\t;\n") +
+                locals.map(l ⇒ if (l eq null) "-" else l.toString).zipWithIndex.map(v ⇒ v._2+":"+v._1).
+                mkString("\tlocals:\n\t\t", ",\n\t\t", "\n")+"\t]")
     }
+
+    def abnormalReturn[D <: Domain[_]](pc: Int, exception: D#DomainValue) {
+        println(pc+": RETURN FROM METHOD DUE TO UNHANDLED EXCEPTION :"+exception)
+    }
+}
+
+object InterpretMethod {
+
+    object AI extends AI {
+
+        def isInterrupted = Thread.interrupted()
+
+        val tracer = Some(new ConsoleTracer {})
+    }
+
+    def main(args: Array[String]) {
+        val classFiles = reader.Java7Framework.ClassFiles(new java.io.File(args(0)))
+        val classFile = classFiles.map(_._1).find(_.thisClass.className == args(1)).get
+
+        val method = classFile.methods.find(_.name == args(2)).get
+        val result = AI(classFile, method, new domain.ConfigurableDefaultDomain((classFile, method)))
+        println(result)
+
+    }
+
 }
