@@ -43,8 +43,7 @@ package domain
  * at the type level. I.e., if you mix in this trait, all Integer,
  * Float, Long and Double values will be represented as such.
  */
-trait TypeLevelIntegerValues
-        extends ConstraintsHandlingHelper { this: Domain[_] ⇒
+trait TypeLevelIntegerValues { this: Domain[_] ⇒
 
     // -----------------------------------------------------------------------------------
     //
@@ -85,27 +84,6 @@ trait TypeLevelIntegerValues
     def isLessThanOrEqualTo(smallerOrEqualValue: DomainValue, equalOrLargerValue: DomainValue): Answer = {
         Unknown
     }
-
-    // -----------------------------------------------------------------------------------
-    //
-    // HANDLING OF CONSTRAINTS RELATED TO INTEGER VALUES
-    //
-    // -----------------------------------------------------------------------------------
-
-    def hasValue: SingleValueConstraintWithBound[Int] =
-        IgnoreSingleValueConstraintWithIntegerValueBound
-
-    def AreEqual: TwoValuesConstraint =
-        IgnoreTwoValuesConstraint
-
-    def AreNotEqual: TwoValuesConstraint =
-        IgnoreTwoValuesConstraint
-
-    def IsLessThan: TwoValuesConstraint =
-        IgnoreTwoValuesConstraint
-
-    def IsLessThanOrEqualTo: TwoValuesConstraint =
-        IgnoreTwoValuesConstraint
 
     // -----------------------------------------------------------------------------------
     //
@@ -252,7 +230,7 @@ trait DefaultTypeLevelIntegerValues[I]
     }
 }
 
-trait TypeLevelLongValues extends ConstraintsHandlingHelper { this: Domain[_] ⇒
+trait TypeLevelLongValues { this: Domain[_] ⇒
 
     // -----------------------------------------------------------------------------------
     //
@@ -329,7 +307,7 @@ trait DefaultTypeLevelLongValues[I]
     }
 }
 
-trait TypeLevelFloatValues extends ConstraintsHandlingHelper { this: Domain[_] ⇒
+trait TypeLevelFloatValues { this: Domain[_] ⇒
 
     // -----------------------------------------------------------------------------------
     //
@@ -404,7 +382,7 @@ trait DefaultTypeLevelFloatValues[I]
     }
 }
 
-trait TypeLevelDoubleValues extends ConstraintsHandlingHelper { this: Domain[_] ⇒
+trait TypeLevelDoubleValues { this: Domain[_] ⇒
 
     // -----------------------------------------------------------------------------------
     //
@@ -475,8 +453,7 @@ trait DefaultTypeLevelDoubleValues[I]
     }
 }
 
-trait TypeLevelConversionInstructions
-        extends ConstraintsHandlingHelper { this: Domain[_] ⇒
+trait TypeLevelConversionInstructions { this: Domain[_] ⇒
 
     // -----------------------------------------------------------------------------------
     //

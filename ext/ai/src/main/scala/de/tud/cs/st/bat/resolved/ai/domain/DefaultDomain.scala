@@ -41,8 +41,8 @@ package domain
  * not track the flow of concrete values. Given the very high level of abstraction,
  * an abstract interpretation using this domain typically terminates quickly.
  *
- * This domain can be used as a foundation/as an inspiration for building your 
- * own `Domain`. For example, it is useful to, e.g., track which types of values 
+ * This domain can be used as a foundation/as an inspiration for building your
+ * own `Domain`. For example, it is useful to, e.g., track which types of values
  * are actually created to calculate a more precise call graph.
  *
  * @author Michael Eichberg
@@ -71,8 +71,9 @@ abstract class AbstractDefaultDomain[I]
     with DefaultTypeHierarchyBinding
 
 /**
- * This is a ready to use domain that is primarily useful for testing and
- * debugging purposes.
+ * This is a ready to use domain which sets the domain identifier to "DefaultDomain".
+ *
+ * This domain is primarily useful for testing and debugging purposes.
  *
  * @author Michael Eichberg
  */
@@ -82,6 +83,11 @@ class DefaultDomain extends AbstractDefaultDomain[String] {
 
 }
 
+/**
+ * A domain with a configurable identifier.
+ *
+ * @author Michael Eichberg
+ */
 class ConfigurableDefaultDomain[I](val identifier: I) extends AbstractDefaultDomain[I]
 
 

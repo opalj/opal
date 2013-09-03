@@ -66,7 +66,8 @@ trait AITracer {
         otherLocals: D#Locals, result: Update[(D#Operands, D#Locals)])
 
     /**
-     * Called when the analyzed method throws an exception that is not catched.
+     * Called when the analyzed method throws an exception that is not catched within
+     * the method.
      */
     def abnormalReturn[D <: Domain[_]](pc: Int, exception: D#DomainValue)
 
@@ -139,7 +140,7 @@ trait ConsoleTracer extends AITracer {
 
 /**
  * A small interpreter that enables us to easily perform the abstract interpretation of a
- * method.
+ * specific method.
  *
  * @author Michael Eichberg
  */

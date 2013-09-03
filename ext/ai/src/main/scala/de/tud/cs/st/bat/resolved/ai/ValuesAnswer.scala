@@ -36,34 +36,45 @@ package resolved
 package ai
 
 /**
- * Encapsulates an answer of a domain w.r.t. the concrete value(s) captured by
+ * Encapsulates the domain's answer about the concrete value(s) captured by
  * a `DomainValue` (abstraction).
  *
  * @tparam V The type of the answer's value. Typically, a `DomainValue`,
- *       a `de.tud.cs.st.bat.resolved.Type` or a `Set` thereof.
+ *       a `de.tud.cs.st.bat.resolved.Type` or a `Set` thereof. If nothing is
+ *       known (i.e., the answer is `ValuesUnknown`) the type is `Nothing`.
  *
  * @author Michael Eichberg
  */
 sealed trait ValuesAnswer[+V] {
+
+    /**
+     * The captured values. Defined if and only if the answer is not `ValuesUnknown`.
+     * Hence, to get a value's answer it is recommended to use pattern matching.
+     */
     def values: V
 }
 
 /**
- * A domain's answer to a question w.r.t. a `DomainValue` that represents the 
+ * A domain's answer to a question about a `DomainValue` that represents the
  * values in such a way that the AI can interpret them.
+ *
+ * @author Michael Eichberg
  */
 final case class Values[+V](
     values: V)
         extends ValuesAnswer[V]
 
 /**
- * A domain's answer to a question w.r.t. a `DomainValue` where the captured values
+ * The answer to a question about a `DomainValue` where the captured values
  * (beyond the computational type) are not known.
+ *
+ *  @author Michael Eichberg
  */
-case object ValuesUnknown extends ValuesAnswer[Nothing] {
-    
+case object ValuesUnknown
+        extends ValuesAnswer[Nothing] {
+
     def values: Nothing = AIImplementationError("the values are unknown")
-    
+
 }
 
 

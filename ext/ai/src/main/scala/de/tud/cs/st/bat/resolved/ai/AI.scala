@@ -164,7 +164,7 @@ trait AI {
         val operandsArray = new Array[List[domain.DomainValue]](codeLength)
         val localsArray = new Array[Array[domain.DomainValue]](codeLength)
         if (!method.isStatic) {
-            val (updatedOperands, updatedLocals) = domain.IsNonNull(0, initialLocals(0), List.empty[DomainValue], initialLocals)
+            val (updatedOperands, updatedLocals) = domain.establishIsNonNull(0, initialLocals(0), List.empty[DomainValue], initialLocals)
             operandsArray(0) = updatedOperands
             localsArray(0) = updatedLocals
         } else {
@@ -390,7 +390,7 @@ trait AI {
                                                     true
                                                 case Unknown ⇒
                                                     val (updatedOperands, updatedLocals) =
-                                                        UpperBound(branchTarget, catchType.get, exceptionValue, nextOperands, locals)
+                                                        establishUpperBound(branchTarget, catchType.get, exceptionValue, nextOperands, locals)
                                                     gotoTarget(branchTarget, updatedOperands, updatedLocals)
                                                     false
                                             })
@@ -576,7 +576,7 @@ trait AI {
                         if (domain.isSomeValueInRange(index, key, key)) {
                             val branchTarget = pc + offset
                             val (updatedOperands, updatedLocals) =
-                                domain.hasValue(branchTarget, key, index, remainingOperands, locals)
+                                domain.establishValue(branchTarget, key, index, remainingOperands, locals)
                             gotoTarget(branchTarget, updatedOperands, updatedLocals)
                         }
                     }
@@ -595,7 +595,7 @@ trait AI {
                         if (domain.isSomeValueInRange(index, v, v)) {
                             val branchTarget = pc + tableswitch.jumpOffsets(v - low)
                             val (updatedOperands, updatedLocals) =
-                                domain.hasValue(branchTarget, v, index, remainingOperands, locals)
+                                domain.establishValue(branchTarget, v, index, remainingOperands, locals)
                             gotoTarget(branchTarget, updatedOperands, updatedLocals)
                         }
                         v = v + 1
@@ -635,7 +635,7 @@ trait AI {
                                     if (eh.catchType.isDefined) {
                                         eh.catchType.map(catchType ⇒ {
                                             val (updatedOperands, updatedLocals) =
-                                                UpperBound(branchTarget, catchType, exceptionValue, nextOperands, locals)
+                                                establishUpperBound(branchTarget, catchType, exceptionValue, nextOperands, locals)
                                             gotoTarget(branchTarget, updatedOperands, updatedLocals)
                                         })
                                     } else
@@ -663,7 +663,7 @@ trait AI {
                                                     true
                                                 case Unknown ⇒
                                                     val (updatedOperands, updatedLocals) =
-                                                        UpperBound(branchTarget, catchType.get, exceptionValue, nextOperands, locals)
+                                                        establishUpperBound(branchTarget, catchType.get, exceptionValue, nextOperands, locals)
                                                     gotoTarget(branchTarget, updatedOperands, updatedLocals)
                                                     false
                                             }

@@ -49,7 +49,7 @@ package ai
  * @tparam E The exception(s) that maybe thrown by the computation. Typically,
  *      a `DomainValue` which represents a reference value with type
  *      `java.lang.Throwable` or a subtype thereof. If multiple exceptions may be
- *      thrown it may also be a set of `DomainValues`.
+ *      thrown it may also be a set of `DomainValue`s.
  *
  * @author Michael Eichberg
  */

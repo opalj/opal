@@ -39,8 +39,7 @@ package domain
 /**
  * @author Michael Eichberg
  */
-trait TypeLevelReferenceValues
-        extends ConstraintsHandlingHelper { this: Domain[_] ⇒
+trait TypeLevelReferenceValues { this: Domain[_] ⇒
 
     /**
      * Abstracts over all values with computational type `reference`.
@@ -89,49 +88,45 @@ trait TypeLevelReferenceValues
     //
     // -----------------------------------------------------------------------------------
 
-    def IsNonNull: SingleValueConstraint = new SingleValueConstraint {
-        def apply(
-            pc: Int,
-            value: DomainValue,
-            operands: Operands,
-            locals: Locals): (Operands, Locals) = {
+    override def establishIsNonNull(
+        pc: Int,
+        value: DomainValue,
+        operands: Operands,
+        locals: Locals): (Operands, Locals) = {
 
-            value match {
-                case r: ReferenceValue ⇒ {
-                    val newReferenceValue = r.updateIsNull(pc, No)
-                    (
-                        operands.map(op ⇒ if (op eq value) newReferenceValue else op),
-                        locals.map(l ⇒ if (l eq value) newReferenceValue else l)
-                    )
-                }
+        value match {
+            case r: ReferenceValue ⇒ {
+                val newReferenceValue = r.updateIsNull(pc, No)
+                (
+                    operands.map(op ⇒ if (op eq value) newReferenceValue else op),
+                    locals.map(l ⇒ if (l eq value) newReferenceValue else l)
+                )
             }
         }
     }
 
-    def IsNull: SingleValueConstraint = new SingleValueConstraint {
-        def apply(
-            pc: Int,
-            value: DomainValue,
-            operands: Operands,
-            locals: Locals): (Operands, Locals) = {
+    override def establishIsNull(
+        pc: Int,
+        value: DomainValue,
+        operands: Operands,
+        locals: Locals): (Operands, Locals) = {
 
-            value match {
-                case r: ReferenceValue ⇒ {
-                    val newReferenceValue = r.updateIsNull(pc, Yes)
-                    (
-                        operands.map(op ⇒ if (op eq value) newReferenceValue else op),
-                        locals.map(l ⇒ if (l eq value) newReferenceValue else l)
-                    )
-                }
+        value match {
+            case r: ReferenceValue ⇒ {
+                val newReferenceValue = r.updateIsNull(pc, Yes)
+                (
+                    operands.map(op ⇒ if (op eq value) newReferenceValue else op),
+                    locals.map(l ⇒ if (l eq value) newReferenceValue else l)
+                )
             }
         }
     }
 
-    def AreEqualReferences: TwoValuesConstraint = IgnoreTwoValuesConstraint
-
-    def AreNotEqualReferences: TwoValuesConstraint = IgnoreTwoValuesConstraint
-
-    def UpperBound: SingleValueConstraintWithBound[ReferenceType] = IgnoreSingleValueConstraintWithReferenceTypeBound
+//    def AreEqualReferences: TwoValuesConstraint = IgnoreTwoValuesConstraint
+//
+//    def AreNotEqualReferences: TwoValuesConstraint = IgnoreTwoValuesConstraint
+//
+//    def UpperBound: SingleValueConstraintWithBound[ReferenceType] = IgnoreSingleValueConstraintWithReferenceTypeBound
 
 }
 

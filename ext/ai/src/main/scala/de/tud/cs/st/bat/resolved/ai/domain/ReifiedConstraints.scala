@@ -47,25 +47,31 @@ trait ReifiedConstraints[I] extends Domain[I] {
 
     trait ReifiedConstraint
 
+    def addConstraint(constraint: ReifiedConstraint)
+
     case class IsNullConstraint(pc: Int, value: Value) extends ReifiedConstraint
+
     case class IsNonNullConstraint(pc: Int, value: Value) extends ReifiedConstraint
 
-    case class SingleValueReifiedConstraint(
-        r: (Int, DomainValue) ⇒ ReifiedConstraint,
-        sv: ( /* pc :*/ Int, DomainValue, Operands, Locals) ⇒ (Operands, Locals))
-            extends SingleValueConstraint {
+    abstract override def establishIsNull(
+        pc: Int,
+        value: DomainValue,
+        operands: Operands,
+        locals: Locals): (Operands, Locals) = {
 
-        def apply(pc: Int, v: DomainValue, o: Operands, l: Locals) = {
-            addConstraint(r(pc, v))
-            sv(pc, v, o, l)
-        }
+        addConstraint(IsNullConstraint(pc, value))
+        super.establishIsNull(pc, value, operands, locals)
     }
 
-    abstract override def IsNull: SingleValueConstraint =
-        SingleValueReifiedConstraint(IsNullConstraint, super.IsNull)
+    abstract override def establishIsNonNull(
+        pc: Int,
+        value: DomainValue,
+        operands: Operands,
+        locals: Locals): (Operands, Locals) = {
 
-    abstract override def IsNonNull: SingleValueConstraint =
-        SingleValueReifiedConstraint(IsNonNullConstraint, super.IsNonNull)
+        addConstraint(IsNonNullConstraint(pc, value))
+        super.establishIsNonNull(pc, value, operands, locals)
+    }
 
     //    abstract override def UpperBound: SingleValueConstraintWithBound[ReferenceType]
     //
@@ -76,7 +82,6 @@ trait ReifiedConstraints[I] extends Domain[I] {
     //    abstract override def IsLessThan: TwoValuesConstraint
     //    abstract override def IsLessThanOrEqualTo: TwoValuesConstraint
 
-    def addConstraint(constraint: ReifiedConstraint)
 }
 
 

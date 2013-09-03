@@ -585,62 +585,138 @@ trait Domain[@specialized(Int, Long) I] {
      */
     type Locals = Array[DomainValue]
 
-    trait ValuesConstraint
+    type SingleValueConstraint = (( /* pc :*/ Int, DomainValue, Operands, Locals) ⇒ (Operands, Locals))
 
-    trait SingleValueConstraint extends (( /* pc :*/ Int, DomainValue, Operands, Locals) ⇒ (Operands, Locals)) with ValuesConstraint
-
-    trait SingleValueConstraintWithBound[Bound] extends (( /* pc :*/ Int, /*bound :*/ Bound, DomainValue, Operands, Locals) ⇒ (Operands, Locals)) with ValuesConstraint
-
-    trait TwoValuesConstraint extends (( /* pc :*/ Int, DomainValue, DomainValue, Operands, Locals) ⇒ (Operands, Locals)) with ValuesConstraint
-
-    final private[ai] class ChangedOrderTwoValuesConstraint(
-        f: () ⇒ TwoValuesConstraint)
-            extends TwoValuesConstraint {
-
-        def apply(pc: Int, value1: DomainValue, value2: DomainValue, operands: Operands, locals: Locals): (Operands, Locals) =
-            f()(pc, value2, value1, operands, locals)
-    }
-
-    final private[ai] class TwoValuesConstraintWithFixedSecondValue(
-        f: () ⇒ TwoValuesConstraint,
-        value2: DomainValue)
-            extends SingleValueConstraint {
-
-        def apply(pc: Int, value1: DomainValue, operands: Operands, locals: Locals): (Operands, Locals) =
-            f()(pc, value2, value1, operands, locals)
-    }
-
-    final private[ai] class TwoValuesConstraintWithFixedFirstValue(
-        f: () ⇒ TwoValuesConstraint,
-        value1: DomainValue)
-            extends SingleValueConstraint {
-
-        def apply(pc: Int, value2: DomainValue, operands: Operands, locals: Locals): (Operands, Locals) =
-            f()(pc, value2, value1, operands, locals)
-    }
+    type TwoValuesConstraint = (( /* pc :*/ Int, DomainValue, DomainValue, Operands, Locals) ⇒ (Operands, Locals))
 
     //
     // W.r.t Reference Values
-    def IsNull: SingleValueConstraint
-    def IsNonNull: SingleValueConstraint
-    def AreEqualReferences: TwoValuesConstraint
-    def AreNotEqualReferences: TwoValuesConstraint
-    def UpperBound: SingleValueConstraintWithBound[ReferenceType]
+    /**
+     * Called by BATAI when it establishes that the value is `null` or has to be
+     * `null`. E.g., after a comparison with `null` BATAI can establish that the
+     * value has to be `null` on one branch and that the value is not `null` on the
+     * other branch.
+     */
+    def establishIsNull(pc: Int,
+                        value: DomainValue,
+                        operands: Operands,
+                        locals: Locals): (Operands, Locals) =
+        (operands, locals)
+    val IsNull = establishIsNull _
+
+    /**
+     * Called by BATAI when it establishes that the value is guaranteed not to be `null`.
+     * E.g., after a comparison with `null` BATAI can establish that the
+     * value has to be `null` on one branch and that the value is not `null` on the
+     * other branch.
+     */
+    def establishIsNonNull(pc: Int,
+                           value: DomainValue,
+                           operands: Operands,
+                           locals: Locals): (Operands, Locals) =
+        (operands, locals)
+    val IsNonNull = establishIsNonNull _
+
+    /**
+     * Called by BATAI when two values were compared for reference equality and
+     * we are currently analyzing the branch where the comparison succeeded.
+     */
+    def establishAreEqualReferences(pc: Int,
+                                    value1: DomainValue,
+                                    value2: DomainValue,
+                                    operands: Operands,
+                                    locals: Locals): (Operands, Locals) =
+        (operands, locals)
+    val AreEqualReferences = establishAreEqualReferences _
+
+    def establishAreNotEqualReferences(pc: Int,
+                                       value1: DomainValue,
+                                       value2: DomainValue,
+                                       operands: Operands,
+                                       locals: Locals): (Operands, Locals) =
+        (operands, locals)
+    val AreNotEqualReferences = establishAreNotEqualReferences _
+
+    def establishUpperBound(pc: Int,
+                            bound: ReferenceType,
+                            value: DomainValue,
+                            operands: Operands,
+                            locals: Locals): (Operands, Locals) =
+        (operands, locals)
+
     //
     // W.r.t. Integer values
-    def hasValue: SingleValueConstraintWithBound[Int]
-    def AreEqual: TwoValuesConstraint
-    def AreNotEqual: TwoValuesConstraint
-    def IsLessThan: TwoValuesConstraint
-    def IsLessThanOrEqualTo: TwoValuesConstraint
-    protected[ai] val IsGreaterThan: TwoValuesConstraint = new ChangedOrderTwoValuesConstraint(IsLessThan _)
-    protected[ai] val IsGreaterThanOrEqualTo: TwoValuesConstraint = new ChangedOrderTwoValuesConstraint(IsLessThanOrEqualTo _)
-    protected[ai] val Is0: SingleValueConstraint = new TwoValuesConstraintWithFixedSecondValue(AreEqual _, IntegerConstant0)
-    protected[ai] val IsNot0: SingleValueConstraint = new TwoValuesConstraintWithFixedSecondValue(AreNotEqual _, IntegerConstant0)
-    protected[ai] val IsLessThan0: SingleValueConstraint = new TwoValuesConstraintWithFixedSecondValue(IsLessThan _, IntegerConstant0)
-    protected[ai] val IsLessThanOrEqualTo0: SingleValueConstraint = new TwoValuesConstraintWithFixedSecondValue(IsLessThanOrEqualTo _, IntegerConstant0)
-    protected[ai] val IsGreaterThan0: SingleValueConstraint = new TwoValuesConstraintWithFixedFirstValue(IsLessThan _, IntegerConstant0)
-    protected[ai] val IsGreaterThanOrEqualTo0: SingleValueConstraint = new TwoValuesConstraintWithFixedFirstValue(IsLessThanOrEqualTo _, IntegerConstant0)
+
+    def establishValue(pc: Int,
+                       theValue: Int,
+                       value: DomainValue,
+                       operands: Operands,
+                       locals: Locals): (Operands, Locals) =
+        (operands, locals)
+
+    def establishAreEqual(pc: Int,
+                          value1: DomainValue,
+                          value2: DomainValue,
+                          operands: Operands,
+                          locals: Locals): (Operands, Locals) =
+        (operands, locals)
+    val AreEqual = establishAreEqual _
+
+    def establishAreNotEqual(pc: Int,
+                             value1: DomainValue,
+                             value2: DomainValue,
+                             operands: Operands,
+                             locals: Locals): (Operands, Locals) =
+        (operands, locals)
+    val AreNotEqual = establishAreNotEqual _
+
+    def establishIsLessThan(pc: Int,
+                            value1: DomainValue,
+                            value2: DomainValue,
+                            operands: Operands,
+                            locals: Locals): (Operands, Locals) =
+        (operands, locals)
+    val IsLessThan = establishIsLessThan _
+
+    def establishIsLessThanOrEqualTo(pc: Int,
+                                     value1: DomainValue,
+                                     value2: DomainValue,
+                                     operands: Operands,
+                                     locals: Locals): (Operands, Locals) =
+        (operands, locals)
+    val IsLessThanOrEqualTo = establishIsLessThanOrEqualTo _
+
+    protected[ai] val IsGreaterThan: TwoValuesConstraint =
+        (pc: Int, value1: DomainValue, value2: DomainValue, operands: Operands, locals: Locals) ⇒
+            establishIsLessThan(pc, value2, value1, operands, locals)
+
+    protected[ai] val IsGreaterThanOrEqualTo: TwoValuesConstraint =
+        (pc: Int, value1: DomainValue, value2: DomainValue, operands: Operands, locals: Locals) ⇒
+            establishIsLessThanOrEqualTo(pc, value2, value1, operands, locals)
+
+    protected[ai] val Is0: SingleValueConstraint =
+        (pc: Int, value: DomainValue, operands: Operands, locals: Locals) ⇒
+            establishAreEqual(pc, value, IntegerConstant0, operands, locals)
+
+    protected[ai] val IsNot0: SingleValueConstraint =
+        (pc: Int, value: DomainValue, operands: Operands, locals: Locals) ⇒
+            establishAreNotEqual(pc, value, IntegerConstant0, operands, locals)
+
+    protected[ai] val IsLessThan0: SingleValueConstraint =
+        (pc: Int, value: DomainValue, operands: Operands, locals: Locals) ⇒
+            establishIsLessThan(pc, value, IntegerConstant0, operands, locals)
+
+    protected[ai] val IsLessThanOrEqualTo0: SingleValueConstraint =
+        (pc: Int, value: DomainValue, operands: Operands, locals: Locals) ⇒
+            establishIsLessThanOrEqualTo(pc, value, IntegerConstant0, operands, locals)
+
+    protected[ai] val IsGreaterThan0: SingleValueConstraint =
+        (pc: Int, value: DomainValue, operands: Operands, locals: Locals) ⇒
+            establishIsLessThan(pc, IntegerConstant0, value, operands, locals)
+
+    protected[ai] val IsGreaterThanOrEqualTo0: SingleValueConstraint =
+        (pc: Int, value: DomainValue, operands: Operands, locals: Locals) ⇒
+            establishIsLessThanOrEqualTo(pc, IntegerConstant0, value, operands, locals)
 
     // -----------------------------------------------------------------------------------
     //
