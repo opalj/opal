@@ -65,12 +65,13 @@ trait DefaultValueBinding[I] extends Domain[I] {
 
     import language.existentials
 
-    case class PreciseType private (valueTypes: Set[_ <: Type]) extends TypeBound
-
-    object PreciseType {
-        def apply(valueType: Type): PreciseType =
-            new PreciseType(Set.empty[Type] + valueType)
+    case class PreciseType(valueType: Type) extends TypeBound {
+        def foreach[U](f: Type ⇒ U): Unit = f(valueType)
+        override def nonEmpty = true
+        override def size = 1
+        override def head = valueType
     }
+
 }
 
 

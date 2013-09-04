@@ -36,7 +36,7 @@ package resolved
 package ai
 package domain
 
-import de.tud.cs.st.util.{Answer,Yes,No,Unknown}
+import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 /**
  * @author Michael Eichberg
@@ -139,10 +139,6 @@ trait DefaultTypeLevelReferenceValues[I]
     //
     //
 
-    case class UnionType(valueTypes: Set[_ <: ReferenceType]) extends TypeBound {
-        assume(valueTypes.size >= 2, "a union type with only one bound is meaningless")
-    }
-
     /**
      * @note Subclasses are not expected to add further state. If so, the implementation
      * of equals and hashCode need to be revised.
@@ -215,7 +211,7 @@ trait DefaultTypeLevelReferenceValues[I]
         override def toString: String =
             "ReferenceValue(isNull="+isNull+"; pc="+pc+"; types="+
                 valueType.map(
-                    _.valueTypes.map(_.toJava).mkString("{", ", ", "}")
+                    _.map(_.toJava).mkString("{", ", ", "}")
                 ).mkString("{", ", ", "}")+")"
     }
 
@@ -325,7 +321,7 @@ trait DefaultTypeLevelReferenceValues[I]
         }
     }
 
-       //
+    //
     // CREATE ARRAY
     //
     def newarray(pc: Int,
@@ -347,22 +343,17 @@ trait DefaultTypeLevelReferenceValues[I]
     // LOAD FROM AND STORE VALUE IN ARRAYS
     //
     def aaload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
-        //        types(arrayref) match {
-        //    case Values(values) => values. 
-        //    case _ => 
-        AIImplementationError("aaload - tracking of array type failed; array contains reference values of unknown type")
-    //}
-
-    //        arrayref match {
-    //            case TypedValue(ArrayType(componentType)) ⇒
-    //                ComputedValue(TypedValue(componentType))
-    //            case _ ⇒
-    //                AIImplementationError("aaload - tracking of array type failed; array contains reference values of unknown type")
-    //        }
+        types(arrayref).values match {
+            case SingletonSet(SingletonTypeBound(ArrayType(componentType))) ⇒
+                ComputedValue(TypedValue(componentType))
+            case _ ⇒ AIImplementationError(
+                "cannot determine the type of the array's content, the array may contain either booleans or byte values: "+arrayref
+            )
+        }
 
     def aastore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
         ComputationWithSideEffectOnly
-    
+
     //
     // PUSH CONSTANT VALUE
     //

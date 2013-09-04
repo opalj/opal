@@ -466,18 +466,19 @@ trait Domain[@specialized(Int, Long) I] {
      * whether the domain makes it possible to distinguish between precise types and
      * type bounds is at the sole discretion of the domain.
      */
-    trait TypeBound { // extends Iterable[_ <: Type]
-        // TODO replace by something like: def foreach
-        def valueTypes: Set[_ <: Type]
-    }
-
-    object TypeBound {
-        def unapply(tb: TypeBound) = Some(tb.valueTypes)
-    }
+    trait TypeBound extends Traversable[Type]
 
     /**
      * Defines an extractor for a set that (is expected to) contain a single element.
      */
+    object SingletonTypeBound {
+        def unapply(typeBound: TypeBound): Option[Type] =
+            if (typeBound.size == 1)
+                Some(typeBound.head)
+            else
+                AIImplementationError("the given type has multiple bounds: "+typeBound)
+    }
+
     object SingletonSet {
         def unapply[T](set: Set[T]): Option[T] =
             if (set.size == 1)

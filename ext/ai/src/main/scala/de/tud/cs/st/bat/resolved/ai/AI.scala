@@ -382,7 +382,7 @@ trait AI {
                                 case ValuesUnknown ⇒
                                     AIImplementationError("handleException requires concrete exception values")
                                 case Values(exceptions) ⇒
-                                    exceptions.forall(_.valueTypes.forall(
+                                    exceptions.forall(_.forall(
                                         (exceptionType: Type) ⇒
                                             domain.isSubtypeOf(exceptionType.asObjectType, catchType.get) match {
                                                 case No ⇒
@@ -646,7 +646,7 @@ trait AI {
                                 abnormalReturn(pc, exceptionValue)
 
                             case Values(exceptionTypes) ⇒
-                                val isHandled = exceptionTypes.forall(_.valueTypes.forall(exceptionType ⇒
+                                val isHandled = exceptionTypes.forall(_.forall(exceptionType ⇒
                                     // find the exception handler that matches the given 
                                     // exception
                                     code.exceptionHandlersFor(pc).exists(eh ⇒ {
