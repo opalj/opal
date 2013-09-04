@@ -46,6 +46,8 @@ import scala.util.control.ControlThrowable
 
 /**
  * Class that can be used to start the interpreter for some given class files.
+ *
+ * @author Michael Eichberg
  */
 object InterpretMethods {
     import de.tud.cs.st.util.debug._

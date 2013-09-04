@@ -129,8 +129,6 @@ trait DefaultTypeLevelReferenceValues[I]
         extends DefaultValueBinding[I]
         with TypeLevelReferenceValues { domain ⇒
 
-    import language.existentials
-
     def intValuesRange(pc: Int, start: Int, end: Int): DomainValue
 
     //
@@ -138,6 +136,7 @@ trait DefaultTypeLevelReferenceValues[I]
     // HANDLING OF REFERENCE VALUES
     //
     //
+    
 
     /**
      * @note Subclasses are not expected to add further state. If so, the implementation
@@ -147,8 +146,18 @@ trait DefaultTypeLevelReferenceValues[I]
 
         def pc: Int
 
+        /**
+         * Basically, we have to distinguish two situations:
+         *
+         * 1. a value that may have (depending on the control flow) different
+         *    independent types
+         * 2. a type for which we have multiple bounds; i.e., we don't know the precise
+         *    type, but we know (e.g., due to typechecks) that it (has to) implements
+         *    multiple interfaces.
+         *
+         */
         type ValueType = Set[TypeBound]
-        def valueType: Set[TypeBound] // Basically, we have to distinguish two situations: (1) a value that may have (depending on the control flow) different independent types (2) a type for which we have multiple bounds (i.e., we don't know the precise type, but we know (e.g., due to typechecks) that it implements multiple interfaces) 
+        def valueType: ValueType
 
         def isNull: Answer
         def updateIsNull(pc: Int, isNull: Answer): ReferenceValue =
@@ -163,7 +172,7 @@ trait DefaultTypeLevelReferenceValues[I]
             value match {
                 case other: ReferenceValue ⇒
                     if (this.pc == other.pc) {
-                        // REMARK we are coalescing reference value information
+                        // REMARK we are coalescing reference value information if
                         // both values have the same origin, i.e., we are effectively
                         // merging two views (w.r.t. its nullness property and
                         // the seen types) of the same value
