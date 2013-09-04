@@ -36,7 +36,7 @@ package util
 import java.io.PrintStream
 
 /**
- * Overrides the default print and println methods provided by scala such that
+ * Overrides the default `print` and `println` methods provided by Scala such that
  * always the UTF-8 charset is used and not the platform's (the JDK's) default.
  *
  * @author Michael Eichberg

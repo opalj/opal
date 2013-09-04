@@ -90,5 +90,37 @@ class DefaultDomain extends AbstractDefaultDomain[String] {
  */
 class ConfigurableDefaultDomain[I](val identifier: I) extends AbstractDefaultDomain[I]
 
+class RecordingDomain[I](identifier: I)
+        extends ConfigurableDefaultDomain[I](identifier)
+        with ReifiedConstraints[I] {
 
+    var returnedValues: Set[(String, Value)] = Set.empty
+    override def areturn(pc: Int, value: DomainValue) {
+        returnedValues += (("areturn", value))
+    }
+    override def dreturn(pc: Int, value: DomainValue) {
+        returnedValues += (("dreturn", value))
+    }
+    override def freturn(pc: Int, value: DomainValue) {
+        returnedValues += (("freturn", value))
+    }
+    override def ireturn(pc: Int, value: DomainValue) {
+        returnedValues += (("ireturn", value))
+    }
+    override def lreturn(pc: Int, value: DomainValue) {
+        returnedValues += (("lreturn", value))
+    }
+    override def returnVoid(pc: Int) {
+        returnedValues += (("return", null))
+    }
+
+    override def abnormalReturn(pc: Int, exception: DomainValue) {
+        returnedValues += (("throws", exception))
+    }
+
+    var constraints: Set[ReifiedConstraint] = Set.empty
+    def addConstraint(constraint: ReifiedConstraint) {
+        constraints += constraint
+    }
+}
 

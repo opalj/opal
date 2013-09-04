@@ -37,56 +37,27 @@ package ai
 package domain
 
 /**
- * (BY default we ignore ArrayIndexOutOfBoundsExceptions and NegativeArraySizeExceptions.)
+ * Basic implementations of methods for loading and storing values in/from arrays.
+ *
+ * (BY default we ignore `ArrayStoreExceptions`, `ArrayIndexOutOfBoundsExceptions`
+ * and `NegativeArraySizeExceptions`.)
  *
  * @author Michael Eichberg
  */
 trait TypeLevelArrayInstructions { this: Domain[_] ⇒
 
     //
-    // CREATE ARRAY
+    // STORING AND LOADING VALUES FROM ARRAYS
     //
-    def newarray(pc: Int,
-                 count: DomainValue,
-                 componentType: FieldType): NewArrayOrNegativeArraySizeException =
-        //ComputedValueAndException(TypedValue(ArrayType(componentType)), TypedValue(ObjectType.ArithmeticException))
-        ComputedValue(TypedValue(ArrayType(componentType)))
-
-    /**
-     * @note The componentType may be (again) an array type.
-     */
-    def multianewarray(pc: Int,
-                       counts: List[DomainValue],
-                       arrayType: ArrayType): NewArrayOrNegativeArraySizeException =
-        //ComputedValueAndException(TypedValue(arrayType), TypedValue(ObjectType.ArithmeticException))
-        ComputedValue(TypedValue(arrayType))
-
-    //
-    // LOAD FROM AND STORE VALUE IN ARRAYS
-    //
-    def aaload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
-        //        types(arrayref) match {
-        //    case Values(values) => values. 
-        //    case _ => 
-        AIImplementationError("aaload - tracking of array type failed; array contains reference values of unknown type")
-    //}
-
-    //        arrayref match {
-    //            case TypedValue(ArrayType(componentType)) ⇒
-    //                ComputedValue(TypedValue(componentType))
-    //            case _ ⇒
-    //                AIImplementationError("aaload - tracking of array type failed; array contains reference values of unknown type")
-    //        }
-
-    def aastore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
-        ComputationWithSideEffectOnly
 
     def baload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
-        //        arrayref match { // byte or boolean load...
-        //            case TypedValue(ArrayType(componentType)) ⇒ ComputedValue(TypedValue(componentType))
-        //            case _ ⇒
-        AIImplementationError("baload - tracking of array type failed; array may contain booleans or byte values")
-    //        }
+        types(arrayref).values.head match {
+            case TypeBound(SingletonSet(ArrayType(componentType))) ⇒
+                ComputedValue(TypedValue(componentType))
+            case _ ⇒ AIImplementationError(
+                "cannot determine the type of the array's content, the array may contain either booleans or byte values: "+arrayref
+            )
+        }
 
     def bastore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
         ComputationWithSideEffectOnly

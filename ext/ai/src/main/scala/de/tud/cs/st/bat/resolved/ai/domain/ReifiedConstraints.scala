@@ -37,7 +37,7 @@ package ai
 package domain
 
 /**
- * Mixin this trait if you want to reify the stated constraints. This is particular
+ * Mixin this trait if you want to reify the stated constraints. This is particularly
  * useful for testing and debugging purposes.
  *
  * @todo Currently we only refine Is(Non)NullConstraints and nothing else...
@@ -49,9 +49,15 @@ trait ReifiedConstraints[I] extends Domain[I] {
 
     def addConstraint(constraint: ReifiedConstraint)
 
-    case class IsNullConstraint(pc: Int, value: Value) extends ReifiedConstraint
+    case class ReifiedSingleValueConstraint(
+        pc: Int,
+        value: DomainValue,
+        constraint: String) extends ReifiedConstraint
 
-    case class IsNonNullConstraint(pc: Int, value: Value) extends ReifiedConstraint
+    case class ReifiedTwoValuesConstraint(
+        pc: Int,
+        value1: DomainValue, value2: DomainValue,
+        constraint: String) extends ReifiedConstraint
 
     abstract override def establishIsNull(
         pc: Int,
@@ -59,7 +65,7 @@ trait ReifiedConstraints[I] extends Domain[I] {
         operands: Operands,
         locals: Locals): (Operands, Locals) = {
 
-        addConstraint(IsNullConstraint(pc, value))
+        addConstraint(ReifiedSingleValueConstraint(pc, value, "is null"))
         super.establishIsNull(pc, value, operands, locals)
     }
 
@@ -69,18 +75,92 @@ trait ReifiedConstraints[I] extends Domain[I] {
         operands: Operands,
         locals: Locals): (Operands, Locals) = {
 
-        addConstraint(IsNonNullConstraint(pc, value))
+        addConstraint(ReifiedSingleValueConstraint(pc, value, "is not null"))
         super.establishIsNonNull(pc, value, operands, locals)
     }
 
-    //    abstract override def UpperBound: SingleValueConstraintWithBound[ReferenceType]
+    abstract override def establishAreEqualReferences(pc: Int,
+                                                      value1: DomainValue,
+                                                      value2: DomainValue,
+                                                      operands: Operands,
+                                                      locals: Locals): (Operands, Locals) = {
+
+        addConstraint(ReifiedTwoValuesConstraint(pc, value1, value2, "equals"))
+        super.establishAreEqualReferences(pc, value1, value2, operands, locals)
+    }
+
+    abstract override def establishAreNotEqualReferences(pc: Int,
+                                                         value1: DomainValue,
+                                                         value2: DomainValue,
+                                                         operands: Operands,
+                                                         locals: Locals): (Operands, Locals) = {
+
+        addConstraint(ReifiedTwoValuesConstraint(pc, value1, value2, "is not equal to"))
+        super.establishAreNotEqualReferences(pc, value1, value2, operands, locals)
+    }
+
+    abstract override def establishUpperBound(pc: Int,
+                                              bound: ReferenceType,
+                                              value: DomainValue,
+                                              operands: Operands,
+                                              locals: Locals): (Operands, Locals) = {
+
+        addConstraint(ReifiedSingleValueConstraint(pc, value, "is subtype of "+bound.toJava))
+        super.establishUpperBound(pc, bound, value, operands, locals)
+    }
+
     //
-    //    abstract override def AreEqualReferences: TwoValuesConstraint
-    //    abstract override def AreNotEqualReferences: TwoValuesConstraint
-    //    abstract override def AreEqualIntegers: TwoValuesConstraint
-    //    abstract override def AreNotEqualIntegers: TwoValuesConstraint
-    //    abstract override def IsLessThan: TwoValuesConstraint
-    //    abstract override def IsLessThanOrEqualTo: TwoValuesConstraint
+    // W.r.t. Integer values
+
+    abstract override def establishValue(pc: Int,
+                                         theValue: Int,
+                                         value: DomainValue,
+                                         operands: Operands,
+                                         locals: Locals): (Operands, Locals) = {
+
+        addConstraint(ReifiedSingleValueConstraint(pc, value, "is "+theValue))
+        super.establishValue(pc, theValue, value, operands, locals)
+    }
+
+    abstract override def establishAreEqual(pc: Int,
+                                            value1: DomainValue,
+                                            value2: DomainValue,
+                                            operands: Operands,
+                                            locals: Locals): (Operands, Locals) = {
+
+        addConstraint(ReifiedTwoValuesConstraint(pc, value1, value2, " == "))
+        super.establishAreEqual(pc, value1, value2, operands, locals)
+    }
+
+    abstract override def establishAreNotEqual(pc: Int,
+                                               value1: DomainValue,
+                                               value2: DomainValue,
+                                               operands: Operands,
+                                               locals: Locals): (Operands, Locals) = {
+
+        addConstraint(ReifiedTwoValuesConstraint(pc, value1, value2, " != "))
+        super.establishAreNotEqual(pc, value1, value2, operands, locals)
+    }
+
+    abstract override def establishIsLessThan(pc: Int,
+                                              value1: DomainValue,
+                                              value2: DomainValue,
+                                              operands: Operands,
+                                              locals: Locals): (Operands, Locals) = {
+
+        addConstraint(ReifiedTwoValuesConstraint(pc, value1, value2, " < "))
+        super.establishIsLessThan(pc, value1, value2, operands, locals)
+    }
+
+    abstract override def establishIsLessThanOrEqualTo(pc: Int,
+                                                       value1: DomainValue,
+                                                       value2: DomainValue,
+                                                       operands: Operands,
+                                                       locals: Locals): (Operands, Locals) = {
+
+        addConstraint(ReifiedTwoValuesConstraint(pc, value1, value2, " <= "))
+        super.establishIsLessThanOrEqualTo(pc, value1, value2, operands, locals)
+    }
 
 }
 

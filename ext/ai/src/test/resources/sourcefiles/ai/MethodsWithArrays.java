@@ -43,6 +43,18 @@ package ai;
  */
 public class MethodsWithArrays {
 
+    public static byte byteArrays(byte[] values) {
+        int length = values.length;
+        values[length / 2] = 10;
+        return values[length - 1];
+    }
+
+    public static boolean booleanArrays(boolean[] values) {
+        int length = values.length;
+        values[length / 2] = false;
+        return values[length - 1];
+    }
+
     //
     // COMPARISON
 

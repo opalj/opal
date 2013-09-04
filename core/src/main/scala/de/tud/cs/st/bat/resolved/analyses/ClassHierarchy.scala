@@ -36,6 +36,7 @@ package resolved
 package analyses
 
 import util.graphs.{ Node, toDot }
+import util.{ Answer, Yes, No, Unknown }
 
 /**
  * Represents the visible part of a project's class hierarchy. The visible part of a project's
@@ -83,17 +84,18 @@ class ClassHierarchy(
     }
 
     /**
-     * Calculates this project's root types. The set of a Java project's root types in general consists of
-     * the single class `java.lang.Object`. However, if an analysis only analyzes a subset of all classes
-     * of an application then it may be possible that multiple root types exist. E.g., if you define a
-     * class (not interface!) that inherits from some not-analyzed library class then it will be considered
-     * as a root type.
+     * Calculates this project's root types. The set of a Java project's root types
+     * generally only contains the single class `java.lang.Object`. However, if an
+     * analysis only analyzes a subset of all classes of an application then it may
+     * be possible that multiple root types exist. E.g., if you define a
+     * class (not interface!) that inherits from some not-analyzed library class then
+     * it will be considered as a root type.
      *
-     * ==Note==
-     * This set contains all types seem by the class hierarchy analysis, but it is not necessarily the case
-     * that the defining class file is available (`Project.classes("SOME ROOT TYPE")`). Imagine that you
-     * just analyze an application's class files. In this case it is extremely likely that you will have
-     * seen the type `java.lang.Object`, however the class file will not be available.
+     * @note This set contains all types seen by the class hierarchy analysis, but
+     *      it is not necessarily the case that the defining class file is available
+     *      (`Project.classes("SOME ROOT TYPE")`). Imagine that you just analyze an
+     *      application's class files. In this case it is extremely likely that you will have
+     *      seen the type `java.lang.Object`, however the class file will not be available.
      */
     def rootTypes: Iterable[ObjectType] = {
         superclasses.view.filter((_: (ObjectType, Set[ObjectType]))._2.isEmpty).map(_._1)
@@ -121,7 +123,7 @@ class ClassHierarchy(
         subclasses.get(objectType)
 
     /**
-     * The set of all classes (and interfaces) that(directly or indirectly)
+     * The set of all classes (and interfaces) that (directly or indirectly)
      * inherit from the given type.
      *
      * @see ClassHierarchy.subclasses(ObjectType) for general remarks about the
@@ -133,7 +135,7 @@ class ClassHierarchy(
         theSubclasses.map(t ⇒
             for {
                 subclass ← theSubclasses.get
-                subtype ← subtypes(subclass).getOrElse(Set()) + subclass
+                subtype ← subtypes(subclass).getOrElse(Set.empty) + subclass
             } yield subtype
         )
     }
@@ -143,13 +145,13 @@ class ClassHierarchy(
      *
      * If we have not (yet) seen the class file of the given type – i.e., the
      * update method was not yet called with the class file that implements the
-     * given type as a parameter –  None is returned. Hence, None indicates
+     * given type as a parameter – `None` is returned. Hence, `None` indicates
      * that we know nothing about the superclasses of the given type. This is
      * in particular the case if you analyze a project's class files but
      * do not also analyze all used libraries.
      *
-     * The empty set will only be returned, if the class file of "java.lang.Object"
-     * was analyzed, and the given object type represents "java.lang.Object".
+     * The empty set will only be returned, if the class file of `java.lang.Object`
+     * was analyzed, and the given object type represents `java.lang.Object`.
      * Recall, that interfaces always (implicitly) inherit from java.lang.Object.
      *
      * @return The direct supertypes of the given type.
@@ -181,7 +183,7 @@ class ClassHierarchy(
             // are not able to identify that the current type is actually
             // a subtype of the given type (supertype) and if we find a
             // type for which we have not seen the class file, the
-            // analysis is considered to be not conclusive.
+            // analysis is considered to be non-conclusive.
             var nonConclusive = false;
             for {
                 superclasses ← superclasses.get(currentType.asObjectType).toList
@@ -287,6 +289,11 @@ object ClassHierarchy {
     }
 }
 
+/**
+ * Creates a `dot` (Graphviz) based representation of the class hierarchy.
+ *
+ * @author Michael Eichberg
+ */
 object ClassHierarchyVisualizer {
 
     def main(args: Array[String]) {
@@ -305,6 +312,16 @@ object ClassHierarchyVisualizer {
     }
 }
 
+/**
+ * Writes out (a subset of) the class hierarchy in the format used by the class hierarchy
+ * to create the pre-initialized class hierarchy.
+ * The format is:
+ * <pre>
+ * SUPERTYPE &gt; SUBTYPE [", " SUBTYPE]*
+ * </pre>
+ *
+ * @author Michael Eichberg
+ */
 object ClassHierarchyExtractor {
 
     def main(args: Array[String]) {

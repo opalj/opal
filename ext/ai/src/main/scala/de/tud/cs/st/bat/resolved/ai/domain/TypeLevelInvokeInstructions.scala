@@ -36,6 +36,8 @@ package resolved
 package ai
 package domain
 
+import de.tud.cs.st.util.{Answer,Yes,No,Unknown}
+
 /**
  *
  * @author Michael Eichberg

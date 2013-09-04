@@ -35,6 +35,8 @@ package bat
 package resolved
 package ai
 
+import de.tud.cs.st.util.{Answer,Yes,No,Unknown}
+
 /**
  * A highly-configurable abstract interpreter for BAT's resolved
  * representation of Java bytecode.

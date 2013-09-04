@@ -35,10 +35,9 @@ package bat
 package resolved
 package ai
 
-import reflect.ClassTag
-import collection.immutable.Range
+import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
-import language.higherKinds
+import reflect.ClassTag
 
 /**
  * A domain contains all information about a program's types and values and determines
@@ -266,7 +265,9 @@ trait Domain[@specialized(Int, Long) I] {
      * This method is solely defined to catch implementation errors early on.
      */
     final def StructuralUpdateNoLegalValue: StructuralUpdate[Nothing] =
-        BATError("the merging of a value with an incompatible value always has to be a MetaInformationUpdate and not more")
+        AIImplementationError(
+            "the merging of a value with an incompatible value "+
+                "always has to be a MetaInformationUpdate and not more")
 
     /**
      * Represents a set of concrete values that store return addresses (i.e., a program
@@ -289,7 +290,8 @@ trait Domain[@specialized(Int, Long) I] {
         }
 
         type ValueType = Nothing
-        def valueType = AIImplementationError("ReturnAddressValues are not associated with a type")
+        def valueType = AIImplementationError(
+            "ReturnAddressValues are not associated with a type")
 
         final def computationalType: ComputationalType = ComputationalTypeReturnAddress
 
@@ -307,11 +309,11 @@ trait Domain[@specialized(Int, Long) I] {
      */
     type DomainReturnAddressValue <: ReturnAddressValue with DomainValue
     /**
-     * Factory method to create instances of `ReturnAddressValue`s
+     * Factory method to create instances of `ReturnAddressValue`s.
      */
     def ReturnAddressValue(addresses: Set[Int]): DomainReturnAddressValue
     /**
-     * Factory method to create instances of `ReturnAddressValue`s
+     * Factory method to create an instance of a `ReturnAddressValue`.
      */
     def ReturnAddressValue(address: Int): DomainReturnAddressValue =
         ReturnAddressValue(Set(address))
@@ -324,10 +326,10 @@ trait Domain[@specialized(Int, Long) I] {
     }
 
     /**
-     * Factory method to create `TypedValue`s; i.e., values for which we have (more)
-     * precise type information but no value or location information. I.e., if a `TypedValue`
-     * represents a reference type it may be possible that the value is `null`, but
-     * such knowledge ist not available.
+     * Factory method to create domain values with a specific type. I.e., values for
+     * which we have some type information but no value or location information.
+     * For example, if a `TypedValue` represents a reference type it may be possible
+     * that the value is `null`, but such knowledge is not available.
      */
     def TypedValue(valueType: Type): DomainValue = {
         val newValue = (valueType match {
@@ -350,13 +352,38 @@ trait Domain[@specialized(Int, Long) I] {
      * Represents some boolean value, where the source of the value is not known.
      */
     def SomeBooleanValue: DomainValue
+
+    /**
+     * Represents some byte value, where the source of the value is not known.
+     */
     def SomeByteValue: DomainValue
+    /**
+     * Represents some short value, where the source of the value is not known.
+     */
     def SomeShortValue: DomainValue
+    /**
+     * Represents some char value, where the source of the value is not known.
+     */
     def SomeCharValue: DomainValue
+    /**
+     * Represents some integer value, where the source of the value is not known.
+     */
     def SomeIntegerValue: DomainValue
+    /**
+     * Represents some float value, where the source of the value is not known.
+     */
     def SomeFloatValue: DomainValue
+    /**
+     * Represents some long value, where the source of the value is not known.
+     */
     def SomeLongValue: DomainValue
+    /**
+     * Represents some double value, where the source of the value is not known.
+     */
     def SomeDoubleValue: DomainValue
+    /**
+     * Represents some reference value, where the source of the value is not known.
+     */
     def SomeReferenceValue(referenceType: ReferenceType): DomainValue
 
     /**
@@ -380,12 +407,14 @@ trait Domain[@specialized(Int, Long) I] {
      * For example, if the given value captures all positive integer values and the
      * specified range is [-1,1] then the answer has to be Yes.
      *
-     * The JVM semantics guarantee that the given domain value represents a value
+     * The JVM semantics guarantee that the given domain `value` represents a value
      * of computational type integer.
      *
      * @note Both bounds are inclusive.
      */
-    /*ABSTRACT*/ def isSomeValueInRange(value: DomainValue, lowerBound: Int, upperBound: Int): Boolean
+    /*ABSTRACT*/ def isSomeValueInRange(value: DomainValue,
+                                        lowerBound: Int,
+                                        upperBound: Int): Boolean
 
     /**
      * Returns `true` iff at least one possible extension of given value is not in the
@@ -396,15 +425,17 @@ trait Domain[@specialized(Int, Long) I] {
      * if the given value represents the range [-5,Integer.MAX_VALUE] and the specified
      * range is again [0,Integer.MAX_VALUE] then the answer has to be `true`.
      *
-     * The JVM semantics guarantee that the given domain value represents a value
+     * The JVM semantics guarantee that the given domain `value` represents a value
      * of computational type integer.
      *
      * @note Both bounds are inclusive.
      */
-    /*ABSTRACT*/ def isSomeValueNotInRange(value: DomainValue, lowerBound: Int, upperBound: Int): Boolean
+    /*ABSTRACT*/ def isSomeValueNotInRange(value: DomainValue,
+                                           lowerBound: Int,
+                                           upperBound: Int): Boolean
 
     /**
-     * Determines whether the given value is `null` (`Yes`), maybe `null` (`Unkown`) or
+     * Determines whether the given value is `null` (`Yes`), maybe `null` (`Unknown`) or
      * is known not to be `null` (`No`).
      *
      * The JVM semantics guarantee that the given domain value represents a value
@@ -417,8 +448,8 @@ trait Domain[@specialized(Int, Long) I] {
     /**
      * Compares the given values for reference equality. Returns `Yes` if both values
      * point to the same instance and returns `No` if both objects are known not to
-     * point to the same instance (which is, e.g., trivially the case when both
-     * values have a different concrete type). Otherwise `Unknown` is returned.
+     * point to the same instance. The latter is, e.g., trivially the case when both
+     * values have a different concrete type. Otherwise `Unknown` is returned.
      */
     /*ABSTRACT*/ def areEqualReferences(value1: DomainValue, value2: DomainValue): Answer
 
@@ -431,10 +462,28 @@ trait Domain[@specialized(Int, Long) I] {
      * of reference types, a type bound may, e.g., be a set of interface types which are
      * known to be implemented by the current object. Even if the type contains a class
      * type it may just be a super class of the concrete type and, hence, just represents
-     * an abstraction.
+     * an abstraction. How type bounds related to reference types are handled and
+     * whether the domain makes it possible to distinguish between precise types and
+     * type bounds is at the sole discretion of the domain.
      */
-    trait TypeBound {
+    trait TypeBound { // extends Iterable[_ <: Type]
+        // TODO replace by something like: def foreach
         def valueTypes: Set[_ <: Type]
+    }
+
+    object TypeBound {
+        def unapply(tb: TypeBound) = Some(tb.valueTypes)
+    }
+
+    /**
+     * Defines an extractor for a set that (is expected to) contain a single element.
+     */
+    object SingletonSet {
+        def unapply[T](set: Set[T]): Option[T] =
+            if (set.size == 1)
+                Some(set.head)
+            else
+                AIImplementationError("the given set is not a singleton set: "+set)
     }
 
     /**
@@ -443,13 +492,15 @@ trait Domain[@specialized(Int, Long) I] {
      * all types that the domain value represents have to belong to the same
      * computational type category. I.e., it is possible that the value captures the
      * types "`NullPointerException` or `IllegalArgumentException`", but it will never
-     * capture the (Java) types `int` and `long`.
+     * capture – at the same time – the (Java) types `int` and `long`.
      */
     /*ABSTRACT*/ def types(value: DomainValue): ValuesAnswer[Set[TypeBound]]
 
     /**
-     * Tries to determine if the given value is a sub-type of the specified reference
-     * type (`superType`).
+     * Tries to determine if the type of the given `value` is a sub-type of the
+     * specified reference type (`superType`).
+     *
+     * @param value A value with computational type reference.
      */
     /*ABSTRACT*/ def isSubtypeOf(value: DomainValue, superType: ReferenceType): Answer
 
@@ -810,21 +861,46 @@ trait Domain[@specialized(Int, Long) I] {
     type ArrayStoreResult = Computation[Nothing, Set[DomainValue]]
 
     def aaload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
-    def aastore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue): ArrayStoreResult
+    def aastore(pc: Int,
+                value: DomainValue,
+                index: DomainValue, arrayref: DomainValue): ArrayStoreResult
+
     def baload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
-    def bastore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue): ArrayStoreResult
+    def bastore(pc: Int,
+                value: DomainValue,
+                index: DomainValue, arrayref: DomainValue): ArrayStoreResult
+
     def caload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
-    def castore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue): ArrayStoreResult
+    def castore(pc: Int,
+                value: DomainValue,
+                index: DomainValue, arrayref: DomainValue): ArrayStoreResult
+
     def daload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
-    def dastore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue): ArrayStoreResult
+    def dastore(pc: Int,
+                value: DomainValue,
+                index: DomainValue, arrayref: DomainValue): ArrayStoreResult
+
     def faload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
-    def fastore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue): ArrayStoreResult
+    def fastore(pc: Int,
+                value: DomainValue,
+                index: DomainValue, arrayref: DomainValue): ArrayStoreResult
+
     def iaload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
-    def iastore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue): ArrayStoreResult
+    def iastore(pc: Int,
+                value: DomainValue,
+                index: DomainValue, arrayref: DomainValue): ArrayStoreResult
+
     def laload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
-    def lastore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue): ArrayStoreResult
-    def saload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
-    def sastore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue): ArrayStoreResult
+    def lastore(pc: Int,
+                value: DomainValue,
+                index: DomainValue, arrayref: DomainValue): ArrayStoreResult
+
+    def saload(pc: Int,
+               index: DomainValue,
+               arrayref: DomainValue): ArrayLoadResult
+    def sastore(pc: Int,
+                value: DomainValue,
+                index: DomainValue, arrayref: DomainValue): ArrayStoreResult
 
     //
     // LENGTH OF AN ARRAY
@@ -858,8 +934,12 @@ trait Domain[@specialized(Int, Long) I] {
     // TYPE CHECKS AND CONVERSION
     //
 
-    def checkcast(pc: Int, objectref: DomainValue, resolvedType: ReferenceType): Computation[DomainValue, DomainValue]
-    def instanceof(pc: Int, objectref: DomainValue, resolvedType: ReferenceType): DomainValue
+    def checkcast(pc: Int,
+                  objectref: DomainValue,
+                  resolvedType: ReferenceType): Computation[DomainValue, DomainValue]
+    def instanceof(pc: Int,
+                   objectref: DomainValue,
+                   resolvedType: ReferenceType): DomainValue
 
     def d2f(pc: Int, value: DomainValue): DomainValue
     def d2i(pc: Int, value: DomainValue): DomainValue
@@ -1060,14 +1140,14 @@ trait Domain[@specialized(Int, Long) I] {
      * Merges the two given memory layouts.
      *
      * @return The merged memory layout. Returns `NoUpdate` if this memory layout
-     * already subsumes the given memory layout.
+     *      already subsumes the given memory layout.
      * @note The size of the operands stacks and the number of registers/locals
-     * has to be the same.
+     *      has to be the same.
      * @note The operand stacks have to contain compatible values. I.e., it has to be
-     * possible to merge operand stack values without getting a `NoLegalValue`. In the
-     * latter case – i.e., if the result of the merging of two operand stacks is
-     * a `NoLegalValue` – either the bytecode is valid, which is extremely unlikely,
-     * or the implementation of the domain is incomplete.
+     *      possible to merge operand stack values without getting a `NoLegalValue`.
+     *      In the latter case – i.e. if the result of the merging of two operand
+     *      stacks is a `NoLegalValue` – either the bytecode is invalid, which is
+     *      extremely unlikely, or the implementation of the domain is incomplete.
      */
     def merge(
         pc: Int,

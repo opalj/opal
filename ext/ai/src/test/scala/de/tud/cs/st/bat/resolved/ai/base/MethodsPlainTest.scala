@@ -38,6 +38,9 @@ package base
 
 import reader.Java7Framework.ClassFiles
 import domain._
+
+import de.tud.cs.st.util.{Answer,Yes,No,Unknown}
+
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
@@ -567,7 +570,7 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "asSimpleMethodsInstance").get
         /*val result =*/ AI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(SomeBooleanValue))
+        domain.returnedValue should be(Some(SomeIntegerValue))
     }
 
     //

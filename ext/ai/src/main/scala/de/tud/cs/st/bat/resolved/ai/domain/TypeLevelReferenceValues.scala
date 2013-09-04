@@ -36,6 +36,8 @@ package resolved
 package ai
 package domain
 
+import de.tud.cs.st.util.{Answer,Yes,No,Unknown}
+
 /**
  * @author Michael Eichberg
  */
@@ -121,13 +123,6 @@ trait TypeLevelReferenceValues { this: Domain[_] ⇒
             }
         }
     }
-
-//    def AreEqualReferences: TwoValuesConstraint = IgnoreTwoValuesConstraint
-//
-//    def AreNotEqualReferences: TwoValuesConstraint = IgnoreTwoValuesConstraint
-//
-//    def UpperBound: SingleValueConstraintWithBound[ReferenceType] = IgnoreSingleValueConstraintWithReferenceTypeBound
-
 }
 
 trait DefaultTypeLevelReferenceValues[I]
@@ -330,6 +325,44 @@ trait DefaultTypeLevelReferenceValues[I]
         }
     }
 
+       //
+    // CREATE ARRAY
+    //
+    def newarray(pc: Int,
+                 count: DomainValue,
+                 componentType: FieldType): NewArrayOrNegativeArraySizeException =
+        //ComputedValueAndException(TypedValue(ArrayType(componentType)), TypedValue(ObjectType.NegativeArraySizeException))
+        ComputedValue(TypedValue(ArrayType(componentType)))
+
+    /**
+     * @note The componentType may be (again) an array type.
+     */
+    def multianewarray(pc: Int,
+                       counts: List[DomainValue],
+                       arrayType: ArrayType): NewArrayOrNegativeArraySizeException =
+        //ComputedValueAndException(TypedValue(arrayType), TypedValue(ObjectType.NegativeArraySizeException))
+        ComputedValue(TypedValue(arrayType))
+
+    //
+    // LOAD FROM AND STORE VALUE IN ARRAYS
+    //
+    def aaload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
+        //        types(arrayref) match {
+        //    case Values(values) => values. 
+        //    case _ => 
+        AIImplementationError("aaload - tracking of array type failed; array contains reference values of unknown type")
+    //}
+
+    //        arrayref match {
+    //            case TypedValue(ArrayType(componentType)) ⇒
+    //                ComputedValue(TypedValue(componentType))
+    //            case _ ⇒
+    //                AIImplementationError("aaload - tracking of array type failed; array contains reference values of unknown type")
+    //        }
+
+    def aastore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
+        ComputationWithSideEffectOnly
+    
     //
     // PUSH CONSTANT VALUE
     //

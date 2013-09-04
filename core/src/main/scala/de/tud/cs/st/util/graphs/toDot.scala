@@ -68,7 +68,7 @@ trait toDot {
         s += "}"
         s
     }
-
 }
+
 object toDot extends toDot
 

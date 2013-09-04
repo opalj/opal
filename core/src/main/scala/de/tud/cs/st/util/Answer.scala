@@ -31,7 +31,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package de.tud.cs.st
-package bat
+package util
 
 /**
  * Models a three state answer.
@@ -39,14 +39,53 @@ package bat
  * @author Michael Eichberg
  */
 sealed trait Answer {
+
+    /**
+     * The negation of this `Answer`. If the answer is `Unknown` the negation is
+     * still `Unknown`.
+     */
     def negate: Answer
+
+    /**
+     * Returns `true` if the answer is `Yes` or `Unknown`, `false` otherwise.
+     */
     def maybeYes: Boolean
+
+    /**
+     * Returns `true` if the answer is `No` or `Unknown`, `false` otherwise.
+     */
     def maybeNo: Boolean
+
+    /**
+     * Returns `true` if and only if the answer is `Yes`. This implies that `isDefined`
+     * is also `true`.
+     */
     def yes: Boolean
+
+    /**
+     * Returns `true` if and only if the answer is `No`. This implies that `isDefined`
+     * is also `true`.
+     */
     def no: Boolean
+
+    /**
+     * Returns `true` in the case of a definitive answer, that is, if the answer is
+     * either `Yes` or `No`.
+     */
     def isDefined: Boolean
+
+    /**
+     * Returns `true` in the case that no definitive answer can be given.
+     * Calling `isUndefined` is effectively the same as a (reference) comparison of
+     * an `Answer` with `Unknown`.
+     */
     def isUndefined: Boolean
 
+    /**
+     * Merges this answer with the given answer. Basically, if the other
+     * `Answer` is identical to this answer `this` answer is returned, otherwise
+     * `Unknown` is returned.
+     */
     def merge(other: Answer): Answer
 }
 /**
@@ -55,6 +94,9 @@ sealed trait Answer {
 object Answer {
     def apply(value: Boolean): Answer = if (value) Yes else No
 }
+/**
+ * Represents a `Yes` answer to a question.
+ */
 final case object Yes extends Answer {
     def negate = No
     def maybeYes: Boolean = true
@@ -64,8 +106,11 @@ final case object Yes extends Answer {
     def isDefined: Boolean = true
     def isUndefined: Boolean = false
 
-    def merge(other: Answer) = if (other eq Yes) Yes else Unknown
+    def merge(other: Answer) = if (other eq this) this else Unknown
 }
+/**
+ * Represents a `No` answer to a question.
+ */
 final case object No extends Answer {
     def negate = Yes
     def maybeYes: Boolean = false
@@ -75,8 +120,11 @@ final case object No extends Answer {
     def isDefined: Boolean = true
     def isUndefined: Boolean = false
 
-    def merge(other: Answer) = if (other eq No) No else Unknown
+    def merge(other: Answer) = if (other eq this) this else Unknown
 }
+/**
+ * Represents an `Unknown` answer to a question.
+ */
 final case object Unknown extends Answer {
     def negate = this
     def maybeYes: Boolean = true

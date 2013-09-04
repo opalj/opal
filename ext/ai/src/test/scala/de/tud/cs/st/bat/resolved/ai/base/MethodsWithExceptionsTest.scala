@@ -36,13 +36,16 @@ package ai
 package base
 
 import reader.Java7Framework
+import domain.DoNothingOnReturnFromMethod
+
+import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
+
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.ParallelTestExecution
 import org.scalatest.matchers.ShouldMatchers
-import de.tud.cs.st.bat.resolved.ai.domain.DoNothingOnReturnFromMethod
 
 /**
  * Basic tests of the abstract interpreter in the presence of simple control flow
@@ -59,25 +62,14 @@ class MethodsWithExceptionsTest
 
     import util.Util.dumpOnFailureDuringValidation
 
-    class RecordingDomain extends domain.DefaultDomain {
+    val classFiles = Java7Framework.ClassFiles(
+        TestSupport.locateTestResources("classfiles/ai.jar", "ext/ai"))
+    val classFile = classFiles.map(_._1).
+        find(_.thisClass.className == "ai/MethodsWithExceptions").get
 
-        var returnedValues: Set[(String, Value)] = Set()
-        override def areturn(pc: Int, value: Value) { returnedValues += (("areturn", value)) }
-        override def dreturn(pc: Int, value: Value) { returnedValues += (("dreturn", value)) }
-        override def freturn(pc: Int, value: Value) { returnedValues += (("freturn", value)) }
-        override def ireturn(pc: Int, value: Value) { returnedValues += (("ireturn", value)) }
-        override def lreturn(pc: Int, value: Value) { returnedValues += (("lreturn", value)) }
-        override def returnVoid(pc: Int) { returnedValues += (("return", null)) }
-        override def abnormalReturn(pc: Int, exception: Value) {
-            returnedValues += (("throws", exception))
-        }
-    }
-
-    val classFiles = Java7Framework.ClassFiles(TestSupport.locateTestResources("classfiles/ai.jar", "ext/ai"))
-    val classFile = classFiles.map(_._1).find(_.thisClass.className == "ai/MethodsWithExceptions").get
-
-    private def evaluateMethod(name: String, f: RecordingDomain ⇒ Unit) {
-        val domain = new RecordingDomain; import domain._
+    import domain.RecordingDomain
+    private def evaluateMethod(name: String, f: RecordingDomain[String] ⇒ Unit) {
+        val domain = new RecordingDomain(name); import domain._
         val method = classFile.methods.find(_.name == name).get
         val result = AI(classFile, method, domain)
 
@@ -144,7 +136,7 @@ class MethodsWithExceptionsTest
             domain.returnedValues should be(
                 Set(("throws", SomeReferenceValue(-1, ObjectType.Throwable, No)),
                     ("throws", SomeReferenceValue(19, ObjectType.NullPointerException, No)),
-                    ("throws", SomeReferenceValue(23, Set[TypeBound](PreciseType(ObjectType.NullPointerException),PreciseType(ObjectType.Throwable)), No)),
+                    ("throws", SomeReferenceValue(23, Set[TypeBound](PreciseType(ObjectType.NullPointerException), PreciseType(ObjectType.Throwable)), No)),
                     ("throws", SomeReferenceValue(25, ObjectType.NullPointerException, No))
                 )
             )

@@ -37,9 +37,8 @@ package graphs
 /**
  * Represents a node of a graph.
  *
- * ==Example Usage==
- * See [[de.tud.cs.st.bat.resolved.analyses.ClassHierarchy]]'s `toGraph` method for
- * an example usage.
+ * @see [[de.tud.cs.st.bat.resolved.analyses.ClassHierarchy]]'s `toGraph` method for
+ *      an example usage.
  *
  * @author Michael Eichberg
  */
@@ -51,7 +50,7 @@ trait Node {
     def toHRR: Option[String]
 
     /**
-     * A identifier that uniquely identifies this node.
+     * An identifier that uniquely identifies this node.
      */
     def uniqueId: Int
 
