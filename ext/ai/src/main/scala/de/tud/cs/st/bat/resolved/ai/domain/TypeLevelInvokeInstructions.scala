@@ -36,45 +36,61 @@ package resolved
 package ai
 package domain
 
+import de.tud.cs.st.util.{Answer,Yes,No,Unknown}
+
 /**
  *
+ * @author Michael Eichberg
  */
 trait TypeLevelInvokeInstructions { this: Domain[_] ⇒
 
-    def invokeinterface(pc: Int,
-                        declaringClass: ReferenceType,
-                        name: String,
-                        methodDescriptor: MethodDescriptor,
-                        params: List[DomainValue]) =
-        ComputedValue(asTypedValue(methodDescriptor.returnType))
-
-    def invokevirtual(pc: Int,
-                      declaringClass: ReferenceType,
-                      name: String,
-                      methodDescriptor: MethodDescriptor,
-                      params: List[DomainValue]) =
-        ComputedValue(asTypedValue(methodDescriptor.returnType))
-
-    def invokespecial(pc: Int,
-                      declaringClass: ReferenceType,
-                      name: String,
-                      methodDescriptor: MethodDescriptor,
-                      params: List[DomainValue]) =
-        ComputedValue(asTypedValue(methodDescriptor.returnType))
-
-    def invokestatic(pc: Int,
-                     declaringClass: ReferenceType,
-                     name: String,
-                     methodDescriptor: MethodDescriptor,
-                     params: List[DomainValue]) =
-        ComputedValue(asTypedValue(methodDescriptor.returnType))
-
-    protected def asTypedValue(someType: Type): Option[DomainTypedValue[someType.type]] = {
+    protected def asTypedValue(someType: Type): Option[DomainValue] = {
         if (someType.isVoidType)
             None
         else
             Some(TypedValue(someType))
     }
+
+    protected def handleInstanceBasedInvoke(pc: Int,
+                                            methodDescriptor: MethodDescriptor,
+                                            operands: List[DomainValue]) =
+        isNull(operands.last) match {
+            case Yes ⇒ ThrowsException(Set(newObject(pc, ObjectType.NullPointerException)))
+            case No  ⇒ ComputedValue(asTypedValue(methodDescriptor.returnType))
+            case Unknown ⇒
+                ComputedValueAndException(
+                    asTypedValue(methodDescriptor.returnType),
+                    Set(newObject(pc, ObjectType.NullPointerException)))
+        }
+
+    def invokeinterface(pc: Int,
+                        declaringClass: ReferenceType,
+                        name: String,
+                        methodDescriptor: MethodDescriptor,
+                        operands: List[DomainValue]) =
+        handleInstanceBasedInvoke(pc, methodDescriptor, operands)
+
+    def invokevirtual(pc: Int,
+                      declaringClass: ReferenceType,
+                      name: String,
+                      methodDescriptor: MethodDescriptor,
+                      operands: List[DomainValue]): OptionalReturnValueOrExceptions =
+        handleInstanceBasedInvoke(pc, methodDescriptor, operands)
+
+    def invokespecial(pc: Int,
+                      declaringClass: ReferenceType,
+                      name: String,
+                      methodDescriptor: MethodDescriptor,
+                      operands: List[DomainValue]) =
+        handleInstanceBasedInvoke(pc, methodDescriptor, operands)
+
+    def invokestatic(pc: Int,
+                     declaringClass: ReferenceType,
+                     name: String,
+                     methodDescriptor: MethodDescriptor,
+                     operands: List[DomainValue]) =
+        ComputedValue(asTypedValue(methodDescriptor.returnType))
+
 }
 
 

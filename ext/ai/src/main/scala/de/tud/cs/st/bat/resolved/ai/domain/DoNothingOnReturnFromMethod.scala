@@ -43,19 +43,19 @@ package domain
  */
 trait DoNothingOnReturnFromMethod { this: Domain[_] ⇒
 
-    def areturn(pc: Int, value: DomainValue): Unit = { /* Nothing to do. */ }
+    def areturn(pc: Int, value: DomainValue): Unit = { /* Do nothing. */ }
 
-    def dreturn(pc: Int, value: DomainValue): Unit = { /* Nothing to do. */ }
+    def dreturn(pc: Int, value: DomainValue): Unit = { /* Do nothing. */ }
 
-    def freturn(pc: Int, value: DomainValue): Unit = { /* Nothing to do. */ }
+    def freturn(pc: Int, value: DomainValue): Unit = { /* Do nothing. */ }
 
-    def ireturn(pc: Int, value: DomainValue): Unit = { /* Nothing to do. */ }
+    def ireturn(pc: Int, value: DomainValue): Unit = { /* Do nothing. */ }
 
-    def lreturn(pc: Int, value: DomainValue): Unit = { /* Nothing to do. */ }
+    def lreturn(pc: Int, value: DomainValue): Unit = { /* Do nothing. */ }
 
-    def returnVoid(pc: Int): Unit = { /* Nothing to do. */ }
+    def returnVoid(pc: Int): Unit = { /* Do nothing. */ }
 
-    def abnormalReturn(pc: Int, exception: DomainValue): Unit = { /* Nothing to do. */ }
+    def abnormalReturn(pc: Int, exception: DomainValue): Unit = { /* Do nothing. */ }
 }
 
 

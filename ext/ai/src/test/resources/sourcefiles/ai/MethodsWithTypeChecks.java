@@ -30,35 +30,46 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package ai;
 
-import analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
-import java.net.URL
+import java.io.File;
+import java.io.IOException;
 
 /**
- * Counts the number of native methods.
- *
+ * Just a very large number of methods that does something related to type checking.
+ * 
+ * <h2>NOTE</h2> This class is not meant to be (automatically) recompiled; it just serves
+ * documentation purposes. The compiled class that is used by the tests is found in the
+ * test-classfiles directory.
+ * 
  * @author Michael Eichberg
  */
-object NativeMethodsCounter extends AnalysisExecutor {
+public class MethodsWithTypeChecks {
 
-    val analysis = new Analysis[URL, BasicReport] {
+    public static java.util.List<Integer> get() {
+        if (System.currentTimeMillis() > 0)
+            return null;
+        else
+            return new java.util.ArrayList<Integer>();
+    }
 
-        def description: String = "Counts the number of native methods."
+    @SuppressWarnings("cast")
+    public static void main(String[] args) {
 
-        def analyze(project: Project[URL]) = {
-            val nativeMethods =
-                for (
-                    classFile ← project.classFiles;
-                    method ← classFile.methods if method.isNative
-                ) yield classFile.thisClass.toJava+" <- "+method.toJava
+        java.util.List<Integer> l = get(); // <= effectively always "null"
 
-            BasicReport(
-                "Native methods found ("+nativeMethods.size+")\n"+
-                    nativeMethods.mkString("\t", "\n\t", "\n")
-            )
-        }
+        System.out.println(l instanceof java.util.List);
+        System.out.println(null instanceof Object);
+        System.out.println(l instanceof Object);
+        System.out.println(l instanceof java.util.Set<?>);
+        System.out.println(l instanceof File);
+
+        Object o = l;
+
+        IOException ioe = (IOException) o;
+        System.out.println(ioe);
+        System.out.println(ioe instanceof IOException);
+
+        System.out.println("End of type frenzy.");
     }
 }

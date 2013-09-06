@@ -36,6 +36,9 @@ package ai
 package base
 
 import reader.Java7Framework
+import domain.RecordingDomain
+
+import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
@@ -45,25 +48,21 @@ import org.scalatest.ParallelTestExecution
 import org.scalatest.matchers.ShouldMatchers
 
 /**
- * Basic tests of the abstract interpreter in the presence of simple control flow
- * instructions (if).
+ * Basic tests of the abstract interpreter related to handling arrays.
  *
  * @author Michael Eichberg
- * @author Dennis Siebert
  */
 @RunWith(classOf[JUnitRunner])
-class MethodsWithBranchesTest
+class MethodsWithArraysTest
         extends FlatSpec
         with ShouldMatchers
         with ParallelTestExecution {
-
-    import domain.RecordingDomain
 
     val classFiles = Java7Framework.ClassFiles(
         TestSupport.locateTestResources("classfiles/ai.jar", "ext/ai"))
 
     val classFile = classFiles.map(_._1).
-        find(_.thisClass.className == "ai/MethodsWithBranches").get
+        find(_.thisClass.className == "ai/MethodsWithArrays").get
 
     private def evaluateMethod(name: String, f: RecordingDomain[String] ⇒ Unit) {
         val domain = new RecordingDomain(name); import domain._
@@ -81,70 +80,21 @@ class MethodsWithBranchesTest
 
     behavior of "the abstract interpreter"
 
-    //
-    // RETURNS
-    it should "be able to analyze a method that performs a comparison with \"nonnull\"" in {
-        evaluateMethod("nullComp", domain ⇒ {
-            //    0  aload_0 [o]
-            //    1  ifnonnull 6
-            //    4  iconst_1
-            //    5  ireturn
-            //    6  iconst_0
-            //    7  ireturn 
+    it should "be able to analyze a method that processes a byte array" in {
+        evaluateMethod("byteArrays", domain ⇒ {
             import domain._
             domain.returnedValues should be(
-                Set(("ireturn", SomeIntegerValue), ("ireturn", SomeIntegerValue)))
-
-            domain.constraints should be(
-                Set(
-                    ReifiedSingleValueConstraint(4, domain.TypedValue(ObjectType.Object), "is null"),
-                    ReifiedSingleValueConstraint(6, domain.TypedValue(ObjectType.Object), "is not null")
-                )
+                Set(("ireturn", SomeByteValue))
             )
         })
     }
 
-    it should "be able to analyze a method that performs a comparison with \"null\"" in {
-        evaluateMethod("nonnullComp", domain ⇒ {
-            //    0  aload_0 [o]
-            //    1  ifnull 6
-            //    4  iconst_1
-            //    5  ireturn
-            //    6  iconst_0
-            //    7  ireturn
+    it should "be able to analyze a method that processes a boolean array" in {
+        evaluateMethod("booleanArrays", domain ⇒ {
             import domain._
             domain.returnedValues should be(
-                Set(("ireturn", SomeIntegerValue), ("ireturn", SomeIntegerValue)))
-
-            domain.constraints should be(
-                Set(
-                    ReifiedSingleValueConstraint(4, domain.TypedValue(ObjectType.Object), "is not null"),
-                    ReifiedSingleValueConstraint(6, domain.TypedValue(ObjectType.Object), "is null")
-                )
+                Set(("ireturn", SomeBooleanValue))
             )
         })
     }
-
-    it should "be able to analyze methods that perform multiple comparisons" in {
-        evaluateMethod("multipleComp", domain ⇒ {
-            //     0  aload_0 [a]
-            //     1  ifnull 17
-            //     4  aload_1 [b]
-            //     5  ifnull 17
-            //     8  aload_0 [a]
-            //     9  aload_1 [b]
-            //    10  if_acmpne 15
-            //    13  iconst_1
-            //    14  ireturn
-            //    15  iconst_0
-            //    16  ireturn
-            //    17  iconst_0
-            //    18  ireturn
-            import domain._
-            domain.returnedValues should be(
-                Set(("ireturn", SomeIntegerValue))
-            )
-        })
-    }
-
 }

@@ -46,6 +46,8 @@ import scala.util.control.ControlThrowable
 
 /**
  * Class that can be used to start the interpreter for some given class files.
+ *
+ * @author Michael Eichberg
  */
 object InterpretMethods {
     import de.tud.cs.st.util.debug._
@@ -95,7 +97,7 @@ object InterpretMethods {
                             if (AI(
                                 classFile,
                                 method,
-                                new domain.DefaultDomain[(ClassFile, Method)] {
+                                new domain.AbstractDefaultDomain[(ClassFile, Method)] {
                                     val identifier = (classFile, method)
                                 }).wasAborted)
                                 throw new InterruptedException();

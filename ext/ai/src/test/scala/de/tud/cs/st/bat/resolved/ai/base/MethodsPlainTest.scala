@@ -37,6 +37,9 @@ package ai
 package base
 
 import reader.Java7Framework.ClassFiles
+import domain._
+
+import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
@@ -44,6 +47,7 @@ import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.ParallelTestExecution
 import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.matchers.MatchResult
 
 /**
  * Basic tests of the abstract interpreter.
@@ -59,8 +63,7 @@ class MethodsPlainTest
 
     import util.Util.dumpOnFailureDuringValidation
 
-    class RecordingDomain(val identifier: None.type = None)
-            extends domain.DefaultDomain[None.type] {
+    class RecordingDomain extends domain.DefaultDomain {
         var returnedValue: Option[DomainValue] = _
         override def areturn(pc: Int, value: DomainValue) { returnedValue = Some(value) }
         override def dreturn(pc: Int, value: DomainValue) { returnedValue = Some(value) }
@@ -125,7 +128,10 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "sLDC").get
         /*val result =*/ AI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(SomeReferenceValue(ObjectType("java/lang/String"))))
+        domain.returnedValue should be(
+            Some(
+                AReferenceValue(0, ObjectType("java/lang/String"), No, true)
+            ))
     }
 
     //
@@ -564,7 +570,7 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "asSimpleMethodsInstance").get
         /*val result =*/ AI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(SomeBooleanValue))
+        domain.returnedValue should be(Some(SomeIntegerValue))
     }
 
     //
@@ -658,7 +664,9 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "localSimpleMethod").get
         /*val result =*/ AI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(SomeReferenceValue(ObjectType("ai/MethodsPlain"))))
+        domain.returnedValue should be(
+            Some(AReferenceValue(0, ObjectType("ai/MethodsPlain"), No,true))
+        )
     }
 
     //
@@ -668,7 +676,7 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "pushNull").get
         /*val result =*/ AI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(NullValue))
+        assert(domain.isNull(domain.returnedValue.get).yes, "returned value was not null")
     }
     it should "be able to analyze a push of byte value" in {
         val domain = new RecordingDomain; import domain._
@@ -942,7 +950,8 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "objectToString").get
         /*val result =*/ AI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(AStringObject))
+        domain.returnedValue should be(Some(SomeReferenceValue(ObjectType.String)))
+
     }
 
     it should "be able to analyze a method that squares a given double value" in {
@@ -960,7 +969,7 @@ class MethodsPlainTest
         val locals = new Array[Value](1)
         val theObject = TypedValue(t)
         locals(0) = theObject
-        AI.perform(method.body.get, domain)(locals)
+        AI.perform(classFile, method, domain)(Some(locals))
 
         domain.returnedValue should be(Some(theObject))
     }

@@ -30,52 +30,24 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
+package ai;
 
 /**
- * Models a three state answer.
- *
+ * Just a very large number of methods related to reflection.
+ * 
+ * <h2>NOTE</h2> This class is not meant to be (automatically) recompiled; it just serves
+ * documentation purposes. The compiled class that is used by the tests is found in the
+ * test-classfiles directory.
+ * 
  * @author Michael Eichberg
  */
-sealed trait Answer {
-    def negate: Answer
-    def maybeYes: Boolean
-    def maybeNo: Boolean
-    def yes: Boolean
-    def no: Boolean
-    def isDefined: Boolean
-}
-/**
- * Defines factory methods for answer objects.
- */
-object Answer {
-    def apply(value: Boolean): Answer = if (value) Yes else No
-}
-final case object Yes extends Answer {
-    def negate = No
-    def maybeYes: Boolean = true
-    def maybeNo: Boolean = false
-    def yes: Boolean = true
-    def no: Boolean = false
-    def isDefined: Boolean = true
-}
-final case object No extends Answer {
-    def negate = Yes
-    def maybeYes: Boolean = false
-    def maybeNo: Boolean = true
-    def yes: Boolean = false
-    def no: Boolean = true
-    def isDefined: Boolean = true
-}
-final case object Unknown extends Answer {
-    def negate = this
-    def maybeYes: Boolean = true
-    def maybeNo: Boolean = true
-    def yes: Boolean = false
-    def no: Boolean = false
-    def isDefined: Boolean = false
-}
+public class MethodsWithReflection {
 
+    public static Class<?> someClass1() throws ClassNotFoundException {
+        return Class.forName("ai.MethodsPlain");
+    }
 
-
+    public static Class<?> someClass2() {
+        return ai.MethodsPlain.class;
+    }
+}

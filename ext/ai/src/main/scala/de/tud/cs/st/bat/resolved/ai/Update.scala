@@ -37,7 +37,7 @@ package ai
 
 /**
  * Encapsulates an updated value and qualifies the type of the update.
- * 
+ *
  * In general BATAI distinguishes between updates to a value that are relevant w.r.t.
  * the abstract interpretation and those updates that just update some meta-information
  * and which do not affect the abstract interpretation and – in particular – should not
@@ -64,6 +64,8 @@ sealed trait Update[+V] {
      * The updated value; if available.
      */
     def value: V
+
+    def updateValue[NewV](newValue: NewV): Update[NewV]
 }
 
 /**
@@ -93,6 +95,7 @@ final case class StructuralUpdate[V](
 
     def &:(updateType: UpdateType): UpdateType = StructuralUpdateType
 
+    def updateValue[NewV](newValue: NewV): Update[NewV] = StructuralUpdate(newValue)
 }
 /**
  * Used to indicate that a new value is returned, but only meta-information
@@ -117,10 +120,13 @@ final case class MetaInformationUpdate[V](
         else
             MetaInformationUpdateType
     }
+
+    def updateValue[NewV](newValue: NewV): Update[NewV] = MetaInformationUpdate(newValue)
 }
 
 /**
- * Indicates that the (given) structure was not updated.
+ * Indicates that the (given) structure was not updated. W.r.t. the interpretation
+ * BATAI does not distinguish between a `NoUpdate` and a `MetaInformationUpdate`.
  */
 case object NoUpdate extends Update[Nothing] {
 
@@ -128,7 +134,11 @@ case object NoUpdate extends Update[Nothing] {
 
     def &:(updateType: UpdateType): UpdateType = updateType
 
-    def value = throw new IllegalStateException("a NoUpdate contains no value")
+    def value =
+        throw new IllegalStateException("a NoUpdate contains no value")
+
+    def updateValue[NewV](newValue: NewV): Update[NewV] =
+        throw new IllegalStateException("updating the value of a NoUpdate is not supported")
 }
 
 /**
@@ -163,26 +173,44 @@ sealed abstract class UpdateType {
      */
     def &:(updateType: UpdateType): UpdateType
 
+    def &:(update: Update[_]): UpdateType
+
 }
 
 case object NoUpdateType extends UpdateType {
+    
     def apply[V](value: ⇒ V): Update[V] = NoUpdate
-    def &:(updateType: UpdateType): UpdateType = updateType
+    
     def noUpdate: Boolean = true
+    
+    def &:(updateType: UpdateType): UpdateType = updateType
+    
+    def &:(update: Update[_]): UpdateType = update.updateType
+    
 }
 
 case object MetaInformationUpdateType extends UpdateType {
+    
     def apply[V](value: ⇒ V): Update[V] = MetaInformationUpdate(value)
+    
     def noUpdate: Boolean = false
+    
     def &:(updateType: UpdateType): UpdateType =
         if (updateType == StructuralUpdateType)
             StructuralUpdateType
         else
             this
+            
+    def &:(update: Update[_]): UpdateType = this &: update.updateType
 }
 
 case object StructuralUpdateType extends UpdateType {
+    
     def apply[V](value: ⇒ V): Update[V] = StructuralUpdate(value)
+    
     def noUpdate: Boolean = false
+    
     def &:(updateType: UpdateType): UpdateType = StructuralUpdateType
+    
+    def &:(update: Update[_]): UpdateType = StructuralUpdateType
 }

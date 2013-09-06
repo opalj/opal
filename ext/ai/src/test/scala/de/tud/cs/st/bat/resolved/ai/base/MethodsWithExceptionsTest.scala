@@ -36,13 +36,16 @@ package ai
 package base
 
 import reader.Java7Framework
+import domain.DoNothingOnReturnFromMethod
+
+import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
+
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.ParallelTestExecution
 import org.scalatest.matchers.ShouldMatchers
-import de.tud.cs.st.bat.resolved.ai.domain.DoNothingOnReturnFromMethod
 
 /**
  * Basic tests of the abstract interpreter in the presence of simple control flow
@@ -59,27 +62,14 @@ class MethodsWithExceptionsTest
 
     import util.Util.dumpOnFailureDuringValidation
 
-    class RecordingDomain
-            extends domain.DefaultDomain[None.type] {
-        val identifier = None
+    val classFiles = Java7Framework.ClassFiles(
+        TestSupport.locateTestResources("classfiles/ai.jar", "ext/ai"))
+    val classFile = classFiles.map(_._1).
+        find(_.thisClass.className == "ai/MethodsWithExceptions").get
 
-        var returnedValues: Set[(String, Value)] = Set()
-        override def areturn(pc: Int, value: Value) { returnedValues += (("areturn", value)) }
-        override def dreturn(pc: Int, value: Value) { returnedValues += (("dreturn", value)) }
-        override def freturn(pc: Int, value: Value) { returnedValues += (("freturn", value)) }
-        override def ireturn(pc: Int, value: Value) { returnedValues += (("ireturn", value)) }
-        override def lreturn(pc: Int, value: Value) { returnedValues += (("lreturn", value)) }
-        override def returnVoid(pc: Int) { returnedValues += (("return", null)) }
-        override def abnormalReturn(pc: Int, exception: Value) {
-            returnedValues += (("throws", exception))
-        }
-    }
-
-    val classFiles = Java7Framework.ClassFiles(TestSupport.locateTestResources("classfiles/ai.jar", "ext/ai"))
-    val classFile = classFiles.map(_._1).find(_.thisClass.className == "ai/MethodsWithExceptions").get
-
-    private def evaluateMethod(name: String, f: RecordingDomain ⇒ Unit) {
-        val domain = new RecordingDomain; import domain._
+    import domain.RecordingDomain
+    private def evaluateMethod(name: String, f: RecordingDomain[String] ⇒ Unit) {
+        val domain = new RecordingDomain(name); import domain._
         val method = classFile.methods.find(_.name == name).get
         val result = AI(classFile, method, domain)
 
@@ -94,9 +84,7 @@ class MethodsWithExceptionsTest
         evaluateMethod("alwaysThrows", domain ⇒ {
             import domain._
             domain.returnedValues should be(
-                Set(("throws", AReferenceValue(ObjectType.RuntimeException)),
-                    ("throws", AReferenceValue(ObjectType.NullPointerException)) // <- the default domain does not distinguish values that are (not) null from those that maybe null
-                )
+                Set(("throws", AReferenceValue(0, ObjectType.RuntimeException, No, true)))
             )
         })
     }
@@ -110,35 +98,12 @@ class MethodsWithExceptionsTest
         })
     }
 
-    it should "be able to analyze a method that may return normally or throw an exception" in {
-        evaluateMethod("withFinallyAndThrows", domain ⇒ {
-            import domain._
-            domain.returnedValues should be(
-                Set(("return", null), // <= void return 
-                    ("throws", SomeReferenceValue), // <= finally
-                    ("throws", AReferenceValue(ObjectType.NullPointerException))) // <= if t is null
-            )
-        })
-    }
-
-    it should "be able to identify all potentially thrown exceptions" in {
+    it should "be able to identify all potentially thrown exceptions when different exceptions are stored in a variable which is then passed to a throw statement" in {
         evaluateMethod("throwsThisOrThatException", domain ⇒ {
             import domain._
             domain.returnedValues should be(
-                Set(("throws", AReferenceValue(ObjectType("java/lang/IllegalArgumentException"))), // <= finally
-                    ("throws", AReferenceValue(ObjectType.NullPointerException))) // <= if t is null
-            )
-        })
-    }
-
-    it should "be able to identify all potentially thrown exceptions if an exception is caught and rethrown" in {
-        evaluateMethod("leverageException", domain ⇒ {
-            import domain._
-            domain.returnedValues should be(
-                Set(("return", null)) // <= void return
-            // Due to the simplicity of the domain we cannot determine that the following two exceptions may also be thrown:
-            // ("throws", AReferenceValue(ObjectType("java/lang/RuntimeException"))) 
-            // ("throws", AReferenceValue(ObjectType.NullPointerException))) 
+                Set(("throws", AReferenceValue(12, ObjectType("java/lang/IllegalArgumentException"), No, true)), // <= finally
+                    ("throws", AReferenceValue(4, ObjectType.NullPointerException, No, true))) // <= if t is null
             )
         })
     }
@@ -147,10 +112,37 @@ class MethodsWithExceptionsTest
         evaluateMethod("throwsNoException", domain ⇒ {
             import domain._
             domain.returnedValues should be(
-                Set(("return", null),
-                    ("throws", SomeReferenceValue) // <= the default domain is too simple to infer that we did catch all types of exceptions
+                Set(("return", null))
+            )
+        })
+    }
+
+    it should "be able to handle the pattern where some (checked) exceptions are caught and then rethrown as an unchecked exception" in {
+        evaluateMethod("leverageException", domain ⇒ {
+            import domain._
+            domain.returnedValues should be(
+                Set(("return", null)) // <= void return
+            // Due to the simplicity of the domain (the exceptions of called methods are 
+            // not yet analyze) we cannot determine that the following exception 
+            // (among others?) may also be thrown:
+            // ("throws", SomeReferenceValue(...,ObjectType("java/lang/RuntimeException"),No)) 
+            )
+        })
+    }
+
+    it should "be able to analyze a method that may return normally or throw an exception" in {
+        evaluateMethod("withFinallyAndThrows", domain ⇒ {
+            import domain._
+            domain.returnedValues should be(
+                Set(("throws", AReferenceValue(-1, ObjectType.Throwable, No, false)),
+                    ("throws", AReferenceValue(19, ObjectType.NullPointerException, No, true)),
+                    ("throws", MultipleReferenceValues(Set(
+                            AReferenceValue(-1, ObjectType.Throwable, No, false), 
+                            AReferenceValue(11, ObjectType.NullPointerException, No, true)))),
+                    ("throws", AReferenceValue(25, ObjectType.NullPointerException, No, true))
                 )
             )
         })
     }
+
 }

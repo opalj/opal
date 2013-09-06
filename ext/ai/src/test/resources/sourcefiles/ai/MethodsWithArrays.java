@@ -30,61 +30,61 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
-package ai
-package domain
+package ai;
 
 /**
- * Helper methods and classes to support the handling of constraints stated by BATAI
- * during the interpretation of a method.
+ * Just a very large number of methods that do array related stuff.
+ * 
+ * <h2>NOTE</h2> This class is not meant to be (automatically) recompiled; it just serves
+ * documentation purposes. The compiled class that is used by the tests is found in the
+ * test-classfiles directory.
  * 
  * @author Michael Eichberg
  */
-trait ConstraintsHandlingHelper { this: Domain[_] ⇒
+public class MethodsWithArrays {
 
-    object IgnoreSingleValueConstraint
-            extends SingleValueConstraint {
+    public static byte byteArrays(byte[] values) {
+        int length = values.length;
+        values[length / 2] = 10;
+        return values[length - 1];
+    }
 
-        def apply(pc: Int,
-                  value: DomainValue,
-                  operands: Operands,
-                  locals: Locals): (Operands, Locals) = {
-            (operands, locals)
+    public static boolean booleanArrays(boolean[] values) {
+        int length = values.length;
+        values[length / 2] = false;
+        return values[length - 1];
+    }
+
+    //
+    // COMPARISON
+
+    public static Object[] wrap(java.io.Serializable o) {
+        if (o == null)
+            return new Object[0];
+        else
+            return new java.io.Serializable[] { o };
+    }
+
+    public static boolean instanceOf(java.io.Serializable o) {
+        Object result = wrap(o);
+        if (result instanceof java.io.Serializable[]) {
+            return true;
+        }
+        if (result instanceof Object[]) {
+            return false;
+        } else {
+            throw new RuntimeException();
         }
     }
 
-    class IgnoreSingleValueConstraintWithBound[Bound]
-            extends SingleValueConstraintWithBound[Bound] {
+    public static void main(String[] args) {
+        Object o = new java.util.ArrayList[0];
 
-        def apply(pc: Int,
-                  bound: Bound,
-                  value: DomainValue,
-                  operands: Operands,
-                  locals: Locals): (Operands, Locals) = {
-            (operands, locals)
-        }
-    }
+        System.out.println(o instanceof Object[]); // true
+        System.out.println(o instanceof java.io.Serializable[]); // true
+        System.out.println(o instanceof java.util.List[]); // true
 
-    object IgnoreSingleValueConstraintWithReferenceTypeBound
-        extends IgnoreSingleValueConstraintWithBound[ReferenceType]
-
-    object IgnoreSingleValueConstraintWithIntegerValueBound
-        extends IgnoreSingleValueConstraintWithBound[Int]
-
-    object IgnoreTwoValuesConstraint extends TwoValuesConstraint {
-
-        def apply(pc: Int,
-                  value1: DomainValue,
-                  value2: DomainValue,
-                  operands: Operands,
-                  locals: Locals): (Operands, Locals) = {
-            (operands, locals)
-        }
+        System.out.println(o instanceof java.util.Set[]); // false
+        System.out.println(o instanceof int[]);// false
     }
 }
-
-
-
-

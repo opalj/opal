@@ -56,40 +56,22 @@ class MethodsWithLoopsTest
         with ShouldMatchers
         with ParallelTestExecution {
 
-    import util.Util.dumpOnFailureDuringValidation
-
-    class RecordingDomain
-            extends domain.DefaultDomain[None.type]
-            with domain.ReifiedConstraints[None.type] {
-        val identifier = None
-        var returnedValues: List[(String, Value)] = List()
-        override def areturn(pc: Int, value: Value) { returnedValues = ("areturn", value) :: returnedValues }
-        override def dreturn(pc: Int, value: Value) { returnedValues = ("dreturn", value) :: returnedValues }
-        override def freturn(pc: Int, value: Value) { returnedValues = ("freturn", value) :: returnedValues }
-        override def ireturn(pc: Int, value: Value) { returnedValues = ("ireturn", value) :: returnedValues }
-        override def lreturn(pc: Int, value: Value) { returnedValues = ("lreturn", value) :: returnedValues }
-        override def returnVoid(pc: Int) { returnedValues = ("return", null) :: returnedValues }
-
-        var constraints: List[ReifiedConstraint] = List()
-
-        def addConstraint(constraint: ReifiedConstraint) {
-            constraints = constraint :: constraints
-        }
-    }
-
-    val classFiles = Java7Framework.ClassFiles(TestSupport.locateTestResources("classfiles/ai.jar", "ext/ai"))
-    val classFile = classFiles.map(_._1).find(_.thisClass.className == "ai/MethodsWithLoops").get
+    val classFiles = Java7Framework.ClassFiles(
+        TestSupport.locateTestResources("classfiles/ai.jar", "ext/ai"))
+    val classFile = classFiles.map(_._1).
+        find(_.thisClass.className == "ai/MethodsWithLoops").get
 
     def findMethod(name: String): Method = {
         classFile.methods.find(_.name == name).get
     }
 
-    private def evaluateMethod(name: String, f: RecordingDomain ⇒ Unit) {
-        val domain = new RecordingDomain; import domain._
+    import domain.RecordingDomain
+    private def evaluateMethod(name: String, f: RecordingDomain[String] ⇒ Unit) {
+        val domain = new RecordingDomain(name); import domain._
         val method = classFile.methods.find(_.name == name).get
         val result = AI(classFile, method, domain)
 
-        dumpOnFailureDuringValidation(Some(classFile), Some(method), method.body.get, result) {
+        util.Util.dumpOnFailureDuringValidation(Some(classFile), Some(method), method.body.get, result) {
             f(domain)
         }
     }

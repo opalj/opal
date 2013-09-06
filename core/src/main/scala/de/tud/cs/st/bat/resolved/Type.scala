@@ -134,7 +134,10 @@ sealed trait Type {
     def isObjectType: Boolean = false
 
     def computationalType: ComputationalType
-
+    
+    def asArrayType: ArrayType = throw new ClassCastException("this type cannot be cast to an ArrayType")
+    def asObjectType: ObjectType = throw new ClassCastException("this type cannot be cast to an ObjectType")
+    
     def toJava: String
 }
 
@@ -191,10 +194,7 @@ sealed trait ReferenceType extends FieldType {
     override final def isReferenceType = true
 
     def computationalType = ComputationalTypeReference
-
-    def asObjectType: ObjectType = throw new ClassCastException("this ReferenceType cannot be cast to ObjecType")
-
-    def asArrayType: ArrayType = throw new ClassCastException("this ReferenceType cannot be cast to ArrayType")
+    
 }
 object ReferenceType {
 

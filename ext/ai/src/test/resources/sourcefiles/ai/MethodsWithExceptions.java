@@ -46,26 +46,62 @@ import java.io.IOException;
  */
 public class MethodsWithExceptions {
 
+    // 0 new java.lang.RuntimeException [16]
+    // 3 dup
+    // 4 aload_0 [message]
+    // 5 invokespecial java.lang.RuntimeException(java.lang.String) [18]
+    // 8 athrow
     public static void alwaysThrows(String message) {
         throw new RuntimeException(message);
     }
 
-    public static void alwaysCatch(Throwable t) {
+    // 0 aload_0 [someThrowable]
+    // 1 athrow
+    // 2 astore_1 [t]
+    // 3 aload_1 [t]
+    // 4 invokevirtual java.lang.Throwable.printStackTrace() : void [24]
+    // 7 return
+    // Exception Table:
+    // [pc: 0, pc: 2] -> 2 when : java.lang.Throwable
+    public static void alwaysCatch(Throwable someThrowable) {
         try {
-            throw t;
-        } catch (Throwable throwable) {
+            throw someThrowable;
+        } catch (Throwable t) {
             t.printStackTrace();
         }
     }
 
+    // 0 aload_0 [t]
+    // 1 ifnull 6
+    // 4 aload_0 [t]
+    // 5 athrow
+    // 6 getstatic java.lang.System.out : java.io.PrintStream [34]
+    // 9 ldc <String "Nothing happening"> [40]
+    // 11 invokevirtual java.io.PrintStream.println(java.lang.String) : void [42]
+    // 14 goto 24
+    // 17 astore_1
+    // 18 aload_0 [t]
+    // 19 invokevirtual java.lang.Throwable.printStackTrace() : void [24]
+    // 22 aload_1
+    // 23 athrow
+    // 24 aload_0 [t]
+    // 25 invokevirtual java.lang.Throwable.printStackTrace() : void [24]
+    // 28 return
+    // Exception Table:
+    // [pc: 0, pc: 17] -> 17 when : any
     public static void withFinallyAndThrows(Throwable t) throws Throwable {
         try {
             if (t != null)
-                throw t;
-            else
+                throw t; // <= will throw t (non-null!)
+            else {
                 System.out.println("Nothing happening");
+                // <= may throw NullPointerException which
+                // will be replaced by a
+                // NullPointerException in the finally
+                // clause because t is null
+            }
         } finally {
-            t.printStackTrace();
+            t.printStackTrace(); // <= t may be null => may throw NullPointerException
         }
     }
 
@@ -107,8 +143,8 @@ public class MethodsWithExceptions {
             e = new NullPointerException();
         else
             e = new IllegalArgumentException();
-        System.out.println(e);
         try {
+            System.out.println(e);
             throw e;
         } catch (NullPointerException npe) {
             // ...

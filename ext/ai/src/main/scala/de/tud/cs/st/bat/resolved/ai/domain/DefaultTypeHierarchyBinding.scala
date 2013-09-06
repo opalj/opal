@@ -33,32 +33,38 @@
 package de.tud.cs.st
 package bat
 package resolved
+package ai
+package domain
 
-import analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
-import java.net.URL
+import de.tud.cs.st.util.{Answer,Yes,No,Unknown}
 
 /**
- * Counts the number of native methods.
+ * Provides a default implementation for answering type hierarchy related
+ * questions.
  *
  * @author Michael Eichberg
  */
-object NativeMethodsCounter extends AnalysisExecutor {
+trait DefaultTypeHierarchyBinding { this: Domain[_] ⇒
 
-    val analysis = new Analysis[URL, BasicReport] {
+    /**
+     * This project's class hierarchy; unless explicitly overridden, BAT's
+     * built-in default class hierarchy is used which only reflects the type-hierarchy
+     * between the exceptions used by JVM instructions.
+     *
+     * @note '''This method is intended to be overridden.'''
+     */
+    protected def classHierarchy: analyses.ClassHierarchy =
+        analyses.ClassHierarchy.preInitializedClassHierarchy
 
-        def description: String = "Counts the number of native methods."
+    /**
+     * @see `de.tud.cs.st.bat.resolved.analyses.ClassHierarch.isSubtypeOf(...)
+     */
+    def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer =
+        classHierarchy.isSubtypeOf(subtype, supertype)
 
-        def analyze(project: Project[URL]) = {
-            val nativeMethods =
-                for (
-                    classFile ← project.classFiles;
-                    method ← classFile.methods if method.isNative
-                ) yield classFile.thisClass.toJava+" <- "+method.toJava
-
-            BasicReport(
-                "Native methods found ("+nativeMethods.size+")\n"+
-                    nativeMethods.mkString("\t", "\n\t", "\n")
-            )
-        }
-    }
 }
+
+
+
+
+

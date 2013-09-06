@@ -35,35 +35,40 @@ package bat
 package resolved
 package ai
 
-/**
- * Encapsulates an answer of a domain w.r.t. the concrete value(s) captured by
- * a `DomainValue` (abstraction).
- *
- * @tparam V The type of the answer's value. Typically, a `DomainValue`,
- *      a `DomainTypedValue`, a `de.tud.cs.st.bat.resolved.Type` or a `Set` thereof.
- *
- * @author Michael Eichberg
- */
-sealed trait ValuesAnswer[+V] {
-    def values: V
+sealed trait TypesAnswer[+TypeInfo] extends Traversable[TypeInfo]
+
+trait TypesUnknown extends TypesAnswer[Nothing] {
+    def foreach[U](f: Nothing ⇒ U): Unit = { /*empty*/ }
+
+    override def nonEmpty = false
+
+    override def size = 0
 }
 
-/**
- * A domain's answer to a question w.r.t. a `DomainValue` that represents the 
- * values in such a way that the AI can interpret them.
- */
-case class Values[+V](
-    values: V)
-        extends ValuesAnswer[V]
+case class IsPrimitiveType(t: BaseType) extends TypesAnswer[BaseType] {
 
-/**
- * A domain's answer to a question w.r.t. a `DomainValue` where the captured values
- * (beyond the computational type) are not known.
- */
-case object ValuesUnknown extends ValuesAnswer[Nothing] {
-    
-    def values: Nothing = AIImplementationError("the values are unknown")
-    
+    def foreach[U](f: BaseType ⇒ U): Unit = f(t)
+
+    override def nonEmpty = true
+
+    override def size = 1
+
+    override def head = t
 }
 
+trait IsReferenceType extends TypesAnswer[TypeBound] {
+    def foreachType[U](f: ReferenceType ⇒ U): Unit
+    def forallTypes(f: ReferenceType ⇒ Boolean): Boolean
 
+    def headType: ReferenceType
+
+    def isPrecise: Boolean
+}
+
+object HasSingleReferenceTypeBound {
+    def unapply(answer: IsReferenceType): Option[ReferenceType] =
+        if (answer.size == 1)
+            Some(answer.headType)
+        else
+            None
+}
