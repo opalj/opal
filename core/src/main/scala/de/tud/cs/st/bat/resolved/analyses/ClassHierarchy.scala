@@ -160,6 +160,26 @@ class ClassHierarchy(
         superclasses.get(objectType)
 
     /**
+     * Returns the set of all classes/intefaces the given class inherits.
+     */
+    def allSuperclasses(objectType: ObjectType): Set[ObjectType] = {
+        var allSuperclasses: Set[ObjectType] = Set.empty
+        var furtherSuperclasses =
+            superclasses.get(objectType).getOrElse({ return Set.empty })
+
+        while (furtherSuperclasses.nonEmpty) {
+            val currentClasses = furtherSuperclasses
+            furtherSuperclasses = Set.empty
+            currentClasses.foreach(currentClass ⇒ {
+                allSuperclasses += currentClass
+                superclasses.get(currentClass).map(furtherSuperclasses ++= _)
+            })
+        }
+
+        allSuperclasses
+    }
+
+    /**
      * Determines if `currentType` is a subtype of `supertype`.
      *
      * @return Some(true) if currentType is a subtype of supertype. Some(false)

@@ -51,16 +51,23 @@ object CountClassForNameCalls extends AnalysisExecutor {
         def description: String = "Counts the number of times Class.forName is called."
 
         def analyze(project: Project[URL]) = {
-            var count = 0
+            var classForNameCount = 0
 
             val invokes = for {
                 clazz @ classFile ← project.classFiles
                 caller @ method ← classFile.methods
                 if method.body.isDefined
-                invoke @ INVOKESTATIC(ObjectType.Class, "forName", MethodDescriptor(Seq(ObjectType.String), ObjectType.Class)) ← method.body.get.instructions
-            } yield { count += 1; (clazz, caller, invoke) }
+                invoke @ INVOKESTATIC(
+                    ObjectType.Class,
+                    "forName",
+                    MethodDescriptor(Seq(ObjectType.String), ObjectType.Class)
+                    ) ← method.body.get.instructions
+            } yield {
+                classForNameCount += 1;
+                (clazz, caller, invoke)
+            }
 
-            BasicReport("The method was called: "+count+" times.\n\t"+
+            BasicReport("Class.forName(String) was called: "+classForNameCount+" times.\n\t"+
                 invokes.map(t ⇒ t._1.thisClass.className+" <- "+t._2.toJava).mkString("\n\t")
             )
         }
