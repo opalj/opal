@@ -30,35 +30,24 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
-
-import analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
-import java.net.URL
+package ai;
 
 /**
- * Counts the number of native methods.
- *
+ * Just a very large number of methods related to reflection.
+ * 
+ * <h2>NOTE</h2> This class is not meant to be (automatically) recompiled; it just serves
+ * documentation purposes. The compiled class that is used by the tests is found in the
+ * test-classfiles directory.
+ * 
  * @author Michael Eichberg
  */
-object NativeMethodsCounter extends AnalysisExecutor {
+public class MethodsWithReflection {
 
-    val analysis = new Analysis[URL, BasicReport] {
+    public static Class<?> someClass1() throws ClassNotFoundException {
+        return Class.forName("ai.MethodsPlain");
+    }
 
-        def description: String = "Counts the number of native methods."
-
-        def analyze(project: Project[URL]) = {
-            val nativeMethods =
-                for (
-                    classFile ← project.classFiles;
-                    method ← classFile.methods if method.isNative
-                ) yield classFile.thisClass.toJava+" <- "+method.toJava
-
-            BasicReport(
-                "Native methods found ("+nativeMethods.size+")\n"+
-                    nativeMethods.mkString("\t", "\n\t", "\n")
-            )
-        }
+    public static Class<?> someClass2() {
+        return ai.MethodsPlain.class;
     }
 }

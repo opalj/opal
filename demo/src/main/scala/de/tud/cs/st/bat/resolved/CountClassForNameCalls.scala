@@ -38,26 +38,30 @@ import analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
 import java.net.URL
 
 /**
- * Counts the number of native methods.
+ * Counts the number of `Class.forName` calls.
+ *
+ * Primarily demonstrates how to match instructions.
  *
  * @author Michael Eichberg
  */
-object NativeMethodsCounter extends AnalysisExecutor {
+object CountClassForNameCalls extends AnalysisExecutor {
 
     val analysis = new Analysis[URL, BasicReport] {
 
-        def description: String = "Counts the number of native methods."
+        def description: String = "Counts the number of times Class.forName is called."
 
         def analyze(project: Project[URL]) = {
-            val nativeMethods =
-                for (
-                    classFile ← project.classFiles;
-                    method ← classFile.methods if method.isNative
-                ) yield classFile.thisClass.toJava+" <- "+method.toJava
+            var count = 0
 
-            BasicReport(
-                "Native methods found ("+nativeMethods.size+")\n"+
-                    nativeMethods.mkString("\t", "\n\t", "\n")
+            val invokes = for {
+                clazz @ classFile ← project.classFiles
+                caller @ method ← classFile.methods
+                if method.body.isDefined
+                invoke @ INVOKESTATIC(ObjectType.Class, "forName", MethodDescriptor(Seq(ObjectType.String), ObjectType.Class)) ← method.body.get.instructions
+            } yield { count += 1; (clazz, caller, invoke) }
+
+            BasicReport("The method was called: "+count+" times.\n\t"+
+                invokes.map(t ⇒ t._1.thisClass.className+" <- "+t._2.toJava).mkString("\n\t")
             )
         }
     }

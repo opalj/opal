@@ -84,7 +84,7 @@ class MethodsWithExceptionsTest
         evaluateMethod("alwaysThrows", domain ⇒ {
             import domain._
             domain.returnedValues should be(
-                Set(("throws", SomeReferenceValue(0, ObjectType.RuntimeException, No)))
+                Set(("throws", AReferenceValue(0, ObjectType.RuntimeException, No, true)))
             )
         })
     }
@@ -102,8 +102,8 @@ class MethodsWithExceptionsTest
         evaluateMethod("throwsThisOrThatException", domain ⇒ {
             import domain._
             domain.returnedValues should be(
-                Set(("throws", SomeReferenceValue(12, ObjectType("java/lang/IllegalArgumentException"), No)), // <= finally
-                    ("throws", SomeReferenceValue(4, ObjectType.NullPointerException, No))) // <= if t is null
+                Set(("throws", AReferenceValue(12, ObjectType("java/lang/IllegalArgumentException"), No, true)), // <= finally
+                    ("throws", AReferenceValue(4, ObjectType.NullPointerException, No, true))) // <= if t is null
             )
         })
     }
@@ -134,10 +134,12 @@ class MethodsWithExceptionsTest
         evaluateMethod("withFinallyAndThrows", domain ⇒ {
             import domain._
             domain.returnedValues should be(
-                Set(("throws", SomeReferenceValue(-1, ObjectType.Throwable, No)),
-                    ("throws", SomeReferenceValue(19, ObjectType.NullPointerException, No)),
-                    ("throws", SomeReferenceValue(23, Set[TypeBound](PreciseType(ObjectType.NullPointerException), PreciseType(ObjectType.Throwable)), No)),
-                    ("throws", SomeReferenceValue(25, ObjectType.NullPointerException, No))
+                Set(("throws", AReferenceValue(-1, ObjectType.Throwable, No, false)),
+                    ("throws", AReferenceValue(19, ObjectType.NullPointerException, No, true)),
+                    ("throws", MultipleReferenceValues(Set(
+                            AReferenceValue(-1, ObjectType.Throwable, No, false), 
+                            AReferenceValue(11, ObjectType.NullPointerException, No, true)))),
+                    ("throws", AReferenceValue(25, ObjectType.NullPointerException, No, true))
                 )
             )
         })

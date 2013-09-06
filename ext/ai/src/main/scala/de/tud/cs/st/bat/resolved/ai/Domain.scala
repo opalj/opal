@@ -49,7 +49,6 @@ import reflect.ClassTag
  * To facilitate the usage of BATAI several classes/traits that implement parts of
  * the `Domain` trait are pre-defined and can be mixed in when needed.
  *
- * - [[de.tud.cs.st.bat.resolved.ai.domain.ConstraintsHandlingHelper]]
  * - [[de.tud.cs.st.bat.resolved.ai.domain.BaseDomain]]
  * - [[de.tud.cs.st.bat.resolved.ai.domain.DefaultDomain]]
  *
@@ -67,15 +66,15 @@ import reflect.ClassTag
  * responsibility of the domain to make sure that coordination with the world is thread
  * safe.
  *
- * @note The framework assumes that every method/code block is associated with its
- *      own instance of a domain object.
+ * @note The framework assumes that conceptually every method/code block is associated
+ *      with its own instance of a domain object.
  * @tparam I The type which is used to identify this domain's context. E.g., if a new
  *      object is created it may be associated with the instruction that created it and
  *      this domain's identifier.
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  * @author Dennis Siebert
  */
-trait Domain[@specialized(Int, Long) I] {
+trait Domain[I] {
 
     /**
      * Returns the value that identifies this domain (method).
@@ -88,7 +87,7 @@ trait Domain[@specialized(Int, Long) I] {
 
     // -----------------------------------------------------------------------------------
     //
-    // ABSTRACTIONS RELATED TO HANDLING VALUES
+    // ABSTRACTIONS RELATED TO THE HANDLING OF VALUES
     //
     // -----------------------------------------------------------------------------------
 
@@ -100,7 +99,6 @@ trait Domain[@specialized(Int, Long) I] {
      * If you extend this trait, make sure that you also extend all classes/traits that
      * inherit from this type (this may require a deep mixin composition and that you
      * refine the type `DomainType` accordingly).
-     *
      */
     trait Value {
         /**
@@ -141,26 +139,18 @@ trait Domain[@specialized(Int, Long) I] {
 
         /**
          * The type of the represented value (e.g., ByteType).
-         *      If the value represents some reference typed value, the type maybe some
-         *      TypeBound or a set thereof. Imagine, e.g., a method that declares to
-         *      return a `java.util.List` object. In this case (i.e., if we don't analyze
-         *      the called method) we only have a type bound. However, if we analyze the
-         *      called method, we may determine that the type of the returned object is
-         *      always either a `java.util.ArrayList` or `java.util.LinkedList`.
+         * If the value represents some reference typed value, the type maybe some
+         * TypeBound or a set thereof. Imagine, e.g., a method that declares to
+         * return a `java.util.List` object. In this case (i.e., if we don't analyze
+         * the called method) we only have a type bound. However, if we analyze the
+         * called method, we may determine that the type of the returned object is
+         * always either a `java.util.ArrayList` or `java.util.LinkedList`.
          */
         type ValueType <: AnyRef
 
         def valueType: ValueType
-
-        /**
-         * Returns a string that states that merging and comparing this value with
-         * the given one could makes sense, but is not yet implemented.
-         */
-        protected def missingSupport(other: DomainValue): String =
-            "the value \""+this.toString()+"\" and \""+other.toString()+"\" are "+
-                "structurally comparable, but no support for comparing/merging them "+
-                "is implemented (the domain implementation is probably incomplete)"
     }
+
     /**
      * Abstracts over the concrete type of `Value`. Needs to be refined by traits that
      * inherit from `Domain` and which extend `Domain`'s `Value` trait.
@@ -214,7 +204,7 @@ trait Domain[@specialized(Int, Long) I] {
      * live) and, hence, are actually allowed to contain incompatible values.
      * (`Not live` means that the value will not be used in the future.)
      */
-    class NoLegalValue extends Value { this: DomainValue ⇒
+    protected class NoLegalValue extends Value { this: DomainValue ⇒
 
         def computationalType: ComputationalType =
             BATError("the value \"NoLegalValue\" does not have a computational type")
@@ -230,13 +220,6 @@ trait Domain[@specialized(Int, Long) I] {
         def valueType = AIImplementationError("a non-legal value has no type")
 
         override def toString = "NoLegalValue"
-    }
-
-    /**
-     * Facilitates matching against `NoLegalValues`.
-     */
-    object NoLegalValue {
-        def unapply(value: NoLegalValue): Boolean = value ne null
     }
 
     /**
@@ -300,7 +283,7 @@ trait Domain[@specialized(Int, Long) I] {
     }
     /**
      * Abstracts over the concrete type of `ReturnAddressValue`. Needs to be fixed
-     * by some sub-trait /sub-class. In the simplest case (i.e., when neither the
+     * by some sub-trait/sub-class. In the simplest case (i.e., when neither the
      * `Value` trait nor the `ReturnAddressValue` trait is refined it is sufficient
      * to write:
      * {{{
@@ -330,6 +313,9 @@ trait Domain[@specialized(Int, Long) I] {
      * which we have some type information but no value or location information.
      * For example, if a `TypedValue` represents a reference type it may be possible
      * that the value is `null`, but such knowledge is not available.
+     *
+     * BATAI only uses this method when a method is to be analyzed, but no parameter
+     * values are given.
      */
     def TypedValue(valueType: Type): DomainValue = {
         val newValue = (valueType match {
@@ -407,10 +393,9 @@ trait Domain[@specialized(Int, Long) I] {
      * For example, if the given value captures all positive integer values and the
      * specified range is [-1,1] then the answer has to be Yes.
      *
-     * The JVM semantics guarantee that the given domain `value` represents a value
-     * of computational type integer.
-     *
-     * @note Both bounds are inclusive.
+     * @param value A value that has to be of computational type integer.
+     * @param lowerBound The range's lower bound (inclusive).
+     * @param upperBound The range's upper bound (inclusive).
      */
     /*ABSTRACT*/ def isSomeValueInRange(value: DomainValue,
                                         lowerBound: Int,
@@ -425,10 +410,9 @@ trait Domain[@specialized(Int, Long) I] {
      * if the given value represents the range [-5,Integer.MAX_VALUE] and the specified
      * range is again [0,Integer.MAX_VALUE] then the answer has to be `true`.
      *
-     * The JVM semantics guarantee that the given domain `value` represents a value
-     * of computational type integer.
-     *
-     * @note Both bounds are inclusive.
+     * @param value A value that has to be of computational type integer.
+     * @param lowerBound The range's lower bound (inclusive).
+     * @param upperBound The range's upper bound (inclusive).
      */
     /*ABSTRACT*/ def isSomeValueNotInRange(value: DomainValue,
                                            lowerBound: Int,
@@ -438,8 +422,7 @@ trait Domain[@specialized(Int, Long) I] {
      * Determines whether the given value is `null` (`Yes`), maybe `null` (`Unknown`) or
      * is known not to be `null` (`No`).
      *
-     * The JVM semantics guarantee that the given domain value represents a value
-     * of computational type reference.
+     * @param value A value of computational type reference.
      */
     /*ABSTRACT*/ def isNull(value: DomainValue): Answer
 
@@ -450,6 +433,9 @@ trait Domain[@specialized(Int, Long) I] {
      * point to the same instance and returns `No` if both objects are known not to
      * point to the same instance. The latter is, e.g., trivially the case when both
      * values have a different concrete type. Otherwise `Unknown` is returned.
+     *
+     * @param value1 A value of computational type reference.
+     * @param value2 A value of computational type reference.
      */
     /*ABSTRACT*/ def areEqualReferences(value1: DomainValue, value2: DomainValue): Answer
 
@@ -457,45 +443,14 @@ trait Domain[@specialized(Int, Long) I] {
         areEqualReferences(value1, value2).negate
 
     /**
-     * A type bound represents the available information about a value's type. A
-     * type bound is generally precise in case of primitive types. However, in case
-     * of reference types, a type bound may, e.g., be a set of interface types which are
-     * known to be implemented by the current object. Even if the type contains a class
-     * type it may just be a super class of the concrete type and, hence, just represents
-     * an abstraction. How type bounds related to reference types are handled and
-     * whether the domain makes it possible to distinguish between precise types and
-     * type bounds is at the sole discretion of the domain.
-     */
-    trait TypeBound extends Traversable[Type]
-
-    /**
-     * Defines an extractor for a set that (is expected to) contain a single element.
-     */
-    object SingletonTypeBound {
-        def unapply(typeBound: TypeBound): Option[Type] =
-            if (typeBound.size == 1)
-                Some(typeBound.head)
-            else
-                AIImplementationError("the given type has multiple bounds: "+typeBound)
-    }
-
-    object SingletonSet {
-        def unapply[T](set: Set[T]): Option[T] =
-            if (set.size == 1)
-                Some(set.head)
-            else
-                AIImplementationError("the given set is not a singleton set: "+set)
-    }
-
-    /**
-     * Returns the type(s) of the value(s). Depending on the control flow, the same
+     * Returns the type(type bounds) of the value. Depending on the control flow, the same
      * `DomainValue` can represent different values with different types. However,
      * all types that the domain value represents have to belong to the same
      * computational type category. I.e., it is possible that the value captures the
-     * types "`NullPointerException` or `IllegalArgumentException`", but it will never
+     * types "`NullPointerException` and `IllegalArgumentException`", but it will never
      * capture – at the same time – the (Java) types `int` and `long`.
      */
-    /*ABSTRACT*/ def types(value: DomainValue): ValuesAnswer[Set[TypeBound]]
+    /*ABSTRACT*/ def types(value: DomainValue): TypesAnswer[_]
 
     /**
      * Tries to determine if the type of the given `value` is a sub-type of the
@@ -506,10 +461,10 @@ trait Domain[@specialized(Int, Long) I] {
     /*ABSTRACT*/ def isSubtypeOf(value: DomainValue, superType: ReferenceType): Answer
 
     /**
-     * Tries to determine if the type referred to as `subType` is a subtype of the
-     * specified reference type `superType`.
+     * Tries to determine if the type referred to as `subtype` is a subtype of the
+     * specified reference type `supertype`.
      */
-    /*ABSTRACT*/ def isSubtypeOf(subType: ReferenceType, superType: ReferenceType): Answer
+    /*ABSTRACT*/ def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer
 
     /**
      * Tests if the two given integer values are equal.
@@ -790,6 +745,7 @@ trait Domain[@specialized(Int, Long) I] {
      * `NullPointerException` if it is the case. If the value is not `null`,
      * the given value is just wrapped and returned as this computation's result.
      */
+    // FIXME As soon as the athrow is gone remove this method/move it to a subclass.
     protected def givenValueOrNullPointerException(
         pc: Int,
         value: DomainValue): ReferenceValueOrNullPointerException = {
@@ -828,6 +784,7 @@ trait Domain[@specialized(Int, Long) I] {
      * new instance of a `NullPointerException` is created and returned as the thrown
      * exception.
      */
+    // FIXME Embed into AI/Move to AI.
     def athrow(pc: Int, exception: DomainValue): Computation[DomainValue, DomainValue] =
         givenValueOrNullPointerException(pc, exception)
 
@@ -915,16 +872,39 @@ trait Domain[@specialized(Int, Long) I] {
     // 
     // PUSH CONSTANT VALUE
     //
+
     /**
-     * Called by BATAI iff when an `aconst_null` instruction is interpreted.
+     * Called by BATAI when a null value is to be pushed onto the stack.
      */
     def nullValue(pc: Int): DomainValue
+
+    /**
+     * Called by BATAI when a constant byte value is to be pushed onto the stack.
+     */
     def byteValue(pc: Int, value: Int): DomainValue
+    /**
+     * Called by BATAI when a constant short value is to be pushed onto the stack.
+     */
     def shortValue(pc: Int, value: Int): DomainValue
+    /**
+     * Called by BATAI when a constant int value is to be pushed onto the stack.
+     */
     def intValue(pc: Int, value: Int): DomainValue
+    /**
+     * Called by BATAI when a constant long value is to be pushed onto the stack.
+     */
     def longValue(pc: Int, value: Long): DomainValue
+    /**
+     * Called by BATAI when a constant float value is to be pushed onto the stack.
+     */
     def floatValue(pc: Int, value: Float): DomainValue
+    /**
+     * Called by BATAI when a constant double value is to be pushed onto the stack.
+     */
     def doubleValue(pc: Int, value: Double): DomainValue
+    /**
+     * Called by BATAI when a constant string value is to be pushed onto the stack.
+     */
     def stringValue(pc: Int, value: String): DomainValue
     /**
      * @return A value that represents a runtime value of type "Class<T>"
@@ -938,6 +918,7 @@ trait Domain[@specialized(Int, Long) I] {
     def checkcast(pc: Int,
                   objectref: DomainValue,
                   resolvedType: ReferenceType): Computation[DomainValue, DomainValue]
+    
     def instanceof(pc: Int,
                    objectref: DomainValue,
                    resolvedType: ReferenceType): DomainValue
@@ -972,12 +953,12 @@ trait Domain[@specialized(Int, Long) I] {
     def returnVoid(pc: Int): Unit
 
     /**
-     * Called by BATAI when an exception is thrown that is not guaranteed to be handled
+     * Called by BATAI when an exception is thrown that is not (guaranteed to be) handled
      * within the same method.
      *
-     * @note If the value has a specific type but is actually the value `null`, then
-     * the exception that is actually thrown is a `NullPointerException`. This
-     * situation is, however, completely handled by BATAI.
+     * @note If the original exception value is `null`, then
+     *      the exception that is actually thrown is a new `NullPointerException`. This 
+     *      situation is, however, completely handled by BATAI.
      */
     def abnormalReturn(pc: Int, exception: DomainValue): Unit
 
@@ -991,16 +972,19 @@ trait Domain[@specialized(Int, Long) I] {
                  declaringClass: ObjectType,
                  name: String,
                  fieldType: FieldType): FieldValueOrNullPointerException
+                 
     def getstatic(pc: Int,
                   declaringClass: ObjectType,
                   name: String,
                   fieldType: FieldType): DomainValue
+                  
     def putfield(pc: Int,
                  objectref: DomainValue,
                  value: DomainValue,
                  declaringClass: ObjectType,
                  name: String,
                  fieldType: FieldType): SucceedsOrNullPointerException
+                 
     def putstatic(pc: Int,
                   value: DomainValue,
                   declaringClass: ObjectType,
@@ -1017,16 +1001,19 @@ trait Domain[@specialized(Int, Long) I] {
                         name: String,
                         methodDescriptor: MethodDescriptor,
                         operands: List[DomainValue]): OptionalReturnValueOrExceptions
+                        
     def invokevirtual(pc: Int,
                       declaringClass: ReferenceType,
                       name: String,
                       methodDescriptor: MethodDescriptor,
                       operands: List[DomainValue]): OptionalReturnValueOrExceptions
+                      
     def invokespecial(pc: Int,
                       declaringClass: ReferenceType,
                       name: String,
                       methodDescriptor: MethodDescriptor,
                       operands: List[DomainValue]): OptionalReturnValueOrExceptions
+                      
     def invokestatic(pc: Int,
                      declaringClass: ReferenceType,
                      name: String,

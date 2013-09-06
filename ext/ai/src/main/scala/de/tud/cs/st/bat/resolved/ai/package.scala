@@ -65,4 +65,18 @@ package object ai {
         throw new AIImplementationError(message)
     }
 
+    /**
+     * A type bound represents the available information about a reference value's type.
+     *
+     * In case of reference types, a type bound may, e.g., be a set of interface types
+     * which are known to be implemented by the current object. Even if the type contains
+     * a class type it may just be a super class of the concrete type and, hence,
+     * just represents an abstraction.
+     *
+     * How type bounds related to reference types are handled and
+     * whether the domain makes it possible to distinguish between precise types and
+     * type bounds is at the sole discretion of the domain.
+     */
+    type TypeBound = Traversable[ReferenceType]
+
 }

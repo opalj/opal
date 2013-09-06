@@ -35,7 +35,7 @@ package bat
 package resolved
 package ai
 
-import de.tud.cs.st.util.{Answer,Yes,No,Unknown}
+import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 /**
  * A highly-configurable abstract interpreter for BAT's resolved
@@ -379,10 +379,8 @@ trait AI {
                             true
                         } else {
                             types(exceptionValue) match {
-                                case ValuesUnknown ⇒
-                                    AIImplementationError("handleException requires concrete exception values")
-                                case Values(exceptions) ⇒
-                                    exceptions.forall(_.forall(
+                                case exceptions: IsReferenceType ⇒
+                                    exceptions.forallTypes(
                                         (exceptionType: Type) ⇒
                                             domain.isSubtypeOf(exceptionType.asObjectType, catchType.get) match {
                                                 case No ⇒
@@ -395,8 +393,11 @@ trait AI {
                                                         establishUpperBound(branchTarget, catchType.get, exceptionValue, nextOperands, locals)
                                                     gotoTarget(branchTarget, updatedOperands, updatedLocals)
                                                     false
-                                            })
+                                            }
                                     )
+                                case _ ⇒
+                                    AIImplementationError("handleException requires concrete exception values - given: "+exceptionValue)
+
                             }
                         }
                     })
@@ -629,7 +630,7 @@ trait AI {
                         val nextOperands = List(exceptionValue)
 
                         domain.types(exceptionValue) match {
-                            case ValuesUnknown ⇒
+                            case answer: TypesUnknown ⇒
                                 code.exceptionHandlersFor(pc).foreach(eh ⇒ {
                                     val branchTarget = eh.handlerPC
                                     // unless we have a "finally" handler, we can state
@@ -645,8 +646,8 @@ trait AI {
                                 })
                                 abnormalReturn(pc, exceptionValue)
 
-                            case Values(exceptionTypes) ⇒
-                                val isHandled = exceptionTypes.forall(_.forall(exceptionType ⇒
+                            case exceptions: IsReferenceType ⇒
+                                val isHandled = exceptions.forallTypes(exceptionType ⇒
                                     // find the exception handler that matches the given 
                                     // exception
                                     code.exceptionHandlersFor(pc).exists(eh ⇒ {
@@ -671,12 +672,15 @@ trait AI {
                                             }
                                         }
                                     }
-                                    )))
+                                    ))
                                 // If "isHandled" is true, we are sure that at least one 
                                 // handler will catch the exception(s)... hence the method
                                 // will not return abnormally
                                 if (!isHandled)
                                     abnormalReturn(pc, exceptionValue)
+
+                            case types ⇒
+                                AIImplementationError("non-exception type(s): "+types)
                         }
                     }
 

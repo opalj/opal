@@ -39,8 +39,7 @@ package domain
 import reflect.ClassTag
 
 /**
- * Final binding of the [[de.tud.cs.st.bat.resolved.ai.Domain.Value]] trait
- * and its immediate subtypes: `DomainTypedValue` and `DomainNoLegalValue`.
+ * Final binding of the [[de.tud.cs.st.bat.resolved.ai.Domain.Value]] trait.
  *
  * @author Michael Eichberg
  */
@@ -56,21 +55,8 @@ trait DefaultValueBinding[I] extends Domain[I] {
 
     final val MetaInformationUpdateNoLegalValue = MetaInformationUpdate(TheNoLegalValue)
 
-    def types(value: DomainValue): ValuesAnswer[Set[TypeBound]] =
-        AIImplementationError("could not determine the type of the given value: "+value)
-
-    //
-    // Convenience classes/factories
-    //
-
-    import language.existentials
-
-    case class PreciseType(valueType: Type) extends TypeBound {
-        def foreach[U](f: Type ⇒ U): Unit = f(valueType)
-        override def nonEmpty = true
-        override def size = 1
-        override def head = valueType
-    }
+    def types(value: DomainValue): TypesAnswer[_] =
+        AIImplementationError("could not determine the type(s) of the given value: "+value)
 
 }
 

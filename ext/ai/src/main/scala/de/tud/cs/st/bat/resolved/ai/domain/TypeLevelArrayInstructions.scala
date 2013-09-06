@@ -51,8 +51,8 @@ trait TypeLevelArrayInstructions { this: Domain[_] ⇒
     //
 
     def baload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
-        types(arrayref).values match {
-            case SingletonSet(SingletonTypeBound(ArrayType(componentType))) ⇒
+        types(arrayref) match {
+            case HasSingleReferenceTypeBound(ArrayType(componentType)) ⇒
                 ComputedValue(TypedValue(componentType))
             case _ ⇒ AIImplementationError(
                 "cannot determine the type of the array's content, the array may contain either booleans or byte values: "+arrayref

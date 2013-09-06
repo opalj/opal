@@ -35,46 +35,40 @@ package bat
 package resolved
 package ai
 
-/**
- * Encapsulates the domain's answer about the concrete value(s) captured by
- * a `DomainValue` (abstraction).
- *
- * @tparam V The type of the answer's value. Typically, a `DomainValue`,
- *       a `de.tud.cs.st.bat.resolved.Type` or a `Set` thereof. If nothing is
- *       known (i.e., the answer is `ValuesUnknown`) the type is `Nothing`.
- *
- * @author Michael Eichberg
- */
-sealed trait ValuesAnswer[+V] {
+sealed trait TypesAnswer[+TypeInfo] extends Traversable[TypeInfo]
 
-    /**
-     * The captured values. Defined if and only if the answer is not `ValuesUnknown`.
-     * Hence, to get a value's answer it is recommended to use pattern matching.
-     */
-    def values: V
+trait TypesUnknown extends TypesAnswer[Nothing] {
+    def foreach[U](f: Nothing ⇒ U): Unit = { /*empty*/ }
+
+    override def nonEmpty = false
+
+    override def size = 0
 }
 
-/**
- * A domain's answer to a question about a `DomainValue` that represents the
- * values in such a way that the AI can interpret them.
- *
- * @author Michael Eichberg
- */
-final case class Values[+V](
-    values: V)
-        extends ValuesAnswer[V]
+case class IsPrimitiveType(t: BaseType) extends TypesAnswer[BaseType] {
 
-/**
- * The answer to a question about a `DomainValue` where the captured values
- * (beyond the computational type) are not known.
- *
- *  @author Michael Eichberg
- */
-case object ValuesUnknown
-        extends ValuesAnswer[Nothing] {
+    def foreach[U](f: BaseType ⇒ U): Unit = f(t)
 
-    def values: Nothing = AIImplementationError("the values are unknown")
+    override def nonEmpty = true
 
+    override def size = 1
+
+    override def head = t
 }
 
+trait IsReferenceType extends TypesAnswer[TypeBound] {
+    def foreachType[U](f: ReferenceType ⇒ U): Unit
+    def forallTypes(f: ReferenceType ⇒ Boolean): Boolean
 
+    def headType: ReferenceType
+
+    def isPrecise: Boolean
+}
+
+object HasSingleReferenceTypeBound {
+    def unapply(answer: IsReferenceType): Option[ReferenceType] =
+        if (answer.size == 1)
+            Some(answer.headType)
+        else
+            None
+}

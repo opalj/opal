@@ -31,34 +31,15 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package de.tud.cs.st
-package bat
-package resolved
-
-import analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
-import java.net.URL
+package util
 
 /**
- * Counts the number of native methods.
- *
- * @author Michael Eichberg
+ * Extractor for singleton sets.
  */
-object NativeMethodsCounter extends AnalysisExecutor {
-
-    val analysis = new Analysis[URL, BasicReport] {
-
-        def description: String = "Counts the number of native methods."
-
-        def analyze(project: Project[URL]) = {
-            val nativeMethods =
-                for (
-                    classFile ← project.classFiles;
-                    method ← classFile.methods if method.isNative
-                ) yield classFile.thisClass.toJava+" <- "+method.toJava
-
-            BasicReport(
-                "Native methods found ("+nativeMethods.size+")\n"+
-                    nativeMethods.mkString("\t", "\n\t", "\n")
-            )
-        }
-    }
+object SingletonSet {
+    def unapply[T](set: Set[T]): Option[T] =
+        if (set.size == 1)
+            Some(set.head)
+        else
+            None
 }

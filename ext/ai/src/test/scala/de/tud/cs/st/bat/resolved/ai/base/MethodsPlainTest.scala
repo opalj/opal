@@ -39,7 +39,7 @@ package base
 import reader.Java7Framework.ClassFiles
 import domain._
 
-import de.tud.cs.st.util.{Answer,Yes,No,Unknown}
+import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
@@ -130,7 +130,7 @@ class MethodsPlainTest
 
         domain.returnedValue should be(
             Some(
-                SomeReferenceValue(0, Set[TypeBound](PreciseType(ObjectType("java/lang/String"))), No)
+                AReferenceValue(0, ObjectType("java/lang/String"), No, true)
             ))
     }
 
@@ -665,7 +665,7 @@ class MethodsPlainTest
         /*val result =*/ AI(classFile, method, domain)
 
         domain.returnedValue should be(
-            Some(SomeReferenceValue(0, ObjectType("ai/MethodsPlain"), No))
+            Some(AReferenceValue(0, ObjectType("ai/MethodsPlain"), No,true))
         )
     }
 

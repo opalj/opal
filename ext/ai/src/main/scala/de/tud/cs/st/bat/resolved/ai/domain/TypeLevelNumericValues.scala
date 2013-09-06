@@ -36,7 +36,7 @@ package resolved
 package ai
 package domain
 
-import de.tud.cs.st.util.{Answer,Yes,No,Unknown}
+import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 /**
  * Support for handling of numeric values at the type-level.
@@ -204,28 +204,23 @@ trait DefaultTypeLevelIntegerValues[I]
         }
     }
 
-    private val valuesAnswerBoolean: ValuesAnswer[Set[TypeBound]] =
-        Values(Set(PreciseType(BooleanType)))
+    private val typesAnswerBoolean: IsPrimitiveType = IsPrimitiveType(BooleanType)
 
-    private val valuesAnswerByte: ValuesAnswer[Set[TypeBound]] =
-        Values(Set(PreciseType(ByteType)))
+    private val typesAnswerByte: IsPrimitiveType = IsPrimitiveType(ByteType)
 
-    private val valuesAnswerChar: ValuesAnswer[Set[TypeBound]] =
-        Values(Set(PreciseType(CharType)))
+    private val typesAnswerChar: IsPrimitiveType = IsPrimitiveType(CharType)
 
-    private val valuesAnswerShort: ValuesAnswer[Set[TypeBound]] =
-        Values(Set(PreciseType(ShortType)))
+    private val typesAnswerShort: IsPrimitiveType = IsPrimitiveType(ShortType)
 
-    private val valuesAnswerInteger: ValuesAnswer[Set[TypeBound]] =
-        Values(Set(PreciseType(IntegerType)))
+    private val typesAnswerInteger: IsPrimitiveType = IsPrimitiveType(IntegerType)
 
-    abstract override def types(value: DomainValue): ValuesAnswer[Set[TypeBound]] = {
+    abstract override def types(value: DomainValue): TypesAnswer[_] = {
         value match {
-            case SomeBooleanValue ⇒ valuesAnswerBoolean
-            case SomeByteValue    ⇒ valuesAnswerByte
-            case SomeCharValue    ⇒ valuesAnswerChar
-            case SomeShortValue   ⇒ valuesAnswerShort
-            case SomeIntegerValue ⇒ valuesAnswerInteger
+            case SomeBooleanValue ⇒ typesAnswerBoolean
+            case SomeByteValue    ⇒ typesAnswerByte
+            case SomeCharValue    ⇒ typesAnswerChar
+            case SomeShortValue   ⇒ typesAnswerShort
+            case SomeIntegerValue ⇒ typesAnswerInteger
 
             case _                ⇒ super.types(value)
         }
@@ -298,12 +293,11 @@ trait DefaultTypeLevelLongValues[I]
         }
     }
 
-    private val valuesAnswer: ValuesAnswer[Set[TypeBound]] =
-        Values(Set(PreciseType(LongType)))
+    private val typesAnswer: IsPrimitiveType = IsPrimitiveType(LongType)
 
-    abstract override def types(value: DomainValue): ValuesAnswer[Set[TypeBound]] = {
+    abstract override def types(value: DomainValue): TypesAnswer[_] = {
         value match {
-            case r: SomeLongValue ⇒ valuesAnswer
+            case r: SomeLongValue ⇒ typesAnswer
             case _                ⇒ super.types(value)
         }
     }
@@ -373,12 +367,11 @@ trait DefaultTypeLevelFloatValues[I]
         }
     }
 
-    private val valuesAnswer: ValuesAnswer[Set[TypeBound]] =
-        Values(Set(PreciseType(FloatType)))
+    private val typesAnswer: IsPrimitiveType = IsPrimitiveType(FloatType)
 
-    abstract override def types(value: DomainValue): ValuesAnswer[Set[TypeBound]] = {
+    abstract override def types(value: DomainValue): TypesAnswer[_] = {
         value match {
-            case r: SomeFloatValue ⇒ valuesAnswer
+            case r: SomeFloatValue ⇒ typesAnswer
             case _                 ⇒ super.types(value)
         }
     }
@@ -444,12 +437,11 @@ trait DefaultTypeLevelDoubleValues[I]
         }
     }
 
-    private val valuesAnswer: ValuesAnswer[Set[TypeBound]] =
-        Values(Set(PreciseType(DoubleType)))
+    private val typesAnswer: IsPrimitiveType = IsPrimitiveType(DoubleType)
 
-    abstract override def types(value: DomainValue): ValuesAnswer[Set[TypeBound]] = {
+    abstract override def types(value: DomainValue): TypesAnswer[_] = {
         value match {
-            case r: SomeDoubleValue ⇒ valuesAnswer
+            case r: SomeDoubleValue ⇒ typesAnswer
             case _                  ⇒ super.types(value)
         }
     }
