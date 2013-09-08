@@ -218,7 +218,7 @@ trait DefaultTypeLevelReferenceValues[I]
                 this
         }
 
-        override def merge(mergePC: Int, value: DomainValue): Update[ReferenceValue] = {
+        override def merge(mergePC: Int, value: DomainValue): Update[DomainValue] = {
             if (value eq this)
                 return NoUpdate
 
@@ -241,6 +241,7 @@ trait DefaultTypeLevelReferenceValues[I]
                         case NoUpdate                 ⇒ StructuralUpdate(mrv)
                         case SomeUpdate(updatedValue) ⇒ StructuralUpdate(updatedValue)
                     }
+                case _ ⇒ MetaInformationUpdateNoLegalValue
 
             }
         }
@@ -307,7 +308,7 @@ trait DefaultTypeLevelReferenceValues[I]
 
         lazy val isNull: Answer = (values.head.isNull /: values.tail)(_ merge _.isNull)
 
-        override def merge(mergePC: Int, value: DomainValue): Update[MultipleReferenceValues] = {
+        override def merge(mergePC: Int, value: DomainValue): Update[DomainValue] = {
             if (value eq this)
                 return NoUpdate
 
@@ -343,6 +344,7 @@ trait DefaultTypeLevelReferenceValues[I]
                         }
                     })
                     updateType(MultipleReferenceValues(newValues ++ otherRemainingArvs))
+                case _ ⇒ MetaInformationUpdateNoLegalValue
             }
         }
 
