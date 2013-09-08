@@ -57,17 +57,20 @@ object CountOverridingMethods extends AnalysisExecutor {
         def description: String = "Counts the number of methods that override a method."
 
         def analyze(project: Project[URL]) = {
+            import project.classHierarchy
+            import project.classes
+
             var methodsCount = 0
             var methodsThatOverrideAnotherMethodCount = 0
 
             def classFileHasImplementedMethod(
-                classFile: ClassFile,
                 methodName: String,
-                methodDescriptor: MethodDescriptor): Boolean = {
+                methodDescriptor: MethodDescriptor)(
+                    classFile: ClassFile): Boolean = {
 
                 classFile.methods.exists(
                     _ match {
-                        case m @ Method(_, `methodName`, `methodDescriptor`, _) if !m.isAbstract ⇒ true
+                        case m @ Method(_, `methodName`, `methodDescriptor`, _) if !m.isAbstract && !m.isPrivate ⇒ true
                         case _ ⇒ false
                     }
                 )
@@ -78,26 +81,22 @@ object CountOverridingMethods extends AnalysisExecutor {
                 classFile ← project.classFiles
                 if !classFile.isInterfaceDeclaration
                 method ← classFile.methods
-                if !method.isPrivate && !method.isAbstract && !method.isStatic && method.name != "<init>"
+                if !method.isPrivate
+                if !method.isAbstract
+                if !method.isStatic
+                if method.name != "<init>"
             } {
+                val hasOverriddenMethod = classFileHasImplementedMethod(method.name, method.descriptor) _
+
                 methodsCount += 1
-                val superclasses = project.classHierarchy.allSuperclasses(classFile.thisClass)
-                superclasses.find(
-                    superclassType ⇒ {
-                        project.classes.get(superclassType).find(theClass ⇒ {
-                            if (!theClass.isInterfaceDeclaration) {
-                                classFileHasImplementedMethod(theClass, method.name, method.descriptor)
-                            } else {
-                                false
-                            }
-                        }) match {
-                            case Some(_ /*classFile*/ ) ⇒ true
-                            case _                      ⇒ false
-                        }
-                    }) match {
+                classHierarchy.superclasses(
+                    classFile,
+                    !(_: ClassFile).isInterfaceDeclaration,
+                    classes
+                ).find(superclass ⇒ hasOverriddenMethod(superclass)) match {
                         case Some(cf) ⇒
                             results = (classFile.thisClass.className+
-                                " inherits from "+cf.className+
+                                " inherits from "+cf.thisClass.className+
                                 " overrides "+method.name + method.descriptor.toUMLNotation) :: results
                             methodsThatOverrideAnotherMethodCount += 1
                         case None ⇒ /*OK*/
@@ -105,9 +104,10 @@ object CountOverridingMethods extends AnalysisExecutor {
             }
 
             BasicReport(
-                "Overall number of methods: "+methodsCount+
-                    "\nNumber of methods that override a parent's (non-abstract) method: "+methodsThatOverrideAnotherMethodCount +
-                    results.mkString("\n\t", "\n\t", "\n"))
+                "Overridden methods:"+results.mkString("\n\t", "\n\t", "\n")+
+                    "Overall number of relevant methods: "+methodsCount+
+                    "\nNumber of methods that override a parent's (non-abstract) method: "+methodsThatOverrideAnotherMethodCount
+            )
 
         }
     }

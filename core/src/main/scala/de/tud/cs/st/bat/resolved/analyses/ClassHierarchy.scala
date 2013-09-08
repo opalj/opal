@@ -39,10 +39,12 @@ import util.graphs.{ Node, toDot }
 import util.{ Answer, Yes, No, Unknown }
 
 /**
- * Represents the visible part of a project's class hierarchy. The visible part of a project's
- * class hierarchy consists of all classes defined in the analyzed class files and all
- * boundary classes/interfaces. I.e., those classes which are seen when analyzing a specific
- * class file, but for which the respective class file is not seen.
+ * Represents the visible part of a project's class hierarchy.
+ *
+ * The visible part of a project's class hierarchy consists of all classes defined in
+ * the analyzed class files and all boundary classes/interfaces. I.e., those classes
+ * which are seen when analyzing a specific class file, but for which the respective
+ * class file is not seen.
  *
  * ==Usage==
  * To build the class hierarchy use the `++` and `+` method.
@@ -52,7 +54,7 @@ import util.{ Answer, Yes, No, Unknown }
  *
  * However, this also means that an update of the class hierarchy results in a new
  * class hierarchy object and, therefore, some external synchronization
- * is needed to make sure that the complete class hierarchy is constructed.
+ * may be needed to make sure that the complete class hierarchy is constructed.
  * This decision was made to avoid any need for synchronization
  * once the class hierarchy is completely constructed.
  *
@@ -62,14 +64,17 @@ class ClassHierarchy(
         protected val superclasses: Map[ObjectType, Set[ObjectType]] = Map(),
         protected val subclasses: Map[ObjectType, Set[ObjectType]] = Map()) {
 
+    /**
+     * Adds the given class files
+     */
     def ++(classFiles: Traversable[ClassFile]): ClassHierarchy =
         (this /: classFiles)(_ + _)
 
     def +(classFile: ClassFile): ClassHierarchy = {
-        this.+(classFile.thisClass, classFile.superClass.toSeq ++ classFile.interfaces)
+        this + (classFile.thisClass, classFile.superClass.toSeq ++ classFile.interfaces)
     }
 
-    def +(aType: ObjectType, aTypesSupertypes: Seq[ObjectType]): ClassHierarchy = {
+    def +(aType: ObjectType, aTypesSupertypes: Traversable[ObjectType]): ClassHierarchy = {
         var thisTypesSuperclasses = superclasses.getOrElse(aType, Set.empty) ++ aTypesSupertypes
         val newSuperclasses = superclasses.updated(aType, thisTypesSuperclasses)
 
@@ -159,31 +164,57 @@ class ClassHierarchy(
     def superclasses(objectType: ObjectType): Option[Set[ObjectType]] =
         superclasses.get(objectType)
 
+    def superclasses(
+        classFile: ClassFile,
+        filter: ClassFile ⇒ Boolean,
+        classes: Map[ObjectType, ClassFile]): Iterator[ClassFile] =
+        superclasses(classFile.thisClass, filter, classes)
+
     /**
-     * Returns the set of all classes/intefaces the given class inherits.
+     * Returns the set of all classes/interfaces from which the given class inherits
+     * and for which the respective class file is available.
+     *
+     * @return An iterator over all class files of all super types of the given type that
+     *    pass the given filter and for which the class file is available.
      */
-    def allSuperclasses(objectType: ObjectType): Set[ObjectType] = {
-        var allSuperclasses: Set[ObjectType] = Set.empty
-        var furtherSuperclasses =
-            superclasses.get(objectType).getOrElse({ return Set.empty })
+    def superclasses(
+        objectType: ObjectType,
+        classFileFilter: ClassFile ⇒ Boolean,
+        classes: Map[ObjectType, ClassFile]): Iterator[ClassFile] = {
 
-        while (furtherSuperclasses.nonEmpty) {
-            val currentClasses = furtherSuperclasses
-            furtherSuperclasses = Set.empty
-            currentClasses.foreach(currentClass ⇒ {
-                allSuperclasses += currentClass
-                superclasses.get(currentClass).map(furtherSuperclasses ++= _)
-            })
+        new Iterator[ClassFile] {
+
+            var returnedSupertypes: Set[ObjectType] = Set.empty
+
+            var nextSuperclasses: Traversable[ClassFile] = {
+                var supertypes = superclasses.get(objectType).getOrElse(List.empty[ObjectType])
+                ClassHierarchy.lookupClassfiles(supertypes, classFileFilter, classes)
+            }
+
+            def hasNext: Boolean = nextSuperclasses.nonEmpty
+
+            def next: ClassFile = {
+                val nextSuperclass = nextSuperclasses.head
+                nextSuperclasses = nextSuperclasses.tail
+                nextSuperclasses ++= {
+                    ClassHierarchy.lookupClassfiles(
+                        superclasses.get(nextSuperclass.thisClass).getOrElse(List.empty[ObjectType]),
+                        classFile ⇒ !returnedSupertypes.contains(classFile.thisClass) && classFileFilter(classFile),
+                        classes)
+                }
+
+                returnedSupertypes += nextSuperclass.thisClass
+
+                nextSuperclass
+            }
         }
-
-        allSuperclasses
     }
 
     /**
      * Determines if `currentType` is a subtype of `supertype`.
      *
-     * @return Some(true) if currentType is a subtype of supertype. Some(false)
-     *      if currentType is not a subtype of supertype and None if the analysis is
+     * @return `Yes` if currentType is a subtype of supertype. `No`
+     *      if currentType is not a subtype of supertype and `Unknown` if the analysis is
      *      not conclusive. The latter can happen if the class hierarchy is not
      *      completely available and hence precise information about a type's supertypes
      *      is not available.
@@ -192,6 +223,14 @@ class ClassHierarchy(
         if (currentType == supertype) {
             Yes
         } else if (currentType.isArrayType) {
+            // FIXME This does not implement the semantics of instanceof !
+            // Object o = new java.util.ArrayList[0];
+            // (o instanceof Object[]); // true
+            // (o instanceof java.io.Serializable[]); // true
+            // (o instanceof java.util.List[]); // true
+            //
+            // (o instanceof java.util.Set[]); // false
+            // (o instanceof int[]);// false
             if (supertype == ObjectType.Object)
                 Yes
             else
@@ -206,7 +245,7 @@ class ClassHierarchy(
             // analysis is considered to be non-conclusive.
             var nonConclusive = false;
             for {
-                superclasses ← superclasses.get(currentType.asObjectType).toList
+                superclasses ← superclasses.get(currentType.asObjectType) //.toList
                 superclass ← superclasses
             } {
                 isSubtypeOf(superclass, supertype) match {
@@ -231,13 +270,14 @@ class ClassHierarchy(
      * directly inherit.
      *
      * If the class file of a given object type was not previously analyzed
-     * an error will be returned.
+     * a `NoSuchElementException` will be raised.
      */
     def superclasses(objectTypes: Traversable[ObjectType]): Set[ObjectType] =
         (Set.empty[ObjectType] /: objectTypes)(_ ++ superclasses.apply(_))
 
     /**
-     * Returns a view of the class hierarchy as a graph.
+     * Returns a view of the class hierarchy as a graph (which can then be transformed
+     * into a dot representation [[http://www.graphviz.org Graphviz]]
      */
     def toGraph: Node = new Node {
 
@@ -275,7 +315,18 @@ class ClassHierarchy(
     }
 }
 
+/**
+ * Defines factory methods for creating initial `ClassHierarchy` objects.
+ *
+ * @author Michael Eichberg
+ */
 object ClassHierarchy {
+
+    def lookupClassfiles(
+        objectTypes: Traversable[ObjectType],
+        filter: ClassFile ⇒ Boolean,
+        classes: Map[ObjectType, ClassFile]): Traversable[ClassFile] =
+        objectTypes.map(classes.get(_)).filter(_.isDefined).map(_.get).filter(filter)
 
     /**
      * Creates a new empty class hierarchy.
