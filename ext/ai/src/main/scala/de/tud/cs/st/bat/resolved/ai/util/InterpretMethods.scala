@@ -104,7 +104,8 @@ object InterpretMethods {
                         }
                     } catch {
                         case ct: ControlThrowable ⇒ throw ct
-                        case t: Throwable ⇒ { // we want to catch all types of exceptions, but also (assertion) error
+                        case t: Throwable ⇒ {
+                            // we want to catch all types of exceptions, but also (assertion) errors
                             collectedExceptions = (classFile, method, t) :: collectedExceptions
                         }
                     }
@@ -120,23 +121,30 @@ object InterpretMethods {
         }
 
         if (collectedExceptions.nonEmpty) {
-            var report = "During the interpretation of "+
+            var report = "Exceptions: "
+
+            var groupedExceptions = collectedExceptions.groupBy(e ⇒ e._3.getClass().getName())
+            groupedExceptions.map(ge ⇒ {
+                val (exClass, exInstances) = ge
+
+                report +=
+                    "\n"+exClass+"("+exInstances.size+")__________________________\n"
+
+                report += exInstances.map(
+                    ex ⇒ {
+                        ex._1.thisClass.className+"{ "+
+                            ex._2.toJava+" => "+ex._3.getMessage().trim+
+                            " }"
+                    }).mkString("\n\t", ",\n\t", "\n")
+            })
+            report +=
+                "\nDuring the interpretation of "+
                 methodsCount+" methods in "+
                 classesCount+" classes (overall: "+nsToSecs(getTime('OVERALL))+
                 "secs. (reading: "+nsToSecs(getTime('READING))+
                 "secs., parsing: "+nsToSecs(getTime('PARSING))+
                 "secs., ai: "+nsToSecs(getTime('AI))+
-                "secs.)) the following exceptions occured:"
-            var groupedExceptions = collectedExceptions.groupBy(e ⇒ e._3.getClass().getName())
-            groupedExceptions.map(ge ⇒ {
-                val (exClass, exInstances) = ge
-                report += "\n\t"+exClass+"("+exInstances.size+")__________________________\n"
-                for ((classFile, method, ex) ← exInstances) {
-                    report += "\t\t"+classFile.thisClass.className
-                    report += " => "+method.toJava+"\n"
-                    report += ex.getMessage().trim
-                }
-            })
+                "secs.)) "+collectedExceptions.size+" exceptions occured."
             Some(report)
         } else {
             None

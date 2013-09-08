@@ -54,7 +54,8 @@ trait TypeLevelArrayInstructions { this: Domain[_] ⇒
         types(arrayref) match {
             case HasSingleReferenceTypeBound(ArrayType(componentType)) ⇒
                 ComputedValue(TypedValue(componentType))
-            case _ ⇒ AIImplementationError(
+            case _ ⇒ domainException(
+                this,
                 "cannot determine the type of the array's content, the array may contain either booleans or byte values: "+arrayref
             )
         }

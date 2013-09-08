@@ -59,27 +59,27 @@ trait ConstantPoolBinding extends Constant_PoolReader {
         cp(index)
 
     trait Constant_Pool_Entry extends bat.reader.ConstantPoolEntry {
-        def asString: String = BATError("conversion to string is not supported")
-        def asFieldType: FieldType = BATError("conversion to field type is not supported")
-        def asMethodDescriptor: MethodDescriptor = BATError("conversion to method descriptor is not supported")
-        def asFieldTypeSignature: FieldTypeSignature = BATError("conversion to field type signature is not supported")
+        def asString: String = BATException("conversion to string is not supported")
+        def asFieldType: FieldType = BATException("conversion to field type is not supported")
+        def asMethodDescriptor: MethodDescriptor = BATException("conversion to method descriptor is not supported")
+        def asFieldTypeSignature: FieldTypeSignature = BATException("conversion to field type signature is not supported")
 
-        def asSignature(implicit ap: AttributeParent): Signature = BATError("conversion to signature attribute is not supported")
+        def asSignature(implicit ap: AttributeParent): Signature = BATException("conversion to signature attribute is not supported")
 
-        def asConstantValue(implicit cp: Constant_Pool): ConstantValue[_] = BATError("conversion to constant value is not supported")
-        def asFieldref(implicit cp: Constant_Pool): (ObjectType, String, FieldType) = BATError("conversion to field ref is not supported")
-        def asMethodref(implicit cp: Constant_Pool): (ReferenceType, String, MethodDescriptor) = BATError("conversion to method ref is not supported")
-        def asInvoke[T <: Instruction](create: (ReferenceType, String, MethodDescriptor) ⇒ T)(implicit cp: Constant_Pool): T = BATError("conversion to method ref is not supported")
+        def asConstantValue(implicit cp: Constant_Pool): ConstantValue[_] = BATException("conversion to constant value is not supported")
+        def asFieldref(implicit cp: Constant_Pool): (ObjectType, String, FieldType) = BATException("conversion to field ref is not supported")
+        def asMethodref(implicit cp: Constant_Pool): (ReferenceType, String, MethodDescriptor) = BATException("conversion to method ref is not supported")
+        def asInvoke[T <: Instruction](create: (ReferenceType, String, MethodDescriptor) ⇒ T)(implicit cp: Constant_Pool): T = BATException("conversion to method ref is not supported")
 
-        def asObjectType(implicit cp: Constant_Pool): ObjectType = BATError("conversion to object type is not supported")
-        def asReferenceType(implicit cp: Constant_Pool): ReferenceType = BATError("conversion to object type is not supported")
+        def asObjectType(implicit cp: Constant_Pool): ObjectType = BATException("conversion to object type is not supported")
+        def asReferenceType(implicit cp: Constant_Pool): ReferenceType = BATException("conversion to object type is not supported")
 
-        def asBootstrapArgument(implicit cp: Constant_Pool): BootstrapArgument = BATError("conversion to bootstrap argument is not supported")
-        def asMethodHandle(implicit cp: Constant_Pool): MethodHandle = BATError("conversion to method handle is not supported")
+        def asBootstrapArgument(implicit cp: Constant_Pool): BootstrapArgument = BATException("conversion to bootstrap argument is not supported")
+        def asMethodHandle(implicit cp: Constant_Pool): MethodHandle = BATException("conversion to method handle is not supported")
 
-        def asNameAndType: CONSTANT_NameAndType_info = BATError("conversion to name and type info is not supported")
+        def asNameAndType: CONSTANT_NameAndType_info = BATException("conversion to name and type info is not supported")
 
-        def asInvokeDynamic: CONSTANT_InvokeDynamic_info = BATError("conversion to invoke dynamic info is not supported")
+        def asInvokeDynamic: CONSTANT_InvokeDynamic_info = BATException("conversion to invoke dynamic info is not supported")
 
     }
 

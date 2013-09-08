@@ -82,7 +82,7 @@ trait TypeLevelReferenceValues { this: Domain[_] ⇒
     def isNull(value: DomainValue): Answer = value match {
         case r: ReferenceValue ⇒ r.isNull
         case _ ⇒
-            AIImplementationError("a non-reference value cannot be (non-)null")
+            domainException(this, "a non-reference value cannot be (non-)null")
     }
 
     // -----------------------------------------------------------------------------------
@@ -147,15 +147,6 @@ trait DefaultTypeLevelReferenceValues[I]
     trait ReferenceValue
             extends super.ReferenceValue
             with IsReferenceType { outer ⇒
-
-        //        final def context: I = domain.identifier
-        //
-        //        /**
-        //         * Typically, the program counter where this reference value was created or
-        //         * (depending on the implementation of the domain) where this reference
-        //         * value was merged.
-        //         */
-        //        def pc: Int
 
         /**
          * Returns the set of types of the represented value.
@@ -409,7 +400,7 @@ trait DefaultTypeLevelReferenceValues[I]
         types(arrayref) match {
             case HasSingleReferenceTypeBound(ArrayType(componentType)) ⇒
                 ComputedValue(TypedValue(componentType))
-            case _ ⇒ AIImplementationError(
+            case _ ⇒ domainException(this,
                 "cannot determine the type of the array's content, the array may contain either booleans or byte values: "+arrayref
             )
         }
@@ -455,7 +446,7 @@ trait DefaultTypeLevelReferenceValues[I]
                 }
                 answer
             case _ ⇒
-                AIImplementationError("checking the subtype for non-reference type values: "+value)
+                domainException(this, "checking the subtype for non-reference type values: "+value)
         }
     }
 

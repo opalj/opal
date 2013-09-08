@@ -36,7 +36,6 @@ package resolved
 package ai
 package util
 
-
 /**
  * A small interpreter that enables us to easily perform the abstract interpretation of a
  * specific method.
@@ -90,9 +89,27 @@ object InterpretMethod {
                     return ;
             }
 
-        val result = AI(classFile, method, new domain.ConfigurableDefaultDomain((classFile, method)))
-        println(result)
+        import util.Util.{ dump, writeAndOpenDump }
 
+        try {
+            val result =
+                AI(classFile,
+                    method,
+                    new domain.ConfigurableDefaultDomain((classFile, method)))
+            println(result)
+        } catch {
+            case ie @ InterpreterException(message, domain, worklist, operands, locals) ⇒
+                writeAndOpenDump(
+                    dump(
+                        Some(classFile),
+                        Some(method),
+                        method.body.get,
+                        operands,
+                        locals,
+                        Some(message)))
+                throw ie
+
+        }
     }
 
 }

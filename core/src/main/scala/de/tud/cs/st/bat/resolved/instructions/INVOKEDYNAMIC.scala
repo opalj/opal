@@ -36,7 +36,7 @@ package resolved
 
 case object UNRESOLVED_INVOKEDYNAMIC extends DynamicMethodInvocationInstruction {
 
-    private def error = BATError("this invokedynamic instruction was not correctly resolved")
+    private def error = BATException("this invokedynamic instruction was not correctly resolved")
 
     def opcode: Int = error
 

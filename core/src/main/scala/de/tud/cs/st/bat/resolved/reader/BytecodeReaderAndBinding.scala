@@ -430,7 +430,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                     WIDE
                 }
 
-                case opcode ⇒ BATError("unsupported opcode: "+opcode)
+                case opcode ⇒ BATException("unsupported opcode: "+opcode)
             }
 
         }

@@ -32,47 +32,10 @@
  */
 package de.tud.cs.st
 package bat
+package resolved
 
-/**
- * Enables iterating over a class( file member)'s access flags. I.e., given
- * the access flags of a class file, a field or a method, it is then possible
- * to iterate over the flags (synthetic, public, deprecated, etc.) that are set.
- *
- * @param accessFlags the class( file member)'s access flags
- * @param ctx the accessFlags' context; the interpretation of the access
- * 	flags bit vector partially depends on the concrete source element that
- * 	defines the accessFlags.
- *
- * @author Michael Eichberg
- */
-class AccessFlagsIterator(
-    accessFlags: Int,
-    ctx: AccessFlagsContext)
-        extends Iterator[AccessFlag] {
-
-    private[this] var flags = accessFlags
-
-    private[this] val potentialAccessFlags = AccessFlagsContexts.potentialAccessFlags(ctx)
-
-    private[this] var index = -1
-
-    def hasNext = flags != 0
-
-    def next: AccessFlag = {
-        while ((index + 1) < potentialAccessFlags.size) {
-            index += 1
-            if ((flags & potentialAccessFlags(index).mask) != 0) {
-                flags = flags & (~potentialAccessFlags(index).mask)
-                return potentialAccessFlags(index)
-            }
-        }
-        BATException("Unknown access flag(s): "+Integer.toHexString(flags))
-    }
-}
-object AccessFlagsIterator {
-
-    def apply(accessFlags: Int, ctx: AccessFlagsContext) =
-        new AccessFlagsIterator(accessFlags, ctx)
-
-}
+case class AnalysisFailedException(
+    message: String,
+    code: Code,
+    pc: Int) extends RuntimeException(message)
 

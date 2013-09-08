@@ -68,7 +68,7 @@ object LDC {
             case f: Float         ⇒ LoadFloat(f)
             case r: ReferenceType ⇒ LoadClass(r)
             case s: String        ⇒ LoadString(s)
-            case _                ⇒ BATError("unsupported constant value: "+constantValue)
+            case _                ⇒ BATException("unsupported constant value: "+constantValue)
         }
     }
 

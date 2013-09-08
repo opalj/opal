@@ -51,18 +51,74 @@ package resolved
  */
 package object ai {
 
+    import language.existentials
+
+    class AIException(message: String) extends RuntimeException(message)
+
+    @throws[AIException]
+    def aiException(message: String): Nothing = {
+        throw new AIException(message)
+    }
+
+    object AIException {
+        def unapply(exception: AIException): Option[String] = Some(exception.getMessage())
+    }
+
+    case class DomainException(
+            domain: Domain[_],
+            message: String) extends AIException(message) {
+
+        def enrich(
+            worklist: List[Int],
+            operandsArray: Array[List[domain.DomainValue]],
+            localsArray: Array[Array[domain.DomainValue]]) = {
+
+            new InterpreterException(
+                message,
+                domain,
+                worklist,
+                operandsArray,
+                localsArray)
+        }
+    }
+
+    @throws[DomainException]
+    def domainException(
+        domain: Domain[_],
+        message: String): Nothing =
+        throw DomainException(domain, message)
+
     /**
      * Exception that is thrown if the framework identifies an error in the concrete
      * implementation of a specific domain. I.e., the error is related to an error in
      * a user's implementation of a domain.
      */
-    class AIImplementationError(message: String) extends RuntimeException(message)
+    case class InterpreterException[D <: Domain[_]](
+        message: String,
+        domain: D,
+        worklist: List[Int],
+        operandsArray: Array[_ <: List[_ <: D#DomainValue]],
+        localsArray: Array[_ <: Array[_ <: D#DomainValue]]) extends AIException(message)
+
+    type SomeInterpreterException = InterpreterException[_]
 
     /**
      * Creates and immediately throws an `AIImplementationError`.
      */
-    @throws[AIImplementationError] def AIImplementationError(message: String): Nothing = {
-        throw new AIImplementationError(message)
+    @throws[SomeInterpreterException]
+    def interpreterException[D <: Domain[_]](
+        message: String,
+        domain: D,
+        worklist: List[Int],
+        operandsArray: Array[_ <: List[_ <: D#DomainValue]],
+        localsArray: Array[_ <: Array[_ <: D#DomainValue]]): Nothing = {
+        throw InterpreterException[Domain[_]](
+            message,
+            domain,
+            worklist,
+            operandsArray,
+            localsArray
+        )
     }
 
     /**

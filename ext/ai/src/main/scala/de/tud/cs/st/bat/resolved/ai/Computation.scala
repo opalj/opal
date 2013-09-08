@@ -96,7 +96,7 @@ final case class ComputedValue[+V](
 
     def hasResult: Boolean = true
 
-    def exceptions = AIImplementationError("the computation succeeded without an exception")
+    def exceptions = aiException("the computation succeeded without an exception")
 
     def throwsException: Boolean = false
 
@@ -127,7 +127,7 @@ final case class ThrowsException[+E](
     exceptions: E)
         extends Computation[Nothing, E] {
 
-    def result = AIImplementationError("the computation resulted in an exception")
+    def result = aiException("the computation resulted in an exception")
 
     def hasResult: Boolean = false
 
@@ -144,7 +144,7 @@ final case class ComputationWithSideEffectOrException[+E](
     exceptions: E)
         extends Computation[Nothing, E] {
 
-    def result = AIImplementationError("the computation was executed for its side effect only")
+    def result = aiException("the computation was executed for its side effect only")
 
     def hasResult: Boolean = false
 
@@ -159,11 +159,11 @@ final case class ComputationWithSideEffectOrException[+E](
 case object ComputationWithSideEffectOnly
         extends Computation[Nothing, Nothing] {
 
-    def result = AIImplementationError("the computation was executed for its side effect only")
+    def result = aiException("the computation was executed for its side effect only")
 
     def hasResult: Boolean = false
 
-    def exceptions = AIImplementationError("the computation succeeded without an exception")
+    def exceptions = aiException("the computation succeeded without an exception")
 
     def throwsException: Boolean = false
 

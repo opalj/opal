@@ -63,7 +63,7 @@ object LDC2_W {
         constantValue.value match {
             case v: Long   ⇒ LoadLong(v)
             case d: Double ⇒ LoadDouble(d)
-            case _         ⇒ BATError("unsupported LDC2_W constant value: "+constantValue)
+            case _         ⇒ BATException("unsupported LDC2_W constant value: "+constantValue)
         }
     }
 

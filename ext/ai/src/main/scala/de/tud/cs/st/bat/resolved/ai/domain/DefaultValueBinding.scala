@@ -56,7 +56,7 @@ trait DefaultValueBinding[I] extends Domain[I] {
     final val MetaInformationUpdateNoLegalValue = MetaInformationUpdate(TheNoLegalValue)
 
     def types(value: DomainValue): TypesAnswer[_] =
-        AIImplementationError("could not determine the type(s) of the given value: "+value)
+        domainException(this,"could not determine the type(s) of the given value: "+value)
 
 }
 

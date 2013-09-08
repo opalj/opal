@@ -59,7 +59,7 @@ sealed trait AccessFlag extends AccessFlagsMatcher {
      *
      * ==Example==
      * {{{
-     *  case ClassFile(ACC_PUBLIC(),...)
+     * case ClassFile(ACC_PUBLIC(),...)
      * }}}
      *
      * To create more complex matchers, use the `&` and `!` methods.
@@ -106,6 +106,7 @@ trait AccessFlagsMatcher { outer ⇒
 }
 
 sealed trait VisibilityModifier extends AccessFlag
+
 /**
  * Utility methods related to the visibility modifiers.
  *
@@ -129,6 +130,7 @@ object VisibilityModifier {
 
     def unapply(accessFlags: Int): Option[VisibilityModifier] = get(accessFlags)
 }
+
 
 object ACC_PUBLIC extends VisibilityModifier {
     final val javaName: Option[String] = Some("public")

@@ -207,7 +207,7 @@ trait Domain[I] {
     protected class NoLegalValue extends Value { this: DomainValue ⇒
 
         def computationalType: ComputationalType =
-            BATError("the value \"NoLegalValue\" does not have a computational type")
+            BATException("the value \"NoLegalValue\" does not have a computational type")
 
         def merge(pc: Int, value: DomainValue): Update[DomainValue] = {
             if (value == TheNoLegalValue)
@@ -217,7 +217,7 @@ trait Domain[I] {
         }
 
         type ValueType = Nothing
-        def valueType = AIImplementationError("a non-legal value has no type")
+        def valueType = throw DomainException(Domain.this, "a non-legal value has no type")
 
         override def toString = "NoLegalValue"
     }
@@ -248,7 +248,7 @@ trait Domain[I] {
      * This method is solely defined to catch implementation errors early on.
      */
     final def StructuralUpdateNoLegalValue: StructuralUpdate[Nothing] =
-        AIImplementationError(
+        throw DomainException(Domain.this,
             "the merging of a value with an incompatible value "+
                 "always has to be a MetaInformationUpdate and not more")
 
@@ -273,7 +273,7 @@ trait Domain[I] {
         }
 
         type ValueType = Nothing
-        def valueType = AIImplementationError(
+        def valueType = throw DomainException(Domain.this,
             "ReturnAddressValues are not associated with a type")
 
         final def computationalType: ComputationalType = ComputationalTypeReturnAddress
@@ -329,7 +329,7 @@ trait Domain[I] {
             case DoubleType        ⇒ SomeDoubleValue
             case rt: ReferenceType ⇒ SomeReferenceValue(rt)
             case VoidType ⇒
-                AIImplementationError("it is not possible to create a void typed value")
+                domainException(Domain.this, "it is not possible to create a void typed value")
         })
         newValue
     }
@@ -918,7 +918,7 @@ trait Domain[I] {
     def checkcast(pc: Int,
                   objectref: DomainValue,
                   resolvedType: ReferenceType): Computation[DomainValue, DomainValue]
-    
+
     def instanceof(pc: Int,
                    objectref: DomainValue,
                    resolvedType: ReferenceType): DomainValue
@@ -957,7 +957,7 @@ trait Domain[I] {
      * within the same method.
      *
      * @note If the original exception value is `null`, then
-     *      the exception that is actually thrown is a new `NullPointerException`. This 
+     *      the exception that is actually thrown is a new `NullPointerException`. This
      *      situation is, however, completely handled by BATAI.
      */
     def abnormalReturn(pc: Int, exception: DomainValue): Unit
@@ -972,19 +972,19 @@ trait Domain[I] {
                  declaringClass: ObjectType,
                  name: String,
                  fieldType: FieldType): FieldValueOrNullPointerException
-                 
+
     def getstatic(pc: Int,
                   declaringClass: ObjectType,
                   name: String,
                   fieldType: FieldType): DomainValue
-                  
+
     def putfield(pc: Int,
                  objectref: DomainValue,
                  value: DomainValue,
                  declaringClass: ObjectType,
                  name: String,
                  fieldType: FieldType): SucceedsOrNullPointerException
-                 
+
     def putstatic(pc: Int,
                   value: DomainValue,
                   declaringClass: ObjectType,
@@ -1001,19 +1001,19 @@ trait Domain[I] {
                         name: String,
                         methodDescriptor: MethodDescriptor,
                         operands: List[DomainValue]): OptionalReturnValueOrExceptions
-                        
+
     def invokevirtual(pc: Int,
                       declaringClass: ReferenceType,
                       name: String,
                       methodDescriptor: MethodDescriptor,
                       operands: List[DomainValue]): OptionalReturnValueOrExceptions
-                      
+
     def invokespecial(pc: Int,
                       declaringClass: ReferenceType,
                       name: String,
                       methodDescriptor: MethodDescriptor,
                       operands: List[DomainValue]): OptionalReturnValueOrExceptions
-                      
+
     def invokestatic(pc: Int,
                      declaringClass: ReferenceType,
                      name: String,

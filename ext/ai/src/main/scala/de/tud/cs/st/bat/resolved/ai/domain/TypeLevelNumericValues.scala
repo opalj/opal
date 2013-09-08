@@ -57,6 +57,10 @@ trait TypeLevelIntegerValues { this: Domain[_] ⇒
 
     def intValuesRange(pc: Int, start: Int, end: Int): DomainValue = SomeIntegerValue
 
+    def booleanValue(pc: Int, value: Boolean): DomainValue = SomeBooleanValue
+
+    def someBooleanValue(pc: Int): DomainValue = SomeBooleanValue
+
     /**
      * Abstracts over all values with computational type `integer` and also
      * represents Integer values.

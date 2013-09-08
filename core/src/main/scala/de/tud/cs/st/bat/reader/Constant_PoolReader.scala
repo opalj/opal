@@ -178,7 +178,7 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
                     i += 1; CONSTANT_MethodType_info(in.readUnsignedShort)
                 case CONSTANT_InvokeDynamic_ID ⇒
                     i += 1; CONSTANT_InvokeDynamic_info(in.readUnsignedShort, in.readUnsignedShort)
-                case _ ⇒ BATError("unknown constant pool tag: "+tag)
+                case _ ⇒ BATException("unknown constant pool tag: "+tag)
             }
         }
         constant_pool_entries
