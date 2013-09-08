@@ -130,7 +130,9 @@ trait DefaultTypeLevelReferenceValues[I]
         extends DefaultValueBinding[I]
         with TypeLevelReferenceValues { domain ⇒
 
-    def intValuesRange(pc: Int, start: Int, end: Int): DomainValue
+    def booleanValue(pc: Int, value: Boolean): DomainValue
+
+    def someBooleanValue(pc: Int): DomainValue
 
     //
     //
@@ -469,9 +471,9 @@ trait DefaultTypeLevelReferenceValues[I]
 
     def instanceof(pc: Int, value: DomainValue, resolvedType: ReferenceType) =
         isNull(value) match {
-            case Yes ⇒ /* => FALSE */ intValue(pc, 0)
-            case No  ⇒ /* We need to check... */ intValuesRange(pc, 0, 1)
-            case _   ⇒ /* => FALSE, but also TRUE?*/ intValuesRange(pc, 0, 1)
+            case Yes ⇒ /* => FALSE */ booleanValue(pc, false)
+            case No  ⇒ /* We need to check... */ SomeBooleanValue
+            case _   ⇒ /* => FALSE, but also TRUE?*/ SomeBooleanValue
         }
 
 }

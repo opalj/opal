@@ -570,7 +570,7 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "asSimpleMethodsInstance").get
         /*val result =*/ AI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(SomeIntegerValue))
+        domain.returnedValue should be(Some(SomeBooleanValue))
     }
 
     //
