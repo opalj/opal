@@ -62,29 +62,80 @@ class ClassHierarchyTest
     //
     val ch = ClassHierarchy.preInitializedClassHierarchy
 
+    val Object = ObjectType("java/lang/Object")
+    val Throwable = ObjectType("java/lang/Throwable")
+    val Exception = ObjectType("java/lang/Exception")
+    val Error = ObjectType("java/lang/Error")
+    val RuntimeException = ObjectType("java/lang/RuntimeException")
+    val Cloneable = ObjectType.Cloneable
+    val Serializable = ObjectType.Serializable
+    val SeriablizableArray = ArrayType(Serializable)
+    val SeriablizableArrayOfArray = ArrayType(SeriablizableArray)
+    val AnUnknownType = ObjectType("myTest/AnUnknownType")
+    val AnUnknownTypeArray = ArrayType(AnUnknownType)
+    val CloneableArray = ArrayType(Cloneable)
+    val ObjectArray = ArrayType(Object)
+    val intArray = ArrayType(IntegerType)
+    val longArray = ArrayType(LongType)
+
     //
     //
     // Verify
     //
     //
 
-    behavior of "The ClassHierarchy created using \"readPredefinedHierarchy\""
+    behavior of "The default ClassHierarchy's isSubtypeOf method w.r.t. Arrays"
+
+    import ch.isSubtypeOf
 
     it should "correctly reflect the base exception hierarchy" in {
-        val Object = ObjectType("java/lang/Object")
-        val Throwable = ObjectType("java/lang/Throwable")
-        val Exception = ObjectType("java/lang/Exception")
-        val Error = ObjectType("java/lang/Error")
-        val RuntimeException = ObjectType("java/lang/RuntimeException")
 
-        ch.isSubtypeOf(Object, Throwable) should be(No)
+        isSubtypeOf(Throwable, Object) should be(Yes)
+        isSubtypeOf(Error, Throwable) should be(Yes)
+        isSubtypeOf(RuntimeException, Exception) should be(Yes)
+        isSubtypeOf(Exception, Throwable) should be(Yes)
 
-        ch.isSubtypeOf(Throwable, Object) should be(Yes)
+        isSubtypeOf(Object, Throwable) should be(No)
 
-        ch.isSubtypeOf(Error, Throwable) should be(Yes)
+        isSubtypeOf(AnUnknownType, Object) should be(Yes)
+        isSubtypeOf(Object, AnUnknownType) should be(No)
 
-        ch.isSubtypeOf(RuntimeException, Exception) should be(Yes)
+    }
 
-        ch.isSubtypeOf(Exception, Throwable) should be(Yes)
+    it should "correctly reflect the basic type hierarchy related to Arrays" in {
+        isSubtypeOf(ObjectArray, Object) should be(Yes)
+        isSubtypeOf(SeriablizableArray, ObjectArray) should be(Yes)
+        isSubtypeOf(CloneableArray, ObjectArray) should be(Yes)
+        isSubtypeOf(ObjectArray, ObjectArray) should be(Yes)
+        isSubtypeOf(SeriablizableArray, SeriablizableArray) should be(Yes)
+        isSubtypeOf(AnUnknownTypeArray, AnUnknownTypeArray) should be(Yes)
+
+        isSubtypeOf(Object, ObjectArray) should be(No)
+        isSubtypeOf(CloneableArray, SeriablizableArray) should be(No)
+
+        isSubtypeOf(AnUnknownTypeArray, SeriablizableArray) should be(Unknown)
+
+        isSubtypeOf(SeriablizableArray, AnUnknownTypeArray) should be(No)
+    }
+
+    it should "correctly reflect the type hierarchy related to Arrays of primitives" in {
+        isSubtypeOf(intArray, Object) should be(Yes)
+        isSubtypeOf(intArray, Serializable) should be(Yes)
+        isSubtypeOf(intArray, Cloneable) should be(Yes)
+        isSubtypeOf(intArray, intArray) should be(Yes)
+
+        isSubtypeOf(intArray, longArray) should be(No)
+        isSubtypeOf(longArray, intArray) should be(No)
+    }
+
+    it should "correctly reflect the type hierarchy related to Arrays of Arrays" in {
+        isSubtypeOf(SeriablizableArrayOfArray, Object) should be(Yes)
+        isSubtypeOf(SeriablizableArrayOfArray, SeriablizableArrayOfArray) should be(Yes)
+
+        isSubtypeOf(SeriablizableArrayOfArray, SeriablizableArray) should be(Yes)
+        isSubtypeOf(SeriablizableArrayOfArray, ObjectArray) should be(Yes)
+        isSubtypeOf(SeriablizableArrayOfArray, CloneableArray) should be(Yes)
+
+        isSubtypeOf(SeriablizableArrayOfArray, AnUnknownTypeArray) should be(No)
     }
 }

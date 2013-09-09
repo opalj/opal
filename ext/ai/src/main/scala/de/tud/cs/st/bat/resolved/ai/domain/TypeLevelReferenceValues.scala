@@ -130,35 +130,32 @@ trait DefaultTypeLevelReferenceValues[I]
         extends DefaultValueBinding[I]
         with TypeLevelReferenceValues { domain ⇒
 
+    //
+    // Additional functionality that need to be provided by the 
+    // implementation of the domain.
+    //
+
     def booleanValue(pc: Int, value: Boolean): DomainValue
 
     def someBooleanValue(pc: Int): DomainValue
 
-    //
+    // -----------------------------------------------------------------------------------
     //
     // HANDLING OF REFERENCE VALUES
     //
-    //
+    // -----------------------------------------------------------------------------------
 
-    /**
-     * @note Subclasses are not expected to add further state. If so, the implementation
-     *      of all `equals` and `hashCode` methods need to be revised.
-     */
-    trait ReferenceValue
-            extends super.ReferenceValue
-            with IsReferenceType { outer ⇒
+    trait ReferenceValue extends super.ReferenceValue with IsReferenceType {
 
         /**
          * Returns the set of types of the represented value.
          *
          * Basically, we have to distinguish two situations:
          * 1. a value that may have (depending on the control flow) different
-         *    independent types
+         *    independent types (different values with corresponding types).
          * 2. a type for which we have multiple bounds; i.e., we don't know the precise
          *    type, but we know (e.g., due to typechecks) that it (has to) implements
          *    multiple interfaces.
-         * @note It may be more efficient to use the `types` method to get a
-         *    reference value's types.
          */
         def typeBound: TypeBound
 

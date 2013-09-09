@@ -90,9 +90,9 @@ object CountOverridingMethods extends AnalysisExecutor {
 
                 methodsCount += 1
                 classHierarchy.superclasses(
-                    classFile,
+                    classFile.thisClass,
                     !(_: ClassFile).isInterfaceDeclaration,
-                    classes
+                    project
                 ).find(superclass ⇒ hasOverriddenMethod(superclass)) match {
                         case Some(cf) ⇒
                             results = (classFile.thisClass.className+

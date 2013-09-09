@@ -56,7 +56,8 @@ trait toDot {
             if (n.toHRR.isDefined) s += "\t"+n.uniqueId+"[label=\""+n.toHRR.get+"\"];\n"
 
             val f = (sn: Node) ⇒ {
-                if (n.toHRR.isDefined) s += "\t"+n.uniqueId+" -> "+sn.uniqueId+";\n" // +"[dir=none];\n"
+                if (n.toHRR.isDefined)
+                    s += "\t"+n.uniqueId+" -> "+sn.uniqueId+";\n" // +"[dir=none];\n"
 
                 if (!(processedNodes contains sn.uniqueId)) {
                     nodesToProcess = sn :: nodesToProcess

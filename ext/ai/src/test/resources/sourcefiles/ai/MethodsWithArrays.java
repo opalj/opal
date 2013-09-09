@@ -79,10 +79,15 @@ public class MethodsWithArrays {
 
     public static void main(String[] args) {
         Object o = new java.util.ArrayList[0];
+        Object s = new java.io.Serializable[10][5];
 
         System.out.println(o instanceof Object[]); // true
         System.out.println(o instanceof java.io.Serializable[]); // true
         System.out.println(o instanceof java.util.List[]); // true
+
+        System.out.println(s instanceof Object[]);
+        System.out.println(s instanceof java.io.Serializable[]);
+        System.out.println(s instanceof java.lang.Cloneable[]);
 
         System.out.println(o instanceof java.util.Set[]); // false
         System.out.println(o instanceof int[]);// false

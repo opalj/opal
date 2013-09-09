@@ -1,0 +1,8 @@
+# Predefinition of the type hierarchy related to supertypes of arrays
+#
+# The format is simple: supertype ">" subtype(", "subtype)*
+java/lang/Object > java/lang/Throwable
+#
+# Class hierarchy for: java/lang/Throwable limited to classes that start with: java/
+# Generated for: /jdk1.7.0_25.jdk/rt.jar
+java/lang/Object > java/lang/Cloneable, java/io/Serializable

@@ -119,8 +119,8 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      * When this method is called, the given stream has to be positioned at the very
      * beginning of the constant pool. This method is called by the template method that
      * reads in a class file to delegate the reading of the constant pool. Only
-     * information belonging to the constant pool are allowed to be read. 
-     * 
+     * information belonging to the constant pool are allowed to be read.
+     *
      * The stream must not be closed after reading the constant pool.
      */
     protected def Constant_Pool(in: DataInputStream): Constant_Pool
@@ -295,7 +295,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      * @param jarFileEntryName the name of a class file stored in the specified ZIP/JAR file.
      */
     def ClassFile(jarFile: File, jarFileEntryName: String): ClassFile = {
-        withResource(new ZipFile(jarFile))(zf ⇒ {
+        process(new ZipFile(jarFile))(zf ⇒ {
             val jarEntry = zf.getEntry(jarFileEntryName)
             ClassFile(zf, jarEntry)
         })
@@ -327,14 +327,16 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      * @param jarFile A valid jar file that contains `.class` files; other files
      *      are ignored.
      * @param f The function that is called for each class file in the given jar file.
-     *      Given that the jarFile is read in parallel '''this function has to be thread safe'''.
+     *      Given that the jarFile is read in parallel '''this function has to be
+     *      thread safe'''.
+     * @param exceptionHandler The exception handler that is called when the reading
+     *      of a class file fails.
      */
+    // TODO  [Improvement][ClassFileReader] Support reading of jar files within jar files.
     def ClassFiles(
         jarFile: ZipFile,
-        f: (ZipFile, ZipEntry, ClassFile) ⇒ _,
-        // TODO  [Improvement] support recursive decent
-        // recursiveDecent: Boolean = true,
-        exceptionHandler: Option[(Exception) ⇒ _] = defaultExceptionHandler) {
+        f: (ZipFile, ZipEntry, ClassFile) ⇒ Unit,
+        exceptionHandler: (Exception) ⇒ Unit = logExceptionToConsoleErr) {
 
         import collection.JavaConversions._
         for (jarEntry ← (jarFile).entries.toIterable.par) {
@@ -346,21 +348,15 @@ trait ClassFileReader extends Constant_PoolAbstractions {
                         f(jarFile, jarEntry, classFile)
                     }
                 }
-
-                //                else if (recursiveDecent && jarEntryName.endsWith(".jar")) {
-                //                    onException(exceptionHandler) {
-                //                        new ZipFile(...)
-                //                    }
-                //                }
             }
         }
     }
 
     /**
-     * Reads all class files from the given zip file.
+     * Reads all class files from the given jar file.
      */
     def ClassFiles(jarFileName: String): Seq[(ClassFile, URL)] =
-        withResource(new ZipFile(jarFileName)) { zf ⇒ ClassFiles(zf) }
+        process(new ZipFile(jarFileName)) { zf ⇒ ClassFiles(zf) }
 
     /**
      * Loads class files from the given file location. If the file denotes

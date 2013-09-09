@@ -175,7 +175,7 @@ object Util {
     }
 
     private lazy val styles: String = {
-        withResource(this.getClass().getResourceAsStream("dump.head.fragment.css"))(
+        process(this.getClass().getResourceAsStream("dump.head.fragment.css"))(
             scala.io.Source.fromInputStream(_).mkString
         )
     }

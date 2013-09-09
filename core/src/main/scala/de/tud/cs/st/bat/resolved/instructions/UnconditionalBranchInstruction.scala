@@ -46,6 +46,7 @@ abstract class UnconditionalBranchInstruction extends ControlTransferInstruction
 
 }
 object UnconditionalBranch {
+    
     def unapply(i: UnconditionalBranchInstruction): Option[Int] = Some(i.branchoffset)
-
+    
 }

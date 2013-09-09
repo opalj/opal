@@ -68,9 +68,9 @@ object BaseAnalyses {
     def isOverride(project: Project[_])(classFile: ClassFile)(method: Method): Boolean = {
         // TODO we could also check for an @Override annotation
         val superMethods = (for (
-            superClass ← project.classHierarchy.superclasses(classFile.thisClass).getOrElse(Set());
-            (_, method) ← project
-                .lookupMethodDeclaration(superClass, method.name, method.descriptor)
+            (superclasses, _) ← project.classHierarchy(classFile.thisClass).toSeq;
+            superClass ← superclasses;
+            (_, method) ← project.classHierarchy.lookupMethodDeclaration(superClass, method.name, method.descriptor, project)
         ) yield {
             method
         })
@@ -103,12 +103,12 @@ object BaseAnalyses {
      */
     def calledSuperConstructor(project: Project[_])(classFile: ClassFile,
                                                     constructor: Method): Option[(ClassFile, Method)] = {
-        val superClasses = project.classHierarchy.superclasses(classFile.thisClass)
-        if (!superClasses.isDefined) {
+        val ch = project.classHierarchy(classFile.thisClass)
+        if (!ch.isDefined) {
             return None
         }
         val constructorCall = constructor.body.get.instructions.collectFirst {
-            case INVOKESPECIAL(trgt, n, d) if superClasses.get.contains(trgt.asInstanceOf[ObjectType]) ⇒
+            case INVOKESPECIAL(trgt, n, d) if ch.get._1.contains(trgt.asInstanceOf[ObjectType]) ⇒
                 (trgt.asInstanceOf[ObjectType], n, d)
 
         }
@@ -118,7 +118,7 @@ object BaseAnalyses {
         }
 
         val Some((targetType, name, desc)) = constructorCall
-        project.lookupMethodDeclaration(targetType, name, desc)
+        project.classHierarchy.lookupMethodDeclaration(targetType, name, desc, project)
     }
 
     def calls(sourceMethod: Method, targetClass: ClassFile, targetMethod: Method): Boolean = {

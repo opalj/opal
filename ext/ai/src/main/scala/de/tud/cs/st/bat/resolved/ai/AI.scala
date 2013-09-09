@@ -39,8 +39,10 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 import scala.util.control.ControlThrowable
 
 /**
- * A highly-configurable abstract interpreter for BAT's resolved
- * representation of Java bytecode.
+ * A highly-configurable interpreter for BAT's resolved representation of Java bytecode.
+ * This interpreter basically iterates over all instructions to execute the given
+ * program. However, compared to a JVM the precise
+ * semantics of an instruction is implemented by an exchangeable `Domain` object.
  *
  * ==Thread Safety==
  * This class is thread-safe as long as the ai tracer (if any) and the used domain
@@ -91,7 +93,8 @@ trait AI {
         domain: Domain[_]) = perform(classFile, method, domain)(None)
 
     /**
-     * The worklist that is used when the analysis of a method starts.
+     * The list of program counters that is used when the analysis of
+     * a method starts.
      */
     private final val initialWorkList = List(0)
 
@@ -100,7 +103,7 @@ trait AI {
      * values (if any).
      *
      * ==Controlling the AI==
-     * The abstract interpretation of a method is aborted it the AI's `isInterrupted`
+     * The abstract interpretation of a method is aborted if the AI's `isInterrupted`
      * method returns true. That method is called directly before an instruction
      * is evaluated.
      *
@@ -153,7 +156,6 @@ trait AI {
                     locals.update(localVariableIndex, thisValue)
                     localVariableIndex += 1 /*==thisType.computationalType.operandSize*/
                 }
-
                 for (parameterType ← method.descriptor.parameterTypes) {
                     val ct = parameterType.computationalType
                     locals.update(localVariableIndex, TypedValue(parameterType))

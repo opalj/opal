@@ -42,21 +42,21 @@ import reflect.api.Trees
 import java.io.InputStream
 
 /**
- * Defines generally useful control abstractions.
+ * Defines additional control abstractions.
  *
  * @author Michael Eichberg
  */
 object ControlAbstractions {
 
-    def rethrowException[T](e: Exception): T = throw e;
-
-    def defaultExceptionHandler: Some[(Exception) ⇒ _] =
-        Some((e: Exception) ⇒ rethrowException(e))
+    /**
+     * Logs the exception to the console, but otherwise swallows the exception.
+     */
+    def logExceptionToConsoleErr(e: Exception): Unit = Console.err.print(e.toString)
 
     /**
      * Calls the given `exceptionHandler` when an exception is thrown while
      * evaluating the expression/function `f` but does not (re)throw
-     * the underlying exception. I.e., unless the exception handler (re)throws
+     * the underlying exception on its own. I.e., unless the exception handler (re)throws
      * (the)an exception the program will continue with the expression after `f` –
      * the exception is swallowed.
      *
@@ -64,11 +64,8 @@ object ControlAbstractions {
      * `java.lang.Throwable`, the exception will not be caught and is directly
      * rethrown.
      *
-     * If no exception handler is registered (exceptionHandler == None)
-     * the exception is silently swallowed.
-     *
-     * If you simply want to rethrow the exception you can use the method
-     * `rethrowException` as the `exceptionHandler`. This is particularly
+     * If you simply want to log the exception you can use the method
+     * `logExceptionToConsoleErr` as the `exceptionHandler`. This is particularly
      * meaningful if you have a method that is parameterized by an
      * exception handler and you want to provide a sensible default.
      *
@@ -78,17 +75,15 @@ object ControlAbstractions {
      * {{{
      * val files = new java.io.File(System.getProperty("user.dir")).listFiles
      * for (file <- files) {
-     *     onException(Some((e:Exception) => println(e.getMessage))){
-     *         println(file.getName)
-     *     }
+     *     onException(){ println(file.getName) }
      * }
      * }}}
      *
      * ===Complex Example===
      * {{{
      * def doIt(zipFile: ZipFile,
-     *          f: (ZipFile, ZipEntry, ClassFile) ⇒ _,
-     *          exceptionHandler: Option[(Exception) ⇒ _] = defaultExceptionHandler) {
+     *          f: (ZipFile, ZipEntry, ClassFile) ⇒ Unit,
+     *          exceptionHandler: exceptionHandler: (Exception) ⇒ Unit = logExceptionToConsoleErr) {
      *     import collection.JavaConversions._
      *     for (zipEntry ← (zipFile).entries.toIterable) {
      *         onException(exceptionHandler){
@@ -98,29 +93,24 @@ object ControlAbstractions {
      * }
      * }}}
      */
-    def onException(exceptionHandler: Option[(Exception) ⇒ _])(f: ⇒ Unit) {
+    def onException[T, E <: T](exceptionHandler: (Exception) ⇒ E = logExceptionToConsoleErr _)(f: ⇒ T) {
         try {
             f
         } catch {
             case e: Exception ⇒ {
-                exceptionHandler match {
-                    case Some(eh) ⇒ eh(e)
-                    case None     ⇒ /* we deliberately swallow the exception */ ;
-                }
+                exceptionHandler(e)
             }
-            case t: Throwable ⇒ throw t
         }
     }
 
     /**
+     * This function takes a function `f` that creates a new `Closeable` resource (`f` is a
+     * named parameter) and a function `r` that processes an input stream.
      * This function takes care of the correct handling of input streams.
-     * The function takes a function <code>f</code> that creates a new <code>InputStream</code> (f is a
-     * named parameter) and a function <code>r</code> that processes an input stream. 
      * When `r` has finished processing the input stream, the stream is closed.
-     * If f should return <code>null</code>, <code>null</code> is passed to r.
+     * If `f` returns `null`, `null` is passed to `r`.
      */
-    @throws[java.io.IOException]
-    def process[I <: InputStream, T](f: ⇒ I)(r: I ⇒ T): T = {
+    def process[I <: java.io.Closeable, T](f: ⇒ I)(r: I ⇒ T): T = {
         val in = f
         try {
             r(in)
@@ -129,16 +119,10 @@ object ControlAbstractions {
         }
     }
 
-    def withResource[I <: java.io.Closeable, O](r: ⇒ I)(f: I ⇒ O): O = {
-        val resource = r
-        try {
-            f(resource)
-        } finally {
-            if (resource ne null)
-                resource.close
-        }
-    }
-
+    /**
+     * Evaluates the given function `f` the given number of `times` and stores
+     * the result in a newly created array.
+     */
     def repeatToArray[T: ClassTag](times: Int)(f: ⇒ T): Array[T] = {
         val array = new Array[T](times)
         var i = 0
@@ -150,8 +134,8 @@ object ControlAbstractions {
     }
 
     /**
-     * Evaluates the given expression `f` with type `T` the given number of `times` and stores the
-     * result in an `IndexedSeq[T]`.
+     * Macro that evaluates the given expression `f` with type `T` the given number of
+     * `times` and stores the result in an `IndexedSeq[T]`.
      *
      * ==Example Usage==
      * {{{
@@ -160,12 +144,14 @@ object ControlAbstractions {
      * }
      * }}}
      *
-     * @param times The number of times the expression `f` is evaluated. The `times` expression is evaluated
-     *     exactly once.
-     * @param f An expression that is evaluated the given number of times unless an exception is
-     *     thrown. Hence, even though `f` is not a by-name parameter, it behaves in the same way.
-     * @return The result of the evaluation of the expression `f` the given number of times stored in an
-     *      `IndexedSeq`. If `times` is zero an empty sequence is returned.
+     * @param times The number of times the expression `f` is evaluated. The `times`
+     *      expression is evaluated exactly once.
+     * @param f An expression that is evaluated the given number of times unless an
+     *      exception is thrown. Hence, even though `f` is not a by-name parameter,
+     *      it behaves in the same way.
+     * @return The result of the evaluation of the expression `f` the given number of
+     *      times stored in an `IndexedSeq`. If `times` is zero an empty sequence is
+     *      returned.
      */
     def repeat[T](times: Int)(f: T): IndexedSeq[T] = macro ControlAbstractionsImplementation.repeat[T]
     // OLD IMPLEMENTATION USING HIGHER-ORDER FUNCTIONS
@@ -187,6 +173,8 @@ object ControlAbstractions {
 
 /**
  * Implementation of the macros.
+ *
+ * @author Michael Eichberg
  */
 private object ControlAbstractionsImplementation {
 

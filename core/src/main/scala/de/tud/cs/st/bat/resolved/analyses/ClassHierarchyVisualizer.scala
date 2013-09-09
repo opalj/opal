@@ -33,16 +33,38 @@
 package de.tud.cs.st
 package bat
 package resolved
+package analyses
 
 /**
- * An instruction that converts between a numeric value of primitive type A and primitive type B.
+ * Creates a `dot` (Graphviz) based representation of the class hierarchy.
  *
  * @author Michael Eichberg
  */
-abstract class NumericConversionInstruction extends Instruction {
+object ClassHierarchyVisualizer {
 
-    def runtimeExceptions(): List[ObjectType] = Nil
+    def main(args: Array[String]) {
 
-    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 1
+        import reader.Java7Framework.ClassFiles
+        import util.graphs.{ Node, toDot }
+        import util.ControlAbstractions._
 
+        if (args.length == 0 || !args.forall(_.endsWith(".jar"))) {
+            println("Usage: java …ClassHierarchy <JAR file>+")
+            println("(c) 2013 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
+            sys.exit(-1)
+        }
+
+        val classHierarchy = (new ClassHierarchy /: args)(_ ++ ClassFiles(_).map(_._1))
+
+        val classHierarchyDescription = (toDot.generateDot(Set(classHierarchy.toGraph)))
+
+        onException(e ⇒ println(classHierarchyDescription)) {
+            val desktop = java.awt.Desktop.getDesktop()
+            val file = java.io.File.createTempFile("ClassHierarchy", ".dot")
+            process(new java.io.FileOutputStream(file)) { fos ⇒
+                fos.write(classHierarchyDescription.getBytes("UTF-8"))
+            }
+            desktop.open(file)
+        }
+    }
 }

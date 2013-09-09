@@ -31,15 +31,19 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package de.tud.cs.st
-package util
+package bat
+package resolved
 
 /**
- * Extractor for singleton sets.
+ * An instruction that converts between a numeric value of primitive type A and
+ * primitive type B.
+ *
+ * @author Michael Eichberg
  */
-object SingletonSet {
-    def unapply[T](set: Set[T]): Option[T] =
-        if (set.size == 1)
-            Some(set.head)
-        else
-            None
+abstract class NumericConversionInstruction extends Instruction {
+
+    def runtimeExceptions(): List[ObjectType] = Nil
+
+    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 1
+
 }

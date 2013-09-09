@@ -105,7 +105,7 @@ object InterpretMethods {
                     } catch {
                         case ct: ControlThrowable ⇒ throw ct
                         case t: Throwable ⇒ {
-                            // we want to catch all types of exceptions, but also (assertion) errors
+                            // basically, we want to catch everything!
                             collectedExceptions = (classFile, method, t) :: collectedExceptions
                         }
                     }
@@ -132,8 +132,9 @@ object InterpretMethods {
 
                 report += exInstances.map(
                     ex ⇒ {
-                        ex._1.thisClass.className+"{ "+
-                            ex._2.toJava+" => "+ex._3.getMessage().trim+
+                        Console.UNDERLINED + ex._1.thisClass.className + "\033[24m"+"{ "+
+                            ex._2.toJava+" => "+
+                            Console.BOLD+ex._3.getMessage().trim+"\033[21m"+
                             " }"
                     }).mkString("\n\t", ",\n\t", "\n")
             })

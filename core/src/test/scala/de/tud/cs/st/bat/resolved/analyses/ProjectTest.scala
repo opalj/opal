@@ -74,8 +74,9 @@ class ProjectTest
 
     behavior of "Project's classes repository"
 
-    import project._
-    
+    import project.classes
+    import project.classHierarchy.lookupMethodDeclaration
+
     it should "find the class methods.a.Super" in {
         classes.get(SuperType) should be('Defined)
     }
@@ -91,41 +92,41 @@ class ProjectTest
     behavior of "Project's lookupMethodDeclaration method"
 
     it should "find a public method" in {
-        project.lookupMethodDeclaration(SuperType, "publicMethod", MethodDescriptor("()V")) should be('Defined)
+        lookupMethodDeclaration(SuperType, "publicMethod", MethodDescriptor("()V"), project) should be('Defined)
     }
 
     it should "find a private method" in {
-        project.lookupMethodDeclaration(SuperType, "privateMethod", MethodDescriptor("()V")) should be('Defined)
+        lookupMethodDeclaration(SuperType, "privateMethod", MethodDescriptor("()V"), project) should be('Defined)
     }
 
     it should "not find a method that does not exist" in {
-        project.lookupMethodDeclaration(SuperType, "doesNotExist", MethodDescriptor("()V")) should be('Empty)
+        lookupMethodDeclaration(SuperType, "doesNotExist", MethodDescriptor("()V"), project) should be('Empty)
     }
 
     it should "find a method with default visibility" in {
-        project.lookupMethodDeclaration(SuperType, "defaultVisibilityMethod", MethodDescriptor("()V")) should be('Defined)
+        lookupMethodDeclaration(SuperType, "defaultVisibilityMethod", MethodDescriptor("()V"), project) should be('Defined)
     }
 
     it should "find another method with default visibility" in {
-        project.lookupMethodDeclaration(SuperType, "anotherDefaultVisibilityMethod", MethodDescriptor("()V")) should be('Defined)
+        lookupMethodDeclaration(SuperType, "anotherDefaultVisibilityMethod", MethodDescriptor("()V"), project) should be('Defined)
     }
 
     it should "find the super class' method anotherDefaultVisibilityMethod" in {
-        project.lookupMethodDeclaration(DirectSub, "anotherDefaultVisibilityMethod", MethodDescriptor("()V")) should be('Defined)
+        lookupMethodDeclaration(DirectSub, "anotherDefaultVisibilityMethod", MethodDescriptor("()V"), project) should be('Defined)
     }
 
     it should "not find Object's toString method, because we only have a partial view of the project" in {
-        project.lookupMethodDeclaration(SuperType, "toString", MethodDescriptor("()Ljava/lang/String;")) should be('Empty)
+        lookupMethodDeclaration(SuperType, "toString", MethodDescriptor("()Ljava/lang/String;"), project) should be('Empty)
     }
 
     it should "find a method declared by a directly implemented interface" in {
-        val r = project.lookupMethodDeclaration(AbstractB, "someSubMethod", MethodDescriptor("()V"))
+        val r = lookupMethodDeclaration(AbstractB, "someSubMethod", MethodDescriptor("()V"),project)
         r should be('Defined)
         assert(r.get._1.thisClass === ObjectType("methods/b/SomeSubInterface"))
     }
 
     it should "find a method declared by an indirectly implemented interface" in {
-        val r = project.lookupMethodDeclaration(AbstractB, "someMethod", MethodDescriptor("()V"))
+        val r = lookupMethodDeclaration(AbstractB, "someMethod", MethodDescriptor("()V"), project)
         r should be('Defined)
         assert(r.get._1.thisClass === ObjectType("methods/b/SomeInterface"))
     }

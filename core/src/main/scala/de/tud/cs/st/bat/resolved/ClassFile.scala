@@ -53,16 +53,16 @@ package resolved
  *    are reified depends on the configuration of the class file reader; e.g.,
  *    [[de.tud.cs.st.bat.resolved.reader.Java7Framework]]. The JVM specification defines the following
  *    attributes:
- *    * InnerClasses
- *    * EnclosingMethod
- *    * Synthetic
- *    * Signature
- *    * SourceFile
- *    * SourceDebugExtension
- *    * Deprecated
- *    * RuntimeVisibleAnnotations
- *    * RuntimeInvisibleAnnotations
- *    * BootstrapMethods
+ *    - InnerClasses
+ *    - EnclosingMethod
+ *    - Synthetic
+ *    - Signature
+ *    - SourceFile
+ *    - SourceDebugExtension
+ *    - Deprecated
+ *    - RuntimeVisibleAnnotations
+ *    - RuntimeInvisibleAnnotations
+ *    - BootstrapMethods
  *
  * @author Michael Eichberg
  */
@@ -70,9 +70,9 @@ case class ClassFile(
     minorVersion: Int,
     majorVersion: Int,
     accessFlags: Int,
-    thisClass: ObjectType,
-    superClass: Option[ObjectType],
-    interfaces: Seq[ObjectType],
+    thisClass: ObjectType, // TODO [ClassFile] Rename "thisClass" to,e.g., theType or classType
+    superClass: Option[ObjectType], // TODO [ClassFile] Rename superClass to superclassType
+    interfaces: Seq[ObjectType], // TODO [ClassFile] Rename interfaces to interfacesTypes
     fields: Fields,
     methods: Methods,
     attributes: Attributes)
@@ -114,11 +114,14 @@ case class ClassFile(
     /**
      * Each class has at most one explicit, direct outer type.
      *
-     * @return The object type of the outer type as well as this inner classes' access flags.
+     * @return The object type of the outer type as well as the access flags of this
+     *      inner class.
      */
+    // TODO [ClassFile][Documentation][Test] We need to better describe the semantics of the access flags value of inner classes (an example?)      
     def outerType: Option[(ObjectType, Int)] = {
         innerClasses.flatMap(_ collectFirst {
-            case InnerClass(`thisClass`, Some(outerType), _, accessFlags) ⇒ (outerType, accessFlags)
+            case InnerClass(`thisClass`, Some(outerType), _, accessFlags) ⇒
+                (outerType, accessFlags)
         })
     }
 
@@ -134,7 +137,8 @@ case class ClassFile(
      */
     def sourceFile: Option[String] = attributes collectFirst { case SourceFile(s) ⇒ s }
 
-    def sourceDebugExtension: Option[String] = attributes collectFirst { case SourceDebugExtension(s) ⇒ s }
+    def sourceDebugExtension: Option[String] =
+        attributes collectFirst { case SourceDebugExtension(s) ⇒ s }
 
     /**
      * All constructors/instance initialization methods defined by this class.
@@ -146,18 +150,28 @@ case class ClassFile(
     /**
      * The static initializer of this class.
      *
-     * ==Note==
-     * The way which method is identified as the static initializer has changed with Java 7.
-     * In a class file whose version number is 51.0 or above, the method must have its ACC_STATIC flag set.
-     * Other methods named <clinit> in a class file are of no consequence.
+     * @note The way which method is identified as the static initializer has changed
+     *       with Java 7. In a class file whose version number is 51.0 or above, the
+     *       method must have its ACC_STATIC flag set. Other methods named &lt;clinit&gt;
+     *       in a class file are of no consequence.
      */
+    // TODO [ClassFile][Test] We need a test to check that the correct method is returned.
     def staticInitializer: Option[Method] = {
         methods.collectFirst({
-            case m @ Method(accessFlags, "<clinit>", MethodDescriptor(Seq(), VoidType), _) if majorVersion < 51 || m.isStatic ⇒ m
+            case m @ Method(
+                _,
+                "<clinit>",
+                MethodDescriptor(Seq(), VoidType),
+                _
+                ) if majorVersion < 51 || m.isStatic ⇒ m
         })
     }
 }
-
+/**
+ * A collection of constants related to class files.
+ *
+ * @author Michael Eichberg
+ */
 object ClassFile {
 
     val classCategoryMask: Int = ACC_INTERFACE.mask | ACC_ANNOTATION.mask | ACC_ENUM.mask

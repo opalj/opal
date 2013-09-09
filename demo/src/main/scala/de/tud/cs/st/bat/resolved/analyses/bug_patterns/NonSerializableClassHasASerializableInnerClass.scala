@@ -54,7 +54,7 @@ class NonSerializableClassHasASerializableInnerClass[Source]
     //
 
     def description = "Identifies (non-static) inner classes that are serializable, but where the outer class is not."
-   
+
     // 
     // Implementation
     // 
@@ -66,8 +66,8 @@ class NonSerializableClassHasASerializableInnerClass[Source]
         val Serializable = ObjectType("java/io/Serializable")
 
         for {
-            objectTypes ← project.classHierarchy.subclasses(Serializable).toSeq
-            objectType ← objectTypes
+            (_, allSerializables) ← project.classHierarchy(Serializable).toSeq
+            objectType ← allSerializables
             classFile = project.classes(objectType)
             (outerType, NOT_STATIC()) ← classFile.outerType
             /* if we know nothing about the class, then we never generate a warning */

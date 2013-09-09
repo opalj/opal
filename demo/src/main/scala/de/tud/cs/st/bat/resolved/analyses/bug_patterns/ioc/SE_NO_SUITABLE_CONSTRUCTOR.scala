@@ -42,9 +42,9 @@ object SE_NO_SUITABLE_CONSTRUCTOR extends (Project[_] ⇒ Iterable[ClassFile]) {
 
     def apply(project: Project[_]) = {
         val serializable = ObjectType("java/io/Serializable")
-        val serializableClasses = project.classHierarchy.subclasses(serializable).getOrElse(Set.empty)
         for {
-            superclass ← project.classHierarchy.superclasses(serializableClasses)
+            (_, serializableClasses) ← project.classHierarchy(serializable).toSeq
+            superclass ← project.classHierarchy.supertypes(serializableClasses)
             if project.classes.isDefinedAt(superclass)
             superClassFile = project.classes(superclass)
             if !superClassFile.isInterfaceDeclaration &&

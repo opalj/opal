@@ -42,9 +42,11 @@ import reader.Java7Framework
 import java.net.URL
 
 /**
- * Container for all class files of a project and the resulting class hierarchy.
+ * Primary abstraction of a Java project. This class is basically just a container
+ * for `ClassFile`s. Additionally, it makes project wide information available such as
+ * the class hierarchy.
  *
- * ==Usage==
+ * ==Initialization==
  * To create a representation of a project use the `++` and `+` method.
  *
  * ==Thread Safety==
@@ -66,13 +68,16 @@ import java.net.URL
  * @author Michael Eichberg
  */
 class Project[+Source](
-        val classes: Map[ObjectType, ClassFile],
-        val sources: Map[ObjectType, Source],
-        val classHierarchy: ClassHierarchy = new ClassHierarchy()) {
+    val classes: Map[ObjectType, ClassFile],
+    val sources: Map[ObjectType, Source],
+    val classHierarchy: ClassHierarchy = new ClassHierarchy())
+        extends (ObjectType ⇒ Option[ClassFile]) {
 
     def this(classHierarchy: ClassHierarchy = new ClassHierarchy()) {
         this(Map[ObjectType, ClassFile](), Map[ObjectType, Source](), classHierarchy)
     }
+
+    def apply(objectType: ObjectType): Option[ClassFile] = classes.get(objectType)
 
     /**
      * Adds the class files to this project by calling the simple "+" method
@@ -84,9 +89,10 @@ class Project[+Source](
     }
 
     /**
-     * Adds the given class file to this project. If the class defines an object
-     * type that was previously added, the old class file will be replaced
-     * by the given one.
+     * Adds the given class file to this project.
+     *
+     * If the class defines an object type that was previously added, the old class file
+     * will be replaced by the given one.
      */
     def +[NewS >: Source](cs: (ClassFile, NewS)): Project[NewS] = {
         val (classFile, source) = cs
@@ -100,63 +106,6 @@ class Project[+Source](
      * This project's class files.
      */
     def classFiles: Iterable[ClassFile] = classes.values
-
-    /**
-     * Looks up the class file and method which actually declares the method that is
-     * referred to by the given receiver type, method name and method descriptor.
-     *
-     * In most cases this will be the receiver's class. For example, if you look
-     * up the method declaration of a method that is called using invokestatic then
-     * (if the project is valid) the class of receiver must define the respective method.
-     * In some cases – however – it might be one (or more) superclasses. In the latter
-     * case the declaration of the method by a superclass has precedence over a
-     * declaration by an interface.
-     *
-     * This method does not take visibility modifiers or the static modifier into account;
-     * i.e, it assumes that the presented project is valid. In the latter case this
-     * method can also be used to reliably lookup a private method's declaration or
-     * the declaration of a constructor/a static method.
-     *
-     * ==Note==
-     * This method might be of limited value if static source code dependencies
-     * are analyzed. If an invoke instruction refers to a method that is not declared
-     * by the receiver's class, then it might be more meaningful to still create a
-     * dependency to the receiver's class than to look up the actual declaration in one
-     * of the receiver's super classes.
-     *
-     * @return `Some((ClassFile,Method))` if the method is found. `None` if the method
-     *    is not found. This can happen under two circumstances:
-     *    First, not all class files referred to/used by the project are (yet) analyzed;
-     *    i.e., we do not have the complete view on all class files belonging to the
-     *    project.
-     *    Second, the analyzed class files do not belong together (they either belong to
-     *    different projects or to incompatible versions of the same project.)
-     */
-    def lookupMethodDeclaration(receiver: ObjectType,
-                                methodName: String,
-                                methodDescriptor: MethodDescriptor): Option[(ClassFile, Method)] = {
-        // TODO [Java 7] How to support lookupMethod for dynamic method calls?
-        val clazz = classes.get(receiver).
-            getOrElse({ return None; })
-
-        (clazz.methods.collectFirst { case m @ Method(_, `methodName`, `methodDescriptor`, _) ⇒ m }) match {
-            case Some(method) ⇒ return Some(clazz, method)
-            case None ⇒ {
-                if (clazz.superClass.isDefined) {
-                    val result = lookupMethodDeclaration(clazz.superClass.get, methodName, methodDescriptor);
-                    if (result.isDefined) {
-                        return result;
-                    }
-                }
-                return clazz.interfaces.collectFirst(
-                    lookupMethodDeclaration(_, methodName, methodDescriptor) match {
-                        case Some(m) ⇒ m
-                    }
-                )
-
-            }
-        }
-    }
 }
 
 /**

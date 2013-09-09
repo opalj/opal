@@ -92,7 +92,7 @@ case object ComputationalTypeDouble
 }
 
 /**
- * A JVM type.
+ * Represents a JVM type.
  *
  * '''From the JVM specification''':
  *
@@ -134,10 +134,16 @@ sealed trait Type {
     def isObjectType: Boolean = false
 
     def computationalType: ComputationalType
-    
-    def asArrayType: ArrayType = throw new ClassCastException("this type cannot be cast to an ArrayType")
-    def asObjectType: ObjectType = throw new ClassCastException("this type cannot be cast to an ObjectType")
-    
+
+    def asReferenceType: ReferenceType =
+        throw new ClassCastException("a "+this.getClass().getSimpleName()+" cannot be cast to a ReferenceType")
+
+    def asArrayType: ArrayType =
+        throw new ClassCastException("a "+this.getClass().getSimpleName()+" cannot be cast to an ArrayType")
+
+    def asObjectType: ObjectType =
+        throw new ClassCastException("a "+this.getClass().getSimpleName()+" cannot be cast to an ObjectType")
+
     def toJava: String
 }
 
@@ -193,8 +199,10 @@ sealed trait ReferenceType extends FieldType {
 
     override final def isReferenceType = true
 
+    override def asReferenceType: ReferenceType = this
+
     def computationalType = ComputationalTypeReference
-    
+
 }
 object ReferenceType {
 
@@ -443,6 +451,10 @@ object ObjectType {
     final val ClassCastException = ObjectType("java/lang/ClassCastException")
     final val ArithmeticException = ObjectType("java/lang/ArithmeticException")
 
+    // the following types are relevant when checking the subtype relation between
+    // two reference types where the subtype is an array type 
+    final val Serializable = ObjectType("java/io/Serializable")
+    final val Cloneable = ObjectType("java/lang/Cloneable")
 }
 
 final class ArrayType private (
@@ -509,12 +521,6 @@ final object ArrayType {
 
     def unapply(at: ArrayType): Option[FieldType] = Some(at.componentType)
 
-    def baseType(t: Type): Type = {
-        t match {
-            case at: ArrayType ⇒ at.elementType
-            case _             ⇒ t
-        }
-    }
 }
 object ArrayElementType {
     def unapply(at: ArrayType): Option[FieldType] = Some(at.elementType)
