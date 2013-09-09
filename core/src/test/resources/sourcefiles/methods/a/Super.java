@@ -45,19 +45,27 @@ package methods.a;
 @SuppressWarnings("all")
 public class Super {
 
-	public void publicMethod() {
-		// empty
-	}
+  public void publicMethod() {
+    // empty
+  }
 
-	void defaultVisibilityMethod() {
-		System.out.println("Super.defaultVisibilityMethod()");
-	}
+  void defaultVisibilityMethod() {
+    System.out.println("Super.defaultVisibilityMethod()");
+  }
 
-	void anotherDefaultVisibilityMethod() {
-		System.out.println("Super.anotherDefaultVisibilityMethod()");
-	}
+  void anotherDefaultVisibilityMethod() {
+    System.out.println("Super.anotherDefaultVisibilityMethod()");
+  }
 
-	private void privateMethod() {
-		// empty
-	}
+  private void privateMethod() {
+    // empty
+  }
+
+  protected static void staticDefaultVisibilityMethod() {
+    System.out.println("Super.staticDefaultVisibilityMethod()");
+  }
+  
+  public static void staticPublicVisibilityMethod() {
+    System.out.println("Super.staticPublicVisibilityMethod()");
+  }
 }

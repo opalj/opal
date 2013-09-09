@@ -51,6 +51,9 @@ public class User {
 		first();
 		second();
 		third();
+		
+		Super.staticDefaultVisibilityMethod();
+		IndirectSub.staticPublicVisibilityMethod();
 	}
 
 	private static void third() {

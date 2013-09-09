@@ -44,12 +44,16 @@ package methods.a;
  */
 @SuppressWarnings("all")
 public class IndirectSub extends methods.b.DirectSub {
-
+  
 	private void privateMethod() {
 		// empty
 	}
 
 	void anotherDefaultVisibilityMethod() {
 		// not allowed super.anotherDefaultVisibilityMethod();
+	}
+	
+	static {
+	  staticDefaultVisibilityMethod();
 	}
 }

@@ -33,8 +33,8 @@
 package methods.a;
 
 /**
- * This class was used to create a class file with some well defined issues. The created class is
- * subsequently used by several tests.
+ * This class was used to create a class file with some well defined issues. 
+ * The created class is subsequently used by several tests.
  *
  * NOTE<br />
  * This class is not meant to be (automatically) recompiled; it just serves documentation purposes.
