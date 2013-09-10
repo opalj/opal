@@ -33,8 +33,8 @@
 package de.tud.cs.st
 
 /**
- * BAT is a Java bytecode library written in Scala that is designed such that it
- * facilitates adaptability to very different use cases.
+ * BAT is a generic Java bytecode library written in Scala that is designed with
+ * adaptability to very different use cases in mind.
  *
  * == This Package ==
  * Common constants and type definitions used across BAT.

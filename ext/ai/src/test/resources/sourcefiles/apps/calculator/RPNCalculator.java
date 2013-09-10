@@ -1,4 +1,4 @@
-package apps;
+package apps.calculator;
 
 import java.util.Stack;
 import java.util.StringTokenizer;

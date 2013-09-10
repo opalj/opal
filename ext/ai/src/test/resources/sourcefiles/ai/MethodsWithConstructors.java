@@ -30,45 +30,40 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
-package ai
+package ai;
 
 /**
- * Defines the interface between the abstract interpreter and the module for
- * tracing the interpreter's behavior. In general, BATAI calls the defined methods
- * at the specified point in time.
- *
+ * Just a very large number of methods that contain loops.
+ * 
+ * <h2>NOTE</h2> This class is not meant to be (automatically) recompiled; it just serves
+ * documentation purposes. The compiled class that is used by the tests is found in the
+ * test-classfiles directory.
+ * 
  * @author Michael Eichberg
  */
-trait AITracer {
+public class MethodsWithConstructors {
 
-    /**
-     * Called by BATAI before an instruction is evaluated.
-     */
-    def instructionEvalution[D <: Domain[_]](
-        domain: D,
-        pc: Int,
-        instruction: Instruction,
-        operands: List[D#DomainValue],
-        locals: Array[D#DomainValue]): Unit
+    public static void singleStepLoop() {
+        for (int i = 0; i < 1; i++) {
+            System.out.println(i);
+        }
+    }
 
-    /**
-     * Called whenever two paths converge and, hence, the values on the operand stack
-     * and the registers need to be merged.
-     */
-    def merge[D <: Domain[_]](
-        pc: Int,
-        thisOperands: D#Operands,
-        thisLocals: D#Locals,
-        otherOperands: D#Operands,
-        otherLocals: D#Locals, result: Update[(D#Operands, D#Locals)])
+    public static void twoStepsLoop() {
+        for (int i = 0; i < 2; i++) {
+            System.out.println(i);
+        }
+    }
 
-    /**
-     * Called when the analyzed method throws an exception that is not catched within
-     * the method.
-     */
-    def abnormalReturn[D <: Domain[_]](pc: Int, exception: D#DomainValue)
+    public static void countTo10() {
+        for (int i = 0; i < 10; i++) {
+            System.out.println(i);
+        }
+    }
 
+    public static void endless() {
+        while (true) {
+            System.out.println(System.nanoTime());
+        }
+    }
 }

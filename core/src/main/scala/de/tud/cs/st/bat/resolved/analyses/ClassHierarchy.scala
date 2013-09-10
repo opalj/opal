@@ -415,37 +415,45 @@ class ClassHierarchy(
         }
     }
 
-//    /**
-//     * Searches for the method (implementation) that will be executed when the given
-//     * method is called on the given receiver.
-//     * 
-//     * This method can be used to resolve super calls/to search for overridden methods.
-//     * In this case the `currentType` just has to be the direct supertype of the `receiver`.
-//     * 
-//     * @param receiver The object that receives the method call. If the receiver
-//     *    is an interface definition, or the class file cannot be looked up
-//     *    `None` is returned.
-//     * @param currentType A supertype of the receiver in which we will look for the
-//     *    method implementation. Initially `currentType` is typically identical
-//     *    to `receiver`.
-//     * @Note If the type of the receiver is not precise the receiver object's
-//     *    subtypes should also be searched for method implementation!
-//     * @Note This method should not be used to    
-//     */
-//    def lookupDefiningMethod(
-//        receiver: ObjectType,
-//        currentType: ObjectType,
-//        methodName: String,
-//        methodDescriptor: MethodDescriptor,
-//        classes: ObjectType ⇒ Option[ClassFile]): Option[(ClassFile, Method)] = {
-//        // TODO [Java 7] How to handle signature polymorphic method resolution?
-//        classes(currentType) match {
-//            case None ⇒ None
-//            case Some(classFile) if classFile.isInterfaceDeclaration ⇒ None
-//            case Some(classFile)
-//        }
-//
-//    }
+    /**
+     * Searches for the method (implementation) that will be executed when the given
+     * method is called on the given receiver.
+     * 
+     * This method can be used to resolve super calls/to search for overridden methods.
+     * In this case the `currentType` just has to be the direct supertype of the `receiver`.
+     * 
+     * @param receiverType The object that receives the method call. If the receiver
+     *    is an interface definition, or the class file cannot be looked up
+     *    `None` is returned.
+     * @param superclassType A supertype of the receiver in which we will look for the
+     *    method implementation. Initially `currentType` is typically identical
+     *    to `receiver`.
+     * @Note If the type of the receiver is not precise the receiver object's
+     *    subtypes should also be searched for method implementation (at least those
+     *    that may be instantiated).
+     * @Note This method should not be used to    
+     */
+    def lookupDefiningMethod(
+        receiverType: ObjectType,
+        superclassType: ObjectType,
+        methodName: String,
+        methodDescriptor: MethodDescriptor,
+        classes: ObjectType ⇒ Option[ClassFile]): Option[(ClassFile, Method)] = {
+        // TODO [Java 7] How to handle signature polymorphic method resolution?
+        classes(receiverType) match {
+            case Some(classFile) if classFile.isInterfaceDeclaration => return None
+            case _ => /* ok... let's continue */
+        }
+                
+        classes(superclassType) match {
+            case None ⇒ None
+            case Some(classFile) if classFile.isInterfaceDeclaration ⇒ None
+            case Some(classFile) => // TODO lll!!!!
+                None
+                
+        }
+
+    }
 
     /**
      * Looks up the class file and method which actually declares the method that is
