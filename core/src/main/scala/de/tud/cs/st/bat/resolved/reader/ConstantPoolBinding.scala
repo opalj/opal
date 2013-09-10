@@ -38,16 +38,15 @@ package reader
 import language.implicitConversions
 import reflect.ClassTag
 
-import de.tud.cs.st.bat.reader.Constant_PoolReader
+import bat.reader.Constant_PoolReader
 
 /**
  * A representation of the constant pool.
  *
- * ==Note==
- * The constant pool is considered to be static; i.e., references between
- * constant pool entries are always resolved at most once and the results are cached.
- * Hence, after reading the constant pool the constant pool is treated as
- * immutable; the referenced constant pool entry must not change.
+ * @note The constant pool is considered to be static; i.e., references between
+ *    constant pool entries are always resolved at most once and the results are cached.
+ *    Hence, after reading the constant pool the constant pool is treated as
+ *    immutable; the referenced constant pool entry must not change.
  *
  * @author Michael Eichberg
  */
@@ -55,58 +54,101 @@ trait ConstantPoolBinding extends Constant_PoolReader {
 
     type ClassFile <: bat.resolved.ClassFile
 
-    implicit def cpIndexTocpEntry(index: Constant_Pool_Index)(implicit cp: Constant_Pool): Constant_Pool_Entry =
+    implicit def cpIndexTocpEntry(
+        index: Constant_Pool_Index)(
+            implicit cp: Constant_Pool): Constant_Pool_Entry =
         cp(index)
 
     trait Constant_Pool_Entry extends bat.reader.ConstantPoolEntry {
-        def asString: String = BATException("conversion to string is not supported")
-        def asFieldType: FieldType = BATException("conversion to field type is not supported")
-        def asMethodDescriptor: MethodDescriptor = BATException("conversion to method descriptor is not supported")
-        def asFieldTypeSignature: FieldTypeSignature = BATException("conversion to field type signature is not supported")
+        def asString: String =
+            BATException("conversion to string is not supported")
 
-        def asSignature(implicit ap: AttributeParent): Signature = BATException("conversion to signature attribute is not supported")
+        def asFieldType: FieldType =
+            BATException("conversion to field type is not supported")
 
-        def asConstantValue(implicit cp: Constant_Pool): ConstantValue[_] = BATException("conversion to constant value is not supported")
-        def asFieldref(implicit cp: Constant_Pool): (ObjectType, String, FieldType) = BATException("conversion to field ref is not supported")
-        def asMethodref(implicit cp: Constant_Pool): (ReferenceType, String, MethodDescriptor) = BATException("conversion to method ref is not supported")
-        def asInvoke[T <: Instruction](create: (ReferenceType, String, MethodDescriptor) ⇒ T)(implicit cp: Constant_Pool): T = BATException("conversion to method ref is not supported")
+        def asMethodDescriptor: MethodDescriptor =
+            BATException("conversion to method descriptor is not supported")
 
-        def asObjectType(implicit cp: Constant_Pool): ObjectType = BATException("conversion to object type is not supported")
-        def asReferenceType(implicit cp: Constant_Pool): ReferenceType = BATException("conversion to object type is not supported")
+        def asFieldTypeSignature: FieldTypeSignature =
+            BATException("conversion to field type signature is not supported")
 
-        def asBootstrapArgument(implicit cp: Constant_Pool): BootstrapArgument = BATException("conversion to bootstrap argument is not supported")
-        def asMethodHandle(implicit cp: Constant_Pool): MethodHandle = BATException("conversion to method handle is not supported")
+        def asSignature(implicit ap: AttributeParent): Signature =
+            BATException("conversion to signature attribute is not supported")
 
-        def asNameAndType: CONSTANT_NameAndType_info = BATException("conversion to name and type info is not supported")
+        def asConstantValue(implicit cp: Constant_Pool): ConstantValue[_] =
+            BATException("conversion to constant value is not supported")
 
-        def asInvokeDynamic: CONSTANT_InvokeDynamic_info = BATException("conversion to invoke dynamic info is not supported")
+        def asFieldref(implicit cp: Constant_Pool): (ObjectType, String, FieldType) =
+            BATException("conversion to field ref is not supported")
 
+        def asMethodref(implicit cp: Constant_Pool): (ReferenceType, String, MethodDescriptor) =
+            BATException("conversion to method ref is not supported")
+
+        def asInvoke[T <: Instruction](
+            create: (ReferenceType, String, MethodDescriptor) ⇒ T)(
+                implicit cp: Constant_Pool): T =
+            BATException("conversion to method ref is not supported")
+
+        def asObjectType(implicit cp: Constant_Pool): ObjectType =
+            BATException("conversion to object type is not supported")
+
+        def asReferenceType(implicit cp: Constant_Pool): ReferenceType =
+            BATException("conversion to object type is not supported")
+
+        def asBootstrapArgument(implicit cp: Constant_Pool): BootstrapArgument =
+            BATException("conversion to bootstrap argument is not supported")
+
+        def asMethodHandle(implicit cp: Constant_Pool): MethodHandle =
+            BATException("conversion to method handle is not supported")
+
+        def asNameAndType: CONSTANT_NameAndType_info =
+            BATException("conversion to name and type info is not supported")
+
+        def asInvokeDynamic: CONSTANT_InvokeDynamic_info =
+            BATException("conversion to invoke dynamic info is not supported")
     }
 
     val Constant_Pool_EntryManifest: ClassTag[Constant_Pool_Entry] = implicitly
 
     trait ConstantValueBootstrapArgument extends Constant_Pool_Entry {
-        override def asBootstrapArgument(implicit cp: Constant_Pool): BootstrapArgument = asConstantValue
+        override def asBootstrapArgument(implicit cp: Constant_Pool): BootstrapArgument =
+            asConstantValue
     }
 
-    case class CONSTANT_Class_info(name_index: Constant_Pool_Index) extends ConstantValueBootstrapArgument {
-        override def asConstantValue(implicit cp: Constant_Pool) = ConstantClass(asReferenceType)
-        override def asObjectType(implicit cp: Constant_Pool) = ObjectType(name_index.asString)
-        override def asReferenceType(implicit cp: Constant_Pool) = ReferenceType(name_index.asString)
-        override def asBootstrapArgument(implicit cp: Constant_Pool): BootstrapArgument = asConstantValue
+    case class CONSTANT_Class_info(
+        name_index: Constant_Pool_Index)
+            extends ConstantValueBootstrapArgument {
+
+        override def asConstantValue(implicit cp: Constant_Pool) =
+            ConstantClass(asReferenceType)
+
+        override def asObjectType(implicit cp: Constant_Pool) =
+            ObjectType(name_index.asString)
+
+        override def asReferenceType(implicit cp: Constant_Pool) =
+            ReferenceType(name_index.asString)
+
+        override def asBootstrapArgument(implicit cp: Constant_Pool): BootstrapArgument =
+            asConstantValue
     }
 
-    case class CONSTANT_Double_info(value: ConstantDouble) extends ConstantValueBootstrapArgument {
+    case class CONSTANT_Double_info(
+        value: ConstantDouble)
+            extends ConstantValueBootstrapArgument {
         def this(value: Double) { this(ConstantDouble(value)) }
         override def asConstantValue(implicit cp: Constant_Pool) = value
     }
 
-    case class CONSTANT_Float_info(value: ConstantFloat) extends ConstantValueBootstrapArgument {
+    case class CONSTANT_Float_info(
+        value: ConstantFloat)
+            extends ConstantValueBootstrapArgument {
         def this(value: Float) { this(ConstantFloat(value)) }
         override def asConstantValue(implicit cp: Constant_Pool) = value
     }
 
-    case class CONSTANT_Integer_info(value: ConstantInteger) extends ConstantValueBootstrapArgument {
+    case class CONSTANT_Integer_info(
+        value: ConstantInteger)
+            extends ConstantValueBootstrapArgument {
 
         def this(value: Int) { this(ConstantInteger(value)) }
 
@@ -114,7 +156,8 @@ trait ConstantPoolBinding extends Constant_PoolReader {
 
     }
 
-    case class CONSTANT_Long_info(value: ConstantLong) extends ConstantValueBootstrapArgument {
+    case class CONSTANT_Long_info(
+            value: ConstantLong) extends ConstantValueBootstrapArgument {
 
         def this(value: Long) { this(ConstantLong(value)) }
 
@@ -139,23 +182,34 @@ trait ConstantPoolBinding extends Constant_PoolReader {
             fieldType
         }
 
-        override def asFieldTypeSignature = SignatureParser.parseFieldTypeSignature(value) // should be called at most once => caching doesn't make sense
+        override def asFieldTypeSignature =
+            // should be called at most once => caching doesn't make sense
+            SignatureParser.parseFieldTypeSignature(value)
 
-        override def asSignature(implicit ap: AttributeParent) = { // should be called at most once => caching doesn't make sense
+        override def asSignature(implicit ap: AttributeParent) =
+            // should be called at most once => caching doesn't make sense
             ap match {
-                case AttributesParent.Field     ⇒ SignatureParser.parseFieldTypeSignature(value)
-                case AttributesParent.ClassFile ⇒ SignatureParser.parseClassSignature(value)
-                case AttributesParent.Method    ⇒ SignatureParser.parseMethodTypeSignature(value)
-                case AttributesParent.Code      ⇒ sys.error("signature attributes stored in a code_attribute's attributes table are non-standard")
+                case AttributesParent.Field ⇒
+                    SignatureParser.parseFieldTypeSignature(value)
+                case AttributesParent.ClassFile ⇒
+                    SignatureParser.parseClassSignature(value)
+                case AttributesParent.Method ⇒
+                    SignatureParser.parseMethodTypeSignature(value)
+                case AttributesParent.Code ⇒
+                    BATException("found signature attribute stored in a code_attribute's attributes table")
             }
-        }
-        override def asConstantValue(implicit cp: Constant_Pool) = ConstantString(value) // required to support annotations; should be called at most once => caching doesn't make sense
+
+        override def asConstantValue(implicit cp: Constant_Pool) =
+            // required to support annotations; should be called at most once => caching doesn't make sense
+            ConstantString(value)
     }
 
     case class CONSTANT_String_info(
         string_index: Constant_Pool_Index)
             extends ConstantValueBootstrapArgument {
-        override def asConstantValue(implicit cp: Constant_Pool) = ConstantString(string_index.asString)
+
+        override def asConstantValue(implicit cp: Constant_Pool) =
+            ConstantString(string_index.asString)
     }
 
     case class CONSTANT_Fieldref_info(
@@ -183,10 +237,13 @@ trait ConstantPoolBinding extends Constant_PoolReader {
     private[ConstantPoolBinding] trait AsMethodref extends Constant_Pool_Entry {
 
         def class_index: Constant_Pool_Index
+
         def name_and_type_index: Constant_Pool_Index
 
-        private[this] var methodref: (ReferenceType, String, MethodDescriptor) = null // to cache the result
-        override def asMethodref(implicit cp: Constant_Pool): (ReferenceType, String, MethodDescriptor) = {
+        // to cache the result
+        private[this] var methodref: (ReferenceType, String, MethodDescriptor) = null
+        override def asMethodref(
+            implicit cp: Constant_Pool): (ReferenceType, String, MethodDescriptor) = {
             if (methodref eq null) {
                 val nameAndType = name_and_type_index.asNameAndType
                 methodref = (class_index.asReferenceType,
@@ -196,7 +253,10 @@ trait ConstantPoolBinding extends Constant_PoolReader {
             }
             methodref
         }
-        override def asInvoke[T <: Instruction](create: (ReferenceType, String, MethodDescriptor) ⇒ T)(implicit cp: Constant_Pool): T = {
+
+        override def asInvoke[T <: Instruction](
+            create: (ReferenceType, String, MethodDescriptor) ⇒ T)(
+                implicit cp: Constant_Pool): T = {
             val nameAndType = name_and_type_index.asNameAndType
             create(class_index.asReferenceType, nameAndType.name, nameAndType.methodDescriptor)
         }
@@ -219,9 +279,15 @@ trait ConstantPoolBinding extends Constant_PoolReader {
 
         override def asNameAndType: CONSTANT_NameAndType_info = this
 
-        def name(implicit cp: Constant_Pool): String = cp(name_index).asString // this operation is very cheap and hence, it doesn't make sense to cache the result
-        def fieldType(implicit cp: Constant_Pool): FieldType = cp(descriptor_index).asFieldType
-        def methodDescriptor(implicit cp: Constant_Pool): MethodDescriptor = cp(descriptor_index).asMethodDescriptor
+        def name(implicit cp: Constant_Pool): String =
+            // this operation is very cheap and hence, it doesn't make sense to cache the result
+            cp(name_index).asString
+
+        def fieldType(implicit cp: Constant_Pool): FieldType =
+            cp(descriptor_index).asFieldType
+
+        def methodDescriptor(implicit cp: Constant_Pool): MethodDescriptor =
+            cp(descriptor_index).asMethodDescriptor
     }
 
     case class CONSTANT_MethodHandle_info(
@@ -229,7 +295,8 @@ trait ConstantPoolBinding extends Constant_PoolReader {
         referenceIndex: Constant_Pool_Index)
             extends Constant_Pool_Entry {
 
-        override def asBootstrapArgument(implicit cp: Constant_Pool): BootstrapArgument = asMethodHandle
+        override def asBootstrapArgument(implicit cp: Constant_Pool): BootstrapArgument =
+            asMethodHandle
 
         override def asMethodHandle(implicit cp: Constant_Pool): MethodHandle = {
             (this.referenceKind: @scala.annotation.switch) match {
@@ -289,9 +356,10 @@ trait ConstantPoolBinding extends Constant_PoolReader {
     }
 
     /**
-     * @param bootstrapMethodAttributeIndex This is an index into the bootstrap table. Since the bootstrap
-     *    table is class level attribute it is only possible to resolve this reference after loading the
-     *    entire class file (class level attributes are loaded last).
+     * @param bootstrapMethodAttributeIndex This is an index into the bootstrap table.
+     *    Since the bootstrap table is a class level attribute it is only possible
+     *    to resolve this reference after loading the entire class file (class level
+     *    attributes are loaded last).
      */
     case class CONSTANT_InvokeDynamic_info(
         bootstrapMethodAttributeIndex: Int,
@@ -300,9 +368,11 @@ trait ConstantPoolBinding extends Constant_PoolReader {
 
         override def asInvokeDynamic: CONSTANT_InvokeDynamic_info = this
 
-        def methodName(implicit cp: Constant_Pool) = cp(nameAndTypeIndex).asNameAndType.name
+        def methodName(implicit cp: Constant_Pool) =
+            cp(nameAndTypeIndex).asNameAndType.name
 
-        def methodDescriptor(implicit cp: Constant_Pool) = cp(nameAndTypeIndex).asNameAndType.methodDescriptor
+        def methodDescriptor(implicit cp: Constant_Pool) =
+            cp(nameAndTypeIndex).asNameAndType.methodDescriptor
 
     }
 
@@ -324,31 +394,38 @@ trait ConstantPoolBinding extends Constant_PoolReader {
 
     def CONSTANT_String_info(i: Int): CONSTANT_String_info = new CONSTANT_String_info(i)
 
-    def CONSTANT_Fieldref_info(class_index: Constant_Pool_Index,
-                               name_and_type_index: Constant_Pool_Index): CONSTANT_Fieldref_info =
+    def CONSTANT_Fieldref_info(
+        class_index: Constant_Pool_Index,
+        name_and_type_index: Constant_Pool_Index): CONSTANT_Fieldref_info =
         new CONSTANT_Fieldref_info(class_index, name_and_type_index)
 
-    def CONSTANT_Methodref_info(class_index: Constant_Pool_Index,
-                                name_and_type_index: Constant_Pool_Index): CONSTANT_Methodref_info =
+    def CONSTANT_Methodref_info(
+        class_index: Constant_Pool_Index,
+        name_and_type_index: Constant_Pool_Index): CONSTANT_Methodref_info =
         new CONSTANT_Methodref_info(class_index, name_and_type_index)
 
-    def CONSTANT_InterfaceMethodref_info(class_index: Constant_Pool_Index,
-                                         name_and_type_index: Constant_Pool_Index): CONSTANT_InterfaceMethodref_info =
+    def CONSTANT_InterfaceMethodref_info(
+        class_index: Constant_Pool_Index,
+        name_and_type_index: Constant_Pool_Index): CONSTANT_InterfaceMethodref_info =
         new CONSTANT_InterfaceMethodref_info(class_index, name_and_type_index)
 
-    def CONSTANT_NameAndType_info(name_index: Constant_Pool_Index,
-                                  descriptor_index: Constant_Pool_Index): CONSTANT_NameAndType_info =
+    def CONSTANT_NameAndType_info(
+        name_index: Constant_Pool_Index,
+        descriptor_index: Constant_Pool_Index): CONSTANT_NameAndType_info =
         new CONSTANT_NameAndType_info(name_index, descriptor_index)
 
-    def CONSTANT_MethodHandle_info(reference_kind: Int,
-                                   reference_index: Int): CONSTANT_MethodHandle_info =
+    def CONSTANT_MethodHandle_info(
+        reference_kind: Int,
+        reference_index: Int): CONSTANT_MethodHandle_info =
         new CONSTANT_MethodHandle_info(reference_kind, reference_index)
 
-    def CONSTANT_MethodType_info(descriptor_index: Constant_Pool_Index): CONSTANT_MethodType_info =
+    def CONSTANT_MethodType_info(
+        descriptor_index: Constant_Pool_Index): CONSTANT_MethodType_info =
         new CONSTANT_MethodType_info(descriptor_index)
 
-    def CONSTANT_InvokeDynamic_info(bootstrap_method_attr_index: Constant_Pool_Index,
-                                    name_and_type_index: Constant_Pool_Index): CONSTANT_InvokeDynamic_info =
+    def CONSTANT_InvokeDynamic_info(
+        bootstrap_method_attr_index: Constant_Pool_Index,
+        name_and_type_index: Constant_Pool_Index): CONSTANT_InvokeDynamic_info =
         new CONSTANT_InvokeDynamic_info(bootstrap_method_attr_index, name_and_type_index)
 
     protected[bat] def createDeferredActionsStore(): DeferredActionsStore = {

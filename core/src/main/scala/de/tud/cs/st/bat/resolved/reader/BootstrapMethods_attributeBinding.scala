@@ -48,12 +48,12 @@ trait BootstrapMethods_attributeBinding
         with ConstantPoolBinding
         with AttributeBinding {
 
-    type BootstrapMethods_attribute = de.tud.cs.st.bat.resolved.BootstrapMethodTable
+    type BootstrapMethods_attribute = resolved.BootstrapMethodTable
 
-    type BootstrapMethod = de.tud.cs.st.bat.resolved.BootstrapMethod
+    type BootstrapMethod = resolved.BootstrapMethod
     val BootstrapMethodManifest: ClassTag[BootstrapMethod] = implicitly
 
-    type BootstrapArgument = de.tud.cs.st.bat.resolved.BootstrapArgument
+    type BootstrapArgument = resolved.BootstrapArgument
     val BootstrapArgumentManifest: ClassTag[BootstrapArgument] = implicitly
 
     def BootstrapMethods_attribute(
@@ -71,7 +71,9 @@ trait BootstrapMethods_attributeBinding
         new BootstrapMethod(cp(bootstrapMethodRef).asMethodHandle, bootstrapArguments)
     }
 
-    def BootstrapArgument(constantPoolIndex: Int)(implicit cp: Constant_Pool): BootstrapArgument = {
+    def BootstrapArgument(
+        constantPoolIndex: Int)(
+            implicit cp: Constant_Pool): BootstrapArgument = {
         cp(constantPoolIndex).asBootstrapArgument
     }
 

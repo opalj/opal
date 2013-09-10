@@ -134,8 +134,19 @@ class MethodsPlainTest
             ))
     }
 
+    it should "be able to analyze a method that returns a fixed class value" in {
+        val domain = new RecordingDomain; import domain._
+        val method = classFile.methods.find(_.name == "cLDC").get
+        /*val result =*/ AI(classFile, method, domain)
+
+        domain.returnedValue should be(
+            Some(
+                AReferenceValue(0, ObjectType("java/lang/Class"), No, true)
+            ))
+    }
+
     //
-    // PARAMETER
+    // RETURNS PARAMETER
     it should "be able to analyze a method that just returns a parameter value" in {
         val domain = new RecordingDomain; import domain._
         val method = classFile.methods.find(_.name == "identity").get
@@ -404,7 +415,7 @@ class MethodsPlainTest
     }
 
     //
-    // INTEGER TYPE CONVERSION
+    // INTEGER VALUE TO X CONVERSION
     it should "be able to analyze a method that casts an int to a byte" in {
         val domain = new RecordingDomain; import domain._
         val method = classFile.methods.find(_.name == "iToByte").get
@@ -450,7 +461,7 @@ class MethodsPlainTest
     }
 
     //
-    // LONG TYPE CONVERSION
+    // LONG VALUE TO X  CONVERSION
     it should "be able to analyze a method that casts an long to a double" in {
         val domain = new RecordingDomain; import domain._
         val method = classFile.methods.find(_.name == "lToDouble").get
@@ -474,7 +485,7 @@ class MethodsPlainTest
     }
 
     //
-    // DOUBLE TYPE CONVERSION
+    // DOUBLE VALUE TO X  CONVERSION
 
     it should "be able to analyze a method that casts an double to a float" in {
         val domain = new RecordingDomain; import domain._
@@ -498,7 +509,7 @@ class MethodsPlainTest
         domain.returnedValue should be(Some(SomeLongValue))
     }
     //
-    // FLOAT TYPE CONVERSION
+    // FLOAT VALUE TO X  CONVERSION
     it should "be able to analyze a method that casts an float to a double" in {
         val domain = new RecordingDomain; import domain._
         val method = classFile.methods.find(_.name == "fToDouble").get
@@ -665,7 +676,7 @@ class MethodsPlainTest
         /*val result =*/ AI(classFile, method, domain)
 
         domain.returnedValue should be(
-            Some(AReferenceValue(0, ObjectType("ai/MethodsPlain"), No,true))
+            Some(AReferenceValue(0, ObjectType("ai/MethodsPlain"), No, true))
         )
     }
 
@@ -790,7 +801,7 @@ class MethodsPlainTest
 
         domain.returnedValue should be(Some(SomeLongValue))
     }
-    //
+
     //
     // CREATE ARRAY
     it should "be able to analyze a new boolean array" in {
@@ -945,22 +956,6 @@ class MethodsPlainTest
         domain.returnedValue should be(Some(SomeDoubleValue))
     }
 
-    it should "be able to handle simple methods correctly" in {
-        val domain = new RecordingDomain; import domain._
-        val method = classFile.methods.find(_.name == "objectToString").get
-        /*val result =*/ AI(classFile, method, domain)
-
-        domain.returnedValue should be(Some(SomeReferenceValue(ObjectType.String)))
-
-    }
-
-    it should "be able to analyze a method that squares a given double value" in {
-        val domain = new RecordingDomain; import domain._
-        val method = classFile.methods.find(_.name == "square").get
-        /*val result =*/ AI(classFile, method, domain)
-
-        domain.returnedValue should be(Some(SomeDoubleValue))
-    }
 
     it should "be able to return the correct type of an object if an object that is passed in is directly returned" in {
         implicit val domain = new RecordingDomain; import domain._

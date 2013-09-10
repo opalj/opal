@@ -34,6 +34,8 @@ package de.tud.cs.st
 package bat
 package reader
 
+import collection.mutable.Buffer
+
 /**
  * Constant pool related type definitions.
  *
@@ -49,10 +51,11 @@ trait Constant_PoolAbstractions {
 
     // The following definitions were introduced to enable the post transformation
     // of a class file after it was (successfully) loaded. In particular to resolve
-    // referenced to the `BootstrapMethods` attribute. 
+    // references to the `BootstrapMethods` attribute. 
     // The underlying idea is that the class file specific transformations are stored
-    // in the class file's constant pool since the constant pool is passed aroud 
-    // after loading.
+    // in the class file's constant pool. The constant pool is basically loaded 
+    // first and then passed to all subsequently loaded class file elements 
+    // (Methods,Fields,..)
 
     type ClassFile
 
@@ -63,7 +66,7 @@ trait Constant_PoolAbstractions {
      * only place where to store information/functions related to a specific class file).
      *
      */
-    protected[bat]type DeferredActionsStore = collection.mutable.Buffer[ClassFile ⇒ ClassFile] with Constant_Pool_Entry
+    protected[bat]type DeferredActionsStore = Buffer[ClassFile ⇒ ClassFile] with Constant_Pool_Entry
 
     /**
      * This method is called/needs to be called after the class file was completely

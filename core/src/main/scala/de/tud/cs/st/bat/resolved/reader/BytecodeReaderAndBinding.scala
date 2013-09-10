@@ -63,21 +63,23 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
         val instructions = new Array[Instruction](codeLength)
 
         var wide: Boolean = false
+
+        def lvIndex(): Int =
+            if (wide) {
+                wide = false
+                in.readUnsignedShort
+            } else {
+                in.readUnsignedByte
+            }
+
         while (in.available > 0) {
             val index = codeLength - in.available
 
             instructions(index) = (in.readUnsignedByte: @scala.annotation.switch) match {
-                case 50 ⇒ AALOAD
-                case 83 ⇒ AASTORE
-                case 1  ⇒ ACONST_NULL
-                case 25 ⇒ ALOAD( /* lvIndex */
-                    if (wide) {
-                        wide = false
-                        in.readUnsignedShort
-                    } else {
-                        in.readUnsignedByte
-                    }
-                )
+                case 50  ⇒ AALOAD
+                case 83  ⇒ AASTORE
+                case 1   ⇒ ACONST_NULL
+                case 25  ⇒ ALOAD(lvIndex())
                 case 42  ⇒ ALOAD_0
                 case 43  ⇒ ALOAD_1
                 case 44  ⇒ ALOAD_2
@@ -85,14 +87,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                 case 189 ⇒ ANEWARRAY(cp(in.readUnsignedShort).asConstantValue(cp).toClass)
                 case 176 ⇒ ARETURN
                 case 190 ⇒ ARRAYLENGTH
-                case 58 ⇒ ASTORE( /* lvIndex */
-                    if (wide) {
-                        wide = false
-                        in.readUnsignedShort
-                    } else {
-                        in.readUnsignedByte
-                    }
-                )
+                case 58  ⇒ ASTORE(lvIndex)
                 case 75  ⇒ ASTORE_0
                 case 76  ⇒ ASTORE_1
                 case 77  ⇒ { ASTORE_2 }
@@ -115,16 +110,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                 case 14  ⇒ { DCONST_0 }
                 case 15  ⇒ { DCONST_1 }
                 case 111 ⇒ { DDIV }
-                case 24 ⇒ {
-                    DLOAD( /* lvIndex */
-                        if (wide) {
-                            wide = false
-                            in.readUnsignedShort
-                        } else {
-                            in.readUnsignedByte
-                        }
-                    )
-                }
+                case 24  ⇒ { DLOAD(lvIndex) }
                 case 38  ⇒ { DLOAD_0 }
                 case 39  ⇒ { DLOAD_1 }
                 case 40  ⇒ { DLOAD_2 }
@@ -133,16 +119,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                 case 119 ⇒ { DNEG }
                 case 115 ⇒ { DREM }
                 case 175 ⇒ { DRETURN }
-                case 57 ⇒ {
-                    DSTORE( /* lv_index */
-                        if (wide) {
-                            wide = false
-                            in.readUnsignedShort
-                        } else {
-                            in.readUnsignedByte
-                        }
-                    )
-                }
+                case 57  ⇒ { DSTORE(lvIndex) }
                 case 71  ⇒ { DSTORE_0 }
                 case 72  ⇒ { DSTORE_1 }
                 case 73  ⇒ { DSTORE_2 }
@@ -166,14 +143,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                 case 12  ⇒ FCONST_1
                 case 13  ⇒ FCONST_2
                 case 110 ⇒ FDIV
-                case 23 ⇒ FLOAD(
-                    if (wide) {
-                        wide = false
-                        in.readUnsignedShort
-                    } else {
-                        in.readUnsignedByte
-                    }
-                )
+                case 23  ⇒ FLOAD(lvIndex)
                 case 34  ⇒ { FLOAD_0 }
                 case 35  ⇒ { FLOAD_1 }
                 case 36  ⇒ { FLOAD_2 }
@@ -182,27 +152,20 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                 case 118 ⇒ { FNEG }
                 case 114 ⇒ { FREM }
                 case 174 ⇒ { FRETURN }
-                case 56 ⇒ {
-                    FSTORE(
-                        if (wide) {
-                            wide = false
-                            in.readUnsignedShort
-                        } else {
-                            in.readUnsignedByte
-                        }
-                    )
-                }
+                case 56  ⇒ { FSTORE(lvIndex) }
                 case 67  ⇒ { FSTORE_0 }
                 case 68  ⇒ { FSTORE_1 }
                 case 69  ⇒ { FSTORE_2 }
                 case 70  ⇒ { FSTORE_3 }
                 case 102 ⇒ { FSUB }
                 case 180 ⇒ {
-                    val (declaringClass, name, fieldType) /*: (ObjectType,String,FieldType)*/ = cp(in.readUnsignedShort).asFieldref(cp) // fieldref
+                    val (declaringClass, name, fieldType): (ObjectType, String, FieldType) =
+                        cp(in.readUnsignedShort).asFieldref(cp)
                     GETFIELD(declaringClass, name, fieldType)
                 }
                 case 178 ⇒ {
-                    val (declaringClass, name, fieldType) /*: (ObjectType,String,FieldType)*/ = cp(in.readUnsignedShort).asFieldref(cp) // fieldref
+                    val (declaringClass, name, fieldType): (ObjectType, String, FieldType) =
+                        cp(in.readUnsignedShort).asFieldref(cp)
                     GETSTATIC(declaringClass, name, fieldType)
                 }
                 case 167 ⇒ { GOTO(in.readShort /* branchoffset */ ) }
@@ -241,7 +204,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                 case 158 ⇒ { IFLE(in.readShort) }
                 case 199 ⇒ { IFNONNULL(in.readShort) }
                 case 198 ⇒ { IFNULL(in.readShort) }
-                case 132 ⇒ {
+                case 132 ⇒
                     if (wide) {
                         wide = false
                         val lvIndex = in.readUnsignedShort
@@ -252,17 +215,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                         val constValue = in.readByte
                         IINC(lvIndex, constValue)
                     }
-                }
-                case 21 ⇒ {
-                    ILOAD(
-                        if (wide) {
-                            wide = false
-                            in.readUnsignedShort
-                        } else {
-                            in.readUnsignedByte
-                        }
-                    )
-                }
+                case 21  ⇒ { ILOAD(lvIndex) }
                 case 26  ⇒ { ILOAD_0 }
                 case 27  ⇒ { ILOAD_1 }
                 case 28  ⇒ { ILOAD_2 }
@@ -289,7 +242,8 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                     UNRESOLVED_INVOKEDYNAMIC
                 }
                 case 185 ⇒ {
-                    val (declaringClass, name, methodDescriptor) /*: (ReferenceType,String,MethodDescriptor)*/ = cp(in.readUnsignedShort).asMethodref(cp) // methodRef
+                    val (declaringClass, name, methodDescriptor) /*: (ReferenceType,String,MethodDescriptor)*/ =
+                        cp(in.readUnsignedShort).asMethodref(cp) // methodRef
                     in.readByte // ignored; fixed value
                     in.readByte // ignored; fixed value
                     INVOKEINTERFACE(declaringClass, name, methodDescriptor)
@@ -298,11 +252,13 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                     cp(in.readUnsignedShort).asInvoke(INVOKESPECIAL)(cp)
                 }
                 case 184 ⇒ {
-                    val (declaringClass, name, methodDescriptor) /*: (ReferenceType,String,MethodDescriptor)*/ = cp(in.readUnsignedShort).asMethodref(cp) // methodRef
+                    val (declaringClass, name, methodDescriptor) /*: (ReferenceType,String,MethodDescriptor)*/ =
+                        cp(in.readUnsignedShort).asMethodref(cp) // methodRef
                     INVOKESTATIC(declaringClass, name, methodDescriptor)
                 }
                 case 182 ⇒ {
-                    val (declaringClass, name, methodDescriptor) /*: (ReferenceType,String,MethodDescriptor)*/ = cp(in.readUnsignedShort).asMethodref(cp) // methodRef
+                    val (declaringClass, name, methodDescriptor) /*: (ReferenceType,String,MethodDescriptor)*/ =
+                        cp(in.readUnsignedShort).asMethodref(cp) // methodRef
                     INVOKEVIRTUAL(declaringClass, name, methodDescriptor)
                 }
                 case 128 ⇒ { IOR }
@@ -310,14 +266,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                 case 172 ⇒ { IRETURN }
                 case 120 ⇒ { ISHL }
                 case 122 ⇒ { ISHR }
-                case 54 ⇒ ISTORE(
-                    if (wide) {
-                        wide = false
-                        in.readUnsignedShort
-                    } else {
-                        in.readUnsignedByte
-                    }
-                )
+                case 54  ⇒ ISTORE(lvIndex)
                 case 59  ⇒ { ISTORE_0 }
                 case 60  ⇒ { ISTORE_1 }
                 case 61  ⇒ { ISTORE_2 }
@@ -341,16 +290,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                 case 19  ⇒ { LDC_W(cp(in.readUnsignedShort).asConstantValue(cp)) }
                 case 20  ⇒ { LDC2_W(cp(in.readUnsignedShort).asConstantValue(cp)) }
                 case 109 ⇒ { LDIV }
-                case 22 ⇒ {
-                    if (wide) {
-                        wide = false
-                        val lvIndex = in.readUnsignedShort
-                        LLOAD(lvIndex)
-                    } else {
-                        val lvIndex = in.readUnsignedByte
-                        LLOAD(lvIndex)
-                    }
-                }
+                case 22  ⇒ LLOAD(lvIndex)
                 case 30  ⇒ { LLOAD_0 }
                 case 31  ⇒ { LLOAD_1 }
                 case 32  ⇒ { LLOAD_2 }
@@ -361,7 +301,10 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                     in.skip(3 - (index % 4)) // skip padding bytes
                     val defaultOffset = in.readInt
                     val npairsCount = in.readInt
-                    val npairs: IndexedSeq[(Int, Int)] = repeat(npairsCount) { (in.readInt, in.readInt) }
+                    val npairs: IndexedSeq[(Int, Int)] =
+                        repeat(npairsCount) {
+                            (in.readInt, in.readInt)
+                        }
                     LOOKUPSWITCH(defaultOffset, npairs)
                 }
                 case 129 ⇒ { LOR }
@@ -369,14 +312,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                 case 173 ⇒ { LRETURN }
                 case 121 ⇒ { LSHL }
                 case 123 ⇒ { LSHR }
-                case 55 ⇒ LSTORE(
-                    if (wide) {
-                        wide = false
-                        in.readUnsignedShort
-                    } else {
-                        in.readUnsignedByte
-                    }
-                )
+                case 55  ⇒ LSTORE(lvIndex)
                 case 63  ⇒ { LSTORE_0 }
                 case 64  ⇒ { LSTORE_1 }
                 case 65  ⇒ { LSTORE_2 }
@@ -386,22 +322,25 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                 case 131 ⇒ { LXOR }
                 case 194 ⇒ { MONITORENTER }
                 case 195 ⇒ { MONITOREXIT }
-                case 197 ⇒ {
-                    MULTIANEWARRAY(
-                        cp(in.readUnsignedShort).asConstantValue(cp).toClass.asInstanceOf[ArrayType] /* componentType */ ,
-                        in.readUnsignedByte /* dimensions */ )
-                }
+                case 197 ⇒ MULTIANEWARRAY(
+                    // componentType 
+                    cp(in.readUnsignedShort).asConstantValue(cp).toClass.asArrayType,
+                    //  dimensions 
+                    in.readUnsignedByte
+                )
                 case 187 ⇒ NEW(cp(in.readUnsignedShort).asObjectType(cp))
                 case 188 ⇒ NEWARRAY(in.readByte)
                 case 0   ⇒ { NOP }
                 case 87  ⇒ { POP }
                 case 88  ⇒ { POP2 }
                 case 181 ⇒ {
-                    val (declaringClass, name, fieldType) /*: (ObjectType,String,FieldType)*/ = cp(in.readUnsignedShort).asFieldref(cp) // fieldref
+                    val (declaringClass, name, fieldType): (ObjectType, String, FieldType) =
+                        cp(in.readUnsignedShort).asFieldref(cp)
                     PUTFIELD(declaringClass, name, fieldType)
                 }
                 case 179 ⇒ {
-                    val (declaringClass, name, fieldType) /*: (ObjectType,String,FieldType)*/ = cp(in.readUnsignedShort).asFieldref(cp) // fieldref
+                    val (declaringClass, name, fieldType): (ObjectType, String, FieldType) =
+                        cp(in.readUnsignedShort).asFieldref(cp)
                     PUTSTATIC(declaringClass, name, fieldType)
                 }
                 case 169 ⇒ RET(
@@ -425,10 +364,8 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                     val jumpOffsets: IndexedSeq[Int] = repeat(high - low + 1) { in.readInt }
                     TABLESWITCH(defaultOffset, low, high, jumpOffsets)
                 }
-                case 196 ⇒ {
-                    wide = true
-                    WIDE
-                }
+                case 196    ⇒
+                    wide = true; WIDE
 
                 case opcode ⇒ BATException("unsupported opcode: "+opcode)
             }

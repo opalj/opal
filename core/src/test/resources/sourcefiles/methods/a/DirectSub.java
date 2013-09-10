@@ -55,4 +55,5 @@ public class DirectSub extends Super {
 	private void privateMethod() {
 		// empty
 	}
+	
 }
