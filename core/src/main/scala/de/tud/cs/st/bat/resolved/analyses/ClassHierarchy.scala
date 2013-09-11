@@ -397,7 +397,7 @@ class ClassHierarchy(
      *      occur.
      *      Furthermore, if the field cannot be found it is the responsibility of the
      *      caller to handle that situation.
-     *
+     * 
      * @param c The class (or a superclass thereof) that is expected to define the
      *      reference field.
      * @param fieldName The name of the accessed field.
@@ -411,6 +411,8 @@ class ClassHierarchy(
         fieldType: FieldType,
         classes: ObjectType ⇒ Option[ClassFile]): Option[(ClassFile, Field)] = {
 
+        // More details: JVM 7 Spec. Section 5.4.3.2 
+        
         classes(c).flatMap(classFile ⇒ {
             classFile.fields.collectFirst {
                 case field @ Field(_, `fieldName`, `fieldType`, _) ⇒ (classFile, field)
