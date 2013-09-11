@@ -33,27 +33,23 @@
 package methods.a;
 
 /**
- * This class was used to create a class file with some well defined issues. The
- * created class is subsequently used by several tests.
+ * This class was used to create a class file with some well defined issues. The created class is
+ * subsequently used by several tests.
  * 
  * NOTE<br />
- * This class is not meant to be (automatically) recompiled; it just serves
- * documentation purposes.
+ * This class is not meant to be (automatically) recompiled; it just serves documentation purposes.
  * 
  * @author Michael Eichberg
  */
 @SuppressWarnings("all")
 public class IndirectSub extends methods.b.DirectSub {
-  
-	private void privateMethod() {
-		// empty
-	}
 
-	void anotherDefaultVisibilityMethod() {
-		// not allowed super.anotherDefaultVisibilityMethod();
-	}
-	
-	static {
-	  staticDefaultVisibilityMethod();
-	}
+    private void privateMethod() {
+        // empty
+    }
+
+    void anotherDefaultVisibilityMethod() {
+        // not allowed super.anotherDefaultVisibilityMethod();
+    }
+
 }

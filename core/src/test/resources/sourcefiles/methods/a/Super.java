@@ -33,39 +33,42 @@
 package methods.a;
 
 /**
- * This class was used to create a class file with some well defined issues. The
- * created class is subsequently used by several tests.
+ * This class was used to create a class file with some well defined issues. The created class is
+ * subsequently used by several tests.
  * 
  * NOTE<br />
- * This class is not meant to be (automatically) recompiled; it just serves
- * documentation purposes.
+ * This class is not meant to be (automatically) recompiled; it just serves documentation purposes.
  * 
  * @author Michael Eichberg
  */
 @SuppressWarnings("all")
 public class Super {
+    
+    // instance methods
+    
+    public void publicMethod() {
+        // empty
+    }
 
-  public void publicMethod() {
-    // empty
-  }
+    void defaultVisibilityMethod() {
+        System.out.println("Super.defaultVisibilityMethod()");
+    }
 
-  void defaultVisibilityMethod() {
-    System.out.println("Super.defaultVisibilityMethod()");
-  }
+    void anotherDefaultVisibilityMethod() {
+        System.out.println("Super.anotherDefaultVisibilityMethod()");
+    }
 
-  void anotherDefaultVisibilityMethod() {
-    System.out.println("Super.anotherDefaultVisibilityMethod()");
-  }
+    private void privateMethod() {
+        // empty
+    }
+    
+    // static methods
 
-  private void privateMethod() {
-    // empty
-  }
+    static void staticDefaultVisibilityMethod() {
+        System.out.println("Super.staticDefaultVisibilityMethod()");
+    }
 
-  protected static void staticDefaultVisibilityMethod() {
-    System.out.println("Super.staticDefaultVisibilityMethod()");
-  }
-  
-  public static void staticPublicVisibilityMethod() {
-    System.out.println("Super.staticPublicVisibilityMethod()");
-  }
+    public static void staticPublicVisibilityMethod() {
+        System.out.println("Super.staticPublicVisibilityMethod()");
+    }
 }

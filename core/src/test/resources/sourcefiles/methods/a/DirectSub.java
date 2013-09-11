@@ -33,27 +33,28 @@
 package methods.a;
 
 /**
- * This class was used to create a class file with some well defined issues. 
- * The created class is subsequently used by several tests.
- *
+ * This class was used to create a class file with some well defined issues. The created class is
+ * subsequently used by several tests.
+ * 
  * NOTE<br />
  * This class is not meant to be (automatically) recompiled; it just serves documentation purposes.
- *
+ * 
  * @author Michael Eichberg
  */
 @SuppressWarnings("all")
 public class DirectSub extends Super {
-	
-	public void publicMethod() {
-		// empty
-	}
 
-	void defaultVisibilityMethod() {
-		super.defaultVisibilityMethod();
-	}
 
-	private void privateMethod() {
-		// empty
-	}
-	
+    public void publicMethod() {
+        // empty        
+    }
+
+    void defaultVisibilityMethod() {
+        super.defaultVisibilityMethod();
+    }
+
+    private void privateMethod() {
+        // empty
+    }
+
 }

@@ -71,8 +71,8 @@ class ClassHierarchy(
     protected[this] val subtypes: Map[ObjectType, Set[ObjectType]] = Map())
         extends (ObjectType ⇒ Option[(Set[ObjectType], Set[ObjectType])]) {
 
-    type Supertypes = Set[ObjectType]
-    type Subtypes = Set[ObjectType]
+    type Supertypes = Set[ObjectType] // just a type alias
+    type Subtypes = Set[ObjectType] // just a type alias
 
     /**
      * Returns the given types supertypes and subtypes if the given type is known.
@@ -243,11 +243,12 @@ class ClassHierarchy(
      * Returns the set of all classes/interfaces from which the given type inherits
      * and for which the respective class file is available.
      *
+     * @note It may be more efficient to use `foreachSuperclass(ObjectType,
+     *      ClassFile => Unit, ObjectType ⇒ Option[ClassFile])`
+     *
      * @return An iterator over all class files of all super types of the given
      *      `objectType` that pass the given filter and for which the class file
      *      is available.
-     * @note It may be more efficient to use `foreachSuperclass(ObjectType,
-     *      ClassFile => Unit, ObjectType ⇒ Option[ClassFile])`
      */
     def superclasses(
         objectType: ObjectType,
@@ -289,6 +290,9 @@ class ClassHierarchy(
     /**
      * Determines if the given type `subtype` is indeed a subtype of `supertype`.
      *
+     * This method basically implements the logic of the JVM's `instanceof` instruction
+     * except of the `null` value check.
+     *
      * @return `Yes` if `subtype` is indeed a subtype of the given `supertype`. `No`
      *      if `subtype` is not a subtype of `supertype` and `Unknown` if the analysis is
      *      not conclusive. The latter can happen if the class hierarchy is not
@@ -305,7 +309,7 @@ class ClassHierarchy(
         this.supertypes.get(subtype) match {
             case Some(intermediateTypes) if intermediateTypes.isEmpty ⇒
                 // we have found a type without information about its supertypes
-                // recall that the test for java.lang.Object was not successful 
+                // recall that the previous test for java.lang.Object was not successful 
                 Unknown
             case Some(intermediateTypes) ⇒
                 var answer: Answer = No
@@ -324,6 +328,9 @@ class ClassHierarchy(
     /**
      * Determines if the given type `subtype` is indeed a subtype of `supertype`.
      *
+     * This method basically implements the logic of the JVM's `instanceof` instruction
+     * except of the `null` value check.
+     *
      * @return `Yes` if `subtype` is indeed a subtype of the given `supertype`. `No`
      *      if `subtype` is not a subtype of `supertype` and `Unknown` if the analysis is
      *      not conclusive. The latter can happen if the class hierarchy is not
@@ -341,7 +348,7 @@ class ClassHierarchy(
                     No
                 else
                     // The analysis is conclusive iff we can get all supertypes
-                    // for the given type (someType) up until "java/lang/Object"; i.e.,
+                    // for the given type (ot) up until "java/lang/Object"; i.e.,
                     // if there are no holes.
                     isSubtypeOf(ot.asObjectType, supertype.asObjectType)
             case ArrayType(componentType) ⇒ {
@@ -375,53 +382,62 @@ class ClassHierarchy(
         (Set.empty[ObjectType] /: objectTypes)(_ ++ supertypes.apply(_))
 
     /**
-     * Returns a view of the class hierarchy as a graph (which can then be transformed
-     * into a dot representation [[http://www.graphviz.org Graphviz]]). This
-     * graph can be a multi-graph if we don't see the complete class hierarchy.
+     * Resolves a symbolic reference to a field. Basically, the search starts with
+     * the given class `c` and then continues with `c`'s superinterfaces before the
+     * search is continued with `c`'s superclass (as prescribed by the JVM specification
+     * for the resolution of unresolved symbolic references.)
+     *
+     * Resolving a symbolic reference is particularly required to, e.g., get a field's
+     * annotations or to get a field's value (if it is a constant value).
+     *
+     * @note This implementation does not check for `IllegalAccessError`. This check
+     *      needs to be done by the caller. The same applies for the check that the
+     *      field is non-static if get-/putfield is used and static if a get/putstatic is
+     *      used to access the field. In the latter case a `LinkingException` would
+     *      occur.
+     *      Furthermore, if the field cannot be found it is the responsibility of the
+     *      caller to handle that situation.
+     *
+     * @param c The class (or a superclass thereof) that is expected to define the
+     *      reference field.
+     * @param fieldName The name of the accessed field.
+     * @param fieldType The type of the accessed field (the field descriptor).
+     * @param classes A function to lookup the class that implements a given `ObjectType`.
+     * @return The concrete class that defines the reference field.
      */
-    def toGraph: Node = new Node {
+    def resolveFieldReference(
+        c: ObjectType,
+        fieldName: String,
+        fieldType: FieldType,
+        classes: ObjectType ⇒ Option[ClassFile]): Option[(ClassFile, Field)] = {
 
-        val sourceElementIDs = new SourceElementIDsMap {}
-
-        import sourceElementIDs.{ sourceElementID ⇒ id }
-
-        private val nodes: Map[ObjectType, Node] = Map() ++ subtypes.keys.map(t ⇒ {
-            val entry: (ObjectType, Node) = (
-                t,
-                new Node {
-                    def uniqueId = id(t)
-                    def toHRR: Option[String] = Some(t.className)
-                    def foreachSuccessor(f: Node ⇒ _) {
-                        subtypes.apply(t).foreach(st ⇒ {
-                            f(nodes(st))
-                        })
+        classes(c).flatMap(classFile ⇒ {
+            classFile.fields.collectFirst {
+                case field @ Field(_, `fieldName`, `fieldType`, _) ⇒ (classFile, field)
+            } orElse {
+                classFile.interfaces.collectFirst { supertype ⇒
+                    resolveFieldReference(supertype, fieldName, fieldType, classes) match {
+                        case Some(resolvedFieldReference) ⇒ resolvedFieldReference
+                    }
+                } orElse {
+                    classFile.superClass.flatMap { supertype ⇒
+                        resolveFieldReference(supertype, fieldName, fieldType, classes)
                     }
                 }
-            )
-            entry
+            }
         })
-
-        // a virtual root node
-        def uniqueId = -1
-        def toHRR = None
-        def foreachSuccessor(f: Node ⇒ _) {
-            /**
-             * We may not see the class files of all classes that are referred
-             * to in the class files that we did see. Hence, we have to be able
-             * to handle partial class hierarchies.
-             */
-            val rootTypes = nodes.filterNot({ case (t, _) ⇒ supertypes.isDefinedAt(t) })
-            rootTypes.values.foreach(f)
-        }
     }
 
     /**
      * Searches for the method (implementation) that will be executed when the given
      * method is called on the given receiver.
-     * 
+     *
      * This method can be used to resolve super calls/to search for overridden methods.
      * In this case the `currentType` just has to be the direct supertype of the `receiver`.
-     * 
+     *
+     * @param callerType The defining object of the method in which the call is made.
+     *      This information is needed to correctly resolve calls to methods with
+     *      default visibility.
      * @param receiverType The object that receives the method call. If the receiver
      *    is an interface definition, or the class file cannot be looked up
      *    `None` is returned.
@@ -431,9 +447,10 @@ class ClassHierarchy(
      * @Note If the type of the receiver is not precise the receiver object's
      *    subtypes should also be searched for method implementation (at least those
      *    that may be instantiated).
-     * @Note This method should not be used to    
+     * @Note This method should not be used to
      */
     def lookupDefiningMethod(
+        callerType: ObjectType,
         receiverType: ObjectType,
         superclassType: ObjectType,
         methodName: String,
@@ -441,16 +458,16 @@ class ClassHierarchy(
         classes: ObjectType ⇒ Option[ClassFile]): Option[(ClassFile, Method)] = {
         // TODO [Java 7] How to handle signature polymorphic method resolution?
         classes(receiverType) match {
-            case Some(classFile) if classFile.isInterfaceDeclaration => return None
-            case _ => /* ok... let's continue */
+            case Some(classFile) if classFile.isInterfaceDeclaration ⇒ return None
+            case _ ⇒ /* ok... let's continue */
         }
-                
+
         classes(superclassType) match {
             case None ⇒ None
             case Some(classFile) if classFile.isInterfaceDeclaration ⇒ None
-            case Some(classFile) => // TODO lll!!!!
+            case Some(classFile) ⇒ // TODO lll!!!!
                 None
-                
+
         }
 
     }
@@ -510,6 +527,47 @@ class ClassHierarchy(
                 )
 
             }
+        }
+    }
+
+    /**
+     * Returns a view of the class hierarchy as a graph (which can then be transformed
+     * into a dot representation [[http://www.graphviz.org Graphviz]]). This
+     * graph can be a multi-graph if we don't see the complete class hierarchy.
+     */
+    def toGraph: Node = new Node {
+
+        val sourceElementIDs = new SourceElementIDsMap {}
+
+        import sourceElementIDs.{ sourceElementID ⇒ id }
+
+        private val nodes: Map[ObjectType, Node] = Map() ++ subtypes.keys.map(t ⇒ {
+            val entry: (ObjectType, Node) = (
+                t,
+                new Node {
+                    def uniqueId = id(t)
+                    def toHRR: Option[String] = Some(t.className)
+                    def foreachSuccessor(f: Node ⇒ _) {
+                        subtypes.apply(t).foreach(st ⇒ {
+                            f(nodes(st))
+                        })
+                    }
+                }
+            )
+            entry
+        })
+
+        // a virtual root node
+        def uniqueId = -1
+        def toHRR = None
+        def foreachSuccessor(f: Node ⇒ _) {
+            /**
+             * We may not see the class files of all classes that are referred
+             * to in the class files that we did see. Hence, we have to be able
+             * to handle partial class hierarchies.
+             */
+            val rootTypes = nodes.filterNot({ case (t, _) ⇒ supertypes.isDefinedAt(t) })
+            rootTypes.values.foreach(f)
         }
     }
 }
@@ -580,7 +638,6 @@ object ClassHierarchy {
             processPredefinedClassHierarchy(
                 "ClassHierarchyJLS.ths",
                 empty))
-
     }
 }
 

@@ -92,7 +92,12 @@ class ProjectTest
     behavior of "Project's lookupMethodDeclaration method"
 
     it should "find a public method" in {
-        lookupMethodDeclaration(SuperType, "publicMethod", MethodDescriptor("()V"), project) should be('Defined)
+        lookupMethodDeclaration(
+            SuperType,
+            "publicMethod",
+            MethodDescriptor("()V"),
+            project
+        ) should be('Defined)
     }
 
     it should "find a private method" in {
@@ -120,7 +125,7 @@ class ProjectTest
     }
 
     it should "find a method declared by a directly implemented interface" in {
-        val r = lookupMethodDeclaration(AbstractB, "someSubMethod", MethodDescriptor("()V"),project)
+        val r = lookupMethodDeclaration(AbstractB, "someSubMethod", MethodDescriptor("()V"), project)
         r should be('Defined)
         assert(r.get._1.thisClass === ObjectType("methods/b/SomeSubInterface"))
     }

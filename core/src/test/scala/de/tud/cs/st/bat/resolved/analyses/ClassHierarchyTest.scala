@@ -55,10 +55,14 @@ class ClassHierarchyTest
         extends FlatSpec
         with ShouldMatchers /*with BeforeAndAfterAll */ {
 
+    // -----------------------------------------------------------------------------------
     //
+    // TESTING THE SUBTYPE RELATION RELATED FUNCTIONALITY
+    //
+    // -----------------------------------------------------------------------------------
+
     //
     // Setup
-    //
     //
     val ch = ClassHierarchy.preInitializedClassHierarchy
 
@@ -79,12 +83,10 @@ class ClassHierarchyTest
     val longArray = ArrayType(LongType)
 
     //
-    //
     // Verify
     //
-    //
 
-    behavior of "The default ClassHierarchy's isSubtypeOf method w.r.t. Arrays"
+    behavior of "the default ClassHierarchy's isSubtypeOf method w.r.t. Arrays"
 
     import ch.isSubtypeOf
 
@@ -137,5 +139,86 @@ class ClassHierarchyTest
         isSubtypeOf(SeriablizableArrayOfArray, CloneableArray) should be(Yes)
 
         isSubtypeOf(SeriablizableArrayOfArray, AnUnknownTypeArray) should be(No)
+    }
+
+    // -----------------------------------------------------------------------------------
+    //
+    // TESTING THE RESOLVING OF FIELD REFERENCES
+    //
+    // -----------------------------------------------------------------------------------
+
+    val resources = TestSupport.locateTestResources("classfiles/Fields.jar")
+    val project = new Project ++ ClassFiles(resources)
+    import project.classes
+
+    val SuperSuperType = ObjectType("fields/SuperSuper")
+    val SuperSuperClass = classes(SuperSuperType)
+    val SuperType = ObjectType("fields/Super")
+    val SuperClass = classes(SuperType)
+
+    val SuperIType = ObjectType("fields/SuperI")
+    val SuperIClass = classes(SuperIType)
+    val SubIType = ObjectType("fields/SubI")
+    val SubIClass = classes(SubIType)
+
+    val SubType = ObjectType("fields/Sub")
+    val SubClass = classes(SubType)
+    val SubSubType = ObjectType("fields/SubSub")
+    val SubSubClass = classes(SubSubType)
+
+    behavior of "the ClassHierarchy's method to resolve field references"
+
+    import project.classHierarchy.resolveFieldReference
+
+    it should "correctly resolve a reference to a static field in a superclass" in {
+        resolveFieldReference(SuperType, "x", IntegerType, project) should be(
+            Some((SuperSuperClass, SuperSuperClass.fields(0)))
+        )
+    }
+
+    it should "correctly resolve a reference to a field defined in an interface" in {
+        resolveFieldReference(SubIType, "THE_SUB_I", IntegerType, project) should be(
+            Some((SubIClass, SubIClass.fields(0)))
+        )
+    }
+
+    it should "correctly resolve a reference to a field defined in a superinterface of an interface" in {
+        resolveFieldReference(SubIType, "THE_I", IntegerType, project) should be(
+            Some((SuperIClass, SuperIClass.fields(0)))
+        )
+    }
+
+    it should "correctly resolve a reference to a field defined in a superinterface" in {
+        resolveFieldReference(SubType, "THE_I", IntegerType, project) should be(
+            Some((SuperIClass, SuperIClass.fields(0)))
+        )
+    }
+
+    it should "correctly resolve a reference to a field defined in a superclass" in {
+        resolveFieldReference(SubSubType, "x", IntegerType, project) should be(
+            Some((SubClass, SubClass.fields(0)))
+        )
+    }
+
+    it should "correctly resolve a reference to a private field defined in a superclass" in {
+        resolveFieldReference(SubSubType, "y", IntegerType, project) should be(
+            Some((SuperClass, SuperClass.fields(0)))
+        )
+    }
+
+    it should "not fail if the field cannot be found" in {
+        resolveFieldReference(SubSubType, "NOT_DEFINED", IntegerType, project) should be(
+            None
+        )
+    }
+
+    it should "not fail if the type cannot be found" in {
+        resolveFieldReference(
+            ObjectType("NOT/DEFINED"),
+            "NOT_DEFINED",
+            IntegerType,
+            project) should be(
+                None
+            )
     }
 }

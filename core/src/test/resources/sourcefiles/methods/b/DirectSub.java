@@ -57,7 +57,7 @@ public class DirectSub extends methods.a.Super {
     // empty
   }
 
-  protected static void staticDefaultVisibilityMethod() {
+  static void staticDefaultVisibilityMethod() {
     System.out.println("Super.staticDefaultVisibilityMethod()");
   }
 }
