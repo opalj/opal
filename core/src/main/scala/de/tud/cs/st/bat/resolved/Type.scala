@@ -228,7 +228,7 @@ sealed trait ByteType extends BaseType {
 
     def computationalType = ComputationalTypeInt
 
-    val atype = 8
+    final val atype = 8
 
     def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
@@ -245,7 +245,7 @@ sealed trait CharType extends BaseType {
 
     def computationalType = ComputationalTypeInt
 
-    val atype = 5
+    final val atype = 5
 
     def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
@@ -262,7 +262,7 @@ sealed trait DoubleType extends BaseType {
 
     def computationalType = ComputationalTypeDouble
 
-    val atype = 7
+    final val atype = 7
 
     def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
@@ -279,7 +279,7 @@ sealed trait FloatType extends BaseType {
 
     def computationalType = ComputationalTypeFloat
 
-    val atype = 6
+    final val atype = 6
 
     def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
@@ -296,7 +296,7 @@ sealed trait ShortType extends BaseType {
 
     def computationalType = ComputationalTypeInt
 
-    val atype = 9
+    final val atype = 9
 
     def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
@@ -313,7 +313,7 @@ sealed trait IntegerType extends BaseType {
 
     def computationalType = ComputationalTypeInt
 
-    val atype = 10
+    final val atype = 10
 
     def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
@@ -330,7 +330,7 @@ sealed trait LongType extends BaseType {
 
     def computationalType = ComputationalTypeLong
 
-    val atype = 11
+    final val atype = 11
 
     def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
@@ -347,7 +347,7 @@ sealed trait BooleanType extends BaseType {
 
     def computationalType = ComputationalTypeInt
 
-    val atype = 4
+    final val atype = 4
 
     def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 

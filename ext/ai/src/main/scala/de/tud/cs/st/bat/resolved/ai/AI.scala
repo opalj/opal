@@ -707,15 +707,23 @@ trait AI {
                         val count :: rest = operands
                         val atype = instruction.asInstanceOf[NEWARRAY].atype
                         val computation = (atype: @annotation.switch) match {
-                            case 4 /*BooleanType.atype*/  ⇒ domain.newarray(pc, count, BooleanType)
-                            case 5 /*CharType.atype*/     ⇒ domain.newarray(pc, count, CharType)
-                            case 6 /*FloatType.atype*/    ⇒ domain.newarray(pc, count, FloatType)
-                            case 7 /*DoubleType.atype*/   ⇒ domain.newarray(pc, count, DoubleType)
-                            case 8 /*ByteType.atype*/     ⇒ domain.newarray(pc, count, ByteType)
-                            case 9 /*ShortType.atype*/    ⇒ domain.newarray(pc, count, ShortType)
-                            case 10 /*IntegerType.atype*/ ⇒ domain.newarray(pc, count, IntegerType)
-                            case 11 /*LongType.atype*/    ⇒ domain.newarray(pc, count, LongType)
-                            case _                        ⇒ BATException("newarray of unsupported \"atype\"")
+                            case BooleanType.atype ⇒
+                                domain.newarray(pc, count, BooleanType)
+                            case CharType.atype ⇒
+                                domain.newarray(pc, count, CharType)
+                            case FloatType.atype ⇒
+                                domain.newarray(pc, count, FloatType)
+                            case DoubleType.atype ⇒
+                                domain.newarray(pc, count, DoubleType)
+                            case ByteType.atype ⇒
+                                domain.newarray(pc, count, ByteType)
+                            case ShortType.atype ⇒
+                                domain.newarray(pc, count, ShortType)
+                            case IntegerType.atype ⇒
+                                domain.newarray(pc, count, IntegerType)
+                            case LongType.atype ⇒
+                                domain.newarray(pc, count, LongType)
+                            case _ ⇒ BATException("newarray of unsupported \"atype\"")
                         }
                         computationWithReturnValueAndException(computation, rest)
 
