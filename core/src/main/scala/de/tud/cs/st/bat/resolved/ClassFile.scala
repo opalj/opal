@@ -70,7 +70,7 @@ case class ClassFile(
     minorVersion: Int,
     majorVersion: Int,
     accessFlags: Int,
-    thisClass: ObjectType, // TODO [ClassFile] Rename "thisClass" to,e.g., theType or classType
+    thisClass: ObjectType, // TODO [ClassFile] Rename "thisClass" to,e.g., thisType
     superClass: Option[ObjectType], // TODO [ClassFile] Rename superClass to superclassType
     interfaces: Seq[ObjectType], // TODO [ClassFile] Rename interfaces to interfacesTypes
     fields: Fields,

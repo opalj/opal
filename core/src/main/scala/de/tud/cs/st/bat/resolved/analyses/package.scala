@@ -38,8 +38,10 @@ import java.io.File
 import java.net.URL
 
 /**
- * Defines implicit conversions to wrap some common types of analyses such that they
- * generate results of type [[de.tud.cs.st.bat.resolved.analyses.ReportableAnalysisResult]].
+ * Defines implicit conversions to wrap some types of analyses such that they generate 
+ * results of type [[de.tud.cs.st.bat.resolved.analyses.ReportableAnalysisResult]].
+ * 
+ * @author Michael Eichberg
  */
 package object analyses {
 
