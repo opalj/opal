@@ -397,7 +397,7 @@ class ClassHierarchy(
      *      occur.
      *      Furthermore, if the field cannot be found it is the responsibility of the
      *      caller to handle that situation.
-     * 
+     *
      * @param c The class (or a superclass thereof) that is expected to define the
      *      reference field.
      * @param fieldName The name of the accessed field.
@@ -412,7 +412,7 @@ class ClassHierarchy(
         classes: ObjectType ⇒ Option[ClassFile]): Option[(ClassFile, Field)] = {
 
         // More details: JVM 7 Spec. Section 5.4.3.2 
-        
+
         classes(c).flatMap(classFile ⇒ {
             classFile.fields.collectFirst {
                 case field @ Field(_, `fieldName`, `fieldType`, _) ⇒ (classFile, field)
@@ -431,71 +431,90 @@ class ClassHierarchy(
     }
 
     /**
-     * Searches for the method (implementation) that will be executed when the given
-     * method is called on the given receiver.
+     * Tries to resolve a method reference as specified by the JVM specification.
+     * I.e., the algorithm tries to find the class that actually declares the referenced
+     * method.
      *
-     * This method can be used to resolve super calls/to search for overridden methods.
-     * In this case the `currentType` just has to be the direct supertype of the `receiver`.
+     * This method is the basis for the implementation of the precise semantics
+     * of the invokeXXX instructions. However, it does not check whether the resolved
+     * method can be accessed or if it is abstract.
      *
-     * @param callerType The defining object of the method in which the call is made.
-     *      This information is needed to correctly resolve calls to methods with
-     *      default visibility.
-     * @param receiverType The object that receives the method call. If the receiver
-     *    is an interface definition, or the class file cannot be looked up
-     *    `None` is returned.
-     * @param superclassType A supertype of the receiver in which we will look for the
-     *    method implementation. Initially `currentType` is typically identical
-     *    to `receiver`.
      * @Note If the type of the receiver is not precise the receiver object's
      *    subtypes should also be searched for method implementation (at least those
      *    that may be instantiated).
-     * @Note This method should not be used to
+     *
+     * @Note This method just resolve a method reference. Additional checks,
+     *    such as whether the resolved method is accessible, may be necessary.
+     *
+     * @param receiverType The type of the object that receives the method call. The
+     *    type must be a class type and must not be an interface type.
+     * @return The resolved method and its defining class or `None`.
      */
-    def lookupDefiningMethod(
-        callerType: ObjectType,
+    def resolveMethodReference(
         receiverType: ObjectType,
-        superclassType: ObjectType,
         methodName: String,
         methodDescriptor: MethodDescriptor,
         classes: ObjectType ⇒ Option[ClassFile]): Option[(ClassFile, Method)] = {
-        // TODO [Java 7] How to handle signature polymorphic method resolution?
-        classes(receiverType) match {
-            case Some(classFile) if classFile.isInterfaceDeclaration ⇒ return None
-            case _ ⇒ /* ok... let's continue */
+        // TODO [Java 7] Implement support for handling signature polymorphic method resolution.
+
+        def lookupMethodInInterface(classFile: ClassFile): Option[(ClassFile, Method)] = {
+            classFile.methods.collectFirst {
+                case method @ Method(_, `methodName`, `methodDescriptor`, _) ⇒
+                    (classFile, method)
+            } orElse {
+                lookupMethodInSuperinterfaces(classFile)
+            }
         }
 
-        classes(superclassType) match {
-            case None ⇒ None
-            case Some(classFile) if classFile.isInterfaceDeclaration ⇒ None
-            case Some(classFile) ⇒ // TODO lll!!!!
-                None
-
+        def lookupMethodInSuperinterfaces(classFile: ClassFile): Option[(ClassFile, Method)] = {
+            classFile.interfaces.foreach { superinterface: ObjectType ⇒
+                classes(superinterface) map { superclass ⇒
+                    val result = lookupMethodInInterface(superclass)
+                    if (result.isDefined) return result
+                }
+            }
+            None
         }
 
+        classes(receiverType) flatMap { classFile ⇒
+            assume(!classFile.isInterfaceDeclaration)
+
+            lookupMethodDefinition(
+                receiverType,
+                methodName,
+                methodDescriptor,
+                classes
+            ).orElse(
+                    lookupMethodInSuperinterfaces(classFile)
+                )
+        }
     }
 
+    //    def resolveInterfaceMethodReference(
+    //        receiverType: ObjectType,
+    //        methodName: String,
+    //        methodDescriptor: MethodDescriptor,
+    //        classes: ObjectType ⇒ Option[ClassFile]): Option[(ClassFile, Method)] = {
+    //
+    //        classes(receiverType) flatMap { classFile ⇒
+    //            assume(classFile.isInterfaceDeclaration)
+    //            lookupMethodDefinition(receiverType, methodName, methodDescriptor, classes)
+    //        }
+    //    }
+
     /**
-     * Looks up the class file and method which actually declares the method that is
-     * referred to by the given receiver type, method name and method descriptor.
+     * Looks up the class file and method which actually defines the method that is
+     * referred to by the given receiver type, method name and method descriptor. Given
+     * that we are searching for method definitions the search is limited to the
+     * superclasses of the class of the given receiver type.
      *
-     * In most cases this will be the receiver's class. For example, if you look
-     * up the method declaration of a method that is called using invokestatic then
-     * (if the project is valid) the class of receiver must define the respective method.
-     * In some cases – however – it might be one (or more) superclasses. In the latter
-     * case the declaration of the method by a superclass has precedence over a
-     * declaration by an interface.
+     * This method does not take visibility modifiers or the static modifier into account.
+     * If necessary such checks needs to be done by the caller.
      *
-     * This method does not take visibility modifiers or the static modifier into account;
-     * i.e, it assumes that the presented project is valid. In the latter case this
-     * method can also be used to reliably lookup a private method's declaration or
-     * the declaration of a constructor/a static method.
-     *
-     * ==Note==
-     * This method might be of limited value if static source code dependencies
-     * are analyzed. If an invoke instruction refers to a method that is not declared
-     * by the receiver's class, then it might be more meaningful to still create a
-     * dependency to the receiver's class than to look up the actual declaration in one
-     * of the receiver's super classes.
+     * @Note In case that you analyze static source code dependencies and if an invoke
+     *    instruction refers to a method that is not declared by the receiver's class, then
+     *    it might be more meaningful to still create a dependency to the receiver's class
+     *    than to look up the actual declaration in one of the receiver's super classes.
      *
      * @return `Some((ClassFile,Method))` if the method is found. `None` if the method
      *    is not found. This can happen under two circumstances:
@@ -505,30 +524,29 @@ class ClassHierarchy(
      *    Second, the analyzed class files do not belong together (they either belong to
      *    different projects or to incompatible versions of the same project.)
      */
-    def lookupMethodDeclaration(
-        receiver: ObjectType,
+    def lookupMethodDefinition(
+        receiverType: ObjectType,
         methodName: String,
         methodDescriptor: MethodDescriptor,
         classes: ObjectType ⇒ Option[ClassFile]): Option[(ClassFile, Method)] = {
-        // TODO [Java 7] How to support lookupMethod for dynamic method calls?
-        val clazz = classes(receiver).getOrElse({ return None; })
 
-        (clazz.methods.collectFirst { case m @ Method(_, `methodName`, `methodDescriptor`, _) ⇒ m }) match {
-            case Some(method) ⇒ return Some(clazz, method)
-            case None ⇒ {
-                if (clazz.superClass.isDefined) {
-                    val result = lookupMethodDeclaration(clazz.superClass.get, methodName, methodDescriptor, classes);
-                    if (result.isDefined) {
-                        return result;
+        def lookupMethodDefinition(classFile: ClassFile): Option[(ClassFile, Method)] = {
+            classFile.methods.collectFirst {
+                case method @ Method(_, `methodName`, `methodDescriptor`, _) ⇒
+                    (classFile, method)
+            } orElse {
+                classFile.superClass.flatMap { superclassType ⇒
+                    classes(superclassType) flatMap { superclass ⇒
+                        lookupMethodDefinition(superclass)
                     }
                 }
-                return clazz.interfaces.collectFirst(
-                    lookupMethodDeclaration(_, methodName, methodDescriptor, classes) match {
-                        case Some(m) ⇒ m
-                    }
-                )
-
             }
+        }
+
+        classes(receiverType) flatMap { classFile ⇒
+            assume(!classFile.isInterfaceDeclaration)
+
+            lookupMethodDefinition(classFile)
         }
     }
 

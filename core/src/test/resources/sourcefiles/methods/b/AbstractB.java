@@ -42,6 +42,6 @@ package methods.b;
  * 
  * @author Michael Eichberg
  */
-public abstract class AbstractB implements SomeSubInterface {
+public abstract class AbstractB implements SubI {
     // deliberately left empty
 }

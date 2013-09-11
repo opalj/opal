@@ -40,8 +40,8 @@ package resolved
  * @author Michael Eichberg
  */
 case class INVOKESTATIC(
-    declaringClass: ReferenceType, // an interface or class type to be precise
-    name: String, // an interface or class type to be precise
+    declaringClass: ReferenceType, // a class type to be precise
+    name: String, 
     methodDescriptor: MethodDescriptor)
         extends StaticMethodInvocationInstruction {
 

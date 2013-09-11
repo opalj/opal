@@ -43,6 +43,6 @@ package methods.b;
  * @author Michael Eichberg
  */
 @SuppressWarnings("all")
-public interface SomeSubInterface extends SomeInterface{
-	void someSubMethod();
+public interface SuperI {
+	void someMethod();
 }
