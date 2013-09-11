@@ -91,7 +91,7 @@ trait ConsoleTracer extends AITracer {
         println(Console.RESET)
     }
 
-    def abnormalReturn[D <: Domain[_]](pc: Int, exception: D#DomainValue) {
+    def abruptMethodExecution[D <: Domain[_]](pc: Int, exception: D#DomainValue) {
         println(Console.BOLD +
             Console.RED +
             pc+": RETURN FROM METHOD DUE TO UNHANDLED EXCEPTION :"+exception +

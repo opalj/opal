@@ -363,7 +363,7 @@ trait AI {
              * Called when an exception was (potentially) raised during the interpretation
              * of the method. In this case the corresponding handler is searched and then
              * the control is transfered to it. If no handler is found the domain is
-             * informed about an abnormal return.
+             * informed that the method invocation completed abruptly.
              *
              * @note The operand stack will only contain the raised exception.
              *
@@ -412,20 +412,20 @@ trait AI {
                     })
 
                 // If "isHandled" is true, we are sure that at least one 
-                // handler will catch the exception... hence the method
-                // will not return abnormally w.r.t. the given exception
+                // handler will catch the exception... hence this method
+                // invocation will not complete abruptly.
                 if (!isHandled)
-                    abnormalReturn(pc, exceptionValue)
+                    abruptMethodExecution(pc, exceptionValue)
             }
             def handleExceptions(exceptions: Set[DomainValue]) {
                 exceptions.foreach(handleException(_))
             }
 
-            def abnormalReturn(pc: Int, exception: DomainValue) {
+            def abruptMethodExecution(pc: Int, exception: DomainValue) {
                 if (tracer.isDefined)
-                    tracer.get.abnormalReturn[domain.type](pc, exception)
+                    tracer.get.abruptMethodExecution[domain.type](pc, exception)
 
-                domain.abnormalReturn(pc, exception)
+                domain.abruptMethodExecution(pc, exception)
             }
 
             def fallThrough() {
@@ -517,7 +517,18 @@ trait AI {
                         val branchtarget = pc + instruction.asInstanceOf[UnconditionalBranchInstruction].branchoffset
                         gotoTarget(branchtarget, operands, locals)
 
-                    // FIXME The handling of JSR/RET needs to be revised. Merging the operand stacks/local variables is not meaningful! I.e., we need to reset them!
+                    // FIXME The handling of JSR/RET needs to be revised. 
+                    // Merging the operand stacks/local variables is not meaningful! I.e., we need to reset them!
+                    // Semantics (from the JVM Spec):
+                    // - The instruction following each jsr(_w) instruction may be 
+                    //      returned to only by a single ret instruction.
+                    // - No jsr(_w) instruction that is returned to may be used to 
+                    //      recursively call a subroutine if that subroutine is already 
+                    //      present in the subroutine call chain. (Subroutines can be 
+                    //      nested when using try-finally constructs from within a 
+                    //      finally clause.)
+                    // - Each instance of type return Address can be returned to at most
+                    //      once.
                     case 169 /*ret*/ ⇒
                         val lvIndex = instruction.asInstanceOf[RET].lvIndex
                         locals(lvIndex) match {
@@ -654,7 +665,7 @@ trait AI {
                                         } else
                                             gotoTarget(branchTarget, nextOperands, locals)
                                     })
-                                    abnormalReturn(pc, exceptionValue)
+                                    abruptMethodExecution(pc, exceptionValue)
 
                                 case exceptions: IsReferenceType ⇒
                                     val isHandled = exceptions.forallTypes(exceptionType ⇒
@@ -685,9 +696,9 @@ trait AI {
                                         ))
                                     // If "isHandled" is true, we are sure that at least one 
                                     // handler will catch the exception(s)... hence the method
-                                    // will not return abnormally
+                                    // will not complete abruptly
                                     if (!isHandled)
-                                        abnormalReturn(pc, exceptionValue)
+                                        abruptMethodExecution(pc, exceptionValue)
 
                                 case types ⇒
                                     interpreterException(

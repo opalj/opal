@@ -960,7 +960,7 @@ trait Domain[I] {
      *      the exception that is actually thrown is a new `NullPointerException`. This
      *      situation is, however, completely handled by BATAI.
      */
-    def abnormalReturn(pc: Int, exception: DomainValue): Unit
+    def abruptMethodExecution(pc: Int, exception: DomainValue): Unit
 
     //
     // ACCESSING FIELDS

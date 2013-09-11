@@ -114,7 +114,7 @@ class RecordingDomain[I](identifier: I)
         returnedValues += (("return", null))
     }
 
-    override def abnormalReturn(pc: Int, exception: DomainValue) {
+    override def abruptMethodExecution(pc: Int, exception: DomainValue) {
         returnedValues += (("throws", exception))
     }
 

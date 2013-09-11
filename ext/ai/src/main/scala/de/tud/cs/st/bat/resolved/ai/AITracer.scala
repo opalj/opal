@@ -69,6 +69,6 @@ trait AITracer {
      * Called when the analyzed method throws an exception that is not catched within
      * the method.
      */
-    def abnormalReturn[D <: Domain[_]](pc: Int, exception: D#DomainValue)
+    def abruptMethodExecution[D <: Domain[_]](pc: Int, exception: D#DomainValue)
 
 }

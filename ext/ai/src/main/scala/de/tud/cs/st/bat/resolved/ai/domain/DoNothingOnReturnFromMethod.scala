@@ -55,7 +55,7 @@ trait DoNothingOnReturnFromMethod { this: Domain[_] ⇒
 
     def returnVoid(pc: Int): Unit = { /* Do nothing. */ }
 
-    def abnormalReturn(pc: Int, exception: DomainValue): Unit = { /* Do nothing. */ }
+    def abruptMethodExecution(pc: Int, exception: DomainValue): Unit = { /* Do nothing. */ }
 }
 
 
