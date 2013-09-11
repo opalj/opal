@@ -239,6 +239,7 @@ trait AI {
                 )
                 if (tracer.isDefined)
                     tracer.get.merge[domain.type](
+                        domain,
                         targetPC, currentOperands, currentLocals, operands, locals,
                         mergeResult
                     )
@@ -423,7 +424,7 @@ trait AI {
 
             def abruptMethodExecution(pc: Int, exception: DomainValue) {
                 if (tracer.isDefined)
-                    tracer.get.abruptMethodExecution[domain.type](pc, exception)
+                    tracer.get.abruptMethodExecution[domain.type](domain, pc, exception)
 
                 domain.abruptMethodExecution(pc, exception)
             }

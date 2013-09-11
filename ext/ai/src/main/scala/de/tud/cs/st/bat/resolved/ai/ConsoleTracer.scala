@@ -57,6 +57,7 @@ trait ConsoleTracer extends AITracer {
     }
 
     def merge[D <: Domain[_]](
+        domain: D,
         pc: Int,
         thisOperands: D#Operands,
         thisLocals: D#Locals,
@@ -91,7 +92,10 @@ trait ConsoleTracer extends AITracer {
         println(Console.RESET)
     }
 
-    def abruptMethodExecution[D <: Domain[_]](pc: Int, exception: D#DomainValue) {
+    def abruptMethodExecution[D <: Domain[_]](
+        domain: D,
+        pc: Int,
+        exception: D#DomainValue) {
         println(Console.BOLD +
             Console.RED +
             pc+": RETURN FROM METHOD DUE TO UNHANDLED EXCEPTION :"+exception +

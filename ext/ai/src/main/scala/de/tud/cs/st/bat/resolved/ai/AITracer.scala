@@ -59,6 +59,7 @@ trait AITracer {
      * and the registers need to be merged.
      */
     def merge[D <: Domain[_]](
+        domain: D,
         pc: Int,
         thisOperands: D#Operands,
         thisLocals: D#Locals,
@@ -69,6 +70,9 @@ trait AITracer {
      * Called when the analyzed method throws an exception that is not catched within
      * the method.
      */
-    def abruptMethodExecution[D <: Domain[_]](pc: Int, exception: D#DomainValue)
+    def abruptMethodExecution[D <: Domain[_]](
+        domain: D,
+        pc: Int,
+        exception: D#DomainValue)
 
 }
