@@ -33,37 +33,42 @@
 package ai;
 
 /**
- * Just a very large number of methods that contain loops.
+ * Methods that contain constructors and inter-constructor calls. framework.
  * 
- * <h2>NOTE</h2> This class is not meant to be (automatically) recompiled; it just serves
- * documentation purposes. The compiled class that is used by the tests is found in the
- * test-classfiles directory.
+ * <b>This class is not meant to be (automatically) recompiled; it just serves documentation
+ * purposes. The compiled class that is used by the tests is found in the test-classfiles
+ * directory</b>
  * 
  * @author Michael Eichberg
  */
 public class MethodsWithConstructors {
 
-    public static void singleStepLoop() {
-        for (int i = 0; i < 1; i++) {
-            System.out.println(i);
+    public static class MWCSuper {
+        private String value;
+
+        public MWCSuper(String value) {
+            super();
+            this.value = value;
+        }
+
+        public MWCSuper(int value) {
+            this("This is an int value: " + value);
+        }
+
+        public String getValue() {
+            return value;
         }
     }
 
-    public static void twoStepsLoop() {
-        for (int i = 0; i < 2; i++) {
-            System.out.println(i);
-        }
-    }
+    public static class MWCSub extends MWCSuper {
+        private Object object;
 
-    public static void countTo10() {
-        for (int i = 0; i < 10; i++) {
-            System.out.println(i);
+        public MWCSub(Object o) {
+            super(o.toString());
         }
-    }
 
-    public static void endless() {
-        while (true) {
-            System.out.println(System.nanoTime());
+        public Object getObject() {
+            return object;
         }
     }
 }

@@ -35,9 +35,9 @@ package ai;
 /**
  * Just a very large number of methods related to reflection.
  * 
- * <h2>NOTE</h2> This class is not meant to be (automatically) recompiled; it just serves
- * documentation purposes. The compiled class that is used by the tests is found in the
- * test-classfiles directory.
+ * <b>This class is not meant to be (automatically) recompiled; it just serves documentation
+ * purposes. The compiled class that is used by the tests is found in the test-classfiles
+ * directory.</b>
  * 
  * @author Michael Eichberg
  */

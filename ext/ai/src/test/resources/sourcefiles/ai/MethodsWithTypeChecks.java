@@ -53,6 +53,20 @@ public class MethodsWithTypeChecks {
             return new java.util.ArrayList<Integer>();
     }
 
+    @SuppressWarnings("unchecked")
+    public static java.util.Collection<Object> castToCollection(Object o) {
+        return (java.util.Collection<Object>) o;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static java.util.Set<Object> castToSet(Object o) {
+        return (java.util.Set<Object>) o;
+    }
+
+    public static Object castToObject(Object o) {
+        return o;
+    }
+
     @SuppressWarnings("cast")
     public static void main(String[] args) {
 
@@ -64,11 +78,16 @@ public class MethodsWithTypeChecks {
         System.out.println(l instanceof java.util.Set<?>);
         System.out.println(l instanceof File);
 
-        Object o = l;
+        java.util.Collection<Object> colL = castToCollection(l);
+        java.util.Set<Object> setL = castToSet(colL);
+        System.out.println(castToObject(setL) instanceof File);
 
+        Object o = l;
         IOException ioe = (IOException) o;
         System.out.println(ioe);
         System.out.println(ioe instanceof IOException);
+        java.util.List<?> list = (java.util.List<?>) o;
+        System.out.println(list instanceof java.util.List<?>);
 
         System.out.println("End of type frenzy.");
     }

@@ -91,8 +91,9 @@ public class MethodsWithBranches {
     }
 
     // RELATIONAL OPERATORS
-    // Comparing two values also invokes some kind of "IF" byte code operations which is
-    // a simple control flow.
+    // Comparing two float/double values puts an int value on the stack which is
+    // then compared - by means of an if instruction - with the predefined value 0 and
+    // then the result is pushed onto the stack.
 
     /*
      * FLOAD 0 FLOAD 1 FCMPL IFLE L1
