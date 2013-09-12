@@ -193,10 +193,10 @@ class ClassHierarchy(
      * Calls the function `f` for each (direct or indirect) subtype of the given type.
      */
     def foreachSubtype(objectType: ObjectType, f: ObjectType ⇒ Unit) {
-        subtypes.apply(objectType).foreach(directSubtype ⇒ {
+        subtypes.apply(objectType) foreach { directSubtype ⇒
             f(directSubtype)
             foreachSubtype(directSubtype, f)
-        })
+        }
     }
 
     /**
@@ -217,10 +217,10 @@ class ClassHierarchy(
      * for each supertype.
      */
     def foreachSupertype(objectType: ObjectType, f: ObjectType ⇒ Unit) {
-        supertypes.apply(objectType).foreach(supertype ⇒ {
+        supertypes.apply(objectType) foreach { supertype ⇒
             f(supertype)
             foreachSupertype(supertype, f)
-        })
+        }
     }
 
     /**
@@ -393,8 +393,8 @@ class ClassHierarchy(
      * @note This implementation does not check for `IllegalAccessError`. This check
      *      needs to be done by the caller. The same applies for the check that the
      *      field is non-static if get-/putfield is used and static if a get/putstatic is
-     *      used to access the field. In the latter case a `LinkingException` would
-     *      occur.
+     *      used to access the field. In the latter case the JVM would throw a
+     *      `LinkingException`.
      *      Furthermore, if the field cannot be found it is the responsibility of the
      *      caller to handle that situation.
      *
@@ -403,7 +403,7 @@ class ClassHierarchy(
      * @param fieldName The name of the accessed field.
      * @param fieldType The type of the accessed field (the field descriptor).
      * @param classes A function to lookup the class that implements a given `ObjectType`.
-     * @return The concrete class that defines the reference field.
+     * @return The concrete class that defines the referenced field.
      */
     def resolveFieldReference(
         c: ObjectType,
@@ -413,7 +413,7 @@ class ClassHierarchy(
 
         // More details: JVM 7 Spec. Section 5.4.3.2 
 
-        classes(c).flatMap(classFile ⇒ {
+        classes(c) flatMap { classFile ⇒
             classFile.fields.collectFirst {
                 case field @ Field(_, `fieldName`, `fieldType`, _) ⇒ (classFile, field)
             } orElse {
@@ -427,7 +427,7 @@ class ClassHierarchy(
                     }
                 }
             }
-        })
+        }
     }
 
     /**
@@ -435,13 +435,17 @@ class ClassHierarchy(
      * I.e., the algorithm tries to find the class that actually declares the referenced
      * method.
      *
-     * This method is the basis for the implementation of the precise semantics
-     * of the invokeXXX instructions. However, it does not check whether the resolved
-     * method can be accessed or if it is abstract.
+     * This method is the basis for the implementation of the semantics
+     * of the `invokeXXX` instructions. However, it does not check whether the resolved
+     * method can be accessed by the caller or if it is abstract. Additionally it is still
+     * necessary that the caller makes a distinction between the statically (at compile time)
+     * identified declaring class and the dynamic type of the receiver in case of
+     * `invokevirtual` and `invokeinterface` instructions. I.e., additional processing
+     * is necessary.
      *
-     * @Note If the type of the receiver is not precise the receiver object's
+     * @Note Generally, if the type of the receiver is not precise the receiver object's
      *    subtypes should also be searched for method implementation (at least those
-     *    that may be instantiated).
+     *    classes that may be instantiated).
      *
      * @Note This method just resolve a method reference. Additional checks,
      *    such as whether the resolved method is accessible, may be necessary.
@@ -561,21 +565,22 @@ class ClassHierarchy(
 
         import sourceElementIDs.{ sourceElementID ⇒ id }
 
-        private val nodes: Map[ObjectType, Node] = Map() ++ subtypes.keys.map(t ⇒ {
-            val entry: (ObjectType, Node) = (
-                t,
-                new Node {
-                    def uniqueId = id(t)
-                    def toHRR: Option[String] = Some(t.className)
-                    def foreachSuccessor(f: Node ⇒ _) {
-                        subtypes.apply(t).foreach(st ⇒ {
-                            f(nodes(st))
-                        })
+        private val nodes: Map[ObjectType, Node] =
+            Map.empty ++ subtypes.keys.map { t ⇒
+                val entry: (ObjectType, Node) = (
+                    t,
+                    new Node {
+                        def uniqueId = id(t)
+                        def toHRR: Option[String] = Some(t.className)
+                        def foreachSuccessor(f: Node ⇒ _) {
+                            subtypes.apply(t) foreach { subtype ⇒
+                                f(nodes(subtype))
+                            }
+                        }
                     }
-                }
-            )
-            entry
-        })
+                )
+                entry
+            }
 
         // a virtual root node
         def uniqueId = -1
@@ -586,7 +591,7 @@ class ClassHierarchy(
              * to in the class files that we did see. Hence, we have to be able
              * to handle partial class hierarchies.
              */
-            val rootTypes = nodes.filterNot({ case (t, _) ⇒ supertypes.isDefinedAt(t) })
+            val rootTypes = nodes.filterNot { case (t, _) ⇒ supertypes.isDefinedAt(t) }
             rootTypes.values.foreach(f)
         }
     }
