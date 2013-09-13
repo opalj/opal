@@ -87,6 +87,12 @@ sealed trait Answer {
      * `Unknown` is returned.
      */
     def merge(other: Answer): Answer
+
+    /**
+     * If this answer is not well defined the given function is evaluated and that
+     * result is returned otherwise this answer is returned.
+     */
+    def orElse(f: ⇒ Answer): Answer = this
 }
 /**
  * Defines factory methods for answer objects.
@@ -135,6 +141,8 @@ final case object Unknown extends Answer {
     def isUndefined: Boolean = true
 
     def merge(other: Answer) = Unknown
+
+    override def orElse(f: ⇒ Answer): Answer = f
 }
 
 

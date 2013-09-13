@@ -59,7 +59,7 @@ class ProjectTest
     // Setup
     //
     //
-    val resources = TestSupport.locateTestResources("classfiles/Methods.jar")
+    val resources = TestSupport.locateTestResources("classfiles/methods.jar")
     val project = new Project ++ ClassFiles(resources)
 
     val SuperType = ObjectType("methods/a/Super")
@@ -75,7 +75,6 @@ class ProjectTest
     behavior of "Project's classes repository"
 
     import project.classes
-    import project.classHierarchy.lookupMethodDeclaration
 
     it should "find the class methods.a.Super" in {
         classes.get(SuperType) should be('Defined)
@@ -91,8 +90,10 @@ class ProjectTest
 
     behavior of "Project's lookupMethodDeclaration method"
 
+    import project.classHierarchy.resolveMethodReference
+
     it should "find a public method" in {
-        lookupMethodDeclaration(
+        resolveMethodReference(
             SuperType,
             "publicMethod",
             MethodDescriptor("()V"),
@@ -101,39 +102,70 @@ class ProjectTest
     }
 
     it should "find a private method" in {
-        lookupMethodDeclaration(SuperType, "privateMethod", MethodDescriptor("()V"), project) should be('Defined)
+        resolveMethodReference(
+            SuperType,
+            "privateMethod",
+            MethodDescriptor("()V"),
+            project
+        ) should be('Defined)
     }
 
     it should "not find a method that does not exist" in {
-        lookupMethodDeclaration(SuperType, "doesNotExist", MethodDescriptor("()V"), project) should be('Empty)
+        resolveMethodReference(
+            SuperType,
+            "doesNotExist",
+            MethodDescriptor("()V"),
+            project
+        ) should be('Empty)
     }
 
     it should "find a method with default visibility" in {
-        lookupMethodDeclaration(SuperType, "defaultVisibilityMethod", MethodDescriptor("()V"), project) should be('Defined)
+        resolveMethodReference(
+            SuperType,
+            "defaultVisibilityMethod",
+            MethodDescriptor("()V"),
+            project
+        ) should be('Defined)
     }
 
-    it should "find another method with default visibility" in {
-        lookupMethodDeclaration(SuperType, "anotherDefaultVisibilityMethod", MethodDescriptor("()V"), project) should be('Defined)
-    }
-
-    it should "find the super class' method anotherDefaultVisibilityMethod" in {
-        lookupMethodDeclaration(DirectSub, "anotherDefaultVisibilityMethod", MethodDescriptor("()V"), project) should be('Defined)
+    it should "find the super class' static method staticDefaultVisibilityMethod" in {
+        resolveMethodReference(
+            DirectSub,
+            "staticDefaultVisibilityMethod",
+            MethodDescriptor("()V"),
+            project
+        ) should be('Defined)
     }
 
     it should "not find Object's toString method, because we only have a partial view of the project" in {
-        lookupMethodDeclaration(SuperType, "toString", MethodDescriptor("()Ljava/lang/String;"), project) should be('Empty)
+        resolveMethodReference(
+            DirectSub,
+            "toString",
+            MethodDescriptor("()Ljava/lang/String;"),
+            project
+        ) should be('Empty)
     }
 
     it should "find a method declared by a directly implemented interface" in {
-        val r = lookupMethodDeclaration(AbstractB, "someSubMethod", MethodDescriptor("()V"), project)
+        val r = resolveMethodReference(
+            AbstractB,
+            "someSubMethod",
+            MethodDescriptor("()V"),
+            project)
+
         r should be('Defined)
-        assert(r.get._1.thisClass === ObjectType("methods/b/SomeSubInterface"))
+        assert(r.get._1.thisClass === ObjectType("methods/b/SubI"))
     }
 
     it should "find a method declared by an indirectly implemented interface" in {
-        val r = lookupMethodDeclaration(AbstractB, "someMethod", MethodDescriptor("()V"), project)
+        val r = resolveMethodReference(
+            AbstractB,
+            "someMethod",
+            MethodDescriptor("()V"),
+            project)
+
         r should be('Defined)
-        assert(r.get._1.thisClass === ObjectType("methods/b/SomeInterface"))
+        assert(r.get._1.thisClass === ObjectType("methods/b/SuperI"))
     }
 
 }

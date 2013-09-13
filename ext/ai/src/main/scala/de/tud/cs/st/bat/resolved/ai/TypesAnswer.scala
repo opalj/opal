@@ -35,6 +35,11 @@ package bat
 package resolved
 package ai
 
+/**
+ * Models the answer of the domain to a question about a specific value's type.
+ * 
+ * @author Michael Eichberg
+ */
 sealed trait TypesAnswer[+TypeInfo] extends Traversable[TypeInfo]
 
 trait TypesUnknown extends TypesAnswer[Nothing] {

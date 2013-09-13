@@ -144,7 +144,7 @@ object Util {
         </style>
         </head>
         <body>
-        { title.getOrElse("") }
+        { scala.xml.Unparsed(title.getOrElse("")) }
         { dumpTable(classFile, method, code, operandsArray, localsArray) }
         </body>
         </html>

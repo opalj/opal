@@ -143,8 +143,8 @@ trait DefaultTypeLevelIntegerValues[I]
         override def merge(pc: Int, value: DomainValue): Update[DomainValue] = value match {
             case SomeBooleanValue         ⇒ NoUpdate
             case other @ SomeIntegerValue ⇒ StructuralUpdate(other)
-            case TheNoLegalValue          ⇒ MetaInformationUpdateNoLegalValue
-            case _                        ⇒ MetaInformationUpdateNoLegalValue
+            case TheIllegalValue          ⇒ MetaInformationUpdateIllegalValue
+            case _                        ⇒ MetaInformationUpdateIllegalValue
         }
     }
     case object SomeByteValue extends CTIntegerValue {
@@ -154,11 +154,11 @@ trait DefaultTypeLevelIntegerValues[I]
 
         override def merge(pc: Int, value: DomainValue): Update[DomainValue] = value match {
             case SomeByteValue            ⇒ NoUpdate
-            case TheNoLegalValue          ⇒ MetaInformationUpdateNoLegalValue
+            case TheIllegalValue          ⇒ MetaInformationUpdateIllegalValue
             case other @ SomeIntegerValue ⇒ StructuralUpdate(other)
             case other @ SomeShortValue   ⇒ StructuralUpdate(other)
             case other @ SomeCharValue    ⇒ StructuralUpdate(other)
-            case other                    ⇒ MetaInformationUpdateNoLegalValue
+            case other                    ⇒ MetaInformationUpdateIllegalValue
         }
     }
 
@@ -169,11 +169,11 @@ trait DefaultTypeLevelIntegerValues[I]
 
         override def merge(pc: Int, value: DomainValue): Update[DomainValue] = value match {
             case SomeShortValue           ⇒ NoUpdate
-            case TheNoLegalValue          ⇒ MetaInformationUpdateNoLegalValue
+            case TheIllegalValue          ⇒ MetaInformationUpdateIllegalValue
             case other @ SomeIntegerValue ⇒ StructuralUpdate(other)
             case SomeByteValue            ⇒ NoUpdate
             case other @ SomeCharValue    ⇒ StructuralUpdate(SomeIntegerValue)
-            case other                    ⇒ MetaInformationUpdateNoLegalValue
+            case other                    ⇒ MetaInformationUpdateIllegalValue
         }
     }
 
@@ -184,11 +184,11 @@ trait DefaultTypeLevelIntegerValues[I]
 
         override def merge(pc: Int, value: DomainValue): Update[DomainValue] = value match {
             case SomeCharValue            ⇒ NoUpdate
-            case TheNoLegalValue          ⇒ MetaInformationUpdateNoLegalValue
+            case TheIllegalValue          ⇒ MetaInformationUpdateIllegalValue
             case SomeByteValue            ⇒ NoUpdate
             case SomeShortValue           ⇒ StructuralUpdate(SomeIntegerValue)
             case other @ SomeIntegerValue ⇒ StructuralUpdate(other)
-            case other                    ⇒ MetaInformationUpdateNoLegalValue
+            case other                    ⇒ MetaInformationUpdateIllegalValue
         }
     }
 
@@ -199,12 +199,12 @@ trait DefaultTypeLevelIntegerValues[I]
 
         override def merge(pc: Int, value: DomainValue): Update[DomainValue] = value match {
             case SomeIntegerValue ⇒ NoUpdate
-            case TheNoLegalValue  ⇒ MetaInformationUpdateNoLegalValue
+            case TheIllegalValue  ⇒ MetaInformationUpdateIllegalValue
             case SomeBooleanValue ⇒ NoUpdate
             case SomeByteValue    ⇒ NoUpdate
             case SomeCharValue    ⇒ NoUpdate
             case SomeShortValue   ⇒ NoUpdate
-            case other            ⇒ MetaInformationUpdateNoLegalValue
+            case other            ⇒ MetaInformationUpdateIllegalValue
         }
     }
 
@@ -293,7 +293,7 @@ trait DefaultTypeLevelLongValues[I]
     case object SomeLongValue extends SomeLongValue {
         override def merge(pc: Int, value: DomainValue): Update[DomainValue] = value match {
             case SomeLongValue ⇒ NoUpdate
-            case _             ⇒ MetaInformationUpdateNoLegalValue
+            case _             ⇒ MetaInformationUpdateIllegalValue
         }
     }
 
@@ -367,7 +367,7 @@ trait DefaultTypeLevelFloatValues[I]
     case object SomeFloatValue extends SomeFloatValue {
         override def merge(pc: Int, value: DomainValue): Update[DomainValue] = value match {
             case SomeFloatValue ⇒ NoUpdate
-            case _              ⇒ MetaInformationUpdateNoLegalValue
+            case _              ⇒ MetaInformationUpdateIllegalValue
         }
     }
 
@@ -437,7 +437,7 @@ trait DefaultTypeLevelDoubleValues[I]
     case object SomeDoubleValue extends SomeDoubleValue {
         override def merge(pc: Int, value: DomainValue): Update[DomainValue] = value match {
             case SomeDoubleValue ⇒ NoUpdate
-            case _               ⇒ MetaInformationUpdateNoLegalValue
+            case _               ⇒ MetaInformationUpdateIllegalValue
         }
     }
 

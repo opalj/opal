@@ -66,6 +66,11 @@ object InterpretMethod {
         val methodName = args(2)
 
         val file = new java.io.File(fileName)
+        if (!file.exists()) {
+            println(Console.RED+"file does not exist: "+fileName + Console.RESET)
+            return ;
+        }
+
         val classFiles =
             try {
                 reader.Java7Framework.ClassFiles(file)
@@ -98,7 +103,7 @@ object InterpretMethod {
                     new domain.ConfigurableDefaultDomain((classFile, method)))
             println(result)
         } catch {
-            case ie @ InterpreterException(message, domain, worklist, operands, locals) ⇒
+            case ie @ InterpreterException(throwable, domain, worklist, operands, locals) ⇒
                 writeAndOpenDump(
                     dump(
                         Some(classFile),
@@ -106,7 +111,11 @@ object InterpretMethod {
                         method.body.get,
                         operands,
                         locals,
-                        Some(message)))
+                        Some(
+                            throwable.getLocalizedMessage()+"<br>"+
+                                throwable.getStackTrace().mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n") +
+                                worklist.mkString("Remaining worklist:\n<br>", ", ", "<br>")
+                        )))
                 throw ie
 
         }

@@ -61,7 +61,7 @@ class InterpretManyMethodsTest
         extends FlatSpec
         with ShouldMatchers {
 
-    behavior of "BAT"
+    behavior of "BATAI"
 
     // The jars of the "BAT core" project
     val directoryWithJARs = "../../../../../core/src/test/resources/classfiles"

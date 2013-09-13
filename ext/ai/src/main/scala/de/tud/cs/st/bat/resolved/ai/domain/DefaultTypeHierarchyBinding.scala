@@ -36,7 +36,7 @@ package resolved
 package ai
 package domain
 
-import de.tud.cs.st.util.{Answer,Yes,No,Unknown}
+import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 /**
  * Provides a default implementation for answering type hierarchy related
@@ -57,7 +57,8 @@ trait DefaultTypeHierarchyBinding { this: Domain[_] ⇒
         analyses.ClassHierarchy.preInitializedClassHierarchy
 
     /**
-     * @see `de.tud.cs.st.bat.resolved.analyses.ClassHierarch.isSubtypeOf(...)
+     * @see [[de.tud.cs.st.bat.resolved.analyses.ClassHierarchy]].
+     *      isSubtypeOf(ReferenceType,ReferenceType)
      */
     def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer =
         classHierarchy.isSubtypeOf(subtype, supertype)

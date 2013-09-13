@@ -74,7 +74,7 @@ package object ai {
             localsArray: Array[Array[domain.DomainValue]]) = {
 
             new InterpreterException(
-                message,
+                this,
                 domain,
                 worklist,
                 operandsArray,
@@ -94,11 +94,12 @@ package object ai {
      * a user's implementation of a domain.
      */
     case class InterpreterException[D <: Domain[_]](
-        message: String,
+        throwable: Throwable,
         domain: D,
         worklist: List[Int],
         operandsArray: Array[_ <: List[_ <: D#DomainValue]],
-        localsArray: Array[_ <: Array[_ <: D#DomainValue]]) extends AIException(message)
+        localsArray: Array[_ <: Array[_ <: D#DomainValue]])
+            extends AIException(throwable.getLocalizedMessage())
 
     type SomeInterpreterException = InterpreterException[_]
 
@@ -107,13 +108,13 @@ package object ai {
      */
     @throws[SomeInterpreterException]
     def interpreterException[D <: Domain[_]](
-        message: String,
+        throwable: Throwable,
         domain: D,
         worklist: List[Int],
         operandsArray: Array[_ <: List[_ <: D#DomainValue]],
         localsArray: Array[_ <: Array[_ <: D#DomainValue]]): Nothing = {
         throw InterpreterException[Domain[_]](
-            message,
+            throwable,
             domain,
             worklist,
             operandsArray,
@@ -133,6 +134,6 @@ package object ai {
      * whether the domain makes it possible to distinguish between precise types and
      * type bounds is at the sole discretion of the domain.
      */
-    type TypeBound = Traversable[ReferenceType]
+    type TypeBound = Set[ReferenceType]
 
 }

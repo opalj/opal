@@ -40,17 +40,17 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 import reflect.ClassTag
 
 /**
- * A domain contains all information about a program's types and values and determines
- * how a domain's values are calculated.
+ * A domain is the fundamental abstraction mechanism in BATAI that contains all
+ * information about a program's types and values and performs the computations with
+ * respect to a domain's values. Customizing a domain is the fundamental mechanism
+ * of adapting BATAI to ones needs.
  *
  * This trait defines the interface between the abstract interpretation framework (BATAI)
- * and some (user defined) domain.
+ * and some (user defined) domain. I.e., this interface defines all methods that
+ * are needed by BATAI to perform abstract interpretations.
  *
  * To facilitate the usage of BATAI several classes/traits that implement parts of
  * the `Domain` trait are pre-defined and can be mixed in when needed.
- *
- * - [[de.tud.cs.st.bat.resolved.ai.domain.BaseDomain]]
- * - [[de.tud.cs.st.bat.resolved.ai.domain.DefaultDomain]]
  *
  * ==Control Flow==
  * BATAI controls the process of evaluating the code of a method, but requires a
@@ -59,7 +59,7 @@ import reflect.ClassTag
  * is completely embedded into BATAI.
  *
  * ==Thread Safety==
- * When every method is associated with a unique `Domain` instance as proposed and – given
+ * When every analyzed method is associated with a unique `Domain` instance and – given
  * that BATAI only uses one thread to analyze a given method at a time – no special care
  * has to be taken. However, if a domain needs to consult a domain which is associated with
  * a project as a whole, which we will refer to as "World" in BATAI, it is then the
@@ -71,10 +71,11 @@ import reflect.ClassTag
  * @tparam I The type which is used to identify this domain's context. E.g., if a new
  *      object is created it may be associated with the instruction that created it and
  *      this domain's identifier.
+ *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  * @author Dennis Siebert
  */
-trait Domain[I] {
+trait Domain[+I] {
 
     /**
      * Returns the value that identifies this domain (method).
@@ -110,44 +111,50 @@ trait Domain[I] {
          * jump targets of RET instructions and to determine which values are
          * actually copied by the dupXX instructions.
          *
-         * '''W.r.t. the computational type no kind of further abstraction is allowed.'''
+         * '''The domain must guarantee that the computational type is always precise.'''
          */
         def computationalType: ComputationalType
 
         /**
          * Merges this value with the given value.
          *
+         * ==Example==
          * For example, merging a `DomainValue` that represents the integer value 0
          * with a `DomainValue` that represents the integer value 1 may return a new
          * `DomainValue` that precisely captures the range or that captures all positive
          * integer values or just '''some integer value'''.
+         *
+         * ==Contract==
+         * '''`this` value''' is always the value that was previously used by BATAI to
+         * perform subsequent computations. Hence, if `this` value subsumes the given
+         * value the result has to be either a `NoUpdate` or a `MetaInformationUpdate`.
+         * In case that the given value subsumes `this` value, the result has to be
+         * a `StructuralUpdate`. Hence, the merge operation is not commutative.
          *
          * The termination of the abstract interpretation directly depends on the fact
          * that at some point all values are fixed and don't change anymore. Hence,
          * it is important that the type of the update is only a
          * [[de.tud.cs.st.bat.resolved.ai.StructuralUpdate]] if the value has changed.
          *
-         * @note ***This value*** is always the value that was used by BATAI for
-         *      subsequent computations. Hence, the merge operator is not commutative!
-         *      Furthermore, if ***this value*** subsumes the given value the result
-         *      has to be either `NoUpdate` or a `MetaInformationUpdate`; it must not
-         *      be a `StructuralUpdate`.
          * @param pc The program counter of the instruction where the paths converge.
          * @param value The "new" domain value.
          */
         def merge(pc: Int, value: DomainValue): Update[DomainValue]
 
         /**
-         * The type of the represented value (e.g., ByteType).
-         * If the value represents some reference typed value, the type maybe some
-         * TypeBound or a set thereof. Imagine, e.g., a method that declares to
-         * return a `java.util.List` object. In this case (i.e., if we don't analyze
-         * the called method) we only have a type bound. However, if we analyze the
-         * called method, we may determine that the type of the returned object is
-         * always either a `java.util.ArrayList` or `java.util.LinkedList`.
+         * The return type of the `valueType` method.
          */
         type ValueType <: AnyRef
 
+        /**
+         * The type of the represented value (e.g., ByteType).
+         * If the value represents some reference typed value, the type maybe some
+         * `TypeBound` or a set thereof. Imagine, e.g., a method that declares to
+         * return a `java.util.List` object. In this case (i.e., if we don't analyze
+         * the called method) we only have an upper type bound. However, if we analyze the
+         * called method, we may determine that the type of the returned object is
+         * always either a `java.util.ArrayList` or `java.util.LinkedList`.
+         */
         def valueType: ValueType
     }
 
@@ -172,82 +179,60 @@ trait Domain[I] {
     implicit val DomainValueTag: ClassTag[DomainValue]
 
     /**
-     * Facilitates matching against values of computational type category 1.
-     *
-     * @example
-     * {{{
-     * case v @ CTC1() => ...
-     * }}}
-     */
-    object CTC1 {
-        def unapply(v: Value): Boolean = v.computationalType.category == 1
-    }
-
-    /**
-     * Facilitates matching against values of computational type category 2.
-     *
-     * @example
-     * {{{
-     * case v @ CTC2() => ...
-     * }}}
-     */
-    object CTC2 {
-        def unapply(v: Value): Boolean = v.computationalType.category == 2
-    }
-
-    /**
      * Represents a value that has no well defined state/type.
      *
      * If the AI framework tries to merge two values that are incompatible, the result has
-     * to be an instance of `NoLegalValue`. This may happen, e.g., when BATAI tries to
+     * to be an instance of `IllegalValue`. This may happen, e.g., when BATAI tries to
      * merge two register values/locals that are not live (i.e., which should not be
      * live) and, hence, are actually allowed to contain incompatible values.
      * (`Not live` means that the value will not be used in the future.)
      */
-    protected class NoLegalValue extends Value { this: DomainValue ⇒
+    protected class IllegalValue extends Value { this: DomainValue ⇒
 
         def computationalType: ComputationalType =
-            BATException("the value \"NoLegalValue\" does not have a computational type")
+            domainException(
+                Domain.this,
+                "the value \"IllegalValue\" does not have a computational type")
 
         def merge(pc: Int, value: DomainValue): Update[DomainValue] = {
-            if (value == TheNoLegalValue)
+            if (value == TheIllegalValue)
                 NoUpdate
             else
-                MetaInformationUpdateNoLegalValue
+                MetaInformationUpdateIllegalValue
         }
 
         type ValueType = Nothing
-        def valueType = throw DomainException(Domain.this, "a non-legal value has no type")
+        def valueType = domainException(Domain.this, "a non-legal value has no type")
 
-        override def toString = "NoLegalValue"
+        override def toString = "DeadValue"
     }
 
     /**
-     * Abstracts over the concrete type of `NoLegalValue`.
+     * Abstracts over the concrete type of `IllegalValue`.
      *
-     * This type needs to be refined whenever the class `NoLegalValue`
+     * This type needs to be refined whenever the class `IllegalValue`
      * is refined or the type `DomainValue` is refined.
      */
-    type DomainNoLegalValue <: NoLegalValue with DomainValue
+    type DomainIllegalValue <: IllegalValue with DomainValue
 
     /**
-     * The **singleton** instance of a `NoLegalVAlue`.
+     * The **singleton** instance of a `IllegalValue`.
      */
-    val TheNoLegalValue: DomainNoLegalValue
+    val TheIllegalValue: DomainIllegalValue
 
     /**
      * If the result of the merge of two values is a non-legal value. The result has
      * to be reported as a `MetaInformationUpdate`.
      */
-    val MetaInformationUpdateNoLegalValue: MetaInformationUpdate[DomainNoLegalValue]
+    val MetaInformationUpdateIllegalValue: MetaInformationUpdate[DomainIllegalValue]
 
     /**
      * The result of the the merging of two values should never be reported as a
-     * `StructuralUpdate` if the computer value is a `NoLegalValue`.
+     * `StructuralUpdate` if the computer value is a `IllegalValue`.
      *
      * This method is solely defined to catch implementation errors early on.
      */
-    final def StructuralUpdateNoLegalValue: StructuralUpdate[Nothing] =
+    final def StructuralUpdateIllegalValue: StructuralUpdate[Nothing] =
         throw DomainException(Domain.this,
             "the merging of a value with an incompatible value "+
                 "always has to be a MetaInformationUpdate and not more")
@@ -269,7 +254,7 @@ trait Domain[I] {
                 else
                     StructuralUpdate(ReturnAddressValue(this.addresses ++ otherAddresses))
             }
-            case _ ⇒ MetaInformationUpdateNoLegalValue
+            case _ ⇒ MetaInformationUpdateIllegalValue
         }
 
         type ValueType = Nothing
@@ -453,18 +438,16 @@ trait Domain[I] {
     /*ABSTRACT*/ def types(value: DomainValue): TypesAnswer[_]
 
     /**
-     * Tries to determine if the type of the given `value` is a sub-type of the
-     * specified reference type (`superType`).
-     *
-     * @param value A value with computational type reference.
-     */
-    /*ABSTRACT*/ def isSubtypeOf(value: DomainValue, superType: ReferenceType): Answer
-
-    /**
      * Tries to determine if the type referred to as `subtype` is a subtype of the
      * specified reference type `supertype`.
      */
     /*ABSTRACT*/ def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer
+
+    /**
+     * Tries to determine if the type of the given non-null reference value is a subtype
+     * of the specified reference type `supertype`.
+     */
+    /*ABSTRACT*/ def isSubtypeOf(value: DomainValue, supertype: ReferenceType, onNull: ⇒ Answer): Answer
 
     /**
      * Tests if the two given integer values are equal.
@@ -740,33 +723,14 @@ trait Domain[I] {
     type NumericValueOrNullPointerException = Computation[DomainValue, DomainValue]
     type ReferenceValueOrNullPointerException = Computation[DomainValue, DomainValue]
 
-    /**
-     * Tests if the given reference value is `null` and returns a newly created
-     * `NullPointerException` if it is the case. If the value is not `null`,
-     * the given value is just wrapped and returned as this computation's result.
-     */
-    // FIXME As soon as the athrow is gone remove this method/move it to a subclass.
-    protected def givenValueOrNullPointerException(
-        pc: Int,
-        value: DomainValue): ReferenceValueOrNullPointerException = {
-        isNull(value) match {
-            case Yes ⇒ ThrowsException(newObject(pc, ObjectType.NullPointerException))
-            case No  ⇒ ComputedValue(value)
-            case Unknown ⇒ ComputedValueAndException(
-                value,
-                newObject(pc, ObjectType.NullPointerException)
-            )
-        }
-    }
-
     protected def sideEffectOnlyOrNullPointerException(
         pc: Int,
         value: DomainValue): SucceedsOrNullPointerException = {
         isNull(value) match {
-            case Yes ⇒ ThrowsException(newObject(pc, ObjectType.NullPointerException))
+            case Yes ⇒ ThrowsException(newVMObject(pc, ObjectType.NullPointerException))
             case No  ⇒ ComputationWithSideEffectOnly
             case Unknown ⇒ ComputationWithSideEffectOrException(
-                newObject(pc, ObjectType.NullPointerException)
+                newVMObject(pc, ObjectType.NullPointerException)
             )
         }
     }
@@ -774,19 +738,6 @@ trait Domain[I] {
     //
     // METHODS TO IMPLEMENT THE SEMANTICS OF INSTRUCTIONS
     //
-
-    //
-    // THROW EXCEPTION
-    //
-
-    /**
-     * The normal result is the given value unless it is `null`. If the value is `null` a
-     * new instance of a `NullPointerException` is created and returned as the thrown
-     * exception.
-     */
-    // FIXME Embed into AI/Move to AI.
-    def athrow(pc: Int, exception: DomainValue): Computation[DomainValue, DomainValue] =
-        givenValueOrNullPointerException(pc, exception)
 
     //
     // CREATE ARRAY
@@ -915,9 +866,9 @@ trait Domain[I] {
     // TYPE CHECKS AND CONVERSION
     //
 
-    def checkcast(pc: Int,
-                  objectref: DomainValue,
-                  resolvedType: ReferenceType): Computation[DomainValue, DomainValue]
+    //    def checkcast(pc: Int,
+    //                  objectref: DomainValue,
+    //                  resolvedType: ReferenceType): Computation[DomainValue, DomainValue]
 
     def instanceof(pc: Int,
                    objectref: DomainValue,
@@ -1113,10 +1064,17 @@ trait Domain[I] {
     }
 
     /**
-     * Creates a new `DomainValue` that represents an (new) instance of an
+     * Creates a new `DomainValue` that represents an (new) uninitialzed instance of an
      * object of the given type.
      */
     def newObject(pc: Int, t: ObjectType): DomainValue
+
+    /**
+     * Creates a new initialized object of the given type. This method is
+     *  used to create reference values that would be created by the JVM (in
+     * particular exceptions such as `NullPointExeception` and `ClassCastException`)
+     */
+    def newVMObject(pc: Int, t: ObjectType): DomainValue
 
     //
     //
@@ -1132,9 +1090,9 @@ trait Domain[I] {
      * @note The size of the operands stacks and the number of registers/locals
      *      has to be the same.
      * @note The operand stacks have to contain compatible values. I.e., it has to be
-     *      possible to merge operand stack values without getting a `NoLegalValue`.
+     *      possible to merge operand stack values without getting a `IllegalValue`.
      *      In the latter case – i.e. if the result of the merging of two operand
-     *      stacks is a `NoLegalValue` – either the bytecode is invalid, which is
+     *      stacks is a `IllegalValue` – either the bytecode is invalid, which is
      *      extremely unlikely, or the implementation of the domain is incomplete.
      */
     def merge(
@@ -1174,8 +1132,8 @@ trait Domain[I] {
                                 case SomeUpdate(operand) ⇒ operand
                                 case NoUpdate            ⇒ thisOperand
                             }
-                            assume(!newOperand.isInstanceOf[NoLegalValue],
-                                "domain merge - the result of merging the operands "+thisOperand+" and "+otherOperand+" is a NoLegalValue")
+                            assume(!newOperand.isInstanceOf[IllegalValue],
+                                "domain merge - the result of merging the operands "+thisOperand+" and "+otherOperand+" is a IllegalValue")
                             operandsUpdated = operandsUpdated &: updatedOperand
                             newOperand
                         }
@@ -1199,12 +1157,12 @@ trait Domain[I] {
                 while (i < maxLocals) {
                     val thisLocal = thisLocals(i)
                     val otherLocal = otherLocals(i)
-                    // The value calculated by "merge" may be the value "NoLegalValue" 
+                    // The value calculated by "merge" may be the value "IllegalValue" 
                     // which means the values in the corresponding register were 
                     // different (path dependent) on the different paths. Hence, the
                     // values are no longer useful.
                     // If we would have a liveness analysis, we could avoid the use of 
-                    // "NoLegalValue" and would avoid the useless merging of 
+                    // "IllegalValue" and would avoid the useless merging of 
                     // dead values.
                     val newLocal =
                         if ((thisLocal eq null) || (otherLocal eq null)) {
@@ -1212,7 +1170,7 @@ trait Domain[I] {
                                 thisLocal
                             } else {
                                 localsUpdated = localsUpdated &: MetaInformationUpdateType
-                                TheNoLegalValue
+                                TheIllegalValue
                             }
                         } else if (thisLocal == otherLocal) {
                             thisLocal

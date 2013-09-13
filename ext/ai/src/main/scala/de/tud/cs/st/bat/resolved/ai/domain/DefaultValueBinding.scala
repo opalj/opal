@@ -49,12 +49,15 @@ trait DefaultValueBinding[I] extends Domain[I] {
 
     final val DomainValueTag: ClassTag[DomainValue] = implicitly
 
-    type DomainNoLegalValue = NoLegalValue
+    type DomainIllegalValue = IllegalValue
 
-    final val TheNoLegalValue: DomainNoLegalValue = new NoLegalValue
+    final val TheIllegalValue: DomainIllegalValue = new IllegalValue
 
-    final val MetaInformationUpdateNoLegalValue = MetaInformationUpdate(TheNoLegalValue)
+    final val MetaInformationUpdateIllegalValue = MetaInformationUpdate(TheIllegalValue)
 
+    /**
+     * This implementation always throws a domain exception. 
+     */
     def types(value: DomainValue): TypesAnswer[_] =
         domainException(this,"could not determine the type(s) of the given value: "+value)
 

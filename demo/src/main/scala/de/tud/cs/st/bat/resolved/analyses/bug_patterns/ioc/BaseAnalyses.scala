@@ -70,7 +70,7 @@ object BaseAnalyses {
         val superMethods = (for (
             (superclasses, _) ← project.classHierarchy(classFile.thisClass).toSeq;
             superClass ← superclasses;
-            (_, method) ← project.classHierarchy.lookupMethodDeclaration(superClass, method.name, method.descriptor, project)
+            (_, method) ← project.classHierarchy.resolveMethodReference(superClass, method.name, method.descriptor, project)
         ) yield {
             method
         })
@@ -118,7 +118,7 @@ object BaseAnalyses {
         }
 
         val Some((targetType, name, desc)) = constructorCall
-        project.classHierarchy.lookupMethodDeclaration(targetType, name, desc, project)
+        project.classHierarchy.resolveMethodReference(targetType, name, desc, project)
     }
 
     def calls(sourceMethod: Method, targetClass: ClassFile, targetMethod: Method): Boolean = {

@@ -42,6 +42,13 @@ package ai
  */
 trait ConsoleTracer extends AITracer {
 
+    private def correctIndent(value: Object): String = {
+        if (value eq null)
+            "null"
+        else
+            value.toString().replaceAll("\n\t", "\n\t\t\t").replaceAll("\n\\)", "\n\t\t)")
+    }
+
     def instructionEvalution[D <: Domain[_]](
         domain: D,
         pc: Int,
@@ -51,9 +58,9 @@ trait ConsoleTracer extends AITracer {
 
         println(
             pc+":"+instruction+" [\n"+
-                operands.mkString("\toperands:\n\t\t", ",\n\t\t", "\n\t;\n") +
-                locals.map(l ⇒ if (l eq null) "-" else l.toString).zipWithIndex.map(v ⇒ v._2+":"+v._1).
-                mkString("\tlocals:\n\t\t", ",\n\t\t", "\n")+"\t]")
+                operands.map(correctIndent(_)).mkString("\toperands:\n\t\t", "\n\t\t", "\n\t;\n") +
+                locals.map(l ⇒ if (l eq null) "-" else l.toString).zipWithIndex.map(v ⇒ v._2+":"+correctIndent(v._1)).
+                mkString("\tlocals:\n\t\t", "\n\t\t", "\n")+"\t]")
     }
 
     def merge[D <: Domain[_]](
@@ -62,7 +69,8 @@ trait ConsoleTracer extends AITracer {
         thisOperands: D#Operands,
         thisLocals: D#Locals,
         otherOperands: D#Operands,
-        otherLocals: D#Locals, result: Update[(D#Operands, D#Locals)]) {
+        otherLocals: D#Locals,
+        result: Update[(D#Operands, D#Locals)]) {
 
         print(Console.BLUE + pc+": MERGE :")
         result match {
@@ -72,21 +80,30 @@ trait ConsoleTracer extends AITracer {
                 println(
                     thisOperands.
                         zip(otherOperands).
-                        map(v ⇒ "given "+v._1+"\n\t\tmerge "+v._2).
+                        map(v ⇒ "given "+correctIndent(v._1)+"\n\t\tmerge "+correctIndent(v._2)).
                         zip(updatedOperands).
-                        map(v ⇒ v._1+"\n\t\t=>    "+v._2).
+                        map(v ⇒ v._1+"\n\t\t=>    "+correctIndent(v._2)).
                         mkString("\tOperands:\n\t\t", "\n\t\t----------------\n\t\t", "")
                 )
                 println(
                     thisLocals.
-                        zipWithIndex.
-                        filter(v ⇒ v._1 ne null).
-                        map(v ⇒ v._2+":\n\t\tgiven "+v._1).
                         zip(otherLocals).
-                        map(v ⇒ v._1+"\n\t\tmerge "+v._2).
-                        zip(updatedLocals).
-                        map(v ⇒ v._1+"\n\t\t=>    "+v._2).
-                        mkString("\tLocals:\n\t\t", ",\n\t\t", "")
+                        zip(updatedLocals).map(v ⇒ (v._1._1, v._1._2, v._2)).
+                        zipWithIndex.map(v ⇒ (v._2, v._1._1, v._1._2, v._1._3)).
+                        filterNot(v ⇒ (v._2 eq null) && (v._3 eq null)).
+                        map(v ⇒
+                            v._1 + {
+                                if (v._2 == v._3)
+                                    Console.GREEN+": ✓ "
+                                else {
+                                    Console.MAGENTA+":\n\t\tgiven "+correctIndent(v._2)+
+                                        "\n\t\tmerge "+correctIndent(v._3)+
+                                        "\n\t\t=>    "
+                                }
+                            } +
+                                correctIndent(v._4)
+                        ).
+                        mkString("\tLocals:\n\t\t", "\n\t\t"+Console.BLUE, Console.BLUE)
                 )
         }
         println(Console.RESET)

@@ -40,13 +40,20 @@ import scala.util.control.ControlThrowable
 
 /**
  * A highly-configurable interpreter for BAT's resolved representation of Java bytecode.
- * This interpreter basically iterates over all instructions to execute the given
- * program. However, compared to a JVM the precise
- * semantics of an instruction is implemented by an exchangeable `Domain` object.
+ * This interpreter basically iterates over all instructions and computes the result
+ * of each instruction using an exchangeable abstract `Domain` object.
+ *
+ * ==Interacting with BATAI==
+ * The primary means how to make use of the abstract interpreter is to perform
+ * an abstract interpretation of a method using a customized Domain. This
+ * customized domain can then be used to build, e.g., a call graph or to
+ * do other intra/interprocedural analyses. Additionally it is possible to analyze the
+ * result of an abstract interpretation.
  *
  * ==Thread Safety==
- * This class is thread-safe as long as the ai tracer (if any) and the used domain
+ * This class is thread-safe as long as the `AITracer` (if any) and the used domain
  * is thread-safe.
+ *
  * Hence, it is possible to use a single instance to analyze multiple methods in parallel.
  * However, if you want to be able to selectively abort the abstract interpretation
  * of some methods or selectively trace the interpretation of some methods, then you
@@ -83,7 +90,7 @@ trait AI {
      *
      *  @param classFile The method's defining class file.
      *  @param method A non-native, non-abstract method of the given class file that
-     *      will be analyzed.
+     *      will be analyzed. All parameters are initialized with sensible default values.
      *  @param domain The domain that will be used for the abstract interpretation.
      *  @note $UseOfDomain
      */
@@ -93,8 +100,7 @@ trait AI {
         domain: Domain[_]) = perform(classFile, method, domain)(None)
 
     /**
-     * The list of program counters that is used when the analysis of
-     * a method starts.
+     * The list of program counters that is used when the analysis of  a method starts.
      */
     private final val initialWorkList = List(0)
 
@@ -116,17 +122,13 @@ trait AI {
      * @param someLocals If the values passed to a method are already known, the
      *      abstract interpretation will be performed under that assumption.
      * @return The result of the abstract interpretation. Basically, the calculated
-     *      memory layouts; i.e., the list of operands and local variable before each
+     *      memory layouts; i.e., the list of operands and local variables before each
      *      instruction. Each calculated memory layout represents the layout before
      *      the instruction with the corresponding program counter was interpreted.
      *      If the interpretation was aborted, the returned result
      *      object contains all necessary information to continue the interpretation
      *      if needed/desired.
      * @note $UseOfDomain
-     * @note If you are just interested in the values that are returned or passed to other
-     *      functions/fields it may be effective (code and performance wise) to implement
-     *      your own domain that just records the values. For an example take a look at
-     *      the test cases of BATAI.
      */
     def perform(
         classFile: ClassFile,
@@ -169,7 +171,12 @@ trait AI {
         val operandsArray = new Array[List[domain.DomainValue]](codeLength)
         val localsArray = new Array[Array[domain.DomainValue]](codeLength)
         if (!method.isStatic) {
-            val (updatedOperands, updatedLocals) = domain.establishIsNonNull(0, initialLocals(0), List.empty[DomainValue], initialLocals)
+            val (updatedOperands, updatedLocals) =
+                // "this" is never null!
+                domain.establishIsNonNull(0,
+                    initialLocals(0),
+                    List.empty[DomainValue],
+                    initialLocals)
             operandsArray(0) = updatedOperands
             localsArray(0) = updatedLocals
         } else {
@@ -372,46 +379,41 @@ trait AI {
              *      an object that is a subtype of `java.lang.Throwable`.
              */
             def handleException(exceptionValue: DomainValue) {
-                val nextOperands: List[domain.DomainValue] = List(exceptionValue)
-                val isHandled =
+                val isHandled = code.exceptionHandlersFor(pc) exists { eh ⇒
                     // find the exception handler that matches the given exception
-                    code.exceptionHandlersFor(pc).exists(eh ⇒ {
-                        val branchTarget = eh.handlerPC
-                        val catchType = eh.catchType
-                        if (catchType.isEmpty) { // this is a finally handler
-                            gotoTarget(branchTarget, nextOperands, locals)
-                            true
-                        } else {
-                            types(exceptionValue) match {
-                                case exceptions: IsReferenceType ⇒
-                                    exceptions.forallTypes(
-                                        (exceptionType: Type) ⇒
-                                            domain.isSubtypeOf(exceptionType.asObjectType, catchType.get) match {
-                                                case No ⇒
-                                                    false
-                                                case Yes ⇒
-                                                    gotoTarget(branchTarget, nextOperands, locals)
-                                                    true
-                                                case Unknown ⇒
-                                                    val (updatedOperands, updatedLocals) =
-                                                        establishUpperBound(branchTarget, catchType.get, exceptionValue, nextOperands, locals)
-                                                    gotoTarget(branchTarget, updatedOperands, updatedLocals)
-                                                    false
-                                            }
-                                    )
-                                case _ ⇒
-                                    interpreterException(
-                                        "handleException requires concrete exception values - given: "+exceptionValue,
-                                        domain,
-                                        worklist,
-                                        operandsArray,
-                                        localsArray
-                                    )
-
-                            }
+                    val branchTarget = eh.handlerPC
+                    val catchType = eh.catchType
+                    if (catchType.isEmpty) { // this is a finally handler
+                        gotoTarget(branchTarget, List(exceptionValue), locals)
+                        true
+                    } else {
+                        types(exceptionValue) match {
+                            case exceptions: IsReferenceType ⇒ exceptions.forallTypes(
+                                (exceptionType: Type) ⇒
+                                    domain.isSubtypeOf(
+                                        exceptionType.asObjectType,
+                                        catchType.get
+                                    ) match {
+                                            case No ⇒
+                                                false
+                                            case Yes ⇒
+                                                gotoTarget(branchTarget, List(exceptionValue), locals)
+                                                true
+                                            case Unknown ⇒
+                                                val (updatedOperands, updatedLocals) =
+                                                    establishUpperBound(branchTarget, catchType.get, exceptionValue, List(exceptionValue), locals)
+                                                gotoTarget(branchTarget, updatedOperands, updatedLocals)
+                                                false
+                                        }
+                            )
+                            case _ ⇒
+                                domainException(
+                                    domain,
+                                    "handleException requires concrete exception values - given: "+exceptionValue
+                                )
                         }
-                    })
-
+                    }
+                }
                 // If "isHandled" is true, we are sure that at least one 
                 // handler will catch the exception... hence this method
                 // invocation will not complete abruptly.
@@ -636,20 +638,21 @@ trait AI {
                     case 191 /*athrow*/ ⇒
                         // In general, we either have a control flow to an exception handler 
                         // or we abort the method.
-                        /* EXCERPT FROM THE SPEC:
-                     * Within a class file the exception handlers for each method are 
-                     * stored in a table. At runtime the Java virtual machine searches 
-                     * the exception handlers of the current method in the order that 
-                     * they appear in the corresponding exception handler table. 
-                     */
-                        val computation = domain.athrow(pc, operands.head)
-                        if (computation.throwsException) {
+                        // EXCERPT FROM THE SPEC:
+                        // Within a class file the exception handlers for each method are 
+                        // stored in a table. At runtime the Java virtual machine searches 
+                        // the exception handlers of the current method in the order that 
+                        // they appear in the corresponding exception handler table.
+                        val exceptionValue = operands.head
+                        val isExceptionNull = isNull(exceptionValue)
+                        if (isExceptionNull.maybeYes) {
                             // if the operand of the athrow exception is null, a new NullPointerException is raised
-                            handleException(computation.exceptions)
+                            handleException(newVMObject(pc, ObjectType.NullPointerException))
                         }
-                        if (computation.hasResult) {
-                            val exceptionValue = computation.result
-                            val nextOperands = List(exceptionValue)
+                        if (isExceptionNull.maybeNo) {
+                            val (updatedOperands, updatedLocals) =
+                                establishIsNonNull(pc, exceptionValue, List(exceptionValue), locals)
+                            val updatedExceptionValue = updatedOperands.head
 
                             domain.types(exceptionValue) match {
                                 case answer: TypesUnknown ⇒
@@ -658,13 +661,13 @@ trait AI {
                                         // unless we have a "finally" handler, we can state
                                         // a constraint
                                         if (eh.catchType.isDefined) {
-                                            eh.catchType.map(catchType ⇒ {
-                                                val (updatedOperands, updatedLocals) =
-                                                    establishUpperBound(branchTarget, catchType, exceptionValue, nextOperands, locals)
-                                                gotoTarget(branchTarget, updatedOperands, updatedLocals)
-                                            })
+                                            eh.catchType.map { catchType ⇒
+                                                val (updatedOperands2, updatedLocals2) =
+                                                    establishUpperBound(branchTarget, catchType, exceptionValue, updatedOperands, updatedLocals)
+                                                gotoTarget(branchTarget, updatedOperands2, updatedLocals2)
+                                            }
                                         } else
-                                            gotoTarget(branchTarget, nextOperands, locals)
+                                            gotoTarget(branchTarget, updatedOperands, updatedLocals)
                                     })
                                     abruptMethodExecution(pc, exceptionValue)
 
@@ -676,22 +679,24 @@ trait AI {
                                             val branchTarget = eh.handlerPC
                                             val catchType = eh.catchType
                                             if (catchType.isEmpty) {
-                                                gotoTarget(branchTarget, nextOperands, locals)
+                                                gotoTarget(branchTarget, updatedOperands, updatedLocals)
                                                 // this is a finally handler
                                                 true
                                             } else {
-                                                domain.isSubtypeOf(exceptionType.asInstanceOf[ReferenceType], catchType.get) match {
-                                                    case No ⇒
-                                                        false
-                                                    case Yes ⇒
-                                                        gotoTarget(branchTarget, nextOperands, locals)
-                                                        true
-                                                    case Unknown ⇒
-                                                        val (updatedOperands, updatedLocals) =
-                                                            establishUpperBound(branchTarget, catchType.get, exceptionValue, nextOperands, locals)
-                                                        gotoTarget(branchTarget, updatedOperands, updatedLocals)
-                                                        false
-                                                }
+                                                domain.isSubtypeOf(
+                                                    exceptionType.asInstanceOf[ReferenceType],
+                                                    catchType.get) match {
+                                                        case No ⇒
+                                                            false
+                                                        case Yes ⇒
+                                                            gotoTarget(branchTarget, updatedOperands, updatedLocals)
+                                                            true
+                                                        case Unknown ⇒
+                                                            val (updatedOperands2, updatedLocals2) =
+                                                                establishUpperBound(branchTarget, catchType.get, exceptionValue, updatedOperands, updatedLocals)
+                                                            gotoTarget(branchTarget, updatedOperands2, updatedLocals2)
+                                                            false
+                                                    }
                                             }
                                         }
                                         ))
@@ -702,12 +707,9 @@ trait AI {
                                         abruptMethodExecution(pc, exceptionValue)
 
                                 case types ⇒
-                                    interpreterException(
-                                        "non-exception type(s): "+types,
+                                    domainException(
                                         domain,
-                                        worklist,
-                                        operandsArray,
-                                        localsArray)
+                                        "non-exception type(s): "+types)
                             }
                         }
 
@@ -970,12 +972,6 @@ trait AI {
                         computationWithOptionalReturnValueAndExceptions(
                             computation,
                             operands.drop(argsCount + 1))
-
-                    case 192 /*checkcast*/ ⇒
-                        val objectref = operands.head
-                        val referenceType = instruction.asInstanceOf[CHECKCAST].referenceType
-                        val computation = domain.checkcast(pc, objectref, referenceType)
-                        computationWithReturnValueAndException(computation, operands.tail)
 
                     case 194 /*monitorenter*/ ⇒
                         val computation = domain.monitorenter(pc, operands.head)
@@ -1378,14 +1374,6 @@ trait AI {
                     //
                     // TYPE CONVERSION
                     //
-
-                    case 193 /*instanceof*/ ⇒ {
-                        val objectref :: rest = operands
-                        val referenceType = instruction.asInstanceOf[INSTANCEOF].referenceType
-                        val newOperand = domain.instanceof(pc, objectref, referenceType)
-                        fallThroughOL(newOperand :: rest, locals)
-                    }
-
                     case 144 /*d2f*/ ⇒
                         fallThroughO(domain.d2f(pc, operands.head) :: (operands.tail))
                     case 142 /*d2i*/ ⇒
@@ -1420,9 +1408,33 @@ trait AI {
                     case 136 /*l2i*/ ⇒
                         fallThroughO(domain.l2i(pc, operands.head) :: (operands.tail))
 
+                    case 192 /*checkcast*/ ⇒
+                        val objectref = operands.head
+                        val supertype = instruction.asInstanceOf[CHECKCAST].referenceType
+                        isSubtypeOf(objectref, supertype, Yes) match {
+                            case Yes ⇒
+                                // if objectref is null => UNCHANGED (see spec. for details)
+                                // if objectref is a subtype => UNCHANGED
+                                fallThrough()
+                            case No ⇒
+                                handleException(newVMObject(pc, ObjectType.ClassCastException))
+                            case Unknown ⇒
+                                handleException(newVMObject(pc, ObjectType.ClassCastException))
+                                val (newOperands, newLocals) =
+                                    establishUpperBound(pc, supertype, objectref, operands, locals)
+                                fallThroughOL(newOperands, newLocals)
+                        }
+
                     //
                     // "OTHER" INSTRUCTIONS
                     //
+                    case 193 /*instanceof*/ ⇒ {
+                        val objectref :: rest = operands
+                        val referenceType = instruction.asInstanceOf[INSTANCEOF].referenceType
+                        val newOperand = domain.instanceof(pc, objectref, referenceType)
+                        fallThroughOL(newOperand :: rest, locals)
+                    }
+
                     case 132 /*iinc*/ ⇒ {
                         val iinc = instruction.asInstanceOf[IINC]
                         val newValue = domain.iinc(pc, locals(iinc.lvIndex), iinc.constValue)
@@ -1437,7 +1449,8 @@ trait AI {
                     case 0 /*nop*/    ⇒ fallThrough()
                     case 196 /*wide*/ ⇒ fallThrough()
 
-                    case opcode       ⇒ BATException("instruction with unsupported opcode: "+opcode)
+                    case opcode ⇒
+                        BATException("instruction with unsupported opcode: "+opcode)
                 }
             } catch {
                 case ct: ControlThrowable ⇒ throw ct
@@ -1448,7 +1461,7 @@ trait AI {
                     localsArray.asInstanceOf[Array[Array[de.domain.type#DomainValue]]]
                 )
                 case t: Throwable ⇒
-                    interpreterException(t.toString(), domain, worklist, operandsArray, localsArray)
+                    interpreterException(t, domain, worklist, operandsArray, localsArray)
 
             }
         }
@@ -1468,5 +1481,31 @@ object AI extends AI {
 
     val tracer = None
 
+}
+
+/**
+ * Facilitates matching against values of computational type category 1.
+ *
+ * @example
+ * {{{
+ * case v @ CTC1() => ...
+ * }}}
+ */
+object CTC1 {
+    def unapply[D <: Domain[Any]](v: D#DomainValue): Boolean =
+        v.computationalType.category == 1
+}
+
+/**
+ * Facilitates matching against values of computational type category 2.
+ *
+ * @example
+ * {{{
+ * case v @ CTC2() => ...
+ * }}}
+ */
+object CTC2 {
+    def unapply[D <: Domain[Any]](v: D#DomainValue): Boolean =
+        v.computationalType.category == 2
 }
 

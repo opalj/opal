@@ -288,12 +288,15 @@ class ClassHierarchy(
     }
 
     /**
-     * Determines if the given type `subtype` is indeed a subtype of `supertype`.
+     * Determines if the given class type `subtype` is a subtype of the class type
+     * `supertype`.
      *
-     * This method basically implements the logic of the JVM's `instanceof` instruction
-     * except of the `null` value check.
+     * This method can be used as a foundation for implementing the logic of the JVM's
+     * `instanceof` and `classcast` instructions. But, in that case additional logic
+     * for handling `null` values and for considering the runtime type needs to be
+     * implemented by the caller of this method.
      *
-     * @return `Yes` if `subtype` is indeed a subtype of the given `supertype`. `No`
+     * @return `Yes` if `subtype` is a subtype of the given `supertype`. `No`
      *      if `subtype` is not a subtype of `supertype` and `Unknown` if the analysis is
      *      not conclusive. The latter can happen if the class hierarchy is not
      *      completely available and hence precise information about a type's supertypes
@@ -303,7 +306,7 @@ class ClassHierarchy(
         if (subtype == theSupertype || theSupertype == ObjectType.Object)
             return Yes
 
-        if (subtype == ObjectType.Object)
+        if (subtype == ObjectType.Object /* && theSupertype != ObjectType.Object*/ )
             return No
 
         this.supertypes.get(subtype) match {
@@ -326,11 +329,15 @@ class ClassHierarchy(
     }
 
     /**
-     * Determines if the given type `subtype` is indeed a subtype of `supertype`.
+     * Determines if `subtype` is a subtype of `supertype`.
      *
-     * This method basically implements the logic of the JVM's `instanceof` instruction
-     * except of the `null` value check.
+     * This method can be used as a foundation for implementing the logic of the JVM's
+     * `instanceof` and `classcast` instructions. But, in that case additional logic
+     * for handling `null` values and for considering the runtime type needs to be
+     * implemented by the caller of this method.
      *
+     * @param subtype A class or array type.
+     * @param supertype A class or array type.
      * @return `Yes` if `subtype` is indeed a subtype of the given `supertype`. `No`
      *      if `subtype` is not a subtype of `supertype` and `Unknown` if the analysis is
      *      not conclusive. The latter can happen if the class hierarchy is not
@@ -443,11 +450,11 @@ class ClassHierarchy(
      * `invokevirtual` and `invokeinterface` instructions. I.e., additional processing
      * is necessary.
      *
-     * @Note Generally, if the type of the receiver is not precise the receiver object's
+     * @note Generally, if the type of the receiver is not precise the receiver object's
      *    subtypes should also be searched for method implementation (at least those
      *    classes that may be instantiated).
      *
-     * @Note This method just resolve a method reference. Additional checks,
+     * @note This method just resolve a method reference. Additional checks,
      *    such as whether the resolved method is accessible, may be necessary.
      *
      * @param receiverType The type of the object that receives the method call. The
@@ -461,50 +468,67 @@ class ClassHierarchy(
         classes: ObjectType ⇒ Option[ClassFile]): Option[(ClassFile, Method)] = {
         // TODO [Java 7] Implement support for handling signature polymorphic method resolution.
 
-        def lookupMethodInInterface(classFile: ClassFile): Option[(ClassFile, Method)] = {
-            classFile.methods.collectFirst {
-                case method @ Method(_, `methodName`, `methodDescriptor`, _) ⇒
-                    (classFile, method)
-            } orElse {
-                lookupMethodInSuperinterfaces(classFile)
-            }
-        }
-
-        def lookupMethodInSuperinterfaces(classFile: ClassFile): Option[(ClassFile, Method)] = {
-            classFile.interfaces.foreach { superinterface: ObjectType ⇒
-                classes(superinterface) map { superclass ⇒
-                    val result = lookupMethodInInterface(superclass)
-                    if (result.isDefined) return result
-                }
-            }
-            None
-        }
-
         classes(receiverType) flatMap { classFile ⇒
             assume(!classFile.isInterfaceDeclaration)
 
-            lookupMethodDefinition(
-                receiverType,
-                methodName,
-                methodDescriptor,
-                classes
-            ).orElse(
-                    lookupMethodInSuperinterfaces(classFile)
-                )
+            lookupMethodDefinition(receiverType, methodName, methodDescriptor, classes).
+                orElse {
+                    lookupMethodInSuperinterfaces(
+                        classFile,
+                        methodName,
+                        methodDescriptor,
+                        classes)
+                }
         }
     }
 
-    //    def resolveInterfaceMethodReference(
-    //        receiverType: ObjectType,
-    //        methodName: String,
-    //        methodDescriptor: MethodDescriptor,
-    //        classes: ObjectType ⇒ Option[ClassFile]): Option[(ClassFile, Method)] = {
-    //
-    //        classes(receiverType) flatMap { classFile ⇒
-    //            assume(classFile.isInterfaceDeclaration)
-    //            lookupMethodDefinition(receiverType, methodName, methodDescriptor, classes)
-    //        }
-    //    }
+    def resolveInterfaceMethodReference(
+        receiverType: ObjectType,
+        methodName: String,
+        methodDescriptor: MethodDescriptor,
+        classes: ObjectType ⇒ Option[ClassFile]): Option[(ClassFile, Method)] = {
+
+        classes(receiverType) flatMap { classFile ⇒
+            assume(classFile.isInterfaceDeclaration)
+
+            lookupMethodInInterface(classFile, methodName, methodDescriptor, classes).
+                orElse {
+                    lookupMethodDefinition(ObjectType.Object,
+                        methodName,
+                        methodDescriptor,
+                        classes)
+                }
+        }
+    }
+
+    def lookupMethodInInterface(
+        classFile: ClassFile,
+        methodName: String,
+        methodDescriptor: MethodDescriptor,
+        classes: ObjectType ⇒ Option[ClassFile]): Option[(ClassFile, Method)] = {
+
+        classFile.methods.collectFirst {
+            case method @ Method(_, `methodName`, `methodDescriptor`, _) ⇒
+                (classFile, method)
+        } orElse {
+            lookupMethodInSuperinterfaces(classFile, methodName, methodDescriptor, classes)
+        }
+    }
+
+    def lookupMethodInSuperinterfaces(
+        classFile: ClassFile,
+        methodName: String,
+        methodDescriptor: MethodDescriptor,
+        classes: ObjectType ⇒ Option[ClassFile]): Option[(ClassFile, Method)] = {
+
+        classFile.interfaces.foreach { superinterface: ObjectType ⇒
+            classes(superinterface) map { superclass ⇒
+                val result = lookupMethodInInterface(superclass, methodName, methodDescriptor, classes)
+                if (result.isDefined) return result
+            }
+        }
+        None
+    }
 
     /**
      * Looks up the class file and method which actually defines the method that is
@@ -518,7 +542,7 @@ class ClassHierarchy(
      * @Note In case that you analyze static source code dependencies and if an invoke
      *    instruction refers to a method that is not declared by the receiver's class, then
      *    it might be more meaningful to still create a dependency to the receiver's class
-     *    than to look up the actual declaration in one of the receiver's super classes.
+     *    than to look up the actual definition in one of the receiver's super classes.
      *
      * @return `Some((ClassFile,Method))` if the method is found. `None` if the method
      *    is not found. This can happen under two circumstances:
