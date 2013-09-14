@@ -45,7 +45,7 @@ import java.io.ByteArrayInputStream
 import scala.util.control.ControlThrowable
 
 /**
- * Class that can be used to start the interpreter for some given class files.
+ * Performs an abstract interpretation of all methods of the given class file(s).
  *
  * @author Michael Eichberg
  */
@@ -55,8 +55,6 @@ object InterpretMethods {
     import collection.JavaConversions._
 
     def main(args: Array[String]) {
-        System.out.println("Sleeping for 30secs")
-        Thread.sleep(30 * 1000)
         interpret(args.map(new java.io.File(_)), true).map(System.err.println(_))
     }
 
@@ -132,9 +130,9 @@ object InterpretMethods {
 
                 report += exInstances.map(
                     ex ⇒ {
-                        Console.UNDERLINED + ex._1.thisClass.className + "\033[24m"+"{ "+
+                        Console.UNDERLINED + ex._1.thisClass.className+"\033[24m"+"{ "+
                             ex._2.toJava+" => "+
-                            Console.BOLD+ex._3.getMessage().trim+"\033[21m"+
+                            Console.BOLD + ex._3.getMessage().trim+"\033[21m"+
                             " }"
                     }).mkString("\n\t", ",\n\t", "\n")
             })
