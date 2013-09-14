@@ -44,7 +44,7 @@ trait ConsoleTracer extends AITracer {
 
     private def correctIndent(value: Object): String = {
         if (value eq null)
-            "null"
+            "<EMPTY>"
         else
             value.toString().replaceAll("\n\t", "\n\t\t\t").replaceAll("\n\\)", "\n\t\t)")
     }
