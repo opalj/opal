@@ -55,10 +55,10 @@ object InterpretMethod {
 
     def main(args: Array[String]) {
         if (args.size != 3) {
-            println("You have to specify the method that should be interpreted.")
-            println("\tFirst parameter: a jar file or class file or a directory containing jar files or class files")
-            println("\tSecond parameter: the name of a class in binary notation (use \"/\" as the package separator")
-            println("\tThird parameter: the name of a method of the class")
+            println("You have to specify the method that should be analyzed.")
+            println("\tFirst parameter: a jar/calss file or a directory containing jar/class files.")
+            println("\tSecond parameter: the name of a class in binary notation (use \"/\" as the package separator.")
+            println("\tThird parameter: the name of a method of the class.")
             return ;
         }
         val fileName = args(0)
@@ -104,21 +104,18 @@ object InterpretMethod {
             println(result)
         } catch {
             case ie @ InterpreterException(throwable, domain, worklist, operands, locals) ⇒
-                writeAndOpenDump(
-                    dump(
-                        Some(classFile),
-                        Some(method),
-                        method.body.get,
-                        operands,
-                        locals,
-                        Some(
-                            throwable.getLocalizedMessage()+"<br>"+
-                                throwable.getStackTrace().mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n") +
-                                worklist.mkString("Remaining worklist:\n<br>", ", ", "<br>")
-                        )))
+                writeAndOpenDump(dump(
+                    Some(classFile),
+                    Some(method),
+                    method.body.get,
+                    operands,
+                    locals,
+                    Some(
+                        throwable.getLocalizedMessage()+"<br>"+
+                            throwable.getStackTrace().mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n") +
+                            worklist.mkString("Remaining worklist:\n<br>", ", ", "<br>")
+                    )))
                 throw ie
-
         }
     }
-
 }
