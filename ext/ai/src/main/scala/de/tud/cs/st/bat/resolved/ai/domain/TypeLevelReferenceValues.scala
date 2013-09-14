@@ -294,6 +294,14 @@ trait DefaultTypeLevelReferenceValues[I]
 
         override def size = valueType.size
 
+        def foreach[U](f: TypeBound ⇒ U): Unit = f(valueType)
+
+        def headType = valueType.head
+
+        def foreachType[U](f: ReferenceType ⇒ U): Unit = valueType.foreach(f(_))
+
+        def forallTypes(f: ReferenceType ⇒ Boolean): Boolean = valueType.forall(f)
+
         /**
          * Determines if this reference value is a subtype of the given supertype by
          * delegating to the `isSubtypeOf(ReferenceType,ReferenceType)` method of the
@@ -329,14 +337,6 @@ trait DefaultTypeLevelReferenceValues[I]
                     }
             }
         }
-
-        def foreach[U](f: TypeBound ⇒ U): Unit = f(valueType)
-
-        def headType = valueType.head
-
-        def foreachType[U](f: ReferenceType ⇒ U): Unit = valueType.foreach(f(_))
-
-        def forallTypes(f: ReferenceType ⇒ Boolean): Boolean = valueType.forall(f)
 
         def updateIsNull(pc: Int, isNull: Answer): ReferenceValue = {
             if (this.isNull == isNull)
@@ -396,34 +396,37 @@ trait DefaultTypeLevelReferenceValues[I]
 
             value match {
                 case v @ AReferenceValue(otherPC, otherValueType, otherIsNull, otherIsPrecise) ⇒
-                    if (otherPC == this.pc) {
-                        if (this.isNull != otherIsNull || this.valueType != otherValueType) {
-                            var newValueType = this.valueType
-                            otherValueType.foreach { otherValueType ⇒
-                                var addOtherValueType = true
-                                newValueType = newValueType.filterNot { vt ⇒
-                                    domain.isSubtypeOf(otherValueType, vt) match {
-                                        case Yes ⇒
-                                            true
-                                        case _ ⇒
-                                            if (domain.isSubtypeOf(vt, otherValueType).yes)
-                                                addOtherValueType = false
-                                            false
-                                    }
-                                }
-                                if (addOtherValueType)
-                                    newValueType = newValueType + otherValueType
+                    if (otherPC != this.pc)
+                        return StructuralUpdate(MultipleReferenceValues(Set[AReferenceValue](this, v)))
+
+                    if (this.isNull == otherIsNull &&
+                        this.valueType == otherValueType &&
+                        (this.isPrecise == false || this.isPrecise == otherIsPrecise))
+                        return NoUpdate
+
+                    var newValueType = this.valueType
+                    otherValueType.foreach { otherValueType ⇒
+                        var addOtherValueType = true
+                        newValueType = newValueType.filterNot { vt ⇒
+                            domain.isSubtypeOf(otherValueType, vt) match {
+                                case Yes ⇒
+                                    true
+                                case _ ⇒
+                                    if (domain.isSubtypeOf(vt, otherValueType).yes)
+                                        addOtherValueType = false
+                                    false
                             }
-                            StructuralUpdate(AReferenceValue(
-                                this.pc,
-                                newValueType,
-                                this.isNull merge otherIsNull,
-                                this.isPrecise && otherIsPrecise
-                            ))
-                        } else
-                            NoUpdate
-                    } else
-                        StructuralUpdate(MultipleReferenceValues(Set[AReferenceValue](this, v)))
+                        }
+                        if (addOtherValueType)
+                            newValueType = newValueType + otherValueType
+                    }
+                    StructuralUpdate(AReferenceValue(
+                        this.pc,
+                        newValueType,
+                        this.isNull merge otherIsNull,
+                        this.isPrecise && otherIsPrecise
+                    ))
+
                 case mrv: MultipleReferenceValues ⇒
                     mrv.merge(mergePC, this) match {
                         case NoUpdate                 ⇒ StructuralUpdate(mrv)
@@ -605,7 +608,6 @@ trait DefaultTypeLevelReferenceValues[I]
         override def toString() = {
             values.mkString("OneOf(\n\t", ",\n\t", ")")
         }
-
     }
 
     //
