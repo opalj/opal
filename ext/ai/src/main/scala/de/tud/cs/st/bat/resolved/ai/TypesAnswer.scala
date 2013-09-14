@@ -37,16 +37,30 @@ package ai
 
 /**
  * Models the answer of the domain to a question about a specific value's type.
- * 
+ *
  * @author Michael Eichberg
  */
-sealed trait TypesAnswer[+TypeInfo] extends Traversable[TypeInfo]
+sealed trait TypesAnswer[+TypeInfo] extends Traversable[TypeInfo] {
+
+    /**
+     * `True` if at least one type/upper type bound is known.
+     */
+    override def nonEmpty = false
+
+    /**
+     * The number of upper-type bounds.
+     */
+    override def size = 0
+}
 
 trait TypesUnknown extends TypesAnswer[Nothing] {
     def foreach[U](f: Nothing ⇒ U): Unit = { /*empty*/ }
 
     override def nonEmpty = false
 
+    /**
+     * The number of upper-type bounds.
+     */
     override def size = 0
 }
 
