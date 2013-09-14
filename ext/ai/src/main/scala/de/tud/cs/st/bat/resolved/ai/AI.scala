@@ -1492,8 +1492,8 @@ object AI extends AI {
  * }}}
  */
 object CTC1 {
-    def unapply[D <: Domain[Any]](v: D#DomainValue): Boolean =
-        v.computationalType.category == 1
+    def unapply[D <: Domain[Any]](value: D#DomainValue): Boolean =
+        value.computationalType.category == 1
 }
 
 /**
@@ -1505,7 +1505,7 @@ object CTC1 {
  * }}}
  */
 object CTC2 {
-    def unapply[D <: Domain[Any]](v: D#DomainValue): Boolean =
-        v.computationalType.category == 2
+    def unapply[D <: Domain[Any]](value: D#DomainValue): Boolean =
+        value.computationalType.category == 2
 }
 

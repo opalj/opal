@@ -37,10 +37,12 @@ package ai
 
 /**
  * Factory to create `AIResult` objects.
+ * 
+ * @author Michael Eichberg
  */
-/* Design - We use a builder to construct a Result object in two steps. This is necessary
- * to correctly type the data structures that store the memory layout and which depend on
- * the given domain. */
+/* Design - We need to use a kind of builder to construct a Result object in two steps. 
+ * This is necessary to correctly type the data structures that store the memory 
+ * layout and which depend on the given domain. */
 object AIResultBuilder {
 
     def aborted(
@@ -80,6 +82,9 @@ object AIResultBuilder {
     }
 }
 
+/**
+ * Encapsulates the result of the abstract interpretation of a method.
+ */
 /* Design - We use an explicit type parameter to avoid a path dependency on a concrete AIResult
  * instance. I.e., if we remove the type parameter and redefine the method BATErrors
  * to "memoryLayouts: IndexedSeq[MemoryLayout[domain.type, domain.DomainValue]]" 
@@ -92,16 +97,18 @@ sealed abstract class AIResult[D <: Domain[_]] {
     val localsArray: Array[Array[domain.DomainValue]]
     val workList: List[Int]
 
+    /**
+     * Returns `true` if the abstract interpretation was aborted.
+     */
     def wasAborted: Boolean
 
-    type BoundAIResult = AIResult[domain.type]
 }
 
 abstract class AIAborted[D <: Domain[_]] extends AIResult[D] {
 
     final def wasAborted: Boolean = true
 
-    def continueInterpretation(): BoundAIResult
+    def continueInterpretation(): AIResult[domain.type]
 }
 
 abstract class AICompleted[D <: Domain[_]] extends AIResult[D] {
@@ -110,5 +117,5 @@ abstract class AICompleted[D <: Domain[_]] extends AIResult[D] {
 
     val workList: List[Int] = List(0)
 
-    def restartInterpretation(): BoundAIResult
+    def restartInterpretation(): AIResult[domain.type]
 }
