@@ -125,11 +125,12 @@ trait TypeLevelReferenceValues { this: Domain[_] ⇒
         val value2IsNull = isNull(value2)
         if (value1IsNull.isDefined &&
             value2IsNull.isDefined &&
-            (value1IsNull.yes || value2IsNull.yes))
+            (value1IsNull.yes || value2IsNull.yes)) {
             Answer(value1IsNull == value2IsNull)
-        else
-            // TODO [IMPROVE - areEqualReferences] If the two values are note in a subtype relationship they cannot be equal.
+        } else {
+            // TODO [IMPROVE - areEqualReferences] If the two values are not in a subtype relationship they cannot be equal.
             Unknown
+        }
     }
 
     /**
@@ -138,9 +139,10 @@ trait TypeLevelReferenceValues { this: Domain[_] ⇒
      * @param value A value of type `ReferenceValue`.
      */
     def isNull(value: DomainValue): Answer = value match {
-        case r: ReferenceValue ⇒ r.isNull
+        case r: ReferenceValue ⇒
+            r.isNull
         case _ ⇒
-            domainException(this, "a non-reference value cannot be (non-)null")
+            domainException(this, "\"isNull\" is not defined for non-reference values: "+value)
     }
 
     def isSubtypeOf(value: DomainValue, supertype: ReferenceType, onNull: ⇒ Answer): Answer =
@@ -148,7 +150,7 @@ trait TypeLevelReferenceValues { this: Domain[_] ⇒
             case rv: ReferenceValue ⇒
                 rv.isSubtypeOf(supertype, onNull)
             case _ ⇒
-                domainException(this, "isSubtypeOf is only defined for reference values")
+                domainException(this, "isSubtypeOf is not defined for non-reference values: "+value)
         }
 
     // -----------------------------------------------------------------------------------
@@ -162,12 +164,11 @@ trait TypeLevelReferenceValues { this: Domain[_] ⇒
         bound: ReferenceType,
         value: DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) = {
-
+        locals: Locals): (Operands, Locals) =
         value match {
-            case r: ReferenceValue ⇒ {
-                val newReferenceValue = r.addUpperBound(pc, bound)
-                if (r eq newReferenceValue) (
+            case referenceValue: ReferenceValue ⇒
+                val newReferenceValue = referenceValue.addUpperBound(pc, bound)
+                if (referenceValue eq newReferenceValue) (
                     operands,
                     locals
                 )
@@ -175,19 +176,18 @@ trait TypeLevelReferenceValues { this: Domain[_] ⇒
                     operands.map(op ⇒ if (op eq value) newReferenceValue else op),
                     locals.map(l ⇒ if (l eq value) newReferenceValue else l)
                 )
-            }
+            case _ ⇒
+                domainException(this, "setting a type bound is only possible for reference values")
         }
-    }
 
     protected def updateIsNull(
         pc: Int,
         value: DomainValue,
         isNull: Answer,
         operands: Operands,
-        locals: Locals): (Operands, Locals) = {
-
+        locals: Locals): (Operands, Locals) =
         value match {
-            case r: ReferenceValue ⇒ {
+            case r: ReferenceValue ⇒
                 val newReferenceValue = r.updateIsNull(pc, isNull)
                 if (r eq newReferenceValue) (
                     operands,
@@ -197,9 +197,7 @@ trait TypeLevelReferenceValues { this: Domain[_] ⇒
                     operands.map(op ⇒ if (op eq value) newReferenceValue else op),
                     locals.map(l ⇒ if (l eq value) newReferenceValue else l)
                 )
-            }
         }
-    }
 
     /**
      * Updates the nullness property (`isNull == No`) of the given value.
