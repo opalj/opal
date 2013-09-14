@@ -40,7 +40,7 @@ package ai
  *
  * In general BATAI distinguishes between updates to a value that are relevant w.r.t.
  * the abstract interpretation and those updates that just update some meta-information
- * and which do not affect the abstract interpretation and – in particular – should not
+ * and which do not affect the abstract interpretation and – in particular – do not
  * force BATAI to continue the abstract interpretation.
  *
  * @author Michael Eichberg
