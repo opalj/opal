@@ -37,57 +37,52 @@ package ai
 package domain
 
 /**
- * This domain performs all computations basically at the type level and does
- * not track the flow of concrete values. Given the very high level of abstraction,
- * an abstract interpretation using this domain typically terminates quickly.
+ * A domain that records the values returned by the method/the exceptions thrown
+ * by a method.
  *
- * This domain can be used as a foundation/as an inspiration for building your
- * own `Domain`. For example, it is useful to, e.g., track which types of values
- * are actually created to calculate a more precise call graph.
+ * ==Thread Safety==
+ * This class is not thread safe.
  *
  * @author Michael Eichberg
  */
-trait BaseDomain[I]
-    extends DefaultValueBinding[I]
-    with DefaultTypeLevelReferenceValues[I]
-    with DefaultTypeLevelIntegerValues[I]
-    with DefaultTypeLevelLongValues[I]
-    with DefaultTypeLevelFloatValues[I]
-    with DefaultTypeLevelDoubleValues[I]
-    with DefaultReturnAddressValues[I]
+class RecordingDomain[I](identifier: I)
+        extends ConfigurableDefaultDomain[I](identifier)
+        with ReifiedConstraints[I] {
 
-/**
- * A complete definition of a domain except of the domain's identifier.
- *
- * @author Michael Eichberg
- */
-abstract class AbstractDefaultDomain[I]
-    extends BaseDomain[I]
-    with TypeLevelArrayInstructions
-    with TypeLevelFieldAccessInstructions
-    with TypeLevelInvokeInstructions
-    with TypeLevelConversionInstructions
-    with DoNothingOnReturnFromMethod
-    with DefaultTypeHierarchyBinding
+    var returnedValues: Set[(String, Value)] = Set.empty
 
-/**
- * This is a ready to use domain which sets the domain identifier to "DefaultDomain".
- *
- * This domain is primarily useful for testing and debugging purposes.
- *
- * @author Michael Eichberg
- */
-class DefaultDomain extends AbstractDefaultDomain[String] {
+    override def areturn(pc: Int, value: DomainValue) {
+        returnedValues += (("areturn", value))
+    }
 
-    def identifier = "DefaultDomain"
+    override def dreturn(pc: Int, value: DomainValue) {
+        returnedValues += (("dreturn", value))
+    }
 
+    override def freturn(pc: Int, value: DomainValue) {
+        returnedValues += (("freturn", value))
+    }
+
+    override def ireturn(pc: Int, value: DomainValue) {
+        returnedValues += (("ireturn", value))
+    }
+
+    override def lreturn(pc: Int, value: DomainValue) {
+        returnedValues += (("lreturn", value))
+    }
+
+    override def returnVoid(pc: Int) {
+        returnedValues += (("return", null))
+    }
+
+    override def abruptMethodExecution(pc: Int, exception: DomainValue) {
+        returnedValues += (("throws", exception))
+    }
+
+    var constraints: Set[ReifiedConstraint] = Set.empty
+
+    def addConstraint(constraint: ReifiedConstraint) {
+        constraints += constraint
+    }
 }
-
-/**
- * A domain with a configurable identifier.
- *
- * @author Michael Eichberg
- */
-class ConfigurableDefaultDomain[I](val identifier: I) extends AbstractDefaultDomain[I]
-
 
