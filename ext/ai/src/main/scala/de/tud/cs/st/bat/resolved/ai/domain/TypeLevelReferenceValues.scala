@@ -644,7 +644,8 @@ trait DefaultTypeLevelReferenceValues[I]
                  count: DomainValue,
                  componentType: FieldType): NewArrayOrNegativeArraySizeException =
         //ComputedValueAndException(TypedValue(ArrayType(componentType)), TypedValue(ObjectType.NegativeArraySizeException))
-        ComputedValue(TypedValue(ArrayType(componentType)))
+        //             ComputedValue(TypedValue(ArrayType(componentType)))
+        ComputedValue(AReferenceValue(pc, ArrayType(componentType), No, true))
 
     /**
      * @note The componentType may be (again) an array type.
@@ -653,7 +654,8 @@ trait DefaultTypeLevelReferenceValues[I]
                        counts: List[DomainValue],
                        arrayType: ArrayType): NewArrayOrNegativeArraySizeException =
         //ComputedValueAndException(TypedValue(arrayType), TypedValue(ObjectType.NegativeArraySizeException))
-        ComputedValue(TypedValue(arrayType))
+        ComputedValue(AReferenceValue(pc, arrayType, No, true))
+    //               ComputedValue(TypedValue(arrayType))
 
     //
     // LOAD FROM AND STORE VALUE IN ARRAYS
