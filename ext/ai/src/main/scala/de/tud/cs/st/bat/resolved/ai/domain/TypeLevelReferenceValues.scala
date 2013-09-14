@@ -663,7 +663,7 @@ trait DefaultTypeLevelReferenceValues[I]
     def aaload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
         types(arrayref) match {
             case HasSingleReferenceTypeBound(ArrayType(componentType)) ⇒
-                ComputedValue(TypedValue(componentType))
+                ComputedValue(TypedValue(componentType)) // TODO use the aaload's pc as the source location...
             case _ ⇒ domainException(this,
                 "cannot determine the type of the array's content, the array may contain either booleans or byte values: "+arrayref
             )
