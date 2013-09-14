@@ -510,19 +510,15 @@ trait DefaultTypeLevelReferenceValues[I]
 
         def foreach[U](f: TypeBound ⇒ U): Unit = values.foreach(_.foreach(f))
 
-        override lazy val nonEmpty = values.forall(_.nonEmpty)
+        override def nonEmpty = valueType.nonEmpty // values.forall(_.nonEmpty) // FIXME doesn't it have to be "values.exists(_.nonEmpty)"
 
-        override lazy val size = values.foldLeft(0)(_ + _.size)
+        override def size = valueType.size
 
-        def foreachType[U](f: ReferenceType ⇒ U): Unit =
-            values.foreach(_.foreachType(f))
+        def foreachType[U](f: ReferenceType ⇒ U): Unit = valueType.foreach(f)
 
-        def forallTypes(f: ReferenceType ⇒ Boolean): Boolean =
-            values.forall(_.forallTypes(f))
+        def forallTypes(f: ReferenceType ⇒ Boolean): Boolean = valueType.forall(f)
 
-        def headType: ReferenceType = values.collectFirst(
-            { case v if v.nonEmpty ⇒ v.headType }
-        ).get
+        def headType: ReferenceType = valueType.head
 
         override def updateIsNull(pc: Int, isNull: Answer): ReferenceValue = {
             var createNew = false
