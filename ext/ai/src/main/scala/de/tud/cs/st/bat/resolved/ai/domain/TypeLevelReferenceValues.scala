@@ -496,11 +496,11 @@ trait DefaultTypeLevelReferenceValues[I]
             extends ReferenceValue {
 
         def isSubtypeOf(supertype: ReferenceType, onNull: ⇒ Answer): Answer = {
-            var answer = values.head.isSubtypeOf(supertype, onNull)
-            for (referenceValue ← values.tail) {
-                answer = answer merge referenceValue.isSubtypeOf(supertype, onNull)
+            val firstAnswer = values.head.isSubtypeOf(supertype, onNull)
+            (firstAnswer /: values.tail) { (answer, nextReferenceValue) ⇒
+                (answer merge nextReferenceValue.isSubtypeOf(supertype, onNull)).
+                    orElse { return Unknown }
             }
-            answer
         }
 
         /**
