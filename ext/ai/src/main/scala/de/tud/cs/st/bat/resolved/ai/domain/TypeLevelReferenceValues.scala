@@ -467,6 +467,10 @@ trait DefaultTypeLevelReferenceValues[I]
         }
     }
 
+    /**
+     * Factory for [[AReferenceValue]]s. Additionally, an `unapply` method is
+     * defined to facilitate pattern matching against reference values.
+     */
     object AReferenceValue {
 
         def apply(
@@ -483,7 +487,7 @@ trait DefaultTypeLevelReferenceValues[I]
             isPrecise: Boolean = false) =
             new AReferenceValue(pc, Set(referenceType), isNull, isPrecise)
 
-        def unapply(arv: AReferenceValue) =
+        def unapply(arv: AReferenceValue): Option[(Int, TypeBound, Answer, Boolean)] =
             Some((arv.pc, arv.valueType, arv.isNull, arv.isPrecise))
     }
 
@@ -499,7 +503,10 @@ trait DefaultTypeLevelReferenceValues[I]
             answer
         }
 
-        lazy val valueType: TypeBound = values.flatMap(_.valueType)
+        /**
+         * The set of all upper type bounds.
+         */
+        lazy val valueType: Set[ReferenceType] = values.flatMap(_.valueType)
 
         def foreach[U](f: TypeBound ⇒ U): Unit = values.foreach(_.foreach(f))
 
