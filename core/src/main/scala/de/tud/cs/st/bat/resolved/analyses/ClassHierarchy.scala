@@ -539,7 +539,7 @@ class ClassHierarchy(
      * This method does not take visibility modifiers or the static modifier into account.
      * If necessary such checks needs to be done by the caller.
      *
-     * @Note In case that you analyze static source code dependencies and if an invoke
+     * @note In case that you analyze static source code dependencies and if an invoke
      *    instruction refers to a method that is not declared by the receiver's class, then
      *    it might be more meaningful to still create a dependency to the receiver's class
      *    than to look up the actual definition in one of the receiver's super classes.

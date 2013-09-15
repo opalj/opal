@@ -57,8 +57,8 @@ trait DefaultTypeHierarchyBinding { this: Domain[_] ⇒
         analyses.ClassHierarchy.preInitializedClassHierarchy
 
     /**
-     * @see [[de.tud.cs.st.bat.resolved.analyses.ClassHierarchy]].
-     *      isSubtypeOf(ReferenceType,ReferenceType)
+     * @see `de.tud.cs.st.bat.resolved.analyses.ClassHierarchy.isSubtypeOf(ReferenceType,
+     * 		ReferenceType)`
      */
     def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer =
         classHierarchy.isSubtypeOf(subtype, supertype)

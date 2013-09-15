@@ -44,8 +44,6 @@ package util
  */
 object InterpretMethod {
 
-    import de.tud.cs.st.util.ControlAbstractions._
-
     private object AI extends AI {
 
         def isInterrupted = Thread.interrupted()
@@ -53,12 +51,21 @@ object InterpretMethod {
         val tracer = Some(new ConsoleTracer {})
     }
 
+    /**
+     * Traces the interpretation of a single method and prints out the results.
+     *
+     * @param args The first element must be the name of a class file, a jar file
+     * 		or a directory containing the former. The second element must
+     *   	denote the name of a class and the third must denote the name of a method
+     *    	of the respective class. If the method is overloaded the first method
+     * 		is returned.
+     */
     def main(args: Array[String]) {
         if (args.size != 3) {
             println("You have to specify the method that should be analyzed.")
-            println("\tFirst parameter: a jar/calss file or a directory containing jar/class files.")
-            println("\tSecond parameter: the name of a class in binary notation (use \"/\" as the package separator.")
-            println("\tThird parameter: the name of a method of the class.")
+            println("\t1: a jar/calss file or a directory containing jar/class files.")
+            println("\t2: the name of a class in binary notation (use \"/\" as the package separator.")
+            println("\t3: the name of a method of the class.")
             return ;
         }
         val fileName = args(0)

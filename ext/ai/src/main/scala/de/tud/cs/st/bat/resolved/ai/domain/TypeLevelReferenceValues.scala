@@ -54,7 +54,7 @@ trait TypeLevelReferenceValues { this: Domain[_] ⇒
     trait ReferenceValue extends Value {
 
         /**
-         * Returns [[de.tud.cs.st.bat.resolved.ComputationalTypeReference]].
+         * Returns `ComputationalTypeReference`.
          */
         final def computationalType: ComputationalType = ComputationalTypeReference
 
@@ -240,17 +240,7 @@ trait DefaultTypeLevelReferenceValues[I]
 
     // -----------------------------------------------------------------------------------
     //
-    // Additional functionality that need to be provided by the final domain.
-    //
-    // -----------------------------------------------------------------------------------
-
-    def booleanValue(pc: Int, value: Boolean): DomainValue
-
-    def someBooleanValue(pc: Int): DomainValue
-
-    // -----------------------------------------------------------------------------------
-    //
-    // HANDLING OF REFERENCE VALUES
+    // REPRESENTATION OF REFERENCE VALUES
     //
     // -----------------------------------------------------------------------------------
 
@@ -258,7 +248,19 @@ trait DefaultTypeLevelReferenceValues[I]
             extends super.ReferenceValue
             with IsReferenceType {
 
-        type ValueType = TypeBound
+        /**
+         * A type bound represents the available information about a reference value's type.
+         *
+         * In case of reference types, a type bound may, e.g., be a set of interface types
+         * which are known to be implemented by the current object. Even if the type contains
+         * a class type it may just be a super class of the concrete type and, hence,
+         * just represents an abstraction.
+         *
+         * How type bounds related to reference types are handled and
+         * whether the domain makes it possible to distinguish between precise types and
+         * type bounds is at the sole discretion of the domain.
+         */
+        type TypeBound = Set[ReferenceType]
 
         /**
          * Returns the set of types of the represented value.
@@ -270,7 +272,7 @@ trait DefaultTypeLevelReferenceValues[I]
          *    type, but we know (e.g., due to typechecks) that it (has to) implements
          *    multiple interfaces.
          */
-        def valueType: ValueType
+        def valueType: TypeBound
 
         def isPrecise: Boolean
     }
@@ -610,37 +612,43 @@ trait DefaultTypeLevelReferenceValues[I]
         }
     }
 
+    abstract override def types(value: DomainValue): TypesAnswer[_] = {
+        value match {
+            case r: ReferenceValue ⇒ r
+            case _                 ⇒ super.types(value)
+        }
+    }
+
     //
     // FACTORY METHODS
     //
 
-    override def nullValue(pc: Int): DomainValue =
+    def newNullValue(pc: Int): DomainValue =
         AReferenceValue(pc, Set.empty[ReferenceType], Yes, true)
 
-    def SomeReferenceValue(referenceType: ReferenceType): DomainValue =
+    def newReferenceValue(referenceType: ReferenceType): DomainValue =
         AReferenceValue(-1, Set(referenceType), Unknown, false)
+
+    def newObject(pc: Int, objectType: ObjectType): DomainValue =
+        AReferenceValue(pc, Set[ReferenceType](objectType), No, true)
 
     def newVMObject(pc: Int, objectType: ObjectType): DomainValue =
         newObject(pc, objectType)
+
+    def newStringValue(pc: Int, value: String): DomainValue =
+        AReferenceValue(pc, Set[ReferenceType](ObjectType.String), No, true)
+
+    def newClassValue(pc: Int, t: Type): DomainValue =
+        AReferenceValue(pc, Set[ReferenceType](ObjectType.Class), No, true)
+
+    def newArray(pc: Int, arrayType: ArrayType, isNull: Answer = No, isPrecise: Boolean = true): DomainValue =
+        AReferenceValue(pc, Set[ReferenceType](arrayType), isNull, isPrecise)
 
     // -----------------------------------------------------------------------------------
     //
     // HANDLING OF COMPUTATIONS
     //
     // -----------------------------------------------------------------------------------
-
-    def newObject(pc: Int, objectType: ObjectType): DomainValue =
-        AReferenceValue(pc, Set[ReferenceType](objectType), No, true)
-
-    //
-    // PUSH CONSTANT VALUE
-    //
-
-    def stringValue(pc: Int, value: String): DomainValue =
-        AReferenceValue(pc, Set[ReferenceType](ObjectType.String), No, true)
-
-    def classValue(pc: Int, t: Type): DomainValue =
-        AReferenceValue(pc, Set[ReferenceType](ObjectType.Class), No, true)
 
     //
     // CREATE ARRAY
@@ -649,8 +657,7 @@ trait DefaultTypeLevelReferenceValues[I]
                  count: DomainValue,
                  componentType: FieldType): NewArrayOrNegativeArraySizeException =
         //ComputedValueAndException(TypedValue(ArrayType(componentType)), TypedValue(ObjectType.NegativeArraySizeException))
-        //             ComputedValue(TypedValue(ArrayType(componentType)))
-        ComputedValue(AReferenceValue(pc, ArrayType(componentType), No, true))
+        ComputedValue(newArray(pc, ArrayType(componentType)))
 
     /**
      * @note The componentType may be (again) an array type.
@@ -659,8 +666,7 @@ trait DefaultTypeLevelReferenceValues[I]
                        counts: List[DomainValue],
                        arrayType: ArrayType): NewArrayOrNegativeArraySizeException =
         //ComputedValueAndException(TypedValue(arrayType), TypedValue(ObjectType.NegativeArraySizeException))
-        ComputedValue(AReferenceValue(pc, arrayType, No, true))
-    //               ComputedValue(TypedValue(arrayType))
+        ComputedValue(newArray(pc, arrayType, No, true))
 
     //
     // LOAD FROM AND STORE VALUE IN ARRAYS
@@ -668,7 +674,7 @@ trait DefaultTypeLevelReferenceValues[I]
     def aaload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
         types(arrayref) match {
             case HasSingleReferenceTypeBound(ArrayType(componentType)) ⇒
-                ComputedValue(TypedValue(componentType)) // TODO use the aaload's pc as the source location...
+                ComputedValue(newTypedValue(componentType)) // TODO use the aaload's pc as the source location...
             case _ ⇒ domainException(this,
                 "cannot determine the type of the array's content, the array may contain either booleans or byte values: "+arrayref
             )
@@ -678,27 +684,16 @@ trait DefaultTypeLevelReferenceValues[I]
         ComputationWithSideEffectOnly
 
     //
-    // QUESTION'S ABOUT VALUES
-    // 
-
-    abstract override def types(value: DomainValue): TypesAnswer[_] = {
-        value match {
-            case r: ReferenceValue ⇒ r
-            case _                 ⇒ super.types(value)
-        }
-    }
-
-    //
     // TYPE CHECKS AND CONVERSION
     //
 
     def instanceof(pc: Int, value: DomainValue, resolvedType: ReferenceType) =
         isNull(value) match {
-            case Yes ⇒ booleanValue(pc, false)
+            case Yes ⇒ newBooleanValue(pc, false)
             case No ⇒
 
-                /* We need to check... */ SomeBooleanValue
-            case _ ⇒ /* => FALSE, but also TRUE?*/ SomeBooleanValue
+                /* We need to check... */ newBooleanValue
+            case _ ⇒ /* => FALSE, but also TRUE?*/ newBooleanValue
         }
 
 }

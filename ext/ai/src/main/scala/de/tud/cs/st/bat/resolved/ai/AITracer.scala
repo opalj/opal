@@ -36,9 +36,13 @@ package resolved
 package ai
 
 /**
- * Defines the interface between the abstract interpreter and the module for
- * tracing the interpreter's behavior. In general, BATAI calls the defined methods
- * at the specified point in time.
+ * Defines the interface between the abstract interpreter and a module for
+ * tracing the interpreter's behavior. In general, a tracer is first registered with an
+ * abstract interpreter. After that, when a method is analyzed, BATAI calls the
+ * tracer's methods at the respective point in time.
+ *
+ * @note In general, all mutable data structures (.e.g. the current locals) passed
+ * 		to the tracer must not be mutated by it.
  *
  * @author Michael Eichberg
  */
@@ -46,6 +50,14 @@ trait AITracer {
 
     /**
      * Called by BATAI before an instruction is evaluated.
+     *
+     * This enables the tracer to precisely log the behavior of the abstract
+     * interpreter, but also enables the tracer to interrupt the evaluation
+     * to, e.g., enable stepping through a program.
+     *
+     * @param operands The operand stack before the execution of the instruction.
+     * @param locals The registers before the execution of the instruction. '''The Array
+     * 		must not be mutated.'''
      */
     def instructionEvalution[D <: Domain[_]](
         domain: D,
@@ -55,8 +67,19 @@ trait AITracer {
         locals: Array[D#DomainValue]): Unit
 
     /**
-     * Called whenever two paths converge and, hence, the values on the operand stack
-     * and the registers need to be merged.
+     * Called by BATAI whenever two paths converge and the values on the operand stack
+     * and the registers are merged.
+     * 
+     * @param thisOperands The operand stack as it was used the last time when the
+     * 		instruction with the given program counter was evaluated. 
+     * @param thisLocals The registers as they were used the last time when the
+     * 		instruction with the given program counter was evaluated.
+     * @param otherOperands The current operand stack when we re-reach the instruction
+     * 		 
+     * @param otherLocals The current registers.
+     *   
+     * @param result The result of merging the operand stacks and register 
+     * 		assignment.   
      */
     def merge[D <: Domain[_]](
         domain: D,
@@ -64,7 +87,8 @@ trait AITracer {
         thisOperands: D#Operands,
         thisLocals: D#Locals,
         otherOperands: D#Operands,
-        otherLocals: D#Locals, result: Update[(D#Operands, D#Locals)])
+        otherLocals: D#Locals, 
+        result: Update[(D#Operands, D#Locals)])
 
     /**
      * Called when the analyzed method throws an exception that is not catched within

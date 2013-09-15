@@ -37,7 +37,7 @@ package ai
 
 /**
  * Factory to create `AIResult` objects.
- * 
+ *
  * @author Michael Eichberg
  */
 /* Design - We need to use a kind of builder to construct a Result object in two steps. 
@@ -45,12 +45,16 @@ package ai
  * layout and which depend on the given domain. */
 object AIResultBuilder {
 
+    /**
+     * Creates a domain dependent `AIAborted` object which stores the results of the
+     * computation.
+     */
     def aborted(
         theCode: Code,
         theDomain: Domain[_])(
             theWorkList: List[Int],
             theOperandsArray: Array[List[theDomain.DomainValue]],
-            theLocalsArray: Array[Array[theDomain.DomainValue]]): AIResult[theDomain.type] = {
+            theLocalsArray: Array[Array[theDomain.DomainValue]]): AIAborted[theDomain.type] = {
 
         new AIAborted[theDomain.type] {
             val code: Code = theCode
@@ -58,25 +62,31 @@ object AIResultBuilder {
             val operandsArray: Array[List[theDomain.DomainValue]] = theOperandsArray
             val localsArray: Array[Array[theDomain.DomainValue]] = theLocalsArray
             val workList: List[Int] = theWorkList
+
             def continueInterpretation(): AIResult[domain.type] = {
                 AI.continueInterpretation(code, domain)(workList, operandsArray, localsArray)
             }
         }
     }
 
+    /**
+     * Creates a domain dependent `AICompleted` object which stores the results of the
+     * computation.
+     */
     def completed(
         theCode: Code,
         theDomain: Domain[_])(
             theOperandsArray: Array[List[theDomain.DomainValue]],
-            theLocalsArray: Array[Array[theDomain.DomainValue]]): AIResult[theDomain.type] = {
+            theLocalsArray: Array[Array[theDomain.DomainValue]]): AICompleted[theDomain.type] = {
 
         new AICompleted[theDomain.type] {
             val code: Code = theCode
             val domain: theDomain.type = theDomain
             val operandsArray: Array[List[theDomain.DomainValue]] = theOperandsArray
             val localsArray: Array[Array[theDomain.DomainValue]] = theLocalsArray
+
             def restartInterpretation(): AIResult[theDomain.type] = {
-                AI.continueInterpretation(code, domain)(workList, operandsArray, localsArray)
+                AI.continueInterpretation(code, domain)(List(0), operandsArray, localsArray)
             }
         }
     }
@@ -85,16 +95,15 @@ object AIResultBuilder {
 /**
  * Encapsulates the result of the abstract interpretation of a method.
  */
-/* Design - We use an explicit type parameter to avoid a path dependency on a concrete AIResult
- * instance. I.e., if we remove the type parameter and redefine the method BATErrors
- * to "memoryLayouts: IndexedSeq[MemoryLayout[domain.type, domain.DomainValue]]" 
+/* Design - We use an explicit type parameter to avoid a path dependency on a 
+ * concrete AIResult instance. I.e., if we would remove the type parameter 
  * we would introduce a path dependence to a particular AIResult's instance and the actual 
  * type would be "this.domain.type" and "this.domain.DomainValue". */
 sealed abstract class AIResult[D <: Domain[_]] {
     val code: Code
     val domain: D
-    val operandsArray: Array[List[domain.DomainValue]]
-    val localsArray: Array[Array[domain.DomainValue]]
+    val operandsArray: Array[List[D#DomainValue]]
+    val localsArray: Array[Array[D#DomainValue]]
     val workList: List[Int]
 
     /**
@@ -104,18 +113,18 @@ sealed abstract class AIResult[D <: Domain[_]] {
 
 }
 
-abstract class AIAborted[D <: Domain[_]] extends AIResult[D] {
+sealed abstract class AIAborted[D <: Domain[_]] extends AIResult[D] {
 
-    final def wasAborted: Boolean = true
+    def wasAborted: Boolean = true
 
     def continueInterpretation(): AIResult[domain.type]
 }
 
-abstract class AICompleted[D <: Domain[_]] extends AIResult[D] {
+sealed abstract class AICompleted[D <: Domain[_]] extends AIResult[D] {
 
-    final def wasAborted: Boolean = false
+    val workList: List[Int] = List.empty
 
-    val workList: List[Int] = List(0)
+    def wasAborted: Boolean = false
 
     def restartInterpretation(): AIResult[domain.type]
 }

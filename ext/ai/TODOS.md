@@ -10,6 +10,10 @@
 
 * Implement a framework to analyze projects. Here, we should support something like a on-demand loading of class files to limit the amount of memory that is required.
 
+* Implement a pluggable Escape Analysis
+
+* Implement a Class Analysis (i.e., an analysis that - for a given program point - which type a value might have.)
+
 ##On-going Tasks
 
 * We need MORE tests.

@@ -53,10 +53,10 @@ trait TypeLevelArrayInstructions { this: Domain[_] ⇒
     def baload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
         types(arrayref) match {
             case HasSingleReferenceTypeBound(ArrayType(componentType)) ⇒
-                ComputedValue(TypedValue(componentType))
+                ComputedValue(newTypedValue(componentType))
             case _ ⇒ domainException(
                 this,
-                "cannot determine the type of the array's content, the array may contain either booleans or byte values: "+arrayref
+                "the array may contain either booleans or byte values: "+arrayref
             )
         }
 
@@ -64,32 +64,32 @@ trait TypeLevelArrayInstructions { this: Domain[_] ⇒
         ComputationWithSideEffectOnly
 
     def caload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
-        ComputedValue(SomeCharValue)
+        ComputedValue(newCharValue)
     def castore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
         ComputationWithSideEffectOnly
 
     def daload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
-        ComputedValue(SomeDoubleValue)
+        ComputedValue(newDoubleValue)
     def dastore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
         ComputationWithSideEffectOnly
 
     def faload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
-        ComputedValue(SomeFloatValue)
+        ComputedValue(newFloatValue)
     def fastore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
         ComputationWithSideEffectOnly
 
     def iaload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
-        ComputedValue(SomeIntegerValue)
+        ComputedValue(newIntegerValue)
     def iastore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
         ComputationWithSideEffectOnly
 
     def laload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
-        ComputedValue(SomeLongValue)
+        ComputedValue(newLongValue)
     def lastore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
         ComputationWithSideEffectOnly
 
     def saload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
-        ComputedValue(SomeShortValue)
+        ComputedValue(newShortValue)
     def sastore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
         ComputationWithSideEffectOnly
 
@@ -97,7 +97,7 @@ trait TypeLevelArrayInstructions { this: Domain[_] ⇒
     // LENGTH OF AN ARRAY
     //
     def arraylength(pc: Int, value: DomainValue): NumericValueOrNullPointerException =
-        ComputedValue(SomeIntegerValue)
+        ComputedValue(newIntegerValue)
 }
 
 

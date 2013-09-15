@@ -36,7 +36,7 @@ package resolved
 package ai
 package domain
 
-import de.tud.cs.st.util.{Answer,Yes,No,Unknown}
+import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 /**
  *
@@ -48,14 +48,14 @@ trait TypeLevelInvokeInstructions { this: Domain[_] ⇒
         if (someType.isVoidType)
             None
         else
-            Some(TypedValue(someType))
+            Some(newTypedValue(someType))
     }
 
     protected def handleInstanceBasedInvoke(pc: Int,
                                             methodDescriptor: MethodDescriptor,
                                             operands: List[DomainValue]) =
         isNull(operands.last) match {
-            case Yes ⇒ ThrowsException(Set(newObject(pc, ObjectType.NullPointerException)))
+            case Yes ⇒ ThrowsException(Set(newVMObject(pc, ObjectType.NullPointerException)))
             case No  ⇒ ComputedValue(asTypedValue(methodDescriptor.returnType))
             case Unknown ⇒
                 ComputedValueAndException(

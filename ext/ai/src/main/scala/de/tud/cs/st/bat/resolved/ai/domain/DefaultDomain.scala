@@ -66,7 +66,6 @@ abstract class AbstractDefaultDomain[I]
     with TypeLevelArrayInstructions
     with TypeLevelFieldAccessInstructions
     with TypeLevelInvokeInstructions
-    with TypeLevelConversionInstructions
     with DoNothingOnReturnFromMethod
     with DefaultTypeHierarchyBinding
 

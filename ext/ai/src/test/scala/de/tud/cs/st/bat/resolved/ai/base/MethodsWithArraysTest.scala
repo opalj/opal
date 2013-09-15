@@ -84,7 +84,7 @@ class MethodsWithArraysTest
         evaluateMethod("byteArrays", domain ⇒ {
             import domain._
             domain.returnedValues should be(
-                Set(("ireturn", SomeByteValue))
+                Set(("ireturn", newByteValue))
             )
         })
     }
@@ -93,7 +93,7 @@ class MethodsWithArraysTest
         evaluateMethod("booleanArrays", domain ⇒ {
             import domain._
             domain.returnedValues should be(
-                Set(("ireturn", SomeBooleanValue))
+                Set(("ireturn", newBooleanValue))
             )
         })
     }

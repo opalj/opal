@@ -93,12 +93,12 @@ class MethodsWithBranchesTest
             //    7  ireturn 
             import domain._
             domain.returnedValues should be(
-                Set(("ireturn", SomeIntegerValue), ("ireturn", SomeIntegerValue)))
+                Set(("ireturn", newIntegerValue), ("ireturn", newIntegerValue)))
 
             domain.constraints should be(
                 Set(
-                    ReifiedSingleValueConstraint(4, domain.TypedValue(ObjectType.Object), "is null"),
-                    ReifiedSingleValueConstraint(6, domain.TypedValue(ObjectType.Object), "is not null")
+                    ReifiedSingleValueConstraint(4, domain.newTypedValue(ObjectType.Object), "is null"),
+                    ReifiedSingleValueConstraint(6, domain.newTypedValue(ObjectType.Object), "is not null")
                 )
             )
         })
@@ -114,12 +114,12 @@ class MethodsWithBranchesTest
             //    7  ireturn
             import domain._
             domain.returnedValues should be(
-                Set(("ireturn", SomeIntegerValue), ("ireturn", SomeIntegerValue)))
+                Set(("ireturn", newIntegerValue), ("ireturn", newIntegerValue)))
 
             domain.constraints should be(
                 Set(
-                    ReifiedSingleValueConstraint(4, domain.TypedValue(ObjectType.Object), "is not null"),
-                    ReifiedSingleValueConstraint(6, domain.TypedValue(ObjectType.Object), "is null")
+                    ReifiedSingleValueConstraint(4, domain.newTypedValue(ObjectType.Object), "is not null"),
+                    ReifiedSingleValueConstraint(6, domain.newTypedValue(ObjectType.Object), "is null")
                 )
             )
         })
@@ -142,7 +142,7 @@ class MethodsWithBranchesTest
             //    18  ireturn
             import domain._
             domain.returnedValues should be(
-                Set(("ireturn", SomeIntegerValue))
+                Set(("ireturn", newIntegerValue))
             )
         })
     }

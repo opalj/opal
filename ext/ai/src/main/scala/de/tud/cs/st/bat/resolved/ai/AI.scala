@@ -154,13 +154,13 @@ trait AI {
 
                 if (!method.isStatic) {
                     val thisType = classFile.thisClass
-                    val thisValue = TypedValue(thisType)
+                    val thisValue = newTypedValue(thisType)
                     locals.update(localVariableIndex, thisValue)
                     localVariableIndex += 1 /*==thisType.computationalType.operandSize*/
                 }
                 for (parameterType ← method.descriptor.parameterTypes) {
                     val ct = parameterType.computationalType
-                    locals.update(localVariableIndex, TypedValue(parameterType))
+                    locals.update(localVariableIndex, newTypedValue(parameterType))
                     localVariableIndex += ct.operandSize
                 }
 
@@ -189,8 +189,7 @@ trait AI {
     }
 
     /**
-     * Continues the interpretation of the given method implementation (code) using
-     * the given domain.
+     * Continues the interpretation of the given method (code) using the given domain.
      *
      * @param initialWorklist The list of program counters with which the interpretation
      *      will continue. If the method was never analyzed before, the list should just
@@ -993,8 +992,8 @@ trait AI {
 
                     // -----------------------------------------------------------------------
                     //
-                    // INSTRUCTIONS THAT FALL THROUGH / THAT DO NOT CONTROL THE 
-                    // CONTROL FLOW (WHICH WILL NEVER THROW AN EXCEPTION)
+                    // INSTRUCTIONS THAT ALWAYS JUST FALL THROUGH AND WILL
+                    // NEVER THROW AN EXCEPTION
                     //
                     // -----------------------------------------------------------------------
 
@@ -1073,80 +1072,74 @@ trait AI {
                     //
 
                     case 1 /*aconst_null*/ ⇒
-                        fallThroughO(domain.nullValue(pc) :: operands)
+                        fallThroughO(domain.newNullValue(pc) :: operands)
 
                     case 16 /*bipush*/ ⇒
-                        val value = instruction.asInstanceOf[BIPUSH].value
-                        fallThroughO(domain.byteValue(pc, value) :: operands)
+                        val value = instruction.asInstanceOf[BIPUSH].value.toByte
+                        fallThroughO(domain.newByteValue(pc, value) :: operands)
 
                     case 14 /*dconst_0*/ ⇒
-                        fallThroughO(domain.doubleValue(pc, 0.0d) :: operands)
+                        fallThroughO(domain.newDoubleValue(pc, 0.0d) :: operands)
                     case 15 /*dconst_1*/ ⇒
-                        fallThroughO(domain.doubleValue(pc, 1.0d) :: operands)
+                        fallThroughO(domain.newDoubleValue(pc, 1.0d) :: operands)
 
                     case 11 /*fconst_0*/ ⇒
-                        fallThroughO(domain.floatValue(pc, 0.0f) :: operands)
+                        fallThroughO(domain.newFloatValue(pc, 0.0f) :: operands)
                     case 12 /*fconst_1*/ ⇒
-                        fallThroughO(domain.floatValue(pc, 1.0f) :: operands)
+                        fallThroughO(domain.newFloatValue(pc, 1.0f) :: operands)
                     case 13 /*fconst_2*/ ⇒
-                        fallThroughO(domain.floatValue(pc, 2.0f) :: operands)
+                        fallThroughO(domain.newFloatValue(pc, 2.0f) :: operands)
 
                     case 2 /*iconst_m1*/ ⇒
-                        fallThroughO(domain.intValue(pc, -1) :: operands)
+                        fallThroughO(domain.newIntegerValue(pc, -1) :: operands)
                     case 3 /*iconst_0*/ ⇒
-                        fallThroughO(domain.intValue(pc, 0) :: operands)
+                        fallThroughO(domain.newIntegerValue(pc, 0) :: operands)
                     case 4 /*iconst_1*/ ⇒
-                        fallThroughO(domain.intValue(pc, 1) :: operands)
+                        fallThroughO(domain.newIntegerValue(pc, 1) :: operands)
                     case 5 /*iconst_2*/ ⇒
-                        fallThroughO(domain.intValue(pc, 2) :: operands)
+                        fallThroughO(domain.newIntegerValue(pc, 2) :: operands)
                     case 6 /*iconst_3*/ ⇒
-                        fallThroughO(domain.intValue(pc, 3) :: operands)
+                        fallThroughO(domain.newIntegerValue(pc, 3) :: operands)
                     case 7 /*iconst_4*/ ⇒
-                        fallThroughO(domain.intValue(pc, 4) :: operands)
+                        fallThroughO(domain.newIntegerValue(pc, 4) :: operands)
                     case 8 /*iconst_5*/ ⇒
-                        fallThroughO(domain.intValue(pc, 5) :: operands)
+                        fallThroughO(domain.newIntegerValue(pc, 5) :: operands)
 
                     case 9 /*lconst_0*/ ⇒
-                        fallThroughO(domain.longValue(pc, 0l) :: operands)
+                        fallThroughO(domain.newLongValue(pc, 0l) :: operands)
                     case 10 /*lconst_1*/ ⇒
-                        fallThroughO(domain.longValue(pc, 1l) :: operands)
+                        fallThroughO(domain.newLongValue(pc, 1l) :: operands)
 
-                    case 18 /*ldc*/ ⇒ {
-                        instruction match {
-                            case LoadInt(v) ⇒
-                                fallThroughO(domain.intValue(pc, v) :: operands)
-                            case LoadFloat(v) ⇒
-                                fallThroughO(domain.floatValue(pc, v) :: operands)
-                            case LoadString(v) ⇒
-                                fallThroughO(domain.stringValue(pc, v) :: operands)
-                            case LoadClass(v) ⇒
-                                fallThroughO(domain.classValue(pc, v) :: operands)
-                        }
+                    case 18 /*ldc*/ ⇒ instruction match {
+                        case LoadInt(v) ⇒
+                            fallThroughO(domain.newIntegerValue(pc, v) :: operands)
+                        case LoadFloat(v) ⇒
+                            fallThroughO(domain.newFloatValue(pc, v) :: operands)
+                        case LoadString(v) ⇒
+                            fallThroughO(domain.newStringValue(pc, v) :: operands)
+                        case LoadClass(v) ⇒
+                            fallThroughO(domain.newClassValue(pc, v) :: operands)
                     }
-                    case 19 /*ldc_w*/ ⇒ {
-                        instruction match {
-                            case LoadInt_W(v) ⇒
-                                fallThroughO(domain.intValue(pc, v) :: operands)
-                            case LoadFloat_W(v) ⇒
-                                fallThroughO(domain.floatValue(pc, v) :: operands)
-                            case LoadString_W(v) ⇒
-                                fallThroughO(domain.stringValue(pc, v) :: operands)
-                            case LoadClass_W(v) ⇒
-                                fallThroughO(domain.classValue(pc, v) :: operands)
-                        }
+                    case 19 /*ldc_w*/ ⇒ instruction match {
+                        case LoadInt_W(v) ⇒
+                            fallThroughO(domain.newIntegerValue(pc, v) :: operands)
+                        case LoadFloat_W(v) ⇒
+                            fallThroughO(domain.newFloatValue(pc, v) :: operands)
+                        case LoadString_W(v) ⇒
+                            fallThroughO(domain.newStringValue(pc, v) :: operands)
+                        case LoadClass_W(v) ⇒
+                            fallThroughO(domain.newClassValue(pc, v) :: operands)
                     }
-                    case 20 /*ldc2_w*/ ⇒ {
-                        instruction match {
-                            case LoadLong(v) ⇒
-                                fallThroughO(domain.longValue(pc, v) :: operands)
-                            case LoadDouble(v) ⇒
-                                fallThroughO(domain.doubleValue(pc, v) :: operands)
-                        }
+                    case 20 /*ldc2_w*/ ⇒ instruction match {
+                        case LoadLong(v) ⇒
+                            fallThroughO(domain.newLongValue(pc, v) :: operands)
+                        case LoadDouble(v) ⇒
+                            fallThroughO(domain.newDoubleValue(pc, v) :: operands)
                     }
 
                     case 17 /*sipush*/ ⇒
-                        val value = instruction.asInstanceOf[SIPUSH].value
-                        fallThroughO(domain.shortValue(pc, value) :: operands)
+                        val value = instruction.asInstanceOf[SIPUSH].value.toShort
+                        fallThroughO(domain.newShortValue(pc, value) :: operands)
 
                     //
                     // RELATIONAL OPERATORS
@@ -1454,7 +1447,6 @@ trait AI {
                 }
             } catch {
                 case ct: ControlThrowable ⇒ throw ct
-
                 case de: DomainException ⇒ throw de.enrich(
                     worklist,
                     operandsArray.asInstanceOf[Array[List[de.domain.type#DomainValue]]],
