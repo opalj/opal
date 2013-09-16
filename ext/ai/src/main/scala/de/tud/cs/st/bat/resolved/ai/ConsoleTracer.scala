@@ -70,7 +70,7 @@ trait ConsoleTracer extends AITracer {
         thisLocals: D#Locals,
         otherOperands: D#Operands,
         otherLocals: D#Locals,
-        result: Update[(D#Operands, D#Locals)]) {
+        result: Update[(D#Operands, D#Locals)]): Unit = {
 
         print(Console.BLUE + pc+": MERGE :")
         result match {
@@ -112,10 +112,22 @@ trait ConsoleTracer extends AITracer {
     def abruptMethodExecution[D <: Domain[_]](
         domain: D,
         pc: Int,
-        exception: D#DomainValue) {
+        exception: D#DomainValue): Unit = {
         println(Console.BOLD +
             Console.RED +
             pc+": RETURN FROM METHOD DUE TO UNHANDLED EXCEPTION :"+exception +
+            Console.RESET)
+    }
+
+    def returnFromSubroutine[D <: Domain[_]](
+        domain: D,
+        pc: Int,
+        returnAddress: Int,
+        subroutineInstructions: List[Int]): Unit = {
+        println(Console.YELLOW_B +
+            Console.BOLD +
+            pc+": RETURN FROM SUBROUTINE : "+returnAddress+
+            " : RESETTING : "+subroutineInstructions.mkString(", ") +
             Console.RESET)
     }
 }

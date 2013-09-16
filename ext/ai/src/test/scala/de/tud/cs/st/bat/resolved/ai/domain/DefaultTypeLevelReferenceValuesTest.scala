@@ -58,8 +58,6 @@ class DefaultTypeLevelReferenceValuesTest
         extends FlatSpec
         with ShouldMatchers {
 
-    behavior of "DefaultTypeLevelReferenceValues"
-
     val domain = new DefaultDomain
     import domain._
 
@@ -81,6 +79,8 @@ class DefaultTypeLevelReferenceValuesTest
     //
     // TESTS
     //
+
+    behavior of "type level reference values"
 
     // java.lang.Object with java.io.File(pc=-1;isNull=No;isPrecise=false),
 

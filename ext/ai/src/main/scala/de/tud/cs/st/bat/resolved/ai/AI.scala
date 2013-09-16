@@ -100,9 +100,18 @@ trait AI {
         domain: Domain[_]) = perform(classFile, method, domain)(None)
 
     /**
-     * The list of program counters that is used when the analysis of  a method starts.
+     * The list of program counters that is used when the analysis of a method starts.
+     *
+     * If we have a call to a subroutine we add the special value SUBROUTINE_START
+     * to the list. This is needed to completely process the subroutine (to explore
+     * all paths) before we finally return to the main method.
      */
     private final val initialWorkList = List(0)
+
+    /**
+     * Special value that is added to the work list before a subroutine is evaluated.
+     */
+    private final val SUBROUTINE_START = -1
 
     /**
      * Analyzes the given method using the given domain and the pre-initialized parameter
@@ -185,7 +194,7 @@ trait AI {
         }
 
         continueInterpretation(code, domain)(
-            initialWorkList, operandsArray, localsArray)
+            initialWorkList, List.empty[Int], operandsArray, localsArray)
     }
 
     /**
@@ -210,6 +219,7 @@ trait AI {
         code: Code,
         domain: Domain[_])(
             initialWorkList: List[Int],
+            alreadyEvaluated: List[Int],
             operandsArray: Array[List[domain.DomainValue]],
             localsArray: Array[Array[domain.DomainValue]]): AIResult[domain.type] = {
 
@@ -224,6 +234,7 @@ trait AI {
         /* 1 */ // operandsArray
         /* 2 */ // localsArray
         /* 3 */ var worklist = initialWorkList
+        /* 4 */ var evaluated = alreadyEvaluated
 
         /**
          * Prepares the AI to continue the interpretation with the instruction
@@ -280,227 +291,229 @@ trait AI {
                     code,
                     domain)(
                         worklist,
+                        evaluated,
                         operandsArray,
                         localsArray)
             }
-
-            val pc = worklist.head
-            worklist = worklist.tail
-            val instruction = instructions(pc)
-            // the memory layout before executing the instruction with the given pc
-            val operands = operandsArray(pc)
-            val locals = localsArray(pc)
-
-            if (tracer.isDefined)
-                tracer.get.instructionEvalution[domain.type](
-                    domain, pc, instruction, operands, locals
-                )
-
-            def pcOfNextInstruction = code.indexOfNextInstruction(pc)
-
-            /**
-             * Handles all '''if''' instructions that perform a comparison with a fixed
-             * value.
-             */
-            def ifXX(domainTest: SingleValueDomainTest,
-                     yesConstraint: SingleValueConstraint,
-                     noConstraint: SingleValueConstraint) {
-
-                val branchInstruction = instruction.asInstanceOf[ConditionalBranchInstruction]
-                val operand = operands.head
-                val rest = operands.tail
-                val nextPC = pcOfNextInstruction
-                val branchTarget = pc + branchInstruction.branchoffset
-
-                domainTest(operand) match {
-                    case Yes ⇒ gotoTarget(branchTarget, rest, locals)
-                    case No  ⇒ gotoTarget(nextPC, rest, locals)
-                    case Unknown ⇒ {
-                        {
-                            val (newOperands, newLocals) =
-                                yesConstraint(branchTarget, operand, rest, locals)
-                            gotoTarget(branchTarget, newOperands, newLocals)
-                        }
-                        {
-                            val (newOperands, newLocals) =
-                                noConstraint(nextPC, operand, rest, locals)
-                            gotoTarget(nextPC, newOperands, newLocals)
-                        }
-                    }
-                }
-            }
-
-            /**
-             * Handles all '''if''' instructions that perform a comparison of two
-             * stack based values.
-             */
-            def ifTcmpXX(domainTest: TwoValuesDomainTest,
-                         yesConstraint: TwoValuesConstraint,
-                         noConstraint: TwoValuesConstraint) {
-
-                val branchInstruction = instruction.asInstanceOf[ConditionalBranchInstruction]
-                val value2 = operands.head
-                var remainingOperands = operands.tail
-                val value1 = remainingOperands.head
-                remainingOperands = remainingOperands.tail
-                val branchTarget = pc + branchInstruction.branchoffset
-                val nextPC = code.indexOfNextInstruction(pc)
-
-                domainTest(value1, value2) match {
-                    case Yes ⇒ gotoTarget(branchTarget, remainingOperands, locals)
-                    case No  ⇒ gotoTarget(nextPC, remainingOperands, locals)
-                    case Unknown ⇒ {
-                        {
-                            val (newOperands, newLocals) =
-                                yesConstraint(branchTarget, value1, value2, remainingOperands, locals)
-                            gotoTarget(branchTarget, newOperands, newLocals)
-                        }
-                        {
-                            val (newOperands, newLocals) =
-                                noConstraint(nextPC, value1, value2, remainingOperands, locals)
-                            gotoTarget(nextPC, newOperands, newLocals)
-                        }
-                    }
-                }
-            }
-
-            /**
-             * Handles the control-flow when an (new) exception was raised.
-             *
-             * Called when an exception was (potentially) raised during the interpretation
-             * of the method. In this case the corresponding handler is searched and then
-             * the control is transfered to it. If no handler is found the domain is
-             * informed that the method invocation completed abruptly.
-             *
-             * @note The operand stack will only contain the raised exception.
-             *
-             * @param exception A guaranteed non-null value that represents an instance of
-             *      an object that is a subtype of `java.lang.Throwable`.
-             */
-            def handleException(exceptionValue: DomainValue) {
-                val isHandled = code.exceptionHandlersFor(pc) exists { eh ⇒
-                    // find the exception handler that matches the given exception
-                    val branchTarget = eh.handlerPC
-                    val catchType = eh.catchType
-                    if (catchType.isEmpty) { // this is a finally handler
-                        gotoTarget(branchTarget, List(exceptionValue), locals)
-                        true
-                    } else {
-                        types(exceptionValue) match {
-                            case exceptions: IsReferenceType ⇒ exceptions.forallTypes(
-                                exceptionType ⇒ isSubtypeOf(exceptionType.asObjectType, catchType.get) match {
-                                    case No ⇒
-                                        false
-                                    case Yes ⇒
-                                        gotoTarget(branchTarget, List(exceptionValue), locals)
-                                        true
-                                    case Unknown ⇒
-                                        val (updatedOperands, updatedLocals) =
-                                            establishUpperBound(branchTarget, catchType.get, exceptionValue, List(exceptionValue), locals)
-                                        gotoTarget(branchTarget, updatedOperands, updatedLocals)
-                                        false
-                                }
-                            )
-                            case _ ⇒
-                                domainException(
-                                    domain, "no concrete exception: "+exceptionValue
-                                )
-                        }
-                    }
-                }
-                // If "isHandled" is true, we are sure that at least one 
-                // handler will catch the exception... hence this method
-                // invocation will not complete abruptly.
-                if (!isHandled)
-                    abruptMethodExecution(pc, exceptionValue)
-            }
-            def handleExceptions(exceptions: Set[DomainValue]): Unit = {
-                exceptions.foreach(handleException)
-            }
-
-            def abruptMethodExecution(pc: Int, exception: DomainValue): Unit = {
-                if (tracer.isDefined)
-                    tracer.get.abruptMethodExecution[domain.type](domain, pc, exception)
-
-                domain.abruptMethodExecution(pc, exception)
-            }
-
-            def fallThrough(
-                newOperands: Operands = operands,
-                newLocals: Locals = locals): Unit = {
-                gotoTarget(pcOfNextInstruction, newOperands, newLocals)
-            }
-
-            def computationWithException(
-                computation: Computation[Nothing, DomainValue],
-                rest: Operands) {
-
-                if (computation.throwsException)
-                    handleException(computation.exceptions)
-                if (computation.returnsNormally)
-                    fallThrough(rest)
-            }
-
-            def computationWithExceptions(
-                computation: Computation[Nothing, Set[DomainValue]],
-                rest: Operands) {
-
-                if (computation.returnsNormally)
-                    fallThrough(rest)
-                if (computation.throwsException)
-                    handleExceptions(computation.exceptions)
-            }
-
-            def computationWithReturnValueAndException(
-                computation: Computation[DomainValue, DomainValue],
-                rest: Operands) {
-
-                if (computation.hasResult)
-                    fallThrough(computation.result :: rest)
-                if (computation.throwsException)
-                    handleException(computation.exceptions)
-            }
-
-            def computationWithReturnValueAndExceptions(
-                computation: Computation[DomainValue, Set[DomainValue]],
-                rest: Operands) {
-
-                if (computation.hasResult)
-                    fallThrough(computation.result :: rest)
-                if (computation.throwsException)
-                    handleExceptions(computation.exceptions)
-            }
-
-            def computationWithOptionalReturnValueAndExceptions(
-                computation: Computation[Option[DomainValue], Set[DomainValue]],
-                rest: Operands) {
-
-                if (computation.hasResult) {
-                    computation.result match {
-                        case Some(value) ⇒ fallThrough(value :: rest)
-                        case None        ⇒ fallThrough(rest)
-                    }
-                }
-                if (computation.throwsException)
-                    handleExceptions(computation.exceptions)
-            }
-
-            /**
-             * Copies the current locals variable array and updates the local variable
-             * stored at the given `index` in the new locals variable array with
-             * the given `domainValue`.
-             *
-             * @param lvIndex A valid index in the locals variable array.
-             * @param domainValue A domain value.
-             * @return The updated locals variable array.
-             */
-            def updateLocals(lvIndex: Int, domainValue: DomainValue): Locals = {
-                val newLocals = locals.clone
-                newLocals.update(lvIndex, domainValue)
-                newLocals
-            }
-
             try {
+                // the worklist is manipulated here and by the JSR / RET instructions 
+                val pc = worklist.head
+                evaluated = pc :: evaluated
+                worklist = worklist.tail
+                val instruction = instructions(pc)
+                // the memory layout before executing the instruction with the given pc
+                val operands = operandsArray(pc)
+                val locals = localsArray(pc)
+
+                if (tracer.isDefined)
+                    tracer.get.instructionEvalution[domain.type](
+                        domain, pc, instruction, operands, locals
+                    )
+
+                def pcOfNextInstruction = code.indexOfNextInstruction(pc)
+
+                /**
+                 * Handles all '''if''' instructions that perform a comparison with a fixed
+                 * value.
+                 */
+                def ifXX(domainTest: SingleValueDomainTest,
+                         yesConstraint: SingleValueConstraint,
+                         noConstraint: SingleValueConstraint) {
+
+                    val branchInstruction = instruction.asInstanceOf[ConditionalBranchInstruction]
+                    val operand = operands.head
+                    val rest = operands.tail
+                    val nextPC = pcOfNextInstruction
+                    val branchTarget = pc + branchInstruction.branchoffset
+
+                    domainTest(operand) match {
+                        case Yes ⇒ gotoTarget(branchTarget, rest, locals)
+                        case No  ⇒ gotoTarget(nextPC, rest, locals)
+                        case Unknown ⇒ {
+                            {
+                                val (newOperands, newLocals) =
+                                    yesConstraint(branchTarget, operand, rest, locals)
+                                gotoTarget(branchTarget, newOperands, newLocals)
+                            }
+                            {
+                                val (newOperands, newLocals) =
+                                    noConstraint(nextPC, operand, rest, locals)
+                                gotoTarget(nextPC, newOperands, newLocals)
+                            }
+                        }
+                    }
+                }
+
+                /**
+                 * Handles all '''if''' instructions that perform a comparison of two
+                 * stack based values.
+                 */
+                def ifTcmpXX(domainTest: TwoValuesDomainTest,
+                             yesConstraint: TwoValuesConstraint,
+                             noConstraint: TwoValuesConstraint) {
+
+                    val branchInstruction = instruction.asInstanceOf[ConditionalBranchInstruction]
+                    val value2 = operands.head
+                    var remainingOperands = operands.tail
+                    val value1 = remainingOperands.head
+                    remainingOperands = remainingOperands.tail
+                    val branchTarget = pc + branchInstruction.branchoffset
+                    val nextPC = code.indexOfNextInstruction(pc)
+
+                    domainTest(value1, value2) match {
+                        case Yes ⇒ gotoTarget(branchTarget, remainingOperands, locals)
+                        case No  ⇒ gotoTarget(nextPC, remainingOperands, locals)
+                        case Unknown ⇒ {
+                            {
+                                val (newOperands, newLocals) =
+                                    yesConstraint(branchTarget, value1, value2, remainingOperands, locals)
+                                gotoTarget(branchTarget, newOperands, newLocals)
+                            }
+                            {
+                                val (newOperands, newLocals) =
+                                    noConstraint(nextPC, value1, value2, remainingOperands, locals)
+                                gotoTarget(nextPC, newOperands, newLocals)
+                            }
+                        }
+                    }
+                }
+
+                /**
+                 * Handles the control-flow when an (new) exception was raised.
+                 *
+                 * Called when an exception was (potentially) raised during the interpretation
+                 * of the method. In this case the corresponding handler is searched and then
+                 * the control is transfered to it. If no handler is found the domain is
+                 * informed that the method invocation completed abruptly.
+                 *
+                 * @note The operand stack will only contain the raised exception.
+                 *
+                 * @param exception A guaranteed non-null value that represents an instance of
+                 *      an object that is a subtype of `java.lang.Throwable`.
+                 */
+                def handleException(exceptionValue: DomainValue) {
+                    val isHandled = code.exceptionHandlersFor(pc) exists { eh ⇒
+                        // find the exception handler that matches the given exception
+                        val branchTarget = eh.handlerPC
+                        val catchType = eh.catchType
+                        if (catchType.isEmpty) { // this is a finally handler
+                            gotoTarget(branchTarget, List(exceptionValue), locals)
+                            true
+                        } else {
+                            types(exceptionValue) match {
+                                case exceptions: IsReferenceType ⇒ exceptions.forallTypes(
+                                    exceptionType ⇒ isSubtypeOf(exceptionType.asObjectType, catchType.get) match {
+                                        case No ⇒
+                                            false
+                                        case Yes ⇒
+                                            gotoTarget(branchTarget, List(exceptionValue), locals)
+                                            true
+                                        case Unknown ⇒
+                                            val (updatedOperands, updatedLocals) =
+                                                establishUpperBound(branchTarget, catchType.get, exceptionValue, List(exceptionValue), locals)
+                                            gotoTarget(branchTarget, updatedOperands, updatedLocals)
+                                            false
+                                    }
+                                )
+                                case _ ⇒
+                                    domainException(
+                                        domain, "no concrete exception: "+exceptionValue
+                                    )
+                            }
+                        }
+                    }
+                    // If "isHandled" is true, we are sure that at least one 
+                    // handler will catch the exception... hence this method
+                    // invocation will not complete abruptly.
+                    if (!isHandled)
+                        abruptMethodExecution(pc, exceptionValue)
+                }
+                def handleExceptions(exceptions: Set[DomainValue]): Unit = {
+                    exceptions.foreach(handleException)
+                }
+
+                def abruptMethodExecution(pc: Int, exception: DomainValue): Unit = {
+                    if (tracer.isDefined)
+                        tracer.get.abruptMethodExecution[domain.type](domain, pc, exception)
+
+                    domain.abruptMethodExecution(pc, exception)
+                }
+
+                def fallThrough(
+                    newOperands: Operands = operands,
+                    newLocals: Locals = locals): Unit = {
+                    gotoTarget(pcOfNextInstruction, newOperands, newLocals)
+                }
+
+                def computationWithException(
+                    computation: Computation[Nothing, DomainValue],
+                    rest: Operands) {
+
+                    if (computation.throwsException)
+                        handleException(computation.exceptions)
+                    if (computation.returnsNormally)
+                        fallThrough(rest)
+                }
+
+                def computationWithExceptions(
+                    computation: Computation[Nothing, Set[DomainValue]],
+                    rest: Operands) {
+
+                    if (computation.returnsNormally)
+                        fallThrough(rest)
+                    if (computation.throwsException)
+                        handleExceptions(computation.exceptions)
+                }
+
+                def computationWithReturnValueAndException(
+                    computation: Computation[DomainValue, DomainValue],
+                    rest: Operands) {
+
+                    if (computation.hasResult)
+                        fallThrough(computation.result :: rest)
+                    if (computation.throwsException)
+                        handleException(computation.exceptions)
+                }
+
+                def computationWithReturnValueAndExceptions(
+                    computation: Computation[DomainValue, Set[DomainValue]],
+                    rest: Operands) {
+
+                    if (computation.hasResult)
+                        fallThrough(computation.result :: rest)
+                    if (computation.throwsException)
+                        handleExceptions(computation.exceptions)
+                }
+
+                def computationWithOptionalReturnValueAndExceptions(
+                    computation: Computation[Option[DomainValue], Set[DomainValue]],
+                    rest: Operands) {
+
+                    if (computation.hasResult) {
+                        computation.result match {
+                            case Some(value) ⇒ fallThrough(value :: rest)
+                            case None        ⇒ fallThrough(rest)
+                        }
+                    }
+                    if (computation.throwsException)
+                        handleExceptions(computation.exceptions)
+                }
+
+                /**
+                 * Copies the current locals variable array and updates the local variable
+                 * stored at the given `index` in the new locals variable array with
+                 * the given `domainValue`.
+                 *
+                 * @param lvIndex A valid index in the locals variable array.
+                 * @param domainValue A domain value.
+                 * @return The updated locals variable array.
+                 */
+                def updateLocals(lvIndex: Int, domainValue: DomainValue): Locals = {
+                    val newLocals = locals.clone
+                    newLocals.update(lvIndex, domainValue)
+                    newLocals
+                }
+
                 (instruction.opcode: @annotation.switch) match {
                     //
                     // UNCONDITIONAL TRANSFER OF CONTROL
@@ -510,8 +523,10 @@ trait AI {
                         val branchtarget = pc + instruction.asInstanceOf[UnconditionalBranchInstruction].branchoffset
                         gotoTarget(branchtarget, operands, locals)
 
-                    // FIXME The handling of JSR/RET needs to be revised. 
-                    // Merging the operand stacks/local variables is not meaningful! I.e., we need to reset them!
+                    // Fundamental idea: we treat a "jump to subroutine" similar to
+                    // the call of a method. I.e., we make sure the operand
+                    // stand and the registers are empty at the beginning and
+                    // we explore all paths before we return from the subroutine.
                     // Semantics (from the JVM Spec):
                     // - The instruction following each jsr(_w) instruction may be 
                     //      returned to only by a single ret instruction.
@@ -524,14 +539,42 @@ trait AI {
                     //      once.
                     case 168 /*jsr*/
                         | 201 /*jsr_w*/ ⇒
+                        worklist = SUBROUTINE_START :: worklist
                         val branchtarget = pc + instruction.asInstanceOf[JSRInstruction].branchoffset
                         gotoTarget(branchtarget, domain.ReturnAddressValue(pcOfNextInstruction) :: operands, locals)
-                    
+
                     case 169 /*ret*/ ⇒
                         val lvIndex = instruction.asInstanceOf[RET].lvIndex
                         locals(lvIndex) match {
                             case ReturnAddressValue(returnAddress) ⇒
-                                gotoTargets(returnAddress, operands, locals)
+                                // Have we explored all paths?
+                                if (worklist.head == SUBROUTINE_START) {
+                                    worklist = worklist.tail
+                                    // clear all computations that were done
+                                    // to make this subroutine callable again
+                                    if (tracer.isDefined)
+                                        tracer.get.returnFromSubroutine(
+                                            domain,
+                                            pc,
+                                            returnAddress,
+                                            evaluated.takeWhile { pc ⇒
+                                                val opcode = instructions(pc).opcode
+                                                opcode != 168 && opcode != 201
+                                            })
+                                    val lastInstructions = evaluated.iterator
+                                    var previousInstruction = lastInstructions.next
+                                    var previousInstructionOpcode = instructions(previousInstruction).opcode
+                                    do {
+                                        operandsArray(previousInstruction) = null
+                                        localsArray(previousInstruction) = null
+                                        previousInstruction = lastInstructions.next
+                                        previousInstructionOpcode = instructions(previousInstruction).opcode
+                                    } while (previousInstructionOpcode != 168 &&
+                                        previousInstructionOpcode != 201)
+
+                                    val updatedLocals = locals.updated(lvIndex, null.asInstanceOf[domain.DomainValue])
+                                    gotoTarget(returnAddress, operands, updatedLocals)
+                                }
                             case _ ⇒
                                 CodeError("the local variable ("+
                                     lvIndex+
@@ -1446,16 +1489,17 @@ trait AI {
                 case ct: ControlThrowable ⇒ throw ct
                 case de: DomainException ⇒ throw de.enrich(
                     worklist,
+                    evaluated,
                     operandsArray.asInstanceOf[Array[List[de.domain.type#DomainValue]]],
                     localsArray.asInstanceOf[Array[Array[de.domain.type#DomainValue]]]
                 )
                 case t: Throwable ⇒
-                    interpreterException(t, domain, worklist, operandsArray, localsArray)
+                    interpreterException(t, domain, worklist, evaluated, operandsArray, localsArray)
 
             }
         }
 
-        AIResultBuilder.completed(code, domain)(operandsArray, localsArray)
+        AIResultBuilder.completed(code, domain)(evaluated, operandsArray, localsArray)
     }
 }
 

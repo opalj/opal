@@ -47,8 +47,8 @@ trait DefaultReturnAddressValues[I]
 
     type DomainReturnAddressValue = ReturnAddressValue
 
-    def ReturnAddressValue(addresses: Set[Int]): DomainReturnAddressValue =
-        new ReturnAddressValue(addresses)
+    def ReturnAddressValue(address: Int): DomainReturnAddressValue =
+        new ReturnAddressValue(address)
 
 }
 

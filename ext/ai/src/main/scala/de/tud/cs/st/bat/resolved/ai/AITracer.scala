@@ -69,17 +69,17 @@ trait AITracer {
     /**
      * Called by BATAI whenever two paths converge and the values on the operand stack
      * and the registers are merged.
-     * 
+     *
      * @param thisOperands The operand stack as it was used the last time when the
-     * 		instruction with the given program counter was evaluated. 
+     * 		instruction with the given program counter was evaluated.
      * @param thisLocals The registers as they were used the last time when the
      * 		instruction with the given program counter was evaluated.
      * @param otherOperands The current operand stack when we re-reach the instruction
-     * 		 
+     *
      * @param otherLocals The current registers.
-     *   
-     * @param result The result of merging the operand stacks and register 
-     * 		assignment.   
+     *
+     * @param result The result of merging the operand stacks and register
+     * 		assignment.
      */
     def merge[D <: Domain[_]](
         domain: D,
@@ -87,7 +87,7 @@ trait AITracer {
         thisOperands: D#Operands,
         thisLocals: D#Locals,
         otherOperands: D#Operands,
-        otherLocals: D#Locals, 
+        otherLocals: D#Locals,
         result: Update[(D#Operands, D#Locals)])
 
     /**
@@ -99,4 +99,12 @@ trait AITracer {
         pc: Int,
         exception: D#DomainValue)
 
+    /**
+     * Called when the evaluation of a subroutine (JSR/RET) is completed.
+     */
+    def returnFromSubroutine[D <: Domain[_]](
+        domain: D,
+        pc: Int,
+        returnAddress: Int,
+        subroutineInstructions: List[Int])
 }

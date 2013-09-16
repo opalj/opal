@@ -132,7 +132,11 @@ object InterpretMethods {
                     ex ⇒ {
                         Console.UNDERLINED + ex._1.thisClass.className+"\033[24m"+"{ "+
                             ex._2.toJava+" => "+
-                            Console.BOLD + ex._3.getMessage().trim+"\033[21m"+
+                            Console.BOLD +
+                            Option(ex._3).map { ex ⇒
+                                (ex.getClass().getSimpleName()+" => "+ex.getMessage()).trim
+                            }.getOrElse("")+
+                            "\033[21m"+
                             " }"
                     }).mkString("\n\t", ",\n\t", "\n")
             })

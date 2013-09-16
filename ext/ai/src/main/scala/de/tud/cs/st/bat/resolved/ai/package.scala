@@ -70,6 +70,7 @@ package object ai {
 
         def enrich(
             worklist: List[Int],
+            evaluated : List[Int],
             operandsArray: Array[List[domain.DomainValue]],
             localsArray: Array[Array[domain.DomainValue]]) = {
 
@@ -77,6 +78,7 @@ package object ai {
                 this,
                 domain,
                 worklist,
+                evaluated,
                 operandsArray,
                 localsArray)
         }
@@ -97,6 +99,7 @@ package object ai {
         throwable: Throwable,
         domain: D,
         worklist: List[Int],
+        evaluated : List[Int],
         operandsArray: Array[_ <: List[_ <: D#DomainValue]],
         localsArray: Array[_ <: Array[_ <: D#DomainValue]])
             extends AIException(throwable.getLocalizedMessage())
@@ -111,12 +114,14 @@ package object ai {
         throwable: Throwable,
         domain: D,
         worklist: List[Int],
+        evaluated : List[Int],
         operandsArray: Array[_ <: List[_ <: D#DomainValue]],
         localsArray: Array[_ <: Array[_ <: D#DomainValue]]): Nothing = {
         throw InterpreterException[Domain[_]](
             throwable,
             domain,
             worklist,
+            evaluated,
             operandsArray,
             localsArray
         )

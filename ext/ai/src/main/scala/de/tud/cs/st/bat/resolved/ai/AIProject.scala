@@ -63,10 +63,9 @@ abstract class AIProject(
      */
     def entryPoints(): Iterable[(ClassFile, Method)]
 
-    def analyze(f: ⇒ Domain[_]) {
+    def analyze(f: ⇒ Domain[_]) : Unit = {
         for ((classFile, method) ← entryPoints) {
             AI(classFile, method, f)
         }
     }
-
 }

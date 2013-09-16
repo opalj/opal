@@ -65,6 +65,9 @@ sealed trait Update[+V] {
      */
     def value: V
 
+    /**
+     * Creates a new `Update` object of the same type with the given value.
+     */
     def updateValue[NewV](newValue: NewV): Update[NewV]
 }
 

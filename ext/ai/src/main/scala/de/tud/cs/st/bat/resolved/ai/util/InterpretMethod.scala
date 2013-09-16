@@ -108,9 +108,15 @@ object InterpretMethod {
                 AI(classFile,
                     method,
                     new domain.ConfigurableDefaultDomain((classFile, method)))
-            println(result)
+            writeAndOpenDump(dump(
+                Some(classFile),
+                Some(method),
+                method.body.get,
+                result.operandsArray,
+                result.localsArray,
+                Some("Result: "+(new java.util.Date).toString)))
         } catch {
-            case ie @ InterpreterException(throwable, domain, worklist, operands, locals) ⇒
+            case ie @ InterpreterException(throwable, domain, worklist, evaluated, operands, locals) ⇒
                 writeAndOpenDump(dump(
                     Some(classFile),
                     Some(method),
@@ -120,6 +126,7 @@ object InterpretMethod {
                     Some(
                         throwable.getLocalizedMessage()+"<br>"+
                             throwable.getStackTrace().mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n") +
+                            evaluated.reverse.mkString("Evaluated instructions:\n<br>", ",", "<br>") +
                             worklist.mkString("Remaining worklist:\n<br>", ", ", "<br>")
                     )))
                 throw ie

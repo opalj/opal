@@ -255,35 +255,28 @@ trait Domain[+I] {
                 "always has to be a MetaInformationUpdate and not more")
 
     /**
-     * Represents a set of concrete values that store return addresses (i.e., a program
-     * counter/index into the code array).
+     * Stores a single return address (i.e., a program counter/index into the code array).
      *
      * @note The framework completely handles all aspects related to return address values.
      */
-    // FIXME [JSR/RET] Remove the class definition ReturnAddressValue as soon as we have embedded the handling of JSR/RET into BATAI
     class ReturnAddressValue(
-        val addresses: Set[Int])
+        val address: Int)
             extends Value {
 
-        override def merge(pc: Int, value: DomainValue): Update[DomainValue] = value match {
-            case ReturnAddressValue(otherAddresses) ⇒ {
-                if (otherAddresses subsetOf this.addresses)
-                    NoUpdate
-                else
-                    StructuralUpdate(ReturnAddressValue(this.addresses ++ otherAddresses))
+        override def merge(pc: Int, value: DomainValue): Update[DomainValue] =
+            value match {
+                case other: ReturnAddressValue if other.address == this.address ⇒ NoUpdate
+                case _ ⇒ BATException("return address values cannot be merged")
             }
-            case _ ⇒ MetaInformationUpdateIllegalValue
-        }
-
-        //        type ValueType = Nothing
-        //        def valueType = throw DomainException(Domain.this,
-        //            "ReturnAddressValues are not associated with a type")
 
         final def computationalType: ComputationalType = ComputationalTypeReturnAddress
 
-        override def toString = "ReturnAddresses: "+addresses.mkString(", ")
-
+        override def toString = "ReturnAddress: "+address
     }
+    object ReturnAddressValue {
+        def unapply(retAddress: ReturnAddressValue): Option[Int] = Some(retAddress.address)
+    }
+
     /**
      * Abstracts over the concrete type of `ReturnAddressValue`. Needs to be fixed
      * by some sub-trait/sub-class. In the simplest case (i.e., when neither the
@@ -293,16 +286,7 @@ trait Domain[+I] {
      * type DomainReturnAddressValue = ReturnAddressValue
      * }}}
      */
-    // FIXME [JSR/RET] Remove the type definition DomainReturnAddressValue as soon as we have embedded the handling of JSR/RET into BATAI
     type DomainReturnAddressValue <: ReturnAddressValue with DomainValue
-
-    /**
-     * Facilitates matching of `ReturnAddressValue`'s.
-     */
-    // FIXME [JSR/RET] Remove the object ReturnAddressValue as soon as we have embedded the handling of JSR/RET into BATAI
-    object ReturnAddressValue {
-        def unapply(value: ReturnAddressValue): Option[Set[Int]] = Some(value.addresses)
-    }
 
     // -----------------------------------------------------------------------------------
     //
@@ -311,17 +295,9 @@ trait Domain[+I] {
     // -----------------------------------------------------------------------------------
 
     /**
-     * Factory method to create instances of `ReturnAddressValue`s.
-     */
-    // FIXME [JSR/RET] Remove the factory method ReturnAddressValue(SET[INT]) as soon as we have embedded the handling of JSR/RET into BATAI
-    /* ABSTRACT */ def ReturnAddressValue(addresses: Set[Int]): DomainReturnAddressValue
-
-    /**
      * Factory method to create an instance of a `ReturnAddressValue`.
      */
-    // FIXME [JSR/RET] Remove the factory method ReturnAddressValue(INT) as soon as we have embedded the handling of JSR/RET into BATAI 
-    def ReturnAddressValue(address: Int): DomainReturnAddressValue =
-        ReturnAddressValue(Set(address))
+    def ReturnAddressValue(address: Int): DomainReturnAddressValue
 
     /**
      * Factory method to create domain values with a specific type. I.e., values for

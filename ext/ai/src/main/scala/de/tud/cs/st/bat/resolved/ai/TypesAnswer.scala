@@ -45,22 +45,20 @@ sealed trait TypesAnswer[+TypeInfo] extends Traversable[TypeInfo] {
     /**
      * `True` if at least one type/upper type bound is known.
      */
-    override def nonEmpty = false
+    override def nonEmpty : Boolean 
 
     /**
      * The number of upper-type bounds.
      */
-    override def size = 0
+    override def size : Int 
 }
 
 trait TypesUnknown extends TypesAnswer[Nothing] {
+    
     def foreach[U](f: Nothing ⇒ U): Unit = { /*empty*/ }
 
     override def nonEmpty = false
-
-    /**
-     * The number of upper-type bounds.
-     */
+ 
     override def size = 0
 }
 
@@ -84,6 +82,9 @@ trait IsReferenceType extends TypesAnswer[TypeBound] {
     def isPrecise: Boolean
 }
 
+/**
+ * Extractor for Reference types.
+ */
 object HasSingleReferenceTypeBound {
     def unapply(answer: IsReferenceType): Option[ReferenceType] =
         if (answer.size == 1)
