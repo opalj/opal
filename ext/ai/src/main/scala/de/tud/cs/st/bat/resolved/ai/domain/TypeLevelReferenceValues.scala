@@ -473,8 +473,7 @@ trait DefaultTypeLevelReferenceValues[I]
     }
 
     /**
-     * Factory for [[AReferenceValue]]s. Additionally, an `unapply` method is
-     * defined to facilitate pattern matching against reference values.
+     * Factory and extractor for `AReferenceValue`s.
      */
     object AReferenceValue {
 
@@ -682,20 +681,6 @@ trait DefaultTypeLevelReferenceValues[I]
 
     def aastore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
         ComputationWithSideEffectOnly
-
-    //
-    // TYPE CHECKS AND CONVERSION
-    //
-
-    def instanceof(pc: Int, value: DomainValue, resolvedType: ReferenceType) =
-        isNull(value) match {
-            case Yes ⇒ newBooleanValue(pc, false)
-            case No ⇒
-
-                /* We need to check... */ newBooleanValue
-            case _ ⇒ /* => FALSE, but also TRUE?*/ newBooleanValue
-        }
-
 }
 
 //trait StringValuesTracing[I]

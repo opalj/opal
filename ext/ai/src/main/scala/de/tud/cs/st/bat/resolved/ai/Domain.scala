@@ -961,12 +961,8 @@ trait Domain[+I] {
     def arraylength(pc: Int, arrayref: DomainValue): NumericValueOrNullPointerException
 
     //
-    // TYPE CHECKS AND CONVERSION
+    // TYPE CONVERSION
     //
-
-    def instanceof(pc: Int,
-                   objectref: DomainValue,
-                   resolvedType: ReferenceType): DomainValue
 
     def d2f(pc: Int, value: DomainValue): DomainValue
     def d2i(pc: Int, value: DomainValue): DomainValue
@@ -1026,9 +1022,8 @@ trait Domain[+I] {
                   fieldType: FieldType): DomainValue
 
     /**
-     * @return A new `NullPointerException` if the given `objectref` may refer to a
-     * 		`null`. If the computation succeeds successfully the field's value is set
-     *  	but no value is returned.
+     * Returns the field's value and/or a new `NullPointerException` if the given
+     * `objectref` is `null`.
      */
     def putfield(pc: Int,
                  objectref: DomainValue,
@@ -1176,14 +1171,14 @@ trait Domain[+I] {
      * In general there should be no need to override this method.
      *
      * @return The merged operand stack and registers.
-     * 		Returns `NoUpdate` if this memory layout already subsumes the given memory
-     *   	layout.
+     *      Returns `NoUpdate` if this memory layout already subsumes the given memory
+     *      layout.
      * @note The size of the operands stacks and the number of registers/locals is
-     * 		guaranteed to be same.
+     *      guaranteed to be same.
      * @note The operand stacks are guaranteed to contain compatible values w.r.t. the
-     * 		computational type (unless the bytecode is not valid or BATAI contains
-     *   	an error). I.e., if the result of merging two operand stack is an
-     *    	`IllegalValue` we assume that the domain implementation is incomplete.
+     *      computational type (unless the bytecode is not valid or BATAI contains
+     *      an error). I.e., if the result of merging two operand stack is an
+     *      `IllegalValue` we assume that the domain implementation is incomplete.
      */
     def merge(
         pc: Int,

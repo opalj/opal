@@ -388,27 +388,22 @@ trait AI {
                     } else {
                         types(exceptionValue) match {
                             case exceptions: IsReferenceType ⇒ exceptions.forallTypes(
-                                (exceptionType: Type) ⇒
-                                    domain.isSubtypeOf(
-                                        exceptionType.asObjectType,
-                                        catchType.get
-                                    ) match {
-                                            case No ⇒
-                                                false
-                                            case Yes ⇒
-                                                gotoTarget(branchTarget, List(exceptionValue), locals)
-                                                true
-                                            case Unknown ⇒
-                                                val (updatedOperands, updatedLocals) =
-                                                    establishUpperBound(branchTarget, catchType.get, exceptionValue, List(exceptionValue), locals)
-                                                gotoTarget(branchTarget, updatedOperands, updatedLocals)
-                                                false
-                                        }
+                                exceptionType ⇒ isSubtypeOf(exceptionType.asObjectType, catchType.get) match {
+                                    case No ⇒
+                                        false
+                                    case Yes ⇒
+                                        gotoTarget(branchTarget, List(exceptionValue), locals)
+                                        true
+                                    case Unknown ⇒
+                                        val (updatedOperands, updatedLocals) =
+                                            establishUpperBound(branchTarget, catchType.get, exceptionValue, List(exceptionValue), locals)
+                                        gotoTarget(branchTarget, updatedOperands, updatedLocals)
+                                        false
+                                }
                             )
                             case _ ⇒
                                 domainException(
-                                    domain,
-                                    "handleException requires concrete exception values - given: "+exceptionValue
+                                    domain, "no concrete exception: "+exceptionValue
                                 )
                         }
                     }
@@ -419,25 +414,21 @@ trait AI {
                 if (!isHandled)
                     abruptMethodExecution(pc, exceptionValue)
             }
-            def handleExceptions(exceptions: Set[DomainValue]) {
-                exceptions.foreach(handleException(_))
+            def handleExceptions(exceptions: Set[DomainValue]): Unit = {
+                exceptions.foreach(handleException)
             }
 
-            def abruptMethodExecution(pc: Int, exception: DomainValue) {
+            def abruptMethodExecution(pc: Int, exception: DomainValue): Unit = {
                 if (tracer.isDefined)
                     tracer.get.abruptMethodExecution[domain.type](domain, pc, exception)
 
                 domain.abruptMethodExecution(pc, exception)
             }
 
-            def fallThrough() {
-                gotoTarget(pcOfNextInstruction, operands, locals)
-            }
-            def fallThroughO(operands: Operands) {
-                gotoTarget(pcOfNextInstruction, operands, locals)
-            }
-            def fallThroughOL(operands: Operands, locals: Locals) {
-                gotoTarget(pcOfNextInstruction, operands, locals)
+            def fallThrough(
+                newOperands: Operands = operands,
+                newLocals: Locals = locals): Unit = {
+                gotoTarget(pcOfNextInstruction, newOperands, newLocals)
             }
 
             def computationWithException(
@@ -447,17 +438,17 @@ trait AI {
                 if (computation.throwsException)
                     handleException(computation.exceptions)
                 if (computation.returnsNormally)
-                    fallThroughO(rest)
+                    fallThrough(rest)
             }
 
             def computationWithExceptions(
                 computation: Computation[Nothing, Set[DomainValue]],
                 rest: Operands) {
 
+                if (computation.returnsNormally)
+                    fallThrough(rest)
                 if (computation.throwsException)
                     handleExceptions(computation.exceptions)
-                if (computation.returnsNormally)
-                    fallThroughO(rest)
             }
 
             def computationWithReturnValueAndException(
@@ -465,7 +456,7 @@ trait AI {
                 rest: Operands) {
 
                 if (computation.hasResult)
-                    fallThroughO(computation.result :: rest)
+                    fallThrough(computation.result :: rest)
                 if (computation.throwsException)
                     handleException(computation.exceptions)
             }
@@ -475,7 +466,7 @@ trait AI {
                 rest: Operands) {
 
                 if (computation.hasResult)
-                    fallThroughO(computation.result :: rest)
+                    fallThrough(computation.result :: rest)
                 if (computation.throwsException)
                     handleExceptions(computation.exceptions)
             }
@@ -486,8 +477,8 @@ trait AI {
 
                 if (computation.hasResult) {
                     computation.result match {
-                        case Some(value) ⇒ fallThroughO(value :: rest)
-                        case None        ⇒ fallThroughO(rest)
+                        case Some(value) ⇒ fallThrough(value :: rest)
+                        case None        ⇒ fallThrough(rest)
                     }
                 }
                 if (computation.throwsException)
@@ -531,6 +522,11 @@ trait AI {
                     //      finally clause.)
                     // - Each instance of type return Address can be returned to at most
                     //      once.
+                    case 168 /*jsr*/
+                        | 201 /*jsr_w*/ ⇒
+                        val branchtarget = pc + instruction.asInstanceOf[JSRInstruction].branchoffset
+                        gotoTarget(branchtarget, domain.ReturnAddressValue(pcOfNextInstruction) :: operands, locals)
+                    
                     case 169 /*ret*/ ⇒
                         val lvIndex = instruction.asInstanceOf[RET].lvIndex
                         locals(lvIndex) match {
@@ -541,10 +537,6 @@ trait AI {
                                     lvIndex+
                                     ") does not contain a return address value", code, lvIndex)
                         }
-                    case 168 /*jsr*/
-                        | 201 /*jsr_w*/ ⇒
-                        val branchtarget = pc + instruction.asInstanceOf[JSRInstruction].branchoffset
-                        gotoTarget(branchtarget, domain.ReturnAddressValue(pcOfNextInstruction) :: operands, locals)
 
                     //
                     // CONDITIONAL TRANSFER OF CONTROL
@@ -788,7 +780,7 @@ trait AI {
                     case 85 /*castore*/ ⇒ {
                         val value :: index :: arrayref :: rest = operands
                         val computation = domain.castore(pc, value, index, arrayref)
-                        fallThroughO(rest)
+                        fallThrough(rest)
                     }
 
                     case 49 /*daload*/ ⇒ {
@@ -871,7 +863,7 @@ trait AI {
                     }
                     case 178 /*getstatic*/ ⇒ {
                         val getstatic = instruction.asInstanceOf[GETSTATIC]
-                        fallThroughO(
+                        fallThrough(
                             domain.getstatic(
                                 pc,
                                 getstatic.declaringClass,
@@ -899,7 +891,7 @@ trait AI {
                             putstatic.declaringClass,
                             putstatic.name,
                             putstatic.fieldType)
-                        fallThroughO(rest)
+                        fallThrough(rest)
                     }
 
                     //
@@ -1006,31 +998,31 @@ trait AI {
                         | 21 /*iload*/
                         | 22 /*lload*/ ⇒
                         val lvIndex = instruction.asInstanceOf[LoadLocalVariableInstruction].lvIndex
-                        fallThroughO(locals(lvIndex) :: operands)
+                        fallThrough(locals(lvIndex) :: operands)
                     case 42 /*aload_0*/
                         | 38 /*dload_0*/
                         | 34 /*fload_0*/
                         | 26 /*iload_0*/
                         | 30 /*lload_0*/ ⇒
-                        fallThroughO(locals(0) :: operands)
+                        fallThrough(locals(0) :: operands)
                     case 43 /*aload_1*/
                         | 39 /*dload_1*/
                         | 35 /*fload_1*/
                         | 27 /*iload_1*/
                         | 31 /*lload_1*/ ⇒
-                        fallThroughO(locals(1) :: operands)
+                        fallThrough(locals(1) :: operands)
                     case 44 /*aload_2*/
                         | 40 /*dload_2*/
                         | 36 /*fload_2*/
                         | 28 /*iload_2*/
                         | 32 /*lload_2*/ ⇒
-                        fallThroughO(locals(2) :: operands)
+                        fallThrough(locals(2) :: operands)
                     case 45 /*aload_3*/
                         | 41 /*dload_3*/
                         | 37 /*fload_3*/
                         | 29 /*iload_3*/
                         | 33 /*lload_3*/ ⇒
-                        fallThroughO(locals(3) :: operands)
+                        fallThrough(locals(3) :: operands)
 
                     //
                     // STORE OPERAND IN LOCAL VARIABLE
@@ -1041,141 +1033,141 @@ trait AI {
                         | 54 /*istore*/
                         | 55 /*lstore*/ ⇒
                         val lvIndex = instruction.asInstanceOf[StoreLocalVariableInstruction].lvIndex
-                        fallThroughOL(operands.tail, updateLocals(lvIndex, operands.head))
+                        fallThrough(operands.tail, updateLocals(lvIndex, operands.head))
                     case 75 /*astore_0*/
                         | 71 /*dstore_0*/
                         | 67 /*fstore_0*/
                         | 63 /*lstore_0*/
                         | 59 /*istore_0*/ ⇒
-                        fallThroughOL(operands.tail, updateLocals(0, operands.head))
+                        fallThrough(operands.tail, updateLocals(0, operands.head))
                     case 76 /*astore_1*/
                         | 72 /*dstore_1*/
                         | 68 /*fstore_1*/
                         | 64 /*lstore_1*/
                         | 60 /*istore_1*/ ⇒
-                        fallThroughOL(operands.tail, updateLocals(1, operands.head))
+                        fallThrough(operands.tail, updateLocals(1, operands.head))
                     case 77 /*astore_2*/
                         | 73 /*dstore_2*/
                         | 69 /*fstore_2*/
                         | 65 /*lstore_2*/
                         | 61 /*istore_2*/ ⇒
-                        fallThroughOL(operands.tail, updateLocals(2, operands.head))
+                        fallThrough(operands.tail, updateLocals(2, operands.head))
                     case 78 /*astore_3*/
                         | 74 /*dstore_3*/
                         | 70 /*fstore_3*/
                         | 66 /*lstore_3*/
                         | 62 /*istore_3*/ ⇒
-                        fallThroughOL(operands.tail, updateLocals(3, operands.head))
+                        fallThrough(operands.tail, updateLocals(3, operands.head))
 
                     //
                     // PUSH CONSTANT VALUE
                     //
 
                     case 1 /*aconst_null*/ ⇒
-                        fallThroughO(domain.newNullValue(pc) :: operands)
+                        fallThrough(domain.newNullValue(pc) :: operands)
 
                     case 16 /*bipush*/ ⇒
                         val value = instruction.asInstanceOf[BIPUSH].value.toByte
-                        fallThroughO(domain.newByteValue(pc, value) :: operands)
+                        fallThrough(domain.newByteValue(pc, value) :: operands)
 
                     case 14 /*dconst_0*/ ⇒
-                        fallThroughO(domain.newDoubleValue(pc, 0.0d) :: operands)
+                        fallThrough(domain.newDoubleValue(pc, 0.0d) :: operands)
                     case 15 /*dconst_1*/ ⇒
-                        fallThroughO(domain.newDoubleValue(pc, 1.0d) :: operands)
+                        fallThrough(domain.newDoubleValue(pc, 1.0d) :: operands)
 
                     case 11 /*fconst_0*/ ⇒
-                        fallThroughO(domain.newFloatValue(pc, 0.0f) :: operands)
+                        fallThrough(domain.newFloatValue(pc, 0.0f) :: operands)
                     case 12 /*fconst_1*/ ⇒
-                        fallThroughO(domain.newFloatValue(pc, 1.0f) :: operands)
+                        fallThrough(domain.newFloatValue(pc, 1.0f) :: operands)
                     case 13 /*fconst_2*/ ⇒
-                        fallThroughO(domain.newFloatValue(pc, 2.0f) :: operands)
+                        fallThrough(domain.newFloatValue(pc, 2.0f) :: operands)
 
                     case 2 /*iconst_m1*/ ⇒
-                        fallThroughO(domain.newIntegerValue(pc, -1) :: operands)
+                        fallThrough(domain.newIntegerValue(pc, -1) :: operands)
                     case 3 /*iconst_0*/ ⇒
-                        fallThroughO(domain.newIntegerValue(pc, 0) :: operands)
+                        fallThrough(domain.newIntegerValue(pc, 0) :: operands)
                     case 4 /*iconst_1*/ ⇒
-                        fallThroughO(domain.newIntegerValue(pc, 1) :: operands)
+                        fallThrough(domain.newIntegerValue(pc, 1) :: operands)
                     case 5 /*iconst_2*/ ⇒
-                        fallThroughO(domain.newIntegerValue(pc, 2) :: operands)
+                        fallThrough(domain.newIntegerValue(pc, 2) :: operands)
                     case 6 /*iconst_3*/ ⇒
-                        fallThroughO(domain.newIntegerValue(pc, 3) :: operands)
+                        fallThrough(domain.newIntegerValue(pc, 3) :: operands)
                     case 7 /*iconst_4*/ ⇒
-                        fallThroughO(domain.newIntegerValue(pc, 4) :: operands)
+                        fallThrough(domain.newIntegerValue(pc, 4) :: operands)
                     case 8 /*iconst_5*/ ⇒
-                        fallThroughO(domain.newIntegerValue(pc, 5) :: operands)
+                        fallThrough(domain.newIntegerValue(pc, 5) :: operands)
 
                     case 9 /*lconst_0*/ ⇒
-                        fallThroughO(domain.newLongValue(pc, 0l) :: operands)
+                        fallThrough(domain.newLongValue(pc, 0l) :: operands)
                     case 10 /*lconst_1*/ ⇒
-                        fallThroughO(domain.newLongValue(pc, 1l) :: operands)
+                        fallThrough(domain.newLongValue(pc, 1l) :: operands)
 
                     case 18 /*ldc*/ ⇒ instruction match {
                         case LoadInt(v) ⇒
-                            fallThroughO(domain.newIntegerValue(pc, v) :: operands)
+                            fallThrough(domain.newIntegerValue(pc, v) :: operands)
                         case LoadFloat(v) ⇒
-                            fallThroughO(domain.newFloatValue(pc, v) :: operands)
+                            fallThrough(domain.newFloatValue(pc, v) :: operands)
                         case LoadString(v) ⇒
-                            fallThroughO(domain.newStringValue(pc, v) :: operands)
+                            fallThrough(domain.newStringValue(pc, v) :: operands)
                         case LoadClass(v) ⇒
-                            fallThroughO(domain.newClassValue(pc, v) :: operands)
+                            fallThrough(domain.newClassValue(pc, v) :: operands)
                     }
                     case 19 /*ldc_w*/ ⇒ instruction match {
                         case LoadInt_W(v) ⇒
-                            fallThroughO(domain.newIntegerValue(pc, v) :: operands)
+                            fallThrough(domain.newIntegerValue(pc, v) :: operands)
                         case LoadFloat_W(v) ⇒
-                            fallThroughO(domain.newFloatValue(pc, v) :: operands)
+                            fallThrough(domain.newFloatValue(pc, v) :: operands)
                         case LoadString_W(v) ⇒
-                            fallThroughO(domain.newStringValue(pc, v) :: operands)
+                            fallThrough(domain.newStringValue(pc, v) :: operands)
                         case LoadClass_W(v) ⇒
-                            fallThroughO(domain.newClassValue(pc, v) :: operands)
+                            fallThrough(domain.newClassValue(pc, v) :: operands)
                     }
                     case 20 /*ldc2_w*/ ⇒ instruction match {
                         case LoadLong(v) ⇒
-                            fallThroughO(domain.newLongValue(pc, v) :: operands)
+                            fallThrough(domain.newLongValue(pc, v) :: operands)
                         case LoadDouble(v) ⇒
-                            fallThroughO(domain.newDoubleValue(pc, v) :: operands)
+                            fallThrough(domain.newDoubleValue(pc, v) :: operands)
                     }
 
                     case 17 /*sipush*/ ⇒
                         val value = instruction.asInstanceOf[SIPUSH].value.toShort
-                        fallThroughO(domain.newShortValue(pc, value) :: operands)
+                        fallThrough(domain.newShortValue(pc, value) :: operands)
 
                     //
                     // RELATIONAL OPERATORS
                     //
                     case 150 /*fcmpg*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThroughO(domain.fcmpg(pc, value1, value2) :: rest)
+                        fallThrough(domain.fcmpg(pc, value1, value2) :: rest)
                     }
                     case 149 /*fcmpl*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThroughO(domain.fcmpl(pc, value1, value2) :: rest)
+                        fallThrough(domain.fcmpl(pc, value1, value2) :: rest)
                     }
                     case 152 /*dcmpg*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThroughO(domain.dcmpg(pc, value1, value2) :: rest)
+                        fallThrough(domain.dcmpg(pc, value1, value2) :: rest)
                     }
                     case 151 /*dcmpl*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThroughO(domain.dcmpl(pc, value1, value2) :: rest)
+                        fallThrough(domain.dcmpl(pc, value1, value2) :: rest)
                     }
                     case 148 /*lcmp*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThroughO(domain.lcmp(pc, value1, value2) :: rest)
+                        fallThrough(domain.lcmp(pc, value1, value2) :: rest)
                     }
 
                     //
                     // UNARY EXPRESSIONS
                     //
                     case 119 /*dneg*/ ⇒
-                        fallThroughO(domain.dneg(pc, operands.head) :: (operands.tail))
+                        fallThrough(domain.dneg(pc, operands.head) :: (operands.tail))
                     case 118 /*fneg*/ ⇒
-                        fallThroughO(domain.fneg(pc, operands.head) :: (operands.tail))
+                        fallThrough(domain.fneg(pc, operands.head) :: (operands.tail))
                     case 117 /*lneg*/ ⇒
-                        fallThroughO(domain.lneg(pc, operands.head) :: (operands.tail))
+                        fallThrough(domain.lneg(pc, operands.head) :: (operands.tail))
                     case 116 /*ineg*/ ⇒
-                        fallThroughO(domain.ineg(pc, operands.head) :: (operands.tail))
+                        fallThrough(domain.ineg(pc, operands.head) :: (operands.tail))
 
                     //
                     // BINARY EXPRESSIONS
@@ -1183,53 +1175,53 @@ trait AI {
 
                     case 99 /*dadd*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThroughO(domain.dadd(pc, value1, value2) :: rest)
+                        fallThrough(domain.dadd(pc, value1, value2) :: rest)
                     }
                     case 111 /*ddiv*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThroughO(domain.ddiv(pc, value1, value2) :: rest)
+                        fallThrough(domain.ddiv(pc, value1, value2) :: rest)
                     }
                     case 107 /*dmul*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThroughO(domain.dmul(pc, value1, value2) :: rest)
+                        fallThrough(domain.dmul(pc, value1, value2) :: rest)
                     }
                     case 115 /*drem*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThroughO(domain.drem(pc, value1, value2) :: rest)
+                        fallThrough(domain.drem(pc, value1, value2) :: rest)
                     }
                     case 103 /*dsub*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThroughO(domain.dsub(pc, value1, value2) :: rest)
+                        fallThrough(domain.dsub(pc, value1, value2) :: rest)
                     }
 
                     case 98 /*fadd*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThroughO(domain.fadd(pc, value1, value2) :: rest)
+                        fallThrough(domain.fadd(pc, value1, value2) :: rest)
                     }
                     case 110 /*fdiv*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThroughO(domain.fdiv(pc, value1, value2) :: rest)
+                        fallThrough(domain.fdiv(pc, value1, value2) :: rest)
                     }
                     case 106 /*fmul*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThroughO(domain.fmul(pc, value1, value2) :: rest)
+                        fallThrough(domain.fmul(pc, value1, value2) :: rest)
                     }
                     case 114 /*frem*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThroughO(domain.frem(pc, value1, value2) :: rest)
+                        fallThrough(domain.frem(pc, value1, value2) :: rest)
                     }
                     case 102 /*fsub*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThroughO(domain.fsub(pc, value1, value2) :: rest)
+                        fallThrough(domain.fsub(pc, value1, value2) :: rest)
                     }
 
                     case 96 /*iadd*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThroughO(domain.iadd(pc, value1, value2) :: rest)
+                        fallThrough(domain.iadd(pc, value1, value2) :: rest)
                     }
                     case 126 /*iand*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThroughO(domain.iand(pc, value1, value2) :: rest)
+                        fallThrough(domain.iand(pc, value1, value2) :: rest)
                     }
                     case 108 /*idiv*/ ⇒ {
                         val value2 :: value1 :: rest = operands
@@ -1238,44 +1230,44 @@ trait AI {
                     }
                     case 104 /*imul*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThroughO(domain.imul(pc, value1, value2) :: rest)
+                        fallThrough(domain.imul(pc, value1, value2) :: rest)
                     }
                     case 128 /*ior*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThroughO(domain.ior(pc, value1, value2) :: rest)
+                        fallThrough(domain.ior(pc, value1, value2) :: rest)
                     }
                     case 112 /*irem*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThroughO(domain.irem(pc, value1, value2) :: rest)
+                        fallThrough(domain.irem(pc, value1, value2) :: rest)
                     }
                     case 120 /*ishl*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThroughO(domain.ishl(pc, value1, value2) :: rest)
+                        fallThrough(domain.ishl(pc, value1, value2) :: rest)
                     }
                     case 122 /*ishr*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThroughO(domain.ishr(pc, value1, value2) :: rest)
+                        fallThrough(domain.ishr(pc, value1, value2) :: rest)
                     }
                     case 100 /*isub*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThroughO(domain.isub(pc, value1, value2) :: rest)
+                        fallThrough(domain.isub(pc, value1, value2) :: rest)
                     }
                     case 124 /*iushr*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThroughO(domain.iushr(pc, value1, value2) :: rest)
+                        fallThrough(domain.iushr(pc, value1, value2) :: rest)
                     }
                     case 130 /*ixor*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThroughO(domain.ixor(pc, value1, value2) :: rest)
+                        fallThrough(domain.ixor(pc, value1, value2) :: rest)
                     }
 
                     case 97 /*ladd*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThroughO(domain.ladd(pc, value1, value2) :: rest)
+                        fallThrough(domain.ladd(pc, value1, value2) :: rest)
                     }
                     case 127 /*land*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThroughO(domain.land(pc, value1, value2) :: rest)
+                        fallThrough(domain.land(pc, value1, value2) :: rest)
                     }
                     case 109 /*ldiv*/ ⇒ {
                         val value2 :: value1 :: rest = operands
@@ -1284,122 +1276,122 @@ trait AI {
                     }
                     case 105 /*lmul*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThroughO(domain.lmul(pc, value1, value2) :: rest)
+                        fallThrough(domain.lmul(pc, value1, value2) :: rest)
                     }
                     case 129 /*lor*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThroughO(domain.lor(pc, value1, value2) :: rest)
+                        fallThrough(domain.lor(pc, value1, value2) :: rest)
                     }
                     case 113 /*lrem*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThroughO(domain.lrem(pc, value1, value2) :: rest)
+                        fallThrough(domain.lrem(pc, value1, value2) :: rest)
                     }
                     case 121 /*lshl*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThroughO(domain.lshl(pc, value1, value2) :: rest)
+                        fallThrough(domain.lshl(pc, value1, value2) :: rest)
                     }
                     case 123 /*lshr*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThroughO(domain.lshr(pc, value1, value2) :: rest)
+                        fallThrough(domain.lshr(pc, value1, value2) :: rest)
                     }
                     case 101 /*lsub*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThroughO(domain.lsub(pc, value1, value2) :: rest)
+                        fallThrough(domain.lsub(pc, value1, value2) :: rest)
                     }
                     case 125 /*lushr*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThroughO(domain.lushr(pc, value1, value2) :: rest)
+                        fallThrough(domain.lushr(pc, value1, value2) :: rest)
                     }
                     case 131 /*lxor*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThroughO(domain.lxor(pc, value1, value2) :: rest)
+                        fallThrough(domain.lxor(pc, value1, value2) :: rest)
                     }
                     //
                     // GENERIC STACK MANIPULATION
                     //
                     case 89 /*dup*/ ⇒
-                        fallThroughO((operands.head) :: operands)
+                        fallThrough((operands.head) :: operands)
                     case 90 /*dup_x1*/ ⇒
                         val v1 :: v2 :: rest = operands
-                        fallThroughO(v1 :: v2 :: v1 :: rest)
+                        fallThrough(v1 :: v2 :: v1 :: rest)
                     case 91 /*dup_x2*/ ⇒ operands match {
                         case (v1 /*@ CTC1()*/ ) :: (v2 @ CTC1()) :: (v3 /*@ CTC1()*/ ) :: rest ⇒
-                            fallThroughO(v1 :: v2 :: v3 :: v1 :: rest)
+                            fallThrough(v1 :: v2 :: v3 :: v1 :: rest)
                         case (v1 /*@ CTC1()*/ ) :: v2 /* @ CTC2()*/ :: rest ⇒
-                            fallThroughO(v1 :: v2 :: v1 :: rest)
+                            fallThrough(v1 :: v2 :: v1 :: rest)
                     }
                     case 92 /*dup2*/ ⇒ operands match {
                         case (v1 @ CTC1()) :: (v2 /*@ CTC1()*/ ) :: _ ⇒
-                            fallThroughO(v1 :: v2 :: operands)
+                            fallThrough(v1 :: v2 :: operands)
                         case (v /*@ CTC2()*/ ) :: _ ⇒
-                            fallThroughO(v :: operands)
+                            fallThrough(v :: operands)
                     }
                     case 93 /*dup2_x1*/ ⇒ operands match {
                         case (v1 @ CTC1()) :: (v2 /*@ CTC1()*/ ) :: (v3 /*@ CTC1()*/ ) :: rest ⇒
-                            fallThroughO(v1 :: v2 :: v3 :: v1 :: v2 :: rest)
+                            fallThrough(v1 :: v2 :: v3 :: v1 :: v2 :: rest)
                         case (v1 @ CTC2()) :: (v2 /*@ CTC1()*/ ) :: rest ⇒
-                            fallThroughO(v1 :: v2 :: v1 :: rest)
+                            fallThrough(v1 :: v2 :: v1 :: rest)
                     }
                     case 94 /*dup2_x2*/ ⇒ operands match {
                         case (v1 @ CTC1()) :: (v2 @ CTC1()) :: (v3 @ CTC1()) :: (v4 /*@ CTC1()*/ ) :: rest ⇒
-                            fallThroughO(v1 :: v2 :: v3 :: v4 :: v1 :: v2 :: rest)
+                            fallThrough(v1 :: v2 :: v3 :: v4 :: v1 :: v2 :: rest)
                         case (v1 @ CTC2()) :: (v2 @ CTC1()) :: (v3 @ CTC1()) :: rest ⇒
-                            fallThroughO(v1 :: v2 :: v3 :: v1 :: rest)
+                            fallThrough(v1 :: v2 :: v3 :: v1 :: rest)
                         case (v1 @ CTC1()) :: (v2 @ CTC1()) :: (v3 @ CTC2()) :: rest ⇒
-                            fallThroughO(v1 :: v2 :: v3 :: v1 :: v2 :: rest)
+                            fallThrough(v1 :: v2 :: v3 :: v1 :: v2 :: rest)
                         case (v1 /*@ CTC2()*/ ) :: (v2 /*@ CTC1()*/ ) :: rest ⇒
-                            fallThroughO(v1 :: v2 :: v1 :: rest)
+                            fallThrough(v1 :: v2 :: v1 :: rest)
                     }
 
                     case 87 /*pop*/ ⇒
-                        fallThroughO(operands.tail)
+                        fallThrough(operands.tail)
                     case 88 /*pop2*/ ⇒
                         if (operands.head.computationalType.operandSize == 1)
-                            fallThroughO(operands.drop(2))
+                            fallThrough(operands.drop(2))
                         else
-                            fallThroughO(operands.tail)
+                            fallThrough(operands.tail)
 
                     case 95 /*swap*/ ⇒ {
                         val v1 :: v2 :: rest = operands
-                        fallThroughO(v2 :: v1 :: rest)
+                        fallThrough(v2 :: v1 :: rest)
                     }
 
                     //
                     // TYPE CONVERSION
                     //
                     case 144 /*d2f*/ ⇒
-                        fallThroughO(domain.d2f(pc, operands.head) :: (operands.tail))
+                        fallThrough(domain.d2f(pc, operands.head) :: (operands.tail))
                     case 142 /*d2i*/ ⇒
-                        fallThroughO(domain.d2i(pc, operands.head) :: (operands.tail))
+                        fallThrough(domain.d2i(pc, operands.head) :: (operands.tail))
                     case 143 /*d2l*/ ⇒
-                        fallThroughO(domain.d2l(pc, operands.head) :: (operands.tail))
+                        fallThrough(domain.d2l(pc, operands.head) :: (operands.tail))
 
                     case 141 /*f2d*/ ⇒
-                        fallThroughO(domain.f2d(pc, operands.head) :: (operands.tail))
+                        fallThrough(domain.f2d(pc, operands.head) :: (operands.tail))
                     case 139 /*f2i*/ ⇒
-                        fallThroughO(domain.f2i(pc, operands.head) :: (operands.tail))
+                        fallThrough(domain.f2i(pc, operands.head) :: (operands.tail))
                     case 140 /*f2l*/ ⇒
-                        fallThroughO(domain.f2l(pc, operands.head) :: (operands.tail))
+                        fallThrough(domain.f2l(pc, operands.head) :: (operands.tail))
 
                     case 145 /*i2b*/ ⇒
-                        fallThroughO(domain.i2b(pc, operands.head) :: (operands.tail))
+                        fallThrough(domain.i2b(pc, operands.head) :: (operands.tail))
                     case 146 /*i2c*/ ⇒
-                        fallThroughO(domain.i2c(pc, operands.head) :: (operands.tail))
+                        fallThrough(domain.i2c(pc, operands.head) :: (operands.tail))
                     case 135 /*i2d*/ ⇒
-                        fallThroughO(domain.i2d(pc, operands.head) :: (operands.tail))
+                        fallThrough(domain.i2d(pc, operands.head) :: (operands.tail))
                     case 134 /*i2f*/ ⇒
-                        fallThroughO(domain.i2f(pc, operands.head) :: (operands.tail))
+                        fallThrough(domain.i2f(pc, operands.head) :: (operands.tail))
                     case 133 /*i2l*/ ⇒
-                        fallThroughO(domain.i2l(pc, operands.head) :: (operands.tail))
+                        fallThrough(domain.i2l(pc, operands.head) :: (operands.tail))
                     case 147 /*i2s*/ ⇒
-                        fallThroughO(domain.i2s(pc, operands.head) :: (operands.tail))
+                        fallThrough(domain.i2s(pc, operands.head) :: (operands.tail))
 
                     case 138 /*l2d*/ ⇒
-                        fallThroughO(domain.l2d(pc, operands.head) :: (operands.tail))
+                        fallThrough(domain.l2d(pc, operands.head) :: (operands.tail))
                     case 137 /*l2f*/ ⇒
-                        fallThroughO(domain.l2f(pc, operands.head) :: (operands.tail))
+                        fallThrough(domain.l2f(pc, operands.head) :: (operands.tail))
                     case 136 /*l2i*/ ⇒
-                        fallThroughO(domain.l2i(pc, operands.head) :: (operands.tail))
+                        fallThrough(domain.l2i(pc, operands.head) :: (operands.tail))
 
                     case 192 /*checkcast*/ ⇒
                         val objectref = operands.head
@@ -1415,35 +1407,40 @@ trait AI {
                                 handleException(newVMObject(pc, ObjectType.ClassCastException))
                                 val (newOperands, newLocals) =
                                     establishUpperBound(pc, supertype, objectref, operands, locals)
-                                fallThroughOL(newOperands, newLocals)
+                                fallThrough(newOperands, newLocals)
                         }
 
                     //
                     // "OTHER" INSTRUCTIONS
                     //
+
                     case 193 /*instanceof*/ ⇒ {
                         val objectref :: rest = operands
                         val referenceType = instruction.asInstanceOf[INSTANCEOF].referenceType
-                        val newOperand = domain.instanceof(pc, objectref, referenceType)
-                        fallThroughOL(newOperand :: rest, locals)
+
+                        val result = domain.isSubtypeOf(objectref, referenceType, No) match {
+                            case Yes     ⇒ domain.newBooleanValue(pc, true)
+                            case No      ⇒ domain.newBooleanValue(pc, false)
+                            case Unknown ⇒ domain.newBooleanValue(pc)
+                        }
+                        fallThrough(result :: rest)
                     }
 
                     case 132 /*iinc*/ ⇒ {
                         val iinc = instruction.asInstanceOf[IINC]
                         val newValue = domain.iinc(pc, locals(iinc.lvIndex), iinc.constValue)
-                        fallThroughOL(operandsArray(pc), updateLocals(iinc.lvIndex, newValue))
+                        fallThrough(operandsArray(pc), updateLocals(iinc.lvIndex, newValue))
                     }
 
                     case 187 /*new*/ ⇒ {
                         val newObject = instruction.asInstanceOf[NEW]
-                        fallThroughO(domain.newObject(pc, newObject.objectType) :: operands)
+                        fallThrough(domain.newObject(pc, newObject.objectType) :: operands)
                     }
 
                     case 0 /*nop*/    ⇒ fallThrough()
                     case 196 /*wide*/ ⇒ fallThrough()
 
-                    case opcode ⇒
-                        BATException("instruction with unsupported opcode: "+opcode)
+                    case opcode       ⇒ BATException("unsupported opcode: "+opcode)
                 }
             } catch {
                 case ct: ControlThrowable ⇒ throw ct
