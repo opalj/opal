@@ -25,3 +25,9 @@
 * Develop a set of analyses that operate on top of BATAI
 
 * Develop an analysis to describe, derive and check method call protocols
+
+
+##Scala - Lessons Learned
+- we could use better support for large-scale family polymorphism
+- we could use ``constructor-dependent types'' (see AIResultBuilder for why)
+- method dependent types ``often'' cause problems
