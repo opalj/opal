@@ -453,7 +453,7 @@ trait DefaultTypeLevelReferenceValues[I]
 
         protected def canEqual(other: AReferenceValue): Boolean = true
 
-        override lazy val hashCode: Int = {
+        override def hashCode: Int = { // TODO How to cache lazy vals?
             (((41 + pc) * 41 + isPrecise.hashCode()) *
                 41 + isNull.hashCode()) *
                 41 + valueType.hashCode()
@@ -466,8 +466,8 @@ trait DefaultTypeLevelReferenceValues[I]
                 case _ ⇒
                     valueType.map(_.toJava).mkString(" with ")+
                         "(pc="+pc+
-                        ";isNull="+isNull+
-                        ";isPrecise="+isPrecise+")"
+                        ", isNull="+isNull+
+                        ", isPrecise="+isPrecise+")"
             }
         }
     }
@@ -683,37 +683,35 @@ trait DefaultTypeLevelReferenceValues[I]
         ComputationWithSideEffectOnly
 }
 
-//trait StringValuesTracing[I]
-//        extends Domain[I]
-//        with DefaultValueBinding
-//        with TypeLevelReferenceValues {
-//
-//    protected trait ConcreteStringValue extends ReferenceValue[ObjectType] {
-//        def valueType: ObjectType = ObjectType.String
-//    }
-//
-//    case object SomeConcreteString extends ConcreteStringValue {
-//        override def merge(value: DomainValue): Update[DomainValue] = value match {
-//            case SomeConcreteString       ⇒ NoUpdate
-//            case other: ReferenceValue[_] ⇒ StructuralUpdate(other)
-//            case _                        ⇒ MetaInformationUpdateIllegalValue
-//        }
-//    }
-//
-//    case class AConcreteString(val theString: String) extends ConcreteStringValue {
-//        override def merge(value: DomainValue): Update[DomainValue] = value match {
-//            case AConcreteString(`theString`) ⇒ NoUpdate
-//            case other: ReferenceValue[_]     ⇒ StructuralUpdate(other)
-//            case _                            ⇒ MetaInformationUpdateIllegalValue
-//        }
-//    }
-//
-//    override def stringValue(pc: Int, value: String) =
-//        if (value eq null)
-//            AIImplementationError("it is not possible to create a concrete string given a null value")
-//        else
-//            AConcreteString(value)
-//
-//}
+trait StringValuesTracing[I]
+        extends DefaultTypeLevelReferenceValues[I] {
+
+    class AStringValue(
+        pc: Int,
+        val value: String)
+            extends AReferenceValue(pc, Set(ObjectType.String), No, true) {
+
+        assume(value != null)
+
+        override def equals(other: Any): Boolean = {
+            super.equals(other) &&
+                other.asInstanceOf[AStringValue].value == this.value
+        }
+
+        override protected def canEqual(other: AReferenceValue): Boolean =
+            other.isInstanceOf[AStringValue]
+
+        override def hashCode: Int = {
+            super.hashCode + 41 * value.hashCode()
+        }
+
+        override def toString(): String =
+            "String(pc="+pc+", value=\""+value+"\")"
+    }
+
+    override def newStringValue(pc: Int, value: String): DomainValue =
+        new AStringValue(pc, value)
+
+}
 
 
