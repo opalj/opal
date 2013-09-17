@@ -96,3 +96,18 @@ class ConfigurableDefaultDomain[I](
         extends ConfigurableDomain[I]
         with AbstractDefaultDomain[I]
 
+class ConfigurablePreciseDomain[I](
+    val identifier: I)
+        extends ConfigurableDomain[I]
+        with DefaultValueBinding[I]
+        with DefaultPreciseIntegerValues[I]
+        with DefaultTypeLevelReferenceValues[I]
+        with DefaultTypeLevelLongValues[I]
+        with DefaultTypeLevelFloatValues[I]
+        with DefaultTypeLevelDoubleValues[I]
+        with DefaultReturnAddressValues[I]
+        with TypeLevelArrayInstructions
+        with TypeLevelFieldAccessInstructions
+        with TypeLevelInvokeInstructions
+        with DoNothingOnReturnFromMethod
+        with DefaultTypeHierarchyBinding
