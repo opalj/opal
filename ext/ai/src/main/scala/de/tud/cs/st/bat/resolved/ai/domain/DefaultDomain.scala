@@ -61,7 +61,7 @@ trait BaseDomain[I]
  *
  * @author Michael Eichberg
  */
-abstract class AbstractDefaultDomain[I]
+trait AbstractDefaultDomain[I]
     extends BaseDomain[I]
     with TypeLevelArrayInstructions
     with TypeLevelFieldAccessInstructions
@@ -82,11 +82,17 @@ class DefaultDomain extends AbstractDefaultDomain[String] {
 
 }
 
+trait ConfigurableDomain[I] extends Domain[I] {
+    val identifier: I
+}
+
 /**
  * A domain with a configurable identifier.
  *
  * @author Michael Eichberg
  */
-class ConfigurableDefaultDomain[I](val identifier: I) extends AbstractDefaultDomain[I]
-
+class ConfigurableDefaultDomain[I](
+    val identifier: I)
+        extends ConfigurableDomain[I]
+        with AbstractDefaultDomain[I]
 

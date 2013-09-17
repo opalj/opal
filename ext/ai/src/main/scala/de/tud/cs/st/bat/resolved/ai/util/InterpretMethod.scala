@@ -36,6 +36,9 @@ package resolved
 package ai
 package util
 
+import domain.ConfigurableDomain
+import domain.ConfigurableDefaultDomain
+
 /**
  * A small interpreter that enables us to easily perform the abstract interpretation of a
  * specific method.
@@ -43,6 +46,8 @@ package util
  * @author Michael Eichberg
  */
 object InterpretMethod {
+
+    import language.existentials
 
     private object AI extends AI {
 
@@ -61,16 +66,24 @@ object InterpretMethod {
      * 		is returned.
      */
     def main(args: Array[String]) {
-        if (args.size != 3) {
+        if (args.size < 3 || args.size > 4) {
             println("You have to specify the method that should be analyzed.")
             println("\t1: a jar/calss file or a directory containing jar/class files.")
             println("\t2: the name of a class in binary notation (use \"/\" as the package separator.")
             println("\t3: the name of a method of the class.")
+            println("\t4[Optional]: domain=CLASS the name of class of the configurable domain to use.")
             return ;
         }
         val fileName = args(0)
         val className = args(1)
         val methodName = args(2)
+        val domainClass = {
+            if (args.length > 3)
+                Class.forName(args(3).substring(7)).asInstanceOf[Class[_ <: ConfigurableDomain[_]]]
+            else
+                classOf[ConfigurableDefaultDomain[_]]
+        }
+        val domainConstructor = domainClass.getConstructor(classOf[Object])
 
         val file = new java.io.File(fileName)
         if (!file.exists()) {
@@ -107,14 +120,14 @@ object InterpretMethod {
             val result =
                 AI(classFile,
                     method,
-                    new domain.ConfigurableDefaultDomain((classFile, method)))
+                    domainConstructor.newInstance((classFile, method)))
             writeAndOpenDump(dump(
                 Some(classFile),
                 Some(method),
                 method.body.get,
                 result.operandsArray,
                 result.localsArray,
-                Some("Result: "+(new java.util.Date).toString)))
+                Some("Result("+domainClass.getName()+"): "+(new java.util.Date).toString)))
         } catch {
             case ie @ InterpreterException(throwable, domain, worklist, evaluated, operands, locals) ⇒
                 writeAndOpenDump(dump(
@@ -123,11 +136,11 @@ object InterpretMethod {
                     method.body.get,
                     operands,
                     locals,
-                    Some(
+                    Some("<p><b>"+domainClass.getName()+"</b></p>"+
                         throwable.getLocalizedMessage()+"<br>"+
-                            throwable.getStackTrace().mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n") +
-                            evaluated.reverse.mkString("Evaluated instructions:\n<br>", ",", "<br>") +
-                            worklist.mkString("Remaining worklist:\n<br>", ", ", "<br>")
+                        throwable.getStackTrace().mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n") +
+                        evaluated.reverse.mkString("Evaluated instructions:\n<br>", ",", "<br>") +
+                        worklist.mkString("Remaining worklist:\n<br>", ", ", "<br>")
                     )))
                 throw ie
         }

@@ -37,11 +37,13 @@ package ai
 package util
 
 import de.tud.cs.st.util.ControlAbstractions._
+import de.tud.cs.st.bat.resolved.ai.domain.ConfigurableDomain
+import de.tud.cs.st.bat.resolved.ai.domain.ConfigurableDefaultDomain
+
 import reader.Java7Framework.ClassFile
 import java.util.zip.ZipFile
 import java.io.DataInputStream
 import java.io.ByteArrayInputStream
-
 import scala.util.control.ControlThrowable
 
 /**
@@ -55,15 +57,32 @@ object InterpretMethods {
     import collection.JavaConversions._
 
     def main(args: Array[String]) {
-        interpret(args.map(new java.io.File(_)), true).map(System.err.println(_))
+        if (args.size > 0 && args(0).startsWith("domain=")) {
+            interpret(
+                Class.forName(args.head.substring(7)).asInstanceOf[Class[_ <: ConfigurableDomain[_]]],
+                args.tail.map(new java.io.File(_)),
+                true).
+                map(System.err.println(_))
+        } else {
+            interpret(
+                classOf[ConfigurableDefaultDomain[_]],
+                args.map(new java.io.File(_)),
+                true).
+                map(System.err.println(_))
+        }
     }
 
     val timeLimit: Long = 250l //milliseconds
 
-    def interpret(files: Seq[java.io.File], beVerbose: Boolean = false): Option[String] = {
+    def interpret(
+        domainClass: Class[_ <: ConfigurableDomain[_]],
+        files: Seq[java.io.File],
+        beVerbose: Boolean = false): Option[String] = {
         var collectedExceptions: List[(ClassFile, Method, Throwable)] = List()
         var classesCount = 0
         var methodsCount = 0
+
+        val domainConstructor = domainClass.getConstructor(classOf[Object])
 
         time('OVERALL) {
             for {
@@ -95,9 +114,10 @@ object InterpretMethods {
                             if (AI(
                                 classFile,
                                 method,
-                                new domain.AbstractDefaultDomain[(ClassFile, Method)] {
+                                domainConstructor.newInstance((classFile, method))
+                            /*new domain.AbstractDefaultDomain[(ClassFile, Method)] {
                                     val identifier = (classFile, method)
-                                }).wasAborted)
+                                }*/ ).wasAborted)
                                 throw new InterruptedException();
                         }
                     } catch {

@@ -37,18 +37,14 @@ package ai
 package comprehensive
 
 import de.tud.cs.st.util.ControlAbstractions._
+import domain.ConfigurableDefaultDomain
+import domain.ConfigurablePreciseDomain
+
 import reader.Java7Framework.ClassFile
-import java.util.zip.ZipFile
-import java.io.DataInputStream
-import java.io.ByteArrayInputStream
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.matchers.ShouldMatchers
-import org.scalatest.concurrent.TimeLimitedTests
-import org.scalatest.time._
-import org.scalatest.BeforeAndAfterAll
-import scala.util.control.ControlThrowable
 
 /**
  * This test(suite) just loads a very large number of class files and performs
@@ -69,8 +65,23 @@ class InterpretManyMethodsTest
         TestSupport.locateTestResources(directoryWithJARs, "ext/ai").listFiles.
             filter(file ⇒ file.isFile && file.canRead() && file.getName.endsWith(".jar"))
 
-    it should ("be able to interpret all methods in "+files.map(_.getName).mkString("\n\t\t", "\n\t\t", "\n")) in {
-        util.InterpretMethods.interpret(files).map(fail(_))
-    }
+    it should (
+        "be able to interpret all methods using the ConfigurableDefaultDomain in "+
+        files.map(_.getName).mkString("\n\t\t", "\n\t\t", "\n")
+    ) in {
+            util.InterpretMethods.interpret(
+                classOf[ConfigurableDefaultDomain[_]],
+                files
+            ).map(fail(_))
+        }
 
+    it should (
+        "be able to interpret all methods using the ConfigurablePreciseDomain in "+
+        files.map(_.getName).mkString("\n\t\t", "\n\t\t", "\n")
+    ) in {
+            util.InterpretMethods.interpret(
+                classOf[ConfigurablePreciseDomain[_]],
+                files
+            ).map(fail(_))
+        }
 }
