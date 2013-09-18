@@ -102,6 +102,8 @@ trait DefaultTypeLevelDoubleValues[I]
             case DoubleValue ⇒ NoUpdate
             case _           ⇒ MetaInformationUpdateIllegalValue
         }
+        
+        def copyToRegister = this
     }
 
     def newDoubleValue(): DoubleValue = DoubleValue

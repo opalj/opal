@@ -109,6 +109,8 @@ trait DefaultTypeLevelLongValues[I]
             case LongValue ⇒ NoUpdate
             case _         ⇒ MetaInformationUpdateIllegalValue
         }
+        
+        def copyToRegister = this
     }
 
     def newLongValue(): LongValue = LongValue

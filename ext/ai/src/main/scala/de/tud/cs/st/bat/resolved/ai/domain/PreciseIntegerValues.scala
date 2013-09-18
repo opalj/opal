@@ -51,127 +51,87 @@ trait PreciseIntegerValues[I] extends Domain[I] {
     //
     // -----------------------------------------------------------------------------------
 
+    private final val typesAnswerIntegerLike: IsPrimitiveType = IsPrimitiveType(IntegerType)
+
+    val maxSpread = 10
+    // => If an integer value is used as a loop index, we will run the loop at most
+    // 10 times.
+
     /**
-     * Abstracts over all values with computational type `integer` and also
-     * represents Integer values.
+     * Abstracts over all values with computational type `integer`.
      */
-    trait IntegerLikeValue extends Value {
+    sealed trait IntegerLikeValue extends Value {
 
         final def computationalType: ComputationalType = ComputationalTypeInt
 
         final def types: TypesAnswer[_] = typesAnswerIntegerLike
+
     }
 
+    /**
+     * Represents a specific, but unknown integer value.
+     */
     trait AnIntegerValue extends IntegerLikeValue
 
-    trait IntegerValueRange extends IntegerLikeValue {
-        val min: Int
-        val max: Int
-    }
-
-    def newIntegerValueRange(pc: Int, min: Int = Int.MinValue, max: Int = Int.MaxValue): DomainValue
-
     trait IntegerValue extends IntegerLikeValue {
+
+        val initial: Int
+
         val value: Int
+
+        def update(newValue: Int): DomainValue
     }
-
-    //    final val IntegerValueChainMaxLength = 100 // sets the size
-    //
-    //    /**
-    //     * Precisely traces an integer's value.
-    //     */
-    //    trait IntegerValueChain extends IntegerValue {
-    //        val start: Int
-    //        /**
-    //         * The current value.
-    //         */
-    //        val value: Int
-    //    }
-
-    private val typesAnswerIntegerLike: IsPrimitiveType = IsPrimitiveType(IntegerType)
 
     abstract override def types(value: DomainValue): TypesAnswer[_] = value match {
-        case integerLikeValue: AnIntegerValue ⇒ integerLikeValue.types
-        case _                                ⇒ super.types(value)
+        case integerLikeValue: IntegerLikeValue ⇒ integerLikeValue.types
+        case _                                  ⇒ super.types(value)
     }
 
     //
     // QUESTION'S ABOUT VALUES
     //
 
-    def areEqual(value1: DomainValue, value2: DomainValue): Answer =
-        (value1, value2) match {
-            case (_: AnIntegerValue, _) | (_, _: AnIntegerValue) ⇒
-                Unknown
-            case (v1: IntegerValueRange, v2: IntegerValueRange) ⇒
-                if (v1.max <= v2.min || v2.max <= v1.min) Unknown else No
-            case (v1: IntegerValueRange, v2: IntegerValue) ⇒
-                if (v1.min <= v2.value && v2.value <= v1.max) Unknown else No
-            case (v1: IntegerValue, v2: IntegerValueRange) ⇒
-                if (v2.min <= v1.value && v1.value <= v2.max) Unknown else No
-            case (v1: IntegerValue, v2: IntegerValue) ⇒
-                Answer(v1.value == v2.value)
+    def ifHasIntValue[T](value: DomainValue)(f: Int ⇒ T)(orElse: ⇒ T): T = {
+        value match {
+            case v: IntegerValue ⇒ f(v.value)
+            case _               ⇒ orElse
         }
+    }
+
+    def areEqual(value1: DomainValue, value2: DomainValue): Answer =
+        ifHasIntValue(value1) { v1 ⇒
+            ifHasIntValue(value2) { v2 ⇒ Answer(v1 == v2) }(Unknown)
+        }(Unknown)
 
     def isSomeValueInRange(
         value: DomainValue,
         lowerBound: Int,
-        upperBound: Int): Boolean = value match {
-        case _: AnIntegerValue    ⇒ true
-        case v: IntegerValueRange ⇒ (v.max >= lowerBound && v.min <= upperBound)
-        case v: IntegerValue      ⇒ lowerBound <= v.value && v.value <= upperBound
-    }
+        upperBound: Int): Boolean =
+        ifHasIntValue(value) { v ⇒ lowerBound <= v && v <= upperBound }(true)
 
     def isSomeValueNotInRange(
         value: DomainValue,
         lowerBound: Int,
-        upperBound: Int): Boolean = value match {
-        case _: AnIntegerValue    ⇒ true
-        case v: IntegerValueRange ⇒ (v.min < lowerBound || v.max > upperBound)
-        case v: IntegerValue      ⇒ v.value < lowerBound || v.value > upperBound
-    }
+        upperBound: Int): Boolean =
+        ifHasIntValue(value) {
+            v ⇒ v < lowerBound || v > upperBound
+        } {
+            !(lowerBound == Int.MinValue && upperBound == Int.MaxValue)
+        }
 
     def isLessThan(
         smallerValue: DomainValue,
-        largerValue: DomainValue): Answer = (smallerValue, largerValue) match {
-        case (_: AnIntegerValue, _) | (_, _: AnIntegerValue) ⇒
-            Unknown
-        case (v1: IntegerValueRange, v2: IntegerValueRange) ⇒
-            if (v1.max < v2.min) Yes
-            else if (v1.min > v2.max) No
-            else Unknown
-        case (v1: IntegerValueRange, v2: IntegerValue) ⇒
-            if (v1.max < v2.value) Yes
-            else if (v1.min > v2.value) No
-            else Unknown
-        case (v1: IntegerValue, v2: IntegerValueRange) ⇒
-            if (v1.value < v2.min) Yes
-            else if (v1.value > v2.max) No
-            else Unknown
-        case (v1: IntegerValue, v2: IntegerValue) ⇒
-            Answer(v1.value < v2.value)
-    }
+        largerValue: DomainValue): Answer =
+        ifHasIntValue(smallerValue) { v1 ⇒
+            ifHasIntValue(largerValue) { v2 ⇒ Answer(v1 < v2) }(Unknown)
+        }(Unknown)
 
     def isLessThanOrEqualTo(
         smallerOrEqualValue: DomainValue,
-        equalOrLargerValue: DomainValue): Answer = (smallerOrEqualValue, equalOrLargerValue) match {
-        case (_: AnIntegerValue, _) | (_, _: AnIntegerValue) ⇒
-            Unknown
-        case (v1: IntegerValueRange, v2: IntegerValueRange) ⇒
-            if (v1.max <= v2.min) Yes
-            else if (v1.min >= v2.max) No
-            else Unknown
-        case (v1: IntegerValueRange, v2: IntegerValue) ⇒
-            if (v1.max <= v2.value) Yes
-            else if (v1.min >= v2.value) No
-            else Unknown
-        case (v1: IntegerValue, v2: IntegerValueRange) ⇒
-            if (v1.value <= v2.min) Yes
-            else if (v1.value >= v2.max) No
-            else Unknown
-        case (v1: IntegerValue, v2: IntegerValue) ⇒
-            Answer(v1.value <= v2.value)
-    }
+        equalOrLargerValue: DomainValue): Answer =
+        ifHasIntValue(smallerOrEqualValue) { v1 ⇒
+            ifHasIntValue(equalOrLargerValue) { v2 ⇒ Answer(v1 <= v2) }(Unknown)
+        }(Unknown)
 
     protected def updatedOperandsAndLocals(
         oldValue: DomainValue,
@@ -180,11 +140,11 @@ trait PreciseIntegerValues[I] extends Domain[I] {
         locals: Locals): (Operands, Locals) = {
         (
             operands.map { operand ⇒
-                if (operand eq oldValue) { println("OPERAND UPDATE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"); newValue }
+                if (operand eq oldValue) { newValue }
                 else operand
             },
             locals.map { local ⇒
-                if (local eq oldValue) { println("LOCALS UPDATE+++++++++++++++++++++++++++++++"); newValue }
+                if (local eq oldValue) { newValue }
                 else local
             }
         )
@@ -195,47 +155,7 @@ trait PreciseIntegerValues[I] extends Domain[I] {
                                 value: DomainValue,
                                 operands: Operands,
                                 locals: Locals): (Operands, Locals) = {
-        println("establishValue")
         updatedOperandsAndLocals(value, newIntegerValue(pc, theValue), operands, locals)
-    }
-
-    override def establishIsLessThan(pc: Int,
-                                     value1: DomainValue,
-                                     value2: DomainValue,
-                                     operands: Operands,
-                                     locals: Locals): (Operands, Locals) = {
-        println("establish<")
-        // Assumption: establishIsLessThan is only called by BATAI if a previous
-        // question w.r.t. this relations was answered with "Unknown".
-        value2 match {
-            case v2: IntegerValue ⇒
-                value1 match {
-                    case v1: AnIntegerValue ⇒
-                        updatedOperandsAndLocals(
-                            value1,
-                            newIntegerValueRange(pc, Int.MinValue, v2.value - 1),
-                            operands,
-                            locals)
-                    case v1: IntegerValueRange ⇒
-                        updatedOperandsAndLocals(
-                            value1,
-                            newIntegerValueRange(pc, v1.min, v2.value - 1),
-                            operands,
-                            locals)
-                    case _ ⇒ (operands, locals)
-                }
-            // TODO [Constraints on integer values] We could do more w.r.t. ranges, but is it worth the effort? 
-            case _ ⇒ (operands, locals)
-        }
-    }
-
-    override def establishIsLessThanOrEqualTo(pc: Int,
-                                              value1: DomainValue,
-                                              value2: DomainValue,
-                                              operands: Operands,
-                                              locals: Locals): (Operands, Locals) = {
-        println("establish<=")
-        (operands, locals)
     }
 
     // -----------------------------------------------------------------------------------
@@ -247,7 +167,10 @@ trait PreciseIntegerValues[I] extends Domain[I] {
     //
     // UNARY EXPRESSIONS
     //
-    def ineg(pc: Int, value: DomainValue) = newIntegerValue
+    def ineg(pc: Int, value: DomainValue) = value match {
+        case v: IntegerValue ⇒ v.update(-v.value)
+        case _               ⇒ value
+    }
 
     //
     // BINARY EXPRESSIONS
@@ -265,7 +188,10 @@ trait PreciseIntegerValues[I] extends Domain[I] {
     def iushr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newIntegerValue
     def ixor(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newIntegerValue
 
-    def iinc(pc: Int, value: DomainValue, increment: Int) = newIntegerValue
+    def iinc(pc: Int, value: DomainValue, increment: Int) = value match {
+        case v: IntegerValue ⇒ v.update(v.value + increment)
+        case _               ⇒ value
+    }
 
     //
     // TYPE CONVERSION INSTRUCTIONS
@@ -273,95 +199,89 @@ trait PreciseIntegerValues[I] extends Domain[I] {
 
     def i2b(pc: Int, value: DomainValue): DomainValue = newByteValue
     def i2c(pc: Int, value: DomainValue): DomainValue = newCharValue
+    def i2s(pc: Int, value: DomainValue): DomainValue = newShortValue
+
     def i2d(pc: Int, value: DomainValue): DomainValue = newDoubleValue
     def i2f(pc: Int, value: DomainValue): DomainValue = newFloatValue
     def i2l(pc: Int, value: DomainValue): DomainValue = newLongValue
-    def i2s(pc: Int, value: DomainValue): DomainValue = newShortValue
-
 }
 
 trait DefaultPreciseIntegerValues[I]
         extends DefaultValueBinding[I]
         with PreciseIntegerValues[I] {
 
-    case class AnIntegerValue() extends super.AnIntegerValue {
+    case object AnIntegerValue extends super.AnIntegerValue {
         override def merge(pc: Int, value: DomainValue): Update[DomainValue] = value match {
             case _: IntegerLikeValue ⇒ NoUpdate
             case other               ⇒ MetaInformationUpdateIllegalValue
         }
+
+        def copyToRegister = this
     }
 
-    /**
-     * Both bounds are inclusive.
-     */
-    case class IntegerValueRange(
-        min: Int,
-        max: Int)
-            extends super.IntegerValueRange {
-
-        override def merge(pc: Int, value: DomainValue): Update[DomainValue] =
-            value match {
-                case AnIntegerValue() ⇒ StructuralUpdate(value)
-                case IntegerValueRange(otherMin, otherMax) ⇒
-                    if (this.min <= otherMin && this.max >= otherMax)
-                        NoUpdate
-                    else
-                        newIntegerValueRange(this.min, otherMin, this.max, otherMax)
-                case IntegerValue(value) ⇒
-                    if (value >= min && value <= max)
-                        NoUpdate
-                    else
-                        newIntegerValueRange(this.min, value, this.max, value)
-                case other ⇒ MetaInformationUpdateIllegalValue
-            }
-    }
-
-    case class IntegerValue(
-        value: Int)
+    case class IntegerValue private (
+        val initial: Int,
+        val value: Int)
             extends super.IntegerValue {
 
+        def this(value: Int) = this(value, value)
+
+        def update(newValue: Int): DomainValue = IntegerValue(initial, newValue)
+
         override def merge(pc: Int, value: DomainValue): Update[DomainValue] =
             value match {
-                case AnIntegerValue() ⇒ StructuralUpdate(value)
-                case IntegerValueRange(otherMin, otherMax) ⇒
-                    newIntegerValueRange(this.value, otherMin, this.value, otherMax)
-                case IntegerValue(otherValue) ⇒
-                    if (this.value == otherValue)
-                        NoUpdate
-                    else
-                        newIntegerValueRange(this.value, otherValue, this.value, otherValue)
+                case AnIntegerValue ⇒ StructuralUpdate(value)
+                case IntegerValue(otherInitial, otherValue) ⇒
+                    if (this.value == otherValue) {
+                        if (this.initial == otherInitial)
+                            NoUpdate
+                        else if (Math.abs(this.value - this.initial) > Math.abs(this.value - otherInitial)) {
+                            MetaInformationUpdate(IntegerValue(this.initial, this.value))
+                        } else {
+                            MetaInformationUpdate(IntegerValue(otherInitial, this.value))
+                        }
+                    } else {
+                        // the value is only allowed to grow in one direction!
+                        val newInitial =
+                            if (Math.abs(otherValue - this.initial) > Math.abs(otherValue - otherInitial))
+                                this.initial
+                            else
+                                otherInitial
+                        val spread = Math.abs(otherValue - newInitial)
+                        if (spread > maxSpread || // <= we can't explore the entire space of integer values
+                            spread < Math.abs(this.value - this.initial)) { // <= the values are no longer growing in one direction
+                            StructuralUpdate(AnIntegerValue)
+                        } else {
+                            StructuralUpdate(IntegerValue(newInitial, otherValue))
+                        }
+                    }
                 case other ⇒ MetaInformationUpdateIllegalValue
             }
+
+        def copyToRegister = this
+
+        override def toString: String = {
+            "IntegerValue("+value+",initial="+initial+")"
+        }
     }
 
-    def newBooleanValue(): DomainValue = IntegerValueRange(0, 1)
-    def newBooleanValue(pc: Int): DomainValue = IntegerValueRange(0, 1)
+    def newBooleanValue(): DomainValue = AnIntegerValue
+    def newBooleanValue(pc: Int): DomainValue = AnIntegerValue
     def newBooleanValue(pc: Int, value: Boolean): DomainValue =
-        if (value) IntegerValue(1) else IntegerValue(0)
+        if (value) new IntegerValue(1) else new IntegerValue(0)
 
-    def newByteValue() = IntegerValueRange(Byte.MinValue, Byte.MaxValue)
-    def newByteValue(pc: Int, value: Byte) = IntegerValue(value)
+    def newByteValue() = AnIntegerValue
+    def newByteValue(pc: Int, value: Byte) = new IntegerValue(value)
 
-    def newShortValue() = IntegerValueRange(Short.MinValue, Short.MaxValue)
-    def newShortValue(pc: Int, value: Short) = IntegerValue(value)
+    def newShortValue() = AnIntegerValue
+    def newShortValue(pc: Int, value: Short) = new IntegerValue(value)
 
-    def newCharValue() = IntegerValueRange(Char.MinValue, Char.MaxValue)
-    def newCharValue(pc: Int, value: Byte) = IntegerValue(value)
+    def newCharValue() = AnIntegerValue
+    def newCharValue(pc: Int, value: Byte) = new IntegerValue(value)
 
-    def newIntegerValue() = AnIntegerValue()
-    def newIntegerValue(pc: Int, value: Int) = IntegerValue(value)
-    def newIntegerConstant0: DomainValue = IntegerValue(0)
+    def newIntegerValue() = AnIntegerValue
+    def newIntegerValue(pc: Int, value: Int) = new IntegerValue(value)
+    def newIntegerConstant0: DomainValue = new IntegerValue(0)
 
-    def newIntegerValueRange(pc: Int, min: Int = Int.MinValue, max: Int = Int.MaxValue): DomainValue = 
-        IntegerValueRange(min,max)
-    
-    protected[this] def newIntegerValueRange(min1: Int, min2: Int, max1: Int, max2: Int) = {
-        val newMin = Math.min(min1, min2)
-        val newMax = Math.max(max1, max2)
-        if (newMin == Int.MinValue && newMax == Int.MaxValue)
-            StructuralUpdate(AnIntegerValue())
-        else
-            StructuralUpdate(IntegerValueRange(newMin, newMax))
-    }
 }
 

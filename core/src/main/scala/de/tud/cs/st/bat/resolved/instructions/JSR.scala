@@ -49,4 +49,5 @@ case class JSR(
 
     def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 3
 
+    override def toString = "JSR(⤼"+branchoffset+")"
 }

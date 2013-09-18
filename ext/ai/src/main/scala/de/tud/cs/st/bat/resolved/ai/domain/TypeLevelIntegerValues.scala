@@ -165,6 +165,8 @@ trait DefaultTypeLevelIntegerValues[I]
             case TheIllegalValue      ⇒ MetaInformationUpdateIllegalValue
             case _                    ⇒ MetaInformationUpdateIllegalValue
         }
+        
+        def copyToRegister = this
     }
     case object ByteValue extends super.ByteValue {
         override def merge(pc: Int, value: DomainValue): Update[DomainValue] = value match {
@@ -175,6 +177,8 @@ trait DefaultTypeLevelIntegerValues[I]
             case other @ CharValue    ⇒ StructuralUpdate(other)
             case other                ⇒ MetaInformationUpdateIllegalValue
         }
+        
+        def copyToRegister = this
     }
 
     case object ShortValue extends super.ShortValue {
@@ -186,6 +190,8 @@ trait DefaultTypeLevelIntegerValues[I]
             case other @ CharValue    ⇒ StructuralUpdate(IntegerValue)
             case other                ⇒ MetaInformationUpdateIllegalValue
         }
+        
+        def copyToRegister = this
     }
 
     case object CharValue extends super.CharValue {
@@ -197,6 +203,8 @@ trait DefaultTypeLevelIntegerValues[I]
             case other @ IntegerValue ⇒ StructuralUpdate(other)
             case other                ⇒ MetaInformationUpdateIllegalValue
         }
+        
+        def copyToRegister = this
     }
 
     case object IntegerValue extends super.IntegerValue {
@@ -209,6 +217,8 @@ trait DefaultTypeLevelIntegerValues[I]
             case ShortValue      ⇒ NoUpdate
             case other           ⇒ MetaInformationUpdateIllegalValue
         }
+        
+        def copyToRegister = this
     }
 
     def newBooleanValue(): DomainValue = BooleanValue

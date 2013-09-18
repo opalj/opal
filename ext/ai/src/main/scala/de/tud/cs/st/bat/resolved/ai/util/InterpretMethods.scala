@@ -57,6 +57,12 @@ object InterpretMethods {
     import collection.JavaConversions._
 
     def main(args: Array[String]) {
+        if (args.size == 0) {
+            println("Performs an abstract interpretation of all methods of all classes.")
+            println("1. [Optional] domain=<DOMAIN CLASS> the configurable domain to use during the abstract interpretation.")
+            println("... jar files  and directories containing jar files.")
+            return ;
+        }
         if (args.size > 0 && args(0).startsWith("domain=")) {
             interpret(
                 Class.forName(args.head.substring(7)).asInstanceOf[Class[_ <: ConfigurableDomain[_]]],
@@ -78,22 +84,29 @@ object InterpretMethods {
         domainClass: Class[_ <: ConfigurableDomain[_]],
         files: Seq[java.io.File],
         beVerbose: Boolean = false): Option[String] = {
-        
+
         reset('OVERALL)
         reset('READING)
-        reset('PARSING)        
+        reset('PARSING)
         reset('AI)
-        
+
         var collectedExceptions: List[(ClassFile, Method, Throwable)] = List()
         var classesCount = 0
         var methodsCount = 0
 
         val domainConstructor = domainClass.getConstructor(classOf[Object])
-        
+
         time('OVERALL) {
+            val theFiles = files.flatMap { file ⇒
+                if (file.isDirectory())
+                    file.listFiles()
+                else
+                    List(file)
+            }
             for {
-                file ← files
-                jarFile = new ZipFile(file)
+                file ← theFiles
+                if (file.toString().endsWith(".jar"))
+                jarFile = { if (beVerbose) println(Console.BOLD + file.toString + Console.RESET); new ZipFile(file) }
                 jarEntry ← (jarFile).entries
                 if !jarEntry.isDirectory && jarEntry.getName.endsWith(".class")
             } {

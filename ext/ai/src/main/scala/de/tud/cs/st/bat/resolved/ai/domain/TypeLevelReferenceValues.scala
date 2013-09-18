@@ -292,6 +292,8 @@ trait DefaultTypeLevelReferenceValues[I]
         val isPrecise: Boolean)
             extends ReferenceValue {
 
+        def copyToRegister = AReferenceValue(pc, valueType, isNull, isPrecise)
+
         override def nonEmpty = valueType.nonEmpty
 
         override def size = valueType.size
@@ -470,6 +472,7 @@ trait DefaultTypeLevelReferenceValues[I]
                         ", isPrecise="+isPrecise+")"
             }
         }
+
     }
 
     /**
@@ -498,6 +501,8 @@ trait DefaultTypeLevelReferenceValues[I]
     case class MultipleReferenceValues(
         val values: Set[AReferenceValue])
             extends ReferenceValue {
+
+        def copyToRegister = MultipleReferenceValues(values.map(_.copyToRegister))
 
         def isSubtypeOf(supertype: ReferenceType, onNull: ⇒ Answer): Answer = {
             val firstAnswer = values.head.isSubtypeOf(supertype, onNull)

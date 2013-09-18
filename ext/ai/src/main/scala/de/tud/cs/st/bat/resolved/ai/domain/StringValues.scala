@@ -51,6 +51,8 @@ trait StringValues[I]
             extends AReferenceValue(pc, Set(ObjectType.String), No, true) {
 
         assume(value != null)
+        
+        override def copyToRegister = this // there are/will be no updates (Value semantics!)
 
         override def equals(other: Any): Boolean = {
             super.equals(other) &&

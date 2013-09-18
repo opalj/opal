@@ -48,4 +48,6 @@ case class GOTO(
     def mnemonic: String = "goto"
 
     def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 3
+    
+    override def toString = "GOTO(⤼"+branchoffset+")"
 }

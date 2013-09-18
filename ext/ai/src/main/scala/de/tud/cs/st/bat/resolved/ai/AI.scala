@@ -1076,31 +1076,37 @@ trait AI {
                         | 54 /*istore*/
                         | 55 /*lstore*/ ⇒
                         val lvIndex = instruction.asInstanceOf[StoreLocalVariableInstruction].lvIndex
-                        fallThrough(operands.tail, updateLocals(lvIndex, operands.head))
+                        fallThrough(
+                            operands.tail,
+                            updateLocals(lvIndex, operands.head.copyToRegister))
                     case 75 /*astore_0*/
                         | 71 /*dstore_0*/
                         | 67 /*fstore_0*/
                         | 63 /*lstore_0*/
                         | 59 /*istore_0*/ ⇒
-                        fallThrough(operands.tail, updateLocals(0, operands.head))
+                        fallThrough(
+                            operands.tail, updateLocals(0, operands.head.copyToRegister))
                     case 76 /*astore_1*/
                         | 72 /*dstore_1*/
                         | 68 /*fstore_1*/
                         | 64 /*lstore_1*/
                         | 60 /*istore_1*/ ⇒
-                        fallThrough(operands.tail, updateLocals(1, operands.head))
+                        fallThrough(
+                            operands.tail, updateLocals(1, operands.head.copyToRegister))
                     case 77 /*astore_2*/
                         | 73 /*dstore_2*/
                         | 69 /*fstore_2*/
                         | 65 /*lstore_2*/
                         | 61 /*istore_2*/ ⇒
-                        fallThrough(operands.tail, updateLocals(2, operands.head))
+                        fallThrough(
+                            operands.tail, updateLocals(2, operands.head.copyToRegister))
                     case 78 /*astore_3*/
                         | 74 /*dstore_3*/
                         | 70 /*fstore_3*/
                         | 66 /*lstore_3*/
                         | 62 /*istore_3*/ ⇒
-                        fallThrough(operands.tail, updateLocals(3, operands.head))
+                        fallThrough(
+                            operands.tail, updateLocals(3, operands.head.copyToRegister))
 
                     //
                     // PUSH CONSTANT VALUE

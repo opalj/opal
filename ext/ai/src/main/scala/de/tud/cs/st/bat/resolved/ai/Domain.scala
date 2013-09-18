@@ -172,6 +172,8 @@ trait Domain[+I] {
          * @param value The "new" domain value.
          */
         def merge(pc: Int, value: DomainValue): Update[DomainValue]
+
+        def copyToRegister: DomainValue
     }
 
     /**
@@ -216,6 +218,8 @@ trait Domain[+I] {
                 MetaInformationUpdateIllegalValue
 
         override def toString = "IllegalValue"
+
+        final def copyToRegister = this
     }
 
     /**
@@ -263,7 +267,7 @@ trait Domain[+I] {
      */
     class ReturnAddressValue(
         val address: Int)
-            extends Value {
+            extends Value { this : DomainValue =>
 
         override def merge(pc: Int, value: DomainValue): Update[DomainValue] =
             value match {
@@ -274,6 +278,8 @@ trait Domain[+I] {
         final def computationalType: ComputationalType = ComputationalTypeReturnAddress
 
         override def toString = "ReturnAddress: "+address
+
+        final def copyToRegister = this
     }
     /**
      * Defines an extractor method to facilitate matching against return addresses.

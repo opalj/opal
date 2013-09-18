@@ -35,35 +35,57 @@ package ai;
 /**
  * Just a very large number of methods that contain loops.
  * 
- * <h2>NOTE</h2> This class is not meant to be (automatically) recompiled; it just serves
- * documentation purposes. The compiled class that is used by the tests is found in the
- * test-classfiles directory.
+ * <h2>NOTE</h2> This class is not meant to be (automatically) recompiled; it
+ * just serves documentation purposes. The compiled class that is used by the
+ * tests is found in the test-classfiles directory.
  * 
  * @author Michael Eichberg
  */
 public class MethodsWithLoops {
 
-    public static void singleStepLoop() {
-        for (int i = 0; i < 1; i++) {
-            System.out.println(i);
-        }
-    }
+	public static void singleStepLoop() {
+		for (int i = 0; i < 1; i++) {
+			System.out.println(i);
+		}
+	}
 
-    public static void twoStepsLoop() {
-        for (int i = 0; i < 2; i++) {
-            System.out.println(i);
-        }
-    }
+	public static void twoStepsLoop() {
+		for (int i = 0; i < 2; i++) {
+			System.out.println(i);
+		}
+	}
 
-    public static void countTo10() {
-        for (int i = 0; i < 10; i++) {
-            System.out.println(i);
-        }
-    }
+	public static void countTo10() {
+		for (int i = 0; i < 10; i++) {
+			System.out.println(i);
+		}
+	}
 
-    public static void endless() {
-        while (true) {
-            System.out.println(System.nanoTime());
-        }
-    }
+	public static void countToM10() {
+		for (int i = 0; i > -10; i--) {
+			System.out.println(i);
+		}
+	}
+
+	public static void endlessDueToBug() {
+		int i = 1;
+		while (i < 2) {
+			System.out.println(System.nanoTime());
+			i -= 1;
+		}
+	}
+
+	public static Object iterateList(java.util.List<?> list) {
+		java.util.List<?> l = list;
+		while (l != null) {
+			l = (java.util.List<?>) l.get(0);
+		}
+		return list.toString();
+	}
+
+	public static void endless() {
+		while (true) {
+			System.out.println(System.nanoTime());
+		}
+	}
 }
