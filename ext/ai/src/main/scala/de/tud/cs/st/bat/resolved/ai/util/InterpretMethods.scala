@@ -78,12 +78,18 @@ object InterpretMethods {
         domainClass: Class[_ <: ConfigurableDomain[_]],
         files: Seq[java.io.File],
         beVerbose: Boolean = false): Option[String] = {
+        
+        reset('OVERALL)
+        reset('READING)
+        reset('PARSING)        
+        reset('AI)
+        
         var collectedExceptions: List[(ClassFile, Method, Throwable)] = List()
         var classesCount = 0
         var methodsCount = 0
 
         val domainConstructor = domainClass.getConstructor(classOf[Object])
-
+        
         time('OVERALL) {
             for {
                 file ← files

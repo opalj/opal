@@ -30,4 +30,5 @@
 ##Scala - Lessons Learned
 - we could use better support for large-scale family polymorphism
 - we could use ``constructor-dependent types'' (see AIResultBuilder for why)
+- we could use ``case traits'' to automatically create extractor methods based on certain fields
 - method dependent types ``often'' cause problems

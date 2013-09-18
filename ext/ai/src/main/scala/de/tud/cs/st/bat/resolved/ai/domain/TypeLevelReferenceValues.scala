@@ -682,36 +682,3 @@ trait DefaultTypeLevelReferenceValues[I]
     def aastore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
         ComputationWithSideEffectOnly
 }
-
-trait StringValuesTracing[I]
-        extends DefaultTypeLevelReferenceValues[I] {
-
-    class AStringValue(
-        pc: Int,
-        val value: String)
-            extends AReferenceValue(pc, Set(ObjectType.String), No, true) {
-
-        assume(value != null)
-
-        override def equals(other: Any): Boolean = {
-            super.equals(other) &&
-                other.asInstanceOf[AStringValue].value == this.value
-        }
-
-        override protected def canEqual(other: AReferenceValue): Boolean =
-            other.isInstanceOf[AStringValue]
-
-        override def hashCode: Int = {
-            super.hashCode + 41 * value.hashCode()
-        }
-
-        override def toString(): String =
-            "String(pc="+pc+", value=\""+value+"\")"
-    }
-
-    override def newStringValue(pc: Int, value: String): DomainValue =
-        new AStringValue(pc, value)
-
-}
-
-

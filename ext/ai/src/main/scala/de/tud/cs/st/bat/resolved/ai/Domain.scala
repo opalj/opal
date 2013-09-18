@@ -215,9 +215,6 @@ trait Domain[+I] {
             else
                 MetaInformationUpdateIllegalValue
 
-        //        type ValueType = Nothing
-        //        def valueType = domainException(Domain.this, "an illegal value has no type")
-
         override def toString = "IllegalValue"
     }
 
@@ -246,8 +243,8 @@ trait Domain[+I] {
      * guarantee that the value was not used in the first case and, hence, continuing
      * the interpretation is meaningless.
      *
-     * This method is solely defined for documentation purposes and to catch
-     * implementation errors early on.
+     * @note This method is solely defined for documentation purposes and to catch
+     *      implementation errors early on.
      */
     final def StructuralUpdateIllegalValue: StructuralUpdate[Nothing] =
         throw DomainException(Domain.this,
@@ -257,7 +254,12 @@ trait Domain[+I] {
     /**
      * Stores a single return address (i.e., a program counter/index into the code array).
      *
-     * @note The framework completely handles all aspects related to return address values.
+     * @note Though the framework completely handles all aspects related to return address
+     *      values, it is nevertheless necessary that this class inherits from `Value`
+     *      as return addresses are stored on the stack / in the registers. However,
+     *      if the `Value` trait should be refined, all additional methods may – from
+     *      the point-of-view of BATAI - just throw an `OperationNotSupportedException`
+     *      as these additional methods will never be called by BATAI.
      */
     class ReturnAddressValue(
         val address: Int)
@@ -273,6 +275,9 @@ trait Domain[+I] {
 
         override def toString = "ReturnAddress: "+address
     }
+    /**
+     * Defines an extractor method to facilitate matching against return addresses.
+     */
     object ReturnAddressValue {
         def unapply(retAddress: ReturnAddressValue): Option[Int] = Some(retAddress.address)
     }
@@ -330,8 +335,15 @@ trait Domain[+I] {
      */
     def newBooleanValue(): DomainValue
 
+    /**
+     * Factory method to create a representation of a boolean value if we now the
+     * origin of the value.
+     */
     def newBooleanValue(pc: Int): DomainValue
 
+    /**
+     * Factory method to create a representation of a boolean value with the given value.
+     */
     def newBooleanValue(pc: Int, value: Boolean): DomainValue
 
     /**
@@ -546,10 +558,10 @@ trait Domain[+I] {
     /**
      * Returns the type(type bounds) of the value. Depending on the control flow, the same
      * `DomainValue` can represent different values with different types. However,
-     * all types that the domain value represents have to belong to the same
+     * all types that the domain value represents must belong to the same
      * computational type category. I.e., it is possible that the value captures the
      * types "`NullPointerException` and `IllegalArgumentException`", but it will never
-     * capture – at the same time – the (Java) types `int` and `long`.
+     * capture – at the same time – the (Java) types `int` and/or `long`.
      */
     /*ABSTRACT*/ def types(value: DomainValue): TypesAnswer[_]
 
@@ -560,16 +572,20 @@ trait Domain[+I] {
     /*ABSTRACT*/ def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer
 
     /**
-     * Tries to determine if the type of the given non-null reference value is a subtype
-     * of the specified reference type `supertype`.
+     * Tries to determine if the runtime type of the given reference value could be a
+     * subtype of the specified reference type `supertype`. I.e., if the type of the
+     * value is not precisely known then all subtypes of the values type are also
+     * taken into consideration when analyzing the subtype relation and only if we
+     * can guarantee that none is a subtype of the given `supertype` the answer will be
+     * `No`.
      */
-    /*ABSTRACT*/ def isSubtypeOf(value: DomainValue, supertype: ReferenceType, onNull: ⇒ Answer): Answer
+    /*ABSTRACT*/ def isSubtypeOf(
+        value: DomainValue,
+        supertype: ReferenceType,
+        onNull: ⇒ Answer): Answer
 
     /**
      * Tests if the two given integer values are equal.
-     *
-     * To return meaningful results a domain is required that is able to track the
-     * flow of concrete integer values.
      *
      * @param value1 A value with computational type integer.
      * @param value2 A value with computational type integer.
@@ -578,9 +594,6 @@ trait Domain[+I] {
 
     /**
      * Tests if the two given integer values are not equal.
-     *
-     * To return meaningful results a domain is required that is able to track the
-     * flow of concrete integer values.
      *
      * @param value1 A value with computational type integer.
      * @param value2 A value with computational type integer.
@@ -1142,19 +1155,22 @@ trait Domain[+I] {
     //
 
     /**
-     * Merges the given operand stacks and register assignments.
+     * Merges the given operand stacks and local variables.
      *
      * In general there should be no need to override this method.
      *
      * @return The merged operand stack and registers.
      *      Returns `NoUpdate` if this memory layout already subsumes the given memory
      *      layout.
-     * @note The size of the operands stacks and the number of registers/locals is
-     *      guaranteed to be same.
+     * @note The size of the operands stacks that are to be merged and the number of
+     *      registers/locals that are to be merged can be expected to be identical
+     *      under the assumption that the bytecode is valid and BATAI contains no
+     *      bugs.
      * @note The operand stacks are guaranteed to contain compatible values w.r.t. the
      *      computational type (unless the bytecode is not valid or BATAI contains
      *      an error). I.e., if the result of merging two operand stack is an
      *      `IllegalValue` we assume that the domain implementation is incomplete.
+     *      However, the merging of two register values can result in an illegal value.
      */
     def merge(
         pc: Int,
@@ -1185,16 +1201,16 @@ trait Domain[+I] {
                     otherRemainingOperands = otherRemainingOperands.tail
 
                     val newOperand =
-                        if (thisOperand == otherOperand) {
+                        if (thisOperand eq otherOperand) {
                             thisOperand
                         } else {
                             val updatedOperand = thisOperand.merge(pc, otherOperand)
                             val newOperand = updatedOperand match {
-                                case SomeUpdate(operand) ⇒ operand
-                                case NoUpdate            ⇒ thisOperand
+                                case NoUpdate   ⇒ thisOperand
+                                case someUpdate ⇒ someUpdate.value
                             }
                             assume(!newOperand.isInstanceOf[IllegalValue],
-                                "domain merge - the result of merging the operands "+thisOperand+" and "+otherOperand+" is a IllegalValue")
+                                "merging of the operands "+thisOperand+" and "+otherOperand+" failed")
                             operandsUpdated = operandsUpdated &: updatedOperand
                             newOperand
                         }
@@ -1233,7 +1249,7 @@ trait Domain[+I] {
                                 localsUpdated = localsUpdated &: MetaInformationUpdateType
                                 TheIllegalValue
                             }
-                        } else if (thisLocal == otherLocal) {
+                        } else if (thisLocal eq otherLocal) {
                             thisLocal
                         } else {
                             val updatedLocal = thisLocal.merge(pc, otherLocal)

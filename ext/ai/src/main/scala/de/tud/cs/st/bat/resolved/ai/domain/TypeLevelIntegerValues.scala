@@ -38,6 +38,11 @@ package domain
 
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
+/**
+ * Domain to trace integer values at the type level.
+ * 
+ * @author Michael Eichberg
+ */
 trait TypeLevelIntegerValues[I] extends Domain[I] {
 
     // -----------------------------------------------------------------------------------

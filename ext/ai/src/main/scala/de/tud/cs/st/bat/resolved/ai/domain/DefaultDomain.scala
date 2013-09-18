@@ -102,6 +102,7 @@ class ConfigurablePreciseDomain[I](
         with DefaultValueBinding[I]
         with DefaultPreciseIntegerValues[I]
         with DefaultTypeLevelReferenceValues[I]
+            with StringValues[I]
         with DefaultTypeLevelLongValues[I]
         with DefaultTypeLevelFloatValues[I]
         with DefaultTypeLevelDoubleValues[I]

@@ -45,7 +45,7 @@ import org.scalatest.matchers.ShouldMatchers
 import org.scalatest.concurrent.TimeLimitedTests
 import org.scalatest.time._
 import org.scalatest.BeforeAndAfterAll
-import scala.util.control.ControlThrowable
+import org.scalatest.ParallelTestExecution
 
 /**
  * This test(suite) just loads a very large number of class files and performs
@@ -56,33 +56,45 @@ import scala.util.control.ControlThrowable
 @RunWith(classOf[JUnitRunner])
 class DefaultTypeLevelReferenceValuesTest
         extends FlatSpec
-        with ShouldMatchers {
+        with ShouldMatchers
+        with ParallelTestExecution {
 
     val domain = new DefaultDomain
     import domain._
 
+    // Helper object to match against Sets which contain one element
     object Set1 {
         def unapply[T](s: Set[T]): Option[T] =
             if (s.size == 1) Some(s.head) else None
     }
 
     val ref1 = AReferenceValue(444, ObjectType.Object, No, true)
+
     val ref1Alt = AReferenceValue(444, ObjectType.Object, No, true)
+
     val ref2 = AReferenceValue(668, ObjectType("java/io/File"), No, true)
+
     val ref2Alt = AReferenceValue(668, ObjectType("java/io/File"), No, true)
+
     val ref3 = AReferenceValue(732, ObjectType("java/io/File"), No, true)
-    val ref1MergeRef2 = ref1.merge(-1, ref2).value.asInstanceOf[MultipleReferenceValues]
-    val ref1AltMergeRef2Alt = ref1Alt.merge(-1, ref2Alt).value.asInstanceOf[MultipleReferenceValues]
-    val ref1MergeRef2MergeRef3 = ref1MergeRef2.merge(-1, ref3).value.asInstanceOf[MultipleReferenceValues]
-    val ref3MergeRef1MergeRef2 = ref3.merge(-1, ref1MergeRef2).value.asInstanceOf[MultipleReferenceValues]
+
+    val ref1MergeRef2 =
+        ref1.merge(-1, ref2).value.asInstanceOf[MultipleReferenceValues]
+
+    val ref1AltMergeRef2Alt =
+        ref1Alt.merge(-1, ref2Alt).value.asInstanceOf[MultipleReferenceValues]
+
+    val ref1MergeRef2MergeRef3 =
+        ref1MergeRef2.merge(-1, ref3).value.asInstanceOf[MultipleReferenceValues]
+
+    val ref3MergeRef1MergeRef2 =
+        ref3.merge(-1, ref1MergeRef2).value.asInstanceOf[MultipleReferenceValues]
 
     //
     // TESTS
     //
 
-    behavior of "type level reference values"
-
-    // java.lang.Object with java.io.File(pc=-1;isNull=No;isPrecise=false),
+    behavior of "the domain that models reference values at the type level"
 
     it should ("be able to handle upper bounds updates") in {
         val File = ObjectType("java/io/File")
@@ -132,17 +144,3 @@ class DefaultTypeLevelReferenceValuesTest
     }
 
 }
-
-/*
-            java.lang.Object(pc=444;isNull=No;isPrecise=true),
-            java.io.File(pc=668;isNull=No;isPrecise=true),
-            java.lang.Object(pc=-1;isNull=No;isPrecise=false))
-        merge Values(
-            java.lang.Object(pc=444;isNull=No;isPrecise=true),
-            java.io.File(pc=668;isNull=No;isPrecise=true),
-            java.io.File(pc=-1;isNull=No;isPrecise=false))
-        =>    Values(
-            java.lang.Object(pc=444;isNull=No;isPrecise=true),
-            java.io.File(pc=668;isNull=No;isPrecise=true),
-            java.io.File with java.lang.Object(pc=-1;isNull=No;isPrecise=false))
-*/
