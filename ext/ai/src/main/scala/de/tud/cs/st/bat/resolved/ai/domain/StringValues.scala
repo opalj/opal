@@ -52,7 +52,7 @@ trait StringValues[I]
 
         assume(value != null)
         
-        override def copyToRegister = this // there are/will be no updates (Value semantics!)
+        override def onCopyToRegister = this // there are/will be no updates (Value semantics!)
 
         override def equals(other: Any): Boolean = {
             super.equals(other) &&

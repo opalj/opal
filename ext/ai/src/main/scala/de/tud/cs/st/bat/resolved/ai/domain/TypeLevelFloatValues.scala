@@ -109,7 +109,7 @@ trait DefaultTypeLevelFloatValues[I]
             case _          ⇒ MetaInformationUpdateIllegalValue
         }
         
-        def copyToRegister = this
+        def onCopyToRegister = this
     }
 
     def newFloatValue(): FloatValue = FloatValue

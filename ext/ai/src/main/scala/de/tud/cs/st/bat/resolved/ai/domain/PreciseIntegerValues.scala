@@ -216,7 +216,7 @@ trait DefaultPreciseIntegerValues[I]
             case other               ⇒ MetaInformationUpdateIllegalValue
         }
 
-        def copyToRegister = this
+        def onCopyToRegister = this
     }
 
     case class IntegerValue private (
@@ -258,7 +258,7 @@ trait DefaultPreciseIntegerValues[I]
                 case other ⇒ MetaInformationUpdateIllegalValue
             }
 
-        def copyToRegister = this
+        def onCopyToRegister = this
 
         override def toString: String = {
             "IntegerValue("+value+",initial="+initial+")"

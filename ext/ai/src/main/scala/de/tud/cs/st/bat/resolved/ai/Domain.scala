@@ -173,7 +173,7 @@ trait Domain[+I] {
          */
         def merge(pc: Int, value: DomainValue): Update[DomainValue]
 
-        def copyToRegister: DomainValue
+        def onCopyToRegister: DomainValue
     }
 
     /**
@@ -219,7 +219,7 @@ trait Domain[+I] {
 
         override def toString = "IllegalValue"
 
-        final def copyToRegister = this
+        final def onCopyToRegister = this
     }
 
     /**
@@ -279,7 +279,7 @@ trait Domain[+I] {
 
         override def toString = "ReturnAddress: "+address
 
-        final def copyToRegister = this
+        final def onCopyToRegister = this
     }
     /**
      * Defines an extractor method to facilitate matching against return addresses.
