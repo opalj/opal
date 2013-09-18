@@ -62,6 +62,9 @@ trait PreciseIntegerValues[I] extends Domain[I] {
      */
     val maxSpread = 25
 
+    /**
+     * Determines if an exception is thrown in case of a potential division by zero.
+     */
     val divisionByZeroIfUnknown = true
 
     private final val typesAnswerIntegerLike: IsPrimitiveType = IsPrimitiveType(IntegerType)
