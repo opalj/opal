@@ -906,12 +906,12 @@ trait AI {
                     }
                     case 178 /*getstatic*/ ⇒ {
                         val getstatic = instruction.asInstanceOf[GETSTATIC]
-                        fallThrough(
+                        computationWithReturnValueAndException(
                             domain.getstatic(
                                 pc,
                                 getstatic.declaringClass,
                                 getstatic.name,
-                                getstatic.fieldType) :: operands)
+                                getstatic.fieldType), operands)
                     }
                     case 181 /*putfield*/ ⇒ {
                         val putfield = instruction.asInstanceOf[PUTFIELD]
@@ -928,13 +928,13 @@ trait AI {
                     case 179 /*putstatic*/ ⇒ {
                         val putstatic = instruction.asInstanceOf[PUTSTATIC]
                         val value :: rest = operands
-                        domain.putstatic(
-                            pc,
-                            value,
-                            putstatic.declaringClass,
-                            putstatic.name,
-                            putstatic.fieldType)
-                        fallThrough(rest)
+                        computationWithException(
+                            domain.putstatic(
+                                pc,
+                                value,
+                                putstatic.declaringClass,
+                                putstatic.name,
+                                putstatic.fieldType), rest)
                     }
 
                     //

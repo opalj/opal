@@ -40,12 +40,12 @@ import reflect.ClassTag
 
 /**
  * Implements the handling of field access instructions at the type level ignoring
- * potential `NullPointerExceptions`. 
- * 
+ * potential `NullPointerExceptions`.
+ *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
 trait TypeLevelFieldAccessInstructions { this: Domain[_] ⇒
- 
+
     def getfield(pc: Int,
                  objectref: DomainValue,
                  declaringClass: ObjectType,
@@ -57,7 +57,7 @@ trait TypeLevelFieldAccessInstructions { this: Domain[_] ⇒
                   declaringClass: ObjectType,
                   name: String,
                   fieldType: FieldType) =
-        newTypedValue(fieldType)
+        ComputedValue(newTypedValue(fieldType))
 
     def putfield(pc: Int,
                  objectref: DomainValue,
@@ -66,15 +66,14 @@ trait TypeLevelFieldAccessInstructions { this: Domain[_] ⇒
                  name: String,
                  fieldType: FieldType) = {
         ComputationWithSideEffectOnly
-        /* Nothing to do. */
     }
 
     def putstatic(pc: Int,
                   value: DomainValue,
                   declaringClass: ObjectType,
                   name: String,
-                  fieldType: FieldType) {
-        /* Nothing to do. */
+                  fieldType: FieldType) = {
+        ComputationWithSideEffectOnly
     }
 
 }

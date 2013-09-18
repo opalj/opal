@@ -774,7 +774,7 @@ trait Domain[+I] {
                         operands: Operands,
                         locals: Locals): (Operands, Locals) =
         (operands, locals)
-    val IsNull = establishIsNull _
+    private[ai] val IsNull = establishIsNull _
 
     /**
      * Called by BATAI when it establishes that the value is guaranteed not to be `null`.
@@ -787,7 +787,7 @@ trait Domain[+I] {
                            operands: Operands,
                            locals: Locals): (Operands, Locals) =
         (operands, locals)
-    val IsNonNull = establishIsNonNull _
+    private[ai] val IsNonNull = establishIsNonNull _
 
     /**
      * Called by BATAI when two values were compared for reference equality and
@@ -799,7 +799,7 @@ trait Domain[+I] {
                                     operands: Operands,
                                     locals: Locals): (Operands, Locals) =
         (operands, locals)
-    val AreEqualReferences = establishAreEqualReferences _
+    private[ai] val AreEqualReferences = establishAreEqualReferences _
 
     def establishAreNotEqualReferences(pc: Int,
                                        value1: DomainValue,
@@ -807,7 +807,7 @@ trait Domain[+I] {
                                        operands: Operands,
                                        locals: Locals): (Operands, Locals) =
         (operands, locals)
-    val AreNotEqualReferences = establishAreNotEqualReferences _
+    private[ai] val AreNotEqualReferences = establishAreNotEqualReferences _
 
     def establishUpperBound(pc: Int,
                             bound: ReferenceType,
@@ -832,7 +832,7 @@ trait Domain[+I] {
                           operands: Operands,
                           locals: Locals): (Operands, Locals) =
         (operands, locals)
-    val AreEqual = establishAreEqual _
+    private[ai] val AreEqual = establishAreEqual _
 
     def establishAreNotEqual(pc: Int,
                              value1: DomainValue,
@@ -840,7 +840,7 @@ trait Domain[+I] {
                              operands: Operands,
                              locals: Locals): (Operands, Locals) =
         (operands, locals)
-    val AreNotEqual = establishAreNotEqual _
+    private[ai] val AreNotEqual = establishAreNotEqual _
 
     def establishIsLessThan(pc: Int,
                             value1: DomainValue,
@@ -848,7 +848,7 @@ trait Domain[+I] {
                             operands: Operands,
                             locals: Locals): (Operands, Locals) =
         (operands, locals)
-    val IsLessThan = establishIsLessThan _
+    private[ai] val IsLessThan = establishIsLessThan _
 
     def establishIsLessThanOrEqualTo(pc: Int,
                                      value1: DomainValue,
@@ -856,37 +856,37 @@ trait Domain[+I] {
                                      operands: Operands,
                                      locals: Locals): (Operands, Locals) =
         (operands, locals)
-    val IsLessThanOrEqualTo = establishIsLessThanOrEqualTo _
+    private[ai] val IsLessThanOrEqualTo = establishIsLessThanOrEqualTo _
 
-    protected[ai] val IsGreaterThan: TwoValuesConstraint =
+    private[ai] val IsGreaterThan: TwoValuesConstraint =
         (pc: Int, value1: DomainValue, value2: DomainValue, operands: Operands, locals: Locals) ⇒
             establishIsLessThan(pc, value2, value1, operands, locals)
 
-    protected[ai] val IsGreaterThanOrEqualTo: TwoValuesConstraint =
+    private[ai] val IsGreaterThanOrEqualTo: TwoValuesConstraint =
         (pc: Int, value1: DomainValue, value2: DomainValue, operands: Operands, locals: Locals) ⇒
             establishIsLessThanOrEqualTo(pc, value2, value1, operands, locals)
 
-    protected[ai] val Is0: SingleValueConstraint =
+    private[ai] val Is0: SingleValueConstraint =
         (pc: Int, value: DomainValue, operands: Operands, locals: Locals) ⇒
             establishAreEqual(pc, value, newIntegerConstant0, operands, locals)
 
-    protected[ai] val IsNot0: SingleValueConstraint =
+    private[ai] val IsNot0: SingleValueConstraint =
         (pc: Int, value: DomainValue, operands: Operands, locals: Locals) ⇒
             establishAreNotEqual(pc, value, newIntegerConstant0, operands, locals)
 
-    protected[ai] val IsLessThan0: SingleValueConstraint =
+    private[ai] val IsLessThan0: SingleValueConstraint =
         (pc: Int, value: DomainValue, operands: Operands, locals: Locals) ⇒
             establishIsLessThan(pc, value, newIntegerConstant0, operands, locals)
 
-    protected[ai] val IsLessThanOrEqualTo0: SingleValueConstraint =
+    private[ai] val IsLessThanOrEqualTo0: SingleValueConstraint =
         (pc: Int, value: DomainValue, operands: Operands, locals: Locals) ⇒
             establishIsLessThanOrEqualTo(pc, value, newIntegerConstant0, operands, locals)
 
-    protected[ai] val IsGreaterThan0: SingleValueConstraint =
+    private[ai] val IsGreaterThan0: SingleValueConstraint =
         (pc: Int, value: DomainValue, operands: Operands, locals: Locals) ⇒
             establishIsLessThan(pc, newIntegerConstant0, value, operands, locals)
 
-    protected[ai] val IsGreaterThanOrEqualTo0: SingleValueConstraint =
+    private[ai] val IsGreaterThanOrEqualTo0: SingleValueConstraint =
         (pc: Int, value: DomainValue, operands: Operands, locals: Locals) ⇒
             establishIsLessThanOrEqualTo(pc, newIntegerConstant0, value, operands, locals)
 
@@ -900,6 +900,7 @@ trait Domain[+I] {
     // HELPER TYPES AND FUNCTIONS RELATED TO THE RESULT OF INSTRUCTIONS
     //
 
+    // TODO DELETE!
     type SucceedsOrNullPointerException = Computation[Nothing, DomainValue]
     type OptionalReturnValueOrExceptions = Computation[Option[DomainValue], Set[DomainValue]]
     type NumericValueOrNullPointerException = Computation[DomainValue, DomainValue]
@@ -924,15 +925,20 @@ trait Domain[+I] {
     //
     // CREATE ARRAY
     //
-    type NewArrayOrNegativeArraySizeException = Computation[DomainValue, DomainValue]
 
-    def newarray(pc: Int,
-                 count: DomainValue,
-                 componentType: FieldType): NewArrayOrNegativeArraySizeException
+    /**
+     * The return value is either a new array, a `NegativeArraySizeException`
+     * or some linking exception.
+     */
+    def newarray(
+        pc: Int,
+        count: DomainValue,
+        componentType: FieldType): Computation[DomainValue, DomainValue]
 
-    def multianewarray(pc: Int,
-                       counts: List[DomainValue],
-                       arrayType: ArrayType): NewArrayOrNegativeArraySizeException
+    def multianewarray(
+        pc: Int,
+        counts: List[DomainValue],
+        arrayType: ArrayType): Computation[DomainValue, DomainValue]
 
     //
     // LOAD FROM AND STORE VALUE IN ARRAYS
@@ -1061,7 +1067,7 @@ trait Domain[+I] {
     def getstatic(pc: Int,
                   declaringClass: ObjectType,
                   name: String,
-                  fieldType: FieldType): DomainValue
+                  fieldType: FieldType): Computation[DomainValue, DomainValue]
 
     /**
      * Returns the field's value and/or a new `NullPointerException` if the given
@@ -1078,7 +1084,7 @@ trait Domain[+I] {
                   value: DomainValue,
                   declaringClass: ObjectType,
                   name: String,
-                  fieldType: FieldType): Unit
+                  fieldType: FieldType): Computation[Nothing,DomainValue]
 
     //
     // METHOD INVOCATIONS

@@ -39,7 +39,7 @@ package domain
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 /**
- * Domain to track integer values at a more precise level.
+ * Configurable domain to track integer values at a more precise level.
  *
  * @author Michael Eichberg
  */
@@ -52,10 +52,14 @@ trait PreciseIntegerValues[I] extends Domain[I] {
     // -----------------------------------------------------------------------------------
 
     /**
-     * Effectively sets an upper boundary for how often a value is allowed to be
-     * updated. This value is only taken into consideration when two paths are merged.
+     * Determines for an integer value that is updated how large the update can be
+     * before we stop the precise tracking of the value and represent the respective
+     * value as "some integer value".
      *
-     * The default value is 25 which will effectively unroll a loop up to 25 times.
+     * This value is only taken into consideration when two paths are merged.
+     *
+     * The default value is 25 which will effectively unroll a loop with a loop
+     * counter that is incremented by one in each round up to 25 times.
      *
      * This is a configurable setting that may affect the overall precision of the
      * analysis that requires knowledge about integers.
@@ -67,7 +71,7 @@ trait PreciseIntegerValues[I] extends Domain[I] {
      */
     val divisionByZeroIfUnknown = true
 
-    private final val typesAnswerIntegerLike: IsPrimitiveType = IsPrimitiveType(IntegerType)
+    private final val typesAnswer: IsPrimitiveType = IsPrimitiveType(IntegerType)
 
     /**
      * Abstracts over all values with computational type `integer`.
@@ -76,7 +80,7 @@ trait PreciseIntegerValues[I] extends Domain[I] {
 
         final def computationalType: ComputationalType = ComputationalTypeInt
 
-        final def types: TypesAnswer[_] = typesAnswerIntegerLike
+        final def types: TypesAnswer[_] = typesAnswer
 
     }
 
@@ -85,6 +89,9 @@ trait PreciseIntegerValues[I] extends Domain[I] {
      */
     trait AnIntegerValue extends IntegerLikeValue
 
+    /**
+     * Represents a concrete integer value.
+     */
     trait IntegerValue extends IntegerLikeValue {
 
         val initial: Int
@@ -111,14 +118,21 @@ trait PreciseIntegerValues[I] extends Domain[I] {
     // QUESTION'S ABOUT VALUES
     //
 
-    protected def ifHasIntValue[T](value: DomainValue)(f: Int ⇒ T)(orElse: ⇒ T): T = {
+    protected def ifHasIntValue[T](
+        value: DomainValue)(
+            f: Int ⇒ T)(
+                orElse: ⇒ T): T = {
         value match {
             case v: IntegerValue ⇒ f(v.value)
             case _               ⇒ orElse
         }
     }
 
-    protected def ifBothHaveIntValues[T](value1: DomainValue, value2: DomainValue)(f: (Int, Int) ⇒ T)(orElse: ⇒ T): T = {
+    protected def ifBothHaveIntValues[T](
+        value1: DomainValue,
+        value2: DomainValue)(
+            f: (Int, Int) ⇒ T)(
+                orElse: ⇒ T): T = {
         ifHasIntValue(value1) { v1 ⇒
             ifHasIntValue(value2) { v2 ⇒ f(v1, v2) }(orElse)
         }(orElse)
@@ -157,16 +171,13 @@ trait PreciseIntegerValues[I] extends Domain[I] {
             ifHasIntValue(equalOrLargerValue) { v2 ⇒ Answer(v1 <= v2) }(Unknown)
         }(Unknown)
 
-    protected def updatedOperandsAndLocals(
+    protected def updateLocals(
         oldValue: DomainValue,
         newValue: DomainValue,
         operands: Operands,
         locals: Locals): (Operands, Locals) = {
         (
-            operands.map { operand ⇒
-                if (operand eq oldValue) { newValue }
-                else operand
-            },
+            operands,
             locals.map { local ⇒
                 if (local eq oldValue) { newValue }
                 else local
@@ -179,8 +190,24 @@ trait PreciseIntegerValues[I] extends Domain[I] {
                                 value: DomainValue,
                                 operands: Operands,
                                 locals: Locals): (Operands, Locals) = {
-        updatedOperandsAndLocals(value, newIntegerValue(pc, theValue), operands, locals)
+        updateLocals(value, newIntegerValue(pc, theValue), operands, locals)
     }
+
+//    override def establishAreEqual(pc: Int,
+//                                   value1: DomainValue,
+//                                   value2: DomainValue,
+//                                   operands: Operands,
+//                                   locals: Locals): (Operands, Locals) = {
+//        ifHasIntValue(value1) { v ⇒
+//            updateLocals(value2, value1.onCopyToRegister, operands, locals)
+//        } {
+//            ifHasIntValue(value2) { v ⇒
+//                updateLocals(value1, value2.onCopyToRegister, operands, locals)
+//            } {
+//                (operands, locals)
+//            }
+//        }
+//    }
 
     // -----------------------------------------------------------------------------------
     //
@@ -203,12 +230,16 @@ trait PreciseIntegerValues[I] extends Domain[I] {
     def iadd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
         ifBothHaveIntValues(value1, value2) {
             (v1, v2) ⇒ newIntegerValue(pc, v1 + v2)
-        }(newIntegerValue)
+        } {
+            newIntegerValue
+        }
 
     def iand(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
         ifBothHaveIntValues(value1, value2) {
             (v1, v2) ⇒ newIntegerValue(pc, v1 & v2)
-        }(newIntegerValue)
+        } {
+            newIntegerValue
+        }
 
     def idiv(pc: Int, value1: DomainValue, value2: DomainValue): Computation[DomainValue, DomainValue] =
         ifBothHaveIntValues(value1, value2) { (v1, v2) ⇒
@@ -218,7 +249,9 @@ trait PreciseIntegerValues[I] extends Domain[I] {
                 ComputedValue(newIntegerValue(pc, v1 / v2))
         } {
             if (divisionByZeroIfUnknown)
-                ComputedValueAndException(newIntegerValue, newVMObject(pc, ObjectType.ArithmeticException))
+                ComputedValueAndException(
+                    newIntegerValue,
+                    newVMObject(pc, ObjectType.ArithmeticException))
             else
                 ComputedValue(newIntegerValue)
         }

@@ -659,7 +659,7 @@ trait DefaultTypeLevelReferenceValues[I]
     //
     def newarray(pc: Int,
                  count: DomainValue,
-                 componentType: FieldType): NewArrayOrNegativeArraySizeException =
+                 componentType: FieldType) : Computation[DomainValue,DomainValue] =
         //ComputedValueAndException(TypedValue(ArrayType(componentType)), TypedValue(ObjectType.NegativeArraySizeException))
         ComputedValue(newArray(pc, ArrayType(componentType)))
 
@@ -668,7 +668,7 @@ trait DefaultTypeLevelReferenceValues[I]
      */
     def multianewarray(pc: Int,
                        counts: List[DomainValue],
-                       arrayType: ArrayType): NewArrayOrNegativeArraySizeException =
+                       arrayType: ArrayType) =
         //ComputedValueAndException(TypedValue(arrayType), TypedValue(ObjectType.NegativeArraySizeException))
         ComputedValue(newArray(pc, arrayType, No, true))
 
