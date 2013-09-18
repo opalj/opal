@@ -58,6 +58,17 @@ public class MethodsWithArithmetic {
 		return r;
 	}
 
+	public static int divIt(int denominator) {
+		return 3 / denominator;
+	}
+
+	public static int divItSafe(int denominator) {
+		if (denominator == 0)
+			return 0;
+		else
+			return 3 / denominator;
+	}
+
 	public static short returnShortValue(short value) {
 		return value;
 	}
