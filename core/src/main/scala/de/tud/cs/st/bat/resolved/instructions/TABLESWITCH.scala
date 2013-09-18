@@ -54,19 +54,12 @@ case class TABLESWITCH(
         currentPC + 1 + (3 - (currentPC % 4)) + 12 + jumpOffsets.size * 4
     }
 
-    override def toString =
-        "TABLESWITCH\n"+
-            (low to high).zip(jumpOffsets).map(keyOffset ⇒ {
-                val (key, offset) = keyOffset
-                "\t"+key+" ⇒ "+offset
-            }).mkString("\n")
-
     override def toString(pc: Int): String =
         "TABLESWITCH("+
-            (low to high).zip(jumpOffsets).map(keyOffset ⇒ {
+            (low to high).zip(jumpOffsets).map { keyOffset ⇒
                 val (key, offset) = keyOffset
                 key+"="+(pc + offset) + (if (offset >= 0) "↓" else "↑")
-            }).mkString(",")+
+            }.mkString(",")+
             "; ifNoMatch="+(defaultOffset + pc) + (if (defaultOffset >= 0) "↓" else "↑")+")"
 
 }
