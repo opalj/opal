@@ -6,8 +6,6 @@
 
 * Improve the possibility for exploring a project and tracing/controlling the progress of the AI. (JavaFX - WebView - ?)
 
-* Do we want to support JSR/RET or do we want to explicitly drop support for it?
-
 * Implement a framework to analyze projects. Here, we should support something like a on-demand loading of class files to limit the amount of memory that is required.
 
 * Implement a pluggable Escape Analysis
