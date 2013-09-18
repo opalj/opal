@@ -652,7 +652,7 @@ trait AI {
                         val low = tableswitch.low
                         val high = tableswitch.high
                         var v = low
-                        while (v < high) {
+                        while (v <= high) {
                             if (domain.isSomeValueInRange(index, v, v)) {
                                 val branchTarget = pc + tableswitch.jumpOffsets(v - low)
                                 val (updatedOperands, updatedLocals) =
