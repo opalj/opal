@@ -55,10 +55,18 @@ case class TABLESWITCH(
     }
 
     override def toString =
-        "switch\n"+
+        "TABLESWITCH\n"+
             (low to high).zip(jumpOffsets).map(keyOffset ⇒ {
                 val (key, offset) = keyOffset
                 "\t"+key+" ⇒ "+offset
             }).mkString("\n")
+
+    override def toString(pc: Int): String =
+        "TABLESWITCH("+
+            (low to high).zip(jumpOffsets).map(keyOffset ⇒ {
+                val (key, offset) = keyOffset
+                key+"="+(pc + offset) + (if (offset >= 0) "↓" else "↑")
+            }).mkString(",")+
+            "; ifNoMatch="+(defaultOffset + pc) + (if (defaultOffset >= 0) "↓" else "↑")+")"
 
 }

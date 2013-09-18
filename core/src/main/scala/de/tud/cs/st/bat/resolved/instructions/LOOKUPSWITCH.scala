@@ -37,6 +37,8 @@ package resolved
 /**
  * Access jump table by key match and jump.
  *
+ * @param npairs A list of tuples where the first value is the match value and
+ *    the second value is the jump offset.
  * @author Michael Eichberg
  */
 case class LOOKUPSWITCH(
@@ -50,5 +52,11 @@ case class LOOKUPSWITCH(
 
     def indexOfNextInstruction(currentPC: Int, code: Code): Int = {
         currentPC + 1 + (3 - (currentPC % 4)) + 8 + npairs.size * 8
+    }
+
+    override def toString(pc: Int): String = {
+        "LOOKUPSWITCH("+
+            npairs.map(p ⇒ p._1+"="+(pc + p._2) + (if (p._2 >= 0) "↓" else "↑")).mkString(",")+
+            "; ifNoMatch="+(defaultOffset + pc) + (if (defaultOffset >= 0) "↓" else "↑")+")"
     }
 }
