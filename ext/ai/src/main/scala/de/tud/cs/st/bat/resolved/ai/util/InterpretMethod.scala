@@ -99,13 +99,20 @@ object InterpretMethod {
                     println(Console.RED+"cannot read file: "+e.getMessage() + Console.RESET)
                     return ;
             }
-        val classFile =
-            classFiles.map(_._1).find(_.thisClass.className == className) match {
-                case Some(classFile) ⇒ classFile
+        val classFile = {
+            def lookupClass(className: String): Option[ClassFile] =
+                classFiles.map(_._1).find(_.thisClass.className == className) match {
+                    case someClassFile @ Some(_)         ⇒ someClassFile
+                    case None if className.contains('.') ⇒ lookupClass(className.replace('.', '/'))
+                    case None                            ⇒ None
+                }
+            lookupClass(className) match {
                 case None ⇒
                     println(Console.RED+"cannot find the class: "+className + Console.RESET)
                     return ;
+                case Some(classFile) ⇒ classFile
             }
+        }
         val method =
             classFile.methods.find(_.name == methodName) match {
                 case Some(method) ⇒ method
