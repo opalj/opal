@@ -43,12 +43,13 @@ import reflect.ClassTag
  * A domain is the fundamental abstraction mechanism in BATAI that contains all
  * information about a program's types and values and performs the computations with
  * respect to a domain's values. Customizing a domain is the fundamental mechanism
- * of adapting BATAI to ones needs.
+ * of adapting BATAI to one's needs.
  *
  * This trait defines the interface between the abstract interpretation framework (BATAI)
  * and some (user defined) domain. I.e., this interface defines all methods that
- * are needed by BATAI to perform abstract interpretations.
- *
+ * are needed by BATAI to perform an abstract interpretation. While it is perfectly
+ * possible to implement a new domain by inheriting from this trait it is recommended
+ * to first study the already implemented domains and to use one of them as a foundation.
  * To facilitate the usage of BATAI several classes/traits that implement parts of
  * the `Domain` trait are pre-defined and can be mixed in when needed.
  *
@@ -69,12 +70,11 @@ import reflect.ClassTag
  * responsibility of the domain to make sure that coordination with the world is thread
  * safe.
  *
- * @note The framework assumes that conceptually every method/code block is associated
+ * @note BATAI assumes that conceptually every method/code block is associated
  *      with its own instance of a domain object.
  * @tparam I The type which is used to identify this domain's context. E.g., if a new
  *      object is created it may be associated with the instruction that created it and
  *      this domain's identifier.
- *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  * @author Dennis Siebert
  */
@@ -109,11 +109,10 @@ trait Domain[+I] {
      * If you directly extend this trait, make sure that you also extend all
      * classes/traits that inherit from this type (this may require a deep mixin
      * composition and that you refine the type `DomainType` accordingly).
-     *
      * However, BATAI was designed such that extending this class should – in general
      * – not be necessary.
      *
-     * Please note, that inheriting from this trait is always
+     * Please note, that standard inheritance from this trait is always
      * supported and is the primary mechanism to model an abstract domain's lattice.
      * ''Extending Value'' in this case refers to a class that inherits from `Domain`
      * and that defines a new class `Value` that inherits from this class and where
@@ -156,9 +155,13 @@ trait Domain[+I] {
          * that at some point all values are fixed and don't change anymore. Hence,
          * it is important that the type of the update is only a
          * [[de.tud.cs.st.bat.resolved.ai.StructuralUpdate]] if the value has changed.
+         * In other words, when two values are merged it has to be ensured that no
+         * fall back occurs. E.g., if you merge the existing integer value 0 and
+         * the given value 1 and the result would be 1, then it must be ensured that
+         * a subsequent merge will never result in the value 0 again.
          *
          * ==Merging Of Incompatible Values==
-         * If BATAI tries to merge two values that are incompatible the result has
+         * If this value is incompatible with the given value the result has
          * to be an `IllegalValue`. This may happen, e.g., when BATAI tries to
          * merge two register values/locals that are not live (i.e., which should not be
          * live) and, hence, are actually allowed to contain incompatible values.
@@ -173,6 +176,50 @@ trait Domain[+I] {
          */
         def merge(pc: Int, value: DomainValue): Update[DomainValue]
 
+        /**
+         * Called by BATAI to inform the domain that a value is copied from the
+         * operand stack to a local register.
+         *
+         * In this case it may be necessary that a copy of this value is created to
+         * make sure that subsequent updates related to the copied value do not
+         * affect the original value (that may have been loaded from a local variable).
+         * For example, given the following Java code:
+         * {{{
+         * public static Object iterateList(java.util.List<?> list) {
+         * 	java.util.List<?> l = list;
+         * 	while (l != null) {
+         * 		l = (java.util.List<?>) l.get(0);
+         * 	}
+         * 	return list.toString();
+         * }
+         * }}}
+         * In this case, the correcsponding bytecode will be:
+         * {{{
+         * 0  aload_0 [list]
+         * 1  astore_1 [l]
+         * 2  goto 16
+         * 5  aload_1 [l]
+         * 6  iconst_0
+         * 7  invokeinterface java.util.List.get(int) : java.lang.Object [45] [nargs: 2]
+         * 12  checkcast java.util.List [46]
+         * 15  astore_1 [l]
+         * 16  aload_1 [l]
+         * 17  ifnonnull 5
+         * 20  aload_0 [list]
+         * 21  invokevirtual java.lang.Object.toString() : java.lang.String [51]
+         * 24  areturn
+         * }}}
+         * Hence, a test (instruction 17) of `l` (variable 1) against `not-null` is performed that
+         * may fail or succeed. Subsequent BATAI will state a corresponding constraint
+         * for each respective path. However, if the respective constraint
+         * (isNull/isNotNull) would affect the original value list (variable 0),
+         * then the result would be that this method would always throw a
+         * `NullPointException` independent of the value `list`. (This
+         * method may throw a `NullPointerException` or may return normally).
+         *
+         * For values that will not be update based on stated constraints it is
+         * generally not necessary to create a (deep!) copy.
+         */
         def onCopyToRegister: DomainValue
     }
 
@@ -267,7 +314,7 @@ trait Domain[+I] {
      */
     class ReturnAddressValue(
         val address: Int)
-            extends Value { this : DomainValue =>
+            extends Value { this: DomainValue ⇒
 
         override def merge(pc: Int, value: DomainValue): Update[DomainValue] =
             value match {

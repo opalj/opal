@@ -46,5 +46,7 @@ abstract class ConditionalBranchInstruction extends ControlTransferInstruction {
     def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 3
 
     override def toString(currentPC: Int) =
-        getClass.getSimpleName+" true=> "+(currentPC + branchoffset)+" false=>\"next\""
+        getClass.getSimpleName+
+            "(true="+(currentPC + branchoffset)+(if(branchoffset >= 0) "↓" else "↑")+
+            " false=↓)"
 }

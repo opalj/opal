@@ -49,6 +49,15 @@ public class MethodsWithArithmetic {
 		return (short) (s2 * 23);
 	}
 
+	public static int fak() {
+		int MAX = 5;
+		int r = 1;
+		for (int i = 1; i < MAX; i++) {
+			r = r * i;
+		}
+		return r;
+	}
+
 	public static short returnShortValue(short value) {
 		return value;
 	}

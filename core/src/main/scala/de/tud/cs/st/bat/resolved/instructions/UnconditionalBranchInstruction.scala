@@ -45,7 +45,7 @@ abstract class UnconditionalBranchInstruction extends ControlTransferInstruction
     def branchoffset: Int
 
     override def toString(currentPC: Int) =
-        getClass().getSimpleName+" "+(currentPC + branchoffset)
+        getClass().getSimpleName+" "+(currentPC + branchoffset) + (if (branchoffset >= 0) "↓" else "↑")
 }
 object UnconditionalBranch {
 
