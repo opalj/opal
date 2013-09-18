@@ -40,7 +40,7 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 /**
  * This domain enables the tracing of string values and can, e.g., be used to
- * resolved "class.forName" calls.
+ * resolve "class.forName" calls.
  */
 trait StringValues[I]
         extends DefaultTypeLevelReferenceValues[I] {
