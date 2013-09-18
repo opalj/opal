@@ -233,7 +233,7 @@ object Util {
                         exceptionHandlers: Option[String]) = {
         <tr class={ if (operands eq null /*||/&& locals eq null*/ ) "not_evaluated" else "evaluated" }>
             <td class="pc">{ scala.xml.Unparsed(pc.toString + "<br>" + exceptionHandlers.getOrElse("")) }</td>
-            <td class="instruction">{ scala.xml.Unparsed(scala.xml.Text(instruction.toString).toString.replace("\n", "<br>")) }</td>
+            <td class="instruction">{ scala.xml.Unparsed(scala.xml.Text(instruction.toString(pc)).toString.replace("\n", "<br>")) }</td>
             <td class="stack">{ dumpStack(operands) }</td>
             <td class="locals">{ dumpLocals(locals) }</td>
         </tr >

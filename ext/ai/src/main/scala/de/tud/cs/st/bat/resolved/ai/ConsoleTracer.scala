@@ -57,7 +57,7 @@ trait ConsoleTracer extends AITracer {
         locals: Array[D#DomainValue]): Unit = {
 
         println(
-            pc+":"+instruction+" [\n"+
+            pc+":"+instruction.toString(pc)+" [\n"+
                 operands.map(correctIndent(_)).mkString("\toperands:\n\t\t", "\n\t\t", "\n\t;\n") +
                 locals.map(l ⇒ if (l eq null) "-" else l.toString).zipWithIndex.map(v ⇒ v._2+":"+correctIndent(v._1)).
                 mkString("\tlocals:\n\t\t", "\n\t\t", "\n")+"\t]")

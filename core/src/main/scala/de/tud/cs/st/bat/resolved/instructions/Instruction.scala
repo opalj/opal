@@ -63,6 +63,8 @@ trait Instruction {
      */
     def indexOfNextInstruction(currentPC: Int, code: Code): Int
 
+    def toString(currentPC: Int): String = toString()
+
 }
 /**
  * Functionality common to instructions.
