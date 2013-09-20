@@ -221,6 +221,12 @@ trait Domain[+I] {
          * generally not necessary to create a (deep!) copy.
          */
         def onCopyToRegister: DomainValue
+
+        def adapt(domain: Domain[_ >: I]): domain.DomainValue =
+            domainException(
+                Domain.this,
+                "adapting this value for the target domain is not supported")
+
     }
 
     /**
@@ -267,6 +273,9 @@ trait Domain[+I] {
         override def toString = "IllegalValue"
 
         final def onCopyToRegister = this
+
+        override def adapt(domain: Domain[_ >: I]): domain.DomainValue =
+            domain.TheIllegalValue
     }
 
     /**
@@ -298,7 +307,7 @@ trait Domain[+I] {
      *      implementation errors early on.
      */
     final def StructuralUpdateIllegalValue: StructuralUpdate[Nothing] =
-        throw DomainException(Domain.this,
+        domainException(Domain.this,
             "merging of values with an incompatible value "+
                 "always has to be a MetaInformationUpdate and not more")
 
@@ -327,6 +336,9 @@ trait Domain[+I] {
         override def toString = "ReturnAddress: "+address
 
         final def onCopyToRegister = this
+
+        override def adapt(domain: Domain[_ >: I]): domain.DomainValue =
+            domain.ReturnAddressValue(address)
     }
     /**
      * Defines an extractor method to facilitate matching against return addresses.
@@ -900,11 +912,8 @@ trait Domain[+I] {
     // HELPER TYPES AND FUNCTIONS RELATED TO THE RESULT OF INSTRUCTIONS
     //
 
-    // TODO DELETE!
-    type SucceedsOrNullPointerException = Computation[Nothing, DomainValue]
-    type OptionalReturnValueOrExceptions = Computation[Option[DomainValue], Set[DomainValue]]
-    type NumericValueOrNullPointerException = Computation[DomainValue, DomainValue]
-    type ReferenceValueOrNullPointerException = Computation[DomainValue, DomainValue]
+    protected type SucceedsOrNullPointerException = Computation[Nothing, DomainValue]
+    protected type OptionalReturnValueOrExceptions = Computation[Option[DomainValue], Set[DomainValue]]
 
     protected def sideEffectOnlyOrNullPointerException(
         pc: Int,
@@ -1006,7 +1015,7 @@ trait Domain[+I] {
     /**
      * Returns the array's length or throws a `NullPointerException`.
      */
-    def arraylength(pc: Int, arrayref: DomainValue): NumericValueOrNullPointerException
+    def arraylength(pc: Int, arrayref: DomainValue): Computation[DomainValue, DomainValue]
 
     //
     // TYPE CONVERSION
@@ -1084,7 +1093,7 @@ trait Domain[+I] {
                   value: DomainValue,
                   declaringClass: ObjectType,
                   name: String,
-                  fieldType: FieldType): Computation[Nothing,DomainValue]
+                  fieldType: FieldType): Computation[Nothing, DomainValue]
 
     //
     // METHOD INVOCATIONS
@@ -1330,6 +1339,7 @@ trait Domain[+I] {
 
         (operandsUpdated &: localsUpdated)((newOperands, newLocals))
     }
+
 }
 
 

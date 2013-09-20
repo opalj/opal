@@ -64,7 +64,7 @@ trait TypeLevelDoubleValues[I] extends Domain[I] {
     // HANDLING OF COMPUTATIONS
     //
     // -----------------------------------------------------------------------------------
- 
+
     //
     // RELATIONAL OPERATORS
     //
@@ -98,11 +98,21 @@ trait DefaultTypeLevelDoubleValues[I]
         with TypeLevelDoubleValues[I] {
 
     case object DoubleValue extends super.DoubleValue {
-        override def merge(pc: Int, value: DomainValue): Update[DomainValue] = value match {
-            case DoubleValue ⇒ NoUpdate
-            case _           ⇒ MetaInformationUpdateIllegalValue
-        }
-        
+
+        override def merge(pc: Int, value: DomainValue): Update[DomainValue] =
+            value match {
+                case DoubleValue ⇒ NoUpdate
+                case _           ⇒ MetaInformationUpdateIllegalValue
+            }
+
+        override def adapt(domain: Domain[_ >: I]): domain.DomainValue =
+            domain match {
+                case d: DefaultTypeLevelDoubleValues[I] ⇒
+                    // "this" value does not have a dependency on this domain instance  
+                    this.asInstanceOf[domain.DomainValue]
+                case _ ⇒ super.adapt(domain)
+            }
+
         def onCopyToRegister = this
     }
 

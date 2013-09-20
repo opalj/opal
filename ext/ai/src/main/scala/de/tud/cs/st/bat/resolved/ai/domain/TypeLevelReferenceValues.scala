@@ -46,7 +46,7 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  *
  * @author Michael Eichberg
  */
-trait TypeLevelReferenceValues { this: Domain[_] ⇒
+trait TypeLevelReferenceValues[I] extends Domain[I] {
 
     /**
      * Abstracts over all values with computational type `reference`.
@@ -64,8 +64,8 @@ trait TypeLevelReferenceValues { this: Domain[_] ⇒
         def isNull: Answer
 
         /**
-         * Called by BATAI when the AI determines that the null-value property
-         * of this type-level reference could be updated.
+         * Called by BATAI when it determines that the null-value property
+         * of this type-level reference should be updated.
          */
         def updateIsNull(pc: Int, isNull: Answer): DomainValue
 
@@ -79,9 +79,12 @@ trait TypeLevelReferenceValues { this: Domain[_] ⇒
          * of this reference value is `java.util.Collection` and we know that this is only
          * an upper bound. In this case an answer is `No` if and only if it is impossible
          * that the runtime type is a subtype of the given supertype. This
-         * condition holds, for example, for `java.io.File`. The classes `java.io.File`
-         * and `java.util.Collection` are not in an inheritance relationship. However,
-         * if the specified supertype would be `java.util.List` the answer would be unknown.
+         * condition holds, for example, for `java.io.File` which is not a subclass
+         * of `java.util.Collection` and which does not have any further subclasses (in
+         * the JDK).
+         * The classes `java.io.File` and `java.util.Collection` are not in an
+         * inheritance relationship. However, if the specified supertype would be
+         * `java.util.List` the answer would be unknown.
          *
          * @param onNull If this value is known to be `null` and, hence, no type
          *      information is available the result of evaluating this function
@@ -89,6 +92,11 @@ trait TypeLevelReferenceValues { this: Domain[_] ⇒
          */
         def isSubtypeOf(supertype: ReferenceType, onNull: ⇒ Answer): Answer
 
+        /**
+         * Adds an upper bound. This call can be ignored if the type
+         * information is precise, i.e., if we know that we precisely capture
+         * the runtime type of the value.
+         */
         def addUpperBound(pc: Int, upperBound: ReferenceType): DomainValue
     }
 
@@ -104,8 +112,8 @@ trait TypeLevelReferenceValues { this: Domain[_] ⇒
      *
      * This implementation completely handles the case where at least one value
      * definitively represents the `null` value.
-     * If both values represent non-null values (or just maybe `null` values) `Unknown` is
-     * returned.
+     * If both values represent non-null values (or just maybe `null` values) `Unknown`
+     * is returned.
      *
      * @note This method is intended to be overridden by subclasses and may be the first
      *      one this is called (super call) by the overriding method to handle checks
@@ -142,7 +150,9 @@ trait TypeLevelReferenceValues { this: Domain[_] ⇒
         case r: ReferenceValue ⇒
             r.isNull
         case _ ⇒
-            domainException(this, "\"isNull\" is not defined for non-reference values: "+value)
+            domainException(
+                this,
+                "\"isNull\" is not defined for non-reference values: "+value)
     }
 
     def isSubtypeOf(value: DomainValue, supertype: ReferenceType, onNull: ⇒ Answer): Answer =
@@ -150,7 +160,9 @@ trait TypeLevelReferenceValues { this: Domain[_] ⇒
             case rv: ReferenceValue ⇒
                 rv.isSubtypeOf(supertype, onNull)
             case _ ⇒
-                domainException(this, "isSubtypeOf is not defined for non-reference values: "+value)
+                domainException(
+                    this,
+                    "isSubtypeOf is not defined for non-reference values: "+value)
         }
 
     // -----------------------------------------------------------------------------------
@@ -236,7 +248,7 @@ trait TypeLevelReferenceValues { this: Domain[_] ⇒
  */
 trait DefaultTypeLevelReferenceValues[I]
         extends DefaultValueBinding[I]
-        with TypeLevelReferenceValues { domain ⇒
+        with TypeLevelReferenceValues[I] { domain ⇒
 
     // -----------------------------------------------------------------------------------
     //
@@ -247,6 +259,8 @@ trait DefaultTypeLevelReferenceValues[I]
     trait ReferenceValue
             extends super.ReferenceValue
             with IsReferenceType {
+
+        def location: I = domain.identifier
 
         /**
          * A type bound represents the available information about a reference value's type.
@@ -293,6 +307,13 @@ trait DefaultTypeLevelReferenceValues[I]
             extends ReferenceValue {
 
         def onCopyToRegister = AReferenceValue(pc, valueType, isNull, isPrecise)
+
+        override def adapt(domain: Domain[_ >: I]): domain.DomainValue = domain match {
+            case d: DefaultTypeLevelReferenceValues[I] ⇒
+                // "this" value does not have a dependency on this domain instance  
+                this.asInstanceOf[domain.DomainValue]
+            case _ ⇒ super.adapt(domain)
+        }
 
         override def nonEmpty = valueType.nonEmpty
 
@@ -504,6 +525,13 @@ trait DefaultTypeLevelReferenceValues[I]
 
         def onCopyToRegister = MultipleReferenceValues(values.map(_.onCopyToRegister))
 
+        override def adapt(domain: Domain[_ >: I]): domain.DomainValue = domain match {
+            case d: DefaultTypeLevelReferenceValues[I] ⇒
+                // "this" value does not have a dependency on this domain instance  
+                this.asInstanceOf[domain.DomainValue]
+            case _ ⇒ super.adapt(domain)
+        }
+
         def isSubtypeOf(supertype: ReferenceType, onNull: ⇒ Answer): Answer = {
             val firstAnswer = values.head.isSubtypeOf(supertype, onNull)
             (firstAnswer /: values.tail) { (answer, nextReferenceValue) ⇒
@@ -659,7 +687,7 @@ trait DefaultTypeLevelReferenceValues[I]
     //
     def newarray(pc: Int,
                  count: DomainValue,
-                 componentType: FieldType) : Computation[DomainValue,DomainValue] =
+                 componentType: FieldType): Computation[DomainValue, DomainValue] =
         //ComputedValueAndException(TypedValue(ArrayType(componentType)), TypedValue(ObjectType.NegativeArraySizeException))
         ComputedValue(newArray(pc, ArrayType(componentType)))
 

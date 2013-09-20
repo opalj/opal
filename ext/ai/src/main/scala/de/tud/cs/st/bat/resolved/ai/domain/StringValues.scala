@@ -46,12 +46,20 @@ trait StringValues[I]
         extends DefaultTypeLevelReferenceValues[I] {
 
     class AStringValue(
-        pc: Int,
+        pc: Int, // sets the pc value of the superclass
         val value: String)
             extends AReferenceValue(pc, Set(ObjectType.String), No, true) {
 
         assume(value != null)
-        
+
+        override def adapt(domain: Domain[_ >: I]): domain.DomainValue =
+            domain match {
+                case d: StringValues[I] ⇒
+                    // "this" value does not have a dependency on this domain instance  
+                    this.asInstanceOf[domain.DomainValue]
+                case _ ⇒ super.adapt(domain)
+            }
+
         override def onCopyToRegister = this // there are/will be no updates (Value semantics!)
 
         override def equals(other: Any): Boolean = {
@@ -68,6 +76,7 @@ trait StringValues[I]
 
         override def toString(): String =
             "String(pc="+pc+", value=\""+value+"\")"
+
     }
 
     override def newStringValue(pc: Int, value: String): DomainValue =

@@ -193,21 +193,21 @@ trait PreciseIntegerValues[I] extends Domain[I] {
         updateLocals(value, newIntegerValue(pc, theValue), operands, locals)
     }
 
-//    override def establishAreEqual(pc: Int,
-//                                   value1: DomainValue,
-//                                   value2: DomainValue,
-//                                   operands: Operands,
-//                                   locals: Locals): (Operands, Locals) = {
-//        ifHasIntValue(value1) { v ⇒
-//            updateLocals(value2, value1.onCopyToRegister, operands, locals)
-//        } {
-//            ifHasIntValue(value2) { v ⇒
-//                updateLocals(value1, value2.onCopyToRegister, operands, locals)
-//            } {
-//                (operands, locals)
-//            }
-//        }
-//    }
+    //    override def establishAreEqual(pc: Int,
+    //                                   value1: DomainValue,
+    //                                   value2: DomainValue,
+    //                                   operands: Operands,
+    //                                   locals: Locals): (Operands, Locals) = {
+    //        ifHasIntValue(value1) { v ⇒
+    //            updateLocals(value2, value1.onCopyToRegister, operands, locals)
+    //        } {
+    //            ifHasIntValue(value2) { v ⇒
+    //                updateLocals(value1, value2.onCopyToRegister, operands, locals)
+    //            } {
+    //                (operands, locals)
+    //            }
+    //        }
+    //    }
 
     // -----------------------------------------------------------------------------------
     //
@@ -330,6 +330,13 @@ trait DefaultPreciseIntegerValues[I]
         }
 
         def onCopyToRegister = this
+
+        override def adapt(domain: Domain[_ >: I]): domain.DomainValue =
+            domain match {
+                case d: DefaultPreciseIntegerValues[I] ⇒
+                    this.asInstanceOf[domain.DomainValue]
+                case _ ⇒ super.adapt(domain)
+            }
     }
 
     case class IntegerValue private (
@@ -372,6 +379,13 @@ trait DefaultPreciseIntegerValues[I]
             }
 
         def onCopyToRegister = this
+
+        override def adapt(domain: Domain[_ >: I]): domain.DomainValue = domain match {
+            case d: DefaultPreciseIntegerValues[I] ⇒
+                // "this" value does not have a dependency on this domain instance  
+                this.asInstanceOf[domain.DomainValue]
+            case _ ⇒ super.adapt(domain)
+        }
 
         override def toString: String = {
             "IntegerValue("+value+",initial="+initial+")"

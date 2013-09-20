@@ -104,12 +104,21 @@ trait DefaultTypeLevelFloatValues[I]
         with TypeLevelFloatValues[I] {
 
     case object FloatValue extends super.FloatValue {
+
         override def merge(pc: Int, value: DomainValue): Update[DomainValue] = value match {
             case FloatValue ⇒ NoUpdate
             case _          ⇒ MetaInformationUpdateIllegalValue
         }
-        
+
+        override def adapt(domain: Domain[_ >: I]): domain.DomainValue = domain match {
+            case d: DefaultTypeLevelFloatValues[I] ⇒
+                // "this" value does not have a dependency on this domain instance  
+                this.asInstanceOf[domain.DomainValue]
+            case _ ⇒ super.adapt(domain)
+        }
+
         def onCopyToRegister = this
+
     }
 
     def newFloatValue(): FloatValue = FloatValue

@@ -96,7 +96,7 @@ trait TypeLevelArrayInstructions { this: Domain[_] ⇒
     //
     // LENGTH OF AN ARRAY
     //
-    def arraylength(pc: Int, value: DomainValue): NumericValueOrNullPointerException =
+    def arraylength(pc: Int, value: DomainValue): Computation[DomainValue, DomainValue] =
         ComputedValue(newIntegerValue)
 }
 

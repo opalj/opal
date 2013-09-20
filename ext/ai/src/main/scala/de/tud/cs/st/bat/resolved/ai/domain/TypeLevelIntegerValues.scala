@@ -59,6 +59,13 @@ trait TypeLevelIntegerValues[I] extends Domain[I] {
         final def computationalType: ComputationalType = ComputationalTypeInt
 
         def types: TypesAnswer[_]
+        
+        override def adapt(domain: Domain[_ >: I]): domain.DomainValue = domain match {
+            case d: TypeLevelIntegerValues[I] ⇒
+                // "this" value does not have a dependency on this domain instance  
+                this.asInstanceOf[domain.DomainValue]
+            case _ ⇒ super.adapt(domain)
+        }
     }
 
     trait BooleanValue extends ComputationalTypeIntegerValue {

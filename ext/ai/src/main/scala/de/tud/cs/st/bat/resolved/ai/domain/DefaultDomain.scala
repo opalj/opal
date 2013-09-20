@@ -62,12 +62,14 @@ trait BaseDomain[I]
  * @author Michael Eichberg
  */
 trait AbstractDefaultDomain[I]
-    extends BaseDomain[I]
-    with TypeLevelArrayInstructions
-    with TypeLevelFieldAccessInstructions
-    with TypeLevelInvokeInstructions
-    with DoNothingOnReturnFromMethod
-    with DefaultTypeHierarchyBinding
+        extends BaseDomain[I]
+        with TypeLevelArrayInstructions
+        with TypeLevelFieldAccessInstructions
+        with TypeLevelInvokeInstructions
+        with DoNothingOnReturnFromMethod
+        with DefaultTypeHierarchyBinding {
+
+}
 
 /**
  * This is a ready to use domain which sets the domain identifier to "DefaultDomain".
@@ -94,7 +96,9 @@ trait ConfigurableDomain[I] extends Domain[I] {
 class ConfigurableDefaultDomain[I](
     val identifier: I)
         extends ConfigurableDomain[I]
-        with AbstractDefaultDomain[I]
+        with AbstractDefaultDomain[I] {
+    
+}
 
 class ConfigurablePreciseDomain[I](
     val identifier: I)
@@ -102,7 +106,7 @@ class ConfigurablePreciseDomain[I](
         with DefaultValueBinding[I]
         with DefaultPreciseIntegerValues[I]
         with DefaultTypeLevelReferenceValues[I]
-            with StringValues[I]
+        with StringValues[I]
         with DefaultTypeLevelLongValues[I]
         with DefaultTypeLevelFloatValues[I]
         with DefaultTypeLevelDoubleValues[I]
@@ -111,4 +115,6 @@ class ConfigurablePreciseDomain[I](
         with TypeLevelFieldAccessInstructions
         with TypeLevelInvokeInstructions
         with DoNothingOnReturnFromMethod
-        with DefaultTypeHierarchyBinding
+        with DefaultTypeHierarchyBinding {
+
+}

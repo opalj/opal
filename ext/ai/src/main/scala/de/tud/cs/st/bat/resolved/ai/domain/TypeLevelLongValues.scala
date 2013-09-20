@@ -109,8 +109,15 @@ trait DefaultTypeLevelLongValues[I]
             case LongValue ⇒ NoUpdate
             case _         ⇒ MetaInformationUpdateIllegalValue
         }
-        
+
         def onCopyToRegister = this
+
+        override def adapt(domain: Domain[_ >: I]): domain.DomainValue = domain match {
+            case d: DefaultTypeLevelLongValues[I] ⇒
+                // "this" value does not have a dependency on this domain instance  
+                this.asInstanceOf[domain.DomainValue]
+            case _ ⇒ super.adapt(domain)
+        }
     }
 
     def newLongValue(): LongValue = LongValue

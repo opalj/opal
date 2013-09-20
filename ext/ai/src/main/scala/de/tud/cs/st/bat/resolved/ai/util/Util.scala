@@ -37,8 +37,8 @@ package ai
 package util
 
 import scala.xml.Node
-
 import java.io.File
+import scala.util.control.ControlThrowable
 
 /**
  * Several utility methods to facilitate the development of the abstract interpreter/
@@ -52,48 +52,49 @@ object Util {
     import de.tud.cs.st.util.ControlAbstractions._
 
     /**
-     * We generate dumps only after the given time (default: 2500 Millis) have passed.
+     * We generate dumps on errors only if the specified time has passed.
      *
-     * If you want to generate more dumps set this value to a lower value or to -1l if
-     * do never want to miss dump.
+     * If you want to generate more dumps set this value to a small value or to -1l if
+     * do never want to miss dump. The default is 2500 (milliseconds).
      */
     @volatile
     var timeInMillisBetweenDumps: Long = 2500l
     private var lastDump: Long = 0l
 
-    def dumpOnFailure[T](
-        classFile: ClassFile,
-        method: Method,
-        domain: Domain[_])(
-            f: AIResult[domain.type] ⇒ T): T = {
-        val result = AI(classFile, method, domain)
-        val operandsArray = result.operandsArray
-        val localsArray = result.localsArray
-        try {
-            if (result.wasAborted) throw new RuntimeException("interpretation aborted")
-            f(result)
-        } catch {
-            case e: Throwable ⇒ {
-                val currentTime = System.currentTimeMillis()
-                if ((currentTime - lastDump) > timeInMillisBetweenDumps) {
-                    lastDump = currentTime
-                    val title = Some("Generated due to exception: "+e.getMessage())
-                    val dump =
-                        util.Util.dump(
-                            Some(classFile),
-                            Some(method),
-                            method.body.get,
-                            operandsArray,
-                            localsArray,
-                            title)
-                    util.Util.writeAndOpenDump(dump) //.map(_.deleteOnExit)
-                } else {
-                    System.err.println("Dump suppressed: "+e.getMessage())
-                }
-                throw e
-            }
-        }
-    }
+    //    def dumpOnFailure[T](
+    //        classFile: ClassFile,
+    //        method: Method,
+    //        domain: Domain[_])(
+    //            f: AIResult[domain.type] ⇒ T): T = {
+    //        val result = AI(classFile, method, domain)
+    //        val operandsArray = result.operandsArray
+    //        val localsArray = result.localsArray
+    //        try {
+    //            if (result.wasAborted)
+    //                throw new RuntimeException("interpretation aborted")
+    //            f(result)
+    //        } catch {
+    //            case ct: ControlThrowable ⇒ throw ct
+    //            case e: Throwable ⇒
+    //                val currentTime = System.currentTimeMillis()
+    //                if ((currentTime - lastDump) > timeInMillisBetweenDumps) {
+    //                    lastDump = currentTime
+    //                    val title = Some("Generated due to exception: "+e.getMessage())
+    //                    val dump =
+    //                        util.Util.dump(
+    //                            Some(classFile),
+    //                            Some(method),
+    //                            method.body.get,
+    //                            operandsArray,
+    //                            localsArray,
+    //                            title)
+    //                    util.Util.writeAndOpenDump(dump) //.map(_.deleteOnExit)
+    //                } else {
+    //                    Console.err.println("Dump suppressed: "+e.getMessage())
+    //                }
+    //                throw e
+    //        }
+    //    }
 
     /**
      * In case that during the validation some exception is thrown, a dump of
@@ -114,18 +115,22 @@ object Util {
             if (result.wasAborted) throw new RuntimeException("interpretation aborted")
             f
         } catch {
-            case e: Throwable ⇒ {
+            case ct: ControlThrowable ⇒ throw ct
+            case e: Throwable ⇒
                 val currentTime = System.currentTimeMillis()
                 if ((currentTime - lastDump) > timeInMillisBetweenDumps) {
                     lastDump = currentTime
-                    val title = Some("Generated due to exception: "+e.getMessage())
-                    val dump = util.Util.dump(classFile, method, code, operandsArray, localsArray, title)
-                    util.Util.writeAndOpenDump(dump) //.map(_.deleteOnExit)
+                    writeAndOpenDump(
+                        dump(classFile,
+                            method,
+                            code,
+                            operandsArray, localsArray,
+                            Some("Dump generated due to exception: "+e.getMessage()))
+                    )
                 } else {
-                    System.err.println("[Util.dumpOnFailureDuringValidation] Dump suppressed: "+e.getMessage())
+                    Console.err.println("dump suppressed: "+e.getMessage())
                 }
                 throw e
-            }
         }
     }
 

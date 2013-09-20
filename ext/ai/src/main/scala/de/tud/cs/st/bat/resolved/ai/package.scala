@@ -53,6 +53,8 @@ package object ai {
 
     import language.existentials
 
+    type SomeDomain = Domain[_]
+    
     class AIException(message: String) extends RuntimeException(message)
 
     @throws[AIException]
@@ -65,7 +67,7 @@ package object ai {
     }
 
     case class DomainException(
-            domain: Domain[_],
+            domain: SomeDomain,
             message: String) extends AIException(message) {
 
         def enrich(
@@ -86,7 +88,7 @@ package object ai {
 
     @throws[DomainException]
     def domainException(
-        domain: Domain[_],
+        domain: SomeDomain,
         message: String): Nothing =
         throw DomainException(domain, message)
 
@@ -95,7 +97,7 @@ package object ai {
      * implementation of a specific domain. I.e., the error is related to an error in
      * a user's implementation of a domain.
      */
-    case class InterpreterException[D <: Domain[_]](
+    case class InterpreterException[D <: SomeDomain](
         throwable: Throwable,
         domain: D,
         worklist: List[Int],
@@ -110,14 +112,14 @@ package object ai {
      * Creates and immediately throws an `AIImplementationError`.
      */
     @throws[SomeInterpreterException]
-    def interpreterException[D <: Domain[_]](
+    def interpreterException[D <: SomeDomain](
         throwable: Throwable,
         domain: D,
         worklist: List[Int],
         evaluated : List[Int],
         operandsArray: Array[_ <: List[_ <: D#DomainValue]],
         localsArray: Array[_ <: Array[_ <: D#DomainValue]]): Nothing = {
-        throw InterpreterException[Domain[_]](
+        throw InterpreterException[SomeDomain](
             throwable,
             domain,
             worklist,
