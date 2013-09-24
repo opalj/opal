@@ -667,7 +667,11 @@ trait DefaultTypeLevelReferenceValues[I]
     def newClassValue(pc: Int, t: Type): DomainValue =
         AReferenceValue(pc, Set[ReferenceType](ObjectType.Class), No, true)
 
-    def newArray(pc: Int, arrayType: ArrayType, isNull: Answer = No, isPrecise: Boolean = true): DomainValue =
+    def newArray(
+        pc: Int,
+        arrayType: ArrayType,
+        isNull: Answer = No,
+        isPrecise: Boolean = true): DomainValue =
         AReferenceValue(pc, Set[ReferenceType](arrayType), isNull, isPrecise)
 
     // -----------------------------------------------------------------------------------
@@ -700,10 +704,12 @@ trait DefaultTypeLevelReferenceValues[I]
     def aaload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
         types(arrayref) match {
             case HasSingleReferenceTypeBound(ArrayType(componentType)) ⇒
-                ComputedValue(newTypedValue(componentType)) // TODO use the aaload's pc as the source location...
-            case _ ⇒ domainException(this,
-                "cannot determine the type of the array's content, the array may contain either booleans or byte values: "+arrayref
-            )
+                ComputedValue(newTypedValue(pc, componentType))
+            case _ ⇒
+                domainException(
+                    this,
+                    "cannot determine the type of the array's content: "+arrayref
+                )
         }
 
     def aastore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue) =

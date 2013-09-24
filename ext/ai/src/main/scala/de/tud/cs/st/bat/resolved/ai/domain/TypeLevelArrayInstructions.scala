@@ -53,7 +53,7 @@ trait TypeLevelArrayInstructions { this: Domain[_] ⇒
     def baload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
         types(arrayref) match {
             case HasSingleReferenceTypeBound(ArrayType(componentType)) ⇒
-                ComputedValue(newTypedValue(pc,componentType))
+                ComputedValue(newTypedValue(pc, componentType))
             case _ ⇒ domainException(
                 this,
                 "the array may contain either booleans or byte values: "+arrayref
