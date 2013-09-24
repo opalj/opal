@@ -60,7 +60,7 @@ trait StringValues[I]
                 case _ ⇒ super.adapt(domain)
             }
 
-        override def onCopyToRegister = this // there are/will be no updates (Value semantics!)
+       // REMOVE? override def onCopyToRegister = this // there are/will be no updates (Value semantics!)
 
         override def equals(other: Any): Boolean = {
             super.equals(other) &&

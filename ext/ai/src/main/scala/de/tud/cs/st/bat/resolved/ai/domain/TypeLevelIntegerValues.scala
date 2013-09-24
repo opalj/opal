@@ -40,7 +40,7 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 /**
  * Domain to trace integer values at the type level.
- * 
+ *
  * @author Michael Eichberg
  */
 trait TypeLevelIntegerValues[I] extends Domain[I] {
@@ -59,7 +59,7 @@ trait TypeLevelIntegerValues[I] extends Domain[I] {
         final def computationalType: ComputationalType = ComputationalTypeInt
 
         def types: TypesAnswer[_]
-        
+
         override def adapt(domain: Domain[_ >: I]): domain.DomainValue = domain match {
             case d: TypeLevelIntegerValues[I] ⇒
                 // "this" value does not have a dependency on this domain instance  
@@ -104,7 +104,7 @@ trait TypeLevelIntegerValues[I] extends Domain[I] {
     //
 
     def areEqual(value1: DomainValue, value2: DomainValue): Answer = Unknown
-    
+
     def isSomeValueInRange(value: DomainValue, lowerBound: Int, upperBound: Int): Boolean =
         true
 
@@ -172,8 +172,8 @@ trait DefaultTypeLevelIntegerValues[I]
             case TheIllegalValue      ⇒ MetaInformationUpdateIllegalValue
             case _                    ⇒ MetaInformationUpdateIllegalValue
         }
-        
-        def onCopyToRegister = this
+
+        // REMOVE?def onCopyToRegister = this
     }
     case object ByteValue extends super.ByteValue {
         override def merge(pc: Int, value: DomainValue): Update[DomainValue] = value match {
@@ -184,8 +184,8 @@ trait DefaultTypeLevelIntegerValues[I]
             case other @ CharValue    ⇒ StructuralUpdate(other)
             case other                ⇒ MetaInformationUpdateIllegalValue
         }
-        
-        def onCopyToRegister = this
+
+        // REMOVE?def onCopyToRegister = this
     }
 
     case object ShortValue extends super.ShortValue {
@@ -197,8 +197,8 @@ trait DefaultTypeLevelIntegerValues[I]
             case other @ CharValue    ⇒ StructuralUpdate(IntegerValue)
             case other                ⇒ MetaInformationUpdateIllegalValue
         }
-        
-        def onCopyToRegister = this
+
+        // REMOVE?def onCopyToRegister = this
     }
 
     case object CharValue extends super.CharValue {
@@ -210,8 +210,8 @@ trait DefaultTypeLevelIntegerValues[I]
             case other @ IntegerValue ⇒ StructuralUpdate(other)
             case other                ⇒ MetaInformationUpdateIllegalValue
         }
-        
-        def onCopyToRegister = this
+
+        // REMOVE?def onCopyToRegister = this
     }
 
     case object IntegerValue extends super.IntegerValue {
@@ -224,8 +224,8 @@ trait DefaultTypeLevelIntegerValues[I]
             case ShortValue      ⇒ NoUpdate
             case other           ⇒ MetaInformationUpdateIllegalValue
         }
-        
-        def onCopyToRegister = this
+
+        // REMOVE?def onCopyToRegister = this
     }
 
     def newBooleanValue(): DomainValue = BooleanValue
@@ -233,15 +233,19 @@ trait DefaultTypeLevelIntegerValues[I]
     def newBooleanValue(pc: Int, value: Boolean): DomainValue = BooleanValue
 
     def newByteValue() = ByteValue
+    def newByteValue(pc: Int): DomainValue = ByteValue
     def newByteValue(pc: Int, value: Byte) = ByteValue
 
     def newShortValue() = ShortValue
+    def newShortValue(pc: Int): DomainValue = ShortValue
     def newShortValue(pc: Int, value: Short) = ShortValue
 
     def newCharValue() = CharValue
+    def newCharValue(pc: Int): DomainValue = CharValue
     def newCharValue(pc: Int, value: Byte) = CharValue
 
     def newIntegerValue() = IntegerValue
+    def newIntegerValue(pc: Int): DomainValue = IntegerValue
     def newIntegerValue(pc: Int, value: Int) = IntegerValue
     val newIntegerConstant0: DomainValue = newIntegerValue(Int.MinValue, 0)
     def intValuesRange(pc: Int, start: Int, end: Int): DomainValue = IntegerValue

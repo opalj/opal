@@ -306,7 +306,7 @@ trait DefaultTypeLevelReferenceValues[I]
         val isPrecise: Boolean)
             extends ReferenceValue {
 
-        def onCopyToRegister = AReferenceValue(pc, valueType, isNull, isPrecise)
+        // REMOVE?def onCopyToRegister = AReferenceValue(pc, valueType, isNull, isPrecise)
 
         override def adapt(domain: Domain[_ >: I]): domain.DomainValue = domain match {
             case d: DefaultTypeLevelReferenceValues[I] ⇒
@@ -363,7 +363,7 @@ trait DefaultTypeLevelReferenceValues[I]
             }
         }
 
-        def updateIsNull(pc: Int, isNull: Answer): ReferenceValue = {
+        def updateIsNull(pc: Int, isNull: Answer): AReferenceValue = {
             if (this.isNull == isNull)
                 this
             else if (this.isNull.isUndefined)
@@ -523,7 +523,7 @@ trait DefaultTypeLevelReferenceValues[I]
         val values: Set[AReferenceValue])
             extends ReferenceValue {
 
-        def onCopyToRegister = MultipleReferenceValues(values.map(_.onCopyToRegister))
+        // REMOVE?def onCopyToRegister = MultipleReferenceValues(values.map(_.onCopyToRegister))
 
         override def adapt(domain: Domain[_ >: I]): domain.DomainValue = domain match {
             case d: DefaultTypeLevelReferenceValues[I] ⇒
@@ -557,20 +557,6 @@ trait DefaultTypeLevelReferenceValues[I]
 
         def headType: ReferenceType = valueType.head
 
-        override def updateIsNull(pc: Int, isNull: Answer): ReferenceValue = {
-            var createNew = false
-            val updatedValues = values.map(v ⇒ {
-                val updatedValue = v.updateIsNull(pc, isNull)
-                if (updatedValue ne v)
-                    createNew = true
-                v
-            })
-            if (createNew)
-                MultipleReferenceValues(updatedValues)
-            else
-                this
-        }
-
         private def updateValues(update: AReferenceValue ⇒ AReferenceValue) = {
             var createNew = false
             val updatedValues = values.map { v ⇒
@@ -585,8 +571,13 @@ trait DefaultTypeLevelReferenceValues[I]
                 this
         }
 
+        override def updateIsNull(pc: Int, isNull: Answer): ReferenceValue =
+            updateValues { aReferenceValue: AReferenceValue ⇒
+                aReferenceValue.updateIsNull(pc, isNull)
+            }
+
         def addUpperBound(pc: Int, upperBound: ReferenceType): DomainValue = {
-            updateValues { (aReferenceValue: AReferenceValue) ⇒
+            updateValues { aReferenceValue: AReferenceValue ⇒
                 aReferenceValue.addUpperBound(pc, upperBound)
             }
         }
@@ -660,6 +651,9 @@ trait DefaultTypeLevelReferenceValues[I]
 
     def newReferenceValue(referenceType: ReferenceType): DomainValue =
         AReferenceValue(-1, Set(referenceType), Unknown, false)
+
+    def newReferenceValue(pc: Int, referenceType: ReferenceType): DomainValue =
+        AReferenceValue(pc, Set(referenceType), Unknown, false)
 
     def newObject(pc: Int, objectType: ObjectType): DomainValue =
         AReferenceValue(pc, Set[ReferenceType](objectType), No, true)

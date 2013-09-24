@@ -329,7 +329,7 @@ trait DefaultPreciseIntegerValues[I]
             case other               ⇒ MetaInformationUpdateIllegalValue
         }
 
-        def onCopyToRegister = this
+       // REMOVE? def onCopyToRegister = this
 
         override def adapt(domain: Domain[_ >: I]): domain.DomainValue =
             domain match {
@@ -378,7 +378,7 @@ trait DefaultPreciseIntegerValues[I]
                 case other ⇒ MetaInformationUpdateIllegalValue
             }
 
-        def onCopyToRegister = this
+        // REMOVE? def onCopyToRegister = this
 
         override def adapt(domain: Domain[_ >: I]): domain.DomainValue = domain match {
             case d: DefaultPreciseIntegerValues[I] ⇒
@@ -398,15 +398,19 @@ trait DefaultPreciseIntegerValues[I]
         if (value) new IntegerValue(1) else new IntegerValue(0)
 
     def newByteValue() = AnIntegerValue
+    def newByteValue(pc: Int): DomainValue = AnIntegerValue
     def newByteValue(pc: Int, value: Byte) = new IntegerValue(value)
 
     def newShortValue() = AnIntegerValue
+    def newShortValue(pc: Int): DomainValue = AnIntegerValue
     def newShortValue(pc: Int, value: Short) = new IntegerValue(value)
 
     def newCharValue() = AnIntegerValue
+    def newCharValue(pc: Int): DomainValue = AnIntegerValue
     def newCharValue(pc: Int, value: Char) = new IntegerValue(value)
 
     def newIntegerValue() = AnIntegerValue
+    def newIntegerValue(pc: Int): DomainValue = AnIntegerValue
     def newIntegerValue(pc: Int, value: Int) = new IntegerValue(value)
     def newIntegerConstant0: DomainValue = new IntegerValue(0)
 

@@ -123,6 +123,8 @@ trait DefaultTypeLevelFloatValues[I]
 
     def newFloatValue(): FloatValue = FloatValue
 
+    def newFloatValue(pc: Int): DomainValue = FloatValue
+    
     def newFloatValue(pc: Int, value: Float): FloatValue = FloatValue
 }
 

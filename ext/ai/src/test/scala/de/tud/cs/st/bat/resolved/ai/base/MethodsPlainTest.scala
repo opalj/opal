@@ -973,7 +973,7 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "create").get
         val result = AI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(newTypedValue(ObjectType.Object)))
+        domain.returnedValue should be(Some(newTypedValue(1,ObjectType.Object)))
     }
 
     it should "be able to analyze a method that creates an object and which calls multiple methods of the new object" in {

@@ -176,52 +176,61 @@ trait Domain[+I] {
          */
         def merge(pc: Int, value: DomainValue): Update[DomainValue]
 
-        /**
-         * Called by BATAI to inform the domain that a value is copied from the
-         * operand stack to a local register.
-         *
-         * In this case it may be necessary that a copy of this value is created to
-         * make sure that subsequent updates related to the copied value do not
-         * affect the original value (that may have been loaded from a local variable).
-         * For example, given the following Java code:
-         * {{{
-         * public static Object iterateList(java.util.List<?> list) {
-         * 	java.util.List<?> l = list;
-         * 	while (l != null) {
-         * 		l = (java.util.List<?>) l.get(0);
-         * 	}
-         * 	return list.toString();
-         * }
-         * }}}
-         * In this case, the correcsponding bytecode will be:
-         * {{{
-         * 0  aload_0 [list]
-         * 1  astore_1 [l]
-         * 2  goto 16
-         * 5  aload_1 [l]
-         * 6  iconst_0
-         * 7  invokeinterface java.util.List.get(int) : java.lang.Object [45] [nargs: 2]
-         * 12  checkcast java.util.List [46]
-         * 15  astore_1 [l]
-         * 16  aload_1 [l]
-         * 17  ifnonnull 5
-         * 20  aload_0 [list]
-         * 21  invokevirtual java.lang.Object.toString() : java.lang.String [51]
-         * 24  areturn
-         * }}}
-         * Hence, a test (instruction 17) of `l` (variable 1) against `not-null` is performed that
-         * may fail or succeed. Subsequent BATAI will state a corresponding constraint
-         * for each respective path. However, if the respective constraint
-         * (isNull/isNotNull) would affect the original value list (variable 0),
-         * then the result would be that this method would always throw a
-         * `NullPointException` independent of the value `list`. (This
-         * method may throw a `NullPointerException` or may return normally).
-         *
-         * For values that will not be update based on stated constraints it is
-         * generally not necessary to create a (deep!) copy.
-         */
-        def onCopyToRegister: DomainValue
+        //        /**
+        //         * Called by BATAI to inform the domain that a value is copied from the
+        //         * operand stack to a local register.
+        //         *
+        //         * In this case it may be necessary that a copy of this value is created to
+        //         * make sure that subsequent updates related to the copied value do not
+        //         * affect the original value (that may have been loaded from a local variable).
+        //         * For example, given the following Java code:
+        //         * {{{
+        //         * public static Object iterateList(java.util.List<?> list) {
+        //         * 	java.util.List<?> l = list;
+        //         * 	while (l != null) {
+        //         * 		l = (java.util.List<?>) l.get(0);
+        //         * 	}
+        //         * 	return list.toString();
+        //         * }
+        //         * }}}
+        //         * In this case, the corresponding bytecode will be:
+        //         * {{{
+        //         * 0  aload_0 [list]
+        //         * 1  astore_1 [l]
+        //         * 2  goto 16
+        //         * 5  aload_1 [l]
+        //         * 6  iconst_0
+        //         * 7  invokeinterface java.util.List.get(int) : java.lang.Object [45] [nargs: 2]
+        //         * 12  checkcast java.util.List [46]
+        //         * 15  astore_1 [l]
+        //         * 16  aload_1 [l]
+        //         * 17  ifnonnull 5
+        //         * 20  aload_0 [list]
+        //         * 21  invokevirtual java.lang.Object.toString() : java.lang.String [51]
+        //         * 24  areturn
+        //         * }}}
+        //         * Hence, a test (instruction 17) of `l` (variable 1) against `not-null` is
+        //         * performed that may fail or succeed.
+        //         * Subsequently, BATAI will state a corresponding constraint
+        //         * for each respective path. However, if the respective constraint
+        //         * (isNull/isNotNull) would affect the original value list (variable 0),
+        //         * then the result would be that this method would always throw a
+        //         * `NullPointException` independent of the value `list`. (This
+        //         * method may throw a `NullPointerException` or may return normally).
+        //         *
+        //         * For values that will not be update based on stated constraints it is
+        //         * generally not necessary to create a (deep!) copy.
+        //         */
+        //        // TODO Do we need to inform the domain also in case of DUP instructions?
+        //        def onCopyToRegister: DomainValue
 
+        /**
+         * Adapts this value to the given domain if possible.
+         *
+         * The `adapt` method is BATAIs main mechanism to enable dynamic domain-widening.
+         * I.e., to make it possible to change the abstract domain at runtime if the
+         * analysis time takes too long using a precise domain.
+         */
         def adapt(domain: Domain[_ >: I]): domain.DomainValue =
             domainException(
                 Domain.this,
@@ -394,6 +403,19 @@ trait Domain[+I] {
         case VoidType          ⇒ domainException(this, "there are no void typed values")
     }
 
+    def newTypedValue(pc: Int, valueType: Type): DomainValue = valueType match {
+        case BooleanType       ⇒ newBooleanValue(pc)
+        case ByteType          ⇒ newByteValue(pc)
+        case ShortType         ⇒ newShortValue(pc)
+        case CharType          ⇒ newCharValue(pc)
+        case IntegerType       ⇒ newIntegerValue(pc)
+        case FloatType         ⇒ newFloatValue(pc)
+        case LongType          ⇒ newLongValue(pc)
+        case DoubleType        ⇒ newDoubleValue(pc)
+        case rt: ReferenceType ⇒ newReferenceValue(pc, rt)
+        case VoidType          ⇒ domainException(this, "there are no void typed values")
+    }
+
     /**
      * Factory method to create a representation of a boolean value if we neither know
      * the precise value nor the source of the value.
@@ -418,6 +440,12 @@ trait Domain[+I] {
     def newByteValue(): DomainValue
 
     /**
+     * Factory method to create a `DomainValue` that was created (explicitly or
+     * implicitly) by the instruction with the specified program counter.
+     */
+    def newByteValue(pc: Int): DomainValue
+
+    /**
      * Factory method to create a `DomainValue` that represents the given byte value
      * and that was created (explicitly or implicitly) by the instruction with the
      * specified program counter.
@@ -431,6 +459,12 @@ trait Domain[+I] {
     def newShortValue(): DomainValue
 
     /**
+     * Factory method to create a `DomainValue` that was created (explicitly or
+     * implicitly) by the instruction with the specified program counter.
+     */
+    def newShortValue(pc: Int): DomainValue
+
+    /**
      * Factory method to create a `DomainValue` that represents the given short value
      * and that was created (explicitly or implicitly) by the instruction with the
      * specified program counter.
@@ -442,6 +476,12 @@ trait Domain[+I] {
      * the precise value nor the source of the value.
      */
     def newCharValue(): DomainValue
+
+    /**
+     * Factory method to create a `DomainValue` that was created (explicitly or
+     * implicitly) by the instruction with the specified program counter.
+     */
+    def newCharValue(pc: Int): DomainValue
 
     /**
      * Factory method to create a representation of the integer constant value 0.
@@ -459,6 +499,12 @@ trait Domain[+I] {
     def newIntegerValue(): DomainValue
 
     /**
+     * Factory method to create a `DomainValue` that was created (explicitly or
+     * implicitly) by the instruction with the specified program counter.
+     */
+    def newIntegerValue(pc: Int): DomainValue
+
+    /**
      * Factory method to create a `DomainValue` that represents the given integer value
      * and that was created (explicitly or implicitly) by the instruction with the
      * specified program counter.
@@ -470,6 +516,12 @@ trait Domain[+I] {
      * the precise value nor the source of the value.
      */
     def newFloatValue(): DomainValue
+
+    /**
+     * Factory method to create a `DomainValue` that was created (explicitly or
+     * implicitly) by the instruction with the specified program counter.
+     */
+    def newFloatValue(pc: Int): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given float value
@@ -485,6 +537,12 @@ trait Domain[+I] {
     def newLongValue(): DomainValue
 
     /**
+     * Factory method to create a `DomainValue` that was created (explicitly or
+     * implicitly) by the instruction with the specified program counter.
+     */
+    def newLongValue(pc: Int): DomainValue
+
+    /**
      * Factory method to create a `DomainValue` that represents the given long value
      * and that was created (explicitly or implicitly) by the instruction with the
      * specified program counter.
@@ -496,6 +554,12 @@ trait Domain[+I] {
      * the precise value nor the source of the value.
      */
     def newDoubleValue(): DomainValue
+
+    /**
+     * Factory method to create a `DomainValue` that was created (explicitly or
+     * implicitly) by the instruction with the specified program counter.
+     */
+    def newDoubleValue(pc: Int): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given double value
@@ -516,6 +580,13 @@ trait Domain[+I] {
      * object of the given type.
      */
     def newReferenceValue(referenceType: ReferenceType): DomainValue
+
+    /**
+     * Factory method to create a `DomainValue` that represents a new, '''initialized'''
+     * object of the given type and that was created (explicitly or
+     * implicitly) by the instruction with the specified program counter.
+     */
+    def newReferenceValue(pc: Int, referenceType: ReferenceType): DomainValue
 
     /**
      * Factory method to create a new `DomainValue` that represents a new,

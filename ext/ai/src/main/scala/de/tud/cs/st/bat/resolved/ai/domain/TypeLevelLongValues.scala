@@ -110,7 +110,7 @@ trait DefaultTypeLevelLongValues[I]
             case _         ⇒ MetaInformationUpdateIllegalValue
         }
 
-        def onCopyToRegister = this
+       // REMOVE? def onCopyToRegister = this
 
         override def adapt(domain: Domain[_ >: I]): domain.DomainValue = domain match {
             case d: DefaultTypeLevelLongValues[I] ⇒
@@ -122,6 +122,8 @@ trait DefaultTypeLevelLongValues[I]
 
     def newLongValue(): LongValue = LongValue
 
+    def newLongValue(pc: Int): DomainValue = LongValue
+    
     def newLongValue(pc: Int, value: Long): LongValue = LongValue
 }
 

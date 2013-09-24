@@ -113,11 +113,13 @@ trait DefaultTypeLevelDoubleValues[I]
                 case _ ⇒ super.adapt(domain)
             }
 
-        def onCopyToRegister = this
+        // REMOVE? def onCopyToRegister = this
     }
 
     def newDoubleValue(): DoubleValue = DoubleValue
 
+    def newDoubleValue(pc: Int): DomainValue = DoubleValue
+    
     def newDoubleValue(pc: Int, value: Double): DoubleValue = DoubleValue
 }
 
