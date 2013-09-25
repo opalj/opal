@@ -244,14 +244,14 @@ trait PreciseIntegerValues[I] extends Domain[I] {
     def idiv(pc: Int, value1: DomainValue, value2: DomainValue): Computation[DomainValue, DomainValue] =
         ifBothHaveIntValues(value1, value2) { (v1, v2) ⇒
             if (v2 == 0)
-                ThrowsException(newVMObject(pc, ObjectType.ArithmeticException))
+                ThrowsException(newInitializedObject(pc, ObjectType.ArithmeticException))
             else
                 ComputedValue(newIntegerValue(pc, v1 / v2))
         } {
             if (divisionByZeroIfUnknown)
                 ComputedValueAndException(
                     newIntegerValue,
-                    newVMObject(pc, ObjectType.ArithmeticException))
+                    newInitializedObject(pc, ObjectType.ArithmeticException))
             else
                 ComputedValue(newIntegerValue)
         }

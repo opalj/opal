@@ -106,9 +106,11 @@ trait Domain[+I] {
      * exception are, of course, classes that directly inherit from this class.
      *
      * ==Extending Value==
-     * If you directly extend this trait, make sure that you also extend all
-     * classes/traits that inherit from this type (this may require a deep mixin
-     * composition and that you refine the type `DomainType` accordingly).
+     * If you directly extend this trait (i.e., in a subclass of the `Domain` trait
+     * you write something like `trait Value extends super.Value`), make sure that
+     * you also extend all classes/traits that inherit from this type
+     * (this may require a deep mixin composition and that you refine the type
+     * `DomainType` accordingly).
      * However, BATAI was designed such that extending this class should – in general
      * – not be necessary.
      *
@@ -176,65 +178,20 @@ trait Domain[+I] {
          */
         def merge(pc: Int, value: DomainValue): Update[DomainValue]
 
-        //        /**
-        //         * Called by BATAI to inform the domain that a value is copied from the
-        //         * operand stack to a local register.
-        //         *
-        //         * In this case it may be necessary that a copy of this value is created to
-        //         * make sure that subsequent updates related to the copied value do not
-        //         * affect the original value (that may have been loaded from a local variable).
-        //         * For example, given the following Java code:
-        //         * {{{
-        //         * public static Object iterateList(java.util.List<?> list) {
-        //         * 	java.util.List<?> l = list;
-        //         * 	while (l != null) {
-        //         * 		l = (java.util.List<?>) l.get(0);
-        //         * 	}
-        //         * 	return list.toString();
-        //         * }
-        //         * }}}
-        //         * In this case, the corresponding bytecode will be:
-        //         * {{{
-        //         * 0  aload_0 [list]
-        //         * 1  astore_1 [l]
-        //         * 2  goto 16
-        //         * 5  aload_1 [l]
-        //         * 6  iconst_0
-        //         * 7  invokeinterface java.util.List.get(int) : java.lang.Object [45] [nargs: 2]
-        //         * 12  checkcast java.util.List [46]
-        //         * 15  astore_1 [l]
-        //         * 16  aload_1 [l]
-        //         * 17  ifnonnull 5
-        //         * 20  aload_0 [list]
-        //         * 21  invokevirtual java.lang.Object.toString() : java.lang.String [51]
-        //         * 24  areturn
-        //         * }}}
-        //         * Hence, a test (instruction 17) of `l` (variable 1) against `not-null` is
-        //         * performed that may fail or succeed.
-        //         * Subsequently, BATAI will state a corresponding constraint
-        //         * for each respective path. However, if the respective constraint
-        //         * (isNull/isNotNull) would affect the original value list (variable 0),
-        //         * then the result would be that this method would always throw a
-        //         * `NullPointException` independent of the value `list`. (This
-        //         * method may throw a `NullPointerException` or may return normally).
-        //         *
-        //         * For values that will not be update based on stated constraints it is
-        //         * generally not necessary to create a (deep!) copy.
-        //         */
-        //        // TODO Do we need to inform the domain also in case of DUP instructions?
-        //        def onCopyToRegister: DomainValue
-
         /**
-         * Adapts this value to the given domain if possible.
+         * Adapts this value to the given domain.
          *
          * The `adapt` method is BATAIs main mechanism to enable dynamic domain-widening.
          * I.e., to make it possible to change the abstract domain at runtime if the
-         * analysis time takes too long using a precise domain.
+         * analysis time takes too long using a (more) precise domain.
          */
         def adapt(domain: Domain[_ >: I]): domain.DomainValue =
             domainException(
                 Domain.this,
                 "adapting this value for the target domain is not supported")
+
+        private[Domain] def asReturnAddressValue: Int =
+            BATException("this value cannot be converted to a return address")
 
     }
 
@@ -266,7 +223,7 @@ trait Domain[+I] {
      *
      * @see [[de.tud.cs.st.bat.resolved.ai.Domain.Value]] for further details.
      */
-    protected class IllegalValue extends Value { this: DomainValue ⇒
+    protected class IllegalValue extends Value { this: DomainIllegalValue ⇒
 
         final def computationalType: ComputationalType =
             domainException(
@@ -279,12 +236,10 @@ trait Domain[+I] {
             else
                 MetaInformationUpdateIllegalValue
 
-        override def toString = "IllegalValue"
-
-        final def onCopyToRegister = this
-
         override def adapt(domain: Domain[_ >: I]): domain.DomainValue =
             domain.TheIllegalValue
+
+        override def toString: String = "IllegalValue"
     }
 
     /**
@@ -332,28 +287,30 @@ trait Domain[+I] {
      */
     class ReturnAddressValue(
         val address: Int)
-            extends Value { this: DomainValue ⇒
-
-        override def merge(pc: Int, value: DomainValue): Update[DomainValue] =
-            value match {
-                case other: ReturnAddressValue if other.address == this.address ⇒ NoUpdate
-                case _ ⇒ BATException("return address values cannot be merged")
-            }
+            extends Value { this: DomainReturnAddressValue ⇒
 
         final def computationalType: ComputationalType = ComputationalTypeReturnAddress
 
-        override def toString = "ReturnAddress: "+address
+        final def merge(pc: Int, value: DomainValue): Update[DomainValue] =
+            if (address == value.asReturnAddressValue)
+                NoUpdate
+            else
+                BATException("return address values cannot be merged")
 
-        final def onCopyToRegister = this
+        private[Domain] override def asReturnAddressValue: Int = address
 
         override def adapt(domain: Domain[_ >: I]): domain.DomainValue =
             domain.ReturnAddressValue(address)
+
+        override def toString = "ReturnAddress: "+address
     }
+
     /**
      * Defines an extractor method to facilitate matching against return addresses.
      */
     object ReturnAddressValue {
-        def unapply(retAddress: ReturnAddressValue): Option[Int] = Some(retAddress.address)
+        def unapply(retAddress: ReturnAddressValue): Option[Int] =
+            Some(retAddress.address)
     }
 
     /**
@@ -386,7 +343,8 @@ trait Domain[+I] {
      * that the actual value is `null`, but such knowledge is not available.
      *
      * BATAI uses this method when a method is to be analyzed, but no parameter
-     * values are given and initial values need to be generated.
+     * values are given and initial values need to be generated. This method is not
+     * used elsewhere by BATAI.
      *
      * @note This method is primarily a convenience method.
      */
@@ -591,8 +549,7 @@ trait Domain[+I] {
     /**
      * Factory method to create a new `DomainValue` that represents a new,
      * '''uninitialized''' instance of an object of the given type that was
-     * created (explicitly or implicitly) by the instruction with the specified program
-     * counter.
+     * created by the instruction with the specified program counter.
      *
      * BATAI calls this method when it evaluates `newobject` instructions.
      * If the bytecode is valid a call of one of the object's constructors will
@@ -606,26 +563,25 @@ trait Domain[+I] {
 
     /**
      * Factory method to create a `DomainValue` that represents a new, '''initialized'''
-     * object of the given and that was created (explicitly or implicitly) by the
+     * object of the given type and that was created (explicitly or implicitly) by the
      * instruction with the specified program counter.
      *
      * This method is used by BATAI to create reference values that are normally
      * internally created by the JVM (in particular exceptions such as
      * `NullPointExeception` and `ClassCastException`).
      */
-    def newVMObject(pc: Int, objectType: ObjectType): DomainValue
+    def newInitializedObject(pc: Int, objectType: ObjectType): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given string value
-     * and that was created (explicitly or implicitly) by the instruction with the
-     * specified program counter.
+     * and that was created by the instruction with the specified program counter.
      */
     def newStringValue(pc: Int, value: String): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents a runtime value of
-     * type "`Class&lt;T&gt;`" and that was created (explicitly or implicitly)
-     * by the instruction with the specified program counter.
+     * type "`Class&lt;T&gt;`" and that was created by the instruction with the
+     * specified program counter.
      */
     def newClassValue(pc: Int, t: Type): DomainValue
 
@@ -990,11 +946,14 @@ trait Domain[+I] {
         pc: Int,
         value: DomainValue): SucceedsOrNullPointerException = {
         isNull(value) match {
-            case Yes ⇒ ThrowsException(newVMObject(pc, ObjectType.NullPointerException))
-            case No  ⇒ ComputationWithSideEffectOnly
-            case Unknown ⇒ ComputationWithSideEffectOrException(
-                newVMObject(pc, ObjectType.NullPointerException)
-            )
+            case Yes ⇒
+                ThrowsException(newInitializedObject(pc, ObjectType.NullPointerException))
+            case No ⇒
+                ComputationWithSideEffectOnly
+            case Unknown ⇒
+                ComputationWithSideEffectOrException(
+                    newInitializedObject(pc, ObjectType.NullPointerException)
+                )
         }
     }
 
@@ -1136,6 +1095,9 @@ trait Domain[+I] {
     //
 
     /**
+     * Returns the field's value and/or a new `NullPointerException` if the given
+     * `objectref` is `null`.
+     *
      * @return The field's value or a new `NullPointerException`.
      */
     def getfield(pc: Int,
@@ -1144,14 +1106,19 @@ trait Domain[+I] {
                  name: String,
                  fieldType: FieldType): Computation[DomainValue, DomainValue]
 
+    /**
+     * Returns the field's value and/or a new `LinkageException` if the specified
+     * class is not found.
+     *
+     * @return The field's value or a new `LinkageException`.
+     */
     def getstatic(pc: Int,
                   declaringClass: ObjectType,
                   name: String,
                   fieldType: FieldType): Computation[DomainValue, DomainValue]
 
     /**
-     * Returns the field's value and/or a new `NullPointerException` if the given
-     * `objectref` is `null`.
+     * Sets the fields values if the given `objectref` is not `null`.
      */
     def putfield(pc: Int,
                  objectref: DomainValue,
@@ -1160,6 +1127,9 @@ trait Domain[+I] {
                  name: String,
                  fieldType: FieldType): Computation[Nothing, DomainValue]
 
+    /**
+     * Sets the fields values if the given class can be found.
+     */
     def putstatic(pc: Int,
                   value: DomainValue,
                   declaringClass: ObjectType,
@@ -1244,6 +1214,7 @@ trait Domain[+I] {
     def isub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
     def iushr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
     def ixor(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def iinc(pc: Int, value: DomainValue, increment: Int): DomainValue
 
     def ladd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
     def land(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
@@ -1256,13 +1227,11 @@ trait Domain[+I] {
     def lsub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
     def lushr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
     def lxor(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-
+    
     //
     // "OTHER" INSTRUCTIONS
     //
-
-    def iinc(pc: Int, value: DomainValue, increment: Int): DomainValue
-
+    
     /**
      * Handles a `monitorenter` instruction.
      *

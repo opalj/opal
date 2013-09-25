@@ -68,7 +68,8 @@ trait TypeLevelLongValues[I] extends Domain[I] {
     //
     // RELATIONAL OPERATORS
     //
-    def lcmp(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newIntegerValue
+    def lcmp(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+        newIntegerValue
 
     //
     // UNARY EXPRESSIONS
@@ -79,17 +80,38 @@ trait TypeLevelLongValues[I] extends Domain[I] {
     // BINARY EXPRESSIONS
     //
 
-    def ladd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newLongValue
-    def land(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newLongValue
-    def ldiv(pc: Int, value1: DomainValue, value2: DomainValue) = ComputedValue(newLongValue)
-    def lmul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newLongValue
-    def lor(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newLongValue
-    def lrem(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newLongValue
-    def lshl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newLongValue
-    def lshr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newLongValue
-    def lsub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newLongValue
-    def lushr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newLongValue
-    def lxor(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newLongValue
+    def ladd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+        newLongValue
+
+    def land(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+        newLongValue
+
+    def ldiv(pc: Int, value1: DomainValue, value2: DomainValue) =
+        ComputedValue(newLongValue)
+
+    def lmul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+        newLongValue
+
+    def lor(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+        newLongValue
+
+    def lrem(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+        newLongValue
+
+    def lshl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+        newLongValue
+
+    def lshr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+        newLongValue
+
+    def lsub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+        newLongValue
+
+    def lushr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+        newLongValue
+
+    def lxor(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+        newLongValue
 
     //
     // CONVERSION INSTRUCTIONS
@@ -105,12 +127,11 @@ trait DefaultTypeLevelLongValues[I]
         with TypeLevelLongValues[I] {
 
     case object LongValue extends super.LongValue {
-        override def merge(pc: Int, value: DomainValue): Update[DomainValue] = value match {
-            case LongValue ⇒ NoUpdate
-            case _         ⇒ MetaInformationUpdateIllegalValue
-        }
-
-       // REMOVE? def onCopyToRegister = this
+        override def merge(pc: Int, value: DomainValue): Update[DomainValue] =
+            value match {
+                case LongValue ⇒ NoUpdate
+                case _         ⇒ MetaInformationUpdateIllegalValue
+            }
 
         override def adapt(domain: Domain[_ >: I]): domain.DomainValue = domain match {
             case d: DefaultTypeLevelLongValues[I] ⇒
@@ -123,7 +144,7 @@ trait DefaultTypeLevelLongValues[I]
     def newLongValue(): LongValue = LongValue
 
     def newLongValue(pc: Int): DomainValue = LongValue
-    
+
     def newLongValue(pc: Int, value: Long): LongValue = LongValue
 }
 

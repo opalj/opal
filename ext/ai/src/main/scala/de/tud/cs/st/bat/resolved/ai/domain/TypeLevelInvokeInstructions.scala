@@ -44,6 +44,8 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  */
 trait TypeLevelInvokeInstructions { this: Domain[_] ⇒
 
+    import ObjectType._
+
     protected def asTypedValue(pc: Int, someType: Type): Option[DomainValue] = {
         if (someType.isVoidType)
             None
@@ -51,19 +53,21 @@ trait TypeLevelInvokeInstructions { this: Domain[_] ⇒
             Some(newTypedValue(pc, someType))
     }
 
-    protected def handleInstanceBasedInvoke(pc: Int,
-                                            methodDescriptor: MethodDescriptor,
-                                            operands: List[DomainValue]) =
+    protected def handleInstanceBasedInvoke(
+        pc: Int,
+        methodDescriptor: MethodDescriptor,
+        operands: List[DomainValue]) = {
         isNull(operands.last) match {
             case Yes ⇒
-                ThrowsException(Set(newVMObject(pc, ObjectType.NullPointerException)))
+                ThrowsException(Set(newInitializedObject(pc, NullPointerException)))
             case No ⇒
                 ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
             case Unknown ⇒
                 ComputedValueAndException(
                     asTypedValue(pc, methodDescriptor.returnType),
-                    Set(newObject(pc, ObjectType.NullPointerException)))
+                    Set(newObject(pc, NullPointerException)))
         }
+    }
 
     def invokeinterface(pc: Int,
                         declaringClass: ReferenceType,

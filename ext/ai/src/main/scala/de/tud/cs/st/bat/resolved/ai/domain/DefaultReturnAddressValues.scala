@@ -38,7 +38,8 @@ package domain
 
 /**
  * Final bindings for a `Domain`'s `ReturnAddressValue` trait that can be
- * mixed in if `Domain`'s `Value` trait was not extended.
+ * mixed in if a `Domain`'s `Value` and `ReturnAddressValue` trait were
+ * not extended.
  *
  * @author Michael Eichberg
  */

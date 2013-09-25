@@ -224,6 +224,7 @@ trait AI {
             localsArray: Array[Array[domain.DomainValue]]): AIResult[domain.type] = {
 
         import domain._
+        import ObjectType._
         type SingleValueDomainTest = (DomainValue) ⇒ Answer
         type TwoValuesDomainTest = (DomainValue, DomainValue) ⇒ Answer
 
@@ -681,7 +682,9 @@ trait AI {
                         val isExceptionNull = isNull(exceptionValue)
                         if (isExceptionNull.maybeYes) {
                             // if the operand of the athrow exception is null, a new NullPointerException is raised
-                            handleException(newVMObject(pc, ObjectType.NullPointerException))
+                            handleException(
+                                newInitializedObject(pc, NullPointerException)
+                            )
                         }
                         if (isExceptionNull.maybeNo) {
                             val (updatedOperands, updatedLocals) =
@@ -1078,35 +1081,35 @@ trait AI {
                         val lvIndex = instruction.asInstanceOf[StoreLocalVariableInstruction].lvIndex
                         fallThrough(
                             operands.tail,
-                            updateLocals(lvIndex, operands.head/* REMOVE: .onCopyToRegister*/))
+                            updateLocals(lvIndex, operands.head /* REMOVE: .onCopyToRegister*/ ))
                     case 75 /*astore_0*/
                         | 71 /*dstore_0*/
                         | 67 /*fstore_0*/
                         | 63 /*lstore_0*/
                         | 59 /*istore_0*/ ⇒
                         fallThrough(
-                            operands.tail, updateLocals(0, operands.head/*REMOVE: .onCopyToRegister*/))
+                            operands.tail, updateLocals(0, operands.head /*REMOVE: .onCopyToRegister*/ ))
                     case 76 /*astore_1*/
                         | 72 /*dstore_1*/
                         | 68 /*fstore_1*/
                         | 64 /*lstore_1*/
                         | 60 /*istore_1*/ ⇒
                         fallThrough(
-                            operands.tail, updateLocals(1, operands.head/*REMOVE: .onCopyToRegister*/))
+                            operands.tail, updateLocals(1, operands.head /*REMOVE: .onCopyToRegister*/ ))
                     case 77 /*astore_2*/
                         | 73 /*dstore_2*/
                         | 69 /*fstore_2*/
                         | 65 /*lstore_2*/
                         | 61 /*istore_2*/ ⇒
                         fallThrough(
-                            operands.tail, updateLocals(2, operands.head/*REMOVE: .onCopyToRegister*/))
+                            operands.tail, updateLocals(2, operands.head /*REMOVE: .onCopyToRegister*/ ))
                     case 78 /*astore_3*/
                         | 74 /*dstore_3*/
                         | 70 /*fstore_3*/
                         | 66 /*lstore_3*/
                         | 62 /*istore_3*/ ⇒
                         fallThrough(
-                            operands.tail, updateLocals(3, operands.head/*REMOVE: .onCopyToRegister*/))
+                            operands.tail, updateLocals(3, operands.head /*REMOVE: .onCopyToRegister*/ ))
 
                     //
                     // PUSH CONSTANT VALUE
@@ -1451,9 +1454,9 @@ trait AI {
                                 // if objectref is a subtype => UNCHANGED
                                 fallThrough()
                             case No ⇒
-                                handleException(newVMObject(pc, ObjectType.ClassCastException))
+                                handleException(newInitializedObject(pc, ClassCastException))
                             case Unknown ⇒
-                                handleException(newVMObject(pc, ObjectType.ClassCastException))
+                                handleException(newInitializedObject(pc, ClassCastException))
                                 val (newOperands, newLocals) =
                                     establishUpperBound(pc, supertype, objectref, operands, locals)
                                 fallThrough(newOperands, newLocals)

@@ -658,7 +658,7 @@ trait DefaultTypeLevelReferenceValues[I]
     def newObject(pc: Int, objectType: ObjectType): DomainValue =
         AReferenceValue(pc, Set[ReferenceType](objectType), No, true)
 
-    def newVMObject(pc: Int, objectType: ObjectType): DomainValue =
+    def newInitializedObject(pc: Int, objectType: ObjectType): DomainValue =
         newObject(pc, objectType)
 
     def newStringValue(pc: Int, value: String): DomainValue =
