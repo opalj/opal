@@ -515,6 +515,8 @@ trait AI {
                     newLocals
                 }
 
+                def as[I <: Instruction](i: Instruction): I = i.asInstanceOf[I]
+
                 (instruction.opcode: @annotation.switch) match {
                     //
                     // UNCONDITIONAL TRANSFER OF CONTROL
@@ -526,8 +528,9 @@ trait AI {
 
                     // Fundamental idea: we treat a "jump to subroutine" similar to
                     // the call of a method. I.e., we make sure the operand
-                    // stand and the registers are empty at the beginning and
-                    // we explore all paths before we return from the subroutine.
+                    // stack and the registers are empty at the beginning and
+                    // we finish the exploration of all paths before we return from the 
+                    // subroutine.
                     // Semantics (from the JVM Spec):
                     // - The instruction following each jsr(_w) instruction may be 
                     //      returned to only by a single ret instruction.
@@ -541,18 +544,19 @@ trait AI {
                     case 168 /*jsr*/
                         | 201 /*jsr_w*/ ⇒
                         worklist = SUBROUTINE_START :: worklist
-                        val branchtarget = pc + instruction.asInstanceOf[JSRInstruction].branchoffset
-                        gotoTarget(branchtarget, domain.ReturnAddressValue(pcOfNextInstruction) :: operands, locals)
+                        val branchtarget = pc + as[JSRInstruction](instruction).branchoffset
+                        gotoTarget(
+                            branchtarget,
+                            domain.ReturnAddressValue(pcOfNextInstruction) :: operands,
+                            locals)
 
                     case 169 /*ret*/ ⇒
-                        val lvIndex = instruction.asInstanceOf[RET].lvIndex
+                        val lvIndex = as[RET](instruction).lvIndex
                         locals(lvIndex) match {
                             case ReturnAddressValue(returnAddress) ⇒
-                                // Have we explored all paths?
+                                // Check that we have explored all paths:
                                 if (worklist.head == SUBROUTINE_START) {
                                     worklist = worklist.tail
-                                    // clear all computations that were done
-                                    // to make this subroutine callable again
                                     if (tracer.isDefined)
                                         tracer.get.returnFromSubroutine(
                                             domain,
@@ -561,10 +565,13 @@ trait AI {
                                             evaluated.takeWhile { pc ⇒
                                                 val opcode = instructions(pc).opcode
                                                 opcode != 168 && opcode != 201
-                                            })
+                                            }
+                                        )
+                                    // clear all computations that were done
+                                    // to make this subroutine callable again
                                     val lastInstructions = evaluated.iterator
                                     var previousInstruction = lastInstructions.next
-                                    var previousInstructionOpcode = instructions(previousInstruction).opcode
+                                    var previousInstructionOpcode: Int = -1 // instructions(previousInstruction).opcode
                                     do {
                                         operandsArray(previousInstruction) = null
                                         localsArray(previousInstruction) = null
@@ -572,7 +579,8 @@ trait AI {
                                         previousInstructionOpcode = instructions(previousInstruction).opcode
                                     } while (previousInstructionOpcode != 168 &&
                                         previousInstructionOpcode != 201)
-
+                                    // reset the local variable that stores the 
+                                    // return address
                                     val updatedLocals = locals.updated(lvIndex, null.asInstanceOf[domain.DomainValue])
                                     gotoTarget(returnAddress, operands, updatedLocals)
                                 }
@@ -642,7 +650,8 @@ trait AI {
                                 gotoTarget(branchTarget, updatedOperands, updatedLocals)
                             }
                         }
-                        if (branchToDefaultRequired || domain.isSomeValueNotInRange(index, firstKey, switch.npairs(switch.npairs.size - 1)._1)) {
+                        if (branchToDefaultRequired ||
+                            domain.isSomeValueNotInRange(index, firstKey, switch.npairs(switch.npairs.size - 1)._1)) {
                             gotoTarget(pc + switch.defaultOffset, remainingOperands, locals)
                         }
 
@@ -681,19 +690,23 @@ trait AI {
                         val exceptionValue = operands.head
                         val isExceptionNull = isNull(exceptionValue)
                         if (isExceptionNull.maybeYes) {
-                            // if the operand of the athrow exception is null, a new NullPointerException is raised
+                            // if the operand of the athrow exception is null, a new 
+                            // NullPointerException is raised by the JVM
                             handleException(
                                 newInitializedObject(pc, NullPointerException)
                             )
                         }
                         if (isExceptionNull.maybeNo) {
                             val (updatedOperands, updatedLocals) =
-                                establishIsNonNull(pc, exceptionValue, List(exceptionValue), locals)
+                                establishIsNonNull(
+                                    pc, exceptionValue,
+                                    List(exceptionValue),
+                                    locals)
                             val updatedExceptionValue = updatedOperands.head
 
                             domain.types(exceptionValue) match {
                                 case answer: TypesUnknown ⇒
-                                    code.exceptionHandlersFor(pc).foreach(eh ⇒ {
+                                    code.exceptionHandlersFor(pc).foreach { eh ⇒
                                         val branchTarget = eh.handlerPC
                                         // unless we have a "finally" handler, we can state
                                         // a constraint
@@ -705,7 +718,7 @@ trait AI {
                                             }
                                         } else
                                             gotoTarget(branchTarget, updatedOperands, updatedLocals)
-                                    })
+                                    }
                                     abruptMethodExecution(pc, exceptionValue)
 
                                 case exceptions: IsReferenceType ⇒
@@ -774,7 +787,6 @@ trait AI {
                                 domain.newarray(pc, count, IntegerType)
                             case LongType.atype ⇒
                                 domain.newarray(pc, count, LongType)
-                            case _ ⇒ BATException("newarray of unsupported \"atype\"")
                         }
                         computationWithReturnValueAndException(computation, rest)
 
@@ -1081,35 +1093,35 @@ trait AI {
                         val lvIndex = instruction.asInstanceOf[StoreLocalVariableInstruction].lvIndex
                         fallThrough(
                             operands.tail,
-                            updateLocals(lvIndex, operands.head /* REMOVE: .onCopyToRegister*/ ))
+                            updateLocals(lvIndex, operands.head))
                     case 75 /*astore_0*/
                         | 71 /*dstore_0*/
                         | 67 /*fstore_0*/
                         | 63 /*lstore_0*/
                         | 59 /*istore_0*/ ⇒
                         fallThrough(
-                            operands.tail, updateLocals(0, operands.head /*REMOVE: .onCopyToRegister*/ ))
+                            operands.tail, updateLocals(0, operands.head))
                     case 76 /*astore_1*/
                         | 72 /*dstore_1*/
                         | 68 /*fstore_1*/
                         | 64 /*lstore_1*/
                         | 60 /*istore_1*/ ⇒
                         fallThrough(
-                            operands.tail, updateLocals(1, operands.head /*REMOVE: .onCopyToRegister*/ ))
+                            operands.tail, updateLocals(1, operands.head))
                     case 77 /*astore_2*/
                         | 73 /*dstore_2*/
                         | 69 /*fstore_2*/
                         | 65 /*lstore_2*/
                         | 61 /*istore_2*/ ⇒
                         fallThrough(
-                            operands.tail, updateLocals(2, operands.head /*REMOVE: .onCopyToRegister*/ ))
+                            operands.tail, updateLocals(2, operands.head))
                     case 78 /*astore_3*/
                         | 74 /*dstore_3*/
                         | 70 /*fstore_3*/
                         | 66 /*lstore_3*/
                         | 62 /*istore_3*/ ⇒
                         fallThrough(
-                            operands.tail, updateLocals(3, operands.head /*REMOVE: .onCopyToRegister*/ ))
+                            operands.tail, updateLocals(3, operands.head))
 
                     //
                     // PUSH CONSTANT VALUE

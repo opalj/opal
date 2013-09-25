@@ -37,9 +37,6 @@ package ai
 package project
 
 import analyses._
-import de.tud.cs.st.bat.resolved.ClassFile
-import de.tud.cs.st.bat.resolved.Method
-import de.tud.cs.st.bat.resolved.ai.Domain
 
 /**
  * @author Michael Eichberg

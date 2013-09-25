@@ -41,8 +41,8 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 /**
  * Implementation of a basic domain for handling reference values.
  *
- * This domain traces the type of a value and the nullness property of reference
- * values.
+ * This domain traces the type of a value and whether the value is `null`, maybe `null`
+ * or is not `null`.
  *
  * @author Michael Eichberg
  */
@@ -64,7 +64,7 @@ trait TypeLevelReferenceValues[I] extends Domain[I] {
         def isNull: Answer
 
         /**
-         * Called by BATAI when it determines that the null-value property
+         * Indirectly called by BATAI when it determines that the null-value property
          * of this type-level reference should be updated.
          */
         def updateIsNull(pc: Int, isNull: Answer): DomainValue
@@ -75,7 +75,7 @@ trait TypeLevelReferenceValues[I] extends Domain[I] {
          *
          * Basically, this method implements the same semantics as the `ClassHierarchy`'s
          * `isSubtypeOf` method. But, additionally it checks if the type of the value
-         * could be a subtpye of the given supertype. For example, assume that the type
+         * could be a subtype of the given supertype. For example, assume that the type
          * of this reference value is `java.util.Collection` and we know that this is only
          * an upper bound. In this case an answer is `No` if and only if it is impossible
          * that the runtime type is a subtype of the given supertype. This
@@ -88,14 +88,16 @@ trait TypeLevelReferenceValues[I] extends Domain[I] {
          *
          * @param onNull If this value is known to be `null` and, hence, no type
          *      information is available the result of evaluating this function
-         *      is returned.
+         *      is returned. This enables it to use this method as the basis for
+         *      the implementation of "instanceof" and "checkcast" as both methods
+         *      handle `null` values differently.
          */
         def isSubtypeOf(supertype: ReferenceType, onNull: ⇒ Answer): Answer
 
         /**
          * Adds an upper bound. This call can be ignored if the type
-         * information is precise, i.e., if we know that we precisely capture
-         * the runtime type of the value.
+         * information related to this value is precise, i.e., if we know that we
+         * precisely capture the runtime type of this value.
          */
         def addUpperBound(pc: Int, upperBound: ReferenceType): DomainValue
     }
@@ -141,29 +143,31 @@ trait TypeLevelReferenceValues[I] extends Domain[I] {
         }
     }
 
+    object AsReference {
+        def unapply(value: DomainValue): Option[ReferenceValue] =
+            if (value.isInstanceOf[ReferenceValue])
+                Some(value.asInstanceOf[ReferenceValue])
+            else
+                None
+    }
+
     /**
      * Determines the nullness-property of the given value.
      *
      * @param value A value of type `ReferenceValue`.
      */
-    def isNull(value: DomainValue): Answer = value match {
-        case r: ReferenceValue ⇒
-            r.isNull
-        case _ ⇒
-            domainException(
-                this,
-                "\"isNull\" is not defined for non-reference values: "+value)
+    def isNull(value: DomainValue): Answer = {
+        val AsReference(objectref) = value
+        objectref.isNull
     }
 
-    def isSubtypeOf(value: DomainValue, supertype: ReferenceType, onNull: ⇒ Answer): Answer =
-        value match {
-            case rv: ReferenceValue ⇒
-                rv.isSubtypeOf(supertype, onNull)
-            case _ ⇒
-                domainException(
-                    this,
-                    "isSubtypeOf is not defined for non-reference values: "+value)
-        }
+    def isSubtypeOf(
+        value: DomainValue,
+        supertype: ReferenceType,
+        onNull: ⇒ Answer): Answer = {
+        val AsReference(objectref) = value
+        objectref.isSubtypeOf(supertype, onNull)
+    }
 
     // -----------------------------------------------------------------------------------
     //
@@ -176,40 +180,40 @@ trait TypeLevelReferenceValues[I] extends Domain[I] {
         bound: ReferenceType,
         value: DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) =
-        value match {
-            case referenceValue: ReferenceValue ⇒
-                val newReferenceValue = referenceValue.addUpperBound(pc, bound)
-                if (referenceValue eq newReferenceValue) (
-                    operands,
-                    locals
-                )
-                else (
-                    operands.map(op ⇒ if (op eq value) newReferenceValue else op),
-                    locals.map(l ⇒ if (l eq value) newReferenceValue else l)
-                )
-            case _ ⇒
-                domainException(this, "setting a type bound is only possible for reference values")
-        }
+        locals: Locals): (Operands, Locals) = {
+        val AsReference(referenceValue) = value
+        val newReferenceValue = referenceValue.addUpperBound(pc, bound)
+        if (referenceValue eq newReferenceValue)
+            (
+                operands,
+                locals
+            )
+        else
+            (
+                operands.map(op ⇒ if (op eq value) newReferenceValue else op),
+                locals.map(l ⇒ if (l eq value) newReferenceValue else l)
+            )
+    }
 
     protected def updateIsNull(
         pc: Int,
         value: DomainValue,
         isNull: Answer,
         operands: Operands,
-        locals: Locals): (Operands, Locals) =
-        value match {
-            case r: ReferenceValue ⇒
-                val newReferenceValue = r.updateIsNull(pc, isNull)
-                if (r eq newReferenceValue) (
-                    operands,
-                    locals
-                )
-                else (
-                    operands.map(op ⇒ if (op eq value) newReferenceValue else op),
-                    locals.map(l ⇒ if (l eq value) newReferenceValue else l)
-                )
-        }
+        locals: Locals): (Operands, Locals) = {
+        val AsReference(referenceValue) = value
+        val newReferenceValue = referenceValue.updateIsNull(pc, isNull)
+        if (referenceValue eq newReferenceValue)
+            (
+                operands,
+                locals
+            )
+        else
+            (
+                operands.map(op ⇒ if (op eq value) newReferenceValue else op),
+                locals.map(l ⇒ if (l eq value) newReferenceValue else l)
+            )
+    }
 
     /**
      * Updates the nullness property (`isNull == No`) of the given value.
@@ -263,15 +267,16 @@ trait DefaultTypeLevelReferenceValues[I]
         def location: I = domain.identifier
 
         /**
-         * A type bound represents the available information about a reference value's type.
+         * A type bound represents the available information about a reference
+         * value's type.
          *
          * In case of reference types, a type bound may, e.g., be a set of interface types
-         * which are known to be implemented by the current object. Even if the type contains
-         * a class type it may just be a super class of the concrete type and, hence,
-         * just represents an abstraction.
+         * which are known to be implemented by the current object. Even if the type
+         * contains a class type it may just be a super class of the concrete type and,
+         * hence, just represent an abstraction.
          *
-         * How type bounds related to reference types are handled and
-         * whether the domain makes it possible to distinguish between precise types and
+         * How type bounds related to reference types are handled and whether the
+         * domain makes it possible to distinguish between precise types and
          * type bounds is at the sole discretion of the domain.
          */
         type TypeBound = Set[ReferenceType]
@@ -288,11 +293,18 @@ trait DefaultTypeLevelReferenceValues[I]
          */
         def valueType: TypeBound
 
+        /**
+         * Returns if `true` if the type information about this value is complete and
+         * precise. I.e., if `isPrecise` returns `true` and the value's type is
+         * reported to be `java.lang.Object` then the current value is known to be an
+         * instance of the class `java.lang.Object` and of no other (sub)class.
+         */
         def isPrecise: Boolean
     }
 
     object ReferenceValue {
-        def unapply(rv: ReferenceValue) = Some((rv.valueType, rv.isNull, rv.isPrecise))
+        def unapply(rv: ReferenceValue): Some[(TypeBound, Answer, Boolean)] =
+            Some((rv.valueType, rv.isNull, rv.isPrecise))
     }
 
     //
@@ -305,8 +317,6 @@ trait DefaultTypeLevelReferenceValues[I]
         val isNull: Answer,
         val isPrecise: Boolean)
             extends ReferenceValue {
-
-        // REMOVE?def onCopyToRegister = AReferenceValue(pc, valueType, isNull, isPrecise)
 
         override def adapt(domain: Domain[_ >: I]): domain.DomainValue = domain match {
             case d: DefaultTypeLevelReferenceValues[I] ⇒
@@ -323,7 +333,7 @@ trait DefaultTypeLevelReferenceValues[I]
 
         def headType = valueType.head
 
-        def foreachType[U](f: ReferenceType ⇒ U): Unit = valueType.foreach(f(_))
+        def foreachType[U](f: ReferenceType ⇒ U): Unit = valueType.foreach(f)
 
         def forallTypes(f: ReferenceType ⇒ Boolean): Boolean = valueType.forall(f)
 
@@ -346,27 +356,22 @@ trait DefaultTypeLevelReferenceValues[I]
                 if answer.isDefined // when the answer is Unknown we do not need to continue
             ) { answer = answer.merge(domain.isSubtypeOf(referenceType, supertype)) }
             answer match {
-                case Unknown ⇒ Unknown
-                case Yes     ⇒ Yes
+                case Unknown         ⇒ Unknown
+                case Yes             ⇒ Yes
+                case No if isPrecise ⇒ No
                 case No ⇒
-                    if (isPrecise)
+                    // .. is it conceivable that this value is still a subtype of the
+                    // given reference type?
+                    if (forallTypes { subtype ⇒ domain.isSubtypeOf(supertype, subtype).yes })
+                        // Well it is conceivable that the value at runtime is a subtype
+                        Unknown
+                    else
                         No
-                    else {
-                        // .. is it conceivable that this value is still a subtype of the
-                        // given reference type?
-                        if (forallTypes { subtype ⇒ domain.isSubtypeOf(supertype, subtype).yes })
-                            // Well it is conceivable that the value at runtime is a subtype
-                            Unknown
-                        else
-                            No
-                    }
             }
         }
 
         def updateIsNull(pc: Int, isNull: Answer): AReferenceValue = {
-            if (this.isNull == isNull)
-                this
-            else if (this.isNull.isUndefined)
+            if (this.isNull.isUndefined)
                 if (isNull.yes)
                     AReferenceValue(this.pc, Set.empty[ReferenceType], Yes, true)
                 else
@@ -522,8 +527,6 @@ trait DefaultTypeLevelReferenceValues[I]
     case class MultipleReferenceValues(
         val values: Set[AReferenceValue])
             extends ReferenceValue {
-
-        // REMOVE?def onCopyToRegister = MultipleReferenceValues(values.map(_.onCopyToRegister))
 
         override def adapt(domain: Domain[_ >: I]): domain.DomainValue = domain match {
             case d: DefaultTypeLevelReferenceValues[I] ⇒
