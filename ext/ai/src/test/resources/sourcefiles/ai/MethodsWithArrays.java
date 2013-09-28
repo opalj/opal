@@ -77,6 +77,25 @@ public class MethodsWithArrays {
         }
     }
 
+    public static int[] doIt() {
+        int[] a = new int[10];
+        int i = 0;
+        while (i < 10) {
+            a[i] = i;
+            i = i + 1;
+        }
+        return a;
+    }
+
+    public static int[] doItAbs(int i) {
+        int[] a = new int[10];
+        while (i < 10) {
+            a[i] = i;
+            i = i + 1;
+        }
+        return a;
+    }
+
     public static void main(String[] args) {
         final java.io.PrintStream out = System.out;
 
