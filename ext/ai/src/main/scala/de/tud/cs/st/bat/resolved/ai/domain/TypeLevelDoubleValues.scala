@@ -52,12 +52,11 @@ trait TypeLevelDoubleValues[I] extends Domain[I] {
 
     private val typesAnswer: IsPrimitiveType = IsPrimitiveType(DoubleType)
 
-    abstract override def types(value: DomainValue): TypesAnswer[_] = {
+    abstract override def types(value: DomainValue): TypesAnswer[_] =
         value match {
             case r: DoubleValue ⇒ typesAnswer
             case _              ⇒ super.types(value)
         }
-    }
 
     // -----------------------------------------------------------------------------------
     //
@@ -68,29 +67,29 @@ trait TypeLevelDoubleValues[I] extends Domain[I] {
     //
     // RELATIONAL OPERATORS
     //
-    def dcmpg(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newIntegerValue
-    def dcmpl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newIntegerValue
+    def dcmpg(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newIntegerValue(pc)
+    def dcmpl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newIntegerValue(pc)
 
     //
     // UNARY EXPRESSIONS
     //
-    def dneg(pc: Int, value: DomainValue) = newDoubleValue
+    def dneg(pc: Int, value: DomainValue) = newDoubleValue(pc)
 
     //
     // BINARY EXPRESSIONS
     //
-    def dadd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newDoubleValue
-    def ddiv(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newDoubleValue
-    def dmul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newDoubleValue
-    def drem(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newDoubleValue
-    def dsub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newDoubleValue
+    def dadd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newDoubleValue(pc)
+    def ddiv(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newDoubleValue(pc)
+    def dmul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newDoubleValue(pc)
+    def drem(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newDoubleValue(pc)
+    def dsub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newDoubleValue(pc)
 
     //
     // TYPE CONVERSION INSTRUCTIONS
     //
-    def d2f(pc: Int, value: DomainValue): DomainValue = newFloatValue
-    def d2i(pc: Int, value: DomainValue): DomainValue = newIntegerValue
-    def d2l(pc: Int, value: DomainValue): DomainValue = newLongValue
+    def d2f(pc: Int, value: DomainValue): DomainValue = newFloatValue(pc)
+    def d2i(pc: Int, value: DomainValue): DomainValue = newIntegerValue(pc)
+    def d2l(pc: Int, value: DomainValue): DomainValue = newLongValue(pc)
 }
 
 trait DefaultTypeLevelDoubleValues[I]
@@ -119,7 +118,7 @@ trait DefaultTypeLevelDoubleValues[I]
     def newDoubleValue(): DoubleValue = DoubleValue
 
     def newDoubleValue(pc: Int): DomainValue = DoubleValue
-    
+
     def newDoubleValue(pc: Int, value: Double): DoubleValue = DoubleValue
 }
 

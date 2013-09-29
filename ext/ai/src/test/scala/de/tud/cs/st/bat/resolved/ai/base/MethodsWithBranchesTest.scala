@@ -57,7 +57,8 @@ class MethodsWithBranchesTest
         with ShouldMatchers
         with ParallelTestExecution {
 
-    import domain.RecordingDomain
+    import domain.{ RecordingDomain, RecordConstraints, RecordReturnValues }
+    type TestDomain = RecordReturnValues[String] with RecordConstraints[String]
 
     val classFiles = Java7Framework.ClassFiles(
         TestSupport.locateTestResources("classfiles/ai.jar", "ext/ai"))
@@ -65,8 +66,8 @@ class MethodsWithBranchesTest
     val classFile = classFiles.map(_._1).
         find(_.thisClass.className == "ai/MethodsWithBranches").get
 
-    private def evaluateMethod(name: String, f: RecordingDomain[String] ⇒ Unit) {
-        val domain = new RecordingDomain(name); import domain._
+    private def evaluateMethod(name: String)(f: TestDomain ⇒ Unit) {
+        val domain = new RecordingDomain(name) with RecordConstraints[String]
         val method = classFile.methods.find(_.name == name).get
         val result = AI(classFile, method, domain)
 
@@ -74,9 +75,7 @@ class MethodsWithBranchesTest
             Some(classFile),
             Some(method),
             method.body.get,
-            result) {
-                f(domain)
-            }
+            result) { f(domain) }
     }
 
     behavior of "the abstract interpreter"
@@ -84,7 +83,7 @@ class MethodsWithBranchesTest
     //
     // RETURNS
     it should "be able to analyze a method that performs a comparison with \"nonnull\"" in {
-        evaluateMethod("nullComp", domain ⇒ {
+        evaluateMethod("nullComp") { domain ⇒
             //    0  aload_0 [o]
             //    1  ifnonnull 6
             //    4  iconst_1
@@ -97,15 +96,15 @@ class MethodsWithBranchesTest
 
             domain.constraints should be(
                 Set(
-                    ReifiedSingleValueConstraint(4, domain.newTypedValue(ObjectType.Object), "is null"),
-                    ReifiedSingleValueConstraint(6, domain.newTypedValue(ObjectType.Object), "is not null")
-                )
-            )
-        })
+                    ReifiedSingleValueConstraint(
+                        4, domain.newTypedValue(ObjectType.Object), "is null"),
+                    ReifiedSingleValueConstraint(
+                        6, domain.newTypedValue(ObjectType.Object), "is not null")))
+        }
     }
 
     it should "be able to analyze a method that performs a comparison with \"null\"" in {
-        evaluateMethod("nonnullComp", domain ⇒ {
+        evaluateMethod("nonnullComp") { domain ⇒
             //    0  aload_0 [o]
             //    1  ifnull 6
             //    4  iconst_1
@@ -118,15 +117,15 @@ class MethodsWithBranchesTest
 
             domain.constraints should be(
                 Set(
-                    ReifiedSingleValueConstraint(4, domain.newTypedValue(ObjectType.Object), "is not null"),
-                    ReifiedSingleValueConstraint(6, domain.newTypedValue(ObjectType.Object), "is null")
-                )
-            )
-        })
+                    ReifiedSingleValueConstraint(
+                        4, domain.newTypedValue(ObjectType.Object), "is not null"),
+                    ReifiedSingleValueConstraint(
+                        6, domain.newTypedValue(ObjectType.Object), "is null")))
+        }
     }
 
     it should "be able to analyze methods that perform multiple comparisons" in {
-        evaluateMethod("multipleComp", domain ⇒ {
+        evaluateMethod("multipleComp") { domain ⇒
             //     0  aload_0 [a]
             //     1  ifnull 17
             //     4  aload_1 [b]
@@ -141,10 +140,7 @@ class MethodsWithBranchesTest
             //    17  iconst_0
             //    18  ireturn
             import domain._
-            domain.returnedValues should be(
-                Set(("ireturn", newIntegerValue))
-            )
-        })
+            domain.returnedValues should be(Set(("ireturn", newIntegerValue)))
+        }
     }
-
 }

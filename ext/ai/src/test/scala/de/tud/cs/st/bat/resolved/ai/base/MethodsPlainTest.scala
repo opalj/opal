@@ -886,7 +886,7 @@ class MethodsPlainTest
         val result = AI(classFile, method, domain)
 
         dumpOnFailureDuringValidation(Some(classFile), Some(method), method.body.get, result) {
-            domain.returnedValue should be(Some(newReferenceValue(ObjectType("ai/MethodsPlain"))))
+            domain.returnedValue should be(Some(newTypedValue(12,ObjectType("ai/MethodsPlain"))))
         }
     }
 

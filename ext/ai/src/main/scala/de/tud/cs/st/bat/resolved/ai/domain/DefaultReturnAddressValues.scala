@@ -43,13 +43,11 @@ package domain
  *
  * @author Michael Eichberg
  */
-trait DefaultReturnAddressValues[I]
-        extends DefaultValueBinding[I] {
+trait DefaultReturnAddressValues[I] extends DefaultValueBinding[I] {
 
     type DomainReturnAddressValue = ReturnAddressValue
 
-    def ReturnAddressValue(address: Int): DomainReturnAddressValue =
-        new ReturnAddressValue(address)
+    def ReturnAddressValue(address: Int) = new ReturnAddressValue(address)
 
 }
 

@@ -42,8 +42,7 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  * This domain enables the tracing of string values and can, e.g., be used to
  * resolve "class.forName" calls.
  */
-trait StringValues[I]
-        extends DefaultTypeLevelReferenceValues[I] {
+trait StringValues[I] extends DefaultTypeLevelReferenceValues[I] {
 
     class AStringValue(
         pc: Int, // sets the pc value of the superclass
@@ -60,8 +59,6 @@ trait StringValues[I]
                 case _ ⇒ super.adapt(domain)
             }
 
-       // REMOVE? override def onCopyToRegister = this // there are/will be no updates (Value semantics!)
-
         override def equals(other: Any): Boolean = {
             super.equals(other) &&
                 other.asInstanceOf[AStringValue].value == this.value
@@ -70,12 +67,9 @@ trait StringValues[I]
         override protected def canEqual(other: AReferenceValue): Boolean =
             other.isInstanceOf[AStringValue]
 
-        override def hashCode: Int = {
-            super.hashCode + 41 * value.hashCode()
-        }
+        override def hashCode: Int = super.hashCode + 41 * value.hashCode()
 
-        override def toString(): String =
-            "String(pc="+pc+", value=\""+value+"\")"
+        override def toString(): String = "String(pc="+pc+", value=\""+value+"\")"
 
     }
 

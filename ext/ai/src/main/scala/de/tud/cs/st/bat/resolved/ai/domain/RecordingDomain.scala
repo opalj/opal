@@ -41,13 +41,12 @@ package domain
  * by a method.
  *
  * ==Thread Safety==
- * This class is not thread safe.
+ * This class is not thread safe. I.e., this domain can only be used if
+ * an instance of this domain is not used by multiple threads.
  *
  * @author Michael Eichberg
  */
-class RecordingDomain[I](identifier: I)
-        extends ConfigurableDefaultDomain[I](identifier)
-        with ReifiedConstraints[I] {
+trait RecordReturnValues[I] extends Domain[I] {
 
     var returnedValues: Set[(String, Value)] = Set.empty
 
@@ -79,10 +78,11 @@ class RecordingDomain[I](identifier: I)
         returnedValues += (("throws", exception))
     }
 
-    var constraints: Set[ReifiedConstraint] = Set.empty
+}
 
-    def addConstraint(constraint: ReifiedConstraint) {
-        constraints += constraint
-    }
+class RecordingDomain[I](identifier: I)
+        extends ConfigurableDefaultDomain[I](identifier)
+        with RecordReturnValues[I] {
+
 }
 
