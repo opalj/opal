@@ -38,42 +38,53 @@ package domain
 
 import reflect.ClassTag
 
+import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
+
 /**
  * Implements the handling of field access instructions at the type level ignoring
- * potential `NullPointerExceptions`.
+ * potential `NullPointerException`s and linkage related exceptions.
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
 trait TypeLevelFieldAccessInstructions { this: Domain[_] ⇒
 
-    def getfield(pc: Int,
-                 objectref: DomainValue,
-                 declaringClass: ObjectType,
-                 name: String,
-                 fieldType: FieldType) =
+    def throwNullPointerExceptionOnPotentiallyNull = false
+
+    def getfield(
+        pc: Int,
+        objectref: DomainValue,
+        declaringClass: ObjectType,
+        name: String,
+        fieldType: FieldType) =
+        isNull(objectref) match {
+            case Yes ⇒ ThrowsException(newInitializedObject(pc, ObjectType.NullPointerException))
+            case No  ⇒ ComputedValue(newTypedValue(pc, fieldType))
+            case Unknown ⇒
+                ComputedValue(newTypedValue(pc, fieldType))
+        }
+
+    def getstatic(
+        pc: Int,
+        declaringClass: ObjectType,
+        name: String,
+        fieldType: FieldType) =
         ComputedValue(newTypedValue(pc, fieldType))
 
-    def getstatic(pc: Int,
-                  declaringClass: ObjectType,
-                  name: String,
-                  fieldType: FieldType) =
-        ComputedValue(newTypedValue(pc, fieldType))
-
-    def putfield(pc: Int,
-                 objectref: DomainValue,
-                 value: DomainValue,
-                 declaringClass: ObjectType,
-                 name: String,
-                 fieldType: FieldType) = {
+    def putfield(
+        pc: Int,
+        objectref: DomainValue,
+        value: DomainValue,
+        declaringClass: ObjectType,
+        name: String,
+        fieldType: FieldType) =
         ComputationWithSideEffectOnly
-    }
 
-    def putstatic(pc: Int,
-                  value: DomainValue,
-                  declaringClass: ObjectType,
-                  name: String,
-                  fieldType: FieldType) = {
+    def putstatic(
+        pc: Int,
+        value: DomainValue,
+        declaringClass: ObjectType,
+        name: String,
+        fieldType: FieldType) =
         ComputationWithSideEffectOnly
-    }
 
 }
