@@ -42,13 +42,13 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 /**
  * Implements the handling of field access instructions at the type level ignoring
- * potential `NullPointerException`s and linkage related exceptions.
+ * potential linkage related exceptions.
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
 trait TypeLevelFieldAccessInstructions { this: Domain[_] ⇒
 
-    def throwNullPointerExceptionOnPotentiallyNull = false
+    def throwNullPointerExceptionOnPotentialNullAccess = false
 
     def getfield(
         pc: Int,
@@ -57,9 +57,13 @@ trait TypeLevelFieldAccessInstructions { this: Domain[_] ⇒
         name: String,
         fieldType: FieldType) =
         isNull(objectref) match {
-            case Yes ⇒ ThrowsException(newInitializedObject(pc, ObjectType.NullPointerException))
-            case No  ⇒ ComputedValue(newTypedValue(pc, fieldType))
-            case Unknown ⇒
+            case Yes ⇒
+                ThrowsException(newInitializedObject(pc, ObjectType.NullPointerException))
+            case Unknown if throwNullPointerExceptionOnPotentialNullAccess ⇒
+                ComputedValueAndException(
+                    newTypedValue(pc, fieldType),
+                    newInitializedObject(pc, ObjectType.NullPointerException))
+            case _ /* No | do not throw NullPointerException on potential null access*/ ⇒
                 ComputedValue(newTypedValue(pc, fieldType))
         }
 
@@ -77,7 +81,15 @@ trait TypeLevelFieldAccessInstructions { this: Domain[_] ⇒
         declaringClass: ObjectType,
         name: String,
         fieldType: FieldType) =
-        ComputationWithSideEffectOnly
+        isNull(objectref) match {
+            case Yes ⇒
+                ThrowsException(newInitializedObject(pc, ObjectType.NullPointerException))
+            case Unknown if throwNullPointerExceptionOnPotentialNullAccess ⇒
+                ComputationWithSideEffectOrException(
+                    newInitializedObject(pc, ObjectType.NullPointerException))
+            case _ /* No | do not throw NullPointerException on potential null access*/ ⇒
+                ComputationWithSideEffectOnly
+        }
 
     def putstatic(
         pc: Int,
