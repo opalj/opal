@@ -109,11 +109,12 @@ trait SourceElementIDsMap extends CategorizedSourceElementIDs {
 
     private[this] val fieldIDs = WeakHashMap[ObjectType, WeakHashMap[String, Int]]()
 
-    def sourceElementID(definingObjectType: ObjectType, fieldName: String): Int = fieldIDs.synchronized {
-        fieldIDs.
-            getOrElseUpdate(definingObjectType, { WeakHashMap[String, Int]() }).
-            getOrElseUpdate(fieldName, { val id = nextFieldID; nextFieldID += 1; id })
-    }
+    def sourceElementID(definingObjectType: ObjectType, fieldName: String): Int =
+        fieldIDs.synchronized {
+            fieldIDs.
+                getOrElseUpdate(definingObjectType, { WeakHashMap[String, Int]() }).
+                getOrElseUpdate(fieldName, { val id = nextFieldID; nextFieldID += 1; id })
+        }
 
     //
     // Associates each method with a unique ID

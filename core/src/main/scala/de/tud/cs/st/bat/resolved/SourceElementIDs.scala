@@ -39,8 +39,8 @@ package resolved
  * a unique id.
  *
  * ==Adaptation==
- * If you want to be able to efficiently retrieve a source element if you have an id, consider mixing
- * in the [[de.tud.cs.st.bat.resolved.ReverseMapping]] trait.
+ * If you want to be able to efficiently retrieve a source element when you have an id, 
+ * consider mixing in the [[de.tud.cs.st.bat.resolved.ReverseMapping]] trait.
  *
  * @author Michael Eichberg
  */
