@@ -75,7 +75,7 @@ class ClassHierarchy(
     type Subtypes = Set[ObjectType] // just a type alias
 
     /**
-     * Returns the given types supertypes and subtypes if the given type is known.
+     * Returns the given type's supertypes and subtypes if the given type is known.
      */
     def apply(objectType: ObjectType): Option[(Supertypes, Subtypes)] =
         if (isKnown(objectType))
@@ -288,7 +288,7 @@ class ClassHierarchy(
     }
 
     /**
-     * Determines if the given class type `subtype` is a subtype of the class type
+     * Determines if the given `subtype` is actually a subtype of the class type
      * `supertype`.
      *
      * This method can be used as a foundation for implementing the logic of the JVM's
@@ -312,7 +312,7 @@ class ClassHierarchy(
         this.supertypes.get(subtype) match {
             case Some(intermediateTypes) if intermediateTypes.isEmpty ⇒
                 // we have found a type without information about its supertypes
-                // recall that the previous test for java.lang.Object was not successful 
+                // and this type is known not to be java.lang.Object (due to a previous test)  
                 Unknown
             case Some(intermediateTypes) ⇒
                 var answer: Answer = No
