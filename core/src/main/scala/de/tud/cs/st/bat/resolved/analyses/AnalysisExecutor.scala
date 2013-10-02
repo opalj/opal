@@ -92,7 +92,7 @@ trait AnalysisExecutor {
         println()
 
         // 
-        // 3. execute analyses
+        // 3. execute analysis
         //
         println("Executing analyses.")
         val result = analysis.analyze(project)
