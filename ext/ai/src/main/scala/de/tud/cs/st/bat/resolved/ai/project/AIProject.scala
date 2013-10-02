@@ -41,8 +41,22 @@ import analyses._
 /**
  * @author Michael Eichberg
  */
-abstract class AIProject(
-        val project: Project[_]) {
+trait AIProject[Source] {
+
+    def analyze(project: analyses.Project[Source]): ReportableAnalysisResult = {
+        val reports = for ((classFile, method) ← entryPoints(project)) yield {
+            val theDomain = domain(project, classFile, method)
+            AI(classFile, method, theDomain)
+            theDomain.report
+        }
+        val theReports: Iterable[String] = reports.filter(_.isDefined).map(_.get)
+        BasicReport("Number of reports: "+theReports.size+"\n"+theReports.mkString("\n"))
+    }
+
+    def domain(
+        project: analyses.Project[Source],
+        classFile: ClassFile,
+        method: Method): Domain[_] with Report
 
     /**
      * A project's entry points.
@@ -62,11 +76,13 @@ abstract class AIProject(
      *
      * @return All methods that are potential entry points.
      */
-    def entryPoints(): Iterable[(ClassFile, Method)]
+    def entryPoints(project: Project[Source]): Iterable[(ClassFile, Method)]
 
-    def analyze(f: ⇒ Domain[_]) : Unit = {
-        for ((classFile, method) ← entryPoints) {
-            AI(classFile, method, f)
-        }
-    }
+}
+
+/**
+ * @author Michael Eichberg
+ */
+trait Report {
+    def report: Option[String]
 }
