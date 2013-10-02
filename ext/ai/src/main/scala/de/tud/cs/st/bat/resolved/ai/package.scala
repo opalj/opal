@@ -54,12 +54,14 @@ package object ai {
     import language.existentials
 
     type SomeDomain = Domain[_]
-    
-    class AIException(message: String) extends RuntimeException(message)
+
+    class AIException(
+        message: String,
+        cause: Throwable) extends RuntimeException(message, cause)
 
     @throws[AIException]
-    def aiException(message: String): Nothing = {
-        throw new AIException(message)
+    def aiException(message: String, cause: Throwable = null): Nothing = {
+        throw new AIException(message, cause)
     }
 
     object AIException {
@@ -68,11 +70,11 @@ package object ai {
 
     case class DomainException(
             domain: SomeDomain,
-            message: String) extends AIException(message) {
+            message: String) extends AIException(message, null) {
 
         def enrich(
             worklist: List[Int],
-            evaluated : List[Int],
+            evaluated: List[Int],
             operandsArray: Array[List[domain.DomainValue]],
             localsArray: Array[Array[domain.DomainValue]]) = {
 
@@ -101,10 +103,10 @@ package object ai {
         throwable: Throwable,
         domain: D,
         worklist: List[Int],
-        evaluated : List[Int],
+        evaluated: List[Int],
         operandsArray: Array[_ <: List[_ <: D#DomainValue]],
         localsArray: Array[_ <: Array[_ <: D#DomainValue]])
-            extends AIException(throwable.getLocalizedMessage())
+            extends AIException(throwable.getLocalizedMessage(), throwable)
 
     type SomeInterpreterException = InterpreterException[_]
 
@@ -116,7 +118,7 @@ package object ai {
         throwable: Throwable,
         domain: D,
         worklist: List[Int],
-        evaluated : List[Int],
+        evaluated: List[Int],
         operandsArray: Array[_ <: List[_ <: D#DomainValue]],
         localsArray: Array[_ <: Array[_ <: D#DomainValue]]): Nothing = {
         throw InterpreterException[SomeDomain](
