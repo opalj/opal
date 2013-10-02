@@ -65,7 +65,3 @@ trait DefaultTypeHierarchyBinding { this: Domain[_] ⇒
 
 }
 
-
-
-
-
