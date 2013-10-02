@@ -38,6 +38,9 @@ package domain
 
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
+import analyses.{ Project, ClassHierarchy }
+import de.tud.cs.st.bat.resolved.ai.IsReferenceType
+
 /**
  *
  * @author Michael Eichberg
@@ -56,7 +59,7 @@ trait TypeLevelInvokeInstructions { this: Domain[_] ⇒
     protected def handleInstanceBasedInvoke(
         pc: Int,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]) = {
+        operands: List[DomainValue]): Computation[Option[DomainValue], Set[DomainValue]] =
         isNull(operands.last) match {
             case Yes ⇒
                 ThrowsException(Set(newInitializedObject(pc, NullPointerException)))
@@ -67,13 +70,12 @@ trait TypeLevelInvokeInstructions { this: Domain[_] ⇒
                     asTypedValue(pc, methodDescriptor.returnType),
                     Set(newObject(pc, NullPointerException)))
         }
-    }
 
     def invokeinterface(pc: Int,
                         declaringClass: ReferenceType,
                         name: String,
                         methodDescriptor: MethodDescriptor,
-                        operands: List[DomainValue]) =
+                        operands: List[DomainValue]): OptionalReturnValueOrExceptions =
         handleInstanceBasedInvoke(pc, methodDescriptor, operands)
 
     def invokevirtual(pc: Int,
@@ -87,17 +89,50 @@ trait TypeLevelInvokeInstructions { this: Domain[_] ⇒
                       declaringClass: ReferenceType,
                       name: String,
                       methodDescriptor: MethodDescriptor,
-                      operands: List[DomainValue]) =
+                      operands: List[DomainValue]): OptionalReturnValueOrExceptions =
         handleInstanceBasedInvoke(pc, methodDescriptor, operands)
 
     def invokestatic(pc: Int,
                      declaringClass: ReferenceType,
                      name: String,
                      methodDescriptor: MethodDescriptor,
-                     operands: List[DomainValue]) =
+                     operands: List[DomainValue]): OptionalReturnValueOrExceptions =
         ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
 
 }
 
+trait PerformInvocations[Source] extends TypeLevelInvokeInstructions { this: Domain[_] ⇒
+
+    def project: Project[Source]
+
+    def classHierarchy: ClassHierarchy
+
+    def doInvokestatic(
+        domain: Domain[_],
+        pc: Int,
+        declaringClass: ReferenceType,
+        methodName: String,
+        methodDescriptor: MethodDescriptor,
+        operands: List[DomainValue],
+        isRecursiveCall: (ClassFile, Method, List[DomainValue]) ⇒ Boolean)(
+            transformResult: (AIResult[domain.type]) ⇒ OptionalReturnValueOrExceptions): OptionalReturnValueOrExceptions = {
+
+        def fallback = invokestatic(pc, declaringClass, methodName, methodDescriptor, operands)
+
+        if (declaringClass.isArrayType)
+            return fallback
+
+        classHierarchy.resolveMethodReference(
+            declaringClass.asObjectType,
+            methodName,
+            methodDescriptor,
+            project) match {
+                case Some((classFile, method)) if !method.isNative && !isRecursiveCall(classFile, method, operands) ⇒
+                    val newOperands = operands.reverse.map(_.adapt(domain)).toArray(domain.DomainValueTag)
+                    transformResult(AI.perform(classFile, method, domain)(Some(newOperands)))
+                case _ ⇒ fallback
+            }
+    }
+}
 
 
