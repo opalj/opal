@@ -87,7 +87,8 @@ public class MethodsWithArrays {
         return a;
     }
 
-    public static int[] doItAbs(int i) {
+    public static int[] doItAbs(int initial) {
+        int i = initial;
         int[] a = new int[10];
         while (i < 10) {
             a[i] = i;
