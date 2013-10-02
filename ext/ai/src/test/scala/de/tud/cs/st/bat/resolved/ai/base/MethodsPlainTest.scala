@@ -573,7 +573,7 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "asSimpleMethods").get
         /*val result =*/ AI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(newTypedValue(ObjectType("ai/MethodsPlain"))))
+        domain.returnedValue should be(Some(newTypedValue(-1,ObjectType("ai/MethodsPlain"))))
     }
 
     it should "be able to correctly handle an instance of" in {
@@ -961,7 +961,7 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "asIs").get
         val t = ObjectType("some/Foo")
         val locals = new Array[Value](1)
-        val theObject = newTypedValue(t)
+        val theObject = newTypedValue(-1,t)
         locals(0) = theObject
         AI.perform(classFile, method, domain)(Some(locals))
 

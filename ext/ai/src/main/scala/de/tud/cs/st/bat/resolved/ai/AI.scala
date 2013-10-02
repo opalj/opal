@@ -154,27 +154,28 @@ trait AI {
         val codeLength = code.instructions.length
 
         val initialLocals = (
-            someLocals.map(l ⇒ {
+            someLocals.map { l ⇒
+                // FIXME if the number of locals is equal to the number of parameters but less than method.body.get.maxLocals
                 assume(l.size == method.body.get.maxLocals)
                 l.toArray
-            }).getOrElse({
+            }.getOrElse {
                 val locals = new Array[domain.DomainValue](method.body.get.maxLocals)
                 var localVariableIndex = 0
 
                 if (!method.isStatic) {
                     val thisType = classFile.thisClass
-                    val thisValue = newTypedValue(thisType)
+                    val thisValue = newTypedValue(-localVariableIndex - 1, thisType)
                     locals.update(localVariableIndex, thisValue)
                     localVariableIndex += 1 /*==thisType.computationalType.operandSize*/
                 }
                 for (parameterType ← method.descriptor.parameterTypes) {
                     val ct = parameterType.computationalType
-                    locals.update(localVariableIndex, newTypedValue(parameterType))
+                    locals.update(localVariableIndex, newTypedValue(-localVariableIndex-1,parameterType))
                     localVariableIndex += ct.operandSize
                 }
 
                 locals
-            })
+            }
         )
 
         val operandsArray = new Array[List[domain.DomainValue]](codeLength)

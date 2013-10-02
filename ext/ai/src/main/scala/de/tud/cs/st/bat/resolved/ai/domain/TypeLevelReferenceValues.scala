@@ -311,7 +311,7 @@ trait DefaultTypeLevelReferenceValues[I]
     // REPRESENTATIONS OF CONCRETE REFERENCE VALUES
     //    
 
-    class AReferenceValue(
+    class AReferenceValue protected (
         val pc: Int,
         val valueType: TypeBound,
         val isNull: Answer,
@@ -354,19 +354,21 @@ trait DefaultTypeLevelReferenceValues[I]
             for (
                 referenceType ← valueType.tail;
                 if answer.isDefined // when the answer is Unknown we do not need to continue
-            ) { answer = answer.merge(domain.isSubtypeOf(referenceType, supertype)) }
+            ) {
+                answer = answer.merge(domain.isSubtypeOf(referenceType, supertype))
+            }
             answer match {
-                case Unknown         ⇒ Unknown
                 case Yes             ⇒ Yes
                 case No if isPrecise ⇒ No
                 case No ⇒
                     // .. is it conceivable that this value is still a subtype of the
                     // given reference type?
-                    if (forallTypes { subtype ⇒ domain.isSubtypeOf(supertype, subtype).yes })
+                    if (forallTypes { subtype ⇒ domain.isSubtypeOf(supertype, subtype).maybeYes })
                         // Well it is conceivable that the value at runtime is a subtype
                         Unknown
                     else
                         No
+                case Unknown ⇒ Unknown
             }
         }
 
@@ -717,4 +719,29 @@ trait DefaultTypeLevelReferenceValues[I]
 
     def aastore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
         ComputationWithSideEffectOnly
+}
+
+import analyses.ClassHierarchy
+
+trait DefaultTypeLevelReferenceValuesWithClosedHierarchy[I]
+        extends DefaultTypeLevelReferenceValues[I] {
+
+    def classHierarchy: ClassHierarchy
+
+    override def newReferenceValue(referenceType: ReferenceType): DomainValue =
+        referenceType match {
+            case ot: ObjectType ⇒
+                val isPrecise = classHierarchy.subtypes(ot).isEmpty
+                AReferenceValue(-1, Set(referenceType), Unknown, isPrecise)
+            case _ ⇒ super.newReferenceValue(referenceType)
+        }
+
+    override def newReferenceValue(pc: Int, referenceType: ReferenceType): DomainValue =
+        referenceType match {
+            case ot: ObjectType ⇒
+                val isPrecise = classHierarchy.subtypes(ot).isEmpty
+                AReferenceValue(pc, Set(referenceType), Unknown, isPrecise)
+            case _ ⇒ super.newReferenceValue(pc, referenceType)
+        }
+
 }

@@ -58,7 +58,7 @@ class MethodsWithBranchesTest
         with ParallelTestExecution {
 
     import domain.{ RecordingDomain, RecordConstraints, RecordReturnValues }
-    type TestDomain = RecordReturnValues[String] with RecordConstraints[String]
+    type TestDomain = RecordingDomain[String] with RecordConstraints[String]
 
     val classFiles = Java7Framework.ClassFiles(
         TestSupport.locateTestResources("classfiles/ai.jar", "ext/ai"))
@@ -97,9 +97,9 @@ class MethodsWithBranchesTest
             domain.constraints should be(
                 Set(
                     ReifiedSingleValueConstraint(
-                        4, domain.newTypedValue(ObjectType.Object), "is null"),
+                        4, domain.newTypedValue(-1,ObjectType.Object), "is null"),
                     ReifiedSingleValueConstraint(
-                        6, domain.newTypedValue(ObjectType.Object), "is not null")))
+                        6, domain.newTypedValue(-1,ObjectType.Object), "is not null")))
         }
     }
 
@@ -118,9 +118,9 @@ class MethodsWithBranchesTest
             domain.constraints should be(
                 Set(
                     ReifiedSingleValueConstraint(
-                        4, domain.newTypedValue(ObjectType.Object), "is not null"),
+                        4, domain.newTypedValue(-1,ObjectType.Object), "is not null"),
                     ReifiedSingleValueConstraint(
-                        6, domain.newTypedValue(ObjectType.Object), "is null")))
+                        6, domain.newTypedValue(-1,ObjectType.Object), "is null")))
         }
     }
 

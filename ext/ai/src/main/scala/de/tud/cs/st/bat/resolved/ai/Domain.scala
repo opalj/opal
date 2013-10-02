@@ -223,6 +223,7 @@ trait Domain[+I] {
      *
      * @see [[de.tud.cs.st.bat.resolved.ai.Domain.Value]] for further details.
      */
+    type ⊥ = IllegalValue
     protected class IllegalValue extends Value { this: DomainIllegalValue ⇒
 
         final def computationalType: ComputationalType =
@@ -254,6 +255,7 @@ trait Domain[+I] {
      * The ''singleton'' instance of a `IllegalValue`.
      */
     val TheIllegalValue: DomainIllegalValue
+    final def ⊥ = TheIllegalValue
 
     /**
      * If the result of the merge of two values is a non-legal value. The result has
@@ -345,22 +347,23 @@ trait Domain[+I] {
      * BATAI uses this method when a method is to be analyzed, but no parameter
      * values are given and initial values need to be generated. This method is not
      * used elsewhere by BATAI.
+     * 
+     * BATAI uses the pc -1 for the first parameter and -2 for the second...
      *
      * @note This method is primarily a convenience method.
      */
-    def newTypedValue(valueType: Type): DomainValue = valueType match {
-        case BooleanType       ⇒ newBooleanValue
-        case ByteType          ⇒ newByteValue
-        case ShortType         ⇒ newShortValue
-        case CharType          ⇒ newCharValue
-        case IntegerType       ⇒ newIntegerValue
-        case FloatType         ⇒ newFloatValue
-        case LongType          ⇒ newLongValue
-        case DoubleType        ⇒ newDoubleValue
-        case rt: ReferenceType ⇒ newReferenceValue(rt)
-        case VoidType          ⇒ domainException(this, "there are no void typed values")
-    }
-
+//    def newTypedValue(valueType: Type): DomainValue = valueType match {
+//        case BooleanType       ⇒ newBooleanValue
+//        case ByteType          ⇒ newByteValue
+//        case ShortType         ⇒ newShortValue
+//        case CharType          ⇒ newCharValue
+//        case IntegerType       ⇒ newIntegerValue
+//        case FloatType         ⇒ newFloatValue
+//        case LongType          ⇒ newLongValue
+//        case DoubleType        ⇒ newDoubleValue
+//        case rt: ReferenceType ⇒ newReferenceValue(rt)
+//        case VoidType          ⇒ domainException(this, "there are no void typed values")
+//    }
     def newTypedValue(pc: Int, valueType: Type): DomainValue = valueType match {
         case BooleanType       ⇒ newBooleanValue(pc)
         case ByteType          ⇒ newByteValue(pc)
@@ -374,11 +377,11 @@ trait Domain[+I] {
         case VoidType          ⇒ domainException(this, "there are no void typed values")
     }
 
-    /**
-     * Factory method to create a representation of a boolean value if we neither know
-     * the precise value nor the source of the value.
-     */
-    def newBooleanValue(): DomainValue
+//    /**
+//     * Factory method to create a representation of a boolean value if we neither know
+//     * the precise value nor the source of the value.
+//     */
+//    def newBooleanValue(): DomainValue
 
     /**
      * Factory method to create a representation of a boolean value if we now the
@@ -391,11 +394,11 @@ trait Domain[+I] {
      */
     def newBooleanValue(pc: Int, value: Boolean): DomainValue
 
-    /**
-     * Factory method to create a representation of a byte value if we neither know
-     * the precise value nor the source of the value.
-     */
-    def newByteValue(): DomainValue
+//    /**
+//     * Factory method to create a representation of a byte value if we neither know
+//     * the precise value nor the source of the value.
+//     */
+//    def newByteValue(): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or
@@ -410,11 +413,11 @@ trait Domain[+I] {
      */
     def newByteValue(pc: Int, value: Byte): DomainValue
 
-    /**
-     * Factory method to create a representation of a short value if we neither know
-     * the precise value nor the source of the value.
-     */
-    def newShortValue(): DomainValue
+//    /**
+//     * Factory method to create a representation of a short value if we neither know
+//     * the precise value nor the source of the value.
+//     */
+//    def newShortValue(): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or
@@ -429,11 +432,11 @@ trait Domain[+I] {
      */
     def newShortValue(pc: Int, value: Short): DomainValue
 
-    /**
-     * Factory method to create a representation of a char value if we neither know
-     * the precise value nor the source of the value.
-     */
-    def newCharValue(): DomainValue
+//    /**
+//     * Factory method to create a representation of a char value if we neither know
+//     * the precise value nor the source of the value.
+//     */
+//    def newCharValue(): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or
@@ -450,11 +453,11 @@ trait Domain[+I] {
      */
     def newIntegerConstant0: DomainValue
 
-    /**
-     * Factory method to create a representation of an integer value if we neither know
-     * the precise value nor the source of the value.
-     */
-    def newIntegerValue(): DomainValue
+//    /**
+//     * Factory method to create a representation of an integer value if we neither know
+//     * the precise value nor the source of the value.
+//     */
+//    def newIntegerValue(): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or
@@ -469,11 +472,11 @@ trait Domain[+I] {
      */
     def newIntegerValue(pc: Int, value: Int): DomainValue
 
-    /**
-     * Factory method to create a representation of a float value if we neither know
-     * the precise value nor the source of the value.
-     */
-    def newFloatValue(): DomainValue
+//    /**
+//     * Factory method to create a representation of a float value if we neither know
+//     * the precise value nor the source of the value.
+//     */
+//    def newFloatValue(): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or
@@ -488,11 +491,11 @@ trait Domain[+I] {
      */
     def newFloatValue(pc: Int, value: Float): DomainValue
 
-    /**
-     * Factory method to create a representation of a long value if we neither know
-     * the precise value nor the source of the value.
-     */
-    def newLongValue(): DomainValue
+//    /**
+//     * Factory method to create a representation of a long value if we neither know
+//     * the precise value nor the source of the value.
+//     */
+//    def newLongValue(): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or
@@ -507,11 +510,11 @@ trait Domain[+I] {
      */
     def newLongValue(pc: Int, value: Long): DomainValue
 
-    /**
-     * Factory method to create a representation of a double value if we neither know
-     * the precise value nor the source of the value.
-     */
-    def newDoubleValue(): DomainValue
+//    /**
+//     * Factory method to create a representation of a double value if we neither know
+//     * the precise value nor the source of the value.
+//     */
+//    def newDoubleValue(): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or
@@ -533,11 +536,11 @@ trait Domain[+I] {
      */
     def newNullValue(pc: Int): DomainValue
 
-    /**
-     * Factory method to create a `DomainValue` that represents a new, '''initialized'''
-     * object of the given type.
-     */
-    def newReferenceValue(referenceType: ReferenceType): DomainValue
+//    /**
+//     * Factory method to create a `DomainValue` that represents a new, '''initialized'''
+//     * object of the given type.
+//     */
+//    def newReferenceValue(referenceType: ReferenceType): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents a new, '''initialized'''
@@ -1227,11 +1230,11 @@ trait Domain[+I] {
     def lsub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
     def lushr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
     def lxor(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    
+
     //
     // "OTHER" INSTRUCTIONS
     //
-    
+
     /**
      * Handles a `monitorenter` instruction.
      *

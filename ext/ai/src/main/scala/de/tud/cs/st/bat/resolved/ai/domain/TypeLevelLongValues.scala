@@ -59,6 +59,8 @@ trait TypeLevelLongValues[I] extends Domain[I] {
         }
     }
 
+    protected def newLongValue(): DomainValue
+
     // -----------------------------------------------------------------------------------
     //
     // HANDLING OF COMPUTATIONS
@@ -69,7 +71,7 @@ trait TypeLevelLongValues[I] extends Domain[I] {
     // RELATIONAL OPERATORS
     //
     def lcmp(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
-        newIntegerValue
+        newIntegerValue(pc)
 
     //
     // UNARY EXPRESSIONS
@@ -117,9 +119,9 @@ trait TypeLevelLongValues[I] extends Domain[I] {
     // CONVERSION INSTRUCTIONS
     //
 
-    def l2d(pc: Int, value: DomainValue): DomainValue = newDoubleValue
-    def l2f(pc: Int, value: DomainValue): DomainValue = newFloatValue
-    def l2i(pc: Int, value: DomainValue): DomainValue = newIntegerValue
+    def l2d(pc: Int, value: DomainValue): DomainValue = newDoubleValue(pc)
+    def l2f(pc: Int, value: DomainValue): DomainValue = newFloatValue(pc)
+    def l2i(pc: Int, value: DomainValue): DomainValue = newIntegerValue(pc)
 }
 
 trait DefaultTypeLevelLongValues[I]

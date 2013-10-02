@@ -62,6 +62,8 @@ trait TypeLevelFloatValues[I] extends Domain[I] {
         }
     }
 
+    protected def newFloatValue() : DomainValue
+    
     // -----------------------------------------------------------------------------------
     //
     // HANDLING OF COMPUTATIONS
@@ -71,8 +73,11 @@ trait TypeLevelFloatValues[I] extends Domain[I] {
     //
     // RELATIONAL OPERATORS
     //
-    def fcmpg(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newIntegerValue
-    def fcmpl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newIntegerValue
+    def fcmpg(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = 
+        newIntegerValue(pc)
+        
+    def fcmpl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = 
+        newIntegerValue(pc)
 
     //
     // UNARY EXPRESSIONS
@@ -93,9 +98,9 @@ trait TypeLevelFloatValues[I] extends Domain[I] {
     // TYPE CONVERSIONS
     //
 
-    def f2d(pc: Int, value: DomainValue): DomainValue = newDoubleValue
-    def f2i(pc: Int, value: DomainValue): DomainValue = newIntegerValue
-    def f2l(pc: Int, value: DomainValue): DomainValue = newLongValue
+    def f2d(pc: Int, value: DomainValue): DomainValue = newDoubleValue(pc)
+    def f2i(pc: Int, value: DomainValue): DomainValue = newIntegerValue(pc)
+    def f2l(pc: Int, value: DomainValue): DomainValue = newLongValue(pc)
 
 }
 

@@ -86,6 +86,10 @@ trait PreciseIntegerValues[I] extends Domain[I] {
         final def types: TypesAnswer[_] = typesAnswer
 
     }
+    
+    protected def newIntegerValue() : DomainValue
+    
+    protected def newByteValue() : DomainValue
 
     /**
      * Represents a specific, but unknown integer value.
@@ -335,9 +339,9 @@ trait PreciseIntegerValues[I] extends Domain[I] {
     def i2s(pc: Int, value: DomainValue): DomainValue =
         getIntValue(value)(v ⇒ newShortValue(pc, v.toShort))(newByteValue)
 
-    def i2d(pc: Int, value: DomainValue): DomainValue = newDoubleValue
-    def i2f(pc: Int, value: DomainValue): DomainValue = newFloatValue
-    def i2l(pc: Int, value: DomainValue): DomainValue = newLongValue
+    def i2d(pc: Int, value: DomainValue): DomainValue = newDoubleValue(pc)
+    def i2f(pc: Int, value: DomainValue): DomainValue = newFloatValue(pc)
+    def i2l(pc: Int, value: DomainValue): DomainValue = newLongValue(pc)
 }
 
 trait DefaultPreciseIntegerValues[I]

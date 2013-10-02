@@ -83,6 +83,8 @@ trait TypeLevelIntegerValues[I] extends Domain[I] {
     trait IntegerValue extends ComputationalTypeIntegerValue {
         final def types: TypesAnswer[_] = typesAnswerInteger
     }
+    
+    protected def newIntegerValue() : DomainValue
 
     private val typesAnswerBoolean: IsPrimitiveType = IsPrimitiveType(BooleanType)
 
@@ -152,12 +154,12 @@ trait TypeLevelIntegerValues[I] extends Domain[I] {
     // TYPE CONVERSION INSTRUCTIONS
     //
 
-    def i2b(pc: Int, value: DomainValue): DomainValue = newByteValue
-    def i2c(pc: Int, value: DomainValue): DomainValue = newCharValue
-    def i2d(pc: Int, value: DomainValue): DomainValue = newDoubleValue
-    def i2f(pc: Int, value: DomainValue): DomainValue = newFloatValue
-    def i2l(pc: Int, value: DomainValue): DomainValue = newLongValue
-    def i2s(pc: Int, value: DomainValue): DomainValue = newShortValue
+    def i2b(pc: Int, value: DomainValue): DomainValue = newByteValue(pc)
+    def i2c(pc: Int, value: DomainValue): DomainValue = newCharValue(pc)
+    def i2d(pc: Int, value: DomainValue): DomainValue = newDoubleValue(pc)
+    def i2f(pc: Int, value: DomainValue): DomainValue = newFloatValue(pc)
+    def i2l(pc: Int, value: DomainValue): DomainValue = newLongValue(pc)
+    def i2s(pc: Int, value: DomainValue): DomainValue = newShortValue(pc)
 
 }
 
