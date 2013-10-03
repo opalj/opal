@@ -45,6 +45,8 @@ package domain
  */
 trait ReifiedConstraints[I] extends Domain[I] {
 
+    /*abstract*/ def addConstraint(constraint: ReifiedConstraint)
+
     trait ReifiedConstraint {
 
         def pc: Int
@@ -52,8 +54,6 @@ trait ReifiedConstraints[I] extends Domain[I] {
         def constraint: String
 
     }
-
-    def addConstraint(constraint: ReifiedConstraint)
 
     case class ReifiedSingleValueConstraint(
         pc: Int,
