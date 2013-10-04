@@ -43,7 +43,7 @@ import reflect.ClassTag
  *
  * @author Michael Eichberg
  */
-trait DefaultValueBinding[I] extends Domain[I] {
+trait DefaultValueBinding[+I] extends Domain[I] {
 
     type DomainValue = Value
 
@@ -57,12 +57,13 @@ trait DefaultValueBinding[I] extends Domain[I] {
 
     /**
      * Base implementation of the method that always throws a domain exception.
+     *
      * The idea is that other traits `abstract override` this method and return the
      * value's type. If a method that overrides this method has no knowledge about
      * the given value, it should delegate this call to its super method.
      */
     def types(value: DomainValue): TypesAnswer[_] =
-        domainException(this, "could not determine the type(s) of the given value: "+value)
+        domainException(this, "the type of the given value is not known: "+value)
 
 }
 

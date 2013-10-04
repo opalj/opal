@@ -77,7 +77,9 @@ package taint {
             project: analyses.Project[Source],
             classFile: ClassFile,
             method: Method): Domain[_] with Report = {
-            new RootTaintAnalysisDomain[Source](project, (classFile.thisClass, method.name, method.descriptor))
+            new RootTaintAnalysisDomain[Source](
+                project,
+                (classFile.thisClass, method.name, method.descriptor))
         }
     }
 
@@ -98,6 +100,8 @@ package taint {
             with DoNothingOnReturnFromMethod
             with ProjectBasedTypeHierarchyBinding[Source]
             with Report {
+
+        def callChain: String
 
         import de.tud.cs.st.util.Unknown
         import ObjectType._
@@ -133,7 +137,8 @@ package taint {
         }
 
         def processResult[D <: TaintAnalysisDomain[Source]](
-            aiResult: AIResult[D]): OptionalReturnValueOrExceptions = {
+            pc: Int)(
+                aiResult: AIResult[D]): OptionalReturnValueOrExceptions = {
             //        val relevantValues = aiResult.domain.returnedValues.filter{pc_value => 
             //            val (pc,value) = pc_value
             //            
@@ -147,7 +152,7 @@ package taint {
                             case NoUpdate          ⇒ c
                             case SomeUpdate(value) ⇒ value
                         }
-                    }.adapt(this)
+                    }.adapt(this, pc)
                 ))
             } else
                 ComputationWithSideEffectOnly
@@ -200,7 +205,7 @@ package taint {
                     domain,
                     pc, declaringClass, methodName, methodDescriptor, operands,
                     isRecursiveCall)(
-                        processResult[domain.type])
+                        processResult[domain.type](pc))
             } else {
                 super.invokestatic(pc, declaringClass, methodName, methodDescriptor, operands)
             }
@@ -248,7 +253,6 @@ package taint {
             super.putstatic(pc, value, declaringClass, name, fieldType)
         }
 
-        def callChain: String
     }
 
     class RootTaintAnalysisDomain[Source](

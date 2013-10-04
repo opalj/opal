@@ -38,7 +38,7 @@ package domain
 
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
-trait TypeLevelFloatValues[I] extends Domain[I] {
+trait TypeLevelFloatValues[+I] extends Domain[I] {
 
     // -----------------------------------------------------------------------------------
     //
@@ -49,7 +49,7 @@ trait TypeLevelFloatValues[I] extends Domain[I] {
     /**
      * Abstracts over all values with computational type `float`.
      */
-    trait FloatValue extends Value {
+    trait FloatValue extends Value { this: DomainValue ⇒
         final def computationalType: ComputationalType = ComputationalTypeFloat
     }
 
@@ -62,8 +62,8 @@ trait TypeLevelFloatValues[I] extends Domain[I] {
         }
     }
 
-    protected def newFloatValue() : DomainValue
-    
+    protected def newFloatValue(): DomainValue
+
     // -----------------------------------------------------------------------------------
     //
     // HANDLING OF COMPUTATIONS
@@ -73,10 +73,10 @@ trait TypeLevelFloatValues[I] extends Domain[I] {
     //
     // RELATIONAL OPERATORS
     //
-    def fcmpg(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = 
+    def fcmpg(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
         newIntegerValue(pc)
-        
-    def fcmpl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = 
+
+    def fcmpl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
         newIntegerValue(pc)
 
     //
@@ -104,7 +104,7 @@ trait TypeLevelFloatValues[I] extends Domain[I] {
 
 }
 
-trait DefaultTypeLevelFloatValues[I]
+trait DefaultTypeLevelFloatValues[+I]
         extends DefaultValueBinding[I]
         with TypeLevelFloatValues[I] {
 
@@ -115,12 +115,13 @@ trait DefaultTypeLevelFloatValues[I]
             case _          ⇒ MetaInformationUpdateIllegalValue
         }
 
-        override def adapt(domain: Domain[_ >: I]): domain.DomainValue = domain match {
-            case d: DefaultTypeLevelFloatValues[I] ⇒
-                // "this" value does not have a dependency on this domain instance  
-                this.asInstanceOf[domain.DomainValue]
-            case _ ⇒ super.adapt(domain)
-        }
+        override def adapt[TDI >: I](targetDomain: Domain[TDI], pc: Int): targetDomain.DomainValue =
+            targetDomain match {
+                case typeLevelFloatValuesDomain: DefaultTypeLevelFloatValues[I] ⇒
+                    // "this" value does not have a dependency on this domain instance  
+                    this.asInstanceOf[targetDomain.DomainValue]
+                case _ ⇒ super.adapt(targetDomain, pc)
+            }
 
         def onCopyToRegister = this
 
@@ -129,7 +130,7 @@ trait DefaultTypeLevelFloatValues[I]
     def newFloatValue(): FloatValue = FloatValue
 
     def newFloatValue(pc: Int): DomainValue = FloatValue
-    
+
     def newFloatValue(pc: Int, value: Float): FloatValue = FloatValue
 }
 

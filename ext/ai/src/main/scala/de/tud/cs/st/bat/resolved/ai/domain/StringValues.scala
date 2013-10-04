@@ -39,25 +39,33 @@ package domain
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 /**
- * This domain enables the tracing of string values and can, e.g., be used to
- * resolve "class.forName" calls.
+ * Enables the tracing of concrete string values and can, e.g., be used to
+ * resolve static "class.forName(...)" calls.
+ *
+ * @author Michael Eichberg
  */
-trait StringValues[I] extends DefaultTypeLevelReferenceValues[I] {
+trait StringValues[+I] extends DefaultTypeLevelReferenceValues[I] {
 
     class AStringValue(
         pc: Int, // sets the pc value of the superclass
         val value: String)
-            extends AReferenceValue(pc, Set(ObjectType.String), No, true) {
+            extends AReferenceValue(pc, Set(ObjectType.String), No, true) { this: DomainValue ⇒
 
         assume(value != null)
 
-        override def adapt(domain: Domain[_ >: I]): domain.DomainValue =
-            domain match {
-                case d: StringValues[I] ⇒
-                    // "this" value does not have a dependency on this domain instance  
-                    this.asInstanceOf[domain.DomainValue]
-                case _ ⇒ super.adapt(domain)
-            }
+        override def adapt[TDI >: I](targetDomain: Domain[TDI], pc: Int): targetDomain.DomainValue =
+            // I would prefer to write (but the compiler crashes!): 
+            // targetDomain match {
+            // 	case otherDomain: StringValues[_] ⇒
+            // 		// TODO Why do we need this (useless?) typecast ( – even if we use the factory method – )?
+            // 		new otherDomain.AStringValue(pc, this.value).asInstanceOf[targetDomain.DomainValue]
+            // 	case _ ⇒ super.adapt(targetDomain, pc)
+            // }
+            if (targetDomain.isInstanceOf[StringValues[TDI]]) {
+                val otherDomain = targetDomain.asInstanceOf[StringValues[TDI]]
+                new otherDomain.AStringValue(pc, this.value).asInstanceOf[targetDomain.DomainValue]
+            } else
+                super.adapt(targetDomain, pc)
 
         override def equals(other: Any): Boolean = {
             super.equals(other) &&

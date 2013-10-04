@@ -128,8 +128,12 @@ trait PerformInvocations[Source] extends TypeLevelInvokeInstructions { this: Dom
             methodDescriptor,
             project) match {
                 case Some((classFile, method)) if !method.isNative && !isRecursiveCall(classFile, method, operands) ⇒
-                    val newOperands = operands.reverse.map(_.adapt(domain)).toArray(domain.DomainValueTag)
-                    transformResult(AI.perform(classFile, method, domain)(Some(newOperands)))
+                    //                    val newOperands = operands.reverse.zipWithIndex.map { operand_index ⇒
+                    //                        val (operand, index) = operand_index
+                    //                        operand.adapt(domain, -(index + 1))
+                    //                    }.toArray(domain.DomainValueTag)
+                    //                    transformResult(AI.perform(classFile, method, domain)(Some(newOperands)))
+                    fallback
                 case _ ⇒ fallback
             }
     }

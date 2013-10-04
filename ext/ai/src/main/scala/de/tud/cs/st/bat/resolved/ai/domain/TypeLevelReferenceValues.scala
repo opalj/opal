@@ -46,12 +46,12 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  *
  * @author Michael Eichberg
  */
-trait TypeLevelReferenceValues[I] extends Domain[I] {
+trait TypeLevelReferenceValues[+I] extends Domain[I] {
 
     /**
      * Abstracts over all values with computational type `reference`.
      */
-    trait ReferenceValue extends Value {
+    trait ReferenceValue extends Value { this: DomainValue ⇒
 
         /**
          * Returns `ComputationalTypeReference`.
@@ -250,7 +250,7 @@ trait TypeLevelReferenceValues[I] extends Domain[I] {
 /**
  * @author Michael Eichberg
  */
-trait DefaultTypeLevelReferenceValues[I]
+trait DefaultTypeLevelReferenceValues[+I]
         extends DefaultValueBinding[I]
         with TypeLevelReferenceValues[I] { domain ⇒
 
@@ -262,7 +262,7 @@ trait DefaultTypeLevelReferenceValues[I]
 
     trait ReferenceValue
             extends super.ReferenceValue
-            with IsReferenceType {
+            with IsReferenceType { this: DomainValue ⇒
 
         def location: I = domain.identifier
 
@@ -316,14 +316,20 @@ trait DefaultTypeLevelReferenceValues[I]
         val valueType: TypeBound,
         val isNull: Answer,
         val isPrecise: Boolean)
-            extends ReferenceValue {
+            extends ReferenceValue { this: DomainValue ⇒
 
-        override def adapt(domain: Domain[_ >: I]): domain.DomainValue = domain match {
-            case d: DefaultTypeLevelReferenceValues[I] ⇒
-                // "this" value does not have a dependency on this domain instance  
-                this.asInstanceOf[domain.DomainValue]
-            case _ ⇒ super.adapt(domain)
-        }
+        override def adapt[TDI >: I](targetDomain: Domain[TDI], pc: Int): targetDomain.DomainValue =
+            targetDomain match {
+                case referenceValuesDomain: DefaultTypeLevelReferenceValues[TDI] ⇒
+                    // TODO Why do we need this type cast?
+                    adaptAReferenceValue(referenceValuesDomain, pc).asInstanceOf[targetDomain.DomainValue]
+                case _ ⇒ super.adapt(targetDomain, pc)
+            }
+
+        def adaptAReferenceValue[TDI >: I](targetDomain: DefaultTypeLevelReferenceValues[TDI], pc: Int): targetDomain.AReferenceValue =
+            new targetDomain.AReferenceValue(
+                pc, this.valueType, this.isNull, this.isPrecise
+            )
 
         override def nonEmpty = valueType.nonEmpty
 
@@ -528,14 +534,17 @@ trait DefaultTypeLevelReferenceValues[I]
 
     case class MultipleReferenceValues(
         val values: Set[AReferenceValue])
-            extends ReferenceValue {
+            extends ReferenceValue { this: DomainValue ⇒
 
-        override def adapt(domain: Domain[_ >: I]): domain.DomainValue = domain match {
-            case d: DefaultTypeLevelReferenceValues[I] ⇒
-                // "this" value does not have a dependency on this domain instance  
-                this.asInstanceOf[domain.DomainValue]
-            case _ ⇒ super.adapt(domain)
-        }
+        override def adapt[TDI >: I](targetDomain: Domain[TDI], pc: Int): targetDomain.DomainValue =
+            if (targetDomain.isInstanceOf[DefaultTypeLevelReferenceValues[TDI]]) {
+                val d = targetDomain.asInstanceOf[DefaultTypeLevelReferenceValues[TDI]]
+                val newValues = this.values.map { value: AReferenceValue ⇒
+                    value.adaptAReferenceValue(d, pc)
+                }
+                d.MultipleReferenceValues(newValues).asInstanceOf[targetDomain.DomainValue]
+            } else
+                super.adapt(targetDomain, pc)
 
         def isSubtypeOf(supertype: ReferenceType, onNull: ⇒ Answer): Answer = {
             val firstAnswer = values.head.isSubtypeOf(supertype, onNull)
@@ -723,7 +732,7 @@ trait DefaultTypeLevelReferenceValues[I]
 
 import analyses.ClassHierarchy
 
-trait DefaultTypeLevelReferenceValuesWithClosedHierarchy[I]
+trait DefaultTypeLevelReferenceValuesWithClosedHierarchy[+I]
         extends DefaultTypeLevelReferenceValues[I] {
 
     def classHierarchy: ClassHierarchy

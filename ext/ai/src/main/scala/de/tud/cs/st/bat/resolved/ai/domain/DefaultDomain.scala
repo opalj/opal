@@ -47,7 +47,7 @@ package domain
  *
  * @author Michael Eichberg
  */
-trait BaseDomain[I]
+trait BaseDomain[+I]
     extends DefaultValueBinding[I]
     with DefaultTypeLevelReferenceValues[I]
     with DefaultTypeLevelIntegerValues[I]
@@ -61,7 +61,7 @@ trait BaseDomain[I]
  *
  * @author Michael Eichberg
  */
-trait AbstractDefaultDomain[I]
+trait AbstractDefaultDomain[+I]
         extends BaseDomain[I]
         with TypeLevelArrayInstructions
         with TypeLevelFieldAccessInstructions
@@ -84,7 +84,7 @@ class DefaultDomain extends AbstractDefaultDomain[String] {
 
 }
 
-trait ConfigurableDomain[I] extends Domain[I] {
+trait ConfigurableDomain[+I] extends Domain[I] {
     val identifier: I
 }
 
@@ -93,14 +93,14 @@ trait ConfigurableDomain[I] extends Domain[I] {
  *
  * @author Michael Eichberg
  */
-class ConfigurableDefaultDomain[I](
+class ConfigurableDefaultDomain[+I](
     val identifier: I)
         extends ConfigurableDomain[I]
         with AbstractDefaultDomain[I] {
     
 }
 
-class ConfigurablePreciseDomain[I](
+class ConfigurablePreciseDomain[+I](
     val identifier: I)
         extends ConfigurableDomain[I]
         with DefaultValueBinding[I]

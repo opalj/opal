@@ -43,7 +43,7 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  *
  * @author Michael Eichberg
  */
-trait PreciseIntegerValues[I] extends Domain[I] {
+trait PreciseIntegerValues[+I] extends Domain[I] {
 
     // -----------------------------------------------------------------------------------
     //
@@ -79,29 +79,29 @@ trait PreciseIntegerValues[I] extends Domain[I] {
     /**
      * Abstracts over all values with computational type `integer`.
      */
-    sealed trait IntegerLikeValue extends Value {
+    sealed trait IntegerLikeValue extends Value { this: DomainValue ⇒
 
         final def computationalType: ComputationalType = ComputationalTypeInt
 
         final def types: TypesAnswer[_] = typesAnswer
 
     }
-    
-    protected def newIntegerValue() : DomainValue
-    
-    protected def newByteValue() : DomainValue
+
+    protected def newIntegerValue(): DomainValue
+
+    protected def newByteValue(): DomainValue
 
     /**
      * Represents a specific, but unknown integer value.
      *
      * Models the top value of this domain's lattice.
      */
-    trait AnIntegerValue extends IntegerLikeValue
+    trait AnIntegerValue extends IntegerLikeValue { this: DomainValue ⇒ }
 
     /**
      * Represents a concrete integer value.
      */
-    trait IntegerValue extends IntegerLikeValue {
+    trait IntegerValue extends IntegerLikeValue { this: DomainValue ⇒
 
         val initial: Int
 
@@ -344,7 +344,7 @@ trait PreciseIntegerValues[I] extends Domain[I] {
     def i2l(pc: Int, value: DomainValue): DomainValue = newLongValue(pc)
 }
 
-trait DefaultPreciseIntegerValues[I]
+trait DefaultPreciseIntegerValues[+I]
         extends DefaultValueBinding[I]
         with PreciseIntegerValues[I] {
 
@@ -356,11 +356,11 @@ trait DefaultPreciseIntegerValues[I]
                 case other               ⇒ MetaInformationUpdateIllegalValue
             }
 
-        override def adapt(domain: Domain[_ >: I]): domain.DomainValue =
-            domain match {
+        override def adapt[TDI >: I](targetDomain: Domain[TDI], pc: Int): targetDomain.DomainValue =
+            targetDomain match {
                 case d: DefaultPreciseIntegerValues[I] ⇒
-                    this.asInstanceOf[domain.DomainValue]
-                case _ ⇒ super.adapt(domain)
+                    this.asInstanceOf[targetDomain.DomainValue]
+                case _ ⇒ super.adapt(targetDomain, pc)
             }
     }
 
@@ -404,12 +404,13 @@ trait DefaultPreciseIntegerValues[I]
                 case other ⇒ MetaInformationUpdateIllegalValue
             }
 
-        override def adapt(domain: Domain[_ >: I]): domain.DomainValue = domain match {
-            case d: DefaultPreciseIntegerValues[I] ⇒
-                // "this" value does not have a dependency on this domain instance  
-                this.asInstanceOf[domain.DomainValue]
-            case _ ⇒ super.adapt(domain)
-        }
+        override def adapt[TDI >: I](targetDomain: Domain[TDI], pc: Int): targetDomain.DomainValue =
+            targetDomain match {
+                case d: DefaultPreciseIntegerValues[TDI] ⇒
+                    // "this" value does not have a dependency on this domain instance  
+                    this.asInstanceOf[targetDomain.DomainValue]
+                case _ ⇒ super.adapt(targetDomain, pc)
+            }
 
         override def toString: String = "IntegerValue("+value+",initial="+initial+")"
     }

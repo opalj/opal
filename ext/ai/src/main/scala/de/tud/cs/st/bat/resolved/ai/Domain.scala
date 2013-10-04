@@ -120,7 +120,7 @@ trait Domain[+I] {
      * and that defines a new class `Value` that inherits from this class and where
      * we redefine `DomainValue`.
      */
-    trait Value {
+    trait Value { this: DomainValue ⇒
 
         /**
          * The computational type of the value.
@@ -181,11 +181,11 @@ trait Domain[+I] {
         /**
          * Adapts this value to the given domain.
          *
-         * The `adapt` method is BATAIs main mechanism to enable dynamic domain-widening.
+         * The `adapt` method is BATAIs main mechanism to enable dynamic domain-adaptation.
          * I.e., to make it possible to change the abstract domain at runtime if the
          * analysis time takes too long using a (more) precise domain.
          */
-        def adapt(domain: Domain[_ >: I]): domain.DomainValue =
+        def adapt[TDI >: I](targetDomain: Domain[TDI], pc: Int): targetDomain.DomainValue =
             domainException(
                 Domain.this,
                 "adapting this value for the target domain is not supported")
@@ -229,7 +229,7 @@ trait Domain[+I] {
         final def computationalType: ComputationalType =
             domainException(
                 Domain.this,
-                "the value \"IllegalValue\" does not have a computational type")
+                "a dead value does not have a computational type")
 
         final def merge(pc: Int, value: DomainValue): Update[DomainValue] =
             if (value == TheIllegalValue)
@@ -237,8 +237,8 @@ trait Domain[+I] {
             else
                 MetaInformationUpdateIllegalValue
 
-        override def adapt(domain: Domain[_ >: I]): domain.DomainValue =
-            domain.TheIllegalValue
+        override def adapt[TDI >: I](targetDomain: Domain[TDI], pc: Int): targetDomain.DomainValue =
+            targetDomain.TheIllegalValue
 
         override def toString: String = "IllegalValue"
     }
@@ -301,8 +301,8 @@ trait Domain[+I] {
 
         private[Domain] override def asReturnAddressValue: Int = address
 
-        override def adapt(domain: Domain[_ >: I]): domain.DomainValue =
-            domain.ReturnAddressValue(address)
+        override def adapt[TDI >: I](targetDomain: Domain[TDI], pc: Int): targetDomain.DomainValue =
+            targetDomain.ReturnAddressValue(address)
 
         override def toString = "ReturnAddress: "+address
     }
@@ -347,23 +347,11 @@ trait Domain[+I] {
      * BATAI uses this method when a method is to be analyzed, but no parameter
      * values are given and initial values need to be generated. This method is not
      * used elsewhere by BATAI.
-     * 
+     *
      * BATAI uses the pc -1 for the first parameter and -2 for the second...
      *
      * @note This method is primarily a convenience method.
      */
-//    def newTypedValue(valueType: Type): DomainValue = valueType match {
-//        case BooleanType       ⇒ newBooleanValue
-//        case ByteType          ⇒ newByteValue
-//        case ShortType         ⇒ newShortValue
-//        case CharType          ⇒ newCharValue
-//        case IntegerType       ⇒ newIntegerValue
-//        case FloatType         ⇒ newFloatValue
-//        case LongType          ⇒ newLongValue
-//        case DoubleType        ⇒ newDoubleValue
-//        case rt: ReferenceType ⇒ newReferenceValue(rt)
-//        case VoidType          ⇒ domainException(this, "there are no void typed values")
-//    }
     def newTypedValue(pc: Int, valueType: Type): DomainValue = valueType match {
         case BooleanType       ⇒ newBooleanValue(pc)
         case ByteType          ⇒ newByteValue(pc)
@@ -377,12 +365,6 @@ trait Domain[+I] {
         case VoidType          ⇒ domainException(this, "there are no void typed values")
     }
 
-//    /**
-//     * Factory method to create a representation of a boolean value if we neither know
-//     * the precise value nor the source of the value.
-//     */
-//    def newBooleanValue(): DomainValue
-
     /**
      * Factory method to create a representation of a boolean value if we now the
      * origin of the value.
@@ -393,12 +375,6 @@ trait Domain[+I] {
      * Factory method to create a representation of a boolean value with the given value.
      */
     def newBooleanValue(pc: Int, value: Boolean): DomainValue
-
-//    /**
-//     * Factory method to create a representation of a byte value if we neither know
-//     * the precise value nor the source of the value.
-//     */
-//    def newByteValue(): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or
@@ -413,12 +389,6 @@ trait Domain[+I] {
      */
     def newByteValue(pc: Int, value: Byte): DomainValue
 
-//    /**
-//     * Factory method to create a representation of a short value if we neither know
-//     * the precise value nor the source of the value.
-//     */
-//    def newShortValue(): DomainValue
-
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or
      * implicitly) by the instruction with the specified program counter.
@@ -431,12 +401,6 @@ trait Domain[+I] {
      * specified program counter.
      */
     def newShortValue(pc: Int, value: Short): DomainValue
-
-//    /**
-//     * Factory method to create a representation of a char value if we neither know
-//     * the precise value nor the source of the value.
-//     */
-//    def newCharValue(): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or
@@ -453,12 +417,6 @@ trait Domain[+I] {
      */
     def newIntegerConstant0: DomainValue
 
-//    /**
-//     * Factory method to create a representation of an integer value if we neither know
-//     * the precise value nor the source of the value.
-//     */
-//    def newIntegerValue(): DomainValue
-
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or
      * implicitly) by the instruction with the specified program counter.
@@ -471,12 +429,6 @@ trait Domain[+I] {
      * specified program counter.
      */
     def newIntegerValue(pc: Int, value: Int): DomainValue
-
-//    /**
-//     * Factory method to create a representation of a float value if we neither know
-//     * the precise value nor the source of the value.
-//     */
-//    def newFloatValue(): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or
@@ -491,12 +443,6 @@ trait Domain[+I] {
      */
     def newFloatValue(pc: Int, value: Float): DomainValue
 
-//    /**
-//     * Factory method to create a representation of a long value if we neither know
-//     * the precise value nor the source of the value.
-//     */
-//    def newLongValue(): DomainValue
-
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or
      * implicitly) by the instruction with the specified program counter.
@@ -509,12 +455,6 @@ trait Domain[+I] {
      * specified program counter.
      */
     def newLongValue(pc: Int, value: Long): DomainValue
-
-//    /**
-//     * Factory method to create a representation of a double value if we neither know
-//     * the precise value nor the source of the value.
-//     */
-//    def newDoubleValue(): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or
@@ -535,12 +475,6 @@ trait Domain[+I] {
      * specified program counter.
      */
     def newNullValue(pc: Int): DomainValue
-
-//    /**
-//     * Factory method to create a `DomainValue` that represents a new, '''initialized'''
-//     * object of the given type.
-//     */
-//    def newReferenceValue(referenceType: ReferenceType): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents a new, '''initialized'''

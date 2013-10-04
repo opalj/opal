@@ -43,7 +43,7 @@ package domain
  * @todo Currently we only refine Is(Non)NullConstraints and nothing else...
  * @author Michael Eichberg
  */
-trait ReifiedConstraints[I] extends Domain[I] {
+trait ReifiedConstraints[+I] extends Domain[I] {
 
     /*abstract*/ def addConstraint(constraint: ReifiedConstraint)
 

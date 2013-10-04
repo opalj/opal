@@ -43,7 +43,7 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  *
  * @author Michael Eichberg
  */
-trait TypeLevelIntegerValues[I] extends Domain[I] {
+trait TypeLevelIntegerValues[+I] extends Domain[I] {
 
     // -----------------------------------------------------------------------------------
     //
@@ -55,36 +55,37 @@ trait TypeLevelIntegerValues[I] extends Domain[I] {
      * Abstracts over all values with computational type `integer` and also
      * represents Integer values.
      */
-    trait ComputationalTypeIntegerValue extends Value {
+    trait ComputationalTypeIntegerValue extends Value { this: DomainValue ⇒
         final def computationalType: ComputationalType = ComputationalTypeInt
 
         def types: TypesAnswer[_]
 
-        override def adapt(domain: Domain[_ >: I]): domain.DomainValue = domain match {
-            case d: TypeLevelIntegerValues[I] ⇒
-                // "this" value does not have a dependency on this domain instance  
-                this.asInstanceOf[domain.DomainValue]
-            case _ ⇒ super.adapt(domain)
-        }
+        override def adapt[TDI >: I](targetDomain: Domain[TDI], pc: Int): targetDomain.DomainValue =
+            targetDomain match {
+                case typeLevelIntegerValuesDomain: TypeLevelIntegerValues[I] ⇒
+                    // "this" value does not have a dependency on this domain instance  
+                    this.asInstanceOf[targetDomain.DomainValue]
+                case _ ⇒ super.adapt(targetDomain, pc)
+            }
     }
 
-    trait BooleanValue extends ComputationalTypeIntegerValue {
+    trait BooleanValue extends ComputationalTypeIntegerValue { this: DomainValue ⇒
         final def types: TypesAnswer[_] = typesAnswerBoolean
     }
-    trait ByteValue extends ComputationalTypeIntegerValue {
+    trait ByteValue extends ComputationalTypeIntegerValue { this: DomainValue ⇒
         final def types: TypesAnswer[_] = typesAnswerByte
     }
-    trait CharValue extends ComputationalTypeIntegerValue {
+    trait CharValue extends ComputationalTypeIntegerValue { this: DomainValue ⇒
         final def types: TypesAnswer[_] = typesAnswerChar
     }
-    trait ShortValue extends ComputationalTypeIntegerValue {
+    trait ShortValue extends ComputationalTypeIntegerValue { this: DomainValue ⇒
         final def types: TypesAnswer[_] = typesAnswerShort
     }
-    trait IntegerValue extends ComputationalTypeIntegerValue {
+    trait IntegerValue extends ComputationalTypeIntegerValue { this: DomainValue ⇒
         final def types: TypesAnswer[_] = typesAnswerInteger
     }
-    
-    protected def newIntegerValue() : DomainValue
+
+    protected def newIntegerValue(): DomainValue
 
     private val typesAnswerBoolean: IsPrimitiveType = IsPrimitiveType(BooleanType)
 
@@ -163,7 +164,7 @@ trait TypeLevelIntegerValues[I] extends Domain[I] {
 
 }
 
-trait DefaultTypeLevelIntegerValues[I]
+trait DefaultTypeLevelIntegerValues[+I]
         extends DefaultValueBinding[I]
         with TypeLevelIntegerValues[I] {
 

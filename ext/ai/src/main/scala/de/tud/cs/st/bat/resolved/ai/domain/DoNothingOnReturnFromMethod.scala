@@ -37,8 +37,8 @@ package ai
 package domain
 
 /**
- * Provides default implementations for a `Domain`'s return methods.
- * 
+ * Provides default implementations for a `Domain`'s return methods that do nothing.
+ *
  * @author Michael Eichberg
  */
 trait DoNothingOnReturnFromMethod { this: Domain[_] ⇒
@@ -53,9 +53,13 @@ trait DoNothingOnReturnFromMethod { this: Domain[_] ⇒
 
     def lreturn(pc: Int, value: DomainValue): Unit = { /* Do nothing. */ }
 
-    def returnVoid(pc: Int): Unit = { /* Do nothing. */ }
+    def returnVoid(pc: Int): Unit = {
+        /* Do nothing. */
+    }
 
-    def abruptMethodExecution(pc: Int, exception: DomainValue): Unit = { /* Do nothing. */ }
+    def abruptMethodExecution(pc: Int, exception: DomainValue): Unit = {
+        /* Do nothing. */
+    }
 }
 
 

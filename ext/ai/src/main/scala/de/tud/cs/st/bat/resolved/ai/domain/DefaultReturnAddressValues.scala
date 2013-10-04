@@ -43,7 +43,7 @@ package domain
  *
  * @author Michael Eichberg
  */
-trait DefaultReturnAddressValues[I] extends DefaultValueBinding[I] {
+trait DefaultReturnAddressValues[+I] extends DefaultValueBinding[I] {
 
     type DomainReturnAddressValue = ReturnAddressValue
 

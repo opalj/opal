@@ -38,7 +38,7 @@ package domain
 
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
-trait TypeLevelDoubleValues[I] extends Domain[I] {
+trait TypeLevelDoubleValues[+I] extends Domain[I] {
 
     // -----------------------------------------------------------------------------------
     //
@@ -46,7 +46,7 @@ trait TypeLevelDoubleValues[I] extends Domain[I] {
     //
     // -----------------------------------------------------------------------------------
 
-    trait DoubleValue extends Value {
+    trait DoubleValue extends Value { this: DomainValue ⇒
         final def computationalType: ComputationalType = ComputationalTypeDouble
     }
 
@@ -92,7 +92,7 @@ trait TypeLevelDoubleValues[I] extends Domain[I] {
     def d2l(pc: Int, value: DomainValue): DomainValue = newLongValue(pc)
 }
 
-trait DefaultTypeLevelDoubleValues[I]
+trait DefaultTypeLevelDoubleValues[+I]
         extends DefaultValueBinding[I]
         with TypeLevelDoubleValues[I] {
 
@@ -104,15 +104,13 @@ trait DefaultTypeLevelDoubleValues[I]
                 case _           ⇒ MetaInformationUpdateIllegalValue
             }
 
-        override def adapt(domain: Domain[_ >: I]): domain.DomainValue =
-            domain match {
+        override def adapt[TDI >: I](targetDomain: Domain[TDI], pc: Int): targetDomain.DomainValue =
+            targetDomain match {
                 case d: DefaultTypeLevelDoubleValues[I] ⇒
                     // "this" value does not have a dependency on this domain instance  
-                    this.asInstanceOf[domain.DomainValue]
-                case _ ⇒ super.adapt(domain)
+                    this.asInstanceOf[targetDomain.DomainValue]
+                case _ ⇒ super.adapt(targetDomain, pc)
             }
-
-        // REMOVE? def onCopyToRegister = this
     }
 
     def newDoubleValue(): DoubleValue = DoubleValue

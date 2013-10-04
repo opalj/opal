@@ -46,7 +46,7 @@ package domain
  *
  * @author Michael Eichberg
  */
-trait RecordReturnValues[I] extends Domain[I] {
+trait RecordReturnValues[+I] extends Domain[I] {
 
     var returnedValues: Set[(String, Value)] = Set.empty
 

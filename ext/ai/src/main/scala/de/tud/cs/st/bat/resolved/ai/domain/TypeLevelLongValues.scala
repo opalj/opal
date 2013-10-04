@@ -38,7 +38,7 @@ package domain
 
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
-trait TypeLevelLongValues[I] extends Domain[I] {
+trait TypeLevelLongValues[+I] extends Domain[I] {
 
     // -----------------------------------------------------------------------------------
     //
@@ -46,7 +46,7 @@ trait TypeLevelLongValues[I] extends Domain[I] {
     //
     // -----------------------------------------------------------------------------------
 
-    trait LongValue extends Value {
+    trait LongValue extends Value { this: DomainValue ⇒
         final def computationalType: ComputationalType = ComputationalTypeLong
     }
 
@@ -124,7 +124,7 @@ trait TypeLevelLongValues[I] extends Domain[I] {
     def l2i(pc: Int, value: DomainValue): DomainValue = newIntegerValue(pc)
 }
 
-trait DefaultTypeLevelLongValues[I]
+trait DefaultTypeLevelLongValues[+I]
         extends DefaultValueBinding[I]
         with TypeLevelLongValues[I] {
 
@@ -135,12 +135,13 @@ trait DefaultTypeLevelLongValues[I]
                 case _         ⇒ MetaInformationUpdateIllegalValue
             }
 
-        override def adapt(domain: Domain[_ >: I]): domain.DomainValue = domain match {
-            case d: DefaultTypeLevelLongValues[I] ⇒
-                // "this" value does not have a dependency on this domain instance  
-                this.asInstanceOf[domain.DomainValue]
-            case _ ⇒ super.adapt(domain)
-        }
+        override def adapt[TDI >: I](targetDomain: Domain[TDI], pc: Int): targetDomain.DomainValue =
+            targetDomain match {
+                case d: DefaultTypeLevelLongValues[I] ⇒
+                    // "this" value does not have a dependency on this domain instance  
+                    this.asInstanceOf[targetDomain.DomainValue]
+                case _ ⇒ super.adapt(targetDomain, pc)
+            }
     }
 
     def newLongValue(): LongValue = LongValue
