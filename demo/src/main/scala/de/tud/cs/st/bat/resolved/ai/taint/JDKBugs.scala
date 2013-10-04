@@ -96,10 +96,10 @@ package taint {
             with TypeLevelArrayInstructions
             with TypeLevelFieldAccessInstructions
             with TypeLevelInvokeInstructions
-            with PerformInvocations[Source]
+            with PerformInvocations[CallStackEntry, Source]
             with DoNothingOnReturnFromMethod
             with ProjectBasedTypeHierarchyBinding[Source]
-            with Report {
+            with Report { thisDomain ⇒
 
         def callChain: String
 
@@ -199,34 +199,39 @@ package taint {
             operands: List[DomainValue]) = {
             if (declaringClass.isObjectType &&
                 checkCall(methodName, methodDescriptor, operands)) {
-                val domain = new ChildTaintAnalysisDomain(this, (declaringClass.asObjectType, methodName, methodDescriptor))
-                println(domain.callChain)
+                val calleeDomain = new CalledTaintAnalysisDomain(
+                    this,
+                    (declaringClass.asObjectType, methodName, methodDescriptor))
+                println(calleeDomain.callChain)
                 doInvokestatic(
-                    domain,
-                    pc, declaringClass, methodName, methodDescriptor, operands,
-                    isRecursiveCall)(
-                        processResult[domain.type](pc))
+                    pc,
+                    declaringClass,
+                    methodName,
+                    methodDescriptor,
+                    operands,
+                    calleeDomain)(
+                        isMutuallyRecursiveCall)(
+                            processResult[calleeDomain.type](pc))
             } else {
                 super.invokestatic(pc, declaringClass, methodName, methodDescriptor, operands)
             }
         }
 
-        def isRecursiveCall(
+        def isMutuallyRecursiveCall(
             declaringClass: ReferenceType,
             methodName: String,
             methodDescriptor: MethodDescriptor,
-            operands: List[DomainValue]): Boolean
+            parameters: DomainValues[_ <: Domain[CallStackEntry]]): Boolean
 
-        def isRecursiveCall(
+        def isMutuallyRecursiveCall(
             classFile: ClassFile,
             method: Method,
-            operands: List[DomainValue]): Boolean = {
-            isRecursiveCall(
+            parameters: DomainValues[_ <: Domain[CallStackEntry]]): Boolean = {
+            isMutuallyRecursiveCall(
                 classFile.thisClass,
                 method.name,
                 method.descriptor,
-                operands
-            )
+                parameters)
         }
 
         override def putfield(
@@ -259,11 +264,11 @@ package taint {
             val project: Project[Source],
             val identifier: CallStackEntry) extends TaintAnalysisDomain[Source] {
 
-        def isRecursiveCall(
+        def isMutuallyRecursiveCall(
             declaringClass: ReferenceType,
             methodName: String,
             methodDescriptor: MethodDescriptor,
-            operands: List[DomainValue]): Boolean = {
+            parameters: DomainValues[_ <: Domain[CallStackEntry]]): Boolean = {
             this.declaringClass == declaringClass &&
                 this.methodName == methodName &&
                 this.methodDescriptor == methodDescriptor // &&
@@ -273,7 +278,7 @@ package taint {
         def callChain = contextIdentifier
     }
 
-    class ChildTaintAnalysisDomain[Source](
+    class CalledTaintAnalysisDomain[Source](
             val previousTaintAnalysisDomain: TaintAnalysisDomain[Source],
             val identifier: CallStackEntry) extends TaintAnalysisDomain[Source] {
 
@@ -282,22 +287,23 @@ package taint {
 
         def project = previousTaintAnalysisDomain.project
 
-        def isRecursiveCall(
+        def isMutuallyRecursiveCall(
             declaringClass: ReferenceType,
             methodName: String,
             methodDescriptor: MethodDescriptor,
-            operands: List[DomainValue]): Boolean = {
+            parameters: DomainValues[_ <: Domain[CallStackEntry]]): Boolean = {
             (this.declaringClass == declaringClass &&
                 this.methodName == methodName &&
-                this.methodDescriptor == methodDescriptor) || (
+                this.methodDescriptor == methodDescriptor
+            // && // TODO check that the analysis would be made under the same assumption (same parameters!)    
+            ) || (
                     declaringClass.isObjectType &&
-                    previousTaintAnalysisDomain.isRecursiveCall(
+                    previousTaintAnalysisDomain.isMutuallyRecursiveCall(
                         declaringClass.asObjectType,
                         methodName,
                         methodDescriptor,
-                        operands.map(_.adapt(previousTaintAnalysisDomain))))
+                        parameters))
 
-            // TODO check that the analysis would be made under the same assumption (same parameters!)
         }
     }
 }

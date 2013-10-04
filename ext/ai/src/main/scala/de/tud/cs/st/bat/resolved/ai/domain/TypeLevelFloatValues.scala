@@ -115,11 +115,10 @@ trait DefaultTypeLevelFloatValues[+I]
             case _          ⇒ MetaInformationUpdateIllegalValue
         }
 
-        override def adapt[TDI >: I](targetDomain: Domain[TDI], pc: Int): targetDomain.DomainValue =
+        override def adapt[ThatI >: I](targetDomain: Domain[ThatI], pc: Int): targetDomain.DomainValue =
             targetDomain match {
-                case typeLevelFloatValuesDomain: DefaultTypeLevelFloatValues[I] ⇒
-                    // "this" value does not have a dependency on this domain instance  
-                    this.asInstanceOf[targetDomain.DomainValue]
+                case thatDomain: DefaultTypeLevelFloatValues[ThatI] ⇒
+                    thatDomain.FloatValue.asInstanceOf[targetDomain.DomainValue]
                 case _ ⇒ super.adapt(targetDomain, pc)
             }
 

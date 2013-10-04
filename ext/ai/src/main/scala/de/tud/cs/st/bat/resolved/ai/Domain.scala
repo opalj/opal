@@ -237,7 +237,7 @@ trait Domain[+I] {
             else
                 MetaInformationUpdateIllegalValue
 
-        override def adapt[TDI >: I](targetDomain: Domain[TDI], pc: Int): targetDomain.DomainValue =
+        override def adapt[ThatI >: I](targetDomain: Domain[ThatI], pc: Int): targetDomain.DomainValue =
             targetDomain.TheIllegalValue
 
         override def toString: String = "IllegalValue"
@@ -301,7 +301,7 @@ trait Domain[+I] {
 
         private[Domain] override def asReturnAddressValue: Int = address
 
-        override def adapt[TDI >: I](targetDomain: Domain[TDI], pc: Int): targetDomain.DomainValue =
+        override def adapt[ThatI >: I](targetDomain: Domain[ThatI], pc: Int): targetDomain.DomainValue =
             targetDomain.ReturnAddressValue(address)
 
         override def toString = "ReturnAddress: "+address

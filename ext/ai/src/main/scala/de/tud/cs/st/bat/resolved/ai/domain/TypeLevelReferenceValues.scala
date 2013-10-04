@@ -318,15 +318,19 @@ trait DefaultTypeLevelReferenceValues[+I]
         val isPrecise: Boolean)
             extends ReferenceValue { this: DomainValue ⇒
 
-        override def adapt[TDI >: I](targetDomain: Domain[TDI], pc: Int): targetDomain.DomainValue =
+        override def adapt[ThatI >: I](
+            targetDomain: Domain[ThatI],
+            pc: Int): targetDomain.DomainValue =
             targetDomain match {
-                case referenceValuesDomain: DefaultTypeLevelReferenceValues[TDI] ⇒
+                case thatDomain: DefaultTypeLevelReferenceValues[ThatI] ⇒
                     // TODO Why do we need this type cast?
-                    adaptAReferenceValue(referenceValuesDomain, pc).asInstanceOf[targetDomain.DomainValue]
+                    adaptAReferenceValue(thatDomain, pc).asInstanceOf[targetDomain.DomainValue]
                 case _ ⇒ super.adapt(targetDomain, pc)
             }
 
-        def adaptAReferenceValue[TDI >: I](targetDomain: DefaultTypeLevelReferenceValues[TDI], pc: Int): targetDomain.AReferenceValue =
+        def adaptAReferenceValue[ThatI >: I](
+            targetDomain: DefaultTypeLevelReferenceValues[ThatI],
+            pc: Int): targetDomain.AReferenceValue =
             new targetDomain.AReferenceValue(
                 pc, this.valueType, this.isNull, this.isPrecise
             )
@@ -495,17 +499,15 @@ trait DefaultTypeLevelReferenceValues[+I]
                 41 + valueType.hashCode()
         }
 
-        override def toString() = {
+        override def toString() =
             isNull match {
-                case Yes ⇒
-                    "Null(pc="+pc+")"
+                case Yes ⇒ "Null(pc="+pc+")"
                 case _ ⇒
                     valueType.map(_.toJava).mkString(" with ")+
                         "(pc="+pc+
                         ", isNull="+isNull+
                         ", isPrecise="+isPrecise+")"
             }
-        }
 
     }
 
@@ -538,11 +540,11 @@ trait DefaultTypeLevelReferenceValues[+I]
 
         override def adapt[TDI >: I](targetDomain: Domain[TDI], pc: Int): targetDomain.DomainValue =
             if (targetDomain.isInstanceOf[DefaultTypeLevelReferenceValues[TDI]]) {
-                val d = targetDomain.asInstanceOf[DefaultTypeLevelReferenceValues[TDI]]
+                val thatDomain = targetDomain.asInstanceOf[DefaultTypeLevelReferenceValues[TDI]]
                 val newValues = this.values.map { value: AReferenceValue ⇒
-                    value.adaptAReferenceValue(d, pc)
+                    value.adaptAReferenceValue(thatDomain, pc)
                 }
-                d.MultipleReferenceValues(newValues).asInstanceOf[targetDomain.DomainValue]
+                thatDomain.MultipleReferenceValues(newValues).asInstanceOf[targetDomain.DomainValue]
             } else
                 super.adapt(targetDomain, pc)
 

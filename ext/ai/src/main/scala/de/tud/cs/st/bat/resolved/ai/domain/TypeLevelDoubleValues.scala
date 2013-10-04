@@ -104,11 +104,10 @@ trait DefaultTypeLevelDoubleValues[+I]
                 case _           ⇒ MetaInformationUpdateIllegalValue
             }
 
-        override def adapt[TDI >: I](targetDomain: Domain[TDI], pc: Int): targetDomain.DomainValue =
+        override def adapt[ThatI >: I](targetDomain: Domain[ThatI], pc: Int): targetDomain.DomainValue =
             targetDomain match {
-                case d: DefaultTypeLevelDoubleValues[I] ⇒
-                    // "this" value does not have a dependency on this domain instance  
-                    this.asInstanceOf[targetDomain.DomainValue]
+                case thatDomain: DefaultTypeLevelDoubleValues[ThatI] ⇒
+                    thatDomain.DoubleValue.asInstanceOf[targetDomain.DomainValue]
                 case _ ⇒ super.adapt(targetDomain, pc)
             }
     }

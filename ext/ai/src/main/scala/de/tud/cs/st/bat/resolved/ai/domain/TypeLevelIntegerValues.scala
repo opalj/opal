@@ -59,14 +59,6 @@ trait TypeLevelIntegerValues[+I] extends Domain[I] {
         final def computationalType: ComputationalType = ComputationalTypeInt
 
         def types: TypesAnswer[_]
-
-        override def adapt[TDI >: I](targetDomain: Domain[TDI], pc: Int): targetDomain.DomainValue =
-            targetDomain match {
-                case typeLevelIntegerValuesDomain: TypeLevelIntegerValues[I] ⇒
-                    // "this" value does not have a dependency on this domain instance  
-                    this.asInstanceOf[targetDomain.DomainValue]
-                case _ ⇒ super.adapt(targetDomain, pc)
-            }
     }
 
     trait BooleanValue extends ComputationalTypeIntegerValue { this: DomainValue ⇒
@@ -176,8 +168,14 @@ trait DefaultTypeLevelIntegerValues[+I]
             case _                    ⇒ MetaInformationUpdateIllegalValue
         }
 
-        // REMOVE?def onCopyToRegister = this
+        override def adapt[ThatI >: I](targetDomain: Domain[ThatI], pc: Int): targetDomain.DomainValue =
+            targetDomain match {
+                case thatDomain: DefaultTypeLevelIntegerValues[ThatI] ⇒
+                    thatDomain.BooleanValue.asInstanceOf[targetDomain.DomainValue]
+                case _ ⇒ super.adapt(targetDomain, pc)
+            }
     }
+
     case object ByteValue extends super.ByteValue {
         override def merge(pc: Int, value: DomainValue): Update[DomainValue] = value match {
             case ByteValue            ⇒ NoUpdate
@@ -188,7 +186,12 @@ trait DefaultTypeLevelIntegerValues[+I]
             case other                ⇒ MetaInformationUpdateIllegalValue
         }
 
-        // REMOVE?def onCopyToRegister = this
+        override def adapt[ThatI >: I](targetDomain: Domain[ThatI], pc: Int): targetDomain.DomainValue =
+            targetDomain match {
+                case thatDomain: DefaultTypeLevelIntegerValues[ThatI] ⇒
+                    thatDomain.ByteValue.asInstanceOf[targetDomain.DomainValue]
+                case _ ⇒ super.adapt(targetDomain, pc)
+            }
     }
 
     case object ShortValue extends super.ShortValue {
@@ -201,7 +204,12 @@ trait DefaultTypeLevelIntegerValues[+I]
             case other                ⇒ MetaInformationUpdateIllegalValue
         }
 
-        // REMOVE?def onCopyToRegister = this
+        override def adapt[ThatI >: I](targetDomain: Domain[ThatI], pc: Int): targetDomain.DomainValue =
+            targetDomain match {
+                case thatDomain: DefaultTypeLevelIntegerValues[ThatI] ⇒
+                    thatDomain.ShortValue.asInstanceOf[targetDomain.DomainValue]
+                case _ ⇒ super.adapt(targetDomain, pc)
+            }
     }
 
     case object CharValue extends super.CharValue {
@@ -214,7 +222,12 @@ trait DefaultTypeLevelIntegerValues[+I]
             case other                ⇒ MetaInformationUpdateIllegalValue
         }
 
-        // REMOVE?def onCopyToRegister = this
+        override def adapt[ThatI >: I](targetDomain: Domain[ThatI], pc: Int): targetDomain.DomainValue =
+            targetDomain match {
+                case thatDomain: DefaultTypeLevelIntegerValues[ThatI] ⇒
+                    thatDomain.CharValue.asInstanceOf[targetDomain.DomainValue]
+                case _ ⇒ super.adapt(targetDomain, pc)
+            }
     }
 
     case object IntegerValue extends super.IntegerValue {
@@ -228,7 +241,12 @@ trait DefaultTypeLevelIntegerValues[+I]
             case other           ⇒ MetaInformationUpdateIllegalValue
         }
 
-        // REMOVE?def onCopyToRegister = this
+        override def adapt[ThatI >: I](targetDomain: Domain[ThatI], pc: Int): targetDomain.DomainValue =
+            targetDomain match {
+                case thatDomain: DefaultTypeLevelIntegerValues[ThatI] ⇒
+                    thatDomain.IntegerValue.asInstanceOf[targetDomain.DomainValue]
+                case _ ⇒ super.adapt(targetDomain, pc)
+            }
     }
 
     def newBooleanValue(): DomainValue = BooleanValue

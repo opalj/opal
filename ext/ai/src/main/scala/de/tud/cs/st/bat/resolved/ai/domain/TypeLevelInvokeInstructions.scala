@@ -97,27 +97,53 @@ trait TypeLevelInvokeInstructions { this: Domain[_] ⇒
                      name: String,
                      methodDescriptor: MethodDescriptor,
                      operands: List[DomainValue]): OptionalReturnValueOrExceptions =
-        ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
+        baseInvokestatic(pc, declaringClass, name, methodDescriptor, operands)
 
+    protected def baseInvokestatic(
+        pc: Int,
+        declaringClass: ReferenceType,
+        name: String,
+        methodDescriptor: MethodDescriptor,
+        operands: List[DomainValue]): OptionalReturnValueOrExceptions =
+        ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
 }
 
-trait PerformInvocations[Source] extends TypeLevelInvokeInstructions { this: Domain[_] ⇒
+sealed abstract class DomainValues[D <: Domain[_]] {
+    val domain: D
+    val values: List[D#DomainValue]
+}
+
+object DomainValues {
+    def apply[I](valuesDomain: Domain[I])(domainValues: List[valuesDomain.DomainValue]) = {
+        new DomainValues[valuesDomain.type] {
+            val domain: valuesDomain.type = valuesDomain
+            val values: List[domain.DomainValue] = domainValues
+        }
+    }
+}
+
+trait PerformInvocations[+I, Source]
+        extends Domain[I]
+        with TypeLevelInvokeInstructions { thisDomain ⇒
 
     def project: Project[Source]
 
     def classHierarchy: ClassHierarchy
 
+    def Parameters(operands: List[DomainValue]) : DomainValues[thisDomain.type] =
+        DomainValues[I](thisDomain)(operands)
+
     def doInvokestatic(
-        domain: Domain[_],
         pc: Int,
         declaringClass: ReferenceType,
         methodName: String,
         methodDescriptor: MethodDescriptor,
         operands: List[DomainValue],
-        isRecursiveCall: (ClassFile, Method, List[DomainValue]) ⇒ Boolean)(
-            transformResult: (AIResult[domain.type]) ⇒ OptionalReturnValueOrExceptions): OptionalReturnValueOrExceptions = {
+        calleeDomain: Domain[_])(
+            isRecursiveCall: (ClassFile, Method, DomainValues[_ <: Domain[I]]) ⇒ Boolean)(
+                transformResult: (AIResult[calleeDomain.type]) ⇒ OptionalReturnValueOrExceptions): OptionalReturnValueOrExceptions = {
 
-        def fallback = invokestatic(pc, declaringClass, methodName, methodDescriptor, operands)
+        def fallback = baseInvokestatic(pc, declaringClass, methodName, methodDescriptor, operands)
 
         if (declaringClass.isArrayType)
             return fallback
@@ -127,13 +153,12 @@ trait PerformInvocations[Source] extends TypeLevelInvokeInstructions { this: Dom
             methodName,
             methodDescriptor,
             project) match {
-                case Some((classFile, method)) if !method.isNative && !isRecursiveCall(classFile, method, operands) ⇒
-                    //                    val newOperands = operands.reverse.zipWithIndex.map { operand_index ⇒
-                    //                        val (operand, index) = operand_index
-                    //                        operand.adapt(domain, -(index + 1))
-                    //                    }.toArray(domain.DomainValueTag)
-                    //                    transformResult(AI.perform(classFile, method, domain)(Some(newOperands)))
-                    fallback
+                case Some((classFile, method)) if !method.isNative && !isRecursiveCall(classFile, method, Parameters(operands)) ⇒
+                    val newOperands = operands.reverse.zipWithIndex.map { operand_index ⇒
+                        val (operand, index) = operand_index
+                        operand.adapt(calleeDomain, -(index + 1))
+                    }.toArray(calleeDomain.DomainValueTag)
+                    transformResult(AI.perform(classFile, method, calleeDomain)(Some(newOperands)))
                 case _ ⇒ fallback
             }
     }

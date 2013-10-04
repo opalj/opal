@@ -126,10 +126,12 @@ trait AI {
      *      the method is an instance method.
      * @param method A non-abstract, non-native method of the given class file; i.e.,
      *      a method with a body.
-     * @param domain The abstract domain that is used to perform "abstract" calculations
+     * @param domain The abstract domain that is used to perform "abstract" computations
      *      w.r.t. the domain's values.
      * @param someLocals If the values passed to a method are already known, the
-     *      abstract interpretation will be performed under that assumption.
+     *      abstract interpretation will be performed under that assumption. SomeLocals
+     *      can either just represent the passed parameters or has to be equivalent
+     *      to the number of max locals.
      * @return The result of the abstract interpretation. Basically, the calculated
      *      memory layouts; i.e., the list of operands and local variables before each
      *      instruction. Each calculated memory layout represents the layout before
@@ -145,7 +147,7 @@ trait AI {
         domain: Domain[_])(
             someLocals: Option[IndexedSeq[domain.DomainValue]] = None): AIResult[domain.type] = {
 
-        assume(method.body.isDefined, "ai perform - the method ("+method.toJava+") has no body")
+        assume(method.body.isDefined, "the method ("+method.toJava+") has no body")
 
         import domain._
         import domain.DomainValueTag
@@ -153,46 +155,54 @@ trait AI {
         val code = method.body.get
         val codeLength = code.instructions.length
 
+        val operandsArray = new Array[List[domain.DomainValue]](codeLength)
+        val initialOperands = List.empty[DomainValue]
+        operandsArray(0) = initialOperands
+
+        val localsArray = new Array[Array[domain.DomainValue]](codeLength)
         val initialLocals = (
             someLocals.map { l ⇒
-                // FIXME if the number of locals is equal to the number of parameters but less than method.body.get.maxLocals
-                assume(l.size == method.body.get.maxLocals)
-                l.toArray
+                assume(
+                    l.size >= (method.parameterTypes.size + (if (method.isStatic) 0 else 1)),
+                    "the number of initial values is less than the number of parameters")
+                if (l.size == method.body.get.maxLocals)
+                    l.toArray
+                else {
+                    // the number of parameter values is smaller than the number of given 
+                    // values (which is equal to the number of parameter values (including
+                    // "this" or "maxLocals") 
+                    val locals = new Array[domain.DomainValue](method.body.get.maxLocals)
+                    for (i ← (0 until l.size))
+                        locals.update(i, l(i))
+                    locals
+                }
             }.getOrElse {
                 val locals = new Array[domain.DomainValue](method.body.get.maxLocals)
                 var localVariableIndex = 0
 
                 if (!method.isStatic) {
                     val thisType = classFile.thisClass
-                    val thisValue = newTypedValue(-localVariableIndex - 1, thisType)
+                    val thisValue = {
+                        val thisValue = newReferenceValue(-localVariableIndex - 1, thisType)
+                        domain.establishIsNonNull(-1,
+                            thisValue,
+                            initialOperands /*are empty...*/ ,
+                            Array(thisValue))._2(0) /* extract the constrained "thisValue"*/
+                    }
                     locals.update(localVariableIndex, thisValue)
                     localVariableIndex += 1 /*==thisType.computationalType.operandSize*/
                 }
                 for (parameterType ← method.descriptor.parameterTypes) {
                     val ct = parameterType.computationalType
-                    locals.update(localVariableIndex, newTypedValue(-localVariableIndex-1,parameterType))
+                    locals.update(
+                        localVariableIndex,
+                        newTypedValue(-localVariableIndex - 1, parameterType))
                     localVariableIndex += ct.operandSize
                 }
-
                 locals
             }
         )
-
-        val operandsArray = new Array[List[domain.DomainValue]](codeLength)
-        val localsArray = new Array[Array[domain.DomainValue]](codeLength)
-        if (!method.isStatic) {
-            val (updatedOperands, updatedLocals) =
-                // "this" is never null!
-                domain.establishIsNonNull(0,
-                    initialLocals(0),
-                    List.empty[DomainValue],
-                    initialLocals)
-            operandsArray(0) = updatedOperands
-            localsArray(0) = updatedLocals
-        } else {
-            operandsArray(0) = List.empty[DomainValue]
-            localsArray(0) = initialLocals
-        }
+        localsArray(0) = initialLocals
 
         continueInterpretation(code, domain)(
             initialWorkList, List.empty[Int], operandsArray, localsArray)

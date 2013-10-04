@@ -404,12 +404,13 @@ trait DefaultPreciseIntegerValues[+I]
                 case other ⇒ MetaInformationUpdateIllegalValue
             }
 
-        override def adapt[TDI >: I](targetDomain: Domain[TDI], pc: Int): targetDomain.DomainValue =
-            targetDomain match {
-                case d: DefaultPreciseIntegerValues[TDI] ⇒
-                    // "this" value does not have a dependency on this domain instance  
-                    this.asInstanceOf[targetDomain.DomainValue]
-                case _ ⇒ super.adapt(targetDomain, pc)
+        override def adapt[ThatI >: I](targetDomain: Domain[ThatI], pc: Int): targetDomain.DomainValue =
+            if (targetDomain.isInstanceOf[DefaultPreciseIntegerValues[ThatI]]) {
+                val thatDomain = targetDomain.asInstanceOf[DefaultPreciseIntegerValues[ThatI]]
+                thatDomain.IntegerValue(this.initial, this.value).
+                    asInstanceOf[targetDomain.DomainValue]
+            } else {
+                super.adapt(targetDomain, pc)
             }
 
         override def toString: String = "IntegerValue("+value+",initial="+initial+")"
