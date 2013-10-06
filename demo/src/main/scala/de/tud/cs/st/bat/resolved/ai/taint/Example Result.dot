@@ -1,0 +1,176 @@
+digraph G {
+	1403959531[label="Some user of the API"];
+	1403959531 -> 1347162734;
+	1347162734[label="(List(-2),ai/taint/HiddenClass{ java.lang.Class uncheckedMethod(java.lang.String) })"];
+	1347162734 -> 30168045;
+	30168045[label="1: Class.forName(java.lang.String(pc=-2, isNull=Unknown, isPrecise=true))"];
+	30168045 -> 1403959531;
+     
+	1403959531[label="Some user of the API"];
+	1403959531 -> -529446475;
+	-529446475[label="(List(-1),sun/reflect/misc/ReflectUtil{ java.lang.Class forName(java.lang.String) })"];
+	-529446475 -> -1222430672;
+	-1222430672[label="5: Class.forName(java.lang.String(pc=-1, isNull=Unknown, isPrecise=true))"];
+	-1222430672 -> 1403959531;
+     
+	1403959531[label="Some user of the API"];
+	1403959531 -> -317808061;
+	-317808061[label="(List(-2, -3),ai/taint/DecoratingClassHierarchyWithDifferentBehaviors$SubClassC{ java.lang.Class execute(java.lang.String,java.lang.String) })"];
+	-317808061 -> 30168045;
+	30168045[label="1: Class.forName(java.lang.String(pc=-2, isNull=Unknown, isPrecise=true))"];
+	30168045 -> 1403959531;
+     
+	1403959531[label="Some user of the API"];
+	1403959531 -> -531327835;
+	-531327835[label="(List(-2),ai/taint/PermissionCheckNotOnCallstack{ java.lang.Class foo(java.lang.String) })"];
+	-531327835 -> 1931453684;
+	1931453684[label="8: Class.forName(java.lang.String(pc=-2, isNull=Unknown, isPrecise=true))"];
+	1931453684 -> 1403959531;
+     
+	1403959531[label="Some user of the API"];
+	1403959531 -> 471823457;
+	471823457[label="(List(-2),ai/taint/ReturnEdgeMerge{ java.lang.Class foo(java.lang.String,boolean,boolean) })"];
+	471823457 -> 30168045;
+	30168045[label="1: Class.forName(java.lang.String(pc=-2, isNull=Unknown, isPrecise=true))"];
+	30168045 -> 1403959531;
+     
+	1403959531[label="Some user of the API"];
+	1403959531 -> 1487586340;
+	1487586340[label="(List(-1),sun/org/mozilla/javascript/internal/Kit{ java.lang.Class classOrNull(java.lang.String) })"];
+	1487586340 -> -1695312852;
+	-1695312852[label="1: Class.forName(java.lang.String(pc=-1, isNull=Unknown, isPrecise=true))"];
+	-1695312852 -> 1403959531;
+     
+	1403959531[label="Some user of the API"];
+	1403959531 -> -1892234890;
+	-1892234890[label="(List(-2),ai/taint/ImpossiblePath{ java.lang.Class foo(java.lang.String,boolean) })"];
+	-1892234890 -> 30168045;
+	30168045[label="1: Class.forName(java.lang.String(pc=-2, isNull=Unknown, isPrecise=true))"];
+	30168045 -> 1403959531;
+	30168045 -> 1403959531;
+     
+	1403959531[label="Some user of the API"];
+	1403959531 -> -1654140567;
+	-1654140567[label="(List(-2),ai/taint/PermissionCheckNotOnAllPaths{ java.lang.Class foo(java.lang.String) })"];
+	-1654140567 -> -190347807;
+	-190347807[label="16: Class.forName(java.lang.String(pc=-2, isNull=Unknown, isPrecise=true))"];
+	-190347807 -> 1403959531;
+     
+	1403959531[label="Some user of the API"];
+	1403959531 -> 864711826;
+	864711826[label="(List(-1),com/sun/beans/finder/ClassFinder{ java.lang.Class findClass(java.lang.String) })"];
+	864711826 -> 399797601;
+	399797601[label="39: Class.forName(java.lang.String(pc=-1, isNull=Unknown, isPrecise=true))"];
+	399797601 -> 1403959531;
+     
+	1403959531[label="Some user of the API"];
+	1403959531 -> 493681328;
+	493681328[label="(List(-2),java/util/ResourceBundle$RBClassLoader{ java.lang.Class loadClass(java.lang.String) })"];
+	493681328 -> 765173472;
+	765173472[label="15: Class.forName(java.lang.String(pc=-2, isNull=Unknown, isPrecise=true))"];
+	765173472 -> 1403959531;
+     
+	1403959531[label="Some user of the API"];
+	1403959531 -> -971062585;
+	-971062585[label="(List(-1),ai/taint/Java7Exploit{ java.lang.Class java7exploit(java.lang.String) })"];
+	-971062585 -> -1501488038;
+	-1501488038[label="32: Class.forName(java.lang.String(pc=-1, isNull=Unknown, isPrecise=true))"];
+	-1501488038 -> 1403959531;
+     
+	1403959531[label="Some user of the API"];
+	1403959531 -> 1639364942;
+	1639364942[label="(List(-1),ai/taint/Java7Exploit{ java.lang.Class java7exploitFixed(java.lang.String) })"];
+	1639364942 -> -1028605858;
+	-1028605858[label="36: Class.forName(java.lang.String(pc=-1, isNull=Unknown, isPrecise=true))"];
+	-1028605858 -> 1403959531;
+     
+	1403959531[label="Some user of the API"];
+	1403959531 -> -1348443947;
+	-1348443947[label="(List(-1, -2),ai/taint/Java7Exploit{ java.lang.Class java7exploitNotFixed(java.lang.String,java.lang.String) })"];
+	-1348443947 -> 696875039;
+	696875039[label="36: Class.forName(java.lang.String(pc=-2, isNull=Unknown, isPrecise=true))"];
+	696875039 -> 1403959531;
+     
+	1403959531[label="Some user of the API"];
+	1403959531 -> -1537839438;
+	-1537839438[label="(List(-1),ai/taint/Recursion{ java.lang.Class recursive(java.lang.String) })"];
+	-1537839438 -> -1695312852;
+	-1695312852[label="1: Class.forName(java.lang.String(pc=-1, isNull=Unknown, isPrecise=true))"];
+	-1695312852 -> 1403959531;
+     
+	1403959531[label="Some user of the API"];
+	1403959531 -> 2041590268;
+	2041590268[label="(List(-1),ai/taint/Recursion{ java.lang.Class recursiveA(java.lang.String) })"];
+	2041590268 -> -960307425;
+	-960307425[label="15: Class.forName(java.lang.String(pc=-1, isNull=Unknown, isPrecise=true))"];
+	-960307425 -> 1403959531;
+
+	1403959531[label="Some user of the API"];
+	1403959531 -> 1656733314;
+	1656733314[label="(List(-1),com/sun/org/apache/xerces/internal/utils/ObjectFactory{ java.lang.Class findProviderClass(java.lang.String,boolean) })"];
+	1656733314 -> 1161494066;
+	1161494066[label="7: Class.forName(java.lang.String(pc=-1, isNull=Unknown, isPrecise=true))"];
+	1161494066 -> 1403959531;
+
+	1403959531[label="Some user of the API"];
+	1403959531 -> 138897692;
+	138897692[label="(List(-1),com/sun/org/apache/xerces/internal/utils/ObjectFactory{ java.lang.Class findProviderClass(java.lang.String,java.lang.ClassLoader,boolean) })"];
+	138897692 -> 1287020447;
+	1287020447[label="59: Class.forName(java.lang.String(pc=-1, isNull=Unknown, isPrecise=true))"];
+	1287020447 -> 1403959531;
+	1287020447 -> 1403959531;
+
+	1403959531[label="Some user of the API"];
+	1403959531 -> -899557669;
+	-899557669[label="(List(-2),ai/taint/RecursionClassAsParameter{ java.lang.Class foo(java.lang.String) })"];
+	-899557669 -> 30168045;
+	30168045[label="1: Class.forName(java.lang.String(pc=-2, isNull=Unknown, isPrecise=true))"];
+	30168045 -> 1403959531;
+
+	1403959531[label="Some user of the API"];
+	1403959531 -> -1944150061;
+	-1944150061[label="(List(-2),ai/taint/RecursionAndClassHierarchy$SubClassC{ java.lang.Class execute(java.lang.String) })"];
+	-1944150061 -> 30168045;
+	30168045[label="1: Class.forName(java.lang.String(pc=-2, isNull=Unknown, isPrecise=true))"];
+	30168045 -> 1403959531;
+	1403959531[label="Some user of the API"];
+	1403959531 -> -798966179;
+	-798966179[label="(List(-1),ai/taint/Switch{ java.lang.Class foo(java.lang.String) })"];
+	-798966179 -> -1573740879;
+	-798966179 -> -2017780485;
+	-798966179 -> 677541401;
+	677541401[label="97: Class.forName(java.lang.String(pc=-1, isNull=Unknown, isPrecise=true))"];
+	677541401 -> 1403959531;
+	677541401 -> 1403959531;
+	677541401 -> 1403959531;
+	-2017780485[label="97: Class.forName(OneOf(
+	java.lang.String(pc=-1, isNull=Unknown, isPrecise=true),
+	java.lang.String(pc=79, isNull=Unknown, isPrecise=true)))"];
+	-2017780485 -> 1403959531;
+	-2017780485 -> 1403959531;
+	-2017780485 -> 1403959531;
+	-1573740879[label="97: Class.forName(OneOf(
+	java.lang.String(pc=-1, isNull=Unknown, isPrecise=true),
+	java.lang.String(pc=79, isNull=Unknown, isPrecise=true),
+	java.lang.String(pc=56, isNull=Unknown, isPrecise=true)))"];
+	-1573740879 -> 1403959531;
+	-1573740879 -> 1403959531;
+	-1573740879 -> 1403959531;
+
+	1403959531[label="Some user of the API"];
+	1403959531 -> 785139776;
+	785139776[label="(List(-1),com/sun/org/apache/xalan/internal/utils/ObjectFactory{ java.lang.Class findProviderClass(java.lang.String,boolean) })"];
+	785139776 -> 1161494066;
+	1161494066[label="7: Class.forName(java.lang.String(pc=-1, isNull=Unknown, isPrecise=true))"];
+	1161494066 -> 1403959531;
+
+	1403959531[label="Some user of the API"];
+	1403959531 -> -2119368613;
+	-2119368613[label="(List(-2),com/sun/org/apache/bcel/internal/util/ClassLoader{ java.lang.Class loadClass(java.lang.String,boolean) })"];
+	-2119368613 -> -308419509;
+	-2119368613 -> -308419509;
+	-308419509[label="153: Class.forName(java.lang.String(pc=-2, isNull=Unknown, isPrecise=true))"];
+	-308419509 -> 1403959531;
+	-308419509[label="153: Class.forName(java.lang.String(pc=-2, isNull=Unknown, isPrecise=true))"];
+	-308419509 -> 1403959531;
+}
