@@ -54,6 +54,8 @@ package object ai {
     import language.existentials
 
     type SomeDomain = Domain[_]
+    
+    type PC = Int
 
     class AIException(
         message: String,
