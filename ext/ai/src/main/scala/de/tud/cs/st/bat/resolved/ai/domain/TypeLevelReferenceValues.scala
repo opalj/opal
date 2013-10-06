@@ -511,6 +511,13 @@ trait DefaultTypeLevelReferenceValues[+I]
 
     }
 
+    // TODO place in some special "Origin trait" to make the method abstract overridable!
+    def origin(value: DomainValue): Iterable[Int] = value match {
+        case aRefVal: AReferenceValue        ⇒ Iterable[Int](aRefVal.pc)
+        case MultipleReferenceValues(values) ⇒ values.map(aRefVal ⇒ aRefVal.pc)
+        case _                               ⇒ Iterable.empty[Int] // TODO replace with super call as soon as this method becomes abstract override 
+    }
+
     /**
      * Factory and extractor for `AReferenceValue`s.
      */
@@ -544,7 +551,10 @@ trait DefaultTypeLevelReferenceValues[+I]
                 val newValues = this.values.map { value: AReferenceValue ⇒
                     value.adaptAReferenceValue(thatDomain, pc)
                 }
-                thatDomain.MultipleReferenceValues(newValues).asInstanceOf[targetDomain.DomainValue]
+                if (newValues.size == 1)
+                    newValues.head.asInstanceOf[targetDomain.DomainValue]
+                else
+                    thatDomain.MultipleReferenceValues(newValues).asInstanceOf[targetDomain.DomainValue]
             } else
                 super.adapt(targetDomain, pc)
 
