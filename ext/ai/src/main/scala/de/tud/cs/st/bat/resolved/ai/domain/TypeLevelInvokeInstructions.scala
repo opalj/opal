@@ -110,58 +110,58 @@ trait TypeLevelInvokeInstructions { this: Domain[_] ⇒
 
 sealed abstract class DomainValues[D <: Domain[_]] {
     val domain: D
-    val values: List[D#DomainValue]
+    val values: IndexedSeq[D#DomainValue]
 }
 
 object DomainValues {
-    def apply[I](valuesDomain: Domain[I])(domainValues: List[valuesDomain.DomainValue]) = {
+    def apply[I](valuesDomain: Domain[I])(domainValues: IndexedSeq[valuesDomain.DomainValue]) = {
         new DomainValues[valuesDomain.type] {
             val domain: valuesDomain.type = valuesDomain
-            val values: List[domain.DomainValue] = domainValues
+            val values: IndexedSeq[domain.DomainValue] = domainValues
         }
     }
 }
 
-trait PerformInvocations[+I, Source]
-        extends Domain[I]
-        with TypeLevelInvokeInstructions { thisDomain ⇒
-
-    def project: Project[Source]
-
-    def classHierarchy: ClassHierarchy
-
-    def Parameters(operands: List[DomainValue]) : DomainValues[thisDomain.type] =
-        DomainValues[I](thisDomain)(operands)
-
-    def doInvokestatic(
-        pc: Int,
-        declaringClass: ReferenceType,
-        methodName: String,
-        methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue],
-        calleeDomain: Domain[_])(
-            isRecursiveCall: (ClassFile, Method, DomainValues[_ <: Domain[I]]) ⇒ Boolean)(
-                transformResult: (AIResult[calleeDomain.type]) ⇒ OptionalReturnValueOrExceptions): OptionalReturnValueOrExceptions = {
-
-        def fallback = baseInvokestatic(pc, declaringClass, methodName, methodDescriptor, operands)
-
-        if (declaringClass.isArrayType)
-            return fallback
-
-        classHierarchy.resolveMethodReference(
-            declaringClass.asObjectType,
-            methodName,
-            methodDescriptor,
-            project) match {
-                case Some((classFile, method)) if !method.isNative && !isRecursiveCall(classFile, method, Parameters(operands)) ⇒
-                    val newOperands = operands.reverse.zipWithIndex.map { operand_index ⇒
-                        val (operand, index) = operand_index
-                        operand.adapt(calleeDomain, -(index + 1))
-                    }.toArray(calleeDomain.DomainValueTag)
-                    transformResult(AI.perform(classFile, method, calleeDomain)(Some(newOperands)))
-                case _ ⇒ fallback
-            }
-    }
-}
+//trait PerformInvocations[+I, Source]
+//        extends Domain[I]
+//        with TypeLevelInvokeInstructions { thisDomain ⇒
+//
+//    def project: Project[Source]
+//
+//    def classHierarchy: ClassHierarchy
+//
+//    def Parameters(operands: List[DomainValue]) : DomainValues[thisDomain.type] =
+//        DomainValues[I](thisDomain)(operands)
+//
+//    def doInvokestatic(
+//        pc: Int,
+//        declaringClass: ReferenceType,
+//        methodName: String,
+//        methodDescriptor: MethodDescriptor,
+//        operands: List[DomainValue],
+//        calleeDomain: Domain[_])(
+//            isRecursiveCall: (ClassFile, Method, DomainValues[_ <: Domain[I]]) ⇒ Boolean)(
+//                transformResult: (AIResult[calleeDomain.type]) ⇒ OptionalReturnValueOrExceptions): OptionalReturnValueOrExceptions = {
+//
+//        def fallback = baseInvokestatic(pc, declaringClass, methodName, methodDescriptor, operands)
+//
+//        if (declaringClass.isArrayType)
+//            return fallback
+//
+//        classHierarchy.resolveMethodReference(
+//            declaringClass.asObjectType,
+//            methodName,
+//            methodDescriptor,
+//            project) match {
+//                case Some((classFile, method)) if !method.isNative && !isRecursiveCall(classFile, method, Parameters(operands)) ⇒
+//                    val newOperands = operands.reverse.zipWithIndex.map { operand_index ⇒
+//                        val (operand, index) = operand_index
+//                        operand.adapt(calleeDomain, -(index + 1))
+//                    }.toArray(calleeDomain.DomainValueTag)
+//                    transformResult(AI.perform(classFile, method, calleeDomain)(Some(newOperands)))
+//                case _ ⇒ fallback
+//            }
+//    }
+//}
 
 
