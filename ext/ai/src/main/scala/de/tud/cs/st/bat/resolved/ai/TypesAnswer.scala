@@ -45,20 +45,20 @@ sealed trait TypesAnswer[+TypeInfo] extends Traversable[TypeInfo] {
     /**
      * `True` if at least one type/upper type bound is known.
      */
-    override def nonEmpty : Boolean 
+    override def nonEmpty: Boolean
 
     /**
      * The number of upper-type bounds.
      */
-    override def size : Int 
+    override def size: Int
 }
 
 trait TypesUnknown extends TypesAnswer[Nothing] {
-    
+
     def foreach[U](f: Nothing ⇒ U): Unit = { /*empty*/ }
 
     override def nonEmpty = false
- 
+
     override def size = 0
 }
 
@@ -76,6 +76,9 @@ case class IsPrimitiveType(t: BaseType) extends TypesAnswer[BaseType] {
 trait IsReferenceType extends TypesAnswer[TypeBound] {
     def foreachType[U](f: ReferenceType ⇒ U): Unit
     def forallTypes(f: ReferenceType ⇒ Boolean): Boolean
+    def hasType(referenceType: ReferenceType): Boolean = {
+        !forallTypes((typeBound: ReferenceType) ⇒ referenceType != typeBound)
+    }
 
     def headType: ReferenceType
 
