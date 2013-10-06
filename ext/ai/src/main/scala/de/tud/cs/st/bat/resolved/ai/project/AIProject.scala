@@ -65,7 +65,7 @@ trait AIProject[Source] {
      * points may just consist of the application's `main` method.
      *
      * If, for example, a desktop application with a GUI is
-     * to be analyzed, the entry points are the application's main method and
+     * to be analyzed, the entry points are usually the application's main method and
      * all those listeners that react on system-level events (mouse move
      * events, keyboard events etc.)
      *
