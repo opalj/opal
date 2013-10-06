@@ -601,6 +601,7 @@ class ClassHierarchy(
                                 f(nodes(subtype))
                             }
                         }
+                        def hasSuccessors(): Boolean = subtypes.apply(t).nonEmpty
                     }
                 )
                 entry
@@ -618,6 +619,8 @@ class ClassHierarchy(
             val rootTypes = nodes.filterNot { case (t, _) ⇒ supertypes.isDefinedAt(t) }
             rootTypes.values.foreach(f)
         }
+        
+        def hasSuccessors(): Boolean = nodes.nonEmpty
     }
 }
 

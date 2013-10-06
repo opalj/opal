@@ -59,5 +59,30 @@ trait Node {
      */
     def foreachSuccessor(f: Node ⇒ _): Unit
 
+    def hasSuccessors(): Boolean
+
+}
+
+final class SimpleNode[I](
+        val identifier: I,
+        val identifierToString: I ⇒ String = (i: I) ⇒ i.toString,
+        private var children: List[Node] = List.empty) extends Node {
+
+    def addChild(node: Node) { children.synchronized(children = node :: children) }
+
+    def removedLastAddedChild() { children.synchronized(children = children.tail) }
+
+    def removedChild(node: Node) {
+        children.synchronized(children = children.filterNot(_ == node))
+    }
+
+    def toHRR = Some(identifierToString(identifier))
+
+    def uniqueId: Int = identifier.hashCode()
+
+    def foreachSuccessor(f: Node ⇒ _) { children.synchronized(children.foreach(f)) }
+
+    def hasSuccessors(): Boolean = children.synchronized(children.nonEmpty)
+       
 }
 

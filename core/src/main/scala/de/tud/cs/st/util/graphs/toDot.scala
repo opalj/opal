@@ -53,7 +53,10 @@ trait toDot {
             processedNodes += n.uniqueId
             nodesToProcess = nodesToProcess.tail
 
-            if (n.toHRR.isDefined) s += "\t"+n.uniqueId+"[label=\""+n.toHRR.get+"\"];\n"
+            if (n.toHRR.isDefined) {
+                val label = n.toHRR.get.replace("\"", "\\\"")
+                s += "\t"+n.uniqueId+"[label=\""+label+"\"];\n"
+            }
 
             val f = (sn: Node) ⇒ {
                 if (n.toHRR.isDefined)
