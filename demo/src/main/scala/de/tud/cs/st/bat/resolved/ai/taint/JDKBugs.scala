@@ -40,10 +40,16 @@ package object taint {
     type CallStackEntry = (ClassFile, Method)
 
     /**
-     * Set of the PCs associated with the relevant parameters.
+     * Set of ids (integer values) associated with the relevant parameters passed
+     * to a method.
      */
     type RelevantParameters = Seq[Int]
 
+    // Initialized (exactly once) by the "analyze" method of the main analysis class.
+    protected[taint] var restrictedPackages: Seq[String] = null
+
+    def definedInRestrictedPackage(packageName: String): Boolean =
+        restrictedPackages.exists(packageName.startsWith(_))
 }
 
 package taint {
@@ -53,20 +59,50 @@ package taint {
     import de.tud.cs.st.bat.resolved.ai.project.{ AIProject, Report }
     import de.tud.cs.st.bat.resolved.ai.domain._
     import de.tud.cs.st.util.graphs._
+    import de.tud.cs.st.util.ControlAbstractions.process
 
     object JDKTaintAnalysis
             extends AIProject[URL]
             with Analysis[URL, ReportableAnalysisResult]
             with AnalysisExecutor {
 
+        def description: String = "Finds unsafe Class.forName(...) calls."
+
         val analysis = this
 
-        def description: String = "Finds unsafe Class.forName(...) calls."
+        val javaSecurityParameter = "-java.security="
+
+        var javaSecurityFile: String = _
+
+        override def analysisParametersDescription: String =
+            javaSecurityParameter+"<JRE/JDK Security Policy File>"
+
+        override def checkAnalysisSpecificParameters(parameters: Seq[String]): Boolean =
+            parameters.size == 1 && {
+                javaSecurityFile = parameters.head.substring(javaSecurityParameter.length())
+                new java.io.File(javaSecurityFile).exists()
+            }
+
+        override def analyze(
+            project: analyses.Project[URL],
+            parameters: Seq[String]): ReportableAnalysisResult = {
+            restrictedPackages = process(new java.io.FileInputStream(javaSecurityFile)) { in ⇒
+                val properties = new java.util.Properties()
+                properties.load(in)
+                properties.getProperty("package.access", "").
+                    split(",").
+                    map(_.trim.replace('.', '/'))
+            }
+            println(restrictedPackages.mkString("Restricted packages:\n\t", "\n\t", "\n"))
+
+            super.analyze(project, parameters)
+        }
 
         def entryPoints(project: Project[URL]): Iterable[(ClassFile, Method)] = {
             import ObjectType._
             for {
                 classFile ← project.classFiles
+                if !definedInRestrictedPackage(classFile.thisClass.packageName)
                 method ← classFile.methods
                 if method.isPublic || (method.isProtected && !classFile.isFinal)
                 descriptor = method.descriptor
@@ -76,8 +112,10 @@ package taint {
                 // Select some specific method for debugging purposes...
                 //                if classFile.thisClass.className == "com/sun/org/apache/xalan/internal/utils/ObjectFactory"
                 //                if method.name == "lookUpFactoryClass"
-//                if classFile.thisClass.className == "ai/taint/PermissionCheckNotOnAllPaths"
-//                if method.name == "foo"
+                //                if classFile.thisClass.className == "ai/taint/PermissionCheckNotOnAllPaths"
+                //                if method.name == "foo"
+                //                if classFile.thisClass.className == "com/sun/beans/finder/ClassFinder"
+                //                if method.name == "findClass"
             } yield (classFile, method)
         }
 
@@ -122,13 +160,26 @@ package taint {
         protected def contextIdentifier =
             declaringClass.className+"{ "+methodDescriptor.toJava(methodName)+" }"
 
+        /**
+         * Identifies the node in the analysis graph that represents the call
+         * of this domain's method.
+         *
+         * ==Control Flow==
+         * We only attach a child node (the `contextNode`) to the caller node if
+         * the analysis of this domain's method returns a relevant result.
+         * This is determined when the `postAnalysis` method is called.
+         */
         protected val callerNode: SimpleNode[_]
 
+        /**
+         * Represents the node in the analysis graph that models the entry point
+         * to this method.
+         */
         protected val contextNode: SimpleNode[(RelevantParameters, String)]
 
         /**
          * Stores the program counters of those invoke instructions that return either
-         * a class object or an object with the greatest lower bound "java.lang.Object"
+         * a class object or an object with the greatest lower bound `java.lang.Object`
          * and which were originally passed a relevant value (in particular a relevant
          * parameter).
          */
@@ -162,9 +213,13 @@ package taint {
         private var isRelevantValueReturned = false
 
         /**
+         * When the analysis of this domain's method has completed a post analysis
+         * can be performed to construct the analysis graph.
+         *
          * @note
          * Calling this method only makes sense when the analysis of this domain's method
          * has completed.
+         *
          * @note
          * This method must be called at most once otherwise the constructed analysis graph
          * may contain duplicate information.
@@ -323,7 +378,7 @@ package taint {
             // If we reach this point, we have an invocation of a relevant method 
             // with a relevant parameter that is not our final sink and which is
             // not native and which is not a recursive call
-            val aiResult = AI.perform(classFile, method, calleeDomain)(Some(calleeParameters))
+            val aiResult = BaseAI.perform(classFile, method, calleeDomain)(Some(calleeParameters))
             aiResult.domain.postAnalysis()
             if (!aiResult.domain.isRelevantValueReturned)
                 return doTypeLevelInvoke;
@@ -343,6 +398,10 @@ package taint {
             mergedValue
         }
 
+        /**
+         * Checks if the call to the specified method represents a (mutually) recursive
+         * call.
+         */
         def isRecursiveCall(
             declaringClass: ReferenceType,
             methodName: String,
@@ -402,7 +461,6 @@ package taint {
                 }.map(param_idx ⇒ -(param_idx._2 + firstIndex))
             new SimpleNode((relevantParameters, contextIdentifier))
         }
-        println(contextNode.identifier._1)
 
         def isRecursiveCall(
             declaringClass: ReferenceType,

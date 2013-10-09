@@ -48,34 +48,34 @@ package domain
  */
 trait RecordReturnValues[+I] extends Domain[I] {
 
-    var returnedValues: Set[(String, Value)] = Set.empty
+    var returnedValues: Set[(String, Int, Value)] = Set.empty
 
     override def areturn(pc: Int, value: DomainValue) {
-        returnedValues += (("areturn", value))
+        returnedValues += (("areturn", pc, value))
     }
 
     override def dreturn(pc: Int, value: DomainValue) {
-        returnedValues += (("dreturn", value))
+        returnedValues += (("dreturn", pc, value))
     }
 
     override def freturn(pc: Int, value: DomainValue) {
-        returnedValues += (("freturn", value))
+        returnedValues += (("freturn", pc, value))
     }
 
     override def ireturn(pc: Int, value: DomainValue) {
-        returnedValues += (("ireturn", value))
+        returnedValues += (("ireturn", pc, value))
     }
 
     override def lreturn(pc: Int, value: DomainValue) {
-        returnedValues += (("lreturn", value))
+        returnedValues += (("lreturn", pc, value))
     }
 
     override def returnVoid(pc: Int) {
-        returnedValues += (("return", null))
+        returnedValues += (("return", pc, null))
     }
 
     override def abruptMethodExecution(pc: Int, exception: DomainValue) {
-        returnedValues += (("throws", exception))
+        returnedValues += (("throws", pc, exception))
     }
 
 }

@@ -49,7 +49,7 @@ object InterpretMethod {
 
     import language.existentials
 
-    private object AI extends AI {
+    private object AI extends AI[Domain[_]] {
 
         def isInterrupted = Thread.interrupted()
 
@@ -71,7 +71,7 @@ object InterpretMethod {
             println("\t1: a jar/calss file or a directory containing jar/class files.")
             println("\t2: the name of a class.")
             println("\t3: the simple name or signature of a method of the class.")
-            println("\t4[Optional]: domain=CLASS the name of class of the configurable domain to use.")
+            println("\t4[Optional]: -domain=CLASS the name of class of the configurable domain to use.")
             return ;
         }
         val fileName = args(0)
@@ -79,7 +79,8 @@ object InterpretMethod {
         val methodName = args(2)
         val domainClass = {
             if (args.length > 3)
-                Class.forName(args(3).substring(7)).asInstanceOf[Class[_ <: ConfigurableDomain[_]]]
+                Class.forName(args(3).substring(8)).
+                    asInstanceOf[Class[_ <: ConfigurableDomain[_]]]
             else
                 classOf[ConfigurableDefaultDomain[_]]
         }
@@ -140,6 +141,7 @@ object InterpretMethod {
                 Some(classFile),
                 Some(method),
                 method.body.get,
+                result.domain,
                 result.operandsArray,
                 result.localsArray,
                 Some("Result("+domainClass.getName()+"): "+(new java.util.Date).toString)))
@@ -149,6 +151,7 @@ object InterpretMethod {
                     Some(classFile),
                     Some(method),
                     method.body.get,
+                    domain,
                     operands,
                     locals,
                     Some("<p><b>"+domainClass.getName()+"</b></p>"+

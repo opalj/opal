@@ -59,7 +59,9 @@ trait Analysis[-Source /*, SomeProject <: Project[Source]*/ , +AnalysisResult] {
     /**
      * Analyzes the given project and reports the result(s).
      */
-    def analyze(project: Project[Source]): AnalysisResult
+    def analyze(
+        project: Project[Source],
+        parameters: Seq[String] = List.empty): AnalysisResult
 
     /**
      * A textual description of this analysis.
@@ -120,28 +122,32 @@ class AnalysisAggregator[Source, AnalysisResult]
         analyses.synchronized(this.analyzeInParallel = analyzeInParallel)
     }
 
-    def analyze(project: Project[Source]): Iterable[AnalysisResult] =
+    def analyze(
+        project: Project[Source],
+        parameters: Seq[String]): Iterable[AnalysisResult] =
         analyses.synchronized {
             if (analyzeInParallel) {
-                (for (analysis ← analyses.par) yield { analysis.analyze(project) }).seq
+                (
+                    for (analysis ← analyses.par) yield {
+                        analysis.analyze(project, parameters)
+                    }
+                ).seq
             } else {
-                for (analysis ← analyses) yield { analysis.analyze(project) }
+                for (analysis ← analyses) yield { analysis.analyze(project, parameters) }
             }
         }
 
     override def title: String = "Analysis Collection"
-        
+
     override def copyright: String =
         analyses.synchronized {
             "Copyrights of the analyses;\n"+
                 analyses.map("\t"+_.copyright).mkString("\"")
         }
-    
+
     def description: String =
         analyses.synchronized {
             "Executes the following analyses:\n"+analyses.map("\t"+_.title).mkString("\n")
         }
-
-
 
 }

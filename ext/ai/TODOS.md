@@ -16,7 +16,7 @@
 
 * We need MORE tests.
 
-* We need more (precise) domains. (We also need a vision how to support dynamic domain-upcasting.)
+* We need more (precise) domains.
 
 * Develop a concept to derive and store the intermediate results of static analyses (derive constraints?)
 
@@ -29,4 +29,4 @@
 - we could use better support for large-scale family polymorphism
 - we could use ``constructor-dependent types'' (see AIResultBuilder for why)
 - we could use ``case traits'' to automatically create extractor methods based on certain fields
-- method dependent types ``often'' cause problems
+- method dependent types and path-dependent types ``often'' cause problems

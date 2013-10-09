@@ -81,14 +81,15 @@ trait TypeLevelReferenceValues[+I] extends Domain[I] {
          * that the runtime type is a subtype of the given supertype. This
          * condition holds, for example, for `java.io.File` which is not a subclass
          * of `java.util.Collection` and which does not have any further subclasses (in
-         * the JDK).
-         * The classes `java.io.File` and `java.util.Collection` are not in an
-         * inheritance relationship. However, if the specified supertype would be
+         * the JDK). I.e., the classes `java.io.File` and `java.util.Collection` are
+         * not in an inheritance relationship. However, if the specified supertype would be
          * `java.util.List` the answer would be unknown.
          *
          * @param onNull If this value is known to be `null` and, hence, no type
          *      information is available the result of evaluating this function
-         *      is returned. This enables it to use this method as the basis for
+         *      is returned.
+         *
+         *      This enables it to use this method as the basis for
          *      the implementation of "instanceof" and "checkcast" as both methods
          *      handle `null` values differently.
          */
@@ -121,8 +122,7 @@ trait TypeLevelReferenceValues[+I] extends Domain[I] {
      *      one this is called (super call) by the overriding method to handle checks
      *      related to null. E.g.
      *      {{{
-     *      super.areEqualReferences(value1,value2).
-     *      orElse {
+     *      super.areEqualReferences(value1,value2).orElse {
      *          ...
      *      }
      *      }}}
@@ -143,6 +143,9 @@ trait TypeLevelReferenceValues[+I] extends Domain[I] {
         }
     }
 
+    /**
+     * Helper object that facilitates general matching against reference values.
+     */
     object AsReference {
         def unapply(value: DomainValue): Option[ReferenceValue] =
             if (value.isInstanceOf[ReferenceValue])
@@ -264,8 +267,6 @@ trait DefaultTypeLevelReferenceValues[+I]
             extends super.ReferenceValue
             with IsReferenceType { this: DomainValue ⇒
 
-        def location: I = domain.identifier
-
         /**
          * A type bound represents the available information about a reference
          * value's type.
@@ -294,10 +295,11 @@ trait DefaultTypeLevelReferenceValues[+I]
         def valueType: TypeBound
 
         /**
-         * Returns if `true` if the type information about this value is complete and
-         * precise. I.e., if `isPrecise` returns `true` and the value's type is
+         * Returns `true` if the type information about this value is precise. 
+         * I.e., if `isPrecise` returns `true` and the value's type is
          * reported to be `java.lang.Object` then the current value is known to be an
          * instance of the class `java.lang.Object` and of no other (sub)class.
+         * Hence, for an interface type `isPrecise` will always return false.
          */
         def isPrecise: Boolean
     }
@@ -311,7 +313,7 @@ trait DefaultTypeLevelReferenceValues[+I]
     // REPRESENTATIONS OF CONCRETE REFERENCE VALUES
     //    
 
-    class AReferenceValue protected (
+    class AReferenceValue protected[DefaultTypeLevelReferenceValues] (
         val pc: Int,
         val valueType: TypeBound,
         val isNull: Answer,
@@ -323,7 +325,6 @@ trait DefaultTypeLevelReferenceValues[+I]
             pc: Int): targetDomain.DomainValue =
             targetDomain match {
                 case thatDomain: DefaultTypeLevelReferenceValues[ThatI] ⇒
-                    // TODO Why do we need this type cast?
                     adaptAReferenceValue(thatDomain, pc).asInstanceOf[targetDomain.DomainValue]
                 case _ ⇒ super.adapt(targetDomain, pc)
             }
@@ -519,27 +520,26 @@ trait DefaultTypeLevelReferenceValues[+I]
     }
 
     /**
-     * Factory and extractor for `AReferenceValue`s.
+     * Extractor for `AReferenceValue`s.
      */
     object AReferenceValue {
-
-        def apply(
-            pc: Int,
-            valueType: TypeBound,
-            isNull: Answer,
-            isPrecise: Boolean) =
-            new AReferenceValue(pc, valueType, isNull, isPrecise)
-
-        def apply(
-            pc: Int,
-            referenceType: ReferenceType,
-            isNull: Answer = Unknown,
-            isPrecise: Boolean = false) =
-            new AReferenceValue(pc, Set(referenceType), isNull, isPrecise)
-
         def unapply(arv: AReferenceValue): Option[(Int, TypeBound, Answer, Boolean)] =
             Some((arv.pc, arv.valueType, arv.isNull, arv.isPrecise))
     }
+
+    def AReferenceValue(
+        pc: Int,
+        valueType: TypeBound,
+        isNull: Answer,
+        isPrecise: Boolean): AReferenceValue =
+        new AReferenceValue(pc, valueType, isNull, isPrecise)
+
+    final def AReferenceValue(
+        pc: Int,
+        referenceType: ReferenceType,
+        isNull: Answer = Unknown,
+        isPrecise: Boolean = false): AReferenceValue =
+        AReferenceValue(pc, Set(referenceType), isNull, isPrecise)
 
     case class MultipleReferenceValues(
         val values: Set[AReferenceValue])

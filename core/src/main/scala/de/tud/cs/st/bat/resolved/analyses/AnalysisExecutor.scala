@@ -54,10 +54,21 @@ trait AnalysisExecutor {
 
     val analysis: Analysis[URL, ReportableAnalysisResult]
 
+    /**
+     * Describes the analysis specific parameters. An analysis specific parameter
+     * has to start with a dash ("-") and has to contain an equals sign ("=") and
+     * has to come after the list of jar files, class files or directories that
+     * specify the classes that will be loaded.
+     */
+    def analysisParametersDescription: String = ""
+
+    def checkAnalysisSpecificParameters(parameters: Seq[String]): Boolean = true
+
     def printUsage() {
         println("Usage: java "+
             this.getClass().getName()+
-            " <Directories or JAR files containing class files>")
+            " <Directories or JAR files containing class files> "+
+            analysisParametersDescription)
         println(analysis.description)
         println(analysis.copyright)
     }
@@ -71,7 +82,8 @@ trait AnalysisExecutor {
         //
         // 1. check arguments
         //
-        val files = for (arg ← args) yield {
+        val sourceFiles = args.takeWhile(arg ⇒ !arg.startsWith("-") && !arg.contains("="))
+        val files = for (arg ← sourceFiles) yield {
             val file = new File(arg)
             if (!file.exists ||
                 !file.canRead ||
@@ -84,6 +96,11 @@ trait AnalysisExecutor {
             }
             file
         }
+        val parameters = args.drop(sourceFiles.size)
+        if (!checkAnalysisSpecificParameters(parameters)) {
+            printUsage()
+            sys.exit(-3)
+        }
 
         //
         // 2. setup project context
@@ -95,7 +112,7 @@ trait AnalysisExecutor {
         // 3. execute analysis
         //
         println("Executing analyses.")
-        val result = analysis.analyze(project)
+        val result = analysis.analyze(project, parameters)
         println(result.consoleReport)
     }
 

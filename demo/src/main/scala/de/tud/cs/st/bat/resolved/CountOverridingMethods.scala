@@ -56,7 +56,7 @@ object CountOverridingMethods extends AnalysisExecutor {
 
         def description: String = "Counts the number of methods that override a method."
 
-        def analyze(project: Project[URL]) = {
+        def analyze(project: Project[URL],parameters : Seq[String] = List.empty) = {
             import project.classHierarchy
             import project.classes
 

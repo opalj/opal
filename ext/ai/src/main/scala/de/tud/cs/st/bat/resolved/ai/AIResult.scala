@@ -65,8 +65,8 @@ object AIResultBuilder {
             val operandsArray: Array[List[theDomain.DomainValue]] = theOperandsArray
             val localsArray: Array[Array[theDomain.DomainValue]] = theLocalsArray
 
-            def continueInterpretation(): AIResult[domain.type] =
-                AI.continueInterpretation(
+            def continueInterpretation(ai: AI[_ >: domain.type]): AIResult[domain.type] =
+                ai.continueInterpretation(
                     code, domain)(
                         worklist, evaluated, operandsArray, localsArray)
 
@@ -91,8 +91,8 @@ object AIResultBuilder {
             val operandsArray: Array[List[theDomain.DomainValue]] = theOperandsArray
             val localsArray: Array[Array[theDomain.DomainValue]] = theLocalsArray
 
-            def restartInterpretation(): AIResult[theDomain.type] =
-                AI.continueInterpretation(
+            def restartInterpretation(ai: AI [_ >: theDomain.type]): AIResult[theDomain.type] =
+                ai.continueInterpretation(
                     code, domain)(
                         List(0), evaluated, operandsArray, localsArray)
 
@@ -112,8 +112,8 @@ sealed abstract class AIResult[D <: Domain[_]] {
     val domain: D
     val worklist: List[Int]
     val evaluated: List[Int]
-    val operandsArray: Array[List[D#DomainValue]]
-    val localsArray: Array[Array[D#DomainValue]]
+    val operandsArray: Array[List[domain.DomainValue]]
+    val localsArray: Array[Array[domain.DomainValue]]
 
     /**
      * Returns `true` if the abstract interpretation was aborted.
@@ -125,7 +125,7 @@ sealed abstract class AIAborted[D <: Domain[_]] extends AIResult[D] {
 
     def wasAborted: Boolean = true
 
-    def continueInterpretation(): AIResult[domain.type]
+    def continueInterpretation(ai: AI[_ >: D]): AIResult[domain.type]
 }
 
 sealed abstract class AICompleted[D <: Domain[_]] extends AIResult[D] {
@@ -134,5 +134,5 @@ sealed abstract class AICompleted[D <: Domain[_]] extends AIResult[D] {
 
     def wasAborted: Boolean = false
 
-    def restartInterpretation(): AIResult[domain.type]
+    def restartInterpretation(ai: AI[_ >: D]): AIResult[domain.type]
 }

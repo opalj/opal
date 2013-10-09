@@ -31,77 +31,29 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package de.tud.cs.st
-package util
-package graphs
+package bat
+package resolved
+package ai
 
 /**
- * Represents a node of a graph.
- *
- * @see [[de.tud.cs.st.bat.resolved.analyses.ClassHierarchy]]'s `toGraph` method for
- *      an example usage.
+ * A base abstract interpreter useful for testing and debugging purposes. The base
+ * interpreter can be interrupted by calling the `interrupt` method of the
+ * AI's thread.
  *
  * @author Michael Eichberg
  */
-trait Node {
+object BaseAI extends AI[Domain[_]] {
 
-    /**
-     * Returns a textual representation of this node.
-     */
-    def toHRR: Option[String]
+    def isInterrupted = Thread.interrupted()
 
-    /**
-     * An identifier that uniquely identifies this node.
-     */
-    def uniqueId: Int
-
-    /**
-     * Applies the given function for each successor node.
-     */
-    def foreachSuccessor(f: Node ⇒ _): Unit
-
-    /**
-     * Returns `true` if this node has successor nodes.
-     */
-    def hasSuccessors(): Boolean
+    final val tracer = None
 
 }
 
-/**
- * Represents a node of a directed graph.
- *
- * ==Thread Safety==
- * This class is thread-safe.
- *
- * @see The demo project for example usages.
- *
- * @author Michael Eichberg
- */
-final class SimpleNode[I](
-        val identifier: I,
-        val identifierToString: I ⇒ String = (i: I) ⇒ i.toString,
-        private var children: List[Node] = List.empty) extends Node {
+object BaseTracingAI extends AIWithPropertyTracing[domain.PropertyTracing[_]] {
 
-    def toHRR = Some(identifierToString(identifier))
+    final val tracer = None
 
-    def uniqueId: Int = identifier.hashCode()
-
-    def addChild(node: Node) {
-        children.synchronized(children = node :: children)
-    }
-
-    def removedLastAddedChild() {
-        children.synchronized(children = children.tail)
-    }
-
-    def removedChild(node: Node) {
-        children.synchronized(children = children.filterNot(_ == node))
-    }
-
-    def foreachSuccessor(f: Node ⇒ _) {
-        children.synchronized(children.foreach(f))
-    }
-
-    def hasSuccessors(): Boolean = children.synchronized(children.nonEmpty)
+    def isInterrupted = Thread.interrupted()
 
 }
-

@@ -50,7 +50,7 @@ object CountClassForNameCalls extends AnalysisExecutor {
 
         def description: String = "Counts the number of times Class.forName is called."
 
-        def analyze(project: Project[URL]) = {
+        def analyze(project: Project[URL],parameters : Seq[String] = List.empty) = {
             var classForNameCount = 0
 
             val invokes = for {

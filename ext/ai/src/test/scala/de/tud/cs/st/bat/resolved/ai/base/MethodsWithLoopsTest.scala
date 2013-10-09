@@ -69,7 +69,7 @@ class MethodsWithLoopsTest
     private def evaluateMethod(name: String, f: RecordingDomain[String] ⇒ Unit) {
         val domain = new RecordingDomain(name); import domain._
         val method = classFile.methods.find(_.name == name).get
-        val result = AI(classFile, method, domain)
+        val result = BaseAI(classFile, method, domain)
 
         util.Util.dumpOnFailureDuringValidation(Some(classFile), Some(method), method.body.get, result) {
             f(domain)
@@ -83,7 +83,7 @@ class MethodsWithLoopsTest
     it should "be able to analyze a method that never terminates" in {
         val domain = new RecordingDomain;
         val method = findMethod("endless")
-        val result = AI(classFile, method, domain) // TODO [AI - Test] Update the test to not wait forever in case of a bug.
+        val result = BaseAI(classFile, method, domain) // TODO [AI - Test] Update the test to not wait forever in case of a bug.
     }
 
 }

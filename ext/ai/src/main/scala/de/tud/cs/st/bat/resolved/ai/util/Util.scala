@@ -107,7 +107,7 @@ object Util {
         classFile: Option[ClassFile],
         method: Option[Method],
         code: Code,
-        result: AIResult[_])(
+        result: AIResult[_ <: Domain[_]])(
             f: ⇒ T): T = {
         val operandsArray = result.operandsArray
         val localsArray = result.localsArray
@@ -124,6 +124,7 @@ object Util {
                         dump(classFile,
                             method,
                             code,
+                            result.domain,
                             operandsArray, localsArray,
                             Some("Dump generated due to exception: "+e.getMessage()))
                     )
@@ -137,6 +138,7 @@ object Util {
     def dump(classFile: Option[ClassFile],
              method: Option[Method],
              code: Code,
+             domain: Domain[_],
              operandsArray: Array[_ <: List[_ <: AnyRef]],
              localsArray: Array[_ <: Array[_ <: AnyRef]],
              title: Option[String] = None): Node = {
@@ -150,7 +152,7 @@ object Util {
         </head>
         <body>
         { scala.xml.Unparsed(title.getOrElse("")) }
-        { dumpTable(classFile, method, code, operandsArray, localsArray) }
+        { dumpTable(classFile, method, code, domain, operandsArray, localsArray) }
         </body>
         </html>
     }
@@ -188,6 +190,7 @@ object Util {
     def dumpTable(classFile: Option[ClassFile],
                   method: Option[Method],
                   code: Code,
+                  domain: Domain[_],
                   operandsArray: Array[_ <: List[_ <: AnyRef]],
                   localsArray: Array[_ <: Array[_ <: AnyRef]]): Node = {
 
@@ -197,10 +200,10 @@ object Util {
         <table>
             <caption>{ caption(classFile, method) }</caption>
             <thead>
-            <tr><th class="pc">PC</th><th class="instruction">Instruction</th><th class="stack">Operand Stack</th><th class="registers">Registers</th></tr>
+            <tr><th class="pc">PC</th><th class="instruction">Instruction</th><th class="stack">Operand Stack</th><th class="registers">Registers</th><th class="properties">Properties</th></tr>
             </thead>
             <tbody>
-            { dumpInstructions(code, operandsArray, localsArray) }
+            { dumpInstructions(code, domain, operandsArray, localsArray) }
             </tbody>
         </table>
         { for ((eh, index) ← indexedExceptionHandlers) yield <p>
@@ -219,20 +222,23 @@ object Util {
 
     private def indexExceptionHandlers(code: Code) = Map() ++ code.exceptionHandlers.zipWithIndex
 
-    private def dumpInstructions(code: Code,
-                                 operandsArray: Array[_ <: List[_ <: AnyRef]],
-                                 localsArray: Array[_ <: Array[_ <: AnyRef]]) = {
+    private def dumpInstructions(
+        code: Code,
+        domain: Domain[_],
+        operandsArray: Array[_ <: List[_ <: AnyRef]],
+        localsArray: Array[_ <: Array[_ <: AnyRef]]) = {
         val indexedExceptionHandlers = indexExceptionHandlers(code)
         val instrs = code.instructions.zipWithIndex.zip(operandsArray zip localsArray).filter(_._1._1 ne null)
         for (((instruction, pc), (operands, locals)) ← instrs) yield {
             var exceptionHandlers = code.exceptionHandlersFor(pc).map(indexedExceptionHandlers(_)).mkString(",")
             if (exceptionHandlers.size > 0) exceptionHandlers = "⚡: "+exceptionHandlers
-            dumpInstruction(pc, instruction, operands, locals, Some(exceptionHandlers))
+            dumpInstruction(pc, instruction, domain, operands, locals, Some(exceptionHandlers))
         }
     }
 
     def dumpInstruction(pc: Int,
                         instruction: Instruction,
+                        domain: Domain[_],
                         operands: List[_ <: AnyRef],
                         locals: Array[_ <: AnyRef],
                         exceptionHandlers: Option[String]) = {
@@ -241,6 +247,7 @@ object Util {
             <td class="instruction">{ scala.xml.Unparsed(scala.xml.Text(instruction.toString(pc)).toString.replace("\n", "<br>")) }</td>
             <td class="stack">{ dumpStack(operands) }</td>
             <td class="locals">{ dumpLocals(locals) }</td>
+            <td class="properties">{ domain.hasProperties(pc).getOrElse("&lt;None&gt;") }</td>
         </tr >
     }
 

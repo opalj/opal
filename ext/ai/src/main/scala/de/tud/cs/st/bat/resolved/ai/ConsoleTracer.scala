@@ -74,13 +74,14 @@ trait ConsoleTracer extends AITracer {
         thisLocals: D#Locals,
         otherOperands: D#Operands,
         otherLocals: D#Locals,
-        result: Update[(D#Operands, D#Locals)]): Unit = {
+        result: Update[(D#Operands, D#Locals)],
+        forcedContinuation: Boolean): Unit = {
 
         print(Console.BLUE + pc+": MERGE :")
         result match {
-            case NoUpdate ⇒ println("no changes")
+            case NoUpdate ⇒ println("no changes; forced continuation="+forcedContinuation)
             case u @ SomeUpdate((updatedOperands, updatedLocals)) ⇒
-                println(u.updateType)
+                println(u.updateType+"; forced continuation="+forcedContinuation)
                 println(
                     thisOperands.
                         zip(otherOperands).

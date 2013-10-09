@@ -89,6 +89,7 @@ trait IsReferenceType extends TypesAnswer[TypeBound] {
  * Extractor for Reference types.
  */
 object HasSingleReferenceTypeBound {
+    
     def unapply(answer: IsReferenceType): Option[ReferenceType] =
         if (answer.size == 1)
             Some(answer.headType)

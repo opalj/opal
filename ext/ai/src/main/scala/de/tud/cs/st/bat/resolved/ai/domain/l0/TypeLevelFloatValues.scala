@@ -38,25 +38,34 @@ package domain
 
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
-trait TypeLevelDoubleValues[+I] extends Domain[I] {
+/**
+ * @author Michael Eichberg
+ */
+trait TypeLevelFloatValues[+I] extends Domain[I] {
 
     // -----------------------------------------------------------------------------------
     //
-    // REPRESENTATION OF DOUBLE VALUES
+    // REPRESENTATION OF FLOAT VALUES
     //
     // -----------------------------------------------------------------------------------
 
-    trait DoubleValue extends Value { this: DomainValue ⇒
-        final def computationalType: ComputationalType = ComputationalTypeDouble
+    /**
+     * Abstracts over all values with computational type `float`.
+     */
+    trait FloatValue extends Value { this: DomainValue ⇒
+        final def computationalType: ComputationalType = ComputationalTypeFloat
     }
 
-    private val typesAnswer: IsPrimitiveType = IsPrimitiveType(DoubleType)
+    private val typesAnswer: IsPrimitiveType = IsPrimitiveType(FloatType)
 
-    abstract override def types(value: DomainValue): TypesAnswer[_] =
+    abstract override def types(value: DomainValue): TypesAnswer[_] = {
         value match {
-            case r: DoubleValue ⇒ typesAnswer
-            case _              ⇒ super.types(value)
+            case r: FloatValue ⇒ typesAnswer
+            case _             ⇒ super.types(value)
         }
+    }
+
+    protected def newFloatValue(): DomainValue
 
     // -----------------------------------------------------------------------------------
     //
@@ -67,57 +76,75 @@ trait TypeLevelDoubleValues[+I] extends Domain[I] {
     //
     // RELATIONAL OPERATORS
     //
-    def dcmpg(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newIntegerValue(pc)
-    def dcmpl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newIntegerValue(pc)
+    def fcmpg(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+        newIntegerValue(pc)
+
+    def fcmpl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+        newIntegerValue(pc)
 
     //
     // UNARY EXPRESSIONS
     //
-    def dneg(pc: Int, value: DomainValue) = newDoubleValue(pc)
+    def fneg(pc: Int, value: DomainValue) = newFloatValue()
 
     //
     // BINARY EXPRESSIONS
     //
-    def dadd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newDoubleValue(pc)
-    def ddiv(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newDoubleValue(pc)
-    def dmul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newDoubleValue(pc)
-    def drem(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newDoubleValue(pc)
-    def dsub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newDoubleValue(pc)
+
+    def fadd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+        newFloatValue()
+
+    def fdiv(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+        newFloatValue()
+
+    def fmul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+        newFloatValue()
+
+    def frem(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+        newFloatValue()
+
+    def fsub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+        newFloatValue()
 
     //
-    // TYPE CONVERSION INSTRUCTIONS
+    // TYPE CONVERSIONS
     //
-    def d2f(pc: Int, value: DomainValue): DomainValue = newFloatValue(pc)
-    def d2i(pc: Int, value: DomainValue): DomainValue = newIntegerValue(pc)
-    def d2l(pc: Int, value: DomainValue): DomainValue = newLongValue(pc)
+
+    def f2d(pc: Int, value: DomainValue): DomainValue = newDoubleValue(pc)
+    def f2i(pc: Int, value: DomainValue): DomainValue = newIntegerValue(pc)
+    def f2l(pc: Int, value: DomainValue): DomainValue = newLongValue(pc)
+
 }
 
-trait DefaultTypeLevelDoubleValues[+I]
+/**
+ * @author Michael Eichberg
+ */
+trait DefaultTypeLevelFloatValues[+I]
         extends DefaultValueBinding[I]
-        with TypeLevelDoubleValues[I] {
+        with TypeLevelFloatValues[I] {
 
-    case object DoubleValue extends super.DoubleValue {
+    case object FloatValue extends super.FloatValue {
 
-        override def merge(pc: Int, value: DomainValue): Update[DomainValue] =
-            value match {
-                case DoubleValue ⇒ NoUpdate
-                case _           ⇒ MetaInformationUpdateIllegalValue
-            }
+        override def merge(pc: Int, value: DomainValue): Update[DomainValue] = value match {
+            case FloatValue ⇒ NoUpdate
+            case _          ⇒ MetaInformationUpdateIllegalValue
+        }
 
-        override def adapt[ThatI >: I](targetDomain: Domain[ThatI], pc: Int): targetDomain.DomainValue =
+        override def adapt[ThatI >: I](
+            targetDomain: Domain[ThatI],
+            pc: Int): targetDomain.DomainValue =
             targetDomain match {
-                case thatDomain: DefaultTypeLevelDoubleValues[ThatI] ⇒
-                    thatDomain.DoubleValue.asInstanceOf[targetDomain.DomainValue]
+                case thatDomain: DefaultTypeLevelFloatValues[ThatI] ⇒
+                    thatDomain.FloatValue.asInstanceOf[targetDomain.DomainValue]
                 case _ ⇒ super.adapt(targetDomain, pc)
             }
     }
 
-    def newDoubleValue(): DoubleValue = DoubleValue
+    def newFloatValue(): FloatValue = FloatValue
 
-    def newDoubleValue(pc: Int): DomainValue = DoubleValue
+    def newFloatValue(pc: Int): DomainValue = FloatValue
 
-    def newDoubleValue(pc: Int, value: Double): DoubleValue = DoubleValue
+    def newFloatValue(pc: Int, value: Float): FloatValue = FloatValue
 }
-
 
 

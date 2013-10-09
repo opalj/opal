@@ -39,24 +39,48 @@ package project
 import analyses._
 
 /**
+ * Template class for executing analyses that use the abstract interpreter.
+ *
+ * This trait can be combined with the Analysis and the AnalysisExecutor traits
+ * to easily create a readily executable analysis (see the Demo project for
+ * examples).
+ *
  * @author Michael Eichberg
  */
-trait AIProject[Source] {
+trait AIProject[Source,D <: Domain[_]] {
 
-    def analyze(project: analyses.Project[Source]): ReportableAnalysisResult = {
+    /**
+     * @note This method is intended to be overridden by subtraits that need to get 
+     * hold on the parameters. In this case (in the subtrait) it is recommended to 
+     * first analyze the parameters and afterwards to call `super.analyze(...)`.
+     */
+    def analyze(
+        project: analyses.Project[Source],
+        parameters: Seq[String]): ReportableAnalysisResult = {
         val reports = for ((classFile, method) ← entryPoints(project)) yield {
             val theDomain = domain(project, classFile, method)
-            AI(classFile, method, theDomain)
+            ai(classFile, method, theDomain)
             theDomain.report
         }
         val theReports: Iterable[String] = reports.filter(_.isDefined).map(_.get)
         BasicReport("Number of reports: "+theReports.size+"\n"+theReports.mkString("\n"))
     }
 
+    /**
+     * Returns the abstract interpreter that is used for performing the abstract 
+     * interpretations.
+     */
+    def ai : AI[D] 
+    
+    /**
+     * Returns the (initial) domain that will be used to analyze the entry points.
+     *
+     * All entry points will potentially be analyzed in parallel.
+     */
     def domain(
         project: analyses.Project[Source],
         classFile: ClassFile,
-        method: Method): Domain[_] with Report
+        method: Method): D with Report
 
     /**
      * A project's entry points.
@@ -80,9 +104,3 @@ trait AIProject[Source] {
 
 }
 
-/**
- * @author Michael Eichberg
- */
-trait Report {
-    def report: Option[String]
-}

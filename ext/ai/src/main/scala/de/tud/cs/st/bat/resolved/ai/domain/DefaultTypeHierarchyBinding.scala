@@ -39,8 +39,8 @@ package domain
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 /**
- * Provides a default implementation for answering type hierarchy related
- * questions.
+ * Implementation of a Domain's `isSubtypeOf(...)` method that delegates to 
+ * the corresponding method defined by the class `ClassHierarchy`.
  *
  * @author Michael Eichberg
  */

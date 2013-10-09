@@ -100,19 +100,27 @@ trait TypeLevelIntegerValues[+I] extends Domain[I] {
 
     def areEqual(value1: DomainValue, value2: DomainValue): Answer = Unknown
 
-    def isSomeValueInRange(value: DomainValue, lowerBound: Int, upperBound: Int): Boolean =
+    def isSomeValueInRange(
+        value: DomainValue,
+        lowerBound: Int,
+        upperBound: Int): Boolean =
         true
 
-    def isSomeValueNotInRange(value: DomainValue, lowerBound: Int, upperBound: Int): Boolean =
+    def isSomeValueNotInRange(
+        value: DomainValue,
+        lowerBound: Int,
+        upperBound: Int): Boolean =
         true
 
-    def isLessThan(smallerValue: DomainValue, largerValue: DomainValue): Answer = {
+    def isLessThan(
+        smallerValue: DomainValue,
+        largerValue: DomainValue): Answer =
         Unknown
-    }
 
-    def isLessThanOrEqualTo(smallerOrEqualValue: DomainValue, equalOrLargerValue: DomainValue): Answer = {
+    def isLessThanOrEqualTo(
+        smallerOrEqualValue: DomainValue,
+        equalOrLargerValue: DomainValue): Answer =
         Unknown
-    }
 
     // -----------------------------------------------------------------------------------
     //
@@ -123,25 +131,46 @@ trait TypeLevelIntegerValues[+I] extends Domain[I] {
     //
     // UNARY EXPRESSIONS
     //
-    def ineg(pc: Int, value: DomainValue) = newIntegerValue
+    def ineg(pc: Int, value: DomainValue) = newIntegerValue()
 
     //
     // BINARY EXPRESSIONS
     //
 
-    def iadd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newIntegerValue
-    def iand(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newIntegerValue
-    def idiv(pc: Int, value1: DomainValue, value2: DomainValue) = ComputedValue(newIntegerValue)
-    def imul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newIntegerValue
-    def ior(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newIntegerValue
-    def irem(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newIntegerValue
-    def ishl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newIntegerValue
-    def ishr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newIntegerValue
-    def isub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newIntegerValue
-    def iushr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newIntegerValue
-    def ixor(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = newIntegerValue
+    def iadd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+        newIntegerValue()
 
-    def iinc(pc: Int, value: DomainValue, increment: Int) = newIntegerValue
+    def iand(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+        newIntegerValue()
+
+    def idiv(pc: Int, value1: DomainValue, value2: DomainValue) =
+        ComputedValue(newIntegerValue())
+
+    def imul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+        newIntegerValue()
+
+    def ior(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+        newIntegerValue()
+
+    def irem(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+        newIntegerValue()
+
+    def ishl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+        newIntegerValue()
+
+    def ishr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+        newIntegerValue()
+
+    def isub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+        newIntegerValue()
+
+    def iushr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+        newIntegerValue()
+
+    def ixor(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+        newIntegerValue()
+
+    def iinc(pc: Int, value: DomainValue, increment: Int) = newIntegerValue()
 
     //
     // TYPE CONVERSION INSTRUCTIONS
@@ -156,19 +185,24 @@ trait TypeLevelIntegerValues[+I] extends Domain[I] {
 
 }
 
+/**
+ * @author Michael Eichberg
+ */
 trait DefaultTypeLevelIntegerValues[+I]
         extends DefaultValueBinding[I]
         with TypeLevelIntegerValues[I] {
 
     case object BooleanValue extends super.BooleanValue {
-        override def merge(pc: Int, value: DomainValue): Update[DomainValue] = value match {
+        def merge(pc: Int, value: DomainValue): Update[DomainValue] = value match {
             case BooleanValue         ⇒ NoUpdate
             case other @ IntegerValue ⇒ StructuralUpdate(other)
             case TheIllegalValue      ⇒ MetaInformationUpdateIllegalValue
             case _                    ⇒ MetaInformationUpdateIllegalValue
         }
 
-        override def adapt[ThatI >: I](targetDomain: Domain[ThatI], pc: Int): targetDomain.DomainValue =
+        override def adapt[ThatI >: I](
+            targetDomain: Domain[ThatI],
+            pc: Int): targetDomain.DomainValue =
             targetDomain match {
                 case thatDomain: DefaultTypeLevelIntegerValues[ThatI] ⇒
                     thatDomain.BooleanValue.asInstanceOf[targetDomain.DomainValue]
@@ -177,7 +211,7 @@ trait DefaultTypeLevelIntegerValues[+I]
     }
 
     case object ByteValue extends super.ByteValue {
-        override def merge(pc: Int, value: DomainValue): Update[DomainValue] = value match {
+        def merge(pc: Int, value: DomainValue): Update[DomainValue] = value match {
             case ByteValue            ⇒ NoUpdate
             case TheIllegalValue      ⇒ MetaInformationUpdateIllegalValue
             case other @ IntegerValue ⇒ StructuralUpdate(other)
@@ -186,7 +220,9 @@ trait DefaultTypeLevelIntegerValues[+I]
             case other                ⇒ MetaInformationUpdateIllegalValue
         }
 
-        override def adapt[ThatI >: I](targetDomain: Domain[ThatI], pc: Int): targetDomain.DomainValue =
+        override def adapt[ThatI >: I](
+            targetDomain: Domain[ThatI],
+            pc: Int): targetDomain.DomainValue =
             targetDomain match {
                 case thatDomain: DefaultTypeLevelIntegerValues[ThatI] ⇒
                     thatDomain.ByteValue.asInstanceOf[targetDomain.DomainValue]
@@ -195,7 +231,7 @@ trait DefaultTypeLevelIntegerValues[+I]
     }
 
     case object ShortValue extends super.ShortValue {
-        override def merge(pc: Int, value: DomainValue): Update[DomainValue] = value match {
+        def merge(pc: Int, value: DomainValue): Update[DomainValue] = value match {
             case ShortValue           ⇒ NoUpdate
             case TheIllegalValue      ⇒ MetaInformationUpdateIllegalValue
             case other @ IntegerValue ⇒ StructuralUpdate(other)
@@ -204,7 +240,9 @@ trait DefaultTypeLevelIntegerValues[+I]
             case other                ⇒ MetaInformationUpdateIllegalValue
         }
 
-        override def adapt[ThatI >: I](targetDomain: Domain[ThatI], pc: Int): targetDomain.DomainValue =
+        override def adapt[ThatI >: I](
+            targetDomain: Domain[ThatI],
+            pc: Int): targetDomain.DomainValue =
             targetDomain match {
                 case thatDomain: DefaultTypeLevelIntegerValues[ThatI] ⇒
                     thatDomain.ShortValue.asInstanceOf[targetDomain.DomainValue]
@@ -222,7 +260,9 @@ trait DefaultTypeLevelIntegerValues[+I]
             case other                ⇒ MetaInformationUpdateIllegalValue
         }
 
-        override def adapt[ThatI >: I](targetDomain: Domain[ThatI], pc: Int): targetDomain.DomainValue =
+        override def adapt[ThatI >: I](
+            targetDomain: Domain[ThatI],
+            pc: Int): targetDomain.DomainValue =
             targetDomain match {
                 case thatDomain: DefaultTypeLevelIntegerValues[ThatI] ⇒
                     thatDomain.CharValue.asInstanceOf[targetDomain.DomainValue]
@@ -231,7 +271,7 @@ trait DefaultTypeLevelIntegerValues[+I]
     }
 
     case object IntegerValue extends super.IntegerValue {
-        override def merge(pc: Int, value: DomainValue): Update[DomainValue] = value match {
+        def merge(pc: Int, value: DomainValue): Update[DomainValue] = value match {
             case IntegerValue    ⇒ NoUpdate
             case TheIllegalValue ⇒ MetaInformationUpdateIllegalValue
             case BooleanValue    ⇒ NoUpdate
@@ -241,7 +281,9 @@ trait DefaultTypeLevelIntegerValues[+I]
             case other           ⇒ MetaInformationUpdateIllegalValue
         }
 
-        override def adapt[ThatI >: I](targetDomain: Domain[ThatI], pc: Int): targetDomain.DomainValue =
+        override def adapt[ThatI >: I](
+            targetDomain: Domain[ThatI],
+            pc: Int): targetDomain.DomainValue =
             targetDomain match {
                 case thatDomain: DefaultTypeLevelIntegerValues[ThatI] ⇒
                     thatDomain.IntegerValue.asInstanceOf[targetDomain.DomainValue]
@@ -269,7 +311,5 @@ trait DefaultTypeLevelIntegerValues[+I]
     def newIntegerValue(pc: Int): DomainValue = IntegerValue
     def newIntegerValue(pc: Int, value: Int) = IntegerValue
     val newIntegerConstant0: DomainValue = newIntegerValue(Int.MinValue, 0)
-    def intValuesRange(pc: Int, start: Int, end: Int): DomainValue = IntegerValue
-
 }
 

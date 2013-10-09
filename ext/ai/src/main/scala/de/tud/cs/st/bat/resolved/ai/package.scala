@@ -54,7 +54,7 @@ package object ai {
     import language.existentials
 
     type SomeDomain = Domain[_]
-    
+
     type PC = Int
 
     class AIException(
@@ -64,10 +64,6 @@ package object ai {
     @throws[AIException]
     def aiException(message: String, cause: Throwable = null): Nothing = {
         throw new AIException(message, cause)
-    }
-
-    object AIException {
-        def unapply(exception: AIException): Option[String] = Some(exception.getMessage())
     }
 
     case class DomainException(
@@ -90,17 +86,17 @@ package object ai {
         }
     }
 
+    /**
+     * Exception that is thrown if the framework identifies an error in the concrete
+     * implementation of a specific domain. I.e., the error is related to an error in
+     * a user's implementation of a domain.
+     */
     @throws[DomainException]
     def domainException(
         domain: SomeDomain,
         message: String): Nothing =
         throw DomainException(domain, message)
 
-    /**
-     * Exception that is thrown if the framework identifies an error in the concrete
-     * implementation of a specific domain. I.e., the error is related to an error in
-     * a user's implementation of a domain.
-     */
     case class InterpreterException[D <: SomeDomain](
         throwable: Throwable,
         domain: D,
@@ -113,10 +109,10 @@ package object ai {
     type SomeInterpreterException = InterpreterException[_]
 
     /**
-     * Creates and immediately throws an `AIImplementationError`.
+     * Creates and throws an `InterpreterException`.
      */
     @throws[SomeInterpreterException]
-    def interpreterException[D <: SomeDomain](
+    def interpreterException[D <: SomeDomain] (
         throwable: Throwable,
         domain: D,
         worklist: List[Int],

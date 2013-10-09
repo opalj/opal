@@ -48,7 +48,7 @@ object NativeMethodsCounter extends AnalysisExecutor {
 
         def description: String = "Counts the number of native methods."
 
-        def analyze(project: Project[URL]) = {
+        def analyze(project: Project[URL],parameters : Seq[String] = List.empty) = {
             val nativeMethods =
                 for (
                     classFile ← project.classFiles;

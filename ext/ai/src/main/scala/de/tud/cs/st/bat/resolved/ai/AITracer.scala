@@ -88,10 +88,11 @@ trait AITracer {
         thisLocals: D#Locals,
         otherOperands: D#Operands,
         otherLocals: D#Locals,
-        result: Update[(D#Operands, D#Locals)])
+        result: Update[(D#Operands, D#Locals)],
+        forcedContinuation: Boolean)
 
     /**
-     * Called when the analyzed method throws an exception that is not catched within
+     * Called when the analyzed method throws an exception that is not caught within
      * the method.
      */
     def abruptMethodExecution[D <: Domain[_]](

@@ -71,7 +71,7 @@ class MethodsWithExceptionsTest
     private def evaluateMethod(name: String, f: RecordingDomain[String] ⇒ Unit) {
         val domain = new RecordingDomain(name); import domain._
         val method = classFile.methods.find(_.name == name).get
-        val result = AI(classFile, method, domain)
+        val result = BaseAI(classFile, method, domain)
 
         dumpOnFailureDuringValidation(Some(classFile), Some(method), method.body.get, result) {
             f(domain)
@@ -84,7 +84,7 @@ class MethodsWithExceptionsTest
         evaluateMethod("alwaysThrows", domain ⇒ {
             import domain._
             domain.returnedValues should be(
-                Set(("throws", AReferenceValue(0, ObjectType.RuntimeException, No, true)))
+                Set(("throws", 8, AReferenceValue(0, ObjectType.RuntimeException, No, true)))
             )
         })
     }
@@ -93,7 +93,7 @@ class MethodsWithExceptionsTest
         evaluateMethod("alwaysCatch", domain ⇒ {
             import domain._
             domain.returnedValues should be(
-                Set(("return", null))
+                Set(("return", 7, null))
             )
         })
     }
@@ -102,8 +102,8 @@ class MethodsWithExceptionsTest
         evaluateMethod("throwsThisOrThatException", domain ⇒ {
             import domain._
             domain.returnedValues should be(
-                Set(("throws", AReferenceValue(12, ObjectType("java/lang/IllegalArgumentException"), No, true)), // <= finally
-                    ("throws", AReferenceValue(4, ObjectType.NullPointerException, No, true))) // <= if t is null
+                Set(("throws", 19, AReferenceValue(12, ObjectType("java/lang/IllegalArgumentException"), No, true)), // <= finally
+                    ("throws", 11, AReferenceValue(4, ObjectType.NullPointerException, No, true))) // <= if t is null
             )
         })
     }
@@ -112,7 +112,7 @@ class MethodsWithExceptionsTest
         evaluateMethod("throwsNoException", domain ⇒ {
             import domain._
             domain.returnedValues should be(
-                Set(("return", null))
+                Set(("return", 39, null))
             )
         })
     }
@@ -121,7 +121,7 @@ class MethodsWithExceptionsTest
         evaluateMethod("leverageException", domain ⇒ {
             import domain._
             domain.returnedValues should be(
-                Set(("return", null)) // <= void return
+                Set(("return", 38, null)) // <= void return
             // Due to the simplicity of the domain (the exceptions of called methods are 
             // not yet analyze) we cannot determine that the following exception 
             // (among others?) may also be thrown:
@@ -134,12 +134,12 @@ class MethodsWithExceptionsTest
         evaluateMethod("withFinallyAndThrows", domain ⇒ {
             import domain._
             domain.returnedValues should be(
-                Set(("throws", AReferenceValue(-1, ObjectType.Throwable, No, false)),
-                    ("throws", AReferenceValue(19, ObjectType.NullPointerException, No, true)),
-                    ("throws", MultipleReferenceValues(Set(
-                            AReferenceValue(-1, ObjectType.Throwable, No, false), 
-                            AReferenceValue(11, ObjectType.NullPointerException, No, true)))),
-                    ("throws", AReferenceValue(25, ObjectType.NullPointerException, No, true))
+                Set(("throws", 23, AReferenceValue(-1, ObjectType.Throwable, No, false)),
+                    ("throws", 19, AReferenceValue(19, ObjectType.NullPointerException, No, true)),
+                    ("throws", 23, MultipleReferenceValues(Set(
+                        AReferenceValue(-1, ObjectType.Throwable, No, false),
+                        AReferenceValue(11, ObjectType.NullPointerException, No, true)))),
+                    ("throws", 25, AReferenceValue(25, ObjectType.NullPointerException, No, true))
                 )
             )
         })

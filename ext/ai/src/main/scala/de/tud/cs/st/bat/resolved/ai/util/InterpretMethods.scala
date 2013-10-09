@@ -59,13 +59,13 @@ object InterpretMethods {
     def main(args: Array[String]) {
         if (args.size == 0) {
             println("Performs an abstract interpretation of all methods of all classes.")
-            println("1. [Optional] domain=<DOMAIN CLASS> the configurable domain to use during the abstract interpretation.")
+            println("1. [Optional] -domain=<DOMAIN CLASS> the configurable domain to use during the abstract interpretation.")
             println("... jar files  and directories containing jar files.")
             return ;
         }
         if (args.size > 0 && args(0).startsWith("domain=")) {
             interpret(
-                Class.forName(args.head.substring(7)).asInstanceOf[Class[_ <: ConfigurableDomain[_]]],
+                Class.forName(args.head.substring(8)).asInstanceOf[Class[_ <: ConfigurableDomain[_]]],
                 args.tail.map(new java.io.File(_)),
                 true).
                 map(System.err.println(_))
@@ -106,7 +106,10 @@ object InterpretMethods {
             for {
                 file ← theFiles
                 if (file.toString().endsWith(".jar"))
-                jarFile = { if (beVerbose) println(Console.BOLD + file.toString + Console.RESET); new ZipFile(file) }
+                jarFile = {
+                    if (beVerbose) println(Console.BOLD + file.toString + Console.RESET)
+                    new ZipFile(file)
+                }
                 jarEntry ← (jarFile).entries
                 if !jarEntry.isDirectory && jarEntry.getName.endsWith(".class")
             } {
@@ -130,13 +133,10 @@ object InterpretMethods {
                     //                        def run() {
                     try {
                         time('AI) {
-                            if (AI(
+                            if (BaseAI(
                                 classFile,
                                 method,
-                                domainConstructor.newInstance((classFile, method))
-                            /*new domain.AbstractDefaultDomain[(ClassFile, Method)] {
-                                    val identifier = (classFile, method)
-                                }*/ ).wasAborted)
+                                domainConstructor.newInstance((classFile, method))).wasAborted)
                                 throw new InterruptedException();
                         }
                     } catch {

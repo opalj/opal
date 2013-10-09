@@ -77,7 +77,7 @@ object PublicMethodsInNonRestrictedPackagesCounter extends AnalysisExecutor {
 
         def description = "Counts the number of public methods in non-restricted packages."
 
-        def analyze(project: Project[URL]) = {
+        def analyze(project: Project[URL],parameters : Seq[String] = List.empty) = {
             val methods =
                 for {
                     classFile ← project.classFiles

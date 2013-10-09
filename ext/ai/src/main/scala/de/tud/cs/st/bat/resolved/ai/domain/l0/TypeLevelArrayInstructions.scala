@@ -46,6 +46,8 @@ package domain
  */
 trait TypeLevelArrayInstructions { this: Domain[_] ⇒
 
+    // TODO make it configurable whether we want to throw an exception or not if we know nothing about the "null" property of the array
+
     //
     // STORING AND LOADING VALUES FROM ARRAYS
     //

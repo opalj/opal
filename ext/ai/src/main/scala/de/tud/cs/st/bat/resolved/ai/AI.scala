@@ -66,7 +66,9 @@ import scala.util.control.ControlThrowable
  *
  * @author Michael Eichberg
  */
-trait AI {
+trait AI[D <: Domain[_]] {
+
+    import AI._
 
     /**
      * Called during the abstract interpretation of a method to determine whether
@@ -97,21 +99,63 @@ trait AI {
     def apply(
         classFile: ClassFile,
         method: Method,
-        domain: Domain[_]) = perform(classFile, method, domain)(None)
+        domain: D) = perform(classFile, method, domain)(None)
 
-    /**
-     * The list of program counters that is used when the analysis of a method starts.
-     *
-     * If we have a call to a subroutine we add the special value SUBROUTINE_START
-     * to the list. This is needed to completely process the subroutine (to explore
-     * all paths) before we finally return to the main method.
-     */
-    private final val initialWorkList = List(0)
+    protected def initialOperands(
+        classFile: ClassFile,
+        method: Method,
+        domain: D): List[domain.DomainValue] =
+        List.empty[domain.DomainValue]
 
-    /**
-     * Special value that is added to the work list before a subroutine is evaluated.
-     */
-    private final val SUBROUTINE_START = -1
+    protected def initialLocals(
+        classFile: ClassFile,
+        method: Method,
+        domain: D)(
+            someLocals: Option[IndexedSeq[domain.DomainValue]] = None): Array[domain.DomainValue] = {
+
+        import domain.DomainValueTag
+
+        someLocals.map { l ⇒
+            assume(
+                l.size >= (method.parameterTypes.size + (if (method.isStatic) 0 else 1)),
+                "the number of initial values is less than the number of parameters")
+            if (l.size >= method.body.get.maxLocals)
+                l.toArray
+            else {
+                // the number of given locals is smaller than the number of max locals
+                // (the former number should be equal to the number of parameter 
+                // values (including "this" or "maxLocals") 
+                val locals = new Array[domain.DomainValue](method.body.get.maxLocals)
+                for (i ← (0 until l.size))
+                    locals.update(i, l(i))
+                locals
+            }
+        }.getOrElse { // there are no locals at all...
+            val locals = new Array[domain.DomainValue](method.body.get.maxLocals)
+            var localVariableIndex = 0
+
+            if (!method.isStatic) {
+                val thisType = classFile.thisClass
+                val thisValue = {
+                    val thisValue = domain.newReferenceValue(-localVariableIndex - 1, thisType)
+                    domain.establishIsNonNull(-1,
+                        thisValue,
+                        List.empty[domain.DomainValue] /*are empty...*/ ,
+                        Array(thisValue))._2(0) /* extract the constrained "thisValue"*/
+                }
+                locals.update(localVariableIndex, thisValue)
+                localVariableIndex += 1 /*==thisType.computationalType.operandSize*/
+            }
+            for (parameterType ← method.descriptor.parameterTypes) {
+                val ct = parameterType.computationalType
+                locals.update(
+                    localVariableIndex,
+                    domain.newTypedValue(-localVariableIndex - 1, parameterType))
+                localVariableIndex += ct.operandSize
+            }
+            locals
+        }
+    }
 
     /**
      * Analyzes the given method using the given domain and the pre-initialized parameter
@@ -129,9 +173,9 @@ trait AI {
      * @param domain The abstract domain that is used to perform "abstract" computations
      *      w.r.t. the domain's values.
      * @param someLocals If the values passed to a method are already known, the
-     *      abstract interpretation will be performed under that assumption. SomeLocals
-     *      can either just represent the passed parameters or has to be equivalent
-     *      to the number of max locals.
+     *      abstract interpretation will be performed under that assumption. The specified
+     *      number of locals has to be equal or larger than the number of parameters (including
+     *      `this` in case of a non-static method.)
      * @return The result of the abstract interpretation. Basically, the calculated
      *      memory layouts; i.e., the list of operands and local variables before each
      *      instruction. Each calculated memory layout represents the layout before
@@ -144,68 +188,38 @@ trait AI {
     def perform(
         classFile: ClassFile,
         method: Method,
-        domain: Domain[_])(
+        domain: D)(
             someLocals: Option[IndexedSeq[domain.DomainValue]] = None): AIResult[domain.type] = {
 
         assume(method.body.isDefined, "the method ("+method.toJava+") has no body")
 
-        import domain._
+        val code = method.body.get
+
+        perform(
+            code, domain)(
+                initialOperands(classFile, method, domain),
+                initialLocals(classFile, method, domain)(someLocals))
+    }
+
+    def perform(
+        code: Code,
+        domain: D)(
+            initialOperands: List[domain.DomainValue],
+            initialLocals: Array[domain.DomainValue]): AIResult[domain.type] = {
+
         import domain.DomainValueTag
 
-        val code = method.body.get
         val codeLength = code.instructions.length
 
         val operandsArray = new Array[List[domain.DomainValue]](codeLength)
-        val initialOperands = List.empty[DomainValue]
         operandsArray(0) = initialOperands
 
         val localsArray = new Array[Array[domain.DomainValue]](codeLength)
-        val initialLocals = (
-            someLocals.map { l ⇒
-                assume(
-                    l.size >= (method.parameterTypes.size + (if (method.isStatic) 0 else 1)),
-                    "the number of initial values is less than the number of parameters")
-                if (l.size == method.body.get.maxLocals)
-                    l.toArray
-                else {
-                    // the number of parameter values is smaller than the number of given 
-                    // values (which is equal to the number of parameter values (including
-                    // "this" or "maxLocals") 
-                    val locals = new Array[domain.DomainValue](method.body.get.maxLocals)
-                    for (i ← (0 until l.size))
-                        locals.update(i, l(i))
-                    locals
-                }
-            }.getOrElse {
-                val locals = new Array[domain.DomainValue](method.body.get.maxLocals)
-                var localVariableIndex = 0
-
-                if (!method.isStatic) {
-                    val thisType = classFile.thisClass
-                    val thisValue = {
-                        val thisValue = newReferenceValue(-localVariableIndex - 1, thisType)
-                        domain.establishIsNonNull(-1,
-                            thisValue,
-                            initialOperands /*are empty...*/ ,
-                            Array(thisValue))._2(0) /* extract the constrained "thisValue"*/
-                    }
-                    locals.update(localVariableIndex, thisValue)
-                    localVariableIndex += 1 /*==thisType.computationalType.operandSize*/
-                }
-                for (parameterType ← method.descriptor.parameterTypes) {
-                    val ct = parameterType.computationalType
-                    locals.update(
-                        localVariableIndex,
-                        newTypedValue(-localVariableIndex - 1, parameterType))
-                    localVariableIndex += ct.operandSize
-                }
-                locals
-            }
-        )
         localsArray(0) = initialLocals
 
-        continueInterpretation(code, domain)(
-            initialWorkList, List.empty[Int], operandsArray, localsArray)
+        continueInterpretation(
+            code, domain)(
+                initialWorkList, List.empty[Int], operandsArray, localsArray)
     }
 
     /**
@@ -226,9 +240,9 @@ trait AI {
      *      '''The `localsArray` data structure is mutated.'''
      * @note $UseOfDomain
      */
-    def continueInterpretation(
+    protected[ai] def continueInterpretation(
         code: Code,
-        domain: Domain[_])(
+        domain: D)(
             initialWorkList: List[Int],
             alreadyEvaluated: List[Int],
             operandsArray: Array[List[domain.DomainValue]],
@@ -247,49 +261,6 @@ trait AI {
         /* 2 */ // localsArray
         /* 3 */ var worklist = initialWorkList
         /* 4 */ var evaluated = alreadyEvaluated
-
-        /**
-         * Prepares the AI to continue the interpretation with the instruction
-         * at the given target (`targetPC`). Basically, the operand stack
-         * and the local variables are updated with the given ones and the
-         * target program counter is added to the `workList`.
-         */
-        def gotoTarget(targetPC: Int, operands: Operands, locals: Locals) {
-            val currentOperands = operandsArray(targetPC)
-            if (currentOperands == null /* || localsArray(targetPC) == null )*/ ) {
-                // we analyze the instruction for the first time ...
-                operandsArray(targetPC) = operands
-                localsArray(targetPC) = locals
-                worklist = targetPC :: worklist
-            } else {
-                val currentLocals = localsArray(targetPC)
-                val mergeResult = domain.merge(
-                    targetPC, currentOperands, currentLocals, operands, locals
-                )
-                if (tracer.isDefined)
-                    tracer.get.merge[domain.type](
-                        domain,
-                        targetPC, currentOperands, currentLocals, operands, locals,
-                        mergeResult
-                    )
-                mergeResult match {
-                    case NoUpdate ⇒ /* Nothing to do */
-                    case StructuralUpdate((updatedOperands, updatedLocals)) ⇒
-                        operandsArray(targetPC) = updatedOperands
-                        localsArray(targetPC) = updatedLocals
-                        worklist = targetPC :: worklist
-                    case MetaInformationUpdate((updatedOperands, updatedLocals)) ⇒
-                        operandsArray(targetPC) = updatedOperands
-                        localsArray(targetPC) = updatedLocals
-                    // => the evaluation context didn't change, hence
-                    // it is not necessary to enqueue the instruction's pc
-                }
-            }
-        }
-
-        def gotoTargets(targetPCs: Iterable[Int], operands: Operands, locals: Locals) {
-            targetPCs.foreach(gotoTarget(_, operands, locals))
-        }
 
         // -------------------------------------------------------------------------------
         //
@@ -323,6 +294,52 @@ trait AI {
                     )
 
                 def pcOfNextInstruction = code.indexOfNextInstruction(pc)
+
+                /**
+                 * Prepares the AI to continue the interpretation with the instruction
+                 * at the given target (`targetPC`). Basically, the operand stack
+                 * and the local variables are updated with the given ones and the
+                 * target program counter is added to the `workList`.
+                 */
+                def gotoTarget(targetPC: Int, operands: Operands, locals: Locals) {
+                    val forceContinuation = domain.flow(pc, targetPC)
+
+                    val currentOperands = operandsArray(targetPC)
+                    if (currentOperands == null /* || localsArray(targetPC) == null )*/ ) {
+                        // we analyze the instruction for the first time ...
+                        operandsArray(targetPC) = operands
+                        localsArray(targetPC) = locals
+                        worklist = targetPC :: worklist
+                    } else {
+                        val currentLocals = localsArray(targetPC)
+                        val mergeResult = domain.merge(
+                            targetPC, currentOperands, currentLocals, operands, locals
+                        )
+                        if (tracer.isDefined)
+                            tracer.get.merge[domain.type](
+                                domain,
+                                targetPC, currentOperands, currentLocals, operands, locals,
+                                mergeResult,
+                                forceContinuation
+                            )
+                        mergeResult match {
+                            case NoUpdate ⇒
+                                if (forceContinuation) worklist = targetPC :: worklist
+                            case StructuralUpdate((updatedOperands, updatedLocals)) ⇒
+                                operandsArray(targetPC) = updatedOperands
+                                localsArray(targetPC) = updatedLocals
+                                worklist = targetPC :: worklist
+                            case MetaInformationUpdate((updatedOperands, updatedLocals)) ⇒
+                                operandsArray(targetPC) = updatedOperands
+                                localsArray(targetPC) = updatedLocals
+                                if (forceContinuation) worklist = targetPC :: worklist
+                        }
+                    }
+                }
+
+                def gotoTargets(targetPCs: Iterable[Int], operands: Operands, locals: Locals) {
+                    targetPCs.foreach(gotoTarget(_, operands, locals))
+                }
 
                 /**
                  * Handles all '''if''' instructions that perform a comparison with a fixed
@@ -1536,16 +1553,25 @@ trait AI {
 }
 
 /**
- * A base abstract interpreter useful for testing and debugging purposes. The base
- * interpreter can be interrupted by calling the `interrupt` method of the
- * AI's thread.
+ * The `AI` trait's companion object that primarily defines instance independent values.
+ *
+ * @author Michael Eichberg
  */
-object AI extends AI {
+private[ai] object AI {
 
-    def isInterrupted = Thread.interrupted()
+    /**
+     * The list of program counters that is used when the analysis of a method starts.
+     *
+     * If we have a call to a subroutine we add the special value SUBROUTINE_START
+     * to the list. This is needed to completely process the subroutine (to explore
+     * all paths) before we finally return to the main method.
+     */
+    private final val initialWorkList = List(0)
 
-    val tracer = None
-
+    /**
+     * Special value that is added to the work list before a subroutine is evaluated.
+     */
+    private final val SUBROUTINE_START = -1
 }
 
 /**
@@ -1556,7 +1582,7 @@ object AI extends AI {
  * case v @ CTC1() => ...
  * }}}
  */
-object CTC1 {
+private[ai] object CTC1 {
     def unapply[D <: Domain[Any]](value: D#DomainValue): Boolean =
         value.computationalType.category == 1
 }
@@ -1569,8 +1595,25 @@ object CTC1 {
  * case v @ CTC2() => ...
  * }}}
  */
-object CTC2 {
+private[ai] object CTC2 {
     def unapply[D <: Domain[Any]](value: D#DomainValue): Boolean =
         value.computationalType.category == 2
 }
+
+/**
+ * @author Michael Eichberg
+ */
+trait AIWithPropertyTracing[D <: domain.PropertyTracing[_]] extends AI[D] {
+
+    override def perform(
+        code: Code,
+        domain: D)(
+            initialOperands: List[domain.DomainValue],
+            initialLocals: Array[domain.DomainValue]): AIResult[domain.type] = {
+
+        domain.initProperties(code, initialOperands, initialLocals)
+        super.perform(code, domain)(initialOperands, initialLocals)
+    }
+}
+
 

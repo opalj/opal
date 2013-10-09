@@ -38,28 +38,28 @@ package domain
 
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
-trait TypeLevelLongValues[+I] extends Domain[I] {
+/**
+ * @author Michael Eichberg
+ */
+trait TypeLevelDoubleValues[+I] extends Domain[I] {
 
     // -----------------------------------------------------------------------------------
     //
-    // REPRESENTATION OF LONG VALUES
+    // REPRESENTATION OF DOUBLE VALUES
     //
     // -----------------------------------------------------------------------------------
 
-    trait LongValue extends Value { this: DomainValue ⇒
-        final def computationalType: ComputationalType = ComputationalTypeLong
+    trait DoubleValue extends Value { this: DomainValue ⇒
+        final def computationalType: ComputationalType = ComputationalTypeDouble
     }
 
-    private val typesAnswer: IsPrimitiveType = IsPrimitiveType(LongType)
+    private val typesAnswer: IsPrimitiveType = IsPrimitiveType(DoubleType)
 
-    abstract override def types(value: DomainValue): TypesAnswer[_] = {
+    abstract override def types(value: DomainValue): TypesAnswer[_] =
         value match {
-            case r: LongValue ⇒ typesAnswer
-            case _            ⇒ super.types(value)
+            case r: DoubleValue ⇒ typesAnswer
+            case _              ⇒ super.types(value)
         }
-    }
-
-    protected def newLongValue(): DomainValue
 
     // -----------------------------------------------------------------------------------
     //
@@ -70,85 +70,69 @@ trait TypeLevelLongValues[+I] extends Domain[I] {
     //
     // RELATIONAL OPERATORS
     //
-    def lcmp(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+    def dcmpg(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = 
+        newIntegerValue(pc)
+        
+    def dcmpl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = 
         newIntegerValue(pc)
 
     //
     // UNARY EXPRESSIONS
     //
-    def lneg(pc: Int, value: DomainValue) = newLongValue
+    def dneg(pc: Int, value: DomainValue) = newDoubleValue(pc)
 
     //
     // BINARY EXPRESSIONS
     //
+    def dadd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+        newDoubleValue(pc)
 
-    def ladd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
-        newLongValue
+    def ddiv(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+        newDoubleValue(pc)
 
-    def land(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
-        newLongValue
+    def dmul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+        newDoubleValue(pc)
 
-    def ldiv(pc: Int, value1: DomainValue, value2: DomainValue) =
-        ComputedValue(newLongValue)
+    def drem(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+        newDoubleValue(pc)
 
-    def lmul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
-        newLongValue
-
-    def lor(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
-        newLongValue
-
-    def lrem(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
-        newLongValue
-
-    def lshl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
-        newLongValue
-
-    def lshr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
-        newLongValue
-
-    def lsub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
-        newLongValue
-
-    def lushr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
-        newLongValue
-
-    def lxor(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
-        newLongValue
+    def dsub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+        newDoubleValue(pc)
 
     //
-    // CONVERSION INSTRUCTIONS
+    // TYPE CONVERSION INSTRUCTIONS
     //
-
-    def l2d(pc: Int, value: DomainValue): DomainValue = newDoubleValue(pc)
-    def l2f(pc: Int, value: DomainValue): DomainValue = newFloatValue(pc)
-    def l2i(pc: Int, value: DomainValue): DomainValue = newIntegerValue(pc)
+    def d2f(pc: Int, value: DomainValue): DomainValue = newFloatValue(pc)
+    def d2i(pc: Int, value: DomainValue): DomainValue = newIntegerValue(pc)
+    def d2l(pc: Int, value: DomainValue): DomainValue = newLongValue(pc)
 }
 
-trait DefaultTypeLevelLongValues[+I]
+trait DefaultTypeLevelDoubleValues[+I]
         extends DefaultValueBinding[I]
-        with TypeLevelLongValues[I] {
+        with TypeLevelDoubleValues[I] {
 
-    case object LongValue extends super.LongValue {
+    case object DoubleValue extends super.DoubleValue {
+
         override def merge(pc: Int, value: DomainValue): Update[DomainValue] =
             value match {
-                case LongValue ⇒ NoUpdate
-                case _         ⇒ MetaInformationUpdateIllegalValue
+                case DoubleValue ⇒ NoUpdate
+                case _           ⇒ MetaInformationUpdateIllegalValue
             }
 
-        override def adapt[TDI >: I](targetDomain: Domain[TDI], pc: Int): targetDomain.DomainValue =
+        override def adapt[ThatI >: I](targetDomain: Domain[ThatI], pc: Int): targetDomain.DomainValue =
             targetDomain match {
-                case d: DefaultTypeLevelLongValues[I] ⇒
-                    // "this" value does not have a dependency on this domain instance  
-                    this.asInstanceOf[targetDomain.DomainValue]
+                case thatDomain: DefaultTypeLevelDoubleValues[ThatI] ⇒
+                    thatDomain.DoubleValue.asInstanceOf[targetDomain.DomainValue]
                 case _ ⇒ super.adapt(targetDomain, pc)
             }
     }
 
-    def newLongValue(): LongValue = LongValue
+    def newDoubleValue(): DoubleValue = DoubleValue
 
-    def newLongValue(pc: Int): DomainValue = LongValue
+    def newDoubleValue(pc: Int): DomainValue = DoubleValue
 
-    def newLongValue(pc: Int, value: Long): LongValue = LongValue
+    def newDoubleValue(pc: Int, value: Double): DoubleValue = DoubleValue
 }
+
 
 

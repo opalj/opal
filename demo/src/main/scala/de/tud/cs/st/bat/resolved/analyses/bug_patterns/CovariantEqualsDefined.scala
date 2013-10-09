@@ -58,7 +58,9 @@ class CovariantEqualsMethodDefined[Source]
     // Implementation
     //
 
-    def analyze(project: Project[Source]): Iterable[ClassBasedReport[Source]] = {
+    def analyze(
+        project: Project[Source],
+        parameters: Seq[String] = List.empty): Iterable[ClassBasedReport[Source]] = {
 
         val mutex = new Object
         var reports = List[ClassBasedReport[Source]]()

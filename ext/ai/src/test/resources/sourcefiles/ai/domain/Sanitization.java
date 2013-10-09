@@ -30,78 +30,98 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package util
-package graphs
+package ai.domain;
 
 /**
- * Represents a node of a graph.
- *
- * @see [[de.tud.cs.st.bat.resolved.analyses.ClassHierarchy]]'s `toGraph` method for
- *      an example usage.
- *
+ * Methods that perform some operation and do some sanitization.
+ * 
  * @author Michael Eichberg
  */
-trait Node {
+@SuppressWarnings("all")
+public class Sanitization {
 
-    /**
-     * Returns a textual representation of this node.
-     */
-    def toHRR: Option[String]
+    static void sanitize(String s) { /* do nothing */
+    }
 
-    /**
-     * An identifier that uniquely identifies this node.
-     */
-    def uniqueId: Int
+    void notSanitized1(String s) {
+        return;
+    }
 
-    /**
-     * Applies the given function for each successor node.
-     */
-    def foreachSuccessor(f: Node ⇒ _): Unit
+    void notSanitized2(String s) {
+        if (System.nanoTime() > 0) {
+            sanitize(s);
+        }
+    }
 
-    /**
-     * Returns `true` if this node has successor nodes.
-     */
-    def hasSuccessors(): Boolean
+    void sanitized1(String s) {
+        sanitize(s);
+    }
 
+    void sanitized2(String s) {
+        if (System.nanoTime() > 0) {
+            sanitize(s);
+        } else {
+            System.gc();
+            sanitize(s);
+        }
+    }
+
+    void sanitized3(String s) {
+        if (s == null) {
+            System.gc();
+            sanitize(s);
+            return;
+        }
+
+        if (s != null) {
+            sanitize(s);
+            return;
+        }
+    }
+
+    void sanitized4(String s) {
+        sanitize(s);
+        if (s == null) {
+            System.out.println("null");
+            return;
+        }
+
+        if (s != null) {
+            System.out.println(s);
+            return;
+        }
+    }
+
+    void sanitized5(String s) {
+        if (s == null) {
+            System.gc();
+        }
+        sanitize(s);
+        if (s != null) {
+            System.gc();
+        }
+    }
+    
+    void sanitized6(String s) {
+        if (s == null) {
+            System.gc();
+        }
+        sanitize(s);
+        if (s != null) {
+            System.gc();
+            return;
+        }
+    }
+    
+
+    void sanitized7(String s) {
+        if (s == null) {
+            System.gc();
+            sanitize(s);
+        }
+
+        if (s != null) {
+            sanitize(s);
+        }
+    }
 }
-
-/**
- * Represents a node of a directed graph.
- *
- * ==Thread Safety==
- * This class is thread-safe.
- *
- * @see The demo project for example usages.
- *
- * @author Michael Eichberg
- */
-final class SimpleNode[I](
-        val identifier: I,
-        val identifierToString: I ⇒ String = (i: I) ⇒ i.toString,
-        private var children: List[Node] = List.empty) extends Node {
-
-    def toHRR = Some(identifierToString(identifier))
-
-    def uniqueId: Int = identifier.hashCode()
-
-    def addChild(node: Node) {
-        children.synchronized(children = node :: children)
-    }
-
-    def removedLastAddedChild() {
-        children.synchronized(children = children.tail)
-    }
-
-    def removedChild(node: Node) {
-        children.synchronized(children = children.filterNot(_ == node))
-    }
-
-    def foreachSuccessor(f: Node ⇒ _) {
-        children.synchronized(children.foreach(f))
-    }
-
-    def hasSuccessors(): Boolean = children.synchronized(children.nonEmpty)
-
-}
-

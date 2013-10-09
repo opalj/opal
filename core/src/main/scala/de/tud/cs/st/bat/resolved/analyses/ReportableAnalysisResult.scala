@@ -190,7 +190,9 @@ case class ReportableAnalysisAdapter[Source, AnalysisResult](
     def description = analysis.description
     override def title = analysis.title
     override def copyright = analysis.copyright
-    def analyze(project: Project[Source]): ReportableAnalysisResult = {
+    def analyze(
+        project: Project[Source],
+        parameters: Seq[String]): ReportableAnalysisResult = {
         new BasicReport(converter(analysis.analyze(project)))
     }
 }

@@ -51,13 +51,13 @@ import reflect.ClassTag
  * possible to implement a new domain by inheriting from this trait it is recommended
  * to first study the already implemented domains and to use one of them as a foundation.
  * To facilitate the usage of BATAI several classes/traits that implement parts of
- * the `Domain` trait are pre-defined and can be mixed in when needed.
+ * the `Domain` trait are pre-defined and can be combined when needed.
  *
  * ==Control Flow==
  * BATAI controls the process of evaluating the code of a method, but requires a
  * domain to perform the actual computations of an instruction's result. E.g., to
- * calculate the result of adding two integer values, the comparison of two object
- * instances or the result of converting a long value to an int value.
+ * calculate the result of adding two integer values or to perform the comparison of two object
+ * instances or to get the result of converting a `long` value to an `int` value.
  * Handling of instructions that manipulate the stack (e.g. `dup`), that move values
  * between the stack and the locals (e.g., `aload_X`) or that determine the control
  * flow is, however, completely embedded into BATAI.
@@ -151,15 +151,17 @@ trait Domain[+I] {
          * perform subsequent computations. Hence, if `this` value subsumes the given
          * value the result has to be either a `NoUpdate` or a `MetaInformationUpdate`.
          * In case that the given value subsumes `this` value, the result has to be
-         * a `StructuralUpdate`. Hence, the merge operation is not commutative.
+         * a `StructuralUpdate`. Hence, the merge operation is not commutative. If the
+         * result is a `StructuralUpdate` BATAI will continue with the interpretation.
          *
          * The termination of the abstract interpretation directly depends on the fact
          * that at some point all values are fixed and don't change anymore. Hence,
          * it is important that the type of the update is only a
-         * [[de.tud.cs.st.bat.resolved.ai.StructuralUpdate]] if the value has changed.
+         * [[de.tud.cs.st.bat.resolved.ai.StructuralUpdate]] if the value has changed in
+         * a way relevant for future computations performed with this value.
          * In other words, when two values are merged it has to be ensured that no
-         * fall back occurs. E.g., if you merge the existing integer value 0 and
-         * the given value 1 and the result would be 1, then it must be ensured that
+         * fall back to a previous value occurs. E.g., if you merge the existing integer
+         * value 0 and the given value 1 and the result would be 1, then it must be ensured that
          * a subsequent merge will never result in the value 0 again.
          *
          * ==Merging Of Incompatible Values==
@@ -179,9 +181,13 @@ trait Domain[+I] {
         def merge(pc: Int, value: DomainValue): Update[DomainValue]
 
         /**
-         * Adapts this value to the given domain.
+         * Adapts this value to the given domain. This is primarily necessary when
+         * you want to analyze a method that is called by the currently analyzed method
+         * and want to adapt this domain's values (the parameters of the method) to the
+         * domain used for analyzing the called method.
          *
-         * The `adapt` method is BATAIs main mechanism to enable dynamic domain-adaptation.
+         * Additionally, the `adapt` method is BATAIs main mechanism to enable dynamic
+         * domain-adaptation.
          * I.e., to make it possible to change the abstract domain at runtime if the
          * analysis time takes too long using a (more) precise domain.
          */
@@ -301,10 +307,12 @@ trait Domain[+I] {
 
         private[Domain] override def asReturnAddressValue: Int = address
 
-        override def adapt[ThatI >: I](targetDomain: Domain[ThatI], pc: Int): targetDomain.DomainValue =
+        override def adapt[ThatI >: I](
+            targetDomain: Domain[ThatI],
+            pc: Int): targetDomain.DomainValue =
             targetDomain.ReturnAddressValue(address)
 
-        override def toString = "ReturnAddress: "+address
+        override def toString = "ReturnAddress("+address+")"
     }
 
     /**
@@ -348,7 +356,7 @@ trait Domain[+I] {
      * values are given and initial values need to be generated. This method is not
      * used elsewhere by BATAI.
      *
-     * BATAI uses the pc -1 for the first parameter and -2 for the second...
+     * BATAI assigns the pc "-1" to the first parameter and -2 for the second...
      *
      * @note This method is primarily a convenience method.
      */
@@ -366,7 +374,7 @@ trait Domain[+I] {
     }
 
     /**
-     * Factory method to create a representation of a boolean value if we now the
+     * Factory method to create a representation of a boolean value if we know the
      * origin of the value.
      */
     def newBooleanValue(pc: Int): DomainValue
@@ -1198,6 +1206,14 @@ trait Domain[+I] {
     // GENERAL METHODS
     //
     //
+
+    def hasProperties(pc: Int): Option[String] = None
+
+    /**
+     * This function is called by BATAI after performing a computation; i.e., after
+     * evaluating an instruction.
+     */
+    def flow(currentPC: Int, successorPC: Int): Boolean = false
 
     /**
      * Merges the given operand stacks and local variables.

@@ -67,7 +67,7 @@ class MethodsWithArraysTest
     private def evaluateMethod(name: String, f: RecordingDomain[String] ⇒ Unit) {
         val domain = new RecordingDomain(name); import domain._
         val method = classFile.methods.find(_.name == name).get
-        val result = AI(classFile, method, domain)
+        val result = BaseAI(classFile, method, domain)
 
         util.Util.dumpOnFailureDuringValidation(
             Some(classFile),
@@ -84,7 +84,7 @@ class MethodsWithArraysTest
         evaluateMethod("byteArrays", domain ⇒ {
             import domain._
             domain.returnedValues should be(
-                Set(("ireturn", newByteValue))
+                Set(("ireturn", 15, newByteValue))
             )
         })
     }
@@ -93,7 +93,7 @@ class MethodsWithArraysTest
         evaluateMethod("booleanArrays", domain ⇒ {
             import domain._
             domain.returnedValues should be(
-                Set(("ireturn", newBooleanValue))
+                Set(("ireturn", 14, newBooleanValue))
             )
         })
     }
