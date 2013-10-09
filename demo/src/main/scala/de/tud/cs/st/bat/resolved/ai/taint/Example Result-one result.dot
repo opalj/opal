@@ -1,0 +1,11 @@
+digraph G {
+	1403959531[label="Some user of the API"];
+	1403959531 -> -2119368613;
+	-2119368613[label="(List(-2),com/sun/org/apache/bcel/internal/util/ClassLoader{ java.lang.Class loadClass(java.lang.String,boolean) })"];
+	-2119368613 -> -308419509;
+	-2119368613 -> -308419509;
+	-308419509[label="153: Class.forName(java.lang.String(pc=-2, isNull=Unknown, isPrecise=true))"];
+	-308419509 -> 1403959531;
+	-308419509[label="153: Class.forName(java.lang.String(pc=-2, isNull=Unknown, isPrecise=true))"];
+	-308419509 -> 1403959531;
+}
