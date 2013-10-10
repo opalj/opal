@@ -91,14 +91,10 @@ class PropertyTracingTest
             def update(pc: Int, newState: Boolean) {
                 propertiesArray(pc) = IsSanitized(newState)
             }
-
         }
 
         def isSanitized(): Boolean = {
-
-            println(identifier+" "+propertiesArray.mkString(", "))
-            println(identifier+" "+returnedValues.map { v ⇒ val (_, pc, _) = v; pc }.map(getProperty(_)).mkString(","))
-
+            //println(identifier+" "+returnedValues.map { v ⇒ val (_, pc, _) = v; pc }.map(getProperty(_)).mkString(","))
             returnedValues.forall { v ⇒ val (_, pc, _) = v; getProperty(pc).state }
         }
     }
@@ -123,10 +119,9 @@ class PropertyTracingTest
                 if (name == "sanitize" && origin(operands.head).exists(_ == -2)) {
                     getProperty(pc).update(pc, true)
                 }
-
+                
                 super.invokestatic(pc, declaringClass, name, methodDescriptor, operands)
             }
-
         }
 
         val method = classFile.methods.find(_.name == name).get

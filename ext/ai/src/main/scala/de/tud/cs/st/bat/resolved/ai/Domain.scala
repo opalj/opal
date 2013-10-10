@@ -1207,11 +1207,26 @@ trait Domain[+I] {
     //
     //
 
+    /**
+     * Returns a string representation of the properties associated with
+     * a specific instruction.
+     *
+     * This method is generally not called by BATAI and is primarily
+     * used to facilitate debugging.
+     */
     def hasProperties(pc: Int): Option[String] = None
 
     /**
-     * This function is called by BATAI after performing a computation; i.e., after
-     * evaluating an instruction.
+     * This function is called by BATAI after performing a computation; that is, after
+     * evaluating the effect of an instruction on the stack and register.
+     * This function basically informs the domain about which instruction(s)
+     * will be executed next. In general, after the evaluation of some instruction
+     * (even those that are domain independent) the flow function is called one or
+     * more times (e.g., in case of `if` or `switch` instructions.) This enables
+     * the domain to precisely follow the evaluation progress and in particular to perform
+     * control-flow dependent analyses.
+     * 
+     * The `flow` method is called before the `merge` method.
      */
     def flow(currentPC: Int, successorPC: Int): Boolean = false
 

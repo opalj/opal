@@ -41,13 +41,14 @@ import scala.util.control.ControlThrowable
 /**
  * A highly-configurable interpreter for BAT's resolved representation of Java bytecode.
  * This interpreter basically iterates over all instructions and computes the result
- * of each instruction using an exchangeable abstract `Domain` object.
+ * of each instruction using an exchangeable abstract
+ * [[de.tud.cs.st.bat.resolved.ai.Domain]] object.
  *
  * ==Interacting with BATAI==
  * The primary means how to make use of the abstract interpreter is to perform
  * an abstract interpretation of a method using a customized Domain. This
  * customized domain can then be used to build, e.g., a call graph or to
- * do other intra/interprocedural analyses. Additionally it is possible to analyze the
+ * do other intra-/interprocedural analyses. Additionally it is possible to analyze the
  * result of an abstract interpretation.
  *
  * ==Thread Safety==
@@ -71,9 +72,12 @@ trait AI[D <: Domain[_]] {
     import AI._
 
     /**
+     * Determines whether a running (or to be started) abstract interpretation
+     * should be interrupted.
+     *
      * Called during the abstract interpretation of a method to determine whether
      * the computation should be aborted. This method is always called before the
-     * evaluation of an instruction.
+     * evaluation of the next instruction.
      *
      * @note When the abstract interpreter is currently waiting on the result of the
      *    interpretation of a called method, it may take some time before the
@@ -101,12 +105,30 @@ trait AI[D <: Domain[_]] {
         method: Method,
         domain: D) = perform(classFile, method, domain)(None)
 
+    /**
+     * Returns the initial set of operands when a new method is analyzed.
+     *
+     * This method is called by the `perform` method with the same signature.
+     *
+     * In general, an empty set is returned as the JVM specification mandates
+     * that the operand stack is empty at the very beginning.
+     */
     protected def initialOperands(
         classFile: ClassFile,
         method: Method,
         domain: D): List[domain.DomainValue] =
         List.empty[domain.DomainValue]
 
+    /**
+     * Returns the initial register assignment that is used when analyzing a new
+     * method. If no initial assignment is provided (`someLocals == None`) BATAI
+     * will automatically create a valid assignment.
+     *
+     * This method is called by the `perform` method with the same signature.
+     *
+     * Initially, only the registers that contain the methods parameters (including
+     * the self reference (`this`)) are used.
+     */
     protected def initialLocals(
         classFile: ClassFile,
         method: Method,
@@ -201,7 +223,11 @@ trait AI[D <: Domain[_]] {
                 initialLocals(classFile, method, domain)(someLocals))
     }
 
-    def perform(
+    /**
+     * Performs an abstract interpretation of the given code snippet using
+     * the given domain and the initial operand stack and initial register assignment.
+     */
+    protected[ai] def perform(
         code: Code,
         domain: D)(
             initialOperands: List[domain.DomainValue],
@@ -452,7 +478,7 @@ trait AI[D <: Domain[_]] {
                         }
                     }
                     // If "isHandled" is true, we are sure that at least one 
-                    // handler will catch the exception... hence this method
+                    // handler caught the exception... hence this method
                     // invocation will not complete abruptly.
                     if (!isHandled)
                         abruptMethodExecution(pc, exceptionValue)
@@ -1601,11 +1627,24 @@ private[ai] object CTC2 {
 }
 
 /**
+ * Abstract interpreter that (in combination with an appropriate domain) 
+ * facilitates the analysis of properties that are control-flow dependent.
+ *
+ * Basically this abstract interpreter can be used as a drop-in replacement
+ * of the default abstract interpreter if the domain supports property 
+ * tracing.
+ *   
  * @author Michael Eichberg
  */
 trait AIWithPropertyTracing[D <: domain.PropertyTracing[_]] extends AI[D] {
 
-    override def perform(
+    /**
+     * Performs an abstract interpretation of the given code snippet. 
+     * 
+     * Before actually starting the interpretation the domain is called to
+     * let it initialize its properties. 
+     */
+    override protected[ai] def perform(
         code: Code,
         domain: D)(
             initialOperands: List[domain.DomainValue],

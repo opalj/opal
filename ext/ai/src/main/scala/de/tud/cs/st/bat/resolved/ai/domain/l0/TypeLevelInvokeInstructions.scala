@@ -108,19 +108,6 @@ trait TypeLevelInvokeInstructions { this: Domain[_] ⇒
         ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
 }
 
-sealed abstract class DomainValues[D <: Domain[_]] {
-    val domain: D
-    val values: IndexedSeq[D#DomainValue]
-}
-
-object DomainValues {
-    def apply[I](valuesDomain: Domain[I])(domainValues: IndexedSeq[valuesDomain.DomainValue]) = {
-        new DomainValues[valuesDomain.type] {
-            val domain: valuesDomain.type = valuesDomain
-            val values: IndexedSeq[domain.DomainValue] = domainValues
-        }
-    }
-}
 
 //trait PerformInvocations[+I, Source]
 //        extends Domain[I]

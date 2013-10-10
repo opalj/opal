@@ -38,57 +38,21 @@ package domain
 
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
+sealed abstract class DomainValues[D <: Domain[_]] {
+    val domain: D
+    val values: IndexedSeq[domain.DomainValue]
+}
+
 /**
- * Representation of some property.
- *
- * @author Michael Eichberg
+ * Factory for creating `DomainValues` objects.
  */
-trait PropertyTracing[+I] extends Domain[I] { domain ⇒
-
-    trait Property {
-        def merge(otherProperty: DomainProperty): Update[DomainProperty]
-    }
-
-    type DomainProperty <: Property
-
-    def initialPropertyValue(): DomainProperty
-
-    implicit val DomainPropertyTag: reflect.ClassTag[DomainProperty]
-
-    protected var propertiesArray: Array[DomainProperty] = _
-
-    def initProperties(
-        code: Code,
-        operandsArray: List[this.type#DomainValue],
-        localsArray: Array[this.type#DomainValue]) = {
-
-        this.propertiesArray = new Array(code.instructions.size)
-        this.propertiesArray(0) = initialPropertyValue()
-    }
-
-    def getProperty(pc: Int): DomainProperty = {
-        propertiesArray(pc)
-    }
-
-    override def hasProperties(pc: Int): Option[String] =
-        Option(propertiesArray(pc)).map(_.toString())
-
-    override def flow(currentPC: Int, successorPC: Int): Boolean = {
-        if (propertiesArray(successorPC) eq null) {
-            propertiesArray(successorPC) = propertiesArray(currentPC)
-            true
-        } else {
-            propertiesArray(successorPC) merge propertiesArray(currentPC) match {
-                case NoUpdate ⇒ false
-                case StructuralUpdate(property) ⇒
-                    propertiesArray(successorPC) = property
-                    true
-                case MetaInformationUpdate(property) ⇒
-                    propertiesArray(successorPC) = property
-                    false
-            }
+object DomainValues {
+    def apply[I](
+        valuesDomain: Domain[I])(
+            domainValues: IndexedSeq[valuesDomain.DomainValue]) = {
+        new DomainValues[valuesDomain.type] {
+            val domain: valuesDomain.type = valuesDomain
+            val values: IndexedSeq[domain.DomainValue] = domainValues
         }
     }
 }
-
-
