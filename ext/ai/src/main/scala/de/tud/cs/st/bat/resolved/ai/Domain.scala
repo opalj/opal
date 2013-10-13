@@ -49,15 +49,17 @@ import reflect.ClassTag
  * and some (user defined) domain. I.e., this interface defines all methods that
  * are needed by BATAI to perform an abstract interpretation. While it is perfectly
  * possible to implement a new domain by inheriting from this trait it is recommended
- * to first study the already implemented domains and to use one of them as a foundation.
+ * to first study the already implemented domains and to use them as a foundation.
  * To facilitate the usage of BATAI several classes/traits that implement parts of
- * the `Domain` trait are pre-defined and can be combined when needed.
+ * the `Domain` trait are pre-defined and can be flexibly combined when needed.
  *
  * ==Control Flow==
  * BATAI controls the process of evaluating the code of a method, but requires a
  * domain to perform the actual computations of an instruction's result. E.g., to
- * calculate the result of adding two integer values or to perform the comparison of two object
- * instances or to get the result of converting a `long` value to an `int` value.
+ * calculate the result of adding two integer values or to perform the comparison
+ * of two object instances or to get the result of converting a `long` value to an
+ * `int` value.
+ *
  * Handling of instructions that manipulate the stack (e.g. `dup`), that move values
  * between the stack and the locals (e.g., `aload_X`) or that determine the control
  * flow is, however, completely embedded into BATAI.
@@ -65,10 +67,9 @@ import reflect.ClassTag
  * ==Thread Safety==
  * When every analyzed method is associated with a unique `Domain` instance and – given
  * that BATAI only uses one thread to analyze a given method at a time – no special care
- * has to be taken. However, if a domain needs to consult a domain which is associated with
- * a project as a whole, which we will refer to as "World" in BATAI, it is then the
- * responsibility of the domain to make sure that coordination with the world is thread
- * safe.
+ * has to be taken. However, if a domain needs to consult another domain which is, e.g,
+ * associated with a project as a whole, it is then the responsibility of the domain to
+ * make sure that coordination with the world is thread safe.
  *
  * @note BATAI assumes that conceptually every method/code block is associated
  *      with its own instance of a domain object.
@@ -81,7 +82,8 @@ import reflect.ClassTag
 trait Domain[+I] {
 
     /**
-     * Returns the value that identifies this domain (method).
+     * Returns the value that identifies this domain (usually it is loosely
+     * connected to the analyzed method).
      *
      * This value may subsequently be used to identify/track object instances but – if
      * so – this happens at the sole responsibility of the domain. BATAI does
@@ -106,7 +108,7 @@ trait Domain[+I] {
      * exception are, of course, classes that directly inherit from this class.
      *
      * ==Extending Value==
-     * If you directly extend this trait (i.e., in a subclass of the `Domain` trait
+     * If you directly extend/refine this trait (i.e., in a subclass of the `Domain` trait
      * you write something like `trait Value extends super.Value`), make sure that
      * you also extend all classes/traits that inherit from this type
      * (this may require a deep mixin composition and that you refine the type
@@ -115,10 +117,8 @@ trait Domain[+I] {
      * – not be necessary.
      *
      * Please note, that standard inheritance from this trait is always
-     * supported and is the primary mechanism to model an abstract domain's lattice.
-     * ''Extending Value'' in this case refers to a class that inherits from `Domain`
-     * and that defines a new class `Value` that inherits from this class and where
-     * we redefine `DomainValue`.
+     * supported and is the primary mechanism to model an abstract domain's lattice
+     * w.r.t. some special type of value.
      */
     trait Value { this: DomainValue ⇒
 
@@ -136,12 +136,15 @@ trait Domain[+I] {
         def computationalType: ComputationalType
 
         /**
-         * Merges this value with the given value.
+         * Join of this value and the given value.
          *
-         * This basically implements the join operator of complete lattices.
+         * This basically implements the join operator of complete lattices. Join is
+         * called whenever two control-flow paths join and, hence, the values found
+         * on the paths need to be joined. This method is called whenever two
+         * '''intra-procedural''' control-flow paths join.
          *
          * ==Example==
-         * For example, merging a `DomainValue` that represents the integer value 0
+         * For example, joining a `DomainValue` that represents the integer value 0
          * with a `DomainValue` that represents the integer value 1 may return a new
          * `DomainValue` that precisely captures the range or that captures all positive
          * integer values or just '''some integer value'''.
@@ -151,7 +154,7 @@ trait Domain[+I] {
          * perform subsequent computations. Hence, if `this` value subsumes the given
          * value the result has to be either a `NoUpdate` or a `MetaInformationUpdate`.
          * In case that the given value subsumes `this` value, the result has to be
-         * a `StructuralUpdate`. Hence, the merge operation is not commutative. If the
+         * a `StructuralUpdate`. Hence, '''the join operation is not commutative'''. If the
          * result is a `StructuralUpdate` BATAI will continue with the interpretation.
          *
          * The termination of the abstract interpretation directly depends on the fact
@@ -159,15 +162,16 @@ trait Domain[+I] {
          * it is important that the type of the update is only a
          * [[de.tud.cs.st.bat.resolved.ai.StructuralUpdate]] if the value has changed in
          * a way relevant for future computations performed with this value.
-         * In other words, when two values are merged it has to be ensured that no
-         * fall back to a previous value occurs. E.g., if you merge the existing integer
-         * value 0 and the given value 1 and the result would be 1, then it must be ensured that
-         * a subsequent merge will never result in the value 0 again.
+         * In other words, when two values are joined it has to be ensured that no
+         * fall back to a previous value occurs. E.g., if you join the existing integer
+         * value 0 and the given value 1 and the result would be 1, then it must be
+         * ensured that a subsequent join with the value 0 will not result in the value
+         * 0 again.
          *
-         * ==Merging Of Incompatible Values==
+         * ==Joining Incompatible Values==
          * If this value is incompatible with the given value the result has
          * to be an `IllegalValue`. This may happen, e.g., when BATAI tries to
-         * merge two register values/locals that are not live (i.e., which should not be
+         * join two register values/locals that are not live (i.e., which should not be
          * live) and, hence, are actually allowed to contain incompatible values.
          * (`Not live` means that the value will not be used in the future.)
          *
@@ -178,27 +182,35 @@ trait Domain[+I] {
          * @param pc The program counter of the instruction where the paths converge.
          * @param value The "new" domain value.
          */
-        def merge(pc: Int, value: DomainValue): Update[DomainValue]
+        def join(pc: PC, value: DomainValue): Update[DomainValue]
+
+        def summarize(pc: PC): DomainValue
+
+        def summarize(pc: PC, value: DomainValue): DomainValue
 
         /**
-         * Adapts this value to the given domain. This is primarily necessary when
-         * you want to analyze a method that is called by the currently analyzed method
-         * and want to adapt this domain's values (the parameters of the method) to the
-         * domain used for analyzing the called method.
+         * Adapts this value to the given domain.
+         *
+         * Supporting the `adapt` method is primarily necessary when  you want to
+         * analyze a method that is called by the currently analyzed method
+         * and you need to adapt this domain's values (the parameters of the method)
+         * to the domain used for analyzing the called method.
          *
          * Additionally, the `adapt` method is BATAIs main mechanism to enable dynamic
-         * domain-adaptation.
-         * I.e., to make it possible to change the abstract domain at runtime if the
-         * analysis time takes too long using a (more) precise domain.
+         * domain-adaptation. I.e., to make it possible to change the abstract domain at
+         * runtime if the analysis time takes too long using a (more) precise domain.
+         *
+         * The `adapt` method is not directly called by BATAI.
          */
-        def adapt[TDI >: I](targetDomain: Domain[TDI], pc: Int): targetDomain.DomainValue =
+        def adapt[TDI >: I](
+            targetDomain: Domain[TDI],
+            pc: PC): targetDomain.DomainValue =
             domainException(
                 Domain.this,
                 "adapting this value for the target domain is not supported")
 
-        private[Domain] def asReturnAddressValue: Int =
+        private[Domain] def asReturnAddressValue: PC =
             BATException("this value cannot be converted to a return address")
-
     }
 
     /**
@@ -232,18 +244,32 @@ trait Domain[+I] {
     type ⊥ = IllegalValue
     protected class IllegalValue extends Value { this: DomainIllegalValue ⇒
 
-        final def computationalType: ComputationalType =
+        final override def computationalType: ComputationalType =
             domainException(
                 Domain.this,
-                "a dead value does not have a computational type")
+                "a dead/an illegal value does not have a computational type")
 
-        final def merge(pc: Int, value: DomainValue): Update[DomainValue] =
+        override def join(pc: PC, value: DomainValue): Update[DomainValue] =
             if (value == TheIllegalValue)
                 NoUpdate
             else
                 MetaInformationUpdateIllegalValue
 
-        override def adapt[ThatI >: I](targetDomain: Domain[ThatI], pc: Int): targetDomain.DomainValue =
+        override def summarize(pc: PC): DomainValue =
+            domainException(
+                Domain.this,
+                "creating a summary of an IllegalValue is not supported")
+
+        override def summarize(
+            pc: PC,
+            value: DomainValue): DomainValue =
+            domainException(
+                Domain.this,
+                "merging IllegalValue is not supported")
+
+        override def adapt[ThatI >: I](
+            targetDomain: Domain[ThatI],
+            pc: PC): targetDomain.DomainValue =
             targetDomain.TheIllegalValue
 
         override def toString: String = "IllegalValue"
@@ -294,22 +320,34 @@ trait Domain[+I] {
      *      as these additional methods will never be called by BATAI.
      */
     class ReturnAddressValue(
-        val address: Int)
+        val address: PC)
             extends Value { this: DomainReturnAddressValue ⇒
 
-        final def computationalType: ComputationalType = ComputationalTypeReturnAddress
+        private[Domain] final override def asReturnAddressValue: Int = address
 
-        final def merge(pc: Int, value: DomainValue): Update[DomainValue] =
+        final override def computationalType: ComputationalType = ComputationalTypeReturnAddress
+
+        override def join(pc: PC, value: DomainValue): Update[DomainValue] =
             if (address == value.asReturnAddressValue)
                 NoUpdate
             else
-                BATException("return address values cannot be merged")
+                domainException(Domain.this, "return address values cannot be merged")
 
-        private[Domain] override def asReturnAddressValue: Int = address
+        override def summarize(pc: PC): DomainValue =
+            domainException(
+                Domain.this,
+                "creating a summary of a return address value is not supported")
+
+        override def summarize(
+            pc: PC,
+            value: DomainValue): DomainValue =
+            domainException(
+                Domain.this,
+                "merging return addresses is not supported")
 
         override def adapt[ThatI >: I](
             targetDomain: Domain[ThatI],
-            pc: Int): targetDomain.DomainValue =
+            pc: PC): targetDomain.DomainValue =
             targetDomain.ReturnAddressValue(address)
 
         override def toString = "ReturnAddress("+address+")"
@@ -343,7 +381,7 @@ trait Domain[+I] {
     /**
      * Factory method to create an instance of a `ReturnAddressValue`.
      */
-    def ReturnAddressValue(address: Int): DomainReturnAddressValue
+    def ReturnAddressValue(address: PC): DomainReturnAddressValue
 
     /**
      * Factory method to create domain values with a specific type. I.e., values for
@@ -360,7 +398,7 @@ trait Domain[+I] {
      *
      * @note This method is primarily a convenience method.
      */
-    def newTypedValue(pc: Int, valueType: Type): DomainValue = valueType match {
+    def newTypedValue(pc: PC, valueType: Type): DomainValue = valueType match {
         case BooleanType       ⇒ newBooleanValue(pc)
         case ByteType          ⇒ newByteValue(pc)
         case ShortType         ⇒ newShortValue(pc)
@@ -377,44 +415,44 @@ trait Domain[+I] {
      * Factory method to create a representation of a boolean value if we know the
      * origin of the value.
      */
-    def newBooleanValue(pc: Int): DomainValue
+    def newBooleanValue(pc: PC): DomainValue
 
     /**
      * Factory method to create a representation of a boolean value with the given value.
      */
-    def newBooleanValue(pc: Int, value: Boolean): DomainValue
+    def newBooleanValue(pc: PC, value: Boolean): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or
      * implicitly) by the instruction with the specified program counter.
      */
-    def newByteValue(pc: Int): DomainValue
+    def newByteValue(pc: PC): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given byte value
      * and that was created (explicitly or implicitly) by the instruction with the
      * specified program counter.
      */
-    def newByteValue(pc: Int, value: Byte): DomainValue
+    def newByteValue(pc: PC, value: Byte): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or
      * implicitly) by the instruction with the specified program counter.
      */
-    def newShortValue(pc: Int): DomainValue
+    def newShortValue(pc: PC): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given short value
      * and that was created (explicitly or implicitly) by the instruction with the
      * specified program counter.
      */
-    def newShortValue(pc: Int, value: Short): DomainValue
+    def newShortValue(pc: PC, value: Short): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or
      * implicitly) by the instruction with the specified program counter.
      */
-    def newCharValue(pc: Int): DomainValue
+    def newCharValue(pc: PC): DomainValue
 
     /**
      * Factory method to create a representation of the integer constant value 0.
@@ -429,67 +467,67 @@ trait Domain[+I] {
      * Factory method to create a `DomainValue` that was created (explicitly or
      * implicitly) by the instruction with the specified program counter.
      */
-    def newIntegerValue(pc: Int): DomainValue
+    def newIntegerValue(pc: PC): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given integer value
      * and that was created (explicitly or implicitly) by the instruction with the
      * specified program counter.
      */
-    def newIntegerValue(pc: Int, value: Int): DomainValue
+    def newIntegerValue(pc: PC, value: Int): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or
      * implicitly) by the instruction with the specified program counter.
      */
-    def newFloatValue(pc: Int): DomainValue
+    def newFloatValue(pc: PC): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given float value
      * and that was created (explicitly or implicitly) by the instruction with the
      * specified program counter.
      */
-    def newFloatValue(pc: Int, value: Float): DomainValue
+    def newFloatValue(pc: PC, value: Float): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or
      * implicitly) by the instruction with the specified program counter.
      */
-    def newLongValue(pc: Int): DomainValue
+    def newLongValue(pc: PC): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given long value
      * and that was created (explicitly or implicitly) by the instruction with the
      * specified program counter.
      */
-    def newLongValue(pc: Int, value: Long): DomainValue
+    def newLongValue(pc: PC, value: Long): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or
      * implicitly) by the instruction with the specified program counter.
      */
-    def newDoubleValue(pc: Int): DomainValue
+    def newDoubleValue(pc: PC): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given double value
      * and that was created (explicitly or implicitly) by the instruction with the
      * specified program counter.
      */
-    def newDoubleValue(pc: Int, value: Double): DomainValue
+    def newDoubleValue(pc: PC, value: Double): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents a `null` value and
      * and that was created (explicitly or implicitly) by the instruction with the
      * specified program counter.
      */
-    def newNullValue(pc: Int): DomainValue
+    def newNullValue(pc: PC): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents a new, '''initialized'''
      * object of the given type and that was created (explicitly or
      * implicitly) by the instruction with the specified program counter.
      */
-    def newReferenceValue(pc: Int, referenceType: ReferenceType): DomainValue
+    def newReferenceValue(pc: PC, referenceType: ReferenceType): DomainValue
 
     /**
      * Factory method to create a new `DomainValue` that represents a new,
@@ -504,7 +542,7 @@ trait Domain[+I] {
      * 		`multianewarray` instructions and in both cases an exception may be thrown
      *   	(e.g., `NegativeArraySizeException`).
      */
-    def newObject(pc: Int, objectType: ObjectType): DomainValue
+    def newObject(pc: PC, objectType: ObjectType): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents a new, '''initialized'''
@@ -515,20 +553,20 @@ trait Domain[+I] {
      * internally created by the JVM (in particular exceptions such as
      * `NullPointExeception` and `ClassCastException`).
      */
-    def newInitializedObject(pc: Int, objectType: ObjectType): DomainValue
+    def newInitializedObject(pc: PC, objectType: ObjectType): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given string value
      * and that was created by the instruction with the specified program counter.
      */
-    def newStringValue(pc: Int, value: String): DomainValue
+    def newStringValue(pc: PC, value: String): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents a runtime value of
      * type "`Class&lt;T&gt;`" and that was created by the instruction with the
      * specified program counter.
      */
-    def newClassValue(pc: Int, t: Type): DomainValue
+    def newClassValue(pc: PC, t: Type): DomainValue
 
     // -----------------------------------------------------------------------------------
     //
@@ -741,9 +779,9 @@ trait Domain[+I] {
      */
     type Locals = Array[DomainValue]
 
-    type SingleValueConstraint = (( /* pc :*/ Int, DomainValue, Operands, Locals) ⇒ (Operands, Locals))
+    type SingleValueConstraint = ((PC, DomainValue, Operands, Locals) ⇒ (Operands, Locals))
 
-    type TwoValuesConstraint = (( /* pc :*/ Int, DomainValue, DomainValue, Operands, Locals) ⇒ (Operands, Locals))
+    type TwoValuesConstraint = ((PC, DomainValue, DomainValue, Operands, Locals) ⇒ (Operands, Locals))
 
     //
     // W.r.t Reference Values
@@ -753,10 +791,11 @@ trait Domain[+I] {
      * value has to be `null` on one branch and that the value is not `null` on the
      * other branch.
      */
-    def establishIsNull(pc: Int,
-                        value: DomainValue,
-                        operands: Operands,
-                        locals: Locals): (Operands, Locals) =
+    def establishIsNull(
+        pc: PC,
+        value: DomainValue,
+        operands: Operands,
+        locals: Locals): (Operands, Locals) =
         (operands, locals)
     private[ai] val IsNull = establishIsNull _
 
@@ -766,10 +805,11 @@ trait Domain[+I] {
      * value has to be `null` on one branch and that the value is not `null` on the
      * other branch.
      */
-    def establishIsNonNull(pc: Int,
-                           value: DomainValue,
-                           operands: Operands,
-                           locals: Locals): (Operands, Locals) =
+    def establishIsNonNull(
+        pc: PC,
+        value: DomainValue,
+        operands: Operands,
+        locals: Locals): (Operands, Locals) =
         (operands, locals)
     private[ai] val IsNonNull = establishIsNonNull _
 
@@ -777,101 +817,109 @@ trait Domain[+I] {
      * Called by BATAI when two values were compared for reference equality and
      * we are currently analyzing the branch where the comparison succeeded.
      */
-    def establishAreEqualReferences(pc: Int,
-                                    value1: DomainValue,
-                                    value2: DomainValue,
-                                    operands: Operands,
-                                    locals: Locals): (Operands, Locals) =
+    def establishAreEqualReferences(
+        pc: PC,
+        value1: DomainValue,
+        value2: DomainValue,
+        operands: Operands,
+        locals: Locals): (Operands, Locals) =
         (operands, locals)
     private[ai] val AreEqualReferences = establishAreEqualReferences _
 
-    def establishAreNotEqualReferences(pc: Int,
-                                       value1: DomainValue,
-                                       value2: DomainValue,
-                                       operands: Operands,
-                                       locals: Locals): (Operands, Locals) =
+    def establishAreNotEqualReferences(
+        pc: PC,
+        value1: DomainValue,
+        value2: DomainValue,
+        operands: Operands,
+        locals: Locals): (Operands, Locals) =
         (operands, locals)
     private[ai] val AreNotEqualReferences = establishAreNotEqualReferences _
 
-    def establishUpperBound(pc: Int,
-                            bound: ReferenceType,
-                            value: DomainValue,
-                            operands: Operands,
-                            locals: Locals): (Operands, Locals) =
+    def establishUpperBound(
+        pc: PC,
+        bound: ReferenceType,
+        value: DomainValue,
+        operands: Operands,
+        locals: Locals): (Operands, Locals) =
         (operands, locals)
 
     //
     // W.r.t. Integer values
 
-    def establishValue(pc: Int,
-                       theValue: Int,
-                       value: DomainValue,
-                       operands: Operands,
-                       locals: Locals): (Operands, Locals) =
+    def establishValue(
+        pc: PC,
+        theValue: Int,
+        value: DomainValue,
+        operands: Operands,
+        locals: Locals): (Operands, Locals) =
         (operands, locals)
 
-    def establishAreEqual(pc: Int,
-                          value1: DomainValue,
-                          value2: DomainValue,
-                          operands: Operands,
-                          locals: Locals): (Operands, Locals) =
+    def establishAreEqual(
+        pc: PC,
+        value1: DomainValue,
+        value2: DomainValue,
+        operands: Operands,
+        locals: Locals): (Operands, Locals) =
         (operands, locals)
     private[ai] val AreEqual = establishAreEqual _
 
-    def establishAreNotEqual(pc: Int,
-                             value1: DomainValue,
-                             value2: DomainValue,
-                             operands: Operands,
-                             locals: Locals): (Operands, Locals) =
+    def establishAreNotEqual(
+        pc: PC,
+        value1: DomainValue,
+        value2: DomainValue,
+        operands: Operands,
+        locals: Locals): (Operands, Locals) =
         (operands, locals)
     private[ai] val AreNotEqual = establishAreNotEqual _
 
-    def establishIsLessThan(pc: Int,
-                            value1: DomainValue,
-                            value2: DomainValue,
-                            operands: Operands,
-                            locals: Locals): (Operands, Locals) =
+    def establishIsLessThan(
+        pc: PC,
+        value1: DomainValue,
+        value2: DomainValue,
+        operands: Operands,
+        locals: Locals): (Operands, Locals) =
         (operands, locals)
     private[ai] val IsLessThan = establishIsLessThan _
 
-    def establishIsLessThanOrEqualTo(pc: Int,
-                                     value1: DomainValue,
-                                     value2: DomainValue,
-                                     operands: Operands,
-                                     locals: Locals): (Operands, Locals) =
+    def establishIsLessThanOrEqualTo(
+        pc: PC,
+        value1: DomainValue,
+        value2: DomainValue,
+        operands: Operands,
+        locals: Locals): (Operands, Locals) =
         (operands, locals)
     private[ai] val IsLessThanOrEqualTo = establishIsLessThanOrEqualTo _
 
     private[ai] val IsGreaterThan: TwoValuesConstraint =
-        (pc: Int, value1: DomainValue, value2: DomainValue, operands: Operands, locals: Locals) ⇒
+        (pc: PC, value1: DomainValue, value2: DomainValue, operands: Operands, locals: Locals) ⇒
             establishIsLessThan(pc, value2, value1, operands, locals)
 
     private[ai] val IsGreaterThanOrEqualTo: TwoValuesConstraint =
-        (pc: Int, value1: DomainValue, value2: DomainValue, operands: Operands, locals: Locals) ⇒
+        (pc: PC, value1: DomainValue, value2: DomainValue, operands: Operands, locals: Locals) ⇒
             establishIsLessThanOrEqualTo(pc, value2, value1, operands, locals)
 
     private[ai] val Is0: SingleValueConstraint =
-        (pc: Int, value: DomainValue, operands: Operands, locals: Locals) ⇒
+        (pc: PC, value: DomainValue, operands: Operands, locals: Locals) ⇒
             establishAreEqual(pc, value, newIntegerConstant0, operands, locals)
 
     private[ai] val IsNot0: SingleValueConstraint =
-        (pc: Int, value: DomainValue, operands: Operands, locals: Locals) ⇒
+        (pc: PC, value: DomainValue, operands: Operands, locals: Locals) ⇒
             establishAreNotEqual(pc, value, newIntegerConstant0, operands, locals)
 
     private[ai] val IsLessThan0: SingleValueConstraint =
-        (pc: Int, value: DomainValue, operands: Operands, locals: Locals) ⇒
+        (pc: PC, value: DomainValue, operands: Operands, locals: Locals) ⇒
             establishIsLessThan(pc, value, newIntegerConstant0, operands, locals)
 
     private[ai] val IsLessThanOrEqualTo0: SingleValueConstraint =
-        (pc: Int, value: DomainValue, operands: Operands, locals: Locals) ⇒
+        (pc: PC, value: DomainValue, operands: Operands, locals: Locals) ⇒
             establishIsLessThanOrEqualTo(pc, value, newIntegerConstant0, operands, locals)
 
     private[ai] val IsGreaterThan0: SingleValueConstraint =
-        (pc: Int, value: DomainValue, operands: Operands, locals: Locals) ⇒
+        (pc: PC, value: DomainValue, operands: Operands, locals: Locals) ⇒
             establishIsLessThan(pc, newIntegerConstant0, value, operands, locals)
 
     private[ai] val IsGreaterThanOrEqualTo0: SingleValueConstraint =
-        (pc: Int, value: DomainValue, operands: Operands, locals: Locals) ⇒
+        (pc: PC, value: DomainValue, operands: Operands, locals: Locals) ⇒
             establishIsLessThanOrEqualTo(pc, newIntegerConstant0, value, operands, locals)
 
     // -----------------------------------------------------------------------------------
@@ -888,7 +936,7 @@ trait Domain[+I] {
     protected type OptionalReturnValueOrExceptions = Computation[Option[DomainValue], Set[DomainValue]]
 
     protected def sideEffectOnlyOrNullPointerException(
-        pc: Int,
+        pc: PC,
         value: DomainValue): SucceedsOrNullPointerException = {
         isNull(value) match {
             case Yes ⇒
@@ -915,12 +963,12 @@ trait Domain[+I] {
      * or some linking exception.
      */
     def newarray(
-        pc: Int,
+        pc: PC,
         count: DomainValue,
         componentType: FieldType): Computation[DomainValue, DomainValue]
 
     def multianewarray(
-        pc: Int,
+        pc: PC,
         counts: List[DomainValue],
         arrayType: ArrayType): Computation[DomainValue, DomainValue]
 
@@ -941,45 +989,45 @@ trait Domain[+I] {
      */
     type ArrayStoreResult = Computation[Nothing, Set[DomainValue]]
 
-    def aaload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
-    def aastore(pc: Int,
+    def aaload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
+    def aastore(pc: PC,
                 value: DomainValue,
                 index: DomainValue, arrayref: DomainValue): ArrayStoreResult
 
-    def baload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
-    def bastore(pc: Int,
+    def baload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
+    def bastore(pc: PC,
                 value: DomainValue,
                 index: DomainValue, arrayref: DomainValue): ArrayStoreResult
 
-    def caload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
-    def castore(pc: Int,
+    def caload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
+    def castore(pc: PC,
                 value: DomainValue,
                 index: DomainValue, arrayref: DomainValue): ArrayStoreResult
 
-    def daload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
-    def dastore(pc: Int,
+    def daload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
+    def dastore(pc: PC,
                 value: DomainValue,
                 index: DomainValue, arrayref: DomainValue): ArrayStoreResult
 
-    def faload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
-    def fastore(pc: Int,
+    def faload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
+    def fastore(pc: PC,
                 value: DomainValue,
                 index: DomainValue, arrayref: DomainValue): ArrayStoreResult
 
-    def iaload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
-    def iastore(pc: Int,
+    def iaload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
+    def iastore(pc: PC,
                 value: DomainValue,
                 index: DomainValue, arrayref: DomainValue): ArrayStoreResult
 
-    def laload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
-    def lastore(pc: Int,
+    def laload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
+    def lastore(pc: PC,
                 value: DomainValue,
                 index: DomainValue, arrayref: DomainValue): ArrayStoreResult
 
-    def saload(pc: Int,
+    def saload(pc: PC,
                index: DomainValue,
                arrayref: DomainValue): ArrayLoadResult
-    def sastore(pc: Int,
+    def sastore(pc: PC,
                 value: DomainValue,
                 index: DomainValue, arrayref: DomainValue): ArrayStoreResult
 
@@ -990,40 +1038,40 @@ trait Domain[+I] {
     /**
      * Returns the array's length or throws a `NullPointerException`.
      */
-    def arraylength(pc: Int, arrayref: DomainValue): Computation[DomainValue, DomainValue]
+    def arraylength(pc: PC, arrayref: DomainValue): Computation[DomainValue, DomainValue]
 
     //
     // TYPE CONVERSION
     //
 
-    def d2f(pc: Int, value: DomainValue): DomainValue
-    def d2i(pc: Int, value: DomainValue): DomainValue
-    def d2l(pc: Int, value: DomainValue): DomainValue
+    def d2f(pc: PC, value: DomainValue): DomainValue
+    def d2i(pc: PC, value: DomainValue): DomainValue
+    def d2l(pc: PC, value: DomainValue): DomainValue
 
-    def f2d(pc: Int, value: DomainValue): DomainValue
-    def f2i(pc: Int, value: DomainValue): DomainValue
-    def f2l(pc: Int, value: DomainValue): DomainValue
+    def f2d(pc: PC, value: DomainValue): DomainValue
+    def f2i(pc: PC, value: DomainValue): DomainValue
+    def f2l(pc: PC, value: DomainValue): DomainValue
 
-    def i2b(pc: Int, value: DomainValue): DomainValue
-    def i2c(pc: Int, value: DomainValue): DomainValue
-    def i2d(pc: Int, value: DomainValue): DomainValue
-    def i2f(pc: Int, value: DomainValue): DomainValue
-    def i2l(pc: Int, value: DomainValue): DomainValue
-    def i2s(pc: Int, value: DomainValue): DomainValue
+    def i2b(pc: PC, value: DomainValue): DomainValue
+    def i2c(pc: PC, value: DomainValue): DomainValue
+    def i2d(pc: PC, value: DomainValue): DomainValue
+    def i2f(pc: PC, value: DomainValue): DomainValue
+    def i2l(pc: PC, value: DomainValue): DomainValue
+    def i2s(pc: PC, value: DomainValue): DomainValue
 
-    def l2d(pc: Int, value: DomainValue): DomainValue
-    def l2f(pc: Int, value: DomainValue): DomainValue
-    def l2i(pc: Int, value: DomainValue): DomainValue
+    def l2d(pc: PC, value: DomainValue): DomainValue
+    def l2f(pc: PC, value: DomainValue): DomainValue
+    def l2i(pc: PC, value: DomainValue): DomainValue
 
     //
     // RETURN FROM METHOD
     //
-    def areturn(pc: Int, value: DomainValue): Unit
-    def dreturn(pc: Int, value: DomainValue): Unit
-    def freturn(pc: Int, value: DomainValue): Unit
-    def ireturn(pc: Int, value: DomainValue): Unit
-    def lreturn(pc: Int, value: DomainValue): Unit
-    def returnVoid(pc: Int): Unit
+    def areturn(pc: PC, value: DomainValue): Unit
+    def dreturn(pc: PC, value: DomainValue): Unit
+    def freturn(pc: PC, value: DomainValue): Unit
+    def ireturn(pc: PC, value: DomainValue): Unit
+    def lreturn(pc: PC, value: DomainValue): Unit
+    def returnVoid(pc: PC): Unit
 
     /**
      * Called by BATAI when an exception is thrown that is not (guaranteed to be) handled
@@ -1033,7 +1081,7 @@ trait Domain[+I] {
      *      the exception that is actually thrown is a new `NullPointerException`. This
      *      situation is, however, completely handled by BATAI.
      */
-    def abruptMethodExecution(pc: Int, exception: DomainValue): Unit
+    def abruptMethodExecution(pc: PC, exception: DomainValue): Unit
 
     //
     // ACCESSING FIELDS
@@ -1045,7 +1093,7 @@ trait Domain[+I] {
      *
      * @return The field's value or a new `NullPointerException`.
      */
-    def getfield(pc: Int,
+    def getfield(pc: PC,
                  objectref: DomainValue,
                  declaringClass: ObjectType,
                  name: String,
@@ -1057,7 +1105,7 @@ trait Domain[+I] {
      *
      * @return The field's value or a new `LinkageException`.
      */
-    def getstatic(pc: Int,
+    def getstatic(pc: PC,
                   declaringClass: ObjectType,
                   name: String,
                   fieldType: FieldType): Computation[DomainValue, DomainValue]
@@ -1065,7 +1113,7 @@ trait Domain[+I] {
     /**
      * Sets the fields values if the given `objectref` is not `null`.
      */
-    def putfield(pc: Int,
+    def putfield(pc: PC,
                  objectref: DomainValue,
                  value: DomainValue,
                  declaringClass: ObjectType,
@@ -1075,7 +1123,7 @@ trait Domain[+I] {
     /**
      * Sets the fields values if the given class can be found.
      */
-    def putstatic(pc: Int,
+    def putstatic(pc: PC,
                   value: DomainValue,
                   declaringClass: ObjectType,
                   name: String,
@@ -1086,25 +1134,25 @@ trait Domain[+I] {
     //
 
     // TODO [AI] Add support for Java7's Invokedynamic to the Domain.
-    def invokeinterface(pc: Int,
+    def invokeinterface(pc: PC,
                         declaringClass: ReferenceType,
                         name: String,
                         methodDescriptor: MethodDescriptor,
                         operands: List[DomainValue]): OptionalReturnValueOrExceptions
 
-    def invokevirtual(pc: Int,
+    def invokevirtual(pc: PC,
                       declaringClass: ReferenceType,
                       name: String,
                       methodDescriptor: MethodDescriptor,
                       operands: List[DomainValue]): OptionalReturnValueOrExceptions
 
-    def invokespecial(pc: Int,
+    def invokespecial(pc: PC,
                       declaringClass: ReferenceType,
                       name: String,
                       methodDescriptor: MethodDescriptor,
                       operands: List[DomainValue]): OptionalReturnValueOrExceptions
 
-    def invokestatic(pc: Int,
+    def invokestatic(pc: PC,
                      declaringClass: ReferenceType,
                      name: String,
                      methodDescriptor: MethodDescriptor,
@@ -1113,19 +1161,19 @@ trait Domain[+I] {
     //
     // RELATIONAL OPERATORS
     //
-    def fcmpg(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def fcmpl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def dcmpg(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def dcmpl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def lcmp(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def fcmpg(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def fcmpl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def dcmpg(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def dcmpl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def lcmp(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
 
     //
     // UNARY EXPRESSIONS
     //
-    def fneg(pc: Int, value: DomainValue): DomainValue
-    def dneg(pc: Int, value: DomainValue): DomainValue
-    def lneg(pc: Int, value: DomainValue): DomainValue
-    def ineg(pc: Int, value: DomainValue): DomainValue
+    def fneg(pc: PC, value: DomainValue): DomainValue
+    def dneg(pc: PC, value: DomainValue): DomainValue
+    def lneg(pc: PC, value: DomainValue): DomainValue
+    def ineg(pc: PC, value: DomainValue): DomainValue
 
     //
     // BINARY EXPRESSIONS
@@ -1136,42 +1184,42 @@ trait Domain[+I] {
      */
     type IntegerDivisionResult = Computation[DomainValue, DomainValue]
 
-    def dadd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def ddiv(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def dmul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def drem(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def dsub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def dadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def ddiv(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def dmul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def drem(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def dsub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
 
-    def fadd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def fdiv(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def fmul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def frem(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def fsub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def fadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def fdiv(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def fmul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def frem(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def fsub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
 
-    def iadd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def iand(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def idiv(pc: Int, value1: DomainValue, value2: DomainValue): IntegerDivisionResult
-    def imul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def ior(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def irem(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def ishl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def ishr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def isub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def iushr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def ixor(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def iinc(pc: Int, value: DomainValue, increment: Int): DomainValue
+    def iadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def iand(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def idiv(pc: PC, value1: DomainValue, value2: DomainValue): IntegerDivisionResult
+    def imul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def ior(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def irem(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def ishl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def ishr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def isub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def iushr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def ixor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def iinc(pc: PC, value: DomainValue, increment: Int): DomainValue
 
-    def ladd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def land(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def ldiv(pc: Int, value1: DomainValue, value2: DomainValue): IntegerDivisionResult
-    def lmul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def lor(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def lrem(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def lshl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def lshr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def lsub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def lushr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
-    def lxor(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
+    def ladd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def land(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def ldiv(pc: PC, value1: DomainValue, value2: DomainValue): IntegerDivisionResult
+    def lmul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def lor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def lrem(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def lshl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def lshr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def lsub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def lushr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def lxor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
 
     //
     // "OTHER" INSTRUCTIONS
@@ -1185,7 +1233,7 @@ trait Domain[+I] {
      * the value is known not to be `null` the given value is (also) returned as this
      * computation's results.
      */
-    def monitorenter(pc: Int, value: DomainValue): SucceedsOrNullPointerException = {
+    def monitorenter(pc: PC, value: DomainValue): SucceedsOrNullPointerException = {
         sideEffectOnlyOrNullPointerException(pc, value)
     }
 
@@ -1197,7 +1245,7 @@ trait Domain[+I] {
      * the value is known not to be `null` the given value is (also) returned as this
      * computation's results.
      */
-    def monitorexit(pc: Int, value: DomainValue): SucceedsOrNullPointerException = {
+    def monitorexit(pc: PC, value: DomainValue): SucceedsOrNullPointerException = {
         sideEffectOnlyOrNullPointerException(pc, value)
     }
 
@@ -1211,10 +1259,11 @@ trait Domain[+I] {
      * Returns a string representation of the properties associated with
      * a specific instruction.
      *
-     * This method is generally not called by BATAI and is primarily
-     * used to facilitate debugging.
+     * Associating properties with an instruction is, however, at the sole
+     * responsibility of the `Domain`. This method is predefined to facilitate
+     * the development of support tools and is not called by BATAI.
      */
-    def hasProperties(pc: Int): Option[String] = None
+    def hasProperties(pc: PC): Option[String] = None
 
     /**
      * This function is called by BATAI after performing a computation; that is, after
@@ -1225,41 +1274,51 @@ trait Domain[+I] {
      * more times (e.g., in case of `if` or `switch` instructions.) This enables
      * the domain to precisely follow the evaluation progress and in particular to perform
      * control-flow dependent analyses.
-     * 
-     * The `flow` method is called before the `merge` method.
+     *
+     * The `flow` method is called before the `join` method.
      */
-    def flow(currentPC: Int, successorPC: Int): Boolean = false
+    def flow(currentPC: PC, successorPC: PC): Boolean = false
 
     /**
-     * Merges the given operand stacks and local variables.
+     * Creates a summary of the given domain values. For the precise details
+     * regarding the calculation of a summary see `Value.summuariz(...)`.
+     */
+    def summarize(pc: PC, values: Iterable[DomainValue]): DomainValue = {
+        (values.head.summarize(pc) /: values.tail) {
+            (c, n) ⇒ c.summarize(pc, n.summarize(pc))
+        }
+    }
+
+    /**
+     * Joins the given operand stacks and local variables.
      *
      * In general there should be no need to override this method.
      *
-     * @return The merged operand stack and registers.
+     * @return The joined operand stack and registers.
      *      Returns `NoUpdate` if this memory layout already subsumes the given memory
      *      layout.
-     * @note The size of the operands stacks that are to be merged and the number of
-     *      registers/locals that are to be merged can be expected to be identical
+     * @note The size of the operands stacks that are to be joined and the number of
+     *      registers/locals that are to be joined can be expected to be identical
      *      under the assumption that the bytecode is valid and BATAI contains no
      *      bugs.
      * @note The operand stacks are guaranteed to contain compatible values w.r.t. the
      *      computational type (unless the bytecode is not valid or BATAI contains
-     *      an error). I.e., if the result of merging two operand stack is an
+     *      an error). I.e., if the result of joining two operand stack values is an
      *      `IllegalValue` we assume that the domain implementation is incomplete.
-     *      However, the merging of two register values can result in an illegal value.
+     *      However, the joining of two register values can result in an illegal value.
      */
-    def merge(
-        pc: Int,
+    def join(
+        pc: PC,
         thisOperands: Operands,
         thisLocals: Locals,
         otherOperands: Operands,
         otherLocals: Locals): Update[(Operands, Locals)] = {
 
         assume(thisOperands.size == otherOperands.size,
-            "domain merge - different stack sizes: "+thisOperands+" <=> "+otherOperands)
+            "domain join - different stack sizes: "+thisOperands+" <=> "+otherOperands)
 
         assume(thisLocals.size == otherLocals.size,
-            "domain merge - different register sizes: "+thisLocals+" <=> "+otherLocals)
+            "domain join - different register sizes: "+thisLocals+" <=> "+otherLocals)
 
         var operandsUpdated: UpdateType = NoUpdateType
         val newOperands =
@@ -1280,7 +1339,7 @@ trait Domain[+I] {
                         if (thisOperand eq otherOperand) {
                             thisOperand
                         } else {
-                            val updatedOperand = thisOperand.merge(pc, otherOperand)
+                            val updatedOperand = thisOperand.join(pc, otherOperand)
                             val newOperand = updatedOperand match {
                                 case NoUpdate   ⇒ thisOperand
                                 case someUpdate ⇒ someUpdate.value
@@ -1328,7 +1387,7 @@ trait Domain[+I] {
                         } else if (thisLocal eq otherLocal) {
                             thisLocal
                         } else {
-                            val updatedLocal = thisLocal.merge(pc, otherLocal)
+                            val updatedLocal = thisLocal.join(pc, otherLocal)
                             if (updatedLocal == NoUpdate) {
                                 thisLocal
                             } else {

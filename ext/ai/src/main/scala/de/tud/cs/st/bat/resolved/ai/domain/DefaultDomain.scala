@@ -97,7 +97,13 @@ class ConfigurableDefaultDomain[+I](
     val identifier: I)
         extends ConfigurableDomain[I]
         with AbstractDefaultDomain[I] {
-    
+
+}
+
+class RecordingDomain[I](identifier: I)
+        extends ConfigurableDefaultDomain[I](identifier)
+        with RecordReturnValues[I] {
+
 }
 
 class ConfigurablePreciseDomain[+I](
@@ -112,9 +118,16 @@ class ConfigurablePreciseDomain[+I](
         with DefaultTypeLevelDoubleValues[I]
         with DefaultReturnAddressValues[I]
         with TypeLevelArrayInstructions
-        with TypeLevelFieldAccessInstructions
-        with TypeLevelInvokeInstructions
+        with TypeLevelFieldAccessInstructionsWithNullPointerHandling
+        with TypeLevelInvokeInstructionsWithNullPointerHandling
         with DoNothingOnReturnFromMethod
         with DefaultTypeHierarchyBinding {
 
 }
+
+class PreciseRecordingDomain[I](identifier: I)
+        extends ConfigurablePreciseDomain[I](identifier)
+        with RecordReturnValues[I] {
+
+}
+

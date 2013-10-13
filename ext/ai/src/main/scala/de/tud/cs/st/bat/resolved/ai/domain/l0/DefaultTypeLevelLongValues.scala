@@ -30,72 +30,51 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st.bat
+package de.tud.cs.st
+package bat
 package resolved
 package ai
-package base
-
-import reader.Java7Framework
-import domain.RecordingDomain
+package domain
 
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
-import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FlatSpec
-import org.scalatest.BeforeAndAfterAll
-import org.scalatest.ParallelTestExecution
-import org.scalatest.matchers.ShouldMatchers
-
 /**
- * Basic tests of the abstract interpreter related to handling arrays.
+ * Base implementation of the `TypeLevelLongValues` trait that requires that
+ * the domain`s `Value` trait is not extended.
  *
  * @author Michael Eichberg
  */
-@RunWith(classOf[JUnitRunner])
-class MethodsWithArraysTest
-        extends FlatSpec
-        with ShouldMatchers
-        with ParallelTestExecution {
+trait DefaultTypeLevelLongValues[+I]
+        extends DefaultValueBinding[I]
+        with TypeLevelLongValues[I] {
 
-    val classFiles = Java7Framework.ClassFiles(
-        TestSupport.locateTestResources("classfiles/ai.jar", "ext/ai"))
+    case object LongValue extends super.LongValue {
 
-    val classFile = classFiles.map(_._1).
-        find(_.thisClass.className == "ai/MethodsWithArrays").get
+        override def join(pc: PC, value: DomainValue): Update[DomainValue] =
+            value match {
+                case LongValue ⇒ NoUpdate
+                case _         ⇒ MetaInformationUpdateIllegalValue
+            }
 
-    private def evaluateMethod(name: String, f: RecordingDomain[String] ⇒ Unit) {
-        val domain = new RecordingDomain(name)
+        override def summarize(pc: PC): DomainValue = this
 
-        val method = classFile.methods.find(_.name == name).get
-        val result = BaseAI(classFile, method, domain)
+        override def summarize(pc: PC, value: DomainValue): DomainValue = this
 
-        util.Util.dumpOnFailureDuringValidation(
-            Some(classFile),
-            Some(method),
-            method.body.get,
-            result) {
-                f(domain)
+        override def adapt[ThatI >: I](
+            targetDomain: Domain[ThatI],
+            pc: PC): targetDomain.DomainValue =
+            targetDomain match {
+                case thatDomain: DefaultTypeLevelLongValues[ThatI] ⇒
+                    thatDomain.LongValue.asInstanceOf[targetDomain.DomainValue]
+                case _ ⇒ super.adapt(targetDomain, pc)
             }
     }
 
-    behavior of "the abstract interpreter"
+    def newLongValue(): LongValue = LongValue
 
-    it should "be able to analyze a method that processes a byte array" in {
-        evaluateMethod("byteArrays", domain ⇒ {
-            import domain._
-            domain.returnedValues should be(
-                Set(("ireturn", 15, newByteValue))
-            )
-        })
-    }
+    def newLongValue(pc: PC): DomainValue = LongValue
 
-    it should "be able to analyze a method that processes a boolean array" in {
-        evaluateMethod("booleanArrays", domain ⇒ {
-            import domain._
-            domain.returnedValues should be(
-                Set(("ireturn", 14, newBooleanValue))
-            )
-        })
-    }
+    def newLongValue(pc: PC, value: Long): LongValue = LongValue
 }
+
+

@@ -40,7 +40,6 @@ package domain
  * Mixin this trait if you want to reify the stated constraints. This is particularly
  * useful for testing and debugging purposes.
  *
- * @todo Currently we only refine Is(Non)NullConstraints and nothing else...
  * @author Michael Eichberg
  */
 trait ReifiedConstraints[+I] extends Domain[I] {

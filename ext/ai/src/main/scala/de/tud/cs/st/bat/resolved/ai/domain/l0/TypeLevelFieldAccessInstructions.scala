@@ -42,61 +42,44 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 /**
  * Implements the handling of field access instructions at the type level ignoring
- * potential linkage related exceptions.
+ * potentially thrown exceptions.
+ *
+ * (Linkage related exceptions are currently generally ignored.)
+ *
+ * @note By ignoring potentially thrown exceptions it may be the case that not all
+ *      possible paths in a program are explored and the overall analysis may not be
+ *      sound.
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
 trait TypeLevelFieldAccessInstructions { this: Domain[_] ⇒
 
-    def throwNullPointerExceptionOnPotentialNullAccess = false
-
     def getfield(
-        pc: Int,
+        pc: PC,
         objectref: DomainValue,
         declaringClass: ObjectType,
         name: String,
-        fieldType: FieldType) =
-        isNull(objectref) match {
-            case Yes ⇒
-                ThrowsException(newInitializedObject(pc, ObjectType.NullPointerException))
-            case Unknown if throwNullPointerExceptionOnPotentialNullAccess ⇒
-                ComputedValueAndException(
-                    newTypedValue(pc, fieldType),
-                    newInitializedObject(pc, ObjectType.NullPointerException))
-            case _ /* No | do not throw NullPointerException on potential null access*/ ⇒
-                ComputedValue(newTypedValue(pc, fieldType))
-        }
+        fieldType: FieldType) = ComputedValue(newTypedValue(pc, fieldType))
 
     def getstatic(
-        pc: Int,
+        pc: PC,
         declaringClass: ObjectType,
         name: String,
-        fieldType: FieldType) =
-        ComputedValue(newTypedValue(pc, fieldType))
+        fieldType: FieldType) = ComputedValue(newTypedValue(pc, fieldType))
 
     def putfield(
-        pc: Int,
+        pc: PC,
         objectref: DomainValue,
         value: DomainValue,
         declaringClass: ObjectType,
         name: String,
-        fieldType: FieldType) =
-        isNull(objectref) match {
-            case Yes ⇒
-                ThrowsException(newInitializedObject(pc, ObjectType.NullPointerException))
-            case Unknown if throwNullPointerExceptionOnPotentialNullAccess ⇒
-                ComputationWithSideEffectOrException(
-                    newInitializedObject(pc, ObjectType.NullPointerException))
-            case _ /* No | do not throw NullPointerException on potential null access*/ ⇒
-                ComputationWithSideEffectOnly
-        }
+        fieldType: FieldType) = ComputationWithSideEffectOnly
 
     def putstatic(
-        pc: Int,
+        pc: PC,
         value: DomainValue,
         declaringClass: ObjectType,
         name: String,
-        fieldType: FieldType) =
-        ComputationWithSideEffectOnly
+        fieldType: FieldType) = ComputationWithSideEffectOnly
 
 }

@@ -179,7 +179,7 @@ class MethodsPlainTest
         domain.returnedValue should be(Some(newIntegerValue))
     }
 
-    it should "be able to analyze a method  that divides two int values" in {
+    it should "be able to analyze a method that divides two int values" in {
         val domain = new RecordingDomain; import domain._
         val method = classFile.methods.find(_.name == "iDiv").get
         /*val result =*/ BaseAI(classFile, method, domain)
@@ -265,7 +265,7 @@ class MethodsPlainTest
         domain.returnedValue should be(Some(newLongValue))
     }
 
-    it should "be able to analyze a method  that divides two long values" in {
+    it should "be able to analyze a method that divides two long values" in {
         val domain = new RecordingDomain; import domain._
         val method = classFile.methods.find(_.name == "lDiv").get
         /*val result =*/ BaseAI(classFile, method, domain)
@@ -344,7 +344,7 @@ class MethodsPlainTest
         domain.returnedValue should be(Some(newDoubleValue()))
     }
 
-    it should "be able to analyze a method  that divides two double values" in {
+    it should "be able to analyze a method that divides two double values" in {
         val domain = new RecordingDomain; import domain._
         val method = classFile.methods.find(_.name == "dDiv").get
         /*val result =*/ BaseAI(classFile, method, domain)
@@ -384,7 +384,7 @@ class MethodsPlainTest
         domain.returnedValue should be(Some(newFloatValue))
     }
 
-    it should "be able to analyze a method  that divides two float values" in {
+    it should "be able to analyze a method that divides two float values" in {
         val domain = new RecordingDomain; import domain._
         val method = classFile.methods.find(_.name == "fDiv").get
         /*val result =*/ BaseAI(classFile, method, domain)

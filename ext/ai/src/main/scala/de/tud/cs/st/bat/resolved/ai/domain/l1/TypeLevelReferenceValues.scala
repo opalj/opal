@@ -67,7 +67,7 @@ trait TypeLevelReferenceValues[+I] extends Domain[I] {
          * Indirectly called by BATAI when it determines that the null-value property
          * of this type-level reference should be updated.
          */
-        def updateIsNull(pc: Int, isNull: Answer): DomainValue
+        def updateIsNull(pc: PC, isNull: Answer): DomainValue
 
         /**
          * Checks if the type of this value is a subtype of the specified
@@ -100,7 +100,7 @@ trait TypeLevelReferenceValues[+I] extends Domain[I] {
          * information related to this value is precise, i.e., if we know that we
          * precisely capture the runtime type of this value.
          */
-        def addUpperBound(pc: Int, upperBound: ReferenceType): DomainValue
+        def addUpperBound(pc: PC, upperBound: ReferenceType): DomainValue
     }
 
     //
@@ -179,7 +179,7 @@ trait TypeLevelReferenceValues[+I] extends Domain[I] {
     // -----------------------------------------------------------------------------------
 
     override def establishUpperBound(
-        pc: Int,
+        pc: PC,
         bound: ReferenceType,
         value: DomainValue,
         operands: Operands,
@@ -199,7 +199,7 @@ trait TypeLevelReferenceValues[+I] extends Domain[I] {
     }
 
     protected def updateIsNull(
-        pc: Int,
+        pc: PC,
         value: DomainValue,
         isNull: Answer,
         operands: Operands,
@@ -227,7 +227,7 @@ trait TypeLevelReferenceValues[+I] extends Domain[I] {
      * @param value A `ReferenceValue`.
      */
     override def establishIsNonNull(
-        pc: Int,
+        pc: PC,
         value: DomainValue,
         operands: Operands,
         locals: Locals): (Operands, Locals) =
@@ -242,7 +242,7 @@ trait TypeLevelReferenceValues[+I] extends Domain[I] {
      * @param value A `ReferenceValue`.
      */
     override def establishIsNull(
-        pc: Int,
+        pc: PC,
         value: DomainValue,
         operands: Operands,
         locals: Locals): (Operands, Locals) =
@@ -257,6 +257,25 @@ trait DefaultTypeLevelReferenceValues[+I]
         extends DefaultValueBinding[I]
         with TypeLevelReferenceValues[I] { domain ⇒
 
+    /**
+     * A type bound represents the available information about a reference
+     * value's type.
+     *
+     * In case of reference types, a type bound may, e.g., be a set of interface types
+     * which are known to be implemented by the current object. Even if the type
+     * contains a class type it may just be a super class of the concrete type and,
+     * hence, just represent an abstraction.
+     *
+     * How type bounds related to reference types are handled and whether the
+     * domain makes it possible to distinguish between precise types and
+     * type bounds is at the sole discretion of the domain.
+     */
+    type TypeBound = Set[ReferenceType]
+
+    def leastCommonSupertype(bound1: TypeBound, bound2: TypeBound): TypeBound = {
+null
+    }
+
     // -----------------------------------------------------------------------------------
     //
     // REPRESENTATION OF REFERENCE VALUES
@@ -268,26 +287,12 @@ trait DefaultTypeLevelReferenceValues[+I]
             with IsReferenceType { this: DomainValue ⇒
 
         /**
-         * A type bound represents the available information about a reference
-         * value's type.
-         *
-         * In case of reference types, a type bound may, e.g., be a set of interface types
-         * which are known to be implemented by the current object. Even if the type
-         * contains a class type it may just be a super class of the concrete type and,
-         * hence, just represent an abstraction.
-         *
-         * How type bounds related to reference types are handled and whether the
-         * domain makes it possible to distinguish between precise types and
-         * type bounds is at the sole discretion of the domain.
-         */
-        type TypeBound = Set[ReferenceType]
-
-        /**
          * Returns the set of types of the represented value.
          *
          * Basically, we have to distinguish two situations:
-         * 1. a value that may have (depending on the control flow) different
-         *    independent types (different values with corresponding types).
+         * 1. a value that actually represents multiple values and that may have
+         *    (depending on the control flow) different independent types (different
+         *    values with corresponding types).
          * 2. a type for which we have multiple bounds; i.e., we don't know the precise
          *    type, but we know (e.g., due to typechecks) that it (has to) implements
          *    multiple interfaces.
@@ -295,7 +300,7 @@ trait DefaultTypeLevelReferenceValues[+I]
         def valueType: TypeBound
 
         /**
-         * Returns `true` if the type information about this value is precise. 
+         * Returns `true` if the type information about this value is precise.
          * I.e., if `isPrecise` returns `true` and the value's type is
          * reported to be `java.lang.Object` then the current value is known to be an
          * instance of the class `java.lang.Object` and of no other (sub)class.
@@ -314,27 +319,11 @@ trait DefaultTypeLevelReferenceValues[+I]
     //    
 
     class AReferenceValue protected[DefaultTypeLevelReferenceValues] (
-        val pc: Int,
+        val pc: PC,
         val valueType: TypeBound,
         val isNull: Answer,
         val isPrecise: Boolean)
             extends ReferenceValue { this: DomainValue ⇒
-
-        override def adapt[ThatI >: I](
-            targetDomain: Domain[ThatI],
-            pc: Int): targetDomain.DomainValue =
-            targetDomain match {
-                case thatDomain: DefaultTypeLevelReferenceValues[ThatI] ⇒
-                    adaptAReferenceValue(thatDomain, pc).asInstanceOf[targetDomain.DomainValue]
-                case _ ⇒ super.adapt(targetDomain, pc)
-            }
-
-        def adaptAReferenceValue[ThatI >: I](
-            targetDomain: DefaultTypeLevelReferenceValues[ThatI],
-            pc: Int): targetDomain.AReferenceValue =
-            new targetDomain.AReferenceValue(
-                pc, this.valueType, this.isNull, this.isPrecise
-            )
 
         override def nonEmpty = valueType.nonEmpty
 
@@ -361,15 +350,16 @@ trait DefaultTypeLevelReferenceValues[+I]
             if (isNull.yes)
                 return onNull
 
-            var answer = domain.isSubtypeOf(valueType.head, supertype)
-            for (
-                referenceType ← valueType.tail;
-                if answer.isDefined // when the answer is Unknown we do not need to continue
-            ) {
-                answer = answer.merge(domain.isSubtypeOf(referenceType, supertype))
+            val answer: Answer = ((No: Answer) /: valueType) { (a, t) ⇒
+                val isSubtypeOf = domain.isSubtypeOf(t, supertype)
+                if (isSubtypeOf.yes) {
+                    return Yes
+                } else {
+                    a merge isSubtypeOf
+                }
             }
+
             answer match {
-                case Yes             ⇒ Yes
                 case No if isPrecise ⇒ No
                 case No ⇒
                     // .. is it conceivable that this value is still a subtype of the
@@ -383,7 +373,7 @@ trait DefaultTypeLevelReferenceValues[+I]
             }
         }
 
-        def updateIsNull(pc: Int, isNull: Answer): AReferenceValue = {
+        def updateIsNull(pc: PC, isNull: Answer): AReferenceValue = {
             if (this.isNull.isUndefined)
                 if (isNull.yes)
                     AReferenceValue(this.pc, Set.empty[ReferenceType], Yes, true)
@@ -396,7 +386,7 @@ trait DefaultTypeLevelReferenceValues[+I]
                 this
         }
 
-        def addUpperBound(pc: Int, theUpperBound: ReferenceType): AReferenceValue = {
+        def addUpperBound(pc: PC, theUpperBound: ReferenceType): AReferenceValue = {
             val isSubtypeOfAnswer = isSubtypeOf(theUpperBound, Yes)
             isSubtypeOfAnswer match {
                 case Yes ⇒ this
@@ -433,14 +423,11 @@ trait DefaultTypeLevelReferenceValues[+I]
             }
         }
 
-        override def merge(mergePC: Int, value: DomainValue): Update[DomainValue] = {
-            if (value eq this)
-                return NoUpdate
-
+        override def join(mergePC: Int, value: DomainValue): Update[DomainValue] = {
             value match {
                 case v @ AReferenceValue(otherPC, otherValueType, otherIsNull, otherIsPrecise) ⇒
                     if (otherPC != this.pc)
-                        return StructuralUpdate(MultipleReferenceValues(Set[AReferenceValue](this, v)))
+                        return StructuralUpdate(MultipleReferenceValues(Set(this, v)))
 
                     if (this.isNull == otherIsNull &&
                         this.valueType == otherValueType &&
@@ -471,12 +458,58 @@ trait DefaultTypeLevelReferenceValues[+I]
                     ))
 
                 case mrv: MultipleReferenceValues ⇒
-                    mrv.merge(mergePC, this) match {
+                    mrv.join(mergePC, this) match {
                         case NoUpdate                 ⇒ StructuralUpdate(mrv)
                         case SomeUpdate(updatedValue) ⇒ StructuralUpdate(updatedValue)
                     }
                 case _ ⇒ MetaInformationUpdateIllegalValue
             }
+        }
+
+        override def adapt[ThatI >: I](
+            targetDomain: Domain[ThatI],
+            pc: PC): targetDomain.DomainValue =
+            targetDomain match {
+                case thatDomain: DefaultTypeLevelReferenceValues[ThatI] ⇒
+                    adaptAReferenceValue(thatDomain, pc).asInstanceOf[targetDomain.DomainValue]
+                case _ ⇒ super.adapt(targetDomain, pc)
+            }
+
+        def adaptAReferenceValue[ThatI >: I](
+            targetDomain: DefaultTypeLevelReferenceValues[ThatI],
+            pc: PC): targetDomain.AReferenceValue =
+            new targetDomain.AReferenceValue(
+                pc, this.valueType, this.isNull, this.isPrecise
+            )
+
+        def summarize(pc: PC): DomainValue = this
+
+        override def summarize(pc: PC, value: DomainValue): DomainValue = {
+            if (this eq value)
+                return this
+                null
+//
+//            value match {
+//                case v @ AReferenceValue(otherPC, otherValueType, otherIsNull, otherIsPrecise) ⇒
+//                    if (otherValueType == this.valueType)
+//                        AReferenceValue(
+//                            pc,
+//                            otherValueType,
+//                            this.isNull merge otherIsNull,
+//                            this.isPrecise && otherIsPrecise
+//                        )
+//                    else {
+//                        AReferenceValue(
+//                            pc,
+//                            computeType(this.valueType, otherValueType),
+//                            this.isNull merge otherIsNull,
+//                            false
+//                        )
+//                    }
+//
+//                case MultipleReferenceValues(values) ⇒ domain.summarize(pc, values + this)
+//
+//            }
         }
 
         override def equals(other: Any): Boolean = {
@@ -516,7 +549,7 @@ trait DefaultTypeLevelReferenceValues[+I]
     def origin(value: DomainValue): Iterable[Int] = value match {
         case aRefVal: AReferenceValue        ⇒ Iterable[Int](aRefVal.pc)
         case MultipleReferenceValues(values) ⇒ values.map(aRefVal ⇒ aRefVal.pc)
-        case _                               ⇒ Iterable.empty[Int] // TODO replace with super call as soon as this method becomes abstract override 
+        case _                               ⇒ Iterable.empty[Int] // TODO replace with super call as soon as this method becomes abstract overrideable 
     }
 
     /**
@@ -528,14 +561,14 @@ trait DefaultTypeLevelReferenceValues[+I]
     }
 
     def AReferenceValue(
-        pc: Int,
+        pc: PC,
         valueType: TypeBound,
         isNull: Answer,
         isPrecise: Boolean): AReferenceValue =
         new AReferenceValue(pc, valueType, isNull, isPrecise)
 
     final def AReferenceValue(
-        pc: Int,
+        pc: PC,
         referenceType: ReferenceType,
         isNull: Answer = Unknown,
         isPrecise: Boolean = false): AReferenceValue =
@@ -545,7 +578,18 @@ trait DefaultTypeLevelReferenceValues[+I]
         val values: Set[AReferenceValue])
             extends ReferenceValue { this: DomainValue ⇒
 
-        override def adapt[TDI >: I](targetDomain: Domain[TDI], pc: Int): targetDomain.DomainValue =
+        override def summarize(pc: PC): DomainValue = domain.summarize(pc, values)
+
+        override def summarize(pc: PC, value: DomainValue): DomainValue = {
+            value match {
+                case aRefVal: AReferenceValue ⇒
+                    domain.summarize(pc, values + aRefVal)
+                case MultipleReferenceValues(otherValues) ⇒
+                    domain.summarize(pc, this.values ++ otherValues)
+            }
+        }
+
+        override def adapt[TDI >: I](targetDomain: Domain[TDI], pc: PC): targetDomain.DomainValue =
             if (targetDomain.isInstanceOf[DefaultTypeLevelReferenceValues[TDI]]) {
                 val thatDomain = targetDomain.asInstanceOf[DefaultTypeLevelReferenceValues[TDI]]
                 val newValues = this.values.map { value: AReferenceValue ⇒
@@ -597,12 +641,12 @@ trait DefaultTypeLevelReferenceValues[+I]
                 this
         }
 
-        override def updateIsNull(pc: Int, isNull: Answer): ReferenceValue =
+        override def updateIsNull(pc: PC, isNull: Answer): ReferenceValue =
             updateValues { aReferenceValue: AReferenceValue ⇒
                 aReferenceValue.updateIsNull(pc, isNull)
             }
 
-        def addUpperBound(pc: Int, upperBound: ReferenceType): DomainValue = {
+        def addUpperBound(pc: PC, upperBound: ReferenceType): DomainValue = {
             updateValues { aReferenceValue: AReferenceValue ⇒
                 aReferenceValue.addUpperBound(pc, upperBound)
             }
@@ -612,7 +656,7 @@ trait DefaultTypeLevelReferenceValues[+I]
 
         lazy val isNull: Answer = (values.head.isNull /: values.tail)(_ merge _.isNull)
 
-        override def merge(mergePC: Int, value: DomainValue): Update[DomainValue] = {
+        override def join(mergePC: Int, value: DomainValue): Update[DomainValue] = {
             if (value eq this)
                 return NoUpdate
 
@@ -622,7 +666,7 @@ trait DefaultTypeLevelReferenceValues[+I]
                         case None ⇒
                             StructuralUpdate(MultipleReferenceValues(values + otherArv))
                         case Some(thisArv) ⇒
-                            thisArv.merge(mergePC, otherArv) match {
+                            thisArv.join(mergePC, otherArv) match {
                                 case NoUpdate ⇒ NoUpdate
                                 case update @ SomeUpdate(updatedArv: AReferenceValue) ⇒
                                     update.updateValue(
@@ -638,7 +682,7 @@ trait DefaultTypeLevelReferenceValues[+I]
                             case None ⇒ thisArv
                             case Some(otherArv) ⇒
                                 otherRemainingArvs -= otherArv
-                                thisArv.merge(mergePC, otherArv) match {
+                                thisArv.join(mergePC, otherArv) match {
                                     case NoUpdate ⇒
                                         thisArv
                                     case update @ SomeUpdate(updatedArv: AReferenceValue) ⇒
@@ -672,29 +716,29 @@ trait DefaultTypeLevelReferenceValues[+I]
     // FACTORY METHODS
     //
 
-    def newNullValue(pc: Int): DomainValue =
+    def newNullValue(pc: PC): DomainValue =
         AReferenceValue(pc, Set.empty[ReferenceType], Yes, true)
 
     def newReferenceValue(referenceType: ReferenceType): DomainValue =
         AReferenceValue(-1, Set(referenceType), Unknown, false)
 
-    def newReferenceValue(pc: Int, referenceType: ReferenceType): DomainValue =
+    def newReferenceValue(pc: PC, referenceType: ReferenceType): DomainValue =
         AReferenceValue(pc, Set(referenceType), Unknown, false)
 
-    def newObject(pc: Int, objectType: ObjectType): DomainValue =
+    def newObject(pc: PC, objectType: ObjectType): DomainValue =
         AReferenceValue(pc, Set[ReferenceType](objectType), No, true)
 
-    def newInitializedObject(pc: Int, objectType: ObjectType): DomainValue =
+    def newInitializedObject(pc: PC, objectType: ObjectType): DomainValue =
         newObject(pc, objectType)
 
-    def newStringValue(pc: Int, value: String): DomainValue =
+    def newStringValue(pc: PC, value: String): DomainValue =
         AReferenceValue(pc, Set[ReferenceType](ObjectType.String), No, true)
 
-    def newClassValue(pc: Int, t: Type): DomainValue =
+    def newClassValue(pc: PC, t: Type): DomainValue =
         AReferenceValue(pc, Set[ReferenceType](ObjectType.Class), No, true)
 
     def newArray(
-        pc: Int,
+        pc: PC,
         arrayType: ArrayType,
         isNull: Answer = No,
         isPrecise: Boolean = true): DomainValue =
@@ -709,7 +753,7 @@ trait DefaultTypeLevelReferenceValues[+I]
     //
     // CREATE ARRAY
     //
-    def newarray(pc: Int,
+    def newarray(pc: PC,
                  count: DomainValue,
                  componentType: FieldType): Computation[DomainValue, DomainValue] =
         //ComputedValueAndException(TypedValue(ArrayType(componentType)), TypedValue(ObjectType.NegativeArraySizeException))
@@ -718,7 +762,7 @@ trait DefaultTypeLevelReferenceValues[+I]
     /**
      * @note The componentType may be (again) an array type.
      */
-    def multianewarray(pc: Int,
+    def multianewarray(pc: PC,
                        counts: List[DomainValue],
                        arrayType: ArrayType) =
         //ComputedValueAndException(TypedValue(arrayType), TypedValue(ObjectType.NegativeArraySizeException))
@@ -727,7 +771,7 @@ trait DefaultTypeLevelReferenceValues[+I]
     //
     // LOAD FROM AND STORE VALUE IN ARRAYS
     //
-    def aaload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
+    def aaload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
         types(arrayref) match {
             case HasSingleReferenceTypeBound(ArrayType(componentType)) ⇒
                 ComputedValue(newTypedValue(pc, componentType))
@@ -738,7 +782,7 @@ trait DefaultTypeLevelReferenceValues[+I]
                 )
         }
 
-    def aastore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
+    def aastore(pc: PC, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
         ComputationWithSideEffectOnly
 }
 
@@ -757,7 +801,7 @@ trait DefaultTypeLevelReferenceValuesWithClosedHierarchy[+I]
             case _ ⇒ super.newReferenceValue(referenceType)
         }
 
-    override def newReferenceValue(pc: Int, referenceType: ReferenceType): DomainValue =
+    override def newReferenceValue(pc: PC, referenceType: ReferenceType): DomainValue =
         referenceType match {
             case ot: ObjectType ⇒
                 val isPrecise = classHierarchy.subtypes(ot).isEmpty

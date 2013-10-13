@@ -338,7 +338,7 @@ trait AI[D <: Domain[_]] {
                         worklist = targetPC :: worklist
                     } else {
                         val currentLocals = localsArray(targetPC)
-                        val mergeResult = domain.merge(
+                        val mergeResult = domain.join(
                             targetPC, currentOperands, currentLocals, operands, locals
                         )
                         if (tracer.isDefined)

@@ -56,10 +56,11 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
      * before we stop the precise tracking of the value and represent the respective
      * value as "some integer value".
      *
-     * This value is only taken into consideration when two paths are merged.
+     * '''This value is only taken into consideration when two paths converge'''.
      *
      * The default value is 25 which will, e.g., effectively unroll a loop with a loop
-     * counter that is incremented by one in each round up to 25 times.
+     * counter that starts with 0 and which is incremented by one in each round up to 
+     * 25 times.
      *
      * This is a runtime configurable setting that may affect the overall precision of
      * subsequent analyses that require knowledge about integers.
@@ -77,7 +78,7 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
      */
     def divisionByZeroIfUnknown = true
 
-    private final val typesAnswer: IsPrimitiveType = IsPrimitiveType(IntegerType)
+    private[this] final val typesAnswer: IsPrimitiveType = IsPrimitiveType(IntegerType)
 
     /**
      * Abstracts over all values with computational type `integer`.
@@ -85,8 +86,6 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
     sealed trait IntegerLikeValue extends Value { this: DomainValue ⇒
 
         final def computationalType: ComputationalType = ComputationalTypeInt
-
-        final def types: TypesAnswer[_] = typesAnswer
 
     }
 
@@ -108,11 +107,13 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
 
         /**
          * Creates a new IntegerValue with the given value as the current value,
-         * but the same initial value.
+         * but the same initial value. Please note that it is ok if the new value
+         * is between the current value and the initial value. It is only required
+         * that the join operation is monotonic. 
          *
          * @note
          * This method must not check whether the initial value and the new value
-         * exceed the spread. This is done by the merge method.
+         * exceed the spread. This is done by the join method.
          */
         def update(newValue: Int): DomainValue
 
@@ -120,7 +121,7 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
 
     abstract override def types(value: DomainValue): TypesAnswer[_] =
         value match {
-            case integerLikeValue: IntegerLikeValue ⇒ integerLikeValue.types
+            case integerLikeValue: IntegerLikeValue ⇒ typesAnswer
             case _                                  ⇒ super.types(value)
         }
 
@@ -128,7 +129,7 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
 
     def newByteValue(): DomainValue
 
-    def newCharValue(pc: Int, value: Char): DomainValue
+    def newCharValue(pc: PC, value: Char): DomainValue
 
     //
     // QUESTION'S ABOUT VALUES
@@ -192,7 +193,7 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
         )
 
     override def establishValue(
-        pc: Int,
+        pc: PC,
         theValue: Int,
         value: DomainValue,
         operands: Operands,
@@ -200,7 +201,7 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
         updateValue(value, newIntegerValue(pc, theValue), operands, locals)
 
     override def establishAreEqual(
-        pc: Int,
+        pc: PC,
         value1: DomainValue,
         value2: DomainValue,
         operands: Operands,
@@ -225,7 +226,7 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
     //
     // UNARY EXPRESSIONS
     //
-    def ineg(pc: Int, value: DomainValue) = value match {
+    def ineg(pc: PC, value: DomainValue) = value match {
         case v: IntegerValue ⇒ v.update(-v.value)
         case _               ⇒ value
     }
@@ -234,21 +235,21 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
     // BINARY EXPRESSIONS
     //
 
-    def iadd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+    def iadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         getIntValues(value1, value2) { (v1, v2) ⇒
             newIntegerValue(pc, v1 + v2)
         } {
             newIntegerValue
         }
 
-    def iand(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+    def iand(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         getIntValues(value1, value2) { (v1, v2) ⇒
             newIntegerValue(pc, v1 & v2)
         } {
             newIntegerValue
         }
 
-    def idiv(pc: Int, value1: DomainValue, value2: DomainValue): Computation[DomainValue, DomainValue] =
+    def idiv(pc: PC, value1: DomainValue, value2: DomainValue): Computation[DomainValue, DomainValue] =
         getIntValues(value1, value2) { (v1, v2) ⇒
             if (v2 == 0)
                 ThrowsException(newInitializedObject(pc, ObjectType.ArithmeticException))
@@ -263,61 +264,61 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
                 ComputedValue(newIntegerValue)
         }
 
-    def imul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+    def imul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         getIntValues(value1, value2) { (v1, v2) ⇒
             newIntegerValue(pc, v1 * v2)
         } {
             newIntegerValue
         }
 
-    def ior(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+    def ior(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         getIntValues(value1, value2) { (v1, v2) ⇒
             newIntegerValue(pc, v1 | v2)
         } {
             newIntegerValue
         }
 
-    def irem(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+    def irem(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         getIntValues(value1, value2) { (v1, v2) ⇒
             newIntegerValue(pc, v1 % v2)
         } {
             newIntegerValue
         }
 
-    def ishl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+    def ishl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         getIntValues(value1, value2) { (v1, v2) ⇒
             newIntegerValue(pc, v1 << v2)
         } {
             newIntegerValue
         }
 
-    def ishr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+    def ishr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         getIntValues(value1, value2) { (v1, v2) ⇒
             newIntegerValue(pc, v1 >> v2)
         } {
             newIntegerValue
         }
 
-    def isub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+    def isub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         getIntValues(value1, value2) { (v1, v2) ⇒
             newIntegerValue(pc, v1 - v2)
         } {
             newIntegerValue
         }
 
-    def iushr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+    def iushr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         getIntValues(value1, value2) { (v1, v2) ⇒
             newIntegerValue(pc, v1 >>> v2)
         }(newIntegerValue)
 
-    def ixor(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+    def ixor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         getIntValues(value1, value2) { (v1, v2) ⇒
             newIntegerValue(pc, v1 ^ v2)
         } {
             newIntegerValue
         }
 
-    def iinc(pc: Int, value: DomainValue, increment: Int) =
+    def iinc(pc: PC, value: DomainValue, increment: Int) =
         value match {
             case v: IntegerValue ⇒ v.update(v.value + increment)
             case _               ⇒ value
@@ -327,117 +328,17 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
     // TYPE CONVERSION INSTRUCTIONS
     //
 
-    def i2b(pc: Int, value: DomainValue): DomainValue =
+    def i2b(pc: PC, value: DomainValue): DomainValue =
         getIntValue(value)(v ⇒ newByteValue(pc, v.toByte))(newByteValue)
 
-    def i2c(pc: Int, value: DomainValue): DomainValue =
+    def i2c(pc: PC, value: DomainValue): DomainValue =
         getIntValue(value)(v ⇒ newCharValue(pc, v.toChar))(newByteValue)
 
-    def i2s(pc: Int, value: DomainValue): DomainValue =
+    def i2s(pc: PC, value: DomainValue): DomainValue =
         getIntValue(value)(v ⇒ newShortValue(pc, v.toShort))(newByteValue)
 
-    def i2d(pc: Int, value: DomainValue): DomainValue = newDoubleValue(pc)
-    def i2f(pc: Int, value: DomainValue): DomainValue = newFloatValue(pc)
-    def i2l(pc: Int, value: DomainValue): DomainValue = newLongValue(pc)
-}
-
-/**
- * @author Michael Eichberg
- */
-trait DefaultPreciseIntegerValues[+I]
-        extends DefaultValueBinding[I]
-        with PreciseIntegerValues[I] {
-
-    case class AnIntegerValue() extends super.AnIntegerValue {
-
-        override def merge(pc: Int, value: DomainValue): Update[DomainValue] =
-            value match {
-                case _: IntegerLikeValue ⇒ NoUpdate
-                case other               ⇒ MetaInformationUpdateIllegalValue
-            }
-
-        override def adapt[ThatI >: I](
-            targetDomain: Domain[ThatI],
-            pc: Int): targetDomain.DomainValue =
-            if (targetDomain.isInstanceOf[DefaultPreciseIntegerValues[ThatI]]) {
-                val thatDomain = targetDomain.asInstanceOf[DefaultPreciseIntegerValues[ThatI]]
-                thatDomain.AnIntegerValue().asInstanceOf[targetDomain.DomainValue]
-            } else {
-                super.adapt(targetDomain, pc)
-            }
-    }
-
-    case class IntegerValue private (
-        val initial: Int,
-        val value: Int)
-            extends super.IntegerValue {
-
-        def this(value: Int) = this(value, value)
-
-        def update(newValue: Int): DomainValue = IntegerValue(initial, newValue)
-
-        override def merge(pc: Int, value: DomainValue): Update[DomainValue] =
-            value match {
-                case AnIntegerValue() ⇒ StructuralUpdate(value)
-                case IntegerValue(otherInitial, otherValue) ⇒
-                    if (this.value == otherValue) {
-                        if (spread(this.value, this.initial) >= spread(otherValue, otherInitial))
-                            NoUpdate
-                        else {
-                            MetaInformationUpdate(IntegerValue(otherInitial, this.value))
-                        }
-                    } else {
-                        // the value is only allowed to grow in one direction!
-                        val newInitial =
-                            if (Math.abs(otherValue - this.initial) > Math.abs(otherValue - otherInitial))
-                                this.initial
-                            else
-                                otherInitial
-                        val spread = Math.abs(otherValue - newInitial)
-                        if (spread > maxSpread || // test for the boundary condition
-                            // test if the value is no longer growing in one direction
-                            spread < Math.abs(this.value - this.initial)) {
-                            StructuralUpdate(AnIntegerValue())
-                        } else {
-                            StructuralUpdate(IntegerValue(newInitial, otherValue))
-                        }
-                    }
-                case other ⇒ MetaInformationUpdateIllegalValue
-            }
-
-        override def adapt[ThatI >: I](targetDomain: Domain[ThatI], pc: Int): targetDomain.DomainValue =
-            if (targetDomain.isInstanceOf[DefaultPreciseIntegerValues[ThatI]]) {
-                val thatDomain = targetDomain.asInstanceOf[DefaultPreciseIntegerValues[ThatI]]
-                thatDomain.IntegerValue(this.initial, this.value).
-                    asInstanceOf[targetDomain.DomainValue]
-            } else {
-                super.adapt(targetDomain, pc)
-            }
-
-        override def toString: String = "IntegerValue("+value+",initial="+initial+")"
-    }
-
-    def newBooleanValue(): DomainValue = AnIntegerValue()
-    def newBooleanValue(pc: Int): DomainValue = AnIntegerValue()
-    def newBooleanValue(pc: Int, value: Boolean): DomainValue =
-        if (value) new IntegerValue(1) else new IntegerValue(0)
-
-    def newByteValue() = AnIntegerValue()
-    def newByteValue(pc: Int): DomainValue = AnIntegerValue()
-    def newByteValue(pc: Int, value: Byte) = new IntegerValue(value)
-
-    def newShortValue() = AnIntegerValue()
-    def newShortValue(pc: Int): DomainValue = AnIntegerValue()
-    def newShortValue(pc: Int, value: Short) = new IntegerValue(value)
-
-    def newCharValue() = AnIntegerValue()
-    def newCharValue(pc: Int): DomainValue = AnIntegerValue()
-    def newCharValue(pc: Int, value: Char) = new IntegerValue(value)
-
-    def newIntegerValue() = AnIntegerValue()
-    def newIntegerValue(pc: Int): DomainValue = AnIntegerValue()
-    def newIntegerValue(pc: Int, value: Int) = new IntegerValue(value)
-    def newIntegerConstant0: DomainValue = new IntegerValue(0)
-
+    def i2d(pc: PC, value: DomainValue): DomainValue = newDoubleValue(pc)
+    def i2f(pc: PC, value: DomainValue): DomainValue = newFloatValue(pc)
+    def i2l(pc: PC, value: DomainValue): DomainValue = newLongValue(pc)
 }
 

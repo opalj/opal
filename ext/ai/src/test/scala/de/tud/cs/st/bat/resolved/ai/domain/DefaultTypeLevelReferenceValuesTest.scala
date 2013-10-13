@@ -79,16 +79,16 @@ class DefaultTypeLevelReferenceValuesTest
     val ref3 = AReferenceValue(732, ObjectType("java/io/File"), No, true)
 
     val ref1MergeRef2 =
-        ref1.merge(-1, ref2).value.asInstanceOf[MultipleReferenceValues]
+        ref1.join(-1, ref2).value.asInstanceOf[MultipleReferenceValues]
 
     val ref1AltMergeRef2Alt =
-        ref1Alt.merge(-1, ref2Alt).value.asInstanceOf[MultipleReferenceValues]
+        ref1Alt.join(-1, ref2Alt).value.asInstanceOf[MultipleReferenceValues]
 
     val ref1MergeRef2MergeRef3 =
-        ref1MergeRef2.merge(-1, ref3).value.asInstanceOf[MultipleReferenceValues]
+        ref1MergeRef2.join(-1, ref3).value.asInstanceOf[MultipleReferenceValues]
 
     val ref3MergeRef1MergeRef2 =
-        ref3.merge(-1, ref1MergeRef2).value.asInstanceOf[MultipleReferenceValues]
+        ref3.join(-1, ref1MergeRef2).value.asInstanceOf[MultipleReferenceValues]
 
     //
     // TESTS
@@ -117,7 +117,7 @@ class DefaultTypeLevelReferenceValuesTest
     }
 
     it should ("keep the old value when we merge a value with an identical value") in {
-        ref1.merge(-1, ref1Alt) should be(NoUpdate)
+        ref1.join(-1, ref1Alt) should be(NoUpdate)
     }
 
     it should ("represent both values after a merge of two independent value") in {
@@ -136,11 +136,11 @@ class DefaultTypeLevelReferenceValuesTest
     }
 
     it should ("be able to merge two value sets where the original set is a superset of the second set") in {
-        ref1MergeRef2MergeRef3.merge(-1, ref1AltMergeRef2Alt) should be(NoUpdate)
+        ref1MergeRef2MergeRef3.join(-1, ref1AltMergeRef2Alt) should be(NoUpdate)
     }
 
     it should ("be able to merge two value sets where the original set is a subset of the second set") in {
-        ref1AltMergeRef2Alt.merge(-1, ref1MergeRef2MergeRef3) should be(StructuralUpdate(ref1MergeRef2MergeRef3))
+        ref1AltMergeRef2Alt.join(-1, ref1MergeRef2MergeRef3) should be(StructuralUpdate(ref1MergeRef2MergeRef3))
     }
 
 }

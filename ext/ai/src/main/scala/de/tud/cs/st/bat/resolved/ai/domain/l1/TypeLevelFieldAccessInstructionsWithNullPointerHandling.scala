@@ -36,60 +36,71 @@ package resolved
 package ai
 package domain
 
+import reflect.ClassTag
+
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
-import analyses.{ Project, ClassHierarchy }
-import de.tud.cs.st.bat.resolved.ai.IsReferenceType
-
 /**
- * Basic handling of method invocations that completely ignores the possibility
- * of thrown exceptions.
- *
- * (Linkage related exceptions are currently generally ignored.)
+ * Implements the handling of field access instructions at the type level ignoring
+ * potential linkage related exceptions but checking the `objectref`.
  *
  * @note By ignoring potentially thrown exceptions it may be the case that not all
  *      possible paths in a program are explored and the overall analysis may not be
  *      sound.
- * @author Michael Eichberg
+ *
+ * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
-trait TypeLevelInvokeInstructions { this: Domain[_] ⇒
+trait TypeLevelFieldAccessInstructionsWithNullPointerHandling { this: Domain[_] ⇒
 
-    import ObjectType._
+    import ObjectType.NullPointerException
 
-    protected def asTypedValue(pc: PC, someType: Type): Option[DomainValue] = {
-        if (someType.isVoidType)
-            None
-        else
-            Some(newTypedValue(pc, someType))
-    }
+    def getfield(
+        pc: PC,
+        objectref: DomainValue,
+        declaringClass: ObjectType,
+        name: String,
+        fieldType: FieldType) =
+        isNull(objectref) match {
+            case Yes ⇒
+                ThrowsException(newInitializedObject(pc, NullPointerException))
+            case Unknown ⇒
+                ComputedValueAndException(
+                    newTypedValue(pc, fieldType),
+                    newInitializedObject(pc, NullPointerException))
+            case No ⇒
+                ComputedValue(newTypedValue(pc, fieldType))
+        }
 
-    def invokeinterface(pc: PC,
-                        declaringClass: ReferenceType,
-                        name: String,
-                        methodDescriptor: MethodDescriptor,
-                        operands: List[DomainValue]): OptionalReturnValueOrExceptions =
-        ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
+    def getstatic(
+        pc: PC,
+        declaringClass: ObjectType,
+        name: String,
+        fieldType: FieldType) =
+        ComputedValue(newTypedValue(pc, fieldType))
 
-    def invokevirtual(pc: PC,
-                      declaringClass: ReferenceType,
-                      name: String,
-                      methodDescriptor: MethodDescriptor,
-                      operands: List[DomainValue]): OptionalReturnValueOrExceptions =
-        ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
+    def putfield(
+        pc: PC,
+        objectref: DomainValue,
+        value: DomainValue,
+        declaringClass: ObjectType,
+        name: String,
+        fieldType: FieldType) =
+        isNull(objectref) match {
+            case Yes ⇒
+                ThrowsException(newInitializedObject(pc, NullPointerException))
+            case Unknown ⇒
+                ComputationWithSideEffectOrException(
+                    newInitializedObject(pc, NullPointerException))
+            case No ⇒
+                ComputationWithSideEffectOnly
+        }
 
-    def invokespecial(pc: PC,
-                      declaringClass: ReferenceType,
-                      name: String,
-                      methodDescriptor: MethodDescriptor,
-                      operands: List[DomainValue]): OptionalReturnValueOrExceptions =
-        ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
-
-    def invokestatic(pc: PC,
-                     declaringClass: ReferenceType,
-                     name: String,
-                     methodDescriptor: MethodDescriptor,
-                     operands: List[DomainValue]): OptionalReturnValueOrExceptions =
-        ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
+    def putstatic(
+        pc: PC,
+        value: DomainValue,
+        declaringClass: ObjectType,
+        name: String,
+        fieldType: FieldType) =
+        ComputationWithSideEffectOnly
 
 }
-

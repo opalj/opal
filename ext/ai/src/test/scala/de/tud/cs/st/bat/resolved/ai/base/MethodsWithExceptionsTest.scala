@@ -61,15 +61,15 @@ class MethodsWithExceptionsTest
         with ParallelTestExecution {
 
     import util.Util.dumpOnFailureDuringValidation
+    import domain.PreciseRecordingDomain
 
     val classFiles = Java7Framework.ClassFiles(
         TestSupport.locateTestResources("classfiles/ai.jar", "ext/ai"))
     val classFile = classFiles.map(_._1).
         find(_.thisClass.className == "ai/MethodsWithExceptions").get
 
-    import domain.RecordingDomain
-    private def evaluateMethod(name: String, f: RecordingDomain[String] ⇒ Unit) {
-        val domain = new RecordingDomain(name); import domain._
+    private def evaluateMethod(name: String, f: PreciseRecordingDomain[String] ⇒ Unit) {
+        val domain = new PreciseRecordingDomain(name)
         val method = classFile.methods.find(_.name == name).get
         val result = BaseAI(classFile, method, domain)
 

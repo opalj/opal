@@ -70,68 +70,41 @@ trait TypeLevelDoubleValues[+I] extends Domain[I] {
     //
     // RELATIONAL OPERATORS
     //
-    def dcmpg(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = 
+    def dcmpg(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = 
         newIntegerValue(pc)
         
-    def dcmpl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = 
+    def dcmpl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = 
         newIntegerValue(pc)
 
     //
     // UNARY EXPRESSIONS
     //
-    def dneg(pc: Int, value: DomainValue) = newDoubleValue(pc)
+    def dneg(pc: PC, value: DomainValue) = newDoubleValue(pc)
 
     //
     // BINARY EXPRESSIONS
     //
-    def dadd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+    def dadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newDoubleValue(pc)
 
-    def ddiv(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+    def ddiv(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newDoubleValue(pc)
 
-    def dmul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+    def dmul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newDoubleValue(pc)
 
-    def drem(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+    def drem(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newDoubleValue(pc)
 
-    def dsub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+    def dsub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newDoubleValue(pc)
 
     //
     // TYPE CONVERSION INSTRUCTIONS
     //
-    def d2f(pc: Int, value: DomainValue): DomainValue = newFloatValue(pc)
-    def d2i(pc: Int, value: DomainValue): DomainValue = newIntegerValue(pc)
-    def d2l(pc: Int, value: DomainValue): DomainValue = newLongValue(pc)
-}
-
-trait DefaultTypeLevelDoubleValues[+I]
-        extends DefaultValueBinding[I]
-        with TypeLevelDoubleValues[I] {
-
-    case object DoubleValue extends super.DoubleValue {
-
-        override def merge(pc: Int, value: DomainValue): Update[DomainValue] =
-            value match {
-                case DoubleValue ⇒ NoUpdate
-                case _           ⇒ MetaInformationUpdateIllegalValue
-            }
-
-        override def adapt[ThatI >: I](targetDomain: Domain[ThatI], pc: Int): targetDomain.DomainValue =
-            targetDomain match {
-                case thatDomain: DefaultTypeLevelDoubleValues[ThatI] ⇒
-                    thatDomain.DoubleValue.asInstanceOf[targetDomain.DomainValue]
-                case _ ⇒ super.adapt(targetDomain, pc)
-            }
-    }
-
-    def newDoubleValue(): DoubleValue = DoubleValue
-
-    def newDoubleValue(pc: Int): DomainValue = DoubleValue
-
-    def newDoubleValue(pc: Int, value: Double): DoubleValue = DoubleValue
+    def d2f(pc: PC, value: DomainValue): DomainValue = newFloatValue(pc)
+    def d2i(pc: PC, value: DomainValue): DomainValue = newIntegerValue(pc)
+    def d2l(pc: PC, value: DomainValue): DomainValue = newLongValue(pc)
 }
 
 

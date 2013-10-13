@@ -36,23 +36,31 @@ package resolved
 package ai
 package domain
 
-import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
-
-sealed abstract class DomainValues[D <: Domain[_]] {
-    val domain: D
-    val values: Iterable[domain.DomainValue]
-}
-
 /**
- * Factory for creating `DomainValues` objects.
+ * Provides default implementations for a `Domain`'s return methods that do nothing.
+ *
+ * @author Michael Eichberg
  */
-object DomainValues {
-    def apply[I](
-        valuesDomain: Domain[I])(
-            domainValues: Iterable[valuesDomain.DomainValue]) = {
-        new DomainValues[valuesDomain.type] {
-            val domain: valuesDomain.type = valuesDomain
-            val values: Iterable[domain.DomainValue] = domainValues
-        }
+trait DoNothingOnReturnFromMethod { this: Domain[_] ⇒
+
+    def areturn(pc: PC, value: DomainValue): Unit = { /* Do nothing. */ }
+
+    def dreturn(pc: PC, value: DomainValue): Unit = { /* Do nothing. */ }
+
+    def freturn(pc: PC, value: DomainValue): Unit = { /* Do nothing. */ }
+
+    def ireturn(pc: PC, value: DomainValue): Unit = { /* Do nothing. */ }
+
+    def lreturn(pc: PC, value: DomainValue): Unit = { /* Do nothing. */ }
+
+    def returnVoid(pc: PC): Unit = { /* Do nothing. */ }
+
+    def abruptMethodExecution(pc: PC, exception: DomainValue): Unit = {
+        /* Do nothing. */
     }
 }
+
+
+
+
+

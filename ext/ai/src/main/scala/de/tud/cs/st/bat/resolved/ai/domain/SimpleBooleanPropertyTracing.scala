@@ -36,33 +36,51 @@ package resolved
 package ai
 package domain
 
+import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
+
 /**
- * Provides default implementations for a `Domain`'s return methods that do nothing.
+ * Representation of some property.
  *
  * @author Michael Eichberg
  */
-trait DoNothingOnReturnFromMethod { this: Domain[_] ⇒
+trait SimpleBooleanPropertyTracing[+I] extends PropertyTracing[I] { domain ⇒
 
-    def areturn(pc: Int, value: DomainValue): Unit = { /* Do nothing. */ }
+    def propertyName: String
 
-    def dreturn(pc: Int, value: DomainValue): Unit = { /* Do nothing. */ }
+    // TODO Can I use an anyval over here?
+    class BooleanProperty private[SimpleBooleanPropertyTracing] (
+        val state: Boolean)
+            extends Property {
 
-    def freturn(pc: Int, value: DomainValue): Unit = { /* Do nothing. */ }
+        def merge(otherProperty: DomainProperty): Update[DomainProperty] = {
+            val newState = this.state & otherProperty.state
+            if (newState != this.state)
+                StructuralUpdate(new BooleanProperty(newState))
+            else
+                NoUpdate
+        }
 
-    def ireturn(pc: Int, value: DomainValue): Unit = { /* Do nothing. */ }
-
-    def lreturn(pc: Int, value: DomainValue): Unit = { /* Do nothing. */ }
-
-    def returnVoid(pc: Int): Unit = {
-        /* Do nothing. */
+        override def toString: String = domain.propertyName+"("+state+")"
     }
 
-    def abruptMethodExecution(pc: Int, exception: DomainValue): Unit = {
-        /* Do nothing. */
+    def updateProperty(pc: Int, newState: Boolean) {
+        propertiesArray(pc) = new BooleanProperty(newState)
+    }
+
+    final type DomainProperty = BooleanProperty
+
+    final val DomainPropertyTag: reflect.ClassTag[DomainProperty] = implicitly
+
+    def initialPropertyValue: DomainProperty = new BooleanProperty(false)
+
+    def hasPropertyOnExit(returnedValues: Set[_ <: (_, PC, _)]): Boolean = {
+        //println(
+        // identifier+" "+
+        // returnedValues.map { v ⇒ val (_, pc, _) = v; pc }.
+        //   map(getProperty(_)).mkString(","))
+        returnedValues.forall { v ⇒ val (_, pc, _) = v; getProperty(pc).state }
     }
 }
-
-
 
 
 

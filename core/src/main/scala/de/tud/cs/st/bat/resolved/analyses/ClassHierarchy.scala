@@ -315,15 +315,14 @@ class ClassHierarchy(
                 // and this type is known not to be java.lang.Object (due to a previous test)  
                 Unknown
             case Some(intermediateTypes) ⇒
-                var answer: Answer = No
                 intermediateTypes.foreach { intermediateType ⇒
                     isSubtypeOf(intermediateType, theSupertype) match {
                         case Yes           ⇒ return Yes
                         case No            ⇒ /*do nothing*/
-                        case _ /*Unknown*/ ⇒ answer = Unknown
+                        case _ /*Unknown*/ ⇒ return Unknown
                     }
                 }
-                answer
+                No
             case _ ⇒ Unknown
         }
     }

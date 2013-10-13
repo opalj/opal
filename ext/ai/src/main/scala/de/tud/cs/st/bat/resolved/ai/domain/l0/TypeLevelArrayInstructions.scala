@@ -37,65 +37,70 @@ package ai
 package domain
 
 /**
- * Basic implementations of methods for loading and storing values in/from arrays.
+ * Loading and storing values in/from arrays are handled at the type level and
+ * will not throw an exception. I.e., no checks are done w.r.t. `NullPointerExceptions`,
+ * `ArrayStoreExceptions`, `ArrayIndexOutOfBoundsExceptions` and
+ * `NegativeArraySizeExceptions`; an array load/store always succeeds and returns
+ * a value of the respective type.
  *
- * (BY default we ignore `ArrayStoreExceptions`, `ArrayIndexOutOfBoundsExceptions`
- * and `NegativeArraySizeExceptions`.)
+ * (Linkage related exceptions are currently generally ignored.)
+ *
+ * @note By ignoring potentially thrown exceptions it may be the case that not all
+ *      possible paths in a program are explored and the overall analysis may not be
+ *      sound.
  *
  * @author Michael Eichberg
  */
 trait TypeLevelArrayInstructions { this: Domain[_] ⇒
 
-    // TODO make it configurable whether we want to throw an exception or not if we know nothing about the "null" property of the array
-
     //
     // STORING AND LOADING VALUES FROM ARRAYS
     //
 
-    def baload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
+    def baload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
         types(arrayref) match {
             case HasSingleReferenceTypeBound(ArrayType(componentType)) ⇒
                 ComputedValue(newTypedValue(pc, componentType))
             case _ ⇒
                 domainException(this, "array with unknown component type: "+arrayref)
         }
-    def bastore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
+    def bastore(pc: PC, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
         ComputationWithSideEffectOnly
 
-    def caload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
+    def caload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
         ComputedValue(newCharValue(pc))
-    def castore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
+    def castore(pc: PC, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
         ComputationWithSideEffectOnly
 
-    def daload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
+    def daload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
         ComputedValue(newDoubleValue(pc))
-    def dastore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
+    def dastore(pc: PC, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
         ComputationWithSideEffectOnly
 
-    def faload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
+    def faload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
         ComputedValue(newFloatValue(pc))
-    def fastore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
+    def fastore(pc: PC, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
         ComputationWithSideEffectOnly
 
-    def iaload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
+    def iaload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
         ComputedValue(newIntegerValue(pc))
-    def iastore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
+    def iastore(pc: PC, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
         ComputationWithSideEffectOnly
 
-    def laload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
+    def laload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
         ComputedValue(newLongValue(pc))
-    def lastore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
+    def lastore(pc: PC, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
         ComputationWithSideEffectOnly
 
-    def saload(pc: Int, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
+    def saload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
         ComputedValue(newShortValue(pc))
-    def sastore(pc: Int, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
+    def sastore(pc: PC, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
         ComputationWithSideEffectOnly
 
     //
     // LENGTH OF AN ARRAY
     //
-    def arraylength(pc: Int, value: DomainValue): Computation[DomainValue, DomainValue] =
+    def arraylength(pc: PC, value: DomainValue): Computation[DomainValue, DomainValue] =
         ComputedValue(newIntegerValue(pc))
 }
 

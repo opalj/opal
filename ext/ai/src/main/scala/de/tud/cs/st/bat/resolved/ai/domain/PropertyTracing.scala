@@ -90,5 +90,3 @@ trait PropertyTracing[+I] extends Domain[I] { domain ⇒
         }
     }
 }
-
-

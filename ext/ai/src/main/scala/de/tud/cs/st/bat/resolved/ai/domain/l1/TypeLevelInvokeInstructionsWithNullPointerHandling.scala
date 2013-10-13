@@ -42,17 +42,10 @@ import analyses.{ Project, ClassHierarchy }
 import de.tud.cs.st.bat.resolved.ai.IsReferenceType
 
 /**
- * Basic handling of method invocations that completely ignores the possibility
- * of thrown exceptions.
  *
- * (Linkage related exceptions are currently generally ignored.)
- *
- * @note By ignoring potentially thrown exceptions it may be the case that not all
- *      possible paths in a program are explored and the overall analysis may not be
- *      sound.
  * @author Michael Eichberg
  */
-trait TypeLevelInvokeInstructions { this: Domain[_] ⇒
+trait TypeLevelInvokeInstructionsWithNullPointerHandling { this: Domain[_] ⇒
 
     import ObjectType._
 
@@ -63,26 +56,41 @@ trait TypeLevelInvokeInstructions { this: Domain[_] ⇒
             Some(newTypedValue(pc, someType))
     }
 
+    protected def handleInstanceBasedInvoke(
+        pc: PC,
+        methodDescriptor: MethodDescriptor,
+        operands: List[DomainValue]): Computation[Option[DomainValue], Set[DomainValue]] =
+        isNull(operands.last) match {
+            case Yes ⇒
+                ThrowsException(Set(newInitializedObject(pc, NullPointerException)))
+            case No ⇒
+                ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
+            case Unknown ⇒
+                ComputedValueAndException(
+                    asTypedValue(pc, methodDescriptor.returnType),
+                    Set(newObject(pc, NullPointerException)))
+        }
+
     def invokeinterface(pc: PC,
                         declaringClass: ReferenceType,
                         name: String,
                         methodDescriptor: MethodDescriptor,
                         operands: List[DomainValue]): OptionalReturnValueOrExceptions =
-        ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
+        handleInstanceBasedInvoke(pc, methodDescriptor, operands)
 
     def invokevirtual(pc: PC,
                       declaringClass: ReferenceType,
                       name: String,
                       methodDescriptor: MethodDescriptor,
                       operands: List[DomainValue]): OptionalReturnValueOrExceptions =
-        ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
+        handleInstanceBasedInvoke(pc, methodDescriptor, operands)
 
     def invokespecial(pc: PC,
                       declaringClass: ReferenceType,
                       name: String,
                       methodDescriptor: MethodDescriptor,
                       operands: List[DomainValue]): OptionalReturnValueOrExceptions =
-        ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
+        handleInstanceBasedInvoke(pc, methodDescriptor, operands)
 
     def invokestatic(pc: PC,
                      declaringClass: ReferenceType,
@@ -90,6 +98,5 @@ trait TypeLevelInvokeInstructions { this: Domain[_] ⇒
                      methodDescriptor: MethodDescriptor,
                      operands: List[DomainValue]): OptionalReturnValueOrExceptions =
         ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
-
 }
 

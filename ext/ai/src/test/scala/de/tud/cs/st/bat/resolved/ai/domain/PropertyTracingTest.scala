@@ -72,31 +72,9 @@ class PropertyTracingTest
             extends ConfigurableDomain[String]
             with AbstractDefaultDomain[String]
             with RecordReturnValues[String]
-            with PropertyTracing[String] {
+            with SimpleBooleanPropertyTracing[String] {
 
-        type DomainProperty = IsSanitized
-        val DomainPropertyTag: reflect.ClassTag[DomainProperty] = implicitly
-
-        def initialPropertyValue: DomainProperty = IsSanitized(false)
-
-        case class IsSanitized(state: Boolean) extends Property {
-            def merge(otherProperty: DomainProperty): Update[DomainProperty] = {
-                val IsSanitized(otherState) = otherProperty
-                val newState = this.state & otherState
-                if (newState != this.state)
-                    StructuralUpdate(IsSanitized(newState))
-                else
-                    NoUpdate
-            }
-            def update(pc: Int, newState: Boolean) {
-                propertiesArray(pc) = IsSanitized(newState)
-            }
-        }
-
-        def isSanitized(): Boolean = {
-            //println(identifier+" "+returnedValues.map { v ⇒ val (_, pc, _) = v; pc }.map(getProperty(_)).mkString(","))
-            returnedValues.forall { v ⇒ val (_, pc, _) = v; getProperty(pc).state }
-        }
+        def isSanitized(): Boolean = hasPropertyOnExit(returnedValues)
     }
 
     private def evaluateMethod(name: String, f: AnalysisDomain ⇒ Unit) {
@@ -109,6 +87,8 @@ class PropertyTracingTest
         val domain = new AnalysisDomain {
             val identifier = name
 
+            def propertyName = "isSanitized"
+
             override def invokestatic(
                 pc: Int,
                 declaringClass: ReferenceType,
@@ -117,9 +97,9 @@ class PropertyTracingTest
                 operands: List[DomainValue]): OptionalReturnValueOrExceptions = {
 
                 if (name == "sanitize" && origin(operands.head).exists(_ == -2)) {
-                    getProperty(pc).update(pc, true)
+                    updateProperty(pc, true)
                 }
-                
+
                 super.invokestatic(pc, declaringClass, name, methodDescriptor, operands)
             }
         }

@@ -76,75 +76,45 @@ trait TypeLevelFloatValues[+I] extends Domain[I] {
     //
     // RELATIONAL OPERATORS
     //
-    def fcmpg(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+    def fcmpg(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newIntegerValue(pc)
 
-    def fcmpl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+    def fcmpl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newIntegerValue(pc)
 
     //
     // UNARY EXPRESSIONS
     //
-    def fneg(pc: Int, value: DomainValue) = newFloatValue()
+    def fneg(pc: PC, value: DomainValue) = newFloatValue()
 
     //
     // BINARY EXPRESSIONS
     //
 
-    def fadd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+    def fadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newFloatValue()
 
-    def fdiv(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+    def fdiv(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newFloatValue()
 
-    def fmul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+    def fmul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newFloatValue()
 
-    def frem(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+    def frem(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newFloatValue()
 
-    def fsub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+    def fsub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newFloatValue()
 
     //
     // TYPE CONVERSIONS
     //
 
-    def f2d(pc: Int, value: DomainValue): DomainValue = newDoubleValue(pc)
-    def f2i(pc: Int, value: DomainValue): DomainValue = newIntegerValue(pc)
-    def f2l(pc: Int, value: DomainValue): DomainValue = newLongValue(pc)
+    def f2d(pc: PC, value: DomainValue): DomainValue = newDoubleValue(pc)
+    def f2i(pc: PC, value: DomainValue): DomainValue = newIntegerValue(pc)
+    def f2l(pc: PC, value: DomainValue): DomainValue = newLongValue(pc)
 
 }
 
-/**
- * @author Michael Eichberg
- */
-trait DefaultTypeLevelFloatValues[+I]
-        extends DefaultValueBinding[I]
-        with TypeLevelFloatValues[I] {
-
-    case object FloatValue extends super.FloatValue {
-
-        override def merge(pc: Int, value: DomainValue): Update[DomainValue] = value match {
-            case FloatValue ⇒ NoUpdate
-            case _          ⇒ MetaInformationUpdateIllegalValue
-        }
-
-        override def adapt[ThatI >: I](
-            targetDomain: Domain[ThatI],
-            pc: Int): targetDomain.DomainValue =
-            targetDomain match {
-                case thatDomain: DefaultTypeLevelFloatValues[ThatI] ⇒
-                    thatDomain.FloatValue.asInstanceOf[targetDomain.DomainValue]
-                case _ ⇒ super.adapt(targetDomain, pc)
-            }
-    }
-
-    def newFloatValue(): FloatValue = FloatValue
-
-    def newFloatValue(pc: Int): DomainValue = FloatValue
-
-    def newFloatValue(pc: Int, value: Float): FloatValue = FloatValue
-}
 
 

@@ -75,93 +75,58 @@ trait TypeLevelLongValues[+I] extends Domain[I] {
     //
     // RELATIONAL OPERATORS
     //
-    def lcmp(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+    def lcmp(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newIntegerValue(pc)
 
     //
     // UNARY EXPRESSIONS
     //
-    def lneg(pc: Int, value: DomainValue) = newLongValue
+    def lneg(pc: PC, value: DomainValue) = newLongValue()
 
     //
     // BINARY EXPRESSIONS
     //
 
-    def ladd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+    def ladd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newLongValue()
 
-    def land(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+    def land(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newLongValue()
 
-    def ldiv(pc: Int, value1: DomainValue, value2: DomainValue) =
+    def ldiv(pc: PC, value1: DomainValue, value2: DomainValue) =
         ComputedValue(newLongValue())
 
-    def lmul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+    def lmul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newLongValue()
 
-    def lor(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+    def lor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newLongValue()
 
-    def lrem(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+    def lrem(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newLongValue()
 
-    def lshl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+    def lshl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newLongValue()
 
-    def lshr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+    def lshr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newLongValue()
 
-    def lsub(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+    def lsub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newLongValue()
 
-    def lushr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+    def lushr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newLongValue()
 
-    def lxor(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue =
+    def lxor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newLongValue()
 
     //
     // CONVERSION INSTRUCTIONS
     //
 
-    def l2d(pc: Int, value: DomainValue): DomainValue = newDoubleValue(pc)
-    def l2f(pc: Int, value: DomainValue): DomainValue = newFloatValue(pc)
-    def l2i(pc: Int, value: DomainValue): DomainValue = newIntegerValue(pc)
-}
-
-/**
- * Base implementation of the `TypeLevelLongValues` trait that requires that
- * the domain`s `Value` trait is not extended.
- *
- * @author Michael Eichberg
- */
-trait DefaultTypeLevelLongValues[+I]
-        extends DefaultValueBinding[I]
-        with TypeLevelLongValues[I] {
-
-    case object LongValue extends super.LongValue {
-
-        override def merge(pc: Int, value: DomainValue): Update[DomainValue] =
-            value match {
-                case LongValue ⇒ NoUpdate
-                case _         ⇒ MetaInformationUpdateIllegalValue
-            }
-
-        override def adapt[ThatI >: I](
-            targetDomain: Domain[ThatI],
-            pc: Int): targetDomain.DomainValue =
-            targetDomain match {
-                case thatDomain: DefaultTypeLevelLongValues[ThatI] ⇒
-                    thatDomain.LongValue.asInstanceOf[targetDomain.DomainValue]
-                case _ ⇒ super.adapt(targetDomain, pc)
-            }
-    }
-
-    def newLongValue(): LongValue = LongValue
-
-    def newLongValue(pc: Int): DomainValue = LongValue
-
-    def newLongValue(pc: Int, value: Long): LongValue = LongValue
+    def l2d(pc: PC, value: DomainValue): DomainValue = newDoubleValue(pc)
+    def l2f(pc: PC, value: DomainValue): DomainValue = newFloatValue(pc)
+    def l2i(pc: PC, value: DomainValue): DomainValue = newIntegerValue(pc)
 }
 
 

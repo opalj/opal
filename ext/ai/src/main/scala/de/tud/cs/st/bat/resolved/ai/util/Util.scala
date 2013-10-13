@@ -247,7 +247,7 @@ object Util {
             <td class="instruction">{ scala.xml.Unparsed(scala.xml.Text(instruction.toString(pc)).toString.replace("\n", "<br>")) }</td>
             <td class="stack">{ dumpStack(operands) }</td>
             <td class="locals">{ dumpLocals(locals) }</td>
-            <td class="properties">{ domain.hasProperties(pc).getOrElse("&lt;None&gt;") }</td>
+            <td class="properties">{ domain.hasProperties(pc).getOrElse("<None>") }</td>
         </tr >
     }
 

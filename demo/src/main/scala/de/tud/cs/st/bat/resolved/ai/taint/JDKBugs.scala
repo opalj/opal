@@ -62,10 +62,12 @@ package taint {
     import de.tud.cs.st.util.ControlAbstractions.process
 
     object JDKTaintAnalysis
-            extends AIProject[URL]
+            extends AIProject[URL,Domain[_]]
             with Analysis[URL, ReportableAnalysisResult]
             with AnalysisExecutor {
 
+        def ai = BaseAI
+        
         def description: String = "Finds unsafe Class.forName(...) calls."
 
         val analysis = this
@@ -389,7 +391,7 @@ package taint {
             val headValue = aiResult.domain.returnedValues.head._2
             val mergedValue = ComputedValue(Some(
                 (headValue /: aiResult.domain.returnedValues.tail) { (c, n) ⇒
-                    c.merge(pc, n._2) match {
+                    c.join(pc, n._2) match {
                         case NoUpdate          ⇒ c
                         case SomeUpdate(value) ⇒ value
                     }

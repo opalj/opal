@@ -80,9 +80,5 @@ trait RecordReturnValues[+I] extends Domain[I] {
 
 }
 
-class RecordingDomain[I](identifier: I)
-        extends ConfigurableDefaultDomain[I](identifier)
-        with RecordReturnValues[I] {
 
-}
 
