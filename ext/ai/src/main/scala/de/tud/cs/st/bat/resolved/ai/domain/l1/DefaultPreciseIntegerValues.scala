@@ -47,11 +47,7 @@ trait DefaultPreciseIntegerValues[+I]
 
     case class AnIntegerValue() extends super.AnIntegerValue {
 
-        override def join(pc: PC, value: DomainValue): Update[DomainValue] =
-            value match {
-                case _: IntegerLikeValue ⇒ NoUpdate
-                case other               ⇒ MetaInformationUpdateIllegalValue
-            }
+        override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = NoUpdate
 
         override def summarize(pc: PC): DomainValue = this
 
@@ -77,7 +73,7 @@ trait DefaultPreciseIntegerValues[+I]
 
         def update(newValue: Int): DomainValue = IntegerValue(initial, newValue)
 
-        override def join(pc: PC, value: DomainValue): Update[DomainValue] =
+        override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] =
             value match {
                 case AnIntegerValue() ⇒ StructuralUpdate(value)
                 case IntegerValue(otherInitial, otherValue) ⇒
@@ -103,7 +99,6 @@ trait DefaultPreciseIntegerValues[+I]
                             StructuralUpdate(IntegerValue(newInitial, otherValue))
                         }
                     }
-                case other ⇒ MetaInformationUpdateIllegalValue
             }
 
         override def summarize(pc: PC): DomainValue = this

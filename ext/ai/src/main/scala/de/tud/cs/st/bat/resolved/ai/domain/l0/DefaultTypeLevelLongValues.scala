@@ -50,11 +50,7 @@ trait DefaultTypeLevelLongValues[+I]
 
     case object LongValue extends super.LongValue {
 
-        override def join(pc: PC, value: DomainValue): Update[DomainValue] =
-            value match {
-                case LongValue ⇒ NoUpdate
-                case _         ⇒ MetaInformationUpdateIllegalValue
-            }
+        override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = NoUpdate
 
         override def summarize(pc: PC): DomainValue = this
 

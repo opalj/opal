@@ -47,10 +47,7 @@ trait DefaultTypeLevelFloatValues[+I]
 
     case object FloatValue extends super.FloatValue {
 
-        override def join(pc: PC, value: DomainValue): Update[DomainValue] = value match {
-            case FloatValue ⇒ NoUpdate
-            case _          ⇒ MetaInformationUpdateIllegalValue
-        }
+        override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = NoUpdate
 
         override def summarize(pc: PC): DomainValue = this
 

@@ -51,7 +51,7 @@ trait ConsoleTracer extends AITracer {
 
     def instructionEvalution[D <: Domain[_]](
         domain: D,
-        pc: Int,
+        pc: PC,
         instruction: Instruction,
         operands: List[D#DomainValue],
         locals: Array[D#DomainValue]): Unit = {
@@ -69,7 +69,7 @@ trait ConsoleTracer extends AITracer {
 
     def merge[D <: Domain[_]](
         domain: D,
-        pc: Int,
+        pc: PC,
         thisOperands: D#Operands,
         thisLocals: D#Locals,
         otherOperands: D#Operands,

@@ -55,13 +55,11 @@ trait StringValues[+I] extends DefaultTypeLevelReferenceValues[I] {
 
         override def adapt[ThatI >: I](targetDomain: Domain[ThatI], pc: Int): targetDomain.DomainValue =
             // I would prefer to write (but the compiler crashes!): 
-            //             targetDomain match {
-            //              case otherDomain: StringValues[ThatI] ⇒
-            //              		// TODO Why do we need this (useless?) typecast ( – even if we use the factory method – )?
-            //              		new otherDomain.AStringValue(pc, this.value).asInstanceOf[targetDomain.DomainValue]
-            //              		//new otherDomain.AStringValue(pc, this.value).asInstanceOf[targetDomain.DomainValue]
-            //              case _ ⇒ super.adapt(targetDomain, pc)
-            //             }
+            // targetDomain match {
+            // 	case otherDomain: StringValues[ThatI] ⇒
+            //      new otherDomain.AStringValue(pc, this.value).asInstanceOf[targetDomain.DomainValue]
+            //  case _ ⇒ super.adapt(targetDomain, pc)
+            // }
             if (targetDomain.isInstanceOf[StringValues[ThatI]]) {
                 val otherDomain = targetDomain.asInstanceOf[StringValues[ThatI]]
                 new otherDomain.AStringValue(pc, this.value).asInstanceOf[targetDomain.DomainValue]

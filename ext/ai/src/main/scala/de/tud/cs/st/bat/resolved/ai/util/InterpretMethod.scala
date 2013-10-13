@@ -51,9 +51,9 @@ object InterpretMethod {
 
     private object AI extends AI[Domain[_]] {
 
-        def isInterrupted = Thread.interrupted()
+        override def isInterrupted = Thread.interrupted()
 
-        val tracer = Some(new ConsoleTracer {})
+        override val tracer = Some(new ConsoleTracer {})
     }
 
     /**

@@ -67,7 +67,7 @@ trait AbstractDefaultDomain[+I]
         with TypeLevelFieldAccessInstructions
         with TypeLevelInvokeInstructions
         with DoNothingOnReturnFromMethod
-        with DefaultTypeHierarchyBinding {
+        with BasicTypeHierarchy {
 
 }
 
@@ -121,7 +121,7 @@ class ConfigurablePreciseDomain[+I](
         with TypeLevelFieldAccessInstructionsWithNullPointerHandling
         with TypeLevelInvokeInstructionsWithNullPointerHandling
         with DoNothingOnReturnFromMethod
-        with DefaultTypeHierarchyBinding {
+        with BasicTypeHierarchy {
 
 }
 

@@ -36,7 +36,10 @@ package resolved
 
 /**
  * This package defines classes and traits used by BAT's abstract interpretation
- * framework – called BATAI in the following.
+ * framework – called BATAI in the following. Please note, that BATAI just refers
+ * to the classes and traits defined in this package (`ai`). The classes and traits
+ * defined in the sub-packages (in particular in `domain`) are not considered to
+ * be part of the core of BATAI.
  *
  * @note This framework assumes that the analyzed bytecode is valid; i.e., the JVM's
  * bytecode verifier would verify the code. Furthermore, load-time errors
@@ -71,8 +74,8 @@ package object ai {
             message: String) extends AIException(message, null) {
 
         def enrich(
-            worklist: List[Int],
-            evaluated: List[Int],
+            worklist: List[PC],
+            evaluated: List[PC],
             operandsArray: Array[List[domain.DomainValue]],
             localsArray: Array[Array[domain.DomainValue]]) = {
 
@@ -100,8 +103,8 @@ package object ai {
     case class InterpreterException[D <: SomeDomain](
         throwable: Throwable,
         domain: D,
-        worklist: List[Int],
-        evaluated: List[Int],
+        worklist: List[PC],
+        evaluated: List[PC],
         operandsArray: Array[_ <: List[_ <: D#DomainValue]],
         localsArray: Array[_ <: Array[_ <: D#DomainValue]])
             extends AIException(throwable.getLocalizedMessage(), throwable)
@@ -115,8 +118,8 @@ package object ai {
     def interpreterException[D <: SomeDomain] (
         throwable: Throwable,
         domain: D,
-        worklist: List[Int],
-        evaluated: List[Int],
+        worklist: List[PC],
+        evaluated: List[PC],
         operandsArray: Array[_ <: List[_ <: D#DomainValue]],
         localsArray: Array[_ <: Array[_ <: D#DomainValue]]): Nothing = {
         throw InterpreterException[SomeDomain](
@@ -141,6 +144,6 @@ package object ai {
      * whether the domain makes it possible to distinguish between precise types and
      * type bounds is at the sole discretion of the domain.
      */
-    type TypeBound = Set[ReferenceType]
+    type TypeBounds = Set[ReferenceType]
 
 }

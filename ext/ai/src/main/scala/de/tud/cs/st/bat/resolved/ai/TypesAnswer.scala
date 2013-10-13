@@ -40,59 +40,38 @@ package ai
  *
  * @author Michael Eichberg
  */
-sealed trait TypesAnswer[+TypeInfo] extends Traversable[TypeInfo] {
+sealed trait TypesAnswer[+TypeInfo]
 
-    /**
-     * `True` if at least one type/upper type bound is known.
-     */
-    override def nonEmpty: Boolean
+case object TypesUnknown extends TypesAnswer[Nothing]
 
-    /**
-     * The number of upper-type bounds.
-     */
-    override def size: Int
-}
+case class IsPrimitiveType(t: BaseType) extends TypesAnswer[BaseType]
 
-trait TypesUnknown extends TypesAnswer[Nothing] {
-
-    def foreach[U](f: Nothing ⇒ U): Unit = { /*empty*/ }
-
-    override def nonEmpty = false
-
-    override def size = 0
-}
-
-case class IsPrimitiveType(t: BaseType) extends TypesAnswer[BaseType] {
-
-    def foreach[U](f: BaseType ⇒ U): Unit = f(t)
-
-    override def nonEmpty = true
-
-    override def size = 1
-
-    override def head = t
-}
-
-trait IsReferenceType extends TypesAnswer[TypeBound] {
-    def foreachType[U](f: ReferenceType ⇒ U): Unit
-    def forallTypes(f: ReferenceType ⇒ Boolean): Boolean
-    def hasType(referenceType: ReferenceType): Boolean = {
-        !forallTypes((typeBound: ReferenceType) ⇒ referenceType != typeBound)
-    }
-
-    def headType: ReferenceType
+trait IsReferenceType extends TypesAnswer[TypeBounds] {
 
     def isPrecise: Boolean
-}
 
-/**
- * Extractor for Reference types.
- */
-object HasSingleReferenceTypeBound {
-    
-    def unapply(answer: IsReferenceType): Option[ReferenceType] =
-        if (answer.size == 1)
-            Some(answer.headType)
+    def typeBounds: TypeBounds
+
+    /**
+     * If this type has a single type bound, that type bound is returned, `None` otherwise.
+     */
+    def theTypeBound(): Option[ReferenceType] =
+        if (typeBounds.size == 1)
+            Some(typeBounds.head)
         else
             None
+
+    def foreachTypeBound[U](f: ReferenceType ⇒ U): Unit =
+        typeBounds.foreach(f)
+
+    def forallTypeBounds(f: ReferenceType ⇒ Boolean): Boolean =
+        typeBounds.forall(f)
+
+    def hasTypeAsBound(referenceType: ReferenceType): Boolean =
+        typeBounds.contains(referenceType)
+
+}
+
+object TheTypeBound {
+    def unapply(answer: IsReferenceType): Option[ReferenceType] = answer.theTypeBound
 }

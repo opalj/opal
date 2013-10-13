@@ -44,16 +44,12 @@ package ai
  */
 object BaseAI extends AI[Domain[_]] {
 
-    def isInterrupted = Thread.interrupted()
-
-    final val tracer = None
+    override def isInterrupted = Thread.interrupted()
 
 }
 
 object BaseTracingAI extends AIWithPropertyTracing[domain.PropertyTracing[_]] {
 
-    final val tracer = None
-
-    def isInterrupted = Thread.interrupted()
+    override def isInterrupted = Thread.interrupted()
 
 }

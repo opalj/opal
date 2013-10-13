@@ -41,8 +41,7 @@ import scala.util.control.ControlThrowable
 /**
  * A highly-configurable interpreter for BAT's resolved representation of Java bytecode.
  * This interpreter basically iterates over all instructions and computes the result
- * of each instruction using an exchangeable abstract
- * [[de.tud.cs.st.bat.resolved.ai.Domain]] object.
+ * of each instruction using an exchangeable [[de.tud.cs.st.bat.resolved.ai.Domain]].
  *
  * ==Interacting with BATAI==
  * The primary means how to make use of the abstract interpreter is to perform
@@ -73,23 +72,39 @@ trait AI[D <: Domain[_]] {
 
     /**
      * Determines whether a running (or to be started) abstract interpretation
-     * should be interrupted.
+     * should be interrupted (default: `false`).
      *
-     * Called during the abstract interpretation of a method to determine whether
+     * In general, interrupting the abstract interpreter may be meaningful if
+     * the abstract interpretation takes too long or if the currently used domain
+     * is not sufficiently precise enough/if additional information is needed to
+     * continue with the analysis.
+     *
+     * Called by BATAI during the abstract interpretation of a method to determine whether
      * the computation should be aborted. This method is always called before the
-     * evaluation of the next instruction.
+     * evaluation of the next instruction. I.e., after the evaluation of an instruction
+     * and the update of the memory as well as stating all constraints.
      *
      * @note When the abstract interpreter is currently waiting on the result of the
      *    interpretation of a called method, it may take some time before the
      *    interpretation of the current method (this abstract interpreter) is actually
      *    aborted.
+     *
+     * This method '''needs to be overridden in subclasses to identify situations
+     * in which a running abstract interpretation should be interrupted'''.
      */
-    def isInterrupted: Boolean
+    def isInterrupted: Boolean = false
 
     /**
-     * Returns the object that is used by BATAI for tracing the abstract interpretation.
+     * The tracer (default: `None`) that is used by BATAI for reporting the current
+     * operation.
+     *
+     * This method is called by BATAI at various different points (see
+     * [[de.tud.cs.st.bat.resolved.ai.AITracer]]) to report the analysis progress.
+     *
+     * To attach a tracer to the abstract interpreter '''override this
+     * method in subclasses''' and return some tracer object.
      */
-    def tracer: Option[AITracer]
+    def tracer: Option[AITracer] = None
 
     /**
      *  Performs an abstract interpretation of the given method with the given domain.
@@ -108,10 +123,11 @@ trait AI[D <: Domain[_]] {
     /**
      * Returns the initial set of operands when a new method is analyzed.
      *
-     * This method is called by the `perform` method with the same signature.
-     *
      * In general, an empty set is returned as the JVM specification mandates
-     * that the operand stack is empty at the very beginning.
+     * that the operand stack is empty at the very beginning of a method.
+     *
+     * This method is called by the `perform` method with the same signature. It
+     * may be overridden by subclasses to perform some additional processing.
      */
     protected def initialOperands(
         classFile: ClassFile,
@@ -121,13 +137,18 @@ trait AI[D <: Domain[_]] {
 
     /**
      * Returns the initial register assignment that is used when analyzing a new
-     * method. If no initial assignment is provided (`someLocals == None`) BATAI
-     * will automatically create a valid assignment.
+     * method.
      *
-     * This method is called by the `perform` method with the same signature.
+     * Initially, only the registers that contain the method's parameters (including
+     * the self reference (`this`)) are used.  If no initial assignment is provided
+     * (`someLocals == None`) BATAI will automatically create a valid assignment using
+     * the domain. See `perform(...)` for further details regarding the initial
+     * register assignment.
      *
-     * Initially, only the registers that contain the methods parameters (including
-     * the self reference (`this`)) are used.
+     * This method is called by the `perform` method with the same signature. It
+     * may be overridden by subclasses to perform some additional processing. In
+     * that case, however, it is highly recommended to call this method to do the
+     * initial assignment.
      */
     protected def initialLocals(
         classFile: ClassFile,
@@ -141,12 +162,13 @@ trait AI[D <: Domain[_]] {
             assume(
                 l.size >= (method.parameterTypes.size + (if (method.isStatic) 0 else 1)),
                 "the number of initial values is less than the number of parameters")
+
             if (l.size >= method.body.get.maxLocals)
                 l.toArray
             else {
                 // the number of given locals is smaller than the number of max locals
-                // (the former number should be equal to the number of parameter 
-                // values (including "this" or "maxLocals") 
+                // (the former number still has to be larger or equal to the number of 
+                // parameter values (including "this")
                 val locals = new Array[domain.DomainValue](method.body.get.maxLocals)
                 for (i ← (0 until l.size))
                     locals.update(i, l(i))
@@ -156,11 +178,15 @@ trait AI[D <: Domain[_]] {
             val locals = new Array[domain.DomainValue](method.body.get.maxLocals)
             var localVariableIndex = 0
 
+            def origin(localVariableIndex: Int) = -localVariableIndex - 1
+
             if (!method.isStatic) {
                 val thisType = classFile.thisClass
                 val thisValue = {
-                    val thisValue = domain.newReferenceValue(-localVariableIndex - 1, thisType)
-                    domain.establishIsNonNull(-1,
+                    val thisValueOrigin = origin(localVariableIndex)
+                    val thisValue = domain.newReferenceValue(thisValueOrigin, thisType)
+                    domain.establishIsNonNull(
+                        thisValueOrigin,
                         thisValue,
                         List.empty[domain.DomainValue] /*are empty...*/ ,
                         Array(thisValue))._2(0) /* extract the constrained "thisValue"*/
@@ -172,7 +198,7 @@ trait AI[D <: Domain[_]] {
                 val ct = parameterType.computationalType
                 locals.update(
                     localVariableIndex,
-                    domain.newTypedValue(-localVariableIndex - 1, parameterType))
+                    domain.newTypedValue(origin(localVariableIndex), parameterType))
                 localVariableIndex += ct.operandSize
             }
             locals
@@ -181,7 +207,9 @@ trait AI[D <: Domain[_]] {
 
     /**
      * Analyzes the given method using the given domain and the pre-initialized parameter
-     * values (if any).
+     * values (if any). Basically, first the set of initial operands and locals is
+     * calculated before the respective `perform(...,initialOperands,initialLocals)`
+     * method is called.
      *
      * ==Controlling the AI==
      * The abstract interpretation of a method is aborted if the AI's `isInterrupted`
@@ -194,10 +222,12 @@ trait AI[D <: Domain[_]] {
      *      a method with a body.
      * @param domain The abstract domain that is used to perform "abstract" computations
      *      w.r.t. the domain's values.
-     * @param someLocals If the values passed to a method are already known, the
+     * @param someLocals The initial register assignment (the parameters passed to the
+     * 		method). If the values passed to a method are already known, the
      *      abstract interpretation will be performed under that assumption. The specified
-     *      number of locals has to be equal or larger than the number of parameters (including
-     *      `this` in case of a non-static method.)
+     *      number of locals has to be equal or larger than the number of parameters
+     *      (including `this` in case of a non-static method.). If the number is lower
+     *      than `method.body.maxLocals` it will be adjusted as required.
      * @return The result of the abstract interpretation. Basically, the calculated
      *      memory layouts; i.e., the list of operands and local variables before each
      *      instruction. Each calculated memory layout represents the layout before
@@ -245,32 +275,42 @@ trait AI[D <: Domain[_]] {
 
         continueInterpretation(
             code, domain)(
-                initialWorkList, List.empty[Int], operandsArray, localsArray)
+                initialWorkList, List.empty[PC], operandsArray, localsArray)
     }
 
     /**
      * Continues the interpretation of the given method (code) using the given domain.
      *
+     * @param code The bytecode that will be interpreted using the given domain.
+     * @param domain The domain that will be used to perform the domain
+     * 		dependent computations.
      * @param initialWorklist The list of program counters with which the interpretation
      *      will continue. If the method was never analyzed before, the list should just
      *      contain the value "0"; i.e., we start with the interpretation of the
      *      first instruction.
+     * @param alreadyEvaluated The list of the program counters (PC) of the instructions
+     * 		that were already evaluated. Initially (i.e., if the given code is analyzed
+     *   	the first time) this list is empty.
      * @param operandsArray The array that contains the operand stacks. Each value
      *      in the array contains the operand stack before the instruction with the
      *      corresponding index is executed. This array can be empty except of the
      *      indexes that are referred to by the `initialWorklist`.
-     *      '''The `operandsArray` data structure is mutated.'''
+     *      '''The `operandsArray` data structure is mutated by BATAI and it is therefore
+     *      __highly recommended that no `Domain` directly mutates the state of
+     *      this array__.'''
      * @param localsArray The array that contains the local variable assignments.
      *      Each value in the array contains the local variable assignments before
      *      the instruction with the corresponding program counter is executed.
-     *      '''The `localsArray` data structure is mutated.'''
+     *      '''The `localsArray` data structure is mutated by BATAI and it is therefore
+     *      _highly recommended that no `Domain` directly mutates the state of
+     *      this array__.'''
      * @note $UseOfDomain
      */
     protected[ai] def continueInterpretation(
         code: Code,
         domain: D)(
-            initialWorkList: List[Int],
-            alreadyEvaluated: List[Int],
+            initialWorkList: List[PC],
+            alreadyEvaluated: List[PC],
             operandsArray: Array[List[domain.DomainValue]],
             localsArray: Array[Array[domain.DomainValue]]): AIResult[domain.type] = {
 
@@ -456,7 +496,7 @@ trait AI[D <: Domain[_]] {
                             true
                         } else {
                             types(exceptionValue) match {
-                                case exceptions: IsReferenceType ⇒ exceptions.forallTypes(
+                                case exceptions: IsReferenceType ⇒ exceptions.forallTypeBounds(
                                     exceptionType ⇒ isSubtypeOf(exceptionType.asObjectType, catchType.get) match {
                                         case No ⇒
                                             false
@@ -606,42 +646,36 @@ trait AI[D <: Domain[_]] {
 
                     case 169 /*ret*/ ⇒
                         val lvIndex = as[RET](instruction).lvIndex
-                        locals(lvIndex) match {
-                            case ReturnAddressValue(returnAddress) ⇒
-                                // Check that we have explored all paths:
-                                if (worklist.head == SUBROUTINE_START) {
-                                    worklist = worklist.tail
-                                    if (tracer.isDefined)
-                                        tracer.get.returnFromSubroutine(
-                                            domain,
-                                            pc,
-                                            returnAddress,
-                                            evaluated.takeWhile { pc ⇒
-                                                val opcode = instructions(pc).opcode
-                                                opcode != 168 && opcode != 201
-                                            }
-                                        )
-                                    // clear all computations that were done
-                                    // to make this subroutine callable again
-                                    val lastInstructions = evaluated.iterator
-                                    var previousInstruction = lastInstructions.next
-                                    var previousInstructionOpcode: Int = -1 // instructions(previousInstruction).opcode
-                                    do {
-                                        operandsArray(previousInstruction) = null
-                                        localsArray(previousInstruction) = null
-                                        previousInstruction = lastInstructions.next
-                                        previousInstructionOpcode = instructions(previousInstruction).opcode
-                                    } while (previousInstructionOpcode != 168 &&
-                                        previousInstructionOpcode != 201)
-                                    // reset the local variable that stores the 
-                                    // return address
-                                    val updatedLocals = locals.updated(lvIndex, null.asInstanceOf[domain.DomainValue])
-                                    gotoTarget(returnAddress, operands, updatedLocals)
-                                }
-                            case _ ⇒
-                                CodeError("the local variable ("+
-                                    lvIndex+
-                                    ") does not contain a return address value", code, lvIndex)
+                        val returnAddress = locals(lvIndex).asReturnAddressValue
+                        // Check that we have explored all paths:
+                        if (worklist.head == SUBROUTINE_START) {
+                            worklist = worklist.tail
+                            if (tracer.isDefined)
+                                tracer.get.returnFromSubroutine(
+                                    domain,
+                                    pc,
+                                    returnAddress,
+                                    evaluated.takeWhile { pc ⇒
+                                        val opcode = instructions(pc).opcode
+                                        opcode != 168 && opcode != 201
+                                    }
+                                )
+                            // clear all computations that were done
+                            // to make this subroutine callable again
+                            val lastInstructions = evaluated.iterator
+                            var previousInstruction = lastInstructions.next
+                            var previousInstructionOpcode: Int = -1 // instructions(previousInstruction).opcode
+                            do {
+                                operandsArray(previousInstruction) = null
+                                localsArray(previousInstruction) = null
+                                previousInstruction = lastInstructions.next
+                                previousInstructionOpcode = instructions(previousInstruction).opcode
+                            } while (previousInstructionOpcode != 168 &&
+                                previousInstructionOpcode != 201)
+                            // reset the local variable that stores the 
+                            // return address
+                            val updatedLocals = locals.updated(lvIndex, null.asInstanceOf[domain.DomainValue])
+                            gotoTarget(returnAddress, operands, updatedLocals)
                         }
 
                     //
@@ -759,7 +793,7 @@ trait AI[D <: Domain[_]] {
                             val updatedExceptionValue = updatedOperands.head
 
                             domain.types(exceptionValue) match {
-                                case answer: TypesUnknown ⇒
+                                case TypesUnknown ⇒
                                     code.exceptionHandlersFor(pc).foreach { eh ⇒
                                         val branchTarget = eh.handlerPC
                                         // unless we have a "finally" handler, we can state
@@ -776,7 +810,7 @@ trait AI[D <: Domain[_]] {
                                     abruptMethodExecution(pc, exceptionValue)
 
                                 case exceptions: IsReferenceType ⇒
-                                    val isHandled = exceptions.forallTypes(exceptionType ⇒
+                                    val isHandled = exceptions.forallTypeBounds(exceptionType ⇒
                                         // find the exception handler that matches the given 
                                         // exception
                                         code.exceptionHandlersFor(pc).exists(eh ⇒ {
@@ -1592,12 +1626,12 @@ private[ai] object AI {
      * to the list. This is needed to completely process the subroutine (to explore
      * all paths) before we finally return to the main method.
      */
-    private final val initialWorkList = List(0)
+    private final val initialWorkList: List[PC] = List(0)
 
     /**
      * Special value that is added to the work list before a subroutine is evaluated.
      */
-    private final val SUBROUTINE_START = -1
+    private final val SUBROUTINE_START: PC = -1
 }
 
 /**
@@ -1627,22 +1661,22 @@ private[ai] object CTC2 {
 }
 
 /**
- * Abstract interpreter that (in combination with an appropriate domain) 
+ * Abstract interpreter that (in combination with an appropriate domain)
  * facilitates the analysis of properties that are control-flow dependent.
  *
  * Basically this abstract interpreter can be used as a drop-in replacement
- * of the default abstract interpreter if the domain supports property 
+ * of the default abstract interpreter if the domain supports property
  * tracing.
- *   
+ *
  * @author Michael Eichberg
  */
 trait AIWithPropertyTracing[D <: domain.PropertyTracing[_]] extends AI[D] {
 
     /**
-     * Performs an abstract interpretation of the given code snippet. 
-     * 
+     * Performs an abstract interpretation of the given code snippet.
+     *
      * Before actually starting the interpretation the domain is called to
-     * let it initialize its properties. 
+     * let it initialize its properties.
      */
     override protected[ai] def perform(
         code: Code,

@@ -38,22 +38,29 @@ package domain
 
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
-import analyses.ClassHierarchy
-
 /**
- * Delegates type hierarchy related questions to a project's class hierarchy.
+ * Implementation of a Domain's `isSubtypeOf(...)` method that delegates to 
+ * the corresponding method defined by the class `ClassHierarchy`.
  *
  * @author Michael Eichberg
  */
-trait ProjectBasedTypeHierarchyBinding[Source] { this: Domain[_] ⇒
+trait BasicTypeHierarchy { this: Domain[_] ⇒
+    /**
+     * This project's class hierarchy; unless explicitly overridden, BAT's
+     * built-in default class hierarchy is used which only reflects the type-hierarchy
+     * between the exceptions used by JVM instructions.
+     *
+     * @note '''This method is intended to be overridden.'''
+     */
+    protected def classHierarchy: analyses.ClassHierarchy =
+        analyses.ClassHierarchy.preInitializedClassHierarchy
 
-    def project: analyses.Project[Source]
-
-    def classHierarchy: ClassHierarchy = project.classHierarchy
-
+    /**
+     * @see `de.tud.cs.st.bat.resolved.analyses.ClassHierarchy.isSubtypeOf(ReferenceType,
+     * 		ReferenceType)`
+     */
     def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer =
         classHierarchy.isSubtypeOf(subtype, supertype)
 
 }
-
 

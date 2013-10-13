@@ -46,11 +46,9 @@ trait DefaultTypeLevelIntegerValues[+I]
         with TypeLevelIntegerValues[I] {
 
     case object BooleanValue extends super.BooleanValue {
-        override def join(pc: PC, value: DomainValue): Update[DomainValue] = value match {
+        override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = value match {
             case BooleanValue         ⇒ NoUpdate
             case other @ IntegerValue ⇒ StructuralUpdate(other)
-            case TheIllegalValue      ⇒ MetaInformationUpdateIllegalValue
-            case _                    ⇒ MetaInformationUpdateIllegalValue
         }
 
         override def adapt[ThatI >: I](
@@ -64,13 +62,11 @@ trait DefaultTypeLevelIntegerValues[+I]
     }
 
     case object ByteValue extends super.ByteValue {
-        override def join(pc: PC, value: DomainValue): Update[DomainValue] = value match {
+        override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = value match {
             case ByteValue            ⇒ NoUpdate
-            case TheIllegalValue      ⇒ MetaInformationUpdateIllegalValue
             case other @ IntegerValue ⇒ StructuralUpdate(other)
             case other @ ShortValue   ⇒ StructuralUpdate(other)
             case other @ CharValue    ⇒ StructuralUpdate(other)
-            case other                ⇒ MetaInformationUpdateIllegalValue
         }
 
         override def adapt[ThatI >: I](
@@ -84,13 +80,11 @@ trait DefaultTypeLevelIntegerValues[+I]
     }
 
     case object ShortValue extends super.ShortValue {
-        override def join(pc: PC, value: DomainValue): Update[DomainValue] = value match {
+        override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = value match {
             case ShortValue           ⇒ NoUpdate
-            case TheIllegalValue      ⇒ MetaInformationUpdateIllegalValue
             case other @ IntegerValue ⇒ StructuralUpdate(other)
             case ByteValue            ⇒ NoUpdate
             case other @ CharValue    ⇒ StructuralUpdate(IntegerValue)
-            case other                ⇒ MetaInformationUpdateIllegalValue
         }
 
         override def adapt[ThatI >: I](
@@ -104,13 +98,11 @@ trait DefaultTypeLevelIntegerValues[+I]
     }
 
     case object CharValue extends super.CharValue {
-        override def join(pc: PC, value: DomainValue): Update[DomainValue] = value match {
+        override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = value match {
             case CharValue            ⇒ NoUpdate
-            case TheIllegalValue      ⇒ MetaInformationUpdateIllegalValue
             case ByteValue            ⇒ NoUpdate
             case ShortValue           ⇒ StructuralUpdate(IntegerValue)
             case other @ IntegerValue ⇒ StructuralUpdate(other)
-            case other                ⇒ MetaInformationUpdateIllegalValue
         }
 
         override def adapt[ThatI >: I](
@@ -124,15 +116,8 @@ trait DefaultTypeLevelIntegerValues[+I]
     }
 
     case object IntegerValue extends super.IntegerValue {
-        override def join(pc: PC, value: DomainValue): Update[DomainValue] = value match {
-            case IntegerValue    ⇒ NoUpdate
-            case TheIllegalValue ⇒ MetaInformationUpdateIllegalValue
-            case BooleanValue    ⇒ NoUpdate
-            case ByteValue       ⇒ NoUpdate
-            case CharValue       ⇒ NoUpdate
-            case ShortValue      ⇒ NoUpdate
-            case other           ⇒ MetaInformationUpdateIllegalValue
-        }
+
+        override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = NoUpdate
 
         override def adapt[ThatI >: I](
             targetDomain: Domain[ThatI],

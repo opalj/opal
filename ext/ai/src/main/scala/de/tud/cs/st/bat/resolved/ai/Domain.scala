@@ -135,12 +135,16 @@ trait Domain[+I] {
          */
         def computationalType: ComputationalType
 
+        private[ai] def asReturnAddressValue: PC =
+            BATException("this value cannot be converted to a return address")
+
         /**
          * Join of this value and the given value.
          *
-         * This basically implements the join operator of complete lattices. Join is
-         * called whenever two control-flow paths join and, hence, the values found
-         * on the paths need to be joined. This method is called whenever two
+         * This basically implements the join operator of complete lattices.
+         *
+         * Join is called whenever two control-flow paths join and, hence, the values
+         * found on the paths need to be joined. This method is called whenever two
          * '''intra-procedural''' control-flow paths join.
          *
          * ==Example==
@@ -154,8 +158,9 @@ trait Domain[+I] {
          * perform subsequent computations. Hence, if `this` value subsumes the given
          * value the result has to be either a `NoUpdate` or a `MetaInformationUpdate`.
          * In case that the given value subsumes `this` value, the result has to be
-         * a `StructuralUpdate`. Hence, '''the join operation is not commutative'''. If the
-         * result is a `StructuralUpdate` BATAI will continue with the interpretation.
+         * a `StructuralUpdate`. Hence, '''the join operation is not commutative'''.
+         * If the result is a `StructuralUpdate` BATAI will continue with the
+         * interpretation.
          *
          * The termination of the abstract interpretation directly depends on the fact
          * that at some point all values are fixed and don't change anymore. Hence,
@@ -168,30 +173,73 @@ trait Domain[+I] {
          * ensured that a subsequent join with the value 0 will not result in the value
          * 0 again.
          *
-         * ==Joining Incompatible Values==
-         * If this value is incompatible with the given value the result has
-         * to be an `IllegalValue`. This may happen, e.g., when BATAI tries to
-         * join two register values/locals that are not live (i.e., which should not be
-         * live) and, hence, are actually allowed to contain incompatible values.
-         * (`Not live` means that the value will not be used in the future.)
-         *
-         * It is the responsibility of the domain to check that the given value is
-         * compatible with the current value and – if not – to return the value
-         * `MetaInformationUpdateIllegalValue`.
          *
          * @param pc The program counter of the instruction where the paths converge.
-         * @param value The "new" domain value.
+         * @param value The "new" domain value with which this domain value should be
+         * 		joined.
          */
-        def join(pc: PC, value: DomainValue): Update[DomainValue]
+        def doJoin(pc: PC, value: DomainValue): Update[DomainValue]
 
+        /**
+         * Checks that the given value and this value are compatible and – if so –
+         * calls `join`. See `doJoin(..)` for details.
+         *
+         * @note It is generally not needed to override this method.
+         *
+         * @param pc The program counter of the instruction where the paths converge.
+         * @param value The "new" domain value with which this domain value should be
+         * 		joined.
+         */
+        def join(pc: PC, value: DomainValue): Update[DomainValue] = {
+            if ((value eq TheIllegalValue) ||
+                (this.computationalType ne value.computationalType))
+                MetaInformationUpdateIllegalValue
+            else
+                doJoin(pc, value)
+        }
+
+        //
+        // METHODS THAT ARE PREDEFINED BECAUSE THEY ARE GENERALLY USEFUL WHEN
+        // ANALYZING PROJECTS, BUT WHICH ARE NOT REQUIRED BY BATAI! 
+        // I.E. THESE METHODS ARE USED - IF AT ALL - BY THE DOMAIN.
+        //
+
+        /**
+         * Creates a summary of this value.
+         *
+         * In general, creating a summary of a value may be useful/required
+         * for values that are potentially returned by a called method and which
+         * will be used by the caller method to continue the interpretation. For example,
+         * it may be useful to precisely track the flow of values within a method to
+         * be able to distinguish between all sources of a value (E.g., to be able to
+         * distinguish between a `NullPointerException` created by instruction A and
+         * one created by instruction B (`A != B`).) However, from the caller perspective
+         * it may be absolutely irrelevant where/how the value was created in the called
+         * method and, hence, keeping all information would just waste memory.
+         *
+         * @note __The precise semantics and usage of `summarize(...)` can be determined
+         * 		by the domain as BATAI does not use/call this method.__ This method
+         *   	is solely predefined to facilitate the development of project-wide
+         *      analyses.
+         */
         def summarize(pc: PC): DomainValue
 
+        /**
+         * Creates a summary value of this value and the given value.
+         *
+         * @note __The precise semantics and usage of `summarize(...)` can be determined
+         * 		by the domain as BATAI does not use/call this method.__ This method
+         *   	is solely predefined to facilitate the development of project-wide
+         *      analyses.
+         */
         def summarize(pc: PC, value: DomainValue): DomainValue
 
         /**
-         * Adapts this value to the given domain.
+         * Adapts this value to the given domain (default: throws a domain exception
+         * that adaptation is not supported). '''This method needs to be overridden
+         * by concrete `Value` classes to support the adaptation for a specific domain.'''
          *
-         * Supporting the `adapt` method is primarily necessary when  you want to
+         * Supporting the `adapt` method is primarily necessary when you want to
          * analyze a method that is called by the currently analyzed method
          * and you need to adapt this domain's values (the parameters of the method)
          * to the domain used for analyzing the called method.
@@ -200,7 +248,8 @@ trait Domain[+I] {
          * domain-adaptation. I.e., to make it possible to change the abstract domain at
          * runtime if the analysis time takes too long using a (more) precise domain.
          *
-         * The `adapt` method is not directly called by BATAI.
+         * @note __The precise semantics of `adapt` can be determined by the domain
+         * 		as BATAI does not use/call this method.__
          */
         def adapt[TDI >: I](
             targetDomain: Domain[TDI],
@@ -209,8 +258,6 @@ trait Domain[+I] {
                 Domain.this,
                 "adapting this value for the target domain is not supported")
 
-        private[Domain] def asReturnAddressValue: PC =
-            BATException("this value cannot be converted to a return address")
     }
 
     /**
@@ -249,23 +296,26 @@ trait Domain[+I] {
                 Domain.this,
                 "a dead/an illegal value does not have a computational type")
 
-        override def join(pc: PC, value: DomainValue): Update[DomainValue] =
-            if (value == TheIllegalValue)
+        override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] =
+            if (value eq TheIllegalValue)
                 NoUpdate
             else
                 MetaInformationUpdateIllegalValue
 
+        override def join(pc: PC, value: DomainValue): Update[DomainValue] =
+            doJoin(pc, value)
+
         override def summarize(pc: PC): DomainValue =
             domainException(
                 Domain.this,
-                "creating a summary of an IllegalValue is not supported")
+                "creating a summary of an IllegalValue is meaningless")
 
         override def summarize(
             pc: PC,
             value: DomainValue): DomainValue =
             domainException(
                 Domain.this,
-                "merging IllegalValue is not supported")
+                "creating a summary of some value and an IllegalValue is meaningless")
 
         override def adapt[ThatI >: I](
             targetDomain: Domain[ThatI],
@@ -284,7 +334,7 @@ trait Domain[+I] {
     type DomainIllegalValue <: IllegalValue with DomainValue
 
     /**
-     * The ''singleton'' instance of a `IllegalValue`.
+     * The '''singleton''' instance of the `IllegalValue`.
      */
     val TheIllegalValue: DomainIllegalValue
     final def ⊥ = TheIllegalValue
@@ -306,7 +356,7 @@ trait Domain[+I] {
      */
     final def StructuralUpdateIllegalValue: StructuralUpdate[Nothing] =
         domainException(Domain.this,
-            "merging of values with an incompatible value "+
+            "joining values with an incompatible value "+
                 "always has to be a MetaInformationUpdate and not more")
 
     /**
@@ -323,27 +373,28 @@ trait Domain[+I] {
         val address: PC)
             extends Value { this: DomainReturnAddressValue ⇒
 
-        private[Domain] final override def asReturnAddressValue: Int = address
+        private[ai] final override def asReturnAddressValue: Int = address
 
-        final override def computationalType: ComputationalType = ComputationalTypeReturnAddress
+        final override def computationalType: ComputationalType =
+            ComputationalTypeReturnAddress
 
-        override def join(pc: PC, value: DomainValue): Update[DomainValue] =
+        override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] =
             if (address == value.asReturnAddressValue)
                 NoUpdate
             else
-                domainException(Domain.this, "return address values cannot be merged")
+                domainException(Domain.this, "return address values cannot be joined")
 
         override def summarize(pc: PC): DomainValue =
             domainException(
                 Domain.this,
-                "creating a summary of a return address value is not supported")
+                "creating a summary of a return address value is meaningless")
 
         override def summarize(
             pc: PC,
             value: DomainValue): DomainValue =
             domainException(
                 Domain.this,
-                "merging return addresses is not supported")
+                "creating a summary of some value and a return address value is meaningless")
 
         override def adapt[ThatI >: I](
             targetDomain: Domain[ThatI],
@@ -351,14 +402,6 @@ trait Domain[+I] {
             targetDomain.ReturnAddressValue(address)
 
         override def toString = "ReturnAddress("+address+")"
-    }
-
-    /**
-     * Defines an extractor method to facilitate matching against return addresses.
-     */
-    object ReturnAddressValue {
-        def unapply(retAddress: ReturnAddressValue): Option[Int] =
-            Some(retAddress.address)
     }
 
     /**
@@ -542,7 +585,7 @@ trait Domain[+I] {
      * 		`multianewarray` instructions and in both cases an exception may be thrown
      *   	(e.g., `NegativeArraySizeException`).
      */
-    def newObject(pc: PC, objectType: ObjectType): DomainValue
+    def newObject(pc: PC, referenceType: ReferenceType): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents a new, '''initialized'''
@@ -551,9 +594,10 @@ trait Domain[+I] {
      *
      * This method is used by BATAI to create reference values that are normally
      * internally created by the JVM (in particular exceptions such as
-     * `NullPointExeception` and `ClassCastException`).
+     * `NullPointExeception` and `ClassCastException`). However, it can generally
+     * be used to create initialized objects/arrays.
      */
-    def newInitializedObject(pc: PC, objectType: ObjectType): DomainValue
+    def newInitializedObject(pc: PC, referenceType: ReferenceType): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given string value
@@ -1281,7 +1325,11 @@ trait Domain[+I] {
 
     /**
      * Creates a summary of the given domain values. For the precise details
-     * regarding the calculation of a summary see `Value.summuariz(...)`.
+     * regarding the calculation of a summary see `Value.summuarize(...)`.
+     *
+     * @param pc The program counter that will be used for the summary value if
+     * 		a new value that abstracts over/summarize the given values is returned.
+     * @param values An `Iterable` over one or more values.
      */
     def summarize(pc: PC, values: Iterable[DomainValue]): DomainValue = {
         (values.head.summarize(pc) /: values.tail) {
@@ -1344,8 +1392,8 @@ trait Domain[+I] {
                                 case NoUpdate   ⇒ thisOperand
                                 case someUpdate ⇒ someUpdate.value
                             }
-                            assume(!newOperand.isInstanceOf[IllegalValue],
-                                "merging of the operands "+thisOperand+" and "+otherOperand+" failed")
+                            assume(newOperand ne TheIllegalValue,
+                                "an operand stack value must never be an illegal value")
                             operandsUpdated = operandsUpdated &: updatedOperand
                             newOperand
                         }
@@ -1369,7 +1417,7 @@ trait Domain[+I] {
                 while (i < maxLocals) {
                     val thisLocal = thisLocals(i)
                     val otherLocal = otherLocals(i)
-                    // The value calculated by "merge" may be the value "IllegalValue" 
+                    // The value calculated by "join" may be the value "IllegalValue" 
                     // which means the values in the corresponding register were 
                     // different – w.r.t. its type – on the different paths. 
                     // Hence, the values are no longer useful.

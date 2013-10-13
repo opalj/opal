@@ -39,48 +39,32 @@ package project
 import analyses._
 
 /**
- * Template class for executing analyses that use the abstract interpreter.
+ * Template class for analyzing complete Java projects that use the abstract interpreter.
  *
- * This trait can be combined with the Analysis and the AnalysisExecutor traits
- * to easily create a readily executable analysis (see the Demo project for
- * examples).
+ * This trait is intended to be used in combination with the `Analysis` and the
+ * `AnalysisExecutor` traits to easily create a readily executable analysis (see
+ * the Demo project for examples).
  *
  * @author Michael Eichberg
  */
-trait AIProject[Source,D <: Domain[_]] {
+trait AIProject[Source, D <: Domain[_] with Report] {
 
     /**
-     * @note This method is intended to be overridden by subtraits that need to get 
-     * hold on the parameters. In this case (in the subtrait) it is recommended to 
-     * first analyze the parameters and afterwards to call `super.analyze(...)`.
-     */
-    def analyze(
-        project: analyses.Project[Source],
-        parameters: Seq[String]): ReportableAnalysisResult = {
-        val reports = for ((classFile, method) ← entryPoints(project)) yield {
-            val theDomain = domain(project, classFile, method)
-            ai(classFile, method, theDomain)
-            theDomain.report
-        }
-        val theReports: Iterable[String] = reports.filter(_.isDefined).map(_.get)
-        BasicReport("Number of reports: "+theReports.size+"\n"+theReports.mkString("\n"))
-    }
-
-    /**
-     * Returns the abstract interpreter that is used for performing the abstract 
+     * Returns the abstract interpreter that should be used for performing the abstract
      * interpretations.
      */
-    def ai : AI[D] 
-    
+    def ai: AI[D]
+
     /**
-     * Returns the (initial) domain that will be used to analyze the entry points.
+     * Returns the (initial) domain object that will be used to analyze an entry point.
      *
-     * All entry points will potentially be analyzed in parallel.
+     * The analysis of all entry points may happen concurrently unless
+     * `analyzeInParallel` is `false.
      */
     def domain(
         project: analyses.Project[Source],
         classFile: ClassFile,
-        method: Method): D with Report
+        method: Method): D
 
     /**
      * A project's entry points.
@@ -102,5 +86,36 @@ trait AIProject[Source,D <: Domain[_]] {
      */
     def entryPoints(project: Project[Source]): Iterable[(ClassFile, Method)]
 
+    /**
+     * If `true` all entry points will be analyzed in parallel.
+     */
+    protected def analyzeInParallel: Boolean = true
+
+    /**
+     * Analyzes the given project by first determining the entry points of the analysis
+     * and then starting an independent analysis for each entry point using its own
+     * domain.
+     *
+     * @note This method is intended to be overridden by subtraits that need to get
+     * hold on the specified analysis parameters. In this case (in the subtrait)
+     * it is recommended to first analyze the parameters and afterwards to call
+     * `super.analyze(...)`.
+     */
+    def analyze(
+        project: analyses.Project[Source],
+        parameters: Seq[String]): ReportableAnalysisResult = {
+        val entryPointsIterator =
+            if (analyzeInParallel)
+                entryPoints(project).par.iterator
+            else
+                entryPoints(project).iterator
+        val reports = (for ((classFile, method) ← entryPointsIterator) yield {
+            val theDomain = domain(project, classFile, method)
+            ai(classFile, method, theDomain)
+            theDomain.report
+        }).toIterable
+        val theReports: Iterable[String] = reports.filter(_.isDefined).map(_.get)
+        BasicReport("Number of reports: "+theReports.size+"\n"+theReports.mkString("\n"))
+    }
 }
 

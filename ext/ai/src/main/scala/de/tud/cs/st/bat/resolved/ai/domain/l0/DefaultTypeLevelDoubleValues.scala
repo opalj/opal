@@ -47,14 +47,13 @@ trait DefaultTypeLevelDoubleValues[+I]
 
     case object DoubleValue extends super.DoubleValue {
 
-        override def join(pc: PC, value: DomainValue): Update[DomainValue] =
-            value match {
-                case DoubleValue ⇒ NoUpdate
-                case _           ⇒ MetaInformationUpdateIllegalValue
-            }
+        override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] =
+            // Since value is guaranteed to have computational type double it 
+            // has to be this value.
+            NoUpdate
 
         override def summarize(pc: PC): DomainValue = this
-            
+
         override def summarize(pc: PC, value: DomainValue): DomainValue = this
 
         override def adapt[ThatI >: I](

@@ -38,31 +38,27 @@ package domain
 
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
-/**
- * Encapsulates a domain and some values created by the respective domain.
- *
- * Using the class `DomainValues` enables type-safety when we need to store and
- * pass on a domain and some of its values.
- *
- * @author Michael Eichberg
- */
-sealed abstract class DomainValues[D <: Domain[_]] {
-    val domain: D
-    val values: Iterable[domain.DomainValue]
-}
+import analyses.ClassHierarchy
 
-/**
- * Factory for creating `DomainValues` objects.
- *
- * @author Michael Eichberg
- */
-object DomainValues {
-    def apply[I](
-        valuesDomain: Domain[I])(
-            domainValues: Iterable[valuesDomain.DomainValue]) = {
-        new DomainValues[valuesDomain.type] {
-            val domain: valuesDomain.type = valuesDomain
-            val values: Iterable[domain.DomainValue] = domainValues
+trait DefaultTypeLevelReferenceValuesWithClosedHierarchy[+I]
+        extends DefaultTypeLevelReferenceValues[I] {
+
+    def classHierarchy: ClassHierarchy
+
+    override def newReferenceValue(referenceType: ReferenceType): DomainValue =
+        referenceType match {
+            case ot: ObjectType ⇒
+                val isPrecise = classHierarchy.subtypes(ot).isEmpty
+                AReferenceValue(-1, Set(referenceType), Unknown, isPrecise)
+            case _ ⇒ super.newReferenceValue(referenceType)
         }
-    }
+
+    override def newReferenceValue(pc: PC, referenceType: ReferenceType): DomainValue =
+        referenceType match {
+            case ot: ObjectType ⇒
+                val isPrecise = classHierarchy.subtypes(ot).isEmpty
+                AReferenceValue(pc, Set(referenceType), Unknown, isPrecise)
+            case _ ⇒ super.newReferenceValue(pc, referenceType)
+        }
+
 }
