@@ -52,16 +52,9 @@ trait TypeLevelLongValues[+I] extends Domain[I] {
     // -----------------------------------------------------------------------------------
 
     trait LongValue extends Value { this: DomainValue ⇒
-        final def computationalType: ComputationalType = ComputationalTypeLong
-    }
 
-    private val typesAnswer: IsPrimitiveType = IsPrimitiveType(LongType)
+        override final def computationalType: ComputationalType = ComputationalTypeLong
 
-    abstract override def types(value: DomainValue): TypesAnswer = {
-        value match {
-            case r: LongValue ⇒ typesAnswer
-            case _            ⇒ super.types(value)
-        }
     }
 
     protected def newLongValue(): DomainValue
@@ -71,6 +64,12 @@ trait TypeLevelLongValues[+I] extends Domain[I] {
     // HANDLING OF COMPUTATIONS
     //
     // -----------------------------------------------------------------------------------
+
+    abstract override def types(value: DomainValue): TypesAnswer =
+        value match {
+            case r: LongValue ⇒ TypeLevelLongValues.typesAnswer
+            case _            ⇒ super.types(value)
+        }
 
     //
     // RELATIONAL OPERATORS
@@ -128,5 +127,9 @@ trait TypeLevelLongValues[+I] extends Domain[I] {
     def l2f(pc: PC, value: DomainValue): DomainValue = newFloatValue(pc)
     def l2i(pc: PC, value: DomainValue): DomainValue = newIntegerValue(pc)
 }
+private object TypeLevelLongValues {
+    private val typesAnswer: IsPrimitiveType = IsPrimitiveType(LongType)
+}
+
 
 

@@ -39,12 +39,17 @@ package domain
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 /**
+ * Base implementation of the `TypeLevelIntegerValues` trait that requires that
+ * the domain`s `Value` trait is not extended. This implementation satisfies
+ * the requirements of BATAI w.r.t. the domain's computational type but provides 
+ * some additional information about a value's range if possible.
+ *  
  * @author Michael Eichberg
  */
 trait DefaultTypeLevelIntegerValues[+I]
         extends DefaultValueBinding[I]
         with TypeLevelIntegerValues[I] {
-
+    
     case object BooleanValue extends super.BooleanValue {
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = value match {
             case BooleanValue         ⇒ NoUpdate
@@ -82,8 +87,8 @@ trait DefaultTypeLevelIntegerValues[+I]
     case object ShortValue extends super.ShortValue {
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = value match {
             case ShortValue           ⇒ NoUpdate
-            case other @ IntegerValue ⇒ StructuralUpdate(other)
             case ByteValue            ⇒ NoUpdate
+            case other @ IntegerValue ⇒ StructuralUpdate(other)
             case other @ CharValue    ⇒ StructuralUpdate(IntegerValue)
         }
 

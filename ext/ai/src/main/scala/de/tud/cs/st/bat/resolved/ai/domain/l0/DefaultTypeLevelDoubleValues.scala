@@ -39,6 +39,10 @@ package domain
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 /**
+ * Base implementation of the `TypeLevelDoubleValues` trait that requires that
+ * the domain`s `Value` trait is not extended. This implementation just satisfies
+ * the basic requirements of BATAI w.r.t. the domain's computational type.
+ *
  * @author Michael Eichberg
  */
 trait DefaultTypeLevelDoubleValues[+I]
@@ -49,7 +53,7 @@ trait DefaultTypeLevelDoubleValues[+I]
 
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] =
             // Since value is guaranteed to have computational type double it 
-            // has to be this value.
+            // has to be "this" value.
             NoUpdate
 
         override def summarize(pc: PC): DomainValue = this

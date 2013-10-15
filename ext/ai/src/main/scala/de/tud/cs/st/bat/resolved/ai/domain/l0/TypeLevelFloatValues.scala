@@ -39,6 +39,8 @@ package domain
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 /**
+ * Domain that handles computations related to `Float` values at the type level.
+ *
  * @author Michael Eichberg
  */
 trait TypeLevelFloatValues[+I] extends Domain[I] {
@@ -53,14 +55,14 @@ trait TypeLevelFloatValues[+I] extends Domain[I] {
      * Abstracts over all values with computational type `float`.
      */
     trait FloatValue extends Value { this: DomainValue ⇒
-        final def computationalType: ComputationalType = ComputationalTypeFloat
-    }
 
-    private val typesAnswer: IsPrimitiveType = IsPrimitiveType(FloatType)
+        override final def computationalType: ComputationalType = ComputationalTypeFloat
+
+    }
 
     abstract override def types(value: DomainValue): TypesAnswer = {
         value match {
-            case r: FloatValue ⇒ typesAnswer
+            case r: FloatValue ⇒ TypeLevelFloatValues.typesAnswer
             case _             ⇒ super.types(value)
         }
     }
@@ -115,6 +117,10 @@ trait TypeLevelFloatValues[+I] extends Domain[I] {
     def f2l(pc: PC, value: DomainValue): DomainValue = newLongValue(pc)
 
 }
+private object TypeLevelFloatValues {
+    private val typesAnswer: IsPrimitiveType = IsPrimitiveType(FloatType)
+}
+
 
 
 

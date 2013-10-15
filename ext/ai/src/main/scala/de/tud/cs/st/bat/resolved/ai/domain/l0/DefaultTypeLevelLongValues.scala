@@ -40,7 +40,8 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 /**
  * Base implementation of the `TypeLevelLongValues` trait that requires that
- * the domain`s `Value` trait is not extended.
+ * the domain`s `Value` trait is not extended. This implementation just satisfies
+ * the basic requirements of BATAI w.r.t. the domain's computational type.
  *
  * @author Michael Eichberg
  */

@@ -39,6 +39,8 @@ package domain
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 /**
+ * Domain that handles computations related to `Double` values at the type level.
+ *
  * @author Michael Eichberg
  */
 trait TypeLevelDoubleValues[+I] extends Domain[I] {
@@ -49,15 +51,18 @@ trait TypeLevelDoubleValues[+I] extends Domain[I] {
     //
     // -----------------------------------------------------------------------------------
 
+    /**
+     * General abstraction over double values that satisfies BATAI's requirements.
+     */
     trait DoubleValue extends Value { this: DomainValue ⇒
-        final def computationalType: ComputationalType = ComputationalTypeDouble
-    }
 
-    private val typesAnswer: IsPrimitiveType = IsPrimitiveType(DoubleType)
+        override final def computationalType: ComputationalType = ComputationalTypeDouble
+
+    }
 
     abstract override def types(value: DomainValue): TypesAnswer =
         value match {
-            case r: DoubleValue ⇒ typesAnswer
+            case r: DoubleValue ⇒ TypeLevelDoubleValues.typesAnswer
             case _              ⇒ super.types(value)
         }
 
@@ -70,16 +75,17 @@ trait TypeLevelDoubleValues[+I] extends Domain[I] {
     //
     // RELATIONAL OPERATORS
     //
-    def dcmpg(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = 
+    def dcmpg(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newIntegerValue(pc)
-        
-    def dcmpl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = 
+
+    def dcmpl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newIntegerValue(pc)
 
     //
     // UNARY EXPRESSIONS
     //
-    def dneg(pc: PC, value: DomainValue) = newDoubleValue(pc)
+    def dneg(pc: PC, value: DomainValue) =
+        newDoubleValue(pc)
 
     //
     // BINARY EXPRESSIONS
@@ -102,9 +108,17 @@ trait TypeLevelDoubleValues[+I] extends Domain[I] {
     //
     // TYPE CONVERSION INSTRUCTIONS
     //
-    def d2f(pc: PC, value: DomainValue): DomainValue = newFloatValue(pc)
-    def d2i(pc: PC, value: DomainValue): DomainValue = newIntegerValue(pc)
-    def d2l(pc: PC, value: DomainValue): DomainValue = newLongValue(pc)
+    def d2f(pc: PC, value: DomainValue): DomainValue =
+        newFloatValue(pc)
+
+    def d2i(pc: PC, value: DomainValue): DomainValue =
+        newIntegerValue(pc)
+
+    def d2l(pc: PC, value: DomainValue): DomainValue =
+        newLongValue(pc)
+}
+private object TypeLevelDoubleValues {
+    private val typesAnswer: IsPrimitiveType = IsPrimitiveType(DoubleType)
 }
 
 

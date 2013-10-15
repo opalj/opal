@@ -39,7 +39,7 @@ package domain
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 /**
- * Domain to trace integer values at the type level.
+ * Domain that performs computations related to integer values at the type level.
  *
  * @author Michael Eichberg
  */
@@ -52,60 +52,49 @@ trait TypeLevelIntegerValues[+I] extends Domain[I] {
     // -----------------------------------------------------------------------------------
 
     /**
-     * Abstracts over all values with computational type `integer` and also
-     * represents Integer values.
+     * Abstracts over values with computational type `integer`.
      */
     trait ComputationalTypeIntegerValue extends Value { this: DomainValue ⇒
-        final def computationalType: ComputationalType = ComputationalTypeInt
+
+        override final def computationalType: ComputationalType = ComputationalTypeInt
 
         override def summarize(pc: PC): DomainValue = this
 
-        override def summarize(pc: PC, value: DomainValue): DomainValue = {
+        override def summarize(pc: PC, value: DomainValue): DomainValue =
             this.join(pc, value) match {
                 case NoUpdate          ⇒ this
                 case SomeUpdate(value) ⇒ value
             }
-        }
 
         protected[TypeLevelIntegerValues] def types: TypesAnswer
     }
 
     trait BooleanValue extends ComputationalTypeIntegerValue { this: DomainValue ⇒
-        final def types: TypesAnswer = typesAnswerBoolean
+        final def types: TypesAnswer = TypeLevelIntegerValues.typesAnswerBoolean
     }
     trait ByteValue extends ComputationalTypeIntegerValue { this: DomainValue ⇒
-        final def types: TypesAnswer = typesAnswerByte
+        final def types: TypesAnswer = TypeLevelIntegerValues.typesAnswerByte
     }
     trait CharValue extends ComputationalTypeIntegerValue { this: DomainValue ⇒
-        final def types: TypesAnswer = typesAnswerChar
+        final def types: TypesAnswer = TypeLevelIntegerValues.typesAnswerChar
     }
     trait ShortValue extends ComputationalTypeIntegerValue { this: DomainValue ⇒
-        final def types: TypesAnswer = typesAnswerShort
+        final def types: TypesAnswer = TypeLevelIntegerValues.typesAnswerShort
     }
     trait IntegerValue extends ComputationalTypeIntegerValue { this: DomainValue ⇒
-        final def types: TypesAnswer = typesAnswerInteger
+        final def types: TypesAnswer = TypeLevelIntegerValues.typesAnswerInteger
     }
 
     protected def newIntegerValue(): DomainValue
 
-    private val typesAnswerBoolean: IsPrimitiveType = IsPrimitiveType(BooleanType)
-
-    private val typesAnswerByte: IsPrimitiveType = IsPrimitiveType(ByteType)
-
-    private val typesAnswerChar: IsPrimitiveType = IsPrimitiveType(CharType)
-
-    private val typesAnswerShort: IsPrimitiveType = IsPrimitiveType(ShortType)
-
-    private val typesAnswerInteger: IsPrimitiveType = IsPrimitiveType(IntegerType)
+    //
+    // QUESTION'S ABOUT VALUES
+    //
 
     abstract override def types(value: DomainValue): TypesAnswer = value match {
         case ctiv: ComputationalTypeIntegerValue ⇒ ctiv.types
         case _                                   ⇒ super.types(value)
     }
-
-    //
-    // QUESTION'S ABOUT VALUES
-    //
 
     def areEqual(value1: DomainValue, value2: DomainValue): Answer = Unknown
 
@@ -192,6 +181,13 @@ trait TypeLevelIntegerValues[+I] extends Domain[I] {
     def i2l(pc: PC, value: DomainValue): DomainValue = newLongValue(pc)
     def i2s(pc: PC, value: DomainValue): DomainValue = newShortValue(pc)
 
+}
+private object TypeLevelIntegerValues {
+    private val typesAnswerBoolean: IsPrimitiveType = IsPrimitiveType(BooleanType)
+    private val typesAnswerByte: IsPrimitiveType = IsPrimitiveType(ByteType)
+    private val typesAnswerChar: IsPrimitiveType = IsPrimitiveType(CharType)
+    private val typesAnswerShort: IsPrimitiveType = IsPrimitiveType(ShortType)
+    private val typesAnswerInteger: IsPrimitiveType = IsPrimitiveType(IntegerType)
 }
 
 

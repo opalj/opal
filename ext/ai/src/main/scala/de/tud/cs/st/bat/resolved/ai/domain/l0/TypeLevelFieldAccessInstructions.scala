@@ -42,7 +42,7 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 /**
  * Implements the handling of field access instructions at the type level ignoring
- * potentially thrown exceptions.
+ * potentially thrown exceptions such as `NullPointerException`s.
  *
  * (Linkage related exceptions are currently generally ignored.)
  *
