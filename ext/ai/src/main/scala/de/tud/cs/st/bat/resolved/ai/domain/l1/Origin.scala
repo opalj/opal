@@ -36,38 +36,15 @@ package resolved
 package ai
 package domain
 
-import reflect.ClassTag
+import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 /**
- * Final binding of the [[de.tud.cs.st.bat.resolved.ai.Domain.Value]] trait.
- *
  * @author Michael Eichberg
  */
-trait DefaultValueBinding[+I] extends Domain[I] {
+trait Origin { this: SomeDomain ⇒
 
-    type DomainValue = Value
-
-    final val DomainValueTag: ClassTag[DomainValue] = implicitly
-
-    type DomainIllegalValue = IllegalValue
-
-    final val TheIllegalValue: DomainIllegalValue = new IllegalValue
-
-    final val MetaInformationUpdateIllegalValue = MetaInformationUpdate(TheIllegalValue)
-
-    /**
-     * Base implementation of the method that always throws a domain exception.
-     *
-     * The idea is that other traits `abstract override` this method and return the
-     * value's type. If a method that overrides this method has no knowledge about
-     * the given value, it should delegate this call to its super method.
-     */
-    def types(value: DomainValue): TypesAnswer =
-        domainException(this, "the type of the given value is not known: "+value)
+    def origin(value: DomainValue): Iterable[Int] = {
+        domainException(this, "the origin of the given value: "+value+" is not available")
+    }
 
 }
-
-
-
-
-

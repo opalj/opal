@@ -55,7 +55,7 @@ trait TypeLevelDoubleValues[+I] extends Domain[I] {
 
     private val typesAnswer: IsPrimitiveType = IsPrimitiveType(DoubleType)
 
-    abstract override def types(value: DomainValue): TypesAnswer[_] =
+    abstract override def types(value: DomainValue): TypesAnswer =
         value match {
             case r: DoubleValue ⇒ typesAnswer
             case _              ⇒ super.types(value)

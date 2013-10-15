@@ -34,6 +34,8 @@ package de.tud.cs.st
 package bat
 package resolved
 
+import de.tud.cs.st.util.Answer
+
 /**
  * This package defines classes and traits used by BAT's abstract interpretation
  * framework – called BATAI in the following. Please note, that BATAI just refers
@@ -58,6 +60,8 @@ package object ai {
 
     type SomeDomain = Domain[_]
 
+    type SomeAI[D <: SomeDomain] = AI[_ >: D]
+    
     type PC = Int
 
     class AIException(
@@ -115,7 +119,7 @@ package object ai {
      * Creates and throws an `InterpreterException`.
      */
     @throws[SomeInterpreterException]
-    def interpreterException[D <: SomeDomain] (
+    def interpreterException[D <: SomeDomain](
         throwable: Throwable,
         domain: D,
         worklist: List[PC],
@@ -133,17 +137,32 @@ package object ai {
     }
 
     /**
-     * A type bound represents the available information about a reference value's type.
+     * A type bound represents the available type information about a reference value.
+     * In general, a type bound represents an upper bound for the concrete type; i.e.,
+     * the runtime type is known to be a subtype of all types of the type bound. E.g.,
+     * a type bound could be: `java.lang.Object`, `java.io.Serializable` and
+     * `java.lang.Cloneable` for an array.
      *
-     * In case of reference types, a type bound may, e.g., be a set of interface types
+     * In general, a type bound may, e.g., be a single class type and a set of interface types
      * which are known to be implemented by the current object. Even if the type contains
      * a class type it may just be a super class of the concrete type and, hence,
      * just represents an abstraction.
      *
-     * How type bounds related to reference types are handled and
-     * whether the domain makes it possible to distinguish between precise types and
-     * type bounds is at the sole discretion of the domain.
+     * How type bounds related to reference types are handled and whether the domain
+     * makes it possible to distinguish between precise types and type bounds is at
+     * the sole discretion of the domain.
      */
     type TypeBounds = Set[ReferenceType]
 
+    trait ValueTypeBounds {
+
+        def isNull: Answer
+
+        /**
+         * @note The function `isSubtypeOf` is not determined if `isNull` returns `Yes`;
+         * 		if `isNull` is `Unknown` then the result is given under the
+         *   	assumption that the value is not `null` at runtime.
+         */
+        def isSubtypeOf(referenceType: ReferenceType): Answer
+    }
 }

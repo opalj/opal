@@ -61,40 +61,42 @@ object Util {
     var timeInMillisBetweenDumps: Long = 2500l
     private var lastDump: Long = 0l
 
-    //    def dumpOnFailure[T](
-    //        classFile: ClassFile,
-    //        method: Method,
-    //        domain: Domain[_])(
-    //            f: AIResult[domain.type] ⇒ T): T = {
-    //        val result = AI(classFile, method, domain)
-    //        val operandsArray = result.operandsArray
-    //        val localsArray = result.localsArray
-    //        try {
-    //            if (result.wasAborted)
-    //                throw new RuntimeException("interpretation aborted")
-    //            f(result)
-    //        } catch {
-    //            case ct: ControlThrowable ⇒ throw ct
-    //            case e: Throwable ⇒
-    //                val currentTime = System.currentTimeMillis()
-    //                if ((currentTime - lastDump) > timeInMillisBetweenDumps) {
-    //                    lastDump = currentTime
-    //                    val title = Some("Generated due to exception: "+e.getMessage())
-    //                    val dump =
-    //                        util.Util.dump(
-    //                            Some(classFile),
-    //                            Some(method),
-    //                            method.body.get,
-    //                            operandsArray,
-    //                            localsArray,
-    //                            title)
-    //                    util.Util.writeAndOpenDump(dump) //.map(_.deleteOnExit)
-    //                } else {
-    //                    Console.err.println("Dump suppressed: "+e.getMessage())
-    //                }
-    //                throw e
-    //        }
-    //    }
+    def dumpOnFailure[T, D <: SomeDomain](
+        classFile: ClassFile,
+        method: Method,
+        ai: AI[_ >: D],
+        domain: D)(
+            f: AIResult[domain.type] ⇒ T): T = {
+        val result = ai(classFile, method, domain)
+        val operandsArray = result.operandsArray
+        val localsArray = result.localsArray
+        try {
+            if (result.wasAborted)
+                throw new RuntimeException("interpretation aborted")
+            f(result)
+        } catch {
+            case ct: ControlThrowable ⇒ throw ct
+            case e: Throwable ⇒
+                val currentTime = System.currentTimeMillis()
+                if ((currentTime - lastDump) > timeInMillisBetweenDumps) {
+                    lastDump = currentTime
+                    val title = Some("Generated due to exception: "+e.getMessage())
+                    val dump =
+                        util.Util.dump(
+                            Some(classFile),
+                            Some(method),
+                            method.body.get,
+                            domain,
+                            operandsArray,
+                            localsArray,
+                            title)
+                    util.Util.writeAndOpenDump(dump) //.map(_.deleteOnExit)
+                } else {
+                    Console.err.println("Dump suppressed: "+e.getMessage())
+                }
+                throw e
+        }
+    }
 
     /**
      * In case that during the validation some exception is thrown, a dump of

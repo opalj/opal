@@ -119,7 +119,7 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
 
     }
 
-    abstract override def types(value: DomainValue): TypesAnswer[_] =
+    abstract override def types(value: DomainValue): TypesAnswer =
         value match {
             case integerLikeValue: IntegerLikeValue ⇒ typesAnswer
             case _                                  ⇒ super.types(value)

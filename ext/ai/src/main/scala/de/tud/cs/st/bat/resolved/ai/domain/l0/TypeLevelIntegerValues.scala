@@ -67,23 +67,23 @@ trait TypeLevelIntegerValues[+I] extends Domain[I] {
             }
         }
 
-        protected[TypeLevelIntegerValues] def types: TypesAnswer[_]
+        protected[TypeLevelIntegerValues] def types: TypesAnswer
     }
 
     trait BooleanValue extends ComputationalTypeIntegerValue { this: DomainValue ⇒
-        final def types: TypesAnswer[_] = typesAnswerBoolean
+        final def types: TypesAnswer = typesAnswerBoolean
     }
     trait ByteValue extends ComputationalTypeIntegerValue { this: DomainValue ⇒
-        final def types: TypesAnswer[_] = typesAnswerByte
+        final def types: TypesAnswer = typesAnswerByte
     }
     trait CharValue extends ComputationalTypeIntegerValue { this: DomainValue ⇒
-        final def types: TypesAnswer[_] = typesAnswerChar
+        final def types: TypesAnswer = typesAnswerChar
     }
     trait ShortValue extends ComputationalTypeIntegerValue { this: DomainValue ⇒
-        final def types: TypesAnswer[_] = typesAnswerShort
+        final def types: TypesAnswer = typesAnswerShort
     }
     trait IntegerValue extends ComputationalTypeIntegerValue { this: DomainValue ⇒
-        final def types: TypesAnswer[_] = typesAnswerInteger
+        final def types: TypesAnswer = typesAnswerInteger
     }
 
     protected def newIntegerValue(): DomainValue
@@ -98,7 +98,7 @@ trait TypeLevelIntegerValues[+I] extends Domain[I] {
 
     private val typesAnswerInteger: IsPrimitiveType = IsPrimitiveType(IntegerType)
 
-    abstract override def types(value: DomainValue): TypesAnswer[_] = value match {
+    abstract override def types(value: DomainValue): TypesAnswer = value match {
         case ctiv: ComputationalTypeIntegerValue ⇒ ctiv.types
         case _                                   ⇒ super.types(value)
     }

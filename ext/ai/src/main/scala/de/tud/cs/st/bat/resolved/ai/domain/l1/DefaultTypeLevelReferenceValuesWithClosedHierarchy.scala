@@ -45,20 +45,19 @@ trait DefaultTypeLevelReferenceValuesWithClosedHierarchy[+I]
 
     def classHierarchy: ClassHierarchy
 
-    override def newReferenceValue(referenceType: ReferenceType): DomainValue =
-        referenceType match {
-            case ot: ObjectType ⇒
-                val isPrecise = classHierarchy.subtypes(ot).isEmpty
-                AReferenceValue(-1, Set(referenceType), Unknown, isPrecise)
-            case _ ⇒ super.newReferenceValue(referenceType)
-        }
-
-    override def newReferenceValue(pc: PC, referenceType: ReferenceType): DomainValue =
-        referenceType match {
-            case ot: ObjectType ⇒
-                val isPrecise = classHierarchy.subtypes(ot).isEmpty
-                AReferenceValue(pc, Set(referenceType), Unknown, isPrecise)
-            case _ ⇒ super.newReferenceValue(pc, referenceType)
-        }
-
+    override def AReferenceValue(
+        pc: PC,
+        typeBounds: TypeBounds,
+        isNull: Answer,
+        isPrecise: Boolean): AReferenceValue = {
+        if (!isPrecise && typeBounds.size == 1) {
+            typeBounds.head match {
+                case ot: ObjectType ⇒
+                    val isPrecise = classHierarchy.subtypes(ot).isEmpty
+                    AReferenceValue(-1, typeBounds, isNull, isPrecise)
+                case _ ⇒ super.AReferenceValue(pc, typeBounds, isNull, isPrecise)
+            }
+        } else
+            super.AReferenceValue(pc, typeBounds, isNull, isPrecise)
+    }
 }

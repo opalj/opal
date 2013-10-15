@@ -70,7 +70,7 @@ trait TypeLevelReferenceValues[+I] extends Domain[I] {
 
         /**
          * Checks if the type of this value is a subtype of the specified
-         * reference type.
+         * reference type under the assumption that this value is not null!
          *
          * Basically, this method implements the same semantics as the `ClassHierarchy`'s
          * `isSubtypeOf` method. But, additionally it checks if the type of this value
@@ -85,15 +85,8 @@ trait TypeLevelReferenceValues[+I] extends Domain[I] {
          * the JDK). I.e., the classes `java.io.File` and `java.util.Collection` are
          * not in an inheritance relationship. However, if the specified supertype would be
          * `java.util.List` the answer would be unknown.
-         *
-         * @param onNull If this value is known to be `null` and, hence, no type
-         *      information is available, the result of evaluating this function
-         *      is returned.
-         *      The `onNull` parameters enables the use of this method as the basis for
-         *      the implementation of "instanceof" and "checkcast" as both methods
-         *      handle `null` values differently.
          */
-        def isSubtypeOf(supertype: ReferenceType, onNull: ⇒ Answer): Answer
+        def isSubtypeOf(supertype: ReferenceType): Answer
 
         /**
          * Adds an upper bound. This call can be ignored if the type
@@ -145,7 +138,7 @@ trait TypeLevelReferenceValues[+I] extends Domain[I] {
         }
     }
 
-    protected implicit def asReferenceValue(value: DomainValue): ReferenceValue =
+    protected def asReferenceValue(value: DomainValue): ReferenceValue =
         value.asInstanceOf[ReferenceValue]
 
     /**
@@ -153,12 +146,11 @@ trait TypeLevelReferenceValues[+I] extends Domain[I] {
      *
      * @param value A value of type `ReferenceValue`.
      */
-    def isNull(value: DomainValue): Answer = value.isNull
+    def isNull(value: DomainValue): Answer = asReferenceValue(value).isNull
 
     def isSubtypeOf(
         value: DomainValue,
-        supertype: ReferenceType,
-        onNull: ⇒ Answer): Answer = value.isSubtypeOf(supertype, onNull)
+        supertype: ReferenceType): Answer = asReferenceValue(value).isSubtypeOf(supertype)
 
     // -----------------------------------------------------------------------------------
     //
@@ -172,7 +164,7 @@ trait TypeLevelReferenceValues[+I] extends Domain[I] {
         value: DomainValue,
         operands: Operands,
         locals: Locals): (Operands, Locals) = {
-        val referenceValue: ReferenceValue = value
+        val referenceValue: ReferenceValue = asReferenceValue(value)
         val newReferenceValue = referenceValue.addUpperBound(pc, bound)
         if (referenceValue eq newReferenceValue)
             (
@@ -192,7 +184,7 @@ trait TypeLevelReferenceValues[+I] extends Domain[I] {
         isNull: Answer,
         operands: Operands,
         locals: Locals): (Operands, Locals) = {
-        val referenceValue: ReferenceValue = value
+        val referenceValue: ReferenceValue = asReferenceValue(value)
         val newReferenceValue = referenceValue.updateIsNull(pc, isNull)
         if (referenceValue eq newReferenceValue)
             (

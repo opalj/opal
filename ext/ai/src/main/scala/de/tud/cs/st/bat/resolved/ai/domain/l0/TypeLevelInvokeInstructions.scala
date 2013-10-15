@@ -42,9 +42,9 @@ import analyses.{ Project, ClassHierarchy }
 import de.tud.cs.st.bat.resolved.ai.IsReferenceType
 
 /**
- * Most basic handling of method invocations that determines the value that is 
- * put onto the operand stack/returned by a method call based on the called method's 
- * signature. This implementation completely ignores exceptions (e.g., 
+ * Most basic handling of method invocations that determines the value that is
+ * put onto the operand stack/returned by a method call based on the called method's
+ * signature. This implementation completely ignores exceptions (e.g.,
  * `NullPointerException`s or exceptions thrown by the method).
  *
  * (Linkage related exceptions are currently generally ignored.)
@@ -52,7 +52,7 @@ import de.tud.cs.st.bat.resolved.ai.IsReferenceType
  * @note By ignoring potentially thrown exceptions it may be the case that not all
  *      possible paths in a program are explored and the overall analysis may not be
  *      sound.
- *      
+ *
  * @author Michael Eichberg
  */
 trait TypeLevelInvokeInstructions { this: Domain[_] ⇒

@@ -49,7 +49,7 @@ trait ConsoleTracer extends AITracer {
             value.toString().replaceAll("\n\t", "\n\t\t\t").replaceAll("\n\\)", "\n\t\t)")
     }
 
-    def instructionEvalution[D <: Domain[_]](
+    def instructionEvalution[D <: SomeDomain](
         domain: D,
         pc: PC,
         instruction: Instruction,
@@ -67,7 +67,7 @@ trait ConsoleTracer extends AITracer {
                 }.mkString("\tlocals:\n\t\t", "\n\t\t", "\n")+"\t]")
     }
 
-    def merge[D <: Domain[_]](
+    def merge[D <: SomeDomain](
         domain: D,
         pc: PC,
         thisOperands: D#Operands,
@@ -114,7 +114,7 @@ trait ConsoleTracer extends AITracer {
         println(Console.RESET)
     }
 
-    def abruptMethodExecution[D <: Domain[_]](
+    def abruptMethodExecution[D <: SomeDomain](
         domain: D,
         pc: Int,
         exception: D#DomainValue): Unit = {
@@ -124,15 +124,33 @@ trait ConsoleTracer extends AITracer {
             Console.RESET)
     }
 
-    def returnFromSubroutine[D <: Domain[_]](
+    def returnFromSubroutine[D <: SomeDomain](
         domain: D,
-        pc: Int,
-        returnAddress: Int,
-        subroutineInstructions: List[Int]): Unit = {
+        pc: PC,
+        returnAddress: PC,
+        subroutineInstructions: List[PC]): Unit = {
         println(Console.YELLOW_B +
             Console.BOLD +
             pc+": RETURN FROM SUBROUTINE : "+returnAddress+
             " : RESETTING : "+subroutineInstructions.mkString(", ") +
             Console.RESET)
     }
+    
+      /**
+     * Called when a ret instruction is encountered.
+     */
+    def ret[D <: SomeDomain](
+        domain: D,
+        pc: PC,
+        returnAddress: PC,
+        oldWorklist: List[PC],
+        newWorklist: List[PC]): Unit = {
+        println(Console.GREEN_B +
+            Console.BOLD +
+            pc+": RET : "+returnAddress+
+            " : OLD_WORKLIST : "+oldWorklist.mkString(", ") + 
+            " : NEW_WORKLIST : "+newWorklist.mkString(", ") +
+            Console.RESET)
+    }
+    
 }

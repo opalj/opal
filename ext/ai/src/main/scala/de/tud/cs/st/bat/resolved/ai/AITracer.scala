@@ -59,9 +59,9 @@ trait AITracer {
      * @param locals The registers before the execution of the instruction. '''The Array
      * 		must not be mutated.'''
      */
-    def instructionEvalution[D <: Domain[_]](
+    def instructionEvalution[D <: SomeDomain](
         domain: D,
-        pc: Int,
+        pc: PC,
         instruction: Instruction,
         operands: List[D#DomainValue],
         locals: Array[D#DomainValue]): Unit
@@ -81,9 +81,9 @@ trait AITracer {
      * @param result The result of merging the operand stacks and register
      * 		assignment.
      */
-    def merge[D <: Domain[_]](
+    def merge[D <: SomeDomain](
         domain: D,
-        pc: Int,
+        pc: PC,
         thisOperands: D#Operands,
         thisLocals: D#Locals,
         otherOperands: D#Operands,
@@ -95,15 +95,25 @@ trait AITracer {
      * Called when the analyzed method throws an exception that is not caught within
      * the method.
      */
-    def abruptMethodExecution[D <: Domain[_]](
+    def abruptMethodExecution[D <: SomeDomain](
         domain: D,
         pc: Int,
         exception: D#DomainValue)
 
     /**
+     * Called when a ret instruction is encountered.
+     */
+    def ret[D <: SomeDomain](
+        domain: D,
+        pc: PC,
+        returnAddress: PC,
+        oldWorklist: List[PC],
+        newWorklist: List[PC])
+
+    /**
      * Called when the evaluation of a subroutine (JSR/RET) is completed.
      */
-    def returnFromSubroutine[D <: Domain[_]](
+    def returnFromSubroutine[D <: SomeDomain](
         domain: D,
         pc: Int,
         returnAddress: Int,

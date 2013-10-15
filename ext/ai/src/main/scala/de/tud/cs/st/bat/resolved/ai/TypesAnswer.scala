@@ -40,36 +40,32 @@ package ai
  *
  * @author Michael Eichberg
  */
-sealed trait TypesAnswer[+TypeInfo]
+sealed trait TypesAnswer
 
-case object TypesUnknown extends TypesAnswer[Nothing]
+case object TypesUnknown extends TypesAnswer
 
-case class IsPrimitiveType(t: BaseType) extends TypesAnswer[BaseType]
+case class IsPrimitiveType(t: BaseType) extends TypesAnswer
 
-trait IsReferenceType extends TypesAnswer[TypeBounds] {
-
-    def isPrecise: Boolean
-
-    def typeBounds: TypeBounds
+trait IsReferenceType extends TypesAnswer {
 
     /**
-     * If this type has a single type bound, that type bound is returned, `None` otherwise.
+     * In general a domain value can refer/represent several distinct values (depending
+     * on the control flow). Each of these values can have a different type bound.
      */
-    def theTypeBound(): Option[ReferenceType] =
-        if (typeBounds.size == 1)
-            Some(typeBounds.head)
-        else
-            None
+    def valuesTypeBounds: Iterable[ValueTypeBounds]
 
-    def foreachTypeBound[U](f: ReferenceType ⇒ U): Unit =
-        typeBounds.foreach(f)
+    /**
+     * If the underlying value (for which this answer is returned) has a single type
+     * bound, that type bound is returned, `None` otherwise. This is generally only
+     * the case for array types.
+     */
+    def theTypeBound: Option[ReferenceType]
 
-    def forallTypeBounds(f: ReferenceType ⇒ Boolean): Boolean =
-        typeBounds.forall(f)
+}
 
-    def hasTypeAsBound(referenceType: ReferenceType): Boolean =
-        typeBounds.contains(referenceType)
-
+object IsReferenceType {
+    def unapply(answer: IsReferenceType): Option[Iterable[ValueTypeBounds]] =
+        Some(answer.valuesTypeBounds)
 }
 
 object TheTypeBound {

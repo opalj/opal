@@ -119,6 +119,9 @@ trait Domain[+I] {
      * Please note, that standard inheritance from this trait is always
      * supported and is the primary mechanism to model an abstract domain's lattice
      * w.r.t. some special type of value.
+     * 
+     * @note BATAI does not rely on any special equality semantics w.r.t. values and 
+     * 		never calls a `Value`'s `equals` method neither direct nor indirect!
      */
     trait Value { this: DomainValue ⇒
 
@@ -682,7 +685,7 @@ trait Domain[+I] {
      * types "`NullPointerException` and `IllegalArgumentException`", but it will never
      * capture – at the same time – the (Java) types `int` and/or `long`.
      */
-    /*ABSTRACT*/ def types(value: DomainValue): TypesAnswer[_]
+    /*ABSTRACT*/ def types(value: DomainValue): TypesAnswer
 
     /**
      * Tries to determine if the type referred to as `subtype` is a subtype of the
@@ -691,17 +694,18 @@ trait Domain[+I] {
     /*ABSTRACT*/ def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer
 
     /**
-     * Tries to determine if the runtime type of the given reference value could be a
+     * Tries to determine – under the assumption that value is potentially non null – 
+     * if the runtime type of the given reference value could be a
      * subtype of the specified reference type `supertype`. I.e., if the type of the
-     * value is not precisely known then all subtypes of the values type are also
+     * value is not precisely known then all subtypes of the value's type are also
      * taken into consideration when analyzing the subtype relation and only if we
      * can guarantee that none is a subtype of the given `supertype` the answer will be
      * `No`.
+     * @note This method is only defined if the given value is not `null`.
      */
     /*ABSTRACT*/ def isSubtypeOf(
         value: DomainValue,
-        supertype: ReferenceType,
-        onNull: ⇒ Answer): Answer
+        supertype: ReferenceType): Answer
 
     /**
      * Tests if the two given integer values are equal.
@@ -977,7 +981,7 @@ trait Domain[+I] {
     //
 
     protected type SucceedsOrNullPointerException = Computation[Nothing, DomainValue]
-    protected type OptionalReturnValueOrExceptions = Computation[Option[DomainValue], Set[DomainValue]]
+    protected type OptionalReturnValueOrExceptions = Computation[Option[DomainValue], Iterable[DomainValue]]
 
     protected def sideEffectOnlyOrNullPointerException(
         pc: PC,
@@ -1025,13 +1029,13 @@ trait Domain[+I] {
      * exception. The exceptions that may be thrown are: `NullPointerException` and
      * `ArrayIndexOutOfBoundsException`.
      */
-    type ArrayLoadResult = Computation[DomainValue, Set[DomainValue]]
+    type ArrayLoadResult = Computation[DomainValue, Iterable[DomainValue]]
     /**
      * Computation that succeeds (updates the value stored in the array at the given
      * index) or that throws an exception. The exceptions that may be thrown are:
      * `NullPointerException`, `ArrayIndexOutOfBoundsException` and `ArrayStoreException`.
      */
-    type ArrayStoreResult = Computation[Nothing, Set[DomainValue]]
+    type ArrayStoreResult = Computation[Nothing, Iterable[DomainValue]]
 
     def aaload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
     def aastore(pc: PC,
@@ -1322,7 +1326,7 @@ trait Domain[+I] {
      * The `flow` method is called before the `join` method.
      */
     def flow(currentPC: PC, successorPC: PC): Boolean = false
-
+    
     /**
      * Creates a summary of the given domain values. For the precise details
      * regarding the calculation of a summary see `Value.summuarize(...)`.
@@ -1333,10 +1337,10 @@ trait Domain[+I] {
      */
     def summarize(pc: PC, values: Iterable[DomainValue]): DomainValue = {
         (values.head.summarize(pc) /: values.tail) {
-            (c, n) ⇒ c.summarize(pc, n.summarize(pc))
+            (c, n) ⇒ c.summarize(pc, n)
         }
     }
-
+    
     /**
      * Joins the given operand stacks and local variables.
      *
@@ -1436,7 +1440,7 @@ trait Domain[+I] {
                             thisLocal
                         } else {
                             val updatedLocal = thisLocal.join(pc, otherLocal)
-                            if (updatedLocal == NoUpdate) {
+                            if (updatedLocal eq NoUpdate) {
                                 thisLocal
                             } else {
                                 localsUpdated = localsUpdated &: updatedLocal
