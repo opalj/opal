@@ -39,6 +39,9 @@ package domain
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 /**
+ * Basic implementation of the `PreciseIntegerValues` trait that requires that
+ * `Domain`'s  `Value` trait is not extended.
+ *
  * @author Michael Eichberg
  */
 trait DefaultPreciseIntegerValues[+I]
@@ -64,7 +67,7 @@ trait DefaultPreciseIntegerValues[+I]
             }
     }
 
-    case class IntegerValue private (
+    case class IntegerValue(
         val initial: Int,
         val value: Int)
             extends super.IntegerValue {
@@ -77,42 +80,40 @@ trait DefaultPreciseIntegerValues[+I]
             value match {
                 case AnIntegerValue() ⇒ StructuralUpdate(value)
                 case IntegerValue(otherInitial, otherValue) ⇒
-                    if (this.value == otherValue) {
-                        if (spread(this.value, this.initial) >= spread(otherValue, otherInitial))
-                            NoUpdate
-                        else {
-                            MetaInformationUpdate(IntegerValue(otherInitial, this.value))
-                        }
-                    } else {
-                        // the value is only allowed to grow in one direction!
-                        val newInitial =
-                            if (Math.abs(otherValue - this.initial) > Math.abs(otherValue - otherInitial))
-                                this.initial
-                            else
-                                otherInitial
-                        val spread = Math.abs(otherValue - newInitial)
-                        if (spread > maxSpread || // test for the boundary condition
-                            // test if the value is no longer growing in one direction
-                            spread < Math.abs(this.value - this.initial)) {
+                    // First check if they are growing in the same direction...
+                    var increasing = (this.value - this.initial >= 0)
+                    if (increasing != (otherValue - otherInitial) >= 0)
+                        return StructuralUpdate(AnIntegerValue())
+
+                    def result(newInitial: Int, newValue: Int) = {
+                        if (spread(newValue, newInitial) > maxSpread)
                             StructuralUpdate(AnIntegerValue())
-                        } else {
-                            StructuralUpdate(IntegerValue(newInitial, otherValue))
-                        }
+                        else if (newValue != this.value)
+                            StructuralUpdate(IntegerValue(newInitial, newValue))
+                        else if (newInitial != this.initial)
+                            MetaInformationUpdate(IntegerValue(newInitial, newValue))
+                        else
+                            NoUpdate
                     }
+
+                    if (increasing)
+                        result(
+                            Math.min(this.initial, otherInitial),
+                            Math.max(this.value, otherValue))
+                    else
+                        result(
+                            Math.max(this.initial, otherInitial),
+                            Math.min(this.value, otherValue))
+
             }
 
         override def summarize(pc: PC): DomainValue = this
 
-        override def summarize(pc: PC, value: DomainValue): DomainValue = {
-            value match {
-                case AnIntegerValue() ⇒ value
-                case IntegerValue(otherInitial, otherValue) ⇒
-                    if (otherValue == this.value)
-                        IntegerValue(Math.min(this.initial, otherInitial), this.value)
-                    else
-                        AnIntegerValue()
+        override def summarize(pc: PC, value: DomainValue): DomainValue =
+            doJoin(pc, value) match {
+                case NoUpdate             ⇒ this
+                case SomeUpdate(newValue) ⇒ newValue
             }
-        }
 
         override def adapt[ThatI >: I](
             targetDomain: Domain[ThatI],
@@ -125,7 +126,7 @@ trait DefaultPreciseIntegerValues[+I]
                 super.adapt(targetDomain, pc)
             }
 
-        override def toString: String = "IntegerValue("+value+",initial="+initial+")"
+        override def toString: String = "IntegerValue(initial="+initial+", value="+value+")"
     }
 
     def newBooleanValue(): DomainValue = AnIntegerValue()
