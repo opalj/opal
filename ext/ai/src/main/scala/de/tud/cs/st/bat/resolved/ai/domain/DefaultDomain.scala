@@ -49,7 +49,7 @@ package domain
  */
 trait BaseDomain[+I]
     extends DefaultValueBinding[I]
-    with DefaultPreciseTypeReferenceValues[I]
+    with DefaultPreciseReferenceValues[I]
     with DefaultTypeLevelIntegerValues[I]
     with DefaultTypeLevelLongValues[I]
     with DefaultTypeLevelFloatValues[I]
@@ -111,7 +111,7 @@ class ConfigurablePreciseDomain[+I](
         extends ConfigurableDomain[I]
         with DefaultValueBinding[I]
         with DefaultPreciseIntegerValues[I]
-        with DefaultPreciseTypeReferenceValues[I]
+        with DefaultPreciseReferenceValues[I]
         with StringValues[I]
         with DefaultTypeLevelLongValues[I]
         with DefaultTypeLevelFloatValues[I]

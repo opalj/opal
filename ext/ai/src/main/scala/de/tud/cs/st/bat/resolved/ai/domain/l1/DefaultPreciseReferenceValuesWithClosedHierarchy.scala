@@ -40,8 +40,8 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 import analyses.ClassHierarchy
 
-trait DefaultPreciseTypeReferenceValuesWithClosedHierarchy[+I]
-        extends DefaultPreciseTypeReferenceValues[I] {
+trait DefaultPreciseReferenceValuesWithClosedHierarchy[+I]
+        extends DefaultPreciseReferenceValues[I] {
 
     def classHierarchy: ClassHierarchy
 

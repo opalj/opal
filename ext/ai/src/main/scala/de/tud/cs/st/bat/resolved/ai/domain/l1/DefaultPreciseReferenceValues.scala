@@ -41,10 +41,10 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 /**
  * @author Michael Eichberg
  */
-trait DefaultPreciseTypeReferenceValues[+I]
+trait DefaultPreciseReferenceValues[+I]
         extends DefaultValueBinding[I]
         with Origin
-        with PreciseTypeReferenceValues[I] { domain ⇒
+        with PreciseReferenceValues[I] { domain ⇒
 
     // -----------------------------------------------------------------------------------
     //
@@ -56,14 +56,13 @@ trait DefaultPreciseTypeReferenceValues[+I]
             extends super.ReferenceValue
             with IsReferenceType {
         this: DomainValue ⇒
-
     }
 
     //
     // REPRESENTATIONS OF CONCRETE REFERENCE VALUES
     //    
 
-    class AReferenceValue protected[DefaultPreciseTypeReferenceValues] (
+    class AReferenceValue protected[DefaultPreciseReferenceValues] (
         val pc: PC,
         val typeBounds: TypeBounds,
         val isNull: Answer,
@@ -216,13 +215,13 @@ trait DefaultPreciseTypeReferenceValues[+I]
             targetDomain: Domain[ThatI],
             pc: PC): targetDomain.DomainValue =
             targetDomain match {
-                case thatDomain: DefaultPreciseTypeReferenceValues[ThatI] ⇒
+                case thatDomain: DefaultPreciseReferenceValues[ThatI] ⇒
                     adaptAReferenceValue(thatDomain, pc).asInstanceOf[targetDomain.DomainValue]
                 case _ ⇒ super.adapt(targetDomain, pc)
             }
 
-        protected[DefaultPreciseTypeReferenceValues] def adaptAReferenceValue[ThatI >: I](
-            targetDomain: DefaultPreciseTypeReferenceValues[ThatI],
+        protected[DefaultPreciseReferenceValues] def adaptAReferenceValue[ThatI >: I](
+            targetDomain: DefaultPreciseReferenceValues[ThatI],
             pc: PC): targetDomain.AReferenceValue =
             targetDomain.AReferenceValue(pc, this.typeBounds, this.isNull, this.isPrecise)
 
@@ -359,8 +358,8 @@ trait DefaultPreciseTypeReferenceValues[+I]
         override def adapt[TDI >: I](
             targetDomain: Domain[TDI],
             pc: PC): targetDomain.DomainValue =
-            if (targetDomain.isInstanceOf[DefaultPreciseTypeReferenceValues[TDI]]) {
-                val thatDomain = targetDomain.asInstanceOf[DefaultPreciseTypeReferenceValues[TDI]]
+            if (targetDomain.isInstanceOf[DefaultPreciseReferenceValues[TDI]]) {
+                val thatDomain = targetDomain.asInstanceOf[DefaultPreciseReferenceValues[TDI]]
                 val newValues = this.values.map { value: AReferenceValue ⇒
                     value.adaptAReferenceValue(thatDomain, pc)
                 }

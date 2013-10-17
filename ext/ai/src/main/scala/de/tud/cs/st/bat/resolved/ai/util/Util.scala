@@ -52,10 +52,11 @@ object Util {
     import de.tud.cs.st.util.ControlAbstractions._
 
     /**
-     * We generate dumps on errors only if the specified time has passed.
+     * We generate dumps on errors only if the specified time has passed (in general 
+     * a bug causes many dumps to be created.)
      *
-     * If you want to generate more dumps set this value to a small value or to -1l if
-     * do never want to miss dump. The default is 2500 (milliseconds).
+     * If you want to generate more dumps set this value to a small(er) value or to -1l if
+     * do never want to miss a dump. The default is 2500 (milliseconds).
      */
     @volatile
     var timeInMillisBetweenDumps: Long = 2500l

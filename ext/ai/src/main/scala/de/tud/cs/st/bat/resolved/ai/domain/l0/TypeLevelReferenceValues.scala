@@ -39,13 +39,11 @@ package domain
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 /**
- * A domain the performs computations w.r.t. reference values at the type level, but
- * which also traces the properties whether the type is precise or whether the value
- * is `null`.
+ * A domain that performs computations w.r.t. reference values at the type level.
  *
  * @author Michael Eichberg
  */
-trait PreciseTypeReferenceValues[+I] extends Domain[I] {
+trait TypeLevelReferenceValues[+I] extends Domain[I] {
 
     /**
      * Abstracts over all values with computational type `reference`.
@@ -56,17 +54,6 @@ trait PreciseTypeReferenceValues[+I] extends Domain[I] {
          * Returns `ComputationalTypeReference`.
          */
         final override def computationalType: ComputationalType = ComputationalTypeReference
-
-        /**
-         * The nullness property of this `ReferenceValue`.
-         */
-        def isNull: Answer
-
-        /**
-         * Indirectly called by BATAI when it determines that the `null`-value property
-         * of this type-level reference should be updated.
-         */
-        def updateIsNull(pc: PC, isNull: Answer): DomainValue
 
         /**
          * Checks if the type of this value is a subtype of the specified
@@ -94,68 +81,26 @@ trait PreciseTypeReferenceValues[+I] extends Domain[I] {
          * precisely capture the runtime type of this value.
          */
         def addUpperBound(pc: PC, upperBound: ReferenceType): DomainValue
-
-        /**
-         * Returns `true` if the type information about this value is precise.
-         * I.e., if `isPrecise` returns `true` and the value's type is
-         * reported to be `java.lang.Object` then the current value is known to be an
-         * instance of the class `java.lang.Object` and of no other (sub)class.
-         * Hence, for an interface type `isPrecise` will always return false.
-         */
-        def isPrecise: Boolean
     }
 
     //
     // QUESTION'S ABOUT VALUES
     //
 
+    def areEqualReferences(value1: DomainValue, value2: DomainValue): Answer =
+        // we could check if it is conceivable that both value are not equal based 
+        // on the available type information...
+        Unknown
+
     protected def asReferenceValue(value: DomainValue): ReferenceValue =
         value.asInstanceOf[ReferenceValue]
-
-    /**
-     * Tests if both values refer to the same object instance.
-     *
-     * Though this is in general intractable, there are some cases where a definitive
-     * answer is possible.
-     *
-     * This implementation completely handles the case where at least one value
-     * definitively represents the `null` value.
-     * If both values represent non-null values (or just maybe `null` values) `Unknown`
-     * is returned.
-     *
-     * @note This method is intended to be overridden by subclasses and may be the first
-     *      one this is called (super call) by the overriding method to handle checks
-     *      related to null. E.g.
-     *      {{{
-     *      super.areEqualReferences(value1,value2).orElse {
-     *          ...
-     *      }
-     *      }}}
-     *
-     * @param value1 A value of type `ReferenceValue`.
-     * @param value2 A value of type `ReferenceValue`.
-     */
-    def areEqualReferences(value1: DomainValue, value2: DomainValue): Answer = {
-        val v1 = asReferenceValue(value1)
-        val v2 = asReferenceValue(value2)
-        val value1IsNull = v1.isNull
-        val value2IsNull = v2.isNull
-        if (value1IsNull.isDefined &&
-            value2IsNull.isDefined &&
-            (value1IsNull.yes || value2IsNull.yes)) {
-            Answer(value1IsNull == value2IsNull)
-        }  else {
-            // TODO [IMPROVE - areEqualReferences] If the two values are not in a subtype relationship they cannot be equal.
-            Unknown
-        }
-    }
 
     /**
      * Determines the nullness-property of the given value.
      *
      * @param value A value of type `ReferenceValue`.
      */
-    def isNull(value: DomainValue): Answer = asReferenceValue(value).isNull
+    def isNull(value: DomainValue): Answer = Unknown
 
     def isSubtypeOf(
         value: DomainValue,
@@ -187,56 +132,6 @@ trait PreciseTypeReferenceValues[+I] extends Domain[I] {
             )
     }
 
-    protected def updateIsNull(
-        pc: PC,
-        value: DomainValue,
-        isNull: Answer,
-        operands: Operands,
-        locals: Locals): (Operands, Locals) = {
-        val referenceValue: ReferenceValue = asReferenceValue(value)
-        val newReferenceValue = referenceValue.updateIsNull(pc, isNull)
-        if (referenceValue eq newReferenceValue)
-            (
-                operands,
-                locals
-            )
-        else
-            (
-                operands.map(op ⇒ if (op eq value) newReferenceValue else op),
-                locals.map(l ⇒ if (l eq value) newReferenceValue else l)
-            )
-    }
-
-    /**
-     * Updates the nullness property (`isNull == No`) of the given value.
-     *
-     * Calls `updateIsNull` on the given `ReferenceValue` and replaces every occurrence
-     * on the stack/in a register with the updated value.
-     *
-     * @param value A `ReferenceValue`.
-     */
-    override def establishIsNonNull(
-        pc: PC,
-        value: DomainValue,
-        operands: Operands,
-        locals: Locals): (Operands, Locals) =
-        updateIsNull(pc, value, No, operands, locals)
-
-    /**
-     * Updates the nullness property (`isNull == Yes`) of the given value.
-     *
-     * Calls `updateIsNull` on the given `ReferenceValue` and replaces every occurrence
-     * on the stack/in a register with the updated value.
-     *
-     * @param value A `ReferenceValue`.
-     */
-    override def establishIsNull(
-        pc: PC,
-        value: DomainValue,
-        operands: Operands,
-        locals: Locals): (Operands, Locals) =
-        updateIsNull(pc, value, Yes, operands, locals)
-
     // -----------------------------------------------------------------------------------
     //
     // HANDLING OF ARRAY RELATED COMPUTATIONS
@@ -257,9 +152,7 @@ trait PreciseTypeReferenceValues[+I] extends Domain[I] {
     /**
      * @note The componentType may be (again) an array type.
      */
-    def multianewarray(pc: PC,
-                       counts: List[DomainValue],
-                       arrayType: ArrayType) =
+    def multianewarray(pc: PC, counts: List[DomainValue], arrayType: ArrayType) =
         //ComputedValueAndException(TypedValue(arrayType), TypedValue(ObjectType.NegativeArraySizeException))
         ComputedValue(newArray(pc, arrayType))
 
@@ -271,10 +164,7 @@ trait PreciseTypeReferenceValues[+I] extends Domain[I] {
             case TheTypeBound(ArrayType(componentType)) ⇒
                 ComputedValue(newTypedValue(pc, componentType))
             case _ ⇒
-                domainException(
-                    this,
-                    "cannot determine the type of the array's content: "+arrayref
-                )
+                domainException(this, "component type unknown: "+arrayref)
         }
 
     def aastore(pc: PC, value: DomainValue, index: DomainValue, arrayref: DomainValue) =

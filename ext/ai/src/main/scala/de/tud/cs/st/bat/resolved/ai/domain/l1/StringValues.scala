@@ -44,7 +44,7 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  *
  * @author Michael Eichberg
  */
-trait StringValues[+I] extends DefaultPreciseTypeReferenceValues[I] {
+trait StringValues[+I] extends DefaultPreciseReferenceValues[I] {
 
     class AStringValue(
         pc: Int, // sets the pc value of the superclass

@@ -339,14 +339,14 @@ trait Domain[+I] {
     /**
      * The '''singleton''' instance of the `IllegalValue`.
      */
-    val TheIllegalValue: DomainIllegalValue
+    def TheIllegalValue: DomainIllegalValue
     final def ⊥ = TheIllegalValue
 
     /**
      * If the result of the merge of two values is a non-legal value. The result has
      * to be reported as a `MetaInformationUpdate`.
      */
-    val MetaInformationUpdateIllegalValue: MetaInformationUpdate[DomainIllegalValue]
+    def MetaInformationUpdateIllegalValue: MetaInformationUpdate[DomainIllegalValue]
 
     /**
      * The result of merging two values should never be reported as a
@@ -1309,8 +1309,8 @@ trait Domain[+I] {
      * respective instruction.
      *
      * Associating properties with an instruction and maintaining those properties
-     * is, however, at the sole responsibility of the `Domain`. 
-     * 
+     * is, however, at the sole responsibility of the `Domain`.
+     *
      * This method is predefined to facilitate the development of support tools
      * and is not called by BATAI.
      */
@@ -1338,11 +1338,10 @@ trait Domain[+I] {
      * 		a new value that abstracts over/summarize the given values is returned.
      * @param values An `Iterable` over one or more values.
      */
-    def summarize(pc: PC, values: Iterable[DomainValue]): DomainValue = {
+    def summarize(pc: PC, values: Iterable[DomainValue]): DomainValue =
         (values.head.summarize(pc) /: values.tail) {
             (c, n) ⇒ c.summarize(pc, n)
         }
-    }
 
     /**
      * Joins the given operand stacks and local variables.
@@ -1461,7 +1460,6 @@ trait Domain[+I] {
 
         (operandsUpdated &: localsUpdated)((newOperands, newLocals))
     }
-
 }
 
 
