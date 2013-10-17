@@ -46,7 +46,7 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  *
  * @author Michael Eichberg
  */
-sealed abstract class DomainValues[D <: Domain[_]] {
+sealed abstract class DomainValues[D <: SomeDomain] {
     val domain: D
     val values: Iterable[domain.DomainValue]
 }

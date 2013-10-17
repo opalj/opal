@@ -45,7 +45,7 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  *
  * @author Michael Eichberg
  */
-trait TypeLevelReferenceValues[+I] extends Domain[I] {
+trait PreciseTypeReferenceValues[+I] extends Domain[I] {
 
     /**
      * Abstracts over all values with computational type `reference`.
@@ -94,13 +94,23 @@ trait TypeLevelReferenceValues[+I] extends Domain[I] {
          * precisely capture the runtime type of this value.
          */
         def addUpperBound(pc: PC, upperBound: ReferenceType): DomainValue
+
+        /**
+         * Returns `true` if the type information about this value is precise.
+         * I.e., if `isPrecise` returns `true` and the value's type is
+         * reported to be `java.lang.Object` then the current value is known to be an
+         * instance of the class `java.lang.Object` and of no other (sub)class.
+         * Hence, for an interface type `isPrecise` will always return false.
+         */
+        def isPrecise: Boolean
     }
 
     //
     // QUESTION'S ABOUT VALUES
     //
 
-    import language.implicitConversions
+    protected def asReferenceValue(value: DomainValue): ReferenceValue =
+        value.asInstanceOf[ReferenceValue]
 
     /**
      * Tests if both values refer to the same object instance.
@@ -126,20 +136,19 @@ trait TypeLevelReferenceValues[+I] extends Domain[I] {
      * @param value2 A value of type `ReferenceValue`.
      */
     def areEqualReferences(value1: DomainValue, value2: DomainValue): Answer = {
-        val value1IsNull = isNull(value1)
-        val value2IsNull = isNull(value2)
+        val v1 = asReferenceValue(value1)
+        val v2 = asReferenceValue(value2)
+        val value1IsNull = v1.isNull
+        val value2IsNull = v2.isNull
         if (value1IsNull.isDefined &&
             value2IsNull.isDefined &&
             (value1IsNull.yes || value2IsNull.yes)) {
             Answer(value1IsNull == value2IsNull)
-        } else {
+        }  else {
             // TODO [IMPROVE - areEqualReferences] If the two values are not in a subtype relationship they cannot be equal.
             Unknown
         }
     }
-
-    protected def asReferenceValue(value: DomainValue): ReferenceValue =
-        value.asInstanceOf[ReferenceValue]
 
     /**
      * Determines the nullness-property of the given value.

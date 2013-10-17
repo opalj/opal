@@ -74,40 +74,35 @@ class PropertyTracingTest
             with RecordReturnValues[String]
             with SimpleBooleanPropertyTracing[String] {
 
+        override def propertyName = "isSanitized"
+
+        override def invokestatic(
+            pc: Int,
+            declaringClass: ReferenceType,
+            name: String,
+            methodDescriptor: MethodDescriptor,
+            operands: List[DomainValue]): OptionalReturnValueOrExceptions = {
+
+            // let's check if the first parameter (_ == -2) passed to a method is 
+            // passed to a method called sanitize...
+            if (name == "sanitize" && origin(operands.head).exists(_ == -2)) {
+                updateProperty(pc, true)
+            }
+            super.invokestatic(pc, declaringClass, name, methodDescriptor, operands)
+        }
+
         def isSanitized(): Boolean = hasPropertyOnExit(returnedValues)
     }
 
     private def evaluateMethod(name: String, f: AnalysisDomain ⇒ Unit) {
-
         /**
          * In this case we want to make sure that a specific value (given as a
          * parameter to a method) is always sanitized (within the method.) I.e.,
          * that the value is passed to a function called sanitizer.
          */
-        val domain = new AnalysisDomain {
-            val identifier = name
-
-            def propertyName = "isSanitized"
-
-            override def invokestatic(
-                pc: Int,
-                declaringClass: ReferenceType,
-                name: String,
-                methodDescriptor: MethodDescriptor,
-                operands: List[DomainValue]): OptionalReturnValueOrExceptions = {
-
-                if (name == "sanitize" && origin(operands.head).exists(_ == -2)) {
-                    updateProperty(pc, true)
-                }
-
-                super.invokestatic(pc, declaringClass, name, methodDescriptor, operands)
-            }
-        }
-
         val method = classFile.methods.find(_.name == name).get
-
+        val domain = new AnalysisDomain { val identifier = name }
         val result = BaseTracingAI(classFile, method, domain)
-
         dumpOnFailureDuringValidation(
             Some(classFile),
             Some(method),
@@ -115,7 +110,6 @@ class PropertyTracingTest
             result) {
                 f(domain)
             }
-
     }
 
     behavior of "an abstract interpreter that enables the tracing of control-flow dependent properties"

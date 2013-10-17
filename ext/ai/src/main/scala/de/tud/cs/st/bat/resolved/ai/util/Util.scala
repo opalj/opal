@@ -140,7 +140,7 @@ object Util {
     def dump(classFile: Option[ClassFile],
              method: Option[Method],
              code: Code,
-             domain: Domain[_],
+             domain: SomeDomain,
              operandsArray: Array[_ <: List[_ <: AnyRef]],
              localsArray: Array[_ <: Array[_ <: AnyRef]],
              title: Option[String] = None): Node = {
@@ -183,21 +183,20 @@ object Util {
         None
     }
 
-    private lazy val styles: String = {
+    private lazy val styles: String =
         process(this.getClass().getResourceAsStream("dump.head.fragment.css"))(
             scala.io.Source.fromInputStream(_).mkString
         )
-    }
 
-    def dumpTable(classFile: Option[ClassFile],
-                  method: Option[Method],
-                  code: Code,
-                  domain: Domain[_],
-                  operandsArray: Array[_ <: List[_ <: AnyRef]],
-                  localsArray: Array[_ <: Array[_ <: AnyRef]]): Node = {
+    def dumpTable(
+        classFile: Option[ClassFile],
+        method: Option[Method],
+        code: Code,
+        domain: SomeDomain,
+        operandsArray: Array[_ <: List[_ <: AnyRef]],
+        localsArray: Array[_ <: Array[_ <: AnyRef]]): Node = {
 
         val indexedExceptionHandlers = indexExceptionHandlers(code)
-
         <div>
         <table>
             <caption>{ caption(classFile, method) }</caption>
@@ -214,19 +213,21 @@ object Util {
         </div>
     }
 
-    private def caption(classFile: Option[ClassFile],
-                        method: Option[Method]): String = {
+    private def caption(
+        classFile: Option[ClassFile],
+        method: Option[Method]): String = {
         method.map(m ⇒ if (m.isStatic) "static " else "").getOrElse("") +
             classFile.map(_.thisClass.toJava+".").getOrElse("") +
             method.map(m ⇒ m.name + m.descriptor.toUMLNotation+" - ").getOrElse("")+
             "Results"
     }
 
-    private def indexExceptionHandlers(code: Code) = Map() ++ code.exceptionHandlers.zipWithIndex
+    private def indexExceptionHandlers(code: Code) =
+        Map() ++ code.exceptionHandlers.zipWithIndex
 
     private def dumpInstructions(
         code: Code,
-        domain: Domain[_],
+        domain: SomeDomain,
         operandsArray: Array[_ <: List[_ <: AnyRef]],
         localsArray: Array[_ <: Array[_ <: AnyRef]]) = {
         val indexedExceptionHandlers = indexExceptionHandlers(code)
@@ -238,22 +239,26 @@ object Util {
         }
     }
 
-    def dumpInstruction(pc: Int,
-                        instruction: Instruction,
-                        domain: Domain[_],
-                        operands: List[_ <: AnyRef],
-                        locals: Array[_ <: AnyRef],
-                        exceptionHandlers: Option[String]) = {
+    def dumpInstruction(
+        pc: Int,
+        instruction: Instruction,
+        domain: SomeDomain,
+        operands: List[_ <: AnyRef],
+        locals: Array[_ <: AnyRef],
+        exceptionHandlers: Option[String]) = {
         <tr class={ if (operands eq null /*||/&& locals eq null*/ ) "not_evaluated" else "evaluated" }>
             <td class="pc">{ scala.xml.Unparsed(pc.toString + "<br>" + exceptionHandlers.getOrElse("")) }</td>
             <td class="instruction">{ scala.xml.Unparsed(scala.xml.Text(instruction.toString(pc)).toString.replace("\n", "<br>")) }</td>
             <td class="stack">{ dumpStack(operands) }</td>
             <td class="locals">{ dumpLocals(locals) }</td>
-            <td class="properties">{ domain.hasProperties(pc).getOrElse("<None>") }</td>
+            <td class="properties">{ domain.properties(pc).getOrElse("<None>") }</td>
         </tr >
     }
 
-    private def dumpStack(operands: List[_ <: AnyRef]) = {
+    type SomeOperands = List[_ <: AnyRef]
+    type SomeLocals = Array[_ <: AnyRef]
+    
+    private def dumpStack(operands: List[_ <: AnyRef]) =
         if (operands eq null)
             <em>Operands are not available.</em>
         else {
@@ -261,9 +266,8 @@ object Util {
             { operands.map(op ⇒ <li>{ op.toString }</li>) }
             </ul>
         }
-    }
 
-    private def dumpLocals(locals: Array[_ <: AnyRef]) = {
+    private def dumpLocals(locals: SomeLocals) =
         if (locals eq null)
             <em>Local variables assignment is not available.</em>
         else {
@@ -271,6 +275,5 @@ object Util {
             { locals.map(l ⇒ if (l eq null) "UNUSED" else l.toString()).map(l ⇒ <li>{ l }</li>) }
             </ol>
         }
-    }
 
 }

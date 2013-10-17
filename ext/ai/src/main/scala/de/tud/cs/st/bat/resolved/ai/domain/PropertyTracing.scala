@@ -39,7 +39,8 @@ package domain
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 /**
- * Representation of some property.
+ * Representation of some arbitrary property that should be tracked during
+ * the abstract interpretation of the method.
  *
  * @author Michael Eichberg
  */
@@ -55,6 +56,10 @@ trait PropertyTracing[+I] extends Domain[I] { domain ⇒
 
     implicit val DomainPropertyTag: reflect.ClassTag[DomainProperty]
 
+    /**
+     * The array which stores the value the property has when the respective.
+     * Instruction is executed. As in case of BATAI
+     */
     protected var propertiesArray: Array[DomainProperty] = _
 
     def initProperties(
@@ -66,11 +71,9 @@ trait PropertyTracing[+I] extends Domain[I] { domain ⇒
         this.propertiesArray(0) = initialPropertyValue()
     }
 
-    def getProperty(pc: Int): DomainProperty = {
-        propertiesArray(pc)
-    }
-
-    override def hasProperties(pc: Int): Option[String] =
+    def getProperty(pc: Int): DomainProperty = propertiesArray(pc)
+    
+    override def properties(pc: Int): Option[String] =
         Option(propertiesArray(pc)).map(_.toString())
 
     override def flow(currentPC: Int, successorPC: Int): Boolean = {

@@ -36,6 +36,8 @@ package resolved
 package ai
 package domain
 
+import language.implicitConversions
+
 /**
  * A domain that records the values returned by the method/the exceptions thrown
  * by a method.
@@ -49,6 +51,11 @@ package domain
 trait RecordReturnValues[+I] extends Domain[I] {
 
     var returnedValues: Set[(String, Int, Value)] = Set.empty
+
+    protected implicit def returnedValueToReturnInstructions(
+        returnedValues: Set[(String, Int, Value)]): Set[PC] = {
+        returnedValues.map(_._2)
+    }
 
     override def areturn(pc: Int, value: DomainValue) {
         returnedValues += (("areturn", pc, value))

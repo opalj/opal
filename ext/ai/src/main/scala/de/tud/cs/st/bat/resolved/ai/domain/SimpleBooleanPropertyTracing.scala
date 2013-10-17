@@ -43,22 +43,23 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  *
  * @author Michael Eichberg
  */
-trait SimpleBooleanPropertyTracing[+I] extends PropertyTracing[I] { domain ⇒
+trait SimpleBooleanPropertyTracing[+I]
+        extends PropertyTracing[I] { domain ⇒
 
+    /**
+     * A name associated with the property. Used for debugging purposes only.
+     */
     def propertyName: String
 
-    // TODO Can I use an anyval over here?
     class BooleanProperty private[SimpleBooleanPropertyTracing] (
         val state: Boolean)
             extends Property {
 
-        def merge(otherProperty: DomainProperty): Update[DomainProperty] = {
-            val newState = this.state & otherProperty.state
-            if (newState != this.state)
-                StructuralUpdate(new BooleanProperty(newState))
-            else
-                NoUpdate
-        }
+        def merge(otherProperty: DomainProperty): Update[DomainProperty] =
+            this.state & otherProperty.state match {
+                case `state`  ⇒ NoUpdate
+                case newState ⇒ StructuralUpdate(new BooleanProperty(newState))
+            }
 
         override def toString: String = domain.propertyName+"("+state+")"
     }
@@ -73,12 +74,12 @@ trait SimpleBooleanPropertyTracing[+I] extends PropertyTracing[I] { domain ⇒
 
     def initialPropertyValue: DomainProperty = new BooleanProperty(false)
 
-    def hasPropertyOnExit(returnedValues: Set[_ <: (_, PC, _)]): Boolean = {
+    def hasPropertyOnExit[ReturnInstructions <% Set[PC]](
+        returnInstructions: ReturnInstructions): Boolean = {
         //println(
         // identifier+" "+
-        // returnedValues.map { v ⇒ val (_, pc, _) = v; pc }.
-        //   map(getProperty(_)).mkString(","))
-        returnedValues.forall { v ⇒ val (_, pc, _) = v; getProperty(pc).state }
+        // returnedValues.map(getProperty(_)).mkString(","))
+        returnInstructions forall { getProperty(_).state }
     }
 }
 

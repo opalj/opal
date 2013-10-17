@@ -119,8 +119,8 @@ trait Domain[+I] {
      * Please note, that standard inheritance from this trait is always
      * supported and is the primary mechanism to model an abstract domain's lattice
      * w.r.t. some special type of value.
-     * 
-     * @note BATAI does not rely on any special equality semantics w.r.t. values and 
+     *
+     * @note BATAI does not rely on any special equality semantics w.r.t. values and
      * 		never calls a `Value`'s `equals` method neither direct nor indirect!
      */
     trait Value { this: DomainValue ⇒
@@ -1305,13 +1305,16 @@ trait Domain[+I] {
 
     /**
      * Returns a string representation of the properties associated with
-     * a specific instruction.
+     * a specific instruction if some properties are associated with the
+     * respective instruction.
      *
-     * Associating properties with an instruction is, however, at the sole
-     * responsibility of the `Domain`. This method is predefined to facilitate
-     * the development of support tools and is not called by BATAI.
+     * Associating properties with an instruction and maintaining those properties
+     * is, however, at the sole responsibility of the `Domain`. 
+     * 
+     * This method is predefined to facilitate the development of support tools
+     * and is not called by BATAI.
      */
-    def hasProperties(pc: PC): Option[String] = None
+    def properties(pc: PC): Option[String] = None
 
     /**
      * This function is called by BATAI after performing a computation; that is, after
@@ -1326,7 +1329,7 @@ trait Domain[+I] {
      * The `flow` method is called before the `join` method.
      */
     def flow(currentPC: PC, successorPC: PC): Boolean = false
-    
+
     /**
      * Creates a summary of the given domain values. For the precise details
      * regarding the calculation of a summary see `Value.summuarize(...)`.
@@ -1340,7 +1343,7 @@ trait Domain[+I] {
             (c, n) ⇒ c.summarize(pc, n)
         }
     }
-    
+
     /**
      * Joins the given operand stacks and local variables.
      *
