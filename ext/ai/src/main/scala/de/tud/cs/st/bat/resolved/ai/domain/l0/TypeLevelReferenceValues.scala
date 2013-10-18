@@ -70,8 +70,8 @@ trait TypeLevelReferenceValues[+I] extends Domain[I] {
          * condition holds, for example, for `java.io.File` which is not a subclass
          * of `java.util.Collection` and which does not have any further subclasses (in
          * the JDK). I.e., the classes `java.io.File` and `java.util.Collection` are
-         * not in an inheritance relationship. However, if the specified supertype would be
-         * `java.util.List` the answer would be unknown.
+         * not in an inheritance relationship. However, if the specified supertype would 
+         * be `java.util.List` the answer would be unknown.
          */
         def isSubtypeOf(supertype: ReferenceType): Answer
 

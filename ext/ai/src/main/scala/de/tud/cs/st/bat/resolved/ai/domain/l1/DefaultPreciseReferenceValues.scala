@@ -303,11 +303,12 @@ trait DefaultPreciseReferenceValues[+I]
             typeBoundsB.exists(bType ⇒ domain.isSubtypeOf(aType, bType).yes))
     }
 
-    protected def summarizeReferenceValues(pc: PC, values: Iterable[DomainValue]): DomainValue = {
+    protected def summarizeReferenceValues(
+        pc: PC,
+        values: Iterable[DomainValue]): DomainValue =
         (values.head.summarize(pc) /: values.tail) {
             (c, n) ⇒ c.summarize(pc, n)
         }
-    }
 
     /**
      * Extractor for `AReferenceValue`s.

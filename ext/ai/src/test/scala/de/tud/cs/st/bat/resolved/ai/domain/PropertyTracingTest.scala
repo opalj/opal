@@ -49,8 +49,7 @@ import org.scalatest.ParallelTestExecution
 import com.sun.org.apache.bcel.internal.generic.INVOKEVIRTUAL
 
 /**
- * This test(suite) just loads a very large number of class files and performs
- * an abstract interpretation of the methods.
+ * This test(suite) basically tests BATAIs support for tracing a property.
  *
  * @author Michael Eichberg
  */
