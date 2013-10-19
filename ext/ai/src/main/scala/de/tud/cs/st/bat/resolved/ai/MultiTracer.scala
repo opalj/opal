@@ -36,60 +36,30 @@ package resolved
 package ai
 
 /**
- * Defines the interface between the abstract interpreter and a module for
- * tracing the interpreter's behavior. In general, a tracer is first registered with an
- * abstract interpreter. After that, when a method is analyzed, BATAI calls the
- * tracer's methods at the respective point in time.
- *
- * @note In general, all mutable data structures (.e.g. the current locals) passed
- * 		to the tracer must not be mutated by it.
  *
  * @author Michael Eichberg
  */
-trait AITracer {
+class MultiTracer(val tracers: AITracer*) extends AITracer {
 
-    /**
-     * Called by BATAI before an instruction is evaluated.
-     *
-     * This enables the tracer to precisely log the behavior of the abstract
-     * interpreter, but also enables the tracer to interrupt the evaluation
-     * to, e.g., enable stepping through a program.
-     *
-     * @param operands The operand stack before the execution of the instruction.
-     * @param locals The registers before the execution of the instruction. '''The Array
-     * 		must not be mutated.'''
-     */
     def instructionEvalution[D <: SomeDomain](
         domain: D,
         pc: PC,
         instruction: Instruction,
         operands: List[D#DomainValue],
-        locals: Array[D#DomainValue]): Unit
+        locals: Array[D#DomainValue]) {
+        tracers.foreach(
+            _.instructionEvalution(
+                domain,
+                pc,
+                instruction,
+                operands,
+                locals))
+    }
 
-    /**
-     * Called by BATAI after an instruction was evaluated and before the targetPC
-     * is evaluated. In case of `if` or `switch` instructions `flow` is called multiple
-     * times before the method `instructionEvaluation` is called again.
-     *
-     * Recall that BATAI performs a depth-first exploration.
-     */
-    def flow(currentPC: PC, targetPC: PC): Unit
+    def flow(currentPC: PC, targetPC: PC) {
+        tracers.foreach(_.flow(currentPC, targetPC))
+    }
 
-    /**
-     * Called by BATAI whenever two paths converge and the values on the operand stack
-     * and the registers are joined.
-     *
-     * @param thisOperands The operand stack as it was used the last time when the
-     * 		instruction with the given program counter was evaluated.
-     * @param thisLocals The registers as they were used the last time when the
-     * 		instruction with the given program counter was evaluated.
-     * @param otherOperands The current operand stack when we re-reach the instruction
-     *
-     * @param otherLocals The current registers.
-     *
-     * @param result The result of joining the operand stacks and register
-     * 		assignment.
-     */
     def join[D <: SomeDomain](
         domain: D,
         pc: PC,
@@ -98,26 +68,41 @@ trait AITracer {
         otherOperands: D#Operands,
         otherLocals: D#Locals,
         result: Update[(D#Operands, D#Locals)],
-        forcedContinuation: Boolean)
+        forcedContinuation: Boolean) {
+        tracers.foreach(
+            _.join[D](
+                domain,
+                pc,
+                thisOperands,
+                thisLocals,
+                otherOperands,
+                otherLocals,
+                result,
+                forcedContinuation)
+        )
+    }
 
-    /**
-     * Called when the analyzed method throws an exception that is not caught within
-     * the method.
-     */
     def abruptMethodExecution[D <: SomeDomain](
         domain: D,
         pc: Int,
-        exception: D#DomainValue)
+        exception: D#DomainValue) {
+        tracers.foreach(_.abruptMethodExecution(domain, pc, exception))
+    }
 
-    /**
-     * Called when a ret instruction is encountered.
-     */
     def ret[D <: SomeDomain](
         domain: D,
         pc: PC,
         returnAddress: PC,
         oldWorklist: List[PC],
-        newWorklist: List[PC])
+        newWorklist: List[PC]) {
+        tracers.foreach(
+            _.ret(
+                domain,
+                pc,
+                returnAddress,
+                oldWorklist,
+                newWorklist))
+    }
 
     /**
      * Called when the evaluation of a subroutine (JSR/RET) is completed.
@@ -126,11 +111,16 @@ trait AITracer {
         domain: D,
         pc: Int,
         returnAddress: Int,
-        subroutineInstructions: List[Int])
+        subroutineInstructions: List[Int]) {
+        tracers.foreach(
+            _.returnFromSubroutine(
+                domain,
+                pc,
+                returnAddress,
+                subroutineInstructions))
+    }
 
-    /**
-     * Called by BATAI when the abstract interpretation of a method has completed/was
-     * interrupted.
-     */
-    def result[D <: SomeDomain](result: AIResult[D])
+    def result[D <: SomeDomain](result: AIResult[D]) {
+        tracers.foreach(_.result(result))
+    }
 }
