@@ -114,9 +114,9 @@ trait XHTMLTracer extends AITracer {
             for (path ← inOrderFlow; flowEntity ← path) yield {
                 val dialogId = "dialog"+flowEntity.flowId
                 <div id={ dialogId } title={ flowEntity.pc + " " + flowEntity.instruction.mnemonic }>
-        	<h1>Stack</h1>
+        	<b>Stack</b><br/>
         	{ util.Util.dumpStack(flowEntity.operands) }
-        	<h1>Locals</h1>
+        	<b>Locals</b><br/>
         	{ util.Util.dumpLocals(flowEntity.locals) }
         	</div>
             }
@@ -150,9 +150,10 @@ trait XHTMLTracer extends AITracer {
 			width:100%;
 			font-size: 12px;
 			font-family: Tahoma;
-			margin: 1px;
+			margin: 0px;
         	padding: 0px;
 			border: 1px solid gray;
+        	border-collapse: collapse;
 		}}
         tr {{ 
         	margin: 0px;
@@ -180,7 +181,10 @@ trait XHTMLTracer extends AITracer {
         ui-dialog-buttonpane: The pane that contains the dialog's buttons. This will only be present if the buttons option is set.
         ui-dialog-buttonset: The container around the buttons themselves.
         */
-        ui-dialog {{ border: 1px solid #222;}}
+        .ui-dialog-content {{
+        	font-family: Tahoma,Arial;
+        	font-size: 11px; 
+        }}
 		</style>
         </head>
         <body style="font-family:Tahoma;font-size:8px;">
