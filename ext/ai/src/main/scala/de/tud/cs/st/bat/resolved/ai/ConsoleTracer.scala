@@ -67,7 +67,9 @@ trait ConsoleTracer extends AITracer {
                 }.mkString("\tlocals:\n\t\t", "\n\t\t", "\n")+"\t]")
     }
 
-    def merge[D <: SomeDomain](
+    def flow(currentPC: PC, targetPC: PC) { /* ignored */ }
+
+    def join[D <: SomeDomain](
         domain: D,
         pc: PC,
         thisOperands: D#Operands,
@@ -135,8 +137,8 @@ trait ConsoleTracer extends AITracer {
             " : RESETTING : "+subroutineInstructions.mkString(", ") +
             Console.RESET)
     }
-    
-      /**
+
+    /**
      * Called when a ret instruction is encountered.
      */
     def ret[D <: SomeDomain](
@@ -148,9 +150,10 @@ trait ConsoleTracer extends AITracer {
         println(Console.GREEN_B +
             Console.BOLD +
             pc+": RET : "+returnAddress+
-            " : OLD_WORKLIST : "+oldWorklist.mkString(", ") + 
+            " : OLD_WORKLIST : "+oldWorklist.mkString(", ")+
             " : NEW_WORKLIST : "+newWorklist.mkString(", ") +
             Console.RESET)
     }
-    
+
+    def result[D <: SomeDomain](result: AIResult[D]) { /*ignored*/ }
 }

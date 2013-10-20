@@ -256,7 +256,7 @@ object Util {
         </tr >
     }
 
-    private def dumpStack(operands: List[_ <: AnyRef]) =
+    def dumpStack(operands: List[_ <: AnyRef]) =
         if (operands eq null)
             <em>Operands are not available.</em>
         else {
@@ -265,7 +265,7 @@ object Util {
             </ul>
         }
 
-    private def dumpLocals(locals: Array[_ <: AnyRef]) =
+    def dumpLocals(locals: Array[_ <: AnyRef]) =
         if (locals eq null)
             <em>Local variables assignment is not available.</em>
         else {

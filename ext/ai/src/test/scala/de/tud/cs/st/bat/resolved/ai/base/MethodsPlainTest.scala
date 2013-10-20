@@ -679,11 +679,13 @@ class MethodsPlainTest
     //
     // PUSH CONSTANT VALUE
     it should "be able to analyze a push of null value" in {
-        val domain = new RecordingDomain; import domain._
+        val domain = new RecordingDomain
         val method = classFile.methods.find(_.name == "pushNull").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        assert(domain.isNull(domain.returnedValue.get).yes, "returned value was not null")
+        assert(
+            domain.isNull(domain.returnedValue.get).isUndefined,
+            "unexpected nullness property of the returned value: "+domain.returnedValue.get)
     }
     it should "be able to analyze a push of byte value" in {
         val domain = new RecordingDomain; import domain._

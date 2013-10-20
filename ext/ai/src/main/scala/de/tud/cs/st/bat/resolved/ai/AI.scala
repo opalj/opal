@@ -345,38 +345,43 @@ trait AI[D <: Domain[_]] {
             targetPC: PC,
             operands: Operands,
             locals: Locals) {
-            val forceContinuation = domain.flow(sourcePC, targetPC)
-
-            val currentOperands = operandsArray(targetPC)
-            if (currentOperands == null /* || localsArray(targetPC) == null )*/ ) {
-                // we analyze the instruction for the first time ...
-                operandsArray(targetPC) = operands
-                localsArray(targetPC) = locals
-                worklist = targetPC :: worklist
-            } else {
-                val currentLocals = localsArray(targetPC)
-                val mergeResult = domain.join(
-                    targetPC, currentOperands, currentLocals, operands, locals
-                )
-                if (tracer.isDefined)
-                    tracer.get.merge[domain.type](
-                        domain,
-                        targetPC, currentOperands, currentLocals, operands, locals,
-                        mergeResult,
-                        forceContinuation
+            val doGotoTarget: Boolean = {
+                val forceContinuation = domain.flow(sourcePC, targetPC)
+                val currentOperands = operandsArray(targetPC)
+                if (currentOperands == null /* || localsArray(targetPC) == null )*/ ) {
+                    // we analyze the instruction for the first time ...
+                    operandsArray(targetPC) = operands
+                    localsArray(targetPC) = locals
+                    true // => do goto target
+                } else {
+                    val currentLocals = localsArray(targetPC)
+                    val mergeResult = domain.join(
+                        targetPC, currentOperands, currentLocals, operands, locals
                     )
-                mergeResult match {
-                    case NoUpdate ⇒
-                        if (forceContinuation) worklist = targetPC :: worklist
-                    case StructuralUpdate((updatedOperands, updatedLocals)) ⇒
-                        operandsArray(targetPC) = updatedOperands
-                        localsArray(targetPC) = updatedLocals
-                        worklist = targetPC :: worklist
-                    case MetaInformationUpdate((updatedOperands, updatedLocals)) ⇒
-                        operandsArray(targetPC) = updatedOperands
-                        localsArray(targetPC) = updatedLocals
-                        if (forceContinuation) worklist = targetPC :: worklist
+                    if (tracer.isDefined)
+                        tracer.get.join[domain.type](
+                            domain,
+                            targetPC, currentOperands, currentLocals, operands, locals,
+                            mergeResult,
+                            forceContinuation
+                        )
+                    mergeResult match {
+                        case NoUpdate ⇒
+                            forceContinuation
+                        case StructuralUpdate((updatedOperands, updatedLocals)) ⇒
+                            operandsArray(targetPC) = updatedOperands
+                            localsArray(targetPC) = updatedLocals
+                            true // => do goto target
+                        case MetaInformationUpdate((updatedOperands, updatedLocals)) ⇒
+                            operandsArray(targetPC) = updatedOperands
+                            localsArray(targetPC) = updatedLocals
+                            forceContinuation
+                    }
                 }
+            }
+            if (doGotoTarget) {
+                worklist = targetPC :: worklist
+                if (tracer.isDefined) tracer.get.flow(sourcePC, targetPC)
             }
         }
 
@@ -390,13 +395,16 @@ trait AI[D <: Domain[_]] {
 
         while (worklist.nonEmpty) {
             if (isInterrupted) {
-                return AIResultBuilder.aborted(
+                val result = AIResultBuilder.aborted(
                     code,
                     domain)(
                         worklist,
                         evaluated,
                         operandsArray,
                         localsArray)
+                if (tracer.isDefined)
+                    tracer.get.result(result)
+                return result
             }
             try {
                 // the worklist is manipulated here and by the JSR / RET instructions 
@@ -450,7 +458,15 @@ trait AI[D <: Domain[_]] {
                         // call to a subroutine – we have nothing further to do and
                         // the computation ends
                         if (worklist.isEmpty) {
-                            return AIResultBuilder.completed(code, domain)(evaluated, operandsArray, localsArray)
+                            val result = AIResultBuilder.completed(
+                                code,
+                                domain)(
+                                    evaluated,
+                                    operandsArray,
+                                    localsArray)
+                            if (tracer.isDefined)
+                                tracer.get.result(result)
+                            return result
                         }
                     }
                     worklist.head
@@ -1662,7 +1678,10 @@ trait AI[D <: Domain[_]] {
             }
         }
 
-        AIResultBuilder.completed(code, domain)(evaluated, operandsArray, localsArray)
+        val result = AIResultBuilder.completed(code, domain)(evaluated, operandsArray, localsArray)
+        if (tracer.isDefined)
+            tracer.get.result(result)
+        result
     }
 }
 
