@@ -36,7 +36,7 @@ package ai
 package base
 
 import reader.Java7Framework
-import domain.RecordingDomain
+import domain.BaseRecordingDomain
 
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
@@ -64,8 +64,8 @@ class MethodsWithArraysTest
     val classFile = classFiles.map(_._1).
         find(_.thisClass.className == "ai/MethodsWithArrays").get
 
-    private def evaluateMethod(name: String, f: RecordingDomain[String] ⇒ Unit) {
-        val domain = new RecordingDomain(name)
+    private def evaluateMethod(name: String, f: BaseRecordingDomain[String] ⇒ Unit) {
+        val domain = new BaseRecordingDomain(name)
 
         val method = classFile.methods.find(_.name == name).get
         val result = BaseAI(classFile, method, domain)

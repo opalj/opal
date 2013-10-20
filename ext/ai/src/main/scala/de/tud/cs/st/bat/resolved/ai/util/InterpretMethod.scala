@@ -36,8 +36,8 @@ package resolved
 package ai
 package util
 
-import domain.ConfigurableDomain
-import domain.ConfigurableDefaultDomain
+import domain.BaseConfigurableDomain
+
 
 /**
  * A small interpreter that enables us to easily perform the abstract interpretation of a
@@ -80,9 +80,9 @@ object InterpretMethod {
         val domainClass = {
             if (args.length > 3)
                 Class.forName(args(3).substring(8)).
-                    asInstanceOf[Class[_ <: ConfigurableDomain[_]]]
+                    asInstanceOf[Class[_ <: BaseConfigurableDomain[_]]]
             else
-                classOf[ConfigurableDefaultDomain[_]]
+                classOf[BaseConfigurableDomain[_]]
         }
         val domainConstructor = domainClass.getConstructor(classOf[Object])
 

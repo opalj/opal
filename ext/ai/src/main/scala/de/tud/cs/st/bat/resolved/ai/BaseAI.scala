@@ -36,7 +36,7 @@ package resolved
 package ai
 
 /**
- * A base abstract interpreter useful for testing and debugging purposes. The base
+ * A base abstract interpreter that can be used with any domain. The base
  * interpreter can be interrupted by calling the `interrupt` method of the
  * AI's thread.
  *
@@ -48,8 +48,3 @@ object BaseAI extends AI[SomeDomain] {
 
 }
 
-object BaseTracingAI extends AIWithPropertyTracing[domain.PropertyTracing[_]] {
-
-    override def isInterrupted = Thread.interrupted()
-
-}

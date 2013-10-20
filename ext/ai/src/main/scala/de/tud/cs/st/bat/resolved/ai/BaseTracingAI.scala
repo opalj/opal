@@ -30,60 +30,22 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st.bat
+package de.tud.cs.st
+package bat
 package resolved
 package ai
-package base
-
-import reader.Java7Framework
-
-import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FlatSpec
-import org.scalatest.BeforeAndAfterAll
-import org.scalatest.ParallelTestExecution
-import org.scalatest.matchers.ShouldMatchers
 
 /**
- * Basic tests of the abstract interpreter in the presence of simple control flow
- * instructions (if).
+ * A base abstract interpreter that can be used with any domain that supports
+ * the tracing of properties.
+ *
+ * By default, this interpreter can be interrupted by calling the `interrupt`
+ * method of the AI's thread.
  *
  * @author Michael Eichberg
  */
-@RunWith(classOf[JUnitRunner])
-class MethodsWithLoopsTest
-        extends FlatSpec
-        with ShouldMatchers
-        with ParallelTestExecution {
+object BaseTracingAI extends AIWithPropertyTracing[domain.PropertyTracing[_]] {
 
-    val classFiles = Java7Framework.ClassFiles(
-        TestSupport.locateTestResources("classfiles/ai.jar", "ext/ai"))
-    val classFile = classFiles.map(_._1).
-        find(_.thisClass.className == "ai/MethodsWithLoops").get
-
-    def findMethod(name: String): Method = {
-        classFile.methods.find(_.name == name).get
-    }
-
-    import domain.BaseDomain
-    private def evaluateMethod(name: String, f: BaseDomain ⇒ Unit) {
-        val domain = new BaseDomain()
-        val method = classFile.methods.find(_.name == name).get
-        val result = BaseAI(classFile, method, domain)
-
-        util.Util.dumpOnFailureDuringValidation(Some(classFile), Some(method), method.body.get, result) {
-            f(domain)
-        }
-    }
-
-    behavior of "the abstract interpreter when analyzing methods with loops"
-
-    //
-    // RETURNS
-    it should "be able to analyze a method that never terminates" in {
-        val domain = new BaseDomain()
-        val method = findMethod("endless")
-        val result = BaseAI(classFile, method, domain) // TODO [AI - Test] Update the test to not wait forever in case of a bug.
-    }
+    override def isInterrupted = Thread.interrupted()
 
 }

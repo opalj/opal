@@ -38,9 +38,9 @@ package ai
 /**
  * Encapsulates the result of a computation in a domain. In general, the
  * result is either some value `V` or some exception(s) `E`. In some cases, however,
- * when the domain cannot "precisely" determine the result, it may be both: some
+ * when the domain cannot '''precisely''' determine the result, it may be both: some
  * exceptional value(s) and a value. In the latter case BATAI will generally follow all
- * conceivable paths.
+ * possible paths.
  *
  * @tparam V The result of the computation. Typically a `DomainValue`.
  *      If the computation is executed for its side
@@ -127,13 +127,14 @@ final case class ThrowsException[+E](
     exceptions: E)
         extends Computation[Nothing, E] {
 
-    def result = aiException("the computation resulted in an exception")
+    def returnsNormally: Boolean = false
 
     def hasResult: Boolean = false
 
+    def result = aiException("the computation resulted in an exception")
+
     def throwsException: Boolean = true
 
-    def returnsNormally: Boolean = false
 }
 
 /**
@@ -144,13 +145,13 @@ final case class ComputationWithSideEffectOrException[+E](
     exceptions: E)
         extends Computation[Nothing, E] {
 
-    def result = aiException("the computation was executed for its side effect only")
+    def returnsNormally: Boolean = true
 
     def hasResult: Boolean = false
 
-    def throwsException: Boolean = true
+    def result = aiException("the computation was executed for its side effect only")
 
-    def returnsNormally: Boolean = true
+    def throwsException: Boolean = true
 }
 
 /**
@@ -159,15 +160,15 @@ final case class ComputationWithSideEffectOrException[+E](
 case object ComputationWithSideEffectOnly
         extends Computation[Nothing, Nothing] {
 
-    def result = aiException("the computation was executed for its side effect only")
+    def returnsNormally: Boolean = true
 
     def hasResult: Boolean = false
 
-    def exceptions = aiException("the computation succeeded without an exception")
+    def result = aiException("the computation was executed for its side effect only")
 
     def throwsException: Boolean = false
 
-    def returnsNormally: Boolean = true
+    def exceptions = aiException("the computation succeeded without an exception")
 }
       
 

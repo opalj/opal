@@ -67,9 +67,8 @@ class PropertyTracingTest
     val classFile = classFiles.map(_._1).
         find(_.thisClass.className == "ai/domain/Sanitization").get
 
-    trait AnalysisDomain
-            extends ConfigurableDomain[String]
-            with AbstractDefaultDomain[String]
+    class AnalysisDomain(identifier:String)
+            extends PreciseConfigurableDomain[String](identifier)
             with RecordReturnValues[String]
             with SimpleBooleanPropertyTracing[String] {
 
@@ -100,7 +99,7 @@ class PropertyTracingTest
          * that the value is passed to a function called sanitizer.
          */
         val method = classFile.methods.find(_.name == name).get
-        val domain = new AnalysisDomain { val identifier = name }
+        val domain = new AnalysisDomain(name)
         val result = BaseTracingAI(classFile, method, domain)
         dumpOnFailureDuringValidation(
             Some(classFile),

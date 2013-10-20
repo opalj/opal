@@ -36,14 +36,15 @@ package resolved
 package ai
 package util
 
-import de.tud.cs.st.util.ControlAbstractions._
-import de.tud.cs.st.bat.resolved.ai.domain.ConfigurableDomain
-import de.tud.cs.st.bat.resolved.ai.domain.ConfigurableDefaultDomain
-
 import reader.Java7Framework.ClassFile
+import domain.BaseConfigurableDomain
+import de.tud.cs.st.util.ControlAbstractions._
+
+
 import java.util.zip.ZipFile
 import java.io.DataInputStream
 import java.io.ByteArrayInputStream
+
 import scala.util.control.ControlThrowable
 
 /**
@@ -65,13 +66,13 @@ object InterpretMethods {
         }
         if (args.size > 0 && args(0).startsWith("domain=")) {
             interpret(
-                Class.forName(args.head.substring(8)).asInstanceOf[Class[_ <: ConfigurableDomain[_]]],
+                Class.forName(args.head.substring(8)).asInstanceOf[Class[_ <: Domain[_]]],
                 args.tail.map(new java.io.File(_)),
                 true).
                 map(System.err.println(_))
         } else {
             interpret(
-                classOf[ConfigurableDefaultDomain[_]],
+                classOf[BaseConfigurableDomain[_]],
                 args.map(new java.io.File(_)),
                 true).
                 map(System.err.println(_))
@@ -81,7 +82,7 @@ object InterpretMethods {
     val timeLimit: Long = 250l //milliseconds
 
     def interpret(
-        domainClass: Class[_ <: ConfigurableDomain[_]],
+        domainClass: Class[_ <: Domain[_]],
         files: Seq[java.io.File],
         beVerbose: Boolean = false): Option[String] = {
 

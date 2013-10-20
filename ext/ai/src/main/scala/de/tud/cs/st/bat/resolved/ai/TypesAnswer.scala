@@ -35,6 +35,8 @@ package bat
 package resolved
 package ai
 
+import de.tud.cs.st.util.Answer
+
 /**
  * Models the answer of the domain to a question about a specific value's type.
  *
@@ -71,3 +73,16 @@ object IsReferenceType {
 object TheTypeBound {
     def unapply(answer: IsReferenceType): Option[ReferenceType] = answer.theTypeBound
 }
+
+trait ValueTypeBounds {
+
+    def isNull: Answer
+
+    /**
+     * @note The function `isSubtypeOf` is not determined if `isNull` returns `Yes`;
+     *      if `isNull` is `Unknown` then the result is given under the
+     *      assumption that the value is not `null` at runtime.
+     */
+    def isSubtypeOf(referenceType: ReferenceType): Answer
+}
+

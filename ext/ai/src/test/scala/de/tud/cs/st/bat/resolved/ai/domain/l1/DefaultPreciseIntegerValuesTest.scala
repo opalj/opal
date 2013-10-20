@@ -60,7 +60,7 @@ class DefaultPreciseIntegerValuesTest
         with ShouldMatchers
         with ParallelTestExecution {
 
-    val domain = new ConfigurablePreciseDomain("DefaultPreciseIntegerValuesTest")
+    val domain = new PreciseConfigurableDomain("DefaultPreciseIntegerValuesTest")
     import domain._
 
     //

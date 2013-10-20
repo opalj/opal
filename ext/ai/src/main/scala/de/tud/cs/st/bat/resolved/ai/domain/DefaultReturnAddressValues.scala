@@ -41,6 +41,9 @@ package domain
  * mixed in if a `Domain`'s `Value` and `ReturnAddressValue` trait were
  * not extended.
  *
+ * In general it is not necessary to add any additional support to return address values
+ * as these values are never part of any domain related computation.
+ *
  * @author Michael Eichberg
  */
 trait DefaultReturnAddressValues[+I] extends DefaultValueBinding[I] {

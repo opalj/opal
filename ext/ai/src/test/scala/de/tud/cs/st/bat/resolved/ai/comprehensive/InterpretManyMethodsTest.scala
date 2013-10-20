@@ -37,8 +37,8 @@ package ai
 package comprehensive
 
 import de.tud.cs.st.util.ControlAbstractions._
-import domain.ConfigurableDefaultDomain
-import domain.ConfigurablePreciseDomain
+import domain.BaseConfigurableDomain
+import domain.PreciseConfigurableDomain
 
 import reader.Java7Framework.ClassFile
 import org.junit.runner.RunWith
@@ -70,7 +70,7 @@ class InterpretManyMethodsTest
         files.map(_.getName).mkString("\n\t\t", "\n\t\t", "\n")
     ) in {
             util.InterpretMethods.interpret(
-                classOf[ConfigurableDefaultDomain[_]],
+                classOf[BaseConfigurableDomain[_]],
                 files
             ).map(fail(_))
         }
@@ -80,7 +80,7 @@ class InterpretManyMethodsTest
         files.map(_.getName).mkString("\n\t\t", "\n\t\t", "\n")
     ) in {
             util.InterpretMethods.interpret(
-                classOf[ConfigurablePreciseDomain[_]],
+                classOf[PreciseConfigurableDomain[_]],
                 files
             ).map(fail(_))
         }

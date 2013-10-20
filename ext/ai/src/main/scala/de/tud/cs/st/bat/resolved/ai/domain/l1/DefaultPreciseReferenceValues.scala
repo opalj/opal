@@ -69,14 +69,15 @@ trait DefaultPreciseReferenceValues[+I]
         val isPrecise: Boolean)
             extends ReferenceValue { self: DomainValue ⇒
 
-        def valuesTypeBounds: Iterable[ValueTypeBounds] = Iterable(
-            new ValueTypeBounds {
-                def isNull: Answer = self.isNull
+        def valuesTypeBounds: Iterable[ValueTypeBounds] =
+            Iterable(
+                new ValueTypeBounds {
+                    def isNull: Answer = self.isNull
 
-                def isSubtypeOf(referenceType: ReferenceType): Answer =
-                    self.isSubtypeOf(referenceType)
-            }
-        )
+                    def isSubtypeOf(referenceType: ReferenceType): Answer =
+                        self.isSubtypeOf(referenceType)
+                }
+            )
 
         def theTypeBound: Option[ReferenceType] =
             if (typeBounds.size == 1)
@@ -90,10 +91,12 @@ trait DefaultPreciseReferenceValues[+I]
          * domain.
          *
          * Additionally, the `isPrecise` property is taken into consideration to ensure
-         * that a `No` answer means that it is impossible that any runtime value is
-         * actually a subtype of the given supertype.
+         * that a `No` answer means that it is impossible that any represented runtime
+         * value is actually a subtype of the given supertype.
          */
         def isSubtypeOf(supertype: ReferenceType): Answer = {
+            assume(this.isNull.maybeNo)
+
             val answer: Answer = ((No: Answer) /: typeBounds) { (a, t) ⇒
                 val isSubtypeOf = domain.isSubtypeOf(t, supertype)
                 if (isSubtypeOf.yes) {
@@ -103,36 +106,33 @@ trait DefaultPreciseReferenceValues[+I]
                 }
             }
             answer match {
-                case No if isPrecise ⇒ No
-                case No ⇒
-                    // .. is it conceivable that this value is still a subtype of the
-                    // given reference type?
-                    if (typeBounds.forall { subtype ⇒ domain.isSubtypeOf(supertype, subtype).maybeYes })
-                        // Well it is conceivable that the value at runtime is a subtype
-                        Unknown
-                    else
-                        No
-                case Unknown ⇒ Unknown
+                case No if isPrecise ⇒
+                    No
+                case _ /* <=> No | Unknown*/ ⇒
+                    // In general, we have to check whether a type exists that is a
+                    // proper subtype of the type identified by this value's type bounds 
+                    // and that is also a subtype of the given `supertype`. 
+                    //
+                    // If such a type does not exist the answer is truly `no` (if we 
+                    // assume that we know the complete type hierarchy); 
+                    // if we don't know the complete hierarchy or if we currently 
+                    // analyze a library the answer generally has to be `Unknown`
+                    // unless we also consider the classes that are final or .... 
+                    Unknown
             }
         }
 
         def updateIsNull(pc: PC, isNull: Answer): AReferenceValue = {
             assume(this.isNull.isUndefined)
-            //            if (this.isNull.isUndefined)
+
             if (isNull.yes)
                 AReferenceValue(this.pc, Set.empty[ReferenceType], Yes, true)
             else
                 AReferenceValue(this.pc, typeBounds, isNull, isPrecise)
-            //            else
-            // this update of the value's isNull property doesn't make sense
-            // hence, we swallow it to facilitate the implementation of 
-            // MultipleReferenceValues
-            //            domainException(domain, "cannot update the isNull property of a null value")
         }
 
         def addUpperBound(pc: PC, theUpperBound: ReferenceType): AReferenceValue = {
-            //            if (isNull.yes)
-            //                return this
+            assume(this.isNull.maybeNo)
 
             isSubtypeOf(theUpperBound) match {
                 case Yes ⇒ this
@@ -146,6 +146,8 @@ trait DefaultPreciseReferenceValues[+I]
                     // bound for the others.
                     this
                 case No if typeBounds.forall(domain.isSubtypeOf(theUpperBound, _).yes) ⇒
+                    // The new upperBound is a subtype of all previous bounds and 
+                    // hence completely replaces this value's type bound.
                     AReferenceValue(this.pc, Set(theUpperBound), isNull, isPrecise)
                 case _ /* (No && !isPrecise || Unknown) */ ⇒
                     var newValueTypes = Set.empty[ReferenceType]
@@ -345,16 +347,17 @@ trait DefaultPreciseReferenceValues[+I]
             }
         lazy val isNull: Answer = calculateIsNull()
 
-        override def summarize(pc: PC): DomainValue = domain.summarizeReferenceValues(pc, values)
+        override def summarize(pc: PC): DomainValue = 
+            domain.summarizeReferenceValues(pc, values)
 
-        override def summarize(pc: PC, value: DomainValue): DomainValue = {
+        override def summarize(pc: PC, value: DomainValue): DomainValue = 
             value match {
                 case aRefVal: AReferenceValue ⇒
                     domain.summarizeReferenceValues(pc, this.values + aRefVal)
                 case MultipleReferenceValues(otherValues) ⇒
                     domain.summarizeReferenceValues(pc, this.values ++ otherValues)
             }
-        }
+        
 
         override def adapt[TDI >: I](
             targetDomain: Domain[TDI],
@@ -398,9 +401,8 @@ trait DefaultPreciseReferenceValues[+I]
                     updatedValues.head
                 else
                     MultipleReferenceValues(updatedValues)
-            } else {
-                this
-            }
+            } else 
+                this            
         }
 
         override def updateIsNull(pc: PC, isNull: Answer): ReferenceValue = {

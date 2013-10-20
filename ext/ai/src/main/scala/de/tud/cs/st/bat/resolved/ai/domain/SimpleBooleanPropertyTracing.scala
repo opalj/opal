@@ -39,7 +39,8 @@ package domain
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 /**
- * Representation of some property.
+ * Enables the tracing of a single boolean property where the precise semantics
+ * is determined by the user.
  *
  * @author Michael Eichberg
  */

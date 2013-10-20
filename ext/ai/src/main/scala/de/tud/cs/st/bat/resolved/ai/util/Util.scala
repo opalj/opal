@@ -52,7 +52,7 @@ object Util {
     import de.tud.cs.st.util.ControlAbstractions._
 
     /**
-     * We generate dumps on errors only if the specified time has passed (in general 
+     * We generate dumps on errors only if the specified time has passed (in general
      * a bug causes many dumps to be created.)
      *
      * If you want to generate more dumps set this value to a small(er) value or to -1l if
@@ -256,9 +256,6 @@ object Util {
         </tr >
     }
 
-    type SomeOperands = List[_ <: AnyRef]
-    type SomeLocals = Array[_ <: AnyRef]
-    
     private def dumpStack(operands: List[_ <: AnyRef]) =
         if (operands eq null)
             <em>Operands are not available.</em>
@@ -268,7 +265,7 @@ object Util {
             </ul>
         }
 
-    private def dumpLocals(locals: SomeLocals) =
+    private def dumpLocals(locals: Array[_ <: AnyRef]) =
         if (locals eq null)
             <em>Local variables assignment is not available.</em>
         else {
@@ -278,3 +275,4 @@ object Util {
         }
 
 }
+

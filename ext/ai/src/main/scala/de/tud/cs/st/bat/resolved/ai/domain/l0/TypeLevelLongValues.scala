@@ -128,7 +128,7 @@ trait TypeLevelLongValues[+I] extends Domain[I] {
     def l2i(pc: PC, value: DomainValue): DomainValue = newIntegerValue(pc)
 }
 private object TypeLevelLongValues {
-    private val typesAnswer: IsPrimitiveType = IsPrimitiveType(LongType)
+    private final val typesAnswer: IsPrimitiveType = IsPrimitiveType(LongType)
 }
 
 

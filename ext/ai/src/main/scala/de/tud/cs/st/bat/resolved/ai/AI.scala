@@ -1722,33 +1722,3 @@ private[ai] object CTC2 {
         value.computationalType.category == 2
 }
 
-/**
- * Abstract interpreter that (in combination with an appropriate domain)
- * facilitates the analysis of properties that are control-flow dependent.
- *
- * Basically this abstract interpreter can be used as a drop-in replacement
- * of the default abstract interpreter if the domain supports property
- * tracing.
- *
- * @author Michael Eichberg
- */
-trait AIWithPropertyTracing[D <: domain.PropertyTracing[_]] extends AI[D] {
-
-    /**
-     * Performs an abstract interpretation of the given code snippet.
-     *
-     * Before actually starting the interpretation the domain is called to
-     * let it initialize its properties.
-     */
-    override protected[ai] def perform(
-        code: Code,
-        domain: D)(
-            initialOperands: List[domain.DomainValue],
-            initialLocals: Array[domain.DomainValue]): AIResult[domain.type] = {
-
-        domain.initProperties(code, initialOperands, initialLocals)
-        super.perform(code, domain)(initialOperands, initialLocals)
-    }
-}
-
-

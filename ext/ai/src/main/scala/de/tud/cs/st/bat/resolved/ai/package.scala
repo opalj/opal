@@ -61,36 +61,12 @@ package object ai {
     type SomeDomain = Domain[_]
 
     type SomeAI[D <: SomeDomain] = AI[_ >: D]
-    
-    type PC = Int
 
-    class AIException(
-        message: String,
-        cause: Throwable) extends RuntimeException(message, cause)
+    type PC = Int
 
     @throws[AIException]
     def aiException(message: String, cause: Throwable = null): Nothing = {
         throw new AIException(message, cause)
-    }
-
-    case class DomainException(
-            domain: SomeDomain,
-            message: String) extends AIException(message, null) {
-
-        def enrich(
-            worklist: List[PC],
-            evaluated: List[PC],
-            operandsArray: Array[List[domain.DomainValue]],
-            localsArray: Array[Array[domain.DomainValue]]) = {
-
-            new InterpreterException(
-                this,
-                domain,
-                worklist,
-                evaluated,
-                operandsArray,
-                localsArray)
-        }
     }
 
     /**
@@ -103,15 +79,6 @@ package object ai {
         domain: SomeDomain,
         message: String): Nothing =
         throw DomainException(domain, message)
-
-    case class InterpreterException[D <: SomeDomain](
-        throwable: Throwable,
-        domain: D,
-        worklist: List[PC],
-        evaluated: List[PC],
-        operandsArray: Array[_ <: List[_ <: D#DomainValue]],
-        localsArray: Array[_ <: Array[_ <: D#DomainValue]])
-            extends AIException(throwable.getLocalizedMessage(), throwable)
 
     type SomeInterpreterException = InterpreterException[_]
 
@@ -154,15 +121,4 @@ package object ai {
      */
     type TypeBounds = Set[ReferenceType]
 
-    trait ValueTypeBounds {
-
-        def isNull: Answer
-
-        /**
-         * @note The function `isSubtypeOf` is not determined if `isNull` returns `Yes`;
-         * 		if `isNull` is `Unknown` then the result is given under the
-         *   	assumption that the value is not `null` at runtime.
-         */
-        def isSubtypeOf(referenceType: ReferenceType): Answer
-    }
 }

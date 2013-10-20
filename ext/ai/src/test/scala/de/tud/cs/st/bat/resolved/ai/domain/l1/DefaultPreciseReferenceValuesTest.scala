@@ -55,12 +55,12 @@ import org.scalatest.ParallelTestExecution
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class DefaultTypeLevelReferenceValuesTest
+class DefaultPreciseReferenceValuesTest
         extends FlatSpec
         with ShouldMatchers
         with ParallelTestExecution {
 
-    val domain = new DefaultDomain
+    val domain = new PreciseConfigurableDomain("Reference Values Tests")
     import domain._
 
     // Helper object to match against Sets which contain one element

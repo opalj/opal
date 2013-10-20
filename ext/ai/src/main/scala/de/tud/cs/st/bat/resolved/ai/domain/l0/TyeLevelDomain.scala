@@ -47,9 +47,10 @@ package domain
  *
  * @author Michael Eichberg
  */
-trait BaseDomain[+I]
-    extends DefaultValueBinding[I]
-    with DefaultPreciseReferenceValues[I]
+trait TypeLevelDomain[+I]
+    extends Domain[I]
+    with DefaultValueBinding[I]
+    with DefaultTypeLevelReferenceValues[I]
     with DefaultTypeLevelIntegerValues[I]
     with DefaultTypeLevelLongValues[I]
     with DefaultTypeLevelFloatValues[I]
@@ -61,31 +62,25 @@ trait BaseDomain[+I]
  *
  * @author Michael Eichberg
  */
-trait AbstractDefaultDomain[+I]
-        extends BaseDomain[I]
-        with TypeLevelArrayInstructions
-        with TypeLevelFieldAccessInstructions
-        with TypeLevelInvokeInstructions
-        with DoNothingOnReturnFromMethod
-        with BasicTypeHierarchy {
-
-}
+trait AbstractBaseDomain[+I]
+    extends TypeLevelDomain[I]
+    with TypeLevelArrayInstructions
+    with TypeLevelFieldAccessInstructions
+    with TypeLevelInvokeInstructions
+    with DoNothingOnReturnFromMethod
+    with BasicTypeHierarchy
 
 /**
- * This is a ready to use domain which sets the domain identifier to "DefaultDomain".
+ * This is a ready to use domain which sets the domain identifier to "TypeLevelDomain".
  *
  * This domain is primarily useful for testing and debugging purposes.
  *
  * @author Michael Eichberg
  */
-class DefaultDomain extends AbstractDefaultDomain[String] {
+class BaseDomain extends AbstractBaseDomain[String] {
 
-    def identifier = "DefaultDomain"
+    def identifier = "TypeLevelDomain"
 
-}
-
-trait ConfigurableDomain[+I] extends Domain[I] {
-    val identifier: I
 }
 
 /**
@@ -93,41 +88,11 @@ trait ConfigurableDomain[+I] extends Domain[I] {
  *
  * @author Michael Eichberg
  */
-class ConfigurableDefaultDomain[+I](
+class BaseConfigurableDomain[+I](
     val identifier: I)
-        extends ConfigurableDomain[I]
-        with AbstractDefaultDomain[I] {
+        extends Domain[I]
+        with AbstractBaseDomain[I]
 
-}
-
-class RecordingDomain[I](identifier: I)
-        extends ConfigurableDefaultDomain[I](identifier)
-        with RecordReturnValues[I] {
-
-}
-
-class ConfigurablePreciseDomain[+I](
-    val identifier: I)
-        extends ConfigurableDomain[I]
-        with DefaultValueBinding[I]
-        with DefaultPreciseIntegerValues[I]
-        with DefaultPreciseReferenceValues[I]
-        with StringValues[I]
-        with DefaultTypeLevelLongValues[I]
-        with DefaultTypeLevelFloatValues[I]
-        with DefaultTypeLevelDoubleValues[I]
-        with DefaultReturnAddressValues[I]
-        with TypeLevelArrayInstructions
-        with TypeLevelFieldAccessInstructionsWithNullPointerHandling
-        with TypeLevelInvokeInstructionsWithNullPointerHandling
-        with DoNothingOnReturnFromMethod
-        with BasicTypeHierarchy {
-
-}
-
-class PreciseRecordingDomain[I](identifier: I)
-        extends ConfigurablePreciseDomain[I](identifier)
-        with RecordReturnValues[I] {
-
-}
-
+class BaseRecordingDomain[I](identifier: I)
+    extends BaseConfigurableDomain[I](identifier)
+    with RecordReturnValues[I] 

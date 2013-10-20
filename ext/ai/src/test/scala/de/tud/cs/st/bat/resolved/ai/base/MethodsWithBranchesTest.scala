@@ -57,8 +57,8 @@ class MethodsWithBranchesTest
         with ShouldMatchers
         with ParallelTestExecution {
 
-    import domain.{ RecordingDomain, RecordConstraints, RecordReturnValues }
-    type TestDomain = RecordingDomain[String] with RecordConstraints[String]
+    import domain.{ BaseRecordingDomain, RecordConstraints }
+    type TestDomain = BaseRecordingDomain[String] with RecordConstraints[String]
 
     val classFiles = Java7Framework.ClassFiles(
         TestSupport.locateTestResources("classfiles/ai.jar", "ext/ai"))
@@ -67,7 +67,7 @@ class MethodsWithBranchesTest
         find(_.thisClass.className == "ai/MethodsWithBranches").get
 
     private def evaluateMethod(name: String)(f: TestDomain ⇒ Unit) {
-        val domain = new RecordingDomain(name) with RecordConstraints[String]
+        val domain = new BaseRecordingDomain(name) with RecordConstraints[String]
         val method = classFile.methods.find(_.name == name).get
         val result = BaseAI(classFile, method, domain)
 
