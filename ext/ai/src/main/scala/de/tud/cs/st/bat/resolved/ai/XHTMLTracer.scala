@@ -46,9 +46,10 @@ case class FlowEntity(
     val flowId = FlowEntity.nextFlowId
 }
 
-private object FlowEntity {
+private[ai] object FlowEntity {
     private var flowId = -1
     private def nextFlowId = { flowId += 1; flowId }
+    def lastFlowId = flowId - 1
 }
 
 /**
@@ -64,6 +65,9 @@ trait XHTMLTracer extends AITracer {
         flow
     }
     private[this] def addFlowEntity(flowEntity: FlowEntity) {
+        if (flow.head.exists(_.pc == flowEntity.pc))
+            newBranch();
+        
         flow = (flowEntity :: flow.head) :: flow.tail
     }
 
@@ -139,7 +143,7 @@ trait XHTMLTracer extends AITracer {
         <html lang="en">
         <head>
         <meta charset="utf-8" />
-        <title>{ title }</title>
+        <title>{ title + " (Paths: " + pathsCount + "; Flow Nodes: " + FlowEntity.lastFlowId + ")" }</title>
         <link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
         <script src="http://code.jquery.com/jquery-1.9.1.js"></script>
         <script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
