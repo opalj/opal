@@ -241,7 +241,7 @@ trait XHTMLTracer extends AITracer {
     private[this] var continuingWithBranch = true
 
     def flow(currentPC: PC, successorPC: PC) = {
-        continuingWithBranch = true
+        continuingWithBranch = currentPC < successorPC
     }
 
     def instructionEvalution[D <: SomeDomain](
