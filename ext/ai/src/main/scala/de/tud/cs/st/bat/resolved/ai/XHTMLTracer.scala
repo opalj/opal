@@ -40,11 +40,12 @@ import language.existentials
 case class FlowEntity(
         val pc: PC,
         val instruction: Instruction,
-        val operands: List[(_ <: Domain[_])#Value],
-        val locals: Array[_ <: Domain[Any]#DomainValue],
+        val operands: List[(_ <: Domain[Any])#Value],
+        val locals: Array[_ <: Domain[Any]#Value],
         val properties: Option[String]) {
     val flowId = FlowEntity.nextFlowId
 }
+
 private object FlowEntity {
     private var flowId = -1
     private def nextFlowId = { flowId += 1; flowId }
