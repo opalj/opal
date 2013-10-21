@@ -61,7 +61,7 @@ object InterpretMethods {
         if (args.size == 0) {
             println("Performs an abstract interpretation of all methods of all classes.")
             println("1. [Optional] -domain=<DOMAIN CLASS> the configurable domain to use during the abstract interpretation.")
-            println("... jar files  and directories containing jar files.")
+            println("... jar files and directories containing jar files.")
             return ;
         }
         if (args.size > 0 && args(0).startsWith("domain=")) {
