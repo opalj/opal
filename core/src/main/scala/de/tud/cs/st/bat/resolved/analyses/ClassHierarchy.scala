@@ -530,9 +530,9 @@ class ClassHierarchy(
     }
 
     /**
-     * Looks up the class file and method which actually defines the method that is
+     * Looks up the class file and method which actually declares the method that is
      * referred to by the given receiver type, method name and method descriptor. Given
-     * that we are searching for method definitions the search is limited to the
+     * that we are searching for method declarations the search is limited to the
      * superclasses of the class of the given receiver type.
      *
      * This method does not take visibility modifiers or the static modifier into account.

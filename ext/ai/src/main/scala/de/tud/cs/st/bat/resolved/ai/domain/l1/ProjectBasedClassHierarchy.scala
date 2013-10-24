@@ -45,7 +45,7 @@ import analyses.ClassHierarchy
  *
  * @author Michael Eichberg
  */
-trait ProjectBasedTypeHierarchy[Source] { this: Domain[_] ⇒
+trait ProjectBasedClassHierarchy[Source] { this: Domain[_] ⇒
 
     def project: analyses.Project[Source]
 

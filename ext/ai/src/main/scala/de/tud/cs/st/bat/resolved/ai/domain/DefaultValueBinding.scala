@@ -39,7 +39,8 @@ package domain
 import reflect.ClassTag
 
 /**
- * Final binding of the [[de.tud.cs.st.bat.resolved.ai.Domain.Value]] trait.
+ * Final binding of the type `DomainValue` using the initial
+ * [[de.tud.cs.st.bat.resolved.ai.Domain.Value]] trait.
  *
  * @author Michael Eichberg
  */

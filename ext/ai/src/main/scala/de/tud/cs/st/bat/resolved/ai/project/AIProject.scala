@@ -36,7 +36,7 @@ package resolved
 package ai
 package project
 
-import analyses._
+import bat.resolved.analyses.{ Project, ReportableAnalysisResult }
 
 /**
  * Template class for analyzing complete Java projects that use the abstract interpreter.
@@ -62,7 +62,7 @@ trait AIProject[Source, D <: Domain[_] with Report] {
      * `analyzeInParallel` is `false.
      */
     def domain(
-        project: analyses.Project[Source],
+        project: Project[Source],
         classFile: ClassFile,
         method: Method): D
 
@@ -102,7 +102,7 @@ trait AIProject[Source, D <: Domain[_] with Report] {
      * `super.analyze(...)`.
      */
     def analyze(
-        project: analyses.Project[Source],
+        project: Project[Source],
         parameters: Seq[String]): ReportableAnalysisResult = {
         val entryPointsIterator =
             if (analyzeInParallel)
@@ -115,7 +115,8 @@ trait AIProject[Source, D <: Domain[_] with Report] {
             theDomain.report
         }).toIterable
         val theReports: Iterable[String] = reports.filter(_.isDefined).map(_.get)
-        BasicReport("Number of reports: "+theReports.size+"\n"+theReports.mkString("\n"))
+        bat.resolved.analyses.BasicReport(
+            "Number of reports: "+theReports.size+"\n"+theReports.mkString("\n"))
     }
 }
 
