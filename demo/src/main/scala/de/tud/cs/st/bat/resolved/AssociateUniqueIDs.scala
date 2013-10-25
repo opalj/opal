@@ -80,7 +80,9 @@ object AssociateUniqueIDs {
 
         import util.debug.PerformanceEvaluation.time
         import util.debug.nsToSecs
-        time(t ⇒ println("Loading classes and generating ids took: "+nsToSecs(t)+" secs.")) {
+        time { t ⇒
+            println("Loading classes and generating ids took: "+nsToSecs(t)+" secs.")
+        } {
             loadAllClassFiles()
         }
     }

@@ -58,17 +58,31 @@ import util.{ Answer, Yes, No, Unknown }
  * This decision was made to avoid any need for synchronization
  * once the class hierarchy is completely constructed.
  *
- * @note It is generally considered to be an error to pass an instance of an `ObjectType`s
+ * @param supertypes The classes and interfaces from which the given type directly
+ *    inherits.
+ *    The empty set will only be returned, if the class file of `java.lang.Object`
+ *    was analyzed, and the given object type represents `java.lang.Object`.
+ *    Recall, that interfaces always (implicitly) inherit from java.lang.Object.
+ * @param subtypes The classes (and interfaces if the given type is an interface type)
+ *    that '''directly''' inherit from the given type.
+ *    If the class hierarchy does not contain any information about the given type
+ *    an exception is thrown.
+ *    However, if you analyzed all class files of a project
+ *    and then ask for the subtypes of a specific type and an
+ *    empty set is returned, then you have the guarantee that no class in the
+ *    project '''directly''' inherits form the given type.
+ *
+ * @note It is generally considered to be an error to pass an instance of an `ObjectType`
  *      to any method if the `ObjectType` was not previously added!
  *
  * @define noIncrementalMaintenance Maintaining the class hierarchy after the
- *      change of previously analyzed class file is not supported.
+ *      change of a previously analyzed/added class file is not supported.
  *
  * @author Michael Eichberg
  */
 class ClassHierarchy(
-    protected[this] val supertypes: Map[ObjectType, Set[ObjectType]] = Map(),
-    protected[this] val subtypes: Map[ObjectType, Set[ObjectType]] = Map())
+    val supertypes: Map[ObjectType, Set[ObjectType]] = Map(),
+    val subtypes: Map[ObjectType, Set[ObjectType]] = Map())
         extends (ObjectType ⇒ Option[(Set[ObjectType], Set[ObjectType])]) {
 
     type Supertypes = Set[ObjectType] // just a type alias
@@ -115,7 +129,7 @@ class ClassHierarchy(
      *
      * @note $noIncrementalMaintenance
      */
-    def +(theNewSubtype: ObjectType,
+    private def +(theNewSubtype: ObjectType,
           theNewSupertypes: Traversable[ObjectType]): ClassHierarchy = {
 
         val newSupertypes =
@@ -152,28 +166,11 @@ class ClassHierarchy(
      *      application's class files. In this case it is extremely likely that you will have
      *      seen the type `java.lang.Object`, however the class file will not be available.
      */
-    def rootTypes: Iterable[ObjectType] = {
+    def rootTypes: Iterable[ObjectType] =
         supertypes.view.filter((_: (ObjectType, Set[ObjectType]))._2.isEmpty).map(_._1)
-    }
 
     /**
-     * The classes (and interfaces if the given type is an interface type)
-     * that '''directly''' inherit from the given type.
-     *
-     * If the class hierarchy does not contain any information about the given type
-     * an exception is thrown.
-     *
-     * However, if you analyzed all class files of a project
-     * and then ask for the subtypes of a specific type and an
-     * empty set is returned, then you have the guarantee that no class in the
-     * project '''directly''' inherits form the given type.
-     *
-     * @return The direct subtypes of the given type.
-     */
-    def subtypes(objectType: ObjectType): Set[ObjectType] = subtypes.apply(objectType)
-
-    /**
-     * The set of all classes (and interfaces) that (directly or indirectly)
+     * The set of all class-types (and interface-types) that (directly or indirectly)
      * inherit from the given type.
      *
      * @see `subtypes(ObjectType)` for general remarks about the
@@ -192,34 +189,21 @@ class ClassHierarchy(
     /**
      * Calls the function `f` for each (direct or indirect) subtype of the given type.
      */
-    def foreachSubtype(objectType: ObjectType, f: ObjectType ⇒ Unit) {
+    def foreachSubtype(objectType: ObjectType)(f: ObjectType ⇒ Unit) {
         subtypes.apply(objectType) foreach { directSubtype ⇒
             f(directSubtype)
-            foreachSubtype(directSubtype, f)
+            foreachSubtype(directSubtype)(f)
         }
     }
-
-    /**
-     * The classes and interfaces from which the given type directly inherits.
-     *
-     * The empty set will only be returned, if the class file of `java.lang.Object`
-     * was analyzed, and the given object type represents `java.lang.Object`.
-     * Recall, that interfaces always (implicitly) inherit from java.lang.Object.
-     *
-     * @return The direct supertypes of the given type.
-     * @note It may be more efficient to use
-     *      `foreachSupertype(ObjectType, ObjectType => Unit)`.
-     */
-    def supertypes(objectType: ObjectType): Set[ObjectType] = supertypes.apply(objectType)
 
     /**
      * Iterates over the given type's supertypes and calls the given function `f`
      * for each supertype.
      */
-    def foreachSupertype(objectType: ObjectType, f: ObjectType ⇒ Unit) {
+    def foreachSupertype(objectType: ObjectType)(f: ObjectType ⇒ Unit) {
         supertypes.apply(objectType) foreach { supertype ⇒
             f(supertype)
-            foreachSupertype(supertype, f)
+            foreachSupertype(supertype)(f)
         }
     }
 
@@ -229,14 +213,14 @@ class ClassHierarchy(
      */
     def foreachSuperclass(
         objectType: ObjectType,
-        f: ClassFile ⇒ Unit,
-        classes: ObjectType ⇒ Option[ClassFile]) {
-        foreachSupertype(objectType, supertype ⇒ {
+        classes: ObjectType ⇒ Option[ClassFile])(
+            f: ClassFile ⇒ Unit) {
+        foreachSupertype(objectType) { supertype ⇒
             classes(supertype) match {
                 case Some(classFile) ⇒ f(classFile)
                 case _               ⇒ /*Do nothing*/
             }
-        })
+        }
     }
 
     /**
@@ -252,8 +236,8 @@ class ClassHierarchy(
      */
     def superclasses(
         objectType: ObjectType,
-        classFileFilter: ClassFile ⇒ Boolean,
-        classes: ObjectType ⇒ Option[ClassFile]): Iterator[ClassFile] = {
+        classes: ObjectType ⇒ Option[ClassFile])(
+            classFileFilter: ClassFile ⇒ Boolean = { _ ⇒ true }): Iterator[ClassFile] = {
 
         new Iterator[ClassFile] {
 
@@ -262,7 +246,7 @@ class ClassHierarchy(
             var nextSuperclasses: Traversable[ClassFile] = {
                 var supertypes: Set[ObjectType] =
                     ClassHierarchy.this.supertypes.get(objectType).getOrElse(Set.empty)
-                ClassHierarchy.lookupClassFiles(supertypes, classFileFilter, classes)
+                ClassHierarchy.lookupClassFiles(supertypes, classes)(classFileFilter)
             }
 
             def hasNext: Boolean = nextSuperclasses.nonEmpty
@@ -273,15 +257,13 @@ class ClassHierarchy(
                 nextSuperclasses ++= {
                     ClassHierarchy.lookupClassFiles(
                         supertypes.get(nextSuperclass.thisClass).getOrElse(Set.empty),
-                        classFile ⇒ {
-                            !returnedSupertypes.contains(classFile.thisClass) &&
-                                classFileFilter(classFile)
-                        },
-                        classes)
+                        classes) {
+                            classFile ⇒
+                                !returnedSupertypes.contains(classFile.thisClass) &&
+                                    classFileFilter(classFile)
+                        }
                 }
-
                 returnedSupertypes += nextSuperclass.thisClass
-
                 nextSuperclass
             }
         }
@@ -618,7 +600,7 @@ class ClassHierarchy(
             val rootTypes = nodes.filterNot { case (t, _) ⇒ supertypes.isDefinedAt(t) }
             rootTypes.values.foreach(f)
         }
-        
+
         def hasSuccessors(): Boolean = nodes.nonEmpty
     }
 }
@@ -642,22 +624,21 @@ object ClassHierarchy {
      */
     def lookupClassFiles(
         objectTypes: Traversable[ObjectType],
-        filter: ClassFile ⇒ Boolean,
-        classes: ObjectType ⇒ Option[ClassFile]): Traversable[ClassFile] = {
+        classes: ObjectType ⇒ Option[ClassFile])(
+            filter: ClassFile ⇒ Boolean): Traversable[ClassFile] =
         objectTypes.map(classes(_)).filter(_.isDefined).map(_.get).filter(filter)
-    }
 
     /**
      * The empty class hierarchy.
      */
-    val empty: ClassHierarchy = new ClassHierarchy()
+    def empty: ClassHierarchy = new ClassHierarchy()
 
     /**
      * Creates a new ClassHierarchy object that predefines the type hierarchy related to
      * the exceptions thrown by specific Java bytecode instructions. See the file
      * ClassHierarchyJVMExceptions.ths (text file) for further details.
      */
-    lazy val preInitializedClassHierarchy: ClassHierarchy = {
+    def preInitializedClassHierarchy: ClassHierarchy = {
         import util.ControlAbstractions.process
 
         def processPredefinedClassHierarchy(

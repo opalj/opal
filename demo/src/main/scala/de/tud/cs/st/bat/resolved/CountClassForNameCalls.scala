@@ -40,7 +40,7 @@ import java.net.URL
 /**
  * Counts the number of `Class.forName` calls.
  *
- * Primarily demonstrates how to match instructions.
+ * Primarily demonstrates how to match instructions and how to use the `AnalysisExecutor`.
  *
  * @author Michael Eichberg
  */
@@ -50,7 +50,7 @@ object CountClassForNameCalls extends AnalysisExecutor {
 
         def description: String = "Counts the number of times Class.forName is called."
 
-        def analyze(project: Project[URL],parameters : Seq[String] = List.empty) = {
+        def analyze(project: Project[URL], parameters: Seq[String]) = {
             var classForNameCount = 0
 
             val invokes = for {

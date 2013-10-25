@@ -39,6 +39,8 @@ package domain
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 /**
+ * Default implementation for handling reference values.
+ *
  * @author Michael Eichberg
  */
 trait DefaultTypeLevelReferenceValues[+I]
@@ -57,13 +59,14 @@ trait DefaultTypeLevelReferenceValues[+I]
             with IsReferenceType {
         self: DomainValue ⇒
 
-        def valuesTypeBounds: Iterable[ValueTypeBounds] = Iterable(
-            new ValueTypeBounds {
-                def isNull: Answer = Unknown
-                def isSubtypeOf(referenceType: ReferenceType): Answer =
-                    self.isSubtypeOf(referenceType)
-            }
-        )
+        def valuesTypeBounds: Iterable[ValueTypeBounds] =
+            Iterable(
+                new ValueTypeBounds {
+                    def isNull: Answer = Unknown
+                    def isSubtypeOf(referenceType: ReferenceType): Answer =
+                        self.isSubtypeOf(referenceType)
+                }
+            )
 
         def theTypeBound: Option[ReferenceType] =
             if (typeBounds.size == 1)
@@ -72,38 +75,23 @@ trait DefaultTypeLevelReferenceValues[+I]
                 None
 
         /**
-         * Determines if this reference value is a subtype of the given supertype by
+         * Determines if this value is a subtype of the given supertype by
          * delegating to the `isSubtypeOf(ReferenceType,ReferenceType)` method of the
          * domain.
          *
-         * Additionally, the `isPrecise` property is taken into consideration to ensure
-         * that a `No` answer means that it is impossible that any runtime value is
-         * actually a subtype of the given supertype.
+         * @note This is a very basic implementation that cannot determine that this
+         * 		value is '''not''' a subtype of the given type as this implementation
+         *   	does not distinguish between class types and interface types. 
          */
-        def isSubtypeOf(supertype: ReferenceType): Answer = {
-            val answer: Answer = ((No: Answer) /: typeBounds) { (a, t) ⇒
-                val isSubtypeOf = domain.isSubtypeOf(t, supertype)
-                if (isSubtypeOf.yes)
-                    return Yes
-                else
-                    a merge isSubtypeOf
-            }
-            (answer: @unchecked) match {
-                case No ⇒
-                    // Is it conceivable that at runtime this value is a subtype of the
-                    // given reference type?
-                    if (typeBounds.forall { subtype ⇒ domain.isSubtypeOf(supertype, subtype).maybeYes })
-                        // Well it is conceivable that the value at runtime is a subtype
-                        Unknown
-                    else
-                        No
-                case Unknown ⇒ Unknown
-            }
-        }
+        def isSubtypeOf(supertype: ReferenceType): Answer = 
+            if (typeBounds exists { tb ⇒ domain.isSubtypeOf(tb, supertype).yes })
+                Yes
+            else
+                Unknown
 
         def addUpperBound(pc: PC, theUpperBound: ReferenceType): AReferenceValue = {
             assume(!typeBounds.contains(theUpperBound))
-            
+
             isSubtypeOf(theUpperBound) match {
                 case Yes ⇒ this
                 case No if typeBounds.forall(domain.isSubtypeOf(theUpperBound, _).yes) ⇒

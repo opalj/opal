@@ -46,7 +46,8 @@ package ioc
  * @todo This implementation is not yet usable.
  * @author Michael Eichberg
  */
-trait AnalysesDirector[Source] extends Analysis[Source, Iterable[ReportableAnalysisResult]] {
+trait AnalysesDirector[Source] 
+extends Analysis[Source, Iterable[ReportableAnalysisResult]] {
 
     def description: String = " TODO "
 

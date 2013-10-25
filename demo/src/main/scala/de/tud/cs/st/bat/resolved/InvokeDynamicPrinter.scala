@@ -46,9 +46,9 @@ object InvokeDynamicPrinter extends AnalysisExecutor {
 
     val analysis = new Analysis[URL, BasicReport] {
 
-        def description: String = "Prints info about invokedynamics."
+        def description: String = "Prints information about invokedynamic instructions."
 
-        def analyze(project: Project[URL], parameters: Seq[String] = List.empty) = {
+        def analyze(project: Project[URL], parameters: Seq[String]) = {
             val invokedynamics =
                 for {
                     classFile ← project.classFiles

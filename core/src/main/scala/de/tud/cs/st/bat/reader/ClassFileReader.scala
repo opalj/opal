@@ -316,7 +316,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
             }
         }
 
-        ClassFiles(jarFile, addClassFile _)
+        ClassFiles(jarFile, addClassFile)
         classFiles
     }
 
@@ -374,7 +374,12 @@ trait ClassFileReader extends Constant_PoolAbstractions {
                 return ClassFiles(file.getAbsoluteFile.getPath)
 
             if (file.getName.endsWith(".class"))
-                return List((ClassFile(() ⇒ new FileInputStream(file)), file.toURI().toURL()))
+                return List(
+                    (
+                        ClassFile(() ⇒ new FileInputStream(file)),
+                        file.toURI().toURL()
+                    )
+                )
 
             return Nil
         }

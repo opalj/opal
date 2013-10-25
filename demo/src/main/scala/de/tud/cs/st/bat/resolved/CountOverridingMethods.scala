@@ -56,7 +56,7 @@ object CountOverridingMethods extends AnalysisExecutor {
 
         def description: String = "Counts the number of methods that override a method."
 
-        def analyze(project: Project[URL],parameters : Seq[String] = List.empty) = {
+        def analyze(project: Project[URL], parameters: Seq[String] = List.empty) = {
             import project.classHierarchy
             import project.classes
 
@@ -84,16 +84,15 @@ object CountOverridingMethods extends AnalysisExecutor {
                 if !method.isPrivate
                 if !method.isAbstract
                 if !method.isStatic
-                if method.name != "<init>"
+                if method.name != "<init>" && method.name != "<clinit>"
             } {
                 val hasOverriddenMethod = classFileHasImplementedMethod(method.name, method.descriptor) _
 
                 methodsCount += 1
                 classHierarchy.superclasses(
-                    classFile.thisClass,
-                    !(_: ClassFile).isInterfaceDeclaration,
-                    project
-                ).find(superclass ⇒ hasOverriddenMethod(superclass)) match {
+                    classFile.thisClass, project) {
+                        !(_: ClassFile).isInterfaceDeclaration
+                    }.find(superclass ⇒ hasOverriddenMethod(superclass)) match {
                         case Some(cf) ⇒
                             results = (classFile.thisClass.className+
                                 " inherits from "+cf.thisClass.className+

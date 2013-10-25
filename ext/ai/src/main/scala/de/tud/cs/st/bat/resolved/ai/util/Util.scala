@@ -42,7 +42,8 @@ import scala.util.control.ControlThrowable
 
 /**
  * Several utility methods to facilitate the development of the abstract interpreter/
- * new domains for the abstract interpreter.
+ * new domains for the abstract interpreter, by creating various kinds of dumps of
+ * the state of the interpreter.
  *
  * @author Michael Eichberg
  */
@@ -51,22 +52,28 @@ object Util {
     import language.existentials
     import de.tud.cs.st.util.ControlAbstractions._
 
+    private[this] val dumpMutex = new Object
     /**
-     * We generate dumps on errors only if the specified time has passed (in general
-     * a bug causes many dumps to be created.)
+     * Stores the time when the last dump was created.
+     *
+     * We generate dumps on errors only if specified time has passed to avoid that
+     * we are drowned in dumps. Often, a single bug causes many dumps to be created.
      *
      * If you want to generate more dumps set this value to a small(er) value or to -1l if
      * do never want to miss a dump. The default is 2500 (milliseconds).
      */
-    @volatile
-    var timeInMillisBetweenDumps: Long = 2500l
-    private var lastDump: Long = 0l
+    private[this] var _lastDump: Long = 0l
+    private[this] def lastDump_=(currentTimeMillis: Long) {
+        dumpMutex.synchronized { _lastDump = currentTimeMillis }
+    }
+    private[this] def lastDump = dumpMutex.synchronized { _lastDump }
 
     def dumpOnFailure[T, D <: SomeDomain](
         classFile: ClassFile,
         method: Method,
         ai: AI[_ >: D],
-        domain: D)(
+        domain: D,
+        minimumDumpInterval: Long = 1000l)(
             f: AIResult[domain.type] ⇒ T): T = {
         val result = ai(classFile, method, domain)
         val operandsArray = result.operandsArray
@@ -79,7 +86,7 @@ object Util {
             case ct: ControlThrowable ⇒ throw ct
             case e: Throwable ⇒
                 val currentTime = System.currentTimeMillis()
-                if ((currentTime - lastDump) > timeInMillisBetweenDumps) {
+                if ((currentTime - lastDump) > minimumDumpInterval) {
                     lastDump = currentTime
                     val title = Some("Generated due to exception: "+e.getMessage())
                     val dump =
@@ -110,7 +117,8 @@ object Util {
         classFile: Option[ClassFile],
         method: Option[Method],
         code: Code,
-        result: AIResult[_ <: Domain[_]])(
+        result: AIResult[_ <: Domain[_]],
+        minimumDumpInterval: Long = 1000l)(
             f: ⇒ T): T = {
         val operandsArray = result.operandsArray
         val localsArray = result.localsArray
@@ -121,7 +129,7 @@ object Util {
             case ct: ControlThrowable ⇒ throw ct
             case e: Throwable ⇒
                 val currentTime = System.currentTimeMillis()
-                if ((currentTime - lastDump) > timeInMillisBetweenDumps) {
+                if ((currentTime - lastDump) > minimumDumpInterval) {
                     lastDump = currentTime
                     writeAndOpenDump(
                         dump(classFile,
@@ -184,7 +192,7 @@ object Util {
         None
     }
 
-    private lazy val styles: String =
+    private def styles: String =
         process(this.getClass().getResourceAsStream("dump.head.fragment.css"))(
             scala.io.Source.fromInputStream(_).mkString
         )

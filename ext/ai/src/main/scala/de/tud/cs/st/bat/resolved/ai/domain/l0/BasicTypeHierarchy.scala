@@ -41,7 +41,7 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 /**
  * Implementation of a Domain's `isSubtypeOf(...)` method that delegates to
  * the corresponding method defined by the class `ClassHierarchy`. This class
- * uses BAT's `preInitializedClassHierarchy` (see `ClassHierarchy` for deatails)
+ * uses BAT's `preInitializedClassHierarchy` (see `ClassHierarchy` for details)
  * for answering queries.
  *
  * @author Michael Eichberg
