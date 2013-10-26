@@ -132,7 +132,6 @@ package object analyses {
             results ⇒ results.map(_.consoleReport(urlToLocationIdentifier)).mkString("\n")
         )
     }
-
 }
 
 

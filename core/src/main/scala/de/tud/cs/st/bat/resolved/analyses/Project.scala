@@ -54,13 +54,12 @@ import java.net.URL
  *
  * @tparam S The type of the source of the class file. E.g., a `URL`, a `File` object,
  *    a `String` or a Pair `(JarFile,JarEntry)`. This information is needed for, e.g.,
- *    presenting the user meaningful message w.r.t. the location of some issue.
- *    We abstract over the type of the resource to facilitate the embedding of BAT/
- *    implemented analyses in existing tools such as IDEs. E.g., in Eclipse
- *    "Resources" are used to identify the location of a resource (e.g., a source or class
- *    file.)
+ *    presenting users meaningful messages w.r.t. the location of issues.
+ *    We abstract over the type of the resource to facilitate the embedding in existing
+ *    tools such as IDEs. E.g., in Eclipse "Resources" are used to identify the
+ *    location of a resource (e.g., a source or class file.)
  * @param classes A mapping of `ObjectType`s to `ClassFile`s. When the analysis does not
- *    load all classes related to a project, it is possible that no class file is
+ *    load or keep all classes related to a project, it is possible that no class file is
  *    associated with a specific `ObjectType`.
  * @param sources A mapping of an `ObjectType` to its defining source.
  * @param classHierarchy This project's class hierarchy.
@@ -73,20 +72,21 @@ class Project[+Source](
     val classHierarchy: ClassHierarchy = new ClassHierarchy())
         extends (ObjectType ⇒ Option[ClassFile]) {
 
-    def this(classHierarchy: ClassHierarchy = new ClassHierarchy()) {
+    def this(classHierarchy: ClassHierarchy = ClassHierarchy.empty) {
         this(Map[ObjectType, ClassFile](), Map[ObjectType, Source](), classHierarchy)
     }
 
+    /**
+     * Tries to lookup the class file for the given `objectType`.
+     */
     def apply(objectType: ObjectType): Option[ClassFile] = classes.get(objectType)
 
     /**
      * Adds the class files to this project by calling the simple "+" method
      * for each class file.
      */
-    def ++[NewS >: Source](classFiles: Traversable[(ClassFile, NewS)]): Project[NewS] = {
-        val newProject: Project[NewS] = this
-        (newProject /: classFiles)(_ + _)
-    }
+    def ++[NewS >: Source](classFiles: Traversable[(ClassFile, NewS)]): Project[NewS] =
+        ((this: Project[NewS]) /: classFiles)(_ + _)
 
     /**
      * Adds the given class file to this project.
@@ -121,6 +121,8 @@ object Project {
      * instructions.
      */
     def initial[Source]() =
-        new Project[Source](classHierarchy = ClassHierarchy.preInitializedClassHierarchy)
+        new Project[Source](
+            classHierarchy = ClassHierarchy.preInitializedClassHierarchy
+        )
 
 }
