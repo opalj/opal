@@ -124,7 +124,7 @@ trait DefaultPreciseReferenceValues[+I]
 
         def updateIsNull(pc: PC, isNull: Answer): AReferenceValue = {
             assume(this.isNull.isUndefined)
-
+            
             if (isNull.yes)
                 AReferenceValue(this.pc, Set.empty[ReferenceType], Yes, true)
             else

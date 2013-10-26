@@ -120,17 +120,17 @@ class ClassHierarchy(
      *
      *  @note $noIncrementalMaintenance
      */
-    def +(classFile: ClassFile): ClassHierarchy = {
+    def +(classFile: ClassFile): ClassHierarchy =
         this + (classFile.thisClass, classFile.superClass.toSeq ++ classFile.interfaces)
-    }
 
     /**
      * Extends the class hierarchy.
      *
      * @note $noIncrementalMaintenance
      */
-    private def +(theNewSubtype: ObjectType,
-          theNewSupertypes: Traversable[ObjectType]): ClassHierarchy = {
+    private def +(
+        theNewSubtype: ObjectType,
+        theNewSupertypes: Traversable[ObjectType]): ClassHierarchy = {
 
         val newSupertypes =
             supertypes.updated(
@@ -270,8 +270,8 @@ class ClassHierarchy(
     }
 
     /**
-     * Determines if the given `subtype` is actually a subtype of the class type
-     * `supertype`.
+     * Determines if the given class type `subtype` is actually a subtype of the
+     * class type `supertype`.
      *
      * This method can be used as a foundation for implementing the logic of the JVM's
      * `instanceof` and `classcast` instructions. But, in that case additional logic
@@ -310,20 +310,25 @@ class ClassHierarchy(
     }
 
     /**
-     * Determines if `subtype` is a subtype of `supertype`.
+     * Determines if `subtype` is a subtype of `supertype` given the available
+     * class hierarchy.
      *
      * This method can be used as a foundation for implementing the logic of the JVM's
-     * `instanceof` and `classcast` instructions. But, in that case additional logic
+     * `instanceof` and `classcast` instructions. But, in both cases additional logic
      * for handling `null` values and for considering the runtime type needs to be
      * implemented by the caller of this method.
      *
      * @param subtype A class or array type.
      * @param supertype A class or array type.
      * @return `Yes` if `subtype` is indeed a subtype of the given `supertype`. `No`
-     *      if `subtype` is not a subtype of `supertype` and `Unknown` if the analysis is
-     *      not conclusive. The latter can happen if the class hierarchy is not
-     *      completely available and hence precise information about a type's supertypes
-     *      is not available.
+     *    if `subtype` is not a subtype of `supertype` and `Unknown` if the analysis is
+     *    not conclusive. The latter can happen if the class hierarchy is not
+     *    completely available and hence precise information about a type's supertypes
+     * @note The answer `No` does not necessarily imply that two runtime values for
+     *    which the given types are only upper boundaries are not (w.r.t. their
+     *    runtime types) in a subtype relation. E.g., if `subtype` denotes the type
+     *    `java.util.List` and `supertype` denotes the type `java.util.ArrayList` then
+     *    the answer is clearly `No`. But, at runtime, this may not be the case.
      */
     def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer = {
         if (subtype == supertype || supertype == ObjectType.Object)
@@ -620,7 +625,7 @@ object ClassHierarchy {
      * @param classes A function that returns the `ClassFile` object that defines
      *      the given `ObjectType`, if available.
      *      If you have a [[de.tud.cs.st.bat.resolved.analyses.Project]] object
-     *      you can just pass that object.
+     *      you can just use the `Project` object.
      */
     def lookupClassFiles(
         objectTypes: Traversable[ObjectType],
@@ -630,6 +635,9 @@ object ClassHierarchy {
 
     /**
      * The empty class hierarchy.
+     *
+     * @note It is generally not recommended to use an empty class hierarchy unless
+     *    you also (also) analyze the JDK.
      */
     def empty: ClassHierarchy = new ClassHierarchy()
 
@@ -648,14 +656,14 @@ object ClassHierarchy {
             var classHierarchy = initialClassHierarchy
             process(getClass().getResourceAsStream(fileName)) { in ⇒
 
-                val SpecLineExtractor = """(\S+)\s*>\s*(.+)""".r
+                val SpecLineExtractor = """(\S+)\s*>:\[(class|interface)\]\s*(.+)""".r
                 val source = new scala.io.BufferedSource(in)
                 val specLines =
-                    source.getLines.map(_.trim).filterNot(
+                    source.getLines.map(_.trim).filterNot {
                         l ⇒ l.startsWith("#") || l.length == 0
-                    )
+                    }
                 for {
-                    SpecLineExtractor(supertype, subtypes) ← specLines
+                    SpecLineExtractor(supertype, subtypesKind, subtypes) ← specLines
                     supertypes = List(ObjectType(supertype))
                     subtype ← subtypes.split(",").map(_.trim)
                 } {
