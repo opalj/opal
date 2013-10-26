@@ -82,7 +82,9 @@ trait AnalysisExecutor {
         //
         // 1. check arguments
         //
-        val sourceFiles = args.takeWhile(arg ⇒ !arg.startsWith("-") && !arg.contains("="))
+        val (parameters, sourceFiles) =
+            args.partition(arg ⇒ arg.startsWith("-") && arg.contains("="))
+
         val files = for (arg ← sourceFiles) yield {
             val file = new File(arg)
             if (!file.exists ||
@@ -96,7 +98,7 @@ trait AnalysisExecutor {
             }
             file
         }
-        val parameters = args.drop(sourceFiles.size)
+
         if (!checkAnalysisSpecificParameters(parameters)) {
             printUsage()
             sys.exit(-3)
