@@ -40,7 +40,6 @@ import reader.Java7Framework.ClassFile
 import domain.BaseConfigurableDomain
 import de.tud.cs.st.util.ControlAbstractions._
 
-
 import java.util.zip.ZipFile
 import java.io.DataInputStream
 import java.io.ByteArrayInputStream
@@ -56,6 +55,8 @@ object InterpretMethods {
     import de.tud.cs.st.util.debug._
     import de.tud.cs.st.util.debug.PerformanceEvaluation._
     import collection.JavaConversions._
+
+    def println(s: String) { System.out.println(s); System.out.flush() }
 
     def main(args: Array[String]) {
         if (args.size == 0) {
