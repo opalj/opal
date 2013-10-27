@@ -64,13 +64,20 @@ class ClassHierarchyTest
     //
     // Setup
     //
-    val ch = ClassHierarchy.preInitializedClassHierarchy
+    val preInitCH =
+        ClassHierarchy.preInitializedClassHierarchy
+    val javaLangCH =
+        ClassHierarchy.processPredefinedClassHierarchy(
+            getClass.getResourceAsStream("JavaLangClassHierarchy.ths"),
+            ClassHierarchy.empty
+        )
 
     val Object = ObjectType("java/lang/Object")
     val Throwable = ObjectType("java/lang/Throwable")
     val Exception = ObjectType("java/lang/Exception")
     val Error = ObjectType("java/lang/Error")
     val RuntimeException = ObjectType("java/lang/RuntimeException")
+    val ArithmeticException = ObjectType("java/lang/ArithmeticException")
     val Cloneable = ObjectType.Cloneable
     val Serializable = ObjectType.Serializable
     val SeriablizableArray = ArrayType(Serializable)
@@ -85,10 +92,68 @@ class ClassHierarchyTest
     //
     // Verify
     //
+    import preInitCH.isSubtypeOf
+    import preInitCH.isKnown
 
-    behavior of "the default ClassHierarchy's isSubtypeOf method w.r.t. Arrays"
+    behavior of "the default ClassHierarchy's isKnown method"
 
-    import ch.isSubtypeOf
+    it should "return true for all known types" in {
+        isKnown(Throwable) should be(true)
+    }
+
+    it should "return false for all unknown types" in {
+        isKnown(AnUnknownType) should be(false)
+    }
+
+    behavior of "the default ClassHierarchy's isDirectSupertypeInformationComplete method"
+
+    it should "return true if a type's super type information is definitive complete" in {
+        javaLangCH.isDirectSupertypeInformationComplete(Object) should be(true)
+        javaLangCH.isDirectSupertypeInformationComplete(Throwable) should be(true)
+    }
+
+    it should "return false if a type's super type information is not guaranteed to be complete" in {
+        javaLangCH.isDirectSupertypeInformationComplete(Serializable) should be(false)
+        javaLangCH.isDirectSupertypeInformationComplete(AnUnknownType) should be(false)
+    }
+
+    behavior of "the default ClassHierarchy's isSubtypeOf method w.r.t. class types"
+
+    it should "return Unknown if the \"subtype\" is unknown" in {
+        isSubtypeOf(AnUnknownType, Throwable) should be(Unknown)
+    }
+
+    it should "return Yes if a class-type indirectly inherits an interface-type" in {
+        isSubtypeOf(ArithmeticException, Serializable) should be(Yes)
+    }
+
+    it should "always return Yes if both types are identical" in {
+        isSubtypeOf(ArithmeticException, ArithmeticException) should be(Yes)
+        isSubtypeOf(AnUnknownType, AnUnknownType) should be(Yes)
+    }
+
+    it should "return Yes for interface types when the given super type is Object even if the interface type's supertypes are not known" in {
+        isSubtypeOf(Serializable, Object) should be(Yes)
+    }
+
+    it should "return No for a type that is not a subtype of another type and all type information is known" in {
+        // "only" classes
+        isSubtypeOf(Error, Exception) should be(No)
+        isSubtypeOf(Exception, Error) should be(No)
+        isSubtypeOf(Exception, RuntimeException) should be(No)
+        
+        // "only" interfaces
+        isSubtypeOf(Serializable, Cloneable) should be(No)
+        
+        // class and interface
+        isSubtypeOf(ArithmeticException, Cloneable) should be(No)
+    }
+
+    it should "return Unknown if two types are not in an inheritance relationship but the subtype's supertypes are not guaranteed to be known" in {
+        javaLangCH.isSubtypeOf(Serializable, Cloneable) should be(Unknown)
+    }
+
+    behavior of "the preInitialized ClassHierarchy's isSubtypeOf method w.r.t. Exceptions"
 
     it should "correctly reflect the base exception hierarchy" in {
 
@@ -103,6 +168,8 @@ class ClassHierarchyTest
         isSubtypeOf(Object, AnUnknownType) should be(No)
 
     }
+
+    behavior of "the ClassHierarchy's isSubtypeOf method w.r.t. Arrays"
 
     it should "correctly reflect the basic type hierarchy related to Arrays" in {
         isSubtypeOf(ObjectArray, Object) should be(Yes)
@@ -206,7 +273,7 @@ class ClassHierarchyTest
         )
     }
 
-    it should "not fail if the field cannot be found" in {
+    it should "not fail (throw an exception) if the field cannot be found" in {
         resolveFieldReference(SubSubType, "NOT_DEFINED", IntegerType, project) should be(
             None
         )
@@ -217,8 +284,6 @@ class ClassHierarchyTest
             ObjectType("NOT/DEFINED"),
             "NOT_DEFINED",
             IntegerType,
-            project) should be(
-                None
-            )
+            project) should be(None)
     }
 }

@@ -48,15 +48,20 @@ object ClassHierarchyVisualizer {
         import util.graphs.{ Node, toDot }
         import util.ControlAbstractions._
 
-        if (args.length == 0 || !args.forall(_.endsWith(".jar"))) {
+        if (!args.forall(_.endsWith(".jar"))) {
             println("Usage: java …ClassHierarchy <JAR file>+")
             println("(c) 2013 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
             sys.exit(-1)
         }
 
-        val classHierarchy = (new ClassHierarchy /: args)(_ ++ ClassFiles(_).map(_._1))
+        val classHierarchy =
+            if (args.size == 0)
+                ClassHierarchy.preInitializedClassHierarchy
+            else
+                (ClassHierarchy.empty /: args)(_ ++ ClassFiles(_).map(_._1))
 
-        val classHierarchyDescription = (toDot.generateDot(Set(classHierarchy.toGraph)))
+        val classHierarchyDescription =
+            toDot.generateDot(Set(classHierarchy.toGraph), "back")
 
         onException(e ⇒ println(classHierarchyDescription)) {
             val desktop = java.awt.Desktop.getDesktop()

@@ -1,48 +1,62 @@
-# Predefinition of the type hierarchy related to exceptions that are potentially thrown 
-# when certain bytecode instructions are executed.
-#
-# The format is simple: supertype ">:[('interface'|'class')]" subtype(", "subtype)*, e.g.,
-# java/lang/Object >:[class] java/lang/Throwable
-#
-# Class hierarchy for: java/lang/Throwable limited to classes that start with: java/
-# Generated for: /jdk1.7.0_25.jdk/rt.jar
-java/lang/Throwable >:[class] java/lang/Error, java/lang/Exception
-java/lang/Exception >:[class] java/text/ParseException, java/security/acl/AclNotFoundException, java/util/prefs/InvalidPreferencesFormatException, java/awt/datatransfer/MimeTypeParseException, java/util/zip/DataFormatException, java/awt/AWTException, java/security/GeneralSecurityException, java/lang/CloneNotSupportedException, java/security/acl/LastOwnerException, java/security/PrivilegedActionException, java/awt/FontFormatException, java/awt/print/PrinterException, java/util/concurrent/BrokenBarrierException, java/io/IOException, java/util/concurrent/ExecutionException, java/rmi/activation/ActivationException, java/security/acl/NotOwnerException, java/lang/ReflectiveOperationException, java/rmi/server/ServerNotActiveException, java/lang/RuntimeException, java/sql/SQLException, java/beans/IntrospectionException, java/awt/geom/NoninvertibleTransformException, java/lang/instrument/IllegalClassFormatException, java/lang/InterruptedException, java/rmi/AlreadyBoundException, java/awt/datatransfer/UnsupportedFlavorException, java/util/prefs/BackingStoreException, java/lang/instrument/UnmodifiableClassException, java/util/TooManyListenersException, java/rmi/NotBoundException, java/net/URISyntaxException, java/beans/PropertyVetoException, java/util/concurrent/TimeoutException
-java/security/GeneralSecurityException >:[class] java/security/UnrecoverableEntryException, java/security/cert/CertPathBuilderException, java/security/KeyStoreException, java/security/SignatureException, java/security/spec/InvalidParameterSpecException, java/security/InvalidAlgorithmParameterException, java/security/spec/InvalidKeySpecException, java/security/cert/CertificateException, java/security/cert/CRLException, java/security/NoSuchProviderException, java/security/cert/CertPathValidatorException, java/security/NoSuchAlgorithmException, java/security/KeyException, java/security/cert/CertStoreException, java/security/DigestException
-java/security/KeyException >:[class] java/security/InvalidKeyException, java/security/KeyManagementException
-java/security/cert/CertificateException >:[class] java/security/cert/CertificateExpiredException, java/security/cert/CertificateNotYetValidException, java/security/cert/CertificateRevokedException, java/security/cert/CertificateParsingException, java/security/cert/CertificateEncodingException
-java/security/UnrecoverableEntryException >:[class] java/security/UnrecoverableKeyException
-java/rmi/activation/ActivationException >:[class] java/rmi/activation/UnknownObjectException, java/rmi/activation/UnknownGroupException
-java/lang/RuntimeException >:[class] java/lang/invoke/WrongMethodTypeException, java/lang/IndexOutOfBoundsException, java/awt/color/CMMException, java/lang/UnsupportedOperationException, java/nio/BufferUnderflowException, java/lang/annotation/IncompleteAnnotationException, java/lang/reflect/MalformedParameterizedTypeException, java/lang/ClassCastException, java/util/EmptyStackException, java/lang/TypeNotPresentException, java/nio/file/FileSystemNotFoundException, java/lang/IllegalStateException, java/awt/image/ImagingOpException, java/security/ProviderException, java/nio/BufferOverflowException, java/lang/IllegalMonitorStateException, java/util/MissingResourceException, java/awt/geom/IllegalPathStateException, java/nio/file/ProviderNotFoundException, java/lang/NegativeArraySizeException, java/nio/file/FileSystemAlreadyExistsException, java/awt/image/RasterFormatException, java/lang/ArrayStoreException, java/util/IllformedLocaleException, java/lang/ArithmeticException, java/awt/color/ProfileDataException, java/util/ConcurrentModificationException, java/lang/IllegalArgumentException, java/util/concurrent/RejectedExecutionException, java/lang/NullPointerException, java/util/NoSuchElementException, java/lang/EnumConstantNotPresentException, java/lang/annotation/AnnotationTypeMismatchException, java/lang/SecurityException, java/lang/reflect/UndeclaredThrowableException
-java/lang/UnsupportedOperationException >:[class] java/awt/HeadlessException, java/nio/file/ReadOnlyFileSystemException, java/nio/ReadOnlyBufferException
-java/util/ConcurrentModificationException >:[class] java/nio/file/DirectoryIteratorException
-java/lang/IllegalArgumentException >:[class] java/lang/IllegalThreadStateException, java/nio/channels/UnresolvedAddressException, java/nio/channels/IllegalChannelGroupException, java/nio/file/ProviderMismatchException, java/nio/file/InvalidPathException, java/lang/NumberFormatException, java/util/IllegalFormatException, java/nio/channels/UnsupportedAddressTypeException, java/nio/channels/IllegalSelectorException, java/util/regex/PatternSyntaxException, java/nio/charset/IllegalCharsetNameException, java/nio/charset/UnsupportedCharsetException, java/security/InvalidParameterException
-java/util/IllegalFormatException >:[class] java/util/UnknownFormatFlagsException, java/util/UnknownFormatConversionException, java/util/DuplicateFormatFlagsException, java/util/IllegalFormatWidthException, java/util/MissingFormatArgumentException, java/util/FormatFlagsConversionMismatchException, java/util/IllegalFormatCodePointException, java/util/MissingFormatWidthException, java/util/IllegalFormatPrecisionException, java/util/IllegalFormatFlagsException, java/util/IllegalFormatConversionException
-java/util/NoSuchElementException >:[class] java/util/InputMismatchException
-java/lang/SecurityException >:[class] java/security/AccessControlException, java/rmi/RMISecurityException
-java/lang/IndexOutOfBoundsException >:[class] java/lang/ArrayIndexOutOfBoundsException, java/lang/StringIndexOutOfBoundsException
-java/lang/IllegalStateException >:[class] java/nio/channels/ReadPendingException, java/util/concurrent/CancellationException, java/nio/channels/ConnectionPendingException, java/nio/channels/IllegalBlockingModeException, java/util/FormatterClosedException, java/nio/channels/AlreadyBoundException, java/nio/channels/NonWritableChannelException, java/nio/file/ClosedDirectoryStreamException, java/nio/channels/NoConnectionPendingException, java/nio/channels/CancelledKeyException, java/nio/InvalidMarkException, java/nio/file/ClosedFileSystemException, java/nio/channels/ShutdownChannelGroupException, java/nio/channels/NotYetBoundException, java/awt/IllegalComponentStateException, java/awt/dnd/InvalidDnDOperationException, java/nio/channels/AlreadyConnectedException, java/nio/file/ClosedWatchServiceException, java/nio/channels/NotYetConnectedException, java/nio/channels/NonReadableChannelException, java/nio/channels/WritePendingException, java/nio/channels/OverlappingFileLockException, java/nio/channels/ClosedSelectorException, java/nio/channels/AcceptPendingException
-java/lang/ReflectiveOperationException >:[class] java/lang/ClassNotFoundException, java/lang/InstantiationException, java/lang/NoSuchFieldException, java/lang/reflect/InvocationTargetException, java/lang/IllegalAccessException, java/lang/NoSuchMethodException
-java/lang/CloneNotSupportedException >:[class] java/rmi/server/ServerCloneException
-java/sql/SQLException >:[class] java/sql/SQLNonTransientException, java/sql/SQLClientInfoException, java/sql/SQLRecoverableException, java/sql/BatchUpdateException, java/sql/SQLWarning, java/sql/SQLTransientException
-java/sql/SQLWarning >:[class] java/sql/DataTruncation
-java/sql/SQLTransientException >:[class] java/sql/SQLTransientConnectionException, java/sql/SQLTransactionRollbackException, java/sql/SQLTimeoutException
-java/sql/SQLNonTransientException >:[class] java/sql/SQLInvalidAuthorizationSpecException, java/sql/SQLNonTransientConnectionException, java/sql/SQLSyntaxErrorException, java/sql/SQLFeatureNotSupportedException, java/sql/SQLIntegrityConstraintViolationException, java/sql/SQLDataException
-java/awt/print/PrinterException >:[class] java/awt/print/PrinterIOException, java/awt/print/PrinterAbortException
-java/io/IOException >:[class] java/nio/channels/ClosedChannelException, java/io/UnsupportedEncodingException, java/io/FileNotFoundException, java/net/UnknownServiceException, java/nio/channels/FileLockInterruptionException, java/net/SocketException, java/util/InvalidPropertiesFormatException, java/rmi/RemoteException, java/nio/charset/CharacterCodingException, java/io/UTFDataFormatException, java/nio/file/attribute/UserPrincipalNotFoundException, java/net/ProtocolException, java/io/ObjectStreamException, java/net/HttpRetryException, java/io/CharConversionException, java/io/EOFException, java/io/SyncFailedException, java/io/InterruptedIOException, java/util/zip/ZipException, java/net/MalformedURLException, java/nio/channels/InterruptedByTimeoutException, java/nio/file/FileSystemException, java/net/UnknownHostException
-java/io/InterruptedIOException >:[class] java/net/SocketTimeoutException
-java/nio/file/FileSystemException >:[class] java/nio/file/AccessDeniedException, java/nio/file/DirectoryNotEmptyException, java/nio/file/NotLinkException, java/nio/file/AtomicMoveNotSupportedException, java/nio/file/FileSystemLoopException, java/nio/file/NotDirectoryException, java/nio/file/NoSuchFileException, java/nio/file/FileAlreadyExistsException
-java/net/SocketException >:[class] java/net/NoRouteToHostException, java/net/ConnectException, java/net/BindException, java/net/PortUnreachableException
-java/io/ObjectStreamException >:[class] java/io/WriteAbortedException, java/io/InvalidClassException, java/io/OptionalDataException, java/io/InvalidObjectException, java/io/NotActiveException, java/io/NotSerializableException, java/io/StreamCorruptedException
-java/rmi/RemoteException >:[class] java/rmi/UnexpectedException, java/rmi/StubNotFoundException, java/rmi/MarshalException, java/rmi/UnknownHostException, java/rmi/server/SkeletonMismatchException, java/rmi/UnmarshalException, java/rmi/AccessException, java/rmi/ServerRuntimeException, java/rmi/server/ExportException, java/rmi/ServerError, java/rmi/ConnectIOException, java/rmi/ConnectException, java/rmi/NoSuchObjectException, java/rmi/activation/ActivateFailedException, java/rmi/server/SkeletonNotFoundException, java/rmi/ServerException
-java/rmi/server/ExportException >:[class] java/rmi/server/SocketSecurityException
-java/nio/charset/CharacterCodingException >:[class] java/nio/charset/UnmappableCharacterException, java/nio/charset/MalformedInputException
-java/nio/channels/ClosedChannelException >:[class] java/nio/channels/AsynchronousCloseException
-java/nio/channels/AsynchronousCloseException >:[class] java/nio/channels/ClosedByInterruptException
-java/util/zip/ZipException >:[class] java/util/jar/JarException
-java/lang/Error >:[class] java/awt/AWTError, java/io/IOError, java/lang/annotation/AnnotationFormatError, java/lang/VirtualMachineError, java/util/ServiceConfigurationError, java/nio/charset/CoderMalfunctionError, java/lang/LinkageError, java/lang/AssertionError, java/lang/ThreadDeath
-java/lang/LinkageError >:[class] java/lang/ClassFormatError, java/lang/BootstrapMethodError, java/lang/UnsatisfiedLinkError, java/lang/VerifyError, java/lang/ExceptionInInitializerError, java/lang/NoClassDefFoundError, java/lang/IncompatibleClassChangeError, java/lang/ClassCircularityError
-java/lang/ClassFormatError >:[class] java/lang/reflect/GenericSignatureFormatError, java/lang/UnsupportedClassVersionError
-java/lang/IncompatibleClassChangeError >:[class] java/lang/NoSuchFieldError, java/lang/AbstractMethodError, java/lang/IllegalAccessError, java/lang/InstantiationError, java/lang/NoSuchMethodError
-java/lang/VirtualMachineError >:[class] java/lang/OutOfMemoryError, java/lang/StackOverflowError, java/lang/InternalError, java/lang/UnknownError
-java/lang/InternalError >:[class] java/util/zip/ZipError
+# Class hierarchy for: java/lang/Throwable limited to subclasses that start with: java/lang
+class java/lang/AbstractMethodError extends java/lang/IncompatibleClassChangeError
+class java/lang/annotation/AnnotationFormatError extends java/lang/Error
+class java/lang/annotation/AnnotationTypeMismatchException extends java/lang/RuntimeException
+class java/lang/annotation/IncompleteAnnotationException extends java/lang/RuntimeException
+class java/lang/ArithmeticException extends java/lang/RuntimeException
+class java/lang/ArrayIndexOutOfBoundsException extends java/lang/IndexOutOfBoundsException
+class java/lang/ArrayStoreException extends java/lang/RuntimeException
+class java/lang/AssertionError extends java/lang/Error
+class java/lang/BootstrapMethodError extends java/lang/LinkageError
+class java/lang/ClassCastException extends java/lang/RuntimeException
+class java/lang/ClassCircularityError extends java/lang/LinkageError
+class java/lang/ClassFormatError extends java/lang/LinkageError
+class java/lang/ClassNotFoundException extends java/lang/ReflectiveOperationException
+class java/lang/CloneNotSupportedException extends java/lang/Exception
+class java/lang/EnumConstantNotPresentException extends java/lang/RuntimeException
+class java/lang/Error extends java/lang/Throwable
+class java/lang/Exception extends java/lang/Throwable
+class java/lang/ExceptionInInitializerError extends java/lang/LinkageError
+class java/lang/IllegalAccessError extends java/lang/IncompatibleClassChangeError
+class java/lang/IllegalAccessException extends java/lang/ReflectiveOperationException
+class java/lang/IllegalArgumentException extends java/lang/RuntimeException
+class java/lang/IllegalMonitorStateException extends java/lang/RuntimeException
+class java/lang/IllegalStateException extends java/lang/RuntimeException
+class java/lang/IllegalThreadStateException extends java/lang/IllegalArgumentException
+class java/lang/IncompatibleClassChangeError extends java/lang/LinkageError
+class java/lang/IndexOutOfBoundsException extends java/lang/RuntimeException
+class java/lang/InstantiationError extends java/lang/IncompatibleClassChangeError
+class java/lang/InstantiationException extends java/lang/ReflectiveOperationException
+class java/lang/instrument/IllegalClassFormatException extends java/lang/Exception
+class java/lang/instrument/UnmodifiableClassException extends java/lang/Exception
+class java/lang/InternalError extends java/lang/VirtualMachineError
+class java/lang/InterruptedException extends java/lang/Exception
+class java/lang/invoke/WrongMethodTypeException extends java/lang/RuntimeException
+class java/lang/LinkageError extends java/lang/Error
+class java/lang/NegativeArraySizeException extends java/lang/RuntimeException
+class java/lang/NoClassDefFoundError extends java/lang/LinkageError
+class java/lang/NoSuchFieldError extends java/lang/IncompatibleClassChangeError
+class java/lang/NoSuchFieldException extends java/lang/ReflectiveOperationException
+class java/lang/NoSuchMethodError extends java/lang/IncompatibleClassChangeError
+class java/lang/NoSuchMethodException extends java/lang/ReflectiveOperationException
+class java/lang/NullPointerException extends java/lang/RuntimeException
+class java/lang/NumberFormatException extends java/lang/IllegalArgumentException
+class java/lang/OutOfMemoryError extends java/lang/VirtualMachineError
+class java/lang/reflect/GenericSignatureFormatError extends java/lang/ClassFormatError
+class java/lang/reflect/InvocationTargetException extends java/lang/ReflectiveOperationException
+class java/lang/reflect/MalformedParameterizedTypeException extends java/lang/RuntimeException
+class java/lang/reflect/UndeclaredThrowableException extends java/lang/RuntimeException
+class java/lang/ReflectiveOperationException extends java/lang/Exception
+class java/lang/RuntimeException extends java/lang/Exception
+class java/lang/SecurityException extends java/lang/RuntimeException
+class java/lang/StackOverflowError extends java/lang/VirtualMachineError
+class java/lang/StringIndexOutOfBoundsException extends java/lang/IndexOutOfBoundsException
+class java/lang/ThreadDeath extends java/lang/Error
+class java/lang/Throwable extends java/lang/Object implements java/io/Serializable
+class java/lang/TypeNotPresentException extends java/lang/RuntimeException
+class java/lang/UnknownError extends java/lang/VirtualMachineError
+class java/lang/UnsatisfiedLinkError extends java/lang/LinkageError
+class java/lang/UnsupportedClassVersionError extends java/lang/ClassFormatError
+class java/lang/UnsupportedOperationException extends java/lang/RuntimeException
+class java/lang/VerifyError extends java/lang/LinkageError
+class java/lang/VirtualMachineError extends java/lang/Error

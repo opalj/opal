@@ -67,13 +67,13 @@ object BaseAnalyses {
      */
     def isOverride(project: Project[_])(classFile: ClassFile)(method: Method): Boolean = {
         // TODO we could also check for an @Override annotation
-        val superMethods = (for (
-            (superclasses, _) ← project.classHierarchy(classFile.thisClass).toSeq;
-            superClass ← superclasses;
-            (_, method) ← project.classHierarchy.resolveMethodReference(superClass, method.name, method.descriptor, project)
-        ) yield {
-            method
-        })
+        val superMethods =
+            for (
+                superclass ← project.classHierarchy.allSupertypes(classFile.thisClass);
+                (_, method) ← project.classHierarchy.resolveMethodReference(superclass, method.name, method.descriptor, project)
+            ) yield {
+                method
+            }
 
         superMethods.size > 0
     }
@@ -103,19 +103,17 @@ object BaseAnalyses {
      */
     def calledSuperConstructor(project: Project[_])(classFile: ClassFile,
                                                     constructor: Method): Option[(ClassFile, Method)] = {
-        val ch = project.classHierarchy(classFile.thisClass)
-        if (!ch.isDefined) {
+        if (!project.classHierarchy.isKnown(classFile.thisClass))
             return None
-        }
+
         val constructorCall = constructor.body.get.instructions.collectFirst {
-            case INVOKESPECIAL(trgt, n, d) if ch.get._1.contains(trgt.asInstanceOf[ObjectType]) ⇒
+            case INVOKESPECIAL(trgt, n, d) if project.classHierarchy.allSupertypes(classFile.thisClass).contains(trgt.asInstanceOf[ObjectType]) ⇒
                 (trgt.asInstanceOf[ObjectType], n, d)
 
         }
 
-        if (!constructorCall.isDefined) {
+        if (!constructorCall.isDefined)
             return None
-        }
 
         val Some((targetType, name, desc)) = constructorCall
         project.classHierarchy.resolveMethodReference(targetType, name, desc, project)

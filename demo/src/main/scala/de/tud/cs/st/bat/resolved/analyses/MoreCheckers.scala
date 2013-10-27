@@ -166,7 +166,7 @@ object MoreCheckers {
             val cloneable = ObjectType("java/lang/Cloneable")
             if (classHierarchy.isKnown(cloneable)) {
                 for {
-                    cloneables ← classHierarchy.subtypes(cloneable)
+                    cloneables ← classHierarchy.allSubtypes(cloneable)
                     classFile ← getClassFile.get(cloneable).toList
                     if !classFile.methods.exists({
                         case Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object), _) ⇒ true;
@@ -213,8 +213,7 @@ object MoreCheckers {
             // we will not be able to identify this issue unless we have identified the whole
             // class hierarchy.
             for {
-                (_, comparables) ← classHierarchy(ObjectType("java/lang/Comparable")).toSeq
-                comparable ← comparables
+                comparable ← classHierarchy.allSubtypes(ObjectType("java/lang/Comparable"))
                 classFile ← getClassFile.get(comparable).toList
                 method @ Method(_, "compareTo", MethodDescriptor(Seq(parameterType), IntegerType), _) ← classFile.methods
                 if parameterType != ObjectType("java/lang/Object")
@@ -305,8 +304,8 @@ object MoreCheckers {
         //        }
         val classesWithoutDefaultConstructor = time(t ⇒ collect("SE_NO_SUITABLE_CONSTRUCTOR", t /*nsToSecs(t)*/ )) {
             for (
-                (_, serializableClasses) ← classHierarchy(ObjectType("java/io/Serializable")).toSeq;
-                superclass ← classHierarchy.supertypes(serializableClasses) if getClassFile.isDefinedAt(superclass) && // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available
+                serializableClasses ← classHierarchy.allSubtypes(ObjectType("java/io/Serializable"));
+                superclass ← classHierarchy.allSupertypes(serializableClasses) if getClassFile.isDefinedAt(superclass) && // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available
                     {
                         val superClassFile = getClassFile(superclass)
                         !superClassFile.isInterfaceDeclaration &&

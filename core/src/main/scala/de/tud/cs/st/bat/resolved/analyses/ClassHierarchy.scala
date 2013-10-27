@@ -39,12 +39,38 @@ import util.graphs.{ Node, toDot }
 import util.{ Answer, Yes, No, Unknown }
 
 /**
+ * Encapsulates the type hierarchy information directly related to a specific type,
+ * that is, its immediate super-/subtypes.
+ *
+ * @param objectType The type for which the type information is made available.
+ *
+ * @author Michael Eichberg
+ */
+case class TypeHierarchyInformation(
+        objectType: ObjectType,
+        superclassType: Option[ObjectType],
+        superinterfaceTypes: Set[ObjectType],
+        subclassTypes: Set[ObjectType],
+        subinterfaceTypes: Set[ObjectType]) {
+
+    /**
+     * Returns true if the supertype information is complete. If the type was
+     * previously analyzed.
+     */
+    def isSupertypeInformationComplete: Boolean =
+        superclassType.isDefined || objectType == ObjectType.Object
+}
+
+/**
  * Represents the visible part of a project's class hierarchy.
  *
  * The visible part of a project's class hierarchy consists of all classes defined in
- * the analyzed class files and all boundary classes/interfaces. I.e., those classes
- * which are seen when analyzing a specific class file, but for which the respective
- * class file is not seen.
+ * the analyzed class files and all ''boundary classes/interfaces''. I.e., those classes
+ * which are directly referred to in a classes declaration, but for which the respective
+ * class file was not analyzed. For example, if the class file of the class
+ * `java.util.ArrayList` is analyzed, the class hierarchy will have some preliminary
+ * information about, e.g., `java.util.List` from which `ArrayList` inherits. However,
+ * the information about `List` is incomplete and `List` will be a boundary class.
  *
  * ==Usage==
  * To build the class hierarchy use the `++` and `+` method.
@@ -58,52 +84,79 @@ import util.{ Answer, Yes, No, Unknown }
  * This decision was made to avoid any need for synchronization
  * once the class hierarchy is completely constructed.
  *
- * @param supertypes The classes and interfaces from which the given type directly
- *    inherits.
- *    The empty set will only be returned, if the class file of `java.lang.Object`
- *    was analyzed, and the given object type represents `java.lang.Object`.
- *    Recall, that interfaces always (implicitly) inherit from java.lang.Object.
- * @param subtypes The classes (and interfaces if the given type is an interface type)
- *    that '''directly''' inherit from the given type.
- *    If the class hierarchy does not contain any information about the given type
- *    an exception is thrown.
- *    However, if you analyzed all class files of a project
- *    and then ask for the subtypes of a specific type and an
- *    empty set is returned, then you have the guarantee that no class in the
- *    project '''directly''' inherits form the given type.
- *
+ * @param superclassTypes Contains type information about a type's immediate superclass.
+ *      This value is always defined except of the case where the key identifies the
+ *      object type `java.lang.Object` or when the respective class files was not
+ *      analyzed and the respective type was only seen in another classe's declaration.
+ * @param superinterfaceTypes Contains type information about a type's directly implemented
+ *      interfaces; if any.
+ * @param subclassTypes Contains type information about a type's subclasses; if any.
+ * @param subinterfaceTypes Contains type information about a type's subinterfaces.
+ *      They only ''class type'' that is allowed to have a non-empty set of subinterfaces
+ *      is `java.lang.Object`.
  * @note It is generally considered to be an error to pass an instance of an `ObjectType`
  *      to any method if the `ObjectType` was not previously added!
  *
- * @define noIncrementalMaintenance Maintaining the class hierarchy after the
+ * @define noIncrementalMaintenance Maintaining the class hierarchy after a
  *      change of a previously analyzed/added class file is not supported.
  *
  * @author Michael Eichberg
  */
 class ClassHierarchy(
-    val supertypes: Map[ObjectType, Set[ObjectType]] = Map(),
-    val subtypes: Map[ObjectType, Set[ObjectType]] = Map())
-        extends (ObjectType ⇒ Option[(Set[ObjectType], Set[ObjectType])]) {
-
-    type Supertypes = Set[ObjectType] // just a type alias
-    type Subtypes = Set[ObjectType] // just a type alias
+    val superclassType: Map[ObjectType, Option[ObjectType]] = Map(),
+    val superinterfaceTypes: Map[ObjectType, Set[ObjectType]] = Map(),
+    val subclassTypes: Map[ObjectType, Set[ObjectType]] = Map(),
+    val subinterfaceTypes: Map[ObjectType, Set[ObjectType]] = Map())
+        extends (ObjectType ⇒ Option[TypeHierarchyInformation]) {
 
     /**
-     * Returns the given type's supertypes and subtypes if the given type is known.
+     * The set of all interface types.
      */
-    def apply(objectType: ObjectType): Option[(Supertypes, Subtypes)] =
+    // We have to distinguish two cases:
+    // 1) The interface type was directly added to the class hierarchy. In this case
+    //    the interface is in the set of sub interfaces of java.lang.Object.
+    // 2) The interface types was not directly added to the class hierarchy, but
+    //    was implemented by another classe's/interface's declaration. In
+    //    this case the interface type is only found in superinterfaceTypes.
+    lazy val interfaceTypes: Set[ObjectType] =
+        subinterfaceTypes(ObjectType.Object) ++ superinterfaceTypes.values.flatten.toSet
+
+    /**
+     * Returns true if the type hierarchy information w.r.t. the given types supertypes
+     * is complete.
+     */
+    def isDirectSupertypeInformationComplete(objectType: ObjectType): Boolean =
+        objectType == ObjectType.Object || {
+            val superclassType = this.superclassType.get(objectType)
+            superclassType.isDefined /* <=> the type is known */ &&
+                superclassType.get.isDefined /* <=> the direct supertypes are all known */
+        }
+
+    /**
+     * Returns the type hierarchy information related to the given type.
+     */
+    def apply(objectType: ObjectType): Option[TypeHierarchyInformation] =
         if (isKnown(objectType))
-            Some((supertypes.apply(objectType), subtypes.apply(objectType)))
+            Some(
+                TypeHierarchyInformation(
+                    objectType,
+                    superclassType(objectType),
+                    superinterfaceTypes.get(objectType).getOrElse(Set.empty),
+                    subclassTypes.get(objectType).getOrElse(Set.empty),
+                    subinterfaceTypes.get(objectType).getOrElse(Set.empty)
+                )
+            )
         else
             None
 
     /**
-     * Returns `true` if the class hierarchy knows the given type.
+     * Returns `true` if the class hierarchy has some information about the given
+     * type.
      */
-    def isKnown(objectType: ObjectType): Boolean = supertypes.contains(objectType)
+    def isKnown(objectType: ObjectType): Boolean = superclassType.contains(objectType)
 
     /**
-     * Returns `true` if the class hierarchy does not know the given type.
+     * Returns `true` if the type is unknown.
      */
     def isUnknown(objectType: ObjectType): Boolean = !isKnown(objectType)
 
@@ -121,7 +174,11 @@ class ClassHierarchy(
      *  @note $noIncrementalMaintenance
      */
     def +(classFile: ClassFile): ClassHierarchy =
-        this + (classFile.thisClass, classFile.superClass.toSeq ++ classFile.interfaces)
+        this + (
+            classFile.thisClass,
+            classFile.isInterfaceDeclaration,
+            classFile.superClass,
+            classFile.interfaces.toSet)
 
     /**
      * Extends the class hierarchy.
@@ -129,26 +186,69 @@ class ClassHierarchy(
      * @note $noIncrementalMaintenance
      */
     private def +(
-        theNewSubtype: ObjectType,
-        theNewSupertypes: Traversable[ObjectType]): ClassHierarchy = {
+        objectType: ObjectType,
+        isInterfaceType: Boolean,
+        theSuperclassType: Option[ObjectType],
+        theSuperinterfaceTypes: Set[ObjectType]): ClassHierarchy = {
 
-        val newSupertypes =
-            supertypes.updated(
-                theNewSubtype,
-                supertypes.getOrElse(theNewSubtype, Set.empty) ++ theNewSupertypes)
+        var newSuperclassType =
+            superclassType.updated(objectType, theSuperclassType)
 
-        // we want to make sure that this type is seen even if there are no subtypes
-        val subtypesWithTheNewSubtype = subtypes.updated(
-            theNewSubtype,
-            subtypes.getOrElse(theNewSubtype, Set.empty))
-        val newSubtypes = (subtypesWithTheNewSubtype /: theNewSupertypes)(
-            (newSubtypes, aNewSupertype) ⇒ {
-                newSubtypes.updated(
-                    aNewSupertype,
-                    newSubtypes.getOrElse(aNewSupertype, Set.empty) + theNewSubtype)
-            })
+        val newSuperinterfaceTypes =
+            if (theSuperinterfaceTypes.isEmpty)
+                superinterfaceTypes
+            else
+                superinterfaceTypes.updated(objectType, theSuperinterfaceTypes)
 
-        new ClassHierarchy(newSupertypes, newSubtypes)
+        //
+        // establish subtype information; i.e, for each super(class|interface)type make 
+        // sure that it is "seen" in "superclassType" 
+        //
+        if (theSuperclassType.isDefined &&
+            newSuperclassType.get(theSuperclassType.get).isEmpty)
+            // we set it 
+            newSuperclassType = newSuperclassType.updated(theSuperclassType.get, None)
+        theSuperinterfaceTypes.foreach { aSuperinterfaceType ⇒
+            if (newSuperclassType.get(aSuperinterfaceType).isEmpty)
+                newSuperclassType = newSuperclassType.updated(aSuperinterfaceType, None)
+        }
+
+        if (isInterfaceType) {
+            var newSubinterfaceTypes =
+                // an interface always has `java.lang.Object` as its super class
+                subinterfaceTypes.updated(
+                    theSuperclassType.get,
+                    subinterfaceTypes.get(theSuperclassType.get).getOrElse(Set.empty) + objectType)
+            theSuperinterfaceTypes.foreach { aSuperinterfaceType ⇒
+                newSubinterfaceTypes = newSubinterfaceTypes.updated(
+                    aSuperinterfaceType,
+                    newSubinterfaceTypes.get(aSuperinterfaceType).getOrElse(Set.empty) + objectType)
+            }
+            new ClassHierarchy(
+                newSuperclassType,
+                newSuperinterfaceTypes,
+                subclassTypes,
+                newSubinterfaceTypes)
+        } else {
+            var newSubclassTypes =
+                if (theSuperclassType.isDefined) {
+                    subclassTypes.updated(
+                        theSuperclassType.get,
+                        subclassTypes.get(theSuperclassType.get).getOrElse(Set.empty) + objectType)
+                } else
+                    subclassTypes
+            theSuperinterfaceTypes.foreach { aSuperinterfaceType ⇒
+                newSubclassTypes = newSubclassTypes.updated(
+                    aSuperinterfaceType,
+                    newSubclassTypes.get(aSuperinterfaceType).getOrElse(Set.empty) + objectType)
+            }
+            new ClassHierarchy(
+                newSuperclassType,
+                newSuperinterfaceTypes,
+                newSubclassTypes,
+                subinterfaceTypes)
+        }
+
     }
 
     /**
@@ -160,56 +260,91 @@ class ClassHierarchy(
      * it will be considered as a root type. Recall that every interface inherits
      * from `java.lang.Object` and is therefore never a root type.
      *
-     * @note This set contains all types seen by the class hierarchy analysis, but
+     * @note This set contains types seen by the class hierarchy analysis, but
      *      it is not necessarily the case that the defining class file is available
      *      (`Project.classes("SOME ROOT TYPE")`). Imagine that you just analyze an
-     *      application's class files. In this case it is extremely likely that you will have
-     *      seen the type `java.lang.Object`, however the class file will not be available.
+     *      application's class files and not also the JRE. In this case it is extremely
+     *      likely that you will have seen the type `java.lang.Object`, however the
+     *      class file will not be available.
      */
     def rootTypes: Iterable[ObjectType] =
-        supertypes.view.filter((_: (ObjectType, Set[ObjectType]))._2.isEmpty).map(_._1)
+        superclassType.view.filter(c_sc ⇒ c_sc._2.isEmpty).map(_._1)
 
     /**
-     * The set of all class-types (and interface-types) that (directly or indirectly)
-     * inherit from the given type.
+     * The set of all class- and interface-types that (directly or indirectly)
+     * inherit from the given type. The given type is not included in the returned
+     * set.
      *
-     * @see `subtypes(ObjectType)` for general remarks about the
-     *    precision of the analysis.
      * @return The set of all direct and indirect subtypes of the given type.
-     * @note It may be more efficient to use `foreachSubtyp(ObjectType,ObjectType => Unit)`
+     * @note If you don't need the set, it is more efficient to use `foreachSubtype
      */
     def allSubtypes(objectType: ObjectType): Set[ObjectType] = {
-        val theSubtypes = subtypes.apply(objectType)
-        for {
-            directSubtype ← theSubtypes
-            indirectSubtype ← allSubtypes(directSubtype) + directSubtype
-        } yield indirectSubtype
+        var subtypes = Set.empty[ObjectType]
+        foreachSubtype(objectType) { subtype ⇒ subtypes += subtype }
+        subtypes
     }
 
     /**
      * Calls the function `f` for each (direct or indirect) subtype of the given type.
+     *
+     * @param objectType An object type.
      */
     def foreachSubtype(objectType: ObjectType)(f: ObjectType ⇒ Unit) {
-        subtypes.apply(objectType) foreach { directSubtype ⇒
-            f(directSubtype)
-            foreachSubtype(directSubtype)(f)
+        subclassTypes.get(objectType) foreach { subclassTypes ⇒
+            subclassTypes foreach { subclassType ⇒
+                f(subclassType)
+                foreachSubtype(subclassType)(f)
+            }
+        }
+        subinterfaceTypes.get(objectType) foreach { subinterfaceTypes ⇒
+            subinterfaceTypes foreach { subinterfaceType ⇒
+                f(subinterfaceType)
+                foreachSubtype(subinterfaceType)(f)
+            }
         }
     }
 
     /**
-     * Iterates over the given type's supertypes and calls the given function `f`
-     * for each supertype.
+     * Calls the given function `f` for each of the given type's supertypes.
+     * It is possible that the same super interface type `I` is passed multiple
+     * times to `f` when `I` is implemented multiple times by the given type's supertypes.
+     *
+     * The algorithm first iterates over the type's super classes
+     * before it iterates over the super interfaces.
+     *
+     * @param objectType A type known to the class hierarchy.
      */
     def foreachSupertype(objectType: ObjectType)(f: ObjectType ⇒ Unit) {
-        supertypes.apply(objectType) foreach { supertype ⇒
-            f(supertype)
-            foreachSupertype(supertype)(f)
+        superclassType(objectType).foreach { superclassType ⇒
+            f(superclassType)
+            foreachSupertype(superclassType)(f)
+        }
+
+        superinterfaceTypes.get(objectType) foreach { superinterfaceTypes ⇒
+            superinterfaceTypes foreach { superinterfaceType ⇒
+                f(superinterfaceType)
+                foreachSupertype(superinterfaceType)(f)
+            }
         }
     }
 
+    def allSupertypes(objectType: ObjectType): Set[ObjectType] = {
+        var supertypes = Set.empty[ObjectType]
+        foreachSupertype(objectType) { supertypes += _ }
+        supertypes
+    }
+
     /**
-     * Iterates over the given type's supertypes and tries to look up the supertype's
-     * class file which is then passed to the given function `f`.
+     * Calls the function `f` for each supertype of the given object type for
+     * which the classfile is available.
+     * It is possible that the class file of the same super interface type `I`
+     * is passed multiple times to `f` when `I` is implemented multiple times
+     * by the given type's supertypes.
+     *
+     * The algorithm first iterates over the type's super classes
+     * before it iterates over the super interfaces.
+     *
+     * @param objectType A type known to the class hierarchy.
      */
     def foreachSuperclass(
         objectType: ObjectType,
@@ -230,48 +365,27 @@ class ClassHierarchy(
      * @note It may be more efficient to use `foreachSuperclass(ObjectType,
      *      ClassFile => Unit, ObjectType ⇒ Option[ClassFile])`
      *
-     * @return An iterator over all class files of all super types of the given
+     * @return An iterable over all class files of all super types of the given
      *      `objectType` that pass the given filter and for which the class file
-     *      is available.
+     *      is available. The iterable guarantees
      */
     def superclasses(
         objectType: ObjectType,
         classes: ObjectType ⇒ Option[ClassFile])(
-            classFileFilter: ClassFile ⇒ Boolean = { _ ⇒ true }): Iterator[ClassFile] = {
-
-        new Iterator[ClassFile] {
-
-            var returnedSupertypes: Set[ObjectType] = Set.empty
-
-            var nextSuperclasses: Traversable[ClassFile] = {
-                var supertypes: Set[ObjectType] =
-                    ClassHierarchy.this.supertypes.get(objectType).getOrElse(Set.empty)
-                ClassHierarchy.lookupClassFiles(supertypes, classes)(classFileFilter)
-            }
-
-            def hasNext: Boolean = nextSuperclasses.nonEmpty
-
-            def next: ClassFile = {
-                val nextSuperclass = nextSuperclasses.head
-                nextSuperclasses = nextSuperclasses.tail
-                nextSuperclasses ++= {
-                    ClassHierarchy.lookupClassFiles(
-                        supertypes.get(nextSuperclass.thisClass).getOrElse(Set.empty),
-                        classes) {
-                            classFile ⇒
-                                !returnedSupertypes.contains(classFile.thisClass) &&
-                                    classFileFilter(classFile)
-                        }
-                }
-                returnedSupertypes += nextSuperclass.thisClass
-                nextSuperclass
-            }
+            classFileFilter: ClassFile ⇒ Boolean = { _ ⇒ true }): Iterable[ClassFile] = {
+        // We want to make sure that every class file is returned only once,
+        // but we want to avoid equals calls on `ClassFile` objects. 
+        var classFiles = Map[ObjectType, ClassFile]()
+        foreachSuperclass(objectType, classes) { classFile ⇒
+            if (classFileFilter(classFile))
+                classFiles = classFiles.updated(classFile.thisClass, classFile)
         }
+        classFiles.values
     }
 
     /**
-     * Determines if the given class type `subtype` is actually a subtype of the
-     * class type `supertype`.
+     * Determines if the given class or interface type `subtype` is actually a subtype
+     * of the class or interface type `supertype`.
      *
      * This method can be used as a foundation for implementing the logic of the JVM's
      * `instanceof` and `classcast` instructions. But, in that case additional logic
@@ -291,22 +405,79 @@ class ClassHierarchy(
         if (subtype == ObjectType.Object /* && theSupertype != ObjectType.Object*/ )
             return No
 
-        this.supertypes.get(subtype) match {
-            case Some(intermediateTypes) if intermediateTypes.isEmpty ⇒
-                // we have found a type without information about its supertypes
-                // and this type is known not to be java.lang.Object (due to a previous test)  
-                Unknown
-            case Some(intermediateTypes) ⇒
-                intermediateTypes.foreach { intermediateType ⇒
-                    isSubtypeOf(intermediateType, theSupertype) match {
-                        case Yes           ⇒ return Yes
-                        case No            ⇒ /*do nothing*/
-                        case _ /*Unknown*/ ⇒ return Unknown
+        val subtypeIsInterface = interfaceTypes.contains(subtype)
+        val supertypeIsInterface = interfaceTypes.contains(theSupertype)
+
+        if (subtypeIsInterface && !supertypeIsInterface)
+            // An interface always (only) directly inherits from java.lang.Object
+            // and this is already checked before.
+            return No
+
+        def implementsInterface(subinterfaceType: ObjectType, theSupertype: ObjectType): Answer = {
+            if (subinterfaceType == theSupertype)
+                return Yes
+
+            superinterfaceTypes.get(subinterfaceType) match {
+                case None ⇒
+                    if (isDirectSupertypeInformationComplete(subinterfaceType))
+                        No
+                    else
+                        Unknown
+                case Some(intermediateTypes) ⇒
+                    var answer: Answer = No
+                    intermediateTypes.foreach { intermediateType ⇒
+                        var anotherAnswer = implementsInterface(intermediateType, theSupertype)
+                        if (anotherAnswer.yes)
+                            return Yes
+                        answer &= anotherAnswer
                     }
-                }
-                No
-            case _ ⇒ Unknown
+                    answer
+            }
         }
+
+        def isSubtypeOf(subclassType: ObjectType): Answer = {
+            def inheritsFromInterface(answerSoFar: Answer): Answer = {
+                if (supertypeIsInterface) {
+                    var doesInheritFromInterface =
+                        implementsInterface(subclassType, theSupertype)
+                    if (doesInheritFromInterface.yes)
+                        Yes
+                    else
+                        answerSoFar & doesInheritFromInterface
+                } else
+                    No
+            }
+
+            superclassType.get(subclassType) match {
+                case Some(Some(intermediateType)) ⇒
+                    if (intermediateType == theSupertype)
+                        return Yes
+
+                    var answer = isSubtypeOf(intermediateType)
+                    if (answer.yes)
+                        Yes
+                    else
+                        inheritsFromInterface(answer)
+
+                case Some(None) ⇒
+                    /* we have reached the top (visible) class Type*/
+                    var answer: Answer =
+                        if (subclassType == ObjectType.Object)
+                            No
+                        else
+                            Unknown
+                    inheritsFromInterface(answer)
+
+                case None ⇒
+                    /*the given subclassType is unknown*/
+                    Unknown
+            }
+        }
+
+        if (subtypeIsInterface /*&& supertypeIsInterface*/ )
+            implementsInterface(subtype, theSupertype)
+        else
+            isSubtypeOf(subtype)
     }
 
     /**
@@ -365,16 +536,6 @@ class ClassHierarchy(
     }
 
     /**
-     * Calculates the set of classes and interfaces from which the given types
-     * directly inherit.
-     *
-     * If the class file of a given object type was not previously analyzed
-     * a `NoSuchElementException` will be raised.
-     */
-    def supertypes(objectTypes: Traversable[ObjectType]): Set[ObjectType] =
-        (Set.empty[ObjectType] /: objectTypes)(_ ++ supertypes.apply(_))
-
-    /**
      * Resolves a symbolic reference to a field. Basically, the search starts with
      * the given class `c` and then continues with `c`'s superinterfaces before the
      * search is continued with `c`'s superclass (as prescribed by the JVM specification
@@ -430,7 +591,7 @@ class ClassHierarchy(
      *
      * This method is the basis for the implementation of the semantics
      * of the `invokeXXX` instructions. However, it does not check whether the resolved
-     * method can be accessed by the caller or if it is abstract. Additionally it is still
+     * method can be accessed by the caller or if it is abstract. Additionally, it is still
      * necessary that the caller makes a distinction between the statically (at compile time)
      * identified declaring class and the dynamic type of the receiver in case of
      * `invokevirtual` and `invokeinterface` instructions. I.e., additional processing
@@ -509,8 +670,14 @@ class ClassHierarchy(
 
         classFile.interfaces.foreach { superinterface: ObjectType ⇒
             classes(superinterface) map { superclass ⇒
-                val result = lookupMethodInInterface(superclass, methodName, methodDescriptor, classes)
-                if (result.isDefined) return result
+                val result =
+                    lookupMethodInInterface(
+                        superclass,
+                        methodName,
+                        methodDescriptor,
+                        classes)
+                if (result.isDefined)
+                    return result
             }
         }
         None
@@ -564,6 +731,11 @@ class ClassHierarchy(
         }
     }
 
+    def directSubtypesOf(objectType: ObjectType): Set[ObjectType] = {
+        val subclasses = subclassTypes.get(objectType).getOrElse(Set.empty[ObjectType])
+        subclasses ++ subinterfaceTypes.get(objectType).getOrElse(Set.empty[ObjectType])
+    }
+
     /**
      * Returns a view of the class hierarchy as a graph (which can then be transformed
      * into a dot representation [[http://www.graphviz.org Graphviz]]). This
@@ -576,18 +748,24 @@ class ClassHierarchy(
         import sourceElementIDs.{ sourceElementID ⇒ id }
 
         private val nodes: Map[ObjectType, Node] =
-            Map.empty ++ subtypes.keys.map { t ⇒
+            Map.empty ++ (superclassType.keys).map { aType ⇒
                 val entry: (ObjectType, Node) = (
-                    t,
+                    aType,
                     new Node {
-                        def uniqueId = id(t)
-                        def toHRR: Option[String] = Some(t.className)
-                        def foreachSuccessor(f: Node ⇒ _) {
-                            subtypes.apply(t) foreach { subtype ⇒
+                        private val directSubtypes = directSubtypesOf(aType)
+                        def uniqueId = id(aType)
+                        def toHRR: Option[String] = Some(aType.toJava)
+                        def backgroundColor: Option[String] =
+                            if (interfaceTypes.contains(aType))
+                                Some("aliceblue")
+                            else
+                                None
+                        def foreachSuccessor(f: Node ⇒ Unit) {
+                            directSubtypes foreach { subtype ⇒
                                 f(nodes(subtype))
                             }
                         }
-                        def hasSuccessors(): Boolean = subtypes.apply(t).nonEmpty
+                        def hasSuccessors(): Boolean = directSubtypes.nonEmpty
                     }
                 )
                 entry
@@ -596,16 +774,16 @@ class ClassHierarchy(
         // a virtual root node
         def uniqueId = -1
         def toHRR = None
-        def foreachSuccessor(f: Node ⇒ _) {
+        def backgroundColor = None
+        def foreachSuccessor(f: Node ⇒ Unit) {
             /**
              * We may not see the class files of all classes that are referred
              * to in the class files that we did see. Hence, we have to be able
              * to handle partial class hierarchies.
              */
-            val rootTypes = nodes.filterNot { case (t, _) ⇒ supertypes.isDefinedAt(t) }
+            val rootTypes = nodes filter { case (t, _) ⇒ superclassType(t).isEmpty }
             rootTypes.values.foreach(f)
         }
-
         def hasSuccessors(): Boolean = nodes.nonEmpty
     }
 }
@@ -647,37 +825,49 @@ object ClassHierarchy {
      * ClassHierarchyJVMExceptions.ths (text file) for further details.
      */
     def preInitializedClassHierarchy: ClassHierarchy = {
+        var theInitialClassHierarchy = ClassHierarchy.empty
+        theInitialClassHierarchy =
+            processPredefinedClassHierarchy(
+                getClass().getResourceAsStream("ClassHierarchyJLS.ths"),
+                theInitialClassHierarchy
+            )
+        theInitialClassHierarchy =
+            processPredefinedClassHierarchy(
+                getClass().getResourceAsStream("ClassHierarchyJVMExceptions.ths"),
+                theInitialClassHierarchy
+            )
+        theInitialClassHierarchy
+    }
+
+    def processPredefinedClassHierarchy(
+        createInputStream: ⇒ java.io.InputStream,
+        classHierarchy: ClassHierarchy): ClassHierarchy = {
         import util.ControlAbstractions.process
 
-        def processPredefinedClassHierarchy(
-            fileName: String,
-            initialClassHierarchy: ClassHierarchy): ClassHierarchy = {
+        var updatedClassHierarchy = classHierarchy
+        process(createInputStream) { in ⇒
+            val SpecLineExtractor =
+                """(class|interface)\s+(\S+)(\s+extends\s+(\S+)(\s+implements\s+(.+))?)?""".r
 
-            var classHierarchy = initialClassHierarchy
-            process(getClass().getResourceAsStream(fileName)) { in ⇒
-
-                val SpecLineExtractor = """(\S+)\s*>:\[(class|interface)\]\s*(.+)""".r
-                val source = new scala.io.BufferedSource(in)
-                val specLines =
-                    source.getLines.map(_.trim).filterNot {
-                        l ⇒ l.startsWith("#") || l.length == 0
-                    }
-                for {
-                    SpecLineExtractor(supertype, subtypesKind, subtypes) ← specLines
-                    supertypes = List(ObjectType(supertype))
-                    subtype ← subtypes.split(",").map(_.trim)
-                } {
-                    classHierarchy += (ObjectType(subtype), supertypes)
+            val source = new scala.io.BufferedSource(in)
+            val specLines =
+                source.getLines.map(_.trim).filterNot {
+                    l ⇒ l.startsWith("#") || l.length == 0
                 }
-                classHierarchy
+            for {
+                SpecLineExtractor(typeKind, theType, _, superclassType, _, superinterfaceTypes) ← specLines
+            } {
+                updatedClassHierarchy += (
+                    ObjectType(theType),
+                    typeKind == "interface",
+                    Option(superclassType).map(ObjectType(_)),
+                    Option(superinterfaceTypes).map { superinterfaceTypes ⇒
+                        superinterfaceTypes.split(",").map(_.trim).map(ObjectType(_)).toSet
+                    }.getOrElse(Set.empty)
+                )
             }
         }
-
-        processPredefinedClassHierarchy(
-            "ClassHierarchyJVMExceptions.ths",
-            processPredefinedClassHierarchy(
-                "ClassHierarchyJLS.ths",
-                empty))
+        updatedClassHierarchy
     }
 }
 

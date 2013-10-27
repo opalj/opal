@@ -43,8 +43,7 @@ object CN_IDIOM extends (Project[_] ⇒ Iterable[ClassFile]) {
 
     def apply(project: Project[_]) =
         for {
-            (_, allCloneables) ← project.classHierarchy(ObjectType("java/lang/Cloneable")).toSeq
-            cloneable ← allCloneables
+            cloneable ← project.classHierarchy.allSubtypes(ObjectType("java/lang/Cloneable"))
             classFile = project.classes(cloneable)
             if !classFile.methods.exists({
                 case Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object), _) ⇒ true

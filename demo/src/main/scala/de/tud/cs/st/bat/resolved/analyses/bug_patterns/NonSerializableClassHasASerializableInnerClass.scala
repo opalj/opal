@@ -68,19 +68,18 @@ class NonSerializableClassHasASerializableInnerClass[Source]
         val Serializable = ObjectType("java/io/Serializable")
 
         for {
-            (_, allSerializables) ← project.classHierarchy(Serializable).toSeq
-            objectType ← allSerializables
-            classFile = project.classes(objectType)
+            serializableType ← project.classHierarchy.allSubtypes(Serializable)
+            classFile = project.classes(serializableType)
             (outerType, NOT_STATIC()) ← classFile.outerType
             /* if we know nothing about the class, then we never generate a warning */
             if isSubtypeOf(outerType, Serializable).no
         } yield {
             ClassBasedReport(
-                project.sources.get(objectType),
-                objectType.toJava,
+                project.sources.get(serializableType),
+                serializableType.toJava,
                 Some("note"),
                 "The non-static inner class: "+
-                    objectType.toJava+
+                    serializableType.toJava+
                     " is seriablizable, but the outer class: "+outerType.toJava+" is not."
             )
         }

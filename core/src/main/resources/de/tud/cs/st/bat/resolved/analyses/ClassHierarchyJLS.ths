@@ -1,7 +1,2 @@
-# Predefinition of the type hierarchy related to the super types of arrays (Arrays are 
-# Cloneable and Serializable)
-#
-# The format is simple: supertype ">:[('interface'|'class')]" subtype(", "subtype)*, e.g.,
-# java/lang/Object >:[class] java/lang/Throwable
-#
-java/lang/Object >:[interface] java/lang/Cloneable, java/io/Serializable
+interface java/lang/Cloneable extends java/lang/Object
+interface java/io/Serializable extends java/lang/Object

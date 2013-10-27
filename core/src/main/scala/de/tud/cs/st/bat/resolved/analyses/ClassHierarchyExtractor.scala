@@ -40,11 +40,6 @@ package analyses
  * [[de.tud.cs.st.bat.resolved.analyses.ClassHierarchy]] to create the pre-initialized
  * class hierarchy.
  *
- * The format is:
- * <pre>
- * SUPERTYPE " &gt; " SUBTYPE [", " SUBTYPE]*
- * </pre>
- *
  * @author Michael Eichberg
  */
 object ClassHierarchyExtractor {
@@ -72,26 +67,35 @@ object ClassHierarchyExtractor {
                     " is not defined in the specified jar(s).")
             sys.exit(-2)
         }
-        val subtypes = classHierarchy.subtypes(supertype)
+
         println(
             "# Class hierarchy for: "+
                 supertypeName+
                 " limited to subclasses that start with: "+
                 filterPrefix)
-
-        var worklist = List((supertype, subtypes))
-        while (worklist.nonEmpty) {
-            val (supertype, allSubtypes) = worklist.head
-            worklist = worklist.tail
-            val subtypes = allSubtypes.filter(_.className.startsWith(filterPrefix))
-            if (subtypes.nonEmpty) {
-                println(supertype.className+" > "+subtypes.map(_.className).mkString(", "))
-                for (subtype ← subtypes) {
-                    worklist = (subtype, classHierarchy.subtypes(subtype)) :: worklist
+        val allRelevantSubtypes =
+            classHierarchy.allSubtypes(supertype).filter { candidateType ⇒
+                candidateType.className.startsWith(filterPrefix)
+            } + supertype
+        var specLines = allRelevantSubtypes.map { aType ⇒
+            var specLine =
+                (
+                    if (classHierarchy.interfaceTypes.contains(aType))
+                        "interface "
+                    else
+                        "class "
+                ) + aType.className
+            val superclassType = classHierarchy.superclassType(aType)
+            if (superclassType.isDefined) {
+                specLine += " extends "+superclassType.get.className
+                val superinterfaceTypes = classHierarchy.superinterfaceTypes.get(aType)
+                if (superinterfaceTypes.isDefined) {
+                    specLine += " implements "+superinterfaceTypes.get.map(_.className).mkString(", ")
                 }
             }
+            specLine
         }
-        println("# Generated for: "+jars.mkString(", "))
+        println(specLines.mkString("\n"))
     }
 }
 
