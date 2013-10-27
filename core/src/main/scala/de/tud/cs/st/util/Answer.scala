@@ -69,7 +69,7 @@ sealed trait Answer {
     def no: Boolean
 
     /**
-     * Returns `true` in the case of a definitive answer, that is, if the answer is
+     * Returns `true` in case of a definitive answer, that is, if the answer is
      * either `Yes` or `No`.
      */
     def isDefined: Boolean
@@ -87,6 +87,13 @@ sealed trait Answer {
      * `Unknown` is returned.
      */
     def merge(other: Answer): Answer
+
+    /**
+     * Joins this answer and the given answer.
+     * Same as merge, but enables us to easily concatenate `Answer`s using `&=` if
+     * the answer is stored in a `var`(iable).
+     */
+    def &(other: Answer): Answer = merge(other)
 
     /**
      * If this answer is not well defined the given function is evaluated and that
