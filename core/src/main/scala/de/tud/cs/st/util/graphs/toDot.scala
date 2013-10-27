@@ -41,34 +41,43 @@ package graphs
  */
 trait toDot {
 
-    def generateDot(nodes: Set[Node]): String = {
-        var nodesToProcess = nodes.toList
-        var processedNodes = Set[Int]()
+    /**
+     * Generates a DOT file for the given graph. Requires that Node implements
+     * a content-based equals and hashCode method.
+     */
+    def generateDot(
+        nodes: Set[Node],
+        dir: String = "forward"): String = {
+        var nodesToProcess = nodes
+        var processedNodes = Set.empty[Node]
 
-        var s = "digraph G {\n"
+        var s = "digraph G {\n\tdir="+dir+"\n"
 
-        while (!(nodesToProcess.isEmpty)) {
-            val n = nodesToProcess.head
+        while (nodesToProcess.nonEmpty) {
+            val nextNode = nodesToProcess.head
             // prepare the next iteration
-            processedNodes += n.uniqueId
+            processedNodes += nextNode
             nodesToProcess = nodesToProcess.tail
 
-            if (n.toHRR.isDefined) {
-                val label = n.toHRR.get.replace("\"", "\\\"")
-                s += "\t"+n.uniqueId+"[label=\""+label+"\"];\n"
+            if (nextNode.toHRR.isDefined) {
+                val label = nextNode.toHRR.get.replace("\"", "\\\"")
+                s +=
+                    "\t"+nextNode.uniqueId+
+                    "[label=\""+label+"\""+
+                    nextNode.backgroundColor.map(",style=filled,fillcolor=\""+_+"\"").getOrElse("")+
+                    "];\n"
             }
 
             val f = (sn: Node) ⇒ {
-                if (n.toHRR.isDefined)
-                    s += "\t"+n.uniqueId+" -> "+sn.uniqueId+";\n" // +"[dir=none];\n"
+                if (nextNode.toHRR.isDefined)
+                    s += "\t"+nextNode.uniqueId+" -> "+sn.uniqueId+" [dir="+dir+"];\n"
 
-                if (!(processedNodes contains sn.uniqueId)) {
-                    nodesToProcess = sn :: nodesToProcess
+                if (!(processedNodes contains sn)) {
+                    nodesToProcess += sn
                 }
             }
-            n.foreachSuccessor(f)
+            nextNode.foreachSuccessor(f)
         }
-
         s += "}"
         s
     }
