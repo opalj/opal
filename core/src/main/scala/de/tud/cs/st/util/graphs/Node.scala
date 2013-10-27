@@ -35,7 +35,8 @@ package util
 package graphs
 
 /**
- * Represents a node of a graph.
+ * Represents a node of a graph. Two nodes are considered equal if they have the
+ * same unique id.
  *
  * @see [[de.tud.cs.st.bat.resolved.analyses.ClassHierarchy]]'s `toGraph` method for
  *      an example usage.
@@ -50,6 +51,13 @@ trait Node {
     def toHRR: Option[String]
 
     /**
+     * The background color. Relies on the X11 color scheme.
+     *
+     * see [[http://www.graphviz.org/content/color-names]] for further details.
+     */
+    def backgroundColor: Option[String]
+
+    /**
      * An identifier that uniquely identifies this node.
      */
     def uniqueId: Int
@@ -57,13 +65,21 @@ trait Node {
     /**
      * Applies the given function for each successor node.
      */
-    def foreachSuccessor(f: Node ⇒ _): Unit
+    def foreachSuccessor(f: Node ⇒ Unit): Unit
 
     /**
      * Returns `true` if this node has successor nodes.
      */
     def hasSuccessors(): Boolean
 
+    override def hashCode: Int = uniqueId
+
+    override def equals(other: Any): Boolean = {
+        other match {
+            case otherNode: Node ⇒ otherNode.uniqueId == this.uniqueId
+            case _               ⇒ false
+        }
+    }
 }
 
 /**
@@ -83,6 +99,8 @@ final class SimpleNode[I](
 
     def toHRR = Some(identifierToString(identifier))
 
+    def backgroundColor = None
+
     def uniqueId: Int = identifier.hashCode()
 
     def addChild(node: Node) {
@@ -97,7 +115,7 @@ final class SimpleNode[I](
         children.synchronized(children = children.filterNot(_ == node))
     }
 
-    def foreachSuccessor(f: Node ⇒ _) {
+    def foreachSuccessor(f: Node ⇒ Unit) {
         children.synchronized(children.foreach(f))
     }
 
