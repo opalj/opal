@@ -55,7 +55,7 @@ trait BasicTypeHierarchy { this: Domain[_] ⇒
      * @note '''This method is intended to be overridden.'''
      */
     protected def classHierarchy: analyses.ClassHierarchy =
-        analyses.ClassHierarchy.preInitializedClassHierarchy
+        BasicTypeHierarchy.classHierarchy
 
     /**
      * @see `de.tud.cs.st.bat.resolved.analyses.ClassHierarchy.isSubtypeOf(ReferenceType,
@@ -64,5 +64,9 @@ trait BasicTypeHierarchy { this: Domain[_] ⇒
     def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer =
         classHierarchy.isSubtypeOf(subtype, supertype)
 
+}
+private object BasicTypeHierarchy {
+    val classHierarchy: analyses.ClassHierarchy =
+        analyses.ClassHierarchy.preInitializedClassHierarchy
 }
 
