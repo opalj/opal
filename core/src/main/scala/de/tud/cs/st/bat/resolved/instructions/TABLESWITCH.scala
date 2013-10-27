@@ -59,7 +59,7 @@ case class TABLESWITCH(
             (low to high).zip(jumpOffsets).map { keyOffset ⇒
                 val (key, offset) = keyOffset
                 key+"="+(pc + offset) + (if (offset >= 0) "↓" else "↑")
-            }.mkString(",")+
+            }.mkString(", ")+
             "; ifNoMatch="+(defaultOffset + pc) + (if (defaultOffset >= 0) "↓" else "↑")+")"
 
 }
