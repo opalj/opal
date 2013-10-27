@@ -53,9 +53,11 @@ object InterpretMethod {
 
         override def isInterrupted = Thread.interrupted()
 
-        override val tracer = Some(
-            new MultiTracer(new ConsoleTracer {}, new XHTMLTracer {})
-        )
+        override val tracer =
+            //Some(new ConsoleTracer {})
+            Some(
+                new MultiTracer(new ConsoleTracer {}, new XHTMLTracer {})
+            )
     }
 
     /**
