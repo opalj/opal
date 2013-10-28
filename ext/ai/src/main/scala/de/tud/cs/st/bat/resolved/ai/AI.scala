@@ -45,9 +45,9 @@ import scala.util.control.ControlThrowable
  *
  * ==Interacting with BATAI==
  * The primary means how to make use of the abstract interpreter is to perform
- * an abstract interpretation of a method using a customized Domain. This
+ * an abstract interpretation of a method using a customized `Domain`. This
  * customized domain can then be used to build, e.g., a call graph or to
- * do other intra-/interprocedural analyses. Additionally it is possible to analyze the
+ * do other intra-/interprocedural analyses. Additionally, it is possible to analyze the
  * result of an abstract interpretation.
  *
  * ==Thread Safety==

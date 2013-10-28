@@ -42,7 +42,9 @@ import util.{ Answer, Yes, No, Unknown }
  * Encapsulates the type hierarchy information directly related to a specific type,
  * that is, its immediate super-/subtypes.
  *
- * @param objectType The type for which the type information is made available.
+ * @param objectType The type for which the type hierarchy information is made available.
+ *    This information may be incomplete if not all of a Java project's own classes as
+ *    well as dependent libraries are analyzed.
  *
  * @author Michael Eichberg
  */
@@ -54,18 +56,20 @@ case class TypeHierarchyInformation(
         subinterfaceTypes: Set[ObjectType]) {
 
     /**
-     * Returns true if the supertype information is complete. If the type was
-     * previously analyzed.
+     * Returns true if the supertype information is complete; that is this method returns
+     * true if the type was explicitly previously added. Returns false if this type
+     * was referred to by some class that was previously added, but the defining class
+     * file was not analyzed.
      */
     def isSupertypeInformationComplete: Boolean =
         superclassType.isDefined || objectType == ObjectType.Object
 }
 
 /**
- * Represents the visible part of a project's class hierarchy.
+ * Represents a project's class hierarchy.
  *
- * The visible part of a project's class hierarchy consists of all classes defined in
- * the analyzed class files and all ''boundary classes/interfaces''. I.e., those classes
+ * Only the part of a project's class hierarchy is visible that is defined in
+ * the analyzed class files and their ''boundary classes/interfaces''. I.e., those classes
  * which are directly referred to in a classes declaration, but for which the respective
  * class file was not analyzed. For example, if the class file of the class
  * `java.util.ArrayList` is analyzed, the class hierarchy will have some preliminary

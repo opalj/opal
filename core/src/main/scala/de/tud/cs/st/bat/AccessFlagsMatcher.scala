@@ -34,18 +34,33 @@ package de.tud.cs.st
 package bat
 
 /**
- * Enumeration of all class file structures that can have attributes.
+ * Matches a given access flags bit array and enables the construction of
+ * complex matchers.
  *
  * @author Michael Eichberg
  */
-object AttributesParent extends Enumeration {
+trait AccessFlagsMatcher { outer ⇒
 
-    val ClassFile = Value
-    
-    val Field = Value
-    
-    val Method = Value
-    
-    val Code = Value
+    def unapply(accessFlags: Int): Boolean
 
+    /**
+     * Creates a new matcher that matches accessFlag vectors where all flags
+     * defined by this `mask` and the mask of the given matcher are matched.
+     */
+    def &(accessFlagsMatcher: AccessFlagsMatcher): AccessFlagsMatcher =
+        new AccessFlagsMatcher {
+            def unapply(accessFlags: Int): Boolean =
+                outer.unapply(accessFlags) && accessFlagsMatcher.unapply(accessFlags)
+        }
+
+    /**
+     * Creates a new matcher that matches accessFlag vectors where none of the flags
+     * defined by `mask` is set.
+     */
+    def unary_!(): AccessFlagsMatcher =
+        new AccessFlagsMatcher {
+            override def unapply(accessFlags: Int): Boolean = !outer.unapply(accessFlags)
+        }
 }
+
+

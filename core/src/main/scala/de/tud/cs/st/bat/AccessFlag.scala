@@ -44,8 +44,8 @@ package bat
 sealed trait AccessFlag extends AccessFlagsMatcher {
 
     /**
-     * The Java (source code) name of the access flag if it exists. E.g., "public",
-     * "native", etc.
+     * The Java (source code) name of the access flag if it exists. E.g., Some("public"),
+     * Some("native"), etc.
      */
     def javaName: Option[String]
 
@@ -71,38 +71,10 @@ sealed trait AccessFlag extends AccessFlagsMatcher {
     /**
      * Determines if this access flag is set in the given `access_flags` bit vector.
      * E.g., to determine if a method's static modifier is set it is sufficient
-     * to call {{{ACC_STATIC ∈ method.access_flags}}}.
+     * to call {{{ACC_STATIC isElementOf method.access_flags}}}.
      */
     def isElementOf(access_flags: Int): Boolean = (access_flags & mask) != 0
 
-}
-
-/**
- * Matches a given access flags bit array and enables the construction of
- * more complex matchers.
- */
-trait AccessFlagsMatcher { outer ⇒
-
-    def unapply(accessFlags: Int): Boolean
-
-    /**
-     * Creates a new matcher that matches accessFlag vectors where all flags
-     * defined by this `mask` and the mask of the given matcher are matched.
-     */
-    def &(accessFlagsMatcher: AccessFlagsMatcher): AccessFlagsMatcher =
-        new AccessFlagsMatcher {
-            def unapply(accessFlags: Int): Boolean =
-                outer.unapply(accessFlags) && accessFlagsMatcher.unapply(accessFlags)
-        }
-
-    /**
-     * Creates a new matcher that matches accessFlag vectors where none of the flags
-     * defined by `mask` is set.
-     */
-    def unary_!(): AccessFlagsMatcher =
-        new AccessFlagsMatcher {
-            override def unapply(accessFlags: Int): Boolean = !outer.unapply(accessFlags)
-        }
 }
 
 sealed trait VisibilityModifier extends AccessFlag

@@ -46,19 +46,21 @@ package graphs
 trait Node {
 
     /**
-     * Returns a textual representation of this node.
+     * Returns a humane readable representation (HRR) of this node.
      */
     def toHRR: Option[String]
 
     /**
-     * The background color. Relies on the X11 color scheme.
+     * The name of the background color base on the X11 color scheme.
      *
      * see [[http://www.graphviz.org/content/color-names]] for further details.
      */
     def backgroundColor: Option[String]
 
     /**
-     * An identifier that uniquely identifies this node.
+     * An identifier that uniquely identifies this node in the graph to which this
+     * node belongs. By default two nodes are considered equal if they have the same
+     * unique id.
      */
     def uniqueId: Int
 

@@ -34,7 +34,7 @@ package de.tud.cs.st
 
 /**
  * BAT is a generic Java bytecode library written in Scala that is designed with
- * adaptability to very different use cases in mind.
+ * scalability and adaptability in mind.
  *
  * == This Package ==
  * Common constants and type definitions used across BAT.
@@ -47,7 +47,7 @@ package de.tud.cs.st
  *
  * ===Thread Safety===
  * Unless explicitly noted, BAT is thread safe. I.e., it is possible to read and process
- * class files in parallel.
+ * class files in parallel without explicit synchronization on the client side.
  *
  * @author Michael Eichberg
  */
@@ -62,7 +62,7 @@ package object bat {
     final val CLASS_FILE_MAGIC = 0xCAFEBABE
 
     final val generalBATExceptionMessage: String =
-        "An error occured while reading/analyzing a class file. The underlying problem is: "
+        "An internal error occured while reading/analyzing a class file: "
 
     /**
      * Exception that is thrown if some error is detected that is most likely the
@@ -72,7 +72,7 @@ package object bat {
 
     @throws[BATException]
     final def BATException(message: String): Nothing =
-        throw new BATException(generalBATExceptionMessage + Console.BOLD + message+"\033[22m" /*<= BOLD_OFF*/ )
+        throw new BATException(generalBATExceptionMessage + message)
 
     //
     // Common matchers for access flags

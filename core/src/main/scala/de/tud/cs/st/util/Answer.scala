@@ -75,7 +75,7 @@ sealed trait Answer {
     def isDefined: Boolean
 
     /**
-     * Returns `true` in the case that no definitive answer can be given.
+     * Returns `true` in case that no definitive answer can be given.
      * Calling `isUndefined` is effectively the same as a (reference) comparison of
      * an `Answer` with `Unknown`.
      */
@@ -96,8 +96,8 @@ sealed trait Answer {
     def &(other: Answer): Answer = merge(other)
 
     /**
-     * If this answer is not well defined the given function is evaluated and that
-     * result is returned otherwise this answer is returned.
+     * If this answer is not defined the given function is evaluated and that
+     * result is returned, otherwise this answer is returned.
      */
     def orElse(f: ⇒ Answer): Answer = this
 }
