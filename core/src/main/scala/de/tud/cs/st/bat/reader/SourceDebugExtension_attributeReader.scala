@@ -58,19 +58,21 @@ trait SourceDebugExtension_attributeReader extends AttributeReader {
 
     type SourceDebugExtension_attribute <: Attribute
 
-    def SourceDebugExtension_attribute(attribute_name_index: Constant_Pool_Index,
-                                       attribute_length: Int,
-                                       debug_extension: String)(
-                                           implicit constant_pool: Constant_Pool): SourceDebugExtension_attribute
+    def SourceDebugExtension_attribute(
+        attribute_name_index: Constant_Pool_Index,
+        attribute_length: Int,
+        debug_extension: String)(
+            implicit constant_pool: Constant_Pool): SourceDebugExtension_attribute
 
     registerAttributeReader(
-        SourceDebugExtension_attributeReader.ATTRIBUTE_NAME ->
-            ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
+        SourceDebugExtension_attributeReader.ATTRIBUTE_NAME -> (
+            (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 val attribute_length = in.readInt
                 SourceDebugExtension_attribute(
                     attribute_name_index, attribute_length, in.readUTF
                 )(cp)
-            })
+            }
+        )
     )
 
 }

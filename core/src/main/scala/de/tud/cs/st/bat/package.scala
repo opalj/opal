@@ -64,12 +64,6 @@ package object bat {
     final val generalBATExceptionMessage: String =
         "An internal error occured while reading/analyzing a class file: "
 
-    /**
-     * Exception that is thrown if some error is detected that is most likely the
-     * result of a bug in BAT (or an invalid class file).
-     */
-    class BATException(message: String) extends RuntimeException(message)
-
     @throws[BATException]
     final def BATException(message: String): Nothing =
         throw new BATException(generalBATExceptionMessage + message)

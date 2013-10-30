@@ -48,12 +48,12 @@ case class Code(
         extends Attribute {
 
     def exceptionHandlersFor(pc: Int): Iterable[ExceptionHandler] = {
-        exceptionHandlers.view.filter(handler ⇒ {
+        exceptionHandlers.view.filter { handler ⇒
             handler.startPC <= pc && handler.endPC > pc
-        })
+        }
     }
-    
-    def indexOfNextInstruction(pc : Int)= {
+
+    def indexOfNextInstruction(pc: Int) = {
         instructions(pc).indexOfNextInstruction(pc, this)
     }
 
@@ -250,7 +250,9 @@ case class Code(
      *      instead.
      * @return The list of results of applying the function f for each matching sequence.
      */
-    def slidingCollect[B](windowSize: Int)(f: PartialFunction[(Int, Seq[Instruction]), B]): Seq[B] = {
+    def slidingCollect[B](
+        windowSize: Int)(
+            f: PartialFunction[(Int, Seq[Instruction]), B]): Seq[B] = {
         require(windowSize > 0)
 
         import collection.immutable.Queue
@@ -297,9 +299,9 @@ case class Code(
     }
 
     override def toString = {
-        "Code_attribute(maxStack="+
-            maxStack+", maxLocals="+
-            maxLocals+","+
+        "Code_attribute("+
+            "maxStack="+maxStack+
+            ", maxLocals="+maxLocals+","+
             (instructions.filter(_ ne null).deep.toString) +
             (exceptionHandlers.toString)+","+
             (attributes.toString)+

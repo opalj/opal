@@ -49,53 +49,39 @@ sealed trait StackMapFrame /*extends de.tud.cs.st.bat.StackMapFrame*/ {
     //final def frame_type = frameType 
 }
 
-case class SameFrame(frameType: Int)
-        extends StackMapFrame {
+final case class SameFrame(frameType: Int)
+    extends StackMapFrame
 
-}
-
-case class SameLocals1StackItemFrame(
+final case class SameLocals1StackItemFrame(
     frameType: Int,
     verificationTypeInfoStackItem: VerificationTypeInfo)
-        extends StackMapFrame {
+        extends StackMapFrame
 
-}
-
-case class SameLocals1StackItemFrameExtended(
+final case class SameLocals1StackItemFrameExtended(
     frameType: Int,
     offsetDelta: Int,
     verificationTypeInfoStackItem: VerificationTypeInfo)
-        extends StackMapFrame {
+        extends StackMapFrame
 
-}
-
-case class ChopFrame(
+final case class ChopFrame(
     frameType: Int,
     offsetDelta: Int)
-        extends StackMapFrame {
+        extends StackMapFrame
 
-}
-
-case class SameFrameExtended(
+final case class SameFrameExtended(
     frameType: Int,
     offsetDelta: Int)
-        extends StackMapFrame {
+        extends StackMapFrame
 
-}
-
-case class AppendFrame(
+final case class AppendFrame(
     frameType: Int,
     offsetDelta: Int,
     verificationTypeInfoLocals: VerificationTypeInfoLocals)
-        extends StackMapFrame {
+        extends StackMapFrame
 
-}
-
-case class FullFrame(
+final case class FullFrame(
     frameType: Int,
     offsetDelta: Int,
     verificationTypeInfoLocals: VerificationTypeInfoLocals,
     verificationTypeInfoStack: VerificationTypeInfoStack)
-        extends StackMapFrame {
-
-}
+        extends StackMapFrame 

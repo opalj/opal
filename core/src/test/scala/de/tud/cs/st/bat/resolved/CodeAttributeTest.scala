@@ -235,6 +235,7 @@ class CodeAttributeTest
     it should "be able to correctly extract the line number for the first instruction" in {
         codeOfConstructor.lineNumberTable.get.lookupLineNumber(0) should be(Some(41))
     }
+    
     it should "be able to correctly extract the line number of some intermediate instruction" in {
         codeOfConstructor.lineNumberTable.get.lookupLineNumber(14) should be(Some(44))
     }

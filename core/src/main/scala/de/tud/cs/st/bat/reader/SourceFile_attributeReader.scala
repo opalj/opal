@@ -60,20 +60,22 @@ trait SourceFile_attributeReader extends AttributeReader {
 
     type SourceFile_attribute <: Attribute
 
-    def SourceFile_attribute(attribute_name_index: Constant_Pool_Index,
-                             sourceFile_index: Constant_Pool_Index)(
-                                 implicit constant_pool: Constant_Pool): SourceFile_attribute
+    def SourceFile_attribute(
+        attribute_name_index: Constant_Pool_Index,
+        sourceFile_index: Constant_Pool_Index)(
+            implicit constant_pool: Constant_Pool): SourceFile_attribute
 
     //
     // IMPLEMENTATION
     //
 
     registerAttributeReader(
-        SourceFile_attributeReader.ATTRIBUTE_NAME ->
-            ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
+        SourceFile_attributeReader.ATTRIBUTE_NAME -> (
+            (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 val attribute_length = in.readInt
                 SourceFile_attribute(attribute_name_index, in.readUnsignedShort)(cp)
-            })
+            }
+        )
     )
 }
 

@@ -79,21 +79,25 @@ trait Code_attributeReader extends AttributeReader {
 
     def Instructions(in: DataInputStream, cp: Constant_Pool): Instructions
 
-    protected def Attributes(ap: AttributeParent, cp: Constant_Pool, in: DataInputStream): Attributes
+    protected def Attributes(
+        ap: AttributeParent,
+        cp: Constant_Pool, in: DataInputStream): Attributes
 
-    def Code_attribute(attribute_name_index: Constant_Pool_Index,
-                       attribute_length: Int,
-                       max_stack: Int,
-                       max_locals: Int,
-                       instructions: Instructions,
-                       exception_handlers: ExceptionHandlers,
-                       attributes: Attributes)(implicit constant_pool: Constant_Pool): Code_attribute
+    def Code_attribute(
+        attribute_name_index: Constant_Pool_Index,
+        attribute_length: Int,
+        max_stack: Int,
+        max_locals: Int,
+        instructions: Instructions,
+        exception_handlers: ExceptionHandlers,
+        attributes: Attributes)(implicit constant_pool: Constant_Pool): Code_attribute
 
-    def ExceptionTableEntry(start_pc: Int,
-                            end_pc: Int,
-                            handler_pc: Int,
-                            catch_type: Int)(
-                                implicit constant_pool: Constant_Pool): ExceptionTableEntry
+    def ExceptionTableEntry(
+        start_pc: Int,
+        end_pc: Int,
+        handler_pc: Int,
+        catch_type: Int)(
+            implicit constant_pool: Constant_Pool): ExceptionTableEntry
 
     //
     // IMPLEMENTATION
@@ -104,8 +108,8 @@ trait Code_attributeReader extends AttributeReader {
     type ExceptionHandlers = IndexedSeq[ExceptionTableEntry]
 
     registerAttributeReader(
-        Code_attributeReader.ATTRIBUTE_NAME ->
-            ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
+        Code_attributeReader.ATTRIBUTE_NAME -> (
+            (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 Code_attribute(
                     attribute_name_index,
                     in.readInt(),
@@ -120,7 +124,8 @@ trait Code_attributeReader extends AttributeReader {
                     },
                     Attributes(AttributesParent.Code, cp, in)
                 )(cp)
-            })
+            }
+        )
     )
 }
 

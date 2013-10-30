@@ -73,5 +73,4 @@ class ArrayTypeTest extends FunSuite with ParallelTestExecution {
                 assert(className === "java/lang/Object")
         }
     }
-
 }

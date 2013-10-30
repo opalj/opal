@@ -73,7 +73,9 @@ trait VerificationTypeInfoReader extends Constant_PoolAbstractions {
      * The Object_variable_info type indicates that the location contains an instance of the class
      * referenced by the constant pool entry.
      */
-    def ObjectVariableInfo(cpool_index: Constant_Pool_Index)(implicit cp: Constant_Pool): VerificationTypeInfo
+    def ObjectVariableInfo(
+        cpool_index: Constant_Pool_Index)(
+            implicit cp: Constant_Pool): VerificationTypeInfo
 
     //
     // IMPLEMENTATION

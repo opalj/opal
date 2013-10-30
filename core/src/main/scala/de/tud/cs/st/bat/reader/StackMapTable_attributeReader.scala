@@ -63,14 +63,15 @@ trait StackMapTable_attributeReader extends AttributeReader {
 
     type StackMapFrames = IndexedSeq[StackMapFrame]
 
-    def StackMapTable_attribute(attribute_name_index: Constant_Pool_Index,
-                                attribute_length: Int,
-                                stack_map_frames: StackMapFrames)(
-                                    implicit constant_pool: Constant_Pool): StackMapTable_attribute
+    def StackMapTable_attribute(
+        attribute_name_index: Constant_Pool_Index,
+        attribute_length: Int,
+        stack_map_frames: StackMapFrames)(
+            implicit constant_pool: Constant_Pool): StackMapTable_attribute
 
     registerAttributeReader(
-        StackMapTable_attributeReader.ATTRIBUTE_NAME ->
-            ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
+        StackMapTable_attributeReader.ATTRIBUTE_NAME -> (
+            (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 StackMapTable_attribute(
                     attribute_name_index,
                     in.readInt, // attribute_length
@@ -78,7 +79,8 @@ trait StackMapTable_attributeReader extends AttributeReader {
                         StackMapFrame(in, cp)
                     }
                 )(cp)
-            })
+            }
+        )
     )
 
 }

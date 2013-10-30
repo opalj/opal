@@ -336,16 +336,18 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     def ClassFiles(
         jarFile: ZipFile,
         f: (ZipFile, ZipEntry, ClassFile) ⇒ Unit,
-        exceptionHandler: (Exception) ⇒ Unit = logExceptionToConsoleErr) {
+        exceptionHandler: (Exception) ⇒ Unit = e ⇒ Console.err.println(e)) {
 
         import collection.JavaConversions._
         for (jarEntry ← (jarFile).entries.toIterable.par) {
             if (!jarEntry.isDirectory) {
                 val jarEntryName = jarEntry.getName
                 if (jarEntryName.endsWith(".class")) {
-                    onException(exceptionHandler) {
+                    try {
                         val classFile = ClassFile(jarFile, jarEntry)
                         f(jarFile, jarEntry, classFile)
+                    } catch {
+                        case e: Exception ⇒ exceptionHandler(e)
                     }
                 }
             }

@@ -95,9 +95,10 @@ trait SourceElementIDsMap extends CategorizedSourceElementIDs {
 
     private[this] val typeIDs = WeakHashMap[Type, Int]()
 
-    def sourceElementID(t: Type): Int = typeIDs.synchronized {
-        typeIDs.getOrElseUpdate(t, { val id = nextTypeID; nextTypeID += 1; id })
-    }
+    def sourceElementID(t: Type): Int =
+        typeIDs.synchronized {
+            typeIDs.getOrElseUpdate(t, { val id = nextTypeID; nextTypeID += 1; id })
+        }
 
     //
     // Associates each field with a unique ID
@@ -126,14 +127,22 @@ trait SourceElementIDsMap extends CategorizedSourceElementIDs {
 
     private[this] val methodIDs = WeakHashMap[ReferenceType, WeakHashMap[MethodDescriptor, WeakHashMap[String, Int]]]()
 
-    def sourceElementID(definingReferenceType: ReferenceType,
-                        methodName: String,
-                        methodDescriptor: MethodDescriptor): Int = methodIDs.synchronized {
-        methodIDs.
-            getOrElseUpdate(definingReferenceType, { WeakHashMap[MethodDescriptor, WeakHashMap[String, Int]]() }).
-            getOrElseUpdate(methodDescriptor, { WeakHashMap[String, Int]() }).
-            getOrElseUpdate(methodName, { val id = nextMethodID; nextMethodID += 1; id })
-    }
+    def sourceElementID(
+        definingReferenceType: ReferenceType,
+        methodName: String,
+        methodDescriptor: MethodDescriptor): Int =
+        methodIDs.synchronized {
+            methodIDs.
+                getOrElseUpdate(
+                    definingReferenceType,
+                    { WeakHashMap[MethodDescriptor, WeakHashMap[String, Int]]() }).
+                    getOrElseUpdate(
+                        methodDescriptor,
+                        { WeakHashMap[String, Int]() }).
+                        getOrElseUpdate(
+                            methodName,
+                            { val id = nextMethodID; nextMethodID += 1; id })
+        }
 
     def allSourceElementIDs(): Iterable[Int] =
         typeIDs.synchronized {

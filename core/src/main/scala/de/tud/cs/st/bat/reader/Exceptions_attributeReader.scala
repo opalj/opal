@@ -54,10 +54,11 @@ trait Exceptions_attributeReader extends AttributeReader {
     type Exceptions_attribute <: Attribute
     implicit val Exceptions_attributeManifest: ClassTag[Exceptions_attribute]
 
-    def Exceptions_attribute(attribute_name_index: Constant_Pool_Index,
-                             attribute_length: Int,
-                             exception_index_table: ExceptionIndexTable)(
-                                 implicit constant_pool: Constant_Pool): Exceptions_attribute
+    def Exceptions_attribute(
+        attribute_name_index: Constant_Pool_Index,
+        attribute_length: Int,
+        exception_index_table: ExceptionIndexTable)(
+            implicit constant_pool: Constant_Pool): Exceptions_attribute
 
     //
     // IMPLEMENTATION
@@ -68,8 +69,8 @@ trait Exceptions_attributeReader extends AttributeReader {
     type ExceptionIndexTable = IndexedSeq[Constant_Pool_Index]
 
     registerAttributeReader(
-        Exceptions_attributeReader.ATTRIBUTE_NAME ->
-            ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
+        Exceptions_attributeReader.ATTRIBUTE_NAME -> (
+            (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 val attribute_length = in.readInt()
                 Exceptions_attribute(
                     attribute_name_index, attribute_length,
@@ -77,7 +78,8 @@ trait Exceptions_attributeReader extends AttributeReader {
                         in.readUnsignedShort
                     }
                 )(cp)
-            })
+            }
+        )
     )
 }
 

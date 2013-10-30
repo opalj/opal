@@ -52,10 +52,11 @@ trait Exceptions_attributeBinding
     type Exceptions_attribute = de.tud.cs.st.bat.resolved.ExceptionTable
     val Exceptions_attributeManifest: ClassTag[Exceptions_attribute] = implicitly
 
-    def Exceptions_attribute(attribute_name_index: Constant_Pool_Index,
-                             attribute_length: Int,
-                             exception_index_table: ExceptionIndexTable)(
-                                 implicit cp: Constant_Pool): Exceptions_attribute = {
+    def Exceptions_attribute(
+        attribute_name_index: Constant_Pool_Index,
+        attribute_length: Int,
+        exception_index_table: ExceptionIndexTable)(
+            implicit cp: Constant_Pool): Exceptions_attribute = {
         new Exceptions_attribute(exception_index_table.map(e_idx ⇒ e_idx.asObjectType))
     }
 

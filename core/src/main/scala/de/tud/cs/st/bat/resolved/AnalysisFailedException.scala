@@ -34,6 +34,11 @@ package de.tud.cs.st
 package bat
 package resolved
 
+/**
+ * Exception that is thrown when an analysis fails.
+ *
+ * @author Michael Eichberg
+ */
 case class AnalysisFailedException(
     message: String,
     code: Code,

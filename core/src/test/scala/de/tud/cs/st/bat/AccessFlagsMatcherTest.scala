@@ -65,7 +65,6 @@ class AccessFlagsMatcherTest
             case ACC_INTERFACE() ⇒ fail("did match ACC_INTERFACE")
             case _               ⇒ /*success*/
         }
-
     }
 
     behavior of "a multiple access flags matcher"
@@ -109,5 +108,4 @@ class AccessFlagsMatcherTest
             case _                     ⇒ /*success*/
         }
     }
-
 }

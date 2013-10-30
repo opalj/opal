@@ -157,14 +157,14 @@ case class ClassFile(
      */
     // TODO [ClassFile][Test] We need a test to check that the correct method is returned.
     def staticInitializer: Option[Method] = {
-        methods.collectFirst({
+        methods collectFirst {
             case m @ Method(
                 _,
                 "<clinit>",
                 MethodDescriptor(Seq(), VoidType),
                 _
                 ) if majorVersion < 51 || m.isStatic ⇒ m
-        })
+        }
     }
 }
 /**

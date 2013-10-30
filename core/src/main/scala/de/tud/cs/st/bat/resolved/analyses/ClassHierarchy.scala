@@ -56,8 +56,8 @@ case class TypeHierarchyInformation(
         subinterfaceTypes: Set[ObjectType]) {
 
     /**
-     * Returns true if the supertype information is complete; that is this method returns
-     * true if the type was explicitly previously added. Returns false if this type
+     * Returns `true` if the supertype information is complete; that is this method returns
+     * `true` if the type was explicitly previously added. Returns `false` if this type
      * was referred to by some class that was previously added, but the defining class
      * file was not analyzed.
      */

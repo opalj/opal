@@ -41,7 +41,7 @@ package debug
  */
 trait PerformanceEvaluation {
 
-    import collection.mutable.Map
+    import collection.concurrent.{ Map, TrieMap }
 
     /**
      * Times the execution of a given method f (function literal / code block).
@@ -50,18 +50,16 @@ trait PerformanceEvaluation {
      * 	took to evaluate the function f.
      */
     def time[T](r: Long ⇒ Unit)(f: ⇒ T): T = {
-
         val startTime: Long = System.nanoTime
         try {
             f
         } finally {
             val endTime: Long = System.nanoTime
-
             r(endTime - startTime)
         }
     }
 
-    private[this] val times: Map[Symbol, Long] = Map()
+    private[this] val times: Map[Symbol, Long] = TrieMap.empty
 
     /**
      * Times the execution of the given method / function literal / code block and
@@ -79,7 +77,6 @@ trait PerformanceEvaluation {
             f
         } finally {
             val endTime = System.nanoTime
-
             val old = times.getOrElseUpdate(s, 0l)
             times.update(s, old + (endTime - startTime))
         }

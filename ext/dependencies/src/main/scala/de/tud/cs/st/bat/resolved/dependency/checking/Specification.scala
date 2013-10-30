@@ -45,20 +45,20 @@ import collection.immutable.SortedSet
 import language.implicitConversions
 
 /**
- * A specification of a project's architectural constraints.
- *
- * ===Usage===
- * First define the ensembles, then the rules and at last specify the
- * class files that should be analyzed. The rules will then be automatically
- * evaluated.
- *
- * ===Note===
- * One ensemble is predefined: [[Specification.empty]] it represents an ensemble that
- * contains no source elements and which can, e.g., be used to specify that no "real"
- * ensemble is allowed to depend on a specific ensemble.
- *
- * @author Michael Eichberg
- */
+  * A specification of a project's architectural constraints.
+  *
+  * ===Usage===
+  * First define the ensembles, then the rules and at last specify the
+  * class files that should be analyzed. The rules will then be automatically
+  * evaluated.
+  *
+  * ===Note===
+  * One ensemble is predefined: [[Specification.empty]] it represents an ensemble that
+  * contains no source elements and which can, e.g., be used to specify that no "real"
+  * ensemble is allowed to depend on a specific ensemble.
+  *
+  * @author Michael Eichberg
+  */
 class Specification
         extends SourceElementIDsMap
         with ReverseMapping
@@ -66,28 +66,28 @@ class Specification
 
     private[this] var theEnsembles = Map[Symbol, (SourceElementsMatcher, SortedSet[SourceElementID])]()
     /**
-     * The set of defined ensembles. An ensemble is identified by a symbol, a query which matches source
-     * elements and the project's source elements that are matched. The latter is available only after
-     * analyze was called.
-     */
+      * The set of defined ensembles. An ensemble is identified by a symbol, a query which matches source
+      * elements and the project's source elements that are matched. The latter is available only after
+      * analyze was called.
+      */
     def ensembles = theEnsembles
 
     // calculated after all class files have been loaded
     private[this] var theOutgoingDependencies = Map[SourceElementID, Set[(SourceElementID, DependencyType)]]()
     /**
-     * Mapping between a source element and those source elements it depends on/uses.
-     *
-     * This mapping is automatically created when analyze is called.
-     */
+      * Mapping between a source element and those source elements it depends on/uses.
+      *
+      * This mapping is automatically created when analyze is called.
+      */
     def outgoingDependencies = theOutgoingDependencies
 
     // calculated after all class files have been loaded
     private[this] var theIncomingDependencies = Map[SourceElementID, Set[(SourceElementID, DependencyType)]]()
     /**
-     * Mapping between a source element and those source elements that depend on it.
-     *
-     * This mapping is automatically created when analyze is called.
-     */
+      * Mapping between a source element and those source elements that depend on it.
+      *
+      * This mapping is automatically created when analyze is called.
+      */
     def incomingDependencies = theIncomingDependencies
 
     // calculated after the extension of all ensembles is determined
@@ -98,31 +98,36 @@ class Specification
     private[this] var unmatchedSourceElements: Set[SourceElementID] = _
 
     /**
-     * Adds a new ensemble definition to this architecture specification.
-     *
-     * @throws SpecificationError If the ensemble is already defined.
-     */
+      * Adds a new ensemble definition to this architecture specification.
+      *
+      * @throws SpecificationError If the ensemble is already defined.
+      */
     @throws(classOf[SpecificationError])
     def ensemble(ensembleSymbol: Symbol)(sourceElementMatcher: SourceElementsMatcher) {
         if (ensembles.contains(ensembleSymbol))
             throw new SpecificationError("The ensemble is already defined: "+ensembleSymbol)
 
-        theEnsembles = theEnsembles + ((ensembleSymbol, (sourceElementMatcher, SortedSet[SourceElementID]())))
+        theEnsembles += (
+            (
+                ensembleSymbol,
+                (sourceElementMatcher, SortedSet[SourceElementID]())
+            )
+        )
     }
 
     /**
-     * Represents an ensemble that contains no source elements. This can be used, e.g., to specify that
-     * a (set of) specific source element(s) is not allowed to depend on any other source elements (belonging
-     * to the project).
-     */
+      * Represents an ensemble that contains no source elements. This can be used, e.g., to specify that
+      * a (set of) specific source element(s) is not allowed to depend on any other source elements (belonging
+      * to the project).
+      */
     val empty = {
         ensemble('empty)(NoSourceElementsMatcher)
         'empty
     }
 
     /**
-     * Facilitates the definition of common source element matchers by means of common String patterns.
-     */
+      * Facilitates the definition of common source element matchers by means of common String patterns.
+      */
     @throws(classOf[SpecificationError])
     implicit def StringToSourceElementMatcher(matcher: String): SourceElementsMatcher = {
         if (matcher endsWith ".*")
@@ -138,8 +143,8 @@ class Specification
     }
 
     /**
-     * Given
-     */
+      * Given
+      */
     implicit def FileToClassFileProvider(file: java.io.File): Seq[(ClassFile, URL)] = Java7Framework.ClassFiles(file)
 
     case class Violation(source: SourceElementID, target: SourceElementID, dependencyType: DependencyType, description: String) {
@@ -161,17 +166,22 @@ class Specification
         def violations() = {
             val sourceEnsembleElements = (SortedSet[SourceElementID]() /: sourceEnsembles)(_ ++ ensembles(_)._2)
             val (_, targetEnsembleElements) = ensembles(targetEnsemble)
-            for (
-                targetEnsembleElement ← targetEnsembleElements if incomingDependencies.contains(targetEnsembleElement);
-                (incomingElement, dependencyType) ← incomingDependencies(targetEnsembleElement) if !(sourceEnsembleElements.contains(incomingElement) || targetEnsembleElements.contains(incomingElement))
-            ) yield Violation(incomingElement, targetEnsembleElement, dependencyType, "violation of a global incoming constraint ")
+            for {
+                targetEnsembleElement ← targetEnsembleElements
+                if incomingDependencies.contains(targetEnsembleElement);
+                (incomingElement, dependencyType) ← incomingDependencies(targetEnsembleElement)
+                if !(sourceEnsembleElements.contains(incomingElement) || targetEnsembleElements.contains(incomingElement))
+            } yield Violation(incomingElement, targetEnsembleElement, dependencyType, "violation of a global incoming constraint ")
         }
 
         override def toString =
             targetEnsemble+" is_only_to_be_used_by ("+sourceEnsembles.mkString(",")+")"
     }
 
-    case class LocalOutgoingConstraint(sourceEnsembleSymbol: Symbol, targetEnsembles: Seq[Symbol]) extends DependencyChecker {
+    case class LocalOutgoingConstraint(
+        sourceEnsembleSymbol: Symbol,
+        targetEnsembles: Seq[Symbol])
+            extends DependencyChecker {
 
         def violations() = {
 
@@ -184,10 +194,11 @@ class Specification
                 // to a target ensemble
                 (ensembles(sourceEnsembleSymbol)._2 /: targetEnsembles)(_ ++ ensembles(_)._2)
 
-            for (
-                sourceElementID ← ensembles(sourceEnsembleSymbol)._2;
-                (targetElementID, dependencyType) ← outgoingDependencies(sourceElementID) if !(allAllowedLocalTargetSourceElements contains targetElementID) && !(unmatchedSourceElements contains targetElementID)
-            ) yield Violation(sourceElementID, targetElementID, dependencyType, "violation of a local outgoing constraint")
+            for {
+                sourceElementID ← ensembles(sourceEnsembleSymbol)._2
+                (targetElementID, dependencyType) ← outgoingDependencies(sourceElementID)
+                if !(allAllowedLocalTargetSourceElements contains targetElementID) && !(unmatchedSourceElements contains targetElementID)
+            } yield Violation(sourceElementID, targetElementID, dependencyType, "violation of a local outgoing constraint")
 
         }
 
@@ -214,10 +225,12 @@ class Specification
         }
     }
 
-    protected implicit def EnsembleSymbolToSpecificationElementFactory(ensembleSymbol: Symbol): SpecificationFactory =
+    protected implicit def EnsembleSymbolToSpecificationElementFactory(
+        ensembleSymbol: Symbol): SpecificationFactory =
         SpecificationFactory(ensembleSymbol)
 
-    protected implicit def EnsembleToSourceElementMatcher(ensembleSymbol: Symbol): SourceElementsMatcher = {
+    protected implicit def EnsembleToSourceElementMatcher(
+        ensembleSymbol: Symbol): SourceElementsMatcher = {
         if (!ensembles.contains(ensembleSymbol))
             throw new SpecificationError("The ensemble: "+ensembleSymbol+" is not yet defined.")
 
@@ -225,8 +238,8 @@ class Specification
     }
 
     /**
-     * Returns a textual representation (as defined in a specification file) of an ensemble.
-     */
+      * Returns a textual representation (as defined in a specification file) of an ensemble.
+      */
     def ensembleToString(ensembleSymbol: Symbol): String = {
         var (sourceElementsMatcher, extension) = ensembles(ensembleSymbol)
         ensembleSymbol+"{"+
@@ -243,20 +256,24 @@ class Specification
 
     def analyze(classFileProviders: Traversable[(ClassFile, URL)]*) {
 
-        val dependencyExtractor = new DependencyExtractor(Specification.this) with NoSourceElementsVisitor {
+        val dependencyExtractor =
+            new DependencyExtractor(Specification.this) with NoSourceElementsVisitor {
 
-            def processDependency(sourceID: SourceElementID, targetID: SourceElementID, dType: DependencyType) {
-                theOutgoingDependencies =
-                    theOutgoingDependencies.updated(
-                        sourceID,
-                        theOutgoingDependencies.getOrElse(sourceID, Set()) + ((targetID, dType)))
-                theIncomingDependencies =
-                    theIncomingDependencies.updated(
-                        targetID,
-                        theIncomingDependencies.getOrElse(targetID, Set()) + ((sourceID, dType))
-                    )
+                def processDependency(
+                    sourceID: SourceElementID,
+                    targetID: SourceElementID,
+                    dType: DependencyType) {
+                    theOutgoingDependencies =
+                        theOutgoingDependencies.updated(
+                            sourceID,
+                            theOutgoingDependencies.getOrElse(sourceID, Set()) + ((targetID, dType)))
+                    theIncomingDependencies =
+                        theIncomingDependencies.updated(
+                            targetID,
+                            theIncomingDependencies.getOrElse(targetID, Set()) + ((sourceID, dType))
+                        )
+                }
             }
-        }
 
         val performance = new de.tud.cs.st.util.debug.PerformanceEvaluation {}
         import performance._

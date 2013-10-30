@@ -53,13 +53,17 @@ trait FieldsReader extends Constant_PoolAbstractions {
 
     type Attributes
 
-    protected def Attributes(ap: AttributeParent, cp: Constant_Pool, in: DataInputStream): Attributes
+    protected def Attributes(
+        ap: AttributeParent,
+        cp: Constant_Pool,
+        in: DataInputStream): Attributes
 
-    def Field_Info(access_flags: Int,
-                   name_index: Constant_Pool_Index,
-                   descriptor_index: Constant_Pool_Index,
-                   attributes: Attributes)(
-                       implicit constant_pool: Constant_Pool): Field_Info
+    def Field_Info(
+        access_flags: Int,
+        name_index: Constant_Pool_Index,
+        descriptor_index: Constant_Pool_Index,
+        attributes: Attributes)(
+            implicit constant_pool: Constant_Pool): Field_Info
 
     //
     // IMPLEMENTATION
@@ -77,12 +81,12 @@ trait FieldsReader extends Constant_PoolAbstractions {
         }
     }
 
-    private def Field_Info(in: DataInputStream, cp: Constant_Pool): Field_Info = {
+    private def Field_Info(in: DataInputStream, cp: Constant_Pool): Field_Info =
         Field_Info(
             in.readUnsignedShort,
             in.readUnsignedShort,
             in.readUnsignedShort,
             Attributes(AttributesParent.Field, cp, in)
         )(cp)
-    }
+
 }

@@ -79,9 +79,11 @@ object SignatureParser {
         //
 
         protected val classSignatureParser: Parser[ClassSignature] =
-            opt(formalTypeParametersParser) ~ superclassSignatureParser ~ rep(superinterfaceSignatureParser) ^^ {
-                case ftps ~ scs ~ siss ⇒ ClassSignature(ftps, scs, siss)
-            }
+            opt(formalTypeParametersParser) ~
+                superclassSignatureParser ~
+                rep(superinterfaceSignatureParser) ^^ {
+                    case ftps ~ scs ~ siss ⇒ ClassSignature(ftps, scs, siss)
+                }
 
         protected val fieldTypeSignatureParser: Parser[FieldTypeSignature] =
             classTypeSignatureParser | typeVariableSignatureParser | arrayTypeSignatureParser
@@ -207,7 +209,8 @@ object SignatureParser {
                 }
             }
 
-        protected def returnTypeParser: Parser[ReturnTypeSignature] = typeSignatureParser | 'V' ^^ (_ ⇒ VoidType)
+        protected def returnTypeParser: Parser[ReturnTypeSignature] =
+            typeSignatureParser | 'V' ^^ (_ ⇒ VoidType)
     }
 
     private def createSignatureParsers() = new SignatureParsers()

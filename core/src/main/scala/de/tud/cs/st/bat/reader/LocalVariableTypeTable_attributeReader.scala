@@ -65,17 +65,19 @@ trait LocalVariableTypeTable_attributeReader extends AttributeReader {
     type LocalVariableTypeTableEntry
     implicit val LocalVariableTypeTableEntryManifest: ClassTag[LocalVariableTypeTableEntry]
 
-    def LocalVariableTypeTable_attribute(attribute_name_index: Constant_Pool_Index,
-                                         attribute_length: Int,
-                                         local_variable_type_table: LocalVariableTypes)(
-                                             implicit constant_pool: Constant_Pool): LocalVariableTypeTable_attribute
+    def LocalVariableTypeTable_attribute(
+        attribute_name_index: Constant_Pool_Index,
+        attribute_length: Int,
+        local_variable_type_table: LocalVariableTypes)(
+            implicit constant_pool: Constant_Pool): LocalVariableTypeTable_attribute
 
-    def LocalVariableTypeTableEntry(start_pc: Int,
-                                    length: Int,
-                                    name_index: Constant_Pool_Index,
-                                    signature_index: Constant_Pool_Index,
-                                    index: Int)(
-                                        implicit constant_pool: Constant_Pool): LocalVariableTypeTableEntry
+    def LocalVariableTypeTableEntry(
+        start_pc: Int,
+        length: Int,
+        name_index: Constant_Pool_Index,
+        signature_index: Constant_Pool_Index,
+        index: Int)(
+            implicit constant_pool: Constant_Pool): LocalVariableTypeTableEntry
 
     //
     // IMPLEMENTATION
@@ -85,8 +87,8 @@ trait LocalVariableTypeTable_attributeReader extends AttributeReader {
     type LocalVariableTypes = IndexedSeq[LocalVariableTypeTableEntry]
 
     registerAttributeReader(
-        LocalVariableTypeTable_attributeReader.ATTRIBUTE_NAME ->
-            ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
+        LocalVariableTypeTable_attributeReader.ATTRIBUTE_NAME -> (
+            (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 val attribute_length = in.readInt()
                 LocalVariableTypeTable_attribute(
                     attribute_name_index, attribute_length,
@@ -101,7 +103,7 @@ trait LocalVariableTypeTable_attributeReader extends AttributeReader {
                     }
                 )(cp)
             }
-            )
+        )
     )
 
 }

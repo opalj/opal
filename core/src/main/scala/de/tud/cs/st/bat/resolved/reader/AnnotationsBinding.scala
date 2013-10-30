@@ -154,9 +154,10 @@ trait AnnotationsBinding
         new ClassValue(ReturnType(rt))
     }
 
-    def EnumValue(type_name_index: Constant_Pool_Index,
-                  const_name_index: Constant_Pool_Index)(
-                      implicit cp: Constant_Pool): ElementValue = {
+    def EnumValue(
+        type_name_index: Constant_Pool_Index,
+        const_name_index: Constant_Pool_Index)(
+            implicit cp: Constant_Pool): ElementValue = {
         new EnumValue(
             type_name_index.asFieldType /*<= triggers the lookup in the CP*/ .asObjectType,
             const_name_index.asString)

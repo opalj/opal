@@ -58,15 +58,17 @@ trait AttributesReader
     override type Constant_Pool = Array[Constant_Pool_Entry]
 
     /**
-     * This factory method is called if an attribute is encountered that is unknown. In general,
-     * such unknown attributes are represented by the <code>Unknown_attribute</code> class.
-     * However, if no representation of the unknown attribute is needed this method can return null -
-     * 	after reading (skipping) all bytes belonging to this attribute.
+     * This factory method is called if an attribute is encountered that is unknown.
+     * In general, such unknown attributes are represented by the
+     * <code>Unknown_attribute</code> class.
+     * However, if no representation of the unknown attribute is needed this method
+     * can return null - after reading (skipping) all bytes belonging to this attribute.
      */
-    def Unknown_attribute(ap: AttributeParent,
-                          cp: Constant_Pool,
-                          attribute_name_index: Int,
-                          in: DataInputStream): Unknown_attribute
+    def Unknown_attribute(
+        ap: AttributeParent,
+        cp: Constant_Pool,
+        attribute_name_index: Int,
+        in: DataInputStream): Unknown_attribute
 
     //
     // IMPLEMENTATION
@@ -114,8 +116,9 @@ trait AttributesReader
      */
     private[this] var attributeReaders: Map[String, (AttributeParent, Constant_Pool, Constant_Pool_Index, DataInputStream) ⇒ Attribute] = Map()
 
-    def registerAttributeReader(r: (String, (AttributeParent, Constant_Pool, Constant_Pool_Index, DataInputStream) ⇒ Attribute)): Unit = {
-        attributeReaders += r
+    def registerAttributeReader(
+        reader: (String, (AttributeParent, Constant_Pool, Constant_Pool_Index, DataInputStream) ⇒ Attribute)): Unit = {
+        attributeReaders += reader
     }
 
     private[this] var attributesPostProcessors: List[(Attributes) ⇒ Attributes] = List()
@@ -132,7 +135,7 @@ trait AttributesReader
     def Attributes(ap: AttributeParent, cp: Constant_Pool, in: DataInputStream): Attributes = {
         var attributes: Attributes = repeat(in.readUnsignedShort) {
             Attribute(ap, cp, in)
-        } filter (_ != null) // We remove the attributes we do not understand or which we do not need.
+        } filter (_ != null) // lets remove the attributes we don't need or understand
 
         attributesPostProcessors.foreach(p ⇒ attributes = p(attributes))
         attributes

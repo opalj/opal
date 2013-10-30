@@ -54,12 +54,13 @@ trait LocalVariableTypeTable_attributeBinding
     type LocalVariableTypeTableEntry = de.tud.cs.st.bat.resolved.LocalVariableType
     val LocalVariableTypeTableEntryManifest: ClassTag[LocalVariableTypeTableEntry] = implicitly
 
-    def LocalVariableTypeTableEntry(start_pc: Int,
-                                    length: Int,
-                                    name_index: Constant_Pool_Index,
-                                    signature_index: Constant_Pool_Index,
-                                    index: Int)(
-                                        implicit cp: Constant_Pool): LocalVariableType = {
+    def LocalVariableTypeTableEntry(
+        start_pc: Int,
+        length: Int,
+        name_index: Constant_Pool_Index,
+        signature_index: Constant_Pool_Index,
+        index: Int)(
+            implicit cp: Constant_Pool): LocalVariableType = {
 
         new LocalVariableType(
             start_pc,
@@ -69,10 +70,11 @@ trait LocalVariableTypeTable_attributeBinding
             index)
     }
 
-    def LocalVariableTypeTable_attribute(attribute_name_index: Constant_Pool_Index,
-                                         attribute_length: Int,
-                                         local_variable_type_table: LocalVariableTypes)(
-                                             implicit constant_pool: Constant_Pool) =
+    def LocalVariableTypeTable_attribute(
+        attribute_name_index: Constant_Pool_Index,
+        attribute_length: Int,
+        local_variable_type_table: LocalVariableTypes)(
+            implicit constant_pool: Constant_Pool) =
         new LocalVariableTypeTable(local_variable_type_table)
 }
 

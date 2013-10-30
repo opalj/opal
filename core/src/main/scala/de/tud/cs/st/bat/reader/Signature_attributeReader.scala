@@ -71,14 +71,16 @@ trait Signature_attributeReader extends AttributeReader {
         signature_index: Constant_Pool_Index)(
             implicit constant_pool: Constant_Pool, ap: AttributeParent): Signature_attribute
 
-    registerAttributeReader(Signature_attributeReader.ATTRIBUTE_NAME ->
-        ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
-            val attribute_length = in.readInt
-            Signature_attribute(
-                attribute_name_index,
-                in.readUnsignedShort
-            )(cp, ap)
-        })
+    registerAttributeReader(
+        Signature_attributeReader.ATTRIBUTE_NAME -> (
+            (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
+                val attribute_length = in.readInt
+                Signature_attribute(
+                    attribute_name_index,
+                    in.readUnsignedShort
+                )(cp, ap)
+            }
+        )
     )
 }
 

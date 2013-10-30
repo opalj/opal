@@ -78,7 +78,8 @@ case class MethodIdentifier(
     methodDescriptor: MethodDescriptor)
         extends StructureIdentifier {
 
-    def toHRR = declaringReferenceType.toJava+"."+methodName+""+(methodDescriptor.toUMLNotation)
+    def toHRR =
+        declaringReferenceType.toJava+"."+methodName+""+(methodDescriptor.toUMLNotation)
 
     def declaringPackage =
         declaringReferenceType match {
@@ -93,7 +94,7 @@ case class FieldIdentifier(
     declaringObjectType: ObjectType,
     fieldName: String)
         extends StructureIdentifier {
-    
+
     def toHRR = declaringObjectType.toJava+"."+fieldName
 
     def declaringPackage = Some(declaringObjectType.packageName)

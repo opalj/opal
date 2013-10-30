@@ -56,25 +56,33 @@ trait StackMapFrameReader extends Constant_PoolAbstractions {
 
     def SameFrame(frame_type: Int): StackMapFrame
 
-    def SameLocals1StackItemFrame(frame_type: Int,
-                                  verification_type_info_stack: VerificationTypeInfo): StackMapFrame
+    def SameLocals1StackItemFrame(
+        frame_type: Int,
+        verification_type_info_stack: VerificationTypeInfo): StackMapFrame
 
-    def SameLocals1StackItemFrameExtended(frame_type: Int,
-                                          offset_delta: Int,
-                                          verification_type_info_stack: VerificationTypeInfo): StackMapFrame
+    def SameLocals1StackItemFrameExtended(
+        frame_type: Int,
+        offset_delta: Int,
+        verification_type_info_stack: VerificationTypeInfo): StackMapFrame
 
-    def ChopFrame(frame_type: Int, offset_delta: Int): StackMapFrame
+    def ChopFrame(
+        frame_type: Int,
+        offset_delta: Int): StackMapFrame
 
-    def SameFrameExtended(frame_type: Int, offset_delta: Int): StackMapFrame
+    def SameFrameExtended(
+        frame_type: Int,
+        offset_delta: Int): StackMapFrame
 
-    def AppendFrame(frame_type: Int,
-                    offset_delta: Int,
-                    verification_type_info_locals: VerificationTypeInfoLocals): StackMapFrame
+    def AppendFrame(
+        frame_type: Int,
+        offset_delta: Int,
+        verification_type_info_locals: VerificationTypeInfoLocals): StackMapFrame
 
-    def FullFrame(frame_type: Int,
-                  offset_delta: Int,
-                  verification_type_info_locals: VerificationTypeInfoLocals,
-                  verification_type_info_stack: VerificationTypeInfoStack): StackMapFrame
+    def FullFrame(
+        frame_type: Int,
+        offset_delta: Int,
+        verification_type_info_locals: VerificationTypeInfoLocals,
+        verification_type_info_stack: VerificationTypeInfoStack): StackMapFrame
 
     //
     // IMPLEMENTATION

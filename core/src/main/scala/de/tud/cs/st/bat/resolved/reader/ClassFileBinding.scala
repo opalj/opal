@@ -62,42 +62,55 @@ trait ClassFileBinding
     type Interfaces <: IndexedSeq[ObjectType]
     val InterfaceManifest: ClassTag[Interface] = implicitly
 
-    def Interface(interface_index: Constant_Pool_Index)(implicit cp: Constant_Pool): Interface =
+    def Interface(
+        interface_index: Constant_Pool_Index)(
+            implicit cp: Constant_Pool): Interface =
         interface_index.asObjectType
 
-    def Field_Info(access_flags: Int,
-                   name_index: Constant_Pool_Index,
-                   descriptor_index: Constant_Pool_Index,
-                   attributes: Attributes)(
-                       implicit cp: Constant_Pool): Field_Info = {
-        new Field(access_flags, name_index.asString, descriptor_index.asFieldType, attributes)
+    def Field_Info(
+        access_flags: Int,
+        name_index: Constant_Pool_Index,
+        descriptor_index: Constant_Pool_Index,
+        attributes: Attributes)(
+            implicit cp: Constant_Pool): Field_Info = {
+        new Field(
+            access_flags,
+            name_index.asString,
+            descriptor_index.asFieldType,
+            attributes)
     }
 
-    def Method_Info(accessFlags: Int,
-                    name_index: Int,
-                    descriptor_index: Int,
-                    attributes: Attributes)(
-                        implicit cp: Constant_Pool): Method_Info = {
-        new Method(accessFlags, name_index.asString, descriptor_index.asMethodDescriptor, attributes)
+    def Method_Info(
+        accessFlags: Int,
+        name_index: Int,
+        descriptor_index: Int,
+        attributes: Attributes)(
+            implicit cp: Constant_Pool): Method_Info = {
+        new Method(
+            accessFlags,
+            name_index.asString,
+            descriptor_index.asMethodDescriptor,
+            attributes)
     }
 
-    def ClassFile(minor_version: Int, major_version: Int,
-                  access_flags: Int,
-                  this_class: Int,
-                  super_class: Int,
-                  interfaces: Interfaces,
-                  fields: Fields,
-                  methods: Methods,
-                  attributes: Attributes)(
-                      implicit cp: Constant_Pool): ClassFile = {
+    def ClassFile(
+        minor_version: Int, major_version: Int,
+        access_flags: Int,
+        this_class: Int,
+        super_class: Int,
+        interfaces: Interfaces,
+        fields: Fields,
+        methods: Methods,
+        attributes: Attributes)(
+            implicit cp: Constant_Pool): ClassFile = {
         new ClassFile(
             minor_version, major_version, access_flags,
             this_class.asObjectType,
             // to handle the special case that this class file represents java.lang.Object
             { if (super_class == 0) None else Some(super_class.asObjectType) },
-            interfaces, 
-            fields, 
-            methods, 
+            interfaces,
+            fields,
+            methods,
             attributes
         )
     }

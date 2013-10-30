@@ -54,22 +54,21 @@ sealed abstract class MethodDescriptor extends BootstrapArgument {
     //
     //
 
-    def toJava(methodName: String): String = {
+    def toJava(methodName: String): String =
         returnType.toJava+" "+
             methodName+
             "("+
             parameterTypes.map(_.toJava).mkString(",")+
             ")"
-    }
 
-    def toUMLNotation: String = {
+    def toUMLNotation: String =
         "("+{
             if (parameterTypes.size == 0)
                 ""
             else
                 (parameterTypes.head.toJava /: parameterTypes.tail)(_+", "+_.toJava)
         }+") : "+returnType.toJava
-    }
+
 }
 
 // 
@@ -106,13 +105,11 @@ case class MultiArgumentsMethodDescriptor private[resolved] (
 
 object NoArgsAndReturnVoid {
 
-    def unapply(md: MethodDescriptor): Boolean = {
+    def unapply(md: MethodDescriptor): Boolean =
         md match {
             case NoArgumentMethodDescriptor(VoidType) ⇒ true
             case _                                    ⇒ false
         }
-    }
-
 }
 
 object MethodDescriptor {

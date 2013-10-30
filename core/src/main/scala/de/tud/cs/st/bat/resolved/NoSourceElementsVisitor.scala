@@ -40,8 +40,11 @@ package resolved
  * @author Michael Eichberg
  */
 trait NoSourceElementsVisitor extends SourceElementsVisitor[Unit] {
+
     override def visit(classFile: ClassFile) { /* EMPTY */ }
+
     override def visit(classFile: ClassFile, method: Method) { /* EMPTY */ }
+
     override def visit(classFile: ClassFile, field: Field) { /* EMPTY */ }
 }
 

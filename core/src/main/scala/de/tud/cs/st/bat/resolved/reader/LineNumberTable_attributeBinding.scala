@@ -54,10 +54,11 @@ trait LineNumberTable_attributeBinding
 
     type LineNumberTable_attribute = de.tud.cs.st.bat.resolved.LineNumberTable
 
-    def LineNumberTable_attribute(attribute_name_index: Constant_Pool_Index,
-                                  attribute_length: Int,
-                                  line_number_table: LineNumbers)(
-                                      implicit constant_pool: Constant_Pool): LineNumberTable =
+    def LineNumberTable_attribute(
+        attribute_name_index: Constant_Pool_Index,
+        attribute_length: Int,
+        line_number_table: LineNumbers)(
+            implicit constant_pool: Constant_Pool): LineNumberTable =
         new LineNumberTable(line_number_table)
 
     def LineNumberTableEntry(start_pc: Int, line_number: Int) =
@@ -66,7 +67,7 @@ trait LineNumberTable_attributeBinding
     /**
      * Merge all line number tables and create a single sorted line number table.
      */
-    registerAttributesPostProcessor(attributes ⇒ {
+    registerAttributesPostProcessor { attributes ⇒
         val (lineNumberTables, otherAttributes) =
             attributes partition {
                 _ match {
@@ -85,7 +86,7 @@ trait LineNumberTable_attributeBinding
                 new LineNumberTable(sortedTable) +: otherAttributes
             }
         }
-    })
+    }
 }
 
 

@@ -57,7 +57,6 @@ class AttributesTest extends FunSuite with ParallelTestExecution {
 
         val cf2 = ClassFile(attributesJARFile, "attributes/DeprecatedByJavaDoc.class")
         assert(cf2.isDeprectated)
-
     }
 
     test("test that the source file attribute is present") {

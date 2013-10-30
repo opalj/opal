@@ -63,13 +63,16 @@ object ClassHierarchyVisualizer {
         val classHierarchyDescription =
             toDot.generateDot(Set(classHierarchy.toGraph), "back")
 
-        onException(e ⇒ println(classHierarchyDescription)) {
+        try {
             val desktop = java.awt.Desktop.getDesktop()
             val file = java.io.File.createTempFile("ClassHierarchy", ".dot")
             process(new java.io.FileOutputStream(file)) { fos ⇒
                 fos.write(classHierarchyDescription.getBytes("UTF-8"))
             }
             desktop.open(file)
+        } catch {
+            case _: Error | _: Exception ⇒
+                println(classHierarchyDescription)
         }
     }
 }

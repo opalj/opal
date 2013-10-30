@@ -39,7 +39,7 @@ package resolved
  * a unique id.
  *
  * ==Adaptation==
- * If you want to be able to efficiently retrieve a source element when you have an id, 
+ * If you want to be able to efficiently retrieve a source element when you have an id,
  * consider mixing in the [[de.tud.cs.st.bat.resolved.ReverseMapping]] trait.
  *
  * @author Michael Eichberg
@@ -60,14 +60,19 @@ trait SourceElementIDs {
      * the specified field.  If the field does not yet has an associated id,
      * new id is created and returned.
      */
-    def sourceElementID(declaringObjectType: ObjectType, fieldName: String): Int
+    def sourceElementID(
+        declaringObjectType: ObjectType,
+        fieldName: String): Int
 
     /**
      * Returns the ID associated with the given method. This ID uniquely identifies
      * the specified method. If the method does not yet has an associated id,
      * new id is created and returned.
      */
-    def sourceElementID(declaringReferenceType: ReferenceType, methodName: String, methodDescriptor: MethodDescriptor): Int
+    def sourceElementID(
+        declaringReferenceType: ReferenceType,
+        methodName: String,
+        methodDescriptor: MethodDescriptor): Int
 
     final def sourceElementID(classFile: ClassFile): Int =
         sourceElementID(classFile.thisClass)

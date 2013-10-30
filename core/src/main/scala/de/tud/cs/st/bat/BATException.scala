@@ -31,30 +31,12 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package de.tud.cs.st
-package bat
-package resolved
-package reader
-
-import de.tud.cs.st.bat.reader.Signature_attributeReader
 
 /**
- * Implements the factory method defined and used by the generic signature attribute reader.
+ * Exception that is thrown if some error is detected that is most likely the
+ * result of a bug in BAT (or an invalid class file).
  *
  * @author Michael Eichberg
  */
-trait Signature_attributeBinding
-        extends Signature_attributeReader
-        with ConstantPoolBinding
-        with AttributeBinding {
-
-    type Signature_attribute = Signature
-
-    def Signature_attribute(
-        attribute_name_index: Constant_Pool_Index,
-        signature_index: Constant_Pool_Index)(
-            implicit cp: Constant_Pool, ap: AttributeParent): Signature_attribute =
-        signature_index.asSignature(ap)
-
-}
-
+class BATException(message: String) extends RuntimeException(message)
 

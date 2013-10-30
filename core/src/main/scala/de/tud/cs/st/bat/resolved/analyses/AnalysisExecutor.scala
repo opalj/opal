@@ -62,7 +62,8 @@ trait AnalysisExecutor {
      */
     def analysisParametersDescription: String = ""
 
-    def checkAnalysisSpecificParameters(parameters: Seq[String]): Boolean = parameters.isEmpty
+    def checkAnalysisSpecificParameters(parameters: Seq[String]): Boolean =
+        parameters.isEmpty
 
     def printUsage() {
         println("Usage: java "+

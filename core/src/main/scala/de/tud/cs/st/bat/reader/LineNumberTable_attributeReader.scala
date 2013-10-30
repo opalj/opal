@@ -55,7 +55,7 @@ import java.io.DataInputStream
 trait LineNumberTable_attributeReader extends AttributeReader {
 
     // TODO [Optimization] Find out whether we want something like a compact LineNumberTable (e.g., one where the whole table is kept as is in memory and unpacked/split up on demand.) 
-    
+
     type LineNumberTable_attribute <: Attribute
 
     type LineNumberTableEntry
@@ -75,17 +75,19 @@ trait LineNumberTable_attributeReader extends AttributeReader {
 
     type LineNumbers = IndexedSeq[LineNumberTableEntry]
 
-    registerAttributeReader(LineNumberTable_attributeReader.ATTRIBUTE_NAME ->
-        ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
-            val attribute_length = in.readInt()
-            LineNumberTable_attribute(
-                attribute_name_index,
-                attribute_length,
-                repeat(in.readUnsignedShort) {
-                    LineNumberTableEntry(in.readUnsignedShort, in.readUnsignedShort)
-                }
-            )(cp)
-        })
+    registerAttributeReader(
+        LineNumberTable_attributeReader.ATTRIBUTE_NAME -> (
+            (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
+                val attribute_length = in.readInt()
+                LineNumberTable_attribute(
+                    attribute_name_index,
+                    attribute_length,
+                    repeat(in.readUnsignedShort) {
+                        LineNumberTableEntry(in.readUnsignedShort, in.readUnsignedShort)
+                    }
+                )(cp)
+            }
+        )
     )
 }
 

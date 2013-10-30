@@ -49,7 +49,8 @@ trait SourceFile_attributeBinding
 
     type SourceFile_attribute = de.tud.cs.st.bat.resolved.SourceFile
 
-    def SourceFile_attribute(attribute_name_index: Constant_Pool_Index,
+    def SourceFile_attribute(
+            attribute_name_index: Constant_Pool_Index,
                              sourceFile_index: Constant_Pool_Index)(
                                  implicit cp: Constant_Pool): SourceFile_attribute = {
         new SourceFile_attribute(sourceFile_index.asString)

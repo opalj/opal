@@ -58,22 +58,23 @@ trait ConstantValue_attributeReader extends AttributeReader {
 
     type ConstantValue_attribute <: Attribute
 
-    def ConstantValue_attribute(attribute_name_index: Constant_Pool_Index,
-                                constantvalue_index: Constant_Pool_Index)(
-                                    implicit constant_pool: Constant_Pool): ConstantValue_attribute
+    def ConstantValue_attribute(
+        attribute_name_index: Constant_Pool_Index,
+        constantvalue_index: Constant_Pool_Index)(
+            implicit constant_pool: Constant_Pool): ConstantValue_attribute
 
     //
     // IMPLEMENTATION
     //
 
     registerAttributeReader(
-        ConstantValue_attributeReader.ATTRIBUTE_NAME ->
-            ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
+        ConstantValue_attributeReader.ATTRIBUTE_NAME -> (
+            (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 val attribute_length = in.readInt
                 ConstantValue_attribute(attribute_name_index, in.readUnsignedShort)(cp)
-            })
+            }
+        )
     )
-
 }
 
 object ConstantValue_attributeReader {

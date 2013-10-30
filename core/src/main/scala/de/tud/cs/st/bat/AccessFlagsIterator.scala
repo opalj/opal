@@ -69,6 +69,9 @@ class AccessFlagsIterator(
         BATException("Unknown access flag(s): "+Integer.toHexString(flags))
     }
 }
+/**
+ * Factory for creating `AccessFlagsIterator` objects.
+ */
 object AccessFlagsIterator {
 
     def apply(accessFlags: Int, ctx: AccessFlagsContext) =

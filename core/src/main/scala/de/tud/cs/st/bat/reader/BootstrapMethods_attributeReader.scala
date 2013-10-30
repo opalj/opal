@@ -74,16 +74,20 @@ trait BootstrapMethods_attributeReader extends AttributeReader {
     type BootstrapArgument
     implicit val BootstrapArgumentManifest: ClassTag[BootstrapArgument]
 
-    def BootstrapMethods_attribute(attribute_name_index: Int,
-                                   attribute_length: Int,
-                                   bootstrap_methods: BootstrapMethods)(
-                                       implicit constant_pool: Constant_Pool): BootstrapMethods_attribute
+    def BootstrapMethods_attribute(
+        attribute_name_index: Int,
+        attribute_length: Int,
+        bootstrap_methods: BootstrapMethods)(
+            implicit constant_pool: Constant_Pool): BootstrapMethods_attribute
 
-    def BootstrapMethod(bootstrap_method_ref: Int,
-                        bootstrap_arguments: BootstrapArguments)(
-                            implicit constant_pool: Constant_Pool): BootstrapMethod
+    def BootstrapMethod(
+        bootstrap_method_ref: Int,
+        bootstrap_arguments: BootstrapArguments)(
+            implicit constant_pool: Constant_Pool): BootstrapMethod
 
-    def BootstrapArgument(constant_pool_ref: Int)(implicit constant_pool: Constant_Pool): BootstrapArgument
+    def BootstrapArgument(
+        constant_pool_ref: Int)(
+            implicit constant_pool: Constant_Pool): BootstrapArgument
 
     //
     // IMPLEMENTATION
@@ -109,15 +113,14 @@ trait BootstrapMethods_attributeReader extends AttributeReader {
     }
 
     registerAttributeReader(
-        BootstrapMethods_attributeReader.ATTRIBUTE_NAME ->
-            ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
+        BootstrapMethods_attributeReader.ATTRIBUTE_NAME -> (
+            (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 BootstrapMethods_attribute(
                     attribute_name_index, in.readInt, // attribute_length
-                    repeat(in.readUnsignedShort) {
-                        BootstrapMethod(in, cp)
-                    }
+                    repeat(in.readUnsignedShort) { BootstrapMethod(in, cp) }
                 )(cp)
-            })
+            }
+        )
     )
 }
 

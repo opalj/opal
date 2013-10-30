@@ -91,9 +91,11 @@ object AccessFlagsContexts extends Enumeration {
             ACC_STRICT,
             ACC_SYNTHETIC)
 
-    val CLASS_VISIBILITY_FLAGS: IndexedSeq[AccessFlag] = IndexedSeq(ACC_PUBLIC)
+    val CLASS_VISIBILITY_FLAGS: IndexedSeq[AccessFlag] =
+        IndexedSeq(ACC_PUBLIC)
 
-    val MEMBER_VISIBILITY_FLAGS: IndexedSeq[AccessFlag] = IndexedSeq(ACC_PUBLIC, ACC_PRIVATE, ACC_PROTECTED)
+    val MEMBER_VISIBILITY_FLAGS: IndexedSeq[AccessFlag] =
+        IndexedSeq(ACC_PUBLIC, ACC_PRIVATE, ACC_PROTECTED)
 
     val INNER_CLASS_VISIBILITY_FLAGS: IndexedSeq[AccessFlag] = MEMBER_VISIBILITY_FLAGS
 

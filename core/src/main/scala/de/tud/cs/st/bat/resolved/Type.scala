@@ -136,13 +136,16 @@ sealed trait Type {
     def computationalType: ComputationalType
 
     def asReferenceType: ReferenceType =
-        throw new ClassCastException("a "+this.getClass().getSimpleName()+" cannot be cast to a ReferenceType")
+        throw new ClassCastException(
+            "a "+this.getClass().getSimpleName()+" cannot be cast to a ReferenceType")
 
     def asArrayType: ArrayType =
-        throw new ClassCastException("a "+this.getClass().getSimpleName()+" cannot be cast to an ArrayType")
+        throw new ClassCastException(
+            "a "+this.getClass().getSimpleName()+" cannot be cast to an ArrayType")
 
     def asObjectType: ObjectType =
-        throw new ClassCastException("a "+this.getClass().getSimpleName()+" cannot be cast to an ObjectType")
+        throw new ClassCastException(
+            "a "+this.getClass().getSimpleName()+" cannot be cast to an ObjectType")
 
     def toJava: String
 }
@@ -161,7 +164,7 @@ sealed trait VoidType extends Type with ReturnTypeSignature {
     override final def isVoidType = true
 
     def computationalType: ComputationalType =
-        throw new Error("\"void\" values do not have a computational type")
+        throw new UnsupportedOperationException("\"void\" does not have a computational type")
 
     def toJava: String = "void"
 

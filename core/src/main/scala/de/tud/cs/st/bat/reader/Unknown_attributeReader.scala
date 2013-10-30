@@ -49,18 +49,21 @@ trait Unknown_attributeReader
     // ABSTRACT DEFINITIONS
     //
 
-    def Unknown_attribute(attribute_name_index: Constant_Pool_Index,
-                          info: Array[Byte])(
-                              implicit constant_pool: Constant_Pool): Unknown_attribute
+    def Unknown_attribute(
+        attribute_name_index: Constant_Pool_Index,
+        info: Array[Byte])(
+            implicit constant_pool: Constant_Pool): Unknown_attribute
 
     //
     // IMPLEMENTATION
     //
 
-    def Unknown_attribute(ap: AttributeParent,
-                          cp: Constant_Pool,
-                          attribute_name_index: Constant_Pool_Index,
-                          in: DataInputStream): Unknown_attribute = {
+    def Unknown_attribute(
+        ap: AttributeParent,
+        cp: Constant_Pool,
+        attribute_name_index: Constant_Pool_Index,
+        in: DataInputStream): Unknown_attribute = {
+
         val info = new Array[Byte](in.readInt)
         in.readFully(info)
 

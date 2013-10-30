@@ -52,21 +52,23 @@ trait Deprecated_attributeReader extends AttributeReader {
 
     type Deprecated_attribute <: Attribute
 
-    def Deprecated_attribute(attribute_name_index: Constant_Pool_Index)(implicit constant_pool: Constant_Pool): Deprecated_attribute
+    def Deprecated_attribute(
+        attribute_name_index: Constant_Pool_Index)(
+            implicit constant_pool: Constant_Pool): Deprecated_attribute
 
     //
     // IMPLEMENTATION
     //
 
     registerAttributeReader(
-        Deprecated_attributeReader.ATTRIBUTE_NAME ->
-            ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
+        Deprecated_attributeReader.ATTRIBUTE_NAME -> (
+            (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 val attribute_length = in.readInt
                 Deprecated_attribute(attribute_name_index)(cp)
-            })
+            }
+        )
     )
 }
-
 object Deprecated_attributeReader {
 
     val ATTRIBUTE_NAME = "Deprecated"

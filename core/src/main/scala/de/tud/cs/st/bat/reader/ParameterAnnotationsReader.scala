@@ -59,7 +59,9 @@ trait ParameterAnnotationsReader extends Constant_PoolAbstractions {
 
     type ParameterAnnotations = IndexedSeq[IndexedSeq[Annotation]]
 
-    def ParameterAnnotations(in: DataInputStream, cp: Constant_Pool): ParameterAnnotations = {
+    def ParameterAnnotations(
+        in: DataInputStream,
+        cp: Constant_Pool): ParameterAnnotations = {
         repeat(in.readUnsignedByte) {
             repeat(in.readUnsignedShort) {
                 Annotation(in, cp)

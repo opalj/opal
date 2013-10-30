@@ -61,15 +61,17 @@ trait InnerClasses_attributeReader extends AttributeReader {
 
     type InnerClasses_attribute <: Attribute
 
-    def InnerClasses_attribute(attribute_name_index: Constant_Pool_Index,
-                               inner_classes: InnerClasses)(
-                                   implicit constant_pool: Constant_Pool): InnerClasses_attribute
+    def InnerClasses_attribute(
+        attribute_name_index: Constant_Pool_Index,
+        inner_classes: InnerClasses)(
+            implicit constant_pool: Constant_Pool): InnerClasses_attribute
 
-    def InnerClassesEntry(inner_class_info_index: Constant_Pool_Index,
-                          outer_class_info_index: Constant_Pool_Index,
-                          inner_name_index: Constant_Pool_Index,
-                          inner_class_access_flags: Int)(
-                              implicit constant_pool: Constant_Pool): InnerClassesEntry
+    def InnerClassesEntry(
+        inner_class_info_index: Constant_Pool_Index,
+        outer_class_info_index: Constant_Pool_Index,
+        inner_name_index: Constant_Pool_Index,
+        inner_class_access_flags: Int)(
+            implicit constant_pool: Constant_Pool): InnerClassesEntry
 
     //
     // IMPLEMENTATION
@@ -79,8 +81,8 @@ trait InnerClasses_attributeReader extends AttributeReader {
     type InnerClasses = IndexedSeq[InnerClassesEntry]
 
     registerAttributeReader(
-        InnerClasses_attributeReader.ATTRIBUTE_NAME ->
-            ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
+        InnerClasses_attributeReader.ATTRIBUTE_NAME -> (
+            (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 val attribute_length = in.readInt()
                 InnerClasses_attribute(
                     attribute_name_index,
@@ -91,7 +93,8 @@ trait InnerClasses_attributeReader extends AttributeReader {
                         )(cp)
                     }
                 )(cp)
-            })
+            }
+        )
     )
 }
 

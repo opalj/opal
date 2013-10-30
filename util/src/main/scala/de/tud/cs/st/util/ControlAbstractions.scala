@@ -49,63 +49,8 @@ import java.io.InputStream
 object ControlAbstractions {
 
     /**
-     * Logs the exception to the console, but otherwise swallows the exception.
-     */
-    def logExceptionToConsoleErr(e: Exception): Unit = Console.err.print(e.toString)
-
-    /**
-     * Calls the given `exceptionHandler` when an exception is thrown while
-     * evaluating the expression/function `f` but does not (re)throw
-     * the underlying exception on its own. I.e., unless the exception handler (re)throws
-     * (the)an exception the program will continue with the expression after `f` –
-     * the exception is swallowed.
-     *
-     * If the exception is of type `java.lang.Error` or is an instance of
-     * `java.lang.Throwable`, the exception will not be caught and is directly
-     * rethrown.
-     *
-     * If you simply want to log the exception you can use the method
-     * `logExceptionToConsoleErr` as the `exceptionHandler`. This is particularly
-     * meaningful if you have a method that is parameterized by an
-     * exception handler and you want to provide a sensible default.
-     *
-     * ==Examples==
-     *
-     * ===Basic Usage===
-     * {{{
-     * val files = new java.io.File(System.getProperty("user.dir")).listFiles
-     * for (file <- files) {
-     *     onException(){ println(file.getName) }
-     * }
-     * }}}
-     *
-     * ===Complex Example===
-     * {{{
-     * def doIt(zipFile: ZipFile,
-     *          f: (ZipFile, ZipEntry, ClassFile) ⇒ Unit,
-     *          exceptionHandler: exceptionHandler: (Exception) ⇒ Unit = logExceptionToConsoleErr) {
-     *     import collection.JavaConversions._
-     *     for (zipEntry ← (zipFile).entries.toIterable) {
-     *         onException(exceptionHandler){
-     *             println(zipFile.toString+ " "+zipEntry.toString)
-     *         }
-     *     }
-     * }
-     * }}}
-     */
-    def onException[T, E <: T](exceptionHandler: (Exception) ⇒ E = logExceptionToConsoleErr _)(f: ⇒ T) {
-        try {
-            f
-        } catch {
-            case e: Exception ⇒ {
-                exceptionHandler(e)
-            }
-        }
-    }
-
-    /**
-     * This function takes a function `f` that creates a new `Closeable` resource (`f` is a
-     * named parameter) and a function `r` that processes an input stream.
+     * This function takes a function `f` that creates a new `Closeable` resource
+     * (`f` is a named parameter) and a function `r` that processes an input stream.
      * This function takes care of the correct handling of input streams.
      * When `r` has finished processing the input stream, the stream is closed.
      * If `f` returns `null`, `null` is passed to `r`.
@@ -115,22 +60,8 @@ object ControlAbstractions {
         try {
             r(in)
         } finally {
-            if (in != null) in.close
+            if (in != null) in.close()
         }
-    }
-
-    /**
-     * Evaluates the given function `f` the given number of `times` and stores
-     * the result in a newly created array.
-     */
-    def repeatToArray[T: ClassTag](times: Int)(f: ⇒ T): Array[T] = {
-        val array = new Array[T](times)
-        var i = 0
-        while (i < times) {
-            array(i) = f
-            i += 1
-        }
-        array
     }
 
     /**
@@ -165,9 +96,9 @@ object ControlAbstractions {
     //            }
     //            array
     //        }
-    // The macro-based implementation has proven to be approx. 1,3 to 1,4 times faster when
-    // the number of times that we repeat an operation (5 to 15 times) is small (which is generally the case
-    // when we read in Java class files)
+    // The macro-based implementation has proven to be approx. 1,3 to 1,4 times faster 
+    // when the number of times that we repeat an operation is small (e.g., 1 to 15 times)  
+    // (which is very often the case when we read in Java class files)
 
 }
 
@@ -182,14 +113,14 @@ private object ControlAbstractionsImplementation {
         import c.universe._
 
         reify {
-            val size = times.splice // we must not evaluate the expression more than once!
+            val size = times.splice // => times is evaluated only once
             if (size == 0) {
                 IndexedSeq.empty
             } else {
                 val array = new scala.collection.mutable.ArrayBuffer[T](size)
                 var i = 0
                 while (i < size) {
-                    val value = f.splice // we evaluate the expression the given number of times
+                    val value = f.splice // => we evaluate f the given number of times
                     array += value
                     i += 1
                 }

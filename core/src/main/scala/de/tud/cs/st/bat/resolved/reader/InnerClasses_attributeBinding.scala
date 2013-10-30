@@ -53,15 +53,17 @@ trait InnerClasses_attributeBinding
     type InnerClassesEntry = de.tud.cs.st.bat.resolved.InnerClass
     val InnerClassesEntryManifest: ClassTag[InnerClassesEntry] = implicitly
 
-    def InnerClasses_attribute(attribute_name_index: Constant_Pool_Index,
-                               inner_classes: InnerClasses)(
-                                   implicit constant_pool: Constant_Pool): InnerClasses_attribute =
+    def InnerClasses_attribute(
+        attribute_name_index: Constant_Pool_Index,
+        inner_classes: InnerClasses)(
+            implicit constant_pool: Constant_Pool): InnerClasses_attribute =
         new InnerClasses_attribute(inner_classes)
 
-    def InnerClassesEntry(inner_class_info_index: Constant_Pool_Index,
-                          outer_class_info_index: Constant_Pool_Index,
-                          inner_name_index: Constant_Pool_Index,
-                          inner_class_access_flags: Int)(implicit cp: Constant_Pool) = {
+    def InnerClassesEntry(
+        inner_class_info_index: Constant_Pool_Index,
+        outer_class_info_index: Constant_Pool_Index,
+        inner_name_index: Constant_Pool_Index,
+        inner_class_access_flags: Int)(implicit cp: Constant_Pool) = {
         new InnerClassesEntry(
             inner_class_info_index.asObjectType,
             if (outer_class_info_index == 0) None else Some(outer_class_info_index.asObjectType),

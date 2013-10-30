@@ -46,7 +46,9 @@ trait Deprecated_attributeBinding
 
     type Deprecated_attribute = de.tud.cs.st.bat.resolved.Attribute
 
-    def Deprecated_attribute(attribute_name_index: Constant_Pool_Index)(implicit constant_pool: Constant_Pool) =
+    def Deprecated_attribute(
+        attribute_name_index: Constant_Pool_Index)(
+            implicit constant_pool: Constant_Pool) =
         de.tud.cs.st.bat.resolved.Deprecated
 
 }

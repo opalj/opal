@@ -38,7 +38,7 @@ package resolved
  * Represents a single field declaration/definition.
  *
  * @param accessFlags This field's access flags. To analyze the access flags
- *  bit vector use [[de.tud.cs.st.bat.AccessFlag]] or 
+ *  bit vector use [[de.tud.cs.st.bat.AccessFlag]] or
  *  [[de.tud.cs.st.bat.AccessFlagsIterator]] or use pattern matching.
  * @param name The name of this field. Note, that this name is not required to be a valid
  *  Java programming language identifier.
@@ -81,7 +81,6 @@ case class Field(
     def constantValue: Option[ConstantValue[_]] =
         attributes collectFirst { case cv: ConstantValue[_] ⇒ cv }
 
-    def toJavaSignature: String = {
-        fieldType.toJava+" "+name
-    }
+    def toJavaSignature: String = fieldType.toJava+" "+name
+
 }

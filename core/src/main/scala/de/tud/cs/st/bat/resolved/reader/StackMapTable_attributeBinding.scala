@@ -78,35 +78,45 @@ trait StackMapTable_attributeBinding
 
     val StackMapFrameManifest: ClassTag[StackMapFrame] = implicitly
 
-    def StackMapTable_attribute(attribute_name_index: Constant_Pool_Index,
-                                attribute_length: Int,
-                                stack_map_frames: StackMapFrames)(implicit cp: Constant_Pool) =
+    def StackMapTable_attribute(
+        attribute_name_index: Constant_Pool_Index,
+        attribute_length: Int,
+        stack_map_frames: StackMapFrames)(implicit cp: Constant_Pool) =
         new StackMapTable(stack_map_frames)
 
     def SameFrame(frame_type: Int): StackMapFrame =
         new SameFrame(frame_type)
 
     def SameLocals1StackItemFrame(
-        frame_type: Int, verification_type_info_stack: VerificationTypeInfo): StackMapFrame =
+        frame_type: Int,
+        verification_type_info_stack: VerificationTypeInfo): StackMapFrame =
         new SameLocals1StackItemFrame(frame_type, verification_type_info_stack)
 
-    def SameLocals1StackItemFrameExtended(frame_type: Int,
-                                          offset_delta: Int,
-                                          verification_type_info_stack: VerificationTypeInfo): StackMapFrame =
+    def SameLocals1StackItemFrameExtended(
+        frame_type: Int,
+        offset_delta: Int,
+        verification_type_info_stack: VerificationTypeInfo): StackMapFrame =
         new SameLocals1StackItemFrameExtended(frame_type, offset_delta, verification_type_info_stack)
 
-    def ChopFrame(frame_type: Int, offset_delta: Int): StackMapFrame =
+    def ChopFrame(
+        frame_type: Int,
+        offset_delta: Int): StackMapFrame =
         new ChopFrame(frame_type, offset_delta)
 
-    def SameFrameExtended(frame_type: Int, offset_delta: Int): StackMapFrame =
+    def SameFrameExtended(
+        frame_type: Int,
+        offset_delta: Int): StackMapFrame =
         new SameFrameExtended(frame_type, offset_delta)
 
-    def AppendFrame(frame_type: Int, offset_delta: Int, verification_type_info_locals: VerificationTypeInfoLocals): StackMapFrame =
+    def AppendFrame(frame_type: Int,
+                    offset_delta: Int,
+                    verification_type_info_locals: VerificationTypeInfoLocals): StackMapFrame =
         new AppendFrame(frame_type, offset_delta, verification_type_info_locals)
 
-    def FullFrame(frame_type: Int, offset_delta: Int,
-                  verification_type_info_locals: VerificationTypeInfoLocals,
-                  verification_type_info_stack: VerificationTypeInfoStack): StackMapFrame =
+    def FullFrame(
+        frame_type: Int, offset_delta: Int,
+        verification_type_info_locals: VerificationTypeInfoLocals,
+        verification_type_info_stack: VerificationTypeInfoStack): StackMapFrame =
         new FullFrame(frame_type, offset_delta, verification_type_info_locals, verification_type_info_stack)
 
     def TopVariableInfo() = de.tud.cs.st.bat.resolved.TopVariableInfo

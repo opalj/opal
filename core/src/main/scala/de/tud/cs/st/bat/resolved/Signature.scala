@@ -56,9 +56,7 @@ sealed trait ThrowsSignature extends SignatureElement {
 /**
  * An attribute-level signature as defined in the JVM specification.
  */
-sealed trait Signature extends SignatureElement with Attribute {
-
-}
+sealed trait Signature extends SignatureElement with Attribute
 
 case class ClassSignature(
     formalTypeParameters: Option[List[FormalTypeParameter]],

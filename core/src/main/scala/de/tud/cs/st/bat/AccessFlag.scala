@@ -165,7 +165,8 @@ object ACC_NATIVE extends AccessFlag {
 }
 
 object ACC_INTERFACE extends AccessFlag {
-    final val javaName: Option[String] = None // this flag modifies the semantics of a class, but it is not an additional flag
+    // this flag modifies the semantics of a class, but it is not an additional flag
+    final val javaName: Option[String] = None 
     final val mask = 0x0200
 }
 

@@ -43,11 +43,14 @@ trait ReverseMapping extends CategorizedSourceElementIDs {
 
     import scala.collection.mutable.ArrayBuffer
 
-    private[this] val typeIDs = new ArrayBuffer[Type](50000)
+    private[this] val typeIDs =
+        new ArrayBuffer[Type](50000)
 
-    private[this] val fieldIDs = new ArrayBuffer[(ObjectType, String)](100000)
+    private[this] val fieldIDs =
+        new ArrayBuffer[(ObjectType, String)](100000)
 
-    private[this] val methodIDs = new ArrayBuffer[(ReferenceType, String, MethodDescriptor)](250000)
+    private[this] val methodIDs =
+        new ArrayBuffer[(ReferenceType, String, MethodDescriptor)](250000)
 
     abstract override def sourceElementID(t: Type): Int = {
         val id = super.sourceElementID(t)
@@ -57,7 +60,10 @@ trait ReverseMapping extends CategorizedSourceElementIDs {
         id
     }
 
-    abstract override def sourceElementID(declaringType: ObjectType, fieldName: String): Int = {
+    abstract override def sourceElementID(
+        declaringType: ObjectType,
+        fieldName: String): Int = {
+
         val id = super.sourceElementID(declaringType, fieldName)
         val index = id - LOWEST_FIELD_ID
         if (index >= fieldIDs.size)
@@ -65,7 +71,11 @@ trait ReverseMapping extends CategorizedSourceElementIDs {
         id
     }
 
-    abstract override def sourceElementID(declaringType: ReferenceType, methodName: String, methodDescriptor: MethodDescriptor): Int = {
+    abstract override def sourceElementID(
+        declaringType: ReferenceType,
+        methodName: String,
+        methodDescriptor: MethodDescriptor): Int = {
+
         val id = super.sourceElementID(declaringType, methodName, methodDescriptor)
         val index = id - LOWEST_METHOD_ID
         if (index >= methodIDs.size)

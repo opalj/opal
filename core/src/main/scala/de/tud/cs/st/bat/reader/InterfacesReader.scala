@@ -53,7 +53,9 @@ trait InterfacesReader extends Constant_PoolAbstractions {
     type Interface
     implicit val InterfaceManifest: ClassTag[Interface]
 
-    def Interface(interface_index: Constant_Pool_Index)(implicit constant_pool: Constant_Pool): Interface
+    def Interface(
+        interface_index: Constant_Pool_Index)(
+            implicit constant_pool: Constant_Pool): Interface
 
     //
     // IMPLEMENTATION
