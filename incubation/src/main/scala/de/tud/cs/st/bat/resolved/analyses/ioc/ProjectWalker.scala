@@ -36,6 +36,13 @@ package resolved
 package analyses
 package ioc
 
+import de.tud.cs.st.bat.resolved.ClassFile
+import de.tud.cs.st.bat.resolved.Code
+import de.tud.cs.st.bat.resolved.Method
+import de.tud.cs.st.bat.resolved.analyses.Analysis
+import de.tud.cs.st.bat.resolved.analyses.Project
+import de.tud.cs.st.bat.resolved.analyses.ReportableAnalysisResult
+
 /**
  * Controls the execution of multiple analyses; i.e., the director takes care of
  * traversing all resources of a project and calling the individual analyses to perform

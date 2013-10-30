@@ -3,7 +3,7 @@ import Keys._
 
 object BatBuild extends Build {
 	
-	lazy val bat = Project(id="BAT", base=file(".")) aggregate(util, core, ext_ai, ext_dependencies, demo)
+	lazy val bat = Project(id="BAT", base=file(".")) aggregate(util, core, ext_ai, ext_dependencies, demo, incubation)
 
 	lazy val util = Project(id="Core-Util", base=file("util")) 
 	
@@ -14,5 +14,7 @@ object BatBuild extends Build {
 	lazy val ext_dependencies = Project(id="Ext-Dependencies", base=file("ext/dependencies")) dependsOn(core % "test->test;compile->compile")			   
 
 	lazy val demo = Project(id="Demo", base=file("demo")) dependsOn(core, ext_ai, ext_dependencies)
+	
+	lazy val incubation = Project(id="Incubation", base=file("incubation")) dependsOn(core, ext_ai, ext_dependencies)
 }
 
