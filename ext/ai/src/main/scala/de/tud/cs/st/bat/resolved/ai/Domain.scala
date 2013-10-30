@@ -1181,30 +1181,40 @@ trait Domain[+I] {
     // METHOD INVOCATIONS
     //
 
-    // TODO [AI] Add support for Java7's Invokedynamic to the Domain.
-    def invokeinterface(pc: PC,
-                        declaringClass: ReferenceType,
-                        name: String,
-                        methodDescriptor: MethodDescriptor,
-                        operands: List[DomainValue]): OptionalReturnValueOrExceptions
+    def invokedynamic(
+        pc: PC,
+        bootstrapMethod: BootstrapMethod,
+        name: String,
+        methodDescriptor: MethodDescriptor,
+        operands: List[DomainValue]) : Computation[DomainValue,Iterable[DomainValue]]
 
-    def invokevirtual(pc: PC,
-                      declaringClass: ReferenceType,
-                      name: String,
-                      methodDescriptor: MethodDescriptor,
-                      operands: List[DomainValue]): OptionalReturnValueOrExceptions
+    def invokeinterface(
+        pc: PC,
+        declaringClass: ReferenceType,
+        name: String,
+        methodDescriptor: MethodDescriptor,
+        operands: List[DomainValue]): OptionalReturnValueOrExceptions
 
-    def invokespecial(pc: PC,
-                      declaringClass: ReferenceType,
-                      name: String,
-                      methodDescriptor: MethodDescriptor,
-                      operands: List[DomainValue]): OptionalReturnValueOrExceptions
+    def invokevirtual(
+        pc: PC,
+        declaringClass: ReferenceType,
+        name: String,
+        methodDescriptor: MethodDescriptor,
+        operands: List[DomainValue]): OptionalReturnValueOrExceptions
 
-    def invokestatic(pc: PC,
-                     declaringClass: ReferenceType,
-                     name: String,
-                     methodDescriptor: MethodDescriptor,
-                     operands: List[DomainValue]): OptionalReturnValueOrExceptions
+    def invokespecial(
+        pc: PC,
+        declaringClass: ReferenceType,
+        name: String,
+        methodDescriptor: MethodDescriptor,
+        operands: List[DomainValue]): OptionalReturnValueOrExceptions
+
+    def invokestatic(
+        pc: PC,
+        declaringClass: ReferenceType,
+        name: String,
+        methodDescriptor: MethodDescriptor,
+        operands: List[DomainValue]): OptionalReturnValueOrExceptions
 
     //
     // RELATIONAL OPERATORS

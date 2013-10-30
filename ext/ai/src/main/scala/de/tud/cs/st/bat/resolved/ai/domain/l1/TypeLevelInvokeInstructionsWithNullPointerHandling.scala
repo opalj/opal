@@ -71,6 +71,14 @@ trait TypeLevelInvokeInstructionsWithNullPointerHandling { this: Domain[_] ⇒
                     Set(newObject(pc, NullPointerException)))
         }
 
+    def invokedynamic(
+        pc: PC,
+        bootstrapMethod: BootstrapMethod,
+        name: String,
+        methodDescriptor: MethodDescriptor,
+        operands: List[DomainValue]): Computation[DomainValue, Iterable[DomainValue]] =
+        ComputedValue(newTypedValue(pc, ObjectType.Object))
+
     def invokeinterface(pc: PC,
                         declaringClass: ReferenceType,
                         name: String,

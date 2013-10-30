@@ -1107,11 +1107,20 @@ trait AI[D <: Domain[_]] {
                     // METHOD INVOCATIONS
                     //
                     case 186 /*invokedynamic*/ ⇒
-                        //                val invoke = instruction.asInstanceOf[INVOKEDYNAMIC]
-                        //                val bootstrapMethod = invoke.bootstrapMethod
-                        //                val bootbootstrapMethod.bootstrapArguments
-                        //                //methodHandle.
-                        BATException("invokedynamic is not yet supported")
+                        val invoke = instruction.asInstanceOf[INVOKEDYNAMIC]
+                        val argsCount = invoke.methodDescriptor.parametersCount
+                        val computation =
+                            domain.invokedynamic(
+                                pc,
+                                invoke.bootstrapMethod,
+                                invoke.name,
+                                invoke.methodDescriptor,
+                                operands.take(argsCount)
+                            )
+                        computationWithReturnValueAndExceptions(
+                            computation,
+                            operands.drop(argsCount)
+                        )
 
                     case 185 /*invokeinterface*/ ⇒
                         val invoke = instruction.asInstanceOf[INVOKEINTERFACE]

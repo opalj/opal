@@ -66,6 +66,14 @@ trait TypeLevelInvokeInstructions { this: Domain[_] ⇒
             Some(newTypedValue(pc, someType))
     }
 
+    def invokedynamic(
+        pc: PC,
+        bootstrapMethod: BootstrapMethod,
+        name: String,
+        methodDescriptor: MethodDescriptor,
+        operands: List[DomainValue]): Computation[DomainValue, Iterable[DomainValue]] =
+        ComputedValue(newTypedValue(pc, ObjectType.Object))
+
     def invokeinterface(pc: PC,
                         declaringClass: ReferenceType,
                         name: String,
