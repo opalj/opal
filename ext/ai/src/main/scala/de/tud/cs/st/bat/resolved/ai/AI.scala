@@ -1115,7 +1115,7 @@ trait AI[D <: Domain[_]] {
 
                     case 185 /*invokeinterface*/ ⇒
                         val invoke = instruction.asInstanceOf[INVOKEINTERFACE]
-                        val argsCount = invoke.methodDescriptor.parameterTypes.length
+                        val argsCount = invoke.methodDescriptor.parametersCount
                         val computation =
                             domain.invokeinterface(
                                 pc,
@@ -1130,7 +1130,7 @@ trait AI[D <: Domain[_]] {
 
                     case 183 /*invokespecial*/ ⇒
                         val invoke = instruction.asInstanceOf[INVOKESPECIAL]
-                        val argsCount = invoke.methodDescriptor.parameterTypes.length
+                        val argsCount = invoke.methodDescriptor.parametersCount
                         val computation =
                             domain.invokespecial(
                                 pc,
@@ -1145,7 +1145,7 @@ trait AI[D <: Domain[_]] {
 
                     case 184 /*invokestatic*/ ⇒
                         val invoke = instruction.asInstanceOf[INVOKESTATIC]
-                        val argsCount = invoke.methodDescriptor.parameterTypes.length
+                        val argsCount = invoke.methodDescriptor.parametersCount
                         val computation =
                             domain.invokestatic(
                                 pc,
@@ -1160,7 +1160,7 @@ trait AI[D <: Domain[_]] {
 
                     case 182 /*invokevirtual*/ ⇒
                         val invoke = instruction.asInstanceOf[INVOKEVIRTUAL]
-                        val argsCount = invoke.methodDescriptor.parameterTypes.length
+                        val argsCount = invoke.methodDescriptor.parametersCount
                         val computation =
                             domain.invokevirtual(
                                 pc,

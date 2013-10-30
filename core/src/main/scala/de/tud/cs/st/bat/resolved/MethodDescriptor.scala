@@ -44,7 +44,7 @@ sealed abstract class MethodDescriptor extends BootstrapArgument {
 
     def parameterTypes: Seq[FieldType]
 
-    def parameterCount: Int
+    def parametersCount: Int
 
     def returnType: Type
 
@@ -83,7 +83,7 @@ case class NoArgumentMethodDescriptor private[resolved] (
 
     def parameterTypes = Nil
 
-    def parameterCount: Int = 0
+    def parametersCount: Int = 0
 }
 
 case class SingleArgumentMethodDescriptor private[resolved] (
@@ -93,7 +93,7 @@ case class SingleArgumentMethodDescriptor private[resolved] (
 
     def parameterTypes = List(fieldType)
 
-    def parameterCount: Int = 1
+    def parametersCount: Int = 1
 }
 
 case class MultiArgumentsMethodDescriptor private[resolved] (
@@ -101,7 +101,7 @@ case class MultiArgumentsMethodDescriptor private[resolved] (
     returnType: Type)
         extends MethodDescriptor {
 
-    def parameterCount: Int = parameterTypes.size
+    def parametersCount: Int = parameterTypes.size
 }
 
 object NoArgsAndReturnVoid {
