@@ -369,7 +369,7 @@ final class ObjectType private (
 
     override def asObjectType = this
 
-    override lazy val hashCode = className.hashCode * 43
+    override val hashCode = ObjectType.nextHashCode.getAndIncrement()
 
     override def equals(other: Any): Boolean =
         other match {
@@ -393,7 +393,10 @@ object ObjectType {
     import java.util.WeakHashMap
     import java.lang.ref.WeakReference
 
-    private val cache = new WeakHashMap[String, WeakReference[ObjectType]]()
+    private val nextHashCode  = new java.util.concurrent.atomic.AtomicInteger()
+    
+    
+    private[this] val cache = new WeakHashMap[String, WeakReference[ObjectType]]()
 
     /**
      * Factory method to create ObjectTypes.
