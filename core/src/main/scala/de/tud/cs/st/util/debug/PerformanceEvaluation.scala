@@ -39,25 +39,9 @@ package debug
  *
  * @author Michael Eichberg
  */
-trait PerformanceEvaluation {
+class PerformanceEvaluation {
 
     import collection.concurrent.{ Map, TrieMap }
-
-    /**
-     * Times the execution of a given method f (function literal / code block).
-     *
-     * @param r A function that is passed the time (in nano seconds) that it
-     * 	took to evaluate the function f.
-     */
-    def time[T](r: Long ⇒ Unit)(f: ⇒ T): T = {
-        val startTime: Long = System.nanoTime
-        try {
-            f
-        } finally {
-            val endTime: Long = System.nanoTime
-            r(endTime - startTime)
-        }
-    }
 
     private[this] val times: Map[Symbol, Long] = TrieMap.empty
 
@@ -95,4 +79,21 @@ trait PerformanceEvaluation {
     }
 }
 
-object PerformanceEvaluation extends PerformanceEvaluation
+object PerformanceEvaluation {
+
+    /**
+     * Times the execution of a given method f (function literal / code block).
+     *
+     * @param r A function that is passed the time (in nano seconds) that it
+     *  took to evaluate the function f.
+     */
+    def time[T](f: ⇒ T)(r: Long ⇒ Unit): T = {
+        val startTime: Long = System.nanoTime
+        try {
+            f
+        } finally {
+            val endTime: Long = System.nanoTime
+            r(endTime - startTime)
+        }
+    }
+}

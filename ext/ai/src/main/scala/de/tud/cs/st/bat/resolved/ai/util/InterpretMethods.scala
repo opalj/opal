@@ -53,8 +53,10 @@ import scala.util.control.ControlThrowable
  */
 object InterpretMethods {
     import de.tud.cs.st.util.debug._
-    import de.tud.cs.st.util.debug.PerformanceEvaluation._
     import collection.JavaConversions._
+
+    val performanceEvaluationContext = new de.tud.cs.st.util.debug.PerformanceEvaluation {}
+    import performanceEvaluationContext._
 
     def println(s: String) { System.out.println(s); System.out.flush() }
 
@@ -117,7 +119,11 @@ object InterpretMethods {
             } {
                 val data = new Array[Byte](jarEntry.getSize().toInt)
                 time('READING) {
-                    process(new DataInputStream(jarFile.getInputStream(jarEntry))) { _.readFully(data) }
+                    process {
+                        new DataInputStream(jarFile.getInputStream(jarEntry))
+                    } { in ⇒
+                        in.readFully(data)
+                    }
                 }
                 analyzeClassFile(file.getName(), data)
             }

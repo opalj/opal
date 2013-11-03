@@ -43,9 +43,8 @@ import java.net.URL
  * This analysis is an overapproximation due to the fact that we do not consider
  * the relation between the visibility modifiers and packages.
  *
- * For example, a method m in a
- * Class C in package c that is public does not override the method
- * m in C's superclass B that is in package b and where the method has
+ * For example, a method m in a Class C in package c that is public does not override 
+ * the method m in C's superclass B that is in package b and where the method has
  * default (package) visibility
  *
  * @author Michael Eichberg
@@ -107,7 +106,6 @@ object CountOverridingMethods extends AnalysisExecutor {
                     "Overall number of relevant methods: "+methodsCount+
                     "\nNumber of methods that override a parent's (non-abstract) method: "+methodsThatOverrideAnotherMethodCount
             )
-
         }
     }
 }

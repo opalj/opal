@@ -48,8 +48,7 @@ import reader.Java7Framework.ClassFiles
  */
 object DependencyMatrix {
 
-    val performance = new util.debug.PerformanceEvaluation {}
-    import performance._
+    import util.debug.PerformanceEvaluation.time
     import de.tud.cs.st.util.debug._
 
     private def printUsage: Unit = {
@@ -59,7 +58,9 @@ object DependencyMatrix {
 
     def main(args: Array[String]) {
 
-        if (args.length == 0 || !args.forall(arg ⇒ arg.endsWith(".zip") || arg.endsWith(".jar"))) {
+        if (args.length == 0 ||
+            !args.forall(arg ⇒ arg.endsWith(".zip") ||
+                arg.endsWith(".jar"))) {
             printUsage
             sys.exit(1)
         }
@@ -94,17 +95,20 @@ object DependencyMatrix {
 
         println("Reading all class files - "+jarFiles.mkString(", ")+".")
         var count = 0
-        var duration = Long.MaxValue
-        time(duration = _) {
-            for (
-                jarFile ← jarFiles;
+        time {
+            for {
+                jarFile ← jarFiles
                 (classFile, _) ← ClassFiles(jarFile)
-            ) {
+            } {
                 require(classFile.thisClass ne null)
                 count += 1
                 dependencyExtractor.process(classFile)
             }
+        } { executionTime ⇒
+            println(
+                "\nReading all "+(count)+
+                    " class files and building the dependency matrix required: "+
+                    nanoSecondsToMilliseconds(executionTime)+"milliseconds.")
         }
-        println("\nReading all "+(count)+" class files and building the dependency matrix required: "+nanoSecondsToMilliseconds(duration)+"milliseconds.")
     }
 }

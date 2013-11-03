@@ -64,7 +64,7 @@ import reader.Java7Framework.ClassFiles
  */
 object MoreCheckers {
 
-    private val CountingPerformanceEvaluator = new PerformanceEvaluation with Counting
+    import PerformanceEvaluation.time
 
     private def printUsage: Unit = {
         println("Usage: java …Main <JAR file containing class files>+")
@@ -75,10 +75,6 @@ object MoreCheckers {
     def collect(id: String, time: Long) {
         print(id+", "+time);
         results.update(id, (time / 1000l) :: results.getOrElse(id, List()));
-    }
-
-    def time[T](r: Long ⇒ Unit)(f: ⇒ T): T = {
-        CountingPerformanceEvaluator.time(r)(f)
     }
 
     def main(args: Array[String]) {
@@ -114,8 +110,10 @@ object MoreCheckers {
         System.err.println("\n\n\n\nMEASUREMENT PHASE")
         for (i ← 1 to 20) {
             println(); //i+"======================================================================="+i);
-            time(t ⇒ println("Reading class files and executing all analyses: "+t)) {
+            time {
                 analyze(args)
+            } { executionTime ⇒
+                println("Reading class files and executing all analyses: "+executionTime)
             }
             System.gc();
             println();
@@ -151,16 +149,16 @@ object MoreCheckers {
 
         //MemoryUsage(mu ⇒ println("Memory still used after executing the queries: "+(mu / 1024.0 / 1024.0)+" MByte")) {
         // FINDBUGS: CI: Class is final but declares protected field (CI_CONFUSED_INHERITANCE) // http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/ConfusedInheritance.java
-        val protectedFields = time(t ⇒ collect("CI_CONFUSED_INHERITANCE", t /*nsToSecs(t)*/ )) {
+        val protectedFields = time {
             for (
                 classFile ← classFiles if classFile.isFinal;
                 field ← classFile.fields if field.isProtected
             ) yield (classFile, field)
-        }
+        } { t ⇒ collect("CI_CONFUSED_INHERITANCE", t /*nsToSecs(t)*/ ) }
         println(", " /*"\tViolations: "*/ +protectedFields.size)
 
         // FINDBUGS: CN: Class implements Cloneable but does not define or use clone method (CN_IDIOM)
-        var cloneableNoClone = time(t ⇒ collect("CN_IDIOM", t /*nsToSecs(t)*/ )) {
+        var cloneableNoClone = time {
             // Weakness: We will not identify cloneable classes in projects, where we extend a predefined
             // class (of the JDK) that indirectly inherits from Cloneable.
             val cloneable = ObjectType("java/lang/Cloneable")
@@ -175,39 +173,39 @@ object MoreCheckers {
                 } yield classFile.thisClass.className
             } else
                 List.empty[String]
-        }
+        } { t ⇒ collect("CN_IDIOM", t /*nsToSecs(t)*/ ) }
         println(", "+cloneableNoClone.size)
 
         // FINDBUGS: CN: clone method does not call super.clone() (CN_IDIOM_NO_SUPER_CALL)
-        var cloneDoesNotCallSuperClone = time(t ⇒ collect("CN_IDIOM_NO_SUPER_CALL", t /*nsToSecs(t)*/ )) {
+        var cloneDoesNotCallSuperClone = time {
             for {
                 classFile ← classFiles
                 if !classFile.isInterfaceDeclaration && !classFile.isAnnotationDeclaration
                 superClass ← classFile.superClass.toList
                 method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object), _) ← classFile.methods
                 if !method.isAbstract
-                if !method.body.get.instructions.exists({
+                if !method.body.get.instructions.exists {
                     case INVOKESPECIAL(`superClass`, "clone", MethodDescriptor(Seq(), ObjectType.Object)) ⇒ true;
                     case _ ⇒ false;
-                })
+                }
             } yield (classFile /*.thisClass.className*/ , method /*.name*/ )
-        }
+        } { t ⇒ collect("CN_IDIOM_NO_SUPER_CALL", t /*nsToSecs(t)*/ ) }
         println(", " /*"\tViolations: "*/ +cloneDoesNotCallSuperClone.size /*+": "+cloneDoesNotCallSuperClone.mkString("; ")*/ )
 
         // FINDBUGS: CN: Class defines clone() but doesn't implement Cloneable (CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE)
-        var cloneButNotCloneable = time(t ⇒ collect("CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE", t /*nsToSecs(t)*/ )) {
+        var cloneButNotCloneable = time {
             for {
                 classFile ← classFiles if !classFile.isAnnotationDeclaration && classFile.superClass.isDefined
                 method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object), _) ← classFile.methods
                 if !classHierarchy.isSubtypeOf(classFile.thisClass, ObjectType("java/lang/Cloneable")).no
             } yield (classFile.thisClass.className, method.name)
-        }
+        }(t ⇒ collect("CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE", t /*nsToSecs(t)*/ ))
         println(", " /*"\tViolations: "*/ /*+cloneButNotCloneable.mkString(", ")*/ +cloneButNotCloneable.size)
 
         // FINDBUGS: Co: Abstract class defines covariant compareTo() method (CO_ABSTRACT_SELF)
         // FINDBUGS: Co: Covariant compareTo() method defined (CO_SELF_NO_OBJECT)
         // This class defines a covariant version of compareTo().  To correctly override the compareTo() method in the Comparable interface, the parameter of compareTo() must have type java.lang.Object.
-        var covariantCompareToMethods = time(t ⇒ collect("CO_SELF_NO_OBJECT/CO_ABSTRACT_SELF", t /*nsToSecs(t)*/ )) {
+        var covariantCompareToMethods = time {
             // Weakness: In a project, where we extend a predefined class (of the JDK) that
             // inherits from Comparable and in which we define covariant comparesTo method,
             // we will not be able to identify this issue unless we have identified the whole
@@ -218,12 +216,12 @@ object MoreCheckers {
                 method @ Method(_, "compareTo", MethodDescriptor(Seq(parameterType), IntegerType), _) ← classFile.methods
                 if parameterType != ObjectType("java/lang/Object")
             } yield (classFile, method)
-        }
+        }(t ⇒ collect("CO_SELF_NO_OBJECT/CO_ABSTRACT_SELF", t /*nsToSecs(t)*/ ))
         println(", " /*"\tViolations: "*/ +covariantCompareToMethods.size)
 
         // FINDBUGS: Dm: Explicit garbage collection; extremely dubious except in benchmarking code (DM_GC)
         var garbageCollectingMethods: List[(ClassFile, Method, Instruction)] = Nil
-        time(t ⇒ collect("DM_GC", t /*nsToSecs(t)*/ )) {
+        time {
             for ( // we don't care about gc calls in java.lang and also about gc calls that happen inside of methods related to garbage collection (heuristic)
                 classFile ← classFiles if !classFile.thisClass.className.startsWith("java/lang");
                 method ← classFile.methods if method.body.isDefined && !"(^gc)|(gc$)".r.findFirstIn(method.name).isDefined;
@@ -236,12 +234,12 @@ object MoreCheckers {
                     case _ ⇒
                 }
             }
-        }
+        }(t ⇒ collect("DM_GC", t /*nsToSecs(t)*/ ))
         println(", " /*"\tViolations: "*/ +garbageCollectingMethods.size)
 
         // FINDBUGS: Dm: Method invokes dangerous method runFinalizersOnExit (DM_RUN_FINALIZERS_ON_EXIT)
         var methodsThatCallRunFinalizersOnExit: List[(ClassFile, Method, Instruction)] = Nil
-        time(t ⇒ collect("DM_RUN_FINALIZERS_ON_EXIT", t /*nsToSecs(t)*/ )) {
+        time {
             for (
                 classFile ← classFiles;
                 method ← classFile.methods if method.body.isDefined;
@@ -254,7 +252,7 @@ object MoreCheckers {
                     case _ ⇒
                 }
             }
-        }
+        }(t ⇒ collect("DM_RUN_FINALIZERS_ON_EXIT", t /*nsToSecs(t)*/ ))
         println(", " /*"\tViolations: "*/ +methodsThatCallRunFinalizersOnExit.size)
         //methodsThatCallRunFinalizersOnExit.foreach((t) => {println(t._1.thisClass.className+ " "+ t._2.name)});
 
@@ -268,21 +266,21 @@ object MoreCheckers {
         //        println("\tViolations: "+abstractClassThatDefinesCovariantEquals.size)
         //        //abstractClassThatDefinesCovariantEquals.foreach((t) => {println(t._1.thisClass.className+ " "+ t._2.name)});
         // FINDBUGS: EQ_ABSTRACT_SELF - a covariant equals method that is abstract (the following reflects the implemented checker)
-        var abstractCovariantEquals = time(t ⇒ collect("EQ_ABSTRACT_SELF", t /*nsToSecs(t)*/ )) {
+        var abstractCovariantEquals = time {
             for (
                 classFile ← classFiles;
                 method @ Method(_, "equals", MethodDescriptor(Seq(classFile.thisClass), BooleanType), _) ← classFile.methods if method.isAbstract
             ) yield (classFile, method);
-        }
+        }(t ⇒ collect("EQ_ABSTRACT_SELF", t /*nsToSecs(t)*/ ))
         println(", " /*"\tViolations: "*/ +abstractCovariantEquals.size)
 
         // FINDBUGS: FI: Finalizer should be protected, not public (FI_PUBLIC_SHOULD_BE_PROTECTED)
-        var classesWithPublicFinalizeMethods = time(t ⇒ collect("FI_PUBLIC_SHOULD_BE_PROTECTED", t /*nsToSecs(t)*/ )) {
+        var classesWithPublicFinalizeMethods = time {
             for {
                 classFile ← classFiles
                 if classFile.methods.exists(_ match { case Method(ACC_PUBLIC(), "finalize", NoArgsAndReturnVoid(), _) ⇒ true; case _ ⇒ false })
             } yield classFile
-        }
+        }(t ⇒ collect("FI_PUBLIC_SHOULD_BE_PROTECTED", t /*nsToSecs(t)*/ ))
         println(", " /*"\tViolations: "*/ +classesWithPublicFinalizeMethods.length)
 
         // FINDBUGS: Se: Class is Serializable but its superclass doesn't define a void constructor (SE_NO_SUITABLE_CONSTRUCTOR)
@@ -302,7 +300,7 @@ object MoreCheckers {
         //                    }
         //            ) yield (serializableClass, superclass)
         //        }
-        val classesWithoutDefaultConstructor = time(t ⇒ collect("SE_NO_SUITABLE_CONSTRUCTOR", t /*nsToSecs(t)*/ )) {
+        val classesWithoutDefaultConstructor = time {
             for (
                 serializableClasses ← classHierarchy.allSubtypes(ObjectType("java/io/Serializable"));
                 superclass ← classHierarchy.allSupertypes(serializableClasses) if getClassFile.isDefinedAt(superclass) && // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available
@@ -312,12 +310,12 @@ object MoreCheckers {
                             !superClassFile.constructors.exists(_.descriptor.parameterTypes.length == 0)
                     }
             ) yield superclass // there can be at most one method
-        }
+        }(t ⇒ collect("SE_NO_SUITABLE_CONSTRUCTOR", t /*nsToSecs(t)*/ ))
         println(", " /*"\tViolations: "*/ +classesWithoutDefaultConstructor.size);
 
         // FINDBUGS: UuF: Unused field (UUF_UNUSED_FIELD)
         var unusedFields: List[(ClassFile, Traversable[String])] = Nil
-        time(t ⇒ collect("UUF_UNUSED_FIELD", t /*nsToSecs(t)*/ )) {
+        time {
             for (classFile ← classFiles if !classFile.isInterfaceDeclaration) {
                 val declaringClass = classFile.thisClass
                 var privateFields = (for (field ← classFile.fields if field.isPrivate) yield field.name).toSet
@@ -334,7 +332,7 @@ object MoreCheckers {
                 if (privateFields.size > 0)
                     unusedFields = (classFile, privateFields) :: unusedFields
             }
-        }
+        }(t ⇒ collect("UUF_UNUSED_FIELD", t /*nsToSecs(t)*/ ))
         println(", "+ /*"\tViolations: "+*/ unusedFields.size)
         //            var allFields = List[(ObjectType, String)]()
         //            var readFields = Set[(ObjectType, String)]()
@@ -366,14 +364,14 @@ object MoreCheckers {
 
         // FINDBUGS: (IMSE_DONT_CATCH_IMSE) http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/DontCatchIllegalMonitorStateException.java
         // Dubious catching of IllegalMonitorStateException.
-        val IllegalMonitorStateExceptionType = ObjectType("java/lang/IllegalMonitorStateException")
-        val catchesIllegalMonitorStateException = time(t ⇒ collect("IMSE_DONT_CATCH_IMSE", t /*nsToSecs(t)*/ )) {
+        val IllegalMonitorStateExceptionType = ObjectType.IllegalMonitorStateException
+        val catchesIllegalMonitorStateException = time {
             for (
                 classFile ← classFiles if classFile.isClassDeclaration;
                 method ← classFile.methods if method.body.isDefined;
                 exceptionHandler ← method.body.get.exceptionHandlers if exceptionHandler.catchType == Some(IllegalMonitorStateExceptionType)
             ) yield (classFile, method)
-        }
+        }(t ⇒ collect("IMSE_DONT_CATCH_IMSE", t /*nsToSecs(t)*/ ))
         println(", " /*"\tViolations: "*/ +catchesIllegalMonitorStateException.size)
         //}
     }

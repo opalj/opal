@@ -39,13 +39,13 @@ package debug
  *
  * @author Michael Eichberg
  */
-trait Counting extends PerformanceEvaluation {
+class Counting extends PerformanceEvaluation {
 
     import scala.collection.mutable.Map
 
     private[this] val count: Map[Symbol, Int] = Map()
 
-    abstract override def time[T](s: Symbol)(f: ⇒ T): T = {
+    override def time[T](s: Symbol)(f: ⇒ T): T = {
         count.update(s, count.getOrElseUpdate(s, 0) + 1)
         super.time(s)(f)
     }
@@ -54,12 +54,13 @@ trait Counting extends PerformanceEvaluation {
         count.getOrElse(sym, 0)
     }
 
-    abstract override def reset(sym: Symbol) {
+    override def reset(sym: Symbol) {
         count.update(sym, 0)
         super.reset(sym)
     }
 
-    abstract override def resetAll {
+    override def resetAll {
         count.clear()
+        super.resetAll()
     }
 }
