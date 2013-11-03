@@ -39,7 +39,7 @@ package domain
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 /**
- * Basic support for computing with long values at the type level.
+ * Support the computation with long values at the type level.
  *
  * @author Michael Eichberg
  */
@@ -74,58 +74,58 @@ trait TypeLevelLongValues[+I] extends Domain[I] {
     //
     // RELATIONAL OPERATORS
     //
-    def lcmp(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def lcmp(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newIntegerValue(pc)
 
     //
     // UNARY EXPRESSIONS
     //
-    def lneg(pc: PC, value: DomainValue) = newLongValue()
+    override def lneg(pc: PC, value: DomainValue) = newLongValue()
 
     //
     // BINARY EXPRESSIONS
     //
 
-    def ladd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def ladd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newLongValue()
 
-    def land(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def land(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newLongValue()
 
-    def ldiv(pc: PC, value1: DomainValue, value2: DomainValue) =
+    override def ldiv(pc: PC, value1: DomainValue, value2: DomainValue) =
         ComputedValue(newLongValue())
 
-    def lmul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def lmul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newLongValue()
 
-    def lor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def lor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newLongValue()
 
-    def lrem(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def lrem(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newLongValue()
 
-    def lshl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def lshl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newLongValue()
 
-    def lshr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def lshr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newLongValue()
 
-    def lsub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def lsub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newLongValue()
 
-    def lushr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def lushr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newLongValue()
 
-    def lxor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def lxor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newLongValue()
 
     //
     // CONVERSION INSTRUCTIONS
     //
 
-    def l2d(pc: PC, value: DomainValue): DomainValue = newDoubleValue(pc)
-    def l2f(pc: PC, value: DomainValue): DomainValue = newFloatValue(pc)
-    def l2i(pc: PC, value: DomainValue): DomainValue = newIntegerValue(pc)
+    override def l2d(pc: PC, value: DomainValue): DomainValue = newDoubleValue(pc)
+    override def l2f(pc: PC, value: DomainValue): DomainValue = newFloatValue(pc)
+    override def l2i(pc: PC, value: DomainValue): DomainValue = newIntegerValue(pc)
 }
 private object TypeLevelLongValues {
     private final val typesAnswer: IsPrimitiveType = IsPrimitiveType(LongType)

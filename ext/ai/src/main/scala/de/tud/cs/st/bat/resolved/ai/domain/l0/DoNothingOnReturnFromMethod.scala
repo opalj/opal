@@ -43,19 +43,19 @@ package domain
  */
 trait DoNothingOnReturnFromMethod { this: Domain[_] ⇒
 
-    def areturn(pc: PC, value: DomainValue): Unit = { /* Do nothing. */ }
+    override def areturn(pc: PC, value: DomainValue): Unit = { /* Do nothing. */ }
 
-    def dreturn(pc: PC, value: DomainValue): Unit = { /* Do nothing. */ }
+    override def dreturn(pc: PC, value: DomainValue): Unit = { /* Do nothing. */ }
 
-    def freturn(pc: PC, value: DomainValue): Unit = { /* Do nothing. */ }
+    override def freturn(pc: PC, value: DomainValue): Unit = { /* Do nothing. */ }
 
-    def ireturn(pc: PC, value: DomainValue): Unit = { /* Do nothing. */ }
+    override def ireturn(pc: PC, value: DomainValue): Unit = { /* Do nothing. */ }
 
-    def lreturn(pc: PC, value: DomainValue): Unit = { /* Do nothing. */ }
+    override def lreturn(pc: PC, value: DomainValue): Unit = { /* Do nothing. */ }
 
-    def returnVoid(pc: PC): Unit = { /* Do nothing. */ }
+    override def returnVoid(pc: PC): Unit = { /* Do nothing. */ }
 
-    def abruptMethodExecution(pc: PC, exception: DomainValue): Unit = {
+    override def abruptMethodExecution(pc: PC, exception: DomainValue): Unit = {
         /* Do nothing. */
     }
 }

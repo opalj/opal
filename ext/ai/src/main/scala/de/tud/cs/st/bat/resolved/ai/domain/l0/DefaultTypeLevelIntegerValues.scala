@@ -51,6 +51,7 @@ trait DefaultTypeLevelIntegerValues[+I]
         with TypeLevelIntegerValues[I] {
     
     case object BooleanValue extends super.BooleanValue {
+        
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = value match {
             case BooleanValue         ⇒ NoUpdate
             case other @ IntegerValue ⇒ StructuralUpdate(other)
@@ -67,6 +68,7 @@ trait DefaultTypeLevelIntegerValues[+I]
     }
 
     case object ByteValue extends super.ByteValue {
+        
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = value match {
             case ByteValue            ⇒ NoUpdate
             case other @ IntegerValue ⇒ StructuralUpdate(other)
@@ -85,6 +87,7 @@ trait DefaultTypeLevelIntegerValues[+I]
     }
 
     case object ShortValue extends super.ShortValue {
+        
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = value match {
             case ShortValue           ⇒ NoUpdate
             case ByteValue            ⇒ NoUpdate
@@ -103,6 +106,7 @@ trait DefaultTypeLevelIntegerValues[+I]
     }
 
     case object CharValue extends super.CharValue {
+        
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = value match {
             case CharValue            ⇒ NoUpdate
             case ByteValue            ⇒ NoUpdate

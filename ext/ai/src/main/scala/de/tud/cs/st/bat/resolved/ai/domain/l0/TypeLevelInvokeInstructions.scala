@@ -44,7 +44,7 @@ import de.tud.cs.st.bat.resolved.ai.IsReferenceType
 /**
  * Most basic handling of method invocations that determines the value that is
  * put onto the operand stack/returned by a method call based on the called method's
- * signature. This implementation completely ignores exceptions (e.g.,
+ * signature. This implementation completely ignores exceptions and/or errors (e.g.,
  * `NullPointerException`s or exceptions thrown by the method).
  *
  * (Linkage related exceptions are currently generally ignored.)
@@ -66,7 +66,7 @@ trait TypeLevelInvokeInstructions { this: Domain[_] ⇒
             Some(newTypedValue(pc, someType))
     }
 
-    def invokedynamic(
+    override def invokedynamic(
         pc: PC,
         bootstrapMethod: BootstrapMethod,
         name: String,
@@ -74,32 +74,36 @@ trait TypeLevelInvokeInstructions { this: Domain[_] ⇒
         operands: List[DomainValue]): Computation[DomainValue, Iterable[DomainValue]] =
         ComputedValue(newTypedValue(pc, ObjectType.Object))
 
-    def invokeinterface(pc: PC,
-                        declaringClass: ReferenceType,
-                        name: String,
-                        methodDescriptor: MethodDescriptor,
-                        operands: List[DomainValue]): OptionalReturnValueOrExceptions =
+    override def invokeinterface(
+        pc: PC,
+        declaringClass: ReferenceType,
+        name: String,
+        methodDescriptor: MethodDescriptor,
+        operands: List[DomainValue]): OptionalReturnValueOrExceptions =
         ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
 
-    def invokevirtual(pc: PC,
-                      declaringClass: ReferenceType,
-                      name: String,
-                      methodDescriptor: MethodDescriptor,
-                      operands: List[DomainValue]): OptionalReturnValueOrExceptions =
+    override def invokevirtual(
+        pc: PC,
+        declaringClass: ReferenceType,
+        name: String,
+        methodDescriptor: MethodDescriptor,
+        operands: List[DomainValue]): OptionalReturnValueOrExceptions =
         ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
 
-    def invokespecial(pc: PC,
-                      declaringClass: ReferenceType,
-                      name: String,
-                      methodDescriptor: MethodDescriptor,
-                      operands: List[DomainValue]): OptionalReturnValueOrExceptions =
+    override def invokespecial(
+        pc: PC,
+        declaringClass: ReferenceType,
+        name: String,
+        methodDescriptor: MethodDescriptor,
+        operands: List[DomainValue]): OptionalReturnValueOrExceptions =
         ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
 
-    def invokestatic(pc: PC,
-                     declaringClass: ReferenceType,
-                     name: String,
-                     methodDescriptor: MethodDescriptor,
-                     operands: List[DomainValue]): OptionalReturnValueOrExceptions =
+    override def invokestatic(
+        pc: PC,
+        declaringClass: ReferenceType,
+        name: String,
+        methodDescriptor: MethodDescriptor,
+        operands: List[DomainValue]): OptionalReturnValueOrExceptions =
         ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
 
 }

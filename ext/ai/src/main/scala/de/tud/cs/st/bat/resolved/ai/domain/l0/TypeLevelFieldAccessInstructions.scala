@@ -54,20 +54,20 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  */
 trait TypeLevelFieldAccessInstructions { this: Domain[_] ⇒
 
-    def getfield(
+    override def getfield(
         pc: PC,
         objectref: DomainValue,
         declaringClass: ObjectType,
         name: String,
         fieldType: FieldType) = ComputedValue(newTypedValue(pc, fieldType))
 
-    def getstatic(
+    override def getstatic(
         pc: PC,
         declaringClass: ObjectType,
         name: String,
         fieldType: FieldType) = ComputedValue(newTypedValue(pc, fieldType))
 
-    def putfield(
+    override def putfield(
         pc: PC,
         objectref: DomainValue,
         value: DomainValue,
@@ -75,7 +75,7 @@ trait TypeLevelFieldAccessInstructions { this: Domain[_] ⇒
         name: String,
         fieldType: FieldType) = ComputationWithSideEffectOnly
 
-    def putstatic(
+    override def putstatic(
         pc: PC,
         value: DomainValue,
         declaringClass: ObjectType,

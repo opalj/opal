@@ -57,50 +57,50 @@ trait TypeLevelArrayInstructions { this: Domain[_] ⇒
     // STORING AND LOADING VALUES FROM ARRAYS
     //
 
-    def baload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
+    override def baload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
         types(arrayref) match {
             case TheTypeBound(ArrayType(componentType)) ⇒
                 ComputedValue(newTypedValue(pc, componentType))
             case _ ⇒
                 domainException(this, "array with unknown component type: "+arrayref)
         }
-    def bastore(pc: PC, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
+    override def bastore(pc: PC, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
         ComputationWithSideEffectOnly
 
-    def caload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
+    override def caload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
         ComputedValue(newCharValue(pc))
-    def castore(pc: PC, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
+    override def castore(pc: PC, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
         ComputationWithSideEffectOnly
 
-    def daload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
+    override def daload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
         ComputedValue(newDoubleValue(pc))
-    def dastore(pc: PC, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
+    override def dastore(pc: PC, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
         ComputationWithSideEffectOnly
 
-    def faload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
+    override def faload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
         ComputedValue(newFloatValue(pc))
-    def fastore(pc: PC, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
+    override def fastore(pc: PC, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
         ComputationWithSideEffectOnly
 
-    def iaload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
+    override def iaload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
         ComputedValue(newIntegerValue(pc))
-    def iastore(pc: PC, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
+    override def iastore(pc: PC, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
         ComputationWithSideEffectOnly
 
-    def laload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
+    override def laload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
         ComputedValue(newLongValue(pc))
-    def lastore(pc: PC, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
+    override def lastore(pc: PC, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
         ComputationWithSideEffectOnly
 
-    def saload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
+    override def saload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
         ComputedValue(newShortValue(pc))
-    def sastore(pc: PC, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
+    override def sastore(pc: PC, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
         ComputationWithSideEffectOnly
 
     //
     // LENGTH OF AN ARRAY
     //
-    def arraylength(pc: PC, value: DomainValue): Computation[DomainValue, DomainValue] =
+    override def arraylength(pc: PC, value: DomainValue): Computation[DomainValue, DomainValue] =
         ComputedValue(newIntegerValue(pc))
 }
 

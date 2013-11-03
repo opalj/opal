@@ -61,7 +61,7 @@ trait BasicTypeHierarchy { this: Domain[_] ⇒
      * @see `de.tud.cs.st.bat.resolved.analyses.ClassHierarchy.isSubtypeOf(ReferenceType,
      * 		ReferenceType)`
      */
-    def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer =
+    override def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer =
         classHierarchy.isSubtypeOf(subtype, supertype)
 
 }

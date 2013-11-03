@@ -55,17 +55,14 @@ trait TypeLevelFloatValues[+I] extends Domain[I] {
      * Abstracts over all values with computational type `float`.
      */
     trait FloatValue extends Value { this: DomainValue ⇒
-
         override final def computationalType: ComputationalType = ComputationalTypeFloat
-
     }
 
-    abstract override def types(value: DomainValue): TypesAnswer = {
+    abstract override def types(value: DomainValue): TypesAnswer =
         value match {
             case r: FloatValue ⇒ TypeLevelFloatValues.typesAnswer
             case _             ⇒ super.types(value)
         }
-    }
 
     protected def newFloatValue(): DomainValue
 
@@ -78,43 +75,43 @@ trait TypeLevelFloatValues[+I] extends Domain[I] {
     //
     // RELATIONAL OPERATORS
     //
-    def fcmpg(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def fcmpg(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newIntegerValue(pc)
 
-    def fcmpl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def fcmpl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newIntegerValue(pc)
 
     //
     // UNARY EXPRESSIONS
     //
-    def fneg(pc: PC, value: DomainValue) = newFloatValue()
+    override def fneg(pc: PC, value: DomainValue) = newFloatValue()
 
     //
     // BINARY EXPRESSIONS
     //
 
-    def fadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def fadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newFloatValue()
 
-    def fdiv(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def fdiv(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newFloatValue()
 
-    def fmul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def fmul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newFloatValue()
 
-    def frem(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def frem(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newFloatValue()
 
-    def fsub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def fsub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newFloatValue()
 
     //
     // TYPE CONVERSIONS
     //
 
-    def f2d(pc: PC, value: DomainValue): DomainValue = newDoubleValue(pc)
-    def f2i(pc: PC, value: DomainValue): DomainValue = newIntegerValue(pc)
-    def f2l(pc: PC, value: DomainValue): DomainValue = newLongValue(pc)
+    override def f2d(pc: PC, value: DomainValue): DomainValue = newDoubleValue(pc)
+    override def f2i(pc: PC, value: DomainValue): DomainValue = newIntegerValue(pc)
+    override def f2l(pc: PC, value: DomainValue): DomainValue = newLongValue(pc)
 
 }
 private object TypeLevelFloatValues {

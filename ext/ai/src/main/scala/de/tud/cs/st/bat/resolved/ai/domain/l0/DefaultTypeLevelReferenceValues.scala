@@ -56,19 +56,18 @@ trait DefaultTypeLevelReferenceValues[+I]
     case class AReferenceValue protected[DefaultTypeLevelReferenceValues] (
         val typeBounds: TypeBounds)
             extends super.ReferenceValue
-            with IsReferenceType {
-        self: DomainValue ⇒
+            with IsReferenceType { self: DomainValue ⇒
 
-        def valuesTypeBounds: Iterable[ValueTypeBounds] =
+        override def valuesTypeBounds: Iterable[ValueTypeBounds] =
             Iterable(
                 new ValueTypeBounds {
-                    def isNull: Answer = Unknown
-                    def isSubtypeOf(referenceType: ReferenceType): Answer =
+                    override def isNull: Answer = Unknown
+                    override def isSubtypeOf(referenceType: ReferenceType): Answer =
                         self.isSubtypeOf(referenceType)
                 }
             )
 
-        def theTypeBound: Option[ReferenceType] =
+        override def theTypeBound: Option[ReferenceType] =
             if (typeBounds.size == 1)
                 Some(typeBounds.head)
             else
@@ -81,15 +80,17 @@ trait DefaultTypeLevelReferenceValues[+I]
          *
          * @note This is a very basic implementation that cannot determine that this
          * 		value is '''not''' a subtype of the given type as this implementation
-         *   	does not distinguish between class types and interface types. 
+         *   	does not distinguish between class types and interface types.
          */
-        def isSubtypeOf(supertype: ReferenceType): Answer = 
+        override def isSubtypeOf(supertype: ReferenceType): Answer =
             if (typeBounds exists { tb ⇒ domain.isSubtypeOf(tb, supertype).yes })
                 Yes
             else
                 Unknown
 
-        def addUpperBound(pc: PC, theUpperBound: ReferenceType): AReferenceValue = {
+        override def addUpperBound(
+            pc: PC,
+            theUpperBound: ReferenceType): AReferenceValue = {
             assume(!typeBounds.contains(theUpperBound))
 
             isSubtypeOf(theUpperBound) match {

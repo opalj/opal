@@ -75,46 +75,46 @@ trait TypeLevelDoubleValues[+I] extends Domain[I] {
     //
     // RELATIONAL OPERATORS
     //
-    def dcmpg(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def dcmpg(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newIntegerValue(pc)
 
-    def dcmpl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def dcmpl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newIntegerValue(pc)
 
     //
     // UNARY EXPRESSIONS
     //
-    def dneg(pc: PC, value: DomainValue) =
+    override def dneg(pc: PC, value: DomainValue) =
         newDoubleValue(pc)
 
     //
     // BINARY EXPRESSIONS
     //
-    def dadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def dadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newDoubleValue(pc)
 
-    def ddiv(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def ddiv(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newDoubleValue(pc)
 
-    def dmul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def dmul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newDoubleValue(pc)
 
-    def drem(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def drem(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newDoubleValue(pc)
 
-    def dsub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def dsub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         newDoubleValue(pc)
 
     //
     // TYPE CONVERSION INSTRUCTIONS
     //
-    def d2f(pc: PC, value: DomainValue): DomainValue =
+    override def d2f(pc: PC, value: DomainValue): DomainValue =
         newFloatValue(pc)
 
-    def d2i(pc: PC, value: DomainValue): DomainValue =
+    override def d2i(pc: PC, value: DomainValue): DomainValue =
         newIntegerValue(pc)
 
-    def d2l(pc: PC, value: DomainValue): DomainValue =
+    override def d2l(pc: PC, value: DomainValue): DomainValue =
         newLongValue(pc)
 }
 private object TypeLevelDoubleValues {
