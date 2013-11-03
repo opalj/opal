@@ -93,7 +93,7 @@ object MoreCheckers {
             }
         }
 
-        System.err.println("WARMUP PHASE")
+        println(Console.BOLD+"WARMUP PHASE"+Console.RESET)
         // for Scalatest - we use 8 warumup runs
         // for Bugs.zip - we use 50 warmup runs
         // for CLASSES.jar - we use 2 warumup runs
@@ -107,7 +107,7 @@ object MoreCheckers {
         results.foreach(X ⇒ { var (id, times) = X; println(id+","+times.mkString(",")) })
         results.clear();
 
-        System.err.println("\n\n\n\nMEASUREMENT PHASE")
+        println(Console.BOLD+"\n\n\n\nMEASUREMENT PHASE"+Console.RESET)
         for (i ← 1 to 20) {
             println(); //i+"======================================================================="+i);
             time {
@@ -130,8 +130,7 @@ object MoreCheckers {
         var classHierarchy = new ClassHierarchy
 
         var classFilesCount = 0
-        val classFiles = MemoryUsage(mu ⇒ println("Memory required for the bytecode representation ("+classFilesCount+"): "+(mu / 1024.0 / 1024.0)+" MByte")) {
-            //   time(t ⇒ println("Reading all class files took: "+t/*nsToSecs(t)*/)) {
+        val classFiles = MemoryUsage {
             val cf = for (
                 zipFile ← jarFiles; // if { println("Reading: "+zipFile); true };
                 (classFile, _) ← ClassFiles(zipFile)
@@ -140,14 +139,13 @@ object MoreCheckers {
                 classHierarchy = classHierarchy + classFile
                 classFile
             }
-            //   }
-            println("Press return to continue."); System.in.read()
             cf
-        }
+        }(mu ⇒ println("Memory required for the bytecode representation ("+classFilesCount+"): "+(mu / 1024.0 / 1024.0)+" MByte"))
         val getClassFile: Map[ObjectType, ClassFile] = classFiles.map(cf ⇒ (cf.thisClass, cf)).toMap // SAME AS IN PROJECT
+        println("Press return to continue."); System.in.read()
+
         //println("Number of class files: "+classFilesCount)
 
-        //MemoryUsage(mu ⇒ println("Memory still used after executing the queries: "+(mu / 1024.0 / 1024.0)+" MByte")) {
         // FINDBUGS: CI: Class is final but declares protected field (CI_CONFUSED_INHERITANCE) // http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/ConfusedInheritance.java
         val protectedFields = time {
             for (
@@ -373,6 +371,5 @@ object MoreCheckers {
             ) yield (classFile, method)
         }(t ⇒ collect("IMSE_DONT_CATCH_IMSE", t /*nsToSecs(t)*/ ))
         println(", " /*"\tViolations: "*/ +catchesIllegalMonitorStateException.size)
-        //}
     }
 }
