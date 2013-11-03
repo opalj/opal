@@ -40,7 +40,8 @@ import dependency._
 import java.net.URL
 
 /**
- * Calculates the transitive closure of all classes referred to by a given set of classes.
+ * Calculates the transitive closure of all classes referred to by a given class.
+ * Here, referred to means that the type is explicitly visible.
  *
  * @author Michael Eichberg
  */
