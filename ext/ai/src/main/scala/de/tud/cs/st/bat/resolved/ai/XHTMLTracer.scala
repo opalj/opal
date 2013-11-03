@@ -53,7 +53,7 @@ private[ai] object FlowEntity {
 }
 
 /**
- * A tracer that prints out a trace's results on the console.
+ * A tracer that generates an HTML document.
  *
  * @author Michael Eichberg
  */
