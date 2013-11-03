@@ -38,14 +38,14 @@ package ai
 import bat.resolved.analyses.{ Project, ReportableAnalysisResult }
 
 /**
- * Creates a simple call graph by analyzing each method on its own.
- *
- * It ignores exceptions for now.
+ * Creates a call graph by analyzing each entry point on its own. The called by
+ * graph is calculated under a specific assumption about a programs/libraries/framework's 
+ * entry methods. 
  *
  * @author Michael Eichberg
  */
-trait CallGraphConstruction {
-        
+class CallGraphFactory {
+
     protected def analyzeInParallel: Boolean = true
 
     def ai: AI[Domain[_]] = BaseAI
@@ -82,8 +82,8 @@ trait CallGraphConstruction {
                 name: String,
                 methodDescriptor: MethodDescriptor,
                 operands: List[DomainValue]): OptionalReturnValueOrExceptions =
-                    
-                    //project.classHierarchy.
+
+                //project.classHierarchy.
                 super.invokeinterface(pc, declaringClass, name, methodDescriptor, operands)
 
             override def invokevirtual(
@@ -115,8 +115,10 @@ trait CallGraphConstruction {
     }
 
     def analyze(
-        project: Project[_]) {
+        project: Project[_]) : CalledByGraph = {
 
+        var calledBy: Map[Method, Set[Method]] = Map.empty
+        
         var privateMethods = List.empty[Method]
         for {
             classFile ← project.classes.values.par
@@ -128,9 +130,9 @@ trait CallGraphConstruction {
                 ai(classFile, method, domain(project, classFile, method))
             }
         }
+        
+        CalledByGraph(calledBy)
     }
-
-    private[this] var calledBy: Map[Method, Set[Method]] = Map.empty
 
 }
 
@@ -138,5 +140,32 @@ case class CalledByGraph(
         val calledBy: Map[Method, Set[Method]]) {
 
 }
+
+
+
+/*
+Things that complicate matters:
+class A {
+
+    private A a = this;
+
+    public m() {    
+        a.foo() // here, a refers to an object of type B if bar was called before m()
+        a.foo() // here, a "always" refers to an object of type B and not this!
+    }
+
+    private foo() {
+        a = new B();
+    }
+
+    public bar() {
+        a = new B();
+    }
+} 
+*/ 
+
+// For each entry point we start calculating the Call Graph. 
+
+ 
 
 
