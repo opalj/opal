@@ -41,37 +41,36 @@ import java.net.URL
 
 /**
  * Calculates the transitive closure of all classes referred to by a given class.
- * Here, referred to means that the type is explicitly visible.
+ * Here, referred to means that the type is explicitly used in the implementation
+ * of the class.
  *
  * @author Michael Eichberg
  */
 object TransitiveUsage extends AnalysisExecutor {
 
-    var visitedTypes = Set.empty[ObjectType]
+    private[this] var visitedTypes = Set.empty[ObjectType]
 
-    var extractedTypes = Set.empty[ObjectType]
+    private[this] var extractedTypes = Set.empty[ObjectType]
+
+    // To extract all usages we reuse the infrastructure that enables us to extract
+    // dependencies. In this case we just recorde referred to types and do not actually
+    // record the conrecte dependencies.
 
     object TypesCollector extends SourceElementIDs {
 
-        def processType(t: Type) {
+        def processType(t: Type): Unit =
             if (t.isObjectType) {
                 val objectType = t.asObjectType
                 if (!visitedTypes.contains(objectType))
                     extractedTypes += objectType
             }
-        }
 
-        def sourceElementID(
-            t: Type): Int = {
-
+        def sourceElementID(t: Type): Int = {
             processType(t)
             -1
         }
 
-        def sourceElementID(
-            definingObjectType: ObjectType,
-            fieldName: String): Int = {
-
+        def sourceElementID(definingObjectType: ObjectType, fieldName: String): Int = {
             processType(definingObjectType)
             -1
         }
@@ -87,6 +86,7 @@ object TransitiveUsage extends AnalysisExecutor {
     }
 
     val dependencyCollector =
+        // we don't want to do anything special while extracting the dependencies.
         new DependencyExtractor(TypesCollector) with NoSourceElementsVisitor {
 
             def processDependency(
@@ -103,13 +103,13 @@ object TransitiveUsage extends AnalysisExecutor {
     override def checkAnalysisSpecificParameters(parameters: Seq[String]): Boolean =
         parameters.size == 1 && parameters.head.startsWith("-class=")
 
-    val analysis = new Analysis[URL, BasicReport] {
+    override val analysis = new Analysis[URL, BasicReport] {
 
-        def description: String =
+        override val description: String =
             "Calculates the transitive closure of all classes used by a specific class. "+
                 "(Does not take reflective usages into relation)."
 
-        def analyze(project: Project[URL], parameters: Seq[String]) = {
+        override def analyze(project: Project[URL], parameters: Seq[String]) = {
 
             val baseType = ObjectType(parameters.head.substring(7).replace('.', '/'))
             extractedTypes += baseType
