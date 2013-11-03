@@ -50,7 +50,9 @@ import java.net.URL
  */
 trait SourceElementsMatcher { left ⇒
 
-    def extension(project: Project[URL], srcElemIDs: SourceElementIDsMap): SortedSet[SourceElementID]
+    def extension(
+        project: Project[URL],
+        srcElemIDs: SourceElementIDsMap): SortedSet[SourceElementID]
 
     def and(right: SourceElementsMatcher): SourceElementsMatcher = {
         new SourceElementsMatcher {
@@ -92,22 +94,25 @@ case class PackageNameBasedMatcher(
     matchSubpackages: Boolean = false)
         extends SourceElementsMatcher {
 
+    require(packageName.length >= 1)
     require(packageName.indexOf('*') == -1)
     require(packageName.indexOf('.') == -1)
 
-    def extension(project: Project[URL], srcElemIds: SourceElementIDsMap): SortedSet[SourceElementID] = {
-        var sourceElementIDs: SortedSet[SourceElementID] = SortedSet()
-        project.classFiles.filter((classFile) ⇒ {
+    def extension(
+        project: Project[URL],
+        srcElemIds: SourceElementIDsMap): SortedSet[SourceElementID] = {
+        var sourceElementIDs: SortedSet[SourceElementID] = SortedSet.empty
+        project.classFiles.filter { classFile ⇒
             val thisClassPackageName = classFile.thisClass.packageName
             thisClassPackageName.startsWith(packageName) && (
                 matchSubpackages ||
                 thisClassPackageName.length() == packageName.length()
             )
-        }).foreach((classFile) ⇒ {
+        }.foreach { classFile ⇒
             sourceElementIDs += srcElemIds.sourceElementID(classFile)
             sourceElementIDs ++= classFile.methods.map(srcElemIds.sourceElementID(classFile, _))
             sourceElementIDs ++= classFile.fields.map(srcElemIds.sourceElementID(classFile, _))
-        })
+        }
         sourceElementIDs
     }
 
@@ -128,8 +133,10 @@ case class ClassMatcher(
     require(className.indexOf('*') == -1)
     require(className.indexOf('.') == -1)
 
-    def extension(project: Project[URL], srcElemIds: SourceElementIDsMap): SortedSet[SourceElementID] = {
-        var sourceElementIDs: SortedSet[SourceElementID] = SortedSet()
+    def extension(
+        project: Project[URL],
+        srcElemIds: SourceElementIDsMap): SortedSet[SourceElementID] = {
+        var sourceElementIDs: SortedSet[SourceElementID] = SortedSet.empty
         project.classFiles.filter((classFile) ⇒
             {
                 val otherClassName = classFile.thisClass.className
@@ -147,7 +154,31 @@ case class ClassMatcher(
     override def toString = "\""+className+"\""
 }
 
+case class RegexClassMatcher(
+    matcher: scala.util.matching.Regex)
+        extends SourceElementsMatcher {
+
+    def extension(
+        project: Project[URL],
+        srcElemIds: SourceElementIDsMap): SortedSet[SourceElementID] = {
+        var sourceElementIDs: SortedSet[SourceElementID] = SortedSet()
+
+        project.classFiles.filter { classFile ⇒
+            val className = classFile.thisClass.className.replace('/', '.')
+            matcher.findFirstIn(className).isDefined
+        }.foreach((classFile) ⇒ {
+            sourceElementIDs += srcElemIds.sourceElementID(classFile)
+            sourceElementIDs ++= classFile.methods.map(srcElemIds.sourceElementID(classFile, _))
+            sourceElementIDs ++= classFile.fields.map(srcElemIds.sourceElementID(classFile, _))
+        })
+        sourceElementIDs
+    }
+}
+
 case object NoSourceElementsMatcher extends SourceElementsMatcher {
-    def extension(project: Project[URL], srcElemIds: SourceElementIDsMap): SortedSet[SourceElementID] = SortedSet();
+    def extension(
+        project: Project[URL],
+        srcElemIds: SourceElementIDsMap): SortedSet[SourceElementID] =
+        SortedSet.empty
 }
 
