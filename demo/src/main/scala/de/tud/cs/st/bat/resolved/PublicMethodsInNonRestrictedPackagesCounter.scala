@@ -44,7 +44,7 @@ import java.net.URL
  */
 object PublicMethodsInNonRestrictedPackagesCounter extends AnalysisExecutor {
 
-    val restrictedPackages = List(
+    val restrictedPackages = List( // set of restricted packages for Java 7 
         "sun/",
         "com/sun/xml/internal/",
         "com/sun/imageio/",
