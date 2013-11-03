@@ -16,3 +16,9 @@ bin
 *.sc
 
 *.hprof
+
+*.gz
+
+*.log
+
+*.aux
