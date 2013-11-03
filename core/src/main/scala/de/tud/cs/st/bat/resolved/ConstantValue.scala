@@ -152,8 +152,10 @@ case class ConstantString(value: String) extends ConstantValue[String] {
 }
 
 /**
- *
  * ConstantClass is, e.g., used by `anewarray` and `multianewarray` instructions.
+ *
+ * A `ConstantClass` attribute is not a `Field` attribute. I.e., it is never used to 
+ * set the value of a static field. 
  */
 case class ConstantClass(value: ReferenceType) extends ConstantValue[ReferenceType] {
 
