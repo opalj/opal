@@ -45,7 +45,7 @@ object MemoryUsage {
      * Measures the amount of memory that is used as a side-effect
      * of executing the given method.
      */
-    def apply[T](mu: (Long) ⇒ Unit)(f: ⇒ T): T = {
+    def apply[T](f: ⇒ T)(mu: Long ⇒ Unit): T = {
         val memoryMXBean = java.lang.management.ManagementFactory.getMemoryMXBean
         memoryMXBean.gc()
         val usedBefore = memoryMXBean.getHeapMemoryUsage.getUsed
