@@ -32,20 +32,27 @@
  */
 package de.tud.cs.st.bat.resolved
 package analyses
-package bug_patterns.ioc
+package bug_patterns
+
 
 /**
- * FINDBUGS: Co: Covariant compareTo() method defined (CO_SELF_NO_OBJECT)
- *
+ * Do not catch `IllegalMonitorStateExceptions`.
+ * 
  * @author Ralf Mitschke
  */
-object CO_SELF_NO_OBJECT extends (Project[_] ⇒ Iterable[(ClassFile, Method)]) {
+object IMSE_DONT_CATCH_IMSE extends (Project[_] ⇒ Iterable[(ClassFile, Method)]) {
+
+    val IllegalMonitorStateExceptionType = ObjectType("java/lang/IllegalMonitorStateException")
 
     def apply(project: Project[_]) =
         for {
-            comparable ← project.classHierarchy.allSubtypes(ObjectType("java/lang/Comparable"))
-            classFile = project.classes(comparable)
-            method @ Method(_, "compareTo", MethodDescriptor(Seq(parameterType), IntegerType), _) ← classFile.methods
-            if parameterType != ObjectType("java/lang/Object")
+            classFile ← project.classFiles
+            if classFile.isClassDeclaration
+            method ← classFile.methods
+            if method.body.isDefined
+            if method.body.get.exceptionHandlers.exists {
+                case ExceptionHandler(_, _, _, Some(IllegalMonitorStateExceptionType)) ⇒ true
+                case _ ⇒ false
+            }
         } yield (classFile, method)
 }

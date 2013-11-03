@@ -35,20 +35,22 @@ package analyses
 package bug_patterns.ioc
 
 /**
- *
+ * A superclass of a `Serializable` class must define a no-args constructor.
+ * 
  * @author Ralf Mitschke
  */
-object IMSE_DONT_CATCH_IMSE extends (Project[_] ⇒ Iterable[(ClassFile, Method)]) {
+object SE_NO_SUITABLE_CONSTRUCTOR extends (Project[_] ⇒ Iterable[ClassFile]) {
 
-    val IllegalMonitorStateExceptionType = ObjectType("java/lang/IllegalMonitorStateException")
-
-    def apply(project: Project[_]) =
+    def apply(project: Project[_]) = {
+        val serializable = ObjectType("java/io/Serializable")
         for {
-            classFile ← project.classFiles if classFile.isClassDeclaration;
-            method ← classFile.methods if method.body.isDefined
-            if method.body.get.exceptionHandlers.exists({
-                case ExceptionHandler(_, _, _, Some(IllegalMonitorStateExceptionType)) ⇒ true
-                case _ ⇒ false
-            })
-        } yield (classFile, method)
+            serializableClass ← project.classHierarchy.allSubtypes(serializable)
+            superclass ← project.classHierarchy.allSupertypes(serializableClass)
+            if project.classes.isDefinedAt(superclass)
+            superClassFile = project.classes(superclass)
+            if !superClassFile.isInterfaceDeclaration &&
+                !superClassFile.constructors.exists(_.descriptor.parameterTypes.length == 0)
+        } yield superClassFile // there can be at most one method
+    }
+
 }

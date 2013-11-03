@@ -30,21 +30,22 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st.bat.resolved
+package de.tud.cs.st.bat
+package resolved
 package analyses
 package bug_patterns.ioc
 
 /**
- *
+ * The `finalize` method should be `protected`.
  * @author Ralf Mitschke
+ * @author Michael Eichberg
  */
-object CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE extends (Project[_] ⇒ Iterable[(ClassFile, Method)]) {
+object FI_PUBLIC_SHOULD_BE_PROTECTED extends (Project[_] ⇒ Iterable[ClassFile]) {
 
     def apply(project: Project[_]) =
         for {
-            classFile ← project.classFiles if !classFile.isAnnotationDeclaration && classFile.superClass.isDefined
-            method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object), _) ← classFile.methods
-            if !project.classHierarchy.isSubtypeOf(classFile.thisClass, ObjectType("java/lang/Cloneable")).no
-        } yield (classFile, method)
+            classFile ← project.classFiles
+            Method(ACC_PUBLIC(), "finalize", MethodDescriptor(Seq(), VoidType), _) ← classFile.methods
+        } yield classFile
 
 }

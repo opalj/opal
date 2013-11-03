@@ -35,17 +35,25 @@ package analyses
 package bug_patterns.ioc
 
 /**
+ * `clone` does not call `super.clone`.
  *
+ * Actually, this method does not check whether `super.clone` is acutally called on all
+ * paths or not.
  * @author Ralf Mitschke
  */
-object FI_PUBLIC_SHOULD_BE_PROTECTED extends (Project[_] ⇒ Iterable[ClassFile]) {
+object CN_IDIOM_NO_SUPER_CALL extends (Project[_] ⇒ Iterable[(ClassFile, Method)]) {
 
     def apply(project: Project[_]) =
         for {
             classFile ← project.classFiles
-            if classFile.methods.exists(method ⇒
-                method.name == "finalize" && method.isPublic && method.descriptor.returnType == VoidType && method.descriptor.parameterTypes.size == 0
-            )
-        } yield classFile
+            if !classFile.isInterfaceDeclaration && !classFile.isAnnotationDeclaration
+            superClass ← classFile.superClass.toSeq
+            method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object), _) ← classFile.methods
+            if method.body.isDefined
+            if !method.body.get.instructions.exists {
+                case INVOKESPECIAL(`superClass`, "clone", MethodDescriptor(Seq(), ObjectType.Object)) ⇒ true
+                case _ ⇒ false
+            }
+        } yield (classFile /*.thisClass.className*/ , method /*.name*/ )
 
 }

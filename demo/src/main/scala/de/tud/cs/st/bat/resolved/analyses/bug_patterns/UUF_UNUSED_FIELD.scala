@@ -35,24 +35,39 @@ package analyses
 package bug_patterns.ioc
 
 /**
- * Finalize just calls super.finalize.
+ * Searches for private fields that are not used.
  *
- * @author Michael Eichberg
+ * @author Ralf Mitschke
  */
-object FI_USELESS extends (Project[_] ⇒ Iterable[(ClassFile, Method)]) {
+object UUF_UNUSED_FIELD extends (Project[_] ⇒ Iterable[(ClassFile, Field)]) {
 
     def apply(project: Project[_]) = {
+        var unusedFields: List[(ClassFile, Field)] = Nil
+
         for {
             classFile ← project.classFiles
-            if !classFile.isInterfaceDeclaration // performance optimization
-            method @ Method(_, "finalize", methodDescriptor @ MethodDescriptor(Seq(), VoidType), _) ← classFile.methods
-            if method.body.isDefined
-            instructions = method.body.get.instructions
-            if instructions.filter(_ != null).length == 5
-            if instructions.exists({
-                case INVOKESPECIAL(_, "finalize", `methodDescriptor`) ⇒ true
-                case _ ⇒ false
-            })
-        } yield (classFile, method)
+            if !classFile.isInterfaceDeclaration
+        } {
+            val declaringClass = classFile.thisClass
+            var privateFields: Map[String, (ClassFile, Field)] = Map.empty
+            for (field ← classFile.fields if field.isPrivate) {
+                privateFields += field.name -> (classFile, field)
+            }
+            for {
+                method ← classFile.methods if method.body.isDefined
+                instruction ← method.body.get.instructions
+            } {
+                instruction match {
+                    case FieldReadAccess(`declaringClass`, name, _) ⇒ privateFields -= name
+                    case GETSTATIC(`declaringClass`, name, _) ⇒ privateFields -= name
+                    case _ ⇒
+                }
+            }
+            if (privateFields.size > 0) {
+                unusedFields = unusedFields ::: privateFields.values.toList
+            }
+        }
+
+        unusedFields
     }
 }

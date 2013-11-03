@@ -37,21 +37,29 @@ package bug_patterns.ioc
 /**
  *
  * @author Ralf Mitschke
- *
  */
-object CN_IDIOM_NO_SUPER_CALL extends (Project[_] ⇒ Iterable[(ClassFile, Method)]) {
+object UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR
+        extends (Project[_] ⇒ Iterable[(ObjectType, Method, String, FieldType, Int)]) {
 
-    def apply(project: Project[_]) =
+    def apply(project: Project[_]) = {
+        import BaseAnalyses._
+
+        val isOverride = BaseAnalyses.isOverride(project) _
+        val calledSuperConstructor = BaseAnalyses.calledSuperConstructor(project) _
         for {
             classFile ← project.classFiles
-            if !classFile.isInterfaceDeclaration && !classFile.isAnnotationDeclaration
-            superClass ← classFile.superClass.toList
-            method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object), _) ← classFile.methods
-            if !method.isAbstract
-            if !method.body.get.instructions.exists({
-                case INVOKESPECIAL(`superClass`, "clone", MethodDescriptor(Seq(), ObjectType.Object)) ⇒ true
-                case _ ⇒ false
-            })
-        } yield (classFile /*.thisClass.className*/ , method /*.name*/ )
+            method ← classFile.methods
+            if !method.isStatic
+            if method.body.isDefined
+            if method.name != "<init>"
+            if isOverride(classFile)(method)
+            (idx, GETFIELD(declaringClass, fieldName, fieldType)) ← method.body.get.associateWithIndex();
+            //(GETFIELD(declaringClass, fieldName, fieldType), idx) ← withIndex(method.body.get.instructions);
+            constructor ← classFile.constructors if declaresField(classFile)(fieldName, fieldType);
+            (superClass, superConstructor) ← calledSuperConstructor(classFile, constructor) if (calls(superConstructor, superClass, method))
 
+        } yield {
+            (declaringClass, method, fieldName, fieldType, idx)
+        }
+    }
 }

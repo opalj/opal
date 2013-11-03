@@ -32,19 +32,27 @@
  */
 package de.tud.cs.st.bat.resolved
 package analyses
-package bug_patterns.ioc
+package bug_patterns
 
 /**
+ * Finalize just calls super.finalize.
  *
- * @author Ralf Mitschke
- *
+ * @author Michael Eichberg
  */
-object CI_CONFUSED_INHERITANCE extends (Project[_] ⇒ Iterable[(ClassFile, Field)]) {
+object FI_USELESS extends (Project[_] ⇒ Iterable[(ClassFile, Method)]) {
 
-    def apply(project: Project[_]) =
-        for (
-            classFile ← project.classFiles if classFile.isFinal;
-            field ← classFile.fields if field.isProtected
-        ) yield (classFile, field)
-
+    def apply(project: Project[_]) = {
+        for {
+            classFile ← project.classFiles
+            if !classFile.isInterfaceDeclaration // performance optimization
+            method @ Method(_, "finalize", methodDescriptor @ MethodDescriptor(Seq(), VoidType), _) ← classFile.methods
+            if method.body.isDefined
+            instructions = method.body.get.instructions
+            if instructions.filter(_ != null).length == 5
+            if instructions.exists {
+                case INVOKESPECIAL(_, "finalize", `methodDescriptor`) ⇒ true
+                case _ ⇒ false
+            }
+        } yield (classFile, method)
+    }
 }

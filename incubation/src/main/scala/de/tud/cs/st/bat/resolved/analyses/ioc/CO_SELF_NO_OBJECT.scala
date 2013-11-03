@@ -35,31 +35,17 @@ package analyses
 package bug_patterns.ioc
 
 /**
+ * FINDBUGS: Co: Covariant compareTo() method defined (CO_SELF_NO_OBJECT)
  *
  * @author Ralf Mitschke
  */
-object UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR
-        extends (Project[_] ⇒ Iterable[(ObjectType, Method, String, FieldType, Int)]) {
+object CO_SELF_NO_OBJECT extends (Project[_] ⇒ Iterable[(ClassFile, Method)]) {
 
-    def apply(project: Project[_]) = {
-        import BaseAnalyses._
-
-        val isOverride = BaseAnalyses.isOverride(project) _
-        val calledSuperConstructor = BaseAnalyses.calledSuperConstructor(project) _
-        for (
-            classFile ← project.classFiles;
-            method ← classFile.methods if (
-                method.body.isDefined &&
-                method.name != "<init>" &&
-                !method.isStatic &&
-                isOverride(classFile)(method));
-            (idx, GETFIELD(declaringClass, fieldName, fieldType)) ← method.body.get.associateWithIndex();
-            //(GETFIELD(declaringClass, fieldName, fieldType), idx) ← withIndex(method.body.get.instructions);
-            constructor ← classFile.constructors if declaresField(classFile)(fieldName, fieldType);
-            (superClass, superConstructor) ← calledSuperConstructor(classFile, constructor) if (calls(superConstructor, superClass, method))
-
-        ) yield {
-            (declaringClass, method, fieldName, fieldType, idx)
-        }
-    }
+    def apply(project: Project[_]) =
+        for {
+            comparable ← project.classHierarchy.allSubtypes(ObjectType("java/lang/Comparable"))
+            classFile = project.classes(comparable)
+            method @ Method(_, "compareTo", MethodDescriptor(Seq(parameterType), IntegerType), _) ← classFile.methods
+            if parameterType != ObjectType.Object
+        } yield (classFile, method)
 }

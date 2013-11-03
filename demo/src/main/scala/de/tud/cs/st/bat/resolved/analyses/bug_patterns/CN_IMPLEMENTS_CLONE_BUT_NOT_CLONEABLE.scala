@@ -38,33 +38,17 @@ package bug_patterns.ioc
  *
  * @author Ralf Mitschke
  */
-object UUF_UNUSED_FIELD extends (Project[_] ⇒ Iterable[(ClassFile, Field)]) {
+object CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE extends (Project[_] ⇒ Iterable[(ClassFile, Method)]) {
 
     def apply(project: Project[_]) = {
-        var unusedFields: List[(ClassFile, Field)] = Nil
-
-        for (classFile ← project.classFiles if !classFile.isInterfaceDeclaration) {
-            val declaringClass = classFile.thisClass
-            var privateFields: Map[String, (ClassFile, Field)] = Map.empty
-            for (field ← classFile.fields if field.isPrivate) {
-                privateFields += field.name -> (classFile, field)
-            }
-
-            for (
-                method ← classFile.methods if method.body.isDefined;
-                instruction ← method.body.get.instructions
-            ) {
-                instruction match {
-                    case FieldReadAccess(`declaringClass`, name, _) ⇒ privateFields -= name
-                    case GETSTATIC(`declaringClass`, name, _) ⇒ privateFields -= name
-                    case _ ⇒
-                }
-            }
-            if (privateFields.size > 0) {
-                unusedFields = unusedFields ::: privateFields.values.toList
-            }
-        }
-
-        unusedFields
+        val cloneable = ObjectType("java/lang/Cloneable")
+        for {
+            classFile ← project.classFiles
+            if classFile.superClass.isDefined // classFile != java.lang.Object
+            if !classFile.isAnnotationDeclaration
+            method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object), _) ← classFile.methods
+            if !project.classHierarchy.isSubtypeOf(classFile.thisClass, cloneable).no
+        } yield (classFile, method)
     }
+
 }

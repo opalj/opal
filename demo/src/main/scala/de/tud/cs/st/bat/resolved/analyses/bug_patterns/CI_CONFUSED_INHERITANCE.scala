@@ -35,21 +35,16 @@ package analyses
 package bug_patterns.ioc
 
 /**
+ * Final class declares `protected` field.
  *
  * @author Ralf Mitschke
  */
-object SE_NO_SUITABLE_CONSTRUCTOR extends (Project[_] ⇒ Iterable[ClassFile]) {
+object CI_CONFUSED_INHERITANCE extends (Project[_] ⇒ Iterable[(ClassFile, Field)]) {
 
-    def apply(project: Project[_]) = {
-        val serializable = ObjectType("java/io/Serializable")
-        for {
-            serializableClass ← project.classHierarchy.allSubtypes(serializable)
-            superclass ← project.classHierarchy.allSupertypes(serializableClass)
-            if project.classes.isDefinedAt(superclass)
-            superClassFile = project.classes(superclass)
-            if !superClassFile.isInterfaceDeclaration &&
-                !superClassFile.constructors.exists(_.descriptor.parameterTypes.length == 0)
-        } yield superClassFile // there can be at most one method
-    }
+    def apply(project: Project[_]) =
+        for (
+            classFile ← project.classFiles if classFile.isFinal;
+            field ← classFile.fields if field.isProtected
+        ) yield (classFile, field)
 
 }
