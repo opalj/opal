@@ -38,7 +38,7 @@ import analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
 import java.net.URL
 
 /**
- * Prints out basic information about invokedynamic instructions.
+ * Prints out the immediately available information about invokedynamic instructions.
  *
  * @author Arne Lottmann
  */
@@ -54,10 +54,12 @@ object InvokeDynamicPrinter extends AnalysisExecutor {
                     classFile ← project.classFiles
                     method ← classFile.methods if method.body.isDefined
                     INVOKEDYNAMIC(bootstrap, name, descriptor) ← method.body.get.instructions
-                } yield bootstrap + "\n" + name + "\n" + descriptor
+                } yield {
+                    bootstrap+"\n"+name+"\n"+descriptor
+                }
 
             BasicReport(
-                invokedynamics.size + " invokedynamic instructions found.\n" +
+                invokedynamics.size+" invokedynamic instructions found.\n"+
                     invokedynamics.mkString("\n", "\n\n\n", "\n"))
         }
     }
