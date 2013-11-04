@@ -154,10 +154,9 @@ class Specification
     }
 
     /**
-     * Given
+     * Returns the class files stored at the given location.
      */
-    implicit def FileToClassFileProvider(
-        file: java.io.File): Seq[(ClassFile, URL)] =
+    implicit def FileToClassFileProvider(file: java.io.File): Seq[(ClassFile, URL)] =
         Java7Framework.ClassFiles(file)
 
     case class Violation(
@@ -175,7 +174,6 @@ class Specification
                 Console.BOLD + dependencyType + Console.RESET+" "+
                 sourceElementIDtoString(target)
         }
-
     }
 
     trait DependencyChecker {
@@ -306,6 +304,10 @@ class Specification
             }+"}"
     }
 
+    /**
+     * Can be called after the evaluation of the extents of the ensembles to print
+     * out the current configuration.
+     */
     def ensembleExtentsToString: String = {
         var s = ""
         for ((ensemble, (_, elements)) ← theEnsembles) {
