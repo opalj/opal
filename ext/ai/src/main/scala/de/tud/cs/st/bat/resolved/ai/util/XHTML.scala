@@ -47,7 +47,7 @@ import scala.util.control.ControlThrowable
  *
  * @author Michael Eichberg
  */
-object Util {
+object XHTML {
 
     import language.existentials
     import de.tud.cs.st.util.ControlAbstractions._
@@ -90,7 +90,7 @@ object Util {
                     lastDump = currentTime
                     val title = Some("Generated due to exception: "+e.getMessage())
                     val dump =
-                        util.Util.dump(
+                        util.XHTML.dump(
                             Some(classFile),
                             Some(method),
                             method.body.get,
@@ -98,7 +98,7 @@ object Util {
                             operandsArray,
                             localsArray,
                             title)
-                    util.Util.writeAndOpenDump(dump) //.map(_.deleteOnExit)
+                    util.XHTML.writeAndOpenDump(dump) //.map(_.deleteOnExit)
                 } else {
                     Console.err.println("Dump suppressed: "+e.getMessage())
                 }
@@ -238,7 +238,7 @@ object Util {
         code: Code,
         domain: SomeDomain,
         operandsArray: Array[_ <: List[_ <: AnyRef]],
-        localsArray: Array[_ <: Array[_ <: AnyRef]]) = {
+        localsArray: Array[_ <: Array[_ <: AnyRef]]) : Array[Node]= {
         val indexedExceptionHandlers = indexExceptionHandlers(code)
         val instrs = code.instructions.zipWithIndex.zip(operandsArray zip localsArray).filter(_._1._1 ne null)
         for (((instruction, pc), (operands, locals)) ← instrs) yield {
@@ -254,7 +254,7 @@ object Util {
         domain: SomeDomain,
         operands: List[_ <: AnyRef],
         locals: Array[_ <: AnyRef],
-        exceptionHandlers: Option[String]) = {
+        exceptionHandlers: Option[String]) : Node = {
         <tr class={ if (operands eq null /*||/&& locals eq null*/ ) "not_evaluated" else "evaluated" }>
             <td class="pc">{ scala.xml.Unparsed(pc.toString + "<br>" + exceptionHandlers.getOrElse("")) }</td>
             <td class="instruction">{ scala.xml.Unparsed(scala.xml.Text(instruction.toString(pc)).toString.replace("\n", "<br>")) }</td>
@@ -264,7 +264,7 @@ object Util {
         </tr >
     }
 
-    def dumpStack(operands: List[_ <: AnyRef]) =
+    def dumpStack(operands: List[_ <: AnyRef]) : Node =
         if (operands eq null)
             <em>Operands are not available.</em>
         else {
@@ -273,7 +273,7 @@ object Util {
             </ul>
         }
 
-    def dumpLocals(locals: Array[_ <: AnyRef]) =
+    def dumpLocals(locals: Array[_ <: AnyRef]) : Node =
         if (locals eq null)
             <em>Local variables assignment is not available.</em>
         else {

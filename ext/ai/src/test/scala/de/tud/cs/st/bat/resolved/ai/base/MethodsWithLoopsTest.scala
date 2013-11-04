@@ -71,7 +71,7 @@ class MethodsWithLoopsTest
         val method = classFile.methods.find(_.name == name).get
         val result = BaseAI(classFile, method, domain)
 
-        util.Util.dumpOnFailureDuringValidation(Some(classFile), Some(method), method.body.get, result) {
+        util.XHTML.dumpOnFailureDuringValidation(Some(classFile), Some(method), method.body.get, result) {
             f(domain)
         }
     }

@@ -34,6 +34,7 @@ package de.tud.cs.st
 package bat
 package resolved
 package ai
+package project
 
 import bat.resolved.analyses.{ Project, ReportableAnalysisResult }
 

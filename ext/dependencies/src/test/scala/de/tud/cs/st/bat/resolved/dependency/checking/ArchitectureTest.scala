@@ -50,66 +50,9 @@ import org.scalatest.matchers.ShouldMatchers
 @RunWith(classOf[JUnitRunner])
 class ArchitectureTest extends FlatSpec with ShouldMatchers with BeforeAndAfterAll {
 
-    //    val expected = new Specification {
-    //
-    //        ensemble('Dependency_Checking) {
-    //            "de.tud.cs.st.bat.resolved.dependency.checking.*"
-    //        }
-    //
-    //        ensemble('Dependency) {
-    //            "de.tud.cs.st.bat.resolved.dependency.*"
-    //        }
-    //        
-    //        'Dependency is_only_allowed_to_use empty
+    behavior of "\"BAT Dependency\"'s implemented architecture"
 
-    //         'Integration_Tests{
-    //        "de.tud.cs.st.bat.Architecture*" and
-    //            "de.tud.cs.st.bat.BATSuite*" and
-    //            "de.tud.cs.st.bat.LoadClassFilesTest*"
-    //    }
-
-    //        ensemble('Root) {
-    //            "de.tud.cs.st.bat.*"
-    //        }
-    //
-    //        ensemble('canonical) {
-    //            "de.tud.cs.st.bat.canonical.*"
-    //        }
-    //
-    //        ensemble('canonical_reader) {
-    //            "de.tud.cs.st.bat.canonical.reader.*"
-    //        }
-    //
-    //        ensemble('reader) {
-    //            "de.tud.cs.st.bat.reader.*"
-    //        }
-    //
-    //        ensemble('resolved_representation) {
-    //            "de.tud.cs.st.bat.resolved.**"
-    //        }
-    //
-    //        //        ensemble('support) {
-    //        //            "de.tud.cs.st.util.**" union "de.tud.cs.st.prolog.*"
-    //        //        }
-    //
-    //        ensemble('util) {
-    //            "de.tud.cs.st.util.**"
-    //        }
-    //
-    //        ensemble('prolog) {
-    //            "de.tud.cs.st.prolog.*"
-    //        }
-
-    //        ensemble('empty) {
-    //            "<EMPTY>.*"
-    //        }
-
-    //  only('empty) is_allowed_to_depend_on 'prolog
-    //    }
-
-    behavior of "BAT Dependency's Architecture"
-
-    it should "the base functionality should not depend on the checking related functionality" in {
+    it should "be well modularized in the sense that a superpackage does not depend on a subpackage" in {
         val expected =
             new Specification {
 
@@ -129,7 +72,7 @@ class ArchitectureTest extends FlatSpec with ShouldMatchers with BeforeAndAfterA
         result should be(Set.empty)
     }
 
-    it should "the checking related functionality is expected to depend on the base functionality" in {
+    it should "have a dependency between the checking related functionality and the core" in {
 
         val illegal = new Specification {
 

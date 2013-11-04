@@ -562,7 +562,7 @@ trait AI[D <: Domain[_]] {
                  *
                  * @note The operand stack will only contain the raised exception.
                  *
-                 * @param exception A guaranteed non-null value that represents an instance of
+                 * @param exceptionValue A guaranteed non-null value that represents an instance of
                  *      an object that is a subtype of `java.lang.Throwable`.
                  */
                 def handleException(exceptionValue: DomainValue) {

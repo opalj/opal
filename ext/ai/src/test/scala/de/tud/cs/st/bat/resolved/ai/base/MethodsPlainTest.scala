@@ -61,7 +61,7 @@ class MethodsPlainTest
         with ShouldMatchers /*with BeforeAndAfterAll */
         with ParallelTestExecution {
 
-    import util.Util.dumpOnFailureDuringValidation
+    import util.XHTML.dumpOnFailureDuringValidation
 
     class RecordingDomain extends domain.BaseDomain {
         var returnedValue: Option[DomainValue] = _

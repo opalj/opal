@@ -34,6 +34,7 @@ package de.tud.cs.st
 package bat
 package resolved
 package ai
+package tracer
 
 /**
  * A tracer that prints out a trace's results on the console.

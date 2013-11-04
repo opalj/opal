@@ -35,6 +35,7 @@ package bat
 package resolved
 package ai
 package domain
+package tracing
 
 import reader.Java7Framework
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
@@ -59,7 +60,7 @@ class PropertyTracingTest
         with ShouldMatchers
         with ParallelTestExecution {
 
-    import util.Util.dumpOnFailureDuringValidation
+    import util.XHTML.dumpOnFailureDuringValidation
 
     val classFiles = Java7Framework.ClassFiles(
         TestSupport.locateTestResources("classfiles/ai.jar", "ext/ai"))

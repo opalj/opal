@@ -34,18 +34,36 @@ package de.tud.cs.st
 package bat
 package resolved
 package ai
+package domain
+package tracing
 
 /**
- * A base abstract interpreter that can be used with any domain that supports
- * the tracing of properties.
+ * Abstract interpreter that (in combination with an appropriate domain)
+ * facilitates the analysis of properties that are control-flow dependent.
  *
- * By default, this interpreter can be interrupted by calling the `interrupt`
- * method of the AI's thread.
+ * Basically this abstract interpreter can be used as a drop-in replacement
+ * of the default abstract interpreter if the domain supports property
+ * tracing.
  *
  * @author Michael Eichberg
  */
-object BaseTracingAI extends AIWithPropertyTracing[domain.PropertyTracing[_]] {
+trait AIWithPropertyTracing[D <: PropertyTracing[_]] extends AI[D] {
 
-    override def isInterrupted = Thread.interrupted()
+    /**
+     * Performs an abstract interpretation of the given code snippet.
+     *
+     * Before actually starting the interpretation the domain is called to
+     * let it initialize its properties.
+     */
+    override protected[ai] def perform(
+        code: Code,
+        domain: D)(
+            initialOperands: List[domain.DomainValue],
+            initialLocals: Array[domain.DomainValue]): AIResult[domain.type] = {
 
+        domain.initProperties(code, initialOperands, initialLocals)
+        super.perform(code, domain)(initialOperands, initialLocals)
+    }
 }
+
+

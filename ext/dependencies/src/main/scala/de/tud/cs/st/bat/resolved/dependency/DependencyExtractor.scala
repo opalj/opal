@@ -476,11 +476,8 @@ abstract class DependencyExtractor(
                     methodDescriptor.parameterTypes foreach { parameterType ⇒
                         processDependency(methodId, parameterType, USES_PARAMETER_TYPE)
                     }
-                    throw new UnsupportedOperationException("Java 7 Invokedynamic is not supported.")
-                //                    
-                //                    def processBootstrapArgument()
-                //                    
-                //                    bootstrapMethod.methodHandle
+                    // TODO complete the implementation of Invokedynamic w.r.t. the static dependencies defined in the "bootstrapmethod" 
+                //    throw new UnsupportedOperationException("Java 7 Invokedynamic is not supported.")
 
                 case 187 ⇒
                     processDependency(methodId, i.asInstanceOf[NEW].objectType, CREATES)

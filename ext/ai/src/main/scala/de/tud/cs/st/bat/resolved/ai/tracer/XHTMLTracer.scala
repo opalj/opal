@@ -34,6 +34,9 @@ package de.tud.cs.st
 package bat
 package resolved
 package ai
+package tracer
+
+import util.XHTML._
 
 import language.existentials
 
@@ -53,10 +56,10 @@ private[ai] object FlowEntity {
 }
 
 /**
- * A tracer that generates an HTML document.
- *
- * @author Michael Eichberg
- */
+  * A tracer that generates an HTML document.
+  *
+  * @author Michael Eichberg
+  */
 trait XHTMLTracer extends AITracer {
 
     private[this] var flow: List[List[FlowEntity]] = List(List.empty)
@@ -67,7 +70,7 @@ trait XHTMLTracer extends AITracer {
     private[this] def addFlowEntity(flowEntity: FlowEntity) {
         if (flow.head.exists(_.pc == flowEntity.pc))
             newBranch();
-        
+
         flow = (flowEntity :: flow.head) :: flow.tail
     }
 
@@ -120,9 +123,9 @@ trait XHTMLTracer extends AITracer {
                 val dialogId = "dialog"+flowEntity.flowId
                 <div id={ dialogId } title={ flowEntity.pc + " " + flowEntity.instruction.mnemonic }>
         	<b>Stack</b><br/>
-        	{ util.Util.dumpStack(flowEntity.operands) }
+        	{ dumpStack(flowEntity.operands) }
         	<b>Locals</b><br/>
-        	{ util.Util.dumpLocals(flowEntity.locals) }
+        	{ dumpLocals(flowEntity.locals) }
         	</div>
             }
         def row(pc: PC) =
@@ -288,24 +291,20 @@ trait XHTMLTracer extends AITracer {
         domain: D,
         pc: PC,
         returnAddress: PC,
-        subroutineInstructions: List[PC]): Unit = {
-        /*ignored*/
-    }
+        subroutineInstructions: List[PC]): Unit = { /*ignored*/ }
 
     /**
-     * Called when a ret instruction is encountered.
-     */
+      * Called when a ret instruction is encountered.
+      */
     def ret[D <: SomeDomain](
         domain: D,
         pc: PC,
         returnAddress: PC,
         oldWorklist: List[PC],
-        newWorklist: List[PC]): Unit = {
-        /*ignored*/
-    }
+        newWorklist: List[PC]): Unit = { /*ignored*/ }
 
-    def result[D <: SomeDomain](result: AIResult[D]) {
-        util.Util.writeAndOpenDump(dumpXHTML((new java.util.Date).toString()))
+    def result[D <: SomeDomain](result: AIResult[D]): Unit = {
+        writeAndOpenDump(dumpXHTML((new java.util.Date).toString()))
     }
 
 }

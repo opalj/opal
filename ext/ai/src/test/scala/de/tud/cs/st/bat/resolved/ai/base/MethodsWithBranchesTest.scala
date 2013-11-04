@@ -71,7 +71,7 @@ class MethodsWithBranchesTest
         val method = classFile.methods.find(_.name == name).get
         val result = BaseAI(classFile, method, domain)
 
-        util.Util.dumpOnFailureDuringValidation(
+        util.XHTML.dumpOnFailureDuringValidation(
             Some(classFile),
             Some(method),
             method.body.get,

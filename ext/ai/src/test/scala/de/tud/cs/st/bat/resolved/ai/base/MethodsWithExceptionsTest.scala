@@ -60,7 +60,7 @@ class MethodsWithExceptionsTest
         with ShouldMatchers
         with ParallelTestExecution {
 
-    import util.Util.dumpOnFailureDuringValidation
+    import util.XHTML.dumpOnFailureDuringValidation
     import domain.PreciseRecordingDomain
 
     val classFiles = Java7Framework.ClassFiles(

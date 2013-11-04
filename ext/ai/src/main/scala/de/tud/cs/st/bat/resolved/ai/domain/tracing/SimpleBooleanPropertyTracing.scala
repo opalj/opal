@@ -35,6 +35,7 @@ package bat
 package resolved
 package ai
 package domain
+package tracing
 
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 

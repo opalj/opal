@@ -30,72 +30,75 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st.bat
+package de.tud.cs.st
+package bat
 package resolved
 package ai
-package base
 
-import reader.Java7Framework
-import domain.BaseRecordingDomain
-
-import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
+import dependency.checking.Specification
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
-import org.scalatest.ParallelTestExecution
 import org.scalatest.matchers.ShouldMatchers
 
 /**
- * Basic tests of the abstract interpreter related to handling arrays.
- *
- * @author Michael Eichberg
- */
+  * Tests that BATAI's implemented design is as expected.
+  *
+  * @author Michael Eichberg
+  */
 @RunWith(classOf[JUnitRunner])
-class MethodsWithArraysTest
-        extends FlatSpec
-        with ShouldMatchers
-        with ParallelTestExecution {
+class ArchitectureTest extends FlatSpec with ShouldMatchers with BeforeAndAfterAll {
 
-    val classFiles = Java7Framework.ClassFiles(
-        TestSupport.locateTestResources("classfiles/ai.jar", "ext/ai"))
+    behavior of "BATAI's implemented architecture"
 
-    val classFile = classFiles.map(_._1).
-        find(_.thisClass.className == "ai/MethodsWithArrays").get
+    it should "be consistent with the specified architecture" in {
+        val expected =
+            new Specification {
 
-    private def evaluateMethod(name: String, f: BaseRecordingDomain[String] ⇒ Unit) {
-        val domain = new BaseRecordingDomain(name)
+                ensemble('Core) {
+                    "de.tud.cs.st.bat.resolved.ai.*" except
+                        classes("""de\.tud\.cs\.st\.bat\.resolved\.ai\..+Test.*""".r)
+                }
 
-        val method = classFile.methods.find(_.name == name).get
-        val result = BaseAI(classFile, method, domain)
+                ensemble('AITracers) {
+                    "de.tud.cs.st.bat.resolved.ai.tracer.*"
+                }
 
-        util.XHTML.dumpOnFailureDuringValidation(
-            Some(classFile),
-            Some(method),
-            method.body.get,
-            result) {
-                f(domain)
+                ensemble('Domain_Tracing) {
+                    "de.tud.cs.st.bat.resolved.ai.domain.tracing.*" except
+                        classes("""de\.tud\.cs\.st\.bat\.resolved\.ai\.domain\.tracing\..+Test.*""".r)
+                }
+
+                ensemble('Util) {
+                    "de.tud.cs.st.bat.resolved.ai.util.*"
+                }
+
+                ensemble('Domains) {
+                    "de.tud.cs.st.bat.resolved.ai.domain.*"
+                }
+
+                ensemble('Project) {
+                    "de.tud.cs.st.bat.resolved.ai.project.*"
+                }
+
+                'Core is_only_allowed_to_use empty
+
+                'Domains is_only_allowed_to_use 'Core
+
+                'Project is_only_allowed_to_use ('Core, 'Domains)
+
+                'AITracers is_only_allowed_to_use ('Core, 'Util)
+
+                'Domain_Tracing is_only_allowed_to_use ('Core, 'Domains)
             }
-    }
+        import expected._
 
-    behavior of "the abstract interpreter"
-
-    it should "be able to analyze a method that processes a byte array" in {
-        evaluateMethod("byteArrays", domain ⇒ {
-            import domain._
-            domain.returnedValues should be(
-                Set(("ireturn", 15, newByteValue))
-            )
-        })
-    }
-
-    it should "be able to analyze a method that processes a boolean array" in {
-        evaluateMethod("booleanArrays", domain ⇒ {
-            import domain._
-            domain.returnedValues should be(
-                Set(("ireturn", 14, newBooleanValue))
-            )
-        })
+        val result = analyze(Directory("."))
+        if (result.nonEmpty) {
+            println("Violations:\n\t"+result.mkString("\n\t"))
+            fail("The implemented and the specified architecture do not conform (see the console for details).")
+        }
     }
 }

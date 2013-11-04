@@ -37,7 +37,7 @@ package analyses
 
 /**
  * Writes out (a subset of) the class hierarchy in the format used by the
- * [[de.tud.cs.st.bat.resolved.analyses.ClassHierarchy]] to create the pre-initialized
+ * `de.tud.cs.st.bat.resolved.analyses.ClassHierarchy` to create the pre-initialized
  * class hierarchy.
  *
  * @author Michael Eichberg

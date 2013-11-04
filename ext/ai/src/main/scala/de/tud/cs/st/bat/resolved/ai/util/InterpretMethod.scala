@@ -37,6 +37,9 @@ package ai
 package util
 
 import domain.BaseConfigurableDomain
+import de.tud.cs.st.bat.resolved.ai.tracer.MultiTracer
+import de.tud.cs.st.bat.resolved.ai.tracer.ConsoleTracer
+import de.tud.cs.st.bat.resolved.ai.tracer.XHTMLTracer
 
 
 /**
@@ -134,7 +137,7 @@ object InterpretMethod {
                         return ;
                 }
 
-        import util.Util.{ dump, writeAndOpenDump }
+        import util.XHTML.{ dump, writeAndOpenDump }
 
         try {
             val result =

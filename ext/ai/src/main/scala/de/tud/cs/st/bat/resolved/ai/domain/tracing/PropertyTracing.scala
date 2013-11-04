@@ -34,34 +34,64 @@ package de.tud.cs.st
 package bat
 package resolved
 package ai
+package domain
+package tracing
+
+import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 /**
- * Abstract interpreter that (in combination with an appropriate domain)
- * facilitates the analysis of properties that are control-flow dependent.
+ * Enables the tracing of some user-defined property while a method is analyzed.
  *
- * Basically this abstract interpreter can be used as a drop-in replacement
- * of the default abstract interpreter if the domain supports property
- * tracing.
+ * After the analysis, the property is associated with all executed instructions.
  *
  * @author Michael Eichberg
  */
-trait AIWithPropertyTracing[D <: domain.PropertyTracing[_]] extends AI[D] {
+trait PropertyTracing[+I] extends Domain[I] { domain ⇒
+
+    trait Property {
+        def merge(otherProperty: DomainProperty): Update[DomainProperty]
+    }
+
+    type DomainProperty <: Property
+
+    def initialPropertyValue(): DomainProperty
+
+    implicit val DomainPropertyTag: reflect.ClassTag[DomainProperty]
 
     /**
-     * Performs an abstract interpretation of the given code snippet.
-     *
-     * Before actually starting the interpretation the domain is called to
-     * let it initialize its properties.
+     * The array which stores the value the property has when the respective.
+     * Instruction is executed. As in case of BATAI
      */
-    override protected[ai] def perform(
-        code: Code,
-        domain: D)(
-            initialOperands: List[domain.DomainValue],
-            initialLocals: Array[domain.DomainValue]): AIResult[domain.type] = {
+    protected var propertiesArray: Array[DomainProperty] = _
 
-        domain.initProperties(code, initialOperands, initialLocals)
-        super.perform(code, domain)(initialOperands, initialLocals)
+    def initProperties(
+        code: Code,
+        operandsArray: List[this.type#DomainValue],
+        localsArray: Array[this.type#DomainValue]) = {
+
+        this.propertiesArray = new Array(code.instructions.size)
+        this.propertiesArray(0) = initialPropertyValue()
+    }
+
+    def getProperty(pc: Int): DomainProperty = propertiesArray(pc)
+
+    override def properties(pc: Int): Option[String] =
+        Option(propertiesArray(pc)).map(_.toString())
+
+    override def flow(currentPC: Int, successorPC: Int): Boolean = {
+        if (propertiesArray(successorPC) eq null) {
+            propertiesArray(successorPC) = propertiesArray(currentPC)
+            true
+        } else {
+            propertiesArray(successorPC) merge propertiesArray(currentPC) match {
+                case NoUpdate ⇒ false
+                case StructuralUpdate(property) ⇒
+                    propertiesArray(successorPC) = property
+                    true
+                case MetaInformationUpdate(property) ⇒
+                    propertiesArray(successorPC) = property
+                    false
+            }
+        }
     }
 }
-
-
