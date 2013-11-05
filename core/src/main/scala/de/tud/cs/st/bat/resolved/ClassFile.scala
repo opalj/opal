@@ -51,8 +51,8 @@ package resolved
  * @param methods The set of declared methods. May be empty.
  * @param attributes This class file's reified attributes. Which attributes
  *    are reified depends on the configuration of the class file reader; e.g.,
- *    [[de.tud.cs.st.bat.resolved.reader.Java7Framework]]. The JVM specification defines the following
- *    attributes:
+ *    [[de.tud.cs.st.bat.resolved.reader.Java7Framework]].
+ *    The JVM specification defines the following attributes:
  *    - InnerClasses
  *    - EnclosingMethod
  *    - Synthetic
@@ -108,7 +108,7 @@ case class ClassFile(
         attributes collectFirst { case InnerClassTable(ice) ⇒ ice }
 
     // TODO [Java 7] should we keep it or should we completely resolve and remove it???
-    lazy val bootstrapMethods: Option[BootstrapMethods] =
+    def bootstrapMethods: Option[BootstrapMethods] =
         attributes collectFirst { case BootstrapMethodTable(bms) ⇒ bms }
 
     /**
@@ -118,12 +118,13 @@ case class ClassFile(
      *      inner class.
      */
     // TODO [ClassFile][Documentation][Test] We need to better describe the semantics of the access flags value of inner classes (an example?)      
-    def outerType: Option[(ObjectType, Int)] = {
-        innerClasses.flatMap(_ collectFirst {
-            case InnerClass(`thisClass`, Some(outerType), _, accessFlags) ⇒
-                (outerType, accessFlags)
-        })
-    }
+    def outerType: Option[(ObjectType, Int)] =
+        innerClasses.flatMap { innerClasses ⇒
+            innerClasses collectFirst {
+                case InnerClass(`thisClass`, Some(outerType), _, accessFlags) ⇒
+                    (outerType, accessFlags)
+            }
+        }
 
     /**
      * Each class file optionally defines a class signature.
@@ -135,7 +136,8 @@ case class ClassFile(
      * The SourceFile attribute is an optional attribute [...]. There can be
      * at most one `SourceFile` attribute.
      */
-    def sourceFile: Option[String] = attributes collectFirst { case SourceFile(s) ⇒ s }
+    def sourceFile: Option[String] =
+        attributes collectFirst { case SourceFile(s) ⇒ s }
 
     def sourceDebugExtension: Option[String] =
         attributes collectFirst { case SourceDebugExtension(s) ⇒ s }
@@ -158,12 +160,9 @@ case class ClassFile(
     // TODO [ClassFile][Test] We need a test to check that the correct method is returned.
     def staticInitializer: Option[Method] = {
         methods collectFirst {
-            case m @ Method(
-                _,
-                "<clinit>",
-                MethodDescriptor(Seq(), VoidType),
-                _
-                ) if majorVersion < 51 || m.isStatic ⇒ m
+            case method @ Method(
+                _, "<clinit>", NoArgsAndReturnVoid(), _
+                ) if majorVersion < 51 || method.isStatic ⇒ method
         }
     }
 }
