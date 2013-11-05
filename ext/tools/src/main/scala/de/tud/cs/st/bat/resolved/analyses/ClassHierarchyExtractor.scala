@@ -49,8 +49,8 @@ object ClassHierarchyExtractor {
         import reader.Java7Framework.ClassFiles
 
         if (args.length < 3 || !args.drop(2).forall(_.endsWith(".jar"))) {
-            Console.err.println("Usage: java …ClassHierarchy supertype filterprefix <JAR file>+")
-            Console.err.println("(c) 2013 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
+            println("Usage: java …ClassHierarchy supertype filterprefix <JAR file>+")
+            println("(c) 2013 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
             sys.exit(-1)
         }
 
@@ -90,7 +90,8 @@ object ClassHierarchyExtractor {
                 specLine += " extends "+superclassType.get.className
                 val superinterfaceTypes = classHierarchy.superinterfaceTypes.get(aType)
                 if (superinterfaceTypes.isDefined) {
-                    specLine += " implements "+superinterfaceTypes.get.map(_.className).mkString(", ")
+                    specLine += 
+                        " implements "+superinterfaceTypes.get.map(_.className).mkString(", ")
                 }
             }
             specLine
