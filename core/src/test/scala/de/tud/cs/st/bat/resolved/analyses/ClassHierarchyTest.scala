@@ -141,10 +141,10 @@ class ClassHierarchyTest
         isSubtypeOf(Error, Exception) should be(No)
         isSubtypeOf(Exception, Error) should be(No)
         isSubtypeOf(Exception, RuntimeException) should be(No)
-        
+
         // "only" interfaces
         isSubtypeOf(Serializable, Cloneable) should be(No)
-        
+
         // class and interface
         isSubtypeOf(ArithmeticException, Cloneable) should be(No)
     }
@@ -214,9 +214,10 @@ class ClassHierarchyTest
     //
     // -----------------------------------------------------------------------------------
 
-    val resources = TestSupport.locateTestResources("classfiles/Fields.jar")
-    val project = new Project ++ ClassFiles(resources)
-    import project.classes
+    val fieldsProject =
+        new Project ++
+            ClassFiles(TestSupport.locateTestResources("classfiles/Fields.jar"))
+    import fieldsProject.classes
 
     val SuperSuperType = ObjectType("fields/SuperSuper")
     val SuperSuperClass = classes(SuperSuperType)
@@ -235,46 +236,46 @@ class ClassHierarchyTest
 
     behavior of "the ClassHierarchy's method to resolve field references"
 
-    import project.classHierarchy.resolveFieldReference
+    import fieldsProject.classHierarchy.resolveFieldReference
 
     it should "correctly resolve a reference to a static field in a superclass" in {
-        resolveFieldReference(SuperType, "x", IntegerType, project) should be(
+        resolveFieldReference(SuperType, "x", IntegerType, fieldsProject) should be(
             Some((SuperSuperClass, SuperSuperClass.fields(0)))
         )
     }
 
     it should "correctly resolve a reference to a field defined in an interface" in {
-        resolveFieldReference(SubIType, "THE_SUB_I", IntegerType, project) should be(
+        resolveFieldReference(SubIType, "THE_SUB_I", IntegerType, fieldsProject) should be(
             Some((SubIClass, SubIClass.fields(0)))
         )
     }
 
     it should "correctly resolve a reference to a field defined in a superinterface of an interface" in {
-        resolveFieldReference(SubIType, "THE_I", IntegerType, project) should be(
+        resolveFieldReference(SubIType, "THE_I", IntegerType, fieldsProject) should be(
             Some((SuperIClass, SuperIClass.fields(0)))
         )
     }
 
     it should "correctly resolve a reference to a field defined in a superinterface" in {
-        resolveFieldReference(SubType, "THE_I", IntegerType, project) should be(
+        resolveFieldReference(SubType, "THE_I", IntegerType, fieldsProject) should be(
             Some((SuperIClass, SuperIClass.fields(0)))
         )
     }
 
     it should "correctly resolve a reference to a field defined in a superclass" in {
-        resolveFieldReference(SubSubType, "x", IntegerType, project) should be(
+        resolveFieldReference(SubSubType, "x", IntegerType, fieldsProject) should be(
             Some((SubClass, SubClass.fields(0)))
         )
     }
 
     it should "correctly resolve a reference to a private field defined in a superclass" in {
-        resolveFieldReference(SubSubType, "y", IntegerType, project) should be(
+        resolveFieldReference(SubSubType, "y", IntegerType, fieldsProject) should be(
             Some((SuperClass, SuperClass.fields(0)))
         )
     }
 
     it should "not fail (throw an exception) if the field cannot be found" in {
-        resolveFieldReference(SubSubType, "NOT_DEFINED", IntegerType, project) should be(
+        resolveFieldReference(SubSubType, "NOT_DEFINED", IntegerType, fieldsProject) should be(
             None
         )
     }
@@ -284,6 +285,50 @@ class ClassHierarchyTest
             ObjectType("NOT/DEFINED"),
             "NOT_DEFINED",
             IntegerType,
-            project) should be(None)
+            fieldsProject) should be(None)
+    }
+
+    // -----------------------------------------------------------------------------------
+    //
+    // TESTING THE RESOLVING OF METHOD REFERENCES
+    //
+    // -----------------------------------------------------------------------------------
+
+    val methodsProject =
+        new Project ++
+            ClassFiles(TestSupport.locateTestResources("classfiles/Methods.jar"))
+
+    val superI = ObjectType("methods/b/SuperI")
+    val directSub = ObjectType("methods/b/DirectSub")
+    val directSubClassFile = methodsProject(directSub).get
+
+    behavior of "the ClassHierarchy's methods to resolve method references"
+
+    it should "handle the case if an interface has no implementing class" in {
+        val classFile = methodsProject(superI).get
+        val result = methodsProject.classHierarchy.lookupImplementingMethods(
+            superI,
+            "someMethod",
+            MethodDescriptor.NoArgsAndReturnVoid,
+            methodsProject)
+
+        result.size should be(0)
+    }
+
+    it should "find a method in a super class" in {
+        val classType = ObjectType("methods/b/B")
+        val classFile = methodsProject(classType).get
+        val result = methodsProject.classHierarchy.lookupImplementingMethods(
+            classType,
+            "publicMethod",
+            MethodDescriptor.NoArgsAndReturnVoid,
+            methodsProject)
+
+        result.size should be(1)
+        result.head._1 should be(directSubClassFile)
+        result.head._2 should have(
+            'name("publicMethod"),
+            'descriptor(MethodDescriptor.NoArgsAndReturnVoid)
+        )
     }
 }

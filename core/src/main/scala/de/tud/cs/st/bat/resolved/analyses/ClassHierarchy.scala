@@ -125,6 +125,8 @@ class ClassHierarchy(
     lazy val interfaceTypes: Set[ObjectType] =
         subinterfaceTypes(ObjectType.Object) ++ superinterfaceTypes.values.flatten.toSet
 
+    def isInterface(objectType: ObjectType) = interfaceTypes.contains(objectType)
+
     /**
      * Returns true if the type hierarchy information w.r.t. the given types supertypes
      * is complete.
@@ -774,11 +776,13 @@ class ClassHierarchy(
      *    than to look up the actual definition in one of the receiver's super classes.
      *
      * @return `Some((ClassFile,Method))` if the method is found. `None` if the method
-     *    is not found. This can happen under two circumstances:
+     *    is not found. This can basically happen under three circumstances:
      *    First, not all class files referred to/used by the project are (yet) analyzed;
      *    i.e., we do not have the complete view on all class files belonging to the
      *    project.
-     *    Second, the analyzed class files do not belong together (they either belong to
+     *    The function classes did not return the class file that defines a specific
+     *    objectType for some (anaylsis-specific) reason.
+     *    Third, the analyzed class files do not belong together (they either belong to
      *    different projects or to incompatible versions of the same project.)
      */
     def lookupMethodDefinition(
@@ -787,39 +791,96 @@ class ClassHierarchy(
         methodDescriptor: MethodDescriptor,
         classes: ObjectType ⇒ Option[ClassFile]): Option[(ClassFile, Method)] = {
 
+        assume(!isInterface(receiverType))
+
         def lookupMethodDefinition(
-            classFile: ClassFile): Option[(ClassFile, Method)] = {
-            classFile.methods.collectFirst {
-                case method @ Method(_, `methodName`, `methodDescriptor`, _) ⇒
-                    (classFile, method)
+            receiverType: ObjectType): Option[(ClassFile, Method)] = {
+            classes(receiverType).flatMap { classFile ⇒
+                classFile.methods.collectFirst {
+                    case method @ Method(_, `methodName`, `methodDescriptor`, _) ⇒
+                        (classFile, method)
+                }
             } orElse {
-                classFile.superClass flatMap { superclassType ⇒
-                    classes(superclassType) flatMap { superclass ⇒
-                        lookupMethodDefinition(superclass)
-                    }
+                superclassType(receiverType) flatMap { superclassType ⇒
+                    lookupMethodDefinition(superclassType)
                 }
             }
         }
 
-        classes(receiverType) flatMap { classFile ⇒
-            assume(!classFile.isInterfaceDeclaration)
-
-            lookupMethodDefinition(classFile)
-        }
+        lookupMethodDefinition(receiverType)
     }
 
-    //    /**
-    //     * Looks up all classes that implement the given method by searching all subclasses
-    //     * of `receiverType` for implementations of the given method.
-    //     */
-    //    def lookupImplementingMethods(
-    //        receiverType: ObjectType,
-    //        methodName: String,
-    //        methodDescriptor: MethodDescriptor,
-    //        
-    //        classes: ObjectType ⇒ Option[ClassFile]): Iterable[(ClassFile, Method)] = {
-    //
-    //    }
+    /**
+     * Returns all classes that implement the given method by searching all subclasses
+     * of `receiverType` for implementations of the given method and also considering
+     * the superclasses of the `receiverType` up until the class (not interface) that
+     * defines the respective method.
+     *
+     *  @param receiverType An upper bound of the runtime type of some value. __If the type
+     *       is known to  be precise (i.e., it is no approximation of the runtime type)
+     *       then it is far more meaningful to directly call `lookupMethodDefinition`.__
+     *  @param methodName The name of the method.
+     *  @param methodDescriptor The method's descriptor.
+     *  @param isCandidate
+     *  @param classes A function to get a type's implementing class file. (Usually
+     *       an instance of the class [[de.tud.cs.st.bat.resolved.analyses.Project]]).
+     *       This method expectes unrestricted access to the pool of all class files.
+     *  @param classesFiler A function that is expected to return true, if the runtime type of
+     *       the `receiverType` may be of the type defined by the given object type. For
+     *       example, if you analyze a project and perform a lookup of all methods that
+     *       implement the method `toString`, then set would be very large. But, if you
+     *       know that only instances of the class (e.g.) `ArrayList` have been created
+     *       (up to the point in your analysis where you call this method), it is
+     *       meaningful to sort out all other classes (such as `Vector`).
+     */
+    def lookupImplementingMethods(
+        receiverType: ObjectType,
+        methodName: String,
+        methodDescriptor: MethodDescriptor,
+        classes: ObjectType ⇒ Option[ClassFile],
+        classesFilter: ObjectType ⇒ Boolean = { _ ⇒ true }): Iterable[(ClassFile, Method)] = {
+
+        var implementingMethods: List[(ClassFile, Method)] =
+            {
+                if (isInterface(receiverType))
+                    lookupMethodDefinition(
+                        ObjectType.Object, // to handle calls such as toString on a (e.g.) "java.util.List"
+                        methodName,
+                        methodDescriptor,
+                        classes)
+                else
+                    lookupMethodDefinition(
+                        receiverType,
+                        methodName,
+                        methodDescriptor,
+                        classes)
+            } match {
+                case Some(method) ⇒ List(method)
+                case None         ⇒ List.empty
+            }
+
+        // Search all subclasses
+        var seenSubtypes = Set.empty[ObjectType]
+        foreachSubtype(receiverType) { (subtype: ObjectType) ⇒
+            if (!seenSubtypes.contains(subtype)) {
+                seenSubtypes += subtype
+                if (classesFilter(subtype)) {
+                    classes(subtype) foreach { classFile ⇒
+                        classFile.methods collectFirst {
+                            case method @ Method(_, `methodName`, `methodDescriptor`, _) ⇒
+                                (classFile, method)
+                        } match {
+                            case Some(anImplementation) ⇒
+                                implementingMethods = anImplementation :: implementingMethods
+                            case _ ⇒
+                            /*don't care*/
+                        }
+                    }
+                }
+            }
+        }
+        implementingMethods
+    }
 
     /**
      * The direct subtypes of the given types.
