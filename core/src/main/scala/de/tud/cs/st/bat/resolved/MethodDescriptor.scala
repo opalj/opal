@@ -76,7 +76,16 @@ sealed abstract class MethodDescriptor extends BootstrapArgument {
 // (Done after a study of the heap memory usage)
 //
 
-case class NoArgumentMethodDescriptor private[resolved] (
+final case object NoArgumentAndNoReturnValueMethodDescriptor extends MethodDescriptor {
+    
+    def returnType = VoidType
+    
+    def parameterTypes = Nil
+    
+    def parametersCount: Int = 0
+}
+
+final case class NoArgumentMethodDescriptor private (
     returnType: Type)
         extends MethodDescriptor {
 
@@ -85,7 +94,7 @@ case class NoArgumentMethodDescriptor private[resolved] (
     def parametersCount: Int = 0
 }
 
-case class SingleArgumentMethodDescriptor private[resolved] (
+final case class SingleArgumentMethodDescriptor private (
     fieldType: FieldType,
     returnType: Type)
         extends MethodDescriptor {
@@ -95,10 +104,12 @@ case class SingleArgumentMethodDescriptor private[resolved] (
     def parametersCount: Int = 1
 }
 
-case class MultiArgumentsMethodDescriptor private[resolved] (
+final case class MultiArgumentsMethodDescriptor private (
     parameterTypes: Seq[FieldType],
     returnType: Type)
         extends MethodDescriptor {
+
+    assume(parameterTypes.size >= 2)
 
     def parametersCount: Int = parameterTypes.size
 }
@@ -107,8 +118,8 @@ object NoArgsAndReturnVoid {
 
     def unapply(md: MethodDescriptor): Boolean =
         md match {
-            case NoArgumentMethodDescriptor(VoidType) ⇒ true
-            case _                                    ⇒ false
+            case NoArgumentAndNoReturnValueMethodDescriptor ⇒ true
+            case _ ⇒ false
         }
 }
 
@@ -119,7 +130,10 @@ object MethodDescriptor {
     def apply(parameterTypes: List[FieldType], returnType: Type): MethodDescriptor = {
         parameterTypes match {
             case Nil ⇒
-                NoArgumentMethodDescriptor(returnType)
+                if (returnType == VoidType)
+                    NoArgumentAndNoReturnValueMethodDescriptor
+                else
+                    NoArgumentMethodDescriptor(returnType)
             case Seq(parameterType) ⇒
                 SingleArgumentMethodDescriptor(parameterType, returnType)
             case parameterTypes ⇒
