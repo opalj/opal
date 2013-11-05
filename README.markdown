@@ -24,7 +24,7 @@ compile Core. Util primarily contains macros.
 	
 # Building BAT
 
-0. Make sure that you have SBT 0.13.0 installed and running.
+0. Make sure that you have Java 7, Scala 2.10.3, SBT 0.13.0 installed and running.
 1. Go to BAT's root folder.
 2. Call `sbt copy-resources doc`.
 3. Call `sbt test` to test that you everything works as expected.
