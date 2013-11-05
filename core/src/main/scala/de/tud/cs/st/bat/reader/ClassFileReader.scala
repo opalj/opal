@@ -295,10 +295,10 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      * @param jarFileEntryName the name of a class file stored in the specified ZIP/JAR file.
      */
     def ClassFile(jarFile: File, jarFileEntryName: String): ClassFile = {
-        process(new ZipFile(jarFile))(zf ⇒ {
+        process { new ZipFile(jarFile) } { zf ⇒
             val jarEntry = zf.getEntry(jarFileEntryName)
             ClassFile(zf, jarEntry)
-        })
+        }
     }
 
     /**
