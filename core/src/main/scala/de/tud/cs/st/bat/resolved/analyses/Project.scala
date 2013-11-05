@@ -69,11 +69,15 @@ import java.net.URL
 class Project[+Source](
     val classes: Map[ObjectType, ClassFile],
     val sources: Map[ObjectType, Source],
-    val classHierarchy: ClassHierarchy = new ClassHierarchy())
+    val classHierarchy: ClassHierarchy)
         extends (ObjectType ⇒ Option[ClassFile]) {
 
     def this(classHierarchy: ClassHierarchy = ClassHierarchy.empty) {
-        this(Map[ObjectType, ClassFile](), Map[ObjectType, Source](), classHierarchy)
+        this(
+            Map.empty[ObjectType, ClassFile],
+            Map.empty[ObjectType, Source],
+            classHierarchy
+        )
     }
 
     /**

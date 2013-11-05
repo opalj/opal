@@ -353,7 +353,7 @@ class ClassHierarchy(
     def foreachSuperclass(
         objectType: ObjectType,
         classes: ObjectType ⇒ Option[ClassFile])(
-            f: ClassFile ⇒ Unit) {
+            f: ClassFile ⇒ Unit): Unit = {
         foreachSupertype(objectType) { supertype ⇒
             classes(supertype) match {
                 case Some(classFile) ⇒ f(classFile)
@@ -546,7 +546,7 @@ class ClassHierarchy(
      * for the resolution of unresolved symbolic references.)
      *
      * Resolving a symbolic reference is particularly required to, e.g., get a field's
-     * annotations or to get a field's value (if it is a constant value).
+     * annotations or to get a field's value (if it is static and a constant value).
      *
      * @note This implementation does not check for `IllegalAccessError`. This check
      *      needs to be done by the caller. The same applies for the check that the
@@ -555,6 +555,68 @@ class ClassHierarchy(
      *      `LinkingException`.
      *      Furthermore, if the field cannot be found it is the responsibility of the
      *      caller to handle that situation.
+     *
+     * @note Resolution is final. I.e., either this algorithm has found the defining field
+     *      or the field is not defined by one of the loaded classes. Searching for the
+     *      field in subclasses is not meaningful as Java does not do dynamic field
+     *      reference resolution. For further details study the following code:
+     *      {{{
+     * static class Super {
+     *
+     *  public int x = 0;
+     *
+     *  public int y = 0;
+     *
+     *  public int z = 0;
+     *
+     *  public String toString() { return String.valueOf(x); }
+     * }
+     *
+     * static interface I { int y = -1; }
+     *
+     * static class Sub extends Super implements I {
+     *
+     *  public int x = 1;
+     *
+     *
+     *  // public java.lang.String toString(); [FILTERED]
+     *  //
+     *  //  4  ldc <String "super.x="> [24]
+     *  //  6  invokespecial java.lang.StringBuilder(java.lang.String) [26]
+     *  //  9  aload_0 [this]
+     *  // 10  invokespecial fields.FieldReferenceResolution$Super.toString() : java.lang.String [29]
+     *  //
+     *  // 21  ldc <String "sub.x="> [37]
+     *  // 26  aload_0 [this]
+     *  // 27  getfield fields.FieldReferenceResolution$Sub.x : int [14]
+     *  //
+     *  // 38  ldc <String "((Super)this).y="> [42]
+     *  // 43  aload_0 [this]
+     *  // 44  getfield fields.FieldReferenceResolution$Super.y : int [44]
+     *  //
+     *  // 55  ldc <String "super.y="> [47]
+     *  // 60  aload_0 [this]
+     *  // 61  getfield fields.FieldReferenceResolution$Super.y : int [44]
+     *  //
+     *  // 72  ldc <String "((I)this).y="> [49]
+     *  // 77  iconst_m1
+     *  //
+     *  // 86  ldc <String "this.z="> [51]
+     *  // 91  aload_0 [this]
+     *  // 92  getfield fields.FieldReferenceResolution$Sub.z : int [53] // <= HERE, we need to resolve the reference!
+     *
+     *  public String toString() {
+     *   return
+     *   "super.x=" + super.toString()/* super.x */+ "; " +
+     *   "sub.x=" + this.x + "; " + // => super.x=0; sub.x=1
+     *   "((Super)this).y=" + ((Super) this).y + "; " +
+     *   "super.y=" + super.y + "; " +
+     *   "((I)this).y=" + ((I) this).y + "; " +
+     *   "this.z=" + this.z;
+     *   // <=> super.x=0; sub.x=1; ((Super)this).y=0; super.y=0; ((I)this).y=-1; this.z=0
+     *  }
+     * }
+     *      }}}
      *
      * @param c The class (or a superclass thereof) that is expected to define the
      *      reference field.
@@ -575,12 +637,12 @@ class ClassHierarchy(
             classFile.fields.collectFirst {
                 case field @ Field(_, `fieldName`, `fieldType`, _) ⇒ (classFile, field)
             } orElse {
-                classFile.interfaces.collectFirst { supertype ⇒
+                classFile.interfaces collectFirst { supertype ⇒
                     resolveFieldReference(supertype, fieldName, fieldType, classes) match {
                         case Some(resolvedFieldReference) ⇒ resolvedFieldReference
                     }
                 } orElse {
-                    classFile.superClass.flatMap { supertype ⇒
+                    classFile.superClass flatMap { supertype ⇒
                         resolveFieldReference(supertype, fieldName, fieldType, classes)
                     }
                 }
@@ -605,7 +667,7 @@ class ClassHierarchy(
      *    subtypes should also be searched for method implementation (at least those
      *    classes that may be instantiated).
      *
-     * @note This method just resolve a method reference. Additional checks,
+     * @note This method just resolves a method reference. Additional checks,
      *    such as whether the resolved method is accessible, may be necessary.
      *
      * @param receiverType The type of the object that receives the method call. The
@@ -617,19 +679,24 @@ class ClassHierarchy(
         methodName: String,
         methodDescriptor: MethodDescriptor,
         classes: ObjectType ⇒ Option[ClassFile]): Option[(ClassFile, Method)] = {
+
         // TODO [Java 7] Implement support for handling signature polymorphic method resolution.
 
         classes(receiverType) flatMap { classFile ⇒
             assume(!classFile.isInterfaceDeclaration)
 
-            lookupMethodDefinition(receiverType, methodName, methodDescriptor, classes).
-                orElse {
-                    lookupMethodInSuperinterfaces(
-                        classFile,
-                        methodName,
-                        methodDescriptor,
-                        classes)
-                }
+            lookupMethodDefinition(
+                receiverType,
+                methodName,
+                methodDescriptor,
+                classes
+            ) orElse
+                lookupMethodInSuperinterfaces(
+                    classFile,
+                    methodName,
+                    methodDescriptor,
+                    classes
+                )
         }
     }
 
@@ -642,13 +709,18 @@ class ClassHierarchy(
         classes(receiverType) flatMap { classFile ⇒
             assume(classFile.isInterfaceDeclaration)
 
-            lookupMethodInInterface(classFile, methodName, methodDescriptor, classes).
-                orElse {
-                    lookupMethodDefinition(ObjectType.Object,
-                        methodName,
-                        methodDescriptor,
-                        classes)
-                }
+            lookupMethodInInterface(
+                classFile,
+                methodName,
+                methodDescriptor,
+                classes
+            ) orElse
+                lookupMethodDefinition(
+                    ObjectType.Object,
+                    methodName,
+                    methodDescriptor,
+                    classes
+                )
         }
     }
 
@@ -694,7 +766,7 @@ class ClassHierarchy(
      * superclasses of the class of the given receiver type.
      *
      * This method does not take visibility modifiers or the static modifier into account.
-     * If necessary such checks needs to be done by the caller.
+     * If necessary, such checks needs to be done by the caller.
      *
      * @note In case that you analyze static source code dependencies and if an invoke
      *    instruction refers to a method that is not declared by the receiver's class, then
@@ -715,12 +787,13 @@ class ClassHierarchy(
         methodDescriptor: MethodDescriptor,
         classes: ObjectType ⇒ Option[ClassFile]): Option[(ClassFile, Method)] = {
 
-        def lookupMethodDefinition(classFile: ClassFile): Option[(ClassFile, Method)] = {
+        def lookupMethodDefinition(
+            classFile: ClassFile): Option[(ClassFile, Method)] = {
             classFile.methods.collectFirst {
                 case method @ Method(_, `methodName`, `methodDescriptor`, _) ⇒
                     (classFile, method)
             } orElse {
-                classFile.superClass.flatMap { superclassType ⇒
+                classFile.superClass flatMap { superclassType ⇒
                     classes(superclassType) flatMap { superclass ⇒
                         lookupMethodDefinition(superclass)
                     }
@@ -735,10 +808,25 @@ class ClassHierarchy(
         }
     }
 
-    def directSubtypesOf(objectType: ObjectType): Set[ObjectType] = {
-        val subclasses = subclassTypes.get(objectType).getOrElse(Set.empty[ObjectType])
-        subclasses ++ subinterfaceTypes.get(objectType).getOrElse(Set.empty[ObjectType])
-    }
+    //    /**
+    //     * Looks up all classes that implement the given method by searching all subclasses
+    //     * of `receiverType` for implementations of the given method.
+    //     */
+    //    def lookupImplementingMethods(
+    //        receiverType: ObjectType,
+    //        methodName: String,
+    //        methodDescriptor: MethodDescriptor,
+    //        
+    //        classes: ObjectType ⇒ Option[ClassFile]): Iterable[(ClassFile, Method)] = {
+    //
+    //    }
+
+    /**
+     * The direct subtypes of the given types.
+     */
+    def directSubtypesOf(objectType: ObjectType): Set[ObjectType] =
+        subclassTypes.getOrElse(objectType, Set.empty[ObjectType]) ++
+            subinterfaceTypes.getOrElse(objectType, Set.empty[ObjectType])
 
     /**
      * Returns a view of the class hierarchy as a graph (which can then be transformed
