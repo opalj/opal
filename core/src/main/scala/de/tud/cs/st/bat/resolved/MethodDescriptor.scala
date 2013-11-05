@@ -35,11 +35,11 @@ package bat
 package resolved
 
 /**
- * A method descriptor represents the parameters that the method takes and
- * the value that it returns.
- *
- * @author Michael Eichberg
- */
+  * A method descriptor represents the parameters that the method takes and
+  * the value that it returns.
+  *
+  * @author Michael Eichberg
+  */
 sealed abstract class MethodDescriptor extends BootstrapArgument {
 
     def parameterTypes: Seq[FieldType]
@@ -76,16 +76,16 @@ sealed abstract class MethodDescriptor extends BootstrapArgument {
 // (Done after a study of the heap memory usage)
 //
 
-final case object NoArgumentAndNoReturnValueMethodDescriptor extends MethodDescriptor {
-    
+private final case object NoArgumentAndNoReturnValueMethodDescriptor extends MethodDescriptor {
+
     def returnType = VoidType
-    
+
     def parameterTypes = Nil
-    
+
     def parametersCount: Int = 0
 }
 
-final case class NoArgumentMethodDescriptor private (
+private final case class NoArgumentMethodDescriptor(
     returnType: Type)
         extends MethodDescriptor {
 
@@ -94,7 +94,7 @@ final case class NoArgumentMethodDescriptor private (
     def parametersCount: Int = 0
 }
 
-final case class SingleArgumentMethodDescriptor private (
+private final case class SingleArgumentMethodDescriptor(
     fieldType: FieldType,
     returnType: Type)
         extends MethodDescriptor {
@@ -104,7 +104,7 @@ final case class SingleArgumentMethodDescriptor private (
     def parametersCount: Int = 1
 }
 
-final case class MultiArgumentsMethodDescriptor private (
+private final case class MultiArgumentsMethodDescriptor(
     parameterTypes: Seq[FieldType],
     returnType: Type)
         extends MethodDescriptor {
