@@ -43,10 +43,10 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.matchers.ShouldMatchers
 
 /**
- * Tests that the dependency's framework implemented design is as expected.
- *
- * @author Michael Eichberg
- */
+  * Tests that the dependency's framework implemented design is as expected.
+  *
+  * @author Michael Eichberg
+  */
 @RunWith(classOf[JUnitRunner])
 class ArchitectureTest extends FlatSpec with ShouldMatchers with BeforeAndAfterAll {
 
@@ -56,12 +56,12 @@ class ArchitectureTest extends FlatSpec with ShouldMatchers with BeforeAndAfterA
         val expected =
             new Specification {
 
-                ensemble('Dependency_Checking) {
-                    "de.tud.cs.st.bat.resolved.dependency.checking.*"
-                }
-
                 ensemble('Dependency) {
                     "de.tud.cs.st.bat.resolved.dependency.*"
+                }
+
+                ensemble('Dependency_Checking) {
+                    "de.tud.cs.st.bat.resolved.dependency.checking.*"
                 }
 
                 'Dependency is_only_allowed_to_use empty

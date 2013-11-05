@@ -36,10 +36,10 @@ package resolved
 package analyses
 
 /**
- * Creates a `dot` (Graphviz) based representation of the class hierarchy.
- *
- * @author Michael Eichberg
- */
+  * Creates a `dot` (Graphviz) based representation of the class hierarchy.
+  *
+  * @author Michael Eichberg
+  */
 object ClassHierarchyVisualizer {
 
     def main(args: Array[String]) {
@@ -66,13 +66,13 @@ object ClassHierarchyVisualizer {
         try {
             val desktop = java.awt.Desktop.getDesktop()
             val file = java.io.File.createTempFile("ClassHierarchy", ".dot")
-            process(new java.io.FileOutputStream(file)) { fos ⇒
+            process { new java.io.FileOutputStream(file) } { fos ⇒
                 fos.write(classHierarchyDescription.getBytes("UTF-8"))
             }
             desktop.open(file)
-        } catch {
-            case _: Error | _: Exception ⇒
-                println(classHierarchyDescription)
+        }
+        catch {
+            case _: Error | _: Exception ⇒ println(classHierarchyDescription)
         }
     }
 }
