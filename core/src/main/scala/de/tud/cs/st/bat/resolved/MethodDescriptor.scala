@@ -35,11 +35,11 @@ package bat
 package resolved
 
 /**
-  * A method descriptor represents the parameters that the method takes and
-  * the value that it returns.
-  *
-  * @author Michael Eichberg
-  */
+ * A method descriptor represents the parameters that the method takes and
+ * the value that it returns.
+ *
+ * @author Michael Eichberg
+ */
 sealed abstract class MethodDescriptor extends BootstrapArgument {
 
     def parameterTypes: Seq[FieldType]
@@ -124,6 +124,8 @@ object NoArgsAndReturnVoid {
 }
 
 object MethodDescriptor {
+
+    def NoArgsAndReturnVoid: MethodDescriptor = NoArgumentAndNoReturnValueMethodDescriptor
 
     def unapply(md: MethodDescriptor) = Some(md.parameterTypes, md.returnType)
 
