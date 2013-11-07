@@ -37,19 +37,38 @@ package ai
 
 import language.existentials
 
+/**
+ * A general, non-recoverable exception occured.
+ *
+ * @author Michael Eichberg
+ */
 class AIException(
     message: String,
     cause: Throwable) extends RuntimeException(message, cause)
 
+/**
+ * Exception that is thrown by BATAI when the abstract interpretation of a method
+ * was not possible.
+ *
+ * @author Michael Eichberg
+ */
 case class InterpreterException[D <: SomeDomain](
-    throwable: Throwable,  
+    throwable: Throwable,
     domain: D,
     worklist: List[PC],
     evaluated: List[PC],
     operandsArray: Array[_ <: List[_ <: D#DomainValue]],
     localsArray: Array[_ <: Array[_ <: D#DomainValue]])
+        // TODO [Design] using the cause's message as the message doesn't make sense when we also pass on the cause itself...
         extends AIException(throwable.getLocalizedMessage(), throwable)
 
+/**
+ * An exception related to performing computations in a specific domain occured.
+ * This exception is primarily intended to be used if the exception is most likely
+ * due to a bug in the implementation of a `Domain`.
+ *
+ * @author Michael Eichberg
+ */
 case class DomainException(
         domain: SomeDomain,
         message: String) extends AIException(message, null) {
