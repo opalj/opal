@@ -39,9 +39,11 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 import scala.util.control.ControlThrowable
 
 /**
- * A highly-configurable interpreter for BAT's resolved representation of Java bytecode.
- * This interpreter basically iterates over all instructions and computes the result
- * of each instruction using an exchangeable [[de.tud.cs.st.bat.resolved.ai.Domain]].
+ * A highly-configurable abstract interpreter for BAT's resolved representation of Java 
+ * bytecode.
+ * 
+ * This interpreter basically iterates over all instructions of a method and computes the 
+ * result of each instruction using an exchangeable [[de.tud.cs.st.bat.resolved.ai.Domain]].
  *
  * ==Interacting with BATAI==
  * The primary means how to make use of the abstract interpreter is to perform
@@ -56,8 +58,8 @@ import scala.util.control.ControlThrowable
  *
  * Hence, it is possible to use a single instance to analyze multiple methods in parallel.
  * However, if you want to be able to selectively abort the abstract interpretation
- * of some methods or selectively trace the interpretation of some methods, then you
- * should use multiple instances.
+ * of some methods or want to selectively trace the interpretation of some methods, then 
+ * you should use multiple instances.
  *
  * @define UseOfDomain
  *     BATAI does not make assumptions about the number of domain objects that
@@ -1699,7 +1701,7 @@ trait AI[D <: Domain[_]] {
  *
  * @author Michael Eichberg
  */
-private[ai] object AI {
+private object AI {
 
     /**
      * The list of program counters that is used when the analysis of a method starts.
@@ -1732,7 +1734,7 @@ private[ai] object AI {
  * case v @ CTC1() => ...
  * }}}
  */
-private[ai] object CTC1 {
+private object CTC1 {
     def unapply[D <: Domain[Any]](value: D#DomainValue): Boolean =
         value.computationalType.category == 1
 }
@@ -1745,7 +1747,7 @@ private[ai] object CTC1 {
  * case v @ CTC2() => ...
  * }}}
  */
-private[ai] object CTC2 {
+private object CTC2 {
     def unapply[D <: Domain[Any]](value: D#DomainValue): Boolean =
         value.computationalType.category == 2
 }
