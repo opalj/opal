@@ -109,7 +109,6 @@ trait AnalysisExecutor {
         // 2. setup project context
         //
         val project: Project[URL] = setupProject(files)
-        println()
 
         // 
         // 3. execute analysis
