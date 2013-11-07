@@ -40,28 +40,29 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 import reflect.ClassTag
 
 /**
- * A domain is the fundamental abstraction mechanism in BATAI that contains all
- * information about a program's types and values and performs the computations with
- * respect to a domain's values. Customizing a domain is the fundamental mechanism
- * of adapting BATAI to one's needs.
+ * A domain is the fundamental abstraction mechanism in BATAI that enables the tailoring
+ * of BATAI towards the needs of a specific analysis. A domain contains all
+ * information about a analyzed program's types and values and specifies the result of
+ * computations with respect to a domain's values. Customizing a domain is the
+ * fundamental mechanism of adapting BATAI to one's needs.
  *
  * This trait defines the interface between the abstract interpretation framework (BATAI)
  * and some (user defined) domain. I.e., this interface defines all methods that
  * are needed by BATAI to perform an abstract interpretation. While it is perfectly
  * possible to implement a new domain by inheriting from this trait it is recommended
  * to first study the already implemented domains and to use them as a foundation.
- * To facilitate the usage of BATAI several classes/traits that implement parts of
+ * To facilitate the usage of BATAI, several classes/traits that implement parts of
  * the `Domain` trait are pre-defined and can be flexibly combined when needed.
  *
  * ==Control Flow==
  * BATAI controls the process of evaluating the code of a method, but requires a
  * domain to perform the actual computations of an instruction's result. E.g., to
- * calculate the result of adding two integer values or to perform the comparison
- * of two object instances or to get the result of converting a `long` value to an
+ * calculate the result of adding two integer values, or to perform the comparison
+ * of two object instances, or to get the result of converting a `long` value to an
  * `int` value.
  *
  * Handling of instructions that manipulate the stack (e.g. `dup`), that move values
- * between the stack and the locals (e.g., `aload_X`) or that determine the control
+ * between the stack and the locals (e.g., `Xload_Y`) or that determine the control
  * flow is, however, completely embedded into BATAI.
  *
  * ==Thread Safety==
@@ -74,8 +75,9 @@ import reflect.ClassTag
  * @note BATAI assumes that conceptually every method/code block is associated
  *      with its own instance of a domain object.
  * @tparam I The type which is used to identify this domain's context. E.g., if a new
- *      object is created it may be associated with the instruction that created it and
+ *      domain is created it may be associated with the instruction that created it and
  *      this domain's identifier.
+ *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  * @author Dennis Siebert
  */
@@ -128,9 +130,9 @@ trait Domain[+I] {
         /**
          * The computational type of the value.
          *
-         * The precise computational type is needed by BATAI to calculate, e.g., the effect
+         * The precise computational type is needed by BATAI to calculate the effect
          * of generic stack manipulation instructions (e.g., `dup_...` and swap)
-         * on the stack. This is required to calculate the jump targets of RET
+         * on the stack as well as to calculate the jump targets of `RET`
          * instructions and to determine which values are actually copied by, e.g., the
          * `dup_XX` instructions.
          *
@@ -147,8 +149,8 @@ trait Domain[+I] {
          * This basically implements the join operator of complete lattices.
          *
          * Join is called whenever two control-flow paths join and, hence, the values
-         * found on the paths need to be joined. This method is called whenever two
-         * '''intra-procedural''' control-flow paths join.
+         * found on the paths need to be joined. This method is called by BATAI whenever
+         * two '''intra-procedural''' control-flow paths join.
          *
          * ==Example==
          * For example, joining a `DomainValue` that represents the integer value 0
@@ -158,10 +160,10 @@ trait Domain[+I] {
          *
          * ==Contract==
          * '''`this` value''' is always the value that was previously used by BATAI to
-         * perform subsequent computations. Hence, if `this` value subsumes the given
-         * value the result has to be either a `NoUpdate` or a `MetaInformationUpdate`.
+         * perform subsequent computations/analyses. Hence, if `this` value subsumes
+         * the given value the result has to be either `NoUpdate` or a `MetaInformationUpdate`.
          * In case that the given value subsumes `this` value, the result has to be
-         * a `StructuralUpdate`. Hence, '''the join operation is not commutative'''.
+         * a `StructuralUpdate`. Hence, '''this join operation is not commutative'''.
          * If the result is a `StructuralUpdate` BATAI will continue with the
          * interpretation.
          *
@@ -169,23 +171,23 @@ trait Domain[+I] {
          * that at some point all values are fixed and don't change anymore. Hence,
          * it is important that the type of the update is only a
          * [[de.tud.cs.st.bat.resolved.ai.StructuralUpdate]] if the value has changed in
-         * a way relevant for future computations performed with this value.
+         * a way relevant for future computations/analyses performed with this value.
          * In other words, when two values are joined it has to be ensured that no
          * fall back to a previous value occurs. E.g., if you join the existing integer
          * value 0 and the given value 1 and the result would be 1, then it must be
          * ensured that a subsequent join with the value 0 will not result in the value
          * 0 again.
          *
-         *
          * @param pc The program counter of the instruction where the paths converge.
          * @param value The "new" domain value with which this domain value should be
-         * 		joined.
+         * 		joined. It is safe to assume that the given `value` and this value have
+         *      the same computational type.
          */
-        def doJoin(pc: PC, value: DomainValue): Update[DomainValue]
+        protected def doJoin(pc: PC, value: DomainValue): Update[DomainValue]
 
         /**
          * Checks that the given value and this value are compatible and – if so –
-         * calls `join`. See `doJoin(..)` for details.
+         * calls `doJoin(PC,DomainValue)`. See `doJoin(..)` for details.
          *
          * @note It is generally not needed to override this method.
          *
@@ -254,6 +256,7 @@ trait Domain[+I] {
          * @note __The precise semantics of `adapt` can be determined by the domain
          * 		as BATAI does not use/call this method.__
          */
+        @throws[DomainException]
         def adapt[TDI >: I](
             targetDomain: Domain[TDI],
             pc: PC): targetDomain.DomainValue =
@@ -294,12 +297,13 @@ trait Domain[+I] {
     type ⊥ = IllegalValue
     protected class IllegalValue extends Value { this: DomainIllegalValue ⇒
 
+        @throws[DomainException]("always")
         final override def computationalType: ComputationalType =
             domainException(
                 Domain.this,
                 "a dead/an illegal value does not have a computational type")
 
-        override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] =
+        override protected def doJoin(pc: PC, value: DomainValue): Update[DomainValue] =
             if (value eq TheIllegalValue)
                 NoUpdate
             else
@@ -308,11 +312,13 @@ trait Domain[+I] {
         override def join(pc: PC, value: DomainValue): Update[DomainValue] =
             doJoin(pc, value)
 
+        @throws[DomainException]("always")
         override def summarize(pc: PC): DomainValue =
             domainException(
                 Domain.this,
                 "creating a summary of an IllegalValue is meaningless")
 
+        @throws[DomainException]("always")
         override def summarize(
             pc: PC,
             value: DomainValue): DomainValue =
@@ -381,17 +387,19 @@ trait Domain[+I] {
         final override def computationalType: ComputationalType =
             ComputationalTypeReturnAddress
 
-        override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] =
+        override protected def doJoin(pc: PC, value: DomainValue): Update[DomainValue] =
             if (address == value.asReturnAddressValue)
                 NoUpdate
             else
                 domainException(Domain.this, "return address values cannot be joined")
 
+        @throws[DomainException]("always")
         override def summarize(pc: PC): DomainValue =
             domainException(
                 Domain.this,
                 "creating a summary of a return address value is meaningless")
 
+        @throws[DomainException]("always")
         override def summarize(
             pc: PC,
             value: DomainValue): DomainValue =
@@ -1186,7 +1194,7 @@ trait Domain[+I] {
         bootstrapMethod: BootstrapMethod,
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]) : Computation[DomainValue,Iterable[DomainValue]]
+        operands: List[DomainValue]): Computation[DomainValue, Iterable[DomainValue]]
 
     def invokeinterface(
         pc: PC,
@@ -1345,7 +1353,7 @@ trait Domain[+I] {
      * regarding the calculation of a summary see `Value.summuarize(...)`.
      *
      * @param pc The program counter that will be used for the summary value if
-     * 		a new value that abstracts over/summarize the given values is returned.
+     * 		a new value is returned that abstracts over/summarize the given values.
      * @param values An `Iterable` over one or more values.
      */
     def summarize(pc: PC, values: Iterable[DomainValue]): DomainValue =
