@@ -44,7 +44,7 @@ package resolved
  *  or the class [[de.tud.cs.st.bat.AccessFlagsIterator]] or the classes which
  *  inherit from [[de.tud.cs.st.bat.AccessFlag]].
  * @param thisClass The type implemented by this class file.
- * @param superClass The class from which this class inherits. None, if this
+ * @param superClass The class from which this class inherits. `None` iff this
  * 	class file represents `java.lang.Object`.
  * @param interfaces The set of implemented interfaces. May be empty.
  * @param fields The set of declared fields. May be empty.
@@ -117,9 +117,8 @@ case class ClassFile(
      * @return The object type of the outer type as well as the access flags of this
      *      inner class.
      */
-    // TODO [ClassFile][Documentation][Test] We need to better describe the semantics of the access flags value of inner classes (an example?)      
     def outerType: Option[(ObjectType, Int)] =
-        innerClasses.flatMap { innerClasses ⇒
+        innerClasses flatMap { innerClasses ⇒
             innerClasses collectFirst {
                 case InnerClass(`thisClass`, Some(outerType), _, accessFlags) ⇒
                     (outerType, accessFlags)
@@ -176,4 +175,15 @@ object ClassFile {
     val classCategoryMask: Int = ACC_INTERFACE.mask | ACC_ANNOTATION.mask | ACC_ENUM.mask
 
     val annotationMask: Int = ACC_INTERFACE.mask | ACC_ANNOTATION.mask
+
+//    def unapply(classFile: ClassFile): Option[(Int, Int, Int, ObjectType, Option[ObjectType], Seq[ObjectType], Fields, Methods, Attributes)] =
+//        Some((classFile.minorVersion,
+//            classFile.majorVersion,
+//            classFile.accessFlags,
+//            classFile.thisClass, // TODO [ClassFile] Rename "thisClass" to,e.g., thisType
+//            classFile.superClass, // TODO [ClassFile] Rename superClass to superclassType
+//            classFile.interfaces, // TODO [ClassFile] Rename interfaces to interfacesTypes
+//            classFile.fields,
+//            classFile.methods,
+//            classFile.attributes))
 }
