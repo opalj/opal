@@ -66,7 +66,7 @@ object DependencyType extends Enumeration {
     val CREATES_ARRAY_OF_TYPE = Value("creates array of type")
     val CASTS_INTO = Value("casts into")
     val CHECKS_INSTANCEOF = Value("checks instanceOf")
-    val CREATES = Value("creates")
+    val CREATES = Value("creates") // TODO CREATES == newObject?
     val USES_FIELD_DECLARING_TYPE = Value("uses field declaring type")
     val READS_FIELD = Value("reads field")
     val WRITES_FIELD = Value("writes field")
