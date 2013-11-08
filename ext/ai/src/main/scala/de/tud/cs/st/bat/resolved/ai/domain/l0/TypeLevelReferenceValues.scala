@@ -60,17 +60,18 @@ trait TypeLevelReferenceValues[+I] extends Domain[I] {
          * reference type under the assumption that this value is not null!
          *
          * Basically, this method implements the same semantics as the `ClassHierarchy`'s
-         * `isSubtypeOf` method. But, additionally it checks if the type of this value
-         * '''could be a subtype'' of the given supertype.
+         * `isSubtypeOf` method, but it additionally  checks if the type of this value
+         * '''could be a subtype'' of the given supertype. I.e., if this value's type
+         * identifies a supertype of the given `supertype` the answer is unknown.
          *
          * For example, assume that the type of this reference value is
-         * `java.util.Collection` and we know/ have to assume that this is only an
+         * `java.util.Collection` and we know/have to assume that this is only an
          * upper bound. In this case an answer is `No` if and only if it is impossible
          * that the runtime type is a subtype of the given supertype. This
          * condition holds, for example, for `java.io.File` which is not a subclass
          * of `java.util.Collection` and which does not have any further subclasses (in
          * the JDK). I.e., the classes `java.io.File` and `java.util.Collection` are
-         * not in an inheritance relationship. However, if the specified supertype would 
+         * not in an inheritance relationship. However, if the specified supertype would
          * be `java.util.List` the answer would be unknown.
          */
         def isSubtypeOf(supertype: ReferenceType): Answer
@@ -100,11 +101,11 @@ trait TypeLevelReferenceValues[+I] extends Domain[I] {
      *
      * @param value A value of type `ReferenceValue`.
      */
-    def isNull(value: DomainValue): Answer = Unknown
+    def isNull(value: DomainValue): Answer =
+        Unknown
 
-    def isSubtypeOf(
-        value: DomainValue,
-        supertype: ReferenceType): Answer = asReferenceValue(value).isSubtypeOf(supertype)
+    def isSubtypeOf(value: DomainValue, supertype: ReferenceType): Answer =
+        asReferenceValue(value).isSubtypeOf(supertype)
 
     // -----------------------------------------------------------------------------------
     //
@@ -138,21 +139,25 @@ trait TypeLevelReferenceValues[+I] extends Domain[I] {
     //
     // -----------------------------------------------------------------------------------
 
-    def newArray(pc: PC, referenceType: ReferenceType): DomainValue
+    def newArray(pc: PC, referenceType: ArrayType): DomainValue
 
     //
     // CREATE ARRAY
     //
-    def newarray(pc: PC,
-                 count: DomainValue,
-                 componentType: FieldType): Computation[DomainValue, DomainValue] =
+    def newarray(
+        pc: PC,
+        count: DomainValue,
+        componentType: FieldType): Computation[DomainValue, DomainValue] =
         //ComputedValueAndException(TypedValue(ArrayType(componentType)), TypedValue(ObjectType.NegativeArraySizeException))
         ComputedValue(newArray(pc, ArrayType(componentType)))
 
     /**
      * @note The componentType may be (again) an array type.
      */
-    def multianewarray(pc: PC, counts: List[DomainValue], arrayType: ArrayType) =
+    def multianewarray(
+        pc: PC,
+        counts: List[DomainValue],
+        arrayType: ArrayType): Computation[DomainValue, DomainValue] =
         //ComputedValueAndException(TypedValue(arrayType), TypedValue(ObjectType.NegativeArraySizeException))
         ComputedValue(newArray(pc, arrayType))
 

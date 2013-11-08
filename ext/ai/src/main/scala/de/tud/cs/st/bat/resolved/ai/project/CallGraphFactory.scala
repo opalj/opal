@@ -39,7 +39,7 @@ package project
 import bat.resolved.analyses.{ Project, ReportableAnalysisResult }
 
 /**
- * Creates a call graph by analyzing each entry point on its own. The called by
+ * Creates a call graph by analyzing each entry point on its own. The call
  * graph is calculated under a specific assumption about a programs/libraries/framework's 
  * entry methods. 
  *

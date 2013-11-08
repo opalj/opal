@@ -66,15 +66,16 @@ case class TypeHierarchyInformation(
 }
 
 /**
- * Represents a project's class hierarchy.
+ * Represents the visible part of a project's class hierarchy.
  *
- * Only the part of a project's class hierarchy is visible that is defined in
- * the analyzed class files and their ''boundary classes/interfaces''. I.e., those classes
+ * Only the part of a project's class hierarchy is visible that is referred to in
+ * the class declarations of the analyzed class. I.e., those classes
  * which are directly referred to in a classes declaration, but for which the respective
- * class file was not analyzed. For example, if the class file of the class
- * `java.util.ArrayList` is analyzed, the class hierarchy will have some preliminary
- * information about, e.g., `java.util.List` from which `ArrayList` inherits. However,
- * the information about `List` is incomplete and `List` will be a boundary class.
+ * class file was not analyzed, are also considered to be visible. For example, if the 
+ * class file of the class `java.util.ArrayList` is analyzed, the class hierarchy will 
+ * have some preliminary information about, e.g., `java.util.List` from which `ArrayList` 
+ * inherits. However, the information about `List` is incomplete and `List` will be a 
+ * boundary class.
  *
  * ==Usage==
  * To build the class hierarchy use the `++` and `+` method.

@@ -242,7 +242,7 @@ trait DefaultTypeLevelReferenceValues[+I]
     def newInitializedObject(pc: PC, referenceType: ReferenceType): DomainValue =
         newObject(pc, referenceType)
 
-    def newArray(pc: PC, referenceType: ReferenceType): DomainValue =
+    def newArray(pc: PC, referenceType: ArrayType): DomainValue =
         newInitializedObject(pc, referenceType)
 
     def newStringValue(pc: PC, value: String): DomainValue =

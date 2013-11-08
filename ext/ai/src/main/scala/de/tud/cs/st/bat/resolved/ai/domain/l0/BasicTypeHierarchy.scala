@@ -47,6 +47,7 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  * @author Michael Eichberg
  */
 trait BasicTypeHierarchy { this: Domain[_] ⇒
+    
     /**
      * This project's class hierarchy; unless explicitly overridden, BAT's
      * built-in default class hierarchy is used which only reflects the type-hierarchy
