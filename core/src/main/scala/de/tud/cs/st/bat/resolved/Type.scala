@@ -361,23 +361,37 @@ sealed trait BooleanType extends BaseType {
 }
 case object BooleanType extends BooleanType
 
+/**
+ * @param className The fully qualified name of the class in binary notation
+ *      (e.g. "java/lang/Object").
+ */
 final class ObjectType private (
     val className: String)
         extends ReferenceType {
 
-    override def isObjectType = true
+    override def isObjectType: Boolean = true
 
-    override def asObjectType = this
+    override def asObjectType: ObjectType = this
 
+    /**
+     * The hash value.
+     *
+     * The way ObjectType instances are created ensures  (for all practical purposes) that:
+     * 1) each instance of type `ObjectType` has a unique hash value.
+     * 2) two references to ObjectTypes that have different hash values identify
+     *      two different types.
+     */
     override val hashCode = ObjectType.nextHashCode.getAndIncrement()
 
     override def equals(other: Any): Boolean =
         other match {
-            case that: ObjectType ⇒ equals(that)
-            case _                ⇒ false
+            case that: AnyRef ⇒ equals(that)
+            case _            ⇒ false
         }
 
-    def equals(other: ObjectType): Boolean = other.className == this.className
+    def equals(other: ObjectType): Boolean =
+        //<=> both class names are equal
+        this eq other
 
     def simpleName: String = ObjectType.simpleName(className)
 
@@ -388,34 +402,41 @@ final class ObjectType private (
     override def toString = "ObjectType("+className+")"
 
 }
+/**
+ * Defines factory and extractor methods for `ObjectType`'s
+ *
+ * @author Michael Eichberg
+ */
 object ObjectType {
 
     import java.util.WeakHashMap
     import java.lang.ref.WeakReference
 
-    private val nextHashCode  = new java.util.concurrent.atomic.AtomicInteger()
-    
-    
+    private val nextHashCode = new java.util.concurrent.atomic.AtomicInteger(0)
+
     private[this] val cache = new WeakHashMap[String, WeakReference[ObjectType]]()
 
     /**
-     * Factory method to create ObjectTypes.
+     * Factory method to create `ObjectType`s.
      *
      * ==Note==
-     * `ObjectType` objects are cached internally to reduce the overall memory requirements.
+     * `ObjectType` objects are cached internally to reduce the overall memory
+     * requirements and to ensure that only one instance of an ObjectType exists
+     * per class name.
      */
-    def apply(className: String): ObjectType = cache.synchronized {
-        val wrOT = cache.get(className)
-        if (wrOT != null) {
-            val OT = wrOT.get()
-            if (OT != null)
-                return OT;
+    def apply(className: String): ObjectType =
+        cache.synchronized {
+            val wrOT = cache.get(className)
+            if (wrOT != null) {
+                val OT = wrOT.get()
+                if (OT != null)
+                    return OT;
+            }
+            val newOT = new ObjectType(className)
+            val wrNewOT = new WeakReference(newOT)
+            cache.put(className, wrNewOT)
+            newOT
         }
-        val newOT = new ObjectType(className)
-        val wrNewOT = new WeakReference(newOT)
-        cache.put(className, wrNewOT)
-        newOT
-    }
 
     def unapply(ot: ObjectType): Option[String] = Some(ot.className)
 
