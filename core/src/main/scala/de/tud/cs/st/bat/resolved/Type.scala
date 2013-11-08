@@ -385,7 +385,7 @@ final class ObjectType private (
 
     override def equals(other: Any): Boolean =
         other match {
-            case that: AnyRef ⇒ equals(that)
+            case that: ObjectType ⇒ equals(that)
             case _            ⇒ false
         }
 
