@@ -206,19 +206,29 @@ object XHTML {
         localsArray: Array[_ <: Array[_ <: AnyRef]]): Node = {
 
         val indexedExceptionHandlers = indexExceptionHandlers(code)
+        val exceptionHandlers =
+            (
+                for ((eh, index) ← indexExceptionHandlers(code)) yield {
+                    "⚡: "+index+" "+eh.catchType.map(_.toJava).getOrElse("<finally>")+
+                        " ["+eh.startPC+","+eh.endPC+")"+" => "+eh.handlerPC
+                }
+            ).map(eh ⇒ <p>{ eh }</p>)
+            
         <div>
         <table>
             <caption>{ caption(classFile, method) }</caption>
             <thead>
-            <tr><th class="pc">PC</th><th class="instruction">Instruction</th><th class="stack">Operand Stack</th><th class="registers">Registers</th><th class="properties">Properties</th></tr>
+            <tr><th class="pc">PC</th>
+                <th class="instruction">Instruction</th>
+                <th class="stack">Operand Stack</th>
+                <th class="registers">Registers</th>
+                <th class="properties">Properties</th></tr>
             </thead>
             <tbody>
             { dumpInstructions(code, domain, operandsArray, localsArray) }
             </tbody>
         </table>
-        { for ((eh, index) ← indexedExceptionHandlers) yield <p>
-                   { "⚡: " + index + " " + eh.catchType.map(_.toJava).getOrElse("<finally>") + " [" + eh.startPC + "," + eh.endPC + ")" + " => " + eh.handlerPC }
-           </p> }
+        { exceptionHandlers }
         </div>
     }
 
@@ -238,7 +248,7 @@ object XHTML {
         code: Code,
         domain: SomeDomain,
         operandsArray: Array[_ <: List[_ <: AnyRef]],
-        localsArray: Array[_ <: Array[_ <: AnyRef]]) : Array[Node]= {
+        localsArray: Array[_ <: Array[_ <: AnyRef]]): Array[Node] = {
         val indexedExceptionHandlers = indexExceptionHandlers(code)
         val instrs = code.instructions.zipWithIndex.zip(operandsArray zip localsArray).filter(_._1._1 ne null)
         for (((instruction, pc), (operands, locals)) ← instrs) yield {
@@ -254,7 +264,7 @@ object XHTML {
         domain: SomeDomain,
         operands: List[_ <: AnyRef],
         locals: Array[_ <: AnyRef],
-        exceptionHandlers: Option[String]) : Node = {
+        exceptionHandlers: Option[String]): Node = {
         <tr class={ if (operands eq null /*||/&& locals eq null*/ ) "not_evaluated" else "evaluated" }>
             <td class="pc">{ scala.xml.Unparsed(pc.toString + "<br>" + exceptionHandlers.getOrElse("")) }</td>
             <td class="instruction">{ scala.xml.Unparsed(scala.xml.Text(instruction.toString(pc)).toString.replace("\n", "<br>")) }</td>
@@ -264,7 +274,7 @@ object XHTML {
         </tr >
     }
 
-    def dumpStack(operands: List[_ <: AnyRef]) : Node =
+    def dumpStack(operands: List[_ <: AnyRef]): Node =
         if (operands eq null)
             <em>Operands are not available.</em>
         else {
@@ -273,7 +283,7 @@ object XHTML {
             </ul>
         }
 
-    def dumpLocals(locals: Array[_ <: AnyRef]) : Node =
+    def dumpLocals(locals: Array[_ <: AnyRef]): Node =
         if (locals eq null)
             <em>Local variables assignment is not available.</em>
         else {
