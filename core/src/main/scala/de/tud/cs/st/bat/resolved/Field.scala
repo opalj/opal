@@ -54,11 +54,12 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case class Field(
-    accessFlags: Int,
-    name: String,
-    fieldType: FieldType,
-    attributes: Attributes)
+class Field private (
+    val id: Int,
+    val accessFlags: Int,
+    val name: String,
+    val fieldType: FieldType,
+    val attributes: Attributes)
         extends ClassMember {
 
     override def isField = true
@@ -83,4 +84,48 @@ case class Field(
 
     def toJavaSignature: String = fieldType.toJava+" "+name
 
+    override def hashCode: Int = id
+
+    override def equals(other: Any): Boolean =
+        other match {
+            case that: AnyRef ⇒ this eq that
+            case _            ⇒ false
+        }
+
+    override def toString(): String = {
+        AccessFlags.toStrings(accessFlags, AccessFlagsContexts.FIELD).mkString("", " ", " ") +
+            fieldType.toJava+" "+name +
+            attributes.view.map(_.getClass().getSimpleName()).mkString(" « ", ", ", " »")
+    }
+}
+
+/**
+ * Defines factory and extractor methods for `Field` objects.
+ */
+object Field {
+
+    private val nextId = new java.util.concurrent.atomic.AtomicInteger(1)
+
+    def fieldsCount = nextId.get
+
+    def apply(
+        accessFlags: Int,
+        name: String,
+        fieldType: FieldType,
+        attributes: Attributes): Field = {
+        new Field(
+            nextId.getAndIncrement(),
+            accessFlags,
+            name,
+            fieldType,
+            attributes)
+    }
+
+    def unapply(field: Field): Option[(Int, String, FieldType, Attributes)] =
+        Some((
+            field.accessFlags,
+            field.name,
+            field.fieldType,
+            field.attributes
+        ))
 }
