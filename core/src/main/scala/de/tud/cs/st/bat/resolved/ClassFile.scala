@@ -72,7 +72,7 @@ case class ClassFile(
     accessFlags: Int,
     thisClass: ObjectType, // TODO [ClassFile] Rename "thisClass" to,e.g., thisType
     superClass: Option[ObjectType], // TODO [ClassFile] Rename superClass to superclassType
-    interfaces: Seq[ObjectType], // TODO [ClassFile] Rename interfaces to interfacesTypes
+    interfaces: Seq[ObjectType], // TODO [ClassFile] Rename interfaces to interfaceTypes
     fields: Fields,
     methods: Methods,
     attributes: Attributes)
@@ -146,7 +146,7 @@ case class ClassFile(
      *
      * (This does not include static initializers.)
      */
-    def constructors: Seq[Method] = methods.view.filter(_.name == "<init>")
+    def constructors: Seq[Method] = methods.view filter { _.name == "<init>" }
 
     /**
      * The static initializer of this class.
@@ -157,13 +157,13 @@ case class ClassFile(
      *       in a class file are of no consequence.
      */
     // TODO [ClassFile][Test] We need a test to check that the correct method is returned.
-    def staticInitializer: Option[Method] = {
+    def staticInitializer: Option[Method] =
         methods collectFirst {
             case method @ Method(
                 _, "<clinit>", NoArgsAndReturnVoid(), _
                 ) if majorVersion < 51 || method.isStatic ⇒ method
         }
-    }
+
 }
 /**
  * A collection of constants related to class files.
@@ -176,14 +176,14 @@ object ClassFile {
 
     val annotationMask: Int = ACC_INTERFACE.mask | ACC_ANNOTATION.mask
 
-//    def unapply(classFile: ClassFile): Option[(Int, Int, Int, ObjectType, Option[ObjectType], Seq[ObjectType], Fields, Methods, Attributes)] =
-//        Some((classFile.minorVersion,
-//            classFile.majorVersion,
-//            classFile.accessFlags,
-//            classFile.thisClass, // TODO [ClassFile] Rename "thisClass" to,e.g., thisType
-//            classFile.superClass, // TODO [ClassFile] Rename superClass to superclassType
-//            classFile.interfaces, // TODO [ClassFile] Rename interfaces to interfacesTypes
-//            classFile.fields,
-//            classFile.methods,
-//            classFile.attributes))
+    //    def unapply(classFile: ClassFile): Option[(Int, Int, Int, ObjectType, Option[ObjectType], Seq[ObjectType], Fields, Methods, Attributes)] =
+    //        Some((classFile.minorVersion,
+    //            classFile.majorVersion,
+    //            classFile.accessFlags,
+    //            classFile.thisClass, // TODO [ClassFile] Rename "thisClass" to,e.g., thisType
+    //            classFile.superClass, // TODO [ClassFile] Rename superClass to superclassType
+    //            classFile.interfaces, // TODO [ClassFile] Rename interfaces to interfacesTypes
+    //            classFile.fields,
+    //            classFile.methods,
+    //            classFile.attributes))
 }
