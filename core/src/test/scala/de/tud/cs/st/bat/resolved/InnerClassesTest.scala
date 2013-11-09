@@ -35,10 +35,10 @@ package bat
 package resolved
 
 import reader.Java7Framework.ClassFiles
-import analyses.Project
+import analyses.MapBasedProject
+
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
-import org.scalatest.Spec
 import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.matchers.ShouldMatchers
@@ -61,7 +61,9 @@ class InnerClassesTest
     //
     //
 
-    val project = new Project ++ ClassFiles(TestSupport.locateTestResources("classfiles/Innerclasses.jar"))
+    val project =
+        MapBasedProject.empty[java.net.URL] ++
+            ClassFiles(TestSupport.locateTestResources("classfiles/Innerclasses.jar"))
 
     val myRootClass$Formatter = ObjectType("innerclasses/MyRootClass$Formatter")
     val myRootClass = ObjectType("innerclasses/MyRootClass")

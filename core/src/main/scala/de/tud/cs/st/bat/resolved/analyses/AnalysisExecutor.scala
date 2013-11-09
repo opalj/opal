@@ -120,12 +120,13 @@ trait AnalysisExecutor {
 
     def setupProject(files: Iterable[File]): Project[URL] = {
         println("Reading class files:")
-        var project = Project.initial[URL]
+        var project = MapBasedProject.empty[URL]
         for {
             file ← files if { println("\t"+file.toString()); true }
             classFiles = Java7Framework.ClassFiles(file)
             classFile ← classFiles
         } {
+            // this is done sequentially!
             project += classFile
         }
         println("\tClass files loaded: "+project.sources.size)

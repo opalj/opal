@@ -215,24 +215,24 @@ class ClassHierarchyTest
     // -----------------------------------------------------------------------------------
 
     val fieldsProject =
-        new Project ++
+        MapBasedProject.empty[java.net.URL] ++
             ClassFiles(TestSupport.locateTestResources("classfiles/Fields.jar"))
-    import fieldsProject.classes
+    import fieldsProject.classFile
 
     val SuperSuperType = ObjectType("fields/SuperSuper")
-    val SuperSuperClass = classes(SuperSuperType)
+    val SuperSuperClass = classFile(SuperSuperType).get
     val SuperType = ObjectType("fields/Super")
-    val SuperClass = classes(SuperType)
+    val SuperClass = classFile(SuperType).get
 
     val SuperIType = ObjectType("fields/SuperI")
-    val SuperIClass = classes(SuperIType)
+    val SuperIClass = classFile(SuperIType).get
     val SubIType = ObjectType("fields/SubI")
-    val SubIClass = classes(SubIType)
+    val SubIClass = classFile(SubIType).get
 
     val SubType = ObjectType("fields/Sub")
-    val SubClass = classes(SubType)
+    val SubClass = classFile(SubType).get
     val SubSubType = ObjectType("fields/SubSub")
-    val SubSubClass = classes(SubSubType)
+    val SubSubClass = classFile(SubSubType).get
 
     behavior of "the ClassHierarchy's method to resolve field references"
 
@@ -295,7 +295,7 @@ class ClassHierarchyTest
     // -----------------------------------------------------------------------------------
 
     val methodsProject =
-        new Project ++
+        MapBasedProject.empty[java.net.URL] ++
             ClassFiles(TestSupport.locateTestResources("classfiles/Methods.jar"))
 
     val superI = ObjectType("methods/b/SuperI")

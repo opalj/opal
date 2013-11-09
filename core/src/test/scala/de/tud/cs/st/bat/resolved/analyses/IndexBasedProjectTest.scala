@@ -49,7 +49,7 @@ import reader.Java7Framework.ClassFiles
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class ProjectTest
+class IndexBasedProjectTest
         extends FlatSpec
         with ShouldMatchers
         with ParallelTestExecution {
@@ -60,7 +60,7 @@ class ProjectTest
     //
     //
     val resources = TestSupport.locateTestResources("classfiles/methods.jar")
-    val project = new Project ++ ClassFiles(resources)
+    val project = IndexBasedProject.empty[java.net.URL] ++ ClassFiles(resources)
 
     val SuperType = ObjectType("methods/a/Super")
     val DirectSub = ObjectType("methods/a/DirectSub")
@@ -72,20 +72,20 @@ class ProjectTest
     //
     //
 
-    behavior of "Project's classes repository"
+    behavior of "IndexBasedProject"
 
-    import project.classes
+    import project.classFile
 
     it should "find the class methods.a.Super" in {
-        classes.get(SuperType) should be('Defined)
+        classFile(SuperType) should be('Defined)
     }
 
     it should "find the class methods.b.AbstractB" in {
-        classes.get(AbstractB) should be('Defined)
+        classFile(AbstractB) should be('Defined)
     }
 
     it should "not find the class java.lang.Object" in {
-        classes.get(ObjectType.Object) should not be ('Defined)
+        classFile(ObjectType.Object) should not be ('Defined)
     }
 
     behavior of "Project's lookupMethodDeclaration method"

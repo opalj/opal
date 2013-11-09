@@ -37,7 +37,7 @@ package dependency
 package checking
 
 import reader.Java7Framework
-import analyses.{ ClassHierarchy, Project }
+import analyses.{ ClassHierarchy, MapBasedProject }
 
 import java.net.URL
 import collection.immutable.SortedSet
@@ -324,7 +324,7 @@ class Specification
         import de.tud.cs.st.util.debug.PerformanceEvaluation.time
         import de.tud.cs.st.util.debug._
 
-        var project = Project.initial[URL]
+        var project = MapBasedProject.empty[URL]
 
         // 1. create and update the support data structures
         time {

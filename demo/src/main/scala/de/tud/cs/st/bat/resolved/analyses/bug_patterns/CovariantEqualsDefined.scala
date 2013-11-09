@@ -78,7 +78,7 @@ class CovariantEqualsMethodDefined[Source]
             if (definesCovariantEqualsMethod && !definesEqualsMethod) {
                 mutex.synchronized {
                     reports = ClassBasedReport(
-                        project.sources.get(classFile.thisClass),
+                        project.source(classFile.thisClass),
                         classFile.thisClass.className,
                         Some("issue"),
                         "The class: "+

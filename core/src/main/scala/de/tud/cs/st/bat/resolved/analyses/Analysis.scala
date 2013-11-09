@@ -53,7 +53,7 @@ package analyses
  * @see [[de.tud.cs.st.bat.resolved.analyses.MultipleResultsAnalysis]]
  * @author Michael Eichberg
  */
-trait Analysis[-Source /*, SomeProject <: Project[Source]*/ , +AnalysisResult] {
+trait Analysis[Source /*, SomeProject <: Project[Source]*/ , +AnalysisResult] {
     // TODO Consider to also abstract over projects. This would enable us to specify that some analyses may required, e.g., a Project class that provides more/other information  
 
     /**

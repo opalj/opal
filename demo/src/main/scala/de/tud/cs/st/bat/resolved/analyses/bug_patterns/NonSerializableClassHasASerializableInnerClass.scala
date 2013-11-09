@@ -69,13 +69,13 @@ class NonSerializableClassHasASerializableInnerClass[Source]
 
         for {
             serializableType ← project.classHierarchy.allSubtypes(Serializable)
-            classFile = project.classes(serializableType)
+            classFile = project(serializableType).get
             (outerType, NOT_STATIC()) ← classFile.outerType
             /* if we know nothing about the class, then we never generate a warning */
             if isSubtypeOf(outerType, Serializable).no
         } yield {
             ClassBasedReport(
-                project.sources.get(serializableType),
+                project.source(serializableType),
                 serializableType.toJava,
                 Some("note"),
                 "The non-static inner class: "+

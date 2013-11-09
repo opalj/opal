@@ -34,7 +34,7 @@ package de.tud.cs.st.bat
 package resolved
 
 import reader.Java7Framework.ClassFiles
-import analyses.Project
+import analyses.MapBasedProject
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
@@ -60,7 +60,9 @@ class CodeAttributeTest
     //
     //
 
-    val project = new Project ++ ClassFiles(TestSupport.locateTestResources("classfiles/Code.jar"))
+    val project =
+        MapBasedProject.empty[java.net.URL] ++
+            ClassFiles(TestSupport.locateTestResources("classfiles/Code.jar"))
 
     val boundedBufferClass = ObjectType("code/BoundedBuffer")
     val immutbleListClass = ObjectType("code/ImmutableList")
@@ -235,7 +237,7 @@ class CodeAttributeTest
     it should "be able to correctly extract the line number for the first instruction" in {
         codeOfConstructor.lineNumberTable.get.lookupLineNumber(0) should be(Some(41))
     }
-    
+
     it should "be able to correctly extract the line number of some intermediate instruction" in {
         codeOfConstructor.lineNumberTable.get.lookupLineNumber(14) should be(Some(44))
     }

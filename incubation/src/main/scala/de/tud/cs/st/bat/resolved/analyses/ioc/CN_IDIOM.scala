@@ -37,14 +37,13 @@ package bug_patterns.ioc
 /**
  *
  * @author Ralf Mitschke
- *
  */
 object CN_IDIOM extends (Project[_] ⇒ Iterable[ClassFile]) {
 
     def apply(project: Project[_]) =
         for {
             cloneable ← project.classHierarchy.allSubtypes(ObjectType("java/lang/Cloneable"))
-            classFile = project.classes(cloneable)
+            classFile ← project.classFile(cloneable)
             if !classFile.methods.exists({
                 case Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object), _) ⇒ true
                 case _ ⇒ false

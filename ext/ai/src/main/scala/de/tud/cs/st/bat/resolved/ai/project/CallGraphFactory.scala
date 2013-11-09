@@ -122,7 +122,7 @@ class CallGraphFactory {
         
         var privateMethods = List.empty[Method]
         for {
-            classFile ← project.classes.values.par
+            classFile ← project.classFiles.par
             method ← classFile.methods
         } {
             if (method.isPrivate) {

@@ -66,11 +66,11 @@ import java.net.URL
  *
  * @author Michael Eichberg
  */
-class Project[+Source](
+class MapBasedProject[Source](
     val classes: Map[ObjectType, ClassFile],
     val sources: Map[ObjectType, Source],
     val classHierarchy: ClassHierarchy)
-        extends (ObjectType ⇒ Option[ClassFile]) {
+        extends ProjectLike[Source, MapBasedProject[Source]] {
 
     def this(classHierarchy: ClassHierarchy = ClassHierarchy.empty) {
         this(
@@ -80,17 +80,9 @@ class Project[+Source](
         )
     }
 
-    /**
-     * Tries to lookup the class file for the given `objectType`.
-     */
-    def apply(objectType: ObjectType): Option[ClassFile] = classes.get(objectType)
+    def source(objectType: ObjectType): Option[Source] = sources.get(objectType)
 
-    /**
-     * Adds the class files to this project by calling the simple "+" method
-     * for each class file.
-     */
-    def ++[NewS >: Source](classFiles: Traversable[(ClassFile, NewS)]): Project[NewS] =
-        ((this: Project[NewS]) /: classFiles)(_ + _)
+    def classFile(objectType: ObjectType): Option[ClassFile] = classes.get(objectType)
 
     /**
      * Adds the given class file to this project.
@@ -98,9 +90,9 @@ class Project[+Source](
      * If the class defines an object type that was previously added, the old class file
      * will be replaced by the given one.
      */
-    def +[NewS >: Source](cs: (ClassFile, NewS)): Project[NewS] = {
+    def +(cs: (ClassFile, Source)): MapBasedProject[Source] = {
         val (classFile, source) = cs
-        new Project(
+        new MapBasedProject(
             classes + ((classFile.thisClass, classFile)),
             sources + ((classFile.thisClass, source)),
             classHierarchy + classFile)
@@ -113,19 +105,19 @@ class Project[+Source](
 }
 
 /**
- * Factory for [[de.tud.cs.st.bat.resolved.analyses.Project]] objects.
+ * Factory for [[de.tud.cs.st.bat.resolved.analyses.MapBasedProject]]s.
  *
  * @author Michael Eichberg
  */
-object Project {
+object MapBasedProject {
 
     /**
      * Creates a project that contains no class files, but where the class hierarchy
      * already contains the information about the exceptions thrown by JVM
      * instructions.
      */
-    def initial[Source]() =
-        new Project[Source](
+    def empty[Source]() =
+        new MapBasedProject[Source](
             classHierarchy = ClassHierarchy.preInitializedClassHierarchy
         )
 

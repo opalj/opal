@@ -46,6 +46,10 @@ import java.net.URL
 package object analyses {
 
     import language.implicitConversions
+    
+    
+    type Project[Source] = ProjectLike[Source, _]
+    
 
     /**
      * Converts a URL in a location identifier.
@@ -62,13 +66,13 @@ package object analyses {
     /**
      * An analysis that may produce a result.
      */
-    type SingleOptionalResultAnalysis[-Source, +AnalysisResult] = Analysis[Source, Option[AnalysisResult]]
+    type SingleOptionalResultAnalysis[Source, +AnalysisResult] = Analysis[Source, Option[AnalysisResult]]
 
     /**
      * An analysis that may produce multiple results. E.g., an analysis that looks for
      * instances of bug patterns.
      */
-    type MultipleResultsAnalysis[-Source, +AnalysisResult] = Analysis[Source, Iterable[AnalysisResult]]
+    type MultipleResultsAnalysis[Source, +AnalysisResult] = Analysis[Source, Iterable[AnalysisResult]]
 
     implicit def fileBasedAnalysisToAnalysisWithReportableResults(
         analysis: Analysis[File, Iterable[SourceLocationBasedReport[File]]]): Analysis[File, ReportableAnalysisResult] = {

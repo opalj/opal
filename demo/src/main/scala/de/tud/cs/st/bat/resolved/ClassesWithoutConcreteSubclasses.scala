@@ -52,7 +52,7 @@ object ClassesWithoutConcreteSubclasses extends AnalysisExecutor {
         def analyze(project: Project[URL], parameters: Seq[String]) = {
             val classTypes =
                 for {
-                    classFile ← project.classes.values
+                    classFile ← project.classFiles
                     thisClass = classFile.thisClass
                     if classFile.isAbstract
                     if project.classHierarchy.directSubtypesOf(thisClass).isEmpty

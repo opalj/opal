@@ -57,7 +57,6 @@ object CountOverridingMethods extends AnalysisExecutor {
 
         def analyze(project: Project[URL], parameters: Seq[String] = List.empty) = {
             import project.classHierarchy
-            import project.classes
 
             var methodsCount = 0
             var methodsThatOverrideAnotherMethodCount = 0

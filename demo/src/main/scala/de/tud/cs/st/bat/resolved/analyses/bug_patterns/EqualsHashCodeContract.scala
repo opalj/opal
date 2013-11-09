@@ -80,7 +80,7 @@ class EqualsHashCodeContract[Source]
             if (definesEqualsMethod != definesHashCodeMethod) {
                 mutex.synchronized {
                     reports = ClassBasedReport(
-                        project.sources.get(classFile.thisClass),
+                        project.source(classFile.thisClass),
                         classFile.thisClass.className,
                         Some("issue"),
                         "The class: "+

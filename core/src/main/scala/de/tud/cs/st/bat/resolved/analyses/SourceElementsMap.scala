@@ -26,30 +26,36 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st.bat.resolved
+package de.tud.cs.st
+package bat
+package resolved
 package analyses
-package bug_patterns.ioc
+
+import util.graphs.{ Node, toDot }
+
+import reader.Java7Framework
+
+import java.net.URL
 
 /**
-  * A superclass of a `Serializable` class must define a no-args constructor.
-  *
-  * @author Ralf Mitschke
-  */
-object SE_NO_SUITABLE_CONSTRUCTOR extends (Project[_] ⇒ Iterable[ClassFile]) {
+ * 
+ *
+ * @author Michael Eichberg
+ */
+trait SourceElementsMap[Source, Project <: ProjectLike[Source, Project]]
+        extends ProjectLike[Source,Project] { this: Project ⇒
 
-    def apply(project: Project[_]) = {
-        val serializable = ObjectType("java/io/Serializable")
-        for {
-            serializableClass ← project.classHierarchy.allSubtypes(serializable)
-            superClass ← project.classHierarchy.allSupertypes(serializableClass)
-            superClassFile ← project.classFile(superClass)
-            if !superClassFile.isInterfaceDeclaration &&
-                !superClassFile.constructors.exists(_.descriptor.parameterTypes.length == 0)
-        } yield superClassFile // there can be at most one method
-    }
-
+  
+    /**
+     * Adds the given class file to this project.
+     *
+     * If the class defines an object type that was previously added, the old class file
+     * will be replaced by the given one.
+     */
+    def +(cs: (ClassFile, Source)): Project
+ 
 }
