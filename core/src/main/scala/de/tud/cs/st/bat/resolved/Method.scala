@@ -37,18 +37,25 @@ package resolved
 /**
  * Represents a single method.
  *
+ * @note Equality of methods is – by purpose – reference based. Furthermore, each method
+ *      has a unique id/hash value in the range [1,Method.methodCount].
+ *      This makes it, e.g., possible to use an array to associate information with
+ *      methods instead of a `Map`. However, a `Map` is more efficient if you will not
+ *      associate information with (nearly) all methods.
+ *
  * @author Michael Eichberg
  */
-case class Method(
-    accessFlags: Int,
-    name: String,
-    descriptor: MethodDescriptor,
-    attributes: Attributes)
+class Method private (
+    val id: Int, // also used as the "hashCode"
+    val accessFlags: Int,
+    val name: String,
+    val descriptor: MethodDescriptor,
+    val attributes: Attributes)
         extends ClassMember {
 
-    override def isMethod = true
+    override final def isMethod = true
 
-    override def asMethod = this
+    override final def asMethod = this
 
     def runtimeVisibleParameterAnnotations: Option[ParameterAnnotations] =
         attributes collectFirst { case RuntimeVisibleParameterAnnotationTable(pas) ⇒ pas }
@@ -88,4 +95,48 @@ case class Method(
 
     def toJava(): String = descriptor.toJava(name)
 
+    override def hashCode: Int = id
+
+    override def equals(other: Any): Boolean =
+        other match {
+            case that: AnyRef ⇒ this eq that
+            case _            ⇒ false
+        }
+
+    override def toString(): String = {
+        AccessFlags.toStrings(accessFlags, AccessFlagsContexts.METHOD).mkString("", " ", " ") +
+            descriptor.toJava(name) +
+            attributes.view.map(_.getClass().getSimpleName()).mkString(" « ", ", ", " »")
+    }
+
+}
+/**
+ * Defines factory and extractor methods for `Method` objects.
+ */
+object Method {
+
+    private val nextId = new java.util.concurrent.atomic.AtomicInteger(1)
+
+    def methodsCount = nextId.get
+
+    def apply(
+        accessFlags: Int,
+        name: String,
+        descriptor: MethodDescriptor,
+        attributes: Attributes): Method = {
+        new Method(
+            nextId.getAndIncrement(),
+            accessFlags,
+            name,
+            descriptor,
+            attributes)
+    }
+
+    def unapply(method: Method): Option[(Int, String, MethodDescriptor, Attributes)] =
+        Some((
+            method.accessFlags,
+            method.name,
+            method.descriptor,
+            method.attributes
+        ))
 }
