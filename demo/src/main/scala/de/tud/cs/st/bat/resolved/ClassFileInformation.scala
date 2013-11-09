@@ -35,10 +35,10 @@ package bat
 package resolved
 
 /**
- * Loads class files form a JAR archive and prints the signatures of the classes.
- *
- * @author Michael Eichberg
- */
+  * Loads class files form a JAR archive and prints the signatures of the classes.
+  *
+  * @author Michael Eichberg
+  */
 object ClassFileInformation {
 
     def main(args: Array[String]) {
@@ -49,6 +49,7 @@ object ClassFileInformation {
             println("Usage: java …ClassFileInformation "+
                 "<JAR file containing class files> "+
                 "<Name of classfile (incl. path) contained in the JAR file>+")
+            println("Example:\n\tjava …ClassFileInformation /Library/Java/JavaVirtualMachines/jdk1.7.0_45.jdk/Contents/Home/jre/lib/rt.jar java/util/ArrayList.class")
             sys.exit(-1)
         }
 
@@ -60,16 +61,20 @@ object ClassFileInformation {
             import classFile._
 
             // print the name of the type defined by this class file
-            print(thisClass.toJava)
+            println(thisClass.toJava)
 
-            superClass.map(s ⇒ println(" extends "+s.toJava)) // java.lang.Object does not have a super class!
+            superClass.map(s ⇒ println("  extends "+s.toJava)) // java.lang.Object does not have a super class!
             if (interfaces.length > 0) {
-                print(interfaces.map(_.toJava).mkString(" implements", " ", "\n"))
+                println(interfaces.map(_.toJava).mkString("  implement ", ", ", ""))
             }
 
-            sourceFile.map(s ⇒ println(" sourcefile: "+s))
+            sourceFile map { s ⇒ println("\tSOURCEFILE: "+s) }
 
-            println(" version   : "+majorVersion+"."+minorVersion)
+            println("\tVERSION: "+majorVersion+"."+minorVersion)
+
+            println(fields.mkString("\tFIELDS:\n\t","\n\t",""))
+
+            println(methods.mkString("\tMETHODS:\n\t","\n\t",""))
 
             println
         }
