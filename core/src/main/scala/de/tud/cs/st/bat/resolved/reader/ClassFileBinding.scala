@@ -73,7 +73,7 @@ trait ClassFileBinding
         descriptor_index: Constant_Pool_Index,
         attributes: Attributes)(
             implicit cp: Constant_Pool): Field_Info = {
-        new Field(
+        Field(
             access_flags,
             name_index.asString,
             descriptor_index.asFieldType,
@@ -86,7 +86,7 @@ trait ClassFileBinding
         descriptor_index: Int,
         attributes: Attributes)(
             implicit cp: Constant_Pool): Method_Info = {
-        new Method(
+        Method(
             accessFlags,
             name_index.asString,
             descriptor_index.asMethodDescriptor,
