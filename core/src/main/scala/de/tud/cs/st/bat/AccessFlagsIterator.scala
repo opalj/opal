@@ -45,20 +45,16 @@ package bat
  *
  * @author Michael Eichberg
  */
-class AccessFlagsIterator(
-    accessFlags: Int,
-    ctx: AccessFlagsContext)
+class AccessFlagsIterator private (
+    var flags: Int,
+    potentialAccessFlags: IndexedSeq[AccessFlag])
         extends Iterator[AccessFlag] {
-
-    private[this] var flags = accessFlags
-
-    private[this] val potentialAccessFlags = AccessFlagsContexts.potentialAccessFlags(ctx)
 
     private[this] var index = -1
 
-    def hasNext = flags != 0
+    override def hasNext = flags != 0
 
-    def next: AccessFlag = {
+    override def next: AccessFlag = {
         while ((index + 1) < potentialAccessFlags.size) {
             index += 1
             if ((flags & potentialAccessFlags(index).mask) != 0) {
@@ -69,13 +65,16 @@ class AccessFlagsIterator(
         BATException("Unknown access flag(s): "+Integer.toHexString(flags))
     }
 }
+
 /**
  * Factory for creating `AccessFlagsIterator` objects.
  */
 object AccessFlagsIterator {
 
     def apply(accessFlags: Int, ctx: AccessFlagsContext) =
-        new AccessFlagsIterator(accessFlags, ctx)
-
+        new AccessFlagsIterator(
+            accessFlags,
+            AccessFlagsContexts.potentialAccessFlags(ctx)
+        )
 }
 
