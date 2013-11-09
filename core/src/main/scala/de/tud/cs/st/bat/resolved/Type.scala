@@ -115,7 +115,7 @@ case object ComputationalTypeDouble
  *
  * @author Michael Eichberg
  */
-sealed trait Type {
+sealed abstract class Type {
 
     def isFieldType: Boolean = false
     def isBaseType: Boolean = false
@@ -156,15 +156,14 @@ object ReturnType {
 
 }
 
-sealed trait VoidType extends Type with ReturnTypeSignature {
-
-    // remark: the default implementation of equals and hashCode suits our needs!
-    def accept[T](sv: SignatureVisitor[T]): T = sv.visit(this)
+sealed abstract class VoidType extends Type with ReturnTypeSignature {
 
     override final def isVoidType = true
 
-    def computationalType: ComputationalType =
+    override final def computationalType: ComputationalType =
         throw new UnsupportedOperationException("\"void\" does not have a computational type")
+
+    override final def accept[T](sv: SignatureVisitor[T]): T = sv.visit(this)
 
     def toJava: String = "void"
 
@@ -173,7 +172,7 @@ sealed trait VoidType extends Type with ReturnTypeSignature {
 }
 case object VoidType extends VoidType
 
-sealed trait FieldType extends Type {
+sealed abstract class FieldType extends Type {
 
     override final def isFieldType = true
 }
@@ -198,15 +197,18 @@ object FieldType {
     }
 }
 
-sealed trait ReferenceType extends FieldType {
+sealed abstract class ReferenceType extends FieldType {
 
     override final def isReferenceType = true
 
-    override def asReferenceType: ReferenceType = this
+    override final def asReferenceType: ReferenceType = this
 
-    def computationalType = ComputationalTypeReference
+    override final def computationalType = ComputationalTypeReference
 
 }
+/**
+ * Defines a factory method to create instances of `ReferenceType`
+ */
 object ReferenceType {
 
     def apply(rt: String): ReferenceType = {
@@ -215,21 +217,19 @@ object ReferenceType {
         else
             ObjectType(rt);
     }
-
-    def unapply(t: ReferenceType): Boolean = true
 }
 
-sealed trait BaseType extends FieldType with TypeSignature {
+sealed abstract class BaseType extends FieldType with TypeSignature {
 
     override final def isBaseType = true
 
 }
 
-sealed trait ByteType extends BaseType {
+sealed abstract class ByteType extends BaseType {
 
-    override def isByteType = true
+    override final def isByteType = true
 
-    def computationalType = ComputationalTypeInt
+    override final def computationalType = ComputationalTypeInt
 
     final val atype = 8
 
@@ -242,15 +242,15 @@ sealed trait ByteType extends BaseType {
 }
 case object ByteType extends ByteType
 
-sealed trait CharType extends BaseType {
+sealed abstract class CharType extends BaseType {
 
-    override def isCharType = true
+    override final def isCharType = true
 
-    def computationalType = ComputationalTypeInt
+    override final def computationalType = ComputationalTypeInt
+
+    override final def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     final val atype = 5
-
-    def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     def toJava: String = "char"
 
@@ -259,15 +259,15 @@ sealed trait CharType extends BaseType {
 }
 final case object CharType extends CharType
 
-sealed trait DoubleType extends BaseType {
+sealed abstract class DoubleType extends BaseType {
 
-    override def isDoubleType = true
+    override final def isDoubleType = true
 
-    def computationalType = ComputationalTypeDouble
+    override final def computationalType = ComputationalTypeDouble
+
+    override final def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     final val atype = 7
-
-    def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     def toJava: String = "double"
 
@@ -276,15 +276,15 @@ sealed trait DoubleType extends BaseType {
 }
 case object DoubleType extends DoubleType
 
-sealed trait FloatType extends BaseType {
+sealed abstract class FloatType extends BaseType {
 
-    override def isFloatType = true
+    override final def isFloatType = true
 
-    def computationalType = ComputationalTypeFloat
+    override final def computationalType = ComputationalTypeFloat
+
+    override final def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     final val atype = 6
-
-    def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     def toJava: String = "float"
 
@@ -293,15 +293,15 @@ sealed trait FloatType extends BaseType {
 }
 case object FloatType extends FloatType
 
-sealed trait ShortType extends BaseType {
+sealed abstract class ShortType extends BaseType {
 
-    override def isShortType = true
+    override final def isShortType = true
 
-    def computationalType = ComputationalTypeInt
+    override final def computationalType = ComputationalTypeInt
+
+    override final def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     final val atype = 9
-
-    def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     def toJava: String = "short"
 
@@ -310,15 +310,15 @@ sealed trait ShortType extends BaseType {
 }
 case object ShortType extends ShortType
 
-sealed trait IntegerType extends BaseType {
+sealed abstract class IntegerType extends BaseType {
 
-    override def isIntegerType = true
+    override final def isIntegerType = true
 
-    def computationalType = ComputationalTypeInt
+    override final def computationalType = ComputationalTypeInt
+
+    override final def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     final val atype = 10
-
-    def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     def toJava: String = "int"
 
@@ -327,15 +327,15 @@ sealed trait IntegerType extends BaseType {
 }
 case object IntegerType extends IntegerType
 
-sealed trait LongType extends BaseType {
+sealed abstract class LongType extends BaseType {
 
-    override def isLongType = true
+    override final def isLongType = true
 
-    def computationalType = ComputationalTypeLong
+    override final def computationalType = ComputationalTypeLong
+
+    override final def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     final val atype = 11
-
-    def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     def toJava: String = "long"
 
@@ -344,15 +344,15 @@ sealed trait LongType extends BaseType {
 }
 case object LongType extends LongType
 
-sealed trait BooleanType extends BaseType {
+sealed abstract class BooleanType extends BaseType {
 
-    override def isBooleanType = true
+    override final def isBooleanType = true
 
-    def computationalType = ComputationalTypeInt
+    override final def computationalType = ComputationalTypeInt
+
+    override final def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     final val atype = 4
-
-    def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     def toJava: String = "boolean"
 
@@ -362,10 +362,13 @@ sealed trait BooleanType extends BaseType {
 case object BooleanType extends BooleanType
 
 /**
+ * Represents a
+ *
  * @param className The fully qualified name of the class in binary notation
  *      (e.g. "java/lang/Object").
  */
 final class ObjectType private (
+    val id: Int,
     val className: String)
         extends ReferenceType {
 
@@ -376,17 +379,17 @@ final class ObjectType private (
     /**
      * The hash value.
      *
-     * The way ObjectType instances are created ensures  (for all practical purposes) that:
+     * The way ObjectType instances are created ensures – for all practical purposes – that:
      * 1) each instance of type `ObjectType` has a unique hash value.
-     * 2) two references to ObjectTypes that have different hash values identify
-     *      two different types.
+     * 2) two references to `ObjectType`s that have different hash values identify
+     * two different types.
      */
-    override val hashCode = ObjectType.nextHashCode.getAndIncrement()
+    override def hashCode = id
 
     override def equals(other: Any): Boolean =
         other match {
             case that: ObjectType ⇒ equals(that)
-            case _            ⇒ false
+            case _                ⇒ false
         }
 
     def equals(other: ObjectType): Boolean =
@@ -412,16 +415,21 @@ object ObjectType {
     import java.util.WeakHashMap
     import java.lang.ref.WeakReference
 
-    private val nextHashCode = new java.util.concurrent.atomic.AtomicInteger(0)
+    private val nextId = new java.util.concurrent.atomic.AtomicInteger(1)
 
     private[this] val cache = new WeakHashMap[String, WeakReference[ObjectType]]()
+
+    /**
+     * The number of different `ObjectType`s in the analyzed class files.
+     */
+    def objectTypesCount = nextId.get
 
     /**
      * Factory method to create `ObjectType`s.
      *
      * ==Note==
      * `ObjectType` objects are cached internally to reduce the overall memory
-     * requirements and to ensure that only one instance of an ObjectType exists
+     * requirements and to ensure that only one instance of an `ObjectType` exists
      * per class name.
      */
     def apply(className: String): ObjectType =
@@ -432,7 +440,7 @@ object ObjectType {
                 if (OT != null)
                     return OT;
             }
-            val newOT = new ObjectType(className)
+            val newOT = new ObjectType(nextId.getAndIncrement(), className)
             val wrNewOT = new WeakReference(newOT)
             cache.put(className, wrNewOT)
             newOT
