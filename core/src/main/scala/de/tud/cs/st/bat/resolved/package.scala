@@ -35,8 +35,8 @@ package bat
 
 /**
  * In this representation of Java bytecode references to a Java class file's constant
- * pool and to attributes are replaced by direct references to the corresponding constant pool entries.
- * This facilitates developing analyses and fosters comprehension.
+ * pool and to attributes are replaced by direct references to the corresponding constant
+ * pool entries. This facilitates developing analyses and fosters comprehension.
  *
  * Based on the fact that indirect
  * reference to constant pool entries are resolved and replaced by direct reference this
@@ -75,6 +75,7 @@ package object resolved {
     type Instructions = Array[Instruction]
 
     type SourceElementID = Int
+
 
     @throws[AnalysisFailedException]
     final def CodeError(message: String, code: Code, pc: Int) =
