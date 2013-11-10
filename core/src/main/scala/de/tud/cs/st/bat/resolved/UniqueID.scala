@@ -33,29 +33,16 @@
 package de.tud.cs.st
 package bat
 package resolved
-package analyses
-
-import util.graphs.{ Node, toDot }
-
-import reader.Java7Framework
-
-import java.net.URL
 
 /**
- * 
  *
  * @author Michael Eichberg
  */
-trait SourceElementsMap[Source, Project <: ProjectLike[Source, Project]]
-        extends ProjectLike[Source,Project] { this: Project ⇒
-
-  
-    /**
-     * Adds the given class file to this project.
-     *
-     * If the class defines an object type that was previously added, the old class file
-     * will be replaced by the given one.
-     */
-    def +(cs: (ClassFile, Source)): Project
- 
+trait UniqueID {
+    def id: Int
 }
+
+object UniqueIDBasedOrdering extends Ordering[UniqueID] {
+    def compare(a: UniqueID, b: UniqueID): Int = a.id - b.id
+}
+

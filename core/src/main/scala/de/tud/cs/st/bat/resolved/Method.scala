@@ -51,7 +51,8 @@ class Method private (
     val name: String,
     val descriptor: MethodDescriptor,
     val attributes: Attributes)
-        extends ClassMember {
+        extends ClassMember
+        with UniqueID {
 
     override final def isMethod = true
 

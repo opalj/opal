@@ -60,7 +60,8 @@ class Field private (
     val name: String,
     val fieldType: FieldType,
     val attributes: Attributes)
-        extends ClassMember {
+        extends ClassMember
+        with UniqueID {
 
     override def isField = true
 
