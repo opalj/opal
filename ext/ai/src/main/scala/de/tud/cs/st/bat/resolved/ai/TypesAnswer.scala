@@ -51,7 +51,7 @@ case class IsPrimitiveType(t: BaseType) extends TypesAnswer
 trait IsReferenceType extends TypesAnswer {
 
     /**
-     * In general a domain value can refer/represent several distinct values (depending
+     * In general a domain value can represent several distinct values (depending
      * on the control flow). Each of these values can have a different type bound.
      */
     def valuesTypeBounds: Iterable[ValueTypeBounds]
