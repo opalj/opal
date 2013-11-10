@@ -64,6 +64,9 @@ package resolved
  *    - RuntimeInvisibleAnnotations
  *    - BootstrapMethods
  *
+ * @note Equality of ClassFiles objects is reference based and a class file's hash code
+ *    is the same as `thisType`'s hash code.
+ *
  * @author Michael Eichberg
  */
 case class ClassFile(
@@ -151,7 +154,7 @@ case class ClassFile(
     /**
      * The static initializer of this class.
      *
-     * @note The way which method is identified as the static initializer has changed
+     * @note The way how the static initializer is identified has changed
      *       with Java 7. In a class file whose version number is 51.0 or above, the
      *       method must have its ACC_STATIC flag set. Other methods named &lt;clinit&gt;
      *       in a class file are of no consequence.
@@ -162,6 +165,14 @@ case class ClassFile(
             case method @ Method(
                 _, "<clinit>", NoArgsAndReturnVoid(), _
                 ) if majorVersion < 51 || method.isStatic ⇒ method
+        }
+    
+    override def hashCode: Int = thisClass.id
+
+    override def equals(other: Any): Boolean =
+        other match {
+            case that: ClassFile ⇒ that eq this
+            case _               ⇒ false
         }
 
 }
