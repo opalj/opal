@@ -10,7 +10,7 @@ BAT consists of four main projects:
 * **Core**: The core project provides functionality necessary for reading and traversing Java class files.  
 **Util**: Technically belongs to the Core project, but contains source code that needs to be compiled before it is possible to 
 compile Core. Util primarily contains macros.  
-**Core** and **Util** can are mature and significant API changes are very unlikely.
+**Core** and **Util** are mature and significant API changes are very unlikely.
 
 * **AI**: Implementation of an abstract interpretation framework that can be used to easily implement analyses at very different levels of precision. This project is useable, but API changes are still likely.
 
