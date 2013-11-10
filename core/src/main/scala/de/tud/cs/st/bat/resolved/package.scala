@@ -76,7 +76,6 @@ package object resolved {
 
     type SourceElementID = Int
 
-
     @throws[AnalysisFailedException]
     final def CodeError(message: String, code: Code, pc: Int) =
         throw AnalysisFailedException(generalBATExceptionMessage + message, code, pc)
