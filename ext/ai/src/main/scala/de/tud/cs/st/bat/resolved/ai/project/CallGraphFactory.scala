@@ -46,100 +46,103 @@ import bat.resolved.analyses.{ Project, ReportableAnalysisResult }
  * @author Michael Eichberg
  */
 class CallGraphFactory {
+/*
+    import language.existentials
 
-    //    import language.existentials
-    //
-    //    import bat.resolved.ai.domain._
-    //
-    //    private type DomainContext = (ClassFile, Method)
-    //
-    //    def create(
-    //        project: Project[_],
-    //        entryPoints: Set[(ClassFile, Method)]): CallGraph = {
-    //
-    //        val fieldTypes: Map[Field, TypeBounds] =
-    //            Map.empty
-    //        var writtenBy: Map[Field, Set[Method]] =
-    //            Map.empty.withDefaultValue(Set.empty)
-    //        var readBy: Map[Field, Set[Method]] =
-    //            Map.empty.withDefaultValue(Set.empty)
-    //        var calledBy: Map[Method, Set[CallSite]] =
-    //            Map.empty.withDefaultValue(Set.empty)
-    //        var calls: Map[Method, Map[PC, Set[Method]]] =
-    //            Map.empty.withDefaultValue(Map.empty.withDefaultValue(Set.empty))
-    //        var methodsToAnalyze = entryPoints
-    //
-    //        object MethodDomain extends Domain[DomainContext]
-    //                with DefaultValueBinding[DomainContext]
-    //                with DefaultTypeLevelIntegerValues[DomainContext]
-    //                with DefaultTypeLevelLongValues[DomainContext]
-    //                with DefaultTypeLevelFloatValues[DomainContext]
-    //                with DefaultTypeLevelDoubleValues[DomainContext]
-    //                with DefaultReturnAddressValues[DomainContext]
-    //                with DefaultPreciseReferenceValues[DomainContext]
-    //                with StringValues[DomainContext]
-    //                with TypeLevelArrayInstructions
-    //                with TypeLevelFieldAccessInstructions
-    //                with TypeLevelInvokeInstructions
-    //                with DoNothingOnReturnFromMethod
-    //                with ProjectBasedClassHierarchy[Source] {
-    //
-    //            def identifier = (classFile, method)
-    //
-    //            def project: Project[Source] = theProject
-    //
-    //            override def invokeinterface(
-    //                pc: PC,
-    //                declaringClass: ReferenceType,
-    //                name: String,
-    //                methodDescriptor: MethodDescriptor,
-    //                operands: List[DomainValue]): OptionalReturnValueOrExceptions =
-    //                val parameters = operands.reverse
-    //                types(parameters.head) match 
-    //                project.classHierarchy.
-    //                super.invokeinterface(pc, declaringClass, name, methodDescriptor, operands)
-    //
-    //            override def invokevirtual(
-    //                pc: PC,
-    //                declaringClass: ReferenceType,
-    //                name: String,
-    //                methodDescriptor: MethodDescriptor,
-    //                operands: List[DomainValue]): OptionalReturnValueOrExceptions =
-    //                super.invokevirtual(pc, declaringClass, name, methodDescriptor, operands)
-    //
-    //            override def invokespecial(
-    //                pc: PC,
-    //                declaringClass: ReferenceType,
-    //                name: String,
-    //                methodDescriptor: MethodDescriptor,
-    //                operands: List[DomainValue]): OptionalReturnValueOrExceptions = {
-    //                declaringClass
-    //
-    //                super.invokespecial(pc, declaringClass, name, methodDescriptor, operands)
-    //            }
-    //
-    //            override def invokestatic(
-    //                pc: PC,
-    //                declaringClass: ReferenceType,
-    //                name: String,
-    //                methodDescriptor: MethodDescriptor,
-    //                operands: List[DomainValue]): OptionalReturnValueOrExceptions =
-    //                super.invokestatic(pc, declaringClass, name, methodDescriptor, operands)
-    //        }
-    //        
-    //        def analyze(classFile: ClassFile, method: Method) {
-    //        	BaseAI.perform(classFile, method, domain)(someLocals)
-    //        }
-    //
-    //        while (methodsToAnalyze.nonEmpty) {
-    //            val (classFile, method) = methodsToAnalyze.head
-    //            methodsToAnalyze = methodsToAnalyze.tail
-    //            analyze(classFile, method)
-    //        }
-    //
-    //        CallGraph(fieldTypes, writtenBy, readBy, calledBy, calls)
-    //    }
+    import bat.resolved.ai.domain._
 
+    private type DomainContext = (ClassFile, Method)
+
+    def create(
+        project: Project[_],
+        entryPoints: Set[(ClassFile, Method)]): CallGraph = {
+
+        val fieldTypes: Map[Field, TypeBounds] =
+            Map.empty
+        var writtenBy: Map[Field, Set[Method]] =
+            Map.empty.withDefaultValue(Set.empty)
+        var readBy: Map[Field, Set[Method]] =
+            Map.empty.withDefaultValue(Set.empty)
+        var calledBy: Map[Method, Set[CallSite]] =
+            Map.empty.withDefaultValue(Set.empty)
+        var calls: Map[Method, Map[PC, Set[Method]]] =
+            Map.empty.withDefaultValue(Map.empty.withDefaultValue(Set.empty))
+        var methodsToAnalyze = entryPoints
+
+        object MethodDomain extends Domain[DomainContext]
+                with DefaultValueBinding[DomainContext]
+                with DefaultTypeLevelIntegerValues[DomainContext]
+                with DefaultTypeLevelLongValues[DomainContext]
+                with DefaultTypeLevelFloatValues[DomainContext]
+                with DefaultTypeLevelDoubleValues[DomainContext]
+                with DefaultReturnAddressValues[DomainContext]
+                with DefaultPreciseReferenceValues[DomainContext]
+                with StringValues[DomainContext]
+                with TypeLevelArrayInstructions
+                with TypeLevelFieldAccessInstructions
+                with TypeLevelInvokeInstructions
+                with DoNothingOnReturnFromMethod
+                with ProjectBasedClassHierarchy[Source] {
+
+            def identifier = (classFile, method)
+
+            def project: Project[Source] = theProject
+
+            override def invokeinterface(
+                pc: PC,
+                declaringClass: ReferenceType,
+                name: String,
+                methodDescriptor: MethodDescriptor,
+                operands: List[DomainValue]): OptionalReturnValueOrExceptions = {
+                val parameters = operands.reverse
+                val baseType = types(parameters.head) match {
+                    case IsReferenceType(typeBounds) ⇒
+                    case _                           ⇒ declaringClass
+                }
+                super.invokeinterface(pc, declaringClass, name, methodDescriptor, operands)
+            }
+
+            override def invokevirtual(
+                pc: PC,
+                declaringClass: ReferenceType,
+                name: String,
+                methodDescriptor: MethodDescriptor,
+                operands: List[DomainValue]): OptionalReturnValueOrExceptions =
+                super.invokevirtual(pc, declaringClass, name, methodDescriptor, operands)
+
+            override def invokespecial(
+                pc: PC,
+                declaringClass: ReferenceType,
+                name: String,
+                methodDescriptor: MethodDescriptor,
+                operands: List[DomainValue]): OptionalReturnValueOrExceptions = {
+                declaringClass
+
+                super.invokespecial(pc, declaringClass, name, methodDescriptor, operands)
+            }
+
+            override def invokestatic(
+                pc: PC,
+                declaringClass: ReferenceType,
+                name: String,
+                methodDescriptor: MethodDescriptor,
+                operands: List[DomainValue]): OptionalReturnValueOrExceptions =
+                super.invokestatic(pc, declaringClass, name, methodDescriptor, operands)
+        }
+
+        def analyze(classFile: ClassFile, method: Method) {
+            BaseAI.perform(classFile, method, domain)(someLocals)
+        }
+
+        while (methodsToAnalyze.nonEmpty) {
+            val (classFile, method) = methodsToAnalyze.head
+            methodsToAnalyze = methodsToAnalyze.tail
+            analyze(classFile, method)
+        }
+
+        CallGraph(fieldTypes, writtenBy, readBy, calledBy, calls)
+    }
+*/
 }
 
 /**
@@ -168,7 +171,7 @@ object CallSite {
 }
 
 case class CallGraph(
-        val fieldTypes: Map[Field, TypeBounds],
+        val fieldTypes: Map[Field, UpperBound],
         val written: Map[Field, Set[Method]],
         val read: Map[Field, Set[Method]],
         val calledBy: Map[Method, Set[CallSite]],

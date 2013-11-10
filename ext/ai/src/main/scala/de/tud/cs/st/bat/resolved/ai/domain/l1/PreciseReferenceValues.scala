@@ -267,8 +267,8 @@ trait PreciseReferenceValues[+I] extends Domain[I] {
     // LOAD FROM AND STORE VALUE IN ARRAYS
     //
     def aaload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
-        types(arrayref) match {
-            case TheTypeBound(ArrayType(componentType)) ⇒
+        typeOfValue(arrayref) match {
+            case IsReferenceValueWithSingleBound(ArrayType(componentType)) ⇒
                 ComputedValue(newTypedValue(pc, componentType))
             case _ ⇒
                 domainException(

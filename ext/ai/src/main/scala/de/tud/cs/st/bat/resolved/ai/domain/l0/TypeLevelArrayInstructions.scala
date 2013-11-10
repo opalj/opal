@@ -58,8 +58,8 @@ trait TypeLevelArrayInstructions { this: Domain[_] ⇒
     //
 
     override def baload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
-        types(arrayref) match {
-            case TheTypeBound(ArrayType(componentType)) ⇒
+        typeOfValue(arrayref) match {
+            case IsReferenceValueWithSingleBound(ArrayType(componentType)) ⇒
                 ComputedValue(newTypedValue(pc, componentType))
             case _ ⇒
                 domainException(this, "array with unknown component type: "+arrayref)

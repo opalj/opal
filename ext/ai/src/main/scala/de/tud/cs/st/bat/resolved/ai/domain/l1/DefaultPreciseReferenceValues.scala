@@ -54,7 +54,7 @@ trait DefaultPreciseReferenceValues[+I]
 
     trait ReferenceValue
             extends super.ReferenceValue
-            with IsReferenceType {
+            with IsReferenceValue {
         this: DomainValue ⇒
     }
 
@@ -64,24 +64,25 @@ trait DefaultPreciseReferenceValues[+I]
 
     class AReferenceValue protected[DefaultPreciseReferenceValues] (
         val pc: PC,
-        val typeBounds: TypeBounds,
+        val upperBound: UpperBound,
         val isNull: Answer,
         val isPrecise: Boolean)
             extends ReferenceValue { self: DomainValue ⇒
 
-        def valuesTypeBounds: Iterable[ValueTypeBounds] =
+        override def upperBounds: Iterable[ValueBasedUpperBound] =
             Iterable(
-                new ValueTypeBounds {
-                    def isNull: Answer = self.isNull
-
-                    def isSubtypeOf(referenceType: ReferenceType): Answer =
+                new ValueBasedUpperBound {
+                    override def isNull: Answer = self.isNull
+                    override def isPrecise: Boolean = self.isPrecise
+                    override def upperBound: UpperBound = self.upperBound
+                    override def isSubtypeOf(referenceType: ReferenceType): Answer =
                         self.isSubtypeOf(referenceType)
                 }
             )
 
-        def theTypeBound: Option[ReferenceType] =
-            if (typeBounds.size == 1)
-                Some(typeBounds.head)
+        override def hasSingleBound: Option[ReferenceType] =
+            if (upperBound.size == 1)
+                Some(upperBound.head)
             else
                 None
 
@@ -97,7 +98,7 @@ trait DefaultPreciseReferenceValues[+I]
         def isSubtypeOf(supertype: ReferenceType): Answer = {
             assume(this.isNull.maybeNo)
 
-            val answer: Answer = ((No: Answer) /: typeBounds) { (a, t) ⇒
+            val answer: Answer = ((No: Answer) /: upperBound) { (a, t) ⇒
                 val isSubtypeOf = domain.isSubtypeOf(t, supertype)
                 if (isSubtypeOf.yes) {
                     return Yes
@@ -124,11 +125,11 @@ trait DefaultPreciseReferenceValues[+I]
 
         def updateIsNull(pc: PC, isNull: Answer): AReferenceValue = {
             assume(this.isNull.isUndefined)
-            
+
             if (isNull.yes)
                 AReferenceValue(this.pc, Set.empty[ReferenceType], Yes, true)
             else
-                AReferenceValue(this.pc, typeBounds, isNull, isPrecise)
+                AReferenceValue(this.pc, upperBound, isNull, isPrecise)
         }
 
         def addUpperBound(pc: PC, theUpperBound: ReferenceType): AReferenceValue = {
@@ -145,14 +146,14 @@ trait DefaultPreciseReferenceValues[+I]
                     // and in this case it may make sense to establish a more stringent
                     // bound for the others.
                     this
-                case No if typeBounds.forall(domain.isSubtypeOf(theUpperBound, _).yes) ⇒
+                case No if upperBound.forall(domain.isSubtypeOf(theUpperBound, _).yes) ⇒
                     // The new upperBound is a subtype of all previous bounds and 
                     // hence completely replaces this value's type bound.
                     AReferenceValue(this.pc, Set(theUpperBound), isNull, isPrecise)
                 case _ /* (No && !isPrecise || Unknown) */ ⇒
                     var newValueTypes = Set.empty[ReferenceType]
                     var addTheUpperBound = true
-                    typeBounds.foreach { anUpperBound ⇒
+                    upperBound.foreach { anUpperBound ⇒
                         if (theUpperBound == anUpperBound) {
                             /* do nothing */
                         } else if (domain.isSubtypeOf(theUpperBound, anUpperBound).yes) {
@@ -178,11 +179,11 @@ trait DefaultPreciseReferenceValues[+I]
                         return StructuralUpdate(MultipleReferenceValues(Set(this, v)))
 
                     if (this.isNull == otherIsNull &&
-                        this.typeBounds == otherTypeBounds &&
+                        this.upperBound == otherTypeBounds &&
                         (this.isPrecise == false || this.isPrecise == otherIsPrecise))
                         return NoUpdate
 
-                    var newTypeBounds = this.typeBounds
+                    var newTypeBounds = this.upperBound
                     otherTypeBounds.foreach { otherTypeBound ⇒
                         var addOtherTypeBounds = true
                         newTypeBounds = newTypeBounds.filterNot { vt ⇒
@@ -225,7 +226,7 @@ trait DefaultPreciseReferenceValues[+I]
         protected[DefaultPreciseReferenceValues] def adaptAReferenceValue[ThatI >: I](
             targetDomain: DefaultPreciseReferenceValues[ThatI],
             pc: PC): targetDomain.AReferenceValue =
-            targetDomain.AReferenceValue(pc, this.typeBounds, this.isNull, this.isPrecise)
+            targetDomain.AReferenceValue(pc, this.upperBound, this.isNull, this.isPrecise)
 
         override def summarize(pc: PC): DomainValue = this
 
@@ -247,16 +248,16 @@ trait DefaultPreciseReferenceValues[+I]
                             MultipleReferenceValues(Set(this, other))
                     } else if (otherIsNull.yes) {
                         MultipleReferenceValues(Set(this, other))
-                    } else if (this.typeBounds == otherTypeBounds) {
+                    } else if (this.upperBound == otherTypeBounds) {
                         AReferenceValue(
                             pc,
-                            this.typeBounds,
+                            this.upperBound,
                             this.isNull merge otherIsNull,
                             this.isPrecise && otherIsPrecise)
-                    } else if (domain.isSubtypeOf(this.typeBounds, otherTypeBounds)) {
+                    } else if (domain.isSubtypeOf(this.upperBound, otherTypeBounds)) {
                         AReferenceValue(pc, otherTypeBounds, this.isNull merge otherIsNull, false)
-                    } else if (domain.isSubtypeOf(otherTypeBounds, this.typeBounds)) {
-                        AReferenceValue(pc, this.typeBounds, this.isNull merge otherIsNull, false)
+                    } else if (domain.isSubtypeOf(otherTypeBounds, this.upperBound)) {
+                        AReferenceValue(pc, this.upperBound, this.isNull merge otherIsNull, false)
                     } else {
                         MultipleReferenceValues(Set(this, other))
                     }
@@ -271,7 +272,7 @@ trait DefaultPreciseReferenceValues[+I]
                         this.pc == that.pc &&
                         this.isPrecise == that.isPrecise &&
                         this.isNull == that.isNull &&
-                        this.typeBounds == that.typeBounds)
+                        this.upperBound == that.upperBound)
                 case _ ⇒ false
             }
         }
@@ -281,12 +282,12 @@ trait DefaultPreciseReferenceValues[+I]
         override def hashCode: Int = // TODO How to cache lazy vals?
             (((41 + pc) * 41 + isPrecise.hashCode()) *
                 41 + isNull.hashCode()) *
-                41 + typeBounds.hashCode()
+                41 + upperBound.hashCode()
 
         override def toString() =
             isNull match {
                 case Yes ⇒ "Null(pc="+pc+")"
-                case _ ⇒ typeBounds.map(_.toJava).mkString(" with ")+
+                case _ ⇒ upperBound.map(_.toJava).mkString(" with ")+
                     "(pc="+pc+
                     ", isNull="+isNull+
                     ", isPrecise="+isPrecise+")"
@@ -299,8 +300,8 @@ trait DefaultPreciseReferenceValues[+I]
      * a subtype of the second type.
      */
     protected def isSubtypeOf(
-        typeBoundsA: TypeBounds,
-        typeBoundsB: TypeBounds): Boolean = {
+        typeBoundsA: UpperBound,
+        typeBoundsB: UpperBound): Boolean = {
         typeBoundsA.forall(aType ⇒
             typeBoundsB.exists(bType ⇒ domain.isSubtypeOf(aType, bType).yes))
     }
@@ -316,21 +317,21 @@ trait DefaultPreciseReferenceValues[+I]
      * Extractor for `AReferenceValue`s.
      */
     object AReferenceValue {
-        def unapply(arv: AReferenceValue): Option[(PC, TypeBounds, Answer, Boolean)] =
-            Some((arv.pc, arv.typeBounds, arv.isNull, arv.isPrecise))
+        def unapply(arv: AReferenceValue): Option[(PC, UpperBound, Answer, Boolean)] =
+            Some((arv.pc, arv.upperBound, arv.isNull, arv.isPrecise))
     }
 
     case class MultipleReferenceValues(
         val values: Set[AReferenceValue])
             extends ReferenceValue { this: DomainValue ⇒
 
-        def valuesTypeBounds: Iterable[ValueTypeBounds] =
-            values.view.map(_.valuesTypeBounds.head)
+        def upperBounds: Iterable[ValueBasedUpperBound] =
+            values.view.map(_.upperBounds.head)
 
-        def theTypeBound: Option[ReferenceType] =
-            values.head.theTypeBound.flatMap { thisTypeBound ⇒
-                if (values.tail.forall(_.theTypeBound.map(_ == thisTypeBound).getOrElse(false)))
-                    Some(thisTypeBound)
+        def hasSingleBound: Option[ReferenceType] =
+            values.head.hasSingleBound.flatMap { thisBound ⇒
+                if (values.tail.forall(_.hasSingleBound.map(_ == thisBound).getOrElse(false)))
+                    Some(thisBound)
                 else
                     None
             }
@@ -347,17 +348,16 @@ trait DefaultPreciseReferenceValues[+I]
             }
         lazy val isNull: Answer = calculateIsNull()
 
-        override def summarize(pc: PC): DomainValue = 
+        override def summarize(pc: PC): DomainValue =
             domain.summarizeReferenceValues(pc, values)
 
-        override def summarize(pc: PC, value: DomainValue): DomainValue = 
+        override def summarize(pc: PC, value: DomainValue): DomainValue =
             value match {
                 case aRefVal: AReferenceValue ⇒
                     domain.summarizeReferenceValues(pc, this.values + aRefVal)
                 case MultipleReferenceValues(otherValues) ⇒
                     domain.summarizeReferenceValues(pc, this.values ++ otherValues)
             }
-        
 
         override def adapt[TDI >: I](
             targetDomain: Domain[TDI],
@@ -401,8 +401,8 @@ trait DefaultPreciseReferenceValues[+I]
                     updatedValues.head
                 else
                     MultipleReferenceValues(updatedValues)
-            } else 
-                this            
+            } else
+                this
         }
 
         override def updateIsNull(pc: PC, isNull: Answer): ReferenceValue = {
@@ -481,10 +481,10 @@ trait DefaultPreciseReferenceValues[+I]
             case _                               ⇒ super.origin(value)
         }
 
-    abstract override def types(value: DomainValue): TypesAnswer =
+    abstract override def typeOfValue(value: DomainValue): TypesAnswer =
         value match {
             case r: ReferenceValue ⇒ r
-            case _                 ⇒ super.types(value)
+            case _                 ⇒ super.typeOfValue(value)
         }
 
     //
@@ -496,10 +496,10 @@ trait DefaultPreciseReferenceValues[+I]
      */
     def AReferenceValue(
         pc: PC,
-        typeBounds: TypeBounds,
+        upperBound: UpperBound,
         isNull: Answer,
         isPrecise: Boolean): AReferenceValue =
-        new AReferenceValue(pc, typeBounds, isNull, isPrecise)
+        new AReferenceValue(pc, upperBound, isNull, isPrecise)
 
     final def AReferenceValue(
         pc: PC,

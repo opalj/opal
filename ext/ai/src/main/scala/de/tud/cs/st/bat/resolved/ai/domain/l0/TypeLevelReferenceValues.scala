@@ -53,7 +53,8 @@ trait TypeLevelReferenceValues[+I] extends Domain[I] {
         /**
          * Returns `ComputationalTypeReference`.
          */
-        final override def computationalType: ComputationalType = ComputationalTypeReference
+        final override def computationalType: ComputationalType =
+            ComputationalTypeReference
 
         /**
          * Checks if the type of this value is a subtype of the specified
@@ -165,8 +166,8 @@ trait TypeLevelReferenceValues[+I] extends Domain[I] {
     // LOAD FROM AND STORE VALUE IN ARRAYS
     //
     def aaload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
-        types(arrayref) match {
-            case TheTypeBound(ArrayType(componentType)) ⇒
+        typeOfValue(arrayref) match {
+            case IsReferenceValueWithSingleBound(ArrayType(componentType)) ⇒
                 ComputedValue(newTypedValue(pc, componentType))
             case _ ⇒
                 domainException(this, "component type unknown: "+arrayref)

@@ -38,7 +38,7 @@ package domain
 
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 import analyses.{ Project, ClassHierarchy }
-import de.tud.cs.st.bat.resolved.ai.IsReferenceType
+import de.tud.cs.st.bat.resolved.ai.IsReferenceValue
 import de.tud.cs.st.bat.resolved.ai.ComputedValueAndException
 
 trait MethodReturnInformation { this: Domain[_] ⇒

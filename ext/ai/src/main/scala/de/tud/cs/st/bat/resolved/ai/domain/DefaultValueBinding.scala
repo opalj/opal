@@ -46,11 +46,11 @@ import reflect.ClassTag
  */
 trait DefaultValueBinding[+I] extends Domain[I] {
 
-    type DomainValue = Value
+    final type DomainValue = Value
 
     final val DomainValueTag: ClassTag[DomainValue] = implicitly
 
-    type DomainIllegalValue = IllegalValue
+    final type DomainIllegalValue = IllegalValue
 
     final val TheIllegalValue: DomainIllegalValue = new IllegalValue
 
@@ -63,7 +63,7 @@ trait DefaultValueBinding[+I] extends Domain[I] {
      * value's type. If a method that overrides this method has no knowledge about
      * the given value, it should delegate this call to its super method.
      */
-    def types(value: DomainValue): TypesAnswer =
+    override def typeOfValue(value: DomainValue): TypesAnswer =
         domainException(this, "the type of the given value is not known: "+value)
 
 }

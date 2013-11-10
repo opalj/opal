@@ -36,8 +36,6 @@ package resolved
 package ai
 package domain
 
-import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
-
 /**
  * Encapsulates a domain and some values created by the respective domain.
  *
@@ -57,6 +55,7 @@ sealed abstract class DomainValues[D <: SomeDomain] {
  * @author Michael Eichberg
  */
 object DomainValues {
+
     def apply[I](
         valuesDomain: Domain[I])(
             domainValues: Iterable[valuesDomain.DomainValue]) = {
@@ -65,4 +64,5 @@ object DomainValues {
             val values: Iterable[domain.DomainValue] = domainValues
         }
     }
+
 }

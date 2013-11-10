@@ -91,9 +91,9 @@ trait TypeLevelIntegerValues[+I] extends Domain[I] {
     // QUESTION'S ABOUT VALUES
     //
 
-    abstract override def types(value: DomainValue): TypesAnswer = value match {
+    abstract override def typeOfValue(value: DomainValue): TypesAnswer = value match {
         case ctiv: ComputationalTypeIntegerValue ⇒ ctiv.types
-        case _                                   ⇒ super.types(value)
+        case _                                   ⇒ super.typeOfValue(value)
     }
 
     override def areEqual(value1: DomainValue, value2: DomainValue): Answer = Unknown
@@ -183,11 +183,11 @@ trait TypeLevelIntegerValues[+I] extends Domain[I] {
 
 }
 private object TypeLevelIntegerValues {
-    private val typesAnswerBoolean: IsPrimitiveType = IsPrimitiveType(BooleanType)
-    private val typesAnswerByte: IsPrimitiveType = IsPrimitiveType(ByteType)
-    private val typesAnswerChar: IsPrimitiveType = IsPrimitiveType(CharType)
-    private val typesAnswerShort: IsPrimitiveType = IsPrimitiveType(ShortType)
-    private val typesAnswerInteger: IsPrimitiveType = IsPrimitiveType(IntegerType)
+    private val typesAnswerBoolean: IsPrimitiveValue = IsPrimitiveValue(BooleanType)
+    private val typesAnswerByte: IsPrimitiveValue = IsPrimitiveValue(ByteType)
+    private val typesAnswerChar: IsPrimitiveValue = IsPrimitiveValue(CharType)
+    private val typesAnswerShort: IsPrimitiveValue = IsPrimitiveValue(ShortType)
+    private val typesAnswerInteger: IsPrimitiveValue = IsPrimitiveValue(IntegerType)
 }
 
 

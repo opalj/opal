@@ -39,10 +39,10 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 import scala.util.control.ControlThrowable
 
 /**
- * A highly-configurable abstract interpreter for BAT's resolved representation of Java 
+ * A highly-configurable abstract interpreter for BAT's resolved representation of Java
  * bytecode.
- * 
- * This interpreter basically iterates over all instructions of a method and computes the 
+ *
+ * This interpreter basically iterates over all instructions of a method and computes the
  * result of each instruction using an exchangeable [[de.tud.cs.st.bat.resolved.ai.Domain]].
  *
  * ==Interacting with BATAI==
@@ -58,7 +58,7 @@ import scala.util.control.ControlThrowable
  *
  * Hence, it is possible to use a single instance to analyze multiple methods in parallel.
  * However, if you want to be able to selectively abort the abstract interpretation
- * of some methods or want to selectively trace the interpretation of some methods, then 
+ * of some methods or want to selectively trace the interpretation of some methods, then
  * you should use multiple instances.
  *
  * @define UseOfDomain
@@ -577,8 +577,8 @@ trait AI[D <: Domain[_]] {
                             true
                         } else {
                             // TODO Do we have to handle the case that we know nothing about the exception type?
-                            val IsReferenceType(valuesTypeBounds) = types(exceptionValue)
-                            valuesTypeBounds.forall { typeBounds ⇒
+                            val IsReferenceValue(upperBounds) = typeOfValue(exceptionValue)
+                            upperBounds.forall { typeBounds ⇒
                                 typeBounds.isSubtypeOf(catchType.get) match {
                                     case No ⇒
                                         false
@@ -587,7 +587,12 @@ trait AI[D <: Domain[_]] {
                                         true
                                     case Unknown ⇒
                                         val (updatedOperands, updatedLocals) =
-                                            establishUpperBound(branchTarget, catchType.get, exceptionValue, List(exceptionValue), locals)
+                                            establishUpperBound(
+                                                branchTarget,
+                                                catchType.get,
+                                                exceptionValue,
+                                                List(exceptionValue),
+                                                locals)
                                         gotoTarget(pc, branchTarget, updatedOperands, updatedLocals)
                                         false
                                 }
@@ -864,8 +869,8 @@ trait AI[D <: Domain[_]] {
                             }
                             val updatedExceptionValue = updatedOperands.head
 
-                            domain.types(exceptionValue) match {
-                                case TypesUnknown ⇒
+                            domain.typeOfValue(exceptionValue) match {
+                                case HasUnknownType ⇒
                                     code.exceptionHandlersFor(pc).foreach { eh ⇒
                                         val branchTarget = eh.handlerPC
                                         // unless we have a "finally" handler, we can state
@@ -881,8 +886,8 @@ trait AI[D <: Domain[_]] {
                                     }
                                     abruptMethodExecution(pc, exceptionValue)
 
-                                case IsReferenceType(valuesTypeBounds) ⇒
-                                    val isHandled = valuesTypeBounds.forall(typeBounds ⇒
+                                case IsReferenceValue(upperBounds) ⇒
+                                    val isHandled = upperBounds.forall(upperBound ⇒
                                         // find the exception handler that matches the given 
                                         // exception
                                         code.exceptionHandlersFor(pc).exists { eh ⇒
@@ -893,7 +898,7 @@ trait AI[D <: Domain[_]] {
                                                 // this is a finally handler
                                                 true
                                             } else {
-                                                typeBounds.isSubtypeOf(catchType.get) match {
+                                                upperBound.isSubtypeOf(catchType.get) match {
                                                     case No ⇒
                                                         false
                                                     case Yes ⇒

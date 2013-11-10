@@ -59,7 +59,7 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
      * '''This value is only taken into consideration when two paths converge'''.
      *
      * The default value is 25 which will, e.g., effectively unroll a loop with a loop
-     * counter that starts with 0 and which is incremented by one in each round up to 
+     * counter that starts with 0 and which is incremented by one in each round up to
      * 25 times.
      *
      * This is a runtime configurable setting that may affect the overall precision of
@@ -77,8 +77,6 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
      * thrown.
      */
     def divisionByZeroIfUnknown = true
-
-    private[this] final val typesAnswer: IsPrimitiveType = IsPrimitiveType(IntegerType)
 
     /**
      * Abstracts over all values with computational type `integer`.
@@ -109,7 +107,7 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
          * Creates a new IntegerValue with the given value as the current value,
          * but the same initial value. Please note that it is ok if the new value
          * is between the current value and the initial value. It is only required
-         * that the join operation is monotonic. 
+         * that the join operation is monotonic.
          *
          * @note
          * This method must not check whether the initial value and the new value
@@ -119,10 +117,10 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
 
     }
 
-    abstract override def types(value: DomainValue): TypesAnswer =
+    abstract override def typeOfValue(value: DomainValue): TypesAnswer =
         value match {
-            case integerLikeValue: IntegerLikeValue ⇒ typesAnswer
-            case _                                  ⇒ super.types(value)
+            case integerLikeValue: IntegerLikeValue ⇒ PreciseIntegerValues.typesAnswer
+            case _                                  ⇒ super.typeOfValue(value)
         }
 
     def newIntegerValue(): DomainValue
@@ -340,5 +338,8 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
     def i2d(pc: PC, value: DomainValue): DomainValue = newDoubleValue(pc)
     def i2f(pc: PC, value: DomainValue): DomainValue = newFloatValue(pc)
     def i2l(pc: PC, value: DomainValue): DomainValue = newLongValue(pc)
+}
+private object PreciseIntegerValues {
+    private final val typesAnswer: IsPrimitiveValue = IsPrimitiveValue(IntegerType)
 }
 

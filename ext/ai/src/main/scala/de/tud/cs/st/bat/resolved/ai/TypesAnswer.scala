@@ -38,45 +38,78 @@ package ai
 import de.tud.cs.st.util.Answer
 
 /**
- * Models the answer of the domain to a question about a specific value's type.
+ * The answer of the domain to a question about a specific value's type.
  *
  * @author Michael Eichberg
  */
 sealed trait TypesAnswer
 
-case object TypesUnknown extends TypesAnswer
+/**
+ * This answer is given when no specific type information about a value is available.
+ *
+ * @author Michael Eichberg
+ */
+case object HasUnknownType extends TypesAnswer
 
-case class IsPrimitiveType(t: BaseType) extends TypesAnswer
+/**
+ * The value has the primitive type.
+ */
+case class IsPrimitiveValue(t: BaseType) extends TypesAnswer
 
-trait IsReferenceType extends TypesAnswer {
+/**
+ * The value is a reference value.
+ *
+ * @author Michael Eichberg
+ */
+trait IsReferenceValue extends TypesAnswer {
 
     /**
      * In general a domain value can represent several distinct values (depending
-     * on the control flow). Each of these values can have a different type bound.
+     * on the control flow). Each of these values can have a different upper bound and
+     * an upper bound can consist of several interfaces and a class.
      */
-    def valuesTypeBounds: Iterable[ValueTypeBounds]
+    def upperBounds: Iterable[ValueBasedUpperBound]
 
-    /**
-     * If the underlying value (for which this answer is returned) has a single type
-     * bound, that type bound is returned, `None` otherwise. This is generally only
-     * the case for array types.
-     */
-    def theTypeBound: Option[ReferenceType]
+    def hasSingleBound: Option[ReferenceType]
+}
+
+/**
+ * Defines an extractor method for instances of `IsReferenceValue` objects.
+ *
+ * @author Michael Eichberg
+ */
+object IsReferenceValue {
+
+    def unapply(answer: IsReferenceValue): Option[Iterable[ValueBasedUpperBound]] = {
+        Some(answer.upperBounds)
+    }
+}
+
+/**
+ * Defines an extractor method for instances of `IsReferenceValue` objects.
+ *
+ * @author Michael Eichberg
+ */
+object IsReferenceValueWithSingleBound {
+
+    def unapply(answer: IsReferenceValue): Option[ReferenceType] =
+        answer.hasSingleBound
 
 }
 
-object IsReferenceType {
-    def unapply(answer: IsReferenceType): Option[Iterable[ValueTypeBounds]] =
-        Some(answer.valuesTypeBounds)
-}
-
-object TheTypeBound {
-    def unapply(answer: IsReferenceType): Option[ReferenceType] = answer.theTypeBound
-}
-
-trait ValueTypeBounds {
+/**
+ * The upper bound of a single value. Captures the information about one of the values
+ * a domain value may refer to.
+ *
+ * @author Michael Eichberg
+ */
+trait ValueBasedUpperBound {
 
     def isNull: Answer
+
+    def isPrecise: Boolean
+
+    def upperBound: UpperBound
 
     /**
      * @note The function `isSubtypeOf` is not determined if `isNull` returns `Yes`;

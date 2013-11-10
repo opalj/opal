@@ -104,8 +104,8 @@ package object ai {
     }
 
     /**
-     * A type bound represents the available type information about a reference value.
-     * In general, a type bound represents an upper bound for the concrete type; i.e.,
+     * An upper bound represents the available type information about a reference value.
+     * In general, it is just an upper bound for the concrete type; i.e.,
      * the runtime type is known to be a subtype of all types of the type bound. E.g.,
      * a type bound could be: `java.lang.Object`, `java.io.Serializable` and
      * `java.lang.Cloneable` for an array.
@@ -119,6 +119,6 @@ package object ai {
      * makes it possible to distinguish between precise types and type bounds is at
      * the sole discretion of the domain.
      */
-    type TypeBounds = Set[ReferenceType]
+    type UpperBound = Set[ReferenceType]
 
 }

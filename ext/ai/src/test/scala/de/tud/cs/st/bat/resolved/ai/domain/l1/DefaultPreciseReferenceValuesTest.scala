@@ -103,11 +103,11 @@ class DefaultPreciseReferenceValuesTest
         val theFile = AReferenceValue(-1, File, No, false)
 
         val update1 = theObject.addUpperBound(-1, File)
-        update1.typeBounds.head should be(File)
+        update1.upperBound.head should be(File)
         val update2 = theFile.addUpperBound(-1, File)
-        update2.typeBounds.head should be(File)
+        update2.upperBound.head should be(File)
         val update3 = theFile.addUpperBound(-1, ObjectType.Object)
-        update3.typeBounds.head should be(File)
+        update3.upperBound.head should be(File)
     }
 
     it should ("be able to create an AReferenceValue with the expected values") in {

@@ -682,7 +682,9 @@ trait Domain[+I] {
      */
     /*ABSTRACT*/ def areEqualReferences(value1: DomainValue, value2: DomainValue): Answer
 
-    final private[ai] def areNotEqualReferences(value1: DomainValue, value2: DomainValue): Answer =
+    final private[ai] def areNotEqualReferences(
+        value1: DomainValue,
+        value2: DomainValue): Answer =
         areEqualReferences(value1, value2).negate
 
     /**
@@ -691,15 +693,19 @@ trait Domain[+I] {
      * all types that the domain value represents must belong to the same
      * computational type category. I.e., it is possible that the value captures the
      * types "`NullPointerException` and `IllegalArgumentException`", but it will never
-     * capture – at the same time – the (Java) types `int` and/or `long`.
+     * capture – at the same time – the (Java) types `int` and/or `long`. Futhermore,
+     * it is possible that the returned type(s) is(are) only an upper bound of the
+     * real type.
      */
-    /*ABSTRACT*/ def types(value: DomainValue): TypesAnswer
+    /*ABSTRACT*/ def typeOfValue(value: DomainValue): TypesAnswer
 
     /**
      * Tries to determine if the type referred to as `subtype` is a subtype of the
      * specified reference type `supertype`.
      */
-    /*ABSTRACT*/ def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer
+    /*ABSTRACT*/ def isSubtypeOf(
+        subtype: ReferenceType,
+        supertype: ReferenceType): Answer
 
     /**
      * Tries to determine – under the assumption that value is potentially non null – 
@@ -729,7 +735,9 @@ trait Domain[+I] {
      * @param value1 A value with computational type integer.
      * @param value2 A value with computational type integer.
      */
-    final private[ai] def areNotEqual(value1: DomainValue, value2: DomainValue): Answer =
+    final private[ai] def areNotEqual(
+        value1: DomainValue,
+        value2: DomainValue): Answer =
         areEqual(value1, value2).negate
 
     /**
@@ -738,7 +746,9 @@ trait Domain[+I] {
      * @param smallerValue A value with computational type integer.
      * @param largerValue A value with computational type integer.
      */
-    /*ABSTRACT*/ def isLessThan(smallerValue: DomainValue, largerValue: DomainValue): Answer
+    /*ABSTRACT*/ def isLessThan(
+        smallerValue: DomainValue,
+        largerValue: DomainValue): Answer
 
     /**
      * Tests if the first integer value is less than or equal to the second value.
@@ -746,8 +756,9 @@ trait Domain[+I] {
      * @param smallerOrEqualValue A value with computational type integer.
      * @param equalOrLargerValue A value with computational type integer.
      */
-    /*ABSTRACT*/ def isLessThanOrEqualTo(smallerOrEqualValue: DomainValue,
-                                         equalOrLargerValue: DomainValue): Answer
+    /*ABSTRACT*/ def isLessThanOrEqualTo(
+        smallerOrEqualValue: DomainValue,
+        equalOrLargerValue: DomainValue): Answer
 
     /**
      * Tests if the first integer value is larger than the second value.
@@ -755,8 +766,9 @@ trait Domain[+I] {
      * @param largerValue A value with computational type integer.
      * @param smallerValue A value with computational type integer.
      */
-    final private[ai] def isGreaterThan(largerValue: DomainValue,
-                                        smallerValue: DomainValue): Answer =
+    final private[ai] def isGreaterThan(
+        largerValue: DomainValue,
+        smallerValue: DomainValue): Answer =
         isLessThan(smallerValue, largerValue)
 
     /**
@@ -765,8 +777,9 @@ trait Domain[+I] {
      * @param largerOrEqualValue A value with computational type integer.
      * @param smallerOrEqualValue A value with computational type integer.
      */
-    final private[ai] def isGreaterThanOrEqualTo(largerOrEqualValue: DomainValue,
-                                                 smallerOrEqualValue: DomainValue): Answer =
+    final private[ai] def isGreaterThanOrEqualTo(
+        largerOrEqualValue: DomainValue,
+        smallerOrEqualValue: DomainValue): Answer =
         isLessThanOrEqualTo(smallerOrEqualValue, largerOrEqualValue)
 
     /**

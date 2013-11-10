@@ -58,10 +58,10 @@ trait TypeLevelFloatValues[+I] extends Domain[I] {
         override final def computationalType: ComputationalType = ComputationalTypeFloat
     }
 
-    abstract override def types(value: DomainValue): TypesAnswer =
+    abstract override def typeOfValue(value: DomainValue): TypesAnswer =
         value match {
             case r: FloatValue ⇒ TypeLevelFloatValues.typesAnswer
-            case _             ⇒ super.types(value)
+            case _             ⇒ super.typeOfValue(value)
         }
 
     protected def newFloatValue(): DomainValue
@@ -115,7 +115,7 @@ trait TypeLevelFloatValues[+I] extends Domain[I] {
 
 }
 private object TypeLevelFloatValues {
-    private val typesAnswer: IsPrimitiveType = IsPrimitiveType(FloatType)
+    private val typesAnswer: IsPrimitiveValue = IsPrimitiveValue(FloatType)
 }
 
 

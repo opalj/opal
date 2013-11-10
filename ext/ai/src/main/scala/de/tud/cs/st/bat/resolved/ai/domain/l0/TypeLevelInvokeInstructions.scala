@@ -39,7 +39,7 @@ package domain
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 import analyses.{ Project, ClassHierarchy }
-import de.tud.cs.st.bat.resolved.ai.IsReferenceType
+import de.tud.cs.st.bat.resolved.ai.IsReferenceValue
 
 /**
  * Most basic handling of method invocations that determines the value that is
