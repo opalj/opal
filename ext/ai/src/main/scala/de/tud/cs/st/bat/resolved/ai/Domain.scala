@@ -690,14 +690,22 @@ trait Domain[+I] {
     /**
      * Returns the type(type bounds) of the value. Depending on the control flow, the same
      * `DomainValue` can represent different values with different types. However,
-     * all types that the domain value represents must belong to the same
+     * all types that the value represents must belong to the same
      * computational type category. I.e., it is possible that the value captures the
      * types "`NullPointerException` and `IllegalArgumentException`", but it will never
-     * capture – at the same time – the (Java) types `int` and/or `long`. Futhermore,
+     * capture – at the same time – the (Java) types `int` and/or `long`. Furthermore,
      * it is possible that the returned type(s) is(are) only an upper bound of the
      * real type.
+     *
+     * This default implementation always returns
+     * [[de.tud.cs.st.bat.resolved.ai.HasUnknownType]].
+     *
+     * The idea is that other traits `abstract override` this method and return the
+     * value's type. If a method that overrides this method has no knowledge about
+     * the given value, it should delegate this call to its super method. (Stackable 
+     * Traits)
      */
-    /*ABSTRACT*/ def typeOfValue(value: DomainValue): TypesAnswer
+    /*ABSTRACT*/ def typeOfValue(value: DomainValue): TypesAnswer = HasUnknownType
 
     /**
      * Tries to determine if the type referred to as `subtype` is a subtype of the
