@@ -1217,30 +1217,30 @@ trait Domain[+I] {
         methodDescriptor: MethodDescriptor,
         operands: List[DomainValue]): Computation[DomainValue, Iterable[DomainValue]]
 
-    def invokeinterface(
+    def invokevirtual(
         pc: PC,
-        declaringClass: ReferenceType,
+        declaringClass: ReferenceType, // e.g., Array[] x = ...; x.clone()
         name: String,
         methodDescriptor: MethodDescriptor,
         operands: List[DomainValue]): OptionalReturnValueOrExceptions
 
-    def invokevirtual(
+    def invokeinterface(
         pc: PC,
-        declaringClass: ReferenceType,
+        declaringClass: ObjectType,
         name: String,
         methodDescriptor: MethodDescriptor,
         operands: List[DomainValue]): OptionalReturnValueOrExceptions
 
     def invokespecial(
         pc: PC,
-        declaringClass: ReferenceType,
+        declaringClass: ObjectType,
         name: String,
         methodDescriptor: MethodDescriptor,
         operands: List[DomainValue]): OptionalReturnValueOrExceptions
 
     def invokestatic(
         pc: PC,
-        declaringClass: ReferenceType,
+        declaringClass: ObjectType,
         name: String,
         methodDescriptor: MethodDescriptor,
         operands: List[DomainValue]): OptionalReturnValueOrExceptions

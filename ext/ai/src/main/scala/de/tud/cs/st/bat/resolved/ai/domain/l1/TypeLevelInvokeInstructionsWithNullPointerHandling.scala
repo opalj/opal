@@ -70,40 +70,44 @@ trait TypeLevelInvokeInstructionsWithNullPointerHandling { this: Domain[_] ⇒
                     Set(newObject(pc, NullPointerException)))
         }
 
-    def invokedynamic(
+    override def invokevirtual(
+        pc: PC,
+        declaringClass: ReferenceType,
+        name: String,
+        methodDescriptor: MethodDescriptor,
+        operands: List[DomainValue]): OptionalReturnValueOrExceptions =
+        handleInstanceBasedInvoke(pc, methodDescriptor, operands)
+
+    override def invokeinterface(
+        pc: PC,
+        declaringClass: ObjectType,
+        name: String,
+        methodDescriptor: MethodDescriptor,
+        operands: List[DomainValue]): OptionalReturnValueOrExceptions =
+        handleInstanceBasedInvoke(pc, methodDescriptor, operands)
+
+    override def invokespecial(
+        pc: PC,
+        declaringClass: ObjectType,
+        name: String,
+        methodDescriptor: MethodDescriptor,
+        operands: List[DomainValue]): OptionalReturnValueOrExceptions =
+        handleInstanceBasedInvoke(pc, methodDescriptor, operands)
+
+    override def invokestatic(
+        pc: PC,
+        declaringClass: ObjectType,
+        name: String,
+        methodDescriptor: MethodDescriptor,
+        operands: List[DomainValue]): OptionalReturnValueOrExceptions =
+        ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
+
+    override def invokedynamic(
         pc: PC,
         bootstrapMethod: BootstrapMethod,
         name: String,
         methodDescriptor: MethodDescriptor,
         operands: List[DomainValue]): Computation[DomainValue, Iterable[DomainValue]] =
         ComputedValue(newTypedValue(pc, ObjectType.Object))
-
-    def invokeinterface(pc: PC,
-                        declaringClass: ReferenceType,
-                        name: String,
-                        methodDescriptor: MethodDescriptor,
-                        operands: List[DomainValue]): OptionalReturnValueOrExceptions =
-        handleInstanceBasedInvoke(pc, methodDescriptor, operands)
-
-    def invokevirtual(pc: PC,
-                      declaringClass: ReferenceType,
-                      name: String,
-                      methodDescriptor: MethodDescriptor,
-                      operands: List[DomainValue]): OptionalReturnValueOrExceptions =
-        handleInstanceBasedInvoke(pc, methodDescriptor, operands)
-
-    def invokespecial(pc: PC,
-                      declaringClass: ReferenceType,
-                      name: String,
-                      methodDescriptor: MethodDescriptor,
-                      operands: List[DomainValue]): OptionalReturnValueOrExceptions =
-        handleInstanceBasedInvoke(pc, methodDescriptor, operands)
-
-    def invokestatic(pc: PC,
-                     declaringClass: ReferenceType,
-                     name: String,
-                     methodDescriptor: MethodDescriptor,
-                     operands: List[DomainValue]): OptionalReturnValueOrExceptions =
-        ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
 }
 

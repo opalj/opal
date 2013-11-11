@@ -40,7 +40,7 @@ package resolved
  * @author Michael Eichberg
  */
 case class INVOKEINTERFACE(
-    declaringClass: ReferenceType, // an interface or class type to be precise
+    declaringClass: ObjectType, // an interface or class type to be precise
     name: String, // an interface or class type to be precise
     methodDescriptor: MethodDescriptor)
         extends StaticMethodInvocationInstruction {

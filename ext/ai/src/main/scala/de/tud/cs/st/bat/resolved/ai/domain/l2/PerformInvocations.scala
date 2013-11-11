@@ -150,30 +150,33 @@ trait PerformInvocations[+I, Source]
         method: Method,
         operands: List[DomainValue]): InvokeExecutionHandler[_ <: Domain[I]]
 
-    override def invokeinterface(pc: PC,
-                                 declaringClass: ReferenceType,
-                                 name: String,
-                                 methodDescriptor: MethodDescriptor,
-                                 operands: List[DomainValue]): OptionalReturnValueOrExceptions =
+    override def invokevirtual(
+        pc: PC,
+        declaringClass: ReferenceType,
+        name: String,
+        methodDescriptor: MethodDescriptor,
+        operands: List[DomainValue]): OptionalReturnValueOrExceptions =
         ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
 
-    override def invokevirtual(pc: PC,
-                               declaringClass: ReferenceType,
-                               name: String,
-                               methodDescriptor: MethodDescriptor,
-                               operands: List[DomainValue]): OptionalReturnValueOrExceptions =
+    override def invokeinterface(
+        pc: PC,
+        declaringClass: ObjectType,
+        name: String,
+        methodDescriptor: MethodDescriptor,
+        operands: List[DomainValue]): OptionalReturnValueOrExceptions =
         ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
 
-    override def invokespecial(pc: PC,
-                               declaringClass: ReferenceType,
-                               name: String,
-                               methodDescriptor: MethodDescriptor,
-                               operands: List[DomainValue]): OptionalReturnValueOrExceptions =
+    override def invokespecial(
+        pc: PC,
+        declaringClass: ObjectType,
+        name: String,
+        methodDescriptor: MethodDescriptor,
+        operands: List[DomainValue]): OptionalReturnValueOrExceptions =
         ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
 
     final override def invokestatic(
         pc: PC,
-        declaringClass: ReferenceType,
+        declaringClass: ObjectType,
         methodName: String,
         methodDescriptor: MethodDescriptor,
         operands: List[DomainValue]): OptionalReturnValueOrExceptions = {
@@ -203,7 +206,7 @@ trait PerformInvocations[+I, Source]
 
     def baseInvokestatic(
         pc: PC,
-        declaringClass: ReferenceType,
+        declaringClass: ObjectType,
         name: String,
         methodDescriptor: MethodDescriptor,
         operands: List[DomainValue]): OptionalReturnValueOrExceptions = {

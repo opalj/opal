@@ -43,8 +43,8 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  */
 trait Origin { this: SomeDomain ⇒
 
-    def origin(value: DomainValue): Iterable[Int] = {
-        domainException(this, "the origin of the given value: "+value+" is not available")
+    def origin(value: DomainValue): Iterable[PC] = {
+        domainException(this, "the origin of \""+value+"\" is not available")
     }
 
 }

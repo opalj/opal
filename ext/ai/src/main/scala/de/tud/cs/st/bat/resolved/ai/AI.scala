@@ -63,8 +63,9 @@ import scala.util.control.ControlThrowable
  *
  * @define UseOfDomain
  *     BATAI does not make assumptions about the number of domain objects that
- *     are used. However, if a domain is used by multiple abstract interpreters,
- *     the domain has to be thread-safe.
+ *     are used. However, if a single domain is used by multiple abstract interpreters,
+ *     the domain has to be thread-safe. The latter is trivially the case when the domain
+ *     object itself does not have any state.
  *
  * @author Michael Eichberg
  */

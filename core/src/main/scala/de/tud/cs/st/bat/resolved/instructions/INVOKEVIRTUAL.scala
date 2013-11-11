@@ -40,8 +40,8 @@ package resolved
  * @author Michael Eichberg
  */
 case class INVOKEVIRTUAL(
-    declaringClass: ReferenceType, // an interface or class type to be precise
-    name: String, // an interface or class type to be precise
+    declaringClass: ReferenceType, // an interface, class or array type to be precise
+    name: String, 
     methodDescriptor: MethodDescriptor)
         extends StaticMethodInvocationInstruction {
 

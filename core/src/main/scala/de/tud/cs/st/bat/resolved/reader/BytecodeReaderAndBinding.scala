@@ -242,12 +242,15 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                         cp(in.readUnsignedShort).asMethodref(cp) // methodRef
                     in.readByte // ignored; fixed value
                     in.readByte // ignored; fixed value
-                    INVOKEINTERFACE(declaringClass, name, methodDescriptor)
-                case 183 ⇒ cp(in.readUnsignedShort).asInvoke(INVOKESPECIAL)(cp)
+                    INVOKEINTERFACE(declaringClass.asObjectType, name, methodDescriptor)
+                case 183 ⇒
+                    val (declaringClass, name, methodDescriptor) /*: (ReferenceType,String,MethodDescriptor)*/ =
+                        cp(in.readUnsignedShort).asMethodref(cp)
+                    INVOKESPECIAL(declaringClass.asObjectType, name, methodDescriptor)
                 case 184 ⇒
                     val (declaringClass, name, methodDescriptor) /*: (ReferenceType,String,MethodDescriptor)*/ =
                         cp(in.readUnsignedShort).asMethodref(cp) // methodRef
-                    INVOKESTATIC(declaringClass, name, methodDescriptor)
+                    INVOKESTATIC(declaringClass.asObjectType, name, methodDescriptor)
                 case 182 ⇒
                     val (declaringClass, name, methodDescriptor) /*: (ReferenceType,String,MethodDescriptor)*/ =
                         cp(in.readUnsignedShort).asMethodref(cp) // methodRef

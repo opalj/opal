@@ -77,7 +77,7 @@ class PropertyTracingTest
 
         override def invokestatic(
             pc: Int,
-            declaringClass: ReferenceType,
+            declaringClass: ObjectType,
             name: String,
             methodDescriptor: MethodDescriptor,
             operands: List[DomainValue]): OptionalReturnValueOrExceptions = {

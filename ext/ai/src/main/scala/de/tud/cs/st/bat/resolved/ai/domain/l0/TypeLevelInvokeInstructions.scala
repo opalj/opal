@@ -66,22 +66,6 @@ trait TypeLevelInvokeInstructions { this: Domain[_] ⇒
             Some(newTypedValue(pc, someType))
     }
 
-    override def invokedynamic(
-        pc: PC,
-        bootstrapMethod: BootstrapMethod,
-        name: String,
-        methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): Computation[DomainValue, Iterable[DomainValue]] =
-        ComputedValue(newTypedValue(pc, ObjectType.Object))
-
-    override def invokeinterface(
-        pc: PC,
-        declaringClass: ReferenceType,
-        name: String,
-        methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): OptionalReturnValueOrExceptions =
-        ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
-
     override def invokevirtual(
         pc: PC,
         declaringClass: ReferenceType,
@@ -90,9 +74,17 @@ trait TypeLevelInvokeInstructions { this: Domain[_] ⇒
         operands: List[DomainValue]): OptionalReturnValueOrExceptions =
         ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
 
+    override def invokeinterface(
+        pc: PC,
+        declaringClass: ObjectType,
+        name: String,
+        methodDescriptor: MethodDescriptor,
+        operands: List[DomainValue]): OptionalReturnValueOrExceptions =
+        ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
+
     override def invokespecial(
         pc: PC,
-        declaringClass: ReferenceType,
+        declaringClass: ObjectType,
         name: String,
         methodDescriptor: MethodDescriptor,
         operands: List[DomainValue]): OptionalReturnValueOrExceptions =
@@ -100,11 +92,19 @@ trait TypeLevelInvokeInstructions { this: Domain[_] ⇒
 
     override def invokestatic(
         pc: PC,
-        declaringClass: ReferenceType,
+        declaringClass: ObjectType,
         name: String,
         methodDescriptor: MethodDescriptor,
         operands: List[DomainValue]): OptionalReturnValueOrExceptions =
         ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
+
+    override def invokedynamic(
+        pc: PC,
+        bootstrapMethod: BootstrapMethod,
+        name: String,
+        methodDescriptor: MethodDescriptor,
+        operands: List[DomainValue]): Computation[DomainValue, Iterable[DomainValue]] =
+        ComputedValue(newTypedValue(pc, ObjectType.Object))
 
 }
 

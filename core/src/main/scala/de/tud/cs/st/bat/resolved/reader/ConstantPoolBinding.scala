@@ -84,11 +84,6 @@ trait ConstantPoolBinding extends Constant_PoolReader {
         def asMethodref(implicit cp: Constant_Pool): (ReferenceType, String, MethodDescriptor) =
             BATException("conversion to method ref is not supported")
 
-        def asInvoke[T <: Instruction](
-            create: (ReferenceType, String, MethodDescriptor) ⇒ T)(
-                implicit cp: Constant_Pool): T =
-            BATException("conversion to method ref is not supported")
-
         def asObjectType(implicit cp: Constant_Pool): ObjectType =
             BATException("conversion to object type is not supported")
 
@@ -246,19 +241,14 @@ trait ConstantPoolBinding extends Constant_PoolReader {
             implicit cp: Constant_Pool): (ReferenceType, String, MethodDescriptor) = {
             if (methodref eq null) {
                 val nameAndType = name_and_type_index.asNameAndType
-                methodref = (class_index.asReferenceType,
-                    nameAndType.name,
-                    nameAndType.methodDescriptor
-                )
+                methodref =
+                    (
+                        class_index.asReferenceType,
+                        nameAndType.name,
+                        nameAndType.methodDescriptor
+                    )
             }
             methodref
-        }
-
-        override def asInvoke[T <: Instruction](
-            create: (ReferenceType, String, MethodDescriptor) ⇒ T)(
-                implicit cp: Constant_Pool): T = {
-            val nameAndType = name_and_type_index.asNameAndType
-            create(class_index.asReferenceType, nameAndType.name, nameAndType.methodDescriptor)
         }
     }
 

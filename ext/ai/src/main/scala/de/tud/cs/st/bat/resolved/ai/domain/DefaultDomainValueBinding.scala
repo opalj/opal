@@ -45,8 +45,7 @@ import reflect.ClassTag
  * @author Michael Eichberg
  */
 trait DefaultDomainValueBinding[+I]
-        extends Domain[I]
-        with DefaultReturnAddressValues[I] {
+        extends Domain[I] {
 
     final type DomainValue = Value
 
@@ -58,6 +57,9 @@ trait DefaultDomainValueBinding[+I]
 
     final val MetaInformationUpdateIllegalValue = MetaInformationUpdate(TheIllegalValue)
 
+       type DomainReturnAddressValue = ReturnAddressValue
+
+    def ReturnAddressValue(address: Int) = new ReturnAddressValue(address)
 }
 
 
