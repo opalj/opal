@@ -123,7 +123,7 @@ class IndexBasedProject[Source: reflect.ClassTag] (
     /**
      * This project's class files.
      */
-    def classFiles: Iterable[ClassFile] = classes.view.filter(_ ne null)
+    override def classFiles: Iterable[ClassFile] = classes.view.filter(_ ne null)
 }
 
 /**

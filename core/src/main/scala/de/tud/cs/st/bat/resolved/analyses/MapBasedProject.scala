@@ -101,7 +101,7 @@ class MapBasedProject[Source](
     /**
      * This project's class files.
      */
-    def classFiles: Iterable[ClassFile] = classes.values
+    override def classFiles: Iterable[ClassFile] = classes.values
 }
 
 /**
