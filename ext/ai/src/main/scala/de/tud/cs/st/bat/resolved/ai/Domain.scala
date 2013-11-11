@@ -702,7 +702,7 @@ trait Domain[+I] {
      *
      * The idea is that other traits `abstract override` this method and return the
      * value's type. If a method that overrides this method has no knowledge about
-     * the given value, it should delegate this call to its super method. (Stackable 
+     * the given value, it should delegate this call to its super method. (Stackable
      * Traits)
      */
     /*ABSTRACT*/ def typeOfValue(value: DomainValue): TypesAnswer = HasUnknownType
@@ -874,7 +874,7 @@ trait Domain[+I] {
         operands: Operands,
         locals: Locals): (Operands, Locals) =
         (operands, locals)
-    private[ai] val IsNull = establishIsNull _
+    private[ai] final def IsNull = establishIsNull _
 
     /**
      * Called by BATAI when it establishes that the value is guaranteed not to be `null`.
@@ -888,7 +888,7 @@ trait Domain[+I] {
         operands: Operands,
         locals: Locals): (Operands, Locals) =
         (operands, locals)
-    private[ai] val IsNonNull = establishIsNonNull _
+    private[ai] final def IsNonNull = establishIsNonNull _
 
     /**
      * Called by BATAI when two values were compared for reference equality and
@@ -901,7 +901,7 @@ trait Domain[+I] {
         operands: Operands,
         locals: Locals): (Operands, Locals) =
         (operands, locals)
-    private[ai] val AreEqualReferences = establishAreEqualReferences _
+    private[ai] final def AreEqualReferences = establishAreEqualReferences _
 
     def establishAreNotEqualReferences(
         pc: PC,
@@ -910,7 +910,7 @@ trait Domain[+I] {
         operands: Operands,
         locals: Locals): (Operands, Locals) =
         (operands, locals)
-    private[ai] val AreNotEqualReferences = establishAreNotEqualReferences _
+    private[ai] final def AreNotEqualReferences = establishAreNotEqualReferences _
 
     def establishUpperBound(
         pc: PC,
@@ -938,7 +938,7 @@ trait Domain[+I] {
         operands: Operands,
         locals: Locals): (Operands, Locals) =
         (operands, locals)
-    private[ai] val AreEqual = establishAreEqual _
+    private[ai] final def AreEqual = establishAreEqual _
 
     def establishAreNotEqual(
         pc: PC,
@@ -947,7 +947,7 @@ trait Domain[+I] {
         operands: Operands,
         locals: Locals): (Operands, Locals) =
         (operands, locals)
-    private[ai] val AreNotEqual = establishAreNotEqual _
+    private[ai] final def AreNotEqual = establishAreNotEqual _
 
     def establishIsLessThan(
         pc: PC,
@@ -956,7 +956,7 @@ trait Domain[+I] {
         operands: Operands,
         locals: Locals): (Operands, Locals) =
         (operands, locals)
-    private[ai] val IsLessThan = establishIsLessThan _
+    private[ai] final def IsLessThan = establishIsLessThan _
 
     def establishIsLessThanOrEqualTo(
         pc: PC,
@@ -965,37 +965,37 @@ trait Domain[+I] {
         operands: Operands,
         locals: Locals): (Operands, Locals) =
         (operands, locals)
-    private[ai] val IsLessThanOrEqualTo = establishIsLessThanOrEqualTo _
+    private[ai] final def IsLessThanOrEqualTo = establishIsLessThanOrEqualTo _
 
-    private[ai] val IsGreaterThan: TwoValuesConstraint =
+    private[ai] final def IsGreaterThan: TwoValuesConstraint =
         (pc: PC, value1: DomainValue, value2: DomainValue, operands: Operands, locals: Locals) ⇒
             establishIsLessThan(pc, value2, value1, operands, locals)
 
-    private[ai] val IsGreaterThanOrEqualTo: TwoValuesConstraint =
+    private[ai] final def IsGreaterThanOrEqualTo: TwoValuesConstraint =
         (pc: PC, value1: DomainValue, value2: DomainValue, operands: Operands, locals: Locals) ⇒
             establishIsLessThanOrEqualTo(pc, value2, value1, operands, locals)
 
-    private[ai] val Is0: SingleValueConstraint =
+    private[ai] final def Is0: SingleValueConstraint =
         (pc: PC, value: DomainValue, operands: Operands, locals: Locals) ⇒
             establishAreEqual(pc, value, newIntegerConstant0, operands, locals)
 
-    private[ai] val IsNot0: SingleValueConstraint =
+    private[ai] final def IsNot0: SingleValueConstraint =
         (pc: PC, value: DomainValue, operands: Operands, locals: Locals) ⇒
             establishAreNotEqual(pc, value, newIntegerConstant0, operands, locals)
 
-    private[ai] val IsLessThan0: SingleValueConstraint =
+    private[ai] final def IsLessThan0: SingleValueConstraint =
         (pc: PC, value: DomainValue, operands: Operands, locals: Locals) ⇒
             establishIsLessThan(pc, value, newIntegerConstant0, operands, locals)
 
-    private[ai] val IsLessThanOrEqualTo0: SingleValueConstraint =
+    private[ai] final def IsLessThanOrEqualTo0: SingleValueConstraint =
         (pc: PC, value: DomainValue, operands: Operands, locals: Locals) ⇒
             establishIsLessThanOrEqualTo(pc, value, newIntegerConstant0, operands, locals)
 
-    private[ai] val IsGreaterThan0: SingleValueConstraint =
+    private[ai] final def IsGreaterThan0: SingleValueConstraint =
         (pc: PC, value: DomainValue, operands: Operands, locals: Locals) ⇒
             establishIsLessThan(pc, newIntegerConstant0, value, operands, locals)
 
-    private[ai] val IsGreaterThanOrEqualTo0: SingleValueConstraint =
+    private[ai] final def IsGreaterThanOrEqualTo0: SingleValueConstraint =
         (pc: PC, value: DomainValue, operands: Operands, locals: Locals) ⇒
             establishIsLessThanOrEqualTo(pc, newIntegerConstant0, value, operands, locals)
 
