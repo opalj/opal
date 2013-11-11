@@ -47,7 +47,7 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  * @author Michael Eichberg
  */
 trait DefaultTypeLevelIntegerValues[+I]
-        extends DefaultValueBinding[I]
+        extends DefaultDomainValueBinding[I]
         with TypeLevelIntegerValues[I] {
     
     case object BooleanValue extends super.BooleanValue {

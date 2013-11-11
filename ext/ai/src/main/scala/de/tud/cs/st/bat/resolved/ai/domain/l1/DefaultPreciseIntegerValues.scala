@@ -45,7 +45,7 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  * @author Michael Eichberg
  */
 trait DefaultPreciseIntegerValues[+I]
-        extends DefaultValueBinding[I]
+        extends DefaultDomainValueBinding[I]
         with PreciseIntegerValues[I] {
 
     case class AnIntegerValue() extends super.AnIntegerValue {

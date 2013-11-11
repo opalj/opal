@@ -49,13 +49,12 @@ package domain
  */
 trait TypeLevelDomain[+I]
     extends Domain[I]
-    with DefaultValueBinding[I]
+    with DefaultDomainValueBinding[I]
     with DefaultTypeLevelReferenceValues[I]
     with DefaultTypeLevelIntegerValues[I]
     with DefaultTypeLevelLongValues[I]
     with DefaultTypeLevelFloatValues[I]
     with DefaultTypeLevelDoubleValues[I]
-    with DefaultReturnAddressValues[I]
 
 /**
  * A complete definition of a domain except of the domain's identifier.

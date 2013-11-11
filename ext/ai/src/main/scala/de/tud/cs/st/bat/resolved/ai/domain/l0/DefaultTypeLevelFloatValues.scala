@@ -46,7 +46,7 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  * @author Michael Eichberg
  */
 trait DefaultTypeLevelFloatValues[+I]
-        extends DefaultValueBinding[I]
+        extends DefaultDomainValueBinding[I]
         with TypeLevelFloatValues[I] {
 
     case object FloatValue extends super.FloatValue {

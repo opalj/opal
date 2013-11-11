@@ -37,16 +37,19 @@ package ai
 package domain
 
 /**
- * Final bindings for a `Domain`'s `ReturnAddressValue` trait that can be
- * mixed in if a `Domain`'s `Value` and `ReturnAddressValue` trait were
+ * Final binding for a `Domain`'s `DomainReturnAddressValue` type that can be
+ * mixed in if a `Domain`'s `Value` and `ReturnAddressValue` traits are
  * not extended.
  *
  * In general it is not necessary to add any additional support to return address values
  * as these values are never part of any domain related computation.
+ * 
+ * @note The [[de.tud.cs.st.bat.resolved.ai.domain.DefaultValueBinding]] trait already
+ * 		mixes in this trait. 
  *
  * @author Michael Eichberg
  */
-trait DefaultReturnAddressValues[+I] extends DefaultValueBinding[I] {
+trait DefaultReturnAddressValues[+I] extends Domain[I] {
 
     type DomainReturnAddressValue = ReturnAddressValue
 

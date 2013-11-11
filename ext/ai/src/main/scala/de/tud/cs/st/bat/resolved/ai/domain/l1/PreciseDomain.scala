@@ -40,14 +40,13 @@ class PreciseConfigurableDomain[+I](
     val identifier: I)
         extends Domain[I]
         with Origin
-        with DefaultValueBinding[I]
+        with DefaultDomainValueBinding[I]
         with DefaultPreciseIntegerValues[I]
         with DefaultPreciseReferenceValues[I]
         with StringValues[I]
         with DefaultTypeLevelLongValues[I]
         with DefaultTypeLevelFloatValues[I]
         with DefaultTypeLevelDoubleValues[I]
-        with DefaultReturnAddressValues[I]
         with TypeLevelArrayInstructions
         with TypeLevelFieldAccessInstructionsWithNullPointerHandling
         with TypeLevelInvokeInstructionsWithNullPointerHandling

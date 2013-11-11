@@ -44,7 +44,9 @@ import reflect.ClassTag
  *
  * @author Michael Eichberg
  */
-trait DefaultValueBinding[+I] extends Domain[I] {
+trait DefaultDomainValueBinding[+I]
+        extends Domain[I]
+        with DefaultReturnAddressValues[I] {
 
     final type DomainValue = Value
 
@@ -55,16 +57,6 @@ trait DefaultValueBinding[+I] extends Domain[I] {
     final val TheIllegalValue: DomainIllegalValue = new IllegalValue
 
     final val MetaInformationUpdateIllegalValue = MetaInformationUpdate(TheIllegalValue)
-
-    /**
-     * Base implementation of the method that always throws a domain exception.
-     *
-     * The idea is that other traits `abstract override` this method and return the
-     * value's type. If a method that overrides this method has no knowledge about
-     * the given value, it should delegate this call to its super method.
-     */
-    override def typeOfValue(value: DomainValue): TypesAnswer =
-        domainException(this, "the type of the given value is not known: "+value)
 
 }
 

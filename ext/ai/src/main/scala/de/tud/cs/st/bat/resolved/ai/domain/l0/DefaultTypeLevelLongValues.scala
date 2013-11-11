@@ -46,7 +46,7 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  * @author Michael Eichberg
  */
 trait DefaultTypeLevelLongValues[+I]
-        extends DefaultValueBinding[I]
+        extends DefaultDomainValueBinding[I]
         with TypeLevelLongValues[I] {
 
     case object LongValue extends super.LongValue {

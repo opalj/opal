@@ -44,7 +44,7 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  * @author Michael Eichberg
  */
 trait DefaultTypeLevelReferenceValues[+I]
-        extends DefaultValueBinding[I]
+        extends DefaultDomainValueBinding[I]
         with TypeLevelReferenceValues[I] { domain ⇒
 
     // -----------------------------------------------------------------------------------

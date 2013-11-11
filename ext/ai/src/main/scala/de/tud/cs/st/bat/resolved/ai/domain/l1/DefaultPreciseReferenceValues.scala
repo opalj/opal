@@ -42,7 +42,7 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  * @author Michael Eichberg
  */
 trait DefaultPreciseReferenceValues[+I]
-        extends DefaultValueBinding[I]
+        extends DefaultDomainValueBinding[I]
         with Origin
         with PreciseReferenceValues[I] { domain ⇒
 
