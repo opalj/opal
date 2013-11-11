@@ -46,36 +46,71 @@ import bat.resolved.analyses.{ Project, ReportableAnalysisResult }
  * @author Michael Eichberg
  */
 class CallGraphFactory {
-/*
+
+    /**
+     * The set of all entry points consists of:
+     * - all static initializers,
+     * - every non-private static method,
+     * - every non-private constructor,
+     * - every non-private method.
+     */
+    def defaultEntryPointsForCHA(project: Project[_]): Set[(ClassFile, Method)] = {
+        for {
+            classFile ← project.classFiles.toSet[ClassFile]
+            method ← classFile.methods
+            if !(method.isNative || method.isPrivate)
+        } yield (classFile, method)
+    }
+
+    //    def defaultEntryPoints(project: Project[_]): Set[(ClassFile, Method)] = {
+    //    	// We assume that we are analyzing a library. Hence, 
+    //        // all static initializers are considered entry points,
+    //        // every non-private static method is an entry point and
+    //        // every non-private constructor is an entry point
+    //        // Secondary entry points are all non-private, non-native 
+    //        // instance methods.        
+    //    }
+
     import language.existentials
 
     import bat.resolved.ai.domain._
 
-    private type DomainContext = (ClassFile, Method)
+    def performCHA[Source](
+        theProject: Project[Source])(
+            entryPoints: Set[(ClassFile, Method)] = defaultEntryPointsForCHA(theProject)): (CHACallGraph, Set[UnresolvedMethodCall]) = {
 
-    def create(
-        project: Project[_],
-        entryPoints: Set[(ClassFile, Method)]): CallGraph = {
+        type DomainContext = (ClassFile,Method)
 
-        val fieldTypes: Map[Field, TypeBounds] =
-            Map.empty
-        var writtenBy: Map[Field, Set[Method]] =
-            Map.empty.withDefaultValue(Set.empty)
-        var readBy: Map[Field, Set[Method]] =
-            Map.empty.withDefaultValue(Set.empty)
-        var calledBy: Map[Method, Set[CallSite]] =
-            Map.empty.withDefaultValue(Set.empty)
+        //        val fieldTypes: Map[Field, UpperBound] =
+        //            Map.empty
+        //        var writtenBy: Map[Field, Set[Method]] =
+        //            Map.empty.withDefaultValue(Set.empty)
+        //        var readBy: Map[Field, Set[Method]] =
+        //            Map.empty.withDefaultValue(Set.empty)
+        var calledBy: Map[Method, Map[Method, Set[PC]]] =
+            Map.empty.withDefaultValue(Map.empty.withDefaultValue(Set.empty))
         var calls: Map[Method, Map[PC, Set[Method]]] =
             Map.empty.withDefaultValue(Map.empty.withDefaultValue(Set.empty))
-        var methodsToAnalyze = entryPoints
 
-        object MethodDomain extends Domain[DomainContext]
-                with DefaultValueBinding[DomainContext]
+        var analyzedMethods = Set.empty[Method]
+        var methodsToAnalyze = entryPoints
+        var unresolvedMethodCalls = Set.empty[UnresolvedMethodCall]
+        def unresolvedMethodCall(
+            declaringClass: ReferenceType,
+            name: String,
+            methodDescriptor: MethodDescriptor) {
+            unresolvedMethodCalls += UnresolvedMethodCall(declaringClass, name, methodDescriptor)
+        }
+
+        // This domain does not have any associated state. 
+        case class MethodDomain(
+                val identifier : (ClassFile,Method)) 
+        extends Domain[DomainContext]
+                with DefaultDomainValueBinding[DomainContext]
                 with DefaultTypeLevelIntegerValues[DomainContext]
                 with DefaultTypeLevelLongValues[DomainContext]
                 with DefaultTypeLevelFloatValues[DomainContext]
                 with DefaultTypeLevelDoubleValues[DomainContext]
-                with DefaultReturnAddressValues[DomainContext]
                 with DefaultPreciseReferenceValues[DomainContext]
                 with StringValues[DomainContext]
                 with TypeLevelArrayInstructions
@@ -84,23 +119,7 @@ class CallGraphFactory {
                 with DoNothingOnReturnFromMethod
                 with ProjectBasedClassHierarchy[Source] {
 
-            def identifier = (classFile, method)
-
             def project: Project[Source] = theProject
-
-            override def invokeinterface(
-                pc: PC,
-                declaringClass: ReferenceType,
-                name: String,
-                methodDescriptor: MethodDescriptor,
-                operands: List[DomainValue]): OptionalReturnValueOrExceptions = {
-                val parameters = operands.reverse
-                val baseType = types(parameters.head) match {
-                    case IsReferenceType(typeBounds) ⇒
-                    case _                           ⇒ declaringClass
-                }
-                super.invokeinterface(pc, declaringClass, name, methodDescriptor, operands)
-            }
 
             override def invokevirtual(
                 pc: PC,
@@ -110,39 +129,81 @@ class CallGraphFactory {
                 operands: List[DomainValue]): OptionalReturnValueOrExceptions =
                 super.invokevirtual(pc, declaringClass, name, methodDescriptor, operands)
 
-            override def invokespecial(
+            override def invokeinterface(
                 pc: PC,
-                declaringClass: ReferenceType,
+                declaringClass: ObjectType,
                 name: String,
                 methodDescriptor: MethodDescriptor,
                 operands: List[DomainValue]): OptionalReturnValueOrExceptions = {
-                declaringClass
+                val parameters = operands.reverse
+                val baseType = typeOfValue(parameters.head) match {
+                    case IsReferenceValue(upperBound) ⇒ upperBound
+                    case _                            ⇒ declaringClass
+                }
+                super.invokeinterface(pc, declaringClass, name, methodDescriptor, operands)
+            }
 
+            override def invokespecial(
+                pc: PC,
+                declaringClass: ObjectType,
+                name: String,
+                methodDescriptor: MethodDescriptor,
+                operands: List[DomainValue]): OptionalReturnValueOrExceptions = {
+                // invocation of private, constructor and super methods 
+                classHierarchy.lookupMethodDefinition(
+                    declaringClass.asObjectType, // the dynamic type is not "relevant"
+                    name,
+                    methodDescriptor,
+                    project) match {
+                        case Some(nextMethod @ (classFile, method)) ⇒
+                            assume(method.isNative || method.body.isDefined,
+                                "unexpected INVOKESPECIAL of an abstract method found")
+                            
+//                            calledBy: Map[Method, Map[Method, Set[PC]]] +=
+//                                calledBy(nextMethod)()
+//                                
+//            Map.empty.withDefaultValue(Map.empty.withDefaultValue(Set.empty))
+//        var calls: Map[Method, Map[PC, Set[Method]]] =
+                                
+                                if (!analyzedMethods.contains(method)) {
+                                methodsToAnalyze += nextMethod
+                            }
+                        
+                        case None ⇒
+                            unresolvedMethodCall(
+                                declaringClass,
+                                name,
+                                methodDescriptor
+                            )
+                    }
                 super.invokespecial(pc, declaringClass, name, methodDescriptor, operands)
             }
 
             override def invokestatic(
                 pc: PC,
-                declaringClass: ReferenceType,
+                declaringClass: ObjectType,
                 name: String,
                 methodDescriptor: MethodDescriptor,
                 operands: List[DomainValue]): OptionalReturnValueOrExceptions =
                 super.invokestatic(pc, declaringClass, name, methodDescriptor, operands)
         }
 
-        def analyze(classFile: ClassFile, method: Method) {
-            BaseAI.perform(classFile, method, domain)(someLocals)
-        }
+       
 
         while (methodsToAnalyze.nonEmpty) {
-            val (classFile, method) = methodsToAnalyze.head
+            val currentMethod @ (classFile, method) = methodsToAnalyze.head
+            analyzedMethods += method
             methodsToAnalyze = methodsToAnalyze.tail
-            analyze(classFile, method)
+            BaseAI(classFile, method, MethodDomain((classFile,method)))
         }
 
-        CallGraph(fieldTypes, writtenBy, readBy, calledBy, calls)
+        (new CHACallGraph(calledBy, calls), unresolvedMethodCalls)
     }
-*/
+
+}
+class CHACallGraph(
+        val calledBy: Map[Method, Map[Method, Set[PC]]],
+        val calls: Map[Method, Map[PC, Set[Method]]]) {
 }
 
 /**
@@ -177,6 +238,11 @@ case class CallGraph(
         val calledBy: Map[Method, Set[CallSite]],
         val calls: Map[Method, Map[PC, Set[Method]]]) {
 }
+
+case class UnresolvedMethodCall(
+    val declaringClass: ReferenceType,
+    val name: String,
+    val descriptor: MethodDescriptor)
 
 
 
