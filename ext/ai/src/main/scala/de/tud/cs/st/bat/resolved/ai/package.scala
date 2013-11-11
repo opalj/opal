@@ -105,15 +105,16 @@ package object ai {
 
     /**
      * An upper bound represents the available type information about a reference value.
-     * In general, it is just an upper bound for the concrete type; i.e.,
-     * the runtime type is known to be a subtype of all types of the type bound. E.g.,
+     * In general, it is just an upper bound for a concrete type; i.e., we know that
+     * the runtime type has to be a subtype of the upper bound. An upper bound can
+     * consists of multiple independent types. E.g.,
      * a type bound could be: `java.lang.Object`, `java.io.Serializable` and
      * `java.lang.Cloneable` for an array.
      *
-     * In general, a type bound may, e.g., be a single class type and a set of interface types
-     * which are known to be implemented by the current object. Even if the type contains
-     * a class type it may just be a super class of the concrete type and, hence,
-     * just represents an abstraction.
+     * In general, an upper bound identifies a single class type and a set of independent 
+     * interface types which are known to be implemented by the current object. Even if the type 
+     * contains a class type it may just be a super class of the concrete type and, hence,
+     * just represent an abstraction.
      *
      * How type bounds related to reference types are handled and whether the domain
      * makes it possible to distinguish between precise types and type bounds is at

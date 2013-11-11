@@ -59,7 +59,7 @@ trait TypeLevelFieldAccessInstructionsWithNullPointerHandling { this: Domain[_] 
         objectref: DomainValue,
         declaringClass: ObjectType,
         name: String,
-        fieldType: FieldType) =
+        fieldType: FieldType) : Computation[DomainValue, DomainValue] =
         isNull(objectref) match {
             case Yes ⇒
                 ThrowsException(newInitializedObject(pc, NullPointerException))
@@ -75,7 +75,7 @@ trait TypeLevelFieldAccessInstructionsWithNullPointerHandling { this: Domain[_] 
         pc: PC,
         declaringClass: ObjectType,
         name: String,
-        fieldType: FieldType) =
+        fieldType: FieldType) : Computation[DomainValue, DomainValue] =
         ComputedValue(newTypedValue(pc, fieldType))
 
     def putfield(
@@ -84,7 +84,7 @@ trait TypeLevelFieldAccessInstructionsWithNullPointerHandling { this: Domain[_] 
         value: DomainValue,
         declaringClass: ObjectType,
         name: String,
-        fieldType: FieldType) =
+        fieldType: FieldType) : Computation[Nothing, DomainValue] =
         isNull(objectref) match {
             case Yes ⇒
                 ThrowsException(newInitializedObject(pc, NullPointerException))
@@ -100,7 +100,7 @@ trait TypeLevelFieldAccessInstructionsWithNullPointerHandling { this: Domain[_] 
         value: DomainValue,
         declaringClass: ObjectType,
         name: String,
-        fieldType: FieldType) =
+        fieldType: FieldType) : Computation[Nothing, DomainValue] =
         ComputationWithSideEffectOnly
 
 }
