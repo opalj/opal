@@ -66,7 +66,7 @@ class EqualsHashCodeContract[Source]
         val mutex = new Object
         var reports = List[ClassBasedReport[Source]]()
 
-        for (classFile ← project.classFiles.par) yield {
+        for (classFile ← project.classFiles.par)  {
             var definesEqualsMethod = false
             var definesHashCodeMethod = false
             for (method ← classFile.methods) method match {

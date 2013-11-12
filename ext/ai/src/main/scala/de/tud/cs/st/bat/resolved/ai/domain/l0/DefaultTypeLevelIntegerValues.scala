@@ -52,7 +52,8 @@ trait DefaultTypeLevelIntegerValues[+I]
     
     case object BooleanValue extends super.BooleanValue {
         
-        override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = value match {
+        override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = 
+            value match {
             case BooleanValue         ⇒ NoUpdate
             case other @ IntegerValue ⇒ StructuralUpdate(other)
         }

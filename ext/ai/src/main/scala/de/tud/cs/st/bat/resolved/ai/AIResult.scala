@@ -66,7 +66,8 @@ object AIResultBuilder {
             val operandsArray: Array[List[theDomain.DomainValue]] = theOperandsArray
             val localsArray: Array[Array[theDomain.DomainValue]] = theLocalsArray
 
-            def continueInterpretation(ai: AI[_ >: domain.type]): AIResult[domain.type] =
+            def continueInterpretation(
+                ai: AI[_ >: domain.type]): AIResult[domain.type] =
                 ai.continueInterpretation(
                     code, domain)(
                         worklist, evaluated, operandsArray, localsArray)
@@ -92,7 +93,8 @@ object AIResultBuilder {
             val operandsArray: Array[List[theDomain.DomainValue]] = theOperandsArray
             val localsArray: Array[Array[theDomain.DomainValue]] = theLocalsArray
 
-            def restartInterpretation(ai: AI [_ >: theDomain.type]): AIResult[theDomain.type] =
+            def restartInterpretation(
+                ai: AI[_ >: theDomain.type]): AIResult[theDomain.type] =
                 ai.continueInterpretation(
                     code, domain)(
                         List(0), evaluated, operandsArray, localsArray)

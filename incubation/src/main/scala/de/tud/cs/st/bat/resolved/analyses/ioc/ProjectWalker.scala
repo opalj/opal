@@ -53,8 +53,8 @@ import de.tud.cs.st.bat.resolved.analyses.ReportableAnalysisResult
  * @todo This implementation is not yet usable.
  * @author Michael Eichberg
  */
-trait AnalysesDirector[Source] 
-extends Analysis[Source, Iterable[ReportableAnalysisResult]] {
+trait AnalysesDirector[Source]
+        extends Analysis[Source, Iterable[ReportableAnalysisResult]] {
 
     def description: String = " TODO "
 
@@ -74,6 +74,11 @@ extends Analysis[Source, Iterable[ReportableAnalysisResult]] {
 
     def project: Project[Source]
 
+    def classFile: ClassFile
+
+    @throws[IllegalStateException]("Defined only during the analysis of a method")
+    def method: Method
+
     def register(analysis: DirectedAnalysis[Source])
 }
 
@@ -81,24 +86,22 @@ trait DirectedAnalysis[Source] {
 
     def director: AnalysesDirector[Source]
 
-    director.register(this)
-
     def project = director.project
 
-    def result(result: ReportableAnalysisResult)
-
-    def classFile(f: PartialFunction[ClassFile, _]): Unit = {}
-
-    def classFile: ClassFile
-
-    def field(f: PartialFunction[Field, _]): Unit = {}
+    def classFile: ClassFile = director.classFile
 
     /**
      * Returns the method that is currently analyzed.
      */
-    def method: Method
+    def method: Method = director.method
 
-    def method(f: PartialFunction[Method, _]): Unit = {}
+    def result(result: ReportableAnalysisResult)
+
+    def classFile(f: PartialFunction[ClassFile, Boolean]): Boolean = { true }
+
+    def field(f: PartialFunction[Field, Boolean]): Boolean = { true }
+
+    def method(f: PartialFunction[Method, Boolean]): Boolean = { true }
 
     def Code: Code = method.body.get
 

@@ -34,67 +34,64 @@ package de.tud.cs.st
 package bat
 package resolved
 package analyses
-package bug_patterns
-
-/**
- * Identifies (non-static) inner classes that are serializable, but where the outer class
- * is not.
- *
- * ==Implementation Note==
- * This analysis is implemented using the traditional approach where each analysis
- * analyzes the project's resources on its own and fully controls the process.
- *
- * @author Michael Eichberg
- */
-class NonSerializableClassHasASerializableInnerClass[Source]
-        extends MultipleResultsAnalysis[Source, ClassBasedReport[Source]] {
-
-    //
-    // Meta-data
-    //
-
-    def description = "Identifies (non-static) inner classes that are serializable, but where the outer class is not."
-
-    // 
-    // Implementation
-    // 
-
-    def analyze(
-        project: Project[Source],
-        parameters: Seq[String] = List.empty): Iterable[ClassBasedReport[Source]] = {
-
-        import project.classHierarchy.isSubtypeOf
-
-        val Serializable = ObjectType.Serializable
-
-        for {
-            serializableType ← project.classHierarchy.allSubtypes(Serializable)
-            classFile = project(serializableType).get
-            (outerType, NOT_STATIC()) ← classFile.outerType
-            /* if we know nothing about the class, then we never generate a warning */
-            if isSubtypeOf(outerType, Serializable).no
-        } yield {
-            ClassBasedReport(
-                project.source(serializableType),
-                serializableType.toJava,
-                Some("note"),
-                "The non-static inner class: "+
-                    serializableType.toJava+
-                    " is seriablizable, but the outer class: "+outerType.toJava+" is not."
-            )
-        }
-    }
-}
 
 import java.net.URL
 
 /**
- * Enables the stand alone execution of this analysis.
+ * Aggregates several analyses such that they are treated as one afterwards.
+ *
+ * ==Thread Safety==
+ * This class is thread safe.
+ *
+ * ==Implementation Note==
+ * If you extend this class, make sure that all access to this classes (mutable) fields/
+ * mutable data structures is synchronized on `analyses`.
+ *
+ * @author Michael Eichberg
  */
-object NonSerializableClassHasASerializableInnerClassAnalysis extends AnalysisExecutor {
+class AnalysisAggregator[Source, AnalysisResult]
+        extends Analysis[Source, Iterable[AnalysisResult]] {
 
-    val analysis = urlBasedAnalysisToAnalysisWithReportableResults(
-        new NonSerializableClassHasASerializableInnerClass[URL]
-    )
+    import scala.collection.mutable.Set
+
+    protected[this] val analyses = Set[Analysis[Source, AnalysisResult]]()
+
+    protected[this] var analyzeInParallel = false
+
+    def register(analysis: Analysis[Source, AnalysisResult]) {
+        analyses.synchronized(analyses += analysis)
+    }
+
+    def setAnalyzeInParallel(analyzeInParallel: Boolean) {
+        analyses.synchronized(this.analyzeInParallel = analyzeInParallel)
+    }
+
+    def analyze(
+        project: Project[Source],
+        parameters: Seq[String]): Iterable[AnalysisResult] =
+        analyses.synchronized {
+            if (analyzeInParallel) {
+                (
+                    for (analysis ← analyses.par) yield {
+                        analysis.analyze(project, parameters)
+                    }
+                ).seq
+            } else {
+                for (analysis ← analyses) yield { analysis.analyze(project, parameters) }
+            }
+        }
+
+    override def title: String = "Analysis Collection"
+
+    override def copyright: String =
+        analyses.synchronized {
+            "Copyrights of the analyses;\n"+
+                analyses.map("\t"+_.copyright).mkString("\"")
+        }
+
+    def description: String =
+        analyses.synchronized {
+            "Executes the following analyses:\n"+analyses.map("\t"+_.title).mkString("\n")
+        }
+
 }
-    
