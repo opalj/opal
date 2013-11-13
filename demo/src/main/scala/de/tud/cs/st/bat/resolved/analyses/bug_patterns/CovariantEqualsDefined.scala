@@ -69,7 +69,7 @@ class CovariantEqualsMethodDefined[Source]
 
             var definesEqualsMethod = false
             var definesCovariantEqualsMethod = false
-            for (Method(_, "equals", MethodDescriptor(Seq(ot), BooleanType), _) ← classFile.methods)
+            for (Method(_, "equals", MethodDescriptor(Seq(ot), BooleanType)) ← classFile.methods)
                 if (ot == ObjectType.Object)
                     definesEqualsMethod = true
                 else

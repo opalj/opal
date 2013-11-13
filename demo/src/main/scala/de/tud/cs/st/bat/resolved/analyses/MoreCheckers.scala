@@ -165,7 +165,7 @@ object MoreCheckers {
                     cloneables ← classHierarchy.allSubtypes(cloneable)
                     classFile ← getClassFile.get(cloneable).toList
                     if !classFile.methods.exists({
-                        case Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object), _) ⇒ true;
+                        case Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object)) ⇒ true;
                         case _ ⇒ false;
                     })
                 } yield classFile.thisClass.className
@@ -180,7 +180,7 @@ object MoreCheckers {
                 classFile ← classFiles
                 if !classFile.isInterfaceDeclaration && !classFile.isAnnotationDeclaration
                 superClass ← classFile.superClass.toList
-                method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object), _) ← classFile.methods
+                method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object)) ← classFile.methods
                 if !method.isAbstract
                 if !method.body.get.instructions.exists {
                     case INVOKESPECIAL(`superClass`, "clone", MethodDescriptor(Seq(), ObjectType.Object)) ⇒ true;
@@ -194,7 +194,7 @@ object MoreCheckers {
         var cloneButNotCloneable = time {
             for {
                 classFile ← classFiles if !classFile.isAnnotationDeclaration && classFile.superClass.isDefined
-                method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object), _) ← classFile.methods
+                method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object)) ← classFile.methods
                 if !classHierarchy.isSubtypeOf(classFile.thisClass, ObjectType("java/lang/Cloneable")).no
             } yield (classFile.thisClass.className, method.name)
         }(t ⇒ collect("CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE", t /*nsToSecs(t)*/ ))
@@ -211,7 +211,7 @@ object MoreCheckers {
             for {
                 comparable ← classHierarchy.allSubtypes(ObjectType("java/lang/Comparable"))
                 classFile ← getClassFile.get(comparable).toList
-                method @ Method(_, "compareTo", MethodDescriptor(Seq(parameterType), IntegerType), _) ← classFile.methods
+                method @ Method(_, "compareTo", MethodDescriptor(Seq(parameterType), IntegerType)) ← classFile.methods
                 if parameterType != ObjectType("java/lang/Object")
             } yield (classFile, method)
         }(t ⇒ collect("CO_SELF_NO_OBJECT/CO_ABSTRACT_SELF", t /*nsToSecs(t)*/ ))
@@ -267,7 +267,7 @@ object MoreCheckers {
         var abstractCovariantEquals = time {
             for (
                 classFile ← classFiles;
-                method @ Method(_, "equals", MethodDescriptor(Seq(classFile.thisClass), BooleanType), _) ← classFile.methods if method.isAbstract
+                method @ Method(_, "equals", MethodDescriptor(Seq(classFile.thisClass), BooleanType)) ← classFile.methods if method.isAbstract
             ) yield (classFile, method);
         }(t ⇒ collect("EQ_ABSTRACT_SELF", t /*nsToSecs(t)*/ ))
         println(", " /*"\tViolations: "*/ +abstractCovariantEquals.size)
@@ -276,7 +276,7 @@ object MoreCheckers {
         var classesWithPublicFinalizeMethods = time {
             for {
                 classFile ← classFiles
-                if classFile.methods.exists(_ match { case Method(ACC_PUBLIC(), "finalize", NoArgsAndReturnVoid(), _) ⇒ true; case _ ⇒ false })
+                if classFile.methods.exists(_ match { case Method(ACC_PUBLIC(), "finalize", NoArgsAndReturnVoid()) ⇒ true; case _ ⇒ false })
             } yield classFile
         }(t ⇒ collect("FI_PUBLIC_SHOULD_BE_PROTECTED", t /*nsToSecs(t)*/ ))
         println(", " /*"\tViolations: "*/ +classesWithPublicFinalizeMethods.length)

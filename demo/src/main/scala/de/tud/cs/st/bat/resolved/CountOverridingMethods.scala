@@ -68,7 +68,7 @@ object CountOverridingMethods extends AnalysisExecutor {
 
                 classFile.methods.exists(
                     _ match {
-                        case m @ Method(_, `methodName`, `methodDescriptor`, _) if !m.isAbstract && !m.isPrivate ⇒ true
+                        case m @ Method(_, `methodName`, `methodDescriptor`) if !m.isAbstract && !m.isPrivate ⇒ true
                         case _ ⇒ false
                     }
                 )

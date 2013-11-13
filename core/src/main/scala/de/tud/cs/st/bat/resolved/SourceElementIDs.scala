@@ -87,7 +87,7 @@ trait SourceElementIDs {
         sourceElementID(declaringClassFile.thisClass, method)
 
     final def sourceElementID(declaringReferenceType: ReferenceType, method: Method): Int = {
-        val Method(_, methodName, methodDescriptor, _) = method
+        val Method(_, methodName, methodDescriptor) = method
         sourceElementID(declaringReferenceType, methodName, methodDescriptor)
     }
 }

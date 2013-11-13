@@ -70,13 +70,16 @@ class CallGraphFactory {
      * - every non-private method.
      */
     def defaultEntryPointsForCHA(project: Project[_]): Set[Method] = {
-        val entryPoints = HashSet.empty[Method]
-        for {
-            classFile ← project.classFiles
-            method ← classFile.methods
-            if !method.isPrivate
-            if method.body.isDefined
-        } entryPoints add method
+        val entryPoints =
+            // specifying the initial size in this way speeds up this method
+            // by a factor of at least "2" ... the fact that we probably 
+            // allocate too much memory can be ignored as this set is short-living
+            new HashSet[Method] { override def initialSize = Method.methodsCount }
+
+        project.foreachMethod { method: Method ⇒
+            if (!method.isPrivate && method.body.isDefined) entryPoints add method
+        }
+
         entryPoints
     }
 
@@ -101,16 +104,22 @@ class CallGraphFactory {
         //            Map.empty.withDefaultValue(Set.empty)
         //        var readBy: Map[Field, Set[Method]] =
         //            Map.empty.withDefaultValue(Set.empty)
-        val calledBy: HashMap[Method, HashMap[Method, collection.mutable.Set[PC]]] =
-            HashMap.empty
-        val calls: HashMap[Method, HashMap[PC, collection.mutable.Set[Method]]] =
-            HashMap.empty
-
-        val analyzedMethods = HashSet.empty[Method]
-        val methodsToAnalyze = entryPoints match {
-            case hashSet: HashSet[Method] ⇒ hashSet
-            case _                        ⇒ HashSet.empty ++ entryPoints
-        }
+        val calledBy =
+            HashMap.empty[Method, HashMap[Method, collection.mutable.Set[PC]]] /* {
+                override def initialSize = Method.methodsCount * 3 / 4
+            }*/
+        val calls =
+            HashMap.empty[Method, HashMap[PC, collection.mutable.Set[Method]]]/* {
+                override def initialSize = Method.methodsCount * 3 / 4
+            }*/
+        val analyzedMethods =
+            HashSet.empty[Method] /* { override def initialSize = Method.methodsCount }*/
+        val methodsToAnalyze =
+            entryPoints match {
+                case hashSet: HashSet[Method] ⇒ hashSet
+                case _                        ⇒ HashSet.empty ++ entryPoints
+            }
+        
         val unresolvedMethodCalls = HashSet.empty[UnresolvedMethodCall]
         def unresolvedMethodCall(
             callerClass: ReferenceType,
@@ -316,7 +325,7 @@ case class UnresolvedMethodCall(
     override val hashCode = ((callerClass.hashCode ^ caller.id) << 16) ^ calleeName.hashCode
 
     override def toString: String = {
-        callerClass.toJava+"{ "+Console.BOLD + caller.toJava + Console.RESET+" } =>"+
+        callerClass.toJava+"{ "+Console.BOLD + caller.toJava + Console.RESET+" } => "+
             calleeClass.toJava+"{ "+Console.BOLD + calleeDescriptor.toJava(calleeName) + Console.RESET+" }"
     }
 

@@ -73,16 +73,7 @@ class IndexBasedProject[Source: reflect.ClassTag] private (
     private[this] val classes: Array[ClassFile],
     private[this] val sources: Array[Source],
     val classHierarchy: ClassHierarchy)
-        extends ProjectLike[Source]
-        with ProjectBuilder[Source, IndexBasedProject[Source]] {
-
-    def this(classHierarchy: ClassHierarchy = ClassHierarchy.empty) {
-        this(
-            new Array[ClassFile](ObjectType.objectTypesCount),
-            new Array[Source](ObjectType.objectTypesCount),
-            classHierarchy
-        )
-    }
+        extends ProjectLike[Source] {
 
     def source(objectType: ObjectType): Option[Source] = {
         if (sources.size <= objectType.id)
@@ -98,42 +89,41 @@ class IndexBasedProject[Source: reflect.ClassTag] private (
             Option(classes(objectType.id))
     }
 
-    /**
-     * Adds the given class file to this project. If this method is called concurrently,
-     * external synchronization is needed!
-     *
-     * If the class defines an object type that was previously added, the old class file
-     * will be replaced by the given one.
-     */
-    def +(cs: (ClassFile, Source)): IndexBasedProject[Source] = {
-        val (classFile, source) = cs
-
-        val oldClasses = this.classes
-        val classes = new Array[ClassFile](ObjectType.objectTypesCount)
-        Array.copy(oldClasses, 0, classes, 0, oldClasses.size)
-        classes(classFile.thisClass.id) = classFile
-
-        val oldSources = this.sources
-        val sources = new Array[Source](ObjectType.objectTypesCount)
-        Array.copy(oldSources, 0, sources, 0, oldClasses.size)
-        sources(classFile.thisClass.id) = source
-
-        new IndexBasedProject(classes, sources, classHierarchy + classFile)
-    }
-
-    private[this] lazy val classFileOfMethod = {
+    private[this] val classFileOfMethod = {
         val lookupTable = new Array[ClassFile](Method.methodsCount)
-        for {
-            classFile ← classes.view.filter(_ ne null)
-            method ← classFile.methods
-        } {
-            lookupTable(method.id) = classFile
+        foreachClassFile { classFile: ClassFile ⇒
+            classFile.methods.foreach { method ⇒
+                lookupTable(method.id) = classFile
+            }
         }
         lookupTable
     }
-
+    
+    /**
+     * Looks up the ClassFile that contains the given method.
+     * 
+     * The complexity of this operation is O(1).
+     */
     override def classFile(method: Method): ClassFile = {
         classFileOfMethod(method.id)
+    }
+
+    override def foreachClassFile(f: ClassFile ⇒ _): Unit = {
+        var i = classes.length - 1
+        while (i >= 0) {
+            val classFile = classes(i)
+            if (classFile ne null) f(classFile)
+            i -= 1
+        }
+    }
+
+    override def foreachMethod(f: Method ⇒ _): Unit = {
+        var i = classes.length - 1
+        while (i >= 0) {
+            val classFile = classes(i)
+            if (classFile ne null) classFile.methods.foreach(f)
+            i -= 1
+        }
     }
 
     /**
@@ -154,14 +144,20 @@ class IndexBasedProject[Source: reflect.ClassTag] private (
  */
 object IndexBasedProject {
 
-    /**
-     * Creates a project that contains no class files, but where the class hierarchy
-     * already contains the information about the exceptions thrown by JVM
-     * instructions.
-     */
-    def empty[Source: reflect.ClassTag] =
-        new IndexBasedProject[Source](
-            classHierarchy = ClassHierarchy.preInitializedClassHierarchy
-        )
+    def apply[Source: reflect.ClassTag](
+        classFiles: Iterable[(ClassFile, Source)],
+        classHierarchy: ClassHierarchy = ClassHierarchy.preInitializedClassHierarchy): IndexBasedProject[Source] = {
 
+        val classFilesCount = classFiles.size
+        val classes = new Array[ClassFile](ObjectType.objectTypesCount)
+        val sources = new Array[Source](ObjectType.objectTypesCount)
+
+        for ((classFile, source) ← classFiles) {
+            val id = classFile.thisClass.id
+            classes(id) = classFile
+            sources(id) = source
+        }
+
+        new IndexBasedProject(classes, sources, classHierarchy)
+    }
 }

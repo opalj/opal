@@ -103,7 +103,7 @@ object SIC_INNER_SHOULD_BE_STATIC_ANON extends (Project[_] ⇒ Iterable[ClassFil
                 canConvertToStaticInnerClass(classFile)
             );
             declaringClass = classFile.thisClass;
-            field @ Field(_, name, fieldType, _) ← classFile.fields if (isOuterThisField(field) &&
+            field @ Field(_, name, fieldType) ← classFile.fields if (isOuterThisField(field) &&
                 !readFields.contains((declaringClass, name, fieldType)) &&
                 !constructorReadsOuterThisField(classFile)
             )

@@ -48,7 +48,7 @@ object CN_IDIOM_NO_SUPER_CALL extends (Project[_] ⇒ Iterable[(ClassFile, Metho
             classFile ← project.classFiles
             if !classFile.isInterfaceDeclaration && !classFile.isAnnotationDeclaration
             superClass ← classFile.superClass.toSeq
-            method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object), _) ← classFile.methods
+            method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object)) ← classFile.methods
             if method.body.isDefined
             if !method.body.get.instructions.exists {
                 case INVOKESPECIAL(`superClass`, "clone", MethodDescriptor(Seq(), ObjectType.Object)) ⇒ true

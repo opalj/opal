@@ -45,7 +45,7 @@ object FI_PUBLIC_SHOULD_BE_PROTECTED extends (Project[_] ⇒ Iterable[ClassFile]
     def apply(project: Project[_]) =
         for {
             classFile ← project.classFiles
-            Method(ACC_PUBLIC(), "finalize", MethodDescriptor(Seq(), VoidType), _) ← classFile.methods
+            Method(ACC_PUBLIC(), "finalize", MethodDescriptor(Seq(), VoidType)) ← classFile.methods
         } yield classFile
 
 }

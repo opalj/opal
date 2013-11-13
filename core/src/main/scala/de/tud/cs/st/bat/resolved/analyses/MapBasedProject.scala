@@ -85,6 +85,14 @@ class MapBasedProject[Source](
 
     def classFile(objectType: ObjectType): Option[ClassFile] = classes.get(objectType)
 
+    def foreachClassFile(f: ClassFile ⇒ _): Unit = {
+        classes.values.foreach(f)
+    }
+
+    def foreachMethod(f: Method ⇒ _): Unit = {
+        classes.values.foreach(_.methods.foreach(f))
+    }
+
     /**
      * Adds the given class file to this project.
      *

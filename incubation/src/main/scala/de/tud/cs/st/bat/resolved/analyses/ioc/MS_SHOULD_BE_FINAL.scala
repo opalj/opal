@@ -51,7 +51,7 @@ object MS_SHOULD_BE_FINAL extends (Project[_] ⇒ Iterable[(ClassFile, Field)]) 
             classFile ← project.classFiles if (!classFile.isInterfaceDeclaration);
             declaringClass = classFile.thisClass;
             packageName = declaringClass.packageName;
-            field @ Field(_, name, fieldType, _) ← classFile.fields if (!field.isFinal &&
+            field @ Field(_, name, fieldType) ← classFile.fields if (!field.isFinal &&
                 field.isStatic &&
                 !field.isSynthetic &&
                 !field.isVolatile &&

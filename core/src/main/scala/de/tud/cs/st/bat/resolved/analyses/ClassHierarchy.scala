@@ -665,7 +665,7 @@ class ClassHierarchy(
         // More details: JVM 7 Spec. Section 5.4.3.2 
         project(c) flatMap { classFile ⇒
             classFile.fields.collectFirst {
-                case field @ Field(_, `fieldName`, `fieldType`, _) ⇒ field
+                case field @ Field(_, `fieldName`, `fieldType`) ⇒ field
             } orElse {
                 classFile.interfaces collectFirst { supertype ⇒
                     resolveFieldReference(supertype, fieldName, fieldType, project) match {
@@ -761,7 +761,7 @@ class ClassHierarchy(
         project: SomeProject): Option[Method] = {
 
         classFile.methods.collectFirst {
-            case method @ Method(_, `methodName`, `methodDescriptor`, _) ⇒ method
+            case method @ Method(_, `methodName`, `methodDescriptor`) ⇒ method
         } orElse {
             lookupMethodInSuperinterfaces(classFile, methodName, methodDescriptor, project)
         }
@@ -823,7 +823,7 @@ class ClassHierarchy(
         def lookupMethodDefinition(receiverType: ObjectType): Option[Method] = {
             project(receiverType) flatMap { classFile ⇒
                 classFile.methods.collectFirst {
-                    case method @ Method(_, `methodName`, `methodDescriptor`, _) ⇒
+                    case method @ Method(_, `methodName`, `methodDescriptor`) ⇒
                         method
                 }
             } orElse {

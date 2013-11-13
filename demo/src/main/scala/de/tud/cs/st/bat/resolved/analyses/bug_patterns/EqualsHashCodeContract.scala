@@ -70,9 +70,9 @@ class EqualsHashCodeContract[Source]
             var definesEqualsMethod = false
             var definesHashCodeMethod = false
             for (method ← classFile.methods) method match {
-                case Method(_, "equals", MethodDescriptor(Seq(ObjectType.Object), BooleanType), _) ⇒
+                case Method(_, "equals", MethodDescriptor(Seq(ObjectType.Object), BooleanType)) ⇒
                     definesEqualsMethod = true
-                case Method(_, "hashCode", MethodDescriptor(Seq(), IntegerType), _) ⇒
+                case Method(_, "hashCode", MethodDescriptor(Seq(), IntegerType)) ⇒
                     definesHashCodeMethod = true
                 case _ ⇒
             }

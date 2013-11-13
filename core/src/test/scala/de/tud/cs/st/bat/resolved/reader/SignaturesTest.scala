@@ -87,11 +87,11 @@ class SignaturesTest extends FunSuite with ParallelTestExecution {
     test("parsing the field type signatures") {
         classA.fields.foreach(x ⇒
             x match {
-                case Field(_, "b", _, _) ⇒ {
+                case Field(_, "b", _) ⇒ {
                     val signature = x.fieldTypeSignature;
                     assert(signature ne null)
                 }
-                case Field(_, "bs", _, _) ⇒ {
+                case Field(_, "bs", _) ⇒ {
                     val signature = x.fieldTypeSignature
                     assert(signature ne null)
                 }

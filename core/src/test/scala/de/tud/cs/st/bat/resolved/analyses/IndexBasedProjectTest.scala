@@ -60,7 +60,7 @@ class IndexBasedProjectTest
     //
     //
     val resources = TestSupport.locateTestResources("classfiles/methods.jar")
-    val project = IndexBasedProject.empty[java.net.URL] ++ ClassFiles(resources)
+    val project = IndexBasedProject(ClassFiles(resources))
 
     val SuperType = ObjectType("methods/a/Super")
     val DirectSub = ObjectType("methods/a/DirectSub")

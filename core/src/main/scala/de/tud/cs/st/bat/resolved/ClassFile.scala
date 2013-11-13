@@ -163,7 +163,7 @@ final case class ClassFile(
     def staticInitializer: Option[Method] =
         methods collectFirst {
             case method @ Method(
-                _, "<clinit>", NoArgsAndReturnVoid(), _
+                _, "<clinit>", NoArgsAndReturnVoid()
                 ) if majorVersion < 51 || method.isStatic ⇒ method
         }
     

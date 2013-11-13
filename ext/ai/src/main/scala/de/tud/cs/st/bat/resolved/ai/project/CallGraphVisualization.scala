@@ -61,6 +61,9 @@ object CallGraphVisualization {
             println("\t2) A pattern that specifies which classes should be included in the output.")
             sys.exit(-1)
         }
+
+        Thread.sleep(15000)
+
         //
         // PROJECT SETUP
         //
@@ -79,7 +82,7 @@ object CallGraphVisualization {
                         println(Console.RED+"cannot read file: "+e.getMessage() + Console.RESET)
                         return ;
                 }
-            bat.resolved.analyses.IndexBasedProject.empty[java.net.URL] ++ classFiles
+            bat.resolved.analyses.IndexBasedProject(classFiles)
         } { t ⇒ println("Setting up the project took: "+nsToSecs(t)) }
 
         val classNameFilter = args(1)
@@ -144,16 +147,17 @@ object CallGraphVisualization {
             }
             nodesForMethods.values.toSet[Node] // it is a set already...
         }
+        // The unresolved methods:
+        //        println(unresolvedMethodCalls.mkString("Unresolved calls:\n\t", "\n\t", ""))
 
-        println(unresolvedMethodCalls.mkString("Unresolved calls:\n\t", "\n\t", ""))
-
-        val consoleOutput = callGraph.calls flatMap { caller ⇒
-            for {
-                (pc, callees) ← caller._2
-                callee ← callees
-            } yield caller._1.toJava+" => ["+pc+"] "+callee.toJava
-        }
-        println(consoleOutput.mkString("\n"))
+        // The graph:
+        //        val consoleOutput = callGraph.calls flatMap { caller ⇒
+        //            for {
+        //                (pc, callees) ← caller._2
+        //                callee ← callees
+        //            } yield caller._1.toJava+" => ["+pc+"] "+callee.toJava
+        //        }
+        //        println(consoleOutput.mkString("\n"))
 
         toDot.generateAndOpenDOT(nodes)
 

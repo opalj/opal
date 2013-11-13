@@ -122,11 +122,10 @@ object Field {
             attributes)
     }
 
-    def unapply(field: Field): Option[(Int, String, FieldType, Attributes)] =
+    def unapply(field: Field): Option[(Int, String, FieldType)] =
         Some((
             field.accessFlags,
             field.name,
-            field.fieldType,
-            field.attributes
+            field.fieldType
         ))
 }

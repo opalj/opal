@@ -83,8 +83,8 @@ object BaseAnalyses {
      */
     def findField(classFile: ClassFile)(name: String, fieldType: FieldType): Option[Field] = {
         classFile.fields.find {
-            case Field(_, `name`, `fieldType`, _) ⇒ true
-            case _                                ⇒ false
+            case Field(_, `name`, `fieldType`) ⇒ true
+            case _                             ⇒ false
         }
     }
 
@@ -93,8 +93,8 @@ object BaseAnalyses {
      */
     def declaresField(classFile: ClassFile)(name: String, fieldType: FieldType): Boolean = {
         classFile.fields.exists {
-            case Field(_, `name`, `fieldType`, _) ⇒ true
-            case _                                ⇒ false
+            case Field(_, `name`, `fieldType`) ⇒ true
+            case _                             ⇒ false
         }
     }
 

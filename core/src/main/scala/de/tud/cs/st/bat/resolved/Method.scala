@@ -50,6 +50,7 @@ final class Method private (
     val accessFlags: Int,
     val name: String,
     val descriptor: MethodDescriptor,
+    val body: Option[Code],
     val attributes: Attributes)
         extends ClassMember
         with UniqueID {
@@ -79,11 +80,6 @@ final class Method private (
     def returnType = descriptor.returnType
 
     def parameterTypes = descriptor.parameterTypes
-
-    /**
-     * This method's implementation (if it is not abstract).
-     */
-    def body: Option[Code] = attributes collectFirst { case c: Code ⇒ c }
 
     /**
      * Each method optionally defines a method type signature.
@@ -125,19 +121,26 @@ object Method {
         name: String,
         descriptor: MethodDescriptor,
         attributes: Attributes): Method = {
+
+        val (bodySeq, theAttributes) = attributes.partition(_.isInstanceOf[Code])
+        val theBody =
+            if (bodySeq.nonEmpty)
+                Some(bodySeq.head.asInstanceOf[Code])
+            else
+                None
         new Method(
             nextId.getAndIncrement(),
             accessFlags,
             name,
             descriptor,
-            attributes)
+            theBody,
+            theAttributes)
     }
 
-    def unapply(method: Method): Option[(Int, String, MethodDescriptor, Attributes)] =
+    def unapply(method: Method): Option[(Int, String, MethodDescriptor)] =
         Some((
             method.accessFlags,
             method.name,
-            method.descriptor,
-            method.attributes
+            method.descriptor
         ))
 }

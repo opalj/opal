@@ -45,7 +45,7 @@ object FI_USELESS extends (Project[_] ⇒ Iterable[(ClassFile, Method)]) {
         for {
             classFile ← project.classFiles
             if !classFile.isInterfaceDeclaration // performance optimization
-            method @ Method(_, "finalize", methodDescriptor @ MethodDescriptor(Seq(), VoidType), _) ← classFile.methods
+            method @ Method(_, "finalize", methodDescriptor @ MethodDescriptor(Seq(), VoidType)) ← classFile.methods
             if method.body.isDefined
             instructions = method.body.get.instructions
             if instructions.filter(_ != null).length == 5
