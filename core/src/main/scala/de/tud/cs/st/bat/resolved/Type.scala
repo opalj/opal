@@ -38,6 +38,8 @@ package resolved
  * The computational type category of a value on the operand stack.
  *
  * (cf. JVM Spec. 2.11.1 Types and the Java Virtual Machine).
+ * 
+ * @author Michael Eichberg
  */
 sealed abstract class ComputationalTypeCategory(
         val operandSize: Byte) {
@@ -93,9 +95,10 @@ case object ComputationalTypeDouble
 
 /**
  * Represents a JVM type.
- * * 
- * '''From the JVM specification''':
- *
+ *  
+ * ==General Information==
+ * '''From the JVM specification'''
+ * 
  * There are three kinds of reference types: class types, array types, and interface
  * types. Their values are references to dynamically created class instances, arrays,
  * or class instances or arrays that implement interfaces, respectively.
@@ -172,7 +175,7 @@ sealed abstract class VoidType private () extends Type with ReturnTypeSignature 
 
     override final def accept[T](sv: SignatureVisitor[T]): T = sv.visit(this)
 
-    def toJava: String = "void"
+    override def toJava: String = "void"
 
     override def toString() = "VoidType"
 

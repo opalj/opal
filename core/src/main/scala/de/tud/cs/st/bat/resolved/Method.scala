@@ -45,7 +45,7 @@ package resolved
  *
  * @author Michael Eichberg
  */
-class Method private (
+final class Method private (
     val id: Int, // also used as the "hashCode"
     val accessFlags: Int,
     val name: String,

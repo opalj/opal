@@ -69,7 +69,7 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case class ClassFile(
+final case class ClassFile(
     minorVersion: Int,
     majorVersion: Int,
     accessFlags: Int,

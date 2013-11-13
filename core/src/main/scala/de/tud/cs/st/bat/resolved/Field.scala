@@ -54,7 +54,7 @@ package resolved
  *
  * @author Michael Eichberg
  */
-class Field private (
+final class Field private (
     val id: Int,
     val accessFlags: Int,
     val name: String,
