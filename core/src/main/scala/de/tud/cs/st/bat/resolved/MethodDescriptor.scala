@@ -48,6 +48,28 @@ sealed abstract class MethodDescriptor extends BootstrapArgument {
 
     def returnType: Type
 
+    final override val hashCode: Int =
+        (returnType.hashCode() * 13) + parameterTypes.hashCode
+
+    final override def equals(other: Any): Boolean = {
+        other match {
+            case that: MethodDescriptor ⇒
+                this.parametersCount == that.parametersCount &&
+                    (this.returnType eq that.returnType) &&
+                    {
+                        var i = parametersCount
+                        while (i > 0) {
+                            i = i - 1
+                            if (this.parameterTypes(i) ne that.parameterTypes(i))
+                                return false
+                        }
+                        true
+                    }
+            case _ ⇒
+                false
+        }
+    }
+
     //
     //
     // SUPPORT FOR SPECIAL REPRESENTATIONS
@@ -76,7 +98,8 @@ sealed abstract class MethodDescriptor extends BootstrapArgument {
 // (Done after a study of the heap memory usage)
 //
 
-private final case object NoArgumentAndNoReturnValueMethodDescriptor extends MethodDescriptor {
+private final case object NoArgumentAndNoReturnValueMethodDescriptor
+        extends MethodDescriptor {
 
     def returnType = VoidType
 
@@ -136,7 +159,7 @@ object MethodDescriptor {
                     NoArgumentAndNoReturnValueMethodDescriptor
                 else
                     NoArgumentMethodDescriptor(returnType)
-            case Seq(parameterType) ⇒
+            case List(parameterType) ⇒
                 SingleArgumentMethodDescriptor(parameterType, returnType)
             case parameterTypes ⇒
                 MultiArgumentsMethodDescriptor(parameterTypes, returnType)
