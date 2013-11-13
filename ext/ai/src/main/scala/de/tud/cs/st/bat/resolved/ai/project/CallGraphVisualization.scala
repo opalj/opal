@@ -98,7 +98,10 @@ object CallGraphVisualization {
         } { t ⇒ println("Creating the call graph took: "+nsToSecs(t)) }
         import callGraph.calls
         println("Classes: "+project.classFiles.size)
-        println("Methods: "+calls.size)
+        println("Methods: "+Method.methodsCount)
+        println("Methods with more than one resolved call: "+calls.size)
+        println("Methods which are called by at least one method: "+callGraph.calledBy.size)
+        println("Unresolved method calls: "+unresolvedMethodCalls.size)
         //        println("Method with the most targets: "+{
         //            calls.view.map(_ map ())
         //        })
