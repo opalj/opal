@@ -81,6 +81,25 @@ trait toDot {
         s += "}"
         s
     }
+
+    def generateAndOpenDOT(
+        nodes: Set[Node],
+        dir: String = "forward") {
+
+        import util.ControlAbstractions._
+
+        val graph = generateDot(nodes, dir)
+        try {
+            val desktop = java.awt.Desktop.getDesktop()
+            val file = java.io.File.createTempFile("ClassHierarchy", ".dot")
+            process { new java.io.FileOutputStream(file) } { fos ⇒
+                fos.write(graph.getBytes("UTF-8"))
+            }
+            desktop.open(file)
+        } catch {
+            case _: Error | _: Exception ⇒ println(graph)
+        }
+    }
 }
 
 object toDot extends toDot
