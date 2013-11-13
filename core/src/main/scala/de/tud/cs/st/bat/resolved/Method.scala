@@ -116,7 +116,7 @@ class Method private (
  */
 object Method {
 
-    private val nextId = new java.util.concurrent.atomic.AtomicInteger(1)
+    private val nextId = new java.util.concurrent.atomic.AtomicInteger(0)
 
     def methodsCount = nextId.get
 

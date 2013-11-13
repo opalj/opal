@@ -105,7 +105,7 @@ class Field private (
  */
 object Field {
 
-    private val nextId = new java.util.concurrent.atomic.AtomicInteger(1)
+    private val nextId = new java.util.concurrent.atomic.AtomicInteger(0)
 
     def fieldsCount = nextId.get
 
