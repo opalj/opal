@@ -97,11 +97,10 @@ trait Node {
 final class SimpleNode[I](
         val identifier: I,
         val identifierToString: I ⇒ String = (i: I) ⇒ i.toString,
+        val backgroundColor : Option[String] = None,
         private var children: List[Node] = List.empty) extends Node {
 
     def toHRR = Some(identifierToString(identifier))
-
-    def backgroundColor = None
 
     def uniqueId: Int = identifier.hashCode()
 
