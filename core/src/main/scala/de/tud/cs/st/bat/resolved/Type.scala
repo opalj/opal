@@ -93,7 +93,7 @@ case object ComputationalTypeDouble
 
 /**
  * Represents a JVM type.
- *
+ * * 
  * '''From the JVM specification''':
  *
  * There are three kinds of reference types: class types, array types, and interface
@@ -112,6 +112,13 @@ case object ComputationalTypeDouble
  * which will be denoted here by null. The null reference initially has no runtime type,
  * but may be cast to any type. The default value of a reference type is null.
  * The Java virtual machine specification does not mandate a concrete value encoding null.
+ *
+ * ==Comparing Types/Performance==
+ * Given that the comparison of types is a standard operation in static analysis which
+ * is usually done over and over again, great care was taken to enable an efficient
+ * comparison of types. It is - '''without exception''' - always possbible to compare
+ * types using reference equality (i.e., the `eq`/`ne` operators). For each type there
+ * will always be exactly one object that represents that type.  
  *
  * @author Michael Eichberg
  */
@@ -156,7 +163,7 @@ object ReturnType {
 
 }
 
-sealed abstract class VoidType extends Type with ReturnTypeSignature {
+sealed abstract class VoidType private () extends Type with ReturnTypeSignature {
 
     override final def isVoidType = true
 
@@ -225,7 +232,7 @@ sealed abstract class BaseType extends FieldType with TypeSignature {
 
 }
 
-sealed abstract class ByteType extends BaseType {
+sealed abstract class ByteType private () extends BaseType {
 
     override final def isByteType = true
 
@@ -242,7 +249,7 @@ sealed abstract class ByteType extends BaseType {
 }
 case object ByteType extends ByteType
 
-sealed abstract class CharType extends BaseType {
+sealed abstract class CharType private () extends BaseType {
 
     override final def isCharType = true
 
@@ -259,7 +266,7 @@ sealed abstract class CharType extends BaseType {
 }
 final case object CharType extends CharType
 
-sealed abstract class DoubleType extends BaseType {
+sealed abstract class DoubleType private () extends BaseType {
 
     override final def isDoubleType = true
 
@@ -276,7 +283,7 @@ sealed abstract class DoubleType extends BaseType {
 }
 case object DoubleType extends DoubleType
 
-sealed abstract class FloatType extends BaseType {
+sealed abstract class FloatType private () extends BaseType {
 
     override final def isFloatType = true
 
@@ -293,7 +300,7 @@ sealed abstract class FloatType extends BaseType {
 }
 case object FloatType extends FloatType
 
-sealed abstract class ShortType extends BaseType {
+sealed abstract class ShortType private () extends BaseType {
 
     override final def isShortType = true
 
@@ -310,7 +317,7 @@ sealed abstract class ShortType extends BaseType {
 }
 case object ShortType extends ShortType
 
-sealed abstract class IntegerType extends BaseType {
+sealed abstract class IntegerType private () extends BaseType {
 
     override final def isIntegerType = true
 
@@ -327,7 +334,7 @@ sealed abstract class IntegerType extends BaseType {
 }
 case object IntegerType extends IntegerType
 
-sealed abstract class LongType extends BaseType {
+sealed abstract class LongType private () extends BaseType {
 
     override final def isLongType = true
 
@@ -344,7 +351,7 @@ sealed abstract class LongType extends BaseType {
 }
 case object LongType extends LongType
 
-sealed abstract class BooleanType extends BaseType {
+sealed abstract class BooleanType private () extends BaseType {
 
     override final def isBooleanType = true
 
@@ -362,12 +369,12 @@ sealed abstract class BooleanType extends BaseType {
 case object BooleanType extends BooleanType
 
 /**
- * Represents a
+ * Represents an `ObjectType`.
  *
  * @param className The fully qualified name of the class in binary notation
  *      (e.g. "java/lang/Object").
  */
-final class ObjectType private (
+final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
     val id: Int,
     val className: String)
         extends ReferenceType {
@@ -376,31 +383,11 @@ final class ObjectType private (
 
     override def asObjectType: ObjectType = this
 
-    /**
-     * The hash value.
-     *
-     * The way ObjectType instances are created ensures – for all practical purposes – that:
-     * 1) each instance of type `ObjectType` has a unique hash value.
-     * 2) two references to `ObjectType`s that have different hash values identify
-     * two different types.
-     */
-    override def hashCode = id
-
-    override def equals(other: Any): Boolean =
-        other match {
-            case that: ObjectType ⇒ equals(that)
-            case _                ⇒ false
-        }
-
-    def equals(other: ObjectType): Boolean =
-        //<=> both class names are equal
-        this eq other
-
     def simpleName: String = ObjectType.simpleName(className)
 
     def packageName: String = ObjectType.packageName(className)
 
-    def toJava: String = className.replace('/', '.')
+    override def toJava: String = className.replace('/', '.')
 
     override def toString = "ObjectType("+className+")"
 
@@ -492,7 +479,7 @@ object ObjectType {
     final val Cloneable = ObjectType("java/lang/Cloneable")
 }
 
-final class ArrayType private (
+final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
     val componentType: FieldType)
         extends ReferenceType {
 
@@ -500,21 +487,14 @@ final class ArrayType private (
 
     override def asArrayType = this
 
-    override def hashCode = 13 * (componentType.hashCode + 7)
-
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: ArrayType ⇒ this.componentType == that.componentType
-            case _               ⇒ false
-        }
-    }
-
     def elementType: FieldType = componentType match {
         case at: ArrayType ⇒ at.elementType
         case _             ⇒ componentType
     }
 
     def toJava: String = componentType.toJava+"[]"
+
+    // the default equals and hashCode methods are a perfect fit.
 
     override def toString = "ArrayType("+componentType.toString+")"
 
