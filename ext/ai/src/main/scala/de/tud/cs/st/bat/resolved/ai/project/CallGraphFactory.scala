@@ -74,7 +74,7 @@ class CallGraphFactory {
             // specifying the initial size in this way speeds up this method
             // by a factor of at least "2" ... the fact that we probably 
             // allocate too much memory can be ignored as this set is short-living
-            new HashSet[Method] { override def initialSize = Method.methodsCount }
+            new HashSet[Method] { override def initialSize = Method.methodsCount * 3 / 4 }
 
         project.foreachMethod { method: Method ⇒
             if (!method.isPrivate && method.body.isDefined) entryPoints add method
@@ -105,21 +105,24 @@ class CallGraphFactory {
         //        var readBy: Map[Field, Set[Method]] =
         //            Map.empty.withDefaultValue(Set.empty)
         val calledBy =
-            HashMap.empty[Method, HashMap[Method, collection.mutable.Set[PC]]] /* {
-                override def initialSize = Method.methodsCount * 3 / 4
-            }*/
+            HashMap.empty[Method, HashMap[Method, collection.mutable.Set[PC]]]
+        //            new HashMap[Method, HashMap[Method, collection.mutable.Set[PC]]] {
+        //                override def initialSize = Method.methodsCount
+        //            }
         val calls =
-            HashMap.empty[Method, HashMap[PC, collection.mutable.Set[Method]]]/* {
-                override def initialSize = Method.methodsCount * 3 / 4
-            }*/
+            HashMap.empty[Method, HashMap[PC, collection.mutable.Set[Method]]]
+        //            new HashMap[Method, HashMap[PC, collection.mutable.Set[Method]]] {
+        //                override def initialSize = Method.methodsCount
+        //            }
         val analyzedMethods =
-            HashSet.empty[Method] /* { override def initialSize = Method.methodsCount }*/
+            // HashSet.empty[Method]
+            new HashSet[Method] { override def initialSize = Method.methodsCount }
         val methodsToAnalyze =
             entryPoints match {
                 case hashSet: HashSet[Method] ⇒ hashSet
                 case _                        ⇒ HashSet.empty ++ entryPoints
             }
-        
+
         val unresolvedMethodCalls = HashSet.empty[UnresolvedMethodCall]
         def unresolvedMethodCall(
             callerClass: ReferenceType,
@@ -292,13 +295,20 @@ class CallGraphFactory {
             BaseAI(classFile, method, new MethodDomain(classFile, method))
         }
 
-        (new CHACallGraph(calledBy, calls), unresolvedMethodCalls)
+        (CHACallGraph(calledBy, calls), unresolvedMethodCalls)
     }
 
 }
 class CHACallGraph(
         val calledBy: Map[Method, Map[Method, Set[PC]]],
         val calls: Map[Method, Map[PC, Set[Method]]]) {
+}
+object CHACallGraph {
+
+    def apply(
+        calledBy: Map[Method, Map[Method, Set[PC]]],
+        calls: Map[Method, Map[PC, Set[Method]]]) =
+        new CHACallGraph(calledBy, calls)
 }
 
 case class UnresolvedMethodCall(
