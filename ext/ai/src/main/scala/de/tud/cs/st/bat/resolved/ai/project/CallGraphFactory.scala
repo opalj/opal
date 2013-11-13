@@ -38,14 +38,29 @@ package project
 
 import bat.resolved.analyses.{ Project, ReportableAnalysisResult }
 
+import collection.Set
+import collection.Map
+
 /**
  * Creates a call graph by analyzing each entry point on its own. The call
  * graph is calculated under a specific assumption about a programs/libraries/framework's
  * entry methods.
  *
+ * Virtual calls on Arrays (clone(), toString(),...) are replaced by calls to
+ * `java.lang.Object`.
+ *
  * @author Michael Eichberg
  */
 class CallGraphFactory {
+
+    import language.existentials
+
+    // internally, we use mutable data structures due to their better performance 
+    // characteristics, but they are not exposed to the outside
+    import collection.mutable.HashSet
+    import collection.mutable.HashMap
+
+    import bat.resolved.ai.domain._
 
     /**
      * The set of all entry points consists of:
@@ -54,12 +69,15 @@ class CallGraphFactory {
      * - every non-private constructor,
      * - every non-private method.
      */
-    def defaultEntryPointsForCHA(project: Project[_]): Set[(ClassFile, Method)] = {
+    def defaultEntryPointsForCHA(project: Project[_]): Set[Method] = {
+        val entryPoints = HashSet.empty[Method]
         for {
-            classFile ← project.classFiles.toSet[ClassFile]
+            classFile ← project.classFiles
             method ← classFile.methods
-            if !(method.isNative || method.isPrivate)
-        } yield (classFile, method)
+            if !method.isPrivate
+            if method.body.isDefined
+        } entryPoints add method
+        entryPoints
     }
 
     //    def defaultEntryPoints(project: Project[_]): Set[(ClassFile, Method)] = {
@@ -71,15 +89,11 @@ class CallGraphFactory {
     //        // instance methods.        
     //    }
 
-    import language.existentials
-
-    import bat.resolved.ai.domain._
-
     def performCHA[Source](
-        theProject: Project[Source])(
-            entryPoints: Set[(ClassFile, Method)] = defaultEntryPointsForCHA(theProject)): (CHACallGraph, Set[UnresolvedMethodCall]) = {
+        theProject: Project[Source],
+        entryPoints: Set[Method]): (CHACallGraph, Set[UnresolvedMethodCall]) = {
 
-        type DomainContext = (ClassFile,Method)
+        type DomainContext = Int
 
         //        val fieldTypes: Map[Field, UpperBound] =
         //            Map.empty
@@ -87,114 +101,186 @@ class CallGraphFactory {
         //            Map.empty.withDefaultValue(Set.empty)
         //        var readBy: Map[Field, Set[Method]] =
         //            Map.empty.withDefaultValue(Set.empty)
-        var calledBy: Map[Method, Map[Method, Set[PC]]] =
-            Map.empty.withDefaultValue(Map.empty.withDefaultValue(Set.empty))
-        var calls: Map[Method, Map[PC, Set[Method]]] =
-            Map.empty.withDefaultValue(Map.empty.withDefaultValue(Set.empty))
+        val calledBy: HashMap[Method, HashMap[Method, collection.mutable.Set[PC]]] =
+            HashMap.empty
+        val calls: HashMap[Method, HashMap[PC, collection.mutable.Set[Method]]] =
+            HashMap.empty
 
-        var analyzedMethods = Set.empty[Method]
-        var methodsToAnalyze = entryPoints
-        var unresolvedMethodCalls = Set.empty[UnresolvedMethodCall]
+        val analyzedMethods = HashSet.empty[Method]
+        val methodsToAnalyze = entryPoints match {
+            case hashSet: HashSet[Method] ⇒ hashSet
+            case _                        ⇒ HashSet.empty ++ entryPoints
+        }
+        val unresolvedMethodCalls = HashSet.empty[UnresolvedMethodCall]
         def unresolvedMethodCall(
-            declaringClass: ReferenceType,
-            name: String,
-            methodDescriptor: MethodDescriptor) {
-            unresolvedMethodCalls += UnresolvedMethodCall(declaringClass, name, methodDescriptor)
+            callerClass: ReferenceType,
+            caller: Method,
+            calleeClass: ReferenceType,
+            calleeName: String,
+            calleeDescriptor: MethodDescriptor) {
+            unresolvedMethodCalls add
+                UnresolvedMethodCall(
+                    callerClass, caller,
+                    calleeClass, calleeName, calleeDescriptor)
         }
 
         // This domain does not have any associated state. 
-        case class MethodDomain(
-                val identifier : (ClassFile,Method)) 
-        extends Domain[DomainContext]
+        class MethodDomain(
+            val callerClassFile: ClassFile,
+            val caller: Method)
+                extends Domain[DomainContext]
                 with DefaultDomainValueBinding[DomainContext]
                 with DefaultTypeLevelIntegerValues[DomainContext]
                 with DefaultTypeLevelLongValues[DomainContext]
                 with DefaultTypeLevelFloatValues[DomainContext]
                 with DefaultTypeLevelDoubleValues[DomainContext]
-                with DefaultPreciseReferenceValues[DomainContext]
-                with StringValues[DomainContext]
+                with DefaultTypeLevelReferenceValues[DomainContext]
+                //with DefaultPreciseReferenceValues[DomainContext]
+                //with StringValues[DomainContext]
                 with TypeLevelArrayInstructions
                 with TypeLevelFieldAccessInstructions
                 with TypeLevelInvokeInstructions
                 with DoNothingOnReturnFromMethod
                 with ProjectBasedClassHierarchy[Source] {
 
+            def identifier = caller.id
+
             def project: Project[Source] = theProject
+
+            private def addCallEdge(
+                caller: Method,
+                pc: PC,
+                callee: Method): Unit = {
+                // calledBy: Map[Method, Map[Method, Set[PC]]]
+                {
+                    val callers = calledBy.getOrElseUpdate(callee, HashMap.empty)
+                    val callSites = callers.getOrElseUpdate(caller, HashSet.empty)
+                    callSites add pc
+                }
+
+                // calls : Map[Method, Map[PC, Set[Method]]]          
+                {
+                    val callSites = calls.getOrElseUpdate(caller, HashMap.empty)
+                    val callees = callSites.getOrElseUpdate(pc, HashSet.empty)
+                    callees add callee
+                }
+
+                if (!analyzedMethods.contains(callee)) {
+                    if (!callee.isNative) {
+                        assume(
+                            callee.body.isDefined,
+                            "call edge to an abstract method"+caller.toJava+"=>"+callee.toJava)
+                        methodsToAnalyze add callee
+                    }
+                }
+            }
+
+            private def dynamicallyBoundInvocation(
+                pc: PC,
+                declaringClass: ObjectType,
+                name: String,
+                descriptor: MethodDescriptor) {
+                // PLAIN CHA - we do not consider any data-flow information 
+                // that is available
+                val callees = classHierarchy.lookupImplementingMethods(
+                    declaringClass, name, descriptor, project
+                )
+                if (callees.isEmpty)
+                    unresolvedMethodCall(
+                        callerClassFile.thisClass, caller,
+                        declaringClass, name, descriptor)
+                else
+                    for (callee ← callees) {
+                        addCallEdge(caller, pc, callee)
+                    }
+            }
 
             override def invokevirtual(
                 pc: PC,
                 declaringClass: ReferenceType,
                 name: String,
-                methodDescriptor: MethodDescriptor,
-                operands: List[DomainValue]): OptionalReturnValueOrExceptions =
-                super.invokevirtual(pc, declaringClass, name, methodDescriptor, operands)
+                descriptor: MethodDescriptor,
+                operands: List[DomainValue]): OptionalReturnValueOrExceptions = {
+
+                if (declaringClass.isArrayType) {
+                    staticallyBoundInvocation(pc, ObjectType.Object, name, descriptor)
+                } else {
+                    dynamicallyBoundInvocation(pc, declaringClass.asObjectType, name, descriptor)
+                }
+                super.invokevirtual(pc, declaringClass, name, descriptor, operands)
+            }
 
             override def invokeinterface(
                 pc: PC,
                 declaringClass: ObjectType,
                 name: String,
-                methodDescriptor: MethodDescriptor,
+                descriptor: MethodDescriptor,
                 operands: List[DomainValue]): OptionalReturnValueOrExceptions = {
-                val parameters = operands.reverse
-                val baseType = typeOfValue(parameters.head) match {
-                    case IsReferenceValue(upperBound) ⇒ upperBound
-                    case _                            ⇒ declaringClass
-                }
-                super.invokeinterface(pc, declaringClass, name, methodDescriptor, operands)
+                //                val parameters = operands.reverse
+                //                val baseType = typeOfValue(parameters.head) match {
+                //                    case IsReferenceValue(upperBound) ⇒ upperBound
+                //                    case _                            ⇒ declaringClass
+                //                }
+                dynamicallyBoundInvocation(pc, declaringClass.asObjectType, name, descriptor)
+                super.invokeinterface(pc, declaringClass, name, descriptor, operands)
             }
 
+            private def staticallyBoundInvocation(
+                pc: PC,
+                declaringClass: ObjectType,
+                name: String,
+                descriptor: MethodDescriptor) {
+                classHierarchy.lookupMethodDefinition(
+                    declaringClass, name, descriptor, project
+                ) match {
+                        case Some(callee) ⇒
+                            assume(callee.isNative || callee.body.isDefined,
+                                "lookup returned an abstract method")
+                            addCallEdge(caller, pc, callee)
+                        case None ⇒
+                            unresolvedMethodCall(
+                                callerClassFile.thisClass, caller,
+                                declaringClass, name, descriptor
+                            )
+                    }
+            }
+
+            /**
+             * Invocation of private, constructor and super methods.
+             */
             override def invokespecial(
                 pc: PC,
                 declaringClass: ObjectType,
                 name: String,
-                methodDescriptor: MethodDescriptor,
+                descriptor: MethodDescriptor,
                 operands: List[DomainValue]): OptionalReturnValueOrExceptions = {
-                // invocation of private, constructor and super methods 
-                classHierarchy.lookupMethodDefinition(
-                    declaringClass.asObjectType, // the dynamic type is not "relevant"
-                    name,
-                    methodDescriptor,
-                    project) match {
-                        case Some(nextMethod @ (classFile, method)) ⇒
-                            assume(method.isNative || method.body.isDefined,
-                                "unexpected INVOKESPECIAL of an abstract method found")
-                            
-//                            calledBy: Map[Method, Map[Method, Set[PC]]] +=
-//                                calledBy(nextMethod)()
-//                                
-//            Map.empty.withDefaultValue(Map.empty.withDefaultValue(Set.empty))
-//        var calls: Map[Method, Map[PC, Set[Method]]] =
-                                
-                                if (!analyzedMethods.contains(method)) {
-                                methodsToAnalyze += nextMethod
-                            }
-                        
-                        case None ⇒
-                            unresolvedMethodCall(
-                                declaringClass,
-                                name,
-                                methodDescriptor
-                            )
-                    }
-                super.invokespecial(pc, declaringClass, name, methodDescriptor, operands)
+                // for invokespecial the dynamic type is not "relevant" and the
+                // first method that we find is the one that needs to be concrete 
+                staticallyBoundInvocation(pc, declaringClass, name, descriptor)
+                super.invokespecial(pc, declaringClass, name, descriptor, operands)
             }
 
+            /**
+             * Invocation of static methods.
+             */
             override def invokestatic(
                 pc: PC,
                 declaringClass: ObjectType,
                 name: String,
-                methodDescriptor: MethodDescriptor,
-                operands: List[DomainValue]): OptionalReturnValueOrExceptions =
-                super.invokestatic(pc, declaringClass, name, methodDescriptor, operands)
+                descriptor: MethodDescriptor,
+                operands: List[DomainValue]): OptionalReturnValueOrExceptions = {
+                staticallyBoundInvocation(pc, declaringClass, name, descriptor)
+                super.invokestatic(pc, declaringClass, name, descriptor, operands)
+            }
         }
 
-       
-
         while (methodsToAnalyze.nonEmpty) {
-            val currentMethod @ (classFile, method) = methodsToAnalyze.head
-            analyzedMethods += method
-            methodsToAnalyze = methodsToAnalyze.tail
-            BaseAI(classFile, method, MethodDomain((classFile,method)))
+            val method = methodsToAnalyze.head
+            methodsToAnalyze remove (method)
+            val classFile = theProject.classFile(method)
+            analyzedMethods add method
+
+            BaseAI(classFile, method, new MethodDomain(classFile, method))
         }
 
         (new CHACallGraph(calledBy, calls), unresolvedMethodCalls)
@@ -206,6 +292,41 @@ class CHACallGraph(
         val calls: Map[Method, Map[PC, Set[Method]]]) {
 }
 
+case class UnresolvedMethodCall(
+        callerClass: ReferenceType,
+        caller: Method,
+        calleeClass: ReferenceType,
+        calleeName: String,
+        calleeDescriptor: MethodDescriptor) {
+
+    // If we have a very large number of unresolved calls that we want to store, e.g., 
+    // in a set we have to make the equals / hashcode computations fast! 
+
+    override def equals(other: Any): Boolean = {
+        other match {
+            case that: UnresolvedMethodCall ⇒
+                (this.callerClass eq that.callerClass) &&
+                    (this.caller.id == that.caller.id) &&
+                    (this.calleeClass eq that.calleeClass) &&
+                    (this.calleeName eq that.calleeName) &&
+                    (this.calleeDescriptor == that.calleeDescriptor)
+            case _ ⇒ false
+        }
+    }
+    override val hashCode = ((callerClass.hashCode ^ caller.id) << 16) ^ calleeName.hashCode
+
+    override def toString: String = {
+        callerClass.toJava+"{ "+Console.BOLD + caller.toJava + Console.RESET+" } =>"+
+            calleeClass.toJava+"{ "+Console.BOLD + calleeDescriptor.toJava(calleeName) + Console.RESET+" }"
+    }
+
+}
+
+//case class MethodContext(
+//    classFile: ClassFile,
+//    method: Method)
+
+    /*
 /**
  * @param pc the program counter of the instruction that is responsible for the call
  * 	of a method. In general, the "pc" refers to an invoke instruction. However,
@@ -238,12 +359,7 @@ case class CallGraph(
         val calledBy: Map[Method, Set[CallSite]],
         val calls: Map[Method, Map[PC, Set[Method]]]) {
 }
-
-case class UnresolvedMethodCall(
-    val declaringClass: ReferenceType,
-    val name: String,
-    val descriptor: MethodDescriptor)
-
+*/
 
 
 /*
@@ -265,6 +381,15 @@ class A {
         a = new B();
     }
 } 
+class B extends A {
+    private foo() {
+        bar()
+    }
+
+    public bar() {
+        // do nothing
+    }
+}
 */ 
 
 // For each entry point we start calculating the Call Graph. 
