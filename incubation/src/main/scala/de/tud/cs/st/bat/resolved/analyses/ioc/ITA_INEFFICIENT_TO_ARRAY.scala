@@ -42,9 +42,9 @@ object ITA_INEFFICIENT_TO_ARRAY extends (Project[_] ⇒ Iterable[(ClassFile, Met
 
     import BaseAnalyses.withIndex
 
-    val objectArrayType = ArrayType(ObjectType("java/lang/Object"))
+    val objectArrayType = ArrayType(ObjectType.Object)
 
-    val toArrayDescriptor = MethodDescriptor(List(objectArrayType), objectArrayType)
+    val toArrayDescriptor = MethodDescriptor(IndexedSeq(objectArrayType), objectArrayType)
 
     val collectionInterface = ObjectType("java/util/Collection")
 

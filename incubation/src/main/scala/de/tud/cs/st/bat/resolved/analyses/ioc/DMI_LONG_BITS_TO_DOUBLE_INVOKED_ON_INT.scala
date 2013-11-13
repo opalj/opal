@@ -44,7 +44,7 @@ object DMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT extends (Project[_] ⇒ Iterable[(
 
     val doubleClass = ObjectType("java/lang/Double")
 
-    val longBitsToDoubleDescriptor = MethodDescriptor(List(LongType), DoubleType)
+    val longBitsToDoubleDescriptor = MethodDescriptor(IndexedSeq(LongType), DoubleType)
 
     def apply(project: Project[_]) = {
         for (

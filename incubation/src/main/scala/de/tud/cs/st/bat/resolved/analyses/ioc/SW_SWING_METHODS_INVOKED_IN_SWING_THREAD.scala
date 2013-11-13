@@ -57,9 +57,9 @@ object SW_SWING_METHODS_INVOKED_IN_SWING_THREAD extends (Project[_] ⇒ Iterable
                 targetType.isObjectType &&
                 targetType.asInstanceOf[ObjectType].className.startsWith("javax/swing/")) &&
                 (
-                    name == "show" && desc == MethodDescriptor(Nil, VoidType) ||
-                    name == "pack" && desc == MethodDescriptor(Nil, VoidType) ||
-                    name == "setVisible" && desc == MethodDescriptor(List(BooleanType), VoidType)
+                    name == "show" && desc == MethodDescriptor(IndexedSeq.empty[FieldType], VoidType) ||
+                    name == "pack" && desc == MethodDescriptor(IndexedSeq.empty[FieldType], VoidType) ||
+                    name == "setVisible" && desc == MethodDescriptor(IndexedSeq(BooleanType), VoidType)
                 )
         ) yield {
             (classFile, method, idx)
