@@ -240,37 +240,37 @@ class ClassHierarchyTest
 
     it should "correctly resolve a reference to a static field in a superclass" in {
         resolveFieldReference(SuperType, "x", IntegerType, fieldsProject) should be(
-            Some((SuperSuperClass, SuperSuperClass.fields(0)))
+            Some(SuperSuperClass.fields(0))
         )
     }
 
     it should "correctly resolve a reference to a field defined in an interface" in {
         resolveFieldReference(SubIType, "THE_SUB_I", IntegerType, fieldsProject) should be(
-            Some((SubIClass, SubIClass.fields(0)))
+            Some(SubIClass.fields(0))
         )
     }
 
     it should "correctly resolve a reference to a field defined in a superinterface of an interface" in {
         resolveFieldReference(SubIType, "THE_I", IntegerType, fieldsProject) should be(
-            Some((SuperIClass, SuperIClass.fields(0)))
+            Some(SuperIClass.fields(0))
         )
     }
 
     it should "correctly resolve a reference to a field defined in a superinterface" in {
         resolveFieldReference(SubType, "THE_I", IntegerType, fieldsProject) should be(
-            Some((SuperIClass, SuperIClass.fields(0)))
+            Some(SuperIClass.fields(0))
         )
     }
 
     it should "correctly resolve a reference to a field defined in a superclass" in {
         resolveFieldReference(SubSubType, "x", IntegerType, fieldsProject) should be(
-            Some((SubClass, SubClass.fields(0)))
+            Some(SubClass.fields(0))
         )
     }
 
     it should "correctly resolve a reference to a private field defined in a superclass" in {
         resolveFieldReference(SubSubType, "y", IntegerType, fieldsProject) should be(
-            Some((SuperClass, SuperClass.fields(0)))
+            Some(SuperClass.fields(0))
         )
     }
 
@@ -325,8 +325,7 @@ class ClassHierarchyTest
             methodsProject)
 
         result.size should be(1)
-        result.head._1 should be(directSubClassFile)
-        result.head._2 should have(
+        result.head should have(
             'name("publicMethod"),
             'descriptor(MethodDescriptor.NoArgsAndReturnVoid)
         )

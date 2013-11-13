@@ -37,6 +37,7 @@ package analyses
 
 import util.graphs.{ Node, toDot }
 import util.{ Answer, Yes, No, Unknown }
+import collection.Set
 
 /**
  * Encapsulates the type hierarchy information directly related to a specific type,
@@ -116,6 +117,8 @@ class ClassHierarchy(
     val subinterfaceTypes: Map[ObjectType, Set[ObjectType]] = Map())
         extends (ObjectType ⇒ Option[TypeHierarchyInformation]) {
 
+    import collection.mutable.HashSet
+
     /**
      * Analyzes the given class files and extends the current class hierarchy.
      *
@@ -134,7 +137,7 @@ class ClassHierarchy(
             classFile.thisClass,
             classFile.isInterfaceDeclaration,
             classFile.superClass,
-            classFile.interfaces.toSet)
+            HashSet.empty ++ classFile.interfaces)
 
     /**
      * Extends the class hierarchy.
@@ -177,12 +180,12 @@ class ClassHierarchy(
                 subinterfaceTypes.updated(
                     theSuperclassType.get,
                     subinterfaceTypes.get(
-                        theSuperclassType.get).getOrElse(Set.empty) +
+                        theSuperclassType.get).getOrElse(HashSet.empty) +
                         objectType)
             theSuperinterfaceTypes.foreach { aSuperinterfaceType ⇒
                 newSubinterfaceTypes = newSubinterfaceTypes.updated(
                     aSuperinterfaceType,
-                    newSubinterfaceTypes.get(aSuperinterfaceType).getOrElse(Set.empty) +
+                    newSubinterfaceTypes.get(aSuperinterfaceType).getOrElse(HashSet.empty) +
                         objectType)
             }
             new ClassHierarchy(
@@ -195,13 +198,13 @@ class ClassHierarchy(
                 if (theSuperclassType.isDefined) {
                     subclassTypes.updated(
                         theSuperclassType.get,
-                        subclassTypes.get(theSuperclassType.get).getOrElse(Set.empty) + objectType)
+                        subclassTypes.get(theSuperclassType.get).getOrElse(HashSet.empty) + objectType)
                 } else
                     subclassTypes
             theSuperinterfaceTypes.foreach { aSuperinterfaceType ⇒
                 newSubclassTypes = newSubclassTypes.updated(
                     aSuperinterfaceType,
-                    newSubclassTypes.get(aSuperinterfaceType).getOrElse(Set.empty) + objectType)
+                    newSubclassTypes.get(aSuperinterfaceType).getOrElse(HashSet.empty) + objectType)
             }
             new ClassHierarchy(
                 newSuperclassType,
@@ -302,8 +305,8 @@ class ClassHierarchy(
      * @note If you don't need the set, it is more efficient to use `foreachSubtype
      */
     def allSubtypes(objectType: ObjectType): Set[ObjectType] = {
-        var subtypes = Set.empty[ObjectType]
-        foreachSubtype(objectType) { subtype ⇒ subtypes += subtype }
+        val subtypes = HashSet.empty[ObjectType]
+        foreachSubtype(objectType) { subtype ⇒ subtypes add subtype }
         subtypes
     }
 
@@ -355,8 +358,8 @@ class ClassHierarchy(
      * The set of all supertypes of the given type.
      */
     def allSupertypes(objectType: ObjectType): Set[ObjectType] = {
-        var supertypes = Set.empty[ObjectType]
-        foreachSupertype(objectType) { supertypes += _ }
+        val supertypes = HashSet.empty[ObjectType]
+        foreachSupertype(objectType) { supertypes.add(_) }
         supertypes
     }
 
@@ -424,22 +427,24 @@ class ClassHierarchy(
      *      is not available.
      */
     def isSubtypeOf(subtype: ObjectType, theSupertype: ObjectType): Answer = {
-        if (subtype == theSupertype || theSupertype == ObjectType.Object)
+        if ((subtype eq theSupertype) || (theSupertype eq ObjectType.Object))
             return Yes
 
-        if (subtype == ObjectType.Object /* && theSupertype != ObjectType.Object*/ )
+        if (subtype eq ObjectType.Object /* && theSupertype != ObjectType.Object*/ )
             return No
 
-        val subtypeIsInterface = interfaceTypes.contains(subtype)
-        val supertypeIsInterface = interfaceTypes.contains(theSupertype)
+        val subtypeIsInterface = isInterface(subtype)
+        val supertypeIsInterface = isInterface(theSupertype)
 
         if (subtypeIsInterface && !supertypeIsInterface)
             // An interface always (only) directly inherits from java.lang.Object
             // and this is already checked before.
             return No
 
-        def implementsInterface(subinterfaceType: ObjectType, theSupertype: ObjectType): Answer = {
-            if (subinterfaceType == theSupertype)
+        def implementsInterface(
+            subinterfaceType: ObjectType,
+            theSupertype: ObjectType): Answer = {
+            if (subinterfaceType eq theSupertype)
                 return Yes
 
             superinterfaceTypes.get(subinterfaceType) match {
@@ -475,7 +480,7 @@ class ClassHierarchy(
 
             superclassType.get(subclassType) match {
                 case Some(Some(intermediateType)) ⇒
-                    if (intermediateType == theSupertype)
+                    if (intermediateType eq theSupertype)
                         return Yes
 
                     var answer = isSubtypeOf(intermediateType)
@@ -487,7 +492,7 @@ class ClassHierarchy(
                 case Some(None) ⇒
                     /* we have reached the top (visible) class Type*/
                     var answer: Answer =
-                        if (subclassType == ObjectType.Object)
+                        if (subclassType eq ObjectType.Object)
                             No
                         else
                             Unknown
@@ -527,11 +532,13 @@ class ClassHierarchy(
      *    the answer is clearly `No`. But, at runtime, this may not be the case.
      */
     def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer = {
-        if (subtype == supertype || supertype == ObjectType.Object)
+        if ((subtype eq supertype) || (supertype eq ObjectType.Object))
             return Yes
 
+        if (subtype eq ObjectType.Object)
+            return No // the given supertype has to be a subtype...
+
         subtype match {
-            case ObjectType.Object ⇒ No // the given supertype has to be a subtype...
             case ot: ObjectType ⇒
                 if (supertype.isArrayType)
                     No
@@ -542,11 +549,14 @@ class ClassHierarchy(
                     isSubtypeOf(ot.asObjectType, supertype.asObjectType)
             case ArrayType(componentType) ⇒ {
                 supertype match {
-                    case ObjectType.Serializable ⇒ Yes
-                    case ObjectType.Cloneable    ⇒ Yes
-                    case _: ObjectType           ⇒ No
+                    case ot: ObjectType ⇒
+                        if ((ot eq ObjectType.Serializable) ||
+                            (ot eq ObjectType.Cloneable))
+                            Yes
+                        else
+                            No
                     case ArrayType(superComponentType: BaseType) ⇒
-                        if (componentType == superComponentType)
+                        if (componentType eq superComponentType)
                             Yes
                         else
                             No
@@ -651,19 +661,19 @@ class ClassHierarchy(
         c: ObjectType,
         fieldName: String,
         fieldType: FieldType,
-        classes: ObjectType ⇒ Option[ClassFile]): Option[(ClassFile, Field)] = {
+        project: SomeProject): Option[Field] = {
         // More details: JVM 7 Spec. Section 5.4.3.2 
-        classes(c) flatMap { classFile ⇒
+        project(c) flatMap { classFile ⇒
             classFile.fields.collectFirst {
-                case field @ Field(_, `fieldName`, `fieldType`, _) ⇒ (classFile, field)
+                case field @ Field(_, `fieldName`, `fieldType`, _) ⇒ field
             } orElse {
                 classFile.interfaces collectFirst { supertype ⇒
-                    resolveFieldReference(supertype, fieldName, fieldType, classes) match {
+                    resolveFieldReference(supertype, fieldName, fieldType, project) match {
                         case Some(resolvedFieldReference) ⇒ resolvedFieldReference
                     }
                 } orElse {
                     classFile.superClass flatMap { supertype ⇒
-                        resolveFieldReference(supertype, fieldName, fieldType, classes)
+                        resolveFieldReference(supertype, fieldName, fieldType, project)
                     }
                 }
             }
@@ -698,24 +708,24 @@ class ClassHierarchy(
         receiverType: ObjectType,
         methodName: String,
         methodDescriptor: MethodDescriptor,
-        classes: ObjectType ⇒ Option[ClassFile]): Option[(ClassFile, Method)] = {
+        project: SomeProject): Option[Method] = {
 
         // TODO [Java 7] Implement support for handling signature polymorphic method resolution.
 
-        classes(receiverType) flatMap { classFile ⇒
+        project(receiverType) flatMap { classFile ⇒
             assume(!classFile.isInterfaceDeclaration)
 
             lookupMethodDefinition(
                 receiverType,
                 methodName,
                 methodDescriptor,
-                classes
+                project
             ) orElse
                 lookupMethodInSuperinterfaces(
                     classFile,
                     methodName,
                     methodDescriptor,
-                    classes
+                    project
                 )
         }
     }
@@ -724,22 +734,22 @@ class ClassHierarchy(
         receiverType: ObjectType,
         methodName: String,
         methodDescriptor: MethodDescriptor,
-        classes: ObjectType ⇒ Option[ClassFile]): Option[(ClassFile, Method)] = {
+        project: SomeProject): Option[Method] = {
 
-        classes(receiverType) flatMap { classFile ⇒
+        project(receiverType) flatMap { classFile ⇒
             assume(classFile.isInterfaceDeclaration)
 
             lookupMethodInInterface(
                 classFile,
                 methodName,
                 methodDescriptor,
-                classes
+                project
             ) orElse
                 lookupMethodDefinition(
                     ObjectType.Object,
                     methodName,
                     methodDescriptor,
-                    classes
+                    project
                 )
         }
     }
@@ -748,13 +758,12 @@ class ClassHierarchy(
         classFile: ClassFile,
         methodName: String,
         methodDescriptor: MethodDescriptor,
-        classes: ObjectType ⇒ Option[ClassFile]): Option[(ClassFile, Method)] = {
+        project: SomeProject): Option[Method] = {
 
         classFile.methods.collectFirst {
-            case method @ Method(_, `methodName`, `methodDescriptor`, _) ⇒
-                (classFile, method)
+            case method @ Method(_, `methodName`, `methodDescriptor`, _) ⇒ method
         } orElse {
-            lookupMethodInSuperinterfaces(classFile, methodName, methodDescriptor, classes)
+            lookupMethodInSuperinterfaces(classFile, methodName, methodDescriptor, project)
         }
     }
 
@@ -762,16 +771,16 @@ class ClassHierarchy(
         classFile: ClassFile,
         methodName: String,
         methodDescriptor: MethodDescriptor,
-        classes: ObjectType ⇒ Option[ClassFile]): Option[(ClassFile, Method)] = {
+        project: SomeProject): Option[Method] = {
 
         classFile.interfaces.foreach { superinterface: ObjectType ⇒
-            classes(superinterface) map { superclass ⇒
+            project(superinterface) map { superclass ⇒
                 val result =
                     lookupMethodInInterface(
                         superclass,
                         methodName,
                         methodDescriptor,
-                        classes)
+                        project)
                 if (result.isDefined)
                     return result
             }
@@ -807,20 +816,21 @@ class ClassHierarchy(
         receiverType: ObjectType,
         methodName: String,
         methodDescriptor: MethodDescriptor,
-        classes: ObjectType ⇒ Option[ClassFile]): Option[(ClassFile, Method)] = {
+        project: SomeProject): Option[Method] = {
 
         assume(!isInterface(receiverType))
 
-        def lookupMethodDefinition(
-            receiverType: ObjectType): Option[(ClassFile, Method)] = {
-            classes(receiverType).flatMap { classFile ⇒
+        def lookupMethodDefinition(receiverType: ObjectType): Option[Method] = {
+            project(receiverType) flatMap { classFile ⇒
                 classFile.methods.collectFirst {
                     case method @ Method(_, `methodName`, `methodDescriptor`, _) ⇒
-                        (classFile, method)
+                        method
                 }
             } orElse {
-                superclassType(receiverType) flatMap { superclassType ⇒
-                    lookupMethodDefinition(superclassType)
+                superclassType.get(receiverType) flatMap { someSuperclassType ⇒
+                    someSuperclassType.flatMap { superclassType ⇒
+                        lookupMethodDefinition(superclassType)
+                    }
                 }
             }
         }
@@ -846,8 +856,8 @@ class ClassHierarchy(
      *  @param classesFiler A function that is expected to return true, if the runtime type of
      *       the `receiverType` may be of the type defined by the given object type. For
      *       example, if you analyze a project and perform a lookup of all methods that
-     *       implement the method `toString`, then this set would probably be very large. 
-     *       But, if you know that only instances of the class (e.g.) `ArrayList` have 
+     *       implement the method `toString`, then this set would probably be very large.
+     *       But, if you know that only instances of the class (e.g.) `ArrayList` have
      *       been created so far
      *       (up to the point in your analysis where you call this method), it is
      *       meaningful to sort out all other classes (such as `Vector`).
@@ -856,48 +866,58 @@ class ClassHierarchy(
         receiverType: ObjectType,
         methodName: String,
         methodDescriptor: MethodDescriptor,
-        classes: ObjectType ⇒ Option[ClassFile],
-        classesFilter: ObjectType ⇒ Boolean = { _ ⇒ true }): Iterable[(ClassFile, Method)] = {
+        project: SomeProject,
+        classesFilter: ObjectType ⇒ Boolean = { _ ⇒ true }): Iterable[Method] = {
 
-        var implementingMethods: List[(ClassFile, Method)] =
+        var implementingMethods: List[Method] =
             {
                 if (isInterface(receiverType))
                     lookupMethodDefinition(
                         ObjectType.Object, // to handle calls such as toString on a (e.g.) "java.util.List"
                         methodName,
                         methodDescriptor,
-                        classes)
+                        project)
                 else
                     lookupMethodDefinition(
                         receiverType,
                         methodName,
                         methodDescriptor,
-                        classes)
+                        project)
             } match {
-                case Some(method) ⇒ List(method)
-                case None         ⇒ List.empty
+                case Some(method) if !method.isAbstract ⇒ List(method)
+                case _                                  ⇒ List.empty
             }
 
         // Search all subclasses
         var seenSubtypes = Set.empty[ObjectType]
         foreachSubtype(receiverType) { (subtype: ObjectType) ⇒
-            if (!seenSubtypes.contains(subtype)) {
+            if (!isInterface(receiverType) &&
+                !seenSubtypes.contains(subtype)) {
                 seenSubtypes += subtype
                 if (classesFilter(subtype)) {
-                    classes(subtype) foreach { classFile ⇒
-                        classFile.methods collectFirst {
-                            case method @ Method(_, `methodName`, `methodDescriptor`, _) ⇒
-                                (classFile, method)
-                        } match {
-                            case Some(anImplementation) ⇒
-                                implementingMethods = anImplementation :: implementingMethods
-                            case _ ⇒
-                            /*don't care*/
+                    project(subtype) foreach { classFile ⇒
+                        val result = classFile.methods.find { method ⇒
+                            !method.isAbstract &&
+                                method.name == methodName &&
+                                method.descriptor == methodDescriptor
+                        }.map { anImplementation ⇒
+                            implementingMethods = anImplementation :: implementingMethods
                         }
+
+                        //                        classFile.methods collectFirst {
+                        //                            case method @ Method(_, `methodName`, `methodDescriptor`, _) if !method.isAbstract ⇒
+                        //                                (classFile, method)
+                        //                        } match {
+                        //                            case Some(anImplementation) ⇒
+                        //                                implementingMethods = anImplementation :: implementingMethods
+                        //                            case _ ⇒
+                        //                            /*don't care*/
+                        //                        }
                     }
                 }
             }
         }
+
         implementingMethods
     }
 

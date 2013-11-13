@@ -194,7 +194,8 @@ trait PerformInvocations[+I, Source]
             methodName,
             methodDescriptor,
             project) match {
-                case Some((classFile, method)) if !method.isNative ⇒
+                case Some(method) if !method.isNative ⇒
+                    val classFile = project.classFile(method)
                     if (isRecursive(classFile, method, Operands(operands)))
                         fallback()
                     else

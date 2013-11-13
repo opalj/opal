@@ -70,7 +70,8 @@ class MapBasedProject[Source](
     val classes: Map[ObjectType, ClassFile],
     val sources: Map[ObjectType, Source],
     val classHierarchy: ClassHierarchy)
-        extends ProjectLike[Source, MapBasedProject[Source]] {
+        extends ProjectLike[Source]
+        with ProjectBuilder[Source, MapBasedProject[Source]] {
 
     def this(classHierarchy: ClassHierarchy = ClassHierarchy.empty) {
         this(
@@ -102,6 +103,21 @@ class MapBasedProject[Source](
      * This project's class files.
      */
     override def classFiles: Iterable[ClassFile] = classes.values
+
+    private[this] lazy val classFileOfMethod = {
+        val lookupTable = new Array[ClassFile](Method.methodsCount)
+        for {
+            classFile ← classes.values
+            method ← classFile.methods
+        } {
+            lookupTable(method.id) = classFile
+        }
+        lookupTable
+    }
+
+    override def classFile(method: Method): ClassFile = {
+        classFileOfMethod(method.id)
+    }
 }
 
 /**

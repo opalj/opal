@@ -69,11 +69,12 @@ import java.net.URL
  *
  * @author Michael Eichberg
  */
-class IndexBasedProject[Source: reflect.ClassTag] (
-    private val classes: Array[ClassFile],
-    private val sources: Array[Source],
+class IndexBasedProject[Source: reflect.ClassTag] private (
+    private[this] val classes: Array[ClassFile],
+    private[this] val sources: Array[Source],
     val classHierarchy: ClassHierarchy)
-        extends ProjectLike[Source,IndexBasedProject[Source]] {
+        extends ProjectLike[Source]
+        with ProjectBuilder[Source, IndexBasedProject[Source]] {
 
     def this(classHierarchy: ClassHierarchy = ClassHierarchy.empty) {
         this(
@@ -96,7 +97,7 @@ class IndexBasedProject[Source: reflect.ClassTag] (
         else
             Option(classes(objectType.id))
     }
-    
+
     /**
      * Adds the given class file to this project. If this method is called concurrently,
      * external synchronization is needed!
@@ -120,10 +121,30 @@ class IndexBasedProject[Source: reflect.ClassTag] (
         new IndexBasedProject(classes, sources, classHierarchy + classFile)
     }
 
+    private[this] lazy val classFileOfMethod = {
+        val lookupTable = new Array[ClassFile](Method.methodsCount)
+        for {
+            classFile ← classes.view.filter(_ ne null)
+            method ← classFile.methods
+        } {
+            lookupTable(method.id) = classFile
+        }
+        lookupTable
+    }
+
+    override def classFile(method: Method): ClassFile = {
+        classFileOfMethod(method.id)
+    }
+
     /**
      * This project's class files.
      */
     override def classFiles: Iterable[ClassFile] = classes.view.filter(_ ne null)
+
+    override def toString: String = {
+        "Classes:\n\t"+classes.view.filter(_ ne null).map(_.thisClass.toJava).mkString("(", ",", ")")+"\n"
+        "ClassFileOfMethod:\n\t"+classFileOfMethod.mkString("(", ",", ")")
+    }
 }
 
 /**
@@ -138,7 +159,7 @@ object IndexBasedProject {
      * already contains the information about the exceptions thrown by JVM
      * instructions.
      */
-    def empty[Source: reflect.ClassTag]() =
+    def empty[Source: reflect.ClassTag] =
         new IndexBasedProject[Source](
             classHierarchy = ClassHierarchy.preInitializedClassHierarchy
         )

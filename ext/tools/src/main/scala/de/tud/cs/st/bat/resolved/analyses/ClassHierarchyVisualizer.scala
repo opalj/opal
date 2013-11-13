@@ -46,8 +46,7 @@ object ClassHierarchyVisualizer {
 
         import reader.Java7Framework.ClassFiles
         import util.graphs.{ Node, toDot }
-        import util.ControlAbstractions._
-
+ 
         if (!args.forall(_.endsWith(".jar"))) {
             println("Usage: java …ClassHierarchy <JAR file>+")
             println("(c) 2013 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
@@ -61,18 +60,6 @@ object ClassHierarchyVisualizer {
                 (ClassHierarchy.empty /: args)(_ ++ ClassFiles(_).map(_._1))
 
         val classHierarchyDescription =
-            toDot.generateDot(Set(classHierarchy.toGraph), "back")
-
-        try {
-            val desktop = java.awt.Desktop.getDesktop()
-            val file = java.io.File.createTempFile("ClassHierarchy", ".dot")
-            process { new java.io.FileOutputStream(file) } { fos ⇒
-                fos.write(classHierarchyDescription.getBytes("UTF-8"))
-            }
-            desktop.open(file)
-        }
-        catch {
-            case _: Error | _: Exception ⇒ println(classHierarchyDescription)
-        }
+            toDot.generateAndOpenDOT(Set(classHierarchy.toGraph), "back")
     }
 }

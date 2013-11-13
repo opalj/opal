@@ -46,11 +46,11 @@ import java.net.URL
 package object analyses {
 
     import language.implicitConversions
-    
-    
-    type Project[Source] = ProjectLike[Source, _]
-    
 
+    type Project[Source] = ProjectLike[Source]
+    type SomeProject = ProjectLike[_]
+
+    
     /**
      * Converts a URL in a location identifier.
      */

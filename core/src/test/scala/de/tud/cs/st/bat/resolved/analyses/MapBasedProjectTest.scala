@@ -154,7 +154,7 @@ class MapBasedProjectTest
             project)
 
         r should be('Defined)
-        assert(r.get._1.thisClass === ObjectType("methods/b/SubI"))
+        assert(project.classFile(r.get).thisClass === ObjectType("methods/b/SubI"))
     }
 
     it should "find a method declared by an indirectly implemented interface" in {
@@ -165,7 +165,7 @@ class MapBasedProjectTest
             project)
 
         r should be('Defined)
-        assert(r.get._1.thisClass === ObjectType("methods/b/SuperI"))
+        assert(project.classFile(r.get).thisClass === ObjectType("methods/b/SuperI"))
     }
 
 }

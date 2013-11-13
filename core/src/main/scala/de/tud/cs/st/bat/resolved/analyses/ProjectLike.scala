@@ -61,8 +61,29 @@ import java.net.URL
  *
  * @author Michael Eichberg
  */
-abstract class ProjectLike[Source, Project <: ProjectLike[Source, Project]]
-        extends (ObjectType ⇒ Option[ClassFile]) { this: Project ⇒
+abstract class ProjectLike[Source] extends (ObjectType ⇒ Option[ClassFile]) {
+
+    /**
+     * Tries to lookup the class file for the given `objectType`.
+     */
+    final def apply(objectType: ObjectType): Option[ClassFile] = classFile(objectType)
+
+    def source(objectType: ObjectType): Option[Source]
+
+    def classFile(objectType: ObjectType): Option[ClassFile]
+
+    def classFile(method: Method): ClassFile 
+    
+    /**
+     * This project's class files.
+     */
+    def classFiles: Iterable[ClassFile]
+
+    val classHierarchy: ClassHierarchy
+}
+
+trait ProjectBuilder[Source, Project <: ProjectBuilder[Source, Project]] {
+    this: Project ⇒
 
     /**
      * Adds the class files to this project by calling the simple "+" method
@@ -78,20 +99,4 @@ abstract class ProjectLike[Source, Project <: ProjectLike[Source, Project]]
      * will be replaced by the given one.
      */
     def +(cs: (ClassFile, Source)): Project
-
-    /**
-     * Tries to lookup the class file for the given `objectType`.
-     */
-    final def apply(objectType: ObjectType): Option[ClassFile] = classFile(objectType)
-
-    def source(objectType: ObjectType): Option[Source]
-
-    def classFile(objectType: ObjectType): Option[ClassFile]
-
-    /**
-     * This project's class files.
-     */
-    def classFiles: Iterable[ClassFile]
-
-    val classHierarchy: ClassHierarchy
 }

@@ -70,7 +70,7 @@ object BaseAnalyses {
         val superMethods =
             for (
                 superclass ← project.classHierarchy.allSupertypes(classFile.thisClass);
-                (_, method) ← project.classHierarchy.resolveMethodReference(superclass, method.name, method.descriptor, project)
+                method ← project.classHierarchy.resolveMethodReference(superclass, method.name, method.descriptor, project)
             ) yield {
                 method
             }
@@ -116,7 +116,10 @@ object BaseAnalyses {
             return None
 
         val Some((targetType, name, desc)) = constructorCall
-        project.classHierarchy.resolveMethodReference(targetType, name, desc, project)
+        project.classHierarchy.resolveMethodReference(targetType, name, desc, project).map { method ⇒
+            val classFile = project.classFile(method)
+            (classFile, method)
+        }
     }
 
     def calls(sourceMethod: Method, targetClass: ClassFile, targetMethod: Method): Boolean = {
