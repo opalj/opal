@@ -75,26 +75,15 @@ class CallGraphFactory {
             // by a factor of at least "2" ... the fact that we probably 
             // allocate too much memory can be ignored as this set is short-living
             new HashSet[Method] { override def initialSize = Method.methodsCount * 3 / 4 }
-
         project.foreachMethod { method: Method ⇒
             if (!method.isPrivate && method.body.isDefined) entryPoints add method
         }
-
         entryPoints
     }
 
-    //    def defaultEntryPoints(project: Project[_]): Set[(ClassFile, Method)] = {
-    //    	// We assume that we are analyzing a library. Hence, 
-    //        // all static initializers are considered entry points,
-    //        // every non-private static method is an entry point and
-    //        // every non-private constructor is an entry point
-    //        // Secondary entry points are all non-private, non-native 
-    //        // instance methods.        
-    //    }
-
     def performCHA[Source](
         theProject: Project[Source],
-        entryPoints: Set[Method]): (CHACallGraph, Set[UnresolvedMethodCall]) = {
+        entryPoints: Set[Method]): (CHACallGraph, Seq[UnresolvedMethodCall]) = {
 
         type DomainContext = Int
 
@@ -114,26 +103,25 @@ class CallGraphFactory {
         //            new HashMap[Method, HashMap[PC, collection.mutable.Set[Method]]] {
         //                override def initialSize = Method.methodsCount
         //            }
-        val analyzedMethods =
-            // HashSet.empty[Method]
-            new HashSet[Method] { override def initialSize = Method.methodsCount }
+        val analyzedMethods = new Array[Boolean](Method.methodsCount)
         val methodsToAnalyze =
             entryPoints match {
                 case hashSet: HashSet[Method] ⇒ hashSet
                 case _                        ⇒ HashSet.empty ++ entryPoints
             }
 
-        val unresolvedMethodCalls = HashSet.empty[UnresolvedMethodCall]
+        var unresolvedMethodCalls = List.empty[UnresolvedMethodCall]
         def unresolvedMethodCall(
             callerClass: ReferenceType,
             caller: Method,
+            pc: PC,
             calleeClass: ReferenceType,
             calleeName: String,
             calleeDescriptor: MethodDescriptor) {
-            unresolvedMethodCalls add
+            unresolvedMethodCalls =
                 UnresolvedMethodCall(
-                    callerClass, caller,
-                    calleeClass, calleeName, calleeDescriptor)
+                    callerClass, caller, pc,
+                    calleeClass, calleeName, calleeDescriptor) :: unresolvedMethodCalls
         }
 
         // This domain does not have any associated state. 
@@ -177,7 +165,7 @@ class CallGraphFactory {
                     callees add callee
                 }
 
-                if (!analyzedMethods.contains(callee)) {
+                if (!analyzedMethods(callee.id)) {
                     if (!callee.isNative) {
                         assume(
                             callee.body.isDefined,
@@ -199,7 +187,7 @@ class CallGraphFactory {
                 )
                 if (callees.isEmpty)
                     unresolvedMethodCall(
-                        callerClassFile.thisClass, caller,
+                        callerClassFile.thisClass, caller, pc,
                         declaringClass, name, descriptor)
                 else
                     for (callee ← callees) {
@@ -251,7 +239,7 @@ class CallGraphFactory {
                             addCallEdge(caller, pc, callee)
                         case None ⇒
                             unresolvedMethodCall(
-                                callerClassFile.thisClass, caller,
+                                callerClassFile.thisClass, caller, pc,
                                 declaringClass, name, descriptor
                             )
                     }
@@ -290,7 +278,7 @@ class CallGraphFactory {
             val method = methodsToAnalyze.head
             methodsToAnalyze remove (method)
             val classFile = theProject.classFile(method)
-            analyzedMethods add method
+            analyzedMethods(method.id) = true
 
             BaseAI(classFile, method, new MethodDomain(classFile, method))
         }
@@ -314,6 +302,7 @@ object CHACallGraph {
 case class UnresolvedMethodCall(
         callerClass: ReferenceType,
         caller: Method,
+        pc: PC,
         calleeClass: ReferenceType,
         calleeName: String,
         calleeDescriptor: MethodDescriptor) {
@@ -326,13 +315,16 @@ case class UnresolvedMethodCall(
             case that: UnresolvedMethodCall ⇒
                 (this.callerClass eq that.callerClass) &&
                     (this.caller.id == that.caller.id) &&
+                    (this.pc == that.pc) &&
                     (this.calleeClass eq that.calleeClass) &&
                     (this.calleeName eq that.calleeName) &&
                     (this.calleeDescriptor == that.calleeDescriptor)
             case _ ⇒ false
         }
     }
-    override val hashCode = ((callerClass.hashCode ^ caller.id) << 16) ^ calleeName.hashCode
+
+    override val hashCode =
+        ((((callerClass.hashCode ^ caller.id) * pc) << 16) ^ calleeName.hashCode)
 
     override def toString: String = {
         callerClass.toJava+"{ "+Console.BOLD + caller.toJava + Console.RESET+" } => "+

@@ -35,53 +35,42 @@ package util
 package graphs
 
 /**
- * Represents a node of a graph. Two nodes are considered equal if they have the
- * same unique id.
+ * Represents a node of a directed graph.
  *
- * @see [[de.tud.cs.st.bat.resolved.analyses.ClassHierarchy]]'s `toGraph` method for
- *      an example usage.
+ * ==Thread Safety==
+ * This class is thread-safe.
+ *
+ * @see The demo project for example usages.
  *
  * @author Michael Eichberg
  */
-trait Node {
+final class SimpleNode[I](
+        val identifier: I,
+        val identifierToString: I ⇒ String = (i: I) ⇒ i.toString,
+        val backgroundColor: Option[String] = None,
+        private var children: List[Node] = List.empty) extends Node {
 
-    /**
-     * Returns a humane readable representation (HRR) of this node.
-     */
-    def toHRR: Option[String]
+    def toHRR = Some(identifierToString(identifier))
 
-    /**
-     * The name of the background color base on the X11 color scheme.
-     *
-     * see [[http://www.graphviz.org/content/color-names]] for further details.
-     */
-    def backgroundColor: Option[String]
+    def uniqueId: Int = identifier.hashCode()
 
-    /**
-     * An identifier that uniquely identifies this node in the graph to which this
-     * node belongs. By default two nodes are considered equal if they have the same
-     * unique id.
-     */
-    def uniqueId: Int
-
-    /**
-     * Applies the given function for each successor node.
-     */
-    def foreachSuccessor(f: Node ⇒ Unit): Unit
-
-    /**
-     * Returns `true` if this node has successor nodes.
-     */
-    def hasSuccessors(): Boolean
-
-    override def hashCode: Int = uniqueId
-
-    override def equals(other: Any): Boolean = {
-        other match {
-            case otherNode: Node ⇒ otherNode.uniqueId == this.uniqueId
-            case _               ⇒ false
-        }
+    def addChild(node: Node) {
+        children.synchronized(children = node :: children)
     }
-}
 
+    def removedLastAddedChild() {
+        children.synchronized(children = children.tail)
+    }
+
+    def removedChild(node: Node) {
+        children.synchronized(children = children.filterNot(_ == node))
+    }
+
+    def foreachSuccessor(f: Node ⇒ Unit) {
+        children.synchronized(children.foreach(f))
+    }
+
+    def hasSuccessors(): Boolean = children.synchronized(children.nonEmpty)
+
+}
 

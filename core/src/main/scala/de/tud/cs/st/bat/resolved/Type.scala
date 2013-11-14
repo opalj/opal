@@ -405,7 +405,7 @@ object ObjectType {
     import java.util.WeakHashMap
     import java.lang.ref.WeakReference
 
-    private val nextId = new java.util.concurrent.atomic.AtomicInteger(1)
+    private val nextId = new java.util.concurrent.atomic.AtomicInteger(0)
 
     private[this] val cache = new WeakHashMap[String, WeakReference[ObjectType]]()
 

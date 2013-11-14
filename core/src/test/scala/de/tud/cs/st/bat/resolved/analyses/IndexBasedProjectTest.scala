@@ -129,6 +129,17 @@ class IndexBasedProjectTest
     }
 
     it should "find the super class' static method staticDefaultVisibilityMethod" in {
+        // let's make sure the method exists...
+        resolveMethodReference(
+            SuperType,
+            "staticDefaultVisibilityMethod",
+            MethodDescriptor("()V"),
+            project
+        ) should be('Defined)
+        // let's make sure the class is a super class
+        project.classHierarchy.isSubtypeOf(DirectSub, SuperType) should be(de.tud.cs.st.util.Yes)
+
+        // let's test the solving 
         resolveMethodReference(
             DirectSub,
             "staticDefaultVisibilityMethod",

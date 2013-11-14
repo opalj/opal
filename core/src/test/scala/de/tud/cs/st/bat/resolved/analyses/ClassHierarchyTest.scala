@@ -210,13 +210,57 @@ class ClassHierarchyTest
 
     // -----------------------------------------------------------------------------------
     //
+    // TESTING THE TRAVERSAL OF THE CLASS HIERARCHY
+    //
+    // -----------------------------------------------------------------------------------
+
+    val clusteringProject =
+        IndexBasedProject[java.net.URL](
+            ClassFiles(TestSupport.locateTestResources("classfiles/ClusteringTestProject.jar"))
+        )
+
+    behavior of "the ClassHierarchy's method to traverse the class hierarchy"
+
+    it should "correctly find all suptyes of an interface" in {
+        import clusteringProject.classHierarchy
+
+        val window = ObjectType("pattern/decorator/example1/Window")
+        val simpleWindow = ObjectType("pattern/decorator/example1/SimpleWindow")
+
+        classHierarchy.isKnown(window) should be(true)
+        classHierarchy.isKnown(simpleWindow) should be(true)
+
+        classHierarchy.isSubtypeOf(window, simpleWindow) should be(No)
+        classHierarchy.isSubtypeOf(simpleWindow, window) should be(Yes)
+
+        // check if the SimpleWindow is in the Set of all subtypes of Window
+        var subtypes = Set.empty[ObjectType]
+        classHierarchy.foreachSubtype(window)(subtypes += _)
+        subtypes.contains(simpleWindow) should be(true)
+
+        clusteringProject(simpleWindow).get.methods.find(method ⇒
+            method.name == "draw" &&
+                method.descriptor == MethodDescriptor.NoArgsAndReturnVoid
+        ) should be('defined)
+
+        classHierarchy.lookupImplementingMethods(
+            window,
+            "draw",
+            MethodDescriptor.NoArgsAndReturnVoid,
+            clusteringProject) should be('nonEmpty)
+    }
+    //pattern.decorator.example1.VerticalScrollBarDecorator{ void draw() } => pattern.decorator.example1.Window{ void draw() }
+
+    // -----------------------------------------------------------------------------------
+    //
     // TESTING THE RESOLVING OF FIELD REFERENCES
     //
     // -----------------------------------------------------------------------------------
 
     val fieldsProject =
-        MapBasedProject.empty[java.net.URL] ++
+        IndexBasedProject[java.net.URL](
             ClassFiles(TestSupport.locateTestResources("classfiles/Fields.jar"))
+        )
     import fieldsProject.classFile
 
     val SuperSuperType = ObjectType("fields/SuperSuper")

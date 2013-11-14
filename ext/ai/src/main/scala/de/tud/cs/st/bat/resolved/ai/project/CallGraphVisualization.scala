@@ -62,7 +62,7 @@ object CallGraphVisualization {
             sys.exit(-1)
         }
 
-        Thread.sleep(15000)
+        Thread.sleep(8000)
 
         //
         // PROJECT SETUP
@@ -84,7 +84,7 @@ object CallGraphVisualization {
                 }
             bat.resolved.analyses.IndexBasedProject(classFiles)
         } { t ⇒ println("Setting up the project took: "+nsToSecs(t)) }
-
+        
         val classNameFilter = args(1)
 
         //
@@ -150,10 +150,10 @@ object CallGraphVisualization {
             }
             nodesForMethods.values.toSet[Node] // it is a set already...
         }
-        // The unresolved methods:
-        //        println(unresolvedMethodCalls.mkString("Unresolved calls:\n\t", "\n\t", ""))
+        // The unresolved methods________________________________________________________:
+        //println(unresolvedMethodCalls.mkString("Unresolved calls:\n\t", "\n\t", ""))
 
-        // The graph:
+        // The graph_____________________________________________________________________:
         //        val consoleOutput = callGraph.calls flatMap { caller ⇒
         //            for {
         //                (pc, callees) ← caller._2

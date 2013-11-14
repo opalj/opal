@@ -137,7 +137,7 @@ class ClassHierarchy(
             classFile.thisClass,
             classFile.isInterfaceDeclaration,
             classFile.superClass,
-            HashSet.empty ++ classFile.interfaces)
+            Set.empty ++ classFile.interfaces)
 
     /**
      * Extends the class hierarchy.
@@ -150,6 +150,9 @@ class ClassHierarchy(
         theSuperclassType: Option[ObjectType],
         theSuperinterfaceTypes: Set[ObjectType]): ClassHierarchy = {
 
+        //
+        // Update the class hierarchy from the point of view the newly added type 
+        //
         var newSuperclassType =
             superclassType.updated(objectType, theSuperclassType)
 
@@ -160,8 +163,7 @@ class ClassHierarchy(
                 superinterfaceTypes.updated(objectType, theSuperinterfaceTypes)
 
         //
-        // establish subtype information; i.e, for each super(class|interface)type make 
-        // sure that it is "seen" in "superclassType" 
+        // For each super(class|interface)type make sure that it is in "superclassType" 
         //
         if (theSuperclassType.isDefined &&
             newSuperclassType.get(theSuperclassType.get).isEmpty) {
@@ -174,6 +176,11 @@ class ClassHierarchy(
                 newSuperclassType = newSuperclassType.updated(aSuperinterfaceType, None)
         }
 
+        //
+        // Update the subtype information - i.e., update the class hierarchy 
+        // from the point of view of the new type's super types 
+        //
+        
         if (isInterfaceType) {
             var newSubinterfaceTypes =
                 // an interface always has `java.lang.Object` as its super class
@@ -242,7 +249,7 @@ class ClassHierarchy(
      * is complete.
      */
     def isDirectSupertypeInformationComplete(objectType: ObjectType): Boolean =
-        objectType == ObjectType.Object || {
+        (objectType eq ObjectType.Object) || {
             val superclassType = this.superclassType.get(objectType)
             superclassType.isDefined /* <=> the type is known */ &&
                 superclassType.get.isDefined /* <=> the direct supertypes are all known */
@@ -760,8 +767,8 @@ class ClassHierarchy(
         methodDescriptor: MethodDescriptor,
         project: SomeProject): Option[Method] = {
 
-        classFile.methods.collectFirst {
-            case method @ Method(_, `methodName`, `methodDescriptor`) ⇒ method
+        classFile.methods find { method ⇒
+            method.name == methodName && method.descriptor == methodDescriptor
         } orElse {
             lookupMethodInSuperinterfaces(classFile, methodName, methodDescriptor, project)
         }
@@ -822,13 +829,12 @@ class ClassHierarchy(
 
         def lookupMethodDefinition(receiverType: ObjectType): Option[Method] = {
             project(receiverType) flatMap { classFile ⇒
-                classFile.methods.collectFirst {
-                    case method @ Method(_, `methodName`, `methodDescriptor`) ⇒
-                        method
+                classFile.methods find { method ⇒
+                    method.name == methodName && method.descriptor == methodDescriptor
                 }
             } orElse {
                 superclassType.get(receiverType) flatMap { someSuperclassType ⇒
-                    someSuperclassType.flatMap { superclassType ⇒
+                    someSuperclassType flatMap { superclassType ⇒
                         lookupMethodDefinition(superclassType)
                     }
                 }
@@ -889,30 +895,21 @@ class ClassHierarchy(
             }
 
         // Search all subclasses
-        var seenSubtypes = Set.empty[ObjectType]
+        var seenSubtypes = HashSet.empty[ObjectType]
         foreachSubtype(receiverType) { (subtype: ObjectType) ⇒
-            if (!isInterface(receiverType) &&
+            if (!isInterface(subtype) &&
                 !seenSubtypes.contains(subtype)) {
                 seenSubtypes += subtype
                 if (classesFilter(subtype)) {
                     project(subtype) foreach { classFile ⇒
-                        val result = classFile.methods.find { method ⇒
-                            !method.isAbstract &&
-                                method.name == methodName &&
-                                method.descriptor == methodDescriptor
-                        }.map { anImplementation ⇒
-                            implementingMethods = anImplementation :: implementingMethods
-                        }
-
-                        //                        classFile.methods collectFirst {
-                        //                            case method @ Method(_, `methodName`, `methodDescriptor`, _) if !method.isAbstract ⇒
-                        //                                (classFile, method)
-                        //                        } match {
-                        //                            case Some(anImplementation) ⇒
-                        //                                implementingMethods = anImplementation :: implementingMethods
-                        //                            case _ ⇒
-                        //                            /*don't care*/
-                        //                        }
+                        val result =
+                            classFile.methods.find { method ⇒
+                                !method.isAbstract &&
+                                    method.name == methodName &&
+                                    method.descriptor == methodDescriptor
+                            }.map { anImplementation ⇒
+                                implementingMethods = anImplementation :: implementingMethods
+                            }
                     }
                 }
             }

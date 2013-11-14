@@ -46,14 +46,20 @@ import java.net.URL
  * for `ClassFile`s. Additionally, it makes project wide information available such as
  * the class hierarchy.
  *
- * This class relies on the property that `ObjectType`s are associated with consecutive,
- * unique ids larger than 0.
- *
  * ==Initialization==
- * To create a representation of a project use the `++` and `+` method.
+ * To create a representation of a project use the companion object's factory method.
+ * After creating a project, it is not possible to dynamically add any further class
+ * files.
  *
  * ==Thread Safety==
- * This class is immutable.
+ * This class is de-facto immutable.
+ *
+ * ==Implementation Details==
+ * This class relies on the property that `ObjectType`s are associated with consecutive,
+ * unique ids larger than 0 and that a `ClassFile's `hashCode` is equivalent to the
+ * id of the `ObjectType` it defines.
+ *
+ *
  *
  * @tparam S The type of the source of the class file. E.g., a `URL`, a `File` object,
  *    a `String` or a Pair `(JarFile,JarEntry)`. This information is needed for, e.g.,
@@ -70,43 +76,46 @@ import java.net.URL
  * @author Michael Eichberg
  */
 class IndexBasedProject[Source: reflect.ClassTag] private (
+    // The arrays are private to avoid that clients accidentially mutate them! 
     private[this] val classes: Array[ClassFile],
     private[this] val sources: Array[Source],
     val classHierarchy: ClassHierarchy)
         extends ProjectLike[Source] {
 
     def source(objectType: ObjectType): Option[Source] = {
-        if (sources.size <= objectType.id)
-            None
-        else
+        // It may be the case that – after loading all class files – 
+        // additional "ObjectType"s are created by some analysis which
+        // will then have higher ids that are larger than the array's size!
+        if (objectType.id < sources.size)
             Option(sources(objectType.id))
+        else
+            None
     }
 
     def classFile(objectType: ObjectType): Option[ClassFile] = {
-        if (classes.size <= objectType.id)
-            None
-        else
+        // It may be the case that – after loading all class files – 
+        // additional "ObjectType"s are created by some analysis which
+        // will then have ids that are larger than the array's size!
+        if (objectType.id < classes.size)
             Option(classes(objectType.id))
+        else
+            None
     }
 
     private[this] val classFileOfMethod = {
         val lookupTable = new Array[ClassFile](Method.methodsCount)
         foreachClassFile { classFile: ClassFile ⇒
-            classFile.methods.foreach { method ⇒
-                lookupTable(method.id) = classFile
-            }
+            classFile.methods foreach { method ⇒ lookupTable(method.id) = classFile }
         }
         lookupTable
     }
-    
+
     /**
      * Looks up the ClassFile that contains the given method.
-     * 
+     *
      * The complexity of this operation is O(1).
      */
-    override def classFile(method: Method): ClassFile = {
-        classFileOfMethod(method.id)
-    }
+    override def classFile(method: Method): ClassFile = { classFileOfMethod(method.id) }
 
     override def foreachClassFile(f: ClassFile ⇒ _): Unit = {
         var i = classes.length - 1
@@ -146,16 +155,18 @@ object IndexBasedProject {
 
     def apply[Source: reflect.ClassTag](
         classFiles: Iterable[(ClassFile, Source)],
-        classHierarchy: ClassHierarchy = ClassHierarchy.preInitializedClassHierarchy): IndexBasedProject[Source] = {
+        initialClassHierarchy: ClassHierarchy = ClassHierarchy.preInitializedClassHierarchy): IndexBasedProject[Source] = {
 
         val classFilesCount = classFiles.size
         val classes = new Array[ClassFile](ObjectType.objectTypesCount)
         val sources = new Array[Source](ObjectType.objectTypesCount)
 
+        var classHierarchy = initialClassHierarchy
         for ((classFile, source) ← classFiles) {
             val id = classFile.thisClass.id
             classes(id) = classFile
             sources(id) = source
+            classHierarchy += classFile
         }
 
         new IndexBasedProject(classes, sources, classHierarchy)
