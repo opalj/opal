@@ -65,6 +65,10 @@ object ControlAbstractions {
         }
     }
 
+    /**
+      * Macro that iterates over a given array `a` and calls the given function `f` for
+      * each non-null value in the array.
+      */
     def foreachNonNullValueOf[T <: AnyRef](
         a: Array[T])(
             f: T ⇒ Unit): Unit = macro ControlAbstractionsImplementation.foreachNonNullValueOf[T]
