@@ -276,7 +276,7 @@ object MoreCheckers {
         var classesWithPublicFinalizeMethods = time {
             for {
                 classFile ← classFiles
-                if classFile.methods.exists(_ match { case Method(ACC_PUBLIC(), "finalize", NoArgsAndReturnVoid()) ⇒ true; case _ ⇒ false })
+                if classFile.methods.exists(_ match { case Method(ACC_PUBLIC(), "finalize", HasNoArgsAndReturnsVoid()) ⇒ true; case _ ⇒ false })
             } yield classFile
         }(t ⇒ collect("FI_PUBLIC_SHOULD_BE_PROTECTED", t /*nsToSecs(t)*/ ))
         println(", " /*"\tViolations: "*/ +classesWithPublicFinalizeMethods.length)

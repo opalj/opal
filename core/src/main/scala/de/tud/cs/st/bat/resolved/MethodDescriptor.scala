@@ -188,7 +188,7 @@ private final class MultiArgumentsMethodDescriptor(
     }
 }
 
-object NoArgsAndReturnVoid {
+object HasNoArgsAndReturnsVoid {
 
     def unapply(md: MethodDescriptor): Boolean =
         md match {
