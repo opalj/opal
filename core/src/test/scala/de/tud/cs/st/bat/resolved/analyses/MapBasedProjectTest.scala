@@ -59,7 +59,7 @@ class MapBasedProjectTest
     // Setup
     //
     //
-    val resources = TestSupport.locateTestResources("classfiles/methods.jar")
+    val resources = TestSupport.locateTestResources("classfiles/Methods.jar")
     val project = MapBasedProject.empty[java.net.URL] ++ ClassFiles(resources)
 
     val SuperType = ObjectType("methods/a/Super")
