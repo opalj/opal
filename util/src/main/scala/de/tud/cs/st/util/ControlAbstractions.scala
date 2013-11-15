@@ -42,48 +42,53 @@ import reflect.api.Trees
 import java.io.InputStream
 
 /**
- * Defines additional control abstractions.
- *
- * @author Michael Eichberg
- */
+  * Defines additional control abstractions.
+  *
+  * @author Michael Eichberg
+  */
 object ControlAbstractions {
 
     /**
-     * This function takes a function `f` that creates a new `Closeable` resource
-     * (`f` is a named parameter) and a function `r` that processes an input stream.
-     * This function takes care of the correct handling of input streams.
-     * When `r` has finished processing the input stream, the stream is closed.
-     * If `f` returns `null`, `null` is passed to `r`.
-     */
+      * This function takes a function `f` that creates a new `Closeable` resource
+      * (`f` is a named parameter) and a function `r` that processes an input stream.
+      * This function takes care of the correct handling of input streams.
+      * When `r` has finished processing the input stream, the stream is closed.
+      * If `f` returns `null`, `null` is passed to `r`.
+      */
     def process[I <: java.io.Closeable, T](f: ⇒ I)(r: I ⇒ T): T = {
         val in = f
         try {
             r(in)
-        } finally {
+        }
+        finally {
             if (in != null) in.close()
         }
     }
 
+    def foreachNonNullValueOf[T <: AnyRef](
+        a: Array[T])(
+            f: T ⇒ Unit): Unit = macro ControlAbstractionsImplementation.foreachNonNullValueOf[T]
+
     /**
-     * Macro that evaluates the given expression `f` with type `T` the given number of
-     * `times` and stores the result in an `IndexedSeq[T]`.
-     *
-     * ==Example Usage==
-     * {{{
-     * val result = repeat(15) {
-     *      System.in.read()
-     * }
-     * }}}
-     *
-     * @param times The number of times the expression `f` is evaluated. The `times`
-     *      expression is evaluated exactly once.
-     * @param f An expression that is evaluated the given number of times unless an
-     *      exception is thrown. Hence, even though `f` is not a by-name parameter,
-     *      it behaves in the same way.
-     * @return The result of the evaluation of the expression `f` the given number of
-     *      times stored in an `IndexedSeq`. If `times` is zero an empty sequence is
-     *      returned.
-     */
+      * Macro that evaluates the given expression `f` with type `T` the given number of
+      * `times` and stores the result in an `IndexedSeq[T]`.
+      *
+      * ==Example Usage==
+      * {{{
+      * val result = repeat(15) {
+      *      System.in.read()
+      * }
+      * }}}
+      *
+      * @param times The number of times the expression `f` is evaluated. The `times`
+      *      expression is evaluated exactly once.
+      * @param f An expression that is evaluated the given number of times unless an
+      *      exception is thrown. Hence, even though `f` is not a by-name parameter,
+      *      it behaves in the same way.
+      * @return The result of the evaluation of the expression `f` the given number of
+      *      times stored in an `IndexedSeq`. If `times` is zero an empty sequence is
+      *      returned.
+      */
     def repeat[T](times: Int)(f: T): IndexedSeq[T] = macro ControlAbstractionsImplementation.repeat[T]
     // OLD IMPLEMENTATION USING HIGHER-ORDER FUNCTIONS
     // (DO NOT DELETE - TO DOCUMENT THE DESIGN DECISION FOR MACROS)
@@ -103,20 +108,42 @@ object ControlAbstractions {
 }
 
 /**
- * Implementation of the macros.
- *
- * @author Michael Eichberg
- */
+  * Implementation of the macros.
+  *
+  * @author Michael Eichberg
+  */
 private object ControlAbstractionsImplementation {
 
-    def repeat[T: c.WeakTypeTag](c: Context)(times: c.Expr[Int])(f: c.Expr[T]): c.Expr[IndexedSeq[T]] = {
+    def foreachNonNullValueOf[T <: AnyRef: c.WeakTypeTag](
+        c: Context)(
+            a: c.Expr[Array[T]])(
+                f: c.Expr[(T) ⇒ Unit]): c.Expr[Unit] = {
+        import c.universe._
+
+        reify {
+            val array = a.splice // evaluate only once!
+            val arrayLength = array.length
+            var i = 0
+            while (i < arrayLength) {
+                val arrayEntry = array(i)
+                if (arrayEntry ne null) f.splice(arrayEntry)
+                i += 1
+            }
+        }
+    }
+
+    def repeat[T: c.WeakTypeTag](
+        c: Context)(
+            times: c.Expr[Int])(
+                f: c.Expr[T]): c.Expr[IndexedSeq[T]] = {
         import c.universe._
 
         reify {
             val size = times.splice // => times is evaluated only once
             if (size == 0) {
                 IndexedSeq.empty
-            } else {
+            }
+            else {
                 val array = new scala.collection.mutable.ArrayBuffer[T](size)
                 var i = 0
                 while (i < size) {
