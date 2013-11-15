@@ -54,22 +54,22 @@ class AnalysisAggregator[Source, AnalysisResult]
 
     import scala.collection.mutable.Set
 
-    protected[this] val analyses = Set[Analysis[Source, AnalysisResult]]()
+    protected[this] var analyses = List.empty[Analysis[Source, AnalysisResult]]
 
     protected[this] var analyzeInParallel = false
 
     def register(analysis: Analysis[Source, AnalysisResult]) {
-        analyses.synchronized(analyses += analysis)
+        this.synchronized(analyses = analysis :: analyses)
     }
 
     def setAnalyzeInParallel(analyzeInParallel: Boolean) {
-        analyses.synchronized(this.analyzeInParallel = analyzeInParallel)
+        this.synchronized(this.analyzeInParallel = analyzeInParallel)
     }
 
     def analyze(
         project: Project[Source],
         parameters: Seq[String]): Iterable[AnalysisResult] =
-        analyses.synchronized {
+        this.synchronized {
             if (analyzeInParallel) {
                 (
                     for (analysis ← analyses.par) yield {
@@ -84,13 +84,13 @@ class AnalysisAggregator[Source, AnalysisResult]
     override def title: String = "Analysis Collection"
 
     override def copyright: String =
-        analyses.synchronized {
+        this.synchronized {
             "Copyrights of the analyses;\n"+
                 analyses.map("\t"+_.copyright).mkString("\"")
         }
 
     def description: String =
-        analyses.synchronized {
+        this.synchronized {
             "Executes the following analyses:\n"+analyses.map("\t"+_.title).mkString("\n")
         }
 

@@ -44,11 +44,11 @@ import java.net.URL
 /**
  * Primary abstraction of a Java project. This class is basically just a container
  * for `ClassFile`s. Additionally, it makes project wide information available such as
- * the class hierarchy.
+ * the class hierarchy, the list of all methods etc..
  *
  * ==Initialization==
  * To create a representation of a project use the companion object's factory method.
- * After creating a project, it is not possible to dynamically add any further class
+ * After creating a project, it is not possible to dynamically add/remove any class
  * files.
  *
  * ==Thread Safety==
@@ -57,50 +57,31 @@ import java.net.URL
  * ==Implementation Details==
  * This class relies on the property that `ObjectType`s are associated with consecutive,
  * unique ids larger than 0 and that a `ClassFile's `hashCode` is equivalent to the
- * id of the `ObjectType` it defines.
+ * `id`/`hashCode` of the `ObjectType` it defines.
  *
- *
- *
- * @tparam S The type of the source of the class file. E.g., a `URL`, a `File` object,
+ * @tparam Source The type of the source of the class file. E.g., a `URL`, a `File` object,
  *    a `String` or a Pair `(JarFile,JarEntry)`. This information is needed for, e.g.,
  *    presenting users meaningful messages w.r.t. the location of issues.
  *    We abstract over the type of the resource to facilitate the embedding in existing
- *    tools such as IDEs. E.g., in Eclipse "Resources" are used to identify the
+ *    tools such as IDEs. E.g., in Eclipse `IResource`s are used to identify the
  *    location of a resource (e.g., a source or class file.)
- * @param classes A mapping of the id of `ObjectType`s to `ClassFile`s. When the analysis
- *    does not load or keep all classes related to a project, it is possible that no
- *    class file is associated with a specific `ObjectType`.
- * @param sources A mapping of the id of an `ObjectType` to its defining source.
  * @param classHierarchy This project's class hierarchy.
  *
  * @author Michael Eichberg
  */
 class IndexBasedProject[Source: reflect.ClassTag] private (
-    // The arrays are private to avoid that clients accidentially mutate them! 
-    private[this] val classes: Array[ClassFile],
-    private[this] val sources: Array[Source],
+    // The arrays are private to avoid that clients accidentally mutate them! 
+    // I.e., this classe's data structures are indeed mutable, but they are never
+    // mutated by this class and they are not exposed to clients either.
+
+    // Mapping between an ObjectType('s id) and the ClassFile object which defines the type
+    private[this] val classesMap: Array[ClassFile],
+
+    // Mapping between an ObjectType('s id) and its defining source file 
+    private[this] val sourcesMap: Array[Source],
+
     val classHierarchy: ClassHierarchy)
         extends ProjectLike[Source] {
-
-    def source(objectType: ObjectType): Option[Source] = {
-        // It may be the case that – after loading all class files – 
-        // additional "ObjectType"s are created by some analysis which
-        // will then have higher ids that are larger than the array's size!
-        if (objectType.id < sources.size)
-            Option(sources(objectType.id))
-        else
-            None
-    }
-
-    def classFile(objectType: ObjectType): Option[ClassFile] = {
-        // It may be the case that – after loading all class files – 
-        // additional "ObjectType"s are created by some analysis which
-        // will then have ids that are larger than the array's size!
-        if (objectType.id < classes.size)
-            Option(classes(objectType.id))
-        else
-            None
-    }
 
     private[this] val classFileOfMethod = {
         val lookupTable = new Array[ClassFile](Method.methodsCount)
@@ -110,44 +91,64 @@ class IndexBasedProject[Source: reflect.ClassTag] private (
         lookupTable
     }
 
+    import de.tud.cs.st.util.ControlAbstractions.foreachNonNullValueOf
+
+    final def objectTypesCount = ObjectType.objectTypesCount
+
+    final def methodsCount = Method.methodsCount
+
+    final def fieldCount = Field.fieldsCount
+
+    /**
+     * This project's class files.
+     */
+    override def classFiles: Iterable[ClassFile] = classesMap.view.filter(_ ne null)
+
+    override def source(objectType: ObjectType): Option[Source] = {
+        // It may be the case that – after loading all class files – 
+        // additional "ObjectType"s are created by some analysis which
+        // will then have higher ids that are larger than the array's size!
+        val id = objectType.id
+        if (id < sourcesMap.size) Option(sourcesMap(id)) else None
+    }
+
+    override def classFile(objectType: ObjectType): Option[ClassFile] = {
+        // It may be the case that – after loading all class files – 
+        // additional "ObjectType"s are created by some analysis which
+        // will then have ids that are larger than the array's size!
+        val id = objectType.id
+        if (id < classesMap.size) Option(classesMap(id)) else None
+    }
+
     /**
      * Looks up the ClassFile that contains the given method.
      *
      * The complexity of this operation is O(1).
      */
-    override def classFile(method: Method): ClassFile = { classFileOfMethod(method.id) }
+    override def classFile(method: Method): ClassFile = classFileOfMethod(method.id)
 
-    override def foreachClassFile(f: ClassFile ⇒ _): Unit = {
-        var i = classes.length - 1
-        while (i >= 0) {
-            val classFile = classes(i)
-            if (classFile ne null) f(classFile)
-            i -= 1
+    override def foreachClassFile(f: ClassFile ⇒ _): Unit =
+        foreachNonNullValueOf(classesMap) { classFile ⇒
+            f(classFile)
         }
-    }
 
-    override def foreachMethod(f: Method ⇒ _): Unit = {
-        var i = classes.length - 1
-        while (i >= 0) {
-            val classFile = classes(i)
-            if (classFile ne null) classFile.methods.foreach(f)
-            i -= 1
+    override def foreachMethod(f: Method ⇒ _): Unit =
+        foreachNonNullValueOf(classesMap) { classFile ⇒
+            classFile.methods.foreach(f)
         }
-    }
-
-    /**
-     * This project's class files.
-     */
-    override def classFiles: Iterable[ClassFile] = classes.view.filter(_ ne null)
 
     override def toString: String = {
-        "Classes:\n\t"+classes.view.filter(_ ne null).map(_.thisClass.toJava).mkString("(", ",", ")")+"\n"
-        "ClassFileOfMethod:\n\t"+classFileOfMethod.mkString("(", ",", ")")
+        val classesAndSources =
+            (classesMap.view zip sourcesMap.view).view.filter(_._1 ne null)
+        val classDescriptions =
+            classesAndSources.map(cs ⇒ cs._1.thisClass.toJava+" « "+cs._2.toString+" »")
+
+        "IndexBasedProject( "+classDescriptions.mkString("\n\t", "\n\t", "\n")+")"
     }
 }
 
 /**
- * Factory for [[de.tud.cs.st.bat.resolved.analyses.Project]] objects.
+ * Factory object to create [[de.tud.cs.st.bat.resolved.analyses.IndexBasedProject]]s.
  *
  * @author Michael Eichberg
  */
@@ -157,7 +158,6 @@ object IndexBasedProject {
         classFiles: Iterable[(ClassFile, Source)],
         initialClassHierarchy: ClassHierarchy = ClassHierarchy.preInitializedClassHierarchy): IndexBasedProject[Source] = {
 
-        val classFilesCount = classFiles.size
         val classes = new Array[ClassFile](ObjectType.objectTypesCount)
         val sources = new Array[Source](ObjectType.objectTypesCount)
 

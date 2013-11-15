@@ -88,6 +88,8 @@ final case class ClassFile(
 
     override def asClassFile = this
 
+    def className: String = thisClass.className
+
     def isAbstract: Boolean = ACC_ABSTRACT isElementOf accessFlags
 
     def isFinal: Boolean = ACC_FINAL isElementOf accessFlags
@@ -159,14 +161,13 @@ final case class ClassFile(
      *       method must have its ACC_STATIC flag set. Other methods named &lt;clinit&gt;
      *       in a class file are of no consequence.
      */
-    // TODO [ClassFile][Test] We need a test to check that the correct method is returned.
     def staticInitializer: Option[Method] =
-        methods collectFirst {
-            case method @ Method(
-                _, "<clinit>", NoArgsAndReturnVoid()
-                ) if majorVersion < 51 || method.isStatic ⇒ method
+        methods find { method ⇒
+            method.descriptor == MethodDescriptor.NoArgsAndReturnVoid &&
+                method.name == "<clinit>" &&
+                (majorVersion < 51 || method.isStatic)
         }
-    
+
     override def hashCode: Int = thisClass.id
 
     override def equals(other: Any): Boolean =

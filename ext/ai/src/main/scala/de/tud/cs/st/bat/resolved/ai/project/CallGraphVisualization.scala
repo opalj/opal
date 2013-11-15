@@ -62,6 +62,7 @@ object CallGraphVisualization {
             sys.exit(-1)
         }
 
+        // To make it possible to attach a profiler: 
         Thread.sleep(8000)
 
         //
@@ -72,7 +73,7 @@ object CallGraphVisualization {
             val file = new java.io.File(fileName)
             if (!file.exists()) {
                 println(Console.RED+"file does not exist: "+fileName + Console.RESET)
-                return ;
+                sys.exit(-2)
             }
             val classFiles =
                 try {
@@ -80,11 +81,10 @@ object CallGraphVisualization {
                 } catch {
                     case e: Exception ⇒
                         println(Console.RED+"cannot read file: "+e.getMessage() + Console.RESET)
-                        return ;
+                        sys.exit(-3)
                 }
             bat.resolved.analyses.IndexBasedProject(classFiles)
         } { t ⇒ println("Setting up the project took: "+nsToSecs(t)) }
-        
         val classNameFilter = args(1)
 
         //
@@ -96,18 +96,19 @@ object CallGraphVisualization {
                 project,
                 callGraphFactory.defaultEntryPointsForCHA(project))
         } { t ⇒ println("Creating the call graph took: "+nsToSecs(t)) }
+
+        // Some statistics
         import callGraph.calls
         println("Classes: "+project.classFiles.size)
         println("Methods: "+Method.methodsCount)
         println("Methods with more than one resolved call: "+calls.size)
         println("Methods which are called by at least one method: "+callGraph.calledBy.size)
         println("Unresolved method calls: "+unresolvedMethodCalls.size)
-        //        println("Method with the most targets: "+{
-        //            calls.view.map(_ map ())
-        //        })
-        // CallGraph( val calls: Map[Method, Map[PC, Set[Method]]]) )
-        import de.tud.cs.st.util.graphs.{ toDot, SimpleNode, Node }
 
+        //
+        // Let's create the graph
+        //
+        import de.tud.cs.st.util.graphs.{ toDot, SimpleNode, Node }
         val nodes: Set[Node] = {
 
             var nodesForMethods = Map.empty[Method, Node]
@@ -136,7 +137,7 @@ object CallGraphVisualization {
                     callees ← calls.get(caller)
                     perCallsiteCallees ← callees.values
                     callee ← perCallsiteCallees
-                    if project.classFile(callee).thisClass.className.startsWith(classNameFilter)
+                    if project.classFile(callee).className.startsWith(classNameFilter)
                 } {
                     node.addChild(createNode(callee))
                 }

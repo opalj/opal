@@ -46,11 +46,8 @@ import java.net.URL
  * for `ClassFile`s. Additionally, it makes project wide information available such as
  * the class hierarchy.
  *
- * ==Initialization==
- * To create a representation of a project use the `++` and `+` method.
- *
  * ==Thread Safety==
- * This class is immutable.
+ * Instances of this trait are expected to be immutable.
  *
  * @tparam Source The type of the source of the class file. E.g., a `URL`, a `File` object,
  *    a `String` or a Pair `(JarFile,JarEntry)`. This information is needed for, e.g.,

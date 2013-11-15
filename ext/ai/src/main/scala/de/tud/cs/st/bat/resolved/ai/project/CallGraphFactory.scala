@@ -69,46 +69,33 @@ class CallGraphFactory {
      * - every non-private constructor,
      * - every non-private method.
      */
-    def defaultEntryPointsForCHA(project: Project[_]): Set[Method] = {
-        val entryPoints =
-            // specifying the initial size in this way speeds up this method
-            // by a factor of at least "2" ... the fact that we probably 
-            // allocate too much memory can be ignored as this set is short-living
-            new HashSet[Method] { override def initialSize = Method.methodsCount * 3 / 4 }
+    def defaultEntryPointsForCHA(project: Project[_]): List[Method] = {
+        var entryPoints = List.empty[Method]
         project.foreachMethod { method: Method ⇒
-            if (!method.isPrivate && method.body.isDefined) entryPoints add method
+            if (!method.isPrivate && method.body.isDefined)
+                entryPoints = method :: entryPoints
         }
         entryPoints
     }
 
     def performCHA[Source](
         theProject: Project[Source],
-        entryPoints: Set[Method]): (CHACallGraph, Seq[UnresolvedMethodCall]) = {
+        entryPoints: List[Method]): (CHACallGraph, Seq[UnresolvedMethodCall]) = {
 
         type DomainContext = Int
 
-        //        val fieldTypes: Map[Field, UpperBound] =
-        //            Map.empty
-        //        var writtenBy: Map[Field, Set[Method]] =
-        //            Map.empty.withDefaultValue(Set.empty)
-        //        var readBy: Map[Field, Set[Method]] =
-        //            Map.empty.withDefaultValue(Set.empty)
         val calledBy =
-            HashMap.empty[Method, HashMap[Method, collection.mutable.Set[PC]]]
-        //            new HashMap[Method, HashMap[Method, collection.mutable.Set[PC]]] {
-        //                override def initialSize = Method.methodsCount
-        //            }
-        val calls =
-            HashMap.empty[Method, HashMap[PC, collection.mutable.Set[Method]]]
-        //            new HashMap[Method, HashMap[PC, collection.mutable.Set[Method]]] {
-        //                override def initialSize = Method.methodsCount
-        //            }
-        val analyzedMethods = new Array[Boolean](Method.methodsCount)
-        val methodsToAnalyze =
-            entryPoints match {
-                case hashSet: HashSet[Method] ⇒ hashSet
-                case _                        ⇒ HashSet.empty ++ entryPoints
+            //            HashMap.empty[Method, HashMap[Method, collection.mutable.Set[PC]]]
+            new HashMap[Method, HashMap[Method, collection.mutable.Set[PC]]] {
+                override def initialSize = Method.methodsCount
             }
+        val calls =
+            //            HashMap.empty[Method, HashMap[PC, collection.mutable.Set[Method]]]
+            new HashMap[Method, HashMap[PC, collection.mutable.Set[Method]]] {
+                override def initialSize = Method.methodsCount
+            }
+        val analyzedMethods = new Array[Boolean](Method.methodsCount)
+        var methodsToAnalyze = entryPoints
 
         var unresolvedMethodCalls = List.empty[UnresolvedMethodCall]
         def unresolvedMethodCall(
@@ -147,7 +134,7 @@ class CallGraphFactory {
 
             def project: Project[Source] = theProject
 
-            private def addCallEdge(
+            @inline private[this] def addCallEdge(
                 caller: Method,
                 pc: PC,
                 callee: Method): Unit = {
@@ -165,17 +152,15 @@ class CallGraphFactory {
                     callees add callee
                 }
 
-                if (!analyzedMethods(callee.id)) {
-                    if (!callee.isNative) {
-                        assume(
-                            callee.body.isDefined,
-                            "call edge to an abstract method"+caller.toJava+"=>"+callee.toJava)
-                        methodsToAnalyze add callee
-                    }
+                if (!callee.isNative) {
+                    assume(
+                        callee.body.isDefined,
+                        "call edge to an abstract method"+caller.toJava+"=>"+callee.toJava)
+                    methodsToAnalyze = callee :: methodsToAnalyze
                 }
             }
 
-            private def dynamicallyBoundInvocation(
+            @inline private[this] def dynamicallyBoundInvocation(
                 pc: PC,
                 declaringClass: ObjectType,
                 name: String,
@@ -216,16 +201,11 @@ class CallGraphFactory {
                 name: String,
                 descriptor: MethodDescriptor,
                 operands: List[DomainValue]): OptionalReturnValueOrExceptions = {
-                //                val parameters = operands.reverse
-                //                val baseType = typeOfValue(parameters.head) match {
-                //                    case IsReferenceValue(upperBound) ⇒ upperBound
-                //                    case _                            ⇒ declaringClass
-                //                }
                 dynamicallyBoundInvocation(pc, declaringClass.asObjectType, name, descriptor)
                 super.invokeinterface(pc, declaringClass, name, descriptor, operands)
             }
 
-            private def staticallyBoundInvocation(
+            @inline private[this] def staticallyBoundInvocation(
                 pc: PC,
                 declaringClass: ObjectType,
                 name: String,
@@ -276,20 +256,23 @@ class CallGraphFactory {
 
         while (methodsToAnalyze.nonEmpty) {
             val method = methodsToAnalyze.head
-            methodsToAnalyze remove (method)
-            val classFile = theProject.classFile(method)
-            analyzedMethods(method.id) = true
-
-            BaseAI(classFile, method, new MethodDomain(classFile, method))
+            methodsToAnalyze = methodsToAnalyze.tail
+            if (!analyzedMethods(method.id)) {
+                analyzedMethods(method.id) = true
+                val classFile = theProject.classFile(method)
+                BaseAI(classFile, method, new MethodDomain(classFile, method))
+            }
         }
 
         (CHACallGraph(calledBy, calls), unresolvedMethodCalls)
     }
-
 }
+
 class CHACallGraph(
+
         val calledBy: Map[Method, Map[Method, Set[PC]]],
         val calls: Map[Method, Map[PC, Set[Method]]]) {
+
 }
 object CHACallGraph {
 
@@ -299,6 +282,12 @@ object CHACallGraph {
         new CHACallGraph(calledBy, calls)
 }
 
+/**
+ * Represents a method call that could not be resolved. This information is primarily
+ * interesting during the development of static analyses.
+ *
+ * @author Michael Eichberg
+ */
 case class UnresolvedMethodCall(
         callerClass: ReferenceType,
         caller: Method,
@@ -327,54 +316,15 @@ case class UnresolvedMethodCall(
         ((((callerClass.hashCode ^ caller.id) * pc) << 16) ^ calleeName.hashCode)
 
     override def toString: String = {
-        callerClass.toJava+"{ "+Console.BOLD + caller.toJava + Console.RESET+" } => "+
+        callerClass.toJava+"{ "+Console.BOLD + caller.toJava + Console.RESET+":"+pc+" } => "+
             calleeClass.toJava+"{ "+Console.BOLD + calleeDescriptor.toJava(calleeName) + Console.RESET+" }"
     }
 
 }
 
-//case class MethodContext(
-//    classFile: ClassFile,
-//    method: Method)
-
-    /*
-/**
- * @param pc the program counter of the instruction that is responsible for the call
- * 	of a method. In general, the "pc" refers to an invoke instruction. However,
- *   	a static initializer may also be called due the access of static field of a
- *    	class that was not previously loaded.
- */
-class CallSite(
-        val method: Method,
-        val pc: PC) {
-
-    override def equals(other: Any): Boolean =
-        other match {
-            case that: CallSite ⇒ this.pc == that.pc && this.method == that.method
-            case _              ⇒ false
-        }
-
-    override def hashCode: Int = pc << 17 | method.id // collisions will happen, but are unlikely
-}
-
-object CallSite {
-    def apply(method: Method, pc: PC): CallSite = {
-        new CallSite(method, pc)
-    }
-}
-
-case class CallGraph(
-        val fieldTypes: Map[Field, UpperBound],
-        val written: Map[Field, Set[Method]],
-        val read: Map[Field, Set[Method]],
-        val calledBy: Map[Method, Set[CallSite]],
-        val calls: Map[Method, Map[PC, Set[Method]]]) {
-}
-*/
-
 
 /*
-Things that complicate matters:
+Things that complicate matters for more complex call graph analyses:
 class A {
 
     private A a = this;
@@ -402,8 +352,6 @@ class B extends A {
     }
 }
 */ 
-
-// For each entry point we start calculating the Call Graph. 
 
  
 
