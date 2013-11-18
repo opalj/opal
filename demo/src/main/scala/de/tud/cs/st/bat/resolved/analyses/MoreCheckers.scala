@@ -127,20 +127,19 @@ object MoreCheckers {
     // it is not meant to demonstrate how to write such analyses in an efficient
     // manner. (However, the performance is still acceptable.)
     def analyze(jarFiles: Array[String]) {
-        var classHierarchy = new ClassHierarchy
-
-        var classFilesCount = 0
+         var classFilesCount = 0
         val classFiles = MemoryUsage {
             val cf = for (
                 zipFile ← jarFiles; // if { println("Reading: "+zipFile); true };
                 (classFile, _) ← ClassFiles(zipFile)
             ) yield {
                 classFilesCount += 1
-                classHierarchy = classHierarchy + classFile
                 classFile
             }
             cf
         }(mu ⇒ println("Memory required for the bytecode representation ("+classFilesCount+"): "+(mu / 1024.0 / 1024.0)+" MByte"))
+        val classHierarchy = ClassHierarchy(classFiles)
+        
         val getClassFile: Map[ObjectType, ClassFile] = classFiles.map(cf ⇒ (cf.thisClass, cf)).toMap // SAME AS IN PROJECT
         println("Press return to continue."); System.in.read()
 

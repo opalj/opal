@@ -53,8 +53,7 @@ trait DefaultPreciseReferenceValuesWithClosedHierarchy[+I]
         if (!isPrecise && upperBound.size == 1) {
             upperBound.head match {
                 case ot: ObjectType ⇒
-                    val isPrecise = classHierarchy.subclassTypes.get(ot).isEmpty &&
-                        classHierarchy.subinterfaceTypes.get(ot).isEmpty
+                    val isPrecise = classHierarchy.hasSubtypes(ot).no
                     AReferenceValue(-1, upperBound, isNull, isPrecise)
                 case _ ⇒ super.AReferenceValue(pc, upperBound, isNull, isPrecise)
             }

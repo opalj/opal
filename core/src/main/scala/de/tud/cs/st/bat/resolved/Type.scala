@@ -38,7 +38,7 @@ package resolved
  * The computational type category of a value on the operand stack.
  *
  * (cf. JVM Spec. 2.11.1 Types and the Java Virtual Machine).
- * 
+ *
  * @author Michael Eichberg
  */
 sealed abstract class ComputationalTypeCategory(
@@ -95,10 +95,10 @@ case object ComputationalTypeDouble
 
 /**
  * Represents a JVM type.
- *  
+ *
  * ==General Information==
  * '''From the JVM specification'''
- * 
+ *
  * There are three kinds of reference types: class types, array types, and interface
  * types. Their values are references to dynamically created class instances, arrays,
  * or class instances or arrays that implement interfaces, respectively.
@@ -121,7 +121,7 @@ case object ComputationalTypeDouble
  * is usually done over and over again, great care was taken to enable an efficient
  * comparison of types. It is - '''without exception''' - always possbible to compare
  * types using reference equality (i.e., the `eq`/`ne` operators). For each type there
- * will always be exactly one object that represents that type.  
+ * will always be exactly one object that represents that type.
  *
  * @author Michael Eichberg
  */
@@ -396,18 +396,42 @@ final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
 
 }
 /**
- * Defines factory and extractor methods for `ObjectType`'s
+ * Defines factory and extractor methods for `ObjectType`s.
  *
  * @author Michael Eichberg
  */
-object ObjectType {
+final object ObjectType {
 
+    import java.util.concurrent.atomic.AtomicInteger
+    import java.util.concurrent.locks.ReentrantReadWriteLock
     import java.util.WeakHashMap
     import java.lang.ref.WeakReference
-
-    private val nextId = new java.util.concurrent.atomic.AtomicInteger(0)
-
+    
+    private[this] val nextId = new AtomicInteger(0)
+    private[this] val cacheRWLock = new ReentrantReadWriteLock();
     private[this] val cache = new WeakHashMap[String, WeakReference[ObjectType]]()
+
+    @volatile private[this] var objectTypeCreationListener: ObjectType ⇒ Unit = null
+
+    /**
+     * Sets the listener and immediately calls it (multiple times) to inform the listener
+     * about all known object types. It is guaranteed that the listener will not miss any
+     * object type creation. However, invocation may occur concurrently.
+     */
+    @throws[IllegalStateException]("if a corresponding listener is already registered")
+    def setObjectTypeCreationListener(f: ObjectType ⇒ Unit): Unit = {
+        objectTypeCreationListener = f
+        try {
+            cacheRWLock.readLock().lock()
+            val objectTypesIterator = cache.values().iterator()
+            while (objectTypesIterator.hasNext) {
+                val objectType = objectTypesIterator.next.get()
+                if (objectType ne null) f(objectType)
+            }
+        } finally {
+            cacheRWLock.readLock().unlock()
+        }
+    }
 
     /**
      * The number of different `ObjectType`s in the analyzed class files.
@@ -417,24 +441,37 @@ object ObjectType {
     /**
      * Factory method to create `ObjectType`s.
      *
-     * ==Note==
-     * `ObjectType` objects are cached internally to reduce the overall memory
-     * requirements and to ensure that only one instance of an `ObjectType` exists
-     * per class name.
+     * @note `ObjectType` objects are cached internally to reduce the overall memory
+     *      requirements and to ensure that only one instance of an `ObjectType` exists
+     *      per class name. Hence, comparing `ObjectTypes` using reference comparison
+     *      is fully supported.
      */
-    def apply(className: String): ObjectType =
-        cache.synchronized {
+    def apply(className: String): ObjectType = {
+        try {
+            cacheRWLock.readLock().lock()
             val wrOT = cache.get(className)
             if (wrOT != null) {
                 val OT = wrOT.get()
                 if (OT != null)
                     return OT;
             }
+        } finally {
+            cacheRWLock.readLock().unlock()
+        }
+        val newOT = try {
+            cacheRWLock.writeLock().lock()
             val newOT = new ObjectType(nextId.getAndIncrement(), className)
             val wrNewOT = new WeakReference(newOT)
             cache.put(className, wrNewOT)
             newOT
+        } finally {
+            cacheRWLock.writeLock().unlock()
         }
+        val currentObjectTypeCreationListener = objectTypeCreationListener
+        if (currentObjectTypeCreationListener ne null)
+            currentObjectTypeCreationListener(newOT)
+        newOT
+    }
 
     def unapply(ot: ObjectType): Option[String] = Some(ot.className)
 
@@ -513,7 +550,9 @@ final object ArrayType {
      * Factory method to create objects of type `ArrayType`.
      *
      * ==Note==
-     * `ArrayType` objects are cached internally to reduce the overall memory requirements.
+     * `ArrayType` objects are cached internally to reduce the overall memory requirements
+     * and to facilitate reference based comparisons. I.e., to `ArrayType`s are equal
+     * iff it is the same object.
      */
     def apply(componentType: FieldType): ArrayType = cache.synchronized {
         val wrAT = cache.get(componentType)
@@ -528,8 +567,7 @@ final object ArrayType {
         newAT
     }
 
-    def apply(dimension: Int, componentType: FieldType): ArrayType = {
-        @annotation.tailrec
+    @annotation.tailrec def apply(dimension: Int, componentType: FieldType): ArrayType = {
         val at = apply(componentType)
         if (dimension > 1)
             apply(dimension - 1, at)
@@ -549,7 +587,7 @@ object ArrayElementType {
  */
 object NotJavaLangObject {
 
-    def unapply(objectType: ObjectType): Boolean = objectType != ObjectType.Object
+    def unapply(objectType: ObjectType): Boolean = objectType ne ObjectType.Object
 }
 
 object NotVoid {

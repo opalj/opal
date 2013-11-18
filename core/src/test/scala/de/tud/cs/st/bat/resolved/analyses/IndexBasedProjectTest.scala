@@ -139,7 +139,7 @@ class IndexBasedProjectTest
         // let's make sure the class is a super class
         project.classHierarchy.isSubtypeOf(DirectSub, SuperType) should be(de.tud.cs.st.util.Yes)
 
-        // let's test the solving 
+        // let's test the resolving 
         resolveMethodReference(
             DirectSub,
             "staticDefaultVisibilityMethod",

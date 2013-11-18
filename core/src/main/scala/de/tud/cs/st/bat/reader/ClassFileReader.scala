@@ -372,8 +372,10 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      */
     def ClassFiles(file: File): Seq[(ClassFile, URL)] = {
         if (file.isFile()) {
-            if (file.getName.endsWith(".jar"))
+            if (file.getName.endsWith(".jar")) {
+                println("Processing: "+file.toString)
                 return ClassFiles(file.getAbsoluteFile.getPath)
+            }
 
             if (file.getName.endsWith(".class"))
                 return List(

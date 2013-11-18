@@ -67,9 +67,9 @@ class ClassHierarchyTest
     val preInitCH =
         ClassHierarchy.preInitializedClassHierarchy
     val javaLangCH =
-        ClassHierarchy.processPredefinedClassHierarchy(
-            getClass.getResourceAsStream("JavaLangClassHierarchy.ths"),
-            ClassHierarchy.empty
+        ClassHierarchy(
+            Traversable.empty,
+            List(() ⇒ getClass.getResourceAsStream("JavaLangClassHierarchy.ths"))
         )
 
     val Object = ObjectType("java/lang/Object")
@@ -235,7 +235,7 @@ class ClassHierarchyTest
 
         // check if the SimpleWindow is in the Set of all subtypes of Window
         var subtypes = Set.empty[ObjectType]
-        classHierarchy.foreachSubtype(window)(subtypes += _)
+        classHierarchy.foreachSubtype(window) { subtypes += _ }
         subtypes.contains(simpleWindow) should be(true)
 
         clusteringProject(simpleWindow).get.methods.find(method ⇒
@@ -339,8 +339,9 @@ class ClassHierarchyTest
     // -----------------------------------------------------------------------------------
 
     val methodsProject =
-        MapBasedProject.empty[java.net.URL] ++
+        IndexBasedProject(
             ClassFiles(TestSupport.locateTestResources("classfiles/Methods.jar"))
+        )
 
     val superI = ObjectType("methods/b/SuperI")
     val directSub = ObjectType("methods/b/DirectSub")

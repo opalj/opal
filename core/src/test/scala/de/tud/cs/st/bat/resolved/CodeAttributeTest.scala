@@ -34,7 +34,7 @@ package de.tud.cs.st.bat
 package resolved
 
 import reader.Java7Framework.ClassFiles
-import analyses.MapBasedProject
+import analyses.IndexBasedProject
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
@@ -61,8 +61,9 @@ class CodeAttributeTest
     //
 
     val project =
-        MapBasedProject.empty[java.net.URL] ++
+        IndexBasedProject(
             ClassFiles(TestSupport.locateTestResources("classfiles/Code.jar"))
+        )
 
     val boundedBufferClass = ObjectType("code/BoundedBuffer")
     val immutbleListClass = ObjectType("code/ImmutableList")
@@ -74,9 +75,11 @@ class CodeAttributeTest
     //
     //
 
-    val codeOfConstructor = project.classes(boundedBufferClass).methods.find(_.name == "<init>").get.body.get
+    val codeOfConstructor = 
+        project.classFile(boundedBufferClass).get.methods.find(_.name == "<init>").get.body.get
 
-    val codeOfPut = project.classes(boundedBufferClass).methods.find(_.name == "put").get.body.get
+    val codeOfPut = 
+        project.classFile(boundedBufferClass).get.methods.find(_.name == "put").get.body.get
     // The code of the "put" method is excepted to have the following bytecode:
     // Method descriptor #13 (I)V
     // Stack: 3, Locals: 2
@@ -127,7 +130,7 @@ class CodeAttributeTest
     //        [pc: 15, same]
     //}
 
-    val codeOfGet = project.classes(immutbleListClass).methods.find(_.name == "get").get.body.get
+    val codeOfGet = project.classFile(immutbleListClass).get.methods.find(_.name == "get").get.body.get
     // The code of get is as follows:
     // Method descriptor #30 ()Ljava/lang/Object;
     // Signature: ()TT;

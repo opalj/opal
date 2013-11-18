@@ -35,7 +35,7 @@ package bat
 package resolved
 
 import reader.Java7Framework.ClassFiles
-import analyses.MapBasedProject
+import analyses.IndexBasedProject
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
@@ -62,8 +62,9 @@ class InnerClassesTest
     //
 
     val project =
-        MapBasedProject.empty[java.net.URL] ++
+        IndexBasedProject(
             ClassFiles(TestSupport.locateTestResources("classfiles/Innerclasses.jar"))
+            )
 
     val myRootClass$Formatter = ObjectType("innerclasses/MyRootClass$Formatter")
     val myRootClass = ObjectType("innerclasses/MyRootClass")
@@ -79,27 +80,27 @@ class InnerClassesTest
     behavior of "a named inner class"
 
     it should "should return true if isInnerClass is called" in {
-        project.classes(myRootClass$Formatter).isInnerClass should be(true)
+        project.classFile(myRootClass$Formatter).get.isInnerClass should be(true)
     }
 
     it should "correctly identify its outer class" in {
-        project.classes(myRootClass$Formatter).outerType.get._1 should be(myRootClass)
+        project.classFile(myRootClass$Formatter).get.outerType.get._1 should be(myRootClass)
     }
 
     behavior of "an anonymous inner class"
 
     it should "should return true when isInnerClass is called" in {
-        project.classes(myRootClass$1).isInnerClass should be(true)
+        project.classFile(myRootClass$1).get.isInnerClass should be(true)
     }
 
     it should "should return true when isInnerClass is called even if it is an inner class of another anonymous inner class" in {
-        project.classes(myRootClass$Formatter).isInnerClass should be(true)
+        project.classFile(myRootClass$Formatter).get.isInnerClass should be(true)
     }
 
     behavior of "an outer class that is not an inner class"
 
     it should "return false if isInnerClass is called" in {
-        project.classes(myRootClass).isInnerClass should be(false)
+        project.classFile(myRootClass).get.isInnerClass should be(false)
     }
 
     //    it should "find a method declared by an indirectly implemented interface" in {
