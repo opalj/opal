@@ -36,6 +36,8 @@ package resolved
 
 import de.tud.cs.st.util.Answer
 
+import collection.Set
+
 /**
  * This package defines classes and traits used by BAT's abstract interpretation
  * framework – called BATAI in the following. Please note, that BATAI just refers
@@ -111,8 +113,8 @@ package object ai {
      * a type bound could be: `java.lang.Object`, `java.io.Serializable` and
      * `java.lang.Cloneable` for an array.
      *
-     * In general, an upper bound identifies a single class type and a set of independent 
-     * interface types which are known to be implemented by the current object. Even if the type 
+     * In general, an upper bound identifies a single class type and a set of independent
+     * interface types which are known to be implemented by the current object. Even if the type
      * contains a class type it may just be a super class of the concrete type and, hence,
      * just represent an abstraction.
      *
