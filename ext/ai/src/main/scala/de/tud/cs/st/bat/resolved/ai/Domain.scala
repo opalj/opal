@@ -72,6 +72,9 @@ import reflect.ClassTag
  * associated with a project as a whole, it is then the responsibility of the domain to
  * make sure that coordination with the world is thread safe.
  *
+ * ==Extending Domain==
+ * This trait does not have any state that is associated with the analysis of a method.
+ *
  * @note BATAI assumes that conceptually every method/code block is associated
  *      with its own instance of a domain object.
  * @tparam I The type which is used to identify this domain's context. E.g., if a new
@@ -104,8 +107,8 @@ trait Domain[+I] {
      * variables.
      *
      * ==Use Of Value/Dependencies On Value==
-     * In general, subclasses and users of a `Domain` should not have/declare
-     * a direct dependency on `Value`. Instead they should use `DomainValue` as otherwise
+     * '''In general, subclasses and users of a `Domain` should not have/declare
+     * a direct dependency on `Value`'''. Instead they should use `DomainValue` as otherwise
      * extensibility of a `Domain` may be hampered or even be impossible. The only
      * exception are, of course, classes that directly inherit from this class.
      *
@@ -123,7 +126,7 @@ trait Domain[+I] {
      * w.r.t. some special type of value.
      *
      * @note BATAI does not rely on any special equality semantics w.r.t. values and
-     * 		never calls a `Value`'s `equals` method neither direct nor indirect!
+     * 		never directly or indirectly calls a `Value`'s `equals` method.
      */
     trait Value { this: DomainValue ⇒
 
@@ -144,7 +147,7 @@ trait Domain[+I] {
             BATException("this value cannot be converted to a return address")
 
         /**
-         * Join of this value and the given value.
+         * Joins this value and the given value.
          *
          * This basically implements the join operator of complete lattices.
          *
@@ -161,7 +164,7 @@ trait Domain[+I] {
          * ==Contract==
          * '''`this` value''' is always the value that was previously used by BATAI to
          * perform subsequent computations/analyses. Hence, if `this` value subsumes
-         * the given value the result has to be either `NoUpdate` or a `MetaInformationUpdate`.
+         * the given value, the result has to be either `NoUpdate` or a `MetaInformationUpdate`.
          * In case that the given value subsumes `this` value, the result has to be
          * a `StructuralUpdate`. Hence, '''this join operation is not commutative'''.
          * If the result is a `StructuralUpdate` BATAI will continue with the
@@ -169,9 +172,9 @@ trait Domain[+I] {
          *
          * The termination of the abstract interpretation directly depends on the fact
          * that at some point all values are fixed and don't change anymore. Hence,
-         * it is important that the type of the update is only a
+         * it is important that '''the type of the update is only a
          * [[de.tud.cs.st.bat.resolved.ai.StructuralUpdate]] if the value has changed in
-         * a way relevant for future computations/analyses performed with this value.
+         * a way relevant for future computations/analyses''' performed with this value.
          * In other words, when two values are joined it has to be ensured that no
          * fall back to a previous value occurs. E.g., if you join the existing integer
          * value 0 and the given value 1 and the result would be 1, then it must be
@@ -195,12 +198,12 @@ trait Domain[+I] {
          * @param value The "new" domain value with which this domain value should be
          * 		joined.
          */
-        def join(pc: PC, value: DomainValue): Update[DomainValue] = {
-            if ((value eq TheIllegalValue) ||
-                (this.computationalType ne value.computationalType))
+        def join(pc: PC, other: DomainValue): Update[DomainValue] = {
+            if ((other eq TheIllegalValue) ||
+                (this.computationalType ne other.computationalType))
                 MetaInformationUpdateIllegalValue
             else
-                doJoin(pc, value)
+                doJoin(pc, other)
         }
 
         //
@@ -214,10 +217,10 @@ trait Domain[+I] {
          *
          * In general, creating a summary of a value may be useful/required
          * for values that are potentially returned by a called method and which
-         * will be used by the caller method to continue the interpretation. For example,
+         * will be used by the calling method to continue the interpretation. For example,
          * it may be useful to precisely track the flow of values within a method to
          * be able to distinguish between all sources of a value (E.g., to be able to
-         * distinguish between a `NullPointerException` created by instruction A and
+         * distinguish between a `NullPointerException` created by instruction A and another
          * one created by instruction B (`A != B`).) However, from the caller perspective
          * it may be absolutely irrelevant where/how the value was created in the called
          * method and, hence, keeping all information would just waste memory.
@@ -233,9 +236,9 @@ trait Domain[+I] {
          * Creates a summary value of this value and the given value.
          *
          * @note __The precise semantics and usage of `summarize(...)` can be determined
-         * 		by the domain as BATAI does not use/call this method.__ This method
-         *   	is solely predefined to facilitate the development of project-wide
-         *      analyses.
+         * 		by the domain as BATAI does not use/call this method.__
+         *      This method is solely predefined to facilitate the development of
+         *      project-wide analyses.
          */
         def summarize(pc: PC, value: DomainValue): DomainValue
 
@@ -256,7 +259,7 @@ trait Domain[+I] {
          * @note __The precise semantics of `adapt` can be determined by the domain
          * 		as BATAI does not use/call this method.__
          */
-        @throws[DomainException]
+        @throws[DomainException]("If it is not possble to adapt this value to the target domain.")
         def adapt[TDI >: I](
             targetDomain: Domain[TDI],
             pc: PC): targetDomain.DomainValue =
@@ -294,7 +297,6 @@ trait Domain[+I] {
      *
      * @see [[de.tud.cs.st.bat.resolved.ai.Domain.Value]] for further details.
      */
-    type ⊥ = IllegalValue
     protected class IllegalValue extends Value { this: DomainIllegalValue ⇒
 
         @throws[DomainException]("always")
@@ -303,14 +305,15 @@ trait Domain[+I] {
                 Domain.this,
                 "a dead/an illegal value does not have a computational type")
 
-        override protected def doJoin(pc: PC, value: DomainValue): Update[DomainValue] =
-            if (value eq TheIllegalValue)
+        @throws[DomainException]("always")
+        override protected def doJoin(pc: PC, other: DomainValue): Update[DomainValue] =
+            domainException(Domain.this, "unsupported; call join(...)")
+
+        override def join(pc: PC, other: DomainValue): Update[DomainValue] =
+            if (other eq TheIllegalValue)
                 NoUpdate
             else
                 MetaInformationUpdateIllegalValue
-
-        override def join(pc: PC, value: DomainValue): Update[DomainValue] =
-            doJoin(pc, value)
 
         @throws[DomainException]("always")
         override def summarize(pc: PC): DomainValue =
@@ -345,8 +348,7 @@ trait Domain[+I] {
     /**
      * The '''singleton''' instance of the `IllegalValue`.
      */
-    def TheIllegalValue: DomainIllegalValue
-    final def ⊥ = TheIllegalValue
+    val TheIllegalValue: DomainIllegalValue
 
     /**
      * If the result of the merge of two values is a non-legal value. The result has
@@ -387,8 +389,8 @@ trait Domain[+I] {
         final override def computationalType: ComputationalType =
             ComputationalTypeReturnAddress
 
-        override protected def doJoin(pc: PC, value: DomainValue): Update[DomainValue] =
-            if (address == value.asReturnAddressValue)
+        override protected def doJoin(pc: PC, other: DomainValue): Update[DomainValue] =
+            if (address == other.asReturnAddressValue)
                 NoUpdate
             else
                 domainException(Domain.this, "return address values cannot be joined")
@@ -472,7 +474,8 @@ trait Domain[+I] {
     def newBooleanValue(pc: PC): DomainValue
 
     /**
-     * Factory method to create a representation of a boolean value with the given value.
+     * Factory method to create a representation of a boolean value with the given
+     * initial value.
      */
     def newBooleanValue(pc: PC, value: Boolean): DomainValue
 
@@ -640,9 +643,10 @@ trait Domain[+I] {
      * @param lowerBound The range's lower bound (inclusive).
      * @param upperBound The range's upper bound (inclusive).
      */
-    /*ABSTRACT*/ def isSomeValueInRange(value: DomainValue,
-                                        lowerBound: Int,
-                                        upperBound: Int): Boolean
+    /*ABSTRACT*/ def isSomeValueInRange(
+        value: DomainValue,
+        lowerBound: Int,
+        upperBound: Int): Boolean
 
     /**
      * Returns `true` iff at least one possible extension of given value is not in the
@@ -657,9 +661,10 @@ trait Domain[+I] {
      * @param lowerBound The range's lower bound (inclusive).
      * @param upperBound The range's upper bound (inclusive).
      */
-    /*ABSTRACT*/ def isSomeValueNotInRange(value: DomainValue,
-                                           lowerBound: Int,
-                                           upperBound: Int): Boolean
+    /*ABSTRACT*/ def isSomeValueNotInRange(
+        value: DomainValue,
+        lowerBound: Int,
+        upperBound: Int): Boolean
 
     /**
      * Determines whether the given value is `null` (`Yes`), maybe `null` (`Unknown`) or
@@ -693,19 +698,19 @@ trait Domain[+I] {
      * all types that the value represents must belong to the same
      * computational type category. I.e., it is possible that the value captures the
      * types "`NullPointerException` and `IllegalArgumentException`", but it will never
-     * capture – at the same time – the (Java) types `int` and/or `long`. Furthermore,
+     * capture – at the same time – the (Java) types `int` and `long`. Furthermore,
      * it is possible that the returned type(s) is(are) only an upper bound of the
      * real type.
      *
      * This default implementation always returns
      * [[de.tud.cs.st.bat.resolved.ai.HasUnknownType]].
      *
-     * The idea is that other traits `abstract override` this method and return the
-     * value's type. If a method that overrides this method has no knowledge about
-     * the given value, it should delegate this call to its super method. (Stackable
-     * Traits)
+     * Other traits that implement a concrete domain's semantics have to `abstract
+     * override` this method and return the value's type. If a method that overrides
+     * this method has no knowledge about the given value, it should delegate this call
+     * to its super method. (Implementation technique: '''Stackable Traits''').
      */
-    /*ABSTRACT*/ def typeOfValue(value: DomainValue): TypesAnswer = HasUnknownType
+    def typeOfValue(value: DomainValue): TypesAnswer = HasUnknownType
 
     /**
      * Tries to determine if the type referred to as `subtype` is a subtype of the
@@ -716,14 +721,16 @@ trait Domain[+I] {
         supertype: ReferenceType): Answer
 
     /**
-     * Tries to determine – under the assumption that value is potentially non null – 
+     * Tries to determine – under the assumption that the given `value` is not `null` – 
      * if the runtime type of the given reference value could be a
      * subtype of the specified reference type `supertype`. I.e., if the type of the
      * value is not precisely known then all subtypes of the value's type are also
      * taken into consideration when analyzing the subtype relation and only if we
      * can guarantee that none is a subtype of the given `supertype` the answer will be
      * `No`.
-     * @note This method is only defined if the given value is not `null`.
+     *
+     * @note The returned value is only meaningful if the value does not represent
+     *      the runtime value `null`.
      */
     /*ABSTRACT*/ def isSubtypeOf(
         value: DomainValue,
@@ -912,6 +919,13 @@ trait Domain[+I] {
         (operands, locals)
     private[ai] final def AreNotEqualReferences = establishAreNotEqualReferences _
 
+    /**
+     * Called by BATAI to inform the domain that the given type is a new additional upper
+     * bound of the given value that the value is guaranteed to satisfy from here on.
+     *
+     * This method is called iff a subtype query (typeOf(value) <: bound) returned
+     * `Unknown`.
+     */
     def establishUpperBound(
         pc: PC,
         bound: ReferenceType,
@@ -1166,7 +1180,7 @@ trait Domain[+I] {
 
     /**
      * Returns the field's value and/or a new `NullPointerException` if the given
-     * `objectref` is `null`.
+     * `objectref` represents the value `null`.
      *
      * @return The field's value or a new `NullPointerException`.
      */
@@ -1343,46 +1357,6 @@ trait Domain[+I] {
     //
 
     /**
-     * Returns a string representation of the properties associated with
-     * a specific instruction if some properties are associated with the
-     * respective instruction.
-     *
-     * Associating properties with an instruction and maintaining those properties
-     * is, however, at the sole responsibility of the `Domain`.
-     *
-     * This method is predefined to facilitate the development of support tools
-     * and is not called by BATAI.
-     */
-    def properties(pc: PC): Option[String] = None
-
-    /**
-     * This function is called by BATAI after performing a computation; that is, after
-     * evaluating the effect of an instruction on the stack and register.
-     * This function basically informs the domain about which instruction(s)
-     * will be executed next. In general, after the evaluation of some instruction
-     * (even those that are domain independent) the flow function is called one or
-     * more times (e.g., in case of `if` or `switch` instructions.) This enables
-     * the domain to precisely follow the evaluation progress and in particular to perform
-     * control-flow dependent analyses.
-     *
-     * The `flow` method is called before the `join` method.
-     */
-    def flow(currentPC: PC, successorPC: PC): Boolean = false
-
-    /**
-     * Creates a summary of the given domain values. For the precise details
-     * regarding the calculation of a summary see `Value.summuarize(...)`.
-     *
-     * @param pc The program counter that will be used for the summary value if
-     * 		a new value is returned that abstracts over/summarize the given values.
-     * @param values An `Iterable` over one or more values.
-     */
-    def summarize(pc: PC, values: Iterable[DomainValue]): DomainValue =
-        (values.head.summarize(pc) /: values.tail) {
-            (c, n) ⇒ c.summarize(pc, n)
-        }
-
-    /**
      * Joins the given operand stacks and local variables.
      *
      * In general there should be no need to override this method.
@@ -1407,11 +1381,12 @@ trait Domain[+I] {
         otherOperands: Operands,
         otherLocals: Locals): Update[(Operands, Locals)] = {
 
-        assume(thisOperands.size == otherOperands.size,
-            "domain join - different stack sizes: "+thisOperands+" <=> "+otherOperands)
-
-        assume(thisLocals.size == otherLocals.size,
-            "domain join - different register sizes: "+thisLocals+" <=> "+otherLocals)
+        // These internal tests should no longer be necessary!
+        // assume(thisOperands.size == otherOperands.size,
+        //      "domain join - different stack sizes: "+thisOperands+" <=> "+otherOperands)
+        //
+        // assume(thisLocals.size == otherLocals.size,
+        //      "domain join - different register sizes: "+thisLocals+" <=> "+otherLocals)
 
         var operandsUpdated: UpdateType = NoUpdateType
         val newOperands =
@@ -1499,6 +1474,46 @@ trait Domain[+I] {
 
         (operandsUpdated &: localsUpdated)((newOperands, newLocals))
     }
+
+    /**
+     * This function is called by BATAI after performing a computation; that is, after
+     * evaluating the effect of an instruction on the stack and register.
+     * This function basically informs the domain about which instruction(s)
+     * will be executed next. In general, after the evaluation of some instruction
+     * (even those that are domain independent) the flow function is called one or
+     * more times (e.g., in case of `if` or `switch` instructions.) This enables
+     * the domain to precisely follow the evaluation progress and in particular to perform
+     * control-flow dependent analyses.
+     *
+     * The `flow` method is called before the `join` method.
+     */
+    def flow(currentPC: PC, successorPC: PC): Boolean = false
+
+    /**
+     * Creates a summary of the given domain values. For the precise details
+     * regarding the calculation of a summary see `Value.summuarize(...)`.
+     *
+     * @param pc The program counter that will be used for the summary value if
+     *      a new value is returned that abstracts over/summarize the given values.
+     * @param values An `Iterable` over one or more values.
+     */
+    def summarize(pc: PC, values: Iterable[DomainValue]): DomainValue =
+        (values.head.summarize(pc) /: values.tail) {
+            (c, n) ⇒ c.summarize(pc, n)
+        }
+
+    /**
+     * If some properties are associated with the respective instruction,
+     * a string representation of the properties associated with
+     * that instruction is returned.
+     *
+     * Associating properties with an instruction and maintaining those properties
+     * is, however, at the sole responsibility of the `Domain`.
+     *
+     * This method is predefined to facilitate the development of support tools
+     * and is not called by BATAI.
+     */
+    def properties(pc: PC): Option[String] = None
 }
 
 
