@@ -579,7 +579,9 @@ trait AI[D <: Domain[_]] {
                         } else {
                             // TODO Do we have to handle the case that we know nothing about the exception type?
                             val IsReferenceValue(upperBounds) = typeOfValue(exceptionValue)
-                            upperBounds.forall { typeBounds ⇒
+                            upperBounds forall { typeBounds ⇒
+                                // as a side effect we also add the handler to the set
+                                // of targets
                                 typeBounds.isSubtypeOf(catchType.get) match {
                                     case No ⇒
                                         false
@@ -879,7 +881,12 @@ trait AI[D <: Domain[_]] {
                                         if (eh.catchType.isDefined) {
                                             eh.catchType.map { catchType ⇒
                                                 val (updatedOperands2, updatedLocals2) =
-                                                    establishUpperBound(branchTarget, catchType, exceptionValue, updatedOperands, updatedLocals)
+                                                    establishUpperBound(
+                                                        branchTarget,
+                                                        catchType,
+                                                        exceptionValue,
+                                                        updatedOperands,
+                                                        updatedLocals)
                                                 gotoTarget(pc, branchTarget, updatedOperands2, updatedLocals2)
                                             }
                                         } else
@@ -907,7 +914,12 @@ trait AI[D <: Domain[_]] {
                                                         true
                                                     case Unknown ⇒
                                                         val (updatedOperands2, updatedLocals2) =
-                                                            establishUpperBound(branchTarget, catchType.get, exceptionValue, updatedOperands, updatedLocals)
+                                                            establishUpperBound(
+                                                                branchTarget,
+                                                                catchType.get,
+                                                                exceptionValue,
+                                                                updatedOperands,
+                                                                updatedLocals)
                                                         gotoTarget(pc, branchTarget, updatedOperands2, updatedLocals2)
                                                         false
                                                 }
@@ -1641,7 +1653,12 @@ trait AI[D <: Domain[_]] {
                                 case Unknown ⇒
                                     handleException(newInitializedObject(pc, ClassCastException))
                                     val (newOperands, newLocals) =
-                                        establishUpperBound(pc, supertype, objectref, operands, locals)
+                                        establishUpperBound(
+                                                pc, 
+                                                supertype, 
+                                                objectref, 
+                                                operands, 
+                                                locals)
                                     fallThrough(newOperands, newLocals)
                             }
 
