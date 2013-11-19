@@ -215,6 +215,11 @@ sealed abstract class ReferenceType extends FieldType {
 
     override final def computationalType = ComputationalTypeReference
 
+    /**
+     * Each reference type is associated with a unique id. Object types get ids &gt;= 0
+     * and interface types get ids &lt; 0.
+     */
+    def id: Int
 }
 /**
  * Defines a factory method to create instances of `ReferenceType`
@@ -406,7 +411,7 @@ final object ObjectType {
     import java.util.concurrent.locks.ReentrantReadWriteLock
     import java.util.WeakHashMap
     import java.lang.ref.WeakReference
-    
+
     private[this] val nextId = new AtomicInteger(0)
     private[this] val cacheRWLock = new ReentrantReadWriteLock();
     private[this] val cache = new WeakHashMap[String, WeakReference[ObjectType]]()
@@ -520,6 +525,7 @@ final object ObjectType {
 }
 
 final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
+    val id: Int,
     val componentType: FieldType)
         extends ReferenceType {
 
@@ -541,10 +547,13 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
 }
 final object ArrayType {
 
+    import java.util.concurrent.atomic.AtomicInteger
     import java.util.WeakHashMap
     import java.lang.ref.WeakReference
 
-    private val cache = new WeakHashMap[FieldType, WeakReference[ArrayType]]()
+    private[this] val cache = new WeakHashMap[FieldType, WeakReference[ArrayType]]()
+
+    private[this] val nextId = new AtomicInteger(-1)
 
     /**
      * Factory method to create objects of type `ArrayType`.
@@ -561,7 +570,7 @@ final object ArrayType {
             if (AT != null)
                 return AT;
         }
-        val newAT = new ArrayType(componentType)
+        val newAT = new ArrayType(nextId.getAndDecrement(), componentType)
         val wrNewAT = new WeakReference(newAT)
         cache.put(componentType, wrNewAT)
         newAT
