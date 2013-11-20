@@ -54,8 +54,8 @@ object ClassHierarchyExtractor {
             sys.exit(-1)
         }
 
-        val supertypeName = args(0)
-        val filterPrefix = args(1)
+        val supertypeName = args(0).replace('.','/')
+        val filterPrefix = args(1).replace('.','/')
         val jars = args.drop(2)
 
         val classFiles = (List.empty[(ClassFile, java.net.URL)] /: jars)(_ ++ ClassFiles(_))
