@@ -48,7 +48,7 @@ class AttributesTest extends FunSuite with ParallelTestExecution {
 
     test("test that the deprecated attribute is present") {
         val cf1 = ClassFile(attributesJARFile, "attributes/DeprecatedByAnnotation.class")
-        assert(cf1.isDeprectated)
+        assert(cf1.isDeprecated)
         assert(
             cf1.runtimeVisibleAnnotations.get.find({
                 case Annotation(ObjectType("java/lang/Deprecated"), _) ⇒ true; case _ ⇒ false
@@ -56,7 +56,7 @@ class AttributesTest extends FunSuite with ParallelTestExecution {
         )
 
         val cf2 = ClassFile(attributesJARFile, "attributes/DeprecatedByJavaDoc.class")
-        assert(cf2.isDeprectated)
+        assert(cf2.isDeprecated)
     }
 
     test("test that the source file attribute is present") {
