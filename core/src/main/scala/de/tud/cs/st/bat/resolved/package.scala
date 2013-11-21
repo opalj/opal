@@ -79,8 +79,5 @@ package object resolved {
     @throws[AnalysisFailedException]
     final def CodeError(message: String, code: Code, pc: Int) =
         throw AnalysisFailedException(generalBATExceptionMessage + message, code, pc)
-
-    implicit val OrderingForObjectTypes = new Ordering[ReferenceType] {
-        def compare(x: ReferenceType, y: ReferenceType): Int = x.id - y.id
-    }
+  
 }

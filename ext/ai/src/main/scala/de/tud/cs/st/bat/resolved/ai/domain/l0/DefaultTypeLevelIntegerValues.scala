@@ -41,22 +41,22 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 /**
  * Base implementation of the `TypeLevelIntegerValues` trait that requires that
  * the domain`s `Value` trait is not extended. This implementation satisfies
- * the requirements of BATAI w.r.t. the domain's computational type but provides 
+ * the requirements of BATAI w.r.t. the domain's computational type but provides
  * some additional information about a value's range if possible.
- *  
+ *
  * @author Michael Eichberg
  */
 trait DefaultTypeLevelIntegerValues[+I]
         extends DefaultDomainValueBinding[I]
-        with TypeLevelIntegerValues[I] {
-    
+        with TypeLevelIntegerValues[I] { Domain ⇒
+
     case object BooleanValue extends super.BooleanValue {
-        
-        override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = 
+
+        override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] =
             value match {
-            case BooleanValue         ⇒ NoUpdate
-            case other @ IntegerValue ⇒ StructuralUpdate(other)
-        }
+                case BooleanValue ⇒ NoUpdate
+                case _            ⇒ StructuralUpdate(IntegerValue)
+            }
 
         override def adapt[ThatI >: I](
             targetDomain: Domain[ThatI],
@@ -69,13 +69,12 @@ trait DefaultTypeLevelIntegerValues[+I]
     }
 
     case object ByteValue extends super.ByteValue {
-        
-        override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = value match {
-            case ByteValue            ⇒ NoUpdate
-            case other @ IntegerValue ⇒ StructuralUpdate(other)
-            case other @ ShortValue   ⇒ StructuralUpdate(other)
-            case other @ CharValue    ⇒ StructuralUpdate(other)
-        }
+
+        override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] =
+            value match {
+                case ByteValue ⇒ NoUpdate
+                case _         ⇒ StructuralUpdate(IntegerValue)
+            }
 
         override def adapt[ThatI >: I](
             targetDomain: Domain[ThatI],
@@ -88,13 +87,13 @@ trait DefaultTypeLevelIntegerValues[+I]
     }
 
     case object ShortValue extends super.ShortValue {
-        
-        override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = value match {
-            case ShortValue           ⇒ NoUpdate
-            case ByteValue            ⇒ NoUpdate
-            case other @ IntegerValue ⇒ StructuralUpdate(other)
-            case other @ CharValue    ⇒ StructuralUpdate(IntegerValue)
-        }
+
+        override def doJoin(pc: PC, that: DomainValue): Update[DomainValue] =
+            that match {
+                case ShortValue ⇒ NoUpdate
+                case _          ⇒ StructuralUpdate(IntegerValue)
+
+            }
 
         override def adapt[ThatI >: I](
             targetDomain: Domain[ThatI],
@@ -107,13 +106,12 @@ trait DefaultTypeLevelIntegerValues[+I]
     }
 
     case object CharValue extends super.CharValue {
-        
-        override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = value match {
-            case CharValue            ⇒ NoUpdate
-            case ByteValue            ⇒ NoUpdate
-            case ShortValue           ⇒ StructuralUpdate(IntegerValue)
-            case other @ IntegerValue ⇒ StructuralUpdate(other)
-        }
+
+        override def doJoin(pc: PC, that: DomainValue): Update[DomainValue] =
+            that match {
+                case CharValue ⇒ NoUpdate
+                case _         ⇒ StructuralUpdate(IntegerValue)
+            }
 
         override def adapt[ThatI >: I](
             targetDomain: Domain[ThatI],
@@ -127,7 +125,8 @@ trait DefaultTypeLevelIntegerValues[+I]
 
     case object IntegerValue extends super.IntegerValue {
 
-        override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = NoUpdate
+        override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] =
+            NoUpdate
 
         override def adapt[ThatI >: I](
             targetDomain: Domain[ThatI],

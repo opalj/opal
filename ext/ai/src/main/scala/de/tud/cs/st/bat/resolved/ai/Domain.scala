@@ -153,7 +153,8 @@ trait Domain[+I] {
          *
          * Join is called whenever two control-flow paths join and, hence, the values
          * found on the paths need to be joined. This method is called by BATAI whenever
-         * two '''intra-procedural''' control-flow paths join.
+         * two '''intra-procedural''' control-flow paths join and the two values are
+         * different.
          *
          * ==Example==
          * For example, joining a `DomainValue` that represents the integer value 0
@@ -190,7 +191,9 @@ trait Domain[+I] {
 
         /**
          * Checks that the given value and this value are compatible and – if so –
-         * calls `doJoin(PC,DomainValue)`. See `doJoin(..)` for details.
+         * calls `doJoin(PC,DomainValue)`.
+         *
+         * See `doJoin(..)` for details.
          *
          * @note It is generally not needed to override this method.
          *
@@ -198,12 +201,12 @@ trait Domain[+I] {
          * @param value The "new" domain value with which this domain value should be
          * 		joined.
          */
-        def join(pc: PC, other: DomainValue): Update[DomainValue] = {
-            if ((other eq TheIllegalValue) ||
-                (this.computationalType ne other.computationalType))
+        def join(pc: PC, that: DomainValue): Update[DomainValue] = {
+            if ((that eq TheIllegalValue) ||
+                (this.computationalType ne that.computationalType))
                 MetaInformationUpdateIllegalValue
             else
-                doJoin(pc, other)
+                doJoin(pc, that)
         }
 
         //

@@ -38,6 +38,8 @@ package domain
 
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
+import collection.SortedSet
+
 /**
  * @author Michael Eichberg
  */
@@ -45,6 +47,8 @@ trait DefaultPreciseReferenceValues[+I]
         extends DefaultDomainValueBinding[I]
         with Origin
         with PreciseReferenceValues[I] { domain ⇒
+
+    type UpperBound = Set[ReferenceType]
 
     // -----------------------------------------------------------------------------------
     //
@@ -153,7 +157,7 @@ trait DefaultPreciseReferenceValues[+I]
                 case _ /* (No && !isPrecise || Unknown) */ ⇒
                     var newValueTypes = Set.empty[ReferenceType]
                     var addTheUpperBound = true
-                    upperBound.foreach { anUpperBound ⇒
+                    upperBound foreach { anUpperBound ⇒
                         if (theUpperBound == anUpperBound) {
                             /* do nothing */
                         } else if (domain.isSubtypeOf(theUpperBound, anUpperBound).yes) {
@@ -184,7 +188,7 @@ trait DefaultPreciseReferenceValues[+I]
                         return NoUpdate
 
                     var newTypeBounds = this.upperBound
-                    otherTypeBounds.foreach { otherTypeBound ⇒
+                    otherTypeBounds foreach { otherTypeBound ⇒
                         var addOtherTypeBounds = true
                         newTypeBounds = newTypeBounds.filterNot { vt ⇒
                             domain.isSubtypeOf(otherTypeBound, vt) match {
@@ -197,7 +201,7 @@ trait DefaultPreciseReferenceValues[+I]
                             }
                         }
                         if (addOtherTypeBounds)
-                            newTypeBounds = newTypeBounds + otherTypeBound
+                            newTypeBounds =  newTypeBounds + otherTypeBound
                     }
                     StructuralUpdate(
                         AReferenceValue(
@@ -474,17 +478,17 @@ trait DefaultPreciseReferenceValues[+I]
     // INFORMATION ABOUT REFERENCE VALUES
     //
 
-    abstract override def origin(value: DomainValue): Iterable[Int] =
+    abstract override def origin(value: DomainValue): Iterable[PC] =
         value match {
-            case aRefVal: AReferenceValue        ⇒ Iterable[Int](aRefVal.pc)
+            case aRefVal: AReferenceValue        ⇒ Iterable[PC](aRefVal.pc)
             case MultipleReferenceValues(values) ⇒ values.map(aRefVal ⇒ aRefVal.pc)
             case _                               ⇒ super.origin(value)
         }
 
     abstract override def typeOfValue(value: DomainValue): TypesAnswer =
         value match {
-            case r: ReferenceValue ⇒ r
-            case _                 ⇒ super.typeOfValue(value)
+            case r: IsReferenceValue ⇒ r
+            case _                   ⇒ super.typeOfValue(value)
         }
 
     //

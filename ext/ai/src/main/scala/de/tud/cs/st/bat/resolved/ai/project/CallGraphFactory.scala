@@ -80,25 +80,17 @@ class CallGraphFactory {
 
     def performCHA[Source](
         theProject: Project[Source],
-        entryPoints: List[Method]): (CHACallGraph, Seq[UnresolvedMethodCall]) = {
+        entryPoints: List[Method]): (CHACallGraph, Seq[UnresolvedMethodCall], Seq[CallGraphConstructionException]) = {
 
-        type DomainContext = Int
-
-        val calledBy =
-            //            HashMap.empty[Method, HashMap[Method, collection.mutable.Set[PC]]]
-            new HashMap[Method, HashMap[Method, collection.mutable.Set[PC]]] {
-                override def initialSize = Method.methodsCount
-            }
-        val calls =
-            //            HashMap.empty[Method, HashMap[PC, collection.mutable.Set[Method]]]
-            new HashMap[Method, HashMap[PC, collection.mutable.Set[Method]]] {
-                override def initialSize = Method.methodsCount
-            }
-        val analyzedMethods = new Array[Boolean](Method.methodsCount)
-        var methodsToAnalyze = entryPoints
+        var exceptions = List.empty[CallGraphConstructionException]
+        def handleException(classFile: ClassFile, method: Method, exception: Exception) {
+            exceptions =
+                CallGraphConstructionException(classFile, method, exception) ::
+                    exceptions
+        }
 
         var unresolvedMethodCalls = List.empty[UnresolvedMethodCall]
-        def unresolvedMethodCall(
+        def handleUnresolvedMethodCall(
             callerClass: ReferenceType,
             caller: Method,
             pc: PC,
@@ -110,6 +102,37 @@ class CallGraphFactory {
                     callerClass, caller, pc,
                     calleeClass, calleeName, calleeDescriptor) :: unresolvedMethodCalls
         }
+        (
+            performCHA(theProject, entryPoints, handleUnresolvedMethodCall _, handleException _),
+            unresolvedMethodCalls,
+            exceptions
+        )
+    }
+
+    def performCHA[Source](
+        theProject: Project[Source],
+        entryPoints: List[Method],
+        handleUnresolvedMethodCall: ( /*callerClass: */ ReferenceType, /*caller:*/ Method, /*pc:*/ PC, /*calleeClass:*/ ReferenceType, /*calleeName:*/ String, /*calleeDescriptor: */ MethodDescriptor) ⇒ _,
+        handleException: (ClassFile, Method, Exception) ⇒ _): CHACallGraph = {
+
+        type DomainContext = Int
+
+        var methodsToAnalyze = entryPoints
+        val methodAnalyzed = new Array[Boolean](Method.methodsCount)
+
+        val calledBy =
+            new HashMap[Method, HashMap[Method, HashSet[PC]]] {
+                override def initialSize = Method.methodsCount
+            }
+        val calls =
+            new HashMap[Method, HashMap[PC, HashSet[Method]]] {
+                override def initialSize = Method.methodsCount
+            }
+
+        val implementingMethodsCache =
+            new HashMap[(ReferenceType, String, MethodDescriptor), Iterable[Method]] {
+                override def initialSize = Method.methodsCount
+            }
 
         // This domain does not have any associated state. 
         class MethodDomain(
@@ -153,9 +176,6 @@ class CallGraphFactory {
                 }
 
                 if (!callee.isNative) {
-                    assume(
-                        callee.body.isDefined,
-                        "call edge to an abstract method"+caller.toJava+"=>"+callee.toJava)
                     methodsToAnalyze = callee :: methodsToAnalyze
                 }
             }
@@ -167,11 +187,17 @@ class CallGraphFactory {
                 descriptor: MethodDescriptor) {
                 // PLAIN CHA - we do not consider any data-flow information 
                 // that is available
-                val callees = classHierarchy.lookupImplementingMethods(
-                    declaringClass, name, descriptor, project
-                )
+                val callerSignature = (declaringClass, name, descriptor)
+                val callees =
+                    implementingMethodsCache.getOrElseUpdate(
+                        callerSignature,
+                        classHierarchy.lookupImplementingMethods(
+                            declaringClass, name, descriptor, project
+                        )
+                    )
+
                 if (callees.isEmpty)
-                    unresolvedMethodCall(
+                    handleUnresolvedMethodCall(
                         callerClassFile.thisClass, caller, pc,
                         declaringClass, name, descriptor)
                 else
@@ -214,11 +240,9 @@ class CallGraphFactory {
                     declaringClass, name, descriptor, project
                 ) match {
                         case Some(callee) ⇒
-                            assume(callee.isNative || callee.body.isDefined,
-                                "lookup returned an abstract method")
                             addCallEdge(caller, pc, callee)
                         case None ⇒
-                            unresolvedMethodCall(
+                            handleUnresolvedMethodCall(
                                 callerClassFile.thisClass, caller, pc,
                                 declaringClass, name, descriptor
                             )
@@ -257,22 +281,23 @@ class CallGraphFactory {
         while (methodsToAnalyze.nonEmpty) {
             val method = methodsToAnalyze.head
             methodsToAnalyze = methodsToAnalyze.tail
-            if (!analyzedMethods(method.id)) {
-                analyzedMethods(method.id) = true
+            if (!methodAnalyzed(method.id)) {
+                methodAnalyzed(method.id) = true
                 val classFile = theProject.classFile(method)
-                BaseAI(classFile, method, new MethodDomain(classFile, method))
+                try {
+                    BaseAI(classFile, method, new MethodDomain(classFile, method))
+                } catch {
+                    case e: Exception ⇒ handleException(classFile, method, e)
+                }
             }
         }
 
-        (CHACallGraph(calledBy, calls), unresolvedMethodCalls)
+        CHACallGraph(calledBy, calls)
     }
 }
-
-class CHACallGraph(
-
+class CHACallGraph private (
         val calledBy: Map[Method, Map[Method, Set[PC]]],
         val calls: Map[Method, Map[PC, Set[Method]]]) {
-
 }
 object CHACallGraph {
 
@@ -296,31 +321,37 @@ case class UnresolvedMethodCall(
         calleeName: String,
         calleeDescriptor: MethodDescriptor) {
 
-    // If we have a very large number of unresolved calls that we want to store, e.g., 
-    // in a set we have to make the equals / hashcode computations fast! 
-
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: UnresolvedMethodCall ⇒
-                (this.callerClass eq that.callerClass) &&
-                    (this.caller.id == that.caller.id) &&
-                    (this.pc == that.pc) &&
-                    (this.calleeClass eq that.calleeClass) &&
-                    (this.calleeName eq that.calleeName) &&
-                    (this.calleeDescriptor == that.calleeDescriptor)
-            case _ ⇒ false
-        }
-    }
-
-    override val hashCode =
-        ((((callerClass.hashCode ^ caller.id) * pc) << 16) ^ calleeName.hashCode)
+    import Console._
 
     override def toString: String = {
-        callerClass.toJava+"{ "+Console.BOLD + caller.toJava + Console.RESET+":"+pc+" } => "+
-            calleeClass.toJava+"{ "+Console.BOLD + calleeDescriptor.toJava(calleeName) + Console.RESET+" }"
+        callerClass.toJava+"{ "+
+            BOLD + caller.toJava + RESET+":"+pc+" } => "+
+            calleeClass.toJava+"{ "+
+            BOLD + calleeDescriptor.toJava(calleeName) + RESET+
+            " }"
     }
 
 }
+
+case class CallGraphConstructionException(
+        classFile: ClassFile,
+        method: Method,
+        underlyingException: Exception) {
+
+    import Console._
+
+    override def toString: String = {
+        classFile.thisClass.toJava+"{ "+
+            method.toJava+" ⚡ "+
+            RED +
+            underlyingException.getClass().getSimpleName()+": "+
+            underlyingException.getMessage() +
+            RESET+
+            " }"
+    }
+}
+
+
 
 
 /*

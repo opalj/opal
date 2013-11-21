@@ -129,7 +129,7 @@ class MethodsPlainTest
         /*val result =*/ BaseAI(classFile, method, domain)
 
         domain.returnedValue should be(
-            Some(AReferenceValue(ObjectType("java/lang/String"))))
+            Some(newReferenceValue(ObjectType("java/lang/String"))))
     }
 
     it should "be able to analyze a method that returns a fixed class value" in {
@@ -138,7 +138,7 @@ class MethodsPlainTest
         /*val result =*/ BaseAI(classFile, method, domain)
 
         domain.returnedValue should be(
-            Some(AReferenceValue(ObjectType("java/lang/Class"))))
+            Some(newReferenceValue(ObjectType("java/lang/Class"))))
     }
 
     //
@@ -672,7 +672,7 @@ class MethodsPlainTest
         /*val result =*/ BaseAI(classFile, method, domain)
 
         domain.returnedValue should be(
-            Some(AReferenceValue(ObjectType("ai/MethodsPlain")))
+            Some(newReferenceValue(ObjectType("ai/MethodsPlain")))
         )
     }
 

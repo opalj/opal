@@ -37,22 +37,22 @@ package ai
 package project
 
 /**
- * Enables the visualization of small call graphs built using CHA.
+ * Visualizes (small) call graphs using Graphviz.
  *
  * @author Michael Eichberg
  */
 object CallGraphVisualization {
 
     import de.tud.cs.st.util.debug._
+    import Console._
 
     /**
      * Traces the interpretation of a single method and prints out the results.
      *
      * @param args The first element must be the name of a class file, a jar file
      *      or a directory containing the former. The second element must
-     *      denote the name of a class and the third must denote the name of a method
-     *      of the respective class. If the method is overloaded the first method
-     *      is returned.
+     *      denote the beginning of a package name and will be used to filter
+     *      the methods that are included in the call graph.
      */
     def main(args: Array[String]) {
         if (args.size != 2) {
@@ -72,7 +72,7 @@ object CallGraphVisualization {
             val fileName = args(0)
             val file = new java.io.File(fileName)
             if (!file.exists()) {
-                println(Console.RED+"file does not exist: "+fileName + Console.RESET)
+                println(RED+"file does not exist: "+fileName + RESET)
                 sys.exit(-2)
             }
             val classFiles =
@@ -80,17 +80,18 @@ object CallGraphVisualization {
                     reader.Java7Framework.ClassFiles(file)
                 } catch {
                     case e: Exception ⇒
-                        println(Console.RED+"cannot read file: "+e.getMessage() + Console.RESET)
+                        println(RED+"cannot read file: "+e.getMessage() + RESET)
                         sys.exit(-3)
                 }
             bat.resolved.analyses.IndexBasedProject(classFiles)
         } { t ⇒ println("Setting up the project took: "+nsToSecs(t)) }
+
         val classNameFilter = args(1)
 
         //
         // GRAPH CONSTRUCTION
         //
-        val (callGraph, unresolvedMethodCalls) = PerformanceEvaluation.time {
+        val (callGraph, unresolvedMethodCalls, exceptions) = PerformanceEvaluation.time {
             val callGraphFactory = new CallGraphFactory
             callGraphFactory.performCHA(
                 project,
@@ -103,7 +104,6 @@ object CallGraphVisualization {
         println("Methods: "+Method.methodsCount)
         println("Methods with more than one resolved call: "+calls.size)
         println("Methods which are called by at least one method: "+callGraph.calledBy.size)
-        println("Unresolved method calls: "+unresolvedMethodCalls.size)
 
         //
         // Let's create the graph
@@ -111,7 +111,7 @@ object CallGraphVisualization {
         import de.tud.cs.st.util.graphs.{ toDot, SimpleNode, Node }
         val nodes: Set[Node] = {
 
-            var nodesForMethods = Map.empty[Method, Node]
+            var nodesForMethods = collection.mutable.HashMap.empty[Method, Node]
 
             def createNode(caller: Method): Node = {
                 if (nodesForMethods.contains(caller))
@@ -131,7 +131,7 @@ object CallGraphVisualization {
                             None
                     }
                 )
-                nodesForMethods = nodesForMethods + ((caller, node)) // break cycles!
+                nodesForMethods += ((caller, node)) // break cycles!
 
                 for {
                     callees ← calls.get(caller)
@@ -152,7 +152,16 @@ object CallGraphVisualization {
             nodesForMethods.values.toSet[Node] // it is a set already...
         }
         // The unresolved methods________________________________________________________:
-        //println(unresolvedMethodCalls.mkString("Unresolved calls:\n\t", "\n\t", ""))
+        if (unresolvedMethodCalls.size > 0) {
+            println("Unresolved method calls: "+unresolvedMethodCalls.size)
+            val (umc, end) =
+                if (unresolvedMethodCalls.size > 10)
+                    (unresolvedMethodCalls.take(10), "...\n")
+                else
+                    (unresolvedMethodCalls, "\n")
+            println(umc.mkString("Unresolved method calls:\n\t", "\n\t", end))
+        }
+        //println(unresolvedMethodCalls.mkString("Unresolved method calls:\n\t", "\n\t", end))
 
         // The graph_____________________________________________________________________:
         //        val consoleOutput = callGraph.calls flatMap { caller ⇒
@@ -162,6 +171,10 @@ object CallGraphVisualization {
         //            } yield caller._1.toJava+" => ["+pc+"] "+callee.toJava
         //        }
         //        println(consoleOutput.mkString("\n"))
+
+        // The exceptions________________________________________________________________:
+        println("Exceptions: "+exceptions.size)
+        println(exceptions.mkString("Exceptions:\n\t", "\n\t", "\t"))
 
         toDot.generateAndOpenDOT(nodes)
 

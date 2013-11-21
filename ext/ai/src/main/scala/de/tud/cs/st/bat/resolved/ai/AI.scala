@@ -1654,11 +1654,11 @@ trait AI[D <: Domain[_]] {
                                     handleException(newInitializedObject(pc, ClassCastException))
                                     val (newOperands, newLocals) =
                                         establishUpperBound(
-                                                pc, 
-                                                supertype, 
-                                                objectref, 
-                                                operands, 
-                                                locals)
+                                            pc,
+                                            supertype,
+                                            objectref,
+                                            operands,
+                                            locals)
                                     fallThrough(newOperands, newLocals)
                             }
 
@@ -1707,12 +1707,16 @@ trait AI[D <: Domain[_]] {
                     localsArray.asInstanceOf[Array[Array[de.domain.type#DomainValue]]]
                 )
                 case t: Throwable ⇒
-                    interpreterException(t, domain, worklist, evaluated, operandsArray, localsArray)
+                    interpreterException(
+                        t, domain, worklist, evaluated)(
+                            operandsArray, localsArray)
 
             }
         }
 
-        val result = AIResultBuilder.completed(code, domain)(evaluated, operandsArray, localsArray)
+        val result =
+            AIResultBuilder.completed(code, domain)(
+                evaluated, operandsArray, localsArray)
         if (tracer.isDefined)
             tracer.get.result(result)
         result
