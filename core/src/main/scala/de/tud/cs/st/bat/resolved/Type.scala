@@ -207,7 +207,7 @@ object FieldType {
     }
 }
 
-sealed abstract class ReferenceType extends FieldType with UniqueID {
+sealed abstract class ReferenceType extends FieldType with UID {
 
     override final def isReferenceType = true
 

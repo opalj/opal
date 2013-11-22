@@ -53,7 +53,7 @@ final class Method private (
     val body: Option[Code],
     val attributes: Attributes)
         extends ClassMember
-        with UniqueID {
+        with UID {
 
     override final def isMethod = true
 

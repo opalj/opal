@@ -55,8 +55,8 @@ import ObjectType.Object
  * class file was not analyzed, are also considered to be visible and are integrated in
  * the class hierarchy. However, types only referred to in the body of a method, but for
  * which neither the defining class file is analyzed nor a class exists that inherits from
- * are not integrated.
- * For example, if the class file of the class `java.util.ArrayList` is analyzed, the
+ * them are not integrated.
+ * For example, if the class file of the class `java.util.ArrayList` is analyzed, then the
  * class hierarchy will have some preliminary information about, e.g., `java.util.List`
  * from which `ArrayList` inherits. However, the information about `List` is incomplete
  * and `List` will be a boundary class.
@@ -65,7 +65,7 @@ import ObjectType.Object
  *
  * ==Thread safety==
  * This class is immutable. Hence, concurrent access to the class hierarchy is supported.
- * *
+ *
  * @param superclassTypes Contains type information about a type's immediate superclass.
  *      This value is always defined except of the case where the key identifies the
  *      object type `java.lang.Object` or when the respective class files was not
@@ -79,11 +79,7 @@ import ObjectType.Object
  *
  * @note It is generally considered to be an error to pass an instance of an `ObjectType`
  *      to any method if the `ObjectType` was not previously added. If in doubt, first
- *      check if the type is known.
- *
- * @define noIncrementalMaintenance Maintaining the class hierarchy after a
- *      change of a previously analyzed/added class file is not supported.
- *
+ *      check if the type is known (`isKnown`/`ifKnown`).
  * @author Michael Eichberg
  */
 class ClassHierarchy private (
@@ -1097,6 +1093,6 @@ object ClassHierarchy {
             superinterfaceTypesMap,
             subclassTypesMap,
             subinterfaceTypesMap
-        ) 
+        )
     }
 }

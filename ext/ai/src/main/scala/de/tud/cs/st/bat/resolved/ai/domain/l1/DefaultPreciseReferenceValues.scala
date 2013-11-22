@@ -201,7 +201,7 @@ trait DefaultPreciseReferenceValues[+I]
                             }
                         }
                         if (addOtherTypeBounds)
-                            newTypeBounds =  newTypeBounds + otherTypeBound
+                            newTypeBounds = newTypeBounds + otherTypeBound
                     }
                     StructuralUpdate(
                         AReferenceValue(
@@ -520,6 +520,9 @@ trait DefaultPreciseReferenceValues[+I]
 
     def newReferenceValue(pc: PC, referenceType: ReferenceType): DomainValue =
         AReferenceValue(pc, Set(referenceType), Unknown, false)
+
+    def nonNullReferenceValue(pc: PC, objectType: ObjectType): DomainValue =
+        AReferenceValue(pc, Set[ReferenceType](objectType), No, false)
 
     def newObject(pc: PC, referenceType: ReferenceType): DomainValue =
         AReferenceValue(pc, Set[ReferenceType](referenceType), No, true)
