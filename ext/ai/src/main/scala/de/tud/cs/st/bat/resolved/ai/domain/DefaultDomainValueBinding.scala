@@ -57,7 +57,7 @@ trait DefaultDomainValueBinding[+I]
 
     final val MetaInformationUpdateIllegalValue = MetaInformationUpdate(TheIllegalValue)
 
-       type DomainReturnAddressValue = ReturnAddressValue
+    type DomainReturnAddressValue = ReturnAddressValue
 
     def ReturnAddressValue(address: Int) = new ReturnAddressValue(address)
 }

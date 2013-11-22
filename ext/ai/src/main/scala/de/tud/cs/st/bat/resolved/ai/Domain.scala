@@ -587,8 +587,11 @@ trait Domain[+I] {
      * object of the given type and that was created (explicitly or
      * implicitly) by the instruction with the specified program counter.
      */
+    // TODO Rename "someReferenceValue"
     def newReferenceValue(pc: PC, referenceType: ReferenceType): DomainValue
 
+    def nonNullReferenceValue(pc: PC, objectType : ObjectType ) : DomainValue
+    
     /**
      * Factory method to create a new `DomainValue` that represents a new,
      * '''uninitialized''' instance of an object of the given type that was

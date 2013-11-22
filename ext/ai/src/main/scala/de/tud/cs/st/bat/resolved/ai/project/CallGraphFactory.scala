@@ -189,12 +189,12 @@ class CallGraphFactory {
                 // that is available
                 val callerSignature = (declaringClass, name, descriptor)
                 val callees =
-                    implementingMethodsCache.getOrElseUpdate(
-                        callerSignature,
+//                    implementingMethodsCache.getOrElseUpdate(
+//                        callerSignature,
                         classHierarchy.lookupImplementingMethods(
                             declaringClass, name, descriptor, project
                         )
-                    )
+//                    )
 
                 if (callees.isEmpty)
                     handleUnresolvedMethodCall(

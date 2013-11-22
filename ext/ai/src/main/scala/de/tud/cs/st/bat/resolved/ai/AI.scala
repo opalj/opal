@@ -185,15 +185,8 @@ trait AI[D <: Domain[_]] {
 
             if (!method.isStatic) {
                 val thisType = classFile.thisClass
-                val thisValue = {
-                    val thisValueOrigin = origin(localVariableIndex)
-                    val thisValue = domain.newReferenceValue(thisValueOrigin, thisType)
-                    domain.establishIsNonNull(
-                        thisValueOrigin,
-                        thisValue,
-                        List.empty[domain.DomainValue] /*are empty...*/ ,
-                        Array(thisValue))._2(0) /* extract the constrained "thisValue"*/
-                }
+                val thisValue =
+                    domain.nonNullReferenceValue(origin(localVariableIndex), thisType)
                 locals.update(localVariableIndex, thisValue)
                 localVariableIndex += 1 /*==thisType.computationalType.operandSize*/
             }

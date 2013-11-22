@@ -49,7 +49,7 @@ trait DefaultTypeLevelReferenceValues[+I]
 
     //    import collection.immutable.{Set => SortedList}
     //    type UpperBound = collection.immutable.Set[ReferenceType]
-    type UpperBound = SortedList[ReferenceType]
+    type UpperBound = UIDList[ReferenceType]
 
     // -----------------------------------------------------------------------------------
     //
@@ -97,7 +97,7 @@ trait DefaultTypeLevelReferenceValues[+I]
             else
                 // probably some (abstract) class and an interface or two
                 // unrelated interfaces
-                MReferenceValue(SortedList(upperBound, additionalUpperBound))
+                MReferenceValue(UIDList(upperBound, additionalUpperBound))
         }
 
         // WIDENING OPERATION
@@ -112,7 +112,7 @@ trait DefaultTypeLevelReferenceValues[+I]
                         StructuralUpdate(other)
                     else
                         StructuralUpdate(
-                            MReferenceValue(SortedList(thisUpperBound, thatUpperBound))
+                            MReferenceValue(UIDList(thisUpperBound, thatUpperBound))
                         )
                 case MReferenceValue(thatUpperBound) ⇒
                     val newUpperBound = thatUpperBound filter { thatBound ⇒
@@ -201,7 +201,7 @@ trait DefaultTypeLevelReferenceValues[+I]
             // returned unknown. Hence, we only handle the case where the new bound
             // is more strict than the previous bound.
 
-            var newUpperBound: SortedList[ReferenceType] = SortedList.empty
+            var newUpperBound: UIDList[ReferenceType] = UIDList.empty
             upperBound foreach { (existingUpperBound: ReferenceType) ⇒
                 // ATTENTION: "!..yes" is not the same as "no" (there is also unknown)
                 if (!domain.isSubtypeOf(additionalUpperBound, existingUpperBound).yes)
@@ -345,7 +345,7 @@ trait DefaultTypeLevelReferenceValues[+I]
     //
 
     def newNullValue(pc: PC): DomainValue =
-        MReferenceValue(SortedList.empty)
+        MReferenceValue(UIDList.empty)
 
     def newReferenceValue(referenceType: ReferenceType): DomainValue =
         AReferenceValue(referenceType)
