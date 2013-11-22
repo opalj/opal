@@ -105,14 +105,14 @@ trait DefaultTypeLevelReferenceValues[+I]
             val thisUpperBound = this.upperBound
             other match {
                 case AReferenceValue(thatUpperBound) ⇒
-                    if ((upperBound eq thatUpperBound) ||
+                    if ((thisUpperBound eq thatUpperBound) ||
                         domain.isSubtypeOf(thatUpperBound, thisUpperBound).yes)
                         NoUpdate
                     else if (domain.isSubtypeOf(thisUpperBound, thatUpperBound).yes)
                         StructuralUpdate(other)
                     else
                         StructuralUpdate(
-                            MReferenceValue(SortedList(this.upperBound, thatUpperBound))
+                            MReferenceValue(SortedList(thisUpperBound, thatUpperBound))
                         )
                 case MReferenceValue(thatUpperBound) ⇒
                     val newUpperBound = thatUpperBound filter { thatBound ⇒

@@ -80,7 +80,7 @@ class CallGraphFactory {
 
     def performCHA[Source](
         theProject: Project[Source],
-        entryPoints: List[Method]): (CHACallGraph, Seq[UnresolvedMethodCall], Seq[CallGraphConstructionException]) = {
+        entryPoints: List[Method]): (CHACallGraph[Source], Seq[UnresolvedMethodCall], Seq[CallGraphConstructionException]) = {
 
         var exceptions = List.empty[CallGraphConstructionException]
         def handleException(classFile: ClassFile, method: Method, exception: Exception) {
@@ -113,7 +113,7 @@ class CallGraphFactory {
         theProject: Project[Source],
         entryPoints: List[Method],
         handleUnresolvedMethodCall: ( /*callerClass: */ ReferenceType, /*caller:*/ Method, /*pc:*/ PC, /*calleeClass:*/ ReferenceType, /*calleeName:*/ String, /*calleeDescriptor: */ MethodDescriptor) ⇒ _,
-        handleException: (ClassFile, Method, Exception) ⇒ _): CHACallGraph = {
+        handleException: (ClassFile, Method, Exception) ⇒ _): CHACallGraph[Source] = {
 
         type DomainContext = Int
 
@@ -292,19 +292,21 @@ class CallGraphFactory {
             }
         }
 
-        CHACallGraph(calledBy, calls)
+        CHACallGraph(theProject, calledBy, calls)
     }
 }
-class CHACallGraph private (
+class CHACallGraph[Source] private (
+        val project: Project[Source],
         val calledBy: Map[Method, Map[Method, Set[PC]]],
         val calls: Map[Method, Map[PC, Set[Method]]]) {
 }
 object CHACallGraph {
 
-    def apply(
+    def apply[Source](
+        project: Project[Source],
         calledBy: Map[Method, Map[Method, Set[PC]]],
         calls: Map[Method, Map[PC, Set[Method]]]) =
-        new CHACallGraph(calledBy, calls)
+        new CHACallGraph(project, calledBy, calls)
 }
 
 /**
@@ -330,9 +332,13 @@ case class UnresolvedMethodCall(
             BOLD + calleeDescriptor.toJava(calleeName) + RESET+
             " }"
     }
-
 }
 
+/**
+ * Encapsulates an exception that is thrown during the creation of the call graph.
+ *
+ * @author Michael Eichberg
+ */
 case class CallGraphConstructionException(
         classFile: ClassFile,
         method: Method,
