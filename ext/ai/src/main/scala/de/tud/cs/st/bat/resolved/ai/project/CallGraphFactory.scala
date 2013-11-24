@@ -51,7 +51,7 @@ import collection.Map
  *
  * @author Michael Eichberg
  */
-class CallGraphFactory {
+object CallGraphFactory {
 
     import language.existentials
 
@@ -102,6 +102,7 @@ class CallGraphFactory {
                     callerClass, caller, pc,
                     calleeClass, calleeName, calleeDescriptor) :: unresolvedMethodCalls
         }
+
         (
             performCHA(theProject, entryPoints, handleUnresolvedMethodCall _, handleException _),
             unresolvedMethodCalls,
@@ -121,18 +122,22 @@ class CallGraphFactory {
         val methodAnalyzed = new Array[Boolean](Method.methodsCount)
 
         val calledBy =
-            new HashMap[Method, HashMap[Method, HashSet[PC]]] {
+            new HashMap[Method, HashMap[Method, Set[PC]]] {
                 override def initialSize = Method.methodsCount
             }
         val calls =
-            new HashMap[Method, HashMap[PC, HashSet[Method]]] {
+            new HashMap[Method, HashMap[PC, Iterable[Method]]] {
                 override def initialSize = Method.methodsCount
             }
 
-        val implementingMethodsCache =
-            new HashMap[(ReferenceType, String, MethodDescriptor), Iterable[Method]] {
-                override def initialSize = Method.methodsCount
-            }
+        //        val implementingMethodsCache =
+        //            new HashMap[(ReferenceType, String, MethodDescriptor), Iterable[Method]] {
+        //                override def initialSize = Method.methodsCount
+        //            }
+        val resolvedTargets = {
+            // the index is the id of the ReferenceType of the receiver
+            new Array[Map[MethodSignature, Iterable[Method]]](theProject.objectTypesCount)
+        }
 
         // This domain does not have any associated state. 
         class MethodDomain(
@@ -155,29 +160,32 @@ class CallGraphFactory {
 
             def identifier = caller.id
 
-            def project: Project[Source] = theProject
+            val project: Project[Source] = theProject
 
             @inline private[this] def addCallEdge(
                 caller: Method,
                 pc: PC,
-                callee: Method): Unit = {
+                callees: Iterable[Method]): Unit = {
                 // calledBy: Map[Method, Map[Method, Set[PC]]]
-                {
+                for (callee ← callees) {
                     val callers = calledBy.getOrElseUpdate(callee, HashMap.empty)
-                    val callSites = callers.getOrElseUpdate(caller, HashSet.empty)
-                    callSites add pc
+                    callers.get(caller) match {
+                        case Some(pcs) ⇒
+                            val newPCs = pcs + pc
+                            if (pcs ne newPCs)
+                                callers.update(caller, newPCs)
+                        case None ⇒
+                            val newPCs = collection.immutable.Set.empty + pc
+                            callers.update(caller, newPCs)
+                    }
+                    if (!callee.isNative) {
+                        methodsToAnalyze = callee :: methodsToAnalyze
+                    }
                 }
 
-                // calls : Map[Method, Map[PC, Set[Method]]]          
-                {
-                    val callSites = calls.getOrElseUpdate(caller, HashMap.empty)
-                    val callees = callSites.getOrElseUpdate(pc, HashSet.empty)
-                    callees add callee
-                }
-
-                if (!callee.isNative) {
-                    methodsToAnalyze = callee :: methodsToAnalyze
-                }
+                // calls : Map[Method, Map[PC, Iterable[Method]]]          
+                val callSites = calls.getOrElseUpdate(caller, HashMap.empty)
+                callSites.update(pc, callees)
             }
 
             @inline private[this] def dynamicallyBoundInvocation(
@@ -187,23 +195,54 @@ class CallGraphFactory {
                 descriptor: MethodDescriptor) {
                 // PLAIN CHA - we do not consider any data-flow information 
                 // that is available
-                val callerSignature = (declaringClass, name, descriptor)
-                val callees =
-//                    implementingMethodsCache.getOrElseUpdate(
-//                        callerSignature,
-                        classHierarchy.lookupImplementingMethods(
-                            declaringClass, name, descriptor, project
-                        )
-//                    )
+                //                val callerSignature = (declaringClass, name, descriptor)
+                //                val callees =
+                //                    implementingMethodsCache.getOrElseUpdate(
+                //                        callerSignature,
+                //                        classHierarchy.lookupImplementingMethods(
+                //                            declaringClass, name, descriptor, project
+                //                        )
+                //                    )
+
+                val callees = {
+                    //resolvedTargets : Array[Map[MethodSignature, Iterable[Method]]]
+                    val resolvedTargetsForClass = resolvedTargets(declaringClass.id)
+                    val callerSignature = new MethodSignature(name, descriptor)
+                    if (resolvedTargetsForClass eq null) {
+                        val targets =
+                            classHierarchy.lookupImplementingMethods(
+                                declaringClass, name, descriptor, project
+                            )
+                        resolvedTargets(declaringClass.id) =
+                            new collection.immutable.Map.Map1(callerSignature, targets)
+                        targets
+                    } else {
+                        resolvedTargetsForClass.get(callerSignature) match {
+                            case Some(targets) ⇒
+                                targets
+                            case None ⇒
+                                val targets = classHierarchy.lookupImplementingMethods(
+                                    declaringClass, name, descriptor, project
+                                )
+                                resolvedTargets(declaringClass.id) =
+                                    resolvedTargetsForClass + ((callerSignature, targets))
+                                targets
+                        }
+                    }
+                }
+                //                implementingMethodsCache.getOrElseUpdate(
+                //                    callerSignature,
+                //                    classHierarchy.lookupImplementingMethods(
+                //                        declaringClass, name, descriptor, project
+                //                    )
+                //                )
 
                 if (callees.isEmpty)
                     handleUnresolvedMethodCall(
                         callerClassFile.thisClass, caller, pc,
                         declaringClass, name, descriptor)
                 else
-                    for (callee ← callees) {
-                        addCallEdge(caller, pc, callee)
-                    }
+                    addCallEdge(caller, pc, callees)
             }
 
             override def invokevirtual(
@@ -240,7 +279,7 @@ class CallGraphFactory {
                     declaringClass, name, descriptor, project
                 ) match {
                         case Some(callee) ⇒
-                            addCallEdge(caller, pc, callee)
+                            addCallEdge(caller, pc, Iterable(callee))
                         case None ⇒
                             handleUnresolvedMethodCall(
                                 callerClassFile.thisClass, caller, pc,
@@ -295,18 +334,96 @@ class CallGraphFactory {
         CHACallGraph(theProject, calledBy, calls)
     }
 }
+/**
+ * Basic representation of a call graph.
+ *
+ * @author Michael Eichberg
+ */
 class CHACallGraph[Source] private (
         val project: Project[Source],
         val calledBy: Map[Method, Map[Method, Set[PC]]],
-        val calls: Map[Method, Map[PC, Set[Method]]]) {
+        val calls: Map[Method, Map[PC, Iterable[Method]]]) {
+
+    /**
+     * Statistics about the number of potential targets per call site.
+     * (TSV format (tab-separated file) - can easily read by most spreadsheet
+     * applications).
+     */
+    def callsStatistics: String = {
+        var result: List[List[String]] = List.empty
+        project foreachMethod { (method: Method) ⇒
+            calls.get(method) foreach { callSites ⇒
+                callSites foreach { callSite ⇒
+                    val (pc, targets) = callSite
+                    result = List(
+                        method.id.toString,
+                        "\""+method.toJava+"\"",
+                        pc.toString,
+                        targets.size.toString
+                    ) :: result
+                }
+            }
+        }
+        result = List("\"Method ID\"", "\"Method Signature\"", "\"Callsite (PC)\"", "\"Targets\"") :: result
+        result.map(_.mkString("\t")).mkString("\n")
+    }
+
+    /**
+     * Statistics about the number of methods that potentially call a specific method.
+     * (TSV format (tab-separated file) - can easily read by most spreadsheet
+     * applications).
+     */
+    def calledByStatistics: String = {
+        var result: List[List[String]] = List.empty
+        project foreachMethod { (method: Method) ⇒
+            calledBy.get(method) foreach { callingSites ⇒
+                //val callingSitesCount = (0 /: callingSites.values) { _ + _.size }
+                callingSites foreach { callingSite ⇒
+                    val (callerMethod, callingInstructions) = callingSite
+                    result =
+                        List(
+                            method.id.toString,
+                            method.toJava,
+                            callerMethod.id.toString,
+                            callerMethod.toJava,
+                            callingInstructions.size.toString
+                        ) :: result
+                }
+            }
+        }
+        result = List("Method ID", "Method Signature", "Calling Method ID", "Calling Method", "Calling Sites") :: result
+        result.map(_.mkString("\t")).mkString("\n")
+    }
 }
+/**
+ * Factory method to create a CHACallGraph object.
+ */
 object CHACallGraph {
 
     def apply[Source](
         project: Project[Source],
         calledBy: Map[Method, Map[Method, Set[PC]]],
-        calls: Map[Method, Map[PC, Set[Method]]]) =
+        calls: Map[Method, Map[PC, Iterable[Method]]]) =
         new CHACallGraph(project, calledBy, calls)
+}
+
+/**
+ * Represents a method signature.
+ *
+ *  @author Michael Eichberg
+ */
+final class MethodSignature(
+        val name: String,
+        val descriptor: MethodDescriptor) {
+
+    override def equals(other: Any): Boolean = {
+        other match {
+            case that: MethodSignature ⇒
+                name == that.name && descriptor == that.descriptor
+            case _ ⇒ false
+        }
+    }
+    override def hashCode: Int = name.hashCode * 13 + descriptor.hashCode
 }
 
 /**

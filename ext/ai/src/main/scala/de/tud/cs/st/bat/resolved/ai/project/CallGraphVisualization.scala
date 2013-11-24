@@ -44,6 +44,7 @@ package project
 object CallGraphVisualization {
 
     import de.tud.cs.st.util.debug._
+    import de.tud.cs.st.util.debug.PerformanceEvaluation.{ time, memory, asMB }
     import Console._
 
     /**
@@ -68,42 +69,59 @@ object CallGraphVisualization {
         //
         // PROJECT SETUP
         //
-        val project = PerformanceEvaluation.time {
-            val fileName = args(0)
-            val file = new java.io.File(fileName)
-            if (!file.exists()) {
-                println(RED+"file does not exist: "+fileName + RESET)
-                sys.exit(-2)
-            }
-            val classFiles =
-                try {
-                    reader.Java7Framework.ClassFiles(file)
-                } catch {
-                    case e: Exception ⇒
-                        println(RED+"cannot read file: "+e.getMessage() + RESET)
-                        sys.exit(-3)
-                }
-            bat.resolved.analyses.IndexBasedProject(classFiles)
-        } { t ⇒ println("Setting up the project took: "+nsToSecs(t)) }
-
+        val project =
+            memory {
+                time {
+                    val fileName = args(0)
+                    val file = new java.io.File(fileName)
+                    if (!file.exists()) {
+                        println(RED+"file does not exist: "+fileName + RESET)
+                        sys.exit(-2)
+                    }
+                    val classFiles =
+                        try {
+                            reader.Java7Framework.ClassFiles(file)
+                        } catch {
+                            case e: Exception ⇒
+                                println(RED+"cannot read file: "+e.getMessage() + RESET)
+                                sys.exit(-3)
+                        }
+                    bat.resolved.analyses.IndexBasedProject(classFiles)
+                } { t ⇒ println("Setting up the project took: "+nsToSecs(t)) }
+            } { m ⇒ println("Required memory for base representation: "+asMB(m)) }
         val classNameFilter = args(1)
 
         //
         // GRAPH CONSTRUCTION
         //
-        val (callGraph, unresolvedMethodCalls, exceptions) = PerformanceEvaluation.time {
-            val callGraphFactory = new CallGraphFactory
-            callGraphFactory.performCHA(
-                project,
-                callGraphFactory.defaultEntryPointsForCHA(project))
-        } { t ⇒ println("Creating the call graph took: "+nsToSecs(t)) }
+        val (callGraph, unresolvedMethodCalls, exceptions) =
+            memory {
+                time {
+                    CallGraphFactory.performCHA(
+                        project,
+                        CallGraphFactory.defaultEntryPointsForCHA(project))
+                } { t ⇒ println("Creating the call graph took: "+nsToSecs(t)) }
+            } { m ⇒ println("Required memory for call graph: "+asMB(m)) }
 
-        // Some statistics
-        import callGraph.calls
+        // Some statistics 
+        import callGraph.{ calls, calledBy }
         println("Classes: "+project.classFiles.size)
         println("Methods: "+Method.methodsCount)
-        println("Methods with more than one resolved call: "+calls.size)
-        println("Methods which are called by at least one method: "+callGraph.calledBy.size)
+        println("Methods with at least one resolved call: "+calls.size)
+        println("Methods which are called by at least one method: "+calledBy.size)
+
+        var maxCallSitesPerMethod = 0
+        var maxTargets = 0
+        for (callees ← calls.values) {
+            val calleesCount = callees.size
+            if (calleesCount > maxCallSitesPerMethod) maxCallSitesPerMethod = calleesCount
+            for (targets ← callees.values) {
+                val targetsCount = targets.size
+                if (targetsCount > maxTargets) maxTargets = targetsCount
+            }
+        }
+        println("Maximum number of targets over all calls: "+maxTargets)
+        println("Maximum number of method calls over all methods: "+maxCallSitesPerMethod)
 
         //
         // Let's create the graph
@@ -178,5 +196,14 @@ object CallGraphVisualization {
 
         toDot.generateAndOpenDOT(nodes)
 
+        writeAndOpenDesktopApplication(
+            callGraph.callsStatistics,
+            "CallGraphStatistics(calls)",
+            ".tsv.txt")
+
+        writeAndOpenDesktopApplication(
+            callGraph.calledByStatistics,
+            "CallGraphStatistics(calledBy)",
+            ".tsv.txt")
     }
 }
