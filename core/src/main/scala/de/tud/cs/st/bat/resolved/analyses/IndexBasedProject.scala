@@ -94,12 +94,6 @@ class IndexBasedProject[Source: reflect.ClassTag] private (
 
     import de.tud.cs.st.util.ControlAbstractions.foreachNonNullValueOf
 
-    final def objectTypesCount = ObjectType.objectTypesCount
-
-    final def methodsCount = Method.methodsCount
-
-    final def fieldCount = Field.fieldsCount
-
     /**
      * This project's class files.
      */
@@ -128,12 +122,12 @@ class IndexBasedProject[Source: reflect.ClassTag] private (
      */
     override def classFile(method: Method): ClassFile = classFileOfMethod(method.id)
 
-    override def foreachClassFile(f: ClassFile ⇒ _): Unit =
+    override def foreachClassFile[U](f: ClassFile ⇒ U): Unit =
         foreachNonNullValueOf(classesMap) { (id, classFile) ⇒
             f(classFile)
         }
 
-    override def foreachMethod(f: Method ⇒ _): Unit =
+    override def foreachMethod[U](f: Method ⇒ U): Unit =
         foreachNonNullValueOf(classesMap) { (id, classFile) ⇒
             classFile.methods.foreach(f)
         }

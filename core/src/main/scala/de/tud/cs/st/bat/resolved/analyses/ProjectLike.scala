@@ -71,9 +71,15 @@ abstract class ProjectLike[Source] extends (ObjectType ⇒ Option[ClassFile]) {
 
     def classFile(method: Method): ClassFile
 
-    def foreachClassFile(f: ClassFile ⇒ _): Unit
+    def foreachClassFile[U](f: ClassFile ⇒ U): Unit
 
-    def foreachMethod(f: Method ⇒ _): Unit
+    def foreachMethod[U](f: Method ⇒ U): Unit
+
+    final def objectTypesCount = ObjectType.objectTypesCount
+
+    final def methodsCount = Method.methodsCount
+
+    final def fieldCount = Field.fieldsCount
 
     /**
      * This project's class files.
