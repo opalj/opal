@@ -115,6 +115,18 @@ class IndexBasedProject[Source: reflect.ClassTag] private (
         if (id < classesMap.size) Option(classesMap(id)) else None
     }
 
+    private[this] lazy val methodsMap: Array[Method] = {
+        val map = new Array[Method](methodsCount)
+        foreachClassFile { classFile ⇒
+            classFile.methods foreach { method ⇒ map(method.id) = method }
+        }
+        map
+    }
+
+    def method(methodID: Int): Method = methodsMap(methodID)
+
+    def classFile(classFileID: Int): ClassFile = classesMap(classFileID)
+
     /**
      * Looks up the ClassFile that contains the given method.
      *

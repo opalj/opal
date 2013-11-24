@@ -104,15 +104,15 @@ object CallGraphVisualization {
             } { m ⇒ println("Required memory for call graph: "+asMB(m)) }
 
         // Some statistics 
-        import callGraph.{ calls, calledBy }
+        import callGraph.{ calls, callsCount, calledByCount, foreachCallingMethod }
         println("Classes: "+project.classFiles.size)
         println("Methods: "+Method.methodsCount)
-        println("Methods with at least one resolved call: "+calls.size)
-        println("Methods which are called by at least one method: "+calledBy.size)
+        println("Methods with at least one resolved call: "+callsCount)
+        println("Methods which are called by at least one method: "+calledByCount)
 
         var maxCallSitesPerMethod = 0
         var maxTargets = 0
-        for (callees ← calls.values) {
+        foreachCallingMethod { (method, callees) ⇒
             val calleesCount = callees.size
             if (calleesCount > maxCallSitesPerMethod) maxCallSitesPerMethod = calleesCount
             for (targets ← callees.values) {
@@ -152,7 +152,7 @@ object CallGraphVisualization {
                 nodesForMethods += ((caller, node)) // break cycles!
 
                 for {
-                    callees ← calls.get(caller)
+                    callees ← calls(caller)
                     perCallsiteCallees ← callees.values
                     callee ← perCallsiteCallees
                     if project.classFile(callee).className.startsWith(classNameFilter)
@@ -162,10 +162,9 @@ object CallGraphVisualization {
                 node
             }
 
-            calls.keySet.view.filter { method ⇒
-                project.classFile(method).thisClass.className.startsWith(classNameFilter)
-            } foreach { caller ⇒
-                createNode(caller)
+            foreachCallingMethod { (method, callees) ⇒
+                if (project.classFile(method).thisClass.className.startsWith(classNameFilter))
+                    createNode(method)
             }
             nodesForMethods.values.toSet[Node] // it is a set already...
         }

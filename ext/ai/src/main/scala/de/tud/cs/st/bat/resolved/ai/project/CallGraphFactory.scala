@@ -62,6 +62,21 @@ object CallGraphFactory {
 
     import bat.resolved.ai.domain._
 
+    @inline private[this] def getOrElseUpdate[T <: AnyRef](
+        array: Array[T],
+        uid: UID,
+        orElse: ⇒ T): T = {
+        val id = uid.id
+        val t = array(id)
+        if (t eq null) {
+            val result = orElse
+            array(id) = result
+            result
+        } else {
+            t
+        }
+    }
+
     /**
      * The set of all entry points consists of:
      * - all static initializers,
@@ -117,27 +132,21 @@ object CallGraphFactory {
         handleException: (ClassFile, Method, Exception) ⇒ _): CHACallGraph[Source] = {
 
         type DomainContext = Int
+        val methodsCount = Method.methodsCount
 
         var methodsToAnalyze = entryPoints
-        val methodAnalyzed = new Array[Boolean](Method.methodsCount)
+        val methodAnalyzed = new Array[Boolean](methodsCount)
 
-        val calledBy =
-            new HashMap[Method, HashMap[Method, Set[PC]]] {
-                override def initialSize = Method.methodsCount
-            }
-        val calls =
-            new HashMap[Method, HashMap[PC, Iterable[Method]]] {
-                override def initialSize = Method.methodsCount
-            }
-
-        //        val implementingMethodsCache =
-        //            new HashMap[(ReferenceType, String, MethodDescriptor), Iterable[Method]] {
-        //                override def initialSize = Method.methodsCount
-        //            }
-        val resolvedTargets = {
+        val resolvedTargetsCache =
             // the index is the id of the ReferenceType of the receiver
             new Array[HashMap[MethodSignature, Iterable[Method]]](theProject.objectTypesCount)
-        }
+
+        val calledBy =
+            // the index is the id of the method that is "called by" other methods
+            new Array[HashMap[Method, Set[PC]]](methodsCount)
+        val calls =
+            // the index is the id of the method that calls other methods
+            new Array[HashMap[PC, Iterable[Method]]](methodsCount)
 
         // This domain does not have any associated state. 
         class MethodDomain(
@@ -168,7 +177,7 @@ object CallGraphFactory {
                 callees: Iterable[Method]): Unit = {
                 // calledBy: Map[Method, Map[Method, Set[PC]]]
                 for (callee ← callees) {
-                    val callers = calledBy.getOrElseUpdate(callee, HashMap.empty)
+                    val callers = getOrElseUpdate(calledBy, callee, HashMap.empty[Method, Set[PC]])
                     callers.get(caller) match {
                         case Some(pcs) ⇒
                             val newPCs = pcs + pc
@@ -184,7 +193,7 @@ object CallGraphFactory {
                 }
 
                 // calls : Map[Method, Map[PC, Iterable[Method]]]          
-                val callSites = calls.getOrElseUpdate(caller, HashMap.empty)
+                val callSites = getOrElseUpdate(calls, caller, HashMap.empty[PC, Iterable[Method]])
                 callSites.update(pc, callees)
             }
 
@@ -206,7 +215,7 @@ object CallGraphFactory {
 
                 val callees = {
                     //resolvedTargets : Array[Map[MethodSignature, Iterable[Method]]]
-                    val resolvedTargetsForClass = resolvedTargets(declaringClass.id)
+                    val resolvedTargetsForClass = resolvedTargetsCache(declaringClass.id)
                     val callerSignature = new MethodSignature(name, descriptor)
                     //                    if (resolvedTargetsForClass eq null) {
                     //                        val targets =
@@ -234,7 +243,7 @@ object CallGraphFactory {
                             classHierarchy.lookupImplementingMethods(
                                 declaringClass, name, descriptor, project
                             )
-                        resolvedTargets(declaringClass.id) =
+                        resolvedTargetsCache(declaringClass.id) =
                             HashMap((callerSignature, targets))
                         targets
                     } else {
@@ -355,8 +364,38 @@ object CallGraphFactory {
  */
 class CHACallGraph[Source] private (
         val project: Project[Source],
-        val calledBy: Map[Method, Map[Method, Set[PC]]],
-        val calls: Map[Method, Map[PC, Iterable[Method]]]) {
+        private[this] val calledByMap: Array[_ <: Map[Method, Set[PC]]],
+        private[this] val callsMap: Array[_ <: Map[PC, Iterable[Method]]]) {
+
+    import de.tud.cs.st.util.ControlAbstractions.foreachNonNullValueOf
+
+    def calledBy(method: Method): Option[Map[Method, Set[PC]]] = {
+        Option(calledByMap(method.id))
+    }
+
+    def calls(method: Method): Option[Map[PC, Iterable[Method]]] = {
+        Option(callsMap(method.id))
+    }
+
+    def foreachCallingMethod[U](f: (Method, Map[PC, Iterable[Method]]) ⇒ U): Unit = {
+        foreachNonNullValueOf(callsMap) { (i, callees) ⇒
+            f(project.method(i), callees)
+        }
+    }
+
+    /** Number of methods that call at least one other method. */
+    def callsCount: Int = {
+        var callsCount = 0
+        foreachNonNullValueOf(callsMap) { (e, i) ⇒ callsCount += 1 }
+        callsCount
+    }
+
+    /** Number of methods that are called by at least one other method. */
+    def calledByCount: Int = {
+        var calledByCount = 0
+        foreachNonNullValueOf(calledByMap) { (e, i) ⇒ calledByCount += 1 }
+        calledByCount
+    }
 
     /**
      * Statistics about the number of potential targets per call site.
@@ -366,7 +405,7 @@ class CHACallGraph[Source] private (
     def callsStatistics: String = {
         var result: List[List[String]] = List.empty
         project foreachMethod { (method: Method) ⇒
-            calls.get(method) foreach { callSites ⇒
+            calls(method) foreach { callSites ⇒
                 callSites foreach { callSite ⇒
                     val (pc, targets) = callSite
                     result = List(
@@ -390,7 +429,7 @@ class CHACallGraph[Source] private (
     def calledByStatistics: String = {
         var result: List[List[String]] = List.empty
         project foreachMethod { (method: Method) ⇒
-            calledBy.get(method) foreach { callingSites ⇒
+            calledBy(method) foreach { callingSites ⇒
                 //val callingSitesCount = (0 /: callingSites.values) { _ + _.size }
                 callingSites foreach { callingSite ⇒
                     val (callerMethod, callingInstructions) = callingSite
@@ -416,8 +455,8 @@ object CHACallGraph {
 
     def apply[Source](
         project: Project[Source],
-        calledBy: Map[Method, Map[Method, Set[PC]]],
-        calls: Map[Method, Map[PC, Iterable[Method]]]) =
+        calledBy: Array[_ <: Map[Method, Set[PC]]],
+        calls: Array[_ <: Map[PC, Iterable[Method]]]) =
         new CHACallGraph(project, calledBy, calls)
 }
 
