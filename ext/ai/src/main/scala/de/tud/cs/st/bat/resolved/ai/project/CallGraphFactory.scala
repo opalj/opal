@@ -136,7 +136,7 @@ object CallGraphFactory {
         //            }
         val resolvedTargets = {
             // the index is the id of the ReferenceType of the receiver
-            new Array[Map[MethodSignature, Iterable[Method]]](theProject.objectTypesCount)
+            new Array[HashMap[MethodSignature, Iterable[Method]]](theProject.objectTypesCount)
         }
 
         // This domain does not have any associated state. 
@@ -208,26 +208,40 @@ object CallGraphFactory {
                     //resolvedTargets : Array[Map[MethodSignature, Iterable[Method]]]
                     val resolvedTargetsForClass = resolvedTargets(declaringClass.id)
                     val callerSignature = new MethodSignature(name, descriptor)
+                    //                    if (resolvedTargetsForClass eq null) {
+                    //                        val targets =
+                    //                            classHierarchy.lookupImplementingMethods(
+                    //                                declaringClass, name, descriptor, project
+                    //                            )
+                    //                        resolvedTargets(declaringClass.id) =
+                    //                            new collection.immutable.Map.Map1(callerSignature, targets)
+                    //                        targets
+                    //                    } else {
+                    //                        resolvedTargetsForClass.get(callerSignature) match {
+                    //                            case Some(targets) ⇒
+                    //                                targets
+                    //                            case None ⇒
+                    //                                val targets = classHierarchy.lookupImplementingMethods(
+                    //                                    declaringClass, name, descriptor, project
+                    //                                )
+                    //                                resolvedTargets(declaringClass.id) =
+                    //                                    resolvedTargetsForClass + ((callerSignature, targets))
+                    //                                targets
+                    //                        }
+                    //                    }
                     if (resolvedTargetsForClass eq null) {
                         val targets =
                             classHierarchy.lookupImplementingMethods(
                                 declaringClass, name, descriptor, project
                             )
                         resolvedTargets(declaringClass.id) =
-                            new collection.immutable.Map.Map1(callerSignature, targets)
+                            HashMap((callerSignature, targets))
                         targets
                     } else {
-                        resolvedTargetsForClass.get(callerSignature) match {
-                            case Some(targets) ⇒
-                                targets
-                            case None ⇒
-                                val targets = classHierarchy.lookupImplementingMethods(
-                                    declaringClass, name, descriptor, project
-                                )
-                                resolvedTargets(declaringClass.id) =
-                                    resolvedTargetsForClass + ((callerSignature, targets))
-                                targets
-                        }
+                        resolvedTargetsForClass.getOrElseUpdate(
+                            callerSignature,
+                            classHierarchy.lookupImplementingMethods(
+                                declaringClass, name, descriptor, project))
                     }
                 }
                 //                implementingMethodsCache.getOrElseUpdate(
