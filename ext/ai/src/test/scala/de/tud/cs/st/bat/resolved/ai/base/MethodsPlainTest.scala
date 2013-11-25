@@ -62,20 +62,7 @@ class MethodsPlainTest
         with ParallelTestExecution {
 
     import util.XHTML.dumpOnFailureDuringValidation
-
-    class RecordingDomain extends domain.BaseDomain {
-        var returnedValue: Option[DomainValue] = _
-        override def areturn(pc: Int, value: DomainValue) { returnedValue = Some(value) }
-        override def dreturn(pc: Int, value: DomainValue) { returnedValue = Some(value) }
-        override def freturn(pc: Int, value: DomainValue) { returnedValue = Some(value) }
-        override def ireturn(pc: Int, value: DomainValue) { returnedValue = Some(value) }
-        override def lreturn(pc: Int, value: DomainValue) { returnedValue = Some(value) }
-        override def returnVoid(pc: Int) { returnedValue = None }
-    }
-
-    val classFile =
-        ClassFiles(TestSupport.locateTestResources("classfiles/ai.jar", "ext/ai")).map(_._1).
-            find(_.thisClass.className == "ai/MethodsPlain").get
+    import MethodsPlainTest._
 
     behavior of "the abstract interpreter"
 
@@ -684,7 +671,7 @@ class MethodsPlainTest
         /*val result =*/ BaseAI(classFile, method, domain)
 
         assert(
-            domain.isNull(domain.returnedValue.get).isUndefined,
+            domain.isNull(domain.returnedValue.get).yes,
             "unexpected nullness property of the returned value: "+domain.returnedValue.get)
     }
     it should "be able to analyze a push of byte value" in {
@@ -981,4 +968,21 @@ class MethodsPlainTest
 
         domain.returnedValue should be(None)
     }
+}
+
+private object MethodsPlainTest {
+
+    class RecordingDomain extends domain.BaseDomain {
+        var returnedValue: Option[DomainValue] = _
+        override def areturn(pc: Int, value: DomainValue) { returnedValue = Some(value) }
+        override def dreturn(pc: Int, value: DomainValue) { returnedValue = Some(value) }
+        override def freturn(pc: Int, value: DomainValue) { returnedValue = Some(value) }
+        override def ireturn(pc: Int, value: DomainValue) { returnedValue = Some(value) }
+        override def lreturn(pc: Int, value: DomainValue) { returnedValue = Some(value) }
+        override def returnVoid(pc: Int) { returnedValue = None }
+    }
+
+    val classFile =
+        ClassFiles(TestSupport.locateTestResources("classfiles/ai.jar", "ext/ai")).map(_._1).
+            find(_.thisClass.className == "ai/MethodsPlain").get
 }

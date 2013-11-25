@@ -62,11 +62,7 @@ class MethodsWithExceptionsTest
 
     import util.XHTML.dumpOnFailureDuringValidation
     import domain.PreciseRecordingDomain
-
-    val classFiles = Java7Framework.ClassFiles(
-        TestSupport.locateTestResources("classfiles/ai.jar", "ext/ai"))
-    val classFile = classFiles.map(_._1).
-        find(_.thisClass.className == "ai/MethodsWithExceptions").get
+    import MethodsWithExceptionsTest._
 
     private def evaluateMethod(name: String, f: PreciseRecordingDomain[String] ⇒ Unit) {
         val domain = new PreciseRecordingDomain(name)
@@ -146,3 +142,12 @@ class MethodsWithExceptionsTest
     }
 
 }
+private object MethodsWithExceptionsTest {
+
+    val classFiles = Java7Framework.ClassFiles(
+        TestSupport.locateTestResources("classfiles/ai.jar", "ext/ai"))
+
+    val classFile = classFiles.map(_._1).
+        find(_.thisClass.className == "ai/MethodsWithExceptions").get
+}
+

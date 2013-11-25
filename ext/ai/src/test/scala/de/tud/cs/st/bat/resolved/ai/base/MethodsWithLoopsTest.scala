@@ -56,10 +56,7 @@ class MethodsWithLoopsTest
         with ShouldMatchers
         with ParallelTestExecution {
 
-    val classFiles = Java7Framework.ClassFiles(
-        TestSupport.locateTestResources("classfiles/ai.jar", "ext/ai"))
-    val classFile = classFiles.map(_._1).
-        find(_.thisClass.className == "ai/MethodsWithLoops").get
+    import MethodsWithLoopsTest._
 
     def findMethod(name: String): Method = {
         classFile.methods.find(_.name == name).get
@@ -86,4 +83,12 @@ class MethodsWithLoopsTest
         val result = BaseAI(classFile, method, domain) // TODO [AI - Test] Update the test to not wait forever in case of a bug.
     }
 
+}
+object MethodsWithLoopsTest {
+
+    val classFiles = Java7Framework.ClassFiles(
+        TestSupport.locateTestResources("classfiles/ai.jar", "ext/ai"))
+
+    val classFile = classFiles.map(_._1).
+        find(_.thisClass.className == "ai/MethodsWithLoops").get
 }

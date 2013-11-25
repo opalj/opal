@@ -57,14 +57,10 @@ class MethodsWithBranchesTest
         with ShouldMatchers
         with ParallelTestExecution {
 
+    import MethodsWithBranchesTest._
+
     import domain.{ BaseRecordingDomain, RecordConstraints }
     type TestDomain = BaseRecordingDomain[String] with RecordConstraints[String]
-
-    val classFiles = Java7Framework.ClassFiles(
-        TestSupport.locateTestResources("classfiles/ai.jar", "ext/ai"))
-
-    val classFile = classFiles.map(_._1).
-        find(_.thisClass.className == "ai/MethodsWithBranches").get
 
     private def evaluateMethod(name: String)(f: TestDomain ⇒ Unit) {
         val domain = new BaseRecordingDomain(name) with RecordConstraints[String]
@@ -147,4 +143,12 @@ class MethodsWithBranchesTest
             ))
         }
     }
+}
+private object MethodsWithBranchesTest {
+
+    val classFiles = Java7Framework.ClassFiles(
+        TestSupport.locateTestResources("classfiles/ai.jar", "ext/ai"))
+
+    val classFile = classFiles.map(_._1).
+        find(_.thisClass.className == "ai/MethodsWithBranches").get
 }

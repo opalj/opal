@@ -61,14 +61,9 @@ class PropertyTracingTest
         with ParallelTestExecution {
 
     import util.XHTML.dumpOnFailureDuringValidation
+    import PropertyTracingTest._
 
-    val classFiles = Java7Framework.ClassFiles(
-        TestSupport.locateTestResources("classfiles/ai.jar", "ext/ai"))
-
-    val classFile = classFiles.map(_._1).
-        find(_.thisClass.className == "ai/domain/Sanitization").get
-
-    class AnalysisDomain(identifier:String)
+    class AnalysisDomain(identifier: String)
             extends PreciseConfigurableDomain[String](identifier)
             with RecordReturnValues[String]
             with SimpleBooleanPropertyTracing[String] {
@@ -118,48 +113,48 @@ class PropertyTracingTest
     //
 
     it should "be able to correctly identify that the method notSanitized1 does not sanitize the value" in {
-        evaluateMethod("notSanitized1"){ domain ⇒ 
+        evaluateMethod("notSanitized1") { domain ⇒
             domain.isSanitized() should be(false)
         }
     }
 
     it should "be able to correctly identify that the method notSanitized2 does not sanitize the value" in {
-        evaluateMethod("notSanitized2"){ domain ⇒ 
+        evaluateMethod("notSanitized2") { domain ⇒
             domain.isSanitized() should be(false)
         }
     }
 
     it should "be able to correctly identify that the method sanitized1 does sanitize the value" in {
-        evaluateMethod("sanitized1"){ domain ⇒ 
+        evaluateMethod("sanitized1") { domain ⇒
             domain.isSanitized() should be(true)
         }
     }
     it should "be able to correctly identify that the method sanitized2 does sanitize the value" in {
-        evaluateMethod("sanitized2"){ domain ⇒ 
+        evaluateMethod("sanitized2") { domain ⇒
             domain.isSanitized() should be(true)
         }
     }
 
     it should "be able to correctly identify that the method sanitized3 does sanitize the value" in {
-        evaluateMethod("sanitized3"){ domain ⇒ 
+        evaluateMethod("sanitized3") { domain ⇒
             domain.isSanitized() should be(true)
         }
     }
 
     it should "be able to correctly identify that the method sanitized4 does sanitize the value" in {
-        evaluateMethod("sanitized4"){ domain ⇒ 
+        evaluateMethod("sanitized4") { domain ⇒
             domain.isSanitized() should be(true)
         }
     }
 
     it should "be able to correctly identify that the method sanitized5 does sanitize the value" in {
-        evaluateMethod("sanitized5"){ domain ⇒ 
+        evaluateMethod("sanitized5") { domain ⇒
             domain.isSanitized() should be(true)
         }
     }
 
     it should "be able to correctly identify that the method sanitized6 does sanitize the value" in {
-        evaluateMethod("sanitized6"){ domain ⇒ 
+        evaluateMethod("sanitized6") { domain ⇒
             domain.isSanitized() should be(true)
         }
     }
@@ -170,4 +165,13 @@ class PropertyTracingTest
     //            domain.isSanitized() should be(true)
     //        })
     //    }
+}
+
+private object PropertyTracingTest {
+
+    val classFiles = Java7Framework.ClassFiles(
+        TestSupport.locateTestResources("classfiles/ai.jar", "ext/ai"))
+
+    val classFile = classFiles.map(_._1).
+        find(_.thisClass.className == "ai/domain/Sanitization").get
 }
