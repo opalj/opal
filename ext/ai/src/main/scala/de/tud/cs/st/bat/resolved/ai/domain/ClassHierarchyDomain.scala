@@ -40,28 +40,23 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 /**
  * Implementation of a Domain's `isSubtypeOf(...)` method that delegates to
- * the corresponding method defined by the class `ClassHierarchy`. This class
- * uses BAT's `preInitializedClassHierarchy` (see `ClassHierarchy` for details)
- * for answering queries.
+ * the corresponding method defined by the class `ClassHierarchy`.
  *
  * @author Michael Eichberg
  */
-trait BasicTypeHierarchy extends ClassHierarchyDomain { this: Domain[_] ⇒
-    
+trait ClassHierarchyDomain { this: Domain[_] ⇒
+
     /**
-     * This project's class hierarchy; unless explicitly overridden, BAT's
-     * built-in default class hierarchy is used which only reflects the type-hierarchy
-     * between the exceptions used by JVM instructions.
-     *
-     * @note '''This method is intended to be overridden.'''
+     * This project's class hierarchy.
      */
-    override def classHierarchy: analyses.ClassHierarchy =
-        BasicTypeHierarchy.classHierarchy
+    def classHierarchy: analyses.ClassHierarchy
 
+    /**
+     * @see `de.tud.cs.st.bat.resolved.analyses.ClassHierarchy.isSubtypeOf(ReferenceType,
+     * 		ReferenceType)`
+     */
+    override def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer =
+        classHierarchy.isSubtypeOf(subtype, supertype)
 
-}
-private object BasicTypeHierarchy {
-    val classHierarchy: analyses.ClassHierarchy =
-        analyses.ClassHierarchy.preInitializedClassHierarchy
 }
 

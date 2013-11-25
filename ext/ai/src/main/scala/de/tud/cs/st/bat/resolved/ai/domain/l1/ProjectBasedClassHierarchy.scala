@@ -45,14 +45,11 @@ import analyses.ClassHierarchy
  *
  * @author Michael Eichberg
  */
-trait ProjectBasedClassHierarchy[Source] { this: Domain[_] ⇒
+trait ProjectBasedClassHierarchy[Source] extends ClassHierarchyDomain { this: Domain[_] ⇒
 
     def project: analyses.Project[Source]
 
-    def classHierarchy: ClassHierarchy = project.classHierarchy
-
-    def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer =
-        classHierarchy.isSubtypeOf(subtype, supertype)
+    override def classHierarchy: ClassHierarchy = project.classHierarchy
 
 }
 
