@@ -41,7 +41,6 @@ import de.tud.cs.st.bat.resolved.ai.tracer.MultiTracer
 import de.tud.cs.st.bat.resolved.ai.tracer.ConsoleTracer
 import de.tud.cs.st.bat.resolved.ai.tracer.XHTMLTracer
 
-
 /**
  * A small interpreter that enables us to easily perform the abstract interpretation of a
  * specific method.
@@ -124,7 +123,7 @@ object InterpretMethod {
         val method =
             (
                 if (methodName.contains("("))
-                    classFile.methods.find(_.toJava == methodName)
+                    classFile.methods.find(_.toJava.contains(methodName))
                 else
                     classFile.methods.find(_.name == methodName)
             ) match {
