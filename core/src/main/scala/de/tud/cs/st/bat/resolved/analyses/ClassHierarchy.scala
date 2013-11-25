@@ -535,7 +535,7 @@ class ClassHierarchy private (
      *      or the field is not defined by one of the loaded classes. Searching for the
      *      field in subclasses is not meaningful as Java does not do dynamic field
      *      reference resolution. For further details study the following code:
-     *      {{{
+     * <pre><code>
      * static class Super {
      *
      *  public int x = 0;
@@ -591,7 +591,7 @@ class ClassHierarchy private (
      *   // <=> super.x=0; sub.x=1; ((Super)this).y=0; super.y=0; ((I)this).y=-1; this.z=0
      *  }
      * }
-     *      }}}
+     * </code></pre>
      *
      * @param c The class (or a superclass thereof) that is expected to define the
      *      reference field.
@@ -948,13 +948,8 @@ object ClassHierarchy {
     def preInitializedClassHierarchy: ClassHierarchy = apply(Traversable.empty)
 
     /**
-     * Analyzes the given class files and extends the current class hierarchy.
-     * However, this also means that an update of the class hierarchy results in a new
-     * class hierarchy object and, therefore, some external synchronization
-     * may be needed to make sure that the complete class hierarchy is constructed.
-     * This decision was made to avoid any need for synchronization
-     * once the class hierarchy is completely constructed.
-     * @note $noIncrementalMaintenance
+     * Create the class hierarchy by analyzing the given class files and
+     * the specified predefined class hierarchies.
      */
     def apply(
         classFiles: Traversable[ClassFile],

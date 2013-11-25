@@ -51,7 +51,10 @@ import collection.mutable.HashMap
  * Domain object which is used to calculate the call graph.
  *
  * ==Thread Safety==
- * This domain is thread-safe. (The used Construction Context has to be thread-safe, too!)
+ * This domain is thread-safe.
+ *
+ * (Do not forget to make sure that the used `CallGraphConstructionContext` is also
+ * thread-safe.)
  *
  * @author Michael Eichberg
  */
