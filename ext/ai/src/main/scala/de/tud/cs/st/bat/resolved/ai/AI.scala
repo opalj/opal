@@ -788,27 +788,36 @@ trait AI[D <: Domain[_]] {
                         val switch = instructions(pc).asInstanceOf[LOOKUPSWITCH]
                         val index = operands.head
                         val remainingOperands = operands.tail
-                        val firstKey = switch.npairs(0)._1
-                        var previousKey = firstKey
-                        var branchToDefaultRequired = false
-                        for ((key, offset) ← switch.npairs) {
-                            if (!branchToDefaultRequired && (key - previousKey) > 1) {
-                                if ((previousKey until key).exists(v ⇒ domain.isSomeValueInRange(index, v, v))) {
-                                    branchToDefaultRequired = true
-                                } else {
-                                    previousKey = key
+                        if (switch.npairs.isEmpty) {
+                            // in the Java 7 JDK 45 we had found a lookupswitch
+                            // that just had a defaultBranch (glorified "goto")
+                            gotoTarget(
+                                pc,
+                                pc + switch.defaultOffset,
+                                remainingOperands, locals)
+                        } else {
+                            var branchToDefaultRequired = false
+                            val firstKey = switch.npairs(0)._1
+                            var previousKey = firstKey
+                            for ((key, offset) ← switch.npairs) {
+                                if (!branchToDefaultRequired && (key - previousKey) > 1) {
+                                    if ((previousKey until key).exists(v ⇒ domain.isSomeValueInRange(index, v, v))) {
+                                        branchToDefaultRequired = true
+                                    } else {
+                                        previousKey = key
+                                    }
+                                }
+                                if (domain.isSomeValueInRange(index, key, key)) {
+                                    val branchTarget = pc + offset
+                                    val (updatedOperands, updatedLocals) =
+                                        domain.establishValue(branchTarget, key, index, remainingOperands, locals)
+                                    gotoTarget(pc, branchTarget, updatedOperands, updatedLocals)
                                 }
                             }
-                            if (domain.isSomeValueInRange(index, key, key)) {
-                                val branchTarget = pc + offset
-                                val (updatedOperands, updatedLocals) =
-                                    domain.establishValue(branchTarget, key, index, remainingOperands, locals)
-                                gotoTarget(pc, branchTarget, updatedOperands, updatedLocals)
+                            if (branchToDefaultRequired ||
+                                domain.isSomeValueNotInRange(index, firstKey, switch.npairs(switch.npairs.size - 1)._1)) {
+                                gotoTarget(pc, pc + switch.defaultOffset, remainingOperands, locals)
                             }
-                        }
-                        if (branchToDefaultRequired ||
-                            domain.isSomeValueNotInRange(index, firstKey, switch.npairs(switch.npairs.size - 1)._1)) {
-                            gotoTarget(pc, pc + switch.defaultOffset, remainingOperands, locals)
                         }
 
                     case 170 /*tableswitch*/ ⇒
