@@ -62,10 +62,10 @@ trait TypeLevelArrayInstructions { this: Domain[_] ⇒
         index: DomainValue,
         arrayref: DomainValue): ArrayLoadResult = {
         val refIsNull = isNull(arrayref)
-        if (refIsNull.maybeYes) {
+        if (refIsNull.yes) {
             ThrowsException(Seq(newInitializedObject(pc, ObjectType.NullPointerException)))
-        }
-        if (refIsNull.maybeNo) {
+        } else {
+            // in this branch we ingore the maybeYes case...
             // this is a byte or boolean load!
             typeOfValue(arrayref) match {
                 case IsReferenceValue(allUpperBounds) ⇒
@@ -84,7 +84,6 @@ trait TypeLevelArrayInstructions { this: Domain[_] ⇒
                     domainException(this, "array with unknown type: "+arrayref)
             }
         }
-        throw new UnknownError("This code was expected to be unreachable...")
     }
     override def bastore(pc: PC, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
         ComputationWithSideEffectOnly

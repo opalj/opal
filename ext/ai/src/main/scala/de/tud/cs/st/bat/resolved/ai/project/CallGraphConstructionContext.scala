@@ -37,15 +37,11 @@ package ai
 package project
 
 import bat.resolved.analyses.{ SomeProject, Project }
-
 import collection.Set
 import collection.Map
-
-// internally, we use mutable data structures (Arrays, mutable Maps) due to their 
-// better performance characteristics, but they are not exposed to the outside
 import collection.mutable.HashMap
-
 import bat.resolved.ai.domain._
+import scala.annotation.tailrec
 
 /**
  * Contains all information required during the computation of a call graph.
@@ -53,8 +49,7 @@ import bat.resolved.ai.domain._
 class CallGraphConstructionContext[Source](
         /* HELPER FIELDS */
         val project: Project[Source],
-        val methodAnalyzed: Array[Boolean],
-        var methodsToAnalyze: List[Method],
+        private[this] var methodsToAnalyze: List[Method],
         // the index is the id of the ReferenceType of the receiver
         val resolvedTargetsCache: Array[HashMap[MethodSignature, Iterable[Method]]],
         val handleUnresolvedMethodCall: ( /*callerClass: */ ReferenceType, /*caller:*/ Method, /*pc:*/ PC, /*calleeClass:*/ ReferenceType, /*calleeName:*/ String, /*calleeDescriptor: */ MethodDescriptor) ⇒ _,
@@ -63,6 +58,22 @@ class CallGraphConstructionContext[Source](
         val calledByMap: Array[HashMap[Method, Set[PC]]],
         // the index is the id of the method that calls other methods
         val callsMap: Array[HashMap[PC, Iterable[Method]]]) {
+
+    val methodAnalyzed: Array[Boolean] = new Array(project.methodsCount)
+
+    @tailrec final def takeMethod: Method = {
+        if (methodsToAnalyze.nonEmpty) {
+            val method = methodsToAnalyze.head
+            methodsToAnalyze = methodsToAnalyze.tail
+            if (methodAnalyzed(method.id))
+                takeMethod
+            else {
+                methodAnalyzed(method.id) = true
+                method
+            }
+        } else
+            null
+    }
 
     @inline final def addCallEdge(
         caller: Method,
@@ -86,7 +97,7 @@ class CallGraphConstructionContext[Source](
                     val newPCs = collection.immutable.Set.empty + pc
                     callers.update(caller, newPCs)
             }
-            if (!callee.isNative) {
+            if (!callee.isNative && !methodAnalyzed(callee.id)) {
                 methodsToAnalyze = callee :: methodsToAnalyze
             }
         }

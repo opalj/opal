@@ -85,13 +85,17 @@ object CallGraphFactory {
         theProject: Project[Source],
         entryPoints: List[Method]): (CHACallGraph[Source], List[UnresolvedMethodCall], List[CallGraphConstructionException]) = {
 
+        val exceptionsMutex = new Object
         var exceptions = List.empty[CallGraphConstructionException]
         def handleException(classFile: ClassFile, method: Method, exception: Exception) {
-            exceptions =
-                CallGraphConstructionException(classFile, method, exception) ::
-                    exceptions
+            exceptionsMutex.synchronized {
+                exceptions =
+                    CallGraphConstructionException(classFile, method, exception) ::
+                        exceptions
+            }
         }
 
+        val unresolvedMethodCallsMutex = new Object
         var unresolvedMethodCalls = List.empty[UnresolvedMethodCall]
         def handleUnresolvedMethodCall(
             callerClass: ReferenceType,
@@ -100,10 +104,12 @@ object CallGraphFactory {
             calleeClass: ReferenceType,
             calleeName: String,
             calleeDescriptor: MethodDescriptor) {
-            unresolvedMethodCalls =
-                UnresolvedMethodCall(
-                    callerClass, caller, pc,
-                    calleeClass, calleeName, calleeDescriptor) :: unresolvedMethodCalls
+            unresolvedMethodCallsMutex.synchronized {
+                unresolvedMethodCalls =
+                    UnresolvedMethodCall(
+                        callerClass, caller, pc,
+                        calleeClass, calleeName, calleeDescriptor) :: unresolvedMethodCalls
+            }
         }
 
         (
@@ -123,7 +129,6 @@ object CallGraphFactory {
 
         val context = new CallGraphConstructionContext[Source](
             theProject,
-            /* methodAnalyzed */ new Array[Boolean](methodsCount),
             /* methodsToAnalyze */ entryPoints,
             /* resolvedMethodsCache */
             new Array[HashMap[MethodSignature, Iterable[Method]]](theProject.objectTypesCount),
@@ -133,20 +138,16 @@ object CallGraphFactory {
         )
         import context._
 
-        while (methodsToAnalyze.nonEmpty) {
-            val method = methodsToAnalyze.head
-            methodsToAnalyze = methodsToAnalyze.tail
-            if (!methodAnalyzed(method.id)) {
-                methodAnalyzed(method.id) = true
-                val classFile = theProject.classFile(method)
-                try {
-                    BaseAI(
-                        classFile, method,
-                        new DefaultCHACallGraphDomain(context, classFile, method)
-                    )
-                } catch {
-                    case e: Exception ⇒ handleException(classFile, method, e)
-                }
+        var method: Method = null
+        while ({ method = context.takeMethod; method != null }) {
+            val classFile = theProject.classFile(method)
+            try {
+                BaseAI(
+                    classFile, method,
+                    new DefaultCHACallGraphDomain(context, classFile, method)
+                )
+            } catch {
+                case e: Exception ⇒ handleException(classFile, method, e)
             }
         }
 
