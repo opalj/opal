@@ -57,13 +57,35 @@ trait TypeLevelArrayInstructions { this: Domain[_] ⇒
     // STORING AND LOADING VALUES FROM ARRAYS
     //
 
-    override def baload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
-        typeOfValue(arrayref) match {
-            case IsReferenceValueWithSingleBound(ArrayType(componentType)) ⇒
-                ComputedValue(newTypedValue(pc, componentType))
-            case _ ⇒
-                domainException(this, "array with unknown component type: "+arrayref)
+    override def baload(
+        pc: PC,
+        index: DomainValue,
+        arrayref: DomainValue): ArrayLoadResult = {
+        val refIsNull = isNull(arrayref)
+        if (refIsNull.maybeYes) {
+            ThrowsException(Seq(newInitializedObject(pc, ObjectType.NullPointerException)))
         }
+        if (refIsNull.maybeNo) {
+            // this is a byte or boolean load!
+            typeOfValue(arrayref) match {
+                case IsReferenceValue(allUpperBounds) ⇒
+                    allUpperBounds foreach { perValueUpperBounds ⇒
+                        perValueUpperBounds.upperBound foreach { upperBound ⇒
+                            // all further types have to be the same!
+                            if (upperBound.isArrayType)
+                                return ComputedValue(
+                                    newTypedValue(
+                                        pc,
+                                        upperBound.asArrayType.componentType))
+                        }
+                    }
+                    domainException(this, "type information missing: "+arrayref)
+                case _ ⇒
+                    domainException(this, "array with unknown type: "+arrayref)
+            }
+        }
+        throw new UnknownError("This code was expected to be unreachable...")
+    }
     override def bastore(pc: PC, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
         ComputationWithSideEffectOnly
 
