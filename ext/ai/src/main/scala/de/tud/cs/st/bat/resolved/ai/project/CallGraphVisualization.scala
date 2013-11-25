@@ -193,15 +193,18 @@ object CallGraphVisualization {
         println("Exceptions: "+exceptions.size)
         println(exceptions.mkString("Exceptions:\n\t", "\n\t", "\t"))
 
+        // Generate and show the graph
         toDot.generateAndOpenDOT(nodes)
 
+        // Write out the statistics about the calls relation
         writeAndOpenDesktopApplication(
-            callGraph.callsStatistics,
+            callGraph.callsStatistics(),
             "CallGraphStatistics(calls)",
             ".tsv.txt")
 
+        // Write out the statistics about the called-by relation
         writeAndOpenDesktopApplication(
-            callGraph.calledByStatistics,
+            callGraph.calledByStatistics(),
             "CallGraphStatistics(calledBy)",
             ".tsv.txt")
     }
