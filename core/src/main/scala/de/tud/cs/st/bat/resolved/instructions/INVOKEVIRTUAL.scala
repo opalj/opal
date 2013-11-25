@@ -43,7 +43,7 @@ case class INVOKEVIRTUAL(
     declaringClass: ReferenceType, // an interface, class or array type to be precise
     name: String, 
     methodDescriptor: MethodDescriptor)
-        extends StaticMethodInvocationInstruction {
+        extends DynamicMethodInvocationInstruction {
 
     def opcode: Int = 182
 
