@@ -158,6 +158,16 @@ trait DefaultTypeLevelReferenceValues[+I]
             sys.error("not implemented")
     }
 
+    /**
+     * Determines the nullness-property of the given value.
+     *
+     * @param value A value of type `ReferenceValue`.
+     */
+    def isNull(value: DomainValue): Answer = value match {
+        case MReferenceValue(UIDList.empty) ⇒ Yes
+        case _                              ⇒ Unknown
+    }
+
     case class MReferenceValue protected[DefaultTypeLevelReferenceValues] (
         upperBound: UpperBound)
             extends super.ReferenceValue

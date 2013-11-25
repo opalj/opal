@@ -98,13 +98,6 @@ trait TypeLevelReferenceValues[+I] extends Domain[I] {
         value.asInstanceOf[ReferenceValue]
 
     /**
-     * Determines the nullness-property of the given value.
-     *
-     * @param value A value of type `ReferenceValue`.
-     */
-    def isNull(value: DomainValue): Answer = Unknown
-
-    /**
      * @param value A reference type value.
      */
     def isSubtypeOf(value: DomainValue, supertype: ReferenceType): Answer =

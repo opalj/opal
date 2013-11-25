@@ -37,7 +37,9 @@ package ai
 package project
 
 /**
- * Visualizes (small) call graphs using Graphviz.
+ * Visualizes call graphs using Graphviz.
+ * 
+ * Given GraphViz's capabilities only small call graphs can be visualized.
  *
  * @author Michael Eichberg
  */
