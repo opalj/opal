@@ -116,7 +116,7 @@ object CallGraphVisualization {
                 time {
                     CallGraphFactory.performCHA(
                         project,
-                        CallGraphFactory.defaultEntryPointsForCHA(project))
+                        CallGraphFactory.defaultEntryPointsForLibraries(project))
                 } { t ⇒ println("Creating the call graph took: "+nsToSecs(t)) }
             } { m ⇒ println("Required memory for call graph: "+asMB(m)) }
 

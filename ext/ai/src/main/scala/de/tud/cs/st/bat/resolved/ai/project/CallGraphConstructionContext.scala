@@ -45,29 +45,36 @@ import scala.annotation.tailrec
 
 /**
  * Contains all information required during the computation of a call graph.
+ *
+ * Basic a helper data structure that encapsulates all data structures that
+ * are mutated during the computation of the call graph.
+ *
+ * @author Michael Eichberg
  */
 class CallGraphConstructionContext[Source](
-        /* HELPER FIELDS */
         val project: Project[Source],
         private[this] var methodsToAnalyze: List[Method],
-        // the index is the id of the ReferenceType of the receiver
-        val resolvedTargetsCache: Array[HashMap[MethodSignature, Iterable[Method]]],
-        val handleUnresolvedMethodCall: ( /*callerClass: */ ReferenceType, /*caller:*/ Method, /*pc:*/ PC, /*calleeClass:*/ ReferenceType, /*calleeName:*/ String, /*calleeDescriptor: */ MethodDescriptor) ⇒ _,
-        /* THE CALL GRAPH */
-        // the index is the id of the method that is "called by" other methods
-        val calledByMap: Array[HashMap[Method, Set[PC]]],
-        // the index is the id of the method that calls other methods
-        val callsMap: Array[HashMap[PC, Iterable[Method]]]) {
+        val handleUnresolvedMethodCall: ( /*callerClass: */ ReferenceType, /*caller:*/ Method, /*pc:*/ PC, /*calleeClass:*/ ReferenceType, /*calleeName:*/ String, /*calleeDescriptor: */ MethodDescriptor) ⇒ _) {
 
-    val methodAnalyzed: Array[Boolean] = new Array(project.methodsCount)
+    // the index is the id of the ReferenceType of the receiver
+    val resolvedTargetsCache: Array[HashMap[MethodSignature, Iterable[Method]]] =
+        new Array[HashMap[MethodSignature, Iterable[Method]]](project.objectTypesCount)
+
+    private[this] val methodAnalyzed: Array[Boolean] = new Array(project.methodsCount)
+
+    /* THE CALL GRAPH */
+    // the index is the id of the method that is "called by" other methods
+    private[this] val calledByMap: Array[HashMap[Method, Set[PC]]] = new Array(project.methodsCount)
+    // the index is the id of the method that calls other methods
+    private[this] val callsMap: Array[HashMap[PC, Iterable[Method]]] = new Array(project.methodsCount)
 
     @tailrec final def takeMethod: Method = {
         if (methodsToAnalyze.nonEmpty) {
             val method = methodsToAnalyze.head
             methodsToAnalyze = methodsToAnalyze.tail
-            if (methodAnalyzed(method.id))
+            if (methodAnalyzed(method.id)) {
                 takeMethod
-            else {
+            } else {
                 methodAnalyzed(method.id) = true
                 method
             }
@@ -110,38 +117,6 @@ class CallGraphConstructionContext[Source](
                 HashMap.empty[PC, Iterable[Method]])
         callSites.update(pc, callees)
     }
+
+    def buildCallGraph(): CallGraph[Source] = new CallGraph(project, calledByMap, callsMap)
 }
-
-/*
-Things that complicate matters for more complex call graph analyses:
-class A {
-
-    private A a = this;
-
-    public m() {    
-        a.foo() // here, a refers to an object of type B if bar was called before m()
-        a.foo() // here, a "always" refers to an object of type B and not this!
-    }
-
-    private foo() {
-        a = new B();
-    }
-
-    public bar() {
-        a = new B();
-    }
-} 
-class B extends A {
-    private foo() {
-        bar()
-    }
-
-    public bar() {
-        // do nothing
-    }
-}
-*/ 
-
- 
-
-

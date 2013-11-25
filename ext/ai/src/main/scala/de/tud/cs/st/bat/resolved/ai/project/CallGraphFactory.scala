@@ -42,7 +42,8 @@ import collection.Set
 import collection.Map
 
 // internally, we use mutable data structures (Arrays, mutable Maps) due to their 
-// better performance characteristics, but they are not exposed to the outside
+// better performance characteristics, but they are not exposed to the outside and 
+// the data structures are generally only mutated while building the data structure
 import collection.mutable.HashMap
 
 import bat.resolved.ai.domain._
@@ -57,13 +58,16 @@ object CallGraphFactory {
     import language.existentials
 
     /**
+     * Returns a list of all entry points that is well suited if we want to
+     * analyze a library/framework.
+     *
      * The set of all entry points consists of:
      * - all static initializers,
      * - every non-private static method,
      * - every non-private constructor,
      * - every non-private method.
      */
-    def defaultEntryPointsForCHA(project: SomeProject): List[Method] = {
+    def defaultEntryPointsForLibraries(project: SomeProject): List[Method] = {
         var entryPoints = List.empty[Method]
         project.foreachMethod { method: Method ⇒
             if (!method.isPrivate && method.body.isDefined)
@@ -73,17 +77,17 @@ object CallGraphFactory {
     }
 
     /**
-     * Creates a call graph using Class Hierarchy Analysis.
-     * The call graph is created by analyzing each entry point on its own. The call
-     * graph is calculated under a specific assumption about a programs/libraries/framework's
-     * entry methods.
+     * Creates a call graph using Class Hierarchy Analysis. 
+     * The call graph is created by analyzing each entry point on its own. Hence, 
+     * the call graph is calculated under a specific assumption about a 
+     * programs/libraries/framework's entry methods.
      *
      * Virtual calls on Arrays (clone(), toString(),...) are replaced by calls to
      * `java.lang.Object`.
      */
     def performCHA[Source](
         theProject: Project[Source],
-        entryPoints: List[Method]): (CHACallGraph[Source], List[UnresolvedMethodCall], List[CallGraphConstructionException]) = {
+        entryPoints: List[Method]): (CallGraph[Source], List[UnresolvedMethodCall], List[CallGraphConstructionException]) = {
 
         val exceptionsMutex = new Object
         var exceptions = List.empty[CallGraphConstructionException]
@@ -123,18 +127,14 @@ object CallGraphFactory {
         theProject: Project[Source],
         entryPoints: List[Method],
         handleUnresolvedMethodCall: ( /*callerClass: */ ReferenceType, /*caller:*/ Method, /*pc:*/ PC, /*calleeClass:*/ ReferenceType, /*calleeName:*/ String, /*calleeDescriptor: */ MethodDescriptor) ⇒ _,
-        handleException: (ClassFile, Method, Exception) ⇒ _): CHACallGraph[Source] = {
+        handleException: (ClassFile, Method, Exception) ⇒ _): CallGraph[Source] = {
 
         val methodsCount = Method.methodsCount
 
         val context = new CallGraphConstructionContext[Source](
             theProject,
             /* methodsToAnalyze */ entryPoints,
-            /* resolvedMethodsCache */
-            new Array[HashMap[MethodSignature, Iterable[Method]]](theProject.objectTypesCount),
-            handleUnresolvedMethodCall,
-            /* calledBy */ new Array[HashMap[Method, Set[PC]]](methodsCount),
-            /* calls */ new Array[HashMap[PC, Iterable[Method]]](methodsCount)
+            handleUnresolvedMethodCall
         )
         import context._
 
@@ -151,7 +151,7 @@ object CallGraphFactory {
             }
         }
 
-        new CHACallGraph(theProject, calledByMap, callsMap)
+        context.buildCallGraph
     }
 }
 
