@@ -37,13 +37,7 @@ package ai
 package project
 
 import bat.resolved.analyses.{ SomeProject, Project }
-import collection.Set
-import collection.Map
-import collection.mutable.HashMap
 import bat.resolved.ai.domain._
-import scala.annotation.tailrec
-import java.util.concurrent.Callable
-import java.util.concurrent.Future
 
 /**
  * Factory methods to create call graphs.
@@ -53,6 +47,9 @@ import java.util.concurrent.Future
 object CallGraphFactory {
 
     import language.existentials
+
+    import java.util.concurrent.Callable
+    import java.util.concurrent.Future
 
     /**
      * Returns a list of all entry points that is well suited if we want to
@@ -86,50 +83,31 @@ object CallGraphFactory {
         theProject: Project[Source],
         entryPoints: List[Method]): (CallGraph[Source], List[UnresolvedMethodCall], List[CallGraphConstructionException]) = {
 
+        type MethodAnalysisResult = (List[(Method, PC, Iterable[Method])], List[UnresolvedMethodCall])
+
+        val cache = CHACache(theProject)
+
         val exceptionsMutex = new Object
         var exceptions = List.empty[CallGraphConstructionException]
-        def caughtException(classFile: ClassFile, method: Method, exception: Exception) {
+        @inline def caughtException(exception: CallGraphConstructionException) {
             exceptionsMutex.synchronized {
-                exceptions =
-                    CallGraphConstructionException(classFile, method, exception) ::
-                        exceptions
+                exceptions = exception :: exceptions
             }
         }
 
         val unresolvedMethodCallsMutex = new Object
         var unresolvedMethodCalls = List.empty[UnresolvedMethodCall]
-        def unresolvedMethodCall(
-            callerClass: ReferenceType,
-            caller: Method,
-            pc: PC,
-            calleeClass: ReferenceType,
-            calleeName: String,
-            calleeDescriptor: MethodDescriptor): Unit = {
-            unresolvedMethodCallsMutex.synchronized {
-                unresolvedMethodCalls =
-                    UnresolvedMethodCall(
-                        callerClass, caller, pc,
-                        calleeClass, calleeName, calleeDescriptor) :: unresolvedMethodCalls
-            }
+        def addUnresolvedMethodCalls(
+            moreUnresolvedMethodCalls: List[UnresolvedMethodCall]): Unit = {
+            if (moreUnresolvedMethodCalls.nonEmpty)
+                unresolvedMethodCallsMutex.synchronized {
+                    unresolvedMethodCalls =
+                        moreUnresolvedMethodCalls ::: unresolvedMethodCalls
+                }
         }
 
-        (
-            performCHA(theProject, entryPoints, unresolvedMethodCall _, caughtException _),
-            unresolvedMethodCalls,
-            exceptions
-        )
-    }
-
-    def performCHA[Source](
-        theProject: Project[Source],
-        entryPoints: List[Method],
-        unresolvedMethodCall: ( /*callerClass: */ ReferenceType, /*caller:*/ Method, /*pc:*/ PC, /*calleeClass:*/ ReferenceType, /*calleeName:*/ String, /*calleeDescriptor: */ MethodDescriptor) ⇒ Unit,
-        caughtException: (ClassFile, Method, Exception) ⇒ _): CallGraph[Source] = {
-
-        val cache = CHACache(theProject)
-
         var futuresMutex = new Object
-        var futures = List.empty[Future[List[(Method, PC, Iterable[Method])]]]
+        var futures = List.empty[Future[MethodAnalysisResult]]
 
         val methodSubmitted: Array[Boolean] = new Array(Method.methodsCount)
         val executorService =
@@ -149,24 +127,22 @@ object CallGraphFactory {
             }
         }
 
-        def doAnalyzeMethod(
-            method: Method): Callable[List[(Method, PC, Iterable[Method])]] =
-            new Callable[List[(Method, PC, Iterable[Method])]] {
-                def call(): List[(Method, PC, Iterable[Method])] = {
+        def doAnalyzeMethod(method: Method): Callable[MethodAnalysisResult] =
+            new Callable[MethodAnalysisResult] {
+                def call(): MethodAnalysisResult = {
                     val classFile = theProject.classFile(method)
+                    val domain: CHACallGraphDomain[Source, Int] =
+                        new DefaultCHACallGraphDomain(theProject, cache, classFile, method)
                     try {
-                        val domain =
-                            new DefaultCHACallGraphDomain(
-                                theProject, cache,
-                                classFile, method,
-                                unresolvedMethodCall
-                            )
                         BaseAI(classFile, method, domain)
-                        domain.callEdges
+                        (domain.callEdges, domain.unresolvedMethodCalls)
                     } catch {
-                        case e: Exception ⇒
-                            caughtException(classFile, method, e)
-                            List.empty
+                        case exception: Exception ⇒
+                            caughtException(
+                                CallGraphConstructionException(classFile, method, exception)
+                            )
+                            // we take what we got so far...
+                            (domain.callEdges, domain.unresolvedMethodCalls)
                     }
                 }
             }
@@ -180,13 +156,16 @@ object CallGraphFactory {
                 futures = futures.tail
                 future
             }
-            val callEdges = future.get()
-            callEdges.foreach(_._3.foreach(method => if(!method.isNative) submitMethod(method)))
+            val (callEdges, unresolvedMethodCalls) = future.get()
+            callEdges.foreach(_._3.foreach { method ⇒
+                if (!method.isNative) submitMethod(method)
+            })
+            addUnresolvedMethodCalls(unresolvedMethodCalls)
             builder.addCallEdges(callEdges)
         }
         executorService.shutdown()
 
-        builder.buildCallGraph
+        (builder.buildCallGraph, unresolvedMethodCalls, exceptions)
     }
 }
 

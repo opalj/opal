@@ -36,15 +36,7 @@ package resolved
 package ai
 package project
 
-import bat.resolved.ai.domain._
-
-import bat.resolved.analyses.{ SomeProject, Project }
-
-import annotation.tailrec
-import collection.Set
-import collection.mutable.Map
-import collection.mutable.HashMap
-import java.util.concurrent.ConcurrentLinkedQueue
+import bat.resolved.analyses.Project
 
 /**
  * Collect the information required to build the call graph.
@@ -54,30 +46,36 @@ import java.util.concurrent.ConcurrentLinkedQueue
 class CallGraphBuilder[Source](
         val project: Project[Source]) {
 
-    private[this] var allEdges = new ConcurrentLinkedQueue[List[(Method, PC, Iterable[Method])]]
+    import collection.immutable.Set
+    import collection.mutable.HashMap
+    import java.util.concurrent.ConcurrentLinkedQueue
+
+    private[this] var allCallEdges =
+        new ConcurrentLinkedQueue[List[(Method, PC, Iterable[Method])]]
 
     @inline final def addCallEdges(callEdges: List[(Method, PC, Iterable[Method])]): Unit = {
         if (callEdges.nonEmpty) {
-            allEdges.add(callEdges)
+            allCallEdges.add(callEdges)
         }
     }
 
     def buildCallGraph(): CallGraph[Source] = {
+        import UID.getOrElseUpdate
 
-        /* THE CALL GRAPH */
+        import concurrent._
+        import concurrent.duration._
+        import ExecutionContext.Implicits.global
+
+        import collection.JavaConversions._
+
         // the index is the id of the method that is "called by" other methods
-        val calledByMap: Array[Map[Method, Set[PC]]] = new Array(project.methodsCount)
-        // the index is the id of the method that calls other methods
-        val callsMap: Array[Map[PC, Iterable[Method]]] = new Array(project.methodsCount)
-
-        @inline def addCallEdge(
-            caller: Method,
-            pc: PC,
-            callees: Iterable[Method]): Unit = {
-            import UID.getOrElseUpdate
-
-            // calledBy: <conceptually> Map[Method, Map[Method, Set[PC]]]
-            for (callee ← callees) {
+        val calledByMapFuture: Future[Array[HashMap[Method, Set[PC]]]] = future {
+            val calledByMap: Array[HashMap[Method, Set[PC]]] = new Array(project.methodsCount)
+            for {
+                edges ← allCallEdges.iterator()
+                (caller, pc, callees) ← edges
+                callee ← callees
+            } {
                 val callers =
                     getOrElseUpdate(
                         calledByMap,
@@ -93,8 +91,16 @@ class CallGraphBuilder[Source](
                         callers.update(caller, newPCs)
                 }
             }
+            calledByMap
+        }
 
-            // calls: <conceptually> Map[Method, Map[PC, Iterable[Method]]]         
+        // the index is the id of the method that calls other methods
+        val callsMap: Array[HashMap[PC, Iterable[Method]]] = new Array(project.methodsCount)
+        for {
+            edges ← allCallEdges.iterator()
+            (caller, pc, callees) ← edges
+            callee ← callees
+        } {
             val callSites =
                 getOrElseUpdate(
                     callsMap,
@@ -103,14 +109,9 @@ class CallGraphBuilder[Source](
             callSites.update(pc, callees)
         }
 
-        import collection.JavaConversions._
-        for {
-            edges ← allEdges.iterator()
-            (caller, pc, callees) ← edges
-        } {
-            addCallEdge(caller, pc, callees)
-        }
-
-        new CallGraph(project, calledByMap, callsMap)
+        new CallGraph(
+            project,
+            Await.result(calledByMapFuture, Duration.Inf),
+            callsMap)
     }
 }

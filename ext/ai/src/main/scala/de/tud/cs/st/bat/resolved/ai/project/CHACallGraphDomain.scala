@@ -40,14 +40,13 @@ import domain._
 import bat.resolved.analyses._
 import collection.Set
 import collection.Map
-import collection.mutable.HashMap
-import java.util.concurrent.locks.ReentrantReadWriteLock
 
 /**
  * Domain object which is used to calculate the call graph.
  *
  * ==Thread Safety==
- * This domain is thread-safe. (The used builder has to be thread-safe, too!)
+ * This domain is not thread-safe. Hence, it can only be used by one abstract interpreter
+ * at a time.
  *
  * @author Michael Eichberg
  */
@@ -68,17 +67,27 @@ trait CHACallGraphDomain[Source, I]
     //
     /* abstract */ val cache: CHACache
 
-    /* abstract */ def unresolvedMethodCall(
-        callerClass: ReferenceType, caller: Method, pc: PC,
-        calleeClass: ReferenceType, calleeName: String, calleeDescriptor: MethodDescriptor): Unit
-
     //
     // IMPLEMENTATION
     //
 
+    private[this] var _unresolvedMethodCalls = List.empty[UnresolvedMethodCall]
+
+    @inline final private[this] def addUnresolvedMethodCall(
+        callerClass: ReferenceType, caller: Method, pc: PC,
+        calleeClass: ReferenceType, calleeName: String, calleeDescriptor: MethodDescriptor): Unit = {
+        _unresolvedMethodCalls =
+            new UnresolvedMethodCall(
+                callerClass, caller, pc,
+                calleeClass, calleeName, calleeDescriptor
+            ) :: _unresolvedMethodCalls
+    }
+
+    def unresolvedMethodCalls: List[UnresolvedMethodCall] = _unresolvedMethodCalls
+
     private[this] var _callEdges = List.empty[(Method, PC, Iterable[Method])]
 
-    @inline final def addCallEdge(
+    @inline final private[this] def addCallEdge(
         caller: Method,
         pc: PC,
         callees: Iterable[Method]): Unit = {
@@ -87,23 +96,41 @@ trait CHACallGraphDomain[Source, I]
 
     def callEdges: List[(Method, PC, Iterable[Method])] = _callEdges
 
-    @inline private[this] def dynamicallyBoundInvocation(
+    @inline private[this] def fixedMethodCall(
         pc: PC,
         declaringClass: ObjectType,
         name: String,
         descriptor: MethodDescriptor) {
-        // PLAIN CHA - we do not consider any data-flow information 
-        // that is available
+        classHierarchy.lookupMethodDefinition(
+            declaringClass, name, descriptor, project
+        ) match {
+                case Some(callee) ⇒
+                    addCallEdge(caller, pc, Iterable(callee))
+                case None ⇒
+                    addUnresolvedMethodCall(
+                        callerClassFile.thisClass, caller, pc,
+                        declaringClass, name, descriptor
+                    )
+            }
+    }
+
+    @inline private[this] def virtualMethodCall(
+        pc: PC,
+        declaringClassType: ReferenceType,
+        name: String,
+        descriptor: MethodDescriptor,
+        operands: List[DomainValue]) {
+        // MODIFIED CHA - we used the type information that is readily available
 
         val callees = cache.getOrElseUpdate(
-            declaringClass, new MethodSignature(name, descriptor),
+            declaringClassType, new MethodSignature(name, descriptor),
             classHierarchy.lookupImplementingMethods(
-                declaringClass, name, descriptor, project))
+                declaringClassType.asObjectType, name, descriptor, project))
 
         if (callees.isEmpty)
-            unresolvedMethodCall(
+            addUnresolvedMethodCall(
                 callerClassFile.thisClass, caller, pc,
-                declaringClass, name, descriptor)
+                declaringClassType, name, descriptor)
         else {
             addCallEdge(caller, pc, callees)
         }
@@ -115,11 +142,10 @@ trait CHACallGraphDomain[Source, I]
         name: String,
         descriptor: MethodDescriptor,
         operands: List[DomainValue]): OptionalReturnValueOrExceptions = {
-
         if (declaringClass.isArrayType) {
-            staticallyBoundInvocation(pc, ObjectType.Object, name, descriptor)
+            fixedMethodCall(pc, ObjectType.Object, name, descriptor)
         } else {
-            dynamicallyBoundInvocation(pc, declaringClass.asObjectType, name, descriptor)
+            virtualMethodCall(pc, declaringClass, name, descriptor, operands)
         }
         super.invokevirtual(pc, declaringClass, name, descriptor, operands)
     }
@@ -130,26 +156,8 @@ trait CHACallGraphDomain[Source, I]
         name: String,
         descriptor: MethodDescriptor,
         operands: List[DomainValue]): OptionalReturnValueOrExceptions = {
-        dynamicallyBoundInvocation(pc, declaringClass.asObjectType, name, descriptor)
+        virtualMethodCall(pc, declaringClass, name, descriptor, operands)
         super.invokeinterface(pc, declaringClass, name, descriptor, operands)
-    }
-
-    @inline private[this] def staticallyBoundInvocation(
-        pc: PC,
-        declaringClass: ObjectType,
-        name: String,
-        descriptor: MethodDescriptor) {
-        classHierarchy.lookupMethodDefinition(
-            declaringClass, name, descriptor, project
-        ) match {
-                case Some(callee) ⇒
-                    addCallEdge(caller, pc, Iterable(callee))
-                case None ⇒
-                    unresolvedMethodCall(
-                        callerClassFile.thisClass, caller, pc,
-                        declaringClass, name, descriptor
-                    )
-            }
     }
 
     /**
@@ -163,7 +171,7 @@ trait CHACallGraphDomain[Source, I]
         operands: List[DomainValue]): OptionalReturnValueOrExceptions = {
         // for invokespecial the dynamic type is not "relevant" and the
         // first method that we find is the one that needs to be concrete 
-        staticallyBoundInvocation(pc, declaringClass, name, descriptor)
+        fixedMethodCall(pc, declaringClass, name, descriptor)
         super.invokespecial(pc, declaringClass, name, descriptor, operands)
     }
 
@@ -176,62 +184,10 @@ trait CHACallGraphDomain[Source, I]
         name: String,
         descriptor: MethodDescriptor,
         operands: List[DomainValue]): OptionalReturnValueOrExceptions = {
-        staticallyBoundInvocation(pc, declaringClass, name, descriptor)
+        fixedMethodCall(pc, declaringClass, name, descriptor)
         super.invokestatic(pc, declaringClass, name, descriptor, operands)
     }
 }
-
-class CHACache private (
-        private[this] val cache: Array[HashMap[MethodSignature, Iterable[Method]]]) {
-
-    private[this] val cacheMutexes: Array[Object] = {
-        val a = new Array(cache.size)
-        Array.fill(cache.size)(new Object)
-    }
-
-    def getOrElseUpdate(
-        declaringClass: ReferenceType,
-        callerSignature: MethodSignature,
-        orElse: ⇒ Iterable[Method]): Iterable[Method] = {
-
-        @inline def updateCachedResults(
-            resolvedTargetsForClass: HashMap[MethodSignature, Iterable[Method]]) = {
-            resolvedTargetsForClass.synchronized {
-                resolvedTargetsForClass.getOrElseUpdate(
-                    callerSignature,
-                    orElse
-                )
-            }
-        }
-
-        val id = declaringClass.id
-        val cachedResults = {
-            val cachedResults = { cacheMutexes(id).synchronized { cache(id) } }
-            if (cachedResults eq null) {
-                cacheMutexes(id).synchronized {
-                    val cachedResults = cache(declaringClass.id)
-                    if (cachedResults eq null) { // still eq null... 
-                        val targets = orElse
-                        cache(declaringClass.id) = HashMap((callerSignature, targets))
-                        return targets
-                    } else {
-                        cachedResults
-                    }
-                }
-            } else {
-                cachedResults
-            }
-        }
-        updateCachedResults(cachedResults)
-    }
-}
-object CHACache {
-
-    def apply(project: SomeProject): CHACache = {
-        new CHACache(new Array(project.objectTypesCount))
-    }
-}
-
 /**
  * Domain object which is used to calculate the call graph.
  */
@@ -239,8 +195,7 @@ class DefaultCHACallGraphDomain[Source](
     val project: Project[Source],
     val cache: CHACache,
     val callerClassFile: ClassFile,
-    val caller: Method,
-    private[this] val _unresolvedMethodCall: (ReferenceType, Method, PC, ReferenceType, String, MethodDescriptor) ⇒ Unit)
+    val caller: Method)
         extends Domain[Int]
         with DefaultDomainValueBinding[Int]
         with DefaultTypeLevelIntegerValues[Int]
@@ -258,16 +213,6 @@ class DefaultCHACallGraphDomain[Source](
         with CHACallGraphDomain[Source, Int] {
 
     def identifier = caller.id
-
-    def unresolvedMethodCall(
-        callerClass: ReferenceType,
-        caller: Method,
-        pc: PC,
-        calleeClass: ReferenceType,
-        calleeName: String,
-        calleeDescriptor: MethodDescriptor): Unit = {
-        _unresolvedMethodCall(callerClass, caller, pc, calleeClass, calleeName, calleeDescriptor)
-    }
 
 }
 

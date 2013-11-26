@@ -50,6 +50,9 @@ import bat.resolved.ai.domain._
 /**
  * Basic representation of a call graph.
  *
+ * ==Thread Safety==
+ * The call graph is immutable and can be accessed by multiple thread concurrently.
+ *
  * @author Michael Eichberg
  */
 class CallGraph[Source] private[project] (
@@ -67,6 +70,10 @@ class CallGraph[Source] private[project] (
         Option(calledByMap(method.id))
     }
 
+    /**
+     * Returns the potential methods that are invoked by the invoke instruction
+     * identified by the method/pc pair.
+     */
     def calls(method: Method, pc: PC): Iterable[Method] = {
         Option(callsMap(method.id)).flatMap(_.get(pc)).getOrElse(Iterable.empty)
     }
