@@ -37,16 +37,11 @@ package ai
 package project
 
 import bat.resolved.analyses.{ SomeProject, Project }
-
 import collection.Set
 import collection.Map
-
-// internally, we use mutable data structures (Arrays, mutable Maps) due to their 
-// better performance characteristics, but they are not exposed to the outside and 
-// the data structures are generally only mutated while building the data structure
 import collection.mutable.HashMap
-
 import bat.resolved.ai.domain._
+import scala.annotation.tailrec
 
 /**
  * Factory methods to create call graphs.
@@ -77,9 +72,9 @@ object CallGraphFactory {
     }
 
     /**
-     * Creates a call graph using Class Hierarchy Analysis. 
-     * The call graph is created by analyzing each entry point on its own. Hence, 
-     * the call graph is calculated under a specific assumption about a 
+     * Creates a call graph using Class Hierarchy Analysis.
+     * The call graph is created by analyzing each entry point on its own. Hence,
+     * the call graph is calculated under a specific assumption about a
      * programs/libraries/framework's entry methods.
      *
      * Virtual calls on Arrays (clone(), toString(),...) are replaced by calls to
@@ -130,16 +125,39 @@ object CallGraphFactory {
         handleException: (ClassFile, Method, Exception) ⇒ _): CallGraph[Source] = {
 
         val methodsCount = Method.methodsCount
+        var methodsToAnalyze: List[Method] = entryPoints
+        val methodAnalyzed: Array[Boolean] = new Array(methodsCount)
 
-        val context = new CallGraphConstructionContext[Source](
-            theProject,
-            /* methodsToAnalyze */ entryPoints,
-            handleUnresolvedMethodCall
-        )
+        @tailrec def takeMethod: Method = {
+            if (methodsToAnalyze.nonEmpty) {
+                val method = methodsToAnalyze.head
+                methodsToAnalyze = methodsToAnalyze.tail
+                if (methodAnalyzed(method.id)) {
+                    takeMethod
+                } else {
+                    methodAnalyzed(method.id) = true
+                    method
+                }
+            } else
+                null
+        }
+        
+        def analyzeMethod(method: Method): Unit = {
+            if (!methodAnalyzed(method.id)) {
+                methodsToAnalyze = method :: methodsToAnalyze
+            }
+        }
+
+        val context =
+            new CallGraphConstructionContext[Source](
+                theProject,
+                analyzeMethod,
+                handleUnresolvedMethodCall
+            )
         import context._
 
         var method: Method = null
-        while ({ method = context.takeMethod; method != null }) {
+        while ({ method = takeMethod; method != null }) {
             val classFile = theProject.classFile(method)
             try {
                 BaseAI(

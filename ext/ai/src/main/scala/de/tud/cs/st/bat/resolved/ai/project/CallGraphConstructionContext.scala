@@ -53,34 +53,18 @@ import scala.annotation.tailrec
  */
 class CallGraphConstructionContext[Source](
         val project: Project[Source],
-        private[this] var methodsToAnalyze: List[Method],
+        val analyzeMethod: (Method) ⇒ Unit,
         val handleUnresolvedMethodCall: ( /*callerClass: */ ReferenceType, /*caller:*/ Method, /*pc:*/ PC, /*calleeClass:*/ ReferenceType, /*calleeName:*/ String, /*calleeDescriptor: */ MethodDescriptor) ⇒ _) {
 
     // the index is the id of the ReferenceType of the receiver
     val resolvedTargetsCache: Array[HashMap[MethodSignature, Iterable[Method]]] =
         new Array[HashMap[MethodSignature, Iterable[Method]]](project.objectTypesCount)
 
-    private[this] val methodAnalyzed: Array[Boolean] = new Array(project.methodsCount)
-
     /* THE CALL GRAPH */
     // the index is the id of the method that is "called by" other methods
     private[this] val calledByMap: Array[HashMap[Method, Set[PC]]] = new Array(project.methodsCount)
     // the index is the id of the method that calls other methods
     private[this] val callsMap: Array[HashMap[PC, Iterable[Method]]] = new Array(project.methodsCount)
-
-    @tailrec final def takeMethod: Method = {
-        if (methodsToAnalyze.nonEmpty) {
-            val method = methodsToAnalyze.head
-            methodsToAnalyze = methodsToAnalyze.tail
-            if (methodAnalyzed(method.id)) {
-                takeMethod
-            } else {
-                methodAnalyzed(method.id) = true
-                method
-            }
-        } else
-            null
-    }
 
     @inline final def addCallEdge(
         caller: Method,
@@ -104,8 +88,8 @@ class CallGraphConstructionContext[Source](
                     val newPCs = collection.immutable.Set.empty + pc
                     callers.update(caller, newPCs)
             }
-            if (!callee.isNative && !methodAnalyzed(callee.id)) {
-                methodsToAnalyze = callee :: methodsToAnalyze
+            if (!callee.isNative) {
+                analyzeMethod(callee)
             }
         }
 
@@ -118,5 +102,6 @@ class CallGraphConstructionContext[Source](
         callSites.update(pc, callees)
     }
 
-    def buildCallGraph(): CallGraph[Source] = new CallGraph(project, calledByMap, callsMap)
+    def buildCallGraph(): CallGraph[Source] =
+        new CallGraph(project, calledByMap, callsMap)
 }
