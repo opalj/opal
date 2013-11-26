@@ -190,7 +190,7 @@ object CallGraphVisualization {
             println("Unresolved method calls: "+unresolvedMethodCalls.size)
             val (umc, end) =
                 if (unresolvedMethodCalls.size > 10)
-                    (unresolvedMethodCalls.take(10), "...\n")
+                    (unresolvedMethodCalls.take(10), "\n\t...\n")
                 else
                     (unresolvedMethodCalls, "\n")
             println(umc.mkString("Unresolved method calls:\n\t", "\n\t", end))
