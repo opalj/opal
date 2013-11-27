@@ -940,8 +940,7 @@ object ClassHierarchy {
 
     /**
      * Creates a ClassHierarchy object that predefines the type hierarchy related to
-     * the exceptions thrown by specific Java bytecode instructions. See the file
-     * ClassHierarchyJVMExceptions.ths (text file) for further details.
+     * the exceptions thrown by specific Java bytecode instructions.
      *
      * This class hierarchy is primarily useful for testing purposes.
      */
@@ -949,7 +948,11 @@ object ClassHierarchy {
 
     /**
      * Create the class hierarchy by analyzing the given class files and
-     * the specified predefined class hierarchies.
+     * the specified predefined class hierarchies. By default the class hierarchy
+     * related to the exceptions thrown by bytecode instructions are predefined
+     * as well as the class hierarchy related to the main classes of the JDK.
+     * See the file `ClassHierarchyJVMExceptions.ths` and `ClassHierarchyJLS.ths`
+     * (text files) for further details.
      */
     def apply(
         classFiles: Traversable[ClassFile],
@@ -965,9 +968,17 @@ object ClassHierarchy {
             theSuperinterfaceTypes: HashSet[ObjectType])
 
         def processPredefinedClassHierarchy(
-            createInputStream: () ⇒ java.io.InputStream): Seq[TypeDeclaration] = {
+            createInputStream: () ⇒ java.io.InputStream): Iterator[TypeDeclaration] = {
+            val in = createInputStream()
+            util.ControlAbstractions.process(new scala.io.BufferedSource(in)) { source ⇒
+                if (source == null) {
+                    import Console._
+                    err.println(BOLD+"Loading the predefined class hierarchy failed."+RESET)
+                    err.println("Make sure that all resources are found in the correct folders.")
+                    err.println("Try to rebuild the project using"+BOLD + BLUE+"sbt copy-resources"+RESET+".")
+                    return Iterator.empty
+                }
 
-            util.ControlAbstractions.process(new scala.io.BufferedSource(createInputStream())) { source ⇒
                 val SpecLineExtractor =
                     """(class|interface)\s+(\S+)(\s+extends\s+(\S+)(\s+implements\s+(.+))?)?""".r
 
@@ -989,7 +1000,7 @@ object ClassHierarchy {
                             }.getOrElse(HashSet.empty)
                         )
                     }
-                ).toSeq
+                )
             }
         }
 
