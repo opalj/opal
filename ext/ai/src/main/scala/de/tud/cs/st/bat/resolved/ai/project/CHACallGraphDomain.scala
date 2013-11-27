@@ -65,7 +65,7 @@ trait CHACallGraphDomain[Source, I]
     //
     // Helper data structures  
     //
-    /* abstract */ val cache: CHACache
+    /* abstract */ val cache: CallGraphCache[MethodSignature, Iterable[Method]]
 
     //
     // IMPLEMENTATION
@@ -193,7 +193,7 @@ trait CHACallGraphDomain[Source, I]
  */
 class DefaultCHACallGraphDomain[Source](
     val project: Project[Source],
-    val cache: CHACache,
+    val cache: CallGraphCache[MethodSignature, Iterable[Method]],
     val callerClassFile: ClassFile,
     val caller: Method)
         extends Domain[Int]

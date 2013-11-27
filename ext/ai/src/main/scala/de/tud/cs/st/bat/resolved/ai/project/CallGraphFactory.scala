@@ -85,7 +85,7 @@ object CallGraphFactory {
 
         type MethodAnalysisResult = (List[(Method, PC, Iterable[Method])], List[UnresolvedMethodCall])
 
-        val cache = CHACache(theProject)
+        val cache = new CallGraphCache[MethodSignature,Iterable[Method]]
 
         val exceptionsMutex = new Object
         var exceptions = List.empty[CallGraphConstructionException]
@@ -112,7 +112,8 @@ object CallGraphFactory {
         val methodSubmitted: Array[Boolean] = new Array(Method.methodsCount)
         val executorService =
             java.util.concurrent.Executors.newFixedThreadPool(
-                Runtime.getRuntime().availableProcessors())
+                Runtime.getRuntime().availableProcessors()
+                )
 
         def submitMethod(method: Method): Unit = {
             methodSubmitted.synchronized {

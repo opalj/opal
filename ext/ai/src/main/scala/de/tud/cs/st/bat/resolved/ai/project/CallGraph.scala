@@ -52,6 +52,7 @@ import bat.resolved.ai.domain._
  *
  * ==Thread Safety==
  * The call graph is immutable and can be accessed by multiple thread concurrently.
+ * Calls will never block.
  *
  * @author Michael Eichberg
  */

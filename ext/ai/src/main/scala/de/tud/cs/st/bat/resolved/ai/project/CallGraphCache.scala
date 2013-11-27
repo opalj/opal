@@ -36,47 +36,62 @@ package resolved
 package ai
 package project
 
-import domain._
-import bat.resolved.analyses._
-import collection.Set
-import collection.Map
+/**
+ * An efficient, '''thread-safe''' cache for information that is associated
+ * with a specific `ObjectType` and an additional key (`Contour`). Conceptually, the cache
+ * is a `Map` of `Map`s where the keys of the first map are `ObjectType`s and which
+ * return values that are maps where the keys are `Contour`s and the values are the
+ * stored/cached information.
+ *
+ * To minimize contention mutual exclusive access to the cache is granted at the level
+ * of `ObjectType`s. I.e., two threads can concurrently access the cache (without blocking)
+ * if the information is associated with two different `ObjectType`s.
+ *
+ * ==Example Usage==
+ * To store the result of the computation of all target methods for a
+ * virtual method call (given some declaring class type and a method signature), the
+ * cache could be instantiated as follows:
+ * {{{
+ * val cache = new CallGraphCache[MethodSignature,Iterable[Method]]
+ * }}}
+ *
+ * @note Creating a new cache is a computationally intensive task that scales
+ *      linearly with the number of `ObjectType`s in a project.
+ *
+ * @author Michael Eichberg
+ */
+class CallGraphCache[Contour, Result] {
+    import collection.mutable.HashMap
 
-import collection.mutable.HashMap
-import java.util.concurrent.locks.ReentrantReadWriteLock
-
-class CHACache private (
-        private[this] val cache: Array[HashMap[MethodSignature, Iterable[Method]]]) {
-
+    private[this] val cache: Array[HashMap[Contour, Result]] =
+        new Array(ObjectType.objectTypesCount)
+    // to minimize contention w.r.t. accessing the cache, we create one object 
+    // that we use as a mutex per class type
     private[this] val cacheMutexes: Array[Object] = {
         val a = new Array(cache.size)
         Array.fill(cache.size)(new Object)
     }
 
+    /**
+     * If a value is already stored in the cache that value is returned, otherwise
+     * `f` is evaluated and the cache is updated accordingly before the value is returned.
+     */
     def getOrElseUpdate(
         declaringClass: ReferenceType,
-        callerSignature: MethodSignature,
-        orElse: ⇒ Iterable[Method]): Iterable[Method] = {
-
-        @inline def updateCachedResults(
-            resolvedTargetsForClass: HashMap[MethodSignature, Iterable[Method]]) = {
-            resolvedTargetsForClass.synchronized {
-                resolvedTargetsForClass.getOrElseUpdate(
-                    callerSignature,
-                    orElse
-                )
-            }
-        }
+        contour: Contour,
+        f: ⇒ Result): Result = {
 
         val id = declaringClass.id
         val cachedResults = {
-            val cachedResults = { cacheMutexes(id).synchronized { cache(id) } }
+            val cachedResults = cacheMutexes(id).synchronized { cache(id) }
             if (cachedResults eq null) {
                 cacheMutexes(id).synchronized {
                     val cachedResults = cache(declaringClass.id)
                     if (cachedResults eq null) { // still eq null... 
-                        val targets = orElse
-                        cache(declaringClass.id) = HashMap((callerSignature, targets))
+                        val targets = f
+                        cache(declaringClass.id) = HashMap((contour, targets))
                         return targets
+
                     } else {
                         cachedResults
                     }
@@ -85,15 +100,12 @@ class CHACache private (
                 cachedResults
             }
         }
-        updateCachedResults(cachedResults)
+        cachedResults.synchronized {
+            cachedResults.getOrElseUpdate(contour, f)
+        }
     }
 }
-object CHACache {
 
-    def apply(project: SomeProject): CHACache = {
-        new CHACache(new Array(project.objectTypesCount))
-    }
-}
 
 
 

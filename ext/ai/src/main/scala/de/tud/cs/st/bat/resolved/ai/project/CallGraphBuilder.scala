@@ -87,7 +87,7 @@ class CallGraphBuilder[Source](
                         if (pcs ne newPCs)
                             callers.update(caller, newPCs)
                     case None ⇒
-                        val newPCs = collection.immutable.Set.empty + pc
+                        val newPCs = Set.empty + pc
                         callers.update(caller, newPCs)
                 }
             }
