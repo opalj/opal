@@ -49,6 +49,35 @@ import org.scalatest.matchers.ShouldMatchers
 @RunWith(classOf[JUnitRunner])
 class ControlAbstractionsTest extends FlatSpec with ShouldMatchers with ParallelTestExecution {
 
+    behavior of "The ControlAbstractions.foreachNonNullValueOf macro"
+    import ControlAbstractions.foreachNonNullValueOf
+
+    it should "evaluate the expression that passes in the array exactly once" in {
+        var initialized = false
+        foreachNonNullValueOf[String] {
+            if (initialized) fail(); initialized = true; new Array(0)
+        } {
+            (i, e) ⇒ /*nothing*/ ;
+        }
+
+        initialized = false
+        foreachNonNullValueOf[String] {
+            if (initialized) fail(); initialized = true; Array("a", "b", "c", null, null, "d")
+        } {
+            (i, e) ⇒ /*nothing*/ ;
+        }
+    }
+
+    it should "evaluate the expression that processes the array elements exactly once per value" in {
+        var result = List.empty[(Int, String)]
+        foreachNonNullValueOf[String] {
+            Array(null, "a", null, "b", "c", null, null, "d", null, null)
+        } {
+            (i, e) ⇒ result = (i, e) :: result;
+        }
+        result.reverse should be(List((1, "a"), (3, "b"), (4, "c"), (7, "d")))
+    }
+
     behavior of "The ControlAbstractions.repeat macro"
     import ControlAbstractions.repeat
 

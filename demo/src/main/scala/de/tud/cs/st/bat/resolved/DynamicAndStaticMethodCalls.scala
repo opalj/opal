@@ -34,24 +34,40 @@ package de.tud.cs.st
 package bat
 package resolved
 
+import analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
+import java.net.URL
+
 /**
- * Invoke interface method.
- *
- * @author Michael Eichberg
- */
-case class INVOKEINTERFACE(
-    declaringClass: ObjectType, // an interface or class type to be precise
-    name: String, // an interface or class type to be precise
-    methodDescriptor: MethodDescriptor)
-        extends DynamicMethodInvocationInstruction {
+  * Counts the number of static and virtual method calls.
+  *
+  * @author Michael Eichberg
+  */
+object DynamicAndStaticMethodCalls extends AnalysisExecutor {
 
-    def opcode: Int = 185
+    val analysis = new Analysis[URL, BasicReport] {
 
-    def mnemonic: String = "invokeinterface"
+        def description: String = "Counts the number of static and virtual method calls."
 
-    def runtimeExceptions: List[ObjectType] = MethodInvocationInstruction.runtimeExceptions
+        def analyze(project: Project[URL], parameters: Seq[String] = List.empty) = {
+            var staticCalls = 0
+            var dynamicCalls = 0
+            for {
+                classFile ← project.classFiles
+                method ← classFile.methods if method.body.isDefined
+                instruction ← method.body.get.instructions
+                if instruction != null
+                if instruction.isInstanceOf[MethodInvocationInstruction]
+            } {
+                if (instruction.isInstanceOf[DynamicMethodInvocationInstruction])
+                    dynamicCalls += 1
+                else
+                    staticCalls += 1
+            }
 
-    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 5
-
-    override def toString = super.toString
+            BasicReport(
+                "Number of invokestatic/invokespecial instructions: "+staticCalls+"\n"+
+                    "Number of invokedynamic/invokeinterface/invokevirtual instructions: "+dynamicCalls
+            )
+        }
+    }
 }

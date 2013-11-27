@@ -50,9 +50,13 @@ import bat.resolved.ai.domain._
 /**
  * Basic representation of a call graph.
  *
+ * ==Thread Safety==
+ * The call graph is immutable and can be accessed by multiple thread concurrently.
+ * Calls will never block.
+ *
  * @author Michael Eichberg
  */
-class CHACallGraph[Source] private[project] (
+class CallGraph[Source] private[project] (
         val project: Project[Source],
         private[this] val calledByMap: Array[_ <: Map[Method, Set[PC]]],
         private[this] val callsMap: Array[_ <: Map[PC, Iterable[Method]]]) {
@@ -68,7 +72,15 @@ class CHACallGraph[Source] private[project] (
     }
 
     /**
-     * Returns the methods that are called by an invoke instruction of the given method.
+     * Returns the potential methods that are invoked by the invoke instruction
+     * identified by the method/pc pair.
+     */
+    def calls(method: Method, pc: PC): Iterable[Method] = {
+        Option(callsMap(method.id)).flatMap(_.get(pc)).getOrElse(Iterable.empty)
+    }
+
+    /**
+     * Returns the methods that are called by the invoke instructions of the given method.
      */
     // In case of the CHA Call Graph this could also be easily calculated on-demand, 
     // since we do not use any information that is not readily available.

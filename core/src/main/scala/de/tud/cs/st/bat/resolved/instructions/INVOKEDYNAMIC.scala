@@ -34,17 +34,23 @@ package de.tud.cs.st
 package bat
 package resolved
 
-case object UNRESOLVED_INVOKEDYNAMIC extends DynamicMethodInvocationInstruction {
+case object UNRESOLVED_INVOKEDYNAMIC extends Instruction {
 
     private def error = BATException("this invokedynamic instruction was not correctly resolved")
 
-    def opcode: Int = error
+    def bootstrapMethod: BootstrapMethod = error
 
-    def mnemonic: String = error
+    def name: String = error
 
-    def indexOfNextInstruction(currentPC: Int, code: Code): Int = error
+    def methodDescriptor: MethodDescriptor = error
 
-    def runtimeExceptions: List[ObjectType] = error
+    def opcode: Int = 186
+
+    def mnemonic: String = "invokedynamic"
+
+    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 5
+
+    def runtimeExceptions: List[ObjectType] = INVOKEDYNAMIC.runtimeExceptions
 
 }
 
@@ -57,7 +63,7 @@ case class INVOKEDYNAMIC(
     bootstrapMethod: BootstrapMethod,
     name: String,
     methodDescriptor: MethodDescriptor)
-        extends DynamicMethodInvocationInstruction {
+        extends Instruction {
 
     def opcode: Int = 186
 
@@ -70,9 +76,9 @@ case class INVOKEDYNAMIC(
 }
 
 object INVOKEDYNAMIC {
-    
+
     val runtimeExceptions = List(ObjectType.BootstrapMethodError)
-    
+
 }
 
 

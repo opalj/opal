@@ -39,11 +39,7 @@ package resolved
  *
  * @author Michael Eichberg
  */
-abstract class MethodInvocationInstruction extends Instruction
-
-abstract class DynamicMethodInvocationInstruction extends MethodInvocationInstruction
-
-abstract class StaticMethodInvocationInstruction extends MethodInvocationInstruction {
+abstract class MethodInvocationInstruction extends Instruction {
 
     def declaringClass: ReferenceType
 
@@ -56,6 +52,10 @@ abstract class StaticMethodInvocationInstruction extends MethodInvocationInstruc
             declaringClass.toJava+"\n"+name+" "+methodDescriptor.toUMLNotation
 
 }
+
+abstract class DynamicMethodInvocationInstruction extends MethodInvocationInstruction
+
+abstract class StaticMethodInvocationInstruction extends MethodInvocationInstruction
 
 object MethodInvocationInstruction {
 

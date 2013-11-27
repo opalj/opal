@@ -38,7 +38,7 @@ package project
 
 /**
  * Visualizes call graphs using Graphviz.
- * 
+ *
  * Given GraphViz's capabilities only small call graphs can be visualized.
  *
  * @author Michael Eichberg
@@ -58,15 +58,30 @@ object CallGraphVisualization {
      *      the methods that are included in the call graph.
      */
     def main(args: Array[String]) {
-        if (args.size != 2) {
+        if ((args.size < 2) || (args.size > 3)) {
             println("You have to specify the method that should be analyzed.")
-            println("\t1) A jar/calss file or a directory containing jar/class files.")
+            println("\t1) A jar/class file or a directory containing jar/class files.")
             println("\t2) A pattern that specifies which classes should be included in the output.")
+            println("\t3) The number of seconds before the analysis starts (e.g., to attach a profiler).")
             sys.exit(-1)
         }
 
         // To make it possible to attach a profiler: 
-        Thread.sleep(8000)
+        if (args.size == 3) {
+            try {
+                val secs = Integer.parseInt(args(2), 10)
+                if (secs > 30) {
+                    Console.err.println("\t3) The number of seconds before the analysis starts (e.g., to attach a profiler).")
+                    sys.exit(-30)
+                }
+                Thread.sleep(secs * 1000)
+            } catch {
+                case _: NumberFormatException ⇒
+                    Console.err.println("\t3) The number of seconds before the analysis starts (e.g., to attach a profiler).")
+                    sys.exit(-31)
+            }
+        }
+        //
 
         //
         // PROJECT SETUP
@@ -101,7 +116,7 @@ object CallGraphVisualization {
                 time {
                     CallGraphFactory.performCHA(
                         project,
-                        CallGraphFactory.defaultEntryPointsForCHA(project))
+                        CallGraphFactory.defaultEntryPointsForLibraries(project))
                 } { t ⇒ println("Creating the call graph took: "+nsToSecs(t)) }
             } { m ⇒ println("Required memory for call graph: "+asMB(m)) }
 
@@ -175,7 +190,7 @@ object CallGraphVisualization {
             println("Unresolved method calls: "+unresolvedMethodCalls.size)
             val (umc, end) =
                 if (unresolvedMethodCalls.size > 10)
-                    (unresolvedMethodCalls.take(10), "...\n")
+                    (unresolvedMethodCalls.take(10), "\n\t...\n")
                 else
                     (unresolvedMethodCalls, "\n")
             println(umc.mkString("Unresolved method calls:\n\t", "\n\t", end))
