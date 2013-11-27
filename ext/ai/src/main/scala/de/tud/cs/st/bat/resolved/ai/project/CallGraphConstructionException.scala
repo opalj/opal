@@ -39,6 +39,9 @@ package project
 /**
  * Encapsulates an exception that is thrown during the creation of the call graph.
  *
+ * In general, we do not abort the construction of the overall call graph if an exception
+ * is thrown.
+ *
  * @author Michael Eichberg
  */
 case class CallGraphConstructionException(

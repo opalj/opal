@@ -982,7 +982,6 @@ object ClassHierarchy {
                 val SpecLineExtractor =
                     """(class|interface)\s+(\S+)(\s+extends\s+(\S+)(\s+implements\s+(.+))?)?""".r
 
-                //val source = 
                 val specLines =
                     source.getLines.map(_.trim).filterNot {
                         l ⇒ l.startsWith("#") || l.length == 0

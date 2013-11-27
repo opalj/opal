@@ -40,16 +40,11 @@ import bat.resolved.analyses.{ SomeProject, Project }
 import bat.resolved.ai.domain._
 
 /**
- * Factory methods to create call graphs.
+ * Factory to create call graphs.
  *
  * @author Michael Eichberg
  */
 object CallGraphFactory {
-
-    import language.existentials
-
-    import java.util.concurrent.Callable
-    import java.util.concurrent.Future
 
     /**
      * Returns a list of all entry points that is well suited if we want to
@@ -71,7 +66,7 @@ object CallGraphFactory {
     }
 
     /**
-     * Creates a call graph using Class Hierarchy Analysis.
+     * Creates a call graph using ''Class Hierarchy Analysis''.
      * The call graph is created by analyzing each entry point on its own. Hence,
      * the call graph is calculated under a specific assumption about a
      * programs/libraries/framework's entry methods.
@@ -83,51 +78,15 @@ object CallGraphFactory {
         theProject: Project[Source],
         entryPoints: List[Method]): (CallGraph[Source], List[UnresolvedMethodCall], List[CallGraphConstructionException]) = {
 
-        type MethodAnalysisResult = (List[(Method, PC, Iterable[Method])], List[UnresolvedMethodCall])
+    	type MethodAnalysisResult = (List[(Method, PC, Iterable[Method])], List[UnresolvedMethodCall], Option[CallGraphConstructionException])
+    	
+        import java.util.concurrent.Callable
+        import java.util.concurrent.Future
+        import java.util.concurrent.Executors
 
-        val cache = new CallGraphCache[MethodSignature,Iterable[Method]]
+        val cache = new CallGraphCache[MethodSignature, Iterable[Method]]
 
-        val exceptionsMutex = new Object
-        var exceptions = List.empty[CallGraphConstructionException]
-        @inline def caughtException(exception: CallGraphConstructionException) {
-            exceptionsMutex.synchronized {
-                exceptions = exception :: exceptions
-            }
-        }
-
-        val unresolvedMethodCallsMutex = new Object
-        var unresolvedMethodCalls = List.empty[UnresolvedMethodCall]
-        def addUnresolvedMethodCalls(
-            moreUnresolvedMethodCalls: List[UnresolvedMethodCall]): Unit = {
-            if (moreUnresolvedMethodCalls.nonEmpty)
-                unresolvedMethodCallsMutex.synchronized {
-                    unresolvedMethodCalls =
-                        moreUnresolvedMethodCalls ::: unresolvedMethodCalls
-                }
-        }
-
-        var futuresMutex = new Object
-        var futures = List.empty[Future[MethodAnalysisResult]]
-
-        val methodSubmitted: Array[Boolean] = new Array(Method.methodsCount)
-        val executorService =
-            java.util.concurrent.Executors.newFixedThreadPool(
-                Runtime.getRuntime().availableProcessors()
-                )
-
-        def submitMethod(method: Method): Unit = {
-            methodSubmitted.synchronized {
-                if (methodSubmitted(method.id))
-                    return
-                else
-                    methodSubmitted(method.id) = true
-            }
-            val newFuture = executorService.submit(doAnalyzeMethod(method))
-            futuresMutex.synchronized {
-                futures = newFuture :: futures
-            }
-        }
-
+        /* START - EXECUTED CONCURRENTLY */
         def doAnalyzeMethod(method: Method): Callable[MethodAnalysisResult] =
             new Callable[MethodAnalysisResult] {
                 def call(): MethodAnalysisResult = {
@@ -136,32 +95,49 @@ object CallGraphFactory {
                         new DefaultCHACallGraphDomain(theProject, cache, classFile, method)
                     try {
                         BaseAI(classFile, method, domain)
-                        (domain.callEdges, domain.unresolvedMethodCalls)
+                        (domain.callEdges, domain.unresolvedMethodCalls, None)
                     } catch {
                         case exception: Exception ⇒
-                            caughtException(
-                                CallGraphConstructionException(classFile, method, exception)
+                            (
+                                domain.callEdges,
+                                domain.unresolvedMethodCalls,
+                                Some(CallGraphConstructionException(classFile, method, exception))
                             )
-                            // we take what we got so far...
-                            (domain.callEdges, domain.unresolvedMethodCalls)
                     }
                 }
             }
+        /* END - EXECUTED CONCURRENTLY */
 
+        var futures = List.empty[Future[MethodAnalysisResult]] // OUR WORKLIST
+        val methodSubmitted: Array[Boolean] = new Array(Method.methodsCount)
+        val processors = Runtime.getRuntime().availableProcessors()
+        val executorService = Executors.newFixedThreadPool(processors)
+        @inline def submitMethod(method: Method): Unit = {
+            if (methodSubmitted(method.id))
+                return
+            else
+                methodSubmitted(method.id) = true
+
+            futures = executorService.submit(doAnalyzeMethod(method)) :: futures
+        }
+
+        // Initialization
         entryPoints.foreach(method ⇒ submitMethod(method))
 
         val builder = new CallGraphBuilder[Source](theProject)
+        var exceptions = List.empty[CallGraphConstructionException]
+        var unresolvedMethodCalls = List.empty[UnresolvedMethodCall]
         while (futures.nonEmpty) {
-            val future = futuresMutex.synchronized {
-                val future = futures.head
-                futures = futures.tail
-                future
-            }
-            val (callEdges, unresolvedMethodCalls) = future.get()
+            val future = futures.head
+            futures = futures.tail
+            val (callEdges, moreUnresolvedMethodCalls, exception) = future.get()
+            if (moreUnresolvedMethodCalls.nonEmpty)
+                unresolvedMethodCalls = moreUnresolvedMethodCalls ::: unresolvedMethodCalls
+            if (exception.isDefined)
+                exceptions = exception.get :: exceptions
             callEdges.foreach(_._3.foreach { method ⇒
                 if (!method.isNative) submitMethod(method)
             })
-            addUnresolvedMethodCalls(unresolvedMethodCalls)
             builder.addCallEdges(callEdges)
         }
         executorService.shutdown()

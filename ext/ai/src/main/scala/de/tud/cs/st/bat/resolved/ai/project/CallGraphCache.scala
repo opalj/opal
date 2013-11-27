@@ -43,7 +43,7 @@ package project
  * return values that are maps where the keys are `Contour`s and the values are the
  * stored/cached information.
  *
- * To minimize contention mutual exclusive access to the cache is granted at the level
+ * To minimize contention, mutual exclusive access to the cache is granted at the level
  * of `ObjectType`s. I.e., two threads can concurrently access the cache (without blocking)
  * if the information is associated with two different `ObjectType`s.
  *
@@ -56,20 +56,18 @@ package project
  * }}}
  *
  * @note Creating a new cache is a computationally intensive task that scales
- *      linearly with the number of `ObjectType`s in a project.
+ *      with the number of `ObjectType`s in a project.
  *
  * @author Michael Eichberg
  */
-class CallGraphCache[Contour, Result] {
-    import collection.mutable.HashMap
+class CallGraphCache[Contour, Value] {
 
-    private[this] val cache: Array[HashMap[Contour, Result]] =
-        new Array(ObjectType.objectTypesCount)
-    // to minimize contention w.r.t. accessing the cache, we create one object 
-    // that we use as a mutex per class type
-    private[this] val cacheMutexes: Array[Object] = {
-        val a = new Array(cache.size)
-        Array.fill(cache.size)(new Object)
+    import java.util.concurrent.{ ConcurrentHashMap ⇒ HashMap }
+
+    private[this] val cache: Array[HashMap[Contour, Value]] = {
+        val size = ObjectType.objectTypesCount
+        val concurrencyLevel = Runtime.getRuntime().availableProcessors()
+        Array.fill(size)(new HashMap(16, concurrencyLevel))
     }
 
     /**
@@ -79,29 +77,17 @@ class CallGraphCache[Contour, Result] {
     def getOrElseUpdate(
         declaringClass: ReferenceType,
         contour: Contour,
-        f: ⇒ Result): Result = {
+        f: ⇒ Value): Value = {
 
         val id = declaringClass.id
-        val cachedResults = {
-            val cachedResults = cacheMutexes(id).synchronized { cache(id) }
-            if (cachedResults eq null) {
-                cacheMutexes(id).synchronized {
-                    val cachedResults = cache(declaringClass.id)
-                    if (cachedResults eq null) { // still eq null... 
-                        val targets = f
-                        cache(declaringClass.id) = HashMap((contour, targets))
-                        return targets
-
-                    } else {
-                        cachedResults
-                    }
-                }
-            } else {
-                cachedResults
-            }
-        }
-        cachedResults.synchronized {
-            cachedResults.getOrElseUpdate(contour, f)
+        val cachedResults = cache(declaringClass.id)
+        val cachedValue = cachedResults.get(contour)
+        if (cachedValue != null)
+            cachedValue
+        else {
+            val value = f
+            cachedResults.put(contour, value)
+            value
         }
     }
 }

@@ -37,21 +37,17 @@ package ai
 package project
 
 import bat.resolved.analyses.{ SomeProject, Project }
+import bat.resolved.ai.domain._
 
 import collection.Set
 import collection.Map
 
-// internally, we use mutable data structures (Arrays, mutable Maps) due to their 
-// better performance characteristics, but they are not exposed to the outside
-import collection.mutable.HashMap
-
-import bat.resolved.ai.domain._
 
 /**
  * Basic representation of a call graph.
  *
  * ==Thread Safety==
- * The call graph is immutable and can be accessed by multiple thread concurrently.
+ * The call graph is immutable and can be accessed by multiple threads concurrently.
  * Calls will never block.
  *
  * @author Michael Eichberg
@@ -88,12 +84,18 @@ class CallGraph[Source] private[project] (
         Option(callsMap(method.id))
     }
 
+    /**
+     * Calls the function `f` for each method that calls some other method.
+     */
     def foreachCallingMethod[U](f: (Method, Map[PC, Iterable[Method]]) ⇒ U): Unit = {
         foreachNonNullValueOf(callsMap) { (i, callees) ⇒
             f(project.method(i), callees)
         }
     }
 
+    /**
+     * Calls the function `f` for each method that is called by some other method.
+     */
     def foreachCalledByMethod[U](f: (Method, Map[Method, Set[PC]]) ⇒ U): Unit = {
         foreachNonNullValueOf(calledByMap) { (i, callers) ⇒
             f(project.method(i), callers)
