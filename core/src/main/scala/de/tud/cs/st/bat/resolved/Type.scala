@@ -497,6 +497,7 @@ final object ObjectType {
     }
 
     final val Object = ObjectType("java/lang/Object")
+    final val MethodHandle = ObjectType("java/lang/invoke/MethodHandle")
     final val String = ObjectType("java/lang/String")
     final val Class = ObjectType("java/lang/Class")
     final val Throwable = ObjectType("java/lang/Throwable")
@@ -586,6 +587,7 @@ final object ArrayType {
 
     def unapply(at: ArrayType): Option[FieldType] = Some(at.componentType)
 
+    final val ArrayOfObjects = ArrayType(ObjectType.Object)
 }
 object ArrayElementType {
     def unapply(at: ArrayType): Option[FieldType] = Some(at.elementType)
