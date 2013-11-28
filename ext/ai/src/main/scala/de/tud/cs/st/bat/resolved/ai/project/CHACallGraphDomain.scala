@@ -203,8 +203,6 @@ class DefaultCHACallGraphDomain[Source](
         with DefaultTypeLevelFloatValues[Int]
         with DefaultTypeLevelDoubleValues[Int]
         with DefaultTypeLevelReferenceValues[Int]
-        //with DefaultPreciseReferenceValues[Int]
-        //with StringValues[Int]
         with TypeLevelArrayInstructions
         with TypeLevelFieldAccessInstructions
         with TypeLevelInvokeInstructions
