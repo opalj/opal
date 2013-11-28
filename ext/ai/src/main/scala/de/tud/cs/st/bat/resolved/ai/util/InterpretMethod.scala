@@ -74,7 +74,7 @@ object InterpretMethod {
     def main(args: Array[String]) {
         if (args.size < 3 || args.size > 4) {
             println("You have to specify the method that should be analyzed.")
-            println("\t1: a jar/calss file or a directory containing jar/class files.")
+            println("\t1: a jar/class file or a directory containing jar/class files.")
             println("\t2: the name of a class.")
             println("\t3: the simple name or signature of a method of the class.")
             println("\t4[Optional]: -domain=CLASS the name of class of the configurable domain to use.")
