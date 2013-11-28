@@ -72,12 +72,12 @@ class ClassHierarchyTest
             List(() ⇒ getClass.getResourceAsStream("JavaLangClassHierarchy.ths"))
         )
 
-    val Object = ObjectType("java/lang/Object")
-    val Throwable = ObjectType("java/lang/Throwable")
-    val Exception = ObjectType("java/lang/Exception")
-    val Error = ObjectType("java/lang/Error")
-    val RuntimeException = ObjectType("java/lang/RuntimeException")
-    val ArithmeticException = ObjectType("java/lang/ArithmeticException")
+    val Object = ObjectType.Object
+    val Throwable = ObjectType.Throwable
+    val Exception = ObjectType.Exception
+    val Error = ObjectType.Error
+    val RuntimeException = ObjectType.RuntimeException
+    val ArithmeticException = ObjectType.ArithmeticException
     val Cloneable = ObjectType.Cloneable
     val Serializable = ObjectType.Serializable
     val SeriablizableArray = ArrayType(Serializable)
@@ -85,7 +85,7 @@ class ClassHierarchyTest
     val AnUnknownType = ObjectType("myTest/AnUnknownType")
     val AnUnknownTypeArray = ArrayType(AnUnknownType)
     val CloneableArray = ArrayType(Cloneable)
-    val ObjectArray = ArrayType(Object)
+    val ObjectArray = ArrayType.ArrayOfObjects
     val intArray = ArrayType(IntegerType)
     val longArray = ArrayType(LongType)
 

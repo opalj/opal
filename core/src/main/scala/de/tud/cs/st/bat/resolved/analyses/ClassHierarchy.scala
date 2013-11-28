@@ -47,7 +47,7 @@ import scala.collection.mutable.HashMap
 import ObjectType.Object
 
 /**
- * Represents the visible part of a project's class hierarchy.
+ * Represents the '''visible part of a project's class hierarchy'''.
  *
  * Only the part of a project's class hierarchy is reified that is referred to in
  * the ''class declarations'' of the analyzed classes. I.e., those classes
@@ -57,23 +57,24 @@ import ObjectType.Object
  * which neither the defining class file is analyzed nor a class exists that inherits from
  * them are not integrated.
  * For example, if the class file of the class `java.util.ArrayList` is analyzed, then the
- * class hierarchy will have some preliminary information about, e.g., `java.util.List`
+ * class hierarchy will have some information about, e.g., `java.util.List`
  * from which `ArrayList` inherits. However, the information about `List` is incomplete
- * and `List` will be a boundary class.
+ * and `List` will be a boundary class unless we also analyze the class file that
+ * defines `java.util.List`.
  *
  * The type `java.lang.Object` is always part of the class hierarchy.
  *
  * ==Thread safety==
  * This class is immutable. Hence, concurrent access to the class hierarchy is supported.
  *
- * @param superclassTypes Contains type information about a type's immediate superclass.
- *      This value is always defined except of the case where the key identifies the
+ * @param superclassTypeMap Contains type information about a type's immediate superclass.
+ *      This value is defined unless the key identifies the
  *      object type `java.lang.Object` or when the respective class files was not
  *      analyzed and the respective type was only seen in the declaration of another class.
- * @param superinterfaceTypes Contains type information about a type's directly implemented
- *      interfaces; if any.
- * @param subclassTypes Contains type information about a type's subclasses; if any.
- * @param subinterfaceTypes Contains type information about a type's subinterfaces.
+ * @param superinterfaceTypesMap Contains type information about a type's directly
+ *      implemented interfaces; if any.
+ * @param subclassTypesMap Contains type information about a type's subclasses; if any.
+ * @param subinterfaceTypesMap Contains type information about a type's subinterfaces.
  *      They only ''class type'' that is allowed to have a non-empty set of subinterfaces
  *      is `java.lang.Object`.
  *
@@ -626,7 +627,8 @@ class ClassHierarchy private (
     /**
      * Tries to resolve a method reference as specified by the JVM specification.
      * I.e., the algorithm tries to find the class that actually declares the referenced
-     * method.
+     * method. Resolution of signature polymorphic method calls is also supported; for
+     * details see `lookupMethodDefinition`).
      *
      * This method is the basis for the implementation of the semantics
      * of the `invokeXXX` instructions. However, it does not check whether the resolved
@@ -652,8 +654,6 @@ class ClassHierarchy private (
         methodName: String,
         methodDescriptor: MethodDescriptor,
         project: SomeProject): Option[Method] = {
-
-        // TODO [Java 7] Implement support for handling signature polymorphic method resolution.
 
         project(receiverType) flatMap { classFile ⇒
             assume(!classFile.isInterfaceDeclaration)
@@ -740,6 +740,10 @@ class ClassHierarchy private (
      * This method does not take visibility modifiers or the static modifier into account.
      * If necessary, such checks needs to be done by the caller.
      *
+     * This method support resolution of `signature polymorphic methods`
+     * (in this case however, it needs to be checked that the respective invoke
+     * instruction is an invokevirtual instruction.)
+     *
      * @note In case that you analyze static source code dependencies and if an invoke
      *    instruction refers to a method that is not declared by the receiver's class, then
      *    it might be more meaningful to still create a dependency to the receiver's class
@@ -766,7 +770,26 @@ class ClassHierarchy private (
         @inline def lookupMethodDefinition(receiverType: ObjectType): Option[Method] = {
             project(receiverType) flatMap { classFile ⇒
                 classFile.methods find { method ⇒
-                    method.name == methodName && method.descriptor == methodDescriptor
+                    method.name == methodName &&
+                        (method.descriptor == methodDescriptor ||
+                            /* FROM THE SPECIFICATION:
+                             * Method resolution attempts to look up the referenced method in C and 
+                             * its superclasses:
+                             * If C declares exactly one method with the name specified by the 
+                             * method reference, and the declaration is a signature polymorphic 
+                             * method, then method lookup succeeds. 
+                             * [...]
+                             * 
+                             * A method is signature polymorphic if:
+                             * - It is declared in the java.lang.invoke.MethodHandleclass.
+                             * - It has a single formal parameter of type Object[].
+                             * - It has a return type of Object.
+                             * - It has the ACC_VARARGS and ACC_NATIVE flags set.
+                             */
+                            ((receiverType eq ObjectType.MethodHandle) &&
+                                method.isNativeAndVarargs &&
+                                method.descriptor == MethodDescriptor.SignaturePolymorphicMethod)
+                        )
                 }
             } orElse {
                 val superclassType = superclassTypeMap(receiverType.id)
@@ -777,7 +800,6 @@ class ClassHierarchy private (
                 }
             }
         }
-
         lookupMethodDefinition(receiverType)
     }
 
