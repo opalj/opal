@@ -71,7 +71,7 @@ sealed abstract class MethodDescriptor extends BootstrapArgument {
                 (parameterTypes.head.toJava /: parameterTypes.tail)(_+", "+_.toJava)
         }+") : "+returnType.toJava
 
-    override def toString: String = toUMLNotation
+    override def toString: String = "MethodDescriptor("+toUMLNotation+")"
 }
 
 // 
