@@ -70,6 +70,8 @@ sealed abstract class MethodDescriptor extends BootstrapArgument {
             else
                 (parameterTypes.head.toJava /: parameterTypes.tail)(_+", "+_.toJava)
         }+") : "+returnType.toJava
+
+    def toString: String = toUMLNotation
 }
 
 // 
@@ -205,6 +207,9 @@ object HasNoArgsAndReturnsVoid {
 object MethodDescriptor {
 
     def NoArgsAndReturnVoid: MethodDescriptor = NoArgumentAndNoReturnValueMethodDescriptor
+
+    final val SignaturePolymorphicMethod: MethodDescriptor =
+        new SingleArgumentMethodDescriptor(ArrayType.ArrayOfObjects, ObjectType.Object)
 
     def unapply(md: MethodDescriptor) = Some(md.parameterTypes, md.returnType)
 
