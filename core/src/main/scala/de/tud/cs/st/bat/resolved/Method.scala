@@ -65,6 +65,10 @@ final class Method private (
     def runtimeInvisibleParameterAnnotations: Option[ParameterAnnotations] =
         attributes collectFirst { case RuntimeInvisibleParameterAnnotationTable(pas) ⇒ pas }
 
+    // This is directly supported due to its need for the resolution of signature 
+    // polymorphic methods. 
+    def isNativeAndVarargs = Method.isNativeAndVarargs(accessFlags)
+
     def isVarargs: Boolean = ACC_VARARGS isElementOf accessFlags
 
     def isSynchronized: Boolean = ACC_SYNCHRONIZED isElementOf accessFlags
@@ -111,6 +115,11 @@ final class Method private (
  * Defines factory and extractor methods for `Method` objects.
  */
 object Method {
+
+    private final val ACC_NATIVEAndACC_VARARGS = ACC_NATIVE.mask | ACC_VARARGS.mask
+
+    private def isNativeAndVarargs(accessFlags: Int) =
+        (accessFlags & ACC_NATIVEAndACC_VARARGS) == ACC_NATIVEAndACC_VARARGS
 
     private val nextId = new java.util.concurrent.atomic.AtomicInteger(0)
 
