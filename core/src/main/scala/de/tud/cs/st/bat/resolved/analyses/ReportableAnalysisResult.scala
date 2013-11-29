@@ -193,7 +193,7 @@ case class ReportableAnalysisAdapter[Source, AnalysisResult](
     def analyze(
         project: Project[Source],
         parameters: Seq[String]): ReportableAnalysisResult = {
-        new BasicReport(converter(analysis.analyze(project)))
+        new BasicReport(converter(analysis.analyze(project,parameters)))
     }
 }
 
