@@ -60,20 +60,20 @@ class CodeAttributeTest
     behavior of "the \"Code\" attribute's collect method"
 
     it should "be able to correctly collect all matching instructions" in {
-        codeOfPut.collect({ case dup @ DUP ⇒ dup }) should equal(Seq((31, DUP)))
-        codeOfPut.collect({ case dup @ DUP ⇒ dup }) should not equal (Seq())
+        codeOfPut collect { case dup @ DUP ⇒ dup } should equal(Seq((31, DUP)))
+        codeOfPut collect { case dup @ DUP ⇒ dup } should not equal (Seq())
 
-        codeOfPut.collect({
+        codeOfPut collect {
             case iconst_1 @ ICONST_1 ⇒ iconst_1
-        }) should equal(Seq((20, ICONST_1), (35, ICONST_1)))
+        } should equal(Seq((20, ICONST_1), (35, ICONST_1)))
 
-        codeOfPut.collect({
+        codeOfPut collect {
             case GETFIELD(declaringClass, "last", _) ⇒ declaringClass
-        }) should equal(Seq((17, boundedBufferClass), (45, boundedBufferClass)))
+        } should equal(Seq((17, boundedBufferClass), (45, boundedBufferClass)))
 
-        codeOfPut.collect({
+        codeOfPut collect {
             case RETURN ⇒ "The very last instruction."
-        }) should equal(Seq((54, "The very last instruction.")))
+        } should equal(Seq((54, "The very last instruction.")))
 
     }
 
