@@ -105,7 +105,7 @@ case class ConstantLong(value: Long) extends ConstantValue[Long] {
 
 case class ConstantInteger(value: Int) extends ConstantValue[Int] {
 
-    override def toBoolean = value != 0 // TODO Does this method: ConstantInteger.toBoolean makes sense?
+    override def toBoolean = value != 0 
 
     override def toByte = value.toByte
 
