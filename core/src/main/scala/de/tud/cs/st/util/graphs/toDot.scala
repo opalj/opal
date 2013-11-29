@@ -83,6 +83,7 @@ trait toDot {
     }
 
     def generateAndOpenDOT(
+        fileNamePrefix: String,
         nodes: Set[Node],
         dir: String = "forward") {
 
@@ -91,7 +92,7 @@ trait toDot {
         val graph = generateDot(nodes, dir)
         try {
             val desktop = java.awt.Desktop.getDesktop()
-            val file = java.io.File.createTempFile("ClassHierarchy", ".dot")
+            val file = java.io.File.createTempFile(fileNamePrefix, ".dot")
             process { new java.io.FileOutputStream(file) } { fos ⇒
                 fos.write(graph.getBytes("UTF-8"))
             }

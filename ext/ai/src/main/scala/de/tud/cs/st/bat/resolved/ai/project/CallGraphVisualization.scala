@@ -212,7 +212,7 @@ object CallGraphVisualization {
         println(exceptions.mkString("Exceptions:\n\t", "\n\t", "\t"))
 
         // Generate and show the graph
-        toDot.generateAndOpenDOT(nodes)
+        toDot.generateAndOpenDOT("CallGraph", nodes)
 
         // Write out the statistics about the calls relation
         writeAndOpenDesktopApplication(
