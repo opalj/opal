@@ -34,6 +34,8 @@ package de.tud.cs.st.bat.resolved
 package analyses
 package bug_patterns.ioc
 
+import instructions._
+
 /**
  * `clone` does not call `super.clone`.
  *

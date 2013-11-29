@@ -46,7 +46,7 @@ object ClassHierarchyVisualizer {
 
         import reader.Java7Framework.ClassFiles
         import util.graphs.{ Node, toDot }
- 
+
         if (!args.forall(_.endsWith(".jar"))) {
             println("Usage: java …ClassHierarchy <JAR file>+")
             println("(c) 2013 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
@@ -56,8 +56,10 @@ object ClassHierarchyVisualizer {
         val classHierarchy =
             if (args.size == 0)
                 ClassHierarchy.preInitializedClassHierarchy
-            else
-                (ClassHierarchy.empty /: args)(_ ++ ClassFiles(_).map(_._1))
+            else {
+                val classFiles = (List.empty[(ClassFile, java.net.URL)] /: args)(_ ++ ClassFiles(_))
+                ClassHierarchy(classFiles.view.map(_._1))
+            }
 
         val classHierarchyDescription =
             toDot.generateAndOpenDOT(Set(classHierarchy.toGraph), "back")

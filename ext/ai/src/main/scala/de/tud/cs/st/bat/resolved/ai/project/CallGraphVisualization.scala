@@ -37,81 +37,118 @@ package ai
 package project
 
 /**
- * Enables the visualization of small call graphs built using CHA.
+ * Visualizes call graphs using Graphviz.
+ *
+ * Given GraphViz's capabilities only small call graphs (10 to 20 nodes) can
+ * be effectively visualized.
  *
  * @author Michael Eichberg
  */
 object CallGraphVisualization {
 
     import de.tud.cs.st.util.debug._
+    import de.tud.cs.st.util.debug.PerformanceEvaluation.{ time, memory, asMB }
+    import Console._
 
     /**
      * Traces the interpretation of a single method and prints out the results.
      *
      * @param args The first element must be the name of a class file, a jar file
      *      or a directory containing the former. The second element must
-     *      denote the name of a class and the third must denote the name of a method
-     *      of the respective class. If the method is overloaded the first method
-     *      is returned.
+     *      denote the beginning of a package name and will be used to filter
+     *      the methods that are included in the call graph.
      */
     def main(args: Array[String]) {
-        if (args.size != 2) {
+        if ((args.size < 2) || (args.size > 3)) {
             println("You have to specify the method that should be analyzed.")
-            println("\t1) A jar/calss file or a directory containing jar/class files.")
+            println("\t1) A jar/class file or a directory containing jar/class files.")
             println("\t2) A pattern that specifies which classes should be included in the output.")
+            println("\t3) The number of seconds (max. 30) before the analysis starts (e.g., to attach a profiler).")
             sys.exit(-1)
         }
 
         // To make it possible to attach a profiler: 
-        Thread.sleep(8000)
+        if (args.size == 3) {
+            try {
+                val secs = Integer.parseInt(args(2), 10)
+                if (secs > 30) {
+                    Console.err.println("\t3) The number of seconds before the analysis starts (e.g., to attach a profiler).")
+                    sys.exit(-30)
+                }
+                Thread.sleep(secs * 1000)
+            } catch {
+                case _: NumberFormatException ⇒
+                    Console.err.println("\t3) The number of seconds before the analysis starts (e.g., to attach a profiler).")
+                    sys.exit(-31)
+            }
+        }
+        //
 
         //
         // PROJECT SETUP
         //
-        val project = PerformanceEvaluation.time {
-            val fileName = args(0)
-            val file = new java.io.File(fileName)
-            if (!file.exists()) {
-                println(Console.RED+"file does not exist: "+fileName + Console.RESET)
-                sys.exit(-2)
-            }
-            val classFiles =
-                try {
-                    reader.Java7Framework.ClassFiles(file)
-                } catch {
-                    case e: Exception ⇒
-                        println(Console.RED+"cannot read file: "+e.getMessage() + Console.RESET)
-                        sys.exit(-3)
-                }
-            bat.resolved.analyses.IndexBasedProject(classFiles)
-        } { t ⇒ println("Setting up the project took: "+nsToSecs(t)) }
+        val project =
+            memory {
+                time {
+                    val fileName = args(0)
+                    val file = new java.io.File(fileName)
+                    if (!file.exists()) {
+                        println(RED+"file does not exist: "+fileName + RESET)
+                        sys.exit(-2)
+                    }
+                    val classFiles =
+                        try {
+                            reader.Java7Framework.ClassFiles(file)
+                        } catch {
+                            case e: Exception ⇒
+                                println(RED+"cannot read file: "+e.getMessage() + RESET)
+                                sys.exit(-3)
+                        }
+                    bat.resolved.analyses.IndexBasedProject(classFiles)
+                } { t ⇒ println("Setting up the project took: "+nsToSecs(t)) }
+            } { m ⇒ println("Required memory for base representation: "+asMB(m)) }
         val classNameFilter = args(1)
 
         //
         // GRAPH CONSTRUCTION
         //
-        val (callGraph, unresolvedMethodCalls) = PerformanceEvaluation.time {
-            val callGraphFactory = new CallGraphFactory
-            callGraphFactory.performCHA(
-                project,
-                callGraphFactory.defaultEntryPointsForCHA(project))
-        } { t ⇒ println("Creating the call graph took: "+nsToSecs(t)) }
+        val (callGraph, unresolvedMethodCalls, exceptions) =
+            memory {
+                time {
+                    CallGraphFactory.create(
+                        project,
+                        CallGraphFactory.defaultEntryPointsForLibraries(project),
+                        new CHACallGraphAlgorithmConfiguration())
+                } { t ⇒ println("Creating the call graph took: "+nsToSecs(t)) }
+            } { m ⇒ println("Required memory for call graph: "+asMB(m)) }
 
-        // Some statistics
-        import callGraph.calls
+        // Some statistics 
+        import callGraph.{ calls, callsCount, calledByCount, foreachCallingMethod }
         println("Classes: "+project.classFiles.size)
         println("Methods: "+Method.methodsCount)
-        println("Methods with more than one resolved call: "+calls.size)
-        println("Methods which are called by at least one method: "+callGraph.calledBy.size)
-        println("Unresolved method calls: "+unresolvedMethodCalls.size)
+        println("Methods with at least one resolved call: "+callsCount)
+        println("Methods which are called by at least one method: "+calledByCount)
+
+        var maxCallSitesPerMethod = 0
+        var maxTargets = 0
+        foreachCallingMethod { (method, callees) ⇒
+            val calleesCount = callees.size
+            if (calleesCount > maxCallSitesPerMethod) maxCallSitesPerMethod = calleesCount
+            for (targets ← callees.values) {
+                val targetsCount = targets.size
+                if (targetsCount > maxTargets) maxTargets = targetsCount
+            }
+        }
+        println("Maximum number of targets over all calls: "+maxTargets)
+        println("Maximum number of method calls over all methods: "+maxCallSitesPerMethod)
 
         //
-        // Let's create the graph
+        // Let's create visualization
         //
         import de.tud.cs.st.util.graphs.{ toDot, SimpleNode, Node }
         val nodes: Set[Node] = {
 
-            var nodesForMethods = Map.empty[Method, Node]
+            var nodesForMethods = collection.mutable.HashMap.empty[Method, Node]
 
             def createNode(caller: Method): Node = {
                 if (nodesForMethods.contains(caller))
@@ -131,10 +168,10 @@ object CallGraphVisualization {
                             None
                     }
                 )
-                nodesForMethods = nodesForMethods + ((caller, node)) // break cycles!
+                nodesForMethods += ((caller, node)) // break cycles!
 
                 for {
-                    callees ← calls.get(caller)
+                    callees ← calls(caller)
                     perCallsiteCallees ← callees.values
                     callee ← perCallsiteCallees
                     if project.classFile(callee).className.startsWith(classNameFilter)
@@ -144,15 +181,22 @@ object CallGraphVisualization {
                 node
             }
 
-            calls.keySet.view.filter { method ⇒
-                project.classFile(method).thisClass.className.startsWith(classNameFilter)
-            } foreach { caller ⇒
-                createNode(caller)
+            foreachCallingMethod { (method, callees) ⇒
+                if (project.classFile(method).thisClass.className.startsWith(classNameFilter))
+                    createNode(method)
             }
             nodesForMethods.values.toSet[Node] // it is a set already...
         }
         // The unresolved methods________________________________________________________:
-        //println(unresolvedMethodCalls.mkString("Unresolved calls:\n\t", "\n\t", ""))
+        if (unresolvedMethodCalls.size > 0) {
+            println("Unresolved method calls: "+unresolvedMethodCalls.size)
+            val (umc, end) =
+                if (unresolvedMethodCalls.size > 10)
+                    (unresolvedMethodCalls.take(10), "\n\t...\n")
+                else
+                    (unresolvedMethodCalls, "\n")
+            println(umc.mkString("Unresolved method calls:\n\t", "\n\t", end))
+        }
 
         // The graph_____________________________________________________________________:
         //        val consoleOutput = callGraph.calls flatMap { caller ⇒
@@ -163,7 +207,23 @@ object CallGraphVisualization {
         //        }
         //        println(consoleOutput.mkString("\n"))
 
+        // The exceptions________________________________________________________________:
+        println("Exceptions: "+exceptions.size)
+        println(exceptions.mkString("Exceptions:\n\t", "\n\t", "\t"))
+
+        // Generate and show the graph
         toDot.generateAndOpenDOT(nodes)
 
+        // Write out the statistics about the calls relation
+        writeAndOpenDesktopApplication(
+            callGraph.callsStatistics(),
+            "CallGraphStatistics(calls)",
+            ".tsv.txt")
+
+        // Write out the statistics about the called-by relation
+        writeAndOpenDesktopApplication(
+            callGraph.calledByStatistics(),
+            "CallGraphStatistics(calledBy)",
+            ".tsv.txt")
     }
 }

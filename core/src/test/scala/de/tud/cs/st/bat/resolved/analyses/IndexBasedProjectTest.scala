@@ -54,18 +54,7 @@ class IndexBasedProjectTest
         with ShouldMatchers
         with ParallelTestExecution {
 
-    //
-    //
-    // Setup
-    //
-    //
-    val resources = TestSupport.locateTestResources("classfiles/Methods.jar")
-    val project = IndexBasedProject(ClassFiles(resources))
-
-    val SuperType = ObjectType("methods/a/Super")
-    val DirectSub = ObjectType("methods/a/DirectSub")
-    val AbstractB = ObjectType("methods/b/AbstractB")
-
+    import IndexBasedProjectTest._
     //
     //
     // Verify
@@ -139,7 +128,7 @@ class IndexBasedProjectTest
         // let's make sure the class is a super class
         project.classHierarchy.isSubtypeOf(DirectSub, SuperType) should be(de.tud.cs.st.util.Yes)
 
-        // let's test the solving 
+        // let's test the resolving 
         resolveMethodReference(
             DirectSub,
             "staticDefaultVisibilityMethod",
@@ -179,4 +168,18 @@ class IndexBasedProjectTest
         assert(project.classFile(r.get).thisClass === ObjectType("methods/b/SuperI"))
     }
 
+}
+private object IndexBasedProjectTest {
+
+    //
+    //
+    // Setup
+    //
+    //
+    val resources = TestSupport.locateTestResources("classfiles/Methods.jar")
+    val project = IndexBasedProject(ClassFiles(resources))
+
+    val SuperType = ObjectType("methods/a/Super")
+    val DirectSub = ObjectType("methods/a/DirectSub")
+    val AbstractB = ObjectType("methods/b/AbstractB")
 }

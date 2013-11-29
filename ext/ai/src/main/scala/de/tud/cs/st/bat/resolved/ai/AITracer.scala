@@ -35,13 +35,17 @@ package bat
 package resolved
 package ai
 
+import instructions._
+
 /**
  * Defines the interface between the abstract interpreter and a module for
  * tracing the interpreter's behavior. In general, a tracer is first registered with an
  * abstract interpreter. After that, when a method is analyzed, BATAI calls the
- * tracer's methods at the respective point in time.
+ * tracer's methods at the respective point in time. A tracer is registered with
+ * an abstract interpreter by creating a new subclass of `AI` and overriding the method
+ * `tracer`. 
  *
- * @note In general, all mutable data structures (.e.g. the current locals) passed
+ * @note In general, all mutable data structures (e.g. the current locals) passed
  * 		to the tracer must not be mutated by it.
  *
  * @author Michael Eichberg
@@ -67,7 +71,7 @@ trait AITracer {
         locals: Array[D#DomainValue]): Unit
 
     /**
-     * Called by BATAI after an instruction was evaluated and before the targetPC
+     * Called by BATAI after an instruction (`currentPC`) was evaluated and before the `targetPC`
      * is evaluated. In case of `if` or `switch` instructions `flow` is called multiple
      * times before the method `instructionEvaluation` is called again.
      *
@@ -84,9 +88,7 @@ trait AITracer {
      * @param thisLocals The registers as they were used the last time when the
      * 		instruction with the given program counter was evaluated.
      * @param otherOperands The current operand stack when we re-reach the instruction
-     *
      * @param otherLocals The current registers.
-     *
      * @param result The result of joining the operand stacks and register
      * 		assignment.
      */
@@ -101,7 +103,8 @@ trait AITracer {
         forcedContinuation: Boolean)
 
     /**
-     * Called when the analyzed method throws an exception that is not caught within
+     * Called when the analyzed method throws an exception (i.e., the interpreter
+     * evaluates an `athrow` instruction) that is not caught within
      * the method.
      */
     def abruptMethodExecution[D <: SomeDomain](

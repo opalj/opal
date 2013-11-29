@@ -35,6 +35,8 @@ package resolved
 package analyses
 package bug_patterns.ioc
 
+import instructions._
+
 /**
  * The `finalize` method should be `protected`.
  * @author Ralf Mitschke

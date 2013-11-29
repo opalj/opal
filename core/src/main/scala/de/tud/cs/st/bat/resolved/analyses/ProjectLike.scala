@@ -71,16 +71,36 @@ abstract class ProjectLike[Source] extends (ObjectType ⇒ Option[ClassFile]) {
 
     def classFile(method: Method): ClassFile
 
-    def foreachClassFile(f: ClassFile ⇒ _): Unit
+    def foreachClassFile[U](f: ClassFile ⇒ U): Unit
+
+    def foreachMethod[U](f: Method ⇒ U): Unit
+
+    def method(methodID: Int): Method
     
-    def foreachMethod(f: Method ⇒ _): Unit
-   
+    def classFile(classFileID : Int) : ClassFile
+
+    final def objectTypesCount = ObjectType.objectTypesCount
+
+    final def methodsCount = Method.methodsCount
+
+    final def fieldCount = Field.fieldsCount
+
     /**
      * This project's class files.
      */
     def classFiles: Iterable[ClassFile]
 
     val classHierarchy: ClassHierarchy
+
+    /**
+     * Returns all available `ClassFile` objects for the given `objectTypes` that
+     * pass the given `filter`. `ObjectType`s for which no `ClassFile` is available
+     * are ignored.
+     */
+    def lookupClassFiles(
+        objectTypes: Traversable[ObjectType])(
+            filter: ClassFile ⇒ Boolean): Traversable[ClassFile] =
+        objectTypes.view.map(apply(_)).filter(_.isDefined).map(_.get).filter(filter)
 }
 
 trait ProjectBuilder[Source, Project <: ProjectBuilder[Source, Project]] {

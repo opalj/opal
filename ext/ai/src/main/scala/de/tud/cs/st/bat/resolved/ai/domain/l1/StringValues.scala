@@ -35,6 +35,7 @@ package bat
 package resolved
 package ai
 package domain
+package l1
 
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
@@ -51,8 +52,6 @@ trait StringValues[+I] extends DefaultPreciseReferenceValues[I] {
         val value: String)
             extends AReferenceValue(pc, Set(ObjectType.String), No, true) { this: DomainValue ⇒
 
-        assume(value != null)
-
         override def adapt[ThatI >: I](targetDomain: Domain[ThatI], pc: Int): targetDomain.DomainValue =
             // I would prefer to write (but the compiler crashes!): 
             // targetDomain match {
@@ -62,7 +61,8 @@ trait StringValues[+I] extends DefaultPreciseReferenceValues[I] {
             // }
             if (targetDomain.isInstanceOf[StringValues[ThatI]]) {
                 val otherDomain = targetDomain.asInstanceOf[StringValues[ThatI]]
-                new otherDomain.AStringValue(pc, this.value).asInstanceOf[targetDomain.DomainValue]
+                val newStringValue = new otherDomain.AStringValue(pc, this.value)
+                newStringValue.asInstanceOf[targetDomain.DomainValue]
             } else
                 super.adapt(targetDomain, pc)
 

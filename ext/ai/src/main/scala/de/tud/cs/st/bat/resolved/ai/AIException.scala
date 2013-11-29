@@ -60,7 +60,9 @@ case class InterpreterException[D <: SomeDomain](
     operandsArray: Array[_ <: List[_ <: D#DomainValue]],
     localsArray: Array[_ <: Array[_ <: D#DomainValue]])
         // TODO [Design] using the cause's message as the message doesn't make sense when we also pass on the cause itself...
-        extends AIException(throwable.getLocalizedMessage(), throwable)
+        extends AIException(
+            throwable.getClass().getSimpleName()+": "+throwable.getLocalizedMessage(),
+            throwable)
 
 /**
  * An exception related to performing computations in a specific domain occured.

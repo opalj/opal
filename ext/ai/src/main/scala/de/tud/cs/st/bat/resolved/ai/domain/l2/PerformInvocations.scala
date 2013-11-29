@@ -35,11 +35,12 @@ package bat
 package resolved
 package ai
 package domain
+package l2
+
+import instructions._
+import analyses.{ Project, ClassHierarchy }
 
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
-import analyses.{ Project, ClassHierarchy }
-import de.tud.cs.st.bat.resolved.ai.IsReferenceValue
-import de.tud.cs.st.bat.resolved.ai.ComputedValueAndException
 
 trait MethodReturnInformation { this: Domain[_] ⇒
 
@@ -95,7 +96,7 @@ trait DefaultMethodReturnInformation extends MethodReturnInformation { this: Dom
 
 trait PerformInvocations[+I, Source]
         extends Domain[I]
-        with TypeLevelInvokeInstructions { thisDomain ⇒
+        with l0.TypeLevelInvokeInstructions { thisDomain ⇒
 
     def project: Project[Source]
 

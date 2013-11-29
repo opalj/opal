@@ -36,6 +36,8 @@ package resolved
 package analyses
 package bug_patterns
 
+import instructions._
+
 /**
  * Identifies (non-static) inner classes that are serializable, but where the outer class
  * is not.

@@ -60,11 +60,11 @@ trait Constant_PoolAbstractions {
     type ClassFile
 
     /**
-     * A DeferredActionsStore is needed to register functions
-     * that need to perform post load actions. E.g., to resolve references to attributes.
-     * (The constant pool is the only structure is passed around and hence it is the
+     * A DeferredActionsStore store all functions that need to perform post load actions. 
+     * 
+     * One example is the resolution of references to attributes.
+     * (The constant pool is the only structure that is passed around and hence it is the
      * only place where to store information/functions related to a specific class file).
-     *
      */
     protected[bat]type DeferredActionsStore = Buffer[ClassFile ⇒ ClassFile] with Constant_Pool_Entry
 

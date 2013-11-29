@@ -33,6 +33,8 @@
 package de.tud.cs.st
 package bat
 package resolved
+package instructions
+
 
 /**
  * An instruction that stores the top-most stack value in a local variable.

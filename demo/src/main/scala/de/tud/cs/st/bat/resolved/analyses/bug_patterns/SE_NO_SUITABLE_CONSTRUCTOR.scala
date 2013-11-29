@@ -34,6 +34,8 @@ package de.tud.cs.st.bat.resolved
 package analyses
 package bug_patterns.ioc
 
+import instructions._
+
 /**
   * A superclass of a `Serializable` class must define a no-args constructor.
   *

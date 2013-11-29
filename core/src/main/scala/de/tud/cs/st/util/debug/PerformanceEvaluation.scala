@@ -81,6 +81,26 @@ class PerformanceEvaluation {
 
 object PerformanceEvaluation {
 
+    def asMB(bytesCount: Long): String = {
+        val mbs = bytesCount / 1024 / 1024.0
+        f"$mbs%.2f MB" // String interpolation
+    }
+
+    /**
+     * Measures the amount of memory that is used as a side-effect
+     * of executing the given method.
+     */
+    def memory[T](f: ⇒ T)(mu: Long ⇒ Unit): T = {
+        val memoryMXBean = java.lang.management.ManagementFactory.getMemoryMXBean
+        memoryMXBean.gc(); System.gc()
+        val usedBefore = memoryMXBean.getHeapMemoryUsage.getUsed
+        val r = f
+        memoryMXBean.gc(); System.gc()
+        val usedAfter = memoryMXBean.getHeapMemoryUsage.getUsed
+        mu(usedAfter - usedBefore)
+        r
+    }
+
     /**
      * Times the execution of a given method f (function literal / code block).
      *

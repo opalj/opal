@@ -35,36 +35,38 @@ package bat
 package resolved
 package analyses
 
-import util.debug.{ Counting, PerformanceEvaluation, MemoryUsage }
+import instructions._
+
+import util.debug.{ Counting, PerformanceEvaluation }
 import reader.Java7Framework.ClassFiles
 
 /**
- * Implementation of some simple static analyses to demonstrate the flexibility
- * and power offered by Scala and BAT when analyzing class files.
- *
- * The implemented static analyses are inspired by Findbugs
- * (http://findbugs.sourceforge.net/bugDescriptions.html).
- * <ul>
- * <li>0-FINDBUGS: CI: Class is final but declares protected field (CI_CONFUSED_INHERITANCE) // http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/ConfusedInheritance.java</li>
- * <li>2-FINDBUGS: CN: Class implements Cloneable but does not define or use clone method (CN_IDIOM)</li>
- * <li>2-FINDBUGS: CN: clone method does not call super.clone() (CN_IDIOM_NO_SUPER_CALL)</li>
- * <li>2-FINDBUGS: CN: Class defines clone() but doesn't implement Cloneable (CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE)
- * <li>1-FINDBUGS: Co: Abstract class defines covariant compareTo() method (CO_ABSTRACT_SELF)</li>
- * <li>1-FINDBUGS: Co: Covariant compareTo() method defined (CO_SELF_NO_OBJECT)</li>
- * <li>0-FINDBUGS: Dm: Explicit garbage collection; extremely dubious except in benchmarking code (DM_GC)</li>
- * <li>1-FINDBUGS: Dm: Method invokes dangerous method runFinalizersOnExit (DM_RUN_FINALIZERS_ON_EXIT)</li>
- * <li>1-FINDBUGS: Eq: Abstract class defines covariant equals() method (EQ_ABSTRACT_SELF)</li>
- * <li>0-FINDBUGS: FI: Finalizer should be protected, not public (FI_PUBLIC_SHOULD_BE_PROTECTED)</li>
- * <li>0-FINDBUGS: Se: Class is Serializable but its superclass doesn't define a void constructor (SE_NO_SUITABLE_CONSTRUCTOR)</li>
- * <li>0-FINDBUGS: UuF: Unused field (UUF_UNUSED_FIELD)</li>
- * <li>0-FINDBUGS: (IMSE_DONT_CATCH_IMSE) http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/DontCatchIllegalMonitorStateException.java</li>
- * </ul>
- *
- * @author Michael Eichberg
- */
+  * Implementation of some simple static analyses to demonstrate the flexibility
+  * and power offered by Scala and BAT when analyzing class files.
+  *
+  * The implemented static analyses are inspired by Findbugs
+  * (http://findbugs.sourceforge.net/bugDescriptions.html).
+  * <ul>
+  * <li>0-FINDBUGS: CI: Class is final but declares protected field (CI_CONFUSED_INHERITANCE) // http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/ConfusedInheritance.java</li>
+  * <li>2-FINDBUGS: CN: Class implements Cloneable but does not define or use clone method (CN_IDIOM)</li>
+  * <li>2-FINDBUGS: CN: clone method does not call super.clone() (CN_IDIOM_NO_SUPER_CALL)</li>
+  * <li>2-FINDBUGS: CN: Class defines clone() but doesn't implement Cloneable (CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE)
+  * <li>1-FINDBUGS: Co: Abstract class defines covariant compareTo() method (CO_ABSTRACT_SELF)</li>
+  * <li>1-FINDBUGS: Co: Covariant compareTo() method defined (CO_SELF_NO_OBJECT)</li>
+  * <li>0-FINDBUGS: Dm: Explicit garbage collection; extremely dubious except in benchmarking code (DM_GC)</li>
+  * <li>1-FINDBUGS: Dm: Method invokes dangerous method runFinalizersOnExit (DM_RUN_FINALIZERS_ON_EXIT)</li>
+  * <li>1-FINDBUGS: Eq: Abstract class defines covariant equals() method (EQ_ABSTRACT_SELF)</li>
+  * <li>0-FINDBUGS: FI: Finalizer should be protected, not public (FI_PUBLIC_SHOULD_BE_PROTECTED)</li>
+  * <li>0-FINDBUGS: Se: Class is Serializable but its superclass doesn't define a void constructor (SE_NO_SUITABLE_CONSTRUCTOR)</li>
+  * <li>0-FINDBUGS: UuF: Unused field (UUF_UNUSED_FIELD)</li>
+  * <li>0-FINDBUGS: (IMSE_DONT_CATCH_IMSE) http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/DontCatchIllegalMonitorStateException.java</li>
+  * </ul>
+  *
+  * @author Michael Eichberg
+  */
 object MoreCheckers {
 
-    import PerformanceEvaluation.time
+    import PerformanceEvaluation.{ time, memory }
 
     private def printUsage: Unit = {
         println("Usage: java …Main <JAR file containing class files>+")
@@ -127,20 +129,19 @@ object MoreCheckers {
     // it is not meant to demonstrate how to write such analyses in an efficient
     // manner. (However, the performance is still acceptable.)
     def analyze(jarFiles: Array[String]) {
-        var classHierarchy = new ClassHierarchy
-
         var classFilesCount = 0
-        val classFiles = MemoryUsage {
+        val classFiles = memory {
             val cf = for (
                 zipFile ← jarFiles; // if { println("Reading: "+zipFile); true };
                 (classFile, _) ← ClassFiles(zipFile)
             ) yield {
                 classFilesCount += 1
-                classHierarchy = classHierarchy + classFile
                 classFile
             }
             cf
         }(mu ⇒ println("Memory required for the bytecode representation ("+classFilesCount+"): "+(mu / 1024.0 / 1024.0)+" MByte"))
+        val classHierarchy = ClassHierarchy(classFiles)
+
         val getClassFile: Map[ObjectType, ClassFile] = classFiles.map(cf ⇒ (cf.thisClass, cf)).toMap // SAME AS IN PROJECT
         println("Press return to continue."); System.in.read()
 
@@ -169,7 +170,8 @@ object MoreCheckers {
                         case _ ⇒ false;
                     })
                 } yield classFile.thisClass.className
-            } else
+            }
+            else
                 List.empty[String]
         } { t ⇒ collect("CN_IDIOM", t /*nsToSecs(t)*/ ) }
         println(", "+cloneableNoClone.size)

@@ -36,6 +36,8 @@ package resolved
 package ai
 package tracer
 
+import instructions._
+
 /**
  *
  * @author Michael Eichberg

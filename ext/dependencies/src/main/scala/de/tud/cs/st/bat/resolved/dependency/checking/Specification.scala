@@ -37,7 +37,7 @@ package dependency
 package checking
 
 import reader.Java7Framework
-import analyses.{ ClassHierarchy, MapBasedProject }
+import analyses.{ ClassHierarchy, IndexBasedProject }
 
 import java.net.URL
 import collection.immutable.SortedSet
@@ -324,9 +324,8 @@ class Specification
         import de.tud.cs.st.util.debug.PerformanceEvaluation.time
         import de.tud.cs.st.util.debug._
 
-        var project = MapBasedProject.empty[URL]
-
         // 1. create and update the support data structures
+        var project: IndexBasedProject[URL] = null
         time {
             val dependencyExtractor =
                 new DependencyExtractor(Specification.this) with NoSourceElementsVisitor {
@@ -348,18 +347,21 @@ class Specification
                             )
                     }
                 }
+            var classFiles: List[(ClassFile, URL)] = Nil
             for {
                 classFileProvider ← classFileProviders
                 cs @ (classFile, source) ← classFileProvider
-            } {
-                project = project + cs
+            } {                
+                classFiles = cs :: classFiles
                 dependencyExtractor.process(classFile)
             }
+            project = IndexBasedProject(classFiles)
         } { executionTime ⇒
             Console.println(
                 Console.GREEN+
                     "1. Reading "+
-                    project.classes.size+" class files and extracting dependencies took "+
+                    project.classFilesCount+" class files (defined types: "+
+                    project.objectTypesCount+") and extracting dependencies took "+
                     nsToSecs(executionTime).toString+" seconds."+
                     Console.BLACK)
         }

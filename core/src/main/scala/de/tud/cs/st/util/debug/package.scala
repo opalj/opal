@@ -52,4 +52,20 @@ package object debug {
     final def asSeconds(startTimeInNanoSeconds: Long, endTimeInNanoSeconds: Long): Double =
         nanoSecondsToSeconds(endTimeInNanoSeconds - startTimeInNanoSeconds)
 
+    def writeAndOpenDesktopApplication(
+        data: String,
+        fileNamePrefix: String,
+        fileNameSuffix: String) {
+        import ControlAbstractions._
+        try {
+            val desktop = java.awt.Desktop.getDesktop()
+            val file = java.io.File.createTempFile(fileNamePrefix, fileNameSuffix)
+            process { new java.io.FileOutputStream(file) } { fos ⇒
+                fos.write(data.getBytes("UTF-8"))
+            }
+            desktop.open(file)
+        } catch {
+            case _: Error | _: Exception ⇒ println(data)
+        }
+    }
 }

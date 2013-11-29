@@ -111,10 +111,31 @@ trait ClassFileBinding
             interfaces,
             fields,
             methods,
-            attributes
-        )
+            attributes)
     }
 
+    val removeBootstrapMethodAttribute: ClassFile ⇒ ClassFile = { classFile ⇒
+        val attributes = classFile.attributes
+        if (classFile.majorVersion <= 50 /*does not have BootstrapMethodTable*/ ||
+            attributes.size == 0 ||
+            attributes.forall(attribute ⇒ !attribute.isInstanceOf[BootstrapMethodTable]))
+            classFile
+        else {
+            val newAttributes = classFile.attributes filter { attribute ⇒
+                !attribute.isInstanceOf[BootstrapMethodTable]
+            }
+            new ClassFile(
+                classFile.minorVersion, classFile.majorVersion, classFile.accessFlags,
+                classFile.thisClass,
+                classFile.superClass,
+                classFile.interfaces,
+                classFile.fields,
+                classFile.methods,
+                newAttributes
+            )
+        }
+    }
+    registerClassFilePostProcessor(removeBootstrapMethodAttribute)
 }
 
 

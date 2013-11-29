@@ -33,6 +33,8 @@
 package de.tud.cs.st
 package bat
 package resolved
+package instructions
+
 
 /**
  * Super class of all bytecode instructions that always jump to a specific

@@ -176,14 +176,6 @@ trait ReifiedConstraints[+I] extends Domain[I] {
     }
 }
 
-trait RecordConstraints[I] extends ReifiedConstraints[I] {
-
-    var constraints: Set[ReifiedConstraint] = Set.empty
-
-    def addConstraint(constraint: ReifiedConstraint) {
-        constraints += constraint
-    }
-}
 
 
 

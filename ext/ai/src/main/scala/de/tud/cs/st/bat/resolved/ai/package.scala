@@ -36,6 +36,8 @@ package resolved
 
 import de.tud.cs.st.util.Answer
 
+import collection.Set
+
 /**
  * This package defines classes and traits used by BAT's abstract interpretation
  * framework – called BATAI in the following. Please note, that BATAI just refers
@@ -65,9 +67,8 @@ package object ai {
     type PC = Int
 
     @throws[AIException]
-    def aiException(message: String, cause: Throwable = null): Nothing = {
+    def aiException(message: String, cause: Throwable = null): Nothing =
         throw new AIException(message, cause)
-    }
 
     /**
      * Exception that is thrown if the framework identifies an error in the concrete
@@ -90,9 +91,9 @@ package object ai {
         throwable: Throwable,
         domain: D,
         worklist: List[PC],
-        evaluated: List[PC],
-        operandsArray: Array[_ <: List[_ <: D#DomainValue]],
-        localsArray: Array[_ <: Array[_ <: D#DomainValue]]): Nothing = {
+        evaluated: List[PC])(
+            operandsArray: Array[_ <: List[_ <: domain.DomainValue]],
+            localsArray: Array[_ <: Array[_ <: domain.DomainValue]]): Nothing = {
         throw InterpreterException[SomeDomain](
             throwable,
             domain,
@@ -105,21 +106,22 @@ package object ai {
 
     /**
      * An upper bound represents the available type information about a reference value.
-     * In general, it is just an upper bound for a concrete type; i.e., we know that
-     * the runtime type has to be a subtype of the upper bound. An upper bound can
-     * consists of multiple independent types. E.g.,
-     * a type bound could be: `java.lang.Object`, `java.io.Serializable` and
-     * `java.lang.Cloneable` for an array.
+     * It is always "just" an upper bound for a concrete type; i.e., we know that
+     * the runtime type has to be a subtype of the type identified by the upper bound.
+     * An upper bound can consists of multiple '''independent''' types. E.g.,
+     * a type bound could be: `java.io.Serializable` and `java.lang.Cloneable` for an
+     * array. Independent means that no two types of the bound are in a subtype
+     * relationship. Hence, an upper bound is always a special set.
      *
-     * In general, an upper bound identifies a single class type and a set of independent 
-     * interface types which are known to be implemented by the current object. Even if the type 
-     * contains a class type it may just be a super class of the concrete type and, hence,
-     * just represent an abstraction.
+     * In general, an upper bound identifies a single class type and a set of independent
+     * interface types which are known to be implemented by the current object. '''Even if
+     * the type contains a class type''' it may just be a super class of the concrete type
+     * and, hence, just represents an abstraction.
      *
-     * How type bounds related to reference types are handled and whether the domain
-     * makes it possible to distinguish between precise types and type bounds is at
-     * the sole discretion of the domain.
+     * @note How type bounds related to reference types are handled and whether the domain
+     *      makes it possible to distinguish between precise types and type bounds is at
+     *      the sole discretion of the domain.
      */
-    type UpperBound = Set[ReferenceType]
+    type UpperBound = Iterable[ReferenceType]
 
 }

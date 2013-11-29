@@ -35,9 +35,11 @@ package bat
 package resolved
 package reader
 
+import instructions._
+
 /**
  * Defines a method to parse an array of bytes (containing Java bytecode instructions) and
- * to return an array of [[de.tud.cs.st.bat.resolved.Instruction]]`s.
+ * to return an array of [[de.tud.cs.st.bat.resolved.instructions.Instruction]]`s.
  *
  * The target array has the same size as the source array to make sure that branch offsets
  * etc. point to the correct instruction.
@@ -50,7 +52,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
 
     /**
      * Transforms an array of bytes into an array of
-     * [[de.tud.cs.st.bat.resolved.Instruction]]s.
+     * [[de.tud.cs.st.bat.resolved.instructions.Instruction]]s.
      */
     def Instructions(source: Array[Byte])(implicit cp: Constant_Pool): Instructions = {
         import java.io.DataInputStream
@@ -225,16 +227,18 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                     val cpe = cp(in.readUnsignedShort).asInvokeDynamic
                     in.readByte // ignored; fixed value
                     in.readByte // ignored; fixed value
-                    registerDeferredAction(classFile ⇒ {
+                    registerDeferredAction { classFile ⇒
+                        val bootstrapMethods = classFile.attributes collectFirst {
+                            case BootstrapMethodTable(bms) ⇒ bms
+                        }
                         val invokeDynamic = INVOKEDYNAMIC(
-                            classFile.bootstrapMethods.get(cpe.bootstrapMethodAttributeIndex),
+                            bootstrapMethods.get(cpe.bootstrapMethodAttributeIndex),
                             cpe.methodName,
                             cpe.methodDescriptor
                         )
                         instructions(index) = invokeDynamic
                         classFile
                     }
-                    )
                     //INVOKEDYNAMIC(cpe.bootstrapMethodAttributeIndex, cpe.methodName, cpe.methodDescriptor)
                     UNRESOLVED_INVOKEDYNAMIC
                 case 185 ⇒

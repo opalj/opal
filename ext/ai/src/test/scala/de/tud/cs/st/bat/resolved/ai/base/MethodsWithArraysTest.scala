@@ -36,7 +36,7 @@ package ai
 package base
 
 import reader.Java7Framework
-import domain.BaseRecordingDomain
+import domain.l0.BaseRecordingDomain
 
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
@@ -58,11 +58,7 @@ class MethodsWithArraysTest
         with ShouldMatchers
         with ParallelTestExecution {
 
-    val classFiles = Java7Framework.ClassFiles(
-        TestSupport.locateTestResources("classfiles/ai.jar", "ext/ai"))
-
-    val classFile = classFiles.map(_._1).
-        find(_.thisClass.className == "ai/MethodsWithArrays").get
+    import MethodsWithArraysTest._
 
     private def evaluateMethod(name: String, f: BaseRecordingDomain[String] ⇒ Unit) {
         val domain = new BaseRecordingDomain(name)
@@ -98,4 +94,12 @@ class MethodsWithArraysTest
             )
         })
     }
+}
+private object MethodsWithArraysTest {
+
+    val classFiles = Java7Framework.ClassFiles(
+        TestSupport.locateTestResources("classfiles/ai.jar", "ext/ai"))
+
+    val classFile = classFiles.map(_._1).
+        find(_.thisClass.className == "ai/MethodsWithArrays").get
 }

@@ -36,6 +36,8 @@ package resolved
 package analyses
 package bug_patterns
 
+import instructions._
+
 /**
  * Finds violations of the contract defined in `java.lang.Object` w.r.t. the methods
  * `equals` and `hashcode`.

@@ -198,7 +198,9 @@ trait ClassFileReader extends Constant_PoolAbstractions {
 
     /**
      * Register a class file post processor. A class file post processor
-     * can transform the completely read and reified class file.
+     * can transform the completely read and reified class file. Post processors
+     * can only be registered before the usage of a class file reader. '''Registering
+     * new `ClassFilePostProcessors` while processing class files is not supported'''.
      */
     def registerClassFilePostProcessor(p: ClassFile ⇒ ClassFile): Unit = {
         classFilePostProcessors = p :: classFilePostProcessors
@@ -245,7 +247,9 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         classFile = applyDeferredActions(classFile, cp)
 
         // perform general transformations on class files
-        classFilePostProcessors.foreach(p ⇒ { classFile = p(classFile) })
+        classFilePostProcessors foreach { postProcessor ⇒
+            classFile = postProcessor(classFile)
+        }
 
         classFile
     }
@@ -372,8 +376,10 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      */
     def ClassFiles(file: File): Seq[(ClassFile, URL)] = {
         if (file.isFile()) {
-            if (file.getName.endsWith(".jar"))
+            if (file.getName.endsWith(".jar")) {
+                println("Processing: "+file.toString)
                 return ClassFiles(file.getAbsoluteFile.getPath)
+            }
 
             if (file.getName.endsWith(".class"))
                 return List(

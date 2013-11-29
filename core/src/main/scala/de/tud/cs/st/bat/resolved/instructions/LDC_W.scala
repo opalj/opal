@@ -33,15 +33,16 @@
 package de.tud.cs.st
 package bat
 package resolved
+package instructions
 
-import scala.language.existentials
+import language.existentials
 
 /**
  * Push item from runtime constant pool.
  *
  * @author Michael Eichberg
  */
-sealed abstract class LDC_W[T] extends LoadConstantInstruction {
+sealed abstract class LDC_W[@specialized(Int,Float) T] extends LoadConstantInstruction {
 
     def value: T
 

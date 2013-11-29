@@ -36,12 +36,12 @@ package resolved
 package analyses
 
 /**
- * Writes out (a subset of) the class hierarchy in the format used by the
- * `de.tud.cs.st.bat.resolved.analyses.ClassHierarchy` to create the pre-initialized
- * class hierarchy.
- *
- * @author Michael Eichberg
- */
+  * Writes out (a subset of) the class hierarchy in the format used by the
+  * `de.tud.cs.st.bat.resolved.analyses.ClassHierarchy` to create the pre-initialized
+  * class hierarchy.
+  *
+  * @author Michael Eichberg
+  */
 object ClassHierarchyExtractor {
 
     def main(args: Array[String]) {
@@ -54,11 +54,12 @@ object ClassHierarchyExtractor {
             sys.exit(-1)
         }
 
-        val supertypeName = args(0)
-        val filterPrefix = args(1)
+        val supertypeName = args(0).replace('.','/')
+        val filterPrefix = args(1).replace('.','/')
         val jars = args.drop(2)
 
-        val classHierarchy = (new ClassHierarchy /: jars)(_ ++ ClassFiles(_).map(_._1))
+        val classFiles = (List.empty[(ClassFile, java.net.URL)] /: jars)(_ ++ ClassFiles(_))
+        val classHierarchy = ClassHierarchy(classFiles.view.map(_._1))
         val supertype = ObjectType(supertypeName)
         if (classHierarchy.isUnknown(supertype)) {
             Console.err.println(
@@ -80,7 +81,7 @@ object ClassHierarchyExtractor {
         var specLines = allRelevantSubtypes.map { aType ⇒
             var specLine =
                 (
-                    if (classHierarchy.interfaceTypes.contains(aType))
+                    if (classHierarchy.isInterface(aType))
                         "interface "
                     else
                         "class "
@@ -88,9 +89,9 @@ object ClassHierarchyExtractor {
             val superclassType = classHierarchy.superclassType(aType)
             if (superclassType.isDefined) {
                 specLine += " extends "+superclassType.get.className
-                val superinterfaceTypes = classHierarchy.superinterfaceTypes.get(aType)
+                val superinterfaceTypes = classHierarchy.superinterfaceTypes(aType)
                 if (superinterfaceTypes.isDefined) {
-                    specLine += 
+                    specLine +=
                         " implements "+superinterfaceTypes.get.map(_.className).mkString(", ")
                 }
             }

@@ -35,6 +35,7 @@ package bat
 package resolved
 package ai
 package domain
+package l0
 
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
@@ -46,7 +47,7 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  *
  * @author Michael Eichberg
  */
-trait BasicTypeHierarchy { this: Domain[_] ⇒
+trait BasicTypeHierarchy extends ClassHierarchyDomain { this: Domain[_] ⇒
     
     /**
      * This project's class hierarchy; unless explicitly overridden, BAT's
@@ -55,15 +56,9 @@ trait BasicTypeHierarchy { this: Domain[_] ⇒
      *
      * @note '''This method is intended to be overridden.'''
      */
-    protected def classHierarchy: analyses.ClassHierarchy =
+    override def classHierarchy: analyses.ClassHierarchy =
         BasicTypeHierarchy.classHierarchy
 
-    /**
-     * @see `de.tud.cs.st.bat.resolved.analyses.ClassHierarchy.isSubtypeOf(ReferenceType,
-     * 		ReferenceType)`
-     */
-    override def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer =
-        classHierarchy.isSubtypeOf(subtype, supertype)
 
 }
 private object BasicTypeHierarchy {

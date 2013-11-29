@@ -35,7 +35,9 @@ package bat
 package resolved
 package ai
 
+import instructions._
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
+
 import scala.util.control.ControlThrowable
 
 /**
@@ -185,15 +187,8 @@ trait AI[D <: Domain[_]] {
 
             if (!method.isStatic) {
                 val thisType = classFile.thisClass
-                val thisValue = {
-                    val thisValueOrigin = origin(localVariableIndex)
-                    val thisValue = domain.newReferenceValue(thisValueOrigin, thisType)
-                    domain.establishIsNonNull(
-                        thisValueOrigin,
-                        thisValue,
-                        List.empty[domain.DomainValue] /*are empty...*/ ,
-                        Array(thisValue))._2(0) /* extract the constrained "thisValue"*/
-                }
+                val thisValue =
+                    domain.nonNullReferenceValue(origin(localVariableIndex), thisType)
                 locals.update(localVariableIndex, thisValue)
                 localVariableIndex += 1 /*==thisType.computationalType.operandSize*/
             }
@@ -579,7 +574,9 @@ trait AI[D <: Domain[_]] {
                         } else {
                             // TODO Do we have to handle the case that we know nothing about the exception type?
                             val IsReferenceValue(upperBounds) = typeOfValue(exceptionValue)
-                            upperBounds.forall { typeBounds ⇒
+                            upperBounds forall { typeBounds ⇒
+                                // as a side effect we also add the handler to the set
+                                // of targets
                                 typeBounds.isSubtypeOf(catchType.get) match {
                                     case No ⇒
                                         false
@@ -793,27 +790,36 @@ trait AI[D <: Domain[_]] {
                         val switch = instructions(pc).asInstanceOf[LOOKUPSWITCH]
                         val index = operands.head
                         val remainingOperands = operands.tail
-                        val firstKey = switch.npairs(0)._1
-                        var previousKey = firstKey
-                        var branchToDefaultRequired = false
-                        for ((key, offset) ← switch.npairs) {
-                            if (!branchToDefaultRequired && (key - previousKey) > 1) {
-                                if ((previousKey until key).exists(v ⇒ domain.isSomeValueInRange(index, v, v))) {
-                                    branchToDefaultRequired = true
-                                } else {
-                                    previousKey = key
+                        if (switch.npairs.isEmpty) {
+                            // in the Java 7 JDK 45 we had found a lookupswitch
+                            // that just had a defaultBranch (glorified "goto")
+                            gotoTarget(
+                                pc,
+                                pc + switch.defaultOffset,
+                                remainingOperands, locals)
+                        } else {
+                            var branchToDefaultRequired = false
+                            val firstKey = switch.npairs(0)._1
+                            var previousKey = firstKey
+                            for ((key, offset) ← switch.npairs) {
+                                if (!branchToDefaultRequired && (key - previousKey) > 1) {
+                                    if ((previousKey until key).exists(v ⇒ domain.isSomeValueInRange(index, v, v))) {
+                                        branchToDefaultRequired = true
+                                    } else {
+                                        previousKey = key
+                                    }
+                                }
+                                if (domain.isSomeValueInRange(index, key, key)) {
+                                    val branchTarget = pc + offset
+                                    val (updatedOperands, updatedLocals) =
+                                        domain.establishValue(branchTarget, key, index, remainingOperands, locals)
+                                    gotoTarget(pc, branchTarget, updatedOperands, updatedLocals)
                                 }
                             }
-                            if (domain.isSomeValueInRange(index, key, key)) {
-                                val branchTarget = pc + offset
-                                val (updatedOperands, updatedLocals) =
-                                    domain.establishValue(branchTarget, key, index, remainingOperands, locals)
-                                gotoTarget(pc, branchTarget, updatedOperands, updatedLocals)
+                            if (branchToDefaultRequired ||
+                                domain.isSomeValueNotInRange(index, firstKey, switch.npairs(switch.npairs.size - 1)._1)) {
+                                gotoTarget(pc, pc + switch.defaultOffset, remainingOperands, locals)
                             }
-                        }
-                        if (branchToDefaultRequired ||
-                            domain.isSomeValueNotInRange(index, firstKey, switch.npairs(switch.npairs.size - 1)._1)) {
-                            gotoTarget(pc, pc + switch.defaultOffset, remainingOperands, locals)
                         }
 
                     case 170 /*tableswitch*/ ⇒
@@ -879,7 +885,12 @@ trait AI[D <: Domain[_]] {
                                         if (eh.catchType.isDefined) {
                                             eh.catchType.map { catchType ⇒
                                                 val (updatedOperands2, updatedLocals2) =
-                                                    establishUpperBound(branchTarget, catchType, exceptionValue, updatedOperands, updatedLocals)
+                                                    establishUpperBound(
+                                                        branchTarget,
+                                                        catchType,
+                                                        exceptionValue,
+                                                        updatedOperands,
+                                                        updatedLocals)
                                                 gotoTarget(pc, branchTarget, updatedOperands2, updatedLocals2)
                                             }
                                         } else
@@ -907,7 +918,12 @@ trait AI[D <: Domain[_]] {
                                                         true
                                                     case Unknown ⇒
                                                         val (updatedOperands2, updatedLocals2) =
-                                                            establishUpperBound(branchTarget, catchType.get, exceptionValue, updatedOperands, updatedLocals)
+                                                            establishUpperBound(
+                                                                branchTarget,
+                                                                catchType.get,
+                                                                exceptionValue,
+                                                                updatedOperands,
+                                                                updatedLocals)
                                                         gotoTarget(pc, branchTarget, updatedOperands2, updatedLocals2)
                                                         false
                                                 }
@@ -1641,7 +1657,12 @@ trait AI[D <: Domain[_]] {
                                 case Unknown ⇒
                                     handleException(newInitializedObject(pc, ClassCastException))
                                     val (newOperands, newLocals) =
-                                        establishUpperBound(pc, supertype, objectref, operands, locals)
+                                        establishUpperBound(
+                                            pc,
+                                            supertype,
+                                            objectref,
+                                            operands,
+                                            locals)
                                     fallThrough(newOperands, newLocals)
                             }
 
@@ -1690,12 +1711,16 @@ trait AI[D <: Domain[_]] {
                     localsArray.asInstanceOf[Array[Array[de.domain.type#DomainValue]]]
                 )
                 case t: Throwable ⇒
-                    interpreterException(t, domain, worklist, evaluated, operandsArray, localsArray)
+                    interpreterException(
+                        t, domain, worklist, evaluated)(
+                            operandsArray, localsArray)
 
             }
         }
 
-        val result = AIResultBuilder.completed(code, domain)(evaluated, operandsArray, localsArray)
+        val result =
+            AIResultBuilder.completed(code, domain)(
+                evaluated, operandsArray, localsArray)
         if (tracer.isDefined)
             tracer.get.result(result)
         result

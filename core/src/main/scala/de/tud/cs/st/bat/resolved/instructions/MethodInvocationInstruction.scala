@@ -33,17 +33,14 @@
 package de.tud.cs.st
 package bat
 package resolved
+package instructions
 
 /**
  * An instruction that invokes another method.
  *
  * @author Michael Eichberg
  */
-abstract class MethodInvocationInstruction extends Instruction
-
-abstract class DynamicMethodInvocationInstruction extends MethodInvocationInstruction
-
-abstract class StaticMethodInvocationInstruction extends MethodInvocationInstruction {
+abstract class MethodInvocationInstruction extends Instruction {
 
     def declaringClass: ReferenceType
 
@@ -56,6 +53,10 @@ abstract class StaticMethodInvocationInstruction extends MethodInvocationInstruc
             declaringClass.toJava+"\n"+name+" "+methodDescriptor.toUMLNotation
 
 }
+
+abstract class DynamicMethodInvocationInstruction extends MethodInvocationInstruction
+
+abstract class StaticMethodInvocationInstruction extends MethodInvocationInstruction
 
 object MethodInvocationInstruction {
 

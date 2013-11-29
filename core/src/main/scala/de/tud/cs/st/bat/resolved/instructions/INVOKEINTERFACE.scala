@@ -33,6 +33,7 @@
 package de.tud.cs.st
 package bat
 package resolved
+package instructions
 
 /**
  * Invoke interface method.
@@ -43,7 +44,7 @@ case class INVOKEINTERFACE(
     declaringClass: ObjectType, // an interface or class type to be precise
     name: String, // an interface or class type to be precise
     methodDescriptor: MethodDescriptor)
-        extends StaticMethodInvocationInstruction {
+        extends DynamicMethodInvocationInstruction {
 
     def opcode: Int = 185
 

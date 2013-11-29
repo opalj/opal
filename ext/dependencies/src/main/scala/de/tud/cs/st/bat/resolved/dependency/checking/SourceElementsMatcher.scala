@@ -36,10 +36,9 @@ package resolved
 package dependency
 package checking
 
-import collection.immutable.SortedSet
+import analyses._
 
-import resolved._
-import resolved.analyses._
+import collection.immutable.SortedSet
 
 import java.net.URL
 

@@ -48,6 +48,7 @@ import java.io.InputStream
   */
 object ControlAbstractions {
 
+    
     /**
       * This function takes a function `f` that creates a new `Closeable` resource
       * (`f` is a named parameter) and a function `r` that processes an input stream.
@@ -55,7 +56,9 @@ object ControlAbstractions {
       * When `r` has finished processing the input stream, the stream is closed.
       * If `f` returns `null`, `null` is passed to `r`.
       */
-    def process[I <: java.io.Closeable, T](f: ⇒ I)(r: I ⇒ T): T = {
+    def process[I <: { def close(): Unit }, T](f: ⇒ I)(r: I ⇒ T): T = {
+        import language.reflectiveCalls
+    
         val in = f
         try {
             r(in)
@@ -71,7 +74,7 @@ object ControlAbstractions {
       */
     def foreachNonNullValueOf[T <: AnyRef](
         a: Array[T])(
-            f: T ⇒ Unit): Unit = macro ControlAbstractionsImplementation.foreachNonNullValueOf[T]
+            f: (Int, T) ⇒ Unit): Unit = macro ControlAbstractionsImplementation.foreachNonNullValueOf[T]
 
     /**
       * Macro that evaluates the given expression `f` with type `T` the given number of
@@ -121,7 +124,7 @@ private object ControlAbstractionsImplementation {
     def foreachNonNullValueOf[T <: AnyRef: c.WeakTypeTag](
         c: Context)(
             a: c.Expr[Array[T]])(
-                f: c.Expr[(T) ⇒ Unit]): c.Expr[Unit] = {
+                f: c.Expr[(Int, T) ⇒ Unit]): c.Expr[Unit] = {
         import c.universe._
 
         reify {
@@ -130,7 +133,7 @@ private object ControlAbstractionsImplementation {
             var i = 0
             while (i < arrayLength) {
                 val arrayEntry = array(i)
-                if (arrayEntry ne null) f.splice(arrayEntry)
+                if (arrayEntry ne null) f.splice(i, arrayEntry)
                 i += 1
             }
         }

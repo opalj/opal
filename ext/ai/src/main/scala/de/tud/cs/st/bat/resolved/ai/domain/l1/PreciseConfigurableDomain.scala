@@ -35,6 +35,8 @@ package bat
 package resolved
 package ai
 package domain
+package l1
+
 
 class PreciseConfigurableDomain[+I](
     val identifier: I)
@@ -44,14 +46,14 @@ class PreciseConfigurableDomain[+I](
         with DefaultPreciseIntegerValues[I]
         with DefaultPreciseReferenceValues[I]
         with StringValues[I]
-        with DefaultTypeLevelLongValues[I]
-        with DefaultTypeLevelFloatValues[I]
-        with DefaultTypeLevelDoubleValues[I]
-        with TypeLevelArrayInstructions
+        with l0.DefaultTypeLevelLongValues[I]
+        with l0.DefaultTypeLevelFloatValues[I]
+        with l0.DefaultTypeLevelDoubleValues[I]
+        with l0.TypeLevelArrayInstructions
         with TypeLevelFieldAccessInstructionsWithNullPointerHandling
         with TypeLevelInvokeInstructionsWithNullPointerHandling
-        with DoNothingOnReturnFromMethod
-        with BasicTypeHierarchy
+        with l0.DoNothingOnReturnFromMethod
+        with l0.BasicTypeHierarchy
 
 class PreciseRecordingDomain[I](identifier: I)
     extends PreciseConfigurableDomain[I](identifier)

@@ -67,17 +67,17 @@ class ClassHierarchyTest
     val preInitCH =
         ClassHierarchy.preInitializedClassHierarchy
     val javaLangCH =
-        ClassHierarchy.processPredefinedClassHierarchy(
-            getClass.getResourceAsStream("JavaLangClassHierarchy.ths"),
-            ClassHierarchy.empty
+        ClassHierarchy(
+            Traversable.empty,
+            List(() ⇒ getClass.getResourceAsStream("JavaLangClassHierarchy.ths"))
         )
 
-    val Object = ObjectType("java/lang/Object")
-    val Throwable = ObjectType("java/lang/Throwable")
-    val Exception = ObjectType("java/lang/Exception")
-    val Error = ObjectType("java/lang/Error")
-    val RuntimeException = ObjectType("java/lang/RuntimeException")
-    val ArithmeticException = ObjectType("java/lang/ArithmeticException")
+    val Object = ObjectType.Object
+    val Throwable = ObjectType.Throwable
+    val Exception = ObjectType.Exception
+    val Error = ObjectType.Error
+    val RuntimeException = ObjectType.RuntimeException
+    val ArithmeticException = ObjectType.ArithmeticException
     val Cloneable = ObjectType.Cloneable
     val Serializable = ObjectType.Serializable
     val SeriablizableArray = ArrayType(Serializable)
@@ -85,7 +85,7 @@ class ClassHierarchyTest
     val AnUnknownType = ObjectType("myTest/AnUnknownType")
     val AnUnknownTypeArray = ArrayType(AnUnknownType)
     val CloneableArray = ArrayType(Cloneable)
-    val ObjectArray = ArrayType(Object)
+    val ObjectArray = ArrayType.ArrayOfObjects
     val intArray = ArrayType(IntegerType)
     val longArray = ArrayType(LongType)
 
@@ -235,7 +235,7 @@ class ClassHierarchyTest
 
         // check if the SimpleWindow is in the Set of all subtypes of Window
         var subtypes = Set.empty[ObjectType]
-        classHierarchy.foreachSubtype(window)(subtypes += _)
+        classHierarchy.foreachSubtype(window) { subtypes += _ }
         subtypes.contains(simpleWindow) should be(true)
 
         clusteringProject(simpleWindow).get.methods.find(method ⇒
@@ -339,8 +339,9 @@ class ClassHierarchyTest
     // -----------------------------------------------------------------------------------
 
     val methodsProject =
-        MapBasedProject.empty[java.net.URL] ++
+        IndexBasedProject(
             ClassFiles(TestSupport.locateTestResources("classfiles/Methods.jar"))
+        )
 
     val superI = ObjectType("methods/b/SuperI")
     val directSub = ObjectType("methods/b/DirectSub")

@@ -36,6 +36,8 @@ package resolved
 package ai
 package tracer
 
+import instructions._
+
 import util.XHTML._
 
 import language.existentials

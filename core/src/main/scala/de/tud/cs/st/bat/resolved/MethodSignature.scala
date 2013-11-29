@@ -31,29 +31,24 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package de.tud.cs.st
-package util
-package debug
+package bat
+package resolved
 
 /**
- * Methods related to the measuring of an application's memory performance.
+ * Represents a method signature.
  *
  * @author Michael Eichberg
  */
-object MemoryUsage {
+final class MethodSignature(
+        val name: String,
+        val descriptor: MethodDescriptor) {
 
-    /**
-     * Measures the amount of memory that is used as a side-effect
-     * of executing the given method.
-     */
-    def apply[T](f: ⇒ T)(mu: Long ⇒ Unit): T = {
-        val memoryMXBean = java.lang.management.ManagementFactory.getMemoryMXBean
-        memoryMXBean.gc()
-        val usedBefore = memoryMXBean.getHeapMemoryUsage.getUsed
-        val r = f
-        memoryMXBean.gc()
-        val usedAfter = memoryMXBean.getHeapMemoryUsage.getUsed
-        mu(usedAfter - usedBefore)
-        r
+    override def equals(other: Any): Boolean = {
+        other match {
+            case that: MethodSignature ⇒
+                name == that.name && descriptor == that.descriptor
+            case _ ⇒ false
+        }
     }
-
+    override def hashCode: Int = name.hashCode * 13 + descriptor.hashCode
 }

@@ -56,7 +56,7 @@ import java.net.URL
  *
  * ==Implementation Details==
  * This class relies on the property that `ObjectType`s are associated with consecutive,
- * unique ids larger than 0 and that a `ClassFile's `hashCode` is equivalent to the
+ * unique ids larger than 0 and that a `ClassFile`'s `hashCode` is equivalent to the
  * `id`/`hashCode` of the `ObjectType` it defines.
  *
  * @tparam Source The type of the source of the class file. E.g., a `URL`, a `File` object,
@@ -70,6 +70,7 @@ import java.net.URL
  * @author Michael Eichberg
  */
 class IndexBasedProject[Source: reflect.ClassTag] private (
+    val classFilesCount: Int,
     // The arrays are private to avoid that clients accidentally mutate them! 
     // I.e., this classe's data structures are indeed mutable, but they are never
     // mutated by this class and they are not exposed to clients either.
@@ -93,12 +94,6 @@ class IndexBasedProject[Source: reflect.ClassTag] private (
 
     import de.tud.cs.st.util.ControlAbstractions.foreachNonNullValueOf
 
-    final def objectTypesCount = ObjectType.objectTypesCount
-
-    final def methodsCount = Method.methodsCount
-
-    final def fieldCount = Field.fieldsCount
-
     /**
      * This project's class files.
      */
@@ -120,6 +115,18 @@ class IndexBasedProject[Source: reflect.ClassTag] private (
         if (id < classesMap.size) Option(classesMap(id)) else None
     }
 
+    private[this] lazy val methodsMap: Array[Method] = {
+        val map = new Array[Method](methodsCount)
+        foreachClassFile { classFile ⇒
+            classFile.methods foreach { method ⇒ map(method.id) = method }
+        }
+        map
+    }
+
+    def method(methodID: Int): Method = methodsMap(methodID)
+
+    def classFile(classFileID: Int): ClassFile = classesMap(classFileID)
+
     /**
      * Looks up the ClassFile that contains the given method.
      *
@@ -127,13 +134,13 @@ class IndexBasedProject[Source: reflect.ClassTag] private (
      */
     override def classFile(method: Method): ClassFile = classFileOfMethod(method.id)
 
-    override def foreachClassFile(f: ClassFile ⇒ _): Unit =
-        foreachNonNullValueOf(classesMap) { classFile ⇒
+    override def foreachClassFile[U](f: ClassFile ⇒ U): Unit =
+        foreachNonNullValueOf(classesMap) { (id, classFile) ⇒
             f(classFile)
         }
 
-    override def foreachMethod(f: Method ⇒ _): Unit =
-        foreachNonNullValueOf(classesMap) { classFile ⇒
+    override def foreachMethod[U](f: Method ⇒ U): Unit =
+        foreachNonNullValueOf(classesMap) { (id, classFile) ⇒
             classFile.methods.foreach(f)
         }
 
@@ -155,20 +162,32 @@ class IndexBasedProject[Source: reflect.ClassTag] private (
 object IndexBasedProject {
 
     def apply[Source: reflect.ClassTag](
-        classFiles: Iterable[(ClassFile, Source)],
-        initialClassHierarchy: ClassHierarchy = ClassHierarchy.preInitializedClassHierarchy): IndexBasedProject[Source] = {
+        classFiles: Iterable[(ClassFile, Source)]): IndexBasedProject[Source] = {
+
+        import concurrent._
+        import concurrent.duration._
+        import ExecutionContext.Implicits.global
+
+        val classHierarchyFuture: Future[ClassHierarchy] = future {
+            ClassHierarchy(classFiles.map(_._1))
+        }
 
         val classes = new Array[ClassFile](ObjectType.objectTypesCount)
         val sources = new Array[Source](ObjectType.objectTypesCount)
 
-        var classHierarchy = initialClassHierarchy
+        var classFilesCount = 0
         for ((classFile, source) ← classFiles) {
+            classFilesCount += 1
             val id = classFile.thisClass.id
             classes(id) = classFile
             sources(id) = source
-            classHierarchy += classFile
         }
 
-        new IndexBasedProject(classes, sources, classHierarchy)
+        new IndexBasedProject(
+            classFilesCount,
+            classes,
+            sources,
+            Await.result(classHierarchyFuture, Duration.Inf)
+        )
     }
 }

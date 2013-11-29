@@ -33,6 +33,7 @@
 package de.tud.cs.st
 package bat
 package resolved
+package instructions
 
 /**
  * Trait that can be mixed in if the local variable index of a load or store instruction

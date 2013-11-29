@@ -35,11 +35,14 @@ package bat
 package resolved
 package ai
 package domain
+package l0
 
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 /**
- * A domain that performs computations w.r.t. reference values at the type level.
+ * This (partial-)domain implements the necessary support for performing
+ * computations w.r.t. reference value. This domain performs
+ * all computations at the type level.
  *
  * @author Michael Eichberg
  */
@@ -58,7 +61,7 @@ trait TypeLevelReferenceValues[+I] extends Domain[I] {
 
         /**
          * Checks if the type of this value is a subtype of the specified
-         * reference type under the assumption that this value is not null!
+         * reference type under the assumption that this value is not `null`!
          *
          * Basically, this method implements the same semantics as the `ClassHierarchy`'s
          * `isSubtypeOf` method, but it additionally  checks if the type of this value
@@ -78,9 +81,7 @@ trait TypeLevelReferenceValues[+I] extends Domain[I] {
         def isSubtypeOf(supertype: ReferenceType): Answer
 
         /**
-         * Adds an upper bound. This call can be ignored if the type
-         * information related to this value is precise, i.e., if we know that we
-         * precisely capture the runtime type of this value.
+         * Adds an upper bound to this value's type.
          */
         def addUpperBound(pc: PC, upperBound: ReferenceType): DomainValue
     }
@@ -98,13 +99,8 @@ trait TypeLevelReferenceValues[+I] extends Domain[I] {
         value.asInstanceOf[ReferenceValue]
 
     /**
-     * Determines the nullness-property of the given value.
-     *
-     * @param value A value of type `ReferenceValue`.
+     * @param value A reference type value.
      */
-    def isNull(value: DomainValue): Answer =
-        Unknown
-
     def isSubtypeOf(value: DomainValue, supertype: ReferenceType): Answer =
         asReferenceValue(value).isSubtypeOf(supertype)
 

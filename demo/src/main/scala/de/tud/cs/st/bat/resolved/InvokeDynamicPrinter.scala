@@ -34,7 +34,9 @@ package de.tud.cs.st
 package bat
 package resolved
 
+import instructions._
 import analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
+
 import java.net.URL
 
 /**

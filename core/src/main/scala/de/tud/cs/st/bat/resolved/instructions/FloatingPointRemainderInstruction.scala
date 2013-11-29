@@ -33,7 +33,7 @@
 package de.tud.cs.st
 package bat
 package resolved
-
+package instructions
 /**
  * An instruction that calculates the remainder of two primitive floating point values.
  *

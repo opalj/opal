@@ -33,6 +33,7 @@
 package de.tud.cs.st
 package bat
 package resolved
+package instructions
 
 /**
  * Invoke instance method; dispatch based on class.
@@ -43,7 +44,7 @@ case class INVOKEVIRTUAL(
     declaringClass: ReferenceType, // an interface, class or array type to be precise
     name: String, 
     methodDescriptor: MethodDescriptor)
-        extends StaticMethodInvocationInstruction {
+        extends DynamicMethodInvocationInstruction {
 
     def opcode: Int = 182
 

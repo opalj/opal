@@ -34,7 +34,8 @@ package de.tud.cs.st.bat
 package resolved
 
 import reader.Java7Framework.ClassFiles
-import analyses.MapBasedProject
+import analyses.IndexBasedProject
+import instructions._
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
@@ -54,94 +55,7 @@ class CodeAttributeTest
         with ShouldMatchers /*with BeforeAndAfterAll */
         with ParallelTestExecution {
 
-    //
-    //
-    // Setup
-    //
-    //
-
-    val project =
-        MapBasedProject.empty[java.net.URL] ++
-            ClassFiles(TestSupport.locateTestResources("classfiles/Code.jar"))
-
-    val boundedBufferClass = ObjectType("code/BoundedBuffer")
-    val immutbleListClass = ObjectType("code/ImmutableList")
-    val quickSortClass = ObjectType("code/Quicksort")
-
-    //
-    //
-    // Verify
-    //
-    //
-
-    val codeOfConstructor = project.classes(boundedBufferClass).methods.find(_.name == "<init>").get.body.get
-
-    val codeOfPut = project.classes(boundedBufferClass).methods.find(_.name == "put").get.body.get
-    // The code of the "put" method is excepted to have the following bytecode:
-    // Method descriptor #13 (I)V
-    // Stack: 3, Locals: 2
-    //  public void put(int item) throws java.lang.InterruptedException;
-    //     0  aload_0 [this]
-    //     1  getfield code.BoundedBuffer.numberInBuffer : int [18]
-    //     4  aload_0 [this]
-    //     5  getfield code.BoundedBuffer.size : int [20]
-    //     8  if_icmpne 15
-    //    11  aload_0 [this]
-    //    12  invokevirtual java.lang.Object.wait() : void [37]
-    //    15  aload_0 [this]
-    //    16  aload_0 [this]
-    //    17  getfield code.BoundedBuffer.last : int [24]
-    //    20  iconst_1
-    //    21  iadd
-    //    22  aload_0 [this]
-    //    23  getfield code.BoundedBuffer.size : int [20]
-    //    26  irem
-    //    27  putfield code.BoundedBuffer.last : int [24]
-    //    30  aload_0 [this]
-    //    31  dup
-    //    32  getfield code.BoundedBuffer.numberInBuffer : int [18]
-    //    35  iconst_1
-    //    36  iadd
-    //    37  putfield code.BoundedBuffer.numberInBuffer : int [18]
-    //    40  aload_0 [this]
-    //    41  getfield code.BoundedBuffer.buffer : int[] [22]
-    //    44  aload_0 [this]
-    //    45  getfield code.BoundedBuffer.last : int [24]
-    //    48  iload_1 [item]
-    //    49  iastore
-    //    50  aload_0 [this]
-    //    51  invokevirtual java.lang.Object.notifyAll() : void [40]
-    //    54  return
-    //      Line numbers:
-    //        [pc: 0, line: 51]
-    //        [pc: 11, line: 52]
-    //        [pc: 15, line: 54]
-    //        [pc: 30, line: 56]
-    //        [pc: 40, line: 58]
-    //        [pc: 50, line: 60]
-    //        [pc: 54, line: 62]
-    //      Local variable table:
-    //        [pc: 0, pc: 55] local: this index: 0 type: code.BoundedBuffer
-    //        [pc: 0, pc: 55] local: item index: 1 type: int
-    //      Stack map table: number of frames 1
-    //        [pc: 15, same]
-    //}
-
-    val codeOfGet = project.classes(immutbleListClass).methods.find(_.name == "get").get.body.get
-    // The code of get is as follows:
-    // Method descriptor #30 ()Ljava/lang/Object;
-    // Signature: ()TT;
-    // Stack: 1, Locals: 1
-    //  public java.lang.Object get();
-    //    0  aload_0 [this]
-    //    1  getfield code.ImmutableList.e : java.lang.Object [19]
-    //    4  areturn
-    //      Line numbers:
-    //        [pc: 0, line: 58]
-    //      Local variable table:
-    //        [pc: 0, pc: 5] local: this index: 0 type: code.ImmutableList
-    //      Local variable type table:
-    //        [pc: 0, pc: 5] local: this index: 0 type: code.ImmutableList<T>
+    import CodeAttributeTest._
 
     behavior of "the \"Code\" attribute's collect method"
 
@@ -250,4 +164,98 @@ class CodeAttributeTest
         codeOfConstructor.lineNumberTable.get.lookupLineNumber(34) should be(Some(46))
     }
 
+}
+private object CodeAttributeTest {
+
+    //
+    //
+    // Setup
+    //
+    //
+
+    val project =
+        IndexBasedProject(
+            ClassFiles(TestSupport.locateTestResources("classfiles/Code.jar"))
+        )
+
+    val boundedBufferClass = ObjectType("code/BoundedBuffer")
+    val immutbleListClass = ObjectType("code/ImmutableList")
+    val quickSortClass = ObjectType("code/Quicksort")
+
+    //
+    //
+    // Verify
+    //
+    //
+
+    val codeOfConstructor =
+        project.classFile(boundedBufferClass).get.methods.find(_.name == "<init>").get.body.get
+
+    val codeOfPut =
+        project.classFile(boundedBufferClass).get.methods.find(_.name == "put").get.body.get
+    // The code of the "put" method is excepted to have the following bytecode:
+    // Method descriptor #13 (I)V
+    // Stack: 3, Locals: 2
+    //  public void put(int item) throws java.lang.InterruptedException;
+    //     0  aload_0 [this]
+    //     1  getfield code.BoundedBuffer.numberInBuffer : int [18]
+    //     4  aload_0 [this]
+    //     5  getfield code.BoundedBuffer.size : int [20]
+    //     8  if_icmpne 15
+    //    11  aload_0 [this]
+    //    12  invokevirtual java.lang.Object.wait() : void [37]
+    //    15  aload_0 [this]
+    //    16  aload_0 [this]
+    //    17  getfield code.BoundedBuffer.last : int [24]
+    //    20  iconst_1
+    //    21  iadd
+    //    22  aload_0 [this]
+    //    23  getfield code.BoundedBuffer.size : int [20]
+    //    26  irem
+    //    27  putfield code.BoundedBuffer.last : int [24]
+    //    30  aload_0 [this]
+    //    31  dup
+    //    32  getfield code.BoundedBuffer.numberInBuffer : int [18]
+    //    35  iconst_1
+    //    36  iadd
+    //    37  putfield code.BoundedBuffer.numberInBuffer : int [18]
+    //    40  aload_0 [this]
+    //    41  getfield code.BoundedBuffer.buffer : int[] [22]
+    //    44  aload_0 [this]
+    //    45  getfield code.BoundedBuffer.last : int [24]
+    //    48  iload_1 [item]
+    //    49  iastore
+    //    50  aload_0 [this]
+    //    51  invokevirtual java.lang.Object.notifyAll() : void [40]
+    //    54  return
+    //      Line numbers:
+    //        [pc: 0, line: 51]
+    //        [pc: 11, line: 52]
+    //        [pc: 15, line: 54]
+    //        [pc: 30, line: 56]
+    //        [pc: 40, line: 58]
+    //        [pc: 50, line: 60]
+    //        [pc: 54, line: 62]
+    //      Local variable table:
+    //        [pc: 0, pc: 55] local: this index: 0 type: code.BoundedBuffer
+    //        [pc: 0, pc: 55] local: item index: 1 type: int
+    //      Stack map table: number of frames 1
+    //        [pc: 15, same]
+    //}
+
+    val codeOfGet = project.classFile(immutbleListClass).get.methods.find(_.name == "get").get.body.get
+    // The code of get is as follows:
+    // Method descriptor #30 ()Ljava/lang/Object;
+    // Signature: ()TT;
+    // Stack: 1, Locals: 1
+    //  public java.lang.Object get();
+    //    0  aload_0 [this]
+    //    1  getfield code.ImmutableList.e : java.lang.Object [19]
+    //    4  areturn
+    //      Line numbers:
+    //        [pc: 0, line: 58]
+    //      Local variable table:
+    //        [pc: 0, pc: 5] local: this index: 0 type: code.ImmutableList
+    //      Local variable type table:
+    //        [pc: 0, pc: 5] local: this index: 0 type: code.ImmutableList<T>
 }
