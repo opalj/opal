@@ -37,7 +37,10 @@ package ai
 package project
 
 import domain._
-import bat.resolved.analyses._
+import domain.l0
+import domain.l1
+import analyses._
+
 import collection.Set
 import collection.Map
 
@@ -108,24 +111,24 @@ trait VTACallGraphDomain[Source, I] extends CHACallGraphDomain[Source, I] {
 class DefaultVTACallGraphDomain[Source](
     val project: Project[Source],
     val cache: CallGraphCache[MethodSignature, Iterable[Method]],
-    val callerClassFile: ClassFile,
-    val caller: Method)
+    val theClassFile: ClassFile,
+    val theMethod: Method)
         extends Domain[Int]
         with DefaultDomainValueBinding[Int]
-        with DefaultTypeLevelIntegerValues[Int]
-        with DefaultTypeLevelLongValues[Int]
-        with DefaultTypeLevelFloatValues[Int]
-        with DefaultTypeLevelDoubleValues[Int]
-        with DefaultPreciseReferenceValues[Int]
-        //with StringValues[Int]
-        with TypeLevelArrayInstructions
-        with TypeLevelFieldAccessInstructions
-        with TypeLevelInvokeInstructions
-        with DoNothingOnReturnFromMethod
-        with ProjectBasedClassHierarchy[Source]
+        with l0.DefaultTypeLevelIntegerValues[Int]
+        with l0.DefaultTypeLevelLongValues[Int]
+        with l0.DefaultTypeLevelFloatValues[Int]
+        with l0.DefaultTypeLevelDoubleValues[Int]
+        with l1.DefaultPreciseReferenceValues[Int]
+        //with l1.StringValues[Int]
+        with l0.TypeLevelArrayInstructions
+        with l0.TypeLevelFieldAccessInstructions
+        with l0.TypeLevelInvokeInstructions
+        with l0.DoNothingOnReturnFromMethod
+        with l1.ProjectBasedClassHierarchy[Source]
         with VTACallGraphDomain[Source, Int] {
 
-    def identifier = caller.id
+    def identifier = theMethod.id
 
 }
 

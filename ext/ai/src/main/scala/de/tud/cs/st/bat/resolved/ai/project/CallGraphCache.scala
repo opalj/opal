@@ -37,15 +37,20 @@ package ai
 package project
 
 /**
- * An efficient, '''thread-safe''' cache for information that is associated
+ * A '''thread-safe''' cache for information that is associated
  * with a specific `ObjectType` and an additional key (`Contour`). Conceptually, the cache
  * is a `Map` of `Map`s where the keys of the first map are `ObjectType`s and which
  * return values that are maps where the keys are `Contour`s and the values are the
  * stored/cached information.
  *
- * To minimize contention, mutual exclusive access to the cache is granted at the level
- * of `ObjectType`s. I.e., two threads can concurrently access the cache (without blocking)
- * if the information is associated with two different `ObjectType`s.
+ * To minimize contention the cache's maps are all preinitialized based on the number of
+ * different types that we have seen. This ensure that two
+ * threads can always concurrently access the cache (without blocking)
+ * if the information is associated with two different `ObjectType`s. If two threads
+ * want to access information that is associated with the same `ObjectType` the
+ * data-structures try to minimize potential contention. Hence, this is not a general
+ * purpose cache. Using this cache is only appropriate if you need/will cache a lot
+ * of information that is associated with different object types.
  *
  * ==Example Usage==
  * To store the result of the computation of all target methods for a
@@ -62,17 +67,21 @@ package project
  */
 class CallGraphCache[Contour, Value] {
 
-    import java.util.concurrent.{ ConcurrentHashMap ⇒ HashMap }
+    import java.util.concurrent.{ ConcurrentHashMap ⇒ CHMap }
 
-    private[this] val cache: Array[HashMap[Contour, Value]] = {
+    private[this] val cache: Array[CHMap[Contour, Value]] = {
         val size = ObjectType.objectTypesCount
         val concurrencyLevel = Runtime.getRuntime().availableProcessors()
-        Array.fill(size)(new HashMap(16, concurrencyLevel))
+        Array.fill(size)(new CHMap(16, concurrencyLevel))
     }
 
     /**
      * If a value is already stored in the cache that value is returned, otherwise
      * `f` is evaluated and the cache is updated accordingly before the value is returned.
+     * In some rare cases it may be the case that two or more functions that are associated
+     * with the same `declaringClass` and `contour` are evaluated concurrently. In such
+     * a case the result of only one function is stored in the cache and will later be 
+     * returned.
      */
     def getOrElseUpdate(
         declaringClass: ReferenceType,
@@ -85,6 +94,8 @@ class CallGraphCache[Contour, Value] {
         if (cachedValue != null)
             cachedValue
         else {
+            // This is expected provide a better trade-off than to always synchronize
+            // the evaluation of f w.r.t. to ObjectType based cache.
             val value = f
             cachedResults.put(contour, value)
             value

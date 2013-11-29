@@ -33,6 +33,7 @@
 package de.tud.cs.st
 package bat
 package resolved
+package instructions
 
 /**
  * Store double into local variable with index 2.

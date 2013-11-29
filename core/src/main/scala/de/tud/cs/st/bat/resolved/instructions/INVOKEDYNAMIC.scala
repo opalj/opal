@@ -33,6 +33,7 @@
 package de.tud.cs.st
 package bat
 package resolved
+package instructions
 
 case object UNRESOLVED_INVOKEDYNAMIC extends Instruction {
 

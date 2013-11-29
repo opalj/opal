@@ -62,7 +62,7 @@ class MethodsWithLoopsTest
         classFile.methods.find(_.name == name).get
     }
 
-    import domain.BaseDomain
+    import domain.l0.BaseDomain
     private def evaluateMethod(name: String, f: BaseDomain ⇒ Unit) {
         val domain = new BaseDomain()
         val method = classFile.methods.find(_.name == name).get

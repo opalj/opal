@@ -33,6 +33,7 @@
 package de.tud.cs.st
 package bat
 package resolved
+package instructions
 
 /**
  * Determine if object is of given type.

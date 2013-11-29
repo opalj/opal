@@ -35,6 +35,8 @@ package bat
 package resolved
 package reader
 
+import instructions.Instruction
+
 /**
  *
  * @author Michael Eichberg

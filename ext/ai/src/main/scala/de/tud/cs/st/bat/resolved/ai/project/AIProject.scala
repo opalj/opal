@@ -55,6 +55,11 @@ trait AIProject[Source, D <: Domain[_] with Report] {
      */
     def ai: AI[D]
 
+            /**
+             * If `true` all entry points will be analyzed in parallel.
+             */
+            protected def analyzeInParallel: Boolean = true
+            
     /**
      * Returns the (initial) domain object that will be used to analyze an entry point.
      *
@@ -87,11 +92,6 @@ trait AIProject[Source, D <: Domain[_] with Report] {
     def entryPoints(project: Project[Source]): Iterable[(ClassFile, Method)]
 
     /**
-     * If `true` all entry points will be analyzed in parallel.
-     */
-    protected def analyzeInParallel: Boolean = true
-
-    /**
      * Analyzes the given project by first determining the entry points of the analysis
      * and then starting an independent analysis for each entry point using its own
      * domain.
@@ -104,7 +104,7 @@ trait AIProject[Source, D <: Domain[_] with Report] {
     def analyze(
         project: Project[Source],
         parameters: Seq[String]): ReportableAnalysisResult = {
-        val entryPointsIterator =
+        val entryPointsIterator=
             if (analyzeInParallel)
                 entryPoints(project).par.iterator
             else

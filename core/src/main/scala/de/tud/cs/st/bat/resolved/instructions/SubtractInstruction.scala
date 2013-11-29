@@ -31,13 +31,16 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st.bat.resolved
+package de.tud.cs.st
+package bat
+package resolved
+package instructions
 
 /**
-  * An instruction that subtracts two primitive values.
-  *
-  * @author Michael Eichberg
-  */
+ * An instruction that subtracts two primitive values.
+ *
+ * @author Michael Eichberg
+ */
 abstract class SubtractInstruction extends ArithmeticInstruction {
 
     final def runtimeExceptions(): List[ObjectType] = Nil

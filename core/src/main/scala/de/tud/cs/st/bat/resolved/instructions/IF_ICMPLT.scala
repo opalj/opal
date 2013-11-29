@@ -33,6 +33,7 @@
 package de.tud.cs.st
 package bat
 package resolved
+package instructions
 
 /**
  * Branch if int comparison succeeds; succeeds if and only if value1 < value2.

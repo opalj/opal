@@ -66,41 +66,39 @@ object CallGraphFactory {
     }
 
     /**
-     * Creates a call graph using ''Class Hierarchy Analysis''.
-     * The call graph is created by analyzing each entry point on its own. Hence,
-     * the call graph is calculated under a specific assumption about a
-     * programs/libraries/framework's entry methods.
+     * Creates a call graph using the configured call graph algorithm.
      *
-     * Virtual calls on Arrays (clone(), toString(),...) are replaced by calls to
-     * `java.lang.Object`.
+     * The call graph is created by analyzing each method using a new instance
+     * of a domain. Furthermore, the methods are analyzed in parallel. Hence,
+     * the call graph algorithm (and its used cache) have to be thread-safe.
      */
-    def performCHA[Source](
+    def create[Source](
         theProject: Project[Source],
-        entryPoints: List[Method]): (CallGraph[Source], List[UnresolvedMethodCall], List[CallGraphConstructionException]) = {
+        entryPoints: List[Method],
+        configuration: CallGraphAlgorithmConfiguration[Source]): (CallGraph[Source], List[UnresolvedMethodCall], List[CallGraphConstructionException]) = {
 
-    	type MethodAnalysisResult = (List[(Method, PC, Iterable[Method])], List[UnresolvedMethodCall], Option[CallGraphConstructionException])
-    	
+        type MethodAnalysisResult = (List[( /*Caller*/ Method, PC, /*Callees*/ Iterable[Method])], List[UnresolvedMethodCall], Option[CallGraphConstructionException])
+
         import java.util.concurrent.Callable
         import java.util.concurrent.Future
         import java.util.concurrent.Executors
 
-        val cache = new CallGraphCache[MethodSignature, Iterable[Method]]
+        val cache = configuration.Cache()
 
         /* START - EXECUTED CONCURRENTLY */
         def doAnalyzeMethod(method: Method): Callable[MethodAnalysisResult] =
             new Callable[MethodAnalysisResult] {
                 def call(): MethodAnalysisResult = {
                     val classFile = theProject.classFile(method)
-                    val domain: CHACallGraphDomain[Source, Int] =
-                        new DefaultCHACallGraphDomain(theProject, cache, classFile, method)
+                    val domain = configuration.Domain(theProject, cache, classFile, method)
                     try {
                         BaseAI(classFile, method, domain)
-                        (domain.callEdges, domain.unresolvedMethodCalls, None)
+                        (domain.allCallEdges, domain.allUnresolvedMethodCalls, None)
                     } catch {
                         case exception: Exception ⇒
                             (
-                                domain.callEdges,
-                                domain.unresolvedMethodCalls,
+                                domain.allCallEdges,
+                                domain.allUnresolvedMethodCalls,
                                 Some(CallGraphConstructionException(classFile, method, exception))
                             )
                     }
@@ -145,7 +143,6 @@ object CallGraphFactory {
         (builder.buildCallGraph, unresolvedMethodCalls, exceptions)
     }
 }
-
 
 /*
 Things that complicate matters for more complex call graph analyses:

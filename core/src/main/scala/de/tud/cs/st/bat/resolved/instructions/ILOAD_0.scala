@@ -33,6 +33,7 @@
 package de.tud.cs.st
 package bat
 package resolved
+package instructions
 
 /**
  * Load int from local variable with index 0.

@@ -37,8 +37,7 @@ package ai
 package util
 
 import reader.Java7Framework.ClassFile
-import domain.BaseConfigurableDomain
-import de.tud.cs.st.util.ControlAbstractions._
+import domain.l0.BaseConfigurableDomain
 
 import java.util.zip.ZipFile
 import java.io.DataInputStream
@@ -48,11 +47,16 @@ import scala.util.control.ControlThrowable
 
 /**
  * Performs an abstract interpretation of all methods of the given class file(s).
+ * 
+ * This class is very helpful during the development and testing of new domains.
  *
  * @author Michael Eichberg
  */
 object InterpretMethods {
+
     import de.tud.cs.st.util.debug._
+    import de.tud.cs.st.util.ControlAbstractions._
+
     import collection.JavaConversions._
 
     val performanceEvaluationContext = new de.tud.cs.st.util.debug.PerformanceEvaluation {}

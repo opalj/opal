@@ -33,6 +33,7 @@
 package de.tud.cs.st
 package bat
 package resolved
+package instructions
 
 /**
  * Invoke instance method; dispatch based on class.

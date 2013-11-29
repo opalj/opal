@@ -39,10 +39,10 @@ import util.ControlAbstractions.foreachNonNullValueOf
 import util.graphs.{ Node, toDot }
 import util.{ Answer, Yes, No, Unknown }
 
-import scala.collection.{ Map, Set }
-import scala.annotation.tailrec
-import scala.collection.mutable.HashSet
-import scala.collection.mutable.HashMap
+import annotation.tailrec
+import collection.{ Map, Set }
+import collection.mutable.HashSet
+import collection.mutable.HashMap
 
 import ObjectType.Object
 

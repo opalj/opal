@@ -35,6 +35,7 @@ package resolved
 
 import reader.Java7Framework.ClassFiles
 import analyses.IndexBasedProject
+import instructions._
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner

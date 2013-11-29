@@ -34,6 +34,7 @@ package de.tud.cs.st.bat.resolved
 package analyses
 package bug_patterns
 
+import instructions._
 
 /**
  * Do not catch `IllegalMonitorStateExceptions`.

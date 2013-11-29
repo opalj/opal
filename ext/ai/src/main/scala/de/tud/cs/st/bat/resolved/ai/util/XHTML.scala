@@ -36,9 +36,12 @@ package resolved
 package ai
 package util
 
-import scala.xml.Node
-import java.io.File
+import instructions._
+
 import scala.util.control.ControlThrowable
+import scala.xml.Node
+
+import java.io.File
 
 /**
  * Several utility methods to facilitate the development of the abstract interpreter/
@@ -56,7 +59,7 @@ object XHTML {
     /**
      * Stores the time when the last dump was created.
      *
-     * We generate dumps on errors only if specified time has passed to avoid that
+     * We generate dumps on errors only if the specified time has passed by to avoid that
      * we are drowned in dumps. Often, a single bug causes many dumps to be created.
      *
      * If you want to generate more dumps set this value to a small(er) value or to -1l if

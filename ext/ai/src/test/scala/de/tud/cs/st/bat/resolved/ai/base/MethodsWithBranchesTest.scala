@@ -59,7 +59,9 @@ class MethodsWithBranchesTest
 
     import MethodsWithBranchesTest._
 
-    import domain.{ BaseRecordingDomain, RecordConstraints }
+    import domain.RecordConstraints
+    import domain.l0.BaseRecordingDomain
+    
     type TestDomain = BaseRecordingDomain[String] with RecordConstraints[String]
 
     private def evaluateMethod(name: String)(f: TestDomain ⇒ Unit) {

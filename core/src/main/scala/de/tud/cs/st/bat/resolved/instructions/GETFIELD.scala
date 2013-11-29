@@ -33,6 +33,7 @@
 package de.tud.cs.st
 package bat
 package resolved
+package instructions
 
 /**
  * Fetch ﬁeld from object.
@@ -45,7 +46,8 @@ package resolved
  * }}}
  * `os.length` is determined using the special `arraylength` instruction.
  *
- * @see [[de.tud.cs.st.bat.resolved.FieldAccess]] for additional pattern matching support.
+ * @see [[de.tud.cs.st.bat.resolved.instructions.FieldAccess]] for additional 
+ *      pattern matching support.
  *
  * @author Michael Eichberg
  */

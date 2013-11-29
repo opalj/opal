@@ -34,6 +34,8 @@ package de.tud.cs.st.bat.resolved
 package analyses
 package bug_patterns.ioc
 
+import instructions._
+
 /**
  * The set method is synchronized and the get method is not synchronized.
  *

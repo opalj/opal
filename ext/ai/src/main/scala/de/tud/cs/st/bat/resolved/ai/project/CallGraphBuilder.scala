@@ -39,11 +39,15 @@ package project
 import bat.resolved.analyses.Project
 
 /**
- * Builds a call graph by first collecting all call edges before the final
+ * Builds a call graph by first collecting all call graph edges before the final
  * `CallGraph` is created.
  *
  * ==Thread Safety==
- * This class is not '''thread-safe'''.
+ * This class is '''not thread-safe'''.
+ *
+ * ==Usage==
+ * This class is used internally by the methods of the `CallGraphFactory` to build
+ * the call graph.
  *
  * @author Michael Eichberg
  */

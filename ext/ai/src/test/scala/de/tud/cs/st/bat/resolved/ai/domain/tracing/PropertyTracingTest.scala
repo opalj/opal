@@ -64,7 +64,7 @@ class PropertyTracingTest
     import PropertyTracingTest._
 
     class AnalysisDomain(identifier: String)
-            extends PreciseConfigurableDomain[String](identifier)
+            extends l1.PreciseConfigurableDomain[String](identifier)
             with RecordReturnValues[String]
             with SimpleBooleanPropertyTracing[String] {
 

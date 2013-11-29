@@ -34,6 +34,8 @@ package de.tud.cs.st
 package bat
 package resolved
 
+import instructions._
+
 /**
  * Representation of a method's code attribute.
  *
@@ -73,22 +75,18 @@ case class Code(
     /**
      * Collects all local variable tables.
      *
-     * ==Note==
-     * Depending on the configuration of the reader for `ClassFile`s this
-     * attribute may not be reified.
+     * @note Depending on the configuration of the reader for `ClassFile`s this
+     * 	    attribute may not be reified.
      */
-    // TODO Merge local variable tables
     def localVariableTable: Seq[LocalVariables] =
         attributes collect { case LocalVariableTable(lvt) ⇒ lvt }
 
     /**
      * Collects all local variable type tables.
      *
-     * ==Note==
-     * Depending on the configuration of the reader for `ClassFile`s this
-     * attribute may not be reified.
+     * @note Depending on the configuration of the reader for `ClassFile`s this
+     * 	    attribute may not be reified.
      */
-    // TODO Merge local variable type tables
     def localVariableTypeTable: Seq[LocalVariableTypes] =
         attributes collect { case LocalVariableTypeTable(lvtt) ⇒ lvtt }
 
@@ -96,9 +94,8 @@ case class Code(
      * The JVM specification mandates that a Code attribute has at most one
      * StackMapTable attribute.
      *
-     * ==Note==
-     * Depending on the configuration of the reader for `ClassFile`s this
-     * attribute may not be reified.
+     * @note Depending on the configuration of the reader for `ClassFile`s this
+     * 	    attribute may not be reified.
      */
     def stackMapTable: Option[StackMapFrames] =
         attributes collectFirst { case StackMapTable(smf) ⇒ smf }

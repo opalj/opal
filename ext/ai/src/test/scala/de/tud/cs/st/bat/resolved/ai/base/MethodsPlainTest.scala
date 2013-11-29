@@ -38,6 +38,7 @@ package base
 
 import reader.Java7Framework.ClassFiles
 import domain._
+import domain.l0._
 
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
@@ -972,7 +973,7 @@ class MethodsPlainTest
 
 private object MethodsPlainTest {
 
-    class RecordingDomain extends domain.BaseDomain {
+    class RecordingDomain extends domain.l0.BaseDomain {
         var returnedValue: Option[DomainValue] = _
         override def areturn(pc: Int, value: DomainValue) { returnedValue = Some(value) }
         override def dreturn(pc: Int, value: DomainValue) { returnedValue = Some(value) }

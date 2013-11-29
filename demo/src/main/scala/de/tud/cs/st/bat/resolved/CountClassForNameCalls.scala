@@ -34,7 +34,9 @@ package de.tud.cs.st
 package bat
 package resolved
 
+import instructions._
 import analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
+
 import java.net.URL
 
 /**
@@ -53,22 +55,22 @@ object CountClassForNameCalls extends AnalysisExecutor {
         def analyze(project: Project[URL], parameters: Seq[String]) = {
             var classForNameCount = 0
 
+            import ObjectType.{ String, Class }
+            val descriptor = MethodDescriptor(String, Class)
             val invokes = for {
-                clazz @ classFile ← project.classFiles
-                caller @ method ← classFile.methods
-                if method.body.isDefined
-                invoke @ INVOKESTATIC(
-                    ObjectType.Class,
-                    "forName",
-                    MethodDescriptor(Seq(ObjectType.String), ObjectType.Class)
-                    ) ← method.body.get.instructions
+                classFile ← project.classFiles
+                method ← classFile.methods
+                body = method.body
+                if body.isDefined
+                instructions = body.get.instructions
+                INVOKESTATIC(Class, "forName", `descriptor`) ← instructions
             } yield {
-                classForNameCount += 1;
-                (clazz, caller, invoke)
+                classForNameCount += 1
+                classFile.thisClass.className+" { "+method.toJava+" }"
             }
 
             BasicReport("Class.forName(String) was called: "+classForNameCount+" times.\n\t"+
-                invokes.map(t ⇒ t._1.thisClass.className+" <- "+t._2.toJava).mkString("\n\t")
+                invokes.toSet.mkString("\n\t")
             )
         }
     }

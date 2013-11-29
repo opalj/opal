@@ -44,8 +44,8 @@ package resolved
  *  or the class [[de.tud.cs.st.bat.AccessFlagsIterator]] or the classes which
  *  inherit from [[de.tud.cs.st.bat.AccessFlag]].
  * @param thisClass The type implemented by this class file.
- * @param superClass The class from which this class inherits. `None` iff this
- * 	class file represents `java.lang.Object`.
+ * @param superClass The class type from which this class inherits. `None` if this
+ *      class file represents `java.lang.Object`.
  * @param interfaces The set of implemented interfaces. May be empty.
  * @param fields The set of declared fields. May be empty.
  * @param methods The set of declared methods. May be empty.
@@ -53,18 +53,23 @@ package resolved
  *    are reified depends on the configuration of the class file reader; e.g.,
  *    [[de.tud.cs.st.bat.resolved.reader.Java7Framework]].
  *    The JVM specification defines the following attributes:
- *    - InnerClasses
- *    - EnclosingMethod
- *    - Synthetic
- *    - Signature
- *    - SourceFile
- *    - SourceDebugExtension
- *    - Deprecated
- *    - RuntimeVisibleAnnotations
- *    - RuntimeInvisibleAnnotations
- *    - BootstrapMethods
+ *    - ''InnerClasses''
+ *    - ''EnclosingMethod''
+ *    - ''Synthetic''
+ *    - ''Signature''
+ *    - ''SourceFile''
+ *    - ''SourceDebugExtension''
+ *    - ''Deprecated''
+ *    - ''RuntimeVisibleAnnotations''
+ *    - ''RuntimeInvisibleAnnotations''
+ *    
+ *    The ''BootstrapMethods'' attribute, which is also defined by the JVM specification,
+ *    is, however, resolved and is not part of the attributes table of the class file.
+ *    The ''BootstrapMethods'' attribute is basically the container for the bootstrap
+ *    methods referred to by the [[de.tud.cs.st.bat.resolved.instructions.INVOKEDYNAMIC]]
+ *    instructions.
  *
- * @note Equality of ClassFiles objects is reference based and a class file's hash code
+ * @note Equality of `ClassFile` objects is reference based and a class file's hash code
  *    is the same as `thisType`'s hash code.
  *
  * @author Michael Eichberg
@@ -111,10 +116,6 @@ final case class ClassFile(
 
     def innerClasses: Option[InnerClasses] =
         attributes collectFirst { case InnerClassTable(ice) ⇒ ice }
-
-    // TODO [Java 7] should we keep it or should we completely resolve and remove it???
-    def bootstrapMethods: Option[BootstrapMethods] =
-        attributes collectFirst { case BootstrapMethodTable(bms) ⇒ bms }
 
     /**
      * Each class has at most one explicit, direct outer type.

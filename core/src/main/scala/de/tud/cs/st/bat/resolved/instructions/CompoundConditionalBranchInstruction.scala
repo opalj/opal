@@ -33,6 +33,7 @@
 package de.tud.cs.st
 package bat
 package resolved
+package instructions
 
 /**
  * Common super class of all compound conditional branch instructions (switch instructions!)

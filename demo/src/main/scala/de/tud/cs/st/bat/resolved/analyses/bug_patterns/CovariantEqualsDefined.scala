@@ -36,6 +36,8 @@ package resolved
 package analyses
 package bug_patterns
 
+import instructions._
+
 /**
  * Finds classes that define a co-variant equals method, but not "standard" equals method.
  *

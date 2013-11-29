@@ -33,11 +33,13 @@
 package de.tud.cs.st
 package bat
 package resolved
+package instructions
 
 /**
  * Set static field in class.
  *
- * @see [[de.tud.cs.st.bat.resolved.FieldAccess]] for additional pattern matching support.
+ * @see [[de.tud.cs.st.bat.resolved.instructions.FieldAccess]] for additional 
+ *      pattern matching support.
  *
  * @author Michael Eichberg
  */

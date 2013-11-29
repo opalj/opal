@@ -36,6 +36,8 @@ package resolved
 package analyses
 package bug_patterns
 
+import instructions._
+
 import java.net.URL
 
 /**

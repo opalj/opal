@@ -33,6 +33,8 @@
 package de.tud.cs.st
 package bat
 package resolved
+package instructions
+
 
 /**
  * Push the long constant 0 onto the operand stack.

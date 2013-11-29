@@ -35,11 +35,7 @@ package bat
 package resolved
 package ai
 
-import de.tud.cs.st.bat.resolved.ClassFile
-import de.tud.cs.st.bat.resolved.Method
-
-import de.tud.cs.st.bat.resolved.ClassFile
-import de.tud.cs.st.bat.resolved.Method
+import instructions._
 
 package object taint {
 

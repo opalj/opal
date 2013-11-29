@@ -33,15 +33,16 @@
 package de.tud.cs.st
 package bat
 package resolved
+package instructions
 
-import scala.language.existentials
+import language.existentials
 
 /**
  * Push long or double from runtime constant pool.
  *
  * @author Michael Eichberg
  */
-sealed abstract class LDC2_W[T <: Any] extends LoadConstantInstruction {
+sealed abstract class LDC2_W[@specialized(Long,Double) T <: Any] extends LoadConstantInstruction {
 
     def value: T
 

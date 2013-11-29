@@ -35,6 +35,7 @@ package bat
 package resolved
 package dependency
 
+import instructions._
 import DependencyType._
 
 /**

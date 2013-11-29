@@ -37,12 +37,20 @@ package ai
 package project
 
 import domain._
-import bat.resolved.analyses._
+import domain.l0
+import domain.l1
+import analyses._
+
 import collection.Set
 import collection.Map
 
 /**
- * Domain object which is used to calculate the call graph.
+ * Domain object that can be used to calculate a call graph using CHA. This domain 
+ * basically collects for all invoke instructions of a method the potential target 
+ * methods that may be invoked at runtime.
+ *
+ * Virtual calls on Arrays (clone(), toString(),...) are replaced by calls to the
+ * respective methods of `java.lang.Object`.
  *
  * ==Thread Safety==
  * This domain is not thread-safe. Hence, it can only be used by one abstract interpreter
@@ -51,16 +59,8 @@ import collection.Map
  * @author Michael Eichberg
  */
 trait CHACallGraphDomain[Source, I]
-        extends Domain[I]
+        extends CallGraphDomain[Source, I]
         with ClassHierarchyDomain {
-
-    /* abstract */ val project: Project[Source]
-    //
-    // The method we want to analyze
-    //
-    /* abstract */ def callerClassFile: ClassFile
-
-    /* abstract */ def caller: Method
 
     //
     // Helper data structures  
@@ -71,32 +71,31 @@ trait CHACallGraphDomain[Source, I]
     // IMPLEMENTATION
     //
 
-    private[this] var _unresolvedMethodCalls = List.empty[UnresolvedMethodCall]
+    private[this] var unresolvedMethodCalls = List.empty[UnresolvedMethodCall]
 
     @inline final private[this] def addUnresolvedMethodCall(
         callerClass: ReferenceType, caller: Method, pc: PC,
         calleeClass: ReferenceType, calleeName: String, calleeDescriptor: MethodDescriptor): Unit = {
-        _unresolvedMethodCalls =
+        unresolvedMethodCalls =
             new UnresolvedMethodCall(
                 callerClass, caller, pc,
                 calleeClass, calleeName, calleeDescriptor
-            ) :: _unresolvedMethodCalls
+            ) :: unresolvedMethodCalls
     }
 
-    def unresolvedMethodCalls: List[UnresolvedMethodCall] = _unresolvedMethodCalls
+    def allUnresolvedMethodCalls: List[UnresolvedMethodCall] = unresolvedMethodCalls
 
-    private[this] var _callEdges = List.empty[(Method, PC, Iterable[Method])]
+    private[this] var callEdges = List.empty[(Method, PC, Iterable[Method])]
 
     @inline final private[this] def addCallEdge(
-        caller: Method,
         pc: PC,
         callees: Iterable[Method]): Unit = {
-        _callEdges = (caller, pc, callees) :: _callEdges
+        callEdges = (theMethod, pc, callees) :: callEdges
     }
 
-    def callEdges: List[(Method, PC, Iterable[Method])] = _callEdges
+    def allCallEdges: List[(Method, PC, Iterable[Method])] = callEdges
 
-    @inline private[this] def fixedMethodCall(
+    @inline private[this] def staticMethodCall(
         pc: PC,
         declaringClass: ObjectType,
         name: String,
@@ -104,11 +103,10 @@ trait CHACallGraphDomain[Source, I]
         classHierarchy.lookupMethodDefinition(
             declaringClass, name, descriptor, project
         ) match {
-                case Some(callee) ⇒
-                    addCallEdge(caller, pc, Iterable(callee))
+                case Some(callee) ⇒ addCallEdge(pc, Iterable(callee))
                 case None ⇒
                     addUnresolvedMethodCall(
-                        callerClassFile.thisClass, caller, pc,
+                        theClassFile.thisClass, theMethod, pc,
                         declaringClass, name, descriptor
                     )
             }
@@ -129,10 +127,10 @@ trait CHACallGraphDomain[Source, I]
 
         if (callees.isEmpty)
             addUnresolvedMethodCall(
-                callerClassFile.thisClass, caller, pc,
+                theClassFile.thisClass, theMethod, pc,
                 declaringClassType, name, descriptor)
         else {
-            addCallEdge(caller, pc, callees)
+            addCallEdge(pc, callees)
         }
     }
 
@@ -143,7 +141,7 @@ trait CHACallGraphDomain[Source, I]
         descriptor: MethodDescriptor,
         operands: List[DomainValue]): OptionalReturnValueOrExceptions = {
         if (declaringClass.isArrayType) {
-            fixedMethodCall(pc, ObjectType.Object, name, descriptor)
+            staticMethodCall(pc, ObjectType.Object, name, descriptor)
         } else {
             virtualMethodCall(pc, declaringClass, name, descriptor, operands)
         }
@@ -171,7 +169,7 @@ trait CHACallGraphDomain[Source, I]
         operands: List[DomainValue]): OptionalReturnValueOrExceptions = {
         // for invokespecial the dynamic type is not "relevant" and the
         // first method that we find is the one that needs to be concrete 
-        fixedMethodCall(pc, declaringClass, name, descriptor)
+        staticMethodCall(pc, declaringClass, name, descriptor)
         super.invokespecial(pc, declaringClass, name, descriptor, operands)
     }
 
@@ -184,33 +182,34 @@ trait CHACallGraphDomain[Source, I]
         name: String,
         descriptor: MethodDescriptor,
         operands: List[DomainValue]): OptionalReturnValueOrExceptions = {
-        fixedMethodCall(pc, declaringClass, name, descriptor)
+        staticMethodCall(pc, declaringClass, name, descriptor)
         super.invokestatic(pc, declaringClass, name, descriptor, operands)
     }
 }
+
 /**
  * Domain object which is used to calculate the call graph.
  */
 class DefaultCHACallGraphDomain[Source](
     val project: Project[Source],
     val cache: CallGraphCache[MethodSignature, Iterable[Method]],
-    val callerClassFile: ClassFile,
-    val caller: Method)
+    val theClassFile: ClassFile,
+    val theMethod: Method)
         extends Domain[Int]
         with DefaultDomainValueBinding[Int]
-        with DefaultTypeLevelIntegerValues[Int]
-        with DefaultTypeLevelLongValues[Int]
-        with DefaultTypeLevelFloatValues[Int]
-        with DefaultTypeLevelDoubleValues[Int]
-        with DefaultTypeLevelReferenceValues[Int]
-        with TypeLevelArrayInstructions
-        with TypeLevelFieldAccessInstructions
-        with TypeLevelInvokeInstructions
-        with DoNothingOnReturnFromMethod
-        with ProjectBasedClassHierarchy[Source]
+        with l0.DefaultTypeLevelIntegerValues[Int]
+        with l0.DefaultTypeLevelLongValues[Int]
+        with l0.DefaultTypeLevelFloatValues[Int]
+        with l0.DefaultTypeLevelDoubleValues[Int]
+        with l0.DefaultTypeLevelReferenceValues[Int]
+        with l0.TypeLevelArrayInstructions
+        with l0.TypeLevelFieldAccessInstructions
+        with l0.TypeLevelInvokeInstructions
+        with l0.DoNothingOnReturnFromMethod
+        with l1.ProjectBasedClassHierarchy[Source]
         with CHACallGraphDomain[Source, Int] {
 
-    def identifier = caller.id
+    def identifier = theMethod.id
 
 }
 

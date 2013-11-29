@@ -36,10 +36,10 @@ package resolved
 package ai
 package util
 
-import domain.BaseConfigurableDomain
-import de.tud.cs.st.bat.resolved.ai.tracer.MultiTracer
-import de.tud.cs.st.bat.resolved.ai.tracer.ConsoleTracer
-import de.tud.cs.st.bat.resolved.ai.tracer.XHTMLTracer
+import domain.l0.BaseConfigurableDomain
+import tracer.MultiTracer
+import tracer.ConsoleTracer
+import tracer.XHTMLTracer
 
 /**
  * A small interpreter that enables us to easily perform the abstract interpretation of a

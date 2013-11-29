@@ -213,20 +213,24 @@ object MethodDescriptor {
 
     def unapply(md: MethodDescriptor) = Some(md.parameterTypes, md.returnType)
 
+    def apply(parameterType: FieldType, returnType: Type): MethodDescriptor =
+        new SingleArgumentMethodDescriptor(parameterType, returnType)
+
     def apply(
         parameterTypes: IndexedSeq[FieldType],
         returnType: Type): MethodDescriptor = {
-        if (parameterTypes.isEmpty) {
-            if (returnType == VoidType)
-                NoArgumentAndNoReturnValueMethodDescriptor
-            else
-                new NoArgumentMethodDescriptor(returnType)
-        } else if (parameterTypes.size == 1) {
-            new SingleArgumentMethodDescriptor(parameterTypes(0), returnType)
-        } else if (parameterTypes.size == 2) {
-            new TwoArgumentsMethodDescriptor(parameterTypes(0), parameterTypes(1), returnType)
-        } else {
-            new MultiArgumentsMethodDescriptor(parameterTypes, returnType)
+        (parameterTypes.size: @annotation.switch) match {
+            case 0 ⇒
+                if (returnType == VoidType)
+                    NoArgumentAndNoReturnValueMethodDescriptor
+                else
+                    new NoArgumentMethodDescriptor(returnType)
+            case 1 ⇒
+                new SingleArgumentMethodDescriptor(parameterTypes(0), returnType)
+            case 2 ⇒
+                new TwoArgumentsMethodDescriptor(parameterTypes(0), parameterTypes(1), returnType)
+            case _ ⇒
+                new MultiArgumentsMethodDescriptor(parameterTypes, returnType)
         }
     }
 

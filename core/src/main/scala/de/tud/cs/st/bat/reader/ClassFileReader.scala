@@ -198,7 +198,9 @@ trait ClassFileReader extends Constant_PoolAbstractions {
 
     /**
      * Register a class file post processor. A class file post processor
-     * can transform the completely read and reified class file.
+     * can transform the completely read and reified class file. Post processors
+     * can only be registered before the usage of a class file reader. '''Registering
+     * new `ClassFilePostProcessors` while processing class files is not supported'''.  
      */
     def registerClassFilePostProcessor(p: ClassFile ⇒ ClassFile): Unit = {
         classFilePostProcessors = p :: classFilePostProcessors

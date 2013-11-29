@@ -36,6 +36,8 @@ package resolved
 package ai
 package tracer
 
+import instructions.Instruction
+
 /**
  * A tracer that prints out a trace's results on the console.
  *

@@ -33,6 +33,8 @@
 package de.tud.cs.st
 package bat
 package resolved
+package instructions
+
 
 /**
  * Swap the top two operand stack values.

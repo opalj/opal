@@ -36,7 +36,7 @@ package ai
 package base
 
 import reader.Java7Framework
-import domain.BaseRecordingDomain
+import domain.l0.BaseRecordingDomain
 
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 

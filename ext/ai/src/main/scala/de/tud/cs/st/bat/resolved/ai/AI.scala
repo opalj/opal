@@ -35,7 +35,9 @@ package bat
 package resolved
 package ai
 
+import instructions._
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
+
 import scala.util.control.ControlThrowable
 
 /**

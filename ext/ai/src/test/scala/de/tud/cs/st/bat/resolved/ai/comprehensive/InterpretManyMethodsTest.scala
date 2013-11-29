@@ -36,9 +36,8 @@ package resolved
 package ai
 package comprehensive
 
-import de.tud.cs.st.util.ControlAbstractions._
-import domain.BaseConfigurableDomain
-import domain.PreciseConfigurableDomain
+import domain.l0.BaseConfigurableDomain
+import domain.l1.PreciseConfigurableDomain
 
 import reader.Java7Framework.ClassFile
 import org.junit.runner.RunWith
@@ -53,9 +52,9 @@ import org.scalatest.matchers.ShouldMatchers
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class InterpretManyMethodsTest
-        extends FlatSpec
-        with ShouldMatchers {
+class InterpretManyMethodsTest extends FlatSpec with ShouldMatchers {
+
+    import de.tud.cs.st.util.ControlAbstractions._
 
     behavior of "BATAI"
 
@@ -66,7 +65,7 @@ class InterpretManyMethodsTest
             filter(file ⇒ file.isFile && file.canRead() && file.getName.endsWith(".jar"))
 
     it should (
-        "be able to interpret all methods using the ConfigurableDefaultDomain in "+
+        "be able to interpret all methods using the BaseConfigurableDomain in "+
         files.map(_.getName).mkString("\n\t\t", "\n\t\t", "\n")
     ) in {
             util.InterpretMethods.interpret(
@@ -76,7 +75,7 @@ class InterpretManyMethodsTest
         }
 
     it should (
-        "be able to interpret all methods using the ConfigurablePreciseDomain in "+
+        "be able to interpret all methods using the PreciseConfigurableDomain in "+
         files.map(_.getName).mkString("\n\t\t", "\n\t\t", "\n")
     ) in {
             util.InterpretMethods.interpret(

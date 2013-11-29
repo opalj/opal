@@ -35,6 +35,8 @@ package bat
 package resolved
 package analyses
 
+import instructions._
+
 import util.debug.{ Counting, PerformanceEvaluation }
 import reader.Java7Framework.ClassFiles
 

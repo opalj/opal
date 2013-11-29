@@ -39,7 +39,8 @@ package project
 /**
  * Visualizes call graphs using Graphviz.
  *
- * Given GraphViz's capabilities only small call graphs can be visualized.
+ * Given GraphViz's capabilities only small call graphs (10 to 20 nodes) can
+ * be effectively visualized.
  *
  * @author Michael Eichberg
  */
@@ -62,7 +63,7 @@ object CallGraphVisualization {
             println("You have to specify the method that should be analyzed.")
             println("\t1) A jar/class file or a directory containing jar/class files.")
             println("\t2) A pattern that specifies which classes should be included in the output.")
-            println("\t3) The number of seconds before the analysis starts (e.g., to attach a profiler).")
+            println("\t3) The number of seconds (max. 30) before the analysis starts (e.g., to attach a profiler).")
             sys.exit(-1)
         }
 
@@ -114,9 +115,10 @@ object CallGraphVisualization {
         val (callGraph, unresolvedMethodCalls, exceptions) =
             memory {
                 time {
-                    CallGraphFactory.performCHA(
+                    CallGraphFactory.create(
                         project,
-                        CallGraphFactory.defaultEntryPointsForLibraries(project))
+                        CallGraphFactory.defaultEntryPointsForLibraries(project),
+                        new CHACallGraphAlgorithmConfiguration())
                 } { t ⇒ println("Creating the call graph took: "+nsToSecs(t)) }
             } { m ⇒ println("Required memory for call graph: "+asMB(m)) }
 
@@ -141,7 +143,7 @@ object CallGraphVisualization {
         println("Maximum number of method calls over all methods: "+maxCallSitesPerMethod)
 
         //
-        // Let's create the graph
+        // Let's create visualization
         //
         import de.tud.cs.st.util.graphs.{ toDot, SimpleNode, Node }
         val nodes: Set[Node] = {
@@ -195,7 +197,6 @@ object CallGraphVisualization {
                     (unresolvedMethodCalls, "\n")
             println(umc.mkString("Unresolved method calls:\n\t", "\n\t", end))
         }
-        //println(unresolvedMethodCalls.mkString("Unresolved method calls:\n\t", "\n\t", end))
 
         // The graph_____________________________________________________________________:
         //        val consoleOutput = callGraph.calls flatMap { caller ⇒

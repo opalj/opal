@@ -72,7 +72,7 @@ package object resolved {
 
     type Fields = IndexedSeq[Field]
 
-    type Instructions = Array[Instruction]
+    type Instructions = Array[instructions.Instruction]
 
     type SourceElementID = Int
 
