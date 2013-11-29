@@ -252,12 +252,16 @@ class ClassHierarchy private (
      * @param objectType A type known to the class hierarchy.
      */
     def foreachSupertype(objectType: ObjectType)(f: ObjectType ⇒ Unit) {
-        val superclassType = superclassTypeMap(objectType.id)
+        val id = objectType.id
+        val superclassType = superclassTypeMap(id)
         if (superclassType != null) {
             f(superclassType)
             foreachSupertype(superclassType)(f)
+        }
 
-            superinterfaceTypesMap(objectType.id) foreach { superinterfaceType ⇒
+        val superinterfaceTypes = superinterfaceTypesMap(id)
+        if (superinterfaceTypes != null) {
+            superinterfaceTypes foreach { superinterfaceType ⇒
                 f(superinterfaceType)
                 foreachSupertype(superinterfaceType)(f)
             }
