@@ -116,8 +116,9 @@ trait ClassFileBinding
 
     val removeBootstrapMethodAttribute: ClassFile ⇒ ClassFile = { classFile ⇒
         val attributes = classFile.attributes
-        if (attributes.size == 0 ||
-            attributes.exists(attribute ⇒ !attribute.isInstanceOf[BootstrapMethodTable]))
+        if (classFile.majorVersion <= 50 /*does not have BootstrapMethodTable*/ ||
+            attributes.size == 0 ||
+            attributes.forall(attribute ⇒ !attribute.isInstanceOf[BootstrapMethodTable]))
             classFile
         else {
             val newAttributes = classFile.attributes filter { attribute ⇒
