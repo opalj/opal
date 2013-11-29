@@ -253,12 +253,14 @@ class ClassHierarchy private (
      */
     def foreachSupertype(objectType: ObjectType)(f: ObjectType ⇒ Unit) {
         val superclassType = superclassTypeMap(objectType.id)
-        f(superclassType)
-        foreachSupertype(superclassType)(f)
+        if (superclassType != null) {
+            f(superclassType)
+            foreachSupertype(superclassType)(f)
 
-        superinterfaceTypesMap(objectType.id) foreach { superinterfaceType ⇒
-            f(superinterfaceType)
-            foreachSupertype(superinterfaceType)(f)
+            superinterfaceTypesMap(objectType.id) foreach { superinterfaceType ⇒
+                f(superinterfaceType)
+                foreachSupertype(superinterfaceType)(f)
+            }
         }
     }
 

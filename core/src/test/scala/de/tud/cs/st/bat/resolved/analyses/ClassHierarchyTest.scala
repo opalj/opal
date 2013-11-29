@@ -210,6 +210,28 @@ class ClassHierarchyTest
 
     // -----------------------------------------------------------------------------------
     //
+    // TESTS IF WE HAVE AN INCOMPLETE CLASS HIERARCHY
+    //
+    // -----------------------------------------------------------------------------------
+
+    val apacheANTCH =
+        ClassHierarchy(
+            Traversable.empty,
+            List(() ⇒ getClass.getResourceAsStream("ApacheANT1.7.1.ClassHierarchy.ths"))
+        )
+
+    it should "be possible to get all supertypes, even if not all information is available" in {
+
+        val mi = ObjectType("org/apache/tools/ant/taskdefs/MacroInstance")
+        apacheANTCH.allSupertypes(mi) should be(Set(
+            ObjectType("org/apache/tools/ant/Task"), 
+            ObjectType("org/apache/tools/ant/TaskContainer"), 
+            ObjectType("org/apache/tools/ant/DynamicAttribute")
+        ))
+    }
+
+    // -----------------------------------------------------------------------------------
+    //
     // TESTING THE TRAVERSAL OF THE CLASS HIERARCHY
     //
     // -----------------------------------------------------------------------------------
@@ -249,7 +271,6 @@ class ClassHierarchyTest
             MethodDescriptor.NoArgsAndReturnVoid,
             clusteringProject) should be('nonEmpty)
     }
-    //pattern.decorator.example1.VerticalScrollBarDecorator{ void draw() } => pattern.decorator.example1.Window{ void draw() }
 
     // -----------------------------------------------------------------------------------
     //
