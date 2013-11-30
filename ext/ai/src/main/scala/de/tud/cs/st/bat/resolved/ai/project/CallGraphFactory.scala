@@ -106,7 +106,8 @@ object CallGraphFactory {
             }
         /* END - EXECUTED CONCURRENTLY */
 
-        var futures = List.empty[Future[MethodAnalysisResult]] // OUR WORKLIST
+        // [LIST] var futures = List.empty[Future[MethodAnalysisResult]] // OUR WORKLIST
+        var futures = collection.mutable.Queue.empty[Future[MethodAnalysisResult]] // OUR WORKLIST
         val methodSubmitted: Array[Boolean] = new Array(Method.methodsCount)
         val processors = Runtime.getRuntime().availableProcessors()
         val executorService = Executors.newFixedThreadPool(processors)
@@ -116,7 +117,8 @@ object CallGraphFactory {
             else
                 methodSubmitted(method.id) = true
 
-            futures = executorService.submit(doAnalyzeMethod(method)) :: futures
+            // [LIST] futures = executorService.submit(doAnalyzeMethod(method)) :: futures
+            futures += executorService.submit(doAnalyzeMethod(method))
         }
 
         // Initialization
@@ -126,16 +128,21 @@ object CallGraphFactory {
         var exceptions = List.empty[CallGraphConstructionException]
         var unresolvedMethodCalls = List.empty[UnresolvedMethodCall]
         while (futures.nonEmpty) {
-            val future = futures.head
-            futures = futures.tail
+            // 1. GET NEXT RESULT
+            // [LIST] val future = futures.head
+            // [LIST] futures = futures.tail
+            val future = futures.dequeue()
             val (callEdges, moreUnresolvedMethodCalls, exception) = future.get()
+
+            // 2. ENQUE NEXT METHODS
+            if(callEdges.nonEmpty)
+                callEdges.foreach(_._3.foreach { m ⇒ if (!m.isNative) submitMethod(m) })
+
+            // 3. PROCESS RESULTS
             if (moreUnresolvedMethodCalls.nonEmpty)
                 unresolvedMethodCalls = moreUnresolvedMethodCalls ::: unresolvedMethodCalls
             if (exception.isDefined)
                 exceptions = exception.get :: exceptions
-            callEdges.foreach(_._3.foreach { method ⇒
-                if (!method.isNative) submitMethod(method)
-            })
             builder.addCallEdges(callEdges)
         }
         executorService.shutdown()

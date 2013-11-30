@@ -36,7 +36,9 @@ package resolved
 package ai
 package project
 
-import bat.resolved.analyses.Project
+import de.tud.cs.st.util.UShortSet
+
+import analyses.Project
 
 /**
  * Builds a call graph by first collecting all call graph edges before the final
@@ -53,9 +55,7 @@ import bat.resolved.analyses.Project
  */
 class CallGraphBuilder[Source](val project: Project[Source]) {
 
-    import collection.immutable.Set
-    import collection.mutable.HashMap
-    import java.util.concurrent.ConcurrentLinkedQueue
+    import CallGraph.PCs
 
     private[this] var allCallEdges = List.empty[List[(Method, PC, Iterable[Method])]]
 
@@ -78,11 +78,15 @@ class CallGraphBuilder[Source](val project: Project[Source]) {
         import concurrent.duration._
         import ExecutionContext.Implicits.global
 
+        import collection.immutable.Set
+        import collection.mutable.HashMap
+        import java.util.concurrent.ConcurrentLinkedQueue
+
         // the index is the id of the method that is "called by" other methods
-        val calledByMapFuture: Future[Array[HashMap[Method, Set[PC]]]] = future {
-            val calledByMap: Array[HashMap[Method, Set[PC]]] = new Array(project.methodsCount)
+        val calledByMapFuture: Future[Array[HashMap[Method, PCs]]] = future {
+            val calledByMap: Array[HashMap[Method, PCs]] = new Array(project.methodsCount)
             for {
-                edges ← allCallEdges //.iterator()
+                edges ← allCallEdges
                 (caller, pc, callees) ← edges
                 callee ← callees
             } {
@@ -90,14 +94,14 @@ class CallGraphBuilder[Source](val project: Project[Source]) {
                     getOrElseUpdate(
                         calledByMap,
                         callee,
-                        HashMap.empty[Method, Set[PC]])
+                        HashMap.empty[Method, PCs])
                 callers.get(caller) match {
                     case Some(pcs) ⇒
                         val newPCs = pcs + pc
                         if (pcs ne newPCs)
                             callers.update(caller, newPCs)
                     case None ⇒
-                        val newPCs = Set.empty + pc
+                        val newPCs = UShortSet(pc)
                         callers.update(caller, newPCs)
                 }
             }
@@ -105,18 +109,20 @@ class CallGraphBuilder[Source](val project: Project[Source]) {
         }
 
         // the index is the id of the method that calls other methods
-        val callsMap: Array[HashMap[PC, Iterable[Method]]] = new Array(project.methodsCount)
+        //val callsMap: Array[Map[PC, Iterable[Method]]] = new Array(project.methodsCount)
+        import it.unimi.dsi.fastutil.ints.Int2ObjectMap
+        val callsMap: Array[Map[PC, Iterable[Method]]] = new Array(project.methodsCount)
         for {
             edges ← allCallEdges
             (caller, pc, callees) ← edges
-            callee ← callees
         } {
-            val callSites =
-                getOrElseUpdate(
-                    callsMap,
-                    caller,
-                    HashMap.empty[PC, Iterable[Method]])
-            callSites.update(pc, callees)
+            var callSites = callsMap(caller.id)
+            if (callSites eq null) {
+                // Here... we may have (un)boxing issues!
+                callsMap(caller.id) = new collection.immutable.Map.Map1(pc, callees)
+            } else {
+                callsMap(caller.id) = callSites.updated(pc, callees)
+            }
         }
 
         new CallGraph(
