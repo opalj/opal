@@ -67,19 +67,19 @@ final class Method private (
 
     // This is directly supported due to its need for the resolution of signature 
     // polymorphic methods. 
-    def isNativeAndVarargs = Method.isNativeAndVarargs(accessFlags)
+    final def isNativeAndVarargs = Method.isNativeAndVarargs(accessFlags)
 
-    def isVarargs: Boolean = ACC_VARARGS isElementOf accessFlags
+    final def isVarargs: Boolean = (ACC_VARARGS.mask & accessFlags) != 0
 
-    def isSynchronized: Boolean = ACC_SYNCHRONIZED isElementOf accessFlags
+    final def isSynchronized: Boolean = (ACC_SYNCHRONIZED.mask & accessFlags) != 0
 
-    def isBridge: Boolean = ACC_BRIDGE isElementOf accessFlags
+    final def isBridge: Boolean = ACC_BRIDGE isElementOf accessFlags
 
-    def isNative = ACC_NATIVE isElementOf accessFlags
+    final def isNative = (ACC_NATIVE.mask & accessFlags) != 0
 
-    def isStrict: Boolean = ACC_STRICT isElementOf accessFlags
+    final def isStrict: Boolean = ACC_STRICT isElementOf accessFlags
 
-    def isAbstract: Boolean = ACC_ABSTRACT isElementOf accessFlags
+    final def isAbstract: Boolean = (ACC_ABSTRACT.mask & accessFlags) != 0
 
     def returnType = descriptor.returnType
 
