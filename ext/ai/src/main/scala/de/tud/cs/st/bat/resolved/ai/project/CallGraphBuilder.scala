@@ -110,7 +110,6 @@ class CallGraphBuilder[Source](val project: Project[Source]) {
 
         // the index is the id of the method that calls other methods
         //val callsMap: Array[Map[PC, Iterable[Method]]] = new Array(project.methodsCount)
-        import it.unimi.dsi.fastutil.ints.Int2ObjectMap
         val callsMap: Array[Map[PC, Iterable[Method]]] = new Array(project.methodsCount)
         for {
             edges ← allCallEdges
