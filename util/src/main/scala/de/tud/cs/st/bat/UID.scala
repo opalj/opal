@@ -36,20 +36,20 @@ package bat
 import scala.annotation.tailrec
 
 /**
-  * Mixed in by data structures that have – by construction - unique ids. I.e., two
-  * data structures that are not reference equal, have to have two different ids.
-  *
-  * @author Michael Eichberg
-  */
+ * Mixed in by data structures that have – by construction - unique ids. I.e., two
+ * data structures that are not reference equal, have to have two different ids.
+ *
+ * @author Michael Eichberg
+ */
 trait UID {
     /**
-      * This data structure's unique id.
-      */
+     * This data structure's unique id.
+     */
     def id: Int
 }
 
 object UID {
-    @inline def getOrElseUpdate[T <: AnyRef](
+    @inline final def getOrElseUpdate[T <: AnyRef](
         array: Array[T],
         uid: UID,
         orElse: ⇒ T): T = {
@@ -59,18 +59,17 @@ object UID {
             val result = orElse
             array(id) = result
             result
-        }
-        else {
+        } else {
             t
         }
     }
 }
 
 /**
-  * Ordering for sorted collections of elements of type `UID`.
-  *
-  * @author Michael Eichberg
-  */
+ * Ordering for sorted collections of elements of type `UID`.
+ *
+ * @author Michael Eichberg
+ */
 object UIDBasedOrdering extends Ordering[UID] {
     def compare(a: UID, b: UID): Int = a.id - b.id
 }
@@ -95,59 +94,59 @@ private final class UIDIterable[T <: UID](
     def iterator = list.iterator
 }
 /**
-  * An immutable, redundancy free, sorted list of elements of type `UID`. This is a highly
-  * specialized data structure that is efficient for small lists and should only
-  * be used if random access is not required.
-  *
-  * @author Michael Eichberg
-  */
+ * An immutable, redundancy free, sorted list of elements of type `UID`. This is a highly
+ * specialized data structure that is efficient for small lists and should only
+ * be used if random access is not generally required.
+ *
+ * @author Michael Eichberg
+ */
 sealed trait UIDList[+T <: UID] { thisList ⇒
 
     /**
-      * The head element of this list, if the list is not empty.
-      */
+     * The head element of this list, if the list is not empty.
+     */
     @throws[NoSuchElementException]("if this list is empty")
     def head: T
 
     /**
-      * The tail of this list, if this list is not empty.
-      */
+     * The tail of this list, if this list is not empty.
+     */
     @throws[NoSuchElementException]("if this list is empty")
     def tail: UIDList[T]
 
     /**
-      * Number of elements of this list.
-      *
-      * This operation take O(n) steps.
-      */
+     * Number of elements of this list.
+     *
+     * This operation take O(n) steps.
+     */
     def size: Int
 
     /**
-      * Returns `true` if this list is empty, `false` otherwise.
-      */
+     * Returns `true` if this list is empty, `false` otherwise.
+     */
     def isEmpty: Boolean
 
     /**
-      * Returns `false` if this list is empty, `true` otherwise.
-      */
+     * Returns `false` if this list is empty, `true` otherwise.
+     */
     def nonEmpty: Boolean
 
     /**
-      * If the given element is not already stored in
-      * this list, a new list is created and the element is added to it.
-      * In the latter case `this` list is returned.
-      */
+     * If the given element is not already stored in
+     * this list, a new list is created and the element is added to it.
+     * In the latter case `this` list is returned.
+     */
     def +[X >: T <: UID](e: X): UIDList[X]
 
     /**
-      * Iterator to iterate over the elements of this collection. Provided to facilitate
-      * the integration with Scala's collections api.
-      */
+     * Iterator to iterate over the elements of this collection. Provided to facilitate
+     * the integration with Scala's collections api.
+     */
     def iterator: Iterator[T] = new UIDIterator(thisList)
 
     /**
-      * Returns `true` if all elements satisfy the given predicate, `false` otherwise.
-      */
+     * Returns `true` if all elements satisfy the given predicate, `false` otherwise.
+     */
     @inline @tailrec final def forall[X >: T <: UID](f: X ⇒ Boolean): Boolean = {
         if (isEmpty) true
         else if (!f(head)) false
@@ -155,8 +154,8 @@ sealed trait UIDList[+T <: UID] { thisList ⇒
     }
 
     /**
-      * Returns `true` if an element satisfies the given predicate, `false` otherwise.
-      */
+     * Returns `true` if an element satisfies the given predicate, `false` otherwise.
+     */
     @inline @tailrec final def exists[X >: T <: UID](f: X ⇒ Boolean): Boolean = {
         if (isEmpty) false
         else if (f(head)) true
@@ -164,8 +163,8 @@ sealed trait UIDList[+T <: UID] { thisList ⇒
     }
 
     /**
-      * Returns `true` if the given element is already in this list, `false` otherwise.
-      */
+     * Returns `true` if the given element is already in this list, `false` otherwise.
+     */
     @inline @tailrec final def contains(e: UID): Boolean = {
         if (isEmpty) false
         else if (head.id == e.id) true
@@ -173,8 +172,8 @@ sealed trait UIDList[+T <: UID] { thisList ⇒
     }
 
     /**
-      * Returns the first element that satisfies the given predicate.
-      */
+     * Returns the first element that satisfies the given predicate.
+     */
     @inline @tailrec final def find[X >: T <: UID](f: X ⇒ Boolean): Option[T] = {
         if (isEmpty) None
         else if (f(head)) Some(head)
@@ -182,19 +181,19 @@ sealed trait UIDList[+T <: UID] { thisList ⇒
     }
 
     /**
-      * Creates a new list which contains the mapped values as specified by the given
-      * function `f`.
-      */
+     * Creates a new list which contains the mapped values as specified by the given
+     * function `f`.
+     */
     def map[X >: T](f: T ⇒ X): List[X] = {
         if (isEmpty) Nil
         else f(head) :: tail.map(f)
     }
 
     /**
-      * Returns a new `UIDList` that contains all elements which satisfy the given
-      * predicate.
-      */
-    final def filter[X >: T <: UID](f: X ⇒ Boolean): UIDList[T] = {
+     * Returns a new `UIDList` that contains all elements which satisfy the given
+     * predicate.
+     */
+    def filter[X >: T <: UID](f: X ⇒ Boolean): UIDList[T] = {
         val empty = EmptyUIDList
         var newHead: UIDSList[T] = null
         var last: UIDSList[T] = null
@@ -204,13 +203,11 @@ sealed trait UIDList[+T <: UID] { thisList ⇒
             val currentHead = current.head
             if (!f(currentHead)) {
                 allPass = false
-            }
-            else {
+            } else {
                 if (newHead eq null) {
                     newHead = new UIDSList(currentHead, empty)
                     last = newHead
-                }
-                else {
+                } else {
                     val newLast = new UIDSList(currentHead, empty)
                     last.tail = newLast
                     last = newLast
@@ -241,10 +238,10 @@ sealed trait UIDList[+T <: UID] { thisList ⇒
     //    }
 
     /**
-      * Returns a new `UIDList` that contains all elements which '''do not satisfy'''
-      * the given predicate.
-      */
-    final def filterNot[X >: T <: UID](f: X ⇒ Boolean): UIDList[T] = {
+     * Returns a new `UIDList` that contains all elements which '''do not satisfy'''
+     * the given predicate.
+     */
+    def filterNot[X >: T <: UID](f: X ⇒ Boolean): UIDList[T] = {
         val empty = EmptyUIDList
         var newHead: UIDSList[T] = null
         var last: UIDSList[T] = null
@@ -254,13 +251,11 @@ sealed trait UIDList[+T <: UID] { thisList ⇒
             val currentHead = current.head
             if (f(currentHead)) {
                 allPass = false
-            }
-            else {
+            } else {
                 if (newHead eq null) {
                     newHead = new UIDSList(currentHead, empty)
                     last = newHead
-                }
-                else {
+                } else {
                     val newLast = new UIDSList(currentHead, empty)
                     last.tail = newLast
                     last = newLast
@@ -291,8 +286,8 @@ sealed trait UIDList[+T <: UID] { thisList ⇒
     //    }
 
     /**
-      * Passes all elements of this list to the given function.
-      */
+     * Passes all elements of this list to the given function.
+     */
     @inline final def foreach[X >: T <: UID, U](f: X ⇒ U): Unit = {
         var rest: UIDList[T] = thisList
         while (rest.nonEmpty) {
@@ -364,6 +359,10 @@ private object EmptyUIDList extends UIDList[Nothing] {
 
     def tail = throw new NoSuchElementException
 
+    override def filter[X <: UID](f: X ⇒ Boolean): this.type = this
+
+    override def filterNot[X <: UID](f: X ⇒ Boolean): this.type = this
+
     def isEmpty = true
 
     def nonEmpty = false
@@ -380,31 +379,31 @@ private object EmptyUIDList extends UIDList[Nothing] {
     override def hashCode: Int = -1
 }
 /**
-  * Factory methods to create UIDLists.
-  *
-  * @author Michael Eichberg
-  */
+ * Factory methods to create UIDLists.
+ *
+ * @author Michael Eichberg
+ */
 object UIDList {
 
     /**
-      * An empty UIDList
-      */
+     * An empty UIDList
+     */
     val empty: UIDList[Nothing] = EmptyUIDList
 
     /**
-      * Creates a new UIDList.
-      *
-      * @param e The non-null value of the created list.
-      */
+     * Creates a new UIDList.
+     *
+     * @param e The non-null value of the created list.
+     */
     def apply[T <: UID](e: T): UIDList[T] =
         new UIDSList(e, empty)
 
     /**
-      * Creates a new UIDList.
-      *
-      * @param e1 A non-null value of the created list.
-      * @param e2 A non-null value of the created list (if it is not a duplicate).
-      */
+     * Creates a new UIDList.
+     *
+     * @param e1 A non-null value of the created list.
+     * @param e2 A non-null value of the created list (if it is not a duplicate).
+     */
     def apply[T <: UID](e1: T, e2: T): UIDList[T] =
         if (e1.id < e2.id)
             new UIDSList(e1, new UIDSList(e2, empty))
