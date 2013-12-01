@@ -35,14 +35,22 @@ package util
 import UShort.{ MIN, MAX }
 
 /**
- * A mutable, sorted set of unsigned short values that is tailored for small sets.
+ * A mutable, sorted set of unsigned short values that is tailored for small(er) sets.
  *
  * @author Michael Eichberg
  */
 trait UShortSet {
 
+    /**
+     * Returns `true` if this set contains the given value. If the given value
+     * is not an unsigned short value [0..65535] the result is undefined.
+     */
     def contains(ushortValue: Int): Boolean
 
+    /**
+     * Executes the given function `f` for each value of this set, starting with
+     * the slowest value.
+     */
     def foreach[U](f: /*ushortValue:*/ Int ⇒ U): Unit
 
     /**
@@ -53,8 +61,14 @@ trait UShortSet {
      */
     def +(value: Int): UShortSet
 
+    /**
+     * Returns a new iterator.
+     */
     def iterator: Iterator[Int] = iterable.iterator
 
+    /**
+     * Returns a new iterable.
+     */
     def iterable: Iterable[Int]
 
     /**
@@ -167,56 +181,64 @@ private class UShortSet4(private var value: Long) extends UShortSet {
 
     def +(uShortValue: Int): UShortSet = {
         val newValue: Long = uShortValue.toLong
-        if (newValue < value1) {
-            if (notFull) {
-                value = value << 16 | newValue
+        val value1 = this.value1
+        val value3 = this.value3
+        if (newValue < value3) {
+            val value2 = this.value2
+            if (newValue < value1) {
+                if (notFull) {
+                    value = value << 16 | newValue
+                    this
+                } else {
+                    new UShortSetNode(
+                        new UShortSet4(newValue, value1, value2, value3),
+                        new UShortSet2(value4.toInt)
+                    )
+                }
+            } else if (newValue == value1) {
                 this
-            } else {
-                new UShortSetNode(
-                    new UShortSet4(newValue, value1, value2, value3),
-                    new UShortSet2(value4.toInt)
-                )
-            }
-        } else if (newValue == value1) {
-            this
-        } else if (newValue < value2) {
-            if (notFull) {
-                value = (value1 | (newValue << 16)) | (value2 << 32) | (value3 << 48)
+            } else if (newValue < value2) {
+                if (notFull) {
+                    value = (value1 | (newValue << 16)) | (value2 << 32) | (value3 << 48)
+                    this
+                } else {
+                    new UShortSetNode(
+                        new UShortSet4(value1, newValue, value2, value3),
+                        new UShortSet2(value4.toInt)
+                    )
+                }
+            } else if (newValue == value2) {
                 this
-            } else {
-                new UShortSetNode(
-                    new UShortSet4(value1, newValue, value2, value3),
-                    new UShortSet2(value4.toInt)
-                )
+            } else /*newValue > value2 && newValue < value3*/ {
+                if (notFull) {
+                    value = (value1 | (value2 << 16)) | (newValue << 32) | (value3 << 48)
+                    this
+                } else {
+                    new UShortSetNode(
+                        new UShortSet4(value1, value2, newValue, value3),
+                        new UShortSet2(value4.toInt)
+                    )
+                }
             }
-        } else if (newValue == value2) {
-            this
-        } else if (newValue < value3) {
-            if (notFull) {
-                value = (value1 | (value2 << 16)) | (newValue << 32) | (value3 << 48)
+        } else /*newValue >= value3*/ {
+            val value4 = this.value4
+            if (newValue == value3) {
                 this
-            } else {
-                new UShortSetNode(
-                    new UShortSet4(value1, value2, newValue, value3),
-                    new UShortSet2(value4.toInt)
-                )
-            }
-        } else if (newValue == value3) {
-            this
-        } else if (newValue < value4) {
-            if (notFull) {
-                value = (value1 | (value2 << 16)) | (value3 << 32) | (newValue << 48)
+            } else if (newValue < value4) {
+                if (notFull) {
+                    value = (value1 | (value2 << 16)) | (value3 << 32) | (newValue << 48)
+                    this
+                } else {
+                    new UShortSetNode(
+                        new UShortSet4(value1, value2, value3, newValue),
+                        new UShortSet2(value4.toInt)
+                    )
+                }
+            } else if (newValue == value4) {
                 this
-            } else {
-                new UShortSetNode(
-                    new UShortSet4(value1, value2, value3, newValue),
-                    new UShortSet2(value4.toInt)
-                )
+            } else /*newValue > value4 */ {
+                new UShortSetNode(this, new UShortSet2(uShortValue))
             }
-        } else if (newValue == value4) {
-            this
-        } else {
-            new UShortSetNode(this, new UShortSet2(uShortValue))
         }
     }
 

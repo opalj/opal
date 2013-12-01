@@ -38,6 +38,7 @@ package de.tud.cs.st.util
  * @author Michael Eichberg
  */
 object UShortSetDemo {
+
     val empty = UShortSet.empty                   //> empty  : de.tud.cs.st.util.UShortSet = UShortSet()
     val just0 = UShortSet(0)                      //> just0  : de.tud.cs.st.util.UShortSet = UShortSet(0)
     val _0_2 = just0 + 2                          //> _0_2  : de.tud.cs.st.util.UShortSet = UShortSet(0,2)
@@ -49,6 +50,7 @@ object UShortSetDemo {
     _0_1_2_65535 + 0                              //> res3: de.tud.cs.st.util.UShortSet = UShortSet(0,1,2,65535)
     _0_1_2_65535 + 1                              //> res4: de.tud.cs.st.util.UShortSet = UShortSet(0,1,2,65535)
     _0_1_2_65535 + 2                              //> res5: de.tud.cs.st.util.UShortSet = UShortSet(0,1,2,65535)
+
     val _10_20_30_40 = UShortSet(10) + 30 + 40 + 20
                                                   //> _10_20_30_40  : de.tud.cs.st.util.UShortSet = UShortSet(10,20,30,40)
     val _10_30_35_40 = UShortSet(10) + 30 + 40 + 35
@@ -71,12 +73,24 @@ object UShortSetDemo {
     large.contains(5242)                          //> res16: Boolean = true
     !large.contains(4)                            //> res17: Boolean = true
     !large.contains(6666)                         //> res18: Boolean = true
-
     large.max                                     //> res19: Int = 5242
+
+    _10_20_30_40 + 0                              //> res20: de.tud.cs.st.util.UShortSet = UShortSet(0,10,20,30,40)
+    _10_20_30_40 + 5                              //> res21: de.tud.cs.st.util.UShortSet = UShortSet(5,10,20,30,40)
+    _10_20_30_40 + 15                             //> res22: de.tud.cs.st.util.UShortSet = UShortSet(10,15,20,30,40)
+    _10_20_30_40 + 25                             //> res23: de.tud.cs.st.util.UShortSet = UShortSet(10,20,25,30,40)
+    _10_20_30_40 + 35                             //> res24: de.tud.cs.st.util.UShortSet = UShortSet(10,20,30,35,40)
+    _10_20_30_40 + 45                             //> res25: de.tud.cs.st.util.UShortSet = UShortSet(10,20,30,40,45)
 
     try {
         empty + 66666
     } catch {
         case _: IllegalArgumentException ⇒ "OK"
-    }                                             //> res20: Object = OK
+    }                                             //> res26: Object = OK
+
+    try {
+        empty + -1
+    } catch {
+        case _: IllegalArgumentException ⇒ "OK"
+    }                                             //> res27: Object = OK
 }
