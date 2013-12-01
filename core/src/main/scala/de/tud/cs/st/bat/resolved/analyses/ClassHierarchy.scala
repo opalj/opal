@@ -225,21 +225,44 @@ class ClassHierarchy private (
      * @param objectType An object type.
      */
     def foreachSubtype(objectType: ObjectType)(f: ObjectType ⇒ Unit) {
-        val id = objectType.id
-        val subclassTypes = subclassTypesMap(id)
-        if (subclassTypes ne null) {
-            subclassTypes foreach { subclassType ⇒
-                f(subclassType)
-                foreachSubtype(subclassType)(f)
+
+        // We had to change this method to get some reasonable performance.
+        // The naive implementation using foreach and (mutual) recursion
+        // didn't perform well.
+        @inline def processAllSubtypes() {
+            var allSubtypes: List[HashSet[ObjectType]] = Nil
+            val id = objectType.id
+            val subclassTypes = subclassTypesMap(id)
+            if (subclassTypes ne null) {
+                allSubtypes = subclassTypes :: allSubtypes
             }
-        }
-        val subinterfaceTypes = subinterfaceTypesMap(id)
-        if (subinterfaceTypes ne null) {
-            subinterfaceTypes foreach { subinterfaceType ⇒
-                f(subinterfaceType)
-                foreachSubtype(subinterfaceType)(f)
+            val subinterfaceTypes = subinterfaceTypesMap(id)
+            if (subinterfaceTypes ne null) {
+                allSubtypes = subinterfaceTypes :: allSubtypes
             }
+
+            while (allSubtypes.nonEmpty) {
+                val subtypes = allSubtypes.head
+                allSubtypes = allSubtypes.tail
+                val subtypesIterator = subtypes.iterator
+                while (subtypesIterator.hasNext) {
+                    val subtype = subtypesIterator.next
+                    f(subtype)
+
+                    val id = subtype.id
+                    val subclassTypes = subclassTypesMap(id)
+                    if (subclassTypes ne null) {
+                        allSubtypes = subclassTypes :: allSubtypes
+                    }
+                    val subinterfaceTypes = subinterfaceTypesMap(id)
+                    if (subinterfaceTypes ne null) {
+                        allSubtypes = subinterfaceTypes :: allSubtypes
+                    }
+                }
+            }
+
         }
+        processAllSubtypes()
     }
 
     /**
@@ -850,9 +873,9 @@ class ClassHierarchy private (
                         project)
                 else
                     lookupMethodDefinition(
-                        receiverType,
-                        methodName,
-                        methodDescriptor,
+                        receiverType, 
+                        methodName, 
+                        methodDescriptor, 
                         project)
             } match {
                 case Some(method) if !method.isAbstract ⇒ List(method)
@@ -866,13 +889,14 @@ class ClassHierarchy private (
                 seenSubtypes += subtype
                 if (classesFilter(subtype)) {
                     project(subtype) foreach { classFile ⇒
-                        classFile.methods.find { method ⇒
-                            !method.isAbstract &&
-                                method.name == methodName &&
-                                method.descriptor == methodDescriptor
-                        }.map { anImplementation ⇒
-                            implementingMethods = anImplementation :: implementingMethods
-                        }
+                        val anImplementation =
+                            classFile.methods.find { method ⇒
+                                !method.isAbstract &&
+                                    method.name == methodName &&
+                                    method.descriptor == methodDescriptor
+                            }
+                        if (anImplementation.isDefined)
+                            implementingMethods = anImplementation.get :: implementingMethods
                     }
                 }
             }
