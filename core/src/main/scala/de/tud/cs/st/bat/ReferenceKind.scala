@@ -48,7 +48,7 @@ sealed abstract class ReferenceKind {
 }
 object ReferenceKind {
 
-    private val referenceKinds: Array[ReferenceKind] =
+    private[this] val referenceKinds: Array[ReferenceKind] =
         Array(
             null, // <=> Index 0
             REF_getField,

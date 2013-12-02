@@ -72,6 +72,25 @@ sealed abstract class MethodDescriptor extends BootstrapArgument {
         }+") : "+returnType.toJava
 
     override def toString: String = "MethodDescriptor("+toUMLNotation+")"
+
+    def <(other: MethodDescriptor): Boolean = {
+        (this.parametersCount < other.parametersCount) || (
+            this.parametersCount == other.parametersCount &&
+            {
+                var i = 0
+                val iMax = this.parametersCount
+                while (i < iMax) {
+                    if (this.parameterTypes(i) < other.parameterTypes(i))
+                        return true
+                    else if (other.parameterTypes(i) < this.parameterTypes(i))
+                        return false
+                    else // the types are identical
+                        i += 1
+                }
+                this.returnType < other.returnType
+            }
+        )
+    }
 }
 
 // 

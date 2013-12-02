@@ -41,7 +41,8 @@ package de.tud.cs.st
  *
  * == General Design Rules ==
  * ===No `null` Values===
- * BAT does not make use of `null` values. I.e., fields will never contain `null` values,
+ * BAT does not make use of `null` values in its public interface. I.e., fields 
+ * will never contain `null` values,
  * method parameters must not be `null` and methods will never return `null`
  * values.
  *

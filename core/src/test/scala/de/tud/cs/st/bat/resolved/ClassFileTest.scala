@@ -30,34 +30,72 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
+package de.tud.cs.st.bat
 package resolved
-package ai
-package project
+
+import org.scalatest.FunSuite
+import org.scalatest.ParallelTestExecution
 
 /**
- * Represents a method call that could not be resolved; that is, the target of
- * an invoke instruction could not be found. This information is primarily
- * interesting during the development of static analyses.
- *
  * @author Michael Eichberg
  */
-case class UnresolvedMethodCall(
-        callerClass: ReferenceType,
-        caller: Method,
-        pc: PC,
-        calleeClass: ReferenceType,
-        calleeName: String,
-        calleeDescriptor: MethodDescriptor) {
+@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
+class ClassFileTest extends FunSuite with ParallelTestExecution {
 
-    import Console._
+    import reader.Java7Framework.ClassFile
 
-    override def toString: String = {
-        callerClass.toJava+"{ "+
-            BOLD + caller.toJava + RESET+":"+pc+" } => "+
-            calleeClass.toJava+"{ "+
-            BOLD + calleeDescriptor.toJava(calleeName) + RESET+
-            " }"
+    val codeJARFile = TestSupport.locateTestResources("classfiles/Code.jar")
+    val cf1 = ClassFile(codeJARFile, "code/ImmutableList.class")
+
+    test("test that it can find the first constructor") {
+        assert(
+            cf1.findMethod(
+                "<init>",
+                MethodDescriptor(ObjectType.Object, VoidType)
+            ).isDefined
+        )
     }
+
+    test("test that it can find the second constructor") {
+        assert(
+            cf1.findMethod(
+                "<init>",
+                MethodDescriptor(
+                    IndexedSeq(ObjectType.Object, ObjectType("code/ImmutableList")),
+                    VoidType)
+            ).isDefined
+        )
+
+    }
+
+    test("test that it can find all other methods") {
+        assert(
+            cf1.findMethod(
+                "getNext",
+                MethodDescriptor(IndexedSeq(), ObjectType("code/ImmutableList"))
+            ).isDefined
+        )
+
+        assert(
+            cf1.findMethod(
+                "prepend",
+                MethodDescriptor(ObjectType.Object, ObjectType("code/ImmutableList"))
+            ).isDefined
+        )
+
+        assert(
+            cf1.findMethod(
+                "getIterator",
+                MethodDescriptor(IndexedSeq(), ObjectType("java/util/Iterator"))
+            ).isDefined
+        )
+
+        assert(
+            cf1.findMethod(
+                "get",
+                MethodDescriptor(IndexedSeq(), ObjectType.Object)
+            ).isDefined
+        )
+    }
+
 }

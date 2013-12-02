@@ -117,11 +117,15 @@ case object ComputationalTypeDouble
  * The Java virtual machine specification does not mandate a concrete value encoding null.
  *
  * ==Comparing Types/Performance==
- * Given that the comparison of types is a standard operation in static analysis which
- * is usually done over and over again, great care was taken to enable an efficient
+ * Given that the comparison of types is a standard operation in static analysis that
+ * is usually done over and over again great care was taken to enable an efficient
  * comparison of types. It is - '''without exception''' - always possbible to compare
  * types using reference equality (i.e., the `eq`/`ne` operators). For each type there
  * will always be exactly one object that represents that type.
+ *
+ * Additionally, a stable order is defined between types that is based on a type's
+ * kind (primitive types &lt; array types &lt; class/interface types) and the uid of the
+ * types in case of reference types.
  *
  * @author Michael Eichberg
  */
@@ -158,6 +162,16 @@ sealed abstract class Type {
             "a "+this.getClass().getSimpleName()+" cannot be cast to an ObjectType")
 
     def toJava: String
+
+    /**
+     * The unique id of this type.
+     */
+    protected def id: Int
+
+    /**
+     * Compares this type with the other type by comparing their ids.
+     */
+    def <(other: Type) = this.id < other.id
 }
 
 object ReturnType {
@@ -179,6 +193,7 @@ sealed abstract class VoidType private () extends Type with ReturnTypeSignature 
 
     override def toString() = "VoidType"
 
+    protected final val id: Int = Int.MinValue
 }
 case object VoidType extends VoidType
 
@@ -217,9 +232,10 @@ sealed abstract class ReferenceType extends FieldType with UID {
 
     /**
      * Each reference type is associated with a unique id. Object types get ids &gt;= 0
-     * and interface types get ids &lt; 0.
+     * and array types get ids &lt; 0.
      */
     def id: Int
+
 }
 /**
  * Defines a factory method to create instances of `ReferenceType`
@@ -238,6 +254,9 @@ sealed abstract class BaseType extends FieldType with TypeSignature {
 
     override final def isBaseType = true
 
+    def atype: Int
+
+    protected final val id: Int = Int.MinValue + atype
 }
 
 sealed abstract class ByteType private () extends BaseType {
@@ -253,7 +272,6 @@ sealed abstract class ByteType private () extends BaseType {
     def toJava: String = "byte"
 
     override def toString() = "ByteType"
-
 }
 case object ByteType extends ByteType
 

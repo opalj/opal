@@ -34,6 +34,8 @@ package de.tud.cs.st
 package bat
 package resolved
 
+import scala.annotation.tailrec
+
 /**
  * Represents a single class file.
  *
@@ -47,8 +49,9 @@ package resolved
  * @param superClass The class type from which this class inherits. `None` if this
  *      class file represents `java.lang.Object`.
  * @param interfaces The set of implemented interfaces. May be empty.
- * @param fields The set of declared fields. May be empty.
- * @param methods The set of declared methods. May be empty.
+ * @param fields The declared fields. May be empty. The list is sorted by name.
+ * @param methods The declared methods. May be empty. The list is sorted by name and
+ *      number of descriptors.
  * @param attributes This class file's reified attributes. Which attributes
  *    are reified depends on the configuration of the class file reader; e.g.,
  *    [[de.tud.cs.st.bat.resolved.reader.Java7Framework]].
@@ -62,7 +65,7 @@ package resolved
  *    - ''Deprecated''
  *    - ''RuntimeVisibleAnnotations''
  *    - ''RuntimeInvisibleAnnotations''
- *    
+ *
  *    The ''BootstrapMethods'' attribute, which is also defined by the JVM specification,
  *    is, however, resolved and is not part of the attributes table of the class file.
  *    The ''BootstrapMethods'' attribute is basically the container for the bootstrap
@@ -74,16 +77,16 @@ package resolved
  *
  * @author Michael Eichberg
  */
-final case class ClassFile(
-    minorVersion: Int,
-    majorVersion: Int,
-    accessFlags: Int,
-    thisClass: ObjectType, // TODO [ClassFile] Rename "thisClass" to,e.g., thisType
-    superClass: Option[ObjectType], // TODO [ClassFile] Rename superClass to superclassType
-    interfaces: Seq[ObjectType], // TODO [ClassFile] Rename interfaces to interfaceTypes
-    fields: Fields,
-    methods: Methods,
-    attributes: Attributes)
+final class ClassFile private (
+    val minorVersion: Int,
+    val majorVersion: Int,
+    val accessFlags: Int,
+    val thisClass: ObjectType, // TODO [ClassFile] Rename "thisClass" to,e.g., thisType
+    val superClass: Option[ObjectType], // TODO [ClassFile] Rename superClass to superclassType
+    val interfaces: Seq[ObjectType], // TODO [ClassFile] Rename interfaces to interfaceTypes
+    val fields: Fields,
+    val methods: Methods,
+    val attributes: Attributes)
         extends CommonAttributes
         with SourceElement {
 
@@ -162,12 +165,63 @@ final case class ClassFile(
      *       method must have its ACC_STATIC flag set. Other methods named &lt;clinit&gt;
      *       in a class file are of no consequence.
      */
-    def staticInitializer: Option[Method] =
-        methods find { method ⇒
-            method.descriptor == MethodDescriptor.NoArgsAndReturnVoid &&
-                method.name == "<clinit>" &&
-                (majorVersion < 51 || method.isStatic)
+    def staticInitializer: Option[Method] = {
+        // The set of methods is sorted - hence, the static initializer should
+        // be (among) the first method(s).
+        val methodsCount = methods.size
+        val noArgsAndReturnVoidDescriptor = MethodDescriptor.NoArgsAndReturnVoid
+        var i = 0
+        while (i < methodsCount) {
+            val method = methods(i)
+            if (method.name == "<clinit>" &&
+                method.descriptor == noArgsAndReturnVoidDescriptor &&
+                (majorVersion < 51 || method.isStatic))
+                return Some(method)
+            else if (method.name > "<clinit>")
+                return None
+            i += 1
         }
+        None
+        // OLD - DID NOT MAKE USE OF THE FACT THAT THE METHODS ARE SORTED:
+        // methods find { method ⇒
+        //  method.descriptor == MethodDescriptor.NoArgsAndReturnVoid &&
+        //  method.name == "<clinit>" &&
+        //  (majorVersion < 51 || method.isStatic)
+        // }
+    }
+
+    /**
+     * Returns the method with the given name and descriptor that is declared by
+     * this class file.
+     *
+     * @note This algorithm uses a binary search algorithm.
+     */
+    def findMethod(name: String, descriptor: MethodDescriptor): Option[Method] = {
+
+        @tailrec @inline def findMethod(low: Int, high: Int): Option[Method] = {
+            if (high < low)
+                return None
+
+            val mid = (low + high) / 2 // <= will never overflow...(there are at most 65535 methods)
+            val method = methods(mid)
+            val methodName = method.name
+            if (methodName == name) {
+                val methodDescriptor = method.descriptor
+                if (methodDescriptor < descriptor)
+                    findMethod(mid + 1, high)
+                else if (descriptor == methodDescriptor)
+                    Some(method)
+                else
+                    findMethod(low, mid - 1)
+            } else if (methodName.compareTo(name) < 0) {
+                findMethod(mid + 1, high)
+            } else {
+                findMethod(low, mid - 1)
+            }
+        }
+
+        findMethod(0, methods.size - 1)
+    }
 
     override def hashCode: Int = thisClass.id
 
@@ -177,9 +231,18 @@ final case class ClassFile(
             case _               ⇒ false
         }
 
+    protected[resolved] def updateAttributes(newAttributes: Attributes): ClassFile = {
+        new ClassFile(
+            this.minorVersion, this.majorVersion, this.accessFlags,
+            this.thisClass, this.superClass, this.interfaces,
+            this.fields, this.methods, newAttributes
+        )
+    }
+
 }
 /**
- * A collection of constants related to class files.
+ * Defines factory and extractor methods for `ClassFile` objects as well as related
+ * constants.
  *
  * @author Michael Eichberg
  */
@@ -189,14 +252,27 @@ object ClassFile {
 
     val annotationMask: Int = ACC_INTERFACE.mask | ACC_ANNOTATION.mask
 
-    //    def unapply(classFile: ClassFile): Option[(Int, Int, Int, ObjectType, Option[ObjectType], Seq[ObjectType], Fields, Methods, Attributes)] =
-    //        Some((classFile.minorVersion,
-    //            classFile.majorVersion,
-    //            classFile.accessFlags,
-    //            classFile.thisClass, // TODO [ClassFile] Rename "thisClass" to,e.g., thisType
-    //            classFile.superClass, // TODO [ClassFile] Rename superClass to superclassType
-    //            classFile.interfaces, // TODO [ClassFile] Rename interfaces to interfacesTypes
-    //            classFile.fields,
-    //            classFile.methods,
-    //            classFile.attributes))
+    def apply(
+        minorVersion: Int,
+        majorVersion: Int,
+        accessFlags: Int,
+        thisClass: ObjectType, // TODO [ClassFile] Rename "thisClass" to,e.g., thisType
+        superClass: Option[ObjectType], // TODO [ClassFile] Rename superClass to superclassType
+        interfaces: Seq[ObjectType], // TODO [ClassFile] Rename interfaces to interfaceTypes
+        fields: Fields,
+        methods: Methods,
+        attributes: Attributes): ClassFile = {
+        new ClassFile(
+            minorVersion, majorVersion,
+            accessFlags,
+            thisClass, superClass, interfaces,
+            fields sortWith { (f1, f2) ⇒ f1 < f2 },
+            methods sortWith { (m1, m2) ⇒ m1 < m2 },
+            attributes)
+    }
+
+    def unapply(classFile: ClassFile): Option[(Int, ObjectType, Option[ObjectType], Seq[ObjectType])] = {
+        import classFile._
+        Some((accessFlags, thisClass, superClass, interfaces))
+    }
 }

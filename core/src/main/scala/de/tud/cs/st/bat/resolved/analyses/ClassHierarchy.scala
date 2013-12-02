@@ -40,9 +40,9 @@ import util.graphs.{ Node, toDot }
 import util.{ Answer, Yes, No, Unknown }
 
 import annotation.tailrec
-import collection.{ Map, Set }
-import collection.mutable.HashSet
-import collection.mutable.HashMap
+import scala.collection.{ Map, Set }
+import scala.collection.mutable.HashSet
+import scala.collection.mutable.HashMap
 
 import ObjectType.Object
 
@@ -226,7 +226,7 @@ class ClassHierarchy private (
      */
     def foreachSubtype(objectType: ObjectType)(f: ObjectType ⇒ Unit) {
 
-        // We had to change this method to get some reasonable performance.
+        // We had to change this method to get better performance.
         // The naive implementation using foreach and (mutual) recursion
         // didn't perform well.
         @inline def processAllSubtypes() {
@@ -260,8 +260,8 @@ class ClassHierarchy private (
                     }
                 }
             }
-
         }
+
         processAllSubtypes()
     }
 
@@ -353,7 +353,7 @@ class ClassHierarchy private (
         classFiles.values
     }
 
-    def superinterfaceTypes(objectType: ObjectType): Option[HashSet[ObjectType]] = {
+    def superinterfaceTypes(objectType: ObjectType): Option[Set[ObjectType]] = {
         if (isKnown(objectType)) {
             val superinterfaceTypes = superinterfaceTypesMap(objectType.id)
             if (superinterfaceTypes ne null)
@@ -520,7 +520,7 @@ class ClassHierarchy private (
                     // for the given type (ot) up until "java/lang/Object"; i.e.,
                     // if there are no holes.
                     isSubtypeOf(ot.asObjectType, supertype.asObjectType)
-            case ArrayType(componentType) ⇒ {
+            case ArrayType(componentType) ⇒
                 supertype match {
                     case ot: ObjectType ⇒
                         if ((ot eq ObjectType.Serializable) ||
@@ -539,7 +539,6 @@ class ClassHierarchy private (
                         else
                             isSubtypeOf(componentType.asReferenceType, superComponentType)
                 }
-            }
         }
     }
 
@@ -711,18 +710,19 @@ class ClassHierarchy private (
         project(receiverType) flatMap { classFile ⇒
             assume(classFile.isInterfaceDeclaration)
 
-            lookupMethodInInterface(
-                classFile,
-                methodName,
-                methodDescriptor,
-                project
-            ) orElse
+            {
+                lookupMethodInInterface(
+                    classFile,
+                    methodName,
+                    methodDescriptor,
+                    project)
+            } orElse {
                 lookupMethodDefinition(
                     ObjectType.Object,
                     methodName,
                     methodDescriptor,
-                    project
-                )
+                    project)
+            }
         }
     }
 
@@ -732,8 +732,8 @@ class ClassHierarchy private (
         methodDescriptor: MethodDescriptor,
         project: SomeProject): Option[Method] = {
 
-        classFile.methods find { method ⇒
-            method.name == methodName && method.descriptor == methodDescriptor
+        {
+            classFile.findMethod(methodName, methodDescriptor)
         } orElse {
             lookupMethodInSuperinterfaces(classFile, methodName, methodDescriptor, project)
         }
@@ -761,31 +761,28 @@ class ClassHierarchy private (
     }
 
     /**
-     * Looks up the class file and method which actually declares the method that is
+     * Looks up the class file and method which actually defines the method that is
      * referred to by the given receiver type, method name and method descriptor. Given
-     * that we are searching for method declarations the search is limited to the
+     * that we are searching for method definitions the search is limited to the
      * superclasses of the class of the given receiver type.
      *
      * This method does not take visibility modifiers or the static modifier into account.
      * If necessary, such checks needs to be done by the caller.
      *
-     * This method support resolution of `signature polymorphic methods`
+     * This method supports resolution of `signature polymorphic methods`
      * (in this case however, it needs to be checked that the respective invoke
-     * instruction is an invokevirtual instruction.)
+     * instruction is an `invokevirtual` instruction.)
      *
-     * @note In case that you analyze static source code dependencies and if an invoke
-     *    instruction refers to a method that is not declared by the receiver's class, then
+     * @note In case that you ''analyze static source code dependencies'' and if an invoke
+     *    instruction refers to a method that is not defined by the receiver's class, then
      *    it might be more meaningful to still create a dependency to the receiver's class
      *    than to look up the actual definition in one of the receiver's super classes.
      *
      * @return `Some((ClassFile,Method))` if the method is found. `None` if the method
-     *    is not found. This can basically happen under three circumstances:
+     *    is not found. This can basically happen under two circumstances:
      *    First, not all class files referred to/used by the project are (yet) analyzed;
-     *    i.e., we do not have the complete view on all class files belonging to the
-     *    project.
-     *    The function classes did not return the class file that defines a specific
-     *    objectType for some (anaylsis-specific) reason.
-     *    Third, the analyzed class files do not belong together (they either belong to
+     *    i.e., we do not have all class files belonging to the project.
+     *    Second, the analyzed class files do not belong together (they either belong to
      *    different projects or to incompatible versions of the same project.)
      */
     def lookupMethodDefinition(
@@ -796,39 +793,49 @@ class ClassHierarchy private (
 
         assume(!isInterface(receiverType))
 
-        @inline def lookupMethodDefinition(receiverType: ObjectType): Option[Method] = {
-            project(receiverType) flatMap { classFile ⇒
-                classFile.methods find { method ⇒
-                    method.name == methodName &&
-                        (method.descriptor == methodDescriptor ||
+        @tailrec def lookupMethodDefinition(receiverType: ObjectType): Option[Method] = {
+            val classFileOption = project(receiverType)
+            var methodOption =
+                if (classFileOption.isDefined) {
+                    val classFile = classFileOption.get
+                    classFile.findMethod(methodName, methodDescriptor).
+                        orElse {
                             /* FROM THE SPECIFICATION:
-                             * Method resolution attempts to look up the referenced method in C and 
-                             * its superclasses:
-                             * If C declares exactly one method with the name specified by the 
-                             * method reference, and the declaration is a signature polymorphic 
-                             * method, then method lookup succeeds. 
-                             * [...]
-                             * 
-                             * A method is signature polymorphic if:
-                             * - It is declared in the java.lang.invoke.MethodHandleclass.
-                             * - It has a single formal parameter of type Object[].
-                             * - It has a return type of Object.
-                             * - It has the ACC_VARARGS and ACC_NATIVE flags set.
-                             */
-                            ((receiverType eq ObjectType.MethodHandle) &&
-                                method.isNativeAndVarargs &&
-                                method.descriptor == MethodDescriptor.SignaturePolymorphicMethod)
-                        )
-                }
-            } orElse {
-                val superclassType = superclassTypeMap(receiverType.id)
-                if (superclassType ne null) {
-                    lookupMethodDefinition(superclassType)
-                } else {
+                         * Method resolution attempts to look up the referenced method in C and 
+                         * its superclasses:
+                         * If C declares exactly one method with the name specified by the 
+                         * method reference, and the declaration is a signature polymorphic 
+                         * method, then method lookup succeeds. 
+                         * [...]
+                         * 
+                         * A method is signature polymorphic if:
+                         * - It is declared in the java.lang.invoke.MethodHandleclass.
+                         * - It has a single formal parameter of type Object[].
+                         * - It has a return type of Object.
+                         * - It has the ACC_VARARGS and ACC_NATIVE flags set.
+                         */
+                            if (receiverType eq ObjectType.MethodHandle)
+                                classFile.findMethod(
+                                    methodName,
+                                    MethodDescriptor.SignaturePolymorphicMethod).find(
+                                        _.isNativeAndVarargs)
+                            else
+                                None
+                        }
+                } else
                     None
-                }
+
+            if (methodOption.isDefined)
+                methodOption
+            else {
+                val superclassType = superclassTypeMap(receiverType.id)
+                if (superclassType ne null)
+                    lookupMethodDefinition(superclassType)
+                else
+                    None
             }
         }
+
         lookupMethodDefinition(receiverType)
     }
 
@@ -843,11 +850,9 @@ class ClassHierarchy private (
      *       then it is far more meaningful to directly call `lookupMethodDefinition`.__
      *  @param methodName The name of the method.
      *  @param methodDescriptor The method's descriptor.
-     *  @param isCandidate
-     *  @param classes A function to get a type's implementing class file. (Usually
-     *       an instance of the class [[de.tud.cs.st.bat.resolved.analyses.Project]]).
-     *       This method expectes unrestricted access to the pool of all class files.
-     *  @param classesFiler A function that is expected to return true, if the runtime type of
+     *  @param project Required to get a type's implementing class file.
+     *       This method expects unrestricted access to the pool of all class files.
+     *  @param classesFiler A function that returns true, if the runtime type of
      *       the `receiverType` may be of the type defined by the given object type. For
      *       example, if you analyze a project and perform a lookup of all methods that
      *       implement the method `toString`, then this set would probably be very large.
@@ -873,9 +878,9 @@ class ClassHierarchy private (
                         project)
                 else
                     lookupMethodDefinition(
-                        receiverType, 
-                        methodName, 
-                        methodDescriptor, 
+                        receiverType,
+                        methodName,
+                        methodDescriptor,
                         project)
             } match {
                 case Some(method) if !method.isAbstract ⇒ List(method)
@@ -889,14 +894,13 @@ class ClassHierarchy private (
                 seenSubtypes += subtype
                 if (classesFilter(subtype)) {
                     project(subtype) foreach { classFile ⇒
-                        val anImplementation =
-                            classFile.methods.find { method ⇒
-                                !method.isAbstract &&
-                                    method.name == methodName &&
-                                    method.descriptor == methodDescriptor
-                            }
-                        if (anImplementation.isDefined)
-                            implementingMethods = anImplementation.get :: implementingMethods
+                        val methodOption =
+                            classFile.findMethod(methodName, methodDescriptor)
+                        if (methodOption.isDefined) {
+                            val method = methodOption.get
+                            if (!method.isAbstract)
+                                implementingMethods = method :: implementingMethods
+                        }
                     }
                 }
             }
@@ -907,7 +911,6 @@ class ClassHierarchy private (
 
     /**
      * The direct subtypes of the given types.
-     *
      */
     def directSubtypesOf(objectType: ObjectType): Set[ObjectType] = {
         val id = objectType.id
@@ -1012,12 +1015,6 @@ object ClassHierarchy {
             () ⇒ { getClass().getResourceAsStream("ClassHierarchyJLS.ths") },
             () ⇒ { getClass().getResourceAsStream("ClassHierarchyJVMExceptions.ths") }
         )): ClassHierarchy = {
-
-        case class TypeDeclaration(
-            objectType: ObjectType,
-            isInterfaceType: Boolean,
-            theSuperclassType: Option[ObjectType],
-            theSuperinterfaceTypes: HashSet[ObjectType])
 
         def processPredefinedClassHierarchy(
             createInputStream: () ⇒ java.io.InputStream): Iterator[TypeDeclaration] = {
@@ -1134,14 +1131,14 @@ object ClassHierarchy {
             }
         }
 
-        typeDeclarations.foreach { typeDecl ⇒
+        typeDeclarations foreach { typeDecl ⇒
             process(
                 typeDecl.objectType,
                 typeDecl.isInterfaceType,
                 typeDecl.theSuperclassType,
                 typeDecl.theSuperinterfaceTypes)
         }
-        classFiles.foreach(processClassFile(_))
+        classFiles foreach { processClassFile(_) }
 
         new ClassHierarchy(
             knownTypesMap,
@@ -1153,3 +1150,9 @@ object ClassHierarchy {
         )
     }
 }
+
+case class TypeDeclaration(
+    objectType: ObjectType,
+    isInterfaceType: Boolean,
+    theSuperclassType: Option[ObjectType],
+    theSuperinterfaceTypes: HashSet[ObjectType])

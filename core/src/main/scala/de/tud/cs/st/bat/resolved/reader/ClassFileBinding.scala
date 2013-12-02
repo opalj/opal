@@ -40,9 +40,9 @@ import reflect.ClassTag
 import de.tud.cs.st.bat.reader.ClassFileReader
 
 /**
- *
- * @author Michael Eichberg
- */
+  *
+  * @author Michael Eichberg
+  */
 trait ClassFileBinding
         extends ClassFileReader
         with ConstantPoolBinding
@@ -109,14 +109,8 @@ trait ClassFileBinding
             // to handle the special case that this class file represents java.lang.Object
             { if (super_class == 0) None else Some(super_class.asObjectType) },
             interfaces,
-//            fields,
-//            methods,
-            fields sortWith { (f1, f2) ⇒ f1.name < f2.name },
-            methods sortWith { (m1, m2) ⇒
-                m1.name < m2.name || (
-                    m1.name == m2.name &&
-                    m1.descriptor.parametersCount < m2.descriptor.parametersCount)
-            },
+            fields,
+            methods,
             attributes)
     }
 
@@ -130,15 +124,7 @@ trait ClassFileBinding
             val newAttributes = classFile.attributes filter { attribute ⇒
                 !attribute.isInstanceOf[BootstrapMethodTable]
             }
-            de.tud.cs.st.bat.resolved.ClassFile(
-                classFile.minorVersion, classFile.majorVersion, classFile.accessFlags,
-                classFile.thisClass,
-                classFile.superClass,
-                classFile.interfaces,
-                classFile.fields,
-                classFile.methods,
-                newAttributes
-            )
+            classFile.updateAttributes(newAttributes)
         }
     }
     registerClassFilePostProcessor(removeBootstrapMethodAttribute)
