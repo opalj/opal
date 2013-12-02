@@ -36,7 +36,7 @@ package resolved
 
 import de.tud.cs.st.util.Answer
 
-import collection.Set
+import scala.collection.Set
 
 /**
  * This package defines classes and traits used by BAT's abstract interpretation

@@ -36,12 +36,12 @@ package resolved
 package ai
 package project
 
-import de.tud.cs.st.util.UShortSet
+import de.tud.cs.st.collection.UShortSet
 import analyses.{ SomeProject, Project }
 import domain._
 
-import collection.Set
-import collection.Map
+import scala.collection.Set
+import scala.collection.Map
 
 /**
   * Basic representation of a call graph.

@@ -34,7 +34,7 @@ package de.tud.cs.st
 package bat
 package reader
 
-import collection.mutable.Buffer
+import scala.collection.mutable.Buffer
 
 /**
  * Constant pool related type definitions.

@@ -83,7 +83,7 @@ trait CategorizedSourceElementIDs extends SourceElementIDs {
  */
 trait SourceElementIDsMap extends CategorizedSourceElementIDs {
 
-    import collection.mutable.WeakHashMap
+    import scala.collection.mutable.WeakHashMap
 
     //
     // Associates each type with a unique ID

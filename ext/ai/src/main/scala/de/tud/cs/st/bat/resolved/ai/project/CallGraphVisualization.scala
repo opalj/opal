@@ -148,7 +148,7 @@ object CallGraphVisualization {
         import de.tud.cs.st.util.graphs.{ toDot, SimpleNode, Node }
         val nodes: Set[Node] = {
 
-            var nodesForMethods = collection.mutable.HashMap.empty[Method, Node]
+            var nodesForMethods = scala.collection.mutable.HashMap.empty[Method, Node]
 
             def createNode(caller: Method): Node = {
                 if (nodesForMethods.contains(caller))

@@ -36,7 +36,7 @@ package resolved
 package ai
 package project
 
-import de.tud.cs.st.util.UShortSet
+import de.tud.cs.st.collection.mutable.UShortSet
 
 import analyses.Project
 
@@ -55,7 +55,7 @@ import analyses.Project
  */
 class CallGraphBuilder[Source](val project: Project[Source]) {
 
-    import CallGraph.PCs
+    type PCs = collection.mutable.UShortSet
 
     private[this] var allCallEdges = List.empty[List[(Method, PC, Iterable[Method])]]
 
@@ -78,9 +78,8 @@ class CallGraphBuilder[Source](val project: Project[Source]) {
         import concurrent.duration._
         import ExecutionContext.Implicits.global
 
-        import collection.immutable.Set
-        import collection.mutable.HashMap
-        import java.util.concurrent.ConcurrentLinkedQueue
+        import scala.collection.immutable.Map
+        import scala.collection.mutable.HashMap
 
         // the index is the id of the method that is "called by" other methods
         val calledByMapFuture: Future[Array[HashMap[Method, PCs]]] = future {
@@ -104,6 +103,20 @@ class CallGraphBuilder[Source](val project: Project[Source]) {
                         val newPCs = UShortSet(pc)
                         callers.update(caller, newPCs)
                 }
+                //                val callers = calledByMap(callee.id)
+                //                if (callers eq null) {
+                //                    calledByMap(callee.id) = new Map.Map1(caller, UShortSet(pc))
+                //                } else {
+                //                    callers.get(caller) match {
+                //                        case Some(pcs) ⇒
+                //                            val newPCs = pcs + pc
+                //                            if (pcs ne newPCs)
+                //                                calledByMap(callee.id) = callers.updated(caller, newPCs)
+                //                        case None ⇒
+                //                            val newPCs = UShortSet(pc)
+                //                            calledByMap(callee.id) = callers.updated(caller, newPCs)
+                //                    }
+                //                }
             }
             calledByMap
         }
@@ -117,8 +130,7 @@ class CallGraphBuilder[Source](val project: Project[Source]) {
         } {
             var callSites = callsMap(caller.id)
             if (callSites eq null) {
-                // Here... we may have (un)boxing issues!
-                callsMap(caller.id) = new collection.immutable.Map.Map1(pc, callees)
+                callsMap(caller.id) = new Map.Map1(pc, callees)
             } else {
                 callsMap(caller.id) = callSites.updated(pc, callees)
             }

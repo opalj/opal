@@ -57,7 +57,7 @@ object InterpretMethods {
     import de.tud.cs.st.util.debug._
     import de.tud.cs.st.util.ControlAbstractions._
 
-    import collection.JavaConversions._
+    import scala.collection.JavaConversions._
 
     val performanceEvaluationContext = new de.tud.cs.st.util.debug.PerformanceEvaluation {}
     import performanceEvaluationContext._

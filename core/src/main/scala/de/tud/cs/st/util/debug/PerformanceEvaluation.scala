@@ -41,7 +41,7 @@ package debug
  */
 class PerformanceEvaluation {
 
-    import collection.concurrent.{ Map, TrieMap }
+    import scala.collection.concurrent.{ Map, TrieMap }
 
     private[this] val times: Map[Symbol, Long] = TrieMap.empty
 
