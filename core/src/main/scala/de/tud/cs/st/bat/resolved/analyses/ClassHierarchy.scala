@@ -353,7 +353,7 @@ class ClassHierarchy private (
         classFiles.values
     }
 
-    def superinterfaceTypes(objectType: ObjectType): Option[HashSet[ObjectType]] = {
+    def superinterfaceTypes(objectType: ObjectType): Option[Set[ObjectType]] = {
         if (isKnown(objectType)) {
             val superinterfaceTypes = superinterfaceTypesMap(objectType.id)
             if (superinterfaceTypes ne null)
