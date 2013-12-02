@@ -13,7 +13,6 @@ bin
 *.iws
 .idea
 .worksheet
-*.sc
 
 *.hprof
 
