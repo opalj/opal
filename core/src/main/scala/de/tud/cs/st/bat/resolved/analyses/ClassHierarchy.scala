@@ -40,9 +40,9 @@ import util.graphs.{ Node, toDot }
 import util.{ Answer, Yes, No, Unknown }
 
 import annotation.tailrec
-import collection.{ Map, Set }
-import collection.mutable.HashSet
-import collection.mutable.HashMap
+import scala.collection.{ Map, Set }
+import scala.collection.mutable.HashSet
+import scala.collection.mutable.HashMap
 
 import ObjectType.Object
 
@@ -873,9 +873,9 @@ class ClassHierarchy private (
                         project)
                 else
                     lookupMethodDefinition(
-                        receiverType, 
-                        methodName, 
-                        methodDescriptor, 
+                        receiverType,
+                        methodName,
+                        methodDescriptor,
                         project)
             } match {
                 case Some(method) if !method.isAbstract ⇒ List(method)
@@ -889,14 +889,18 @@ class ClassHierarchy private (
                 seenSubtypes += subtype
                 if (classesFilter(subtype)) {
                     project(subtype) foreach { classFile ⇒
-                        val anImplementation =
-                            classFile.methods.find { method ⇒
-                                !method.isAbstract &&
-                                    method.name == methodName &&
-                                    method.descriptor == methodDescriptor
-                            }
-                        if (anImplementation.isDefined)
-                            implementingMethods = anImplementation.get :: implementingMethods
+                        val methodOption =
+                            classFile.findMethod(methodName, methodDescriptor)
+//                          classFile.methods.find { method ⇒
+//                            !method.isAbstract &&
+//                            method.name == methodName &&
+//                            method.descriptor == methodDescriptor
+//                          }
+                        if (methodOption.isDefined) {
+                            val method = methodOption.get
+                            if (!method.isAbstract)
+                                implementingMethods = method :: implementingMethods
+                        }
                     }
                 }
             }
