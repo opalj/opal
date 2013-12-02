@@ -38,17 +38,30 @@ package resolved
  * Represents a single method.
  *
  * @note Equality of methods is – by purpose – reference based. Furthermore, each method
- *      has a unique id/hash value in the range [1,Method.methodCount].
+ *      has a unique id/hash value in the range [0,Method.methodsCount].
  *      This makes it, e.g., possible to use an array to associate information with
- *      methods instead of a `Map`. However, a `Map` is more efficient if you will not
- *      associate information with (nearly) all methods.
+ *      methods instead of a `HashMap` or `HashTrie`. However, a `Map` is more
+ *      efficient if you will not associate information with (nearly) all methods.
+ *
+ * @param id The unique if of this method.
+ * @param accessFlags The ''access flags'' of this method. Though it is possible to
+ *     directly work with the `accessFlags` field, it may be more convenient to use
+ *     the respective methods (`isNative`, `isAbstract`,...) to query the access flags.
+ * @param name The name of the method. The name is interned (see `String.intern()`
+ *      for details).
+ * @param descriptor This method's descriptor.
+ * @param body The body of the method if any.
+ * @param attributes This method's defined attributes. (Which attributes are available
+ *      generally depends on the configuration of the class file reader. However,
+ *      the `Code_Attribute` is – if it was loaded – always directly accessible by
+ *      means of the `body` attribute.).
  *
  * @author Michael Eichberg
  */
 final class Method private (
     val id: Int, // also used as the "hashCode"
     val accessFlags: Int,
-    val name: String,
+    val name: String, // the name is interned to enable reference comparisons!
     val descriptor: MethodDescriptor,
     val body: Option[Code],
     val attributes: Attributes)
@@ -96,6 +109,18 @@ final class Method private (
 
     def toJava(): String = descriptor.toJava(name)
 
+    /**
+     * Defines a absolute order on `Method` instances w.r.t. their method signatures.
+     * The order is defined by lexicographically comparing the names of the methods
+     * and – in case that the names of both methods are identical – by comparing
+     * their method descriptors.
+     */
+    def <(other: Method): Boolean = {
+        this.name < other.name || (
+            (this.name eq other.name) &&
+            this.descriptor < other.descriptor)
+    }
+
     override def hashCode: Int = id
 
     override def equals(other: Any): Boolean =
@@ -121,7 +146,7 @@ object Method {
     private def isNativeAndVarargs(accessFlags: Int) =
         (accessFlags & ACC_NATIVEAndACC_VARARGS) == ACC_NATIVEAndACC_VARARGS
 
-    private val nextId = new java.util.concurrent.atomic.AtomicInteger(0)
+    private[this] val nextId = new java.util.concurrent.atomic.AtomicInteger(0)
 
     def methodsCount = nextId.get
 
@@ -131,7 +156,7 @@ object Method {
         descriptor: MethodDescriptor,
         attributes: Attributes): Method = {
 
-        val (bodySeq, theAttributes) = attributes.partition(_.isInstanceOf[Code])
+        val (bodySeq, remainingAttributes) = attributes partition { _.isInstanceOf[Code] }
         val theBody =
             if (bodySeq.nonEmpty)
                 Some(bodySeq.head.asInstanceOf[Code])
@@ -140,16 +165,12 @@ object Method {
         new Method(
             nextId.getAndIncrement(),
             accessFlags,
-            name,
+            name.intern(),
             descriptor,
             theBody,
-            theAttributes)
+            remainingAttributes)
     }
 
     def unapply(method: Method): Option[(Int, String, MethodDescriptor)] =
-        Some((
-            method.accessFlags,
-            method.name,
-            method.descriptor
-        ))
+        Some((method.accessFlags, method.name, method.descriptor))
 }

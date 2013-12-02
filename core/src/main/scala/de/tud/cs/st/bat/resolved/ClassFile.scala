@@ -182,17 +182,21 @@ final class ClassFile private (
             i += 1
         }
         None
-        // OLD - NOT MAKE USE OF THE FACT THAT THE METHODS ARE SORTED:
-        //        methods find { method ⇒
-        //            method.descriptor == MethodDescriptor.NoArgsAndReturnVoid &&
-        //                method.name == "<clinit>" &&
-        //                (majorVersion < 51 || method.isStatic)
-        //        }
+        // OLD - DID NOT MAKE USE OF THE FACT THAT THE METHODS ARE SORTED:
+        // methods find { method ⇒
+        //  method.descriptor == MethodDescriptor.NoArgsAndReturnVoid &&
+        //  method.name == "<clinit>" &&
+        //  (majorVersion < 51 || method.isStatic)
+        // }
     }
 
+    /**
+     * Returns the method with the given name and descriptor that is declared by
+     * this class file.
+     *
+     * @note This algorithm uses a binary search algorithm.
+     */
     def findMethod(name: String, descriptor: MethodDescriptor): Option[Method] = {
-
-        val descriptorParametersCount = descriptor.parametersCount
 
         @tailrec @inline def findMethod(low: Int, high: Int): Option[Method] = {
             if (high < low)
@@ -203,56 +207,13 @@ final class ClassFile private (
             val methodName = method.name
             if (methodName == name) {
                 val methodDescriptor = method.descriptor
-                val methodParametersCount = methodDescriptor.parametersCount
-                if (methodParametersCount < descriptorParametersCount)
+                if (methodDescriptor < descriptor)
                     findMethod(mid + 1, high)
-                else if (methodParametersCount > descriptorParametersCount)
+                else if (descriptor == methodDescriptor)
+                    Some(method)
+                else
                     findMethod(low, mid - 1)
-                else {
-                    // the number of parameters is identical!
-                    if (methodDescriptor == descriptor)
-                        return Some(method)
-                    else {
-                        // the number of arguments and the name fit...
-                        // we now perform a local search
-                        {
-                            var p = mid - 1
-                            while (p >= low) {
-                                val method = methods(p)
-                                if (method.descriptor.parametersCount != descriptorParametersCount)
-                                    p = -1 // break...
-                                else if (method.name == name) {
-                                    if (method.descriptor == descriptor)
-                                        return Some(method)
-                                    //else continue the search    
-                                } else {
-                                    p = -1 // break...
-                                }
-
-                                p -= 1
-                            }
-                        }
-                        {
-                            var s = mid + 1
-                            while (s <= high) {
-                                val method = methods(s)
-                                if (method.name == name) {
-                                    if (method.descriptor == descriptor)
-                                        return Some(method)
-
-                                    if (method.descriptor.parametersCount != descriptorParametersCount)
-                                        return None
-
-                                    //else continue the search
-                                } else
-                                    return None
-                                s += 1
-                            }
-                        }
-                        None
-                    }
-                }
-            } else if (method.name < name) {
+            } else if (methodName.compareTo(name) < 0) {
                 findMethod(mid + 1, high)
             } else {
                 findMethod(low, mid - 1)
@@ -270,9 +231,18 @@ final class ClassFile private (
             case _               ⇒ false
         }
 
+    protected[resolved] def updateAttributes(newAttributes: Attributes): ClassFile = {
+        new ClassFile(
+            this.minorVersion, this.majorVersion, this.accessFlags,
+            this.thisClass, this.superClass, this.interfaces,
+            this.fields, this.methods, newAttributes
+        )
+    }
+
 }
 /**
- * A collection of constants related to class files.
+ * Defines factory and extractor methods for `ClassFile` objects as well as related
+ * constants.
  *
  * @author Michael Eichberg
  */
@@ -296,7 +266,9 @@ object ClassFile {
             minorVersion, majorVersion,
             accessFlags,
             thisClass, superClass, interfaces,
-            fields, methods, attributes)
+            fields sortWith { (f1, f2) ⇒ f1 < f2 },
+            methods sortWith { (m1, m2) ⇒ m1 < m2 },
+            attributes)
     }
 
     def unapply(classFile: ClassFile): Option[(Int, ObjectType, Option[ObjectType], Seq[ObjectType])] = {

@@ -37,27 +37,31 @@ package resolved
 /**
  * Represents a single field declaration/definition.
  *
+ * @param id The unique id of this field. The id is an integer in the range
+ *      [0..Field.fieldsCount].
  * @param accessFlags This field's access flags. To analyze the access flags
- *  bit vector use [[de.tud.cs.st.bat.AccessFlag]] or
- *  [[de.tud.cs.st.bat.AccessFlagsIterator]] or use pattern matching.
- * @param name The name of this field. Note, that this name is not required to be a valid
- *  Java programming language identifier.
+ *      bit vector use [[de.tud.cs.st.bat.AccessFlag]] or
+ *      [[de.tud.cs.st.bat.AccessFlagsIterator]] or use pattern matching.
+ * @param name The name of this field. The name is interned (see `String.intern()` for
+ *     details.)
+ *     Note, that this name is not required to be a valid Java programming
+ *     language identifier.
  * @param fieldType The (erased) type of this field.
- * @param attributes The defined attributes. The JVM 7 specification defines the following
- * 	  attributes for fields:
- *    * [[de.tud.cs.st.bat.resolved.ConstantValue]],
- *    * [[de.tud.cs.st.bat.resolved.Synthetic]],
- *    * [[de.tud.cs.st.bat.resolved.Signature]],
- * 	  * [[de.tud.cs.st.bat.resolved.Deprecated]],
- *    * [[de.tud.cs.st.bat.resolved.RuntimeVisibleAnnotationTable]] and
- *    * [[de.tud.cs.st.bat.resolved.RuntimeInvisibleAnnotationTable]].
+ * @param attributes The defined attributes. The JVM 7 specification defines
+ *     the following attributes for fields:
+ *     * [[de.tud.cs.st.bat.resolved.ConstantValue]],
+ *     * [[de.tud.cs.st.bat.resolved.Synthetic]],
+ *     * [[de.tud.cs.st.bat.resolved.Signature]],
+ *     * [[de.tud.cs.st.bat.resolved.Deprecated]],
+ *     * [[de.tud.cs.st.bat.resolved.RuntimeVisibleAnnotationTable]] and
+ *     * [[de.tud.cs.st.bat.resolved.RuntimeInvisibleAnnotationTable]].
  *
  * @author Michael Eichberg
  */
 final class Field private (
     val id: Int,
     val accessFlags: Int,
-    val name: String,
+    val name: String, // the name is interned to enable reference comparisons!
     val fieldType: FieldType,
     val attributes: Attributes)
         extends ClassMember
@@ -84,6 +88,19 @@ final class Field private (
         attributes collectFirst { case cv: ConstantValue[_] ⇒ cv }
 
     def toJavaSignature: String = fieldType.toJava+" "+name
+
+    /**
+     * Defines an absolute order on `Field` objects w.r.t. their names and types.
+     * The order is defined by first lexicographically comparing the names of the
+     * fields and – if the names are identical – by comparing the descriptors.
+     *
+     * Hence, for two fields that have the same names and types, but which have
+     * different access flags the result will be `false`.
+     */
+    def <(other: Field): Boolean =
+        this.name < other.name || (
+            (this.name eq other.name) &&
+            this.fieldType < other.fieldType)
 
     override def hashCode: Int = id
 
@@ -117,15 +134,11 @@ object Field {
         new Field(
             nextId.getAndIncrement(),
             accessFlags,
-            name,
+            name.intern(),
             fieldType,
             attributes)
     }
 
     def unapply(field: Field): Option[(Int, String, FieldType)] =
-        Some((
-            field.accessFlags,
-            field.name,
-            field.fieldType
-        ))
+        Some((field.accessFlags, field.name, field.fieldType))
 }

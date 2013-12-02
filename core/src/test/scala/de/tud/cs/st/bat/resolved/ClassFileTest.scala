@@ -49,32 +49,52 @@ class ClassFileTest extends FunSuite with ParallelTestExecution {
 
     test("test that it can find the first constructor") {
         assert(
-            cf1.findMethod("<init>", MethodDescriptor(ObjectType.Object, VoidType)).isDefined
+            cf1.findMethod(
+                "<init>",
+                MethodDescriptor(ObjectType.Object, VoidType)
+            ).isDefined
         )
     }
 
     test("test that it can find the second constructor") {
         assert(
-            cf1.findMethod("<init>", MethodDescriptor(IndexedSeq(ObjectType.Object, ObjectType("code/ImmutableList")), VoidType)).isDefined
+            cf1.findMethod(
+                "<init>",
+                MethodDescriptor(
+                    IndexedSeq(ObjectType.Object, ObjectType("code/ImmutableList")),
+                    VoidType)
+            ).isDefined
         )
 
     }
 
     test("test that it can find all other methods") {
         assert(
-            cf1.findMethod("getNext", MethodDescriptor(IndexedSeq(), ObjectType("code/ImmutableList"))).isDefined
+            cf1.findMethod(
+                "getNext",
+                MethodDescriptor(IndexedSeq(), ObjectType("code/ImmutableList"))
+            ).isDefined
         )
 
         assert(
-            cf1.findMethod("prepend", MethodDescriptor(ObjectType.Object, ObjectType("code/ImmutableList"))).isDefined
+            cf1.findMethod(
+                "prepend",
+                MethodDescriptor(ObjectType.Object, ObjectType("code/ImmutableList"))
+            ).isDefined
         )
 
         assert(
-            cf1.findMethod("getIterator", MethodDescriptor(IndexedSeq(), ObjectType("java/util/Iterator"))).isDefined
+            cf1.findMethod(
+                "getIterator",
+                MethodDescriptor(IndexedSeq(), ObjectType("java/util/Iterator"))
+            ).isDefined
         )
-        
+
         assert(
-            cf1.findMethod("get", MethodDescriptor(IndexedSeq(), ObjectType.Object)).isDefined
+            cf1.findMethod(
+                "get",
+                MethodDescriptor(IndexedSeq(), ObjectType.Object)
+            ).isDefined
         )
     }
 
