@@ -56,7 +56,7 @@ class DependencyExtractorTest extends FunSuite {
 
         var dependencies: List[(String, String, DependencyType)] = Nil
 
-        var nodes = new collection.mutable.ArrayBuffer[String](1000)
+        var nodes = new scala.collection.mutable.ArrayBuffer[String](1000)
 
         object SourceElementIDsProvider extends SourceElementIDs {
 

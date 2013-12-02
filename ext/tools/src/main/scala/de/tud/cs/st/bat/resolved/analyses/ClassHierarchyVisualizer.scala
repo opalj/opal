@@ -62,6 +62,6 @@ object ClassHierarchyVisualizer {
             }
 
         val classHierarchyDescription =
-            toDot.generateAndOpenDOT(Set(classHierarchy.toGraph), "back")
+            toDot.generateAndOpenDOT("ClassHierarchy",Set(classHierarchy.toGraph), "back")
     }
 }

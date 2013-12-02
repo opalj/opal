@@ -224,5 +224,4 @@ object AccessFlags {
             }
         )
     }
-
 }

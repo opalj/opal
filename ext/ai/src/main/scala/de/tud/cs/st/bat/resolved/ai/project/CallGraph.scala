@@ -36,48 +36,52 @@ package resolved
 package ai
 package project
 
-import bat.resolved.analyses.{ SomeProject, Project }
-import bat.resolved.ai.domain._
+import de.tud.cs.st.collection.UShortSet
+import analyses.{ SomeProject, Project }
+import domain._
 
-import collection.Set
-import collection.Map
-
+import scala.collection.Set
+import scala.collection.Map
 
 /**
- * Basic representation of a call graph.
- *
- * ==Thread Safety==
- * The call graph is immutable and can be accessed by multiple threads concurrently.
- * Calls will never block.
- *
- * @author Michael Eichberg
- */
+  * Basic representation of a call graph.
+  *
+  * ==Thread Safety==
+  * The call graph is immutable and can be accessed by multiple threads concurrently.
+  * Calls will never block.
+  *
+  * @author Michael Eichberg
+  */
 class CallGraph[Source] private[project] (
         val project: Project[Source],
-        private[this] val calledByMap: Array[_ <: Map[Method, Set[PC]]],
+        private[this] val calledByMap: Array[_ <: Map[Method, UShortSet]],
         private[this] val callsMap: Array[_ <: Map[PC, Iterable[Method]]]) {
+
+    import CallGraph.PCs
 
     import de.tud.cs.st.util.ControlAbstractions.foreachNonNullValueOf
 
     /**
-     * Returns the invoke instructions (by means of a `Method`/`PC` pairs) that
-     * call the given method.
-     */
-    def calledBy(method: Method): Option[Map[Method, Set[PC]]] = {
+      * Returns the invoke instructions (by means of a `Method`/`PC` pairs) that
+      * call the given method.
+      *
+      * The `UShortSet` models the set of program counters.
+      */
+    def calledBy(method: Method): Option[Map[Method, PCs]] = {
         Option(calledByMap(method.id))
     }
 
     /**
-     * Returns the potential methods that are invoked by the invoke instruction
-     * identified by the method/pc pair.
-     */
+      * Returns the potential methods that are invoked by the invoke instruction
+      * identified by the method/pc pair.
+      */
     def calls(method: Method, pc: PC): Iterable[Method] = {
         Option(callsMap(method.id)).flatMap(_.get(pc)).getOrElse(Iterable.empty)
     }
 
     /**
-     * Returns the methods that are called by the invoke instructions of the given method.
-     */
+      * Returns the methods that are called by the invoke instructions of the given method.
+      */
     // In case of the CHA Call Graph this could also be easily calculated on-demand, 
     // since we do not use any information that is not readily available.
     def calls(method: Method): Option[Map[PC, Iterable[Method]]] = {
@@ -85,8 +89,8 @@ class CallGraph[Source] private[project] (
     }
 
     /**
-     * Calls the function `f` for each method that calls some other method.
-     */
+      * Calls the function `f` for each method that calls some other method.
+      */
     def foreachCallingMethod[U](f: (Method, Map[PC, Iterable[Method]]) ⇒ U): Unit = {
         foreachNonNullValueOf(callsMap) { (i, callees) ⇒
             f(project.method(i), callees)
@@ -94,9 +98,9 @@ class CallGraph[Source] private[project] (
     }
 
     /**
-     * Calls the function `f` for each method that is called by some other method.
-     */
-    def foreachCalledByMethod[U](f: (Method, Map[Method, Set[PC]]) ⇒ U): Unit = {
+      * Calls the function `f` for each method that is called by some other method.
+      */
+    def foreachCalledByMethod[U](f: (Method, Map[Method, PCs]) ⇒ U): Unit = {
         foreachNonNullValueOf(calledByMap) { (i, callers) ⇒
             f(project.method(i), callers)
         }
@@ -117,11 +121,11 @@ class CallGraph[Source] private[project] (
     }
 
     /**
-     * Statistics about the number of potential targets per call site.
-     * (TSV format (tab-separated file) - can easily read by most spreadsheet
-     * applications).
-     *
-     */
+      * Statistics about the number of potential targets per call site.
+      * (TSV format (tab-separated file) - can easily read by most spreadsheet
+      * applications).
+      *
+      */
     def callsStatistics(maxNumberOfResults: Int = 65536): String = {
         var result: List[List[String]] = List.empty
         var resultCount = 0
@@ -146,10 +150,10 @@ class CallGraph[Source] private[project] (
     }
 
     /**
-     * Statistics about the number of methods that potentially call a specific method.
-     * (TSV format (tab-separated file) - can easily read by most spreadsheet
-     * applications).
-     */
+      * Statistics about the number of methods that potentially call a specific method.
+      * (TSV format (tab-separated file) - can easily read by most spreadsheet
+      * applications).
+      */
     def calledByStatistics(maxNumberOfResults: Int = 65536): String = {
         var result: List[List[String]] = List.empty
         var resultCount = 0
@@ -174,4 +178,10 @@ class CallGraph[Source] private[project] (
         result = List("Method ID", "Method Signature", "Calling Method ID", "Calling Method", "Calling Sites") :: result
         result.map(_.mkString("\t")).mkString("\n")
     }
+}
+object CallGraph {
+    /**
+      * Set of program counters.
+      */
+    type PCs = UShortSet
 }

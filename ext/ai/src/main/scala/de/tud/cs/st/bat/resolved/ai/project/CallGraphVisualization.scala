@@ -148,7 +148,7 @@ object CallGraphVisualization {
         import de.tud.cs.st.util.graphs.{ toDot, SimpleNode, Node }
         val nodes: Set[Node] = {
 
-            var nodesForMethods = collection.mutable.HashMap.empty[Method, Node]
+            var nodesForMethods = scala.collection.mutable.HashMap.empty[Method, Node]
 
             def createNode(caller: Method): Node = {
                 if (nodesForMethods.contains(caller))
@@ -212,7 +212,7 @@ object CallGraphVisualization {
         println(exceptions.mkString("Exceptions:\n\t", "\n\t", "\t"))
 
         // Generate and show the graph
-        toDot.generateAndOpenDOT(nodes)
+        toDot.generateAndOpenDOT("CallGraph", nodes)
 
         // Write out the statistics about the calls relation
         writeAndOpenDesktopApplication(

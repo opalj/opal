@@ -34,8 +34,9 @@ package de.tud.cs.st
 package bat
 
 /**
- * This class is an enumeration of the different contexts in which the JVM Spec. uses
- * `access_flags` fields and defines which `access_flags` can be found in which context.
+ * Enumeration of the different contexts in which the JVM Spec. uses
+ * `access_flags` fields and also an enumeration which `access_flags` are found 
+ * in which context.
  *
  * @author Michael Eichberg
  */

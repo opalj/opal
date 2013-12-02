@@ -252,7 +252,7 @@ case class Code(
             f: PartialFunction[(Int, Seq[Instruction]), B]): Seq[B] = {
         require(windowSize > 0)
 
-        import collection.immutable.Queue
+        import scala.collection.immutable.Queue
 
         val max_pc = instructions.size
         var instrs: Queue[Instruction] = Queue.empty

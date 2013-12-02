@@ -80,14 +80,13 @@ abstract class DependencyExtractor(
     def process(classFile: ClassFile) {
         visit(classFile)
         val thisClassID = sourceElementID(classFile)
-        val ClassFile(
-            _, _, _,
-            thisClass,
-            superclass,
-            interfaces,
-            fields,
-            methods,
-            attributes) = classFile
+
+        val thisClass = classFile.thisClass
+        val superclass = classFile.superClass
+        val interfaces = classFile.interfaces
+        val fields = classFile.fields
+        val methods = classFile.methods
+        val attributes = classFile.attributes
 
         superclass foreach { processDependency(thisClassID, _, EXTENDS) }
         interfaces foreach { processDependency(thisClassID, _, IMPLEMENTS) }

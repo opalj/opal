@@ -82,6 +82,7 @@ object CallGraphFactory {
         import java.util.concurrent.Callable
         import java.util.concurrent.Future
         import java.util.concurrent.Executors
+        import java.util.concurrent.ExecutorCompletionService
 
         val cache = configuration.Cache()
 
@@ -106,17 +107,19 @@ object CallGraphFactory {
             }
         /* END - EXECUTED CONCURRENTLY */
 
-        var futures = List.empty[Future[MethodAnalysisResult]] // OUR WORKLIST
+        var futuresCount = 0
         val methodSubmitted: Array[Boolean] = new Array(Method.methodsCount)
-        val processors = Runtime.getRuntime().availableProcessors()
-        val executorService = Executors.newFixedThreadPool(processors)
+        val executorService =
+            Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() + 1)
+        val completionService =
+            new ExecutorCompletionService[MethodAnalysisResult](executorService)
         @inline def submitMethod(method: Method): Unit = {
             if (methodSubmitted(method.id))
                 return
-            else
-                methodSubmitted(method.id) = true
 
-            futures = executorService.submit(doAnalyzeMethod(method)) :: futures
+            methodSubmitted(method.id) = true
+            futuresCount += 1
+            completionService.submit(doAnalyzeMethod(method))
         }
 
         // Initialization
@@ -125,17 +128,20 @@ object CallGraphFactory {
         val builder = new CallGraphBuilder[Source](theProject)
         var exceptions = List.empty[CallGraphConstructionException]
         var unresolvedMethodCalls = List.empty[UnresolvedMethodCall]
-        while (futures.nonEmpty) {
-            val future = futures.head
-            futures = futures.tail
-            val (callEdges, moreUnresolvedMethodCalls, exception) = future.get()
+        while (futuresCount > 0) {
+            // 1. GET NEXT RESULT
+            val (callEdges, moreUnresolvedMethodCalls, exception) = completionService.take().get()
+            futuresCount -= 1
+
+            // 2. ENQUE NEXT METHODS
+            if (callEdges.nonEmpty)
+                callEdges.foreach(_._3.foreach { m ⇒ if (!m.isNative) submitMethod(m) })
+
+            // 3. PROCESS RESULTS
             if (moreUnresolvedMethodCalls.nonEmpty)
                 unresolvedMethodCalls = moreUnresolvedMethodCalls ::: unresolvedMethodCalls
             if (exception.isDefined)
                 exceptions = exception.get :: exceptions
-            callEdges.foreach(_._3.foreach { method ⇒
-                if (!method.isNative) submitMethod(method)
-            })
             builder.addCallEdges(callEdges)
         }
         executorService.shutdown()

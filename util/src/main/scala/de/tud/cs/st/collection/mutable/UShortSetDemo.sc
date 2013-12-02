@@ -26,62 +26,67 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
-package ai
-package project
-
-import domain._
-import bat.resolved.analyses._
-import scala.collection.Set
-import scala.collection.Map
+package de.tud.cs.st.collection.mutable
 
 /**
- * Common interface of all domains that collect the edges of a call graph
- * that are associated with a specific method.
- *
- * Each domain instance is associated with one specific method and is intended to
- * be used only once to perform an abstract interpretation (implementations of this
- * domain will have internal state.)
+ * This is a scala worksheet to demonstrate how to use UShortSets.
  *
  * @author Michael Eichberg
  */
-trait CallGraphDomain[Source, I] extends Domain[I] {
+object UShortSetDemo {
 
-    // THE CONTEXT - SET DURING THE CREATION OF THE DOMAIN
+    val empty = UShortSet.empty
+    val just0 = UShortSet(0)
+    val _0_2 = just0 + 2
+    _0_2 + 0
+    _0_2 + 2
+    val _0_1_2 = _0_2 + 1
+    val _0_1_2_65535 = _0_1_2 + 65535
+    _0_1_2_65535 + 65535
+    _0_1_2_65535 + 0
+    _0_1_2_65535 + 1
+    _0_1_2_65535 + 2
 
-    /* abstract */ val project: Project[Source]
+    val _10_20_30_40 = UShortSet(10) + 30 + 40 + 20
+    val _10_30_35_40 = UShortSet(10) + 30 + 40 + 35
+    val _5_10_30_40 = UShortSet(10) + 30 + 40 + 5
 
-    /* abstract */ val theClassFile: ClassFile
+    val large = _5_10_30_40 + 35 + 500 + 2 + 90 + 5242 + 0 + 1 + 0 + 5 + 30
+    large.contains(0)
+    large.contains(1)
+    large.contains(2)
+    large.contains(5)
+    large.contains(10)
+    large.contains(30)
+    large.contains(35)
+    large.contains(40)
+    large.contains(90)
+    large.contains(500)
+    large.contains(5242)
+    !large.contains(4)
+    !large.contains(6666)
+    large.max
 
-    /* abstract */ val theMethod: Method
+    _10_20_30_40 + 0
+    _10_20_30_40 + 5
+    _10_20_30_40 + 15
+    _10_20_30_40 + 25
+    _10_20_30_40 + 35
+    _10_20_30_40 + 45
 
-    // METHODS TO GET THE RESULTS AFTER THE DOMAIN WAS USED FOR THE ABSTRACT
-    // INTERPRETATION OF THIS METHOD.
-    /**
-     * Returns the list of all methods that are called by `theMethod`.
-     *
-     * @note This method should only be called after the abstract interpretation
-     *      of `theMethod`.
-     */
-    def allCallEdges: List[(Method, PC, Iterable[Method])]
+    try {
+        empty + 66666
+    } catch {
+        case _: IllegalArgumentException ⇒ "OK"
+    }
 
-    /**
-     * Returns the list of all unresolved method calls of `theMethod`. A call
-     * cannot be resolved if, e.g., the target class file is not available or
-     * if the type of the receiver is an interface type and no appropriate implementations
-     * are found.
-     *
-     * @note This method should only be called after the abstract interpretation
-     *      of `thisMethod`.
-     */
-    def allUnresolvedMethodCalls: List[UnresolvedMethodCall]
-
+    try {
+        empty + -1
+    } catch {
+        case _: IllegalArgumentException ⇒ "OK"
+    }
 }
-
-

@@ -60,7 +60,7 @@ object ClassesWithoutConcreteSubclasses extends AnalysisExecutor {
 
             BasicReport(
                 "Abstract classes and interfaces without concrete subclasses: "+
-                    (collection.immutable.SortedSet.empty[String] ++ classTypes.map(_.toJava)).mkString("\n\t", "\n\t", "\n"))
+                    (scala.collection.immutable.SortedSet.empty[String] ++ classTypes.map(_.toJava)).mkString("\n\t", "\n\t", "\n"))
         }
     }
 }

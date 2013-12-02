@@ -95,11 +95,11 @@ final case class ClassFile(
 
     def className: String = thisClass.className
 
-    def isAbstract: Boolean = ACC_ABSTRACT isElementOf accessFlags
+    def isAbstract: Boolean = (ACC_ABSTRACT.mask & accessFlags) != 0
 
-    def isFinal: Boolean = ACC_FINAL isElementOf accessFlags
+    def isFinal: Boolean = (ACC_FINAL.mask & accessFlags) != 0
 
-    def isPublic: Boolean = ACC_PUBLIC isElementOf accessFlags
+    def isPublic: Boolean = (ACC_PUBLIC.mask & accessFlags) != 0
 
     def isClassDeclaration: Boolean = (accessFlags & classCategoryMask) == 0
 
