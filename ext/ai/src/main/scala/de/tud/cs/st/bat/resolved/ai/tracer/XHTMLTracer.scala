@@ -106,16 +106,18 @@ trait XHTMLTracer extends AITracer {
     }
 
     def dumpXHTML(title: String): scala.xml.Node = {
+        import scala.collection.immutable.{SortedMap,SortedSet}
+        
         val inOrderFlow = flow.map(_.reverse).reverse
         var pathsCount = 0
-        var pcs = collection.immutable.SortedSet.empty[PC]
+        var pcs = SortedSet.empty[PC]
         for (path ← flow) {
             pathsCount += 1
             for (entity ← path) {
                 pcs += entity.pc
             }
         }
-        val pcsToRowIndex: collection.SortedMap[Int, Int] = collection.SortedMap.empty[Int, Int] ++ (pcs.zipWithIndex)
+        val pcsToRowIndex = SortedMap.empty[Int, Int] ++ (pcs.zipWithIndex)
         val dialogSetup =
             for (path ← inOrderFlow; entity ← path) yield {
                 xml.Unparsed("$(function() { $( \"#dialog"+entity.flowId+"\" ).dialog({autoOpen:false}); });\n")

@@ -103,14 +103,20 @@ trait ClassFileBinding
         methods: Methods,
         attributes: Attributes)(
             implicit cp: Constant_Pool): ClassFile = {
-        new ClassFile(
+        de.tud.cs.st.bat.resolved.ClassFile(
             minor_version, major_version, access_flags,
             this_class.asObjectType,
             // to handle the special case that this class file represents java.lang.Object
             { if (super_class == 0) None else Some(super_class.asObjectType) },
             interfaces,
-            fields,
-            methods,
+//            fields,
+//            methods,
+            fields sortWith { (f1, f2) ⇒ f1.name < f2.name },
+            methods sortWith { (m1, m2) ⇒
+                m1.name < m2.name || (
+                    m1.name == m2.name &&
+                    m1.descriptor.parametersCount < m2.descriptor.parametersCount)
+            },
             attributes)
     }
 
@@ -124,7 +130,7 @@ trait ClassFileBinding
             val newAttributes = classFile.attributes filter { attribute ⇒
                 !attribute.isInstanceOf[BootstrapMethodTable]
             }
-            new ClassFile(
+            de.tud.cs.st.bat.resolved.ClassFile(
                 classFile.minorVersion, classFile.majorVersion, classFile.accessFlags,
                 classFile.thisClass,
                 classFile.superClass,

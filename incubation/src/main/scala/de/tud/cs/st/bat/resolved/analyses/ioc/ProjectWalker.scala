@@ -53,7 +53,7 @@ trait AnalysesDirector[Source]
 
     def description: String = " TODO "
 
-    protected[this] val results = collection.mutable.Buffer[ReportableAnalysisResult]()
+    protected[this] val results = scala.collection.mutable.Buffer[ReportableAnalysisResult]()
 
     def result(result: ReportableAnalysisResult): Unit = results.synchronized {
         results += result

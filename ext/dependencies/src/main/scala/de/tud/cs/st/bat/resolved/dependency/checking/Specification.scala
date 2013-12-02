@@ -40,8 +40,8 @@ import reader.Java7Framework
 import analyses.{ ClassHierarchy, IndexBasedProject }
 
 import java.net.URL
-import collection.immutable.SortedSet
-import _root_.scala.util.matching.Regex
+import scala.collection.immutable.SortedSet
+import scala.util.matching.Regex
 
 import language.implicitConversions
 

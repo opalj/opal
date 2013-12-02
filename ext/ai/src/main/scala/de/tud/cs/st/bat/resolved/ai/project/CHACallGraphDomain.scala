@@ -41,20 +41,25 @@ import domain.l0
 import domain.l1
 import analyses._
 
-import collection.Set
-import collection.Map
+import scala.collection.Set
+import scala.collection.Map
 
 /**
- * Domain object that can be used to calculate a call graph using CHA. This domain 
- * basically collects for all invoke instructions of a method the potential target 
+ * Domain object that can be used to calculate a call graph using CHA. This domain
+ * basically collects for all invoke instructions of a method the potential target
  * methods that may be invoked at runtime.
  *
  * Virtual calls on Arrays (clone(), toString(),...) are replaced by calls to the
  * respective methods of `java.lang.Object`.
  *
+ * Signature polymorphic methods are correctly resolved (done by the
+ * `lookupImplementingMethod` method defined in `ClassHierarchy`.)
+ *
  * ==Thread Safety==
- * This domain is not thread-safe. Hence, it can only be used by one abstract interpreter
- * at a time.
+ * '''This domain is not thread-safe'''. Hence, it can only be used by one abstract interpreter
+ * at a time. However, it is no problem to have multiple abstract interpreters that
+ * process different methods where each uses its own instance of a CHACallGraphDomain
+ * object.
  *
  * @author Michael Eichberg
  */
@@ -103,7 +108,8 @@ trait CHACallGraphDomain[Source, I]
         classHierarchy.lookupMethodDefinition(
             declaringClass, name, descriptor, project
         ) match {
-                case Some(callee) ⇒ addCallEdge(pc, Iterable(callee))
+                case Some(callee) ⇒
+                    addCallEdge(pc, Iterable(callee))
                 case None ⇒
                     addUnresolvedMethodCall(
                         theClassFile.thisClass, theMethod, pc,
@@ -118,7 +124,6 @@ trait CHACallGraphDomain[Source, I]
         name: String,
         descriptor: MethodDescriptor,
         operands: List[DomainValue]) {
-        // MODIFIED CHA - we used the type information that is readily available
 
         val callees = cache.getOrElseUpdate(
             declaringClassType, new MethodSignature(name, descriptor),

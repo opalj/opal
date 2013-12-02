@@ -46,15 +46,13 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.matchers.ShouldMatchers
 
 /**
- * Tests that the dependency extractor does not report dependencies to primitive types
- * and arrays of primitive types.
- *
- * @author Michael Eichberg
- */
+  * Tests that the dependency extractor does not report dependencies to primitive types
+  * and arrays of primitive types.
+  *
+  * @author Michael Eichberg
+  */
 @RunWith(classOf[JUnitRunner])
-class DependenciesToPrimitiveTypesTest
-        extends FlatSpec
-        with ShouldMatchers {
+class DependenciesToPrimitiveTypesTest extends FlatSpec with ShouldMatchers {
 
     //
     //
@@ -93,10 +91,10 @@ class DependenciesToPrimitiveTypesTest
     // EXERCISE
     //
     //
-    DependencyCollector.process({
+    DependencyCollector process {
         val resource = TestSupport.locateTestResources("classfiles/Types.jar", "ext/dependencies")
         Java7Framework.ClassFile(resource, "types/TypeDeclarations.class")
-    });
+    };
 
     //
     //

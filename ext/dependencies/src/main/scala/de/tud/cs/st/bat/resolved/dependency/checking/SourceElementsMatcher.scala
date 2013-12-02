@@ -38,7 +38,7 @@ package checking
 
 import analyses._
 
-import collection.immutable.SortedSet
+import scala.collection.immutable.SortedSet
 
 import java.net.URL
 

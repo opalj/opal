@@ -39,7 +39,7 @@ package l1
 
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
-import collection.SortedSet
+import scala.collection.SortedSet
 
 /**
  * @author Michael Eichberg

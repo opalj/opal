@@ -31,57 +31,60 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package de.tud.cs.st
-package bat
-package resolved
-package ai
-package project
-
-import domain._
-import bat.resolved.analyses._
-import scala.collection.Set
-import scala.collection.Map
+package collection
 
 /**
- * Common interface of all domains that collect the edges of a call graph
- * that are associated with a specific method.
- *
- * Each domain instance is associated with one specific method and is intended to
- * be used only once to perform an abstract interpretation (implementations of this
- * domain will have internal state.)
+ * A sorted set of unsigned short values.
  *
  * @author Michael Eichberg
  */
-trait CallGraphDomain[Source, I] extends Domain[I] {
-
-    // THE CONTEXT - SET DURING THE CREATION OF THE DOMAIN
-
-    /* abstract */ val project: Project[Source]
-
-    /* abstract */ val theClassFile: ClassFile
-
-    /* abstract */ val theMethod: Method
-
-    // METHODS TO GET THE RESULTS AFTER THE DOMAIN WAS USED FOR THE ABSTRACT
-    // INTERPRETATION OF THIS METHOD.
-    /**
-     * Returns the list of all methods that are called by `theMethod`.
-     *
-     * @note This method should only be called after the abstract interpretation
-     *      of `theMethod`.
-     */
-    def allCallEdges: List[(Method, PC, Iterable[Method])]
+trait UShortSet {
 
     /**
-     * Returns the list of all unresolved method calls of `theMethod`. A call
-     * cannot be resolved if, e.g., the target class file is not available or
-     * if the type of the receiver is an interface type and no appropriate implementations
-     * are found.
-     *
-     * @note This method should only be called after the abstract interpretation
-     *      of `thisMethod`.
+     * Returns `true` if this set contains the given value. If the given value
+     * is not an unsigned short value [0..65535] the result is undefined.
      */
-    def allUnresolvedMethodCalls: List[UnresolvedMethodCall]
+    def contains(ushortValue: Int): Boolean
 
+    /**
+     * Executes the given function `f` for each value of this set, starting with
+     * the smallest value.
+     */
+    def foreach[U](f: /*ushortValue:*/ Int ⇒ U): Unit
+
+    /**
+     * Returns a new iterator. The iterator is primarily defined to facilitate
+     * the integration with Scala's standard collections API.
+     *
+     * @note Whenever possible try to use this set's native method
+     *      (e.g., foreach and contains) as they are guaranteed to be optimized for
+     *      performance.
+     */
+    def iterator: Iterator[Int] = iterable.iterator
+
+    /**
+     * Returns a new iterable. The method is primarily defined to facilitate
+     * the integration with Scala's standard collections API.
+     *
+     * @note Whenever possible try to use this set's native method
+     *      (e.g., foreach and contains) as they are guaranteed to be optimized for
+     *      performance.
+     *
+     */
+    def iterable: Iterable[Int]
+
+    /**
+     * The maximum value in this set.
+     */
+    def max: Int
+    def last = max
+
+    /**
+     * The number of elements of this set.
+     *
+     * @note The size is calculated using the iterator, hence its complexity is O(n).
+     */
+    def size: Int = iterator.size
+
+    override def toString: String = iterator.mkString("UShortSet(", ",", ")")
 }
-
-

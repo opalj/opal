@@ -31,19 +31,17 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package de.tud.cs.st
-package util
-import UShort.{ MIN, MAX }
+package collection
+package mutable
+
+import UShort.{ MinValue, MaxValue }
 
 /**
- * A mutable, sorted set of unsigned short values that is tailored for small sets.
+ * A mutable, sorted set of unsigned short values that is tailored for small(er) sets.
  *
  * @author Michael Eichberg
  */
-trait UShortSet {
-
-    def contains(ushortValue: Int): Boolean
-
-    def foreach[U](f: /*ushortValue:*/ Int ⇒ U): Unit
+trait UShortSet extends collection.UShortSet {
 
     /**
      * Adds the given value to this set if it is not already contained in this set.
@@ -53,24 +51,6 @@ trait UShortSet {
      */
     def +(value: Int): UShortSet
 
-    def iterator: Iterator[Int] = iterable.iterator
-
-    def iterable: Iterable[Int]
-
-    /**
-     * The maximum value in this set.
-     */
-    def max: Int
-    def last = max
-
-    /**
-     * The number of elements of this set.
-     *
-     * @note The size is calculated using the iterator, hence its complexity is O(n).
-     */
-    def size: Int = iterator.size
-
-    override def toString: String = iterator.mkString("UShortSet(", ",", ")")
 }
 
 /**
@@ -99,15 +79,16 @@ private class UShortSet2(private var value: Int) extends UShortSet {
         { f(value1); f(value2) }
 
     def +(uShortValue: Int): UShortSet = {
-        if (uShortValue < MIN || uShortValue > MAX)
+        if (uShortValue < MinValue || uShortValue > MaxValue)
             throw new IllegalArgumentException("value out of range: "+uShortValue)
 
         if (notFull) {
+            val value = this.value
             // update this sets container, if necessary 
             if (uShortValue < value)
-                value = (value << 16) | uShortValue
+                this.value = (value << 16) | uShortValue
             else if (uShortValue > value)
-                value = (uShortValue << 16) | value
+                this.value = (uShortValue << 16) | value
 
             this // this set..
         } else {
@@ -145,7 +126,7 @@ private class UShortSet2(private var value: Int) extends UShortSet {
     }
 }
 private object UShortSet2 {
-    final val Value1Mask: Int = UShort.MAX
+    final val Value1Mask: Int = UShort.MaxValue
     final val Value2Mask: Int = Value1Mask << 16
 }
 
@@ -166,57 +147,68 @@ private class UShortSet4(private var value: Long) extends UShortSet {
     def max: Int = (if (notFull) value3 else value4).toInt
 
     def +(uShortValue: Int): UShortSet = {
+        if (uShortValue < MinValue || uShortValue > MaxValue)
+            throw new IllegalArgumentException("value out of range: "+uShortValue)
+
         val newValue: Long = uShortValue.toLong
-        if (newValue < value1) {
-            if (notFull) {
-                value = value << 16 | newValue
+        val value1 = this.value1
+        val value3 = this.value3
+        if (newValue < value3) {
+            val value2 = this.value2
+            if (newValue < value1) {
+                if (notFull) {
+                    value = value << 16 | newValue
+                    this
+                } else {
+                    new UShortSetNode(
+                        new UShortSet4(newValue, value1, value2, value3),
+                        new UShortSet2(value4.toInt)
+                    )
+                }
+            } else if (newValue == value1) {
                 this
-            } else {
-                new UShortSetNode(
-                    new UShortSet4(newValue, value1, value2, value3),
-                    new UShortSet2(value4.toInt)
-                )
-            }
-        } else if (newValue == value1) {
-            this
-        } else if (newValue < value2) {
-            if (notFull) {
-                value = (value1 | (newValue << 16)) | (value2 << 32) | (value3 << 48)
+            } else if (newValue < value2) {
+                if (notFull) {
+                    value = (value1 | (newValue << 16)) | (value2 << 32) | (value3 << 48)
+                    this
+                } else {
+                    new UShortSetNode(
+                        new UShortSet4(value1, newValue, value2, value3),
+                        new UShortSet2(value4.toInt)
+                    )
+                }
+            } else if (newValue == value2) {
                 this
-            } else {
-                new UShortSetNode(
-                    new UShortSet4(value1, newValue, value2, value3),
-                    new UShortSet2(value4.toInt)
-                )
+            } else /*newValue > value2 && newValue < value3*/ {
+                if (notFull) {
+                    value = (value1 | (value2 << 16)) | (newValue << 32) | (value3 << 48)
+                    this
+                } else {
+                    new UShortSetNode(
+                        new UShortSet4(value1, value2, newValue, value3),
+                        new UShortSet2(value4.toInt)
+                    )
+                }
             }
-        } else if (newValue == value2) {
-            this
-        } else if (newValue < value3) {
-            if (notFull) {
-                value = (value1 | (value2 << 16)) | (newValue << 32) | (value3 << 48)
+        } else /*newValue >= value3*/ {
+            val value4 = this.value4
+            if (newValue == value3) {
                 this
-            } else {
-                new UShortSetNode(
-                    new UShortSet4(value1, value2, newValue, value3),
-                    new UShortSet2(value4.toInt)
-                )
-            }
-        } else if (newValue == value3) {
-            this
-        } else if (newValue < value4) {
-            if (notFull) {
-                value = (value1 | (value2 << 16)) | (value3 << 32) | (newValue << 48)
+            } else if (newValue < value4) {
+                if (notFull) {
+                    value = (value1 | (value2 << 16)) | (value3 << 32) | (newValue << 48)
+                    this
+                } else {
+                    new UShortSetNode(
+                        new UShortSet4(value1, value2, value3, newValue),
+                        new UShortSet2(value4.toInt)
+                    )
+                }
+            } else if (newValue == value4) {
                 this
-            } else {
-                new UShortSetNode(
-                    new UShortSet4(value1, value2, value3, newValue),
-                    new UShortSet2(value4.toInt)
-                )
+            } else /*newValue > value4 */ {
+                new UShortSetNode(this, new UShortSet2(uShortValue))
             }
-        } else if (newValue == value4) {
-            this
-        } else {
-            new UShortSetNode(this, new UShortSet2(uShortValue))
         }
     }
 
@@ -246,7 +238,7 @@ private class UShortSet4(private var value: Long) extends UShortSet {
 }
 
 private object UShortSet4 {
-    final val Value1Mask: Long = UShort.MAX.toLong
+    final val Value1Mask: Long = UShort.MaxValue.toLong
     final val Value2Mask: Long = Value1Mask << 16
     final val Value3Mask: Long = Value2Mask << 16
     final val Value4Mask: Long = Value3Mask << 16
@@ -270,7 +262,7 @@ private class UShortSetNode(set1: UShortSet, set2: UShortSet) extends UShortSet 
     def foreach[U](f: /*ushortValue:*/ Int ⇒ U): Unit = { set1.foreach(f); set2.foreach(f) }
 
     def +(uShortValue: Int): UShortSet = {
-        if (uShortValue < MIN || uShortValue > MAX)
+        if (uShortValue < MinValue || uShortValue > MaxValue)
             throw new IllegalArgumentException("value out of range: "+uShortValue)
         val set1Max = set1.max
         if (set1Max > uShortValue) {
@@ -299,16 +291,23 @@ private object EmptyUShortSet extends UShortSet {
     def +(uShortValue: Int): UShortSet = UShortSet(uShortValue)
     def max = throw new UnsupportedOperationException("the set is empty")
 }
-object UShort {
-    final val MAX = 65535
-    final val MIN = 0
-}
+/**
+ * Factory object to create new sets of unsigned short values.
+ *
+ * @author Michael Eichberg
+ */
 object UShortSet {
 
+    /**
+     * The empty set.
+     */
     val empty: UShortSet = EmptyUShortSet
 
+    /**
+     * Creates a new set of unsigned short values which contains the given value.
+     */
     @inline def apply(uShortValue: Int): UShortSet = {
-        if (uShortValue < MIN || uShortValue > MAX)
+        if (uShortValue < MinValue || uShortValue > MaxValue)
             throw new IllegalArgumentException("value out of range: "+uShortValue)
 
         new UShortSet2(uShortValue)

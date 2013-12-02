@@ -31,57 +31,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package de.tud.cs.st
-package bat
-package resolved
-package ai
-package project
-
-import domain._
-import bat.resolved.analyses._
-import scala.collection.Set
-import scala.collection.Map
 
 /**
- * Common interface of all domains that collect the edges of a call graph
- * that are associated with a specific method.
- *
- * Each domain instance is associated with one specific method and is intended to
- * be used only once to perform an abstract interpretation (implementations of this
- * domain will have internal state.)
+ * Properties of unsigned short values.
  *
  * @author Michael Eichberg
  */
-trait CallGraphDomain[Source, I] extends Domain[I] {
-
-    // THE CONTEXT - SET DURING THE CREATION OF THE DOMAIN
-
-    /* abstract */ val project: Project[Source]
-
-    /* abstract */ val theClassFile: ClassFile
-
-    /* abstract */ val theMethod: Method
-
-    // METHODS TO GET THE RESULTS AFTER THE DOMAIN WAS USED FOR THE ABSTRACT
-    // INTERPRETATION OF THIS METHOD.
-    /**
-     * Returns the list of all methods that are called by `theMethod`.
-     *
-     * @note This method should only be called after the abstract interpretation
-     *      of `theMethod`.
-     */
-    def allCallEdges: List[(Method, PC, Iterable[Method])]
-
-    /**
-     * Returns the list of all unresolved method calls of `theMethod`. A call
-     * cannot be resolved if, e.g., the target class file is not available or
-     * if the type of the receiver is an interface type and no appropriate implementations
-     * are found.
-     *
-     * @note This method should only be called after the abstract interpretation
-     *      of `thisMethod`.
-     */
-    def allUnresolvedMethodCalls: List[UnresolvedMethodCall]
-
+object UShort {
+    final val MaxValue = 65535
+    final val MinValue = 0
 }
-
-

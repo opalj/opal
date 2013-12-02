@@ -64,7 +64,7 @@ class ExtractDependenciesFromClassFilesTest extends Suite {
     */
     private val testCases = {
 
-        var tcs = collection.immutable.Map[String, (ZipFile, ZipEntry)]()
+        var tcs = scala.collection.immutable.Map[String, (ZipFile, ZipEntry)]()
 
         var files = TestSupport.locateTestResources("classfiles", "ext/dependencies").listFiles()
 

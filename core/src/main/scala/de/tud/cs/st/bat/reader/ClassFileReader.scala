@@ -342,7 +342,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         f: (ZipFile, ZipEntry, ClassFile) ⇒ Unit,
         exceptionHandler: (Exception) ⇒ Unit = e ⇒ Console.err.println(e)) {
 
-        import collection.JavaConversions._
+        import scala.collection.JavaConversions._
         for (jarEntry ← (jarFile).entries.toIterable.par) {
             if (!jarEntry.isDirectory) {
                 val jarEntryName = jarEntry.getName

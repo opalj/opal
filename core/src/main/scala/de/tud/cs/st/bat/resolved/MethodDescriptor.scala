@@ -34,7 +34,7 @@ package de.tud.cs.st
 package bat
 package resolved
 
-import collection.Seq
+import scala.collection.Seq
 
 /**
  * A method descriptor represents the parameters that the method takes and

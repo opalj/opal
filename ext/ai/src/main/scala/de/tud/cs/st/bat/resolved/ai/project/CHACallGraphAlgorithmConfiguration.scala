@@ -38,8 +38,8 @@ package project
 
 import domain._
 import bat.resolved.analyses._
-import collection.Set
-import collection.Map
+import scala.collection.Set
+import scala.collection.Map
 
 /**
  * Configuration of a call graph algorithm that uses CHA.

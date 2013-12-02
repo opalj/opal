@@ -41,8 +41,8 @@ import domain.l0
 import domain.l1
 import analyses._
 
-import collection.Set
-import collection.Map
+import scala.collection.Set
+import scala.collection.Map
 
 /**
  * Domain object which is used to calculate the call graph.
