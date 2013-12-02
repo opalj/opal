@@ -37,7 +37,8 @@ package ai
 package project
 
 /**
- * Represents a method call that could not be resolved. This information is primarily
+ * Represents a method call that could not be resolved; that is, the target of
+ * an invoke instruction could not be found. This information is primarily
  * interesting during the development of static analyses.
  *
  * @author Michael Eichberg

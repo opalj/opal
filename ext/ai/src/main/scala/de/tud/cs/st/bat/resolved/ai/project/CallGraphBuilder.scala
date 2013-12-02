@@ -103,20 +103,21 @@ class CallGraphBuilder[Source](val project: Project[Source]) {
                         val newPCs = UShortSet(pc)
                         callers.update(caller, newPCs)
                 }
-                //                val callers = calledByMap(callee.id)
-                //                if (callers eq null) {
-                //                    calledByMap(callee.id) = new Map.Map1(caller, UShortSet(pc))
-                //                } else {
-                //                    callers.get(caller) match {
-                //                        case Some(pcs) ⇒
-                //                            val newPCs = pcs + pc
-                //                            if (pcs ne newPCs)
-                //                                calledByMap(callee.id) = callers.updated(caller, newPCs)
-                //                        case None ⇒
-                //                            val newPCs = UShortSet(pc)
-                //                            calledByMap(callee.id) = callers.updated(caller, newPCs)
-                //                    }
-                //                }
+                // USING AN IMMUTABLE MAP - ROUGHLY 5% SLOWER AND 10% MEMORY OVERHEAD
+                // val callers = calledByMap(callee.id)
+                // if (callers eq null) {
+                //  calledByMap(callee.id) = new Map.Map1(caller, UShortSet(pc))
+                // } else {
+                //  callers.get(caller) match {
+                //      case Some(pcs) ⇒
+                //          val newPCs = pcs + pc
+                //          if (pcs ne newPCs)
+                //              calledByMap(callee.id) = callers.updated(caller, newPCs)
+                //      case None ⇒
+                //          val newPCs = UShortSet(pc)
+                //          calledByMap(callee.id) = callers.updated(caller, newPCs)
+                //      }
+                // }
             }
             calledByMap
         }

@@ -110,7 +110,7 @@ object CallGraphFactory {
         var futuresCount = 0
         val methodSubmitted: Array[Boolean] = new Array(Method.methodsCount)
         val executorService =
-            Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() + 1)
+            Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() /*+ 1*/)
         val completionService =
             new ExecutorCompletionService[MethodAnalysisResult](executorService)
         @inline def submitMethod(method: Method): Unit = {
@@ -130,7 +130,8 @@ object CallGraphFactory {
         var unresolvedMethodCalls = List.empty[UnresolvedMethodCall]
         while (futuresCount > 0) {
             // 1. GET NEXT RESULT
-            val (callEdges, moreUnresolvedMethodCalls, exception) = completionService.take().get()
+            val (callEdges, moreUnresolvedMethodCalls, exception) =
+                completionService.take().get()
             futuresCount -= 1
 
             // 2. ENQUE NEXT METHODS
