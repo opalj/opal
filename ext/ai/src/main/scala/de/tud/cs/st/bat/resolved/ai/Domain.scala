@@ -1482,22 +1482,23 @@ trait Domain[+I] {
     }
 
     /**
-     * This function is called by BATAI after performing a computation; that is, after
+     * '''Called by BATAI after performing a computation'''; that is, after
      * evaluating the effect of an instruction on the stack and register.
      * This function basically informs the domain about which instruction(s)
      * will be executed next. In general, after the evaluation of some instruction
-     * (even those that are domain independent) the flow function is called one or
-     * more times (e.g., in case of `if` or `switch` instructions.) This enables
-     * the domain to precisely follow the evaluation progress and in particular to perform
-     * control-flow dependent analyses.
+     * (even those that are domain independent such as `dup` and `xLoad`) the flow 
+     * function is called one or more times (e.g., in case of `if` or `switch` 
+     * instructions.) This enables the domain to precisely follow the evaluation 
+     * progress and in particular to perform control-flow dependent analyses.
      *
-     * The `flow` method is called before the `join` method.
+     * The `flow` method is called before the `join` method. Hence, not all paths 
+     * will be followed.
      */
     def flow(currentPC: PC, successorPC: PC): Boolean = false
 
     /**
      * Creates a summary of the given domain values. For the precise details
-     * regarding the calculation of a summary see `Value.summuarize(...)`.
+     * regarding the calculation of a summary see `Value.summarize(...)`.
      *
      * @param pc The program counter that will be used for the summary value if
      *      a new value is returned that abstracts over/summarize the given values.
