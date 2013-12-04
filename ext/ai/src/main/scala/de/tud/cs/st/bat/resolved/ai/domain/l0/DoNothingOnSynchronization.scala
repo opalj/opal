@@ -35,28 +35,58 @@ package bat
 package resolved
 package ai
 package domain
-package l1
+package l0
+
+import de.tud.cs.st.util.{ Yes, No, Unknown }
+
+/**
+ * Provides a default implementation for the instructions related to synchronization.
+ *
+ * @author Michael Eichberg
+ */
+trait DoNothingOnSynchronization { this: Domain[_] ⇒
+
+    protected def sideEffectOnlyOrNullPointerException(
+        pc: PC,
+        value: DomainValue): SucceedsOrNullPointerException = {
+        isNull(value) match {
+            case Yes ⇒
+                ThrowsException(newInitializedObject(pc, ObjectType.NullPointerException))
+            case No ⇒
+                ComputationWithSideEffectOnly
+            case Unknown ⇒
+                ComputationWithSideEffectOrException(
+                    newInitializedObject(pc, ObjectType.NullPointerException)
+                )
+        }
+    }
+
+    /**
+     * Handles a `monitorenter` instruction.
+     *
+     * @note The default implementation checks if the given value is `null` and raises
+     * an exception if it is `null` or maybe `null`. In the later case or in case that
+     * the value is known not to be `null` the given value is (also) returned as this
+     * computation's results.
+     */
+    override def monitorenter(pc: PC, value: DomainValue): SucceedsOrNullPointerException = {
+        sideEffectOnlyOrNullPointerException(pc, value)
+    }
+
+    /**
+     * Handles a `monitorenter` instruction.
+     *
+     * @note The default implementation checks if the given value is `null` and raises
+     * an exception if it is `null` or maybe `null`. In the later case or in case that
+     * the value is known not to be `null` the given value is (also) returned as this
+     * computation's results.
+     */
+    override def monitorexit(pc: PC, value: DomainValue): SucceedsOrNullPointerException = {
+        sideEffectOnlyOrNullPointerException(pc, value)
+    }
+}
 
 
-class PreciseConfigurableDomain[+I](
-    val identifier: I)
-        extends Domain[I]
-        with Origin
-        with DefaultDomainValueBinding[I]
-        with DefaultPreciseIntegerValues[I]
-        with DefaultPreciseReferenceValues[I]
-        with StringValues[I]
-        with l0.DefaultTypeLevelLongValues[I]
-        with l0.DefaultTypeLevelFloatValues[I]
-        with l0.DefaultTypeLevelDoubleValues[I]
-        with l0.TypeLevelArrayInstructions
-        with TypeLevelFieldAccessInstructionsWithNullPointerHandling
-        with TypeLevelInvokeInstructionsWithNullPointerHandling
-        with l0.DoNothingOnReturnFromMethod
-        with l0.DoNothingOnSynchronization
-        with l0.BasicTypeHierarchy
 
-class PreciseRecordingDomain[I](identifier: I)
-    extends PreciseConfigurableDomain[I](identifier)
-    with RecordReturnValues[I]
+
 

@@ -57,7 +57,7 @@ sealed trait Computation[+V, +E] {
 
     /**
      * The return value of the computation (if any); defined if and only if
-     * `hasValue` returns true.
+     * `hasResult` returns true.
      */
     def result: V
 
@@ -75,12 +75,12 @@ sealed trait Computation[+V, +E] {
     def exceptions: E
 
     /**
-     * Returns `true` if this computation may have raised an exception.
+     * Returns `true` if this computation ''may have raised an exception''.
      */
     def throwsException: Boolean
 
     /**
-     * Returns `true` if this computation may have returned normally without
+     * Returns `true` if this computation ''may have returned normally'' without
      * throwing an exception.
      */
     def returnsNormally: Boolean
@@ -96,7 +96,10 @@ final case class ComputedValue[+V](
 
     def hasResult: Boolean = true
 
-    def exceptions = aiException("the computation succeeded without an exception")
+    def exceptions: Nothing =
+        throw new UnsupportedOperationException(
+            "the computation succeeded without an exception"
+        )
 
     def throwsException: Boolean = false
 
@@ -131,7 +134,10 @@ final case class ThrowsException[+E](
 
     def hasResult: Boolean = false
 
-    def result = aiException("the computation resulted in an exception")
+    def result: Nothing =
+        throw new UnsupportedOperationException(
+            "the computation resulted in an exception"
+        )
 
     def throwsException: Boolean = true
 
@@ -149,7 +155,10 @@ final case class ComputationWithSideEffectOrException[+E](
 
     def hasResult: Boolean = false
 
-    def result = aiException("the computation was executed for its side effect only")
+    def result: Nothing =
+        throw new UnsupportedOperationException(
+            "the computation was executed for its side effect only"
+        )
 
     def throwsException: Boolean = true
 }
@@ -157,18 +166,23 @@ final case class ComputationWithSideEffectOrException[+E](
 /**
  * Represents a computation that completed normally.
  */
-case object ComputationWithSideEffectOnly
-        extends Computation[Nothing, Nothing] {
+case object ComputationWithSideEffectOnly extends Computation[Nothing, Nothing] {
 
     def returnsNormally: Boolean = true
 
     def hasResult: Boolean = false
 
-    def result = aiException("the computation was executed for its side effect only")
+    def result: Nothing =
+        throw new UnsupportedOperationException(
+            "the computation was executed for its side effect only"
+        )
 
     def throwsException: Boolean = false
 
-    def exceptions = aiException("the computation succeeded without an exception")
+    def exceptions: Nothing =
+        throw new UnsupportedOperationException(
+            "the computation succeeded without an exception"
+        )
 }
       
 

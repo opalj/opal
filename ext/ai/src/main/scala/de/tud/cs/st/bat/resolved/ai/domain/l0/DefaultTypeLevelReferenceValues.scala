@@ -355,31 +355,28 @@ trait DefaultTypeLevelReferenceValues[+I]
     // FACTORY METHODS
     //
 
-    def newNullValue(pc: PC): DomainValue =
+    override def newNullValue(pc: PC): DomainValue =
         MReferenceValue(UIDList.empty)
 
-    def nonNullReferenceValue(pc: PC, objectType: ObjectType): DomainValue =
+    override def nonNullReferenceValue(pc: PC, objectType: ObjectType): DomainValue =
         AReferenceValue(objectType)
 
-    def newReferenceValue(referenceType: ReferenceType): DomainValue =
+    override def someReferenceValue(pc: PC, referenceType: ReferenceType): DomainValue =
         AReferenceValue(referenceType)
 
-    def newReferenceValue(pc: PC, referenceType: ReferenceType): DomainValue =
+    override def newObject(pc: PC, referenceType: ReferenceType): DomainValue =
         AReferenceValue(referenceType)
 
-    def newObject(pc: PC, referenceType: ReferenceType): DomainValue =
-        AReferenceValue(referenceType)
-
-    def newInitializedObject(pc: PC, referenceType: ReferenceType): DomainValue =
+    override def newInitializedObject(pc: PC, referenceType: ReferenceType): DomainValue =
         newObject(pc, referenceType)
 
-    def newArray(pc: PC, referenceType: ArrayType): DomainValue =
+    override def newArray(pc: PC, referenceType: ArrayType): DomainValue =
         newInitializedObject(pc, referenceType)
 
-    def newStringValue(pc: PC, value: String): DomainValue =
+    override def newStringValue(pc: PC, value: String): DomainValue =
         AReferenceValue(ObjectType.String)
 
-    def newClassValue(pc: PC, t: Type): DomainValue =
+    override def newClassValue(pc: PC, t: Type): DomainValue =
         AReferenceValue(ObjectType.Class)
 
 }

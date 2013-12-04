@@ -117,7 +117,7 @@ class MethodsPlainTest
         /*val result =*/ BaseAI(classFile, method, domain)
 
         domain.returnedValue should be(
-            Some(newReferenceValue(ObjectType("java/lang/String"))))
+            Some(nonNullReferenceValue(Int.MinValue /*<=IGNORED*/ , ObjectType.String)))
     }
 
     it should "be able to analyze a method that returns a fixed class value" in {
@@ -126,7 +126,7 @@ class MethodsPlainTest
         /*val result =*/ BaseAI(classFile, method, domain)
 
         domain.returnedValue should be(
-            Some(newReferenceValue(ObjectType("java/lang/Class"))))
+            Some(nonNullReferenceValue(Int.MinValue /*<=IGNORED*/ , ObjectType.Class)))
     }
 
     //
@@ -143,7 +143,9 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "sOne").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(newReferenceValue(ObjectType("java/lang/String"))))
+        domain.returnedValue should be(Some(
+            nonNullReferenceValue(Int.MinValue /*<=IGNORED*/ , ObjectType.String)
+        ))
     }
 
     //
@@ -660,7 +662,7 @@ class MethodsPlainTest
         /*val result =*/ BaseAI(classFile, method, domain)
 
         domain.returnedValue should be(
-            Some(newReferenceValue(ObjectType("ai/MethodsPlain")))
+            Some(nonNullReferenceValue(Int.MinValue /*<=IGNORED*/ , ObjectType("ai/MethodsPlain")))
         )
     }
 

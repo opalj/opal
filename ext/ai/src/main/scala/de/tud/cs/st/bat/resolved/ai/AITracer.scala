@@ -41,12 +41,13 @@ import instructions._
  * Defines the interface between the abstract interpreter and a module for
  * tracing the interpreter's behavior. In general, a tracer is first registered with an
  * abstract interpreter. After that, when a method is analyzed, BATAI calls the
- * tracer's methods at the respective point in time. A tracer is registered with
- * an abstract interpreter by creating a new subclass of `AI` and overriding the method
- * `tracer`. 
+ * tracer's methods at the respective points in time. 
+ * 
+ * A tracer is registered with an abstract interpreter by creating a new subclass of 
+ * `AI` and overriding the method `tracer`. 
  *
  * @note In general, all mutable data structures (e.g. the current locals) passed
- * 		to the tracer must not be mutated by it.
+ *      to the tracer must not be mutated by it.
  *
  * @author Michael Eichberg
  */
@@ -61,7 +62,7 @@ trait AITracer {
      *
      * @param operands The operand stack before the execution of the instruction.
      * @param locals The registers before the execution of the instruction. '''The Array
-     * 		must not be mutated.'''
+     *      must not be mutated.'''
      */
     def instructionEvalution[D <: SomeDomain](
         domain: D,
@@ -71,9 +72,17 @@ trait AITracer {
         locals: Array[D#DomainValue]): Unit
 
     /**
-     * Called by BATAI after an instruction (`currentPC`) was evaluated and before the `targetPC`
-     * is evaluated. In case of `if` or `switch` instructions `flow` is called multiple
-     * times before the method `instructionEvaluation` is called again.
+     * Called by BATAI after an instruction (`currentPC`) was evaluated and before the 
+     * `targetPC` is evaluated. 
+     * 
+     * This method is only called if the instruction with the program counter 
+     * `targetPC` will be evaluated. I.e., when the abstract interpreter
+     * determines that the evaluation of an instruction does not change the abstract
+     * state (associated with the successor instruction) and, therefore, will not 
+     * schedule the successor instruction this method is not called.
+     * 
+     * In case of `if` or `switch` instructions `flow` may be 
+     * called multiple times before the method `instructionEvaluation` is called again.
      *
      * Recall that BATAI performs a depth-first exploration.
      */
@@ -113,7 +122,7 @@ trait AITracer {
         exception: D#DomainValue)
 
     /**
-     * Called when a ret instruction is encountered.
+     * Called when a `RET` instruction is encountered.
      */
     def ret[D <: SomeDomain](
         domain: D,

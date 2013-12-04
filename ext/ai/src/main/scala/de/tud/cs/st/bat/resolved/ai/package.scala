@@ -46,11 +46,11 @@ import scala.collection.Set
  * be part of the core of BATAI.
  *
  * @note This framework assumes that the analyzed bytecode is valid; i.e., the JVM's
- * bytecode verifier would verify the code. Furthermore, load-time errors
- * (e.g., `LinkageErrors`) are completely ignored to facilitate the analysis of
- * parts of a project. In general, if the presented bytecode is not valid,
- * the result is undefined (i.e., BATAI may report meaningless results, crash or run
- * indefinitely).
+ *      bytecode verifier would verify the code. Furthermore, load-time errors
+ *      (e.g., `LinkageErrors`) are completely ignored to facilitate the analysis of
+ *      parts of a project. In general, if the presented bytecode is not valid,
+ *      the result is undefined (i.e., BATAI may report meaningless results, crash or run
+ *      indefinitely).
  *
  * @see [[de.tud.cs.st.bat.resolved.ai.AI]] - the main class
  *
@@ -108,15 +108,15 @@ package object ai {
      * An upper bound represents the available type information about a reference value.
      * It is always "just" an upper bound for a concrete type; i.e., we know that
      * the runtime type has to be a subtype of the type identified by the upper bound.
-     * An upper bound can consists of multiple '''independent''' types. E.g.,
-     * a type bound could be: `java.io.Serializable` and `java.lang.Cloneable` for an
-     * array. Independent means that no two types of the bound are in a subtype
-     * relationship. Hence, an upper bound is always a special set.
+     * Furthermore, an upper bound can identify multiple '''independent''' types. E.g.,
+     * a type bound for array objects could be: `java.io.Serializable` and 
+     * `java.lang.Cloneable`. Here, independent means that no two types of the bound 
+     * are in a subtype relationship. Hence, an upper bound is always a special set.
      *
      * In general, an upper bound identifies a single class type and a set of independent
      * interface types which are known to be implemented by the current object. '''Even if
      * the type contains a class type''' it may just be a super class of the concrete type
-     * and, hence, just represents an abstraction.
+     * and, hence, just represent an abstraction.
      *
      * @note How type bounds related to reference types are handled and whether the domain
      *      makes it possible to distinguish between precise types and type bounds is at

@@ -38,14 +38,22 @@ package ai
 import de.tud.cs.st.util.Answer
 
 /**
- * The answer of the domain to a question about a specific value's type.
+ * The answer of a domain to a query about a value's specific type.
+ *
+ * (See `Domain.valueOfType(DomainValue)` for further details.)
  *
  * @author Michael Eichberg
  */
 sealed trait TypesAnswer
 
 /**
- * This answer is given when no specific type information about a value is available.
+ * This answer is given when no specific/additional type information about a value
+ * is available.
+ *
+ * @note Recall that the computational type of a value always has to be available, but
+ *      that a `Domain.typeOfValue(...)` query does not need to take the computational type
+ *      into account (Whenever BATAI requires the computational type of a value it uses
+ *      the respective method.)
  *
  * @author Michael Eichberg
  */
@@ -54,7 +62,29 @@ case object HasUnknownType extends TypesAnswer
 /**
  * The value has the primitive type.
  */
-case class IsPrimitiveValue(t: BaseType) extends TypesAnswer
+sealed trait IsPrimitiveValue extends TypesAnswer {
+    def primitiveType: BaseType
+}
+
+object IsPrimitiveValue {
+    def unapplay(answer: IsPrimitiveValue): Option[BaseType] = Some(answer.primitiveType)
+}
+
+case object IsBooleanValue extends IsPrimitiveValue { final val primitiveType = BooleanType }
+
+case object IsByteValue extends IsPrimitiveValue { final val primitiveType = ByteType }
+
+case object IsCharValue extends IsPrimitiveValue { final val primitiveType = CharType }
+
+case object IsShortValue extends IsPrimitiveValue { final val primitiveType = ShortType }
+
+case object IsIntegerValue extends IsPrimitiveValue { final val primitiveType = IntegerType }
+
+case object IsFloatValue extends IsPrimitiveValue { final val primitiveType = FloatType }
+
+case object IsLongValue extends IsPrimitiveValue { final val primitiveType = LongType }
+
+case object IsDoubleValue extends IsPrimitiveValue { final val primitiveType = DoubleType }
 
 /**
  * The value is a reference value.

@@ -68,6 +68,7 @@ trait AbstractBaseDomain[+I]
     with TypeLevelFieldAccessInstructions
     with TypeLevelInvokeInstructions
     with DoNothingOnReturnFromMethod
+    with DoNothingOnSynchronization
     with BasicTypeHierarchy
 
 /**

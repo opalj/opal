@@ -513,31 +513,28 @@ trait DefaultPreciseReferenceValues[+I]
         isPrecise: Boolean): AReferenceValue =
         AReferenceValue(pc, Set(referenceType), isNull, isPrecise)
 
-    def newNullValue(pc: PC): DomainValue =
+    override def newNullValue(pc: PC): DomainValue =
         AReferenceValue(pc, Set.empty[ReferenceType], Yes, true)
 
-    def newReferenceValue(referenceType: ReferenceType): DomainValue =
-        AReferenceValue(-1, Set(referenceType), Unknown, false)
-
-    def newReferenceValue(pc: PC, referenceType: ReferenceType): DomainValue =
+    override def someReferenceValue(pc: PC, referenceType: ReferenceType): DomainValue =
         AReferenceValue(pc, Set(referenceType), Unknown, false)
 
-    def nonNullReferenceValue(pc: PC, objectType: ObjectType): DomainValue =
+    override def nonNullReferenceValue(pc: PC, objectType: ObjectType): DomainValue =
         AReferenceValue(pc, Set[ReferenceType](objectType), No, false)
 
-    def newObject(pc: PC, referenceType: ReferenceType): DomainValue =
+    override def newObject(pc: PC, referenceType: ReferenceType): DomainValue =
         AReferenceValue(pc, Set[ReferenceType](referenceType), No, true)
 
-    def newInitializedObject(pc: PC, referenceType: ReferenceType): DomainValue =
+    override def newInitializedObject(pc: PC, referenceType: ReferenceType): DomainValue =
         newObject(pc, referenceType)
 
-    def newArray(pc: PC, referenceType: ReferenceType): DomainValue =
-        newInitializedObject(pc, referenceType)
-
-    def newStringValue(pc: PC, value: String): DomainValue =
+    override def newStringValue(pc: PC, value: String): DomainValue =
         AReferenceValue(pc, Set[ReferenceType](ObjectType.String), No, true)
 
-    def newClassValue(pc: PC, t: Type): DomainValue =
+    override def newClassValue(pc: PC, t: Type): DomainValue =
         AReferenceValue(pc, Set[ReferenceType](ObjectType.Class), No, true)
+
+    override def newArray(pc: PC, referenceType: ReferenceType): DomainValue =
+        newInitializedObject(pc, referenceType)
 
 }

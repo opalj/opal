@@ -68,7 +68,7 @@ trait TypeLevelLongValues[+I] extends Domain[I] {
 
     abstract override def typeOfValue(value: DomainValue): TypesAnswer =
         value match {
-            case r: LongValue ⇒ TypeLevelLongValues.typesAnswer
+            case r: LongValue ⇒ IsLongValue
             case _            ⇒ super.typeOfValue(value)
         }
 
@@ -127,9 +127,6 @@ trait TypeLevelLongValues[+I] extends Domain[I] {
     override def l2d(pc: PC, value: DomainValue): DomainValue = newDoubleValue(pc)
     override def l2f(pc: PC, value: DomainValue): DomainValue = newFloatValue(pc)
     override def l2i(pc: PC, value: DomainValue): DomainValue = newIntegerValue(pc)
-}
-private object TypeLevelLongValues {
-    private final val typesAnswer: IsPrimitiveValue = IsPrimitiveValue(LongType)
 }
 
 

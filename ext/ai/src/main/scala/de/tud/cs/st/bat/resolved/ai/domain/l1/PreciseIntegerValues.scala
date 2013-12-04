@@ -120,7 +120,7 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
 
     abstract override def typeOfValue(value: DomainValue): TypesAnswer =
         value match {
-            case integerLikeValue: IntegerLikeValue ⇒ PreciseIntegerValues.typesAnswer
+            case integerLikeValue: IntegerLikeValue ⇒ IsIntegerValue
             case _                                  ⇒ super.typeOfValue(value)
         }
 
@@ -339,8 +339,5 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
     def i2d(pc: PC, value: DomainValue): DomainValue = newDoubleValue(pc)
     def i2f(pc: PC, value: DomainValue): DomainValue = newFloatValue(pc)
     def i2l(pc: PC, value: DomainValue): DomainValue = newLongValue(pc)
-}
-private object PreciseIntegerValues {
-    private final val typesAnswer: IsPrimitiveValue = IsPrimitiveValue(IntegerType)
 }
 

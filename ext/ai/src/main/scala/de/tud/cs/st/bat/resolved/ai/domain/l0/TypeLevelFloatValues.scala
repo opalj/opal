@@ -60,7 +60,7 @@ trait TypeLevelFloatValues[+I] extends Domain[I] {
 
     abstract override def typeOfValue(value: DomainValue): TypesAnswer =
         value match {
-            case r: FloatValue ⇒ TypeLevelFloatValues.typesAnswer
+            case r: FloatValue ⇒ IsFloatValue
             case _             ⇒ super.typeOfValue(value)
         }
 
@@ -113,9 +113,6 @@ trait TypeLevelFloatValues[+I] extends Domain[I] {
     override def f2i(pc: PC, value: DomainValue): DomainValue = newIntegerValue(pc)
     override def f2l(pc: PC, value: DomainValue): DomainValue = newLongValue(pc)
 
-}
-private object TypeLevelFloatValues {
-    private val typesAnswer: IsPrimitiveValue = IsPrimitiveValue(FloatType)
 }
 
 

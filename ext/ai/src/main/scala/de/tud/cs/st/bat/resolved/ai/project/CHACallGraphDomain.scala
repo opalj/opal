@@ -211,6 +211,7 @@ class DefaultCHACallGraphDomain[Source](
         with l0.TypeLevelFieldAccessInstructions
         with l0.TypeLevelInvokeInstructions
         with l0.DoNothingOnReturnFromMethod
+        with l0.DoNothingOnSynchronization
         with l1.ProjectBasedClassHierarchy[Source]
         with CHACallGraphDomain[Source, Int] {
 

@@ -67,23 +67,23 @@ trait TypeLevelIntegerValues[+I] extends Domain[I] {
                 case SomeUpdate(value) ⇒ value
             }
 
-        protected[TypeLevelIntegerValues] def types: TypesAnswer
+        protected[TypeLevelIntegerValues] def typesAnswer: TypesAnswer
     }
 
     trait BooleanValue extends ComputationalTypeIntegerValue { this: DomainValue ⇒
-        final def types: TypesAnswer = TypeLevelIntegerValues.typesAnswerBoolean
+        final def typesAnswer: TypesAnswer = IsBooleanValue
     }
     trait ByteValue extends ComputationalTypeIntegerValue { this: DomainValue ⇒
-        final def types: TypesAnswer = TypeLevelIntegerValues.typesAnswerByte
+        final def typesAnswer: TypesAnswer = IsByteValue
     }
     trait CharValue extends ComputationalTypeIntegerValue { this: DomainValue ⇒
-        final def types: TypesAnswer = TypeLevelIntegerValues.typesAnswerChar
+        final def typesAnswer: TypesAnswer = IsCharValue
     }
     trait ShortValue extends ComputationalTypeIntegerValue { this: DomainValue ⇒
-        final def types: TypesAnswer = TypeLevelIntegerValues.typesAnswerShort
+        final def typesAnswer: TypesAnswer = IsShortValue
     }
     trait IntegerValue extends ComputationalTypeIntegerValue { this: DomainValue ⇒
-        final def types: TypesAnswer = TypeLevelIntegerValues.typesAnswerInteger
+        final def typesAnswer: TypesAnswer = IsIntegerValue
     }
 
     protected def newIntegerValue(): DomainValue
@@ -93,7 +93,7 @@ trait TypeLevelIntegerValues[+I] extends Domain[I] {
     //
 
     abstract override def typeOfValue(value: DomainValue): TypesAnswer = value match {
-        case ctiv: ComputationalTypeIntegerValue ⇒ ctiv.types
+        case ctiv: ComputationalTypeIntegerValue ⇒ ctiv.typesAnswer
         case _                                   ⇒ super.typeOfValue(value)
     }
 
@@ -183,12 +183,4 @@ trait TypeLevelIntegerValues[+I] extends Domain[I] {
     override def i2s(pc: PC, value: DomainValue): DomainValue = newShortValue(pc)
 
 }
-private object TypeLevelIntegerValues {
-    private val typesAnswerBoolean: IsPrimitiveValue = IsPrimitiveValue(BooleanType)
-    private val typesAnswerByte: IsPrimitiveValue = IsPrimitiveValue(ByteType)
-    private val typesAnswerChar: IsPrimitiveValue = IsPrimitiveValue(CharType)
-    private val typesAnswerShort: IsPrimitiveValue = IsPrimitiveValue(ShortType)
-    private val typesAnswerInteger: IsPrimitiveValue = IsPrimitiveValue(IntegerType)
-}
-
 
