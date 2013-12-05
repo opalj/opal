@@ -203,7 +203,7 @@ trait AI[D <: SomeDomain] {
             if (!method.isStatic) {
                 val thisType = classFile.thisClass
                 val thisValue =
-                    domain.nonNullReferenceValue(origin(localVariableIndex), thisType)
+                    domain.NonNullReferenceValue(origin(localVariableIndex), thisType)
                 locals.update(localVariableIndex, thisValue)
                 localVariableIndex += 1 /*==thisType.computationalType.operandSize*/
             }
@@ -211,7 +211,7 @@ trait AI[D <: SomeDomain] {
                 val ct = parameterType.computationalType
                 locals.update(
                     localVariableIndex,
-                    domain.newTypedValue(origin(localVariableIndex), parameterType))
+                    domain.TypedValue(origin(localVariableIndex), parameterType))
                 localVariableIndex += ct.operandSize
             }
             locals
@@ -874,7 +874,7 @@ trait AI[D <: SomeDomain] {
                             // if the operand of the athrow exception is null, a new 
                             // NullPointerException is raised by the JVM
                             handleException(
-                                newInitializedObject(pc, NullPointerException)
+                                InitializedObject(pc, NullPointerException)
                             )
                         }
                         if (isExceptionValueNull.maybeNo) {
@@ -1326,74 +1326,74 @@ trait AI[D <: SomeDomain] {
                     //
 
                     case 1 /*aconst_null*/ ⇒
-                        fallThrough(domain.newNullValue(pc) :: operands)
+                        fallThrough(domain.NullValue(pc) :: operands)
 
                     case 16 /*bipush*/ ⇒
                         val value = instruction.asInstanceOf[BIPUSH].value.toByte
-                        fallThrough(domain.newByteValue(pc, value) :: operands)
+                        fallThrough(domain.ByteValue(pc, value) :: operands)
 
                     case 14 /*dconst_0*/ ⇒
-                        fallThrough(domain.newDoubleValue(pc, 0.0d) :: operands)
+                        fallThrough(domain.DoubleValue(pc, 0.0d) :: operands)
                     case 15 /*dconst_1*/ ⇒
-                        fallThrough(domain.newDoubleValue(pc, 1.0d) :: operands)
+                        fallThrough(domain.DoubleValue(pc, 1.0d) :: operands)
 
                     case 11 /*fconst_0*/ ⇒
-                        fallThrough(domain.newFloatValue(pc, 0.0f) :: operands)
+                        fallThrough(domain.FloatValue(pc, 0.0f) :: operands)
                     case 12 /*fconst_1*/ ⇒
-                        fallThrough(domain.newFloatValue(pc, 1.0f) :: operands)
+                        fallThrough(domain.FloatValue(pc, 1.0f) :: operands)
                     case 13 /*fconst_2*/ ⇒
-                        fallThrough(domain.newFloatValue(pc, 2.0f) :: operands)
+                        fallThrough(domain.FloatValue(pc, 2.0f) :: operands)
 
                     case 2 /*iconst_m1*/ ⇒
-                        fallThrough(domain.newIntegerValue(pc, -1) :: operands)
+                        fallThrough(domain.IntegerValue(pc, -1) :: operands)
                     case 3 /*iconst_0*/ ⇒
-                        fallThrough(domain.newIntegerValue(pc, 0) :: operands)
+                        fallThrough(domain.IntegerValue(pc, 0) :: operands)
                     case 4 /*iconst_1*/ ⇒
-                        fallThrough(domain.newIntegerValue(pc, 1) :: operands)
+                        fallThrough(domain.IntegerValue(pc, 1) :: operands)
                     case 5 /*iconst_2*/ ⇒
-                        fallThrough(domain.newIntegerValue(pc, 2) :: operands)
+                        fallThrough(domain.IntegerValue(pc, 2) :: operands)
                     case 6 /*iconst_3*/ ⇒
-                        fallThrough(domain.newIntegerValue(pc, 3) :: operands)
+                        fallThrough(domain.IntegerValue(pc, 3) :: operands)
                     case 7 /*iconst_4*/ ⇒
-                        fallThrough(domain.newIntegerValue(pc, 4) :: operands)
+                        fallThrough(domain.IntegerValue(pc, 4) :: operands)
                     case 8 /*iconst_5*/ ⇒
-                        fallThrough(domain.newIntegerValue(pc, 5) :: operands)
+                        fallThrough(domain.IntegerValue(pc, 5) :: operands)
 
                     case 9 /*lconst_0*/ ⇒
-                        fallThrough(domain.newLongValue(pc, 0l) :: operands)
+                        fallThrough(domain.LongValue(pc, 0l) :: operands)
                     case 10 /*lconst_1*/ ⇒
-                        fallThrough(domain.newLongValue(pc, 1l) :: operands)
+                        fallThrough(domain.LongValue(pc, 1l) :: operands)
 
                     case 18 /*ldc*/ ⇒ instruction match {
                         case LoadInt(v) ⇒
-                            fallThrough(domain.newIntegerValue(pc, v) :: operands)
+                            fallThrough(domain.IntegerValue(pc, v) :: operands)
                         case LoadFloat(v) ⇒
-                            fallThrough(domain.newFloatValue(pc, v) :: operands)
+                            fallThrough(domain.FloatValue(pc, v) :: operands)
                         case LoadString(v) ⇒
-                            fallThrough(domain.newStringValue(pc, v) :: operands)
+                            fallThrough(domain.StringValue(pc, v) :: operands)
                         case LoadClass(v) ⇒
-                            fallThrough(domain.newClassValue(pc, v) :: operands)
+                            fallThrough(domain.ClassValue(pc, v) :: operands)
                     }
                     case 19 /*ldc_w*/ ⇒ instruction match {
                         case LoadInt_W(v) ⇒
-                            fallThrough(domain.newIntegerValue(pc, v) :: operands)
+                            fallThrough(domain.IntegerValue(pc, v) :: operands)
                         case LoadFloat_W(v) ⇒
-                            fallThrough(domain.newFloatValue(pc, v) :: operands)
+                            fallThrough(domain.FloatValue(pc, v) :: operands)
                         case LoadString_W(v) ⇒
-                            fallThrough(domain.newStringValue(pc, v) :: operands)
+                            fallThrough(domain.StringValue(pc, v) :: operands)
                         case LoadClass_W(v) ⇒
-                            fallThrough(domain.newClassValue(pc, v) :: operands)
+                            fallThrough(domain.ClassValue(pc, v) :: operands)
                     }
                     case 20 /*ldc2_w*/ ⇒ instruction match {
                         case LoadLong(v) ⇒
-                            fallThrough(domain.newLongValue(pc, v) :: operands)
+                            fallThrough(domain.LongValue(pc, v) :: operands)
                         case LoadDouble(v) ⇒
-                            fallThrough(domain.newDoubleValue(pc, v) :: operands)
+                            fallThrough(domain.DoubleValue(pc, v) :: operands)
                     }
 
                     case 17 /*sipush*/ ⇒
                         val value = instruction.asInstanceOf[SIPUSH].value.toShort
-                        fallThrough(domain.newShortValue(pc, value) :: operands)
+                        fallThrough(domain.ShortValue(pc, value) :: operands)
 
                     //
                     // RELATIONAL OPERATORS
@@ -1667,9 +1667,9 @@ trait AI[D <: SomeDomain] {
                                     // if objectref is a subtype => UNCHANGED
                                     fallThrough()
                                 case No ⇒
-                                    handleException(newInitializedObject(pc, ClassCastException))
+                                    handleException(InitializedObject(pc, ClassCastException))
                                 case Unknown ⇒
-                                    handleException(newInitializedObject(pc, ClassCastException))
+                                    handleException(InitializedObject(pc, ClassCastException))
                                     val (newOperands, newLocals) =
                                         establishUpperBound(
                                             pc,
@@ -1690,12 +1690,12 @@ trait AI[D <: SomeDomain] {
 
                         val result =
                             if (isNull(objectref).yes)
-                                domain.newBooleanValue(pc, false)
+                                domain.BooleanValue(pc, false)
                             else
                                 domain.isSubtypeOf(objectref, referenceType) match {
-                                    case Yes     ⇒ domain.newBooleanValue(pc, true)
-                                    case No      ⇒ domain.newBooleanValue(pc, false)
-                                    case Unknown ⇒ domain.newBooleanValue(pc)
+                                    case Yes     ⇒ domain.BooleanValue(pc, true)
+                                    case No      ⇒ domain.BooleanValue(pc, false)
+                                    case Unknown ⇒ domain.BooleanValue(pc)
                                 }
                         fallThrough(result :: rest)
                     }
@@ -1708,7 +1708,7 @@ trait AI[D <: SomeDomain] {
 
                     case 187 /*new*/ ⇒ {
                         val newObject = instruction.asInstanceOf[NEW]
-                        fallThrough(domain.newObject(pc, newObject.objectType) :: operands)
+                        fallThrough(domain.NewObject(pc, newObject.objectType) :: operands)
                     }
 
                     case 0 /*nop*/    ⇒ fallThrough()
@@ -1728,7 +1728,6 @@ trait AI[D <: SomeDomain] {
                     interpreterException(
                         t, domain, worklist, evaluated)(
                             operandsArray, localsArray)
-
             }
         }
 

@@ -51,7 +51,7 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
-trait TypeLevelFieldAccessInstructionsWithNullPointerHandling { this: Domain[_] ⇒
+trait TypeLevelFieldAccessInstructionsWithNullPointerHandling { this: SomeDomain ⇒
 
     import ObjectType.NullPointerException
 
@@ -60,24 +60,24 @@ trait TypeLevelFieldAccessInstructionsWithNullPointerHandling { this: Domain[_] 
         objectref: DomainValue,
         declaringClass: ObjectType,
         name: String,
-        fieldType: FieldType) : Computation[DomainValue, DomainValue] =
+        fieldType: FieldType): Computation[DomainValue, DomainValue] =
         isNull(objectref) match {
             case Yes ⇒
-                ThrowsException(newInitializedObject(pc, NullPointerException))
+                ThrowsException(InitializedObject(pc, NullPointerException))
             case Unknown ⇒
                 ComputedValueAndException(
-                    newTypedValue(pc, fieldType),
-                    newInitializedObject(pc, NullPointerException))
+                    TypedValue(pc, fieldType),
+                    InitializedObject(pc, NullPointerException))
             case No ⇒
-                ComputedValue(newTypedValue(pc, fieldType))
+                ComputedValue(TypedValue(pc, fieldType))
         }
 
     def getstatic(
         pc: PC,
         declaringClass: ObjectType,
         name: String,
-        fieldType: FieldType) : Computation[DomainValue, DomainValue] =
-        ComputedValue(newTypedValue(pc, fieldType))
+        fieldType: FieldType): Computation[DomainValue, Nothing] =
+        ComputedValue(TypedValue(pc, fieldType))
 
     def putfield(
         pc: PC,
@@ -85,13 +85,13 @@ trait TypeLevelFieldAccessInstructionsWithNullPointerHandling { this: Domain[_] 
         value: DomainValue,
         declaringClass: ObjectType,
         name: String,
-        fieldType: FieldType) : Computation[Nothing, DomainValue] =
+        fieldType: FieldType): Computation[Nothing, DomainValue] =
         isNull(objectref) match {
             case Yes ⇒
-                ThrowsException(newInitializedObject(pc, NullPointerException))
+                ThrowsException(InitializedObject(pc, NullPointerException))
             case Unknown ⇒
                 ComputationWithSideEffectOrException(
-                    newInitializedObject(pc, NullPointerException))
+                    InitializedObject(pc, NullPointerException))
             case No ⇒
                 ComputationWithSideEffectOnly
         }
@@ -101,7 +101,7 @@ trait TypeLevelFieldAccessInstructionsWithNullPointerHandling { this: Domain[_] 
         value: DomainValue,
         declaringClass: ObjectType,
         name: String,
-        fieldType: FieldType) : Computation[Nothing, DomainValue] =
+        fieldType: FieldType): Computation[Nothing, Nothing] =
         ComputationWithSideEffectOnly
 
 }

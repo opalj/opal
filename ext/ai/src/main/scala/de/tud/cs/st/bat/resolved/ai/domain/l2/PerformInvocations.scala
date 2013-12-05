@@ -120,7 +120,7 @@ trait PerformInvocations[+I, Source]
         val ai: AI[_ >: domain.type]
 
         // the function to transform the result
-        def transformResult(callerPC: PC, result: AIResult[domain.type]): OptionalReturnValueOrExceptions = {
+        def transformResult(callerPC: PC, result: AIResult[domain.type]): MethodCallResult = {
             val returnedValues = result.domain.returnedValues(result)
             val computedValue =
                 if (returnedValues.isEmpty)
@@ -156,7 +156,7 @@ trait PerformInvocations[+I, Source]
         declaringClass: ReferenceType,
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): OptionalReturnValueOrExceptions =
+        operands: List[DomainValue]): MethodCallResult =
         ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
 
     override def invokeinterface(
@@ -164,7 +164,7 @@ trait PerformInvocations[+I, Source]
         declaringClass: ObjectType,
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): OptionalReturnValueOrExceptions =
+        operands: List[DomainValue]): MethodCallResult =
         ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
 
     override def invokespecial(
@@ -172,7 +172,7 @@ trait PerformInvocations[+I, Source]
         declaringClass: ObjectType,
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): OptionalReturnValueOrExceptions =
+        operands: List[DomainValue]): MethodCallResult =
         ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
 
     final override def invokestatic(
@@ -180,7 +180,7 @@ trait PerformInvocations[+I, Source]
         declaringClass: ObjectType,
         methodName: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): OptionalReturnValueOrExceptions = {
+        operands: List[DomainValue]): MethodCallResult = {
 
         def fallback() =
             baseInvokestatic(pc, declaringClass, methodName, methodDescriptor, operands)
@@ -211,7 +211,7 @@ trait PerformInvocations[+I, Source]
         declaringClass: ObjectType,
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): OptionalReturnValueOrExceptions = {
+        operands: List[DomainValue]): MethodCallResult = {
         super.invokestatic(pc, declaringClass, name, methodDescriptor, operands)
     }
 
@@ -219,7 +219,7 @@ trait PerformInvocations[+I, Source]
         pc: PC,
         definingClass: ClassFile,
         method: Method,
-        operands: List[DomainValue]): OptionalReturnValueOrExceptions = {
+        operands: List[DomainValue]): MethodCallResult = {
 
         val executionHandler = invokeExecutionHandler(pc, definingClass, method, operands)
         val parameters = operands.reverse.zipWithIndex.map { operand_index ⇒

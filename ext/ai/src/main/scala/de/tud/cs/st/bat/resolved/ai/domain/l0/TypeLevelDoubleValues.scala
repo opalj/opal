@@ -77,46 +77,46 @@ trait TypeLevelDoubleValues[+I] extends Domain[I] {
     // RELATIONAL OPERATORS
     //
     override def dcmpg(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        newIntegerValue(pc)
+        IntegerValue(pc)
 
     override def dcmpl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        newIntegerValue(pc)
+        IntegerValue(pc)
 
     //
     // UNARY EXPRESSIONS
     //
     override def dneg(pc: PC, value: DomainValue) =
-        newDoubleValue(pc)
+        DoubleValue(pc)
 
     //
     // BINARY EXPRESSIONS
     //
     override def dadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        newDoubleValue(pc)
+        DoubleValue(pc)
 
     override def ddiv(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        newDoubleValue(pc)
+        DoubleValue(pc)
 
     override def dmul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        newDoubleValue(pc)
+        DoubleValue(pc)
 
     override def drem(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        newDoubleValue(pc)
+        DoubleValue(pc)
 
     override def dsub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        newDoubleValue(pc)
+        DoubleValue(pc)
 
     //
     // TYPE CONVERSION INSTRUCTIONS
     //
     override def d2f(pc: PC, value: DomainValue): DomainValue =
-        newFloatValue(pc)
+        FloatValue(pc)
 
     override def d2i(pc: PC, value: DomainValue): DomainValue =
-        newIntegerValue(pc)
+        IntegerValue(pc)
 
     override def d2l(pc: PC, value: DomainValue): DomainValue =
-        newLongValue(pc)
+        LongValue(pc)
 }
 
 

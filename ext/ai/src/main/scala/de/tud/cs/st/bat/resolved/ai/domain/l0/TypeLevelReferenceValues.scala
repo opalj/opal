@@ -136,39 +136,39 @@ trait TypeLevelReferenceValues[+I] extends Domain[I] {
     //
     // -----------------------------------------------------------------------------------
 
-    def newArray(pc: PC, referenceType: ArrayType): DomainValue
+    def ArrayReferenceValue(pc: PC, referenceType: ArrayType): DomainValue
 
     //
     // CREATE ARRAY
     //
-    def newarray(
+    override def newarray(
         pc: PC,
         count: DomainValue,
         componentType: FieldType): Computation[DomainValue, DomainValue] =
         //ComputedValueAndException(TypedValue(ArrayType(componentType)), TypedValue(ObjectType.NegativeArraySizeException))
-        ComputedValue(newArray(pc, ArrayType(componentType)))
+        ComputedValue(ArrayReferenceValue(pc, ArrayType(componentType)))
 
     /**
      * @note The componentType may be (again) an array type.
      */
-    def multianewarray(
+    override def multianewarray(
         pc: PC,
         counts: List[DomainValue],
         arrayType: ArrayType): Computation[DomainValue, DomainValue] =
         //ComputedValueAndException(TypedValue(arrayType), TypedValue(ObjectType.NegativeArraySizeException))
-        ComputedValue(newArray(pc, arrayType))
+        ComputedValue(ArrayReferenceValue(pc, arrayType))
 
     //
     // LOAD FROM AND STORE VALUE IN ARRAYS
     //
-    def aaload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
+    override def aaload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
         typeOfValue(arrayref) match {
             case IsReferenceValueWithSingleBound(ArrayType(componentType)) ⇒
-                ComputedValue(newTypedValue(pc, componentType))
+                ComputedValue(TypedValue(pc, componentType))
             case _ ⇒
                 domainException(this, "component type unknown: "+arrayref)
         }
 
-    def aastore(pc: PC, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
+    override def aastore(pc: PC, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
         ComputationWithSideEffectOnly
 }

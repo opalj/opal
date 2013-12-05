@@ -50,7 +50,7 @@ trait DefaultTypeLevelDoubleValues[+I]
         extends DefaultDomainValueBinding[I]
         with TypeLevelDoubleValues[I] {
 
-    case object DoubleValue extends super.DoubleValue {
+    case object ADoubleValue extends super.DoubleValue {
 
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] =
             // Since value is guaranteed to have computational type double it 
@@ -66,16 +66,14 @@ trait DefaultTypeLevelDoubleValues[+I]
             pc: PC): targetDomain.DomainValue =
             targetDomain match {
                 case thatDomain: DefaultTypeLevelDoubleValues[ThatI] ⇒
-                    thatDomain.DoubleValue.asInstanceOf[targetDomain.DomainValue]
+                    thatDomain.ADoubleValue.asInstanceOf[targetDomain.DomainValue]
                 case _ ⇒ super.adapt(targetDomain, pc)
             }
     }
 
-    def newDoubleValue(): DoubleValue = DoubleValue
+    override def DoubleValue(pc: PC): DomainValue = ADoubleValue
 
-    def newDoubleValue(pc: PC): DomainValue = DoubleValue
-
-    def newDoubleValue(pc: PC, value: Double): DoubleValue = DoubleValue
+    override def DoubleValue(pc: PC, value: Double): DoubleValue = ADoubleValue
 }
 
 

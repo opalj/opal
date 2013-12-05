@@ -48,8 +48,6 @@ trait DefaultTypeLevelReferenceValues[+I]
         extends DefaultDomainValueBinding[I]
         with TypeLevelReferenceValues[I] { domain ⇒
 
-    //    import collection.immutable.{Set => SortedList}
-    //    type UpperBound = collection.immutable.Set[ReferenceType]
     type UpperBound = UIDList[ReferenceType]
 
     // -----------------------------------------------------------------------------------
@@ -355,28 +353,28 @@ trait DefaultTypeLevelReferenceValues[+I]
     // FACTORY METHODS
     //
 
-    override def newNullValue(pc: PC): DomainValue =
+    override def NullValue(pc: PC): DomainValue =
         MReferenceValue(UIDList.empty)
 
-    override def nonNullReferenceValue(pc: PC, objectType: ObjectType): DomainValue =
+    override def NonNullReferenceValue(pc: PC, objectType: ObjectType): DomainValue =
         AReferenceValue(objectType)
 
-    override def someReferenceValue(pc: PC, referenceType: ReferenceType): DomainValue =
+    override def ReferenceValue(pc: PC, referenceType: ReferenceType): DomainValue =
         AReferenceValue(referenceType)
 
-    override def newObject(pc: PC, referenceType: ReferenceType): DomainValue =
+    override def NewObject(pc: PC, referenceType: ReferenceType): DomainValue =
         AReferenceValue(referenceType)
 
-    override def newInitializedObject(pc: PC, referenceType: ReferenceType): DomainValue =
-        newObject(pc, referenceType)
+    override def InitializedObject(pc: PC, referenceType: ReferenceType): DomainValue =
+        AReferenceValue(referenceType)
 
-    override def newArray(pc: PC, referenceType: ArrayType): DomainValue =
-        newInitializedObject(pc, referenceType)
+    override def ArrayReferenceValue(pc: PC, referenceType: ArrayType): DomainValue =
+        InitializedObject(pc, referenceType)
 
-    override def newStringValue(pc: PC, value: String): DomainValue =
+    override def StringValue(pc: PC, value: String): DomainValue =
         AReferenceValue(ObjectType.String)
 
-    override def newClassValue(pc: PC, t: Type): DomainValue =
+    override def ClassValue(pc: PC, t: Type): DomainValue =
         AReferenceValue(ObjectType.Class)
 
 }

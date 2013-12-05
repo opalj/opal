@@ -39,6 +39,7 @@ package project
 import de.tud.cs.st.collection.UShortSet
 import analyses.{ SomeProject, Project }
 import domain._
+import CallGraph.PCs
 
 import scala.collection.Set
 import scala.collection.Map
@@ -54,10 +55,8 @@ import scala.collection.Map
  */
 class CallGraph[Source] private[project] (
         val project: Project[Source],
-        private[this] val calledByMap: Array[_ <: Map[Method, UShortSet]],
+        private[this] val calledByMap: Array[_ <: Map[Method, PCs]],
         private[this] val callsMap: Array[_ <: Map[PC, Iterable[Method]]]) {
-
-    import CallGraph.PCs
 
     import de.tud.cs.st.util.ControlAbstractions.foreachNonNullValueOf
 
@@ -190,6 +189,11 @@ class CallGraph[Source] private[project] (
         result.map(_.mkString("\t")).mkString("\n")
     }
 }
+/**
+ * Useful constants and methods required for creating the call graph.
+ *
+ * @author Michael Eichberg
+ */
 object CallGraph {
     /**
      * Set of program counters.

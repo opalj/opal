@@ -64,7 +64,7 @@ trait TypeLevelInvokeInstructions { this: Domain[_] ⇒
         if (someType.isVoidType)
             None
         else
-            Some(newTypedValue(pc, someType))
+            Some(TypedValue(pc, someType))
     }
 
     override def invokevirtual(
@@ -72,7 +72,7 @@ trait TypeLevelInvokeInstructions { this: Domain[_] ⇒
         declaringClass: ReferenceType,
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): OptionalReturnValueOrExceptions =
+        operands: List[DomainValue]): MethodCallResult =
         ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
 
     override def invokeinterface(
@@ -80,7 +80,7 @@ trait TypeLevelInvokeInstructions { this: Domain[_] ⇒
         declaringClass: ObjectType,
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): OptionalReturnValueOrExceptions =
+        operands: List[DomainValue]): MethodCallResult =
         ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
 
     override def invokespecial(
@@ -88,7 +88,7 @@ trait TypeLevelInvokeInstructions { this: Domain[_] ⇒
         declaringClass: ObjectType,
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): OptionalReturnValueOrExceptions =
+        operands: List[DomainValue]): MethodCallResult =
         ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
 
     override def invokestatic(
@@ -96,7 +96,7 @@ trait TypeLevelInvokeInstructions { this: Domain[_] ⇒
         declaringClass: ObjectType,
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): OptionalReturnValueOrExceptions =
+        operands: List[DomainValue]): MethodCallResult =
         ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
 
     override def invokedynamic(
@@ -104,8 +104,9 @@ trait TypeLevelInvokeInstructions { this: Domain[_] ⇒
         bootstrapMethod: BootstrapMethod,
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): Computation[DomainValue, Iterable[DomainValue]] =
-        ComputedValue(newTypedValue(pc, ObjectType.Object))
+        operands: List[DomainValue]): Computation[DomainValue, ExceptionValues] =
+        // TODO [Clarify] This works for Groovy 2.1.5' use of invokedynamice, but does it work in general?
+        ComputedValue(TypedValue(pc, ObjectType.Object))
 
 }
 

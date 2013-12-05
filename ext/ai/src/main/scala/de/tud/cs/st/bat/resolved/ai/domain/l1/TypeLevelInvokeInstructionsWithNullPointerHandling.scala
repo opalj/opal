@@ -45,30 +45,30 @@ import analyses.{ Project, ClassHierarchy }
  *
  * @author Michael Eichberg
  */
-trait TypeLevelInvokeInstructionsWithNullPointerHandling { this: Domain[_] ⇒
+trait TypeLevelInvokeInstructionsWithNullPointerHandling { this: SomeDomain ⇒
 
     import ObjectType._
 
-    protected def asTypedValue(pc: PC, someType: Type): Option[DomainValue] = {
+    protected[this] def ReturnValue(pc: PC, someType: Type): Option[DomainValue] = {
         if (someType.isVoidType)
             None
         else
-            Some(newTypedValue(pc, someType))
+            Some(TypedValue(pc, someType))
     }
 
     protected def handleInstanceBasedInvoke(
         pc: PC,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): Computation[Option[DomainValue], Set[DomainValue]] =
+        operands: List[DomainValue]): MethodCallResult =
         isNull(operands.last) match {
             case Yes ⇒
-                ThrowsException(Set(newInitializedObject(pc, NullPointerException)))
+                ThrowsException(Set(InitializedObject(pc, NullPointerException)))
             case No ⇒
-                ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
+                ComputedValue(ReturnValue(pc, methodDescriptor.returnType))
             case Unknown ⇒
                 ComputedValueAndException(
-                    asTypedValue(pc, methodDescriptor.returnType),
-                    Set(newObject(pc, NullPointerException)))
+                    ReturnValue(pc, methodDescriptor.returnType),
+                    Set(InitializedObject(pc, NullPointerException)))
         }
 
     override def invokevirtual(
@@ -76,7 +76,7 @@ trait TypeLevelInvokeInstructionsWithNullPointerHandling { this: Domain[_] ⇒
         declaringClass: ReferenceType,
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): OptionalReturnValueOrExceptions =
+        operands: List[DomainValue]): MethodCallResult =
         handleInstanceBasedInvoke(pc, methodDescriptor, operands)
 
     override def invokeinterface(
@@ -84,7 +84,7 @@ trait TypeLevelInvokeInstructionsWithNullPointerHandling { this: Domain[_] ⇒
         declaringClass: ObjectType,
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): OptionalReturnValueOrExceptions =
+        operands: List[DomainValue]): MethodCallResult =
         handleInstanceBasedInvoke(pc, methodDescriptor, operands)
 
     override def invokespecial(
@@ -92,7 +92,7 @@ trait TypeLevelInvokeInstructionsWithNullPointerHandling { this: Domain[_] ⇒
         declaringClass: ObjectType,
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): OptionalReturnValueOrExceptions =
+        operands: List[DomainValue]): MethodCallResult =
         handleInstanceBasedInvoke(pc, methodDescriptor, operands)
 
     override def invokestatic(
@@ -100,15 +100,15 @@ trait TypeLevelInvokeInstructionsWithNullPointerHandling { this: Domain[_] ⇒
         declaringClass: ObjectType,
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): OptionalReturnValueOrExceptions =
-        ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
+        operands: List[DomainValue]): MethodCallResult =
+        ComputedValue(ReturnValue(pc, methodDescriptor.returnType))
 
     override def invokedynamic(
         pc: PC,
         bootstrapMethod: BootstrapMethod,
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): Computation[DomainValue, Iterable[DomainValue]] =
-        ComputedValue(newTypedValue(pc, ObjectType.Object))
+        operands: List[DomainValue]): Computation[DomainValue, ExceptionValues] =
+        ComputedValue(TypedValue(pc, ObjectType.Object))
 }
 

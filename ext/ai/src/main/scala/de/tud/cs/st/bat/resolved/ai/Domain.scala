@@ -299,6 +299,16 @@ trait Domain[+I] {
     type DomainValue <: Value
 
     /**
+     * An instruction's operands are represented using a list where the first
+     * element of the list represents the top level operand stack value.
+     */
+    type Operands = List[DomainValue]
+    /**
+     * An instruction's current register values/locals are represented using an array.
+     */
+    type Locals = Array[DomainValue]
+
+    /**
      * A simple type alias of the type `DomainValue`.
      * Used to facilitate comprehension.
      */
@@ -488,16 +498,16 @@ trait Domain[+I] {
      *
      * BATAI assigns the pc "-1" to the first parameter and -2 for the second...
      */
-    def newTypedValue(pc: PC, valueType: Type): DomainValue = valueType match {
-        case BooleanType       ⇒ newBooleanValue(pc)
-        case ByteType          ⇒ newByteValue(pc)
-        case ShortType         ⇒ newShortValue(pc)
-        case CharType          ⇒ newCharValue(pc)
-        case IntegerType       ⇒ newIntegerValue(pc)
-        case FloatType         ⇒ newFloatValue(pc)
-        case LongType          ⇒ newLongValue(pc)
-        case DoubleType        ⇒ newDoubleValue(pc)
-        case rt: ReferenceType ⇒ someReferenceValue(pc, rt)
+    def TypedValue(pc: PC, valueType: Type): DomainValue = valueType match {
+        case BooleanType       ⇒ BooleanValue(pc)
+        case ByteType          ⇒ ByteValue(pc)
+        case ShortType         ⇒ ShortValue(pc)
+        case CharType          ⇒ CharValue(pc)
+        case IntegerType       ⇒ IntegerValue(pc)
+        case FloatType         ⇒ FloatValue(pc)
+        case LongType          ⇒ LongValue(pc)
+        case DoubleType        ⇒ DoubleValue(pc)
+        case rt: ReferenceType ⇒ ReferenceValue(pc, rt)
         case VoidType          ⇒ domainException(this, "there are no void typed values")
     }
 
@@ -507,7 +517,7 @@ trait Domain[+I] {
      *
      * The domain may ignore the information about the origin (pc).
      */
-    def newBooleanValue(pc: PC): DomainValue
+    def BooleanValue(pc: PC): DomainValue
 
     /**
      * Factory method to create a representation of a boolean value with the given
@@ -515,7 +525,7 @@ trait Domain[+I] {
      *
      * The domain may ignore the information about the value and the origin (pc).
      */
-    def newBooleanValue(pc: PC, value: Boolean): DomainValue
+    def BooleanValue(pc: PC, value: Boolean): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or
@@ -523,7 +533,7 @@ trait Domain[+I] {
      *
      * The domain may ignore the information about the origin (pc).
      */
-    def newByteValue(pc: PC): DomainValue
+    def ByteValue(pc: PC): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given byte value
@@ -532,7 +542,7 @@ trait Domain[+I] {
      *
      * The domain may ignore the information about the value and the origin (pc).
      */
-    def newByteValue(pc: PC, value: Byte): DomainValue
+    def ByteValue(pc: PC, value: Byte): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or
@@ -540,14 +550,14 @@ trait Domain[+I] {
      *
      * The domain may ignore the information about the origin (pc).
      */
-    def newShortValue(pc: PC): DomainValue
+    def ShortValue(pc: PC): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given short value
      * and that was created (explicitly or implicitly) by the instruction with the
      * specified program counter.
      */
-    def newShortValue(pc: PC, value: Short): DomainValue
+    def ShortValue(pc: PC, value: Short): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or
@@ -555,17 +565,27 @@ trait Domain[+I] {
      *
      * The domain may ignore the information about the origin (pc).
      */
-    def newCharValue(pc: PC): DomainValue
+    def CharValue(pc: PC): DomainValue
+    
+    /**
+     * Factory method to create a `DomainValue` that represents the given char value
+     * and that was created (explicitly or implicitly) by the instruction with the
+     * specified program counter.
+     */
+    def CharValue(pc: PC, value: Char): DomainValue
 
     /**
      * Factory method to create a representation of the integer constant value 0.
+     *
+     * (The program counter  (`pc`) that should be assigned with the value (if any)
+     * should be Int.MinValue to signify that this value was not created by the program.)
      *
      * BATAI in particular uses this special value for performing subsequent
      * computations against the fixed value 0 (e.g., for if_XX instructions).
      *
      * The domain may ignore the information about the value.
      */
-    def newIntegerConstant0: DomainValue
+    def IntegerConstant0: DomainValue = IntegerValue(Int.MinValue, 0)
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or
@@ -573,7 +593,7 @@ trait Domain[+I] {
      *
      * The domain may ignore the information about the origin (pc).
      */
-    def newIntegerValue(pc: PC): DomainValue
+    def IntegerValue(pc: PC): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given integer value
@@ -582,7 +602,7 @@ trait Domain[+I] {
      *
      * The domain may ignore the information about the value and the origin (pc).
      */
-    def newIntegerValue(pc: PC, value: Int): DomainValue
+    def IntegerValue(pc: PC, value: Int): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or
@@ -590,7 +610,7 @@ trait Domain[+I] {
      *
      * The domain may ignore the information about the origin (pc).
      */
-    def newFloatValue(pc: PC): DomainValue
+    def FloatValue(pc: PC): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given float value
@@ -599,7 +619,7 @@ trait Domain[+I] {
      *
      * The domain may ignore the information about the value and the origin (pc).
      */
-    def newFloatValue(pc: PC, value: Float): DomainValue
+    def FloatValue(pc: PC, value: Float): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or
@@ -607,7 +627,7 @@ trait Domain[+I] {
      *
      * The domain may ignore the information about the origin (pc).
      */
-    def newLongValue(pc: PC): DomainValue
+    def LongValue(pc: PC): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given long value
@@ -616,7 +636,7 @@ trait Domain[+I] {
      *
      * The domain may ignore the information about the value and the origin (pc).
      */
-    def newLongValue(pc: PC, value: Long): DomainValue
+    def LongValue(pc: PC, value: Long): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or
@@ -624,7 +644,7 @@ trait Domain[+I] {
      *
      * The domain may ignore the information about the origin (pc).
      */
-    def newDoubleValue(pc: PC): DomainValue
+    def DoubleValue(pc: PC): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given double value
@@ -633,7 +653,7 @@ trait Domain[+I] {
      *
      * The domain may ignore the information about the value and the origin (pc).
      */
-    def newDoubleValue(pc: PC, value: Double): DomainValue
+    def DoubleValue(pc: PC, value: Double): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents a `null` value and
@@ -641,8 +661,15 @@ trait Domain[+I] {
      * specified program counter.
      *
      * The domain may ignore the information about the value and the origin (pc).
+     *
+     * ==Summary==
+     * The properties of the domain value are:
+     * 
+     *  - Initialized: N/A
+     *  - Type: '''Null'''
+     *  - Null: '''Yes'''
      */
-    def newNullValue(pc: PC): DomainValue
+    def NullValue(pc: PC): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents ''either a reference
@@ -653,18 +680,31 @@ trait Domain[+I] {
      * The domain may ignore the information about the value and the origin (pc), but
      * it has to remain possible for the domain to identify the component type of an
      * array.
+     *
+     * ==Summary==
+     * The properties of the domain value are:
+     * 
+     *  - Initialized: '''yes''' (the constructor was called)
+     *  - Type: '''Upper Bound'''
+     *  - Null: '''MayBe''' (It is unknown whether the value is `null` or not.)
      */
-    def someReferenceValue(pc: PC, referenceType: ReferenceType): DomainValue
+    def ReferenceValue(pc: PC, referenceType: ReferenceType): DomainValue
 
     /**
      * Represents ''a non-null reference value with the given type as an upper type bound''.
      *
      * The domain may ignore the information about the value and the origin (pc).
+     *
+     * ==Summary==
+     * The properties of the domain value are:
+     *  - Initialized: '''Yes''' (the constructor was called)
+     *  - Type: '''Upper Bound'''
+     *  - Null: '''No''' (This value is not `null`.)
      */
-    def nonNullReferenceValue(pc: PC, objectType: ObjectType): DomainValue
+    def NonNullReferenceValue(pc: PC, objectType: ObjectType): DomainValue
 
     /**
-     * Factory method to create a new `DomainValue` that represents a new,
+     * Creates a new `DomainValue` that represents a new,
      * '''uninitialized''' instance of an object of the given type. The object was
      * created by the (`NEW`) instruction with the specified program counter.
      *
@@ -672,11 +712,18 @@ trait Domain[+I] {
      * If the bytecode is valid a call of one of the object's constructors will
      * subsequently initialize the object.
      *
+     * ==Summary==
+     * The properties of the domain value are:
+     *  - Initialized: '''no''' (only the memory is allocated)
+     *  - Type: '''precise''' (i.e., this type is not an upper bound, 
+     *      the type correctly models the runtime type.)
+     *  - Null: '''No''' (This value is not `null`.)
+     *
      * @note Instances of arrays are created by the `newarray` and
      *      `multianewarray` instructions and in both cases an exception may be thrown
      *      (e.g., `NegativeArraySizeException`).
      */
-    def newObject(pc: PC, referenceType: ReferenceType): DomainValue
+    def NewObject(pc: PC, referenceType: ReferenceType): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents a new, '''initialized'''
@@ -690,8 +737,15 @@ trait Domain[+I] {
      * internally created by the JVM (in particular exceptions such as
      * `NullPointExeception` and `ClassCastException`). However, it can generally
      * be used to create initialized objects/arrays.
+     *
+     * ==Summary==
+     * The properties of the domain value are:
+     *  - Initialized: '''Yes'''
+     *  - Type: '''precise''' (i.e., this type is not an upper bound, the type 
+     *      correctly models the runtime type.)
+     *  - Null: '''No''' (This value is not `null`.)
      */
-    def newInitializedObject(pc: PC, referenceType: ReferenceType): DomainValue
+    def InitializedObject(pc: PC, referenceType: ReferenceType): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given string value
@@ -699,9 +753,16 @@ trait Domain[+I] {
      *
      * The domain may ignore the information about the value and the origin (pc).
      *
+     * ==Summary==
+     * The properties of the domain value are:
+     *  - Initialized: '''Yes''' and the String's value is the given value. The string
+     *      may be empty.
+     *  - Type: '''java.lang.String'''
+     *  - Null: '''No'''
+     *
      * @param value A non-null string. (The string may be empty, though.)
      */
-    def newStringValue(pc: PC, value: String): DomainValue
+    def StringValue(pc: PC, value: String): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents a runtime value of
@@ -709,8 +770,14 @@ trait Domain[+I] {
      * specified program counter.
      *
      * The domain may ignore the information about the value and the origin (pc).
+     *
+     * ==Summary==
+     * The properties of the domain value are:
+     *  - Initialized: '''Yes'''
+     *  - Type: '''java.lang.Class<t:Type>'''
+     *  - Null: '''No'''
      */
-    def newClassValue(pc: PC, t: Type): DomainValue
+    def ClassValue(pc: PC, t: Type): DomainValue
 
     // -----------------------------------------------------------------------------------
     //
@@ -795,11 +862,23 @@ trait Domain[+I] {
      * ==Implementing `typeOfValue`==
      * This method is typically not implemented by a single `Domain` trait/object, but is
      * instead implemented collaboratively by all domains that implement the semantics
-     * of certain values. To achieve that other `Domain` traits that implement a
-     * concrete domain's semantics have to `abstract override` this method and
+     * of certain values. To achieve that, other `Domain` traits that implement a
+     * concrete domain's semantics have to `abstract override` this method and only
      * return the value's type if the domain knows anything about the type. If a method
      * that overrides this method has no knowledge about the given value, it should
      * delegate this call to its super method.
+     *
+     * '''Example'''
+     * {{{
+     * trait FloatValues extends Domain[...] {
+     *   ...
+     *     abstract override def typeOfValue(value: DomainValue): TypesAnswer =
+     *     value match {
+     *       case r: FloatValue ⇒ IsFloatValue
+     *       case _             ⇒ super.typeOfValue(value)
+     *     }
+     * }
+     * }}}
      */
     def typeOfValue(value: DomainValue): TypesAnswer = HasUnknownType
 
@@ -892,7 +971,7 @@ trait Domain[+I] {
      * @param value A value with computational type integer.
      */
     final private[ai] def is0(value: DomainValue): Answer =
-        areEqual(value, newIntegerConstant0)
+        areEqual(value, IntegerConstant0)
 
     /**
      * Tests if the given integer value is not 0 or maybe not 0.
@@ -900,7 +979,7 @@ trait Domain[+I] {
      * @param value A value with computational type integer.
      */
     final private[ai] def isNot0(value: DomainValue): Answer =
-        areNotEqual(value, newIntegerConstant0)
+        areNotEqual(value, IntegerConstant0)
 
     /**
      * Tests if the given integer value is &lt; 0 or maybe &lt; 0.
@@ -908,7 +987,7 @@ trait Domain[+I] {
      * @param value A value with computational type integer.
      */
     final private[ai] def isLessThan0(value: DomainValue): Answer =
-        isLessThan(value, newIntegerConstant0)
+        isLessThan(value, IntegerConstant0)
 
     /**
      * Tests if the given integer value is less than or equal to 0 or maybe
@@ -917,7 +996,7 @@ trait Domain[+I] {
      * @param value A value with computational type integer.
      */
     final private[ai] def isLessThanOrEqualTo0(value: DomainValue): Answer =
-        isLessThanOrEqualTo(value, newIntegerConstant0)
+        isLessThanOrEqualTo(value, IntegerConstant0)
 
     /**
      * Tests if the given integer value is &gt; 0 or maybe &gt; 0.
@@ -925,7 +1004,7 @@ trait Domain[+I] {
      * @param value A value with computational type integer.
      */
     final private[ai] def isGreaterThan0(value: DomainValue): Answer =
-        isGreaterThan(value, newIntegerConstant0)
+        isGreaterThan(value, IntegerConstant0)
 
     /**
      * Tests if the given value is greater than or equal to 0 or maybe greater
@@ -934,7 +1013,7 @@ trait Domain[+I] {
      * @param value A value with computational type integer.
      */
     final private[ai] def isGreaterThanOrEqualTo0(value: DomainValue): Answer =
-        isGreaterThanOrEqualTo(value, newIntegerConstant0)
+        isGreaterThanOrEqualTo(value, IntegerConstant0)
 
     // -----------------------------------------------------------------------------------
     //
@@ -942,25 +1021,11 @@ trait Domain[+I] {
     //
     // -----------------------------------------------------------------------------------
 
-    /**
-     * An instruction's operands are represented using a list where the first
-     * element of the list represents the top level operand stack value.
-     */
-    type Operands = List[DomainValue]
-    /**
-     * An instruction's current register values/locals are represented using an array.
-     */
-    type Locals = Array[DomainValue]
-
-    type SingleValueConstraint = ((PC, DomainValue, Operands, Locals) ⇒ (Operands, Locals))
-
-    type TwoValuesConstraint = ((PC, DomainValue, DomainValue, Operands, Locals) ⇒ (Operands, Locals))
-
     //
     // W.r.t Reference Values
     /**
-     * Called by BATAI when it establishes that the value is `null` or has to be
-     * `null`. E.g., after a comparison with `null` BATAI can establish that the
+     * Called by BATAI when the value is know to be `null` has to be `null`.
+     * E.g., after a comparison with `null` (IFNULL/IFNONNULL) BATAI knows that the
      * value has to be `null` on one branch and that the value is not `null` on the
      * other branch.
      */
@@ -1070,6 +1135,20 @@ trait Domain[+I] {
         (operands, locals)
     private[ai] final def IsLessThanOrEqualTo = establishIsLessThanOrEqualTo _
 
+    /**
+     * A function that takes a program counter (`PC`), a value, the current operands
+     * and the register assignment and updates the operands and the register
+     * assignment w.r.t. the given value and the modeled constraint.
+     */
+    private[ai]type SingleValueConstraint = ((PC, DomainValue, Operands, Locals) ⇒ (Operands, Locals))
+
+    /**
+     * A function that takes a program counter (`PC`), two values, the current operands
+     * and the register assignment and updates the operands and the register
+     * assignment w.r.t. the given values and the modeled constraint.
+     */
+    private[ai]type TwoValuesConstraint = ((PC, DomainValue, DomainValue, Operands, Locals) ⇒ (Operands, Locals))
+
     private[ai] final def IsGreaterThan: TwoValuesConstraint =
         (pc: PC, value1: DomainValue, value2: DomainValue, operands: Operands, locals: Locals) ⇒
             establishIsLessThan(pc, value2, value1, operands, locals)
@@ -1080,36 +1159,33 @@ trait Domain[+I] {
 
     private[ai] final def Is0: SingleValueConstraint =
         (pc: PC, value: DomainValue, operands: Operands, locals: Locals) ⇒
-            establishAreEqual(pc, value, newIntegerConstant0, operands, locals)
+            establishAreEqual(pc, value, IntegerConstant0, operands, locals)
 
     private[ai] final def IsNot0: SingleValueConstraint =
         (pc: PC, value: DomainValue, operands: Operands, locals: Locals) ⇒
-            establishAreNotEqual(pc, value, newIntegerConstant0, operands, locals)
+            establishAreNotEqual(pc, value, IntegerConstant0, operands, locals)
 
     private[ai] final def IsLessThan0: SingleValueConstraint =
         (pc: PC, value: DomainValue, operands: Operands, locals: Locals) ⇒
-            establishIsLessThan(pc, value, newIntegerConstant0, operands, locals)
+            establishIsLessThan(pc, value, IntegerConstant0, operands, locals)
 
     private[ai] final def IsLessThanOrEqualTo0: SingleValueConstraint =
         (pc: PC, value: DomainValue, operands: Operands, locals: Locals) ⇒
-            establishIsLessThanOrEqualTo(pc, value, newIntegerConstant0, operands, locals)
+            establishIsLessThanOrEqualTo(pc, value, IntegerConstant0, operands, locals)
 
     private[ai] final def IsGreaterThan0: SingleValueConstraint =
         (pc: PC, value: DomainValue, operands: Operands, locals: Locals) ⇒
-            establishIsLessThan(pc, newIntegerConstant0, value, operands, locals)
+            establishIsLessThan(pc, IntegerConstant0, value, operands, locals)
 
     private[ai] final def IsGreaterThanOrEqualTo0: SingleValueConstraint =
         (pc: PC, value: DomainValue, operands: Operands, locals: Locals) ⇒
-            establishIsLessThanOrEqualTo(pc, newIntegerConstant0, value, operands, locals)
+            establishIsLessThanOrEqualTo(pc, IntegerConstant0, value, operands, locals)
 
     // -----------------------------------------------------------------------------------
     //
     // ABSTRACTIONS RELATED TO INSTRUCTIONS
     //
     // -----------------------------------------------------------------------------------
-
-    protected type SucceedsOrNullPointerException = Computation[Nothing, ExceptionValue]
-    protected type OptionalReturnValueOrExceptions = Computation[Option[DomainValue], ExceptionValues]
 
     //
     // METHODS TO IMPLEMENT THE SEMANTICS OF INSTRUCTIONS
@@ -1120,18 +1196,22 @@ trait Domain[+I] {
     //
 
     /**
-     * The return value is either a new array, a `NegativeArraySizeException`
-     * or some linking exception.
+     * The return value is either a new array or a `NegativeArraySizeException` if
+     * count is negative.
      */
     def newarray(
         pc: PC,
         count: DomainValue,
-        componentType: FieldType): Computation[DomainValue, DomainValue]
+        componentType: FieldType): Computation[DomainValue, ExceptionValue]
 
+    /**
+     * The return value is either a new array or a `NegativeArraySizeException` if
+     * count is negative.
+     */
     def multianewarray(
         pc: PC,
         counts: List[DomainValue],
-        arrayType: ArrayType): Computation[DomainValue, DomainValue]
+        arrayType: ArrayType): Computation[DomainValue, ExceptionValue]
 
     //
     // LOAD FROM AND STORE VALUE IN ARRAYS
@@ -1189,7 +1269,7 @@ trait Domain[+I] {
     /**
      * Returns the array's length or throws a `NullPointerException`.
      */
-    def arraylength(pc: PC, arrayref: DomainValue): Computation[DomainValue, DomainValue]
+    def arraylength(pc: PC, arrayref: DomainValue): Computation[DomainValue, ExceptionValue]
 
     //
     // TYPE CONVERSION
@@ -1228,9 +1308,10 @@ trait Domain[+I] {
      * Called by BATAI when an exception is thrown that is not (guaranteed to be) handled
      * within the same method.
      *
-     * @note If the original exception value is `null`, then
+     * @note If the original exception value is `null` (`/*E.g.*/throw null;`), then
      *      the exception that is actually thrown is a new `NullPointerException`. This
-     *      situation is, however, completely handled by BATAI.
+     *      situation is, however, completely handled by BATAI and the exception
+     *      is hence never `null`.
      */
     def abruptMethodExecution(pc: PC, exception: DomainValue): Unit
 
@@ -1251,15 +1332,14 @@ trait Domain[+I] {
                  fieldType: FieldType): Computation[DomainValue, DomainValue]
 
     /**
-     * Returns the field's value and/or a new `LinkageException` if the specified
-     * class is not found.
+     * Returns the field's value.
      *
      * @return The field's value or a new `LinkageException`.
      */
     def getstatic(pc: PC,
                   declaringClass: ObjectType,
                   name: String,
-                  fieldType: FieldType): Computation[DomainValue, DomainValue]
+                  fieldType: FieldType): Computation[DomainValue, Nothing]
 
     /**
      * Sets the fields values if the given `objectref` is not `null`.
@@ -1278,46 +1358,47 @@ trait Domain[+I] {
                   value: DomainValue,
                   declaringClass: ObjectType,
                   name: String,
-                  fieldType: FieldType): Computation[Nothing, DomainValue]
+                  fieldType: FieldType): Computation[Nothing, Nothing]
 
     //
     // METHOD INVOCATIONS
     //
+    protected type MethodCallResult = Computation[Option[DomainValue], ExceptionValues]
 
     def invokedynamic(
         pc: PC,
         bootstrapMethod: BootstrapMethod,
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): Computation[DomainValue, Iterable[DomainValue]]
+        operands: List[DomainValue]): Computation[DomainValue, ExceptionValues]
 
     def invokevirtual(
         pc: PC,
         declaringClass: ReferenceType, // e.g., Array[] x = ...; x.clone()
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): OptionalReturnValueOrExceptions
+        operands: List[DomainValue]): MethodCallResult
 
     def invokeinterface(
         pc: PC,
         declaringClass: ObjectType,
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): OptionalReturnValueOrExceptions
+        operands: List[DomainValue]): MethodCallResult
 
     def invokespecial(
         pc: PC,
         declaringClass: ObjectType,
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): OptionalReturnValueOrExceptions
+        operands: List[DomainValue]): MethodCallResult
 
     def invokestatic(
         pc: PC,
         declaringClass: ObjectType,
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): OptionalReturnValueOrExceptions
+        operands: List[DomainValue]): MethodCallResult
 
     //
     // RELATIONAL OPERATORS
@@ -1343,7 +1424,7 @@ trait Domain[+I] {
     /**
      * Computation that returns a numeric value or an `ObjectType.ArithmeticException`.
      */
-    type IntegerDivisionResult = Computation[DomainValue, DomainValue]
+    type IntegerDivisionResult = Computation[DomainValue, ExceptionValue]
 
     def dadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
     def ddiv(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
@@ -1389,12 +1470,12 @@ trait Domain[+I] {
     /**
      * Handles a `monitorenter` instruction.
      */
-    def monitorenter(pc: PC, value: DomainValue): SucceedsOrNullPointerException
+    def monitorenter(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue]
 
     /**
      * Handles a `monitorenter` instruction.
      */
-    def monitorexit(pc: PC, value: DomainValue): SucceedsOrNullPointerException
+    def monitorexit(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue]
 
     //
     //

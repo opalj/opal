@@ -51,12 +51,12 @@ trait DefaultTypeLevelIntegerValues[+I]
         extends DefaultDomainValueBinding[I]
         with TypeLevelIntegerValues[I] { Domain ⇒
 
-    case object BooleanValue extends super.BooleanValue {
+    case object ABooleanValue extends super.BooleanValue {
 
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] =
             value match {
-                case BooleanValue ⇒ NoUpdate
-                case _            ⇒ StructuralUpdate(IntegerValue)
+                case ABooleanValue ⇒ NoUpdate
+                case _             ⇒ StructuralUpdate(AnIntegerValue)
             }
 
         override def adapt[ThatI >: I](
@@ -64,17 +64,17 @@ trait DefaultTypeLevelIntegerValues[+I]
             pc: PC): targetDomain.DomainValue =
             targetDomain match {
                 case thatDomain: DefaultTypeLevelIntegerValues[ThatI] ⇒
-                    thatDomain.BooleanValue.asInstanceOf[targetDomain.DomainValue]
+                    thatDomain.ABooleanValue.asInstanceOf[targetDomain.DomainValue]
                 case _ ⇒ super.adapt(targetDomain, pc)
             }
     }
 
-    case object ByteValue extends super.ByteValue {
+    case object AByteValue extends super.ByteValue {
 
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] =
             value match {
-                case ByteValue ⇒ NoUpdate
-                case _         ⇒ StructuralUpdate(IntegerValue)
+                case AByteValue ⇒ NoUpdate
+                case _          ⇒ StructuralUpdate(AnIntegerValue)
             }
 
         override def adapt[ThatI >: I](
@@ -82,17 +82,17 @@ trait DefaultTypeLevelIntegerValues[+I]
             pc: PC): targetDomain.DomainValue =
             targetDomain match {
                 case thatDomain: DefaultTypeLevelIntegerValues[ThatI] ⇒
-                    thatDomain.ByteValue.asInstanceOf[targetDomain.DomainValue]
+                    thatDomain.AByteValue.asInstanceOf[targetDomain.DomainValue]
                 case _ ⇒ super.adapt(targetDomain, pc)
             }
     }
 
-    case object ShortValue extends super.ShortValue {
+    case object AShortValue extends super.ShortValue {
 
         override def doJoin(pc: PC, that: DomainValue): Update[DomainValue] =
             that match {
-                case ShortValue ⇒ NoUpdate
-                case _          ⇒ StructuralUpdate(IntegerValue)
+                case AShortValue ⇒ NoUpdate
+                case _           ⇒ StructuralUpdate(AnIntegerValue)
 
             }
 
@@ -101,17 +101,17 @@ trait DefaultTypeLevelIntegerValues[+I]
             pc: PC): targetDomain.DomainValue =
             targetDomain match {
                 case thatDomain: DefaultTypeLevelIntegerValues[ThatI] ⇒
-                    thatDomain.ShortValue.asInstanceOf[targetDomain.DomainValue]
+                    thatDomain.AShortValue.asInstanceOf[targetDomain.DomainValue]
                 case _ ⇒ super.adapt(targetDomain, pc)
             }
     }
 
-    case object CharValue extends super.CharValue {
+    case object ACharValue extends super.CharValue {
 
         override def doJoin(pc: PC, that: DomainValue): Update[DomainValue] =
             that match {
-                case CharValue ⇒ NoUpdate
-                case _         ⇒ StructuralUpdate(IntegerValue)
+                case ACharValue ⇒ NoUpdate
+                case _          ⇒ StructuralUpdate(AnIntegerValue)
             }
 
         override def adapt[ThatI >: I](
@@ -119,12 +119,12 @@ trait DefaultTypeLevelIntegerValues[+I]
             pc: PC): targetDomain.DomainValue =
             targetDomain match {
                 case thatDomain: DefaultTypeLevelIntegerValues[ThatI] ⇒
-                    thatDomain.CharValue.asInstanceOf[targetDomain.DomainValue]
+                    thatDomain.ACharValue.asInstanceOf[targetDomain.DomainValue]
                 case _ ⇒ super.adapt(targetDomain, pc)
             }
     }
 
-    case object IntegerValue extends super.IntegerValue {
+    case object AnIntegerValue extends super.IntegerValue {
 
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] =
             NoUpdate
@@ -134,30 +134,24 @@ trait DefaultTypeLevelIntegerValues[+I]
             pc: PC): targetDomain.DomainValue =
             targetDomain match {
                 case thatDomain: DefaultTypeLevelIntegerValues[ThatI] ⇒
-                    thatDomain.IntegerValue.asInstanceOf[targetDomain.DomainValue]
+                    thatDomain.AnIntegerValue.asInstanceOf[targetDomain.DomainValue]
                 case _ ⇒ super.adapt(targetDomain, pc)
             }
     }
 
-    def newBooleanValue(): DomainValue = BooleanValue
-    def newBooleanValue(pc: PC): DomainValue = BooleanValue
-    def newBooleanValue(pc: PC, value: Boolean): DomainValue = BooleanValue
+    override def BooleanValue(pc: PC): DomainValue = ABooleanValue
+    override def BooleanValue(pc: PC, value: Boolean): DomainValue = ABooleanValue
 
-    def newByteValue() = ByteValue
-    def newByteValue(pc: PC): DomainValue = ByteValue
-    def newByteValue(pc: PC, value: Byte) = ByteValue
+    override def ByteValue(pc: PC): DomainValue = AByteValue
+    override def ByteValue(pc: PC, value: Byte) = AByteValue
 
-    def newShortValue() = ShortValue
-    def newShortValue(pc: PC): DomainValue = ShortValue
-    def newShortValue(pc: PC, value: Short) = ShortValue
+    override def ShortValue(pc: PC): DomainValue = AShortValue
+    override def ShortValue(pc: PC, value: Short) = AShortValue
 
-    def newCharValue() = CharValue
-    def newCharValue(pc: PC): DomainValue = CharValue
-    def newCharValue(pc: PC, value: Byte) = CharValue
+    override def CharValue(pc: PC): DomainValue = ACharValue
+    override def CharValue(pc: PC, value: Char) = ACharValue
 
-    def newIntegerValue() = IntegerValue
-    def newIntegerValue(pc: PC): DomainValue = IntegerValue
-    def newIntegerValue(pc: PC, value: Int) = IntegerValue
-    val newIntegerConstant0: DomainValue = newIntegerValue(Int.MinValue, 0)
+    override def IntegerValue(pc: PC): DomainValue = AnIntegerValue
+    override def IntegerValue(pc: PC, value: Int) = AnIntegerValue
 }
 

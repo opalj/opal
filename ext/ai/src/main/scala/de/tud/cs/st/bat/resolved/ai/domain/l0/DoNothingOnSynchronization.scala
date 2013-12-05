@@ -48,15 +48,15 @@ trait DoNothingOnSynchronization { this: Domain[_] ⇒
 
     protected def sideEffectOnlyOrNullPointerException(
         pc: PC,
-        value: DomainValue): SucceedsOrNullPointerException = {
+        value: DomainValue): Computation[Nothing, ExceptionValue] = {
         isNull(value) match {
             case Yes ⇒
-                ThrowsException(newInitializedObject(pc, ObjectType.NullPointerException))
+                ThrowsException(InitializedObject(pc, ObjectType.NullPointerException))
             case No ⇒
                 ComputationWithSideEffectOnly
             case Unknown ⇒
                 ComputationWithSideEffectOrException(
-                    newInitializedObject(pc, ObjectType.NullPointerException)
+                    InitializedObject(pc, ObjectType.NullPointerException)
                 )
         }
     }
@@ -69,7 +69,9 @@ trait DoNothingOnSynchronization { this: Domain[_] ⇒
      * the value is known not to be `null` the given value is (also) returned as this
      * computation's results.
      */
-    override def monitorenter(pc: PC, value: DomainValue): SucceedsOrNullPointerException = {
+    override def monitorenter(
+        pc: PC,
+        value: DomainValue): Computation[Nothing, ExceptionValue] = {
         sideEffectOnlyOrNullPointerException(pc, value)
     }
 
@@ -81,7 +83,9 @@ trait DoNothingOnSynchronization { this: Domain[_] ⇒
      * the value is known not to be `null` the given value is (also) returned as this
      * computation's results.
      */
-    override def monitorexit(pc: PC, value: DomainValue): SucceedsOrNullPointerException = {
+    override def monitorexit(
+        pc: PC,
+        value: DomainValue): Computation[Nothing, ExceptionValue] = {
         sideEffectOnlyOrNullPointerException(pc, value)
     }
 }

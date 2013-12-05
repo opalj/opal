@@ -244,33 +244,33 @@ trait PreciseReferenceValues[+I] extends Domain[I] {
     //
     // -----------------------------------------------------------------------------------
 
-    def newArray(pc: PC, referenceType: ReferenceType): DomainValue
+    def ArrayReferenceValue(pc: PC, referenceType: ReferenceType): DomainValue
 
     //
     // CREATE ARRAY
     //
-    def newarray(pc: PC,
+    override def newarray(pc: PC,
                  count: DomainValue,
                  componentType: FieldType): Computation[DomainValue, DomainValue] =
         //ComputedValueAndException(TypedValue(ArrayType(componentType)), TypedValue(ObjectType.NegativeArraySizeException))
-        ComputedValue(newArray(pc, ArrayType(componentType)))
+        ComputedValue(ArrayReferenceValue(pc, ArrayType(componentType)))
 
     /**
      * @note The componentType may be (again) an array type.
      */
-    def multianewarray(pc: PC,
+    override def multianewarray(pc: PC,
                        counts: List[DomainValue],
                        arrayType: ArrayType) =
         //ComputedValueAndException(TypedValue(arrayType), TypedValue(ObjectType.NegativeArraySizeException))
-        ComputedValue(newArray(pc, arrayType))
+        ComputedValue(ArrayReferenceValue(pc, arrayType))
 
     //
     // LOAD FROM AND STORE VALUE IN ARRAYS
     //
-    def aaload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
+    override def aaload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
         typeOfValue(arrayref) match {
             case IsReferenceValueWithSingleBound(ArrayType(componentType)) ⇒
-                ComputedValue(newTypedValue(pc, componentType))
+                ComputedValue(TypedValue(pc, componentType))
             case _ ⇒
                 domainException(
                     this,
@@ -278,6 +278,6 @@ trait PreciseReferenceValues[+I] extends Domain[I] {
                 )
         }
 
-    def aastore(pc: PC, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
+    override def aastore(pc: PC, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
         ComputationWithSideEffectOnly
 }

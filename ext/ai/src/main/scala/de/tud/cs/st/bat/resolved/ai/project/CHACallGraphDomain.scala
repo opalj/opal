@@ -144,7 +144,7 @@ trait CHACallGraphDomain[Source, I]
         declaringClass: ReferenceType,
         name: String,
         descriptor: MethodDescriptor,
-        operands: List[DomainValue]): OptionalReturnValueOrExceptions = {
+        operands: List[DomainValue]): MethodCallResult = {
         if (declaringClass.isArrayType) {
             staticMethodCall(pc, ObjectType.Object, name, descriptor)
         } else {
@@ -158,7 +158,7 @@ trait CHACallGraphDomain[Source, I]
         declaringClass: ObjectType,
         name: String,
         descriptor: MethodDescriptor,
-        operands: List[DomainValue]): OptionalReturnValueOrExceptions = {
+        operands: List[DomainValue]): MethodCallResult = {
         virtualMethodCall(pc, declaringClass, name, descriptor, operands)
         super.invokeinterface(pc, declaringClass, name, descriptor, operands)
     }
@@ -171,7 +171,7 @@ trait CHACallGraphDomain[Source, I]
         declaringClass: ObjectType,
         name: String,
         descriptor: MethodDescriptor,
-        operands: List[DomainValue]): OptionalReturnValueOrExceptions = {
+        operands: List[DomainValue]): MethodCallResult = {
         // for invokespecial the dynamic type is not "relevant" and the
         // first method that we find is the one that needs to be concrete 
         staticMethodCall(pc, declaringClass, name, descriptor)
@@ -186,7 +186,7 @@ trait CHACallGraphDomain[Source, I]
         declaringClass: ObjectType,
         name: String,
         descriptor: MethodDescriptor,
-        operands: List[DomainValue]): OptionalReturnValueOrExceptions = {
+        operands: List[DomainValue]): MethodCallResult = {
         staticMethodCall(pc, declaringClass, name, descriptor)
         super.invokestatic(pc, declaringClass, name, descriptor, operands)
     }

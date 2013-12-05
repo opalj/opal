@@ -49,6 +49,11 @@ trait DefaultPreciseIntegerValues[+I]
         extends DefaultDomainValueBinding[I]
         with PreciseIntegerValues[I] {
 
+    // ATTENTION: The functionality to propagate a constraint crucially depends on
+    // the fact two integer values created at two different places are represented
+    // by two different instances of "AnIntegerValue"; otherwise, propagating the
+    // constraint that some value (after some kind of check) has to have a special
+    // value may affect unrelated values!
     case class AnIntegerValue() extends super.AnIntegerValue {
 
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = NoUpdate
@@ -62,25 +67,23 @@ trait DefaultPreciseIntegerValues[+I]
             pc: PC): targetDomain.DomainValue =
             if (targetDomain.isInstanceOf[DefaultPreciseIntegerValues[ThatI]]) {
                 val thatDomain = targetDomain.asInstanceOf[DefaultPreciseIntegerValues[ThatI]]
-                thatDomain.AnIntegerValue().asInstanceOf[targetDomain.DomainValue]
+                thatDomain.AnIntegerValue.asInstanceOf[targetDomain.DomainValue]
             } else {
                 super.adapt(targetDomain, pc)
             }
     }
 
-    case class IntegerValue(
+    case class IntegerRange(
         val initial: Int,
         val value: Int)
             extends super.IntegerValue {
-
-        def this(value: Int) = this(value, value)
-
-        def update(newValue: Int): DomainValue = IntegerValue(initial, newValue)
+        
+        def update(newValue: Int): DomainValue = IntegerRange(initial, newValue)
 
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] =
             value match {
                 case AnIntegerValue() ⇒ StructuralUpdate(value)
-                case IntegerValue(otherInitial, otherValue) ⇒
+                case IntegerRange(otherInitial, otherValue) ⇒
                     // First check if they are growing in the same direction...
                     var increasing = (this.value - this.initial >= 0)
                     if (increasing != (otherValue - otherInitial) >= 0)
@@ -90,9 +93,9 @@ trait DefaultPreciseIntegerValues[+I]
                         if (spread(newValue, newInitial) > maxSpread)
                             StructuralUpdate(AnIntegerValue())
                         else if (newValue != this.value)
-                            StructuralUpdate(IntegerValue(newInitial, newValue))
+                            StructuralUpdate(IntegerRange(newInitial, newValue))
                         else if (newInitial != this.initial)
-                            MetaInformationUpdate(IntegerValue(newInitial, newValue))
+                            MetaInformationUpdate(IntegerRange(newInitial, newValue))
                         else
                             NoUpdate
                     }
@@ -121,36 +124,30 @@ trait DefaultPreciseIntegerValues[+I]
             pc: PC): targetDomain.DomainValue =
             if (targetDomain.isInstanceOf[DefaultPreciseIntegerValues[ThatI]]) {
                 val thatDomain = targetDomain.asInstanceOf[DefaultPreciseIntegerValues[ThatI]]
-                thatDomain.IntegerValue(this.initial, this.value).
+                thatDomain.IntegerRange(this.initial, this.value).
                     asInstanceOf[targetDomain.DomainValue]
             } else {
                 super.adapt(targetDomain, pc)
             }
 
-        override def toString: String = "IntegerValue(initial="+initial+", value="+value+")"
+        override def toString: String = "IntegerRage(initial="+initial+", value="+value+")"
     }
 
-    def newBooleanValue(): DomainValue = AnIntegerValue()
-    def newBooleanValue(pc: PC): DomainValue = AnIntegerValue()
-    def newBooleanValue(pc: PC, value: Boolean): DomainValue =
-        if (value) newIntegerValue(pc, 1) else newIntegerValue(pc, 0)
+    override def BooleanValue(pc: PC): DomainValue = AnIntegerValue()
+    override def BooleanValue(pc: PC, value: Boolean): DomainValue =
+        if (value) IntegerValue(pc, 1) else IntegerValue(pc, 0)
 
-    def newByteValue() = AnIntegerValue()
-    def newByteValue(pc: PC): DomainValue = AnIntegerValue()
-    def newByteValue(pc: PC, value: Byte) = new IntegerValue(value)
+    override def ByteValue(pc: PC): DomainValue = AnIntegerValue()
+    override def ByteValue(pc: PC, value: Byte) = new IntegerRange(value,value)
 
-    def newShortValue() = AnIntegerValue()
-    def newShortValue(pc: PC): DomainValue = AnIntegerValue()
-    def newShortValue(pc: PC, value: Short) = new IntegerValue(value)
+    override def ShortValue(pc: PC): DomainValue = AnIntegerValue()
+    override def ShortValue(pc: PC, value: Short) = new IntegerRange(value,value)
 
-    def newCharValue() = AnIntegerValue()
-    def newCharValue(pc: PC): DomainValue = AnIntegerValue()
-    def newCharValue(pc: PC, value: Char) = new IntegerValue(value)
+    override def CharValue(pc: PC): DomainValue = AnIntegerValue()
+    override def CharValue(pc: PC, value: Char) = new IntegerRange(value,value)
 
-    def newIntegerValue() = AnIntegerValue()
-    def newIntegerValue(pc: PC): DomainValue = AnIntegerValue()
-    def newIntegerValue(pc: PC, value: Int) = new IntegerValue(value)
-    def newIntegerConstant0: DomainValue = new IntegerValue(0)
+    override def IntegerValue(pc: PC): DomainValue = AnIntegerValue()
+    override def IntegerValue(pc: PC, value: Int) = new IntegerRange(value,value)
 
 }
 

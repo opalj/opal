@@ -513,28 +513,28 @@ trait DefaultPreciseReferenceValues[+I]
         isPrecise: Boolean): AReferenceValue =
         AReferenceValue(pc, Set(referenceType), isNull, isPrecise)
 
-    override def newNullValue(pc: PC): DomainValue =
+    override def NullValue(pc: PC): DomainValue =
         AReferenceValue(pc, Set.empty[ReferenceType], Yes, true)
 
-    override def someReferenceValue(pc: PC, referenceType: ReferenceType): DomainValue =
+    override def ReferenceValue(pc: PC, referenceType: ReferenceType): DomainValue =
         AReferenceValue(pc, Set(referenceType), Unknown, false)
 
-    override def nonNullReferenceValue(pc: PC, objectType: ObjectType): DomainValue =
+    override def NonNullReferenceValue(pc: PC, objectType: ObjectType): DomainValue =
         AReferenceValue(pc, Set[ReferenceType](objectType), No, false)
 
-    override def newObject(pc: PC, referenceType: ReferenceType): DomainValue =
+    override def NewObject(pc: PC, referenceType: ReferenceType): DomainValue =
         AReferenceValue(pc, Set[ReferenceType](referenceType), No, true)
 
-    override def newInitializedObject(pc: PC, referenceType: ReferenceType): DomainValue =
-        newObject(pc, referenceType)
+    override def InitializedObject(pc: PC, referenceType: ReferenceType): DomainValue =
+        NewObject(pc, referenceType)
 
-    override def newStringValue(pc: PC, value: String): DomainValue =
+    override def StringValue(pc: PC, value: String): DomainValue =
         AReferenceValue(pc, Set[ReferenceType](ObjectType.String), No, true)
 
-    override def newClassValue(pc: PC, t: Type): DomainValue =
+    override def ClassValue(pc: PC, t: Type): DomainValue =
         AReferenceValue(pc, Set[ReferenceType](ObjectType.Class), No, true)
 
-    override def newArray(pc: PC, referenceType: ReferenceType): DomainValue =
-        newInitializedObject(pc, referenceType)
+    def ArrayReferenceValue(pc: PC, referenceType: ReferenceType): DomainValue =
+        InitializedObject(pc, referenceType)
 
 }

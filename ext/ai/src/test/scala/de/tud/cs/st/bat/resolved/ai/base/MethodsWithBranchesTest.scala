@@ -90,14 +90,14 @@ class MethodsWithBranchesTest
             //    7  ireturn 
             import domain._
             domain.returnedValues should be(
-                Set(("ireturn", 5, newIntegerValue), ("ireturn", 7, newIntegerValue)))
+                Set(("ireturn", 5, AnIntegerValue), ("ireturn", 7, AnIntegerValue)))
 
             domain.constraints should be(
                 Set(
                     ReifiedSingleValueConstraint(
-                        4, domain.newTypedValue(-1, ObjectType.Object), "is null"),
+                        4, domain.TypedValue(-1, ObjectType.Object), "is null"),
                     ReifiedSingleValueConstraint(
-                        6, domain.newTypedValue(-1, ObjectType.Object), "is not null")))
+                        6, domain.TypedValue(-1, ObjectType.Object), "is not null")))
         }
     }
 
@@ -111,14 +111,14 @@ class MethodsWithBranchesTest
             //    7  ireturn
             import domain._
             domain.returnedValues should be(
-                Set(("ireturn", 5, newIntegerValue), ("ireturn", 7, newIntegerValue)))
+                Set(("ireturn", 5, AnIntegerValue), ("ireturn", 7, AnIntegerValue)))
 
             domain.constraints should be(
                 Set(
                     ReifiedSingleValueConstraint(
-                        4, domain.newTypedValue(-1, ObjectType.Object), "is not null"),
+                        4, domain.TypedValue(-1, ObjectType.Object), "is not null"),
                     ReifiedSingleValueConstraint(
-                        6, domain.newTypedValue(-1, ObjectType.Object), "is null")))
+                        6, domain.TypedValue(-1, ObjectType.Object), "is null")))
         }
     }
 
@@ -139,9 +139,9 @@ class MethodsWithBranchesTest
             //    18  ireturn
             import domain._
             domain.returnedValues should be(Set(
-                ("ireturn", 14, newIntegerValue),
-                ("ireturn", 16, newIntegerValue),
-                ("ireturn", 18, newIntegerValue)
+                ("ireturn", 14, AnIntegerValue),
+                ("ireturn", 16, AnIntegerValue),
+                ("ireturn", 18, AnIntegerValue)
             ))
         }
     }

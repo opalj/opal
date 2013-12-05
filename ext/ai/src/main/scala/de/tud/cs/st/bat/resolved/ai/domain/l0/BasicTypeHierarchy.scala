@@ -38,6 +38,7 @@ package domain
 package l0
 
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
+import analyses.ClassHierarchy
 
 /**
  * Implementation of a Domain's `isSubtypeOf(...)` method that delegates to
@@ -48,7 +49,7 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  * @author Michael Eichberg
  */
 trait BasicTypeHierarchy extends ClassHierarchyDomain { this: Domain[_] ⇒
-    
+
     /**
      * This project's class hierarchy; unless explicitly overridden, BAT's
      * built-in default class hierarchy is used which only reflects the type-hierarchy
@@ -56,13 +57,12 @@ trait BasicTypeHierarchy extends ClassHierarchyDomain { this: Domain[_] ⇒
      *
      * @note '''This method is intended to be overridden.'''
      */
-    override def classHierarchy: analyses.ClassHierarchy =
-        BasicTypeHierarchy.classHierarchy
-
+    override def classHierarchy: ClassHierarchy = BasicTypeHierarchy.classHierarchy
 
 }
 private object BasicTypeHierarchy {
-    val classHierarchy: analyses.ClassHierarchy =
-        analyses.ClassHierarchy.preInitializedClassHierarchy
+
+    val classHierarchy: ClassHierarchy = ClassHierarchy.preInitializedClassHierarchy
+
 }
 

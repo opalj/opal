@@ -58,8 +58,6 @@ trait TypeLevelLongValues[+I] extends Domain[I] {
 
     }
 
-    protected def newLongValue(): DomainValue
-
     // -----------------------------------------------------------------------------------
     //
     // HANDLING OF COMPUTATIONS
@@ -76,57 +74,57 @@ trait TypeLevelLongValues[+I] extends Domain[I] {
     // RELATIONAL OPERATORS
     //
     override def lcmp(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        newIntegerValue(pc)
+        IntegerValue(pc)
 
     //
     // UNARY EXPRESSIONS
     //
-    override def lneg(pc: PC, value: DomainValue) = newLongValue()
+    override def lneg(pc: PC, value: DomainValue) = LongValue(pc)
 
     //
     // BINARY EXPRESSIONS
     //
 
     override def ladd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        newLongValue()
+        LongValue(pc)
 
     override def land(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        newLongValue()
+        LongValue(pc)
 
     override def ldiv(pc: PC, value1: DomainValue, value2: DomainValue) =
-        ComputedValue(newLongValue())
+        ComputedValue(LongValue(pc))
 
     override def lmul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        newLongValue()
+        LongValue(pc)
 
     override def lor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        newLongValue()
+        LongValue(pc)
 
     override def lrem(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        newLongValue()
+        LongValue(pc)
 
     override def lshl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        newLongValue()
+        LongValue(pc)
 
     override def lshr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        newLongValue()
+        LongValue(pc)
 
     override def lsub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        newLongValue()
+        LongValue(pc)
 
     override def lushr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        newLongValue()
+        LongValue(pc)
 
     override def lxor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        newLongValue()
+        LongValue(pc)
 
     //
     // CONVERSION INSTRUCTIONS
     //
 
-    override def l2d(pc: PC, value: DomainValue): DomainValue = newDoubleValue(pc)
-    override def l2f(pc: PC, value: DomainValue): DomainValue = newFloatValue(pc)
-    override def l2i(pc: PC, value: DomainValue): DomainValue = newIntegerValue(pc)
+    override def l2d(pc: PC, value: DomainValue): DomainValue = DoubleValue(pc)
+    override def l2f(pc: PC, value: DomainValue): DomainValue = FloatValue(pc)
+    override def l2i(pc: PC, value: DomainValue): DomainValue = IntegerValue(pc)
 }
 
 

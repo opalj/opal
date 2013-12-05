@@ -50,7 +50,7 @@ trait DefaultTypeLevelLongValues[+I]
         extends DefaultDomainValueBinding[I]
         with TypeLevelLongValues[I] {
 
-    case object LongValue extends super.LongValue {
+    case object ALongValue extends super.LongValue {
 
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = NoUpdate
 
@@ -63,16 +63,14 @@ trait DefaultTypeLevelLongValues[+I]
             pc: PC): targetDomain.DomainValue =
             targetDomain match {
                 case thatDomain: DefaultTypeLevelLongValues[ThatI] ⇒
-                    thatDomain.LongValue.asInstanceOf[targetDomain.DomainValue]
+                    thatDomain.ALongValue.asInstanceOf[targetDomain.DomainValue]
                 case _ ⇒ super.adapt(targetDomain, pc)
             }
     }
 
-    def newLongValue(): LongValue = LongValue
+    override def LongValue(pc: PC): DomainValue = ALongValue
 
-    def newLongValue(pc: PC): DomainValue = LongValue
-
-    def newLongValue(pc: PC, value: Long): LongValue = LongValue
+    override def LongValue(pc: PC, value: Long): LongValue = ALongValue
 }
 
 

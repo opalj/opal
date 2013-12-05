@@ -80,7 +80,7 @@ trait StringValues[+I] extends DefaultPreciseReferenceValues[I] {
 
     }
 
-    override def newStringValue(pc: Int, value: String): DomainValue =
+    override def StringValue(pc: Int, value: String): DomainValue = 
         new AStringValue(pc, value)
 
 }

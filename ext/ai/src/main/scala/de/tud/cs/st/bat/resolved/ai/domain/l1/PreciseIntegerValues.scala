@@ -120,44 +120,39 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
 
     abstract override def typeOfValue(value: DomainValue): TypesAnswer =
         value match {
-            case integerLikeValue: IntegerLikeValue ⇒ IsIntegerValue
-            case _                                  ⇒ super.typeOfValue(value)
+            case _: IntegerLikeValue ⇒ IsIntegerValue
+            case _                   ⇒ super.typeOfValue(value)
         }
-
-    def newIntegerValue(): DomainValue
-
-    def newByteValue(): DomainValue
-
-    def newCharValue(pc: PC, value: Char): DomainValue
 
     //
     // QUESTION'S ABOUT VALUES
     //
 
-    protected def getIntValue[T](value: DomainValue)(f: Int ⇒ T)(orElse: ⇒ T): T =
+    @inline protected final def getIntValue[T](value: DomainValue)(f: Int ⇒ T)(orElse: ⇒ T): T =
         value match {
             case v: IntegerValue ⇒ f(v.value)
             case _               ⇒ orElse
         }
 
-    protected def getIntValues[T](
+    @inline protected final def getIntValues[T](
         value1: DomainValue,
         value2: DomainValue)(
-            f: (Int, Int) ⇒ T)(orElse: ⇒ T): T =
+            f: (Int, Int) ⇒ T)(
+                orElse: ⇒ T): T =
         getIntValue(value1) { v1 ⇒ getIntValue(value2) { v2 ⇒ f(v1, v2) }(orElse) } {
             orElse
         }
 
-    def areEqual(value1: DomainValue, value2: DomainValue): Answer =
+    override def areEqual(value1: DomainValue, value2: DomainValue): Answer =
         getIntValues(value1, value2) { (v1, v2) ⇒ Answer(v1 == v2) } { Unknown }
 
-    def isSomeValueInRange(
+    override def isSomeValueInRange(
         value: DomainValue,
         lowerBound: Int,
         upperBound: Int): Boolean =
         getIntValue(value) { v ⇒ lowerBound <= v && v <= upperBound } { true }
 
-    def isSomeValueNotInRange(
+    override def isSomeValueNotInRange(
         value: DomainValue,
         lowerBound: Int,
         upperBound: Int): Boolean =
@@ -167,14 +162,14 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
             !(lowerBound == Int.MinValue && upperBound == Int.MaxValue)
         }
 
-    def isLessThan(
+    override def isLessThan(
         smallerValue: DomainValue,
         largerValue: DomainValue): Answer =
         getIntValues(smallerValue, largerValue) { (v1, v2) ⇒
             Answer(v1 < v2)
         } { Unknown }
 
-    def isLessThanOrEqualTo(
+    override def isLessThanOrEqualTo(
         smallerOrEqualValue: DomainValue,
         equalOrLargerValue: DomainValue): Answer =
         getIntValues(smallerOrEqualValue, equalOrLargerValue) { (v1, v2) ⇒
@@ -197,7 +192,7 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
         value: DomainValue,
         operands: Operands,
         locals: Locals): (Operands, Locals) =
-        updateValue(value, newIntegerValue(pc, theValue), operands, locals)
+        updateValue(value, IntegerValue(pc, theValue), operands, locals)
 
     override def establishAreEqual(
         pc: PC,
@@ -206,10 +201,10 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
         operands: Operands,
         locals: Locals): (Operands, Locals) = {
         getIntValue(value1) { v1 ⇒
-            updateValue(value2, newIntegerValue(pc, v1), operands, locals)
+            updateValue(value2, IntegerValue(pc, v1), operands, locals)
         } {
             getIntValue(value2) { v2 ⇒
-                updateValue(value1, newIntegerValue(pc, v2), operands, locals)
+                updateValue(value1, IntegerValue(pc, v2), operands, locals)
             } {
                 (operands, locals)
             }
@@ -225,7 +220,7 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
     //
     // UNARY EXPRESSIONS
     //
-    def ineg(pc: PC, value: DomainValue) = value match {
+    override def ineg(pc: PC, value: DomainValue) = value match {
         case v: IntegerValue ⇒ v.update(-v.value)
         case _               ⇒ value
     }
@@ -234,90 +229,92 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
     // BINARY EXPRESSIONS
     //
 
-    def iadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def iadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         getIntValues(value1, value2) { (v1, v2) ⇒
-            newIntegerValue(pc, v1 + v2)
+            IntegerValue(pc, v1 + v2)
         } {
-            newIntegerValue
+            IntegerValue(pc)
         }
 
-    def iand(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def iand(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         getIntValues(value1, value2) { (v1, v2) ⇒
-            newIntegerValue(pc, v1 & v2)
+            IntegerValue(pc, v1 & v2)
         } {
-            newIntegerValue
+            IntegerValue(pc)
         }
 
-    def idiv(pc: PC, value1: DomainValue, value2: DomainValue): Computation[DomainValue, DomainValue] =
+    override def idiv(pc: PC, value1: DomainValue, value2: DomainValue): Computation[DomainValue, DomainValue] =
         getIntValues(value1, value2) { (v1, v2) ⇒
             if (v2 == 0)
-                ThrowsException(newInitializedObject(pc, ObjectType.ArithmeticException))
+                ThrowsException(InitializedObject(pc, ObjectType.ArithmeticException))
             else
-                ComputedValue(newIntegerValue(pc, v1 / v2))
+                ComputedValue(IntegerValue(pc, v1 / v2))
         } {
             if (divisionByZeroIfUnknown)
                 ComputedValueAndException(
-                    newIntegerValue,
-                    newInitializedObject(pc, ObjectType.ArithmeticException))
+                    IntegerValue(pc),
+                    InitializedObject(pc, ObjectType.ArithmeticException))
             else
-                ComputedValue(newIntegerValue)
+                ComputedValue(IntegerValue(pc))
         }
 
-    def imul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def imul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         getIntValues(value1, value2) { (v1, v2) ⇒
-            newIntegerValue(pc, v1 * v2)
+            IntegerValue(pc, v1 * v2)
         } {
-            newIntegerValue
+            IntegerValue(pc)
         }
 
-    def ior(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def ior(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         getIntValues(value1, value2) { (v1, v2) ⇒
-            newIntegerValue(pc, v1 | v2)
+            IntegerValue(pc, v1 | v2)
         } {
-            newIntegerValue
+            IntegerValue(pc)
         }
 
-    def irem(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def irem(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         getIntValues(value1, value2) { (v1, v2) ⇒
-            newIntegerValue(pc, v1 % v2)
+            IntegerValue(pc, v1 % v2)
         } {
-            newIntegerValue
+            IntegerValue(pc)
         }
 
-    def ishl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def ishl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         getIntValues(value1, value2) { (v1, v2) ⇒
-            newIntegerValue(pc, v1 << v2)
+            IntegerValue(pc, v1 << v2)
         } {
-            newIntegerValue
+            IntegerValue(pc)
         }
 
-    def ishr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def ishr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         getIntValues(value1, value2) { (v1, v2) ⇒
-            newIntegerValue(pc, v1 >> v2)
+            IntegerValue(pc, v1 >> v2)
         } {
-            newIntegerValue
+            IntegerValue(pc)
         }
 
-    def isub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def isub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         getIntValues(value1, value2) { (v1, v2) ⇒
-            newIntegerValue(pc, v1 - v2)
+            IntegerValue(pc, v1 - v2)
         } {
-            newIntegerValue
+            IntegerValue(pc)
         }
 
-    def iushr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def iushr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         getIntValues(value1, value2) { (v1, v2) ⇒
-            newIntegerValue(pc, v1 >>> v2)
-        }(newIntegerValue)
-
-    def ixor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        getIntValues(value1, value2) { (v1, v2) ⇒
-            newIntegerValue(pc, v1 ^ v2)
+            IntegerValue(pc, v1 >>> v2)
         } {
-            newIntegerValue
+            IntegerValue(pc)
         }
 
-    def iinc(pc: PC, value: DomainValue, increment: Int) =
+    override def ixor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+        getIntValues(value1, value2) { (v1, v2) ⇒
+            IntegerValue(pc, v1 ^ v2)
+        } {
+            IntegerValue(pc)
+        }
+
+    override def iinc(pc: PC, value: DomainValue, increment: Int) =
         value match {
             case v: IntegerValue ⇒ v.update(v.value + increment)
             case _               ⇒ value
@@ -327,17 +324,17 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
     // TYPE CONVERSION INSTRUCTIONS
     //
 
-    def i2b(pc: PC, value: DomainValue): DomainValue =
-        getIntValue(value)(v ⇒ newByteValue(pc, v.toByte))(newByteValue)
+    override def i2b(pc: PC, value: DomainValue): DomainValue =
+        getIntValue(value)(v ⇒ ByteValue(pc, v.toByte))(ByteValue(pc))
 
-    def i2c(pc: PC, value: DomainValue): DomainValue =
-        getIntValue(value)(v ⇒ newCharValue(pc, v.toChar))(newByteValue)
+    override def i2c(pc: PC, value: DomainValue): DomainValue =
+        getIntValue(value)(v ⇒ CharValue(pc, v.toChar))(CharValue(pc))
 
-    def i2s(pc: PC, value: DomainValue): DomainValue =
-        getIntValue(value)(v ⇒ newShortValue(pc, v.toShort))(newByteValue)
+    override def i2s(pc: PC, value: DomainValue): DomainValue =
+        getIntValue(value)(v ⇒ ShortValue(pc, v.toShort))(ShortValue(pc))
 
-    def i2d(pc: PC, value: DomainValue): DomainValue = newDoubleValue(pc)
-    def i2f(pc: PC, value: DomainValue): DomainValue = newFloatValue(pc)
-    def i2l(pc: PC, value: DomainValue): DomainValue = newLongValue(pc)
+    override def i2d(pc: PC, value: DomainValue): DomainValue = DoubleValue(pc)
+    override def i2f(pc: PC, value: DomainValue): DomainValue = FloatValue(pc)
+    override def i2l(pc: PC, value: DomainValue): DomainValue = LongValue(pc)
 }
 
