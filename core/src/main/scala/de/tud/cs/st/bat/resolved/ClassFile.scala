@@ -37,7 +37,7 @@ package resolved
 import scala.annotation.tailrec
 
 /**
- * Represents a single class file.
+ * Represents a single class file which either defines a class type or an interface type.
  *
  * @param minorVersion The minor part of this class file's version number.
  * @param majorVersion The major part of this class file's version number.
@@ -45,13 +45,13 @@ import scala.annotation.tailrec
  *  either use the corresponding convenience methods (e.g., isEnumDeclaration())
  *  or the class [[de.tud.cs.st.bat.AccessFlagsIterator]] or the classes which
  *  inherit from [[de.tud.cs.st.bat.AccessFlag]].
- * @param thisClass The type implemented by this class file.
+ * @param thisType The type implemented by this class file.
  * @param superClass The class type from which this class inherits. `None` if this
- *      class file represents `java.lang.Object`.
+ *      class file defines `java.lang.Object`.
  * @param interfaces The set of implemented interfaces. May be empty.
  * @param fields The declared fields. May be empty. The list is sorted by name.
- * @param methods The declared methods. May be empty. The list is sorted by name and
- *      number of descriptors.
+ * @param methods The declared methods. May be empty. The list is first sorted by name,
+ *      and then by method descriptor.
  * @param attributes This class file's reified attributes. Which attributes
  *    are reified depends on the configuration of the class file reader; e.g.,
  *    [[de.tud.cs.st.bat.resolved.reader.Java7Framework]].
@@ -81,9 +81,9 @@ final class ClassFile private (
     val minorVersion: Int,
     val majorVersion: Int,
     val accessFlags: Int,
-    val thisClass: ObjectType, // TODO [ClassFile] Rename "thisClass" to,e.g., thisType
-    val superClass: Option[ObjectType], // TODO [ClassFile] Rename superClass to superclassType
-    val interfaces: Seq[ObjectType], // TODO [ClassFile] Rename interfaces to interfaceTypes
+    val thisType: ObjectType,
+    val superclassType: Option[ObjectType],
+    val interfaceTypes: Seq[ObjectType],
     val fields: Fields,
     val methods: Methods,
     val attributes: Attributes)
@@ -96,7 +96,10 @@ final class ClassFile private (
 
     override def asClassFile = this
 
-    def className: String = thisClass.className
+    /**
+     * The fully qualified name of the type defined by this class file.
+     */
+    def fqn: String = thisType.fqn
 
     def isAbstract: Boolean = (ACC_ABSTRACT.mask & accessFlags) != 0
 
@@ -112,7 +115,7 @@ final class ClassFile private (
 
     def isAnnotationDeclaration: Boolean = (accessFlags & classCategoryMask) == annotationMask
 
-    def isInnerClass: Boolean = innerClasses.exists(_.exists(_.innerClassType == thisClass))
+    def isInnerClass: Boolean = innerClasses.exists(_.exists(_.innerClassType == thisType))
 
     def enclosingMethod: Option[EnclosingMethod] =
         attributes collectFirst { case em: EnclosingMethod ⇒ em }
@@ -129,7 +132,7 @@ final class ClassFile private (
     def outerType: Option[(ObjectType, Int)] =
         innerClasses flatMap { innerClasses ⇒
             innerClasses collectFirst {
-                case InnerClass(`thisClass`, Some(outerType), _, accessFlags) ⇒
+                case InnerClass(`thisType`, Some(outerType), _, accessFlags) ⇒
                     (outerType, accessFlags)
             }
         }
@@ -223,7 +226,7 @@ final class ClassFile private (
         findMethod(0, methods.size - 1)
     }
 
-    override def hashCode: Int = thisClass.id
+    override def hashCode: Int = thisType.id
 
     override def equals(other: Any): Boolean =
         other match {
@@ -234,7 +237,7 @@ final class ClassFile private (
     protected[resolved] def updateAttributes(newAttributes: Attributes): ClassFile = {
         new ClassFile(
             this.minorVersion, this.majorVersion, this.accessFlags,
-            this.thisClass, this.superClass, this.interfaces,
+            this.thisType, this.superclassType, this.interfaceTypes,
             this.fields, this.methods, newAttributes
         )
     }
@@ -256,16 +259,16 @@ object ClassFile {
         minorVersion: Int,
         majorVersion: Int,
         accessFlags: Int,
-        thisClass: ObjectType, // TODO [ClassFile] Rename "thisClass" to,e.g., thisType
-        superClass: Option[ObjectType], // TODO [ClassFile] Rename superClass to superclassType
-        interfaces: Seq[ObjectType], // TODO [ClassFile] Rename interfaces to interfaceTypes
+        thisType: ObjectType,
+        superclassType: Option[ObjectType],
+        interfaceTypes: Seq[ObjectType],
         fields: Fields,
         methods: Methods,
         attributes: Attributes): ClassFile = {
         new ClassFile(
             minorVersion, majorVersion,
             accessFlags,
-            thisClass, superClass, interfaces,
+            thisType, superclassType, interfaceTypes,
             fields sortWith { (f1, f2) ⇒ f1 < f2 },
             methods sortWith { (m1, m2) ⇒ m1 < m2 },
             attributes)
@@ -273,6 +276,6 @@ object ClassFile {
 
     def unapply(classFile: ClassFile): Option[(Int, ObjectType, Option[ObjectType], Seq[ObjectType])] = {
         import classFile._
-        Some((accessFlags, thisClass, superClass, interfaces))
+        Some((accessFlags, thisType, superclassType, interfaceTypes))
     }
 }

@@ -139,16 +139,32 @@ class IndexBasedProject[Source: reflect.ClassTag] private (
             f(classFile)
         }
 
+    override def forallClassFiles[U](f: ClassFile ⇒ Boolean): Boolean = {
+        foreachNonNullValueOf(classesMap) { (id, classFile) ⇒
+            if (!f(classFile))
+                return false
+        }
+        true
+    }
+
     override def foreachMethod[U](f: Method ⇒ U): Unit =
         foreachNonNullValueOf(classesMap) { (id, classFile) ⇒
             classFile.methods.foreach(f)
         }
 
+    override def forallMethods[U](f: Method ⇒ Boolean): Boolean = {
+        foreachNonNullValueOf(classesMap) { (id, classFile) ⇒
+            if (!classFile.methods.forall(f))
+                return false
+        }
+        true
+    }
+
     override def toString: String = {
         val classesAndSources =
             (classesMap.view zip sourcesMap.view).view.filter(_._1 ne null)
         val classDescriptions =
-            classesAndSources.map(cs ⇒ cs._1.thisClass.toJava+" « "+cs._2.toString+" »")
+            classesAndSources.map(cs ⇒ cs._1.thisType.toJava+" « "+cs._2.toString+" »")
 
         "IndexBasedProject( "+classDescriptions.mkString("\n\t", "\n\t", "\n")+")"
     }
@@ -178,7 +194,7 @@ object IndexBasedProject {
         var classFilesCount = 0
         for ((classFile, source) ← classFiles) {
             classFilesCount += 1
-            val id = classFile.thisClass.id
+            val id = classFile.thisType.id
             classes(id) = classFile
             sources(id) = source
         }

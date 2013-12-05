@@ -73,11 +73,15 @@ abstract class ProjectLike[Source] extends (ObjectType ⇒ Option[ClassFile]) {
 
     def foreachClassFile[U](f: ClassFile ⇒ U): Unit
 
+    def forallClassFiles[U](f: ClassFile ⇒ Boolean): Boolean
+
     def foreachMethod[U](f: Method ⇒ U): Unit
 
+    def forallMethods[U](f: Method ⇒ Boolean): Boolean
+
     def method(methodID: Int): Method
-    
-    def classFile(classFileID : Int) : ClassFile
+
+    def classFile(classFileID: Int): ClassFile
 
     final def objectTypesCount = ObjectType.objectTypesCount
 

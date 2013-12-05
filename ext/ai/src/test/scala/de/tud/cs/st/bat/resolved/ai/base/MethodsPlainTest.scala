@@ -987,5 +987,5 @@ private object MethodsPlainTest {
 
     val classFile =
         ClassFiles(TestSupport.locateTestResources("classfiles/ai.jar", "ext/ai")).map(_._1).
-            find(_.thisClass.className == "ai/MethodsPlain").get
+            find(_.thisType.fqn == "ai/MethodsPlain").get
 }

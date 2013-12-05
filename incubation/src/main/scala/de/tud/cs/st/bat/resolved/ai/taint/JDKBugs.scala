@@ -106,7 +106,7 @@ package taint {
     //            import ObjectType._
     //            for {
     //                classFile ← project.classFiles
-    //                if !definedInRestrictedPackage(classFile.thisClass.packageName)
+    //                if !definedInRestrictedPackage(classFile.thisType.packageName)
     //                method ← classFile.methods
     //                if method.isPublic || (method.isProtected && !classFile.isFinal)
     //                descriptor = method.descriptor
@@ -114,11 +114,11 @@ package taint {
     //                if (descriptor.parameterTypes.contains(String))
     //                if method.body.isDefined // let's filter native methods...
     //                // Select some specific method for debugging purposes...
-    //                //                if classFile.thisClass.className == "com/sun/org/apache/xalan/internal/utils/ObjectFactory"
+    //                //                if classFile.thisType.className == "com/sun/org/apache/xalan/internal/utils/ObjectFactory"
     //                //                if method.name == "lookUpFactoryClass"
-    //                //                if classFile.thisClass.className == "ai/taint/PermissionCheckNotOnAllPaths"
+    //                //                if classFile.thisType.className == "ai/taint/PermissionCheckNotOnAllPaths"
     //                //                if method.name == "foo"
-    //                //                if classFile.thisClass.className == "com/sun/beans/finder/ClassFinder"
+    //                //                if classFile.thisType.className == "com/sun/beans/finder/ClassFinder"
     //                //                if method.name == "findClass"
     //            } yield (classFile, method)
     //        }
@@ -417,7 +417,7 @@ package taint {
     //            method: Method,
     //            parameters: DomainValues[_ <: Domain[CallStackEntry]]): Boolean = {
     //            isRecursiveCall(
-    //                classFile.thisClass,
+    //                classFile.thisType,
     //                method.name,
     //                method.descriptor,
     //                parameters)

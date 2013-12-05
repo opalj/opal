@@ -397,25 +397,25 @@ case object BooleanType extends BooleanType
 /**
  * Represents an `ObjectType`.
  *
- * @param className The fully qualified name of the class in binary notation
+ * @param fqn The fully qualified name of the class or interface in binary notation
  *      (e.g. "java/lang/Object").
  */
 final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
     val id: Int,
-    val className: String)
+    val fqn: String)
         extends ReferenceType {
 
     override def isObjectType: Boolean = true
 
     override def asObjectType: ObjectType = this
 
-    def simpleName: String = ObjectType.simpleName(className)
+    def simpleName: String = ObjectType.simpleName(fqn)
 
-    def packageName: String = ObjectType.packageName(className)
+    def packageName: String = ObjectType.packageName(fqn)
 
-    override def toJava: String = className.replace('/', '.')
+    override def toJava: String = fqn.replace('/', '.')
 
-    override def toString = "ObjectType("+className+")"
+    override def toString = "ObjectType("+fqn+")"
 
 }
 /**
@@ -464,15 +464,17 @@ final object ObjectType {
     /**
      * Factory method to create `ObjectType`s.
      *
+     * @param fqn The fully qualified name of a class or interface type in 
+     *      binary notation.
      * @note `ObjectType` objects are cached internally to reduce the overall memory
      *      requirements and to ensure that only one instance of an `ObjectType` exists
-     *      per class name. Hence, comparing `ObjectTypes` using reference comparison
-     *      is fully supported.
+     *      per fully qualified name. Hence, comparing `ObjectTypes` using reference 
+     *      comparison is explicitly supported.
      */
-    def apply(className: String): ObjectType = {
+    def apply(fqn: String): ObjectType = {
         try {
             cacheRWLock.readLock().lock()
-            val wrOT = cache.get(className)
+            val wrOT = cache.get(fqn)
             if (wrOT != null) {
                 val OT = wrOT.get()
                 if (OT != null)
@@ -483,9 +485,9 @@ final object ObjectType {
         }
         val newOT = try {
             cacheRWLock.writeLock().lock()
-            val newOT = new ObjectType(nextId.getAndIncrement(), className)
+            val newOT = new ObjectType(nextId.getAndIncrement(), fqn)
             val wrNewOT = new WeakReference(newOT)
-            cache.put(className, wrNewOT)
+            cache.put(fqn, wrNewOT)
             newOT
         } finally {
             cacheRWLock.writeLock().unlock()
@@ -496,22 +498,22 @@ final object ObjectType {
         newOT
     }
 
-    def unapply(ot: ObjectType): Option[String] = Some(ot.className)
+    def unapply(ot: ObjectType): Option[String] = Some(ot.fqn)
 
-    def simpleName(className: String): String = {
-        val index = className.lastIndexOf('/')
+    def simpleName(fqn: String): String = {
+        val index = fqn.lastIndexOf('/')
         if (index > -1)
-            className.substring(index + 1)
+            fqn.substring(index + 1)
         else
-            className
+            fqn
     }
 
-    def packageName(className: String): String = {
-        val index = className.lastIndexOf('/')
+    def packageName(fqn: String): String = {
+        val index = fqn.lastIndexOf('/')
         if (index == -1)
             ""
         else
-            className.substring(0, index)
+            fqn.substring(0, index)
     }
 
     final val Object = ObjectType("java/lang/Object")

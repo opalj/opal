@@ -201,7 +201,7 @@ trait AI[D <: SomeDomain] {
             def origin(localVariableIndex: Int) = -localVariableIndex - 1
 
             if (!method.isStatic) {
-                val thisType = classFile.thisClass
+                val thisType = classFile.thisType
                 val thisValue =
                     domain.NonNullReferenceValue(origin(localVariableIndex), thisType)
                 locals.update(localVariableIndex, thisValue)

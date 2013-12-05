@@ -152,5 +152,5 @@ private object MethodsWithBranchesTest {
         TestSupport.locateTestResources("classfiles/ai.jar", "ext/ai"))
 
     val classFile = classFiles.map(_._1).
-        find(_.thisClass.className == "ai/MethodsWithBranches").get
+        find(_.thisType.fqn == "ai/MethodsWithBranches").get
 }

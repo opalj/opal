@@ -100,6 +100,5 @@ private object MethodsWithArraysTest {
     val classFiles = Java7Framework.ClassFiles(
         TestSupport.locateTestResources("classfiles/ai.jar", "ext/ai"))
 
-    val classFile = classFiles.map(_._1).
-        find(_.thisClass.className == "ai/MethodsWithArrays").get
+    val classFile = classFiles.map(_._1).find(_.thisType.fqn == "ai/MethodsWithArrays").get
 }

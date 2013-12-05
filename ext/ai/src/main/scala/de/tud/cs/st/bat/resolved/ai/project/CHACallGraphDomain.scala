@@ -112,7 +112,7 @@ trait CHACallGraphDomain[Source, I]
                     addCallEdge(pc, Iterable(callee))
                 case None ⇒
                     addUnresolvedMethodCall(
-                        theClassFile.thisClass, theMethod, pc,
+                        theClassFile.thisType, theMethod, pc,
                         declaringClass, name, descriptor
                     )
             }
@@ -132,7 +132,7 @@ trait CHACallGraphDomain[Source, I]
 
         if (callees.isEmpty)
             addUnresolvedMethodCall(
-                theClassFile.thisClass, theMethod, pc,
+                theClassFile.thisType, theMethod, pc,
                 declaringClassType, name, descriptor)
         else {
             addCallEdge(pc, callees)

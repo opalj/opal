@@ -62,29 +62,35 @@ class CallGraph[Source] private[project] (
 
     /**
      * Returns the invoke instructions (by means of a `Method`/`PC` pairs) that
-     * call the given method.
+     * call the given method. If this method is not called by any other method an
+     * empty map is returned.
      *
      * The `UShortSet` models the set of program counters.
      */
-    def calledBy(method: Method): Option[Map[Method, PCs]] = {
-        Option(calledByMap(method.id))
+    def calledBy(method: Method): Map[Method, PCs] = {
+        val callers = calledByMap(method.id)
+        if (callers ne null) callers else Map.empty
     }
 
     /**
-     * Returns the potential methods that are invoked by the invoke instruction
-     * identified by the method/pc pair.
+     * Returns the methods that are potentially invoked by the invoke instruction
+     * identified by the `method`/`pc` pair.
      */
     def calls(method: Method, pc: PC): Iterable[Method] = {
-        Option(callsMap(method.id)).flatMap(_.get(pc)).getOrElse(Iterable.empty)
+        val callees = callsMap(method.id)
+        if (callees ne null) callees.get(pc).get else Iterable.empty
     }
 
     /**
      * Returns the methods that are called by the invoke instructions of the given method.
+     *
+     * If this method does not call any methods an empty map is returned.
      */
     // In case of the CHA Call Graph this could also be easily calculated on-demand, 
     // since we do not use any information that is not readily available.
-    def calls(method: Method): Option[Map[PC, Iterable[Method]]] = {
-        Option(callsMap(method.id))
+    def calls(method: Method): Map[PC, Iterable[Method]] = {
+        val callees = callsMap(method.id)
+        if (callees ne null) callees else Map.empty
     }
 
     /**
@@ -123,26 +129,24 @@ class CallGraph[Source] private[project] (
      * Statistics about the number of potential targets per call site.
      * (TSV format (tab-separated file) - can easily read by most spreadsheet
      * applications).
-     *
      */
     def callsStatistics(maxNumberOfResults: Int = 65536): String = {
         var result: List[List[String]] = List.empty
         var resultCount = 0
-        project foreachMethod { (method: Method) ⇒
-            if (resultCount < maxNumberOfResults)
-                calls(method) foreach { callSites ⇒
-                    if (resultCount < maxNumberOfResults)
-                        callSites foreach { callSite ⇒
-                            val (pc, targets) = callSite
-                            result = List(
-                                method.id.toString,
-                                "\""+method.toJava+"\"",
-                                pc.toString,
-                                targets.size.toString
-                            ) :: result
-                            resultCount += 1
-                        }
-                }
+        project forallMethods { (method: Method) ⇒
+            val callSites = calls(method)
+            callSites forall { callSite ⇒
+                val (pc, targets) = callSite
+                result = List(
+                    method.id.toString,
+                    "\""+method.toJava+"\"",
+                    pc.toString,
+                    targets.size.toString
+                ) :: result
+                resultCount += 1
+                resultCount < maxNumberOfResults
+            }
+            resultCount < maxNumberOfResults
         }
         // add(prepend) the line with the column titles
         result =
@@ -159,25 +163,26 @@ class CallGraph[Source] private[project] (
      * applications).
      */
     def calledByStatistics(maxNumberOfResults: Int = 65536): String = {
+        assume(maxNumberOfResults > 0)
+
         var result: List[List[String]] = List.empty
         var resultCount = 0
-        project foreachMethod { (method: Method) ⇒
-            if (resultCount < maxNumberOfResults)
-                calledBy(method) foreach { callingSites ⇒
-                    if (resultCount < maxNumberOfResults)
-                        callingSites foreach { callingSite ⇒
-                            val (callerMethod, callingInstructions) = callingSite
-                            result =
-                                List(
-                                    method.id.toString,
-                                    method.toJava,
-                                    callerMethod.id.toString,
-                                    callerMethod.toJava,
-                                    callingInstructions.size.toString
-                                ) :: result
-                            resultCount += 1
-                        }
-                }
+        project forallMethods { (method: Method) ⇒
+            val callingSites = calledBy(method)
+            callingSites forall { callingSite ⇒
+                val (callerMethod, callingInstructions) = callingSite
+                result =
+                    List(
+                        method.id.toString,
+                        method.toJava,
+                        callerMethod.id.toString,
+                        callerMethod.toJava,
+                        callingInstructions.size.toString
+                    ) :: result
+                resultCount += 1
+                resultCount < maxNumberOfResults
+            }
+            resultCount < maxNumberOfResults
         }
         // add(prepend) the line with the column titles
         result =

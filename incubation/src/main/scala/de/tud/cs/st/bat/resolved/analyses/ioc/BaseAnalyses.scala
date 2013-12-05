@@ -71,7 +71,7 @@ object BaseAnalyses {
         // TODO we could also check for an @Override annotation
         val superMethods =
             for (
-                superclass ← project.classHierarchy.allSupertypes(classFile.thisClass);
+                superclass ← project.classHierarchy.allSupertypes(classFile.thisType);
                 method ← project.classHierarchy.resolveMethodReference(superclass, method.name, method.descriptor, project)
             ) yield {
                 method
@@ -105,11 +105,11 @@ object BaseAnalyses {
      */
     def calledSuperConstructor(project: Project[_])(classFile: ClassFile,
                                                     constructor: Method): Option[(ClassFile, Method)] = {
-        if (!project.classHierarchy.isKnown(classFile.thisClass))
+        if (!project.classHierarchy.isKnown(classFile.thisType))
             return None
 
         val constructorCall = constructor.body.get.instructions.collectFirst {
-            case INVOKESPECIAL(trgt, n, d) if project.classHierarchy.allSupertypes(classFile.thisClass).contains(trgt.asInstanceOf[ObjectType]) ⇒
+            case INVOKESPECIAL(trgt, n, d) if project.classHierarchy.allSupertypes(classFile.thisType).contains(trgt.asInstanceOf[ObjectType]) ⇒
                 (trgt.asInstanceOf[ObjectType], n, d)
 
         }
@@ -127,13 +127,13 @@ object BaseAnalyses {
     def calls(sourceMethod: Method, targetClass: ClassFile, targetMethod: Method): Boolean = {
         sourceMethod.body.isDefined &&
             sourceMethod.body.get.instructions.exists {
-                case INVOKEINTERFACE(targetType, name, desc) ⇒ targetClass.thisClass == targetType && targetMethod
+                case INVOKEINTERFACE(targetType, name, desc) ⇒ targetClass.thisType == targetType && targetMethod
                     .name == name && targetMethod.descriptor == desc
-                case INVOKEVIRTUAL(targetType, name, desc) ⇒ targetClass.thisClass == targetType && targetMethod
+                case INVOKEVIRTUAL(targetType, name, desc) ⇒ targetClass.thisType == targetType && targetMethod
                     .name == name && targetMethod.descriptor == desc
-                case INVOKESTATIC(targetType, name, desc) ⇒ targetClass.thisClass == targetType && targetMethod
+                case INVOKESTATIC(targetType, name, desc) ⇒ targetClass.thisType == targetType && targetMethod
                     .name == name && targetMethod.descriptor == desc
-                case INVOKESPECIAL(targetType, name, desc) ⇒ targetClass.thisClass == targetType && targetMethod
+                case INVOKESPECIAL(targetType, name, desc) ⇒ targetClass.thisType == targetType && targetMethod
                     .name == name && targetMethod.descriptor == desc
                 case _ ⇒ false
             }

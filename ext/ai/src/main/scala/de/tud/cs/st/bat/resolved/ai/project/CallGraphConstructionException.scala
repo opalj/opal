@@ -52,7 +52,7 @@ case class CallGraphConstructionException(
     import Console._
 
     override def toString: String = {
-        classFile.thisClass.toJava+"{ "+
+        classFile.thisType.toJava+"{ "+
             method.toJava+" ⚡ "+
             RED +
             underlyingException.getClass().getSimpleName()+": "+

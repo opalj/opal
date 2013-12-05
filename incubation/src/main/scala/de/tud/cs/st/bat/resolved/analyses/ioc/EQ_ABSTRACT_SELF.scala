@@ -45,7 +45,7 @@ object EQ_ABSTRACT_SELF extends (Project[_] ⇒ Iterable[(ClassFile, Method)]) {
     def apply(project: Project[_]) =
         for (
             classFile ← project.classFiles;
-            method @ Method(_, "equals", MethodDescriptor(Seq(classFile.thisClass), BooleanType)) ← classFile.methods if method.isAbstract
+            method @ Method(_, "equals", MethodDescriptor(Seq(classFile.thisType), BooleanType)) ← classFile.methods if method.isAbstract
         ) yield (classFile, method);
 
 }

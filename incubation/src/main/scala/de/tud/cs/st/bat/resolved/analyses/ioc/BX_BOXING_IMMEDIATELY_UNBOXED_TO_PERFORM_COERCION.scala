@@ -64,7 +64,7 @@ object BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION
                 (INVOKEVIRTUAL(secondReceiver, name, MethodDescriptor(Seq(), returnType)), idx)
                 ) ← withIndex(method.body.get.instructions).sliding(2) if (
                 !paramType.isReferenceType &&
-                firstReceiver.asInstanceOf[ObjectType].className.startsWith("java/lang") &&
+                firstReceiver.asInstanceOf[ObjectType].fqn.startsWith("java/lang") &&
                 firstReceiver == secondReceiver &&
                 name.endsWith("Value") &&
                 returnType != paramType // coercion to another type performed

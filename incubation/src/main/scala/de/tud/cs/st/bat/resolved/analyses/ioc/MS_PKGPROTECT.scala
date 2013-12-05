@@ -51,10 +51,10 @@ object MS_PKGPROTECT extends (Project[_] ⇒ Iterable[(ClassFile, Field)]) {
     def apply(project: Project[_]) = {
         // list of tuples in the form (packageName, FieldEntry)
         val readFieldsFromPackage = BaseAnalyses.readFields(project.classFiles)
-            .map(entry ⇒ (entry._1._1.thisClass.packageName, entry._2))
+            .map(entry ⇒ (entry._1._1.thisType.packageName, entry._2))
         for (
             classFile ← project.classFiles if (!classFile.isInterfaceDeclaration);
-            declaringClass = classFile.thisClass;
+            declaringClass = classFile.thisType;
             packageName = declaringClass.packageName;
             field @ Field(_, name, fieldType) ← classFile.fields if (field.isFinal &&
                 field.isStatic &&

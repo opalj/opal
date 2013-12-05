@@ -62,7 +62,7 @@ object CallGraphVisualization {
         if ((args.size < 2) || (args.size > 3)) {
             println("You have to specify the method that should be analyzed.")
             println("\t1) A jar/class file or a directory containing jar/class files.")
-            println("\t2) A pattern that specifies which classes should be included in the output.")
+            println("\t2) A pattern that specifies which class/interface types should be included in the output.")
             println("\t3) The number of seconds (max. 30) before the analysis starts (e.g., to attach a profiler).")
             sys.exit(-1)
         }
@@ -107,7 +107,7 @@ object CallGraphVisualization {
                     bat.resolved.analyses.IndexBasedProject(classFiles)
                 } { t ⇒ println("Setting up the project took: "+nsToSecs(t)) }
             } { m ⇒ println("Required memory for base representation: "+asMB(m)) }
-        val classNameFilter = args(1)
+        val fqnFilter = args(1)
 
         //
         // GRAPH CONSTRUCTION
@@ -156,7 +156,7 @@ object CallGraphVisualization {
 
                 val node = new SimpleNode(
                     caller,
-                    (m: Method) ⇒ project.classFile(m).thisClass.toJava+" { "+m.toJava+" } ",
+                    (m: Method) ⇒ project.classFile(m).thisType.toJava+" { "+m.toJava+" } ",
                     {
                         if (caller.name == "<init>")
                             Some("darkseagreen1")
@@ -171,10 +171,9 @@ object CallGraphVisualization {
                 nodesForMethods += ((caller, node)) // break cycles!
 
                 for {
-                    callees ← calls(caller)
-                    perCallsiteCallees ← callees.values
+                    perCallsiteCallees ← calls(caller).values
                     callee ← perCallsiteCallees
-                    if project.classFile(callee).className.startsWith(classNameFilter)
+                    if project.classFile(callee).fqn.startsWith(fqnFilter)
                 } {
                     node.addChild(createNode(callee))
                 }
@@ -182,7 +181,7 @@ object CallGraphVisualization {
             }
 
             foreachCallingMethod { (method, callees) ⇒
-                if (project.classFile(method).thisClass.className.startsWith(classNameFilter))
+                if (project.classFile(method).thisType.fqn.startsWith(fqnFilter))
                     createNode(method)
             }
             nodesForMethods.values.toSet[Node] // it is a set already...

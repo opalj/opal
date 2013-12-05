@@ -49,7 +49,7 @@ object CN_IDIOM_NO_SUPER_CALL extends (Project[_] ⇒ Iterable[(ClassFile, Metho
         for {
             classFile ← project.classFiles
             if !classFile.isInterfaceDeclaration && !classFile.isAnnotationDeclaration
-            superClass ← classFile.superClass.toSeq
+            superClass ← classFile.superclassType.toSeq
             method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object)) ← classFile.methods
             if method.body.isDefined
             if !method.body.get.instructions.exists {

@@ -81,9 +81,9 @@ abstract class DependencyExtractor(
         visit(classFile)
         val thisClassID = sourceElementID(classFile)
 
-        val thisClass = classFile.thisClass
-        val superclass = classFile.superClass
-        val interfaces = classFile.interfaces
+        val thisType = classFile.thisType
+        val superclass = classFile.superclassType
+        val interfaces = classFile.interfaceTypes
         val fields = classFile.fields
         val methods = classFile.methods
         val attributes = classFile.attributes
@@ -121,7 +121,7 @@ abstract class DependencyExtractor(
                     // is equal to the currently processed class. If this is the case,
                     // a dependency from inner class to this class will be added.
                     InnerClass(innerClass, outerClass, _, _) ← innerClasses
-                    if outerClass.exists(_ == thisClass)
+                    if outerClass.exists(_ == thisType)
                 } {
                     processDependency(innerClass, thisClassID, IS_INNER_CLASS_OF)
                 }
@@ -140,7 +140,7 @@ abstract class DependencyExtractor(
       */
     protected def process(field: Field, declaringClass: ClassFile, declaringTypeID: Int) {
         visit(declaringClass, field)
-        val fieldID = sourceElementID(declaringClass.thisClass, field)
+        val fieldID = sourceElementID(declaringClass.thisType, field)
         val Field(_ /*accessFlags*/ , _, fieldType) = field
 
         processDependency(
@@ -176,7 +176,7 @@ abstract class DependencyExtractor(
       */
     protected def process(method: Method, declaringClass: ClassFile, declaringTypeID: Int) {
         visit(declaringClass, method)
-        val methodID = sourceElementID(declaringClass.thisClass, method)
+        val methodID = sourceElementID(declaringClass.thisType, method)
         val MethodDescriptor(parameterTypes, returnType) = method.descriptor
 
         processDependency(

@@ -51,7 +51,7 @@ object MS_SHOULD_BE_FINAL extends (Project[_] ⇒ Iterable[(ClassFile, Field)]) 
     def apply(project: Project[_]) = {
         for (
             classFile ← project.classFiles if (!classFile.isInterfaceDeclaration);
-            declaringClass = classFile.thisClass;
+            declaringClass = classFile.thisType;
             packageName = declaringClass.packageName;
             field @ Field(_, name, fieldType) ← classFile.fields if (!field.isFinal &&
                 field.isStatic &&

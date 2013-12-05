@@ -112,11 +112,11 @@ trait DirectedAnalysis[Source] {
 //    field {
 //        case f if f.isProtected ⇒ result(
 //            FieldBasedReport[Source](
-//                project.sources.get(classFile.thisClass),
+//                project.sources.get(classFile.thisType),
 //                f.toJavaSignature,
 //                Some("note"),
 //                "The class "+
-//                    classFile.thisClass.toJava+
+//                    classFile.thisType.toJava+
 //                    " is final, but declares a protected field: "+
 //                    f.name+"."
 //            ))

@@ -239,7 +239,7 @@ object XHTML {
         classFile: Option[ClassFile],
         method: Option[Method]): String = {
         method.map(m ⇒ if (m.isStatic) "static " else "").getOrElse("") +
-            classFile.map(_.thisClass.toJava+".").getOrElse("") +
+            classFile.map(_.thisType.toJava+".").getOrElse("") +
             method.map(m ⇒ m.name + m.descriptor.toUMLNotation+" - ").getOrElse("")+
             "Results"
     }

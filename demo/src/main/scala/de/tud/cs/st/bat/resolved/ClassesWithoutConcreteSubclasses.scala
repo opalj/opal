@@ -53,7 +53,7 @@ object ClassesWithoutConcreteSubclasses extends AnalysisExecutor {
             val classTypes =
                 for {
                     classFile ← project.classFiles
-                    thisClass = classFile.thisClass
+                    thisClass = classFile.thisType
                     if classFile.isAbstract
                     if project.classHierarchy.directSubtypesOf(thisClass).isEmpty
                 } yield thisClass

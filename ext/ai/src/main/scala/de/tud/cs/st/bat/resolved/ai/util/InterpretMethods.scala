@@ -137,7 +137,7 @@ object InterpretMethods {
                     ClassFile(new DataInputStream(new ByteArrayInputStream(data)))
                 }
                 classesCount += 1
-                if (beVerbose) println(classFile.thisClass.className)
+                if (beVerbose) println(classFile.thisType.fqn)
                 for (method ← classFile.methods; if method.body.isDefined) {
                     methodsCount += 1
                     if (beVerbose) println("  =>  "+method.toJava)
@@ -181,7 +181,7 @@ object InterpretMethods {
 
                 report += exInstances.map(
                     ex ⇒ {
-                        Console.UNDERLINED + ex._1.thisClass.className+"\033[24m"+"{ "+
+                        Console.UNDERLINED + ex._1.thisType.fqn+"\033[24m"+"{ "+
                             ex._2.toJava+" => "+
                             Console.BOLD +
                             Option(ex._3).map { ex ⇒

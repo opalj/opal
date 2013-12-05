@@ -107,11 +107,11 @@ object InterpretMethod {
                     return ;
             }
         val classFile = {
-            def lookupClass(className: String): Option[ClassFile] =
-                classFiles.map(_._1).find(_.thisClass.className == className) match {
-                    case someClassFile @ Some(_)         ⇒ someClassFile
-                    case None if className.contains('.') ⇒ lookupClass(className.replace('.', '/'))
-                    case None                            ⇒ None
+            def lookupClass(fqn: String): Option[ClassFile] =
+                classFiles.map(_._1).find(_.thisType.fqn == fqn) match {
+                    case someClassFile @ Some(_)   ⇒ someClassFile
+                    case None if fqn.contains('.') ⇒ lookupClass(fqn.replace('.', '/'))
+                    case None                      ⇒ None
                 }
             lookupClass(className) match {
                 case None ⇒

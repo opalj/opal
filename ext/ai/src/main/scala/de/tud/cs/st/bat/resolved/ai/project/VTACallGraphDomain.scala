@@ -71,7 +71,7 @@ trait VTACallGraphDomain[Source, I] extends CHACallGraphDomain[Source, I] {
 //
 //            if (callees.isEmpty)
 //                addUnresolvedMethodCall(
-//                    callerClassFile.thisClass, caller, pc,
+//                    callerclassFile.thisType, caller, pc,
 //                    declaringClassType, name, descriptor)
 //            else {
 //                addCallEdge(caller, pc, callees)

@@ -61,11 +61,11 @@ object ClassFileInformation {
             import classFile._
 
             // print the name of the type defined by this class file
-            println(thisClass.toJava)
+            println(thisType.toJava)
 
-            superClass.map(s ⇒ println("  extends "+s.toJava)) // java.lang.Object does not have a super class!
-            if (interfaces.length > 0) {
-                println(interfaces.map(_.toJava).mkString("  implement ", ", ", ""))
+            superclassType.map(s ⇒ println("  extends "+s.toJava)) // java.lang.Object does not have a super class!
+            if (interfaceTypes.length > 0) {
+                println(interfaceTypes.map(_.toJava).mkString("  implement ", ", ", ""))
             }
 
             sourceFile map { s ⇒ println("\tSOURCEFILE: "+s) }
