@@ -219,7 +219,10 @@ object XHTML {
             
         <div>
         <table>
-            <caption>{ caption(classFile, method) }</caption>
+            <caption>{annotations(classFile, method).map { annotation =>
+	                <span class="annotation">{annotation}</span><br />
+	            } 
+        	}{caption(classFile, method)}</caption>
             <thead>
             <tr><th class="pc">PC</th>
                 <th class="instruction">Instruction</th>
@@ -234,14 +237,23 @@ object XHTML {
         { exceptionHandlers }
         </div>
     }
-
-    private def caption(
-        classFile: Option[ClassFile],
-        method: Option[Method]): String = {
-        method.map(m ⇒ if (m.isStatic) "static " else "").getOrElse("") +
-            classFile.map(_.thisType.toJava+".").getOrElse("") +
-            method.map(m ⇒ m.name + m.descriptor.toUMLNotation+" - ").getOrElse("")+
-            "Results"
+    
+    private def annotations(classFile: Option[ClassFile], method: Option[Method]): Seq[String] = {
+        val annotations = method.map(m => m.runtimeVisibleAnnotations.getOrElse(IndexedSeq())).getOrElse(IndexedSeq())
+        annotations.map { annotation =>
+            val typeName = "@" + annotation.annotationType.toJava
+            val parameters = annotation.elementValuePairs.map { case ElementValuePair(name, value) =>
+                name + " = " + value
+            }.mkString("(", ",", ")")
+            typeName + parameters
+        }
+    }
+    
+    private def caption(classFile: Option[ClassFile], method: Option[Method]): String = {
+        val modifiers = method.map(m => if (m.isStatic) "static " else "").getOrElse("")
+        val typeName = classFile.map(_.thisType.toJava + ".").getOrElse("")
+        val methodName = method.map(m => m.name + m.descriptor.toUMLNotation + " - ").getOrElse("")
+        modifiers + typeName + methodName + "Results"
     }
 
     private def indexExceptionHandlers(code: Code) =

@@ -39,59 +39,52 @@ package resolved
  *
  * @author Michael Eichberg
  */
-sealed trait ElementValue extends Attribute 
+sealed trait ElementValue extends Attribute
 
-case class ByteValue(
-    value: Byte)
-        extends ElementValue
+case class ByteValue(value: Byte) extends ElementValue {
+    override def toString = value.toString
+}
 
-case class CharValue(
-    value: Char)
-        extends ElementValue
+case class CharValue(value: Char) extends ElementValue {
+    override def toString = value.toString
+}
 
-case class DoubleValue(
-    value: Double)
-        extends ElementValue
+case class DoubleValue(value: Double) extends ElementValue {
+    override def toString = value.toString
+}
 
-case class FloatValue(
-    value: Float)
-        extends ElementValue
+case class FloatValue(value: Float) extends ElementValue {
+    override def toString = value.toString
+}
 
-case class IntValue(
-    value: Int)
-        extends ElementValue
+case class IntValue(value: Int) extends ElementValue {
+    override def toString = value.toString
+}
 
-case class LongValue(
-    value: Long)
-        extends ElementValue
+case class LongValue(value: Long) extends ElementValue {
+    override def toString = value.toString
+}
 
-case class ShortValue(
-    value: Short)
-        extends ElementValue
+case class ShortValue(value: Short) extends ElementValue {
+    override def toString = value.toString
+}
 
-case class BooleanValue(
-    value: Boolean)
-        extends ElementValue
+case class BooleanValue(value: Boolean) extends ElementValue {
+    override def toString = value.toString
+}
 
-case class StringValue(
-    value: String)
-        extends ElementValue
+case class StringValue(value: String) extends ElementValue {
+    override def toString = value.toString
+}
 
-case class ClassValue(
-    value: Type)
-        extends ElementValue
+case class ClassValue(value: Type) extends ElementValue {
+    override def toString = value.toJava
+}
 
-case class EnumValue(
-    enumType: ObjectType,
-    val constName: String)
-        extends ElementValue
+case class EnumValue(enumType: ObjectType, val constName: String) extends ElementValue
 
-case class ArrayValue(
-    values: IndexedSeq[ElementValue])
-        extends ElementValue
+case class ArrayValue(values: IndexedSeq[ElementValue]) extends ElementValue {
+    override def toString = values.mkString("[", ",", "]")
+}
 
-case class AnnotationValue(
-    annotation: Annotation)
-        extends ElementValue 
-
-
+case class AnnotationValue(annotation: Annotation) extends ElementValue
