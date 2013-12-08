@@ -39,8 +39,12 @@ package domain
 import language.implicitConversions
 
 /**
- * A domain that records the values returned by the method/the exceptions thrown
- * by a method.
+ * Records both, the values returned by the method and the exceptions thrown
+ * by a method. This trait can be used to record the return values independently of
+ * the precision of the domain.
+ *
+ * ==Usage==
+ * A domain that mixes in this trait should only be used to analyze a single method.
  *
  * ==Thread Safety==
  * This class is not thread safe. I.e., this domain can only be used if
@@ -50,41 +54,54 @@ import language.implicitConversions
  */
 trait RecordReturnValues[+I] extends Domain[I] {
 
-    var returnedValues: Set[(String, Int, Value)] = Set.empty
+    @volatile private[this] var returnedValues: Set[(String, Int, Value)] = Set.empty
+
+    def allReturnedValues = returnedValues
 
     protected implicit def returnedValueToReturnInstructions(
-        returnedValues: Set[(String, Int, Value)]): Set[PC] = {
+        returnedValues: Set[(String, PC, Value)]): Set[PC] = {
         returnedValues.map(_._2)
     }
 
-    override def areturn(pc: Int, value: DomainValue) {
+    override def areturn(pc: PC, value: DomainValue) {
         returnedValues += (("areturn", pc, value))
     }
 
-    override def dreturn(pc: Int, value: DomainValue) {
+    override def dreturn(pc: PC, value: DomainValue) {
         returnedValues += (("dreturn", pc, value))
     }
 
-    override def freturn(pc: Int, value: DomainValue) {
+    override def freturn(pc: PC, value: DomainValue) {
         returnedValues += (("freturn", pc, value))
     }
 
-    override def ireturn(pc: Int, value: DomainValue) {
+    override def ireturn(pc: PC, value: DomainValue) {
         returnedValues += (("ireturn", pc, value))
     }
 
-    override def lreturn(pc: Int, value: DomainValue) {
+    override def lreturn(pc: PC, value: DomainValue) {
         returnedValues += (("lreturn", pc, value))
     }
 
-    override def returnVoid(pc: Int) {
+    override def returnVoid(pc: PC) {
         returnedValues += (("return", pc, null))
     }
 
-    override def abruptMethodExecution(pc: Int, exception: DomainValue) {
+    override def abruptMethodExecution(pc: PC, exception: DomainValue) {
         returnedValues += (("throws", pc, exception))
     }
 
+    
+    case class ThrownException(pc: PC, domainValue: DomainValue)
+
+    case class ReturnedIntValue(pc : PC, domainValue: DomainValue)
+    
+    case class ReturnedFloatValue(pc : PC, domainValue: DomainValue)
+    case class ReturnedLongValue(pc : PC, domainValue: DomainValue)
+    case class ReturnedDoubleValue(pc : PC, domainValue: DomainValue)
+    
+    case class ReturnedReferenceValue(pc : PC, domainValue: DomainValue)
+    
 }
 
 

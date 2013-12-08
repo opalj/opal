@@ -35,59 +35,21 @@ package bat
 package resolved
 package ai
 package domain
-package l0
-
-import de.tud.cs.st.util.{ Yes, No, Unknown }
 
 /**
- * Provides a default implementation for the instructions related to synchronization.
+ * A `Domain` that does nothing if a method returns ab-/normally.
+ *
+ * @note This trait's method is not intended to be overridden. If you need to do some
+ * 		special processing just directly implement
+ *   	the respective method and mixin the traits that ignore the rest.
  *
  * @author Michael Eichberg
  */
-trait DoNothingOnSynchronization { this: Domain[_] ⇒
+trait IgnoreMethodResults
+        extends IgnoreVoidReturns
+        with IgnoreThrownExceptions
+        with IgnoreReturnedValues { this: SomeDomain ⇒
 
-    protected def sideEffectOnlyOrNullPointerException(
-        pc: PC,
-        value: DomainValue): Computation[Nothing, ExceptionValue] = {
-        isNull(value) match {
-            case Yes ⇒
-                ThrowsException(InitializedObject(pc, ObjectType.NullPointerException))
-            case No ⇒
-                ComputationWithSideEffectOnly
-            case Unknown ⇒
-                ComputationWithSideEffectOrException(
-                    InitializedObject(pc, ObjectType.NullPointerException)
-                )
-        }
-    }
-
-    /**
-     * Handles a `monitorenter` instruction.
-     *
-     * @note The default implementation checks if the given value is `null` and raises
-     * an exception if it is `null` or maybe `null`. In the later case or in case that
-     * the value is known not to be `null` the given value is (also) returned as this
-     * computation's results.
-     */
-    override def monitorenter(
-        pc: PC,
-        value: DomainValue): Computation[Nothing, ExceptionValue] = {
-        sideEffectOnlyOrNullPointerException(pc, value)
-    }
-
-    /**
-     * Handles a `monitorenter` instruction.
-     *
-     * @note The default implementation checks if the given value is `null` and raises
-     * an exception if it is `null` or maybe `null`. In the later case or in case that
-     * the value is known not to be `null` the given value is (also) returned as this
-     * computation's results.
-     */
-    override def monitorexit(
-        pc: PC,
-        value: DomainValue): Computation[Nothing, ExceptionValue] = {
-        sideEffectOnlyOrNullPointerException(pc, value)
-    }
 }
 
 

@@ -115,6 +115,8 @@ class DefaultVTACallGraphDomain[Source](
     val theMethod: Method)
         extends Domain[Int]
         with DefaultDomainValueBinding[Int]
+        with IgnoreMethodResults
+        with IgnoreSynchronization
         with l0.DefaultTypeLevelIntegerValues[Int]
         with l0.DefaultTypeLevelLongValues[Int]
         with l0.DefaultTypeLevelFloatValues[Int]
@@ -124,8 +126,6 @@ class DefaultVTACallGraphDomain[Source](
         with l0.TypeLevelArrayInstructions
         with l0.TypeLevelFieldAccessInstructions
         with l0.TypeLevelInvokeInstructions
-        with l0.DoNothingOnReturnFromMethod
-        with l0.DoNothingOnSynchronization
         with l1.ProjectBasedClassHierarchy[Source]
         with VTACallGraphDomain[Source, Int] {
 

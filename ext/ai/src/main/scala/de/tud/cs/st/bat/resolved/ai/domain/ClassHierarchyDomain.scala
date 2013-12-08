@@ -40,14 +40,16 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 /**
  * Implementation of a Domain's `isSubtypeOf(...)` method that delegates to
- * the corresponding method defined by the class `ClassHierarchy`.
+ * the corresponding method defined in
+ * `de.tud.cs.st.bat.resolved.analyses.ClassHierarchy`.
  *
  * @author Michael Eichberg
  */
-trait ClassHierarchyDomain { this: Domain[_] ⇒
+trait ClassHierarchyDomain { this: SomeDomain ⇒
 
     /**
-     * This project's class hierarchy.
+     * This project's class hierarchy. Usually, just a redirect to the `Project`'s
+     * class hierarchy.
      */
     def classHierarchy: analyses.ClassHierarchy
 

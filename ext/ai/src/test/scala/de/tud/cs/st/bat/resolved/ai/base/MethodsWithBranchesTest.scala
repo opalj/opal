@@ -89,10 +89,10 @@ class MethodsWithBranchesTest
             //    6  iconst_0
             //    7  ireturn 
             import domain._
-            domain.returnedValues should be(
+            domain.allReturnedValues should be(
                 Set(("ireturn", 5, AnIntegerValue), ("ireturn", 7, AnIntegerValue)))
 
-            domain.constraints should be(
+            domain.allConstraints should be(
                 Set(
                     ReifiedSingleValueConstraint(
                         4, domain.TypedValue(-1, ObjectType.Object), "is null"),
@@ -110,10 +110,10 @@ class MethodsWithBranchesTest
             //    6  iconst_0
             //    7  ireturn
             import domain._
-            domain.returnedValues should be(
+            domain.allReturnedValues should be(
                 Set(("ireturn", 5, AnIntegerValue), ("ireturn", 7, AnIntegerValue)))
 
-            domain.constraints should be(
+            domain.allConstraints should be(
                 Set(
                     ReifiedSingleValueConstraint(
                         4, domain.TypedValue(-1, ObjectType.Object), "is not null"),
@@ -138,7 +138,7 @@ class MethodsWithBranchesTest
             //    17  iconst_0
             //    18  ireturn
             import domain._
-            domain.returnedValues should be(Set(
+            allReturnedValues should be(Set(
                 ("ireturn", 14, AnIntegerValue),
                 ("ireturn", 16, AnIntegerValue),
                 ("ireturn", 18, AnIntegerValue)

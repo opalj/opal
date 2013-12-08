@@ -40,7 +40,7 @@ package domain
  * Encapsulates a domain and some values created by the respective domain.
  *
  * Using the class `DomainValues` enables type-safety when we need to store and
- * pass on a domain and some of its values.
+ * pass on a `Domain` object and some of its values.
  *
  * @author Michael Eichberg
  */
@@ -56,8 +56,8 @@ sealed abstract class DomainValues[D <: SomeDomain] {
  */
 object DomainValues {
 
-    def apply[I](
-        valuesDomain: Domain[I])(
+    def apply(
+        valuesDomain: SomeDomain)(
             domainValues: Iterable[valuesDomain.DomainValue]) = {
         new DomainValues[valuesDomain.type] {
             val domain: valuesDomain.type = valuesDomain

@@ -37,8 +37,10 @@ package ai
 package domain
 
 /**
- * Mixin this trait if you want to reify the stated constraints. This is particularly
- * useful for testing and debugging purposes.
+ * Mixin this trait if you want to reify the stated constraints. This trait
+ * need to mixed in after all traits that actually handle constraints.
+ *
+ * This is particularly useful for testing and debugging purposes.
  *
  * @author Michael Eichberg
  */
@@ -46,19 +48,34 @@ trait ReifiedConstraints[+I] extends Domain[I] {
 
     /*abstract*/ def addConstraint(constraint: ReifiedConstraint)
 
+    /**
+     * Representation of a reified constraint.
+     */
     trait ReifiedConstraint {
 
+        /**
+         * The pc associated with the constraint.
+         */
         def pc: Int
 
+        /**
+         * A textual description of the constraint.
+         */
         def constraint: String
 
     }
 
+    /**
+     * Representation of a constraint related to a single value.
+     */
     case class ReifiedSingleValueConstraint(
         pc: Int,
         value: DomainValue,
         constraint: String) extends ReifiedConstraint
 
+    /**
+     * Representation of a constraint related to two values.
+     */
     case class ReifiedTwoValuesConstraint(
         pc: Int,
         value1: DomainValue, value2: DomainValue,

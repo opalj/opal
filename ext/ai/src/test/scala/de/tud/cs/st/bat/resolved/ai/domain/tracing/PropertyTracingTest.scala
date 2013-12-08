@@ -63,9 +63,10 @@ class PropertyTracingTest
     import util.XHTML.dumpOnFailureDuringValidation
     import PropertyTracingTest._
 
-    class AnalysisDomain(identifier: String)
-            extends l1.PreciseConfigurableDomain[String](identifier)
+    class AnalysisDomain(val identifier: String)
+            extends l1.PreciseDomain[String]
             with RecordReturnValues[String]
+            with IgnoreSynchronization
             with SimpleBooleanPropertyTracing[String] {
 
         override def propertyName = "isSanitized"
@@ -85,7 +86,7 @@ class PropertyTracingTest
             super.invokestatic(pc, declaringClass, name, methodDescriptor, operands)
         }
 
-        def isSanitized(): Boolean = hasPropertyOnExit(returnedValues)
+        def isSanitized(): Boolean = hasPropertyOnExit(allReturnedValues)
     }
 
     private def evaluateMethod(name: String)(f: AnalysisDomain ⇒ Unit) {

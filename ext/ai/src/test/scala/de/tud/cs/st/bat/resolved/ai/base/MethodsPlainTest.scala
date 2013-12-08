@@ -975,7 +975,10 @@ class MethodsPlainTest
 
 private object MethodsPlainTest {
 
-    class RecordingDomain extends domain.l0.BaseDomain {
+    class RecordingDomain extends domain.l0.TypeLevelDomain[String]
+            with IgnoreSynchronization
+            with IgnoreThrownExceptions {
+        def identifier = "SimpleRecordingDomain"
         var returnedValue: Option[DomainValue] = _
         override def areturn(pc: Int, value: DomainValue) { returnedValue = Some(value) }
         override def dreturn(pc: Int, value: DomainValue) { returnedValue = Some(value) }

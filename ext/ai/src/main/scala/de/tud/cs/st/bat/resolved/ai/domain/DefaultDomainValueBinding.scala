@@ -39,27 +39,27 @@ package domain
 import reflect.ClassTag
 
 /**
- * Final binding of the type `DomainValue` using the initial
+ * Final binding of a `Domain`'s type `DomainValue` as well as all subtypes that are
+ * also defined by `Domain`. defined by using the initial
  * [[de.tud.cs.st.bat.resolved.ai.Domain.Value]] trait.
  *
  * @author Michael Eichberg
  */
-trait DefaultDomainValueBinding[+I]
-        extends Domain[I] {
+trait DefaultDomainValueBinding[+I] extends Domain[I] {
 
     final type DomainValue = Value
 
-    final val DomainValueTag: ClassTag[DomainValue] = implicitly
+    override final val DomainValueTag: ClassTag[DomainValue] = implicitly
 
     final type DomainIllegalValue = IllegalValue
 
-    final val TheIllegalValue: DomainIllegalValue = new IllegalValue
+    override final val TheIllegalValue: DomainIllegalValue = new IllegalValue
 
-    final val MetaInformationUpdateIllegalValue = MetaInformationUpdate(TheIllegalValue)
+    override final val MetaInformationUpdateIllegalValue = MetaInformationUpdate(TheIllegalValue)
 
-    type DomainReturnAddressValue = ReturnAddressValue
+    final type DomainReturnAddressValue = ReturnAddressValue
 
-    def ReturnAddressValue(address: Int) = new ReturnAddressValue(address)
+    override def ReturnAddressValue(address: Int) = new ReturnAddressValue(address)
 }
 
 

@@ -80,7 +80,7 @@ class MethodsWithArraysTest
     it should "be able to analyze a method that processes a byte array" in {
         evaluateMethod("byteArrays", domain ⇒ {
             import domain._
-            domain.returnedValues should be(
+            domain.allReturnedValues should be(
                 Set(("ireturn", 15, AByteValue))
             )
         })
@@ -89,7 +89,7 @@ class MethodsWithArraysTest
     it should "be able to analyze a method that processes a boolean array" in {
         evaluateMethod("booleanArrays", domain ⇒ {
             import domain._
-            domain.returnedValues should be(
+            domain.allReturnedValues should be(
                 Set(("ireturn", 14, ABooleanValue))
             )
         })

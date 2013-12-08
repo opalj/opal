@@ -35,35 +35,43 @@ package bat
 package resolved
 package ai
 package domain
-package l0
-
-import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
-import analyses.ClassHierarchy
 
 /**
- * Implementation of a Domain's `isSubtypeOf(...)` method that delegates to
- * the corresponding method defined by the class `ClassHierarchy`. This class
- * uses BAT's `preInitializedClassHierarchy` (see `ClassHierarchy` for details)
- * for answering queries.
+ * Provides default implementations for a `Domain`'s return methods that do nothing.
+ *
+ * You can mix in this trait if you are not interested in a method's return values.
  *
  * @author Michael Eichberg
  */
-trait BasicTypeHierarchy extends ClassHierarchyDomain { this: SomeDomain ⇒
+trait IgnoreReturnedValues { this: SomeDomain ⇒
 
-    /**
-     * Returns the predefined class hierarchy unless explicitly overridden. BAT's
-     * built-in default class hierarchy only reflects the type-hierarchy between the
-     * most basic types – in particular between the exceptions potentially thrown
-     * by JVM instructions.
-     *
-     * @note '''This method is intended to be overridden.'''
-     */
-    override def classHierarchy: ClassHierarchy = BasicTypeHierarchy.classHierarchy
+    // THE METHODS ARE FINAL TO AVOID THAT THIS TRAIT IS MIXED IN AS WELL AS A 
+    // TRAIT THAT ALSO IMPLEMENTS THE METHODS. IN THAT CASE COMPREHENSIBILITY
+    // WOULD SUFFER!
+    
+    override final def areturn(pc: PC, value: DomainValue): Unit = {
+        /* Does nothing. */
+    }
+
+    override final def dreturn(pc: PC, value: DomainValue): Unit = {
+        /* Do nothing. */
+    }
+
+    override final def freturn(pc: PC, value: DomainValue): Unit = {
+        /* Do nothing. */
+    }
+
+    override final def ireturn(pc: PC, value: DomainValue): Unit = {
+        /* Do nothing. */
+    }
+
+    override final def lreturn(pc: PC, value: DomainValue): Unit = {
+        /* Do nothing. */
+    }
 
 }
-private object BasicTypeHierarchy {
 
-    val classHierarchy: ClassHierarchy = ClassHierarchy.preInitializedClassHierarchy
 
-}
+
+
 

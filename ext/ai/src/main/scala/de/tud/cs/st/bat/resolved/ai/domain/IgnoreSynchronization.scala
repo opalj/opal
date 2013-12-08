@@ -35,35 +35,61 @@ package bat
 package resolved
 package ai
 package domain
-package l0
 
-import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
-import analyses.ClassHierarchy
+import de.tud.cs.st.util.{ Yes, No, Unknown }
 
 /**
- * Implementation of a Domain's `isSubtypeOf(...)` method that delegates to
- * the corresponding method defined by the class `ClassHierarchy`. This class
- * uses BAT's `preInitializedClassHierarchy` (see `ClassHierarchy` for details)
- * for answering queries.
+ * Provides a default implementation for the instructions related to synchronization.
  *
  * @author Michael Eichberg
  */
-trait BasicTypeHierarchy extends ClassHierarchyDomain { this: SomeDomain ⇒
+trait IgnoreSynchronization { this: SomeDomain ⇒
+
+    protected[this] def sideEffectOnlyOrNullPointerException(
+        pc: PC,
+        value: DomainValue): Computation[Nothing, ExceptionValue] = {
+        isNull(value) match {
+            case Yes ⇒
+                ThrowsException(InitializedObject(pc, ObjectType.NullPointerException))
+            case No ⇒
+                ComputationWithSideEffectOnly
+            case Unknown ⇒
+                ComputationWithSideEffectOrException(
+                    InitializedObject(pc, ObjectType.NullPointerException)
+                )
+        }
+    }
 
     /**
-     * Returns the predefined class hierarchy unless explicitly overridden. BAT's
-     * built-in default class hierarchy only reflects the type-hierarchy between the
-     * most basic types – in particular between the exceptions potentially thrown
-     * by JVM instructions.
+     * Handles a `monitorenter` instruction.
      *
-     * @note '''This method is intended to be overridden.'''
+     * @note The default implementation checks if the given value is `null` and raises
+     * an exception if it is `null` or maybe `null`. In the later case or in case that
+     * the value is known not to be `null` the given value is (also) returned as this
+     * computation's results.
      */
-    override def classHierarchy: ClassHierarchy = BasicTypeHierarchy.classHierarchy
+    override def monitorenter(
+        pc: PC,
+        value: DomainValue): Computation[Nothing, ExceptionValue] = {
+        sideEffectOnlyOrNullPointerException(pc, value)
+    }
 
+    /**
+     * Handles a `monitorenter` instruction.
+     *
+     * @note The default implementation checks if the given value is `null` and raises
+     * an exception if it is `null` or maybe `null`. In the later case or in case that
+     * the value is known not to be `null` the given value is (also) returned as this
+     * computation's results.
+     */
+    override def monitorexit(
+        pc: PC,
+        value: DomainValue): Computation[Nothing, ExceptionValue] = {
+        sideEffectOnlyOrNullPointerException(pc, value)
+    }
 }
-private object BasicTypeHierarchy {
 
-    val classHierarchy: ClassHierarchy = ClassHierarchy.preInitializedClassHierarchy
 
-}
+
+
 

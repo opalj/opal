@@ -35,30 +35,24 @@ package bat
 package resolved
 package ai
 package domain
-package l0
 
 /**
- * Provides default implementations for a `Domain`'s return methods that do nothing.
+ * Basic implementation of a `Domain`s `returnVoid` method that does nothing.
+ *
+ * @note This trait's method is not intended to be overridden. If you need to do some
+ * 		special processing in case of abrupt method executions, just directly implement
+ *   	the respective method and ignore this trait.
  *
  * @author Michael Eichberg
  */
-trait DoNothingOnReturnFromMethod { this: Domain[_] ⇒
+trait IgnoreVoidReturns { this: SomeDomain ⇒
 
-    override def areturn(pc: PC, value: DomainValue): Unit = { /* Do nothing. */ }
+    // THE METHOD IS FINAL TO AVOID THAT THIS TRAIT IS MIXED IN AS WELL AS A 
+    // TRAIT THAT ALSO IMPLEMENTS THE METHOD. IN THAT CASE COMPREHENSIBILITY
+    // WOULD SUFFER!
 
-    override def dreturn(pc: PC, value: DomainValue): Unit = { /* Do nothing. */ }
+    override final def returnVoid(pc: PC): Unit = { /* Does nothing. */ }
 
-    override def freturn(pc: PC, value: DomainValue): Unit = { /* Do nothing. */ }
-
-    override def ireturn(pc: PC, value: DomainValue): Unit = { /* Do nothing. */ }
-
-    override def lreturn(pc: PC, value: DomainValue): Unit = { /* Do nothing. */ }
-
-    override def returnVoid(pc: PC): Unit = { /* Do nothing. */ }
-
-    override def abruptMethodExecution(pc: PC, exception: DomainValue): Unit = {
-        /* Do nothing. */
-    }
 }
 
 

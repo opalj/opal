@@ -35,35 +35,29 @@ package bat
 package resolved
 package ai
 package domain
-package l0
-
-import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
-import analyses.ClassHierarchy
 
 /**
- * Implementation of a Domain's `isSubtypeOf(...)` method that delegates to
- * the corresponding method defined by the class `ClassHierarchy`. This class
- * uses BAT's `preInitializedClassHierarchy` (see `ClassHierarchy` for details)
- * for answering queries.
+ * Basic implementation of a `Domain`'s `abruptMethodExecution` method that does
+ * nothing.
+ *
+ * @note This trait's method is not intended to be overridden. If you need to do some
+ * 		special processing in case of abrupt method executions, just directly implement
+ *   	the respective method and ignore this trait.
  *
  * @author Michael Eichberg
  */
-trait BasicTypeHierarchy extends ClassHierarchyDomain { this: SomeDomain ⇒
+trait IgnoreThrownExceptions { this: SomeDomain ⇒
 
-    /**
-     * Returns the predefined class hierarchy unless explicitly overridden. BAT's
-     * built-in default class hierarchy only reflects the type-hierarchy between the
-     * most basic types – in particular between the exceptions potentially thrown
-     * by JVM instructions.
-     *
-     * @note '''This method is intended to be overridden.'''
-     */
-    override def classHierarchy: ClassHierarchy = BasicTypeHierarchy.classHierarchy
+    // THE METHOD IS FINAL TO AVOID THAT THIS TRAIT IS MIXED IN AS WELL AS A 
+    // TRAIT THAT ALSO IMPLEMENTS THE METHOD. IN THAT CASE COMPREHENSIBILITY
+    // WOULD SUFFER!
 
+    override final def abruptMethodExecution(pc: PC, exception: DomainValue): Unit = {
+        /* Does nothing. */
+    }
 }
-private object BasicTypeHierarchy {
 
-    val classHierarchy: ClassHierarchy = ClassHierarchy.preInitializedClassHierarchy
 
-}
+
+
 

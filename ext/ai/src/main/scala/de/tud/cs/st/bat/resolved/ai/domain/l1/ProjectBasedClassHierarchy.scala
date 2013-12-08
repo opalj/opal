@@ -46,11 +46,17 @@ import analyses.ClassHierarchy
  *
  * @author Michael Eichberg
  */
-trait ProjectBasedClassHierarchy[Source] extends ClassHierarchyDomain { this: Domain[_] ⇒
+trait ProjectBasedClassHierarchy[Source] extends l0.BasicTypeHierarchy { this: SomeDomain ⇒
 
+    /**
+     * Returns project that is currently analyzed.
+     */
     def project: analyses.Project[Source]
 
-    override def classHierarchy: ClassHierarchy = project.classHierarchy
+    /**
+     * Returns the project's class hiearchy.
+     */
+    override final def classHierarchy: ClassHierarchy = project.classHierarchy
 
 }
 

@@ -36,7 +36,6 @@ package ai
 package base
 
 import reader.Java7Framework
-import domain.l0.DoNothingOnReturnFromMethod
 
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
@@ -79,7 +78,7 @@ class MethodsWithExceptionsTest
     it should "be able to analyze a method that always throws an exception" in {
         evaluateMethod("alwaysThrows", domain ⇒ {
             import domain._
-            domain.returnedValues should be(
+            allReturnedValues should be(
                 Set(("throws", 8, AReferenceValue(0, ObjectType.RuntimeException, No, true)))
             )
         })
@@ -88,7 +87,7 @@ class MethodsWithExceptionsTest
     it should "be able to analyze a method that catches everything" in {
         evaluateMethod("alwaysCatch", domain ⇒ {
             import domain._
-            domain.returnedValues should be(
+            allReturnedValues should be(
                 Set(("return", 7, null))
             )
         })
@@ -97,7 +96,7 @@ class MethodsWithExceptionsTest
     it should "be able to identify all potentially thrown exceptions when different exceptions are stored in a variable which is then passed to a throw statement" in {
         evaluateMethod("throwsThisOrThatException", domain ⇒ {
             import domain._
-            domain.returnedValues should be(
+            allReturnedValues should be(
                 Set(("throws", 19, AReferenceValue(12, ObjectType("java/lang/IllegalArgumentException"), No, true)), // <= finally
                     ("throws", 11, AReferenceValue(4, ObjectType.NullPointerException, No, true))) // <= if t is null
             )
@@ -107,7 +106,7 @@ class MethodsWithExceptionsTest
     it should "be able to analyze a method that catches the thrown exceptions" in {
         evaluateMethod("throwsNoException", domain ⇒ {
             import domain._
-            domain.returnedValues should be(
+            allReturnedValues should be(
                 Set(("return", 39, null))
             )
         })
@@ -116,7 +115,7 @@ class MethodsWithExceptionsTest
     it should "be able to handle the pattern where some (checked) exceptions are caught and then rethrown as an unchecked exception" in {
         evaluateMethod("leverageException", domain ⇒ {
             import domain._
-            domain.returnedValues should be(
+            allReturnedValues should be(
                 Set(("return", 38, null)) // <= void return
             // Due to the simplicity of the domain (the exceptions of called methods are 
             // not yet analyze) we cannot determine that the following exception 
@@ -129,7 +128,7 @@ class MethodsWithExceptionsTest
     it should "be able to analyze a method that may return normally or throw an exception" in {
         evaluateMethod("withFinallyAndThrows", domain ⇒ {
             import domain._
-            domain.returnedValues should be(
+            allReturnedValues should be(
                 Set(("throws", 23, AReferenceValue(-1, ObjectType.Throwable, No, false)),
                     ("throws", 19, AReferenceValue(19, ObjectType.NullPointerException, No, true)),
                     ("throws", 23, MultipleReferenceValues(Set(
