@@ -950,6 +950,16 @@ trait Domain[+I] {
         operands: Operands,
         locals: Locals): (Operands, Locals) =
         (operands, locals)
+     //
+    // W.r.t. Integer values
+
+    def establishValue(
+        pc: PC,
+        theValue: Long,
+        value: DomainValue,
+        operands: Operands,
+        locals: Locals): (Operands, Locals) =
+        (operands, locals)
 
     def establishAreEqual(
         pc: PC,

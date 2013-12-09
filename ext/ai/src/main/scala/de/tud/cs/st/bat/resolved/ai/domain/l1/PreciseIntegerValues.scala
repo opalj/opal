@@ -66,9 +66,9 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
      * This is a runtime configurable setting that may affect the overall precision of
      * subsequent analyses that require knowledge about integers.
      */
-    def maxSpread = 25
+     def maxSpreadInteger = 25
 
-    protected def spread(a: Int, b: Int) = Math.abs(a - b)
+     protected def spread(a: Int, b: Int) = Math.abs(a - b)
 
     /**
      * Determines if an exception is thrown in case of a '''potential''' division by zero.
@@ -77,7 +77,7 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
      * However, if we know that the denominator is 0 a corresponding exception will be
      * thrown.
      */
-    def divisionByZeroIfUnknown = true
+    def divisionByZeroIfUnknownInteger = true
 
     /**
      * Abstracts over all values with computational type `integer`.
@@ -223,9 +223,15 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
     // -----------------------------------------------------------------------------------
 
     //
+    // RELATIONAL OPERATORS
+    //
+    override def lcmp(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+        newIntegerValue(pc)
+        
+    //
     // UNARY EXPRESSIONS
     //
-    def ineg(pc: PC, value: DomainValue) = value match {
+    override def ineg(pc: PC, value: DomainValue) = value match {
         case v: IntegerValue ⇒ v.update(-v.value)
         case _               ⇒ value
     }
@@ -234,28 +240,28 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
     // BINARY EXPRESSIONS
     //
 
-    def iadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def iadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         getIntValues(value1, value2) { (v1, v2) ⇒
             newIntegerValue(pc, v1 + v2)
         } {
             newIntegerValue
         }
 
-    def iand(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def iand(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         getIntValues(value1, value2) { (v1, v2) ⇒
             newIntegerValue(pc, v1 & v2)
         } {
             newIntegerValue
         }
 
-    def idiv(pc: PC, value1: DomainValue, value2: DomainValue): Computation[DomainValue, DomainValue] =
+    override def idiv(pc: PC, value1: DomainValue, value2: DomainValue): Computation[DomainValue, DomainValue] =
         getIntValues(value1, value2) { (v1, v2) ⇒
             if (v2 == 0)
                 ThrowsException(newInitializedObject(pc, ObjectType.ArithmeticException))
             else
                 ComputedValue(newIntegerValue(pc, v1 / v2))
         } {
-            if (divisionByZeroIfUnknown)
+            if (divisionByZeroIfUnknownInteger)
                 ComputedValueAndException(
                     newIntegerValue,
                     newInitializedObject(pc, ObjectType.ArithmeticException))
@@ -263,61 +269,61 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
                 ComputedValue(newIntegerValue)
         }
 
-    def imul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def imul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         getIntValues(value1, value2) { (v1, v2) ⇒
             newIntegerValue(pc, v1 * v2)
         } {
             newIntegerValue
         }
 
-    def ior(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def ior(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         getIntValues(value1, value2) { (v1, v2) ⇒
             newIntegerValue(pc, v1 | v2)
         } {
             newIntegerValue
         }
 
-    def irem(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def irem(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         getIntValues(value1, value2) { (v1, v2) ⇒
             newIntegerValue(pc, v1 % v2)
         } {
             newIntegerValue
         }
 
-    def ishl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def ishl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         getIntValues(value1, value2) { (v1, v2) ⇒
             newIntegerValue(pc, v1 << v2)
         } {
             newIntegerValue
         }
 
-    def ishr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def ishr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         getIntValues(value1, value2) { (v1, v2) ⇒
             newIntegerValue(pc, v1 >> v2)
         } {
             newIntegerValue
         }
 
-    def isub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def isub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         getIntValues(value1, value2) { (v1, v2) ⇒
             newIntegerValue(pc, v1 - v2)
         } {
             newIntegerValue
         }
 
-    def iushr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def iushr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         getIntValues(value1, value2) { (v1, v2) ⇒
             newIntegerValue(pc, v1 >>> v2)
         }(newIntegerValue)
 
-    def ixor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def ixor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         getIntValues(value1, value2) { (v1, v2) ⇒
             newIntegerValue(pc, v1 ^ v2)
         } {
             newIntegerValue
         }
 
-    def iinc(pc: PC, value: DomainValue, increment: Int) =
+    override def iinc(pc: PC, value: DomainValue, increment: Int) =
         value match {
             case v: IntegerValue ⇒ v.update(v.value + increment)
             case _               ⇒ value
@@ -327,18 +333,18 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
     // TYPE CONVERSION INSTRUCTIONS
     //
 
-    def i2b(pc: PC, value: DomainValue): DomainValue =
+    override def i2b(pc: PC, value: DomainValue): DomainValue =
         getIntValue(value)(v ⇒ newByteValue(pc, v.toByte))(newByteValue)
 
-    def i2c(pc: PC, value: DomainValue): DomainValue =
+    override def i2c(pc: PC, value: DomainValue): DomainValue =
         getIntValue(value)(v ⇒ newCharValue(pc, v.toChar))(newByteValue)
 
-    def i2s(pc: PC, value: DomainValue): DomainValue =
+    override def i2s(pc: PC, value: DomainValue): DomainValue =
         getIntValue(value)(v ⇒ newShortValue(pc, v.toShort))(newByteValue)
 
-    def i2d(pc: PC, value: DomainValue): DomainValue = newDoubleValue(pc)
-    def i2f(pc: PC, value: DomainValue): DomainValue = newFloatValue(pc)
-    def i2l(pc: PC, value: DomainValue): DomainValue = newLongValue(pc)
+    override def i2d(pc: PC, value: DomainValue): DomainValue = newDoubleValue(pc)
+    override def i2f(pc: PC, value: DomainValue): DomainValue = newFloatValue(pc)
+    override def i2l(pc: PC, value: DomainValue): DomainValue = newLongValue(pc)
 }
 private object PreciseIntegerValues {
     private final val typesAnswer: IsPrimitiveValue = IsPrimitiveValue(IntegerType)

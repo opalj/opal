@@ -40,16 +40,16 @@ package l1
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 /**
- * Basic implementation of the `PreciseIntegerValues` trait that requires that
+ * Basic implementation of the `PreciseLongValues` trait that requires that
  * `Domain`'s  `Value` trait is not extended.
  *
  * @author Michael Eichberg
  */
-trait DefaultPreciseIntegerValues[+I]
+trait DefaultPreciseLongValues[+I]
         extends DefaultDomainValueBinding[I]
-        with PreciseIntegerValues[I] {
+        with PreciseLongValues[I] {
 
-    case class AnIntegerValue() extends super.AnIntegerValue {
+    case class AnLongValue() extends super.AnLongValue {
 
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = NoUpdate
 
@@ -60,39 +60,39 @@ trait DefaultPreciseIntegerValues[+I]
         override def adapt[ThatI >: I](
             targetDomain: Domain[ThatI],
             pc: PC): targetDomain.DomainValue =
-            if (targetDomain.isInstanceOf[DefaultPreciseIntegerValues[ThatI]]) {
-                val thatDomain = targetDomain.asInstanceOf[DefaultPreciseIntegerValues[ThatI]]
-                thatDomain.AnIntegerValue().asInstanceOf[targetDomain.DomainValue]
+            if (targetDomain.isInstanceOf[DefaultPreciseLongValues[ThatI]]) {
+                val thatDomain = targetDomain.asInstanceOf[DefaultPreciseLongValues[ThatI]]
+                thatDomain.AnLongValue().asInstanceOf[targetDomain.DomainValue]
             } else {
                 super.adapt(targetDomain, pc)
             }
     }
 
-    case class IntegerValue(
-        val initial: Int,
-        val value: Int)
-            extends super.IntegerValue {
+    case class LongValue(
+        val initial: Long,
+        val value: Long)
+            extends super.LongValue {
 
-        def this(value: Int) = this(value, value)
+        def this(value: Long) = this(value, value)
 
-        def update(newValue: Int): DomainValue = IntegerValue(initial, newValue)
+        def update(newValue: Long): DomainValue = LongValue(initial, newValue)
 
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] =
             value match {
-                case AnIntegerValue() ⇒ StructuralUpdate(value)
-                case IntegerValue(otherInitial, otherValue) ⇒
+                case AnLongValue() ⇒ StructuralUpdate(value)
+                case LongValue(otherInitial, otherValue) ⇒
                     // First check if they are growing in the same direction...
                     var increasing = (this.value - this.initial >= 0)
                     if (increasing != (otherValue - otherInitial) >= 0)
-                        return StructuralUpdate(AnIntegerValue())
+                        return StructuralUpdate(AnLongValue())
 
-                    def result(newInitial: Int, newValue: Int) = {
-                        if (spread(newValue, newInitial) > maxSpreadInteger)
-                            StructuralUpdate(AnIntegerValue())
+                    def result(newInitial: Long, newValue: Long) = {
+                        if (spread(newValue, newInitial) > maxSpreadLong)
+                            StructuralUpdate(AnLongValue())
                         else if (newValue != this.value)
-                            StructuralUpdate(IntegerValue(newInitial, newValue))
+                            StructuralUpdate(LongValue(newInitial, newValue))
                         else if (newInitial != this.initial)
-                            MetaInformationUpdate(IntegerValue(newInitial, newValue))
+                            MetaInformationUpdate(LongValue(newInitial, newValue))
                         else
                             NoUpdate
                     }
@@ -119,38 +119,38 @@ trait DefaultPreciseIntegerValues[+I]
         override def adapt[ThatI >: I](
             targetDomain: Domain[ThatI],
             pc: PC): targetDomain.DomainValue =
-            if (targetDomain.isInstanceOf[DefaultPreciseIntegerValues[ThatI]]) {
-                val thatDomain = targetDomain.asInstanceOf[DefaultPreciseIntegerValues[ThatI]]
-                thatDomain.IntegerValue(this.initial, this.value).
+            if (targetDomain.isInstanceOf[DefaultPreciseLongValues[ThatI]]) {
+                val thatDomain = targetDomain.asInstanceOf[DefaultPreciseLongValues[ThatI]]
+                thatDomain.LongValue(this.initial, this.value).
                     asInstanceOf[targetDomain.DomainValue]
             } else {
                 super.adapt(targetDomain, pc)
             }
 
-        override def toString: String = "IntegerValue(initial="+initial+", value="+value+")"
+        override def toString: String = "LongValue(initial="+initial+", value="+value+")"
     }
-
-    def newBooleanValue(): DomainValue = AnIntegerValue()
-    def newBooleanValue(pc: PC): DomainValue = AnIntegerValue()
+/*
+    def newBooleanValue(): DomainValue = AnLongValue()
+    def newBooleanValue(pc: PC): DomainValue = AnLongValue()
     def newBooleanValue(pc: PC, value: Boolean): DomainValue =
-        if (value) newIntegerValue(pc, 1) else newIntegerValue(pc, 0)
+        if (value) newLongValue(pc, 1) else newLongValue(pc, 0)
 
-    def newByteValue() = AnIntegerValue()
-    def newByteValue(pc: PC): DomainValue = AnIntegerValue()
-    def newByteValue(pc: PC, value: Byte) = new IntegerValue(value)
+    def newByteValue() = AnLongValue()
+    def newByteValue(pc: PC): DomainValue = AnLongValue()
+    def newByteValue(pc: PC, value: Byte) = new LongValue(value)
 
-    def newShortValue() = AnIntegerValue()
-    def newShortValue(pc: PC): DomainValue = AnIntegerValue()
-    def newShortValue(pc: PC, value: Short) = new IntegerValue(value)
+    def newShortValue() = AnLongValue()
+    def newShortValue(pc: PC): DomainValue = AnLongValue()
+    def newShortValue(pc: PC, value: Short) = new LongValue(value)
 
-    def newCharValue() = AnIntegerValue()
-    def newCharValue(pc: PC): DomainValue = AnIntegerValue()
-    def newCharValue(pc: PC, value: Char) = new IntegerValue(value)
-
-    def newIntegerValue() = AnIntegerValue()
-    def newIntegerValue(pc: PC): DomainValue = AnIntegerValue()
-    def newIntegerValue(pc: PC, value: Int) = new IntegerValue(value)
-    def newIntegerConstant0: DomainValue = new IntegerValue(0)
+    def newCharValue() = AnLongValue()
+    def newCharValue(pc: PC): DomainValue = AnLongValue()
+    def newCharValue(pc: PC, value: Char) = new LongValue(value)
+*/
+    def newLongValue() = AnLongValue()
+    def newLongValue(pc: PC): DomainValue = AnLongValue()
+    def newLongValue(pc: PC, value: Long) = new LongValue(value)
+    def newLongConstant0: DomainValue = new LongValue(0)
 
 }
 
