@@ -54,7 +54,7 @@ trait UShortSet extends collection.UShortSet {
 }
 
 /**
- * This set uses a single int value to store two unsigned short values.
+ * This set uses a single int value to store one or two unsigned short values.
  */
 private class UShortSet2(private var value: Int) extends UShortSet {
 
@@ -76,7 +76,12 @@ private class UShortSet2(private var value: Int) extends UShortSet {
     }
 
     def foreach[U](f: /*ushortValue:*/ Int ⇒ U): Unit =
-        { f(value1); f(value2) }
+        { f(value1); val value2 = this.value2; if (value2 > 0) f(value2) }
+
+    def forall(f: /*ushortValue:*/ Int ⇒ Boolean): Boolean = {
+        val value2 = this.value2
+        f(value1) && ((value2 == 0) || f(value2))
+    }
 
     def +(uShortValue: Int): UShortSet = {
         if (uShortValue < MinValue || uShortValue > MaxValue)
@@ -130,6 +135,9 @@ private object UShortSet2 {
     final val Value2Mask: Int = Value1Mask << 16
 }
 
+/**
+ * This set uses a single long value to store three or four unsigned short values.
+ */
 private class UShortSet4(private var value: Long) extends UShortSet {
 
     def this(value1: Long, value2: Long, value3: Long, value4: Long) {
@@ -220,8 +228,21 @@ private class UShortSet4(private var value: Long) extends UShortSet {
             value3 == uShortValue || value4 == uShortValue
     }
 
-    def foreach[U](f: /*ushortValue:*/ Int ⇒ U): Unit =
-        { f(value1.toInt); f(value2.toInt); f(value3.toInt); f(value4.toInt) }
+    def foreach[U](f: /*ushortValue:*/ Int ⇒ U): Unit = {
+        f(value1.toInt)
+        f(value2.toInt)
+        f(value3.toInt)
+        val value4 = this.value4
+        if (value4 > 0) f(value4.toInt)
+    }
+
+    def forall(f: /*ushortValue:*/ Int ⇒ Boolean): Boolean = {
+        val value4 = this.value4.toInt
+        f(value1.toInt) &&
+            f(value2.toInt) &&
+            f(value3.toInt) &&
+            ((value4 == 0) || f(value4))
+    }
 
     def iterable: Iterable[Int] =
         if (notFull)
@@ -259,7 +280,11 @@ private class UShortSetNode(set1: UShortSet, set2: UShortSet) extends UShortSet 
         else
             set2.contains(uShortValue)
 
-    def foreach[U](f: /*ushortValue:*/ Int ⇒ U): Unit = { set1.foreach(f); set2.foreach(f) }
+    def foreach[U](f: /*ushortValue:*/ Int ⇒ U): Unit =
+        { set1.foreach(f); set2.foreach(f) }
+
+    def forall(f: /*ushortValue:*/ Int ⇒ Boolean): Boolean =
+        set1.forall(f) && set2.forall(f)
 
     def +(uShortValue: Int): UShortSet = {
         if (uShortValue < MinValue || uShortValue > MaxValue)
@@ -288,6 +313,7 @@ private object EmptyUShortSet extends UShortSet {
     def iterable = Iterable.empty
     def contains(uShortValue: Int): Boolean = false
     def foreach[U](f: /*ushortValue:*/ Int ⇒ U): Unit = { /*Nothing to do.*/ }
+    def forall(f: /*ushortValue:*/ Int ⇒ Boolean): Boolean = true
     def +(uShortValue: Int): UShortSet = UShortSet(uShortValue)
     def max = throw new UnsupportedOperationException("the set is empty")
 }
@@ -311,6 +337,14 @@ object UShortSet {
             throw new IllegalArgumentException("value out of range: "+uShortValue)
 
         new UShortSet2(uShortValue)
+    }
+
+    def create(uShortValues: Int*): UShortSet = {
+        uShortValues match {
+            case Nil              ⇒ EmptyUShortSet
+            case Seq(uShortValue) ⇒ apply(uShortValue)
+            case values           ⇒ (apply(values.head) /: values.tail)(_ + _)
+        }
     }
 }
 
