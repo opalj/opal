@@ -66,7 +66,7 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
      * This is a runtime configurable setting that may affect the overall precision of
      * subsequent analyses that require knowledge about integers.
      */
-    def maxSpread = 25
+    def maxSpreadInteger  = 25
 
     protected def spread(a: Int, b: Int) = Math.abs(a - b)
 
@@ -77,7 +77,7 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
      * However, if we know that the denominator is 0 a corresponding exception will be
      * thrown.
      */
-    def divisionByZeroIfUnknown = true
+    def divisionByZeroIfUnknownInteger = true
 
     /**
      * Abstracts over all values with computational type `integer`.
@@ -250,7 +250,7 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
             else
                 ComputedValue(IntegerValue(pc, v1 / v2))
         } {
-            if (divisionByZeroIfUnknown)
+            if (divisionByZeroIfUnknownInteger)
                 ComputedValueAndException(
                     IntegerValue(pc),
                     InitializedObject(pc, ObjectType.ArithmeticException))

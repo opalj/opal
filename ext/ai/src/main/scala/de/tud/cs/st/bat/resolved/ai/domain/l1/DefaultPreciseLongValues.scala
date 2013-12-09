@@ -40,21 +40,21 @@ package l1
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 /**
- * Basic implementation of the `PreciseIntegerValues` trait that requires that
+ * Basic implementation of the `PreciseLongValues` trait that requires that
  * `Domain`'s  `Value` trait is not extended.
  *
- * @author Michael Eichberg
+ * @author Riadh Chtara
  */
-trait DefaultPreciseIntegerValues[+I]
+trait DefaultPreciseLongValues[+I]
         extends DefaultDomainValueBinding[I]
-        with PreciseIntegerValues[I] {
+        with PreciseLongValues[I] {
 
     // ATTENTION: The functionality to propagate a constraint crucially depends on
-    // the fact two integer values created at two different places are represented
-    // by two different instances of "AnIntegerValue"; otherwise, propagating the
+    // the fact two long values created at two different places are represented
+    // by two different instances of "AnLongValue"; otherwise, propagating the
     // constraint that some value (after some kind of check) has to have a special
     // value may affect unrelated values!
-    case class AnIntegerValue() extends super.AnIntegerValue {
+    case class AnLongValue() extends super.AnLongValue {
 
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = NoUpdate
 
@@ -65,37 +65,37 @@ trait DefaultPreciseIntegerValues[+I]
         override def adapt[ThatI >: I](
             targetDomain: Domain[ThatI],
             pc: PC): targetDomain.DomainValue =
-            if (targetDomain.isInstanceOf[DefaultPreciseIntegerValues[ThatI]]) {
-                val thatDomain = targetDomain.asInstanceOf[DefaultPreciseIntegerValues[ThatI]]
-                thatDomain.AnIntegerValue.asInstanceOf[targetDomain.DomainValue]
+            if (targetDomain.isInstanceOf[DefaultPreciseLongValues[ThatI]]) {
+                val thatDomain = targetDomain.asInstanceOf[DefaultPreciseLongValues[ThatI]]
+                thatDomain.AnLongValue.asInstanceOf[targetDomain.DomainValue]
             } else {
                 super.adapt(targetDomain, pc)
             }
     }
 
-    case class IntegerRange(
-        val initial: Int,
-        val value: Int)
-            extends super.IntegerValue {
+    case class LongRange(
+        val initial: Long,
+        val value: Long)
+            extends super.LongValue {
         
-        def update(newValue: Int): DomainValue = IntegerRange(initial, newValue)
+        def update(newValue: Long): DomainValue = LongRange(initial, newValue)
 
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] =
             value match {
-                case AnIntegerValue() ⇒ StructuralUpdate(value)
-                case IntegerRange(otherInitial, otherValue) ⇒
+                case AnLongValue() ⇒ StructuralUpdate(value)
+                case LongRange(otherInitial, otherValue) ⇒
                     // First check if they are growing in the same direction...
                     var increasing = (this.value - this.initial >= 0)
                     if (increasing != (otherValue - otherInitial) >= 0)
-                        return StructuralUpdate(AnIntegerValue())
+                        return StructuralUpdate(AnLongValue())
 
-                    def result(newInitial: Int, newValue: Int) = {
-                        if (spread(newValue, newInitial) > maxSpreadInteger)
-                            StructuralUpdate(AnIntegerValue())
+                    def result(newInitial: Long, newValue: Long) = {
+                        if (spread(newValue, newInitial) > maxSpreadLong)
+                            StructuralUpdate(AnLongValue())
                         else if (newValue != this.value)
-                            StructuralUpdate(IntegerRange(newInitial, newValue))
+                            StructuralUpdate(LongRange(newInitial, newValue))
                         else if (newInitial != this.initial)
-                            MetaInformationUpdate(IntegerRange(newInitial, newValue))
+                            MetaInformationUpdate(LongRange(newInitial, newValue))
                         else
                             NoUpdate
                     }
@@ -122,32 +122,19 @@ trait DefaultPreciseIntegerValues[+I]
         override def adapt[ThatI >: I](
             targetDomain: Domain[ThatI],
             pc: PC): targetDomain.DomainValue =
-            if (targetDomain.isInstanceOf[DefaultPreciseIntegerValues[ThatI]]) {
-                val thatDomain = targetDomain.asInstanceOf[DefaultPreciseIntegerValues[ThatI]]
-                thatDomain.IntegerRange(this.initial, this.value).
+            if (targetDomain.isInstanceOf[DefaultPreciseLongValues[ThatI]]) {
+                val thatDomain = targetDomain.asInstanceOf[DefaultPreciseLongValues[ThatI]]
+                thatDomain.LongRange(this.initial, this.value).
                     asInstanceOf[targetDomain.DomainValue]
             } else {
                 super.adapt(targetDomain, pc)
             }
 
-        override def toString: String = "IntegerRage(initial="+initial+", value="+value+")"
+        override def toString: String = "LongRage(initial="+initial+", value="+value+")"
     }
 
-    override def BooleanValue(pc: PC): DomainValue = AnIntegerValue()
-    override def BooleanValue(pc: PC, value: Boolean): DomainValue =
-        if (value) IntegerValue(pc, 1) else IntegerValue(pc, 0)
-
-    override def ByteValue(pc: PC): DomainValue = AnIntegerValue()
-    override def ByteValue(pc: PC, value: Byte) = new IntegerRange(value,value)
-
-    override def ShortValue(pc: PC): DomainValue = AnIntegerValue()
-    override def ShortValue(pc: PC, value: Short) = new IntegerRange(value,value)
-
-    override def CharValue(pc: PC): DomainValue = AnIntegerValue()
-    override def CharValue(pc: PC, value: Char) = new IntegerRange(value,value)
-
-    override def IntegerValue(pc: PC): DomainValue = AnIntegerValue()
-    override def IntegerValue(pc: PC, value: Int) = new IntegerRange(value,value)
+    override def LongValue(pc: PC): DomainValue = AnLongValue()
+    override def LongValue(pc: PC, value: Long) = new LongRange(value,value)
 
 }
 

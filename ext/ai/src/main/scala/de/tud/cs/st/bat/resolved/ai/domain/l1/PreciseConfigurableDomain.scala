@@ -44,7 +44,7 @@ trait PreciseDomain[+I]
     with DefaultPreciseIntegerValues[I]
     with DefaultPreciseReferenceValues[I]
     with StringValues[I]
-    with l0.DefaultTypeLevelLongValues[I]
+    with DefaultPreciseLongValues[I]
     with l0.DefaultTypeLevelFloatValues[I]
     with l0.DefaultTypeLevelDoubleValues[I]
     with l0.TypeLevelArrayInstructions
