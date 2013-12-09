@@ -194,10 +194,36 @@ final class ClassFile private (
     }
 
     /**
+     * Returns the method with the given name, if any.
+     *
+     * @note Though the methods are sorted, no guarantee is given which method is
+     *      returned if multiple methods are defined with the same name.
+     */
+    def findMethod(name: String): Option[Method] = {
+        @tailrec @inline def findMethod(low: Int, high: Int): Option[Method] = {
+            if (high < low)
+                return None
+
+            val mid = (low + high) / 2 // <= will never overflow...(there are at most 65535 methods)
+            val method = methods(mid)
+            val methodName = method.name
+            if (methodName == name) {
+                Some(method)
+            } else if (methodName.compareTo(name) < 0) {
+                findMethod(mid + 1, high)
+            } else {
+                findMethod(low, mid - 1)
+            }
+        }
+
+        findMethod(0, methods.size - 1)
+    }
+
+    /**
      * Returns the method with the given name and descriptor that is declared by
      * this class file.
      *
-     * @note This algorithm uses a binary search algorithm.
+     * @note The complexity is O(log2 n); this algorithm uses a binary search algorithm.
      */
     def findMethod(name: String, descriptor: MethodDescriptor): Option[Method] = {
 

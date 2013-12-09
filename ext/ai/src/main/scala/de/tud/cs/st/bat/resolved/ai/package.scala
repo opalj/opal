@@ -109,8 +109,8 @@ package object ai {
      * It is always "just" an upper bound for a concrete type; i.e., we know that
      * the runtime type has to be a subtype of the type identified by the upper bound.
      * Furthermore, an upper bound can identify multiple '''independent''' types. E.g.,
-     * a type bound for array objects could be: `java.io.Serializable` and 
-     * `java.lang.Cloneable`. Here, independent means that no two types of the bound 
+     * a type bound for array objects could be: `java.io.Serializable` and
+     * `java.lang.Cloneable`. Here, independent means that no two types of the bound
      * are in a subtype relationship. Hence, an upper bound is always a special set.
      *
      * In general, an upper bound identifies a single class type and a set of independent
@@ -124,4 +124,8 @@ package object ai {
      */
     type UpperBound = Iterable[ReferenceType]
 
+    /**
+     * A set of program counters.
+     */
+    type PCs = collection.UShortSet
 }

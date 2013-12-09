@@ -48,7 +48,7 @@ trait RecordConstraints[I] extends ReifiedConstraints[I] {
     
     def allConstraints : Set[ReifiedConstraint]  = constraints
     
-    def addConstraint(constraint: ReifiedConstraint) : Unit = {
+    override def nextConstraint(constraint: ReifiedConstraint) : Unit = {
         constraints += constraint
     }
 }

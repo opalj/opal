@@ -38,10 +38,10 @@ package domain
 
 import language.implicitConversions
 
+import collection.mutable.UShortSet
+
 /**
- * Records both, the values returned by the method and the exceptions thrown
- * by a method. This trait can be used to record the return values independently of
- * the precision of the domain.
+ * Records the program counters of all return instructions that are reached.
  *
  * ==Usage==
  * A domain that mixes in this trait should only be used to analyze a single method.
@@ -52,56 +52,16 @@ import language.implicitConversions
  *
  * @author Michael Eichberg
  */
-trait RecordReturnValues[+I] extends Domain[I] {
+trait RecordReturnInstructions[+I] extends Domain[I] {
 
-    @volatile private[this] var returnedValues: Set[(String, Int, Value)] = Set.empty
+    @volatile private[this] var returnInstructions: UShortSet = UShortSet.empty
 
-    def allReturnedValues = returnedValues
-
-    protected implicit def returnedValueToReturnInstructions(
-        returnedValues: Set[(String, PC, Value)]): Set[PC] = {
-        returnedValues.map(_._2)
-    }
-
-    override def areturn(pc: PC, value: DomainValue) {
-        returnedValues += (("areturn", pc, value))
-    }
-
-    override def dreturn(pc: PC, value: DomainValue) {
-        returnedValues += (("dreturn", pc, value))
-    }
-
-    override def freturn(pc: PC, value: DomainValue) {
-        returnedValues += (("freturn", pc, value))
-    }
-
-    override def ireturn(pc: PC, value: DomainValue) {
-        returnedValues += (("ireturn", pc, value))
-    }
-
-    override def lreturn(pc: PC, value: DomainValue) {
-        returnedValues += (("lreturn", pc, value))
-    }
+    def allReturnInstructions: PCs = returnInstructions
 
     override def returnVoid(pc: PC) {
-        returnedValues += (("return", pc, null))
+        returnInstructions += pc
     }
 
-    override def abruptMethodExecution(pc: PC, exception: DomainValue) {
-        returnedValues += (("throws", pc, exception))
-    }
-
-    
-    case class ThrownException(pc: PC, domainValue: DomainValue)
-
-    case class ReturnedIntValue(pc : PC, domainValue: DomainValue)
-    
-    case class ReturnedFloatValue(pc : PC, domainValue: DomainValue)
-    case class ReturnedLongValue(pc : PC, domainValue: DomainValue)
-    case class ReturnedDoubleValue(pc : PC, domainValue: DomainValue)
-    
-    case class ReturnedReferenceValue(pc : PC, domainValue: DomainValue)
-    
 }
 
 

@@ -62,6 +62,7 @@ class MethodsWithExceptionsTest
     import util.XHTML.dumpOnFailureDuringValidation
     import domain.l1.PreciseRecordingDomain
     import MethodsWithExceptionsTest._
+    import de.tud.cs.st.collection.mutable.UShortSet
 
     private def evaluateMethod(name: String, f: PreciseRecordingDomain[String] ⇒ Unit) {
         val domain = new PreciseRecordingDomain(name)
@@ -78,8 +79,8 @@ class MethodsWithExceptionsTest
     it should "be able to analyze a method that always throws an exception" in {
         evaluateMethod("alwaysThrows", domain ⇒ {
             import domain._
-            allReturnedValues should be(
-                Set(("throws", 8, AReferenceValue(0, ObjectType.RuntimeException, No, true)))
+            allThrownExceptions should be(
+                Map((8 -> Set(AReferenceValue(0, ObjectType.RuntimeException, No, true))))
             )
         })
     }
@@ -87,18 +88,16 @@ class MethodsWithExceptionsTest
     it should "be able to analyze a method that catches everything" in {
         evaluateMethod("alwaysCatch", domain ⇒ {
             import domain._
-            allReturnedValues should be(
-                Set(("return", 7, null))
-            )
+            allReturnInstructions should be(UShortSet(7)) // <= void return
         })
     }
 
     it should "be able to identify all potentially thrown exceptions when different exceptions are stored in a variable which is then passed to a throw statement" in {
         evaluateMethod("throwsThisOrThatException", domain ⇒ {
             import domain._
-            allReturnedValues should be(
-                Set(("throws", 19, AReferenceValue(12, ObjectType("java/lang/IllegalArgumentException"), No, true)), // <= finally
-                    ("throws", 11, AReferenceValue(4, ObjectType.NullPointerException, No, true))) // <= if t is null
+            allThrownExceptions should be(
+                Map((19 -> Set(AReferenceValue(12, ObjectType("java/lang/IllegalArgumentException"), No, true))), // <= finally
+                    (11 -> Set(AReferenceValue(4, ObjectType.NullPointerException, No, true)))) // <= if t is null
             )
         })
     }
@@ -106,35 +105,35 @@ class MethodsWithExceptionsTest
     it should "be able to analyze a method that catches the thrown exceptions" in {
         evaluateMethod("throwsNoException", domain ⇒ {
             import domain._
-            allReturnedValues should be(
-                Set(("return", 39, null))
-            )
+            allThrownExceptions should be(Map.empty)
+            allReturnInstructions should be(UShortSet(39)) // <= void return
         })
     }
 
     it should "be able to handle the pattern where some (checked) exceptions are caught and then rethrown as an unchecked exception" in {
         evaluateMethod("leverageException", domain ⇒ {
             import domain._
-            allReturnedValues should be(
-                Set(("return", 38, null)) // <= void return
+            allReturnInstructions should be(UShortSet(38)) // <= void return
+            allThrownExceptions should be(Map.empty)
             // Due to the simplicity of the domain (the exceptions of called methods are 
             // not yet analyze) we cannot determine that the following exception 
             // (among others?) may also be thrown:
             // ("throws", SomeReferenceValue(...,ObjectType("java/lang/RuntimeException"),No)) 
-            )
         })
     }
 
     it should "be able to analyze a method that may return normally or throw an exception" in {
         evaluateMethod("withFinallyAndThrows", domain ⇒ {
             import domain._
-            allReturnedValues should be(
-                Set(("throws", 23, AReferenceValue(-1, ObjectType.Throwable, No, false)),
-                    ("throws", 19, AReferenceValue(19, ObjectType.NullPointerException, No, true)),
-                    ("throws", 23, MultipleReferenceValues(Set(
+            allThrownExceptions should be(
+                Map((23, Set(AReferenceValue(-1, ObjectType.Throwable, No, false))),
+                    (19, Set(AReferenceValue(19, ObjectType.NullPointerException, No, true))),
+                    (23, Set(
                         AReferenceValue(-1, ObjectType.Throwable, No, false),
-                        AReferenceValue(11, ObjectType.NullPointerException, No, true)))),
-                    ("throws", 25, AReferenceValue(25, ObjectType.NullPointerException, No, true))
+                        MultipleReferenceValues(Set(
+                            AReferenceValue(-1, ObjectType.Throwable, No, false),
+                            AReferenceValue(11, ObjectType.NullPointerException, No, true))))),
+                    (25, Set(AReferenceValue(25, ObjectType.NullPointerException, No, true)))
                 )
             )
         })

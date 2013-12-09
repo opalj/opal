@@ -63,11 +63,14 @@ class PropertyTracingTest
     import util.XHTML.dumpOnFailureDuringValidation
     import PropertyTracingTest._
 
-    class AnalysisDomain(val identifier: String)
+    class AnalysisDomain(val method: Method)
             extends l1.PreciseDomain[String]
-            with RecordReturnValues[String]
             with IgnoreSynchronization
             with SimpleBooleanPropertyTracing[String] {
+
+        override def identifier = method.toJava
+
+        override def code: Code = method.body.get
 
         override def propertyName = "isSanitized"
 
@@ -86,7 +89,7 @@ class PropertyTracingTest
             super.invokestatic(pc, declaringClass, name, methodDescriptor, operands)
         }
 
-        def isSanitized(): Boolean = hasPropertyOnExit(allReturnedValues)
+        def isSanitized(): Boolean = hasPropertyOnExit
     }
 
     private def evaluateMethod(name: String)(f: AnalysisDomain ⇒ Unit) {
@@ -95,16 +98,15 @@ class PropertyTracingTest
          * parameter to a method) is always sanitized (within the method.) I.e.,
          * that the value is passed to a function called sanitizer.
          */
-        val method = classFile.methods.find(_.name == name).get
-        val domain = new AnalysisDomain(name)
+        val method = classFile.findMethod(name).get
+        val domain = new AnalysisDomain(method)
         val result = BaseTracingAI(classFile, method, domain)
         dumpOnFailureDuringValidation(
             Some(classFile),
             Some(method),
             method.body.get,
-            result) {
-                f(domain)
-            }
+            result
+        ) { f(domain) }
     }
 
     behavior of "an abstract interpreter that enables the tracing of control-flow dependent properties"

@@ -36,10 +36,8 @@ package resolved
 package ai
 package project
 
-import de.tud.cs.st.collection.UShortSet
 import analyses.{ SomeProject, Project }
 import domain._
-import CallGraph.PCs
 
 import scala.collection.Set
 import scala.collection.Map
@@ -193,15 +191,4 @@ class CallGraph[Source] private[project] (
                 "\"Calling Sites\"") :: result
         result.map(_.mkString("\t")).mkString("\n")
     }
-}
-/**
- * Useful constants and methods required for creating the call graph.
- *
- * @author Michael Eichberg
- */
-object CallGraph {
-    /**
-     * Set of program counters.
-     */
-    type PCs = UShortSet
 }

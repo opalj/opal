@@ -62,7 +62,7 @@ trait TypeLevelDomain[+I]
     with BasicTypeHierarchy
 
 /**
- * This is a ready to use domain which sets the domain identifier to "TypeLevelDomain".
+ * This is a ready to use domain which sets the domain identifier to "BaseTypeLevelDomain".
  *
  * This domain is primarily useful for testing and debugging purposes.
  *
@@ -73,7 +73,7 @@ class BaseDomain
         with IgnoreMethodResults
         with IgnoreSynchronization {
 
-    def identifier = "TypeLevelDomain"
+    def identifier = "BaseTypeLevelDomain"
 
 }
 
@@ -91,5 +91,7 @@ class BaseConfigurableDomain[+I](
 class BaseRecordingDomain[I](
     val identifier: I)
         extends TypeLevelDomain[I]
-        with RecordReturnValues[I]
+        with RecordLastReturnedValues[I]
+        with RecordAllThrownExceptions[I]
+        with RecordReturnInstructions[I]
         with IgnoreSynchronization

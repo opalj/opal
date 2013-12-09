@@ -496,7 +496,7 @@ trait Domain[+I] {
      * values are given and initial values need to be generated. This method is not
      * used elsewhere by BATAI.
      *
-     * BATAI assigns the pc "-1" to the first parameter and -2 for the second...
+     * BATAI assigns the `pc` "-1" to the first parameter and -2 for the second...
      */
     def TypedValue(pc: PC, valueType: Type): DomainValue = valueType match {
         case BooleanType       ⇒ BooleanValue(pc)
@@ -515,7 +515,7 @@ trait Domain[+I] {
      * Factory method to create a representation of a boolean value if we know the
      * origin of the value.
      *
-     * The domain may ignore the information about the origin (pc).
+     * The domain may ignore the information about the origin (`pc`).
      */
     def BooleanValue(pc: PC): DomainValue
 
@@ -523,7 +523,7 @@ trait Domain[+I] {
      * Factory method to create a representation of a boolean value with the given
      * initial value and origin.
      *
-     * The domain may ignore the information about the value and the origin (pc).
+     * The domain may ignore the information about the value and the origin (`pc`).
      */
     def BooleanValue(pc: PC, value: Boolean): DomainValue
 
@@ -531,7 +531,7 @@ trait Domain[+I] {
      * Factory method to create a `DomainValue` that was created (explicitly or
      * implicitly) by the instruction with the specified program counter.
      *
-     * The domain may ignore the information about the origin (pc).
+     * The domain may ignore the information about the origin (`pc`).
      */
     def ByteValue(pc: PC): DomainValue
 
@@ -540,7 +540,7 @@ trait Domain[+I] {
      * and that was created (explicitly or implicitly) by the instruction with the
      * specified program counter.
      *
-     * The domain may ignore the information about the value and the origin (pc).
+     * The domain may ignore the information about the value and the origin (`pc`).
      */
     def ByteValue(pc: PC, value: Byte): DomainValue
 
@@ -548,7 +548,7 @@ trait Domain[+I] {
      * Factory method to create a `DomainValue` that was created (explicitly or
      * implicitly) by the instruction with the specified program counter.
      *
-     * The domain may ignore the information about the origin (pc).
+     * The domain may ignore the information about the origin (`pc`).
      */
     def ShortValue(pc: PC): DomainValue
 
@@ -563,10 +563,10 @@ trait Domain[+I] {
      * Factory method to create a `DomainValue` that was created (explicitly or
      * implicitly) by the instruction with the specified program counter.
      *
-     * The domain may ignore the information about the origin (pc).
+     * The domain may ignore the information about the origin (`pc`).
      */
     def CharValue(pc: PC): DomainValue
-    
+
     /**
      * Factory method to create a `DomainValue` that represents the given char value
      * and that was created (explicitly or implicitly) by the instruction with the
@@ -591,7 +591,7 @@ trait Domain[+I] {
      * Factory method to create a `DomainValue` that was created (explicitly or
      * implicitly) by the instruction with the specified program counter.
      *
-     * The domain may ignore the information about the origin (pc).
+     * The domain may ignore the information about the origin (`pc`).
      */
     def IntegerValue(pc: PC): DomainValue
 
@@ -600,7 +600,7 @@ trait Domain[+I] {
      * and that was created (explicitly or implicitly) by the instruction with the
      * specified program counter.
      *
-     * The domain may ignore the information about the value and the origin (pc).
+     * The domain may ignore the information about the value and the origin (`pc`).
      */
     def IntegerValue(pc: PC, value: Int): DomainValue
 
@@ -608,7 +608,7 @@ trait Domain[+I] {
      * Factory method to create a `DomainValue` that was created (explicitly or
      * implicitly) by the instruction with the specified program counter.
      *
-     * The domain may ignore the information about the origin (pc).
+     * The domain may ignore the information about the origin (`pc`).
      */
     def FloatValue(pc: PC): DomainValue
 
@@ -617,7 +617,7 @@ trait Domain[+I] {
      * and that was created (explicitly or implicitly) by the instruction with the
      * specified program counter.
      *
-     * The domain may ignore the information about the value and the origin (pc).
+     * The domain may ignore the information about the value and the origin (`pc`).
      */
     def FloatValue(pc: PC, value: Float): DomainValue
 
@@ -625,7 +625,7 @@ trait Domain[+I] {
      * Factory method to create a `DomainValue` that was created (explicitly or
      * implicitly) by the instruction with the specified program counter.
      *
-     * The domain may ignore the information about the origin (pc).
+     * The domain may ignore the information about the origin (`pc`).
      */
     def LongValue(pc: PC): DomainValue
 
@@ -634,7 +634,7 @@ trait Domain[+I] {
      * and that was created (explicitly or implicitly) by the instruction with the
      * specified program counter.
      *
-     * The domain may ignore the information about the value and the origin (pc).
+     * The domain may ignore the information about the value and the origin (`pc`).
      */
     def LongValue(pc: PC, value: Long): DomainValue
 
@@ -642,7 +642,7 @@ trait Domain[+I] {
      * Factory method to create a `DomainValue` that was created (explicitly or
      * implicitly) by the instruction with the specified program counter.
      *
-     * The domain may ignore the information about the origin (pc).
+     * The domain may ignore the information about the origin (`pc`).
      */
     def DoubleValue(pc: PC): DomainValue
 
@@ -651,7 +651,7 @@ trait Domain[+I] {
      * and that was created (explicitly or implicitly) by the instruction with the
      * specified program counter.
      *
-     * The domain may ignore the information about the value and the origin (pc).
+     * The domain may ignore the information about the value and the origin (`pc`).
      */
     def DoubleValue(pc: PC, value: Double): DomainValue
 
@@ -660,11 +660,11 @@ trait Domain[+I] {
      * and that was created (explicitly or implicitly) by the instruction with the
      * specified program counter.
      *
-     * The domain may ignore the information about the value and the origin (pc).
+     * The domain may ignore the information about the value and the origin (`pc`).
      *
      * ==Summary==
      * The properties of the domain value are:
-     * 
+     *
      *  - Initialized: N/A
      *  - Type: '''Null'''
      *  - Null: '''Yes'''
@@ -677,13 +677,13 @@ trait Domain[+I] {
      * information whether the value is `null` or not is not available. Furthermore, the
      * type may also be an upper bound.
      *
-     * The domain may ignore the information about the value and the origin (pc), but
+     * The domain may ignore the information about the value and the origin (`pc`), but
      * it has to remain possible for the domain to identify the component type of an
      * array.
      *
      * ==Summary==
      * The properties of the domain value are:
-     * 
+     *
      *  - Initialized: '''yes''' (the constructor was called)
      *  - Type: '''Upper Bound'''
      *  - Null: '''MayBe''' (It is unknown whether the value is `null` or not.)
@@ -704,8 +704,8 @@ trait Domain[+I] {
     def NonNullReferenceValue(pc: PC, objectType: ObjectType): DomainValue
 
     /**
-     * Creates a new `DomainValue` that represents a new,
-     * '''uninitialized''' instance of an object of the given type. The object was
+     * Creates a new `DomainValue` that represents ''a new,
+     * uninitialized instance of an object of the given type''. The object was
      * created by the (`NEW`) instruction with the specified program counter.
      *
      * BATAI calls this method when it evaluates `newobject` instructions.
@@ -714,8 +714,8 @@ trait Domain[+I] {
      *
      * ==Summary==
      * The properties of the domain value are:
-     *  - Initialized: '''no''' (only the memory is allocated)
-     *  - Type: '''precise''' (i.e., this type is not an upper bound, 
+     *  - Initialized: '''no''' (only the memory is allocated for the object)
+     *  - Type: '''precise''' (i.e., this type is not an upper bound,
      *      the type correctly models the runtime type.)
      *  - Null: '''No''' (This value is not `null`.)
      *
@@ -728,10 +728,14 @@ trait Domain[+I] {
     /**
      * Factory method to create a `DomainValue` that represents a new, '''initialized'''
      * object of the given type and that was created (explicitly or implicitly) by the
-     * instruction with the specified program counter. I.e., the given type usually identifies
-     * a class type (not an interface type) that is not abstract. However, in some cases
-     * (e.g. consider the native function `java.lang.Runtime.getRuntime()` it may
-     * be useful to )
+     * instruction with the specified program counter. 
+     * 
+     * ==General Remarks==
+     * The given type usually identifies a class type (not an interface type) that is 
+     * not abstract, but in some cases (e.g. consider `java.awt.Toolkit()`) 
+     * it may be useful/meaningful to relax this requirement and to state that the 
+     * class precisely represents the runtime type – even
+     * so the class is abstract. However, such decisions need to be made by the domain.
      *
      * This method is used by BATAI to create reference values that are normally
      * internally created by the JVM (in particular exceptions such as
@@ -741,7 +745,7 @@ trait Domain[+I] {
      * ==Summary==
      * The properties of the domain value are:
      *  - Initialized: '''Yes'''
-     *  - Type: '''precise''' (i.e., this type is not an upper bound, the type 
+     *  - Type: '''precise''' (i.e., this type is not an upper bound, the type
      *      correctly models the runtime type.)
      *  - Null: '''No''' (This value is not `null`.)
      */
@@ -751,12 +755,15 @@ trait Domain[+I] {
      * Factory method to create a `DomainValue` that represents the given string value
      * and that was created by the instruction with the specified program counter.
      *
+     * This function is called by BATAI when a string constant (`LDC(_W)` instruction) is
+     * put on the stack.
+     *
      * The domain may ignore the information about the value and the origin (pc).
      *
      * ==Summary==
      * The properties of the domain value are:
      *  - Initialized: '''Yes''' and the String's value is the given value. The string
-     *      may be empty.
+     *      may be empty (""), but it is never `null`.
      *  - Type: '''java.lang.String'''
      *  - Null: '''No'''
      *
@@ -769,11 +776,14 @@ trait Domain[+I] {
      * type "`Class&lt;T&gt;`" and that was created by the instruction with the
      * specified program counter.
      *
+     * This function is called by BATAI when a class constant (`LDC(_W)` instruction) is
+     * put on the stack.
+     *
      * The domain may ignore the information about the value and the origin (pc).
      *
      * ==Summary==
      * The properties of the domain value are:
-     *  - Initialized: '''Yes'''
+     *  - Initialized: '''Yes''' and the type represented by the class is the given type.
      *  - Type: '''java.lang.Class<t:Type>'''
      *  - Null: '''No'''
      */
@@ -821,7 +831,7 @@ trait Domain[+I] {
 
     /**
      * Determines whether the given value is `null` (`Yes`), maybe `null` (`Unknown`) or
-     * is known not to be `null` (`No`).
+     * is not `null` (`No`).
      *
      * @param value A value of computational type reference.
      */
@@ -1024,7 +1034,7 @@ trait Domain[+I] {
     //
     // W.r.t Reference Values
     /**
-     * Called by BATAI when the value is know to be `null` has to be `null`.
+     * Called by BATAI when the value is known to be `null`/has to be `null`.
      * E.g., after a comparison with `null` (IFNULL/IFNONNULL) BATAI knows that the
      * value has to be `null` on one branch and that the value is not `null` on the
      * other branch.
@@ -1297,11 +1307,41 @@ trait Domain[+I] {
     //
     // RETURN FROM METHOD
     //
+
+    /**
+     * The given `value`, which is a value with ''computational type reference'', is returned
+     * by the return instruction with the given `pc`.
+     */
     def areturn(pc: PC, value: DomainValue): Unit
+
+    /**
+     * The given `value`, which is a value with ''computational type double'', is returned
+     * by the return instruction with the given `pc`.
+     */
     def dreturn(pc: PC, value: DomainValue): Unit
+
+    /**
+     * The given `value`, which is a value with ''computational type float'', is returned
+     * by the return instruction with the given `pc`.
+     */
     def freturn(pc: PC, value: DomainValue): Unit
+
+    /**
+     * The given `value`, which is a value with ''computational type integer'', is returned
+     * by the return instruction with the given `pc`.
+     */
     def ireturn(pc: PC, value: DomainValue): Unit
+
+    /**
+     * The given `value`, which is a value with ''computational type long'', is returned
+     * by the return instruction with the given `pc`.
+     */
     def lreturn(pc: PC, value: DomainValue): Unit
+
+    /**
+     * Called by BATAI when a return instruction with the given `pc` is reached.
+     * In other words, when the method returns normally.
+     */
     def returnVoid(pc: PC): Unit
 
     /**
@@ -1329,7 +1369,7 @@ trait Domain[+I] {
                  objectref: DomainValue,
                  declaringClass: ObjectType,
                  name: String,
-                 fieldType: FieldType): Computation[DomainValue, DomainValue]
+                 fieldType: FieldType): Computation[DomainValue, ExceptionValue]
 
     /**
      * Returns the field's value.
@@ -1349,7 +1389,7 @@ trait Domain[+I] {
                  value: DomainValue,
                  declaringClass: ObjectType,
                  name: String,
-                 fieldType: FieldType): Computation[Nothing, DomainValue]
+                 fieldType: FieldType): Computation[Nothing, ExceptionValue]
 
     /**
      * Sets the fields values if the given class can be found.
@@ -1604,10 +1644,10 @@ trait Domain[+I] {
 
     /**
      * '''Called by BATAI after performing a computation'''; that is, after
-     * evaluating the effect of an instruction on the stack and register.
+     * evaluating the effect of the instruction with `currentPC` on the stack and register.
      * This function basically informs the domain about which instruction(s)
      * will be executed next. The flow function is always called one or more times
-     * (e.g., in case of `if` or `switch` instructions.) after the evaluation of some
+     * (e.g., in case of `if` or `switch` instructions) after the evaluation of some
      * instruction (even those that are domain independent such as `dup` and `xLoad`
      * which `just` manipulate the registers and stack in a generic way).
      * This enables the domain to precisely follow the evaluation
@@ -1653,5 +1693,3 @@ trait Domain[+I] {
      */
     def properties(pc: PC): Option[String] = None
 }
-
-

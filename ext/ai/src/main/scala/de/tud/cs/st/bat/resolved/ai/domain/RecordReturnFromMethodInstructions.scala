@@ -35,59 +35,57 @@ package bat
 package resolved
 package ai
 package domain
-package tracing
 
-import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
-import de.tud.cs.st.bat.resolved.instructions.ReturnInstruction
+import language.implicitConversions
+
+import collection.mutable.UShortSet
 
 /**
- * Enables the tracing of a single boolean property where the precise semantics
- * is determined by the user.
+ * Records the program counters of all instructions that lead to a abnormal/normal
+ * return from the method.
+ *
+ * ==Usage==
+ * A domain that mixes in this trait should only be used to analyze a single method.
+ *
+ * ==Thread Safety==
+ * This class is not thread safe. I.e., this domain can only be used if
+ * an instance of this domain is not used by multiple threads.
  *
  * @author Michael Eichberg
  */
-trait SimpleBooleanPropertyTracing[+I]
-        extends PropertyTracing[I]
-        with RecordReturnFromMethodInstructions[I] { domain ⇒
+trait RecordReturnFromMethodInstructions[+I] extends Domain[I] {
 
-    def code: Code
+    @volatile private[this] var returnInstructions: UShortSet = UShortSet.empty
 
-    /**
-     * A name associated with the property. Used for debugging purposes only.
-     */
-    def propertyName: String
+    def allReturnInstructions: PCs = returnInstructions
 
-    class BooleanProperty private[SimpleBooleanPropertyTracing] (
-        val state: Boolean)
-            extends Property {
-
-        def merge(otherProperty: DomainProperty): Update[DomainProperty] =
-            this.state & otherProperty.state match {
-                case `state`  ⇒ NoUpdate
-                case newState ⇒ StructuralUpdate(new BooleanProperty(newState))
-            }
-
-        override def toString: String = domain.propertyName+"("+state+")"
+    override def areturn(pc: PC, value: DomainValue) {
+        returnInstructions += pc
     }
 
-    def updateProperty(pc: Int, newState: Boolean) {
-        propertiesArray(pc) = new BooleanProperty(newState)
+    override def dreturn(pc: PC, value: DomainValue) {
+        returnInstructions += pc
     }
 
-    final type DomainProperty = BooleanProperty
-
-    final val DomainPropertyTag: reflect.ClassTag[DomainProperty] = implicitly
-
-    def initialPropertyValue: DomainProperty = new BooleanProperty(false)
-
-    def hasPropertyOnExit: Boolean = {
-        allReturnInstructions forall { pc ⇒ getProperty(pc).state }
+    override def freturn(pc: PC, value: DomainValue) {
+        returnInstructions += pc
     }
 
-    def hasPropertyOnNormalReturn: Boolean = {
-        allReturnInstructions forall { pc ⇒
-            !code.instructions(pc).isInstanceOf[ReturnInstruction] || getProperty(pc).state
-        }
+    override def ireturn(pc: PC, value: DomainValue) {
+        returnInstructions += pc
+    }
+
+    override def lreturn(pc: PC, value: DomainValue) {
+        returnInstructions += pc
+    }
+
+    override def returnVoid(pc: PC) {
+        returnInstructions += pc
+    }
+
+    // handles all kinds of abrupt method returns 
+    override def abruptMethodExecution(pc: PC, exception: DomainValue) {
+        returnInstructions += pc
     }
 }
 

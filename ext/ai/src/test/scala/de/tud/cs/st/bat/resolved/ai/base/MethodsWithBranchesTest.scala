@@ -61,7 +61,7 @@ class MethodsWithBranchesTest
 
     import domain.RecordConstraints
     import domain.l0.BaseRecordingDomain
-    
+
     type TestDomain = BaseRecordingDomain[String] with RecordConstraints[String]
 
     private def evaluateMethod(name: String)(f: TestDomain ⇒ Unit) {
@@ -90,7 +90,7 @@ class MethodsWithBranchesTest
             //    7  ireturn 
             import domain._
             domain.allReturnedValues should be(
-                Set(("ireturn", 5, AnIntegerValue), ("ireturn", 7, AnIntegerValue)))
+                Map((5 -> AnIntegerValue), (7 -> AnIntegerValue)))
 
             domain.allConstraints should be(
                 Set(
@@ -111,7 +111,7 @@ class MethodsWithBranchesTest
             //    7  ireturn
             import domain._
             domain.allReturnedValues should be(
-                Set(("ireturn", 5, AnIntegerValue), ("ireturn", 7, AnIntegerValue)))
+                Map((5 -> AnIntegerValue), (7 -> AnIntegerValue)))
 
             domain.allConstraints should be(
                 Set(
@@ -138,10 +138,10 @@ class MethodsWithBranchesTest
             //    17  iconst_0
             //    18  ireturn
             import domain._
-            allReturnedValues should be(Set(
-                ("ireturn", 14, AnIntegerValue),
-                ("ireturn", 16, AnIntegerValue),
-                ("ireturn", 18, AnIntegerValue)
+            allReturnedValues should be(Map(
+                (14 -> AnIntegerValue),
+                (16 -> AnIntegerValue),
+                (18 -> AnIntegerValue)
             ))
         }
     }

@@ -61,7 +61,9 @@ class PreciseConfigurableDomain[+I](
 class PreciseRecordingDomain[I](
     val identifier: I)
         extends PreciseDomain[I]
-        with RecordReturnValues[I]
+        with RecordLastReturnedValues[I]
+        with RecordAllThrownExceptions[I]
+        with RecordReturnInstructions[I]
         with IgnoreSynchronization
         
 
