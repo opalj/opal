@@ -30,44 +30,37 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
-package ai
-package domain
-package l1
+package ai.domain;
 
-/** 
- * ClassValues must come after TypeLevelInvokeInstructionsWithNullPointerHandling.
- * @see ClassValues type documentation comment  
+/**
+ * This class's method contains statically referenced Class objects to test the ClassValues resolution.
+ * 
+ * @author Arne Lottmann
  */
-trait DefaultDomain[+I]
-    extends Domain[I]
-    with DefaultDomainValueBinding[I]
-    with DefaultReferenceValuesBinding[I]
-    with DefaultStringValuesBinding[I]
-    with DefaultPreciseIntegerValues[I]
-    with DefaultPreciseLongValues[I]
-    with l0.DefaultTypeLevelFloatValues[I]
-    with l0.DefaultTypeLevelDoubleValues[I]
-    with TypeLevelFieldAccessInstructionsWithNullPointerHandling
-    with TypeLevelInvokeInstructionsWithNullPointerHandling
-    with PredefinedClassHierarchy
-    with ClassValues[I]
-
-class DefaultConfigurableDomain[+I](
-    val identifier: I)
-        extends DefaultDomain[I]
-        with IgnoreMethodResults
-        with IgnoreSynchronization
-
-class DefaultRecordingDomain[I](
-    val identifier: I)
-        extends DefaultDomain[I]
-        with IgnoreMethodResults
-        with RecordLastReturnedValues[I]
-        with RecordAllThrownExceptions[I]
-        with RecordReturnInstructions[I]
-        with IgnoreSynchronization
-        
-
+public class PlainClassesJava {
+	public Class<?> staticClassValue() {
+		return String.class;
+	}
+	
+	public Class<?> literalStringInClassForName() throws ClassNotFoundException {
+		return Class.forName("java.lang.Integer");
+	}
+	
+	public Class<?> stringVariableInClassForName() throws ClassNotFoundException {
+		String className = "java.lang.Integer";
+		return Class.forName(className);
+	}
+	
+	public Class<?> literalStringAsParameterInClassForName() throws ClassNotFoundException {
+		return getClass("java.lang.Integer");
+	}
+	
+	private Class<?> getClass(String className) throws ClassNotFoundException {
+		return Class.forName(className);
+	}
+	
+	public Class<?> stringVariableAsParameterInClassForName() throws ClassNotFoundException {
+		String className = "java.lang.Integer";
+		return getClass(className);
+	}
+}

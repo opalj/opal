@@ -74,6 +74,10 @@ trait StringValues[+I] extends ReferenceValues[I] {
         override def toString(): String = "String(pc="+pc+", value=\""+value+"\")"
 
     }
+    
+    object StringValue {
+        def unapply(value: StringValue): Option[String] = Some(value.value)
+    }
 
     // Need to be implemented (the default implementation is now longer sufficient!)
     override def StringValue(pc: PC, value: String): DomainObjectValue

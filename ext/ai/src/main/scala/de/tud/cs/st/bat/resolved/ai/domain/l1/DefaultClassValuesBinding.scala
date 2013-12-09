@@ -1,5 +1,5 @@
 /* License (BSD Style License):
- * Copyright (c) 2009 - 2013
+ * Copyright (c) 2009 - 2014
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -37,37 +37,27 @@ package ai
 package domain
 package l1
 
-/** 
- * ClassValues must come after TypeLevelInvokeInstructionsWithNullPointerHandling.
- * @see ClassValues type documentation comment  
+import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
+
+import scala.collection.SortedSet
+
+/**
+ * @author Arne Lottmann
  */
-trait DefaultDomain[+I]
-    extends Domain[I]
-    with DefaultDomainValueBinding[I]
-    with DefaultReferenceValuesBinding[I]
-    with DefaultStringValuesBinding[I]
-    with DefaultPreciseIntegerValues[I]
-    with DefaultPreciseLongValues[I]
-    with l0.DefaultTypeLevelFloatValues[I]
-    with l0.DefaultTypeLevelDoubleValues[I]
-    with TypeLevelFieldAccessInstructionsWithNullPointerHandling
-    with TypeLevelInvokeInstructionsWithNullPointerHandling
-    with PredefinedClassHierarchy
-    with ClassValues[I]
+trait DefaultClassValuesBinding[+I]
+        extends l1.DefaultStringValuesBinding[I]
+        with ClassValues[I] {
+    domain: Configuration with IntegerValuesComparison with ClassHierarchy ⇒
 
-class DefaultConfigurableDomain[+I](
-    val identifier: I)
-        extends DefaultDomain[I]
-        with IgnoreMethodResults
-        with IgnoreSynchronization
+    // Let's fix the type hierarchy
+    type DomainClassValue = AClassValue
 
-class DefaultRecordingDomain[I](
-    val identifier: I)
-        extends DefaultDomain[I]
-        with IgnoreMethodResults
-        with RecordLastReturnedValues[I]
-        with RecordAllThrownExceptions[I]
-        with RecordReturnInstructions[I]
-        with IgnoreSynchronization
-        
+    //
+    // FACTORY METHODS
+    //
+
+    override def ClassValue(pc: PC, value: Type): DomainObjectValue =
+        new AClassValue(pc, value)
+
+}
 
