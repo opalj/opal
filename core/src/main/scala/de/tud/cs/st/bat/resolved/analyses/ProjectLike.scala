@@ -48,13 +48,12 @@ import java.net.URL
  * 
  * ==Creating Projects==
  * Projects are generally created using factory methods. E.g., the companion object of 
- * [[de.tud.cs.st.bat.resolved.ai.analyses.IndexBasedProject]] defines the respective 
+ * [[de.tud.cs.st.bat.resolved.analyses.IndexBasedProject]] defines the respective 
  * factory method.
  *
  * ==Thread Safety==
  * Implementations of the `ProjektLike` trait need to be thread-safe.
  *
- * 
  * @note
  *    This project abstraction does not support (incremenatl) project updates.
  *    Furthermore, it makes use of some global, internal counters. Hence, if you want
