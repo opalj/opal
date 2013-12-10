@@ -53,7 +53,7 @@ trait PreciseLongValues[+I] extends Domain[I] {
     // -----------------------------------------------------------------------------------
 
     /**
-     * Determines for an long value that is updated how large the update can be
+     * Determines for a long value that is updated how large the update can be
      * before we stop the precise tracking of the value and represent the respective
      * value as "some long value".
      *
@@ -66,9 +66,9 @@ trait PreciseLongValues[+I] extends Domain[I] {
      * This is a runtime configurable setting that may affect the overall precision of
      * subsequent analyses that require knowledge about longs.
      */
-    def maxSpreadLong = 25
+    def maxSpreadLong: Long = 25l
 
-    protected def spread(a: Long, b: Long) = Math.abs(a - b)
+    protected def spread(a: Long, b: Long): Long = Math.abs(a - b)
 
     /**
      * Determines if an exception is thrown in case of a '''potential''' division by zero.
@@ -77,7 +77,7 @@ trait PreciseLongValues[+I] extends Domain[I] {
      * However, if we know that the denominator is 0 a corresponding exception will be
      * thrown.
      */
-    def divisionByZeroIfUnknownLong = true
+    def divisionByZeroIfUnknownLong: Boolean = true
 
     /**
      * Abstracts over all values with computational type `long`.
@@ -93,7 +93,7 @@ trait PreciseLongValues[+I] extends Domain[I] {
      *
      * Models the top value of this domain's lattice.
      */
-    trait AnLongValue extends LongLikeValue { this: DomainValue ⇒ }
+    trait ALongValue extends LongLikeValue { this: DomainValue ⇒ }
 
     /**
      * Represents a concrete long value.
@@ -120,7 +120,7 @@ trait PreciseLongValues[+I] extends Domain[I] {
 
     abstract override def typeOfValue(value: DomainValue): TypesAnswer =
         value match {
-            case longLikeValueegerLikeValue: LongLikeValue ⇒ IsLongValue
+            case longLikeValue: LongLikeValue ⇒ IsLongValue
             case _                                  ⇒ super.typeOfValue(value)
         }
 
@@ -141,9 +141,6 @@ trait PreciseLongValues[+I] extends Domain[I] {
         getLongValue(value1) { v1 ⇒ getLongValue(value2) { v2 ⇒ f(v1, v2) }(orElse) } {
             orElse
         }
-
-    abstract override def areEqual(value1: DomainValue, value2: DomainValue): Answer =
-        getLongValues(value1, value2) {(v1, v2) ⇒ Answer(v1 == v2) } { Unknown }
 
     def isSomeValueInRange(
         value: DomainValue,
@@ -185,30 +182,6 @@ trait PreciseLongValues[+I] extends Domain[I] {
             locals.map { local ⇒ if (local eq oldValue) newValue else local }
         )
 
-    def establishValue(
-        pc: PC,
-        theValue: Long,
-        value: DomainValue,
-        operands: Operands,
-        locals: Locals): (Operands, Locals) =
-        updateValueLong(value, LongValue(pc, theValue), operands, locals)
-
-    abstract override def establishAreEqual(
-        pc: PC,
-        value1: DomainValue,
-        value2: DomainValue,
-        operands: Operands,
-        locals: Locals): (Operands, Locals) = {
-        getLongValue(value1) { v1 ⇒
-            updateValueLong(value2, LongValue(pc, v1), operands, locals)
-        } {
-            getLongValue(value2) { v2 ⇒
-                updateValueLong(value1, LongValue(pc, v2), operands, locals)
-            } {
-                (operands, locals)
-            }
-        }
-    }
 
     // -----------------------------------------------------------------------------------
     //
@@ -219,11 +192,20 @@ trait PreciseLongValues[+I] extends Domain[I] {
     //
     // RELATIONAL OPERATORS
     //
+
     override def lcmp(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        IntegerValue(pc)
+        getLongValues(value1, value2) { (v1, v2) ⇒
+            if (v1 > v2) IntegerValue(pc, 1)
+            else if (v1 == v2) IntegerValue(pc, 0)
+            else IntegerValue(pc, -1)
+        } {
+            LongValue(pc)
+        }
+
     //
     // UNARY EXPRESSIONS
     //
+        
     override def lneg(pc: PC, value: DomainValue) = value match {
         case v: LongValue ⇒ v.update(-v.value)
         case _               ⇒ value
@@ -326,8 +308,13 @@ trait PreciseLongValues[+I] extends Domain[I] {
     // TYPE CONVERSION INSTRUCTIONS
     //
 
-    override def l2d(pc: PC, value: DomainValue): DomainValue = DoubleValue(pc)
-    override def l2f(pc: PC, value: DomainValue): DomainValue = FloatValue(pc)
-    override def l2i(pc: PC, value: DomainValue): DomainValue = IntegerValue(pc)
+    override def l2d(pc: PC, value: DomainValue): DomainValue =
+        getLongValue(value)(v ⇒ DoubleValue(pc, v.toDouble))(DoubleValue(pc))
+
+    override def l2f(pc: PC, value: DomainValue): DomainValue =
+        getLongValue(value)(v ⇒ FloatValue(pc, v.toFloat))(FloatValue(pc))
+
+    override def l2i(pc: PC, value: DomainValue): DomainValue =
+        getLongValue(value)(v ⇒ IntegerValue(pc, v.toInt))(IntegerValue(pc))
 }
 

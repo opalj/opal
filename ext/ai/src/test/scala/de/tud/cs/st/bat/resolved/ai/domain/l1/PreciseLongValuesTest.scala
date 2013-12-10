@@ -49,8 +49,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.ParallelTestExecution
 
 /**
- * This test(suite) just loads a very large number of class files and performs
- * an abstract interpretation of the methods.
+ * This test(suite) checks if PreciseLongValues is working fine
  *
  * @author Riadh Chtara
  */
@@ -77,8 +76,8 @@ class PreciseLongValuesTest
     	val v1 = LongValue(-1, 7)
     	val v2 = LongValue(-1, 7)
     	val v3 = LongValue(-1, 8) 
-    	areEqual(v1, v2) should be(Answer(true))
-    	areEqual(v1, v3) should be(No)
+    	v1.equals(v2) should be(true)
+    	v1.equals(v3) should be(false)
     }
     
     it should ("be able to check if a long value is in some range") in {
@@ -108,14 +107,25 @@ class PreciseLongValuesTest
     }
     
     //
+    // RELATIONAL OPERATORS
+    //
+    
+    it should ("be able to compare two long values") in {
+    	val v1 = LongValue(-1, 7)
+    	val v2 = LongValue(-1, 8)
+    	lcmp(-1, v1, v2) should be(IntegerValue(-1, -1))
+    	lcmp(-1, v1, v1) should be(IntegerValue(-1, 0))
+    	lcmp(-1, v2, v1) should be(IntegerValue(-1, 1))
+    }
+    
+    //
     // UNARY EXPRESSIONS
     //
     
     it should ("be able to the calculate the neg of a long value") in {
     	val v1 = LongValue(-1, 7)
     	val v2 = lneg(-1, lneg(-1, v1))
-    	
-    	areEqual(v1, v2) should be(Answer(true))
+    	v1.equals(v2) should be(true)
     }
     
     //

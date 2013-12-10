@@ -51,10 +51,10 @@ trait DefaultPreciseLongValues[+I]
 
     // ATTENTION: The functionality to propagate a constraint crucially depends on
     // the fact two long values created at two different places are represented
-    // by two different instances of "AnLongValue"; otherwise, propagating the
+    // by two different instances of "ALongValue"; otherwise, propagating the
     // constraint that some value (after some kind of check) has to have a special
     // value may affect unrelated values!
-    case class AnLongValue() extends super.AnLongValue {
+    case class ALongValue() extends super.ALongValue {
 
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = NoUpdate
 
@@ -67,7 +67,7 @@ trait DefaultPreciseLongValues[+I]
             pc: PC): targetDomain.DomainValue =
             if (targetDomain.isInstanceOf[DefaultPreciseLongValues[ThatI]]) {
                 val thatDomain = targetDomain.asInstanceOf[DefaultPreciseLongValues[ThatI]]
-                thatDomain.AnLongValue.asInstanceOf[targetDomain.DomainValue]
+                thatDomain.ALongValue.asInstanceOf[targetDomain.DomainValue]
             } else {
                 super.adapt(targetDomain, pc)
             }
@@ -82,16 +82,16 @@ trait DefaultPreciseLongValues[+I]
 
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] =
             value match {
-                case AnLongValue() ⇒ StructuralUpdate(value)
+                case ALongValue() ⇒ StructuralUpdate(value)
                 case LongRange(otherInitial, otherValue) ⇒
                     // First check if they are growing in the same direction...
                     var increasing = (this.value - this.initial >= 0)
                     if (increasing != (otherValue - otherInitial) >= 0)
-                        return StructuralUpdate(AnLongValue())
+                        return StructuralUpdate(ALongValue())
 
                     def result(newInitial: Long, newValue: Long) = {
                         if (spread(newValue, newInitial) > maxSpreadLong)
-                            StructuralUpdate(AnLongValue())
+                            StructuralUpdate(ALongValue())
                         else if (newValue != this.value)
                             StructuralUpdate(LongRange(newInitial, newValue))
                         else if (newInitial != this.initial)
@@ -133,7 +133,7 @@ trait DefaultPreciseLongValues[+I]
         override def toString: String = "LongRage(initial="+initial+", value="+value+")"
     }
 
-    override def LongValue(pc: PC): DomainValue = AnLongValue()
+    override def LongValue(pc: PC): DomainValue = ALongValue()
     override def LongValue(pc: PC, value: Long) = new LongRange(value,value)
 
 }
