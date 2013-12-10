@@ -45,11 +45,11 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  *
  * @author Michael Eichberg
  */
-trait ClassHierarchyDomain { this: SomeDomain ⇒
+trait ClassHierarchy { this: SomeDomain ⇒
 
     /**
      * This project's class hierarchy. Usually, just a redirect to the `Project`'s
-     * class hierarchy.
+     * class hierarchy or the default class hierarchy.
      */
     def classHierarchy: analyses.ClassHierarchy
 

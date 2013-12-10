@@ -58,14 +58,8 @@ trait DefaultTypeLevelFloatValues[+I]
 
         override def summarize(pc: PC, value: DomainValue): DomainValue = this
 
-        override def adapt[ThatI >: I](
-            targetDomain: Domain[ThatI],
-            pc: PC): targetDomain.DomainValue =
-            targetDomain match {
-                case thatDomain: DefaultTypeLevelFloatValues[ThatI] ⇒
-                    thatDomain.AFloatValue.asInstanceOf[targetDomain.DomainValue]
-                case _ ⇒ super.adapt(targetDomain, pc)
-            }
+        override def adapt[ThatI >: I](target: Domain[ThatI], pc: PC): target.DomainValue =
+            target.FloatValue(pc)
     }
 
     override def FloatValue(pc: PC): DomainValue = AFloatValue

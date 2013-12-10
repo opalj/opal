@@ -128,7 +128,10 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
     // QUESTION'S ABOUT VALUES
     //
 
-    @inline protected final def getIntValue[T](value: DomainValue)(f: Int ⇒ T)(orElse: ⇒ T): T =
+    @inline protected final def getIntValue[T](
+        value: DomainValue)(
+            f: Int ⇒ T)(
+                orElse: ⇒ T): T =
         value match {
             case v: IntegerValue ⇒ f(v.value)
             case _               ⇒ orElse

@@ -39,9 +39,10 @@ package domain
 import reflect.ClassTag
 
 /**
- * Final binding of a `Domain`'s type `DomainValue` as well as all subtypes that are
- * also defined by `Domain`. defined by using the initial
- * [[de.tud.cs.st.bat.resolved.ai.Domain.Value]] trait.
+ * Final binding of a `Domain`'s type `DomainValue` as well as all subtypes of it that are
+ * also defined by `Domain`.
+ *
+ * The type `DomainValue` is set to the type [[de.tud.cs.st.bat.resolved.ai.Domain.Value]].
  *
  * @author Michael Eichberg
  */

@@ -55,8 +55,19 @@ package l0
 trait TypeLevelArrayInstructions { this: Domain[_] ⇒
 
     //
-    // STORING AND LOADING VALUES FROM ARRAYS
+    // STORING VALUES IN AND LOADING VALUES FROM ARRAYS
     //
+
+    override def aaload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
+        typeOfValue(arrayref) match {
+            case IsReferenceValueWithSingleBound(ArrayType(componentType)) ⇒
+                ComputedValue(TypedValue(pc, componentType))
+            case _ ⇒
+                domainException(this, "component type unknown: "+arrayref)
+        }
+
+    override def aastore(pc: PC, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
+        ComputationWithSideEffectOnly
 
     override def baload(
         pc: PC,

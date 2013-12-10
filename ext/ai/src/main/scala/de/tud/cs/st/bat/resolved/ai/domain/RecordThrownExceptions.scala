@@ -93,7 +93,7 @@ trait RecordThrownExceptions[+I] extends Domain[I] {
 
     def allThrownExceptions: Map[PC, ThrownException] = thrownExceptions
 
-    override def abruptMethodExecution(pc: PC, exception: DomainValue) {
+    abstract override def abruptMethodExecution(pc: PC, exception: DomainValue) {
         thrownExceptions =
             thrownExceptions.updated(
                 pc,
@@ -104,6 +104,7 @@ trait RecordThrownExceptions[+I] extends Domain[I] {
                         thrownException(exception)
                 }
             )
+        super.abruptMethodExecution(pc, exception)
     }
 }
 

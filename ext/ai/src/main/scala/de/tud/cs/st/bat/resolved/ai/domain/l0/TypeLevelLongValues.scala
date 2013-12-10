@@ -66,7 +66,7 @@ trait TypeLevelLongValues[+I] extends Domain[I] {
 
     abstract override def typeOfValue(value: DomainValue): TypesAnswer =
         value match {
-            case r: LongValue ⇒ IsLongValue
+            case _: LongValue ⇒ IsLongValue
             case _            ⇒ super.typeOfValue(value)
         }
 
@@ -122,9 +122,14 @@ trait TypeLevelLongValues[+I] extends Domain[I] {
     // CONVERSION INSTRUCTIONS
     //
 
-    override def l2d(pc: PC, value: DomainValue): DomainValue = DoubleValue(pc)
-    override def l2f(pc: PC, value: DomainValue): DomainValue = FloatValue(pc)
-    override def l2i(pc: PC, value: DomainValue): DomainValue = IntegerValue(pc)
+    override def l2d(pc: PC, value: DomainValue): DomainValue = 
+        DoubleValue(pc)
+        
+    override def l2f(pc: PC, value: DomainValue): DomainValue = 
+        FloatValue(pc)
+        
+    override def l2i(pc: PC, value: DomainValue): DomainValue = 
+        IntegerValue(pc)
 }
 
 

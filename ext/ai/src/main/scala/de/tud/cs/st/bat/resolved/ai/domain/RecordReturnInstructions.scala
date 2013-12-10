@@ -58,8 +58,9 @@ trait RecordReturnInstructions[+I] extends Domain[I] {
 
     def allReturnInstructions: PCs = returnInstructions
 
-    override def returnVoid(pc: PC) {
+    abstract override def returnVoid(pc: PC) {
         returnInstructions += pc
+        super.returnVoid(pc)
     }
 
 }

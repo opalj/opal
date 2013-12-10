@@ -50,7 +50,7 @@ trait PreciseDomain[+I]
     with l0.TypeLevelArrayInstructions
     with TypeLevelFieldAccessInstructionsWithNullPointerHandling
     with TypeLevelInvokeInstructionsWithNullPointerHandling
-    with l0.BasicTypeHierarchy
+    with l0.DefaultClassHierarchy
 
 class PreciseConfigurableDomain[+I](
     val identifier: I)
@@ -61,6 +61,7 @@ class PreciseConfigurableDomain[+I](
 class PreciseRecordingDomain[I](
     val identifier: I)
         extends PreciseDomain[I]
+        with IgnoreMethodResults
         with RecordLastReturnedValues[I]
         with RecordAllThrownExceptions[I]
         with RecordReturnInstructions[I]

@@ -40,8 +40,9 @@ import language.implicitConversions
 
 /**
  * Records the values returned by the method. (Note that the computational type
- * of the value(s) is not directly recorded, as it is directly determined by
- * the signature of method that is analyzed.)
+ * of the value(s) is not recorded. It is directly determined by
+ * the signature of method that is analyzed or can be extracted using the respective
+ * method.)
  *
  * This trait can be used to record the return values independently of
  * the precision of the domain.
@@ -93,11 +94,6 @@ trait RecordReturnedValues[+I] extends Domain[I] {
 
     def allReturnedValues: Map[PC, ReturnedValue] = returnedValues
 
-    protected implicit def returnedValueToReturnInstructions(
-        returnedValues: Map[PC, ReturnedValue]): Set[PC] = {
-        returnedValues.keySet
-    }
-
     protected[this] def recordReturnedValue(pc: PC, value: DomainValue) {
         returnedValues =
             returnedValues.updated(
@@ -111,24 +107,29 @@ trait RecordReturnedValues[+I] extends Domain[I] {
             )
     }
 
-    override def areturn(pc: PC, value: DomainValue) {
+    abstract override def areturn(pc: PC, value: DomainValue) {
         recordReturnedValue(pc, value)
+        super.areturn(pc,value)
     }
 
-    override def dreturn(pc: PC, value: DomainValue) {
+    abstract override def dreturn(pc: PC, value: DomainValue) {
         recordReturnedValue(pc, value)
+        super.dreturn(pc,value)
     }
 
-    override def freturn(pc: PC, value: DomainValue) {
+    abstract override def freturn(pc: PC, value: DomainValue) {
         recordReturnedValue(pc, value)
+        super.freturn(pc,value)
     }
 
-    override def ireturn(pc: PC, value: DomainValue) {
+    abstract override def ireturn(pc: PC, value: DomainValue) {
         recordReturnedValue(pc, value)
+        super.ireturn(pc,value)
     }
 
-    override def lreturn(pc: PC, value: DomainValue) {
+    abstract override def lreturn(pc: PC, value: DomainValue) {
         recordReturnedValue(pc, value)
+        super.lreturn(pc,value)
     }
 
 }

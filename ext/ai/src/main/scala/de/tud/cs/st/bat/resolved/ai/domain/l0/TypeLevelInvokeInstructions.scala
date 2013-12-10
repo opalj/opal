@@ -106,7 +106,8 @@ trait TypeLevelInvokeInstructions { this: Domain[_] ⇒
         methodDescriptor: MethodDescriptor,
         operands: List[DomainValue]): Computation[DomainValue, ExceptionValues] =
         // TODO [Clarify] This works for Groovy 2.1.5' use of invokedynamice, but does it work in general?
-        ComputedValue(TypedValue(pc, ObjectType.Object))
+        //ComputedValue(TypedValue(pc, ObjectType.Object))
+        ComputedValue(TypedValue(pc, methodDescriptor.returnType))
 
 }
 

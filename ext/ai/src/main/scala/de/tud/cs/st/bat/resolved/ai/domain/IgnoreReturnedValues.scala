@@ -39,34 +39,31 @@ package domain
 /**
  * Provides default implementations for a `Domain`'s return methods that do nothing.
  *
- * You can mix in this trait if you are not interested in a method's return values.
+ * You can mix in this trait if you are not interested in a method's return values or if
+ * you need some default implementations.
  *
  * @author Michael Eichberg
  */
 trait IgnoreReturnedValues { this: SomeDomain ⇒
 
-    // THE METHODS ARE FINAL TO AVOID THAT THIS TRAIT IS MIXED IN AS WELL AS A 
-    // TRAIT THAT ALSO IMPLEMENTS THE METHODS. IN THAT CASE COMPREHENSIBILITY
-    // WOULD SUFFER!
-    
-    override final def areturn(pc: PC, value: DomainValue): Unit = {
-        /* Does nothing. */
+    override def areturn(pc: PC, value: DomainValue): Unit = {
+        /* Nothing to do. */
     }
 
-    override final def dreturn(pc: PC, value: DomainValue): Unit = {
-        /* Do nothing. */
+    override def dreturn(pc: PC, value: DomainValue): Unit = {
+        /* Nothing to do. */
     }
 
-    override final def freturn(pc: PC, value: DomainValue): Unit = {
-        /* Do nothing. */
+    override def freturn(pc: PC, value: DomainValue): Unit = {
+        /* Nothing to do. */
     }
 
-    override final def ireturn(pc: PC, value: DomainValue): Unit = {
-        /* Do nothing. */
+    override def ireturn(pc: PC, value: DomainValue): Unit = {
+        /* Nothing to do. */
     }
 
-    override final def lreturn(pc: PC, value: DomainValue): Unit = {
-        /* Do nothing. */
+    override def lreturn(pc: PC, value: DomainValue): Unit = {
+        /* Nothing to do. */
     }
 
 }

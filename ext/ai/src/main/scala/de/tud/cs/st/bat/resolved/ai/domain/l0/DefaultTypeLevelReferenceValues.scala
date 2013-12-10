@@ -368,9 +368,6 @@ trait DefaultTypeLevelReferenceValues[+I]
     override def InitializedObject(pc: PC, referenceType: ReferenceType): DomainValue =
         AReferenceValue(referenceType)
 
-    override def ArrayReferenceValue(pc: PC, referenceType: ArrayType): DomainValue =
-        InitializedObject(pc, referenceType)
-
     override def StringValue(pc: PC, value: String): DomainValue =
         AReferenceValue(ObjectType.String)
 

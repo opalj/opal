@@ -38,17 +38,19 @@ package domain
 package l0
 
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
-import analyses.ClassHierarchy
 
 /**
  * Implementation of a Domain's `isSubtypeOf(...)` method that delegates to
- * the corresponding method defined by the class `ClassHierarchy`. This class
- * uses BAT's `preInitializedClassHierarchy` (see `ClassHierarchy` for details)
+ * the corresponding method defined by the class `...resolved.analyses.ClassHierarchy`.
+ *  
+ * This class uses BAT's `preInitializedClassHierarchy` (see `ClassHierarchy` for details)
  * for answering queries.
  *
  * @author Michael Eichberg
  */
-trait BasicTypeHierarchy extends ClassHierarchyDomain { this: SomeDomain ⇒
+trait DefaultClassHierarchy extends ClassHierarchy { this: SomeDomain ⇒
+
+    import analyses.ClassHierarchy
 
     /**
      * Returns the predefined class hierarchy unless explicitly overridden. BAT's
@@ -58,10 +60,12 @@ trait BasicTypeHierarchy extends ClassHierarchyDomain { this: SomeDomain ⇒
      *
      * @note '''This method is intended to be overridden.'''
      */
-    override def classHierarchy: ClassHierarchy = BasicTypeHierarchy.classHierarchy
+    override def classHierarchy: ClassHierarchy = DefaultClassHierarchy.classHierarchy
 
 }
-private object BasicTypeHierarchy {
+private object DefaultClassHierarchy {
+
+    import analyses.ClassHierarchy
 
     val classHierarchy: ClassHierarchy = ClassHierarchy.preInitializedClassHierarchy
 

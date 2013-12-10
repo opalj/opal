@@ -37,7 +37,7 @@ package ai
 package domain
 
 /**
- * Records all exception thrown by a specific instruction.
+ * Records all exceptions thrown by a method.
  *
  * @note This domain requires that `DomainValue`s that represent thrown exceptions
  *      have a meaningful `equals` and `hashCode` method.
@@ -48,11 +48,13 @@ trait RecordAllThrownExceptions[+I] extends RecordThrownExceptions[I] {
 
     type ThrownException = Set[DomainValue]
 
-    def thrownException(value: ExceptionValue): ThrownException = Set.empty + value
+    def thrownException(value: ExceptionValue): ThrownException =
+        Set.empty + value
 
     def joinThrownExceptions(
         previouslyThrownException: ThrownException,
-        value: ExceptionValue): ThrownException = previouslyThrownException + value
+        value: ExceptionValue): ThrownException =
+        previouslyThrownException + value
 
 }
 

@@ -39,7 +39,8 @@ package project
 import domain._
 import domain.l0
 import domain.l1
-import analyses._
+
+import analyses.Project
 
 import scala.collection.Set
 import scala.collection.Map
@@ -65,7 +66,7 @@ import scala.collection.Map
  */
 trait CHACallGraphDomain[Source, I]
         extends CallGraphDomain[Source, I]
-        with ClassHierarchyDomain {
+        with ClassHierarchy {
 
     //
     // Helper data structures  

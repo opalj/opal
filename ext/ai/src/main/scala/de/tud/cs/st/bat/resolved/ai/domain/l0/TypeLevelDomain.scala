@@ -59,7 +59,7 @@ trait TypeLevelDomain[+I]
     with TypeLevelArrayInstructions
     with TypeLevelFieldAccessInstructions
     with TypeLevelInvokeInstructions
-    with BasicTypeHierarchy
+    with DefaultClassHierarchy
 
 /**
  * This is a ready to use domain which sets the domain identifier to "BaseTypeLevelDomain".
@@ -91,7 +91,8 @@ class BaseConfigurableDomain[+I](
 class BaseRecordingDomain[I](
     val identifier: I)
         extends TypeLevelDomain[I]
+        with IgnoreMethodResults
+        with IgnoreSynchronization
         with RecordLastReturnedValues[I]
         with RecordAllThrownExceptions[I]
         with RecordReturnInstructions[I]
-        with IgnoreSynchronization

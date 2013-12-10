@@ -40,20 +40,20 @@ package domain
  * Basic implementation of a `Domain`'s `abruptMethodExecution` method that does
  * nothing.
  *
- * @note This trait's method is not intended to be overridden. If you need to do some
- * 		special processing in case of abrupt method executions, just directly implement
- *   	the respective method and ignore this trait.
+ * @note Mix-in this trait if the analysis does not need to do anything special in case
+ *      of an exception or if you have multiple stackable traits and you need a base
+ *      implementation.
+ *      Example:
+ *      {{{
+ *      MySpecialDomain extends ... with IgnoreThrownExceptions with RecordThrownExceptions with ...
+ *      }}}
  *
  * @author Michael Eichberg
  */
 trait IgnoreThrownExceptions { this: SomeDomain ⇒
 
-    // THE METHOD IS FINAL TO AVOID THAT THIS TRAIT IS MIXED IN AS WELL AS A 
-    // TRAIT THAT ALSO IMPLEMENTS THE METHOD. IN THAT CASE COMPREHENSIBILITY
-    // WOULD SUFFER!
-
-    override final def abruptMethodExecution(pc: PC, exception: DomainValue): Unit = {
-        /* Does nothing. */
+    override def abruptMethodExecution(pc: PC, exception: DomainValue): Unit = {
+        /* Nothing to do. */
     }
 }
 

@@ -50,31 +50,32 @@ trait DefaultTypeLevelDoubleValues[+I]
         extends DefaultDomainValueBinding[I]
         with TypeLevelDoubleValues[I] {
 
-    case object ADoubleValue extends super.DoubleValue {
+    /**
+     * Represents a specific, but unknown double value.
+     */
+    class ADoubleValue extends super.DoubleValue {
 
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] =
-            // Since value is guaranteed to have computational type double it 
-            // has to be "this" value.
+            // Since `value` is guaranteed to have computational type double and we 
+            // don't care about the precise value, as this DomainValue already 
+            // just represents "some" double value, we can always safely return
+            // NoUpdate. 
             NoUpdate
 
         override def summarize(pc: PC): DomainValue = this
 
         override def summarize(pc: PC, value: DomainValue): DomainValue = this
 
-        override def adapt[ThatI >: I](
-            targetDomain: Domain[ThatI],
-            pc: PC): targetDomain.DomainValue =
-            targetDomain match {
-                case thatDomain: DefaultTypeLevelDoubleValues[ThatI] ⇒
-                    thatDomain.ADoubleValue.asInstanceOf[targetDomain.DomainValue]
-                case _ ⇒ super.adapt(targetDomain, pc)
-            }
+        override def adapt[ThatI >: I](target: Domain[ThatI], pc: PC): target.DomainValue =
+            target.DoubleValue(pc)
+
     }
 
-    override def DoubleValue(pc: PC): DomainValue = ADoubleValue
+    private[this] val TheADoubleValue = new ADoubleValue()
+    
+    override def DoubleValue(pc: PC): DomainValue = TheADoubleValue
 
-    override def DoubleValue(pc: PC, value: Double): DoubleValue = ADoubleValue
+    override def DoubleValue(pc: PC, value: Double): DoubleValue = TheADoubleValue
 }
-
 
 

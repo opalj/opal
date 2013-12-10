@@ -61,6 +61,8 @@ class MethodsPlainTest
         extends FlatSpec
         with ShouldMatchers /*with BeforeAndAfterAll */
         with ParallelTestExecution {
+    
+    private[this] val IrrelevantPC = Int.MinValue
 
     import util.XHTML.dumpOnFailureDuringValidation
     import MethodsPlainTest._
@@ -98,7 +100,7 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "dOne").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(ADoubleValue))
+        domain.returnedValue should be(Some(DoubleValue(IrrelevantPC)))
     }
 
     it should "be able to analyze a method that returns a fixed float value" in {
@@ -327,7 +329,7 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "dAdd").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(ADoubleValue))
+        domain.returnedValue should be(Some(DoubleValue(IrrelevantPC)))
     }
 
     it should "be able to analyze a method that divides two double values" in {
@@ -335,14 +337,14 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "dDiv").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(ADoubleValue))
+        domain.returnedValue should be(Some(DoubleValue(IrrelevantPC)))
     }
     it should "be able to analyze a method that multiplies two double values" in {
         val domain = new RecordingDomain; import domain._
         val method = classFile.methods.find(_.name == "dMul").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(ADoubleValue))
+        domain.returnedValue should be(Some(DoubleValue(IrrelevantPC)))
     }
 
     it should "be able to analyze a method that reminder an double values" in {
@@ -350,14 +352,14 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "dRem").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(ADoubleValue))
+        domain.returnedValue should be(Some(DoubleValue(IrrelevantPC)))
     }
     it should "be able to analyze a method that substracts two double values" in {
         val domain = new RecordingDomain; import domain._
         val method = classFile.methods.find(_.name == "dSub").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(ADoubleValue))
+        domain.returnedValue should be(Some(DoubleValue(IrrelevantPC)))
     }
 
     //
@@ -421,7 +423,7 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "iToDouble").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(ADoubleValue))
+        domain.returnedValue should be(Some(DoubleValue(IrrelevantPC)))
     }
     it should "be able to analyze a method that casts an int to a float" in {
         val domain = new RecordingDomain; import domain._
@@ -453,7 +455,7 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "lToDouble").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(ADoubleValue))
+        domain.returnedValue should be(Some(DoubleValue(IrrelevantPC)))
     }
     it should "be able to analyze a method that casts an long to a float" in {
         val domain = new RecordingDomain; import domain._
@@ -501,7 +503,7 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "fToDouble").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(ADoubleValue))
+        domain.returnedValue should be(Some(DoubleValue(IrrelevantPC)))
     }
     it should "be able to analyze a method that casts an float to a int" in {
         val domain = new RecordingDomain; import domain._
@@ -533,7 +535,7 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "dNeg").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(ADoubleValue))
+        domain.returnedValue should be(Some(DoubleValue(IrrelevantPC)))
     }
 
     it should "be able to analyze a method that returns a negativ long value" in {
@@ -637,7 +639,7 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "localDoubleOdd").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(ADoubleValue))
+        domain.returnedValue should be(Some(DoubleValue(IrrelevantPC)))
     }
 
     it should "be able to analyze even double load and store commands" in {
@@ -645,7 +647,7 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "localDoubleEven").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(ADoubleValue))
+        domain.returnedValue should be(Some(DoubleValue(IrrelevantPC)))
     }
 
     it should "be able to analyze float load and store commands" in {
@@ -696,14 +698,14 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "pushDoubleConst0").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(ADoubleValue))
+        domain.returnedValue should be(Some(DoubleValue(IrrelevantPC)))
     }
     it should "be able to analyze a push of double const1 value" in {
         val domain = new RecordingDomain; import domain._
         val method = classFile.methods.find(_.name == "pushDoubleConst1").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(ADoubleValue))
+        domain.returnedValue should be(Some(DoubleValue(IrrelevantPC)))
     }
     it should "be able to analyze a push of float const0 value" in {
         val domain = new RecordingDomain; import domain._
@@ -797,21 +799,21 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "createNewBooleanArray").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(ArrayReferenceValue(1, ArrayType(BooleanType))))
+        domain.returnedValue should be(Some(InitializedObject(1, ArrayType(BooleanType))))
     }
     it should "be able to analyze a new char array" in {
         val domain = new RecordingDomain; import domain._
         val method = classFile.methods.find(_.name == "createNewCharArray").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(ArrayReferenceValue(1, ArrayType(CharType))))
+        domain.returnedValue should be(Some(InitializedObject(1, ArrayType(CharType))))
     }
     it should "be able to analyze a new float array" in {
         val domain = new RecordingDomain; import domain._
         val method = classFile.methods.find(_.name == "createNewFloatArray").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(ArrayReferenceValue(1, ArrayType(FloatType))))
+        domain.returnedValue should be(Some(InitializedObject(1, ArrayType(FloatType))))
     }
 
     it should "be able to analyze a new double array" in {
@@ -819,35 +821,35 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "createNewDoubleArray").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(ArrayReferenceValue(1, ArrayType(DoubleType))))
+        domain.returnedValue should be(Some(InitializedObject(1, ArrayType(DoubleType))))
     }
     it should "be able to analyze a new byte array" in {
         val domain = new RecordingDomain; import domain._
         val method = classFile.methods.find(_.name == "createNewByteArray").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(ArrayReferenceValue(1, ArrayType(ByteType))))
+        domain.returnedValue should be(Some(InitializedObject(1, ArrayType(ByteType))))
     }
     it should "be able to analyze a new short array" in {
         val domain = new RecordingDomain; import domain._
         val method = classFile.methods.find(_.name == "createNewShortArray").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(ArrayReferenceValue(1, ArrayType(ShortType))))
+        domain.returnedValue should be(Some(InitializedObject(1, ArrayType(ShortType))))
     }
     it should "be able to analyze a new int array" in {
         val domain = new RecordingDomain; import domain._
         val method = classFile.methods.find(_.name == "createNewIntArray").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(ArrayReferenceValue(1, ArrayType(IntegerType))))
+        domain.returnedValue should be(Some(InitializedObject(1, ArrayType(IntegerType))))
     }
     it should "be able to analyze a new long array" in {
         val domain = new RecordingDomain; import domain._
         val method = classFile.methods.find(_.name == "createNewLongArray").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(ArrayReferenceValue(1, ArrayType(LongType))))
+        domain.returnedValue should be(Some(InitializedObject(1, ArrayType(LongType))))
     }
 
     it should "be able to analyze a new Object array" in {
@@ -855,7 +857,7 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "createNewSimpleMethodsArray").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(ArrayReferenceValue(1, ArrayType(ObjectType("ai/MethodsPlain")))))
+        domain.returnedValue should be(Some(InitializedObject(1, ArrayType(ObjectType("ai/MethodsPlain")))))
     }
 
     it should "be able to analyze a new multidimensional Object array" in {
@@ -863,7 +865,7 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "createNewMultiSimpleMethodsArray").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(ArrayReferenceValue(2, ArrayType(ArrayType(ObjectType("ai/MethodsPlain"))))))
+        domain.returnedValue should be(Some(InitializedObject(2, ArrayType(ArrayType(ObjectType("ai/MethodsPlain"))))))
     }
 
     //
@@ -901,7 +903,7 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "doubleArray").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(ADoubleValue))
+        domain.returnedValue should be(Some(DoubleValue(IrrelevantPC)))
     }
 
     it should "be able to analyze to load and store a float in an array" in {
@@ -941,7 +943,7 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "twice").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(ADoubleValue))
+        domain.returnedValue should be(Some(DoubleValue(IrrelevantPC)))
     }
 
     it should "be able to return the correct type of an object if an object that is passed in is directly returned" in {

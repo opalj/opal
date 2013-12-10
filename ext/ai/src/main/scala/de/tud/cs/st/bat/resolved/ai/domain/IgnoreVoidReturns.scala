@@ -39,19 +39,13 @@ package domain
 /**
  * Basic implementation of a `Domain`s `returnVoid` method that does nothing.
  *
- * @note This trait's method is not intended to be overridden. If you need to do some
- * 		special processing in case of abrupt method executions, just directly implement
- *   	the respective method and ignore this trait.
- *
  * @author Michael Eichberg
  */
 trait IgnoreVoidReturns { this: SomeDomain ⇒
 
-    // THE METHOD IS FINAL TO AVOID THAT THIS TRAIT IS MIXED IN AS WELL AS A 
-    // TRAIT THAT ALSO IMPLEMENTS THE METHOD. IN THAT CASE COMPREHENSIBILITY
-    // WOULD SUFFER!
-
-    override final def returnVoid(pc: PC): Unit = { /* Does nothing. */ }
+    override def returnVoid(pc: PC): Unit = {
+        /* Nothing to do. */
+    }
 
 }
 
