@@ -65,7 +65,7 @@ class DefaultPreciseIntegerValuesTest
     //
     // TESTS
     //
-
+   
     behavior of "IntegerRange values"
 
     it should ("be able to join two identical values") in {
