@@ -496,7 +496,7 @@ trait AI[D <: SomeDomain] {
                         domain, pc, instruction, operands, locals
                     )
 
-                def pcOfNextInstruction = code.indexOfNextInstruction(pc)
+                def pcOfNextInstruction = code.pcOfNextInstruction(pc)
 
                 /**
                  * Handles all '''if''' instructions that perform a comparison with a fixed
@@ -544,7 +544,7 @@ trait AI[D <: SomeDomain] {
                     val value1 = remainingOperands.head
                     remainingOperands = remainingOperands.tail
                     val branchTarget = pc + branchInstruction.branchoffset
-                    val nextPC = code.indexOfNextInstruction(pc)
+                    val nextPC = code.pcOfNextInstruction(pc)
 
                     domainTest(value1, value2) match {
                         case Yes ⇒ gotoTarget(pc, branchTarget, remainingOperands, locals)

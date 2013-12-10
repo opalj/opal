@@ -64,8 +64,6 @@ package object ai {
 
     type SomeAI[D <: SomeDomain] = AI[_ >: D]
 
-    type PC = Int
-
     @throws[AIException]
     def aiException(message: String, cause: Throwable = null): Nothing =
         throw new AIException(message, cause)
