@@ -216,13 +216,17 @@ object XHTML {
                         " ["+eh.startPC+","+eh.endPC+")"+" => "+eh.handlerPC
                 }
             ).map(eh ⇒ <p>{ eh }</p>)
-            
+
         <div>
         <table>
-            <caption>{annotations(classFile, method).map { annotation =>
-	                <span class="annotation">{annotation}</span><br />
-	            } 
-        	}{caption(classFile, method)}</caption>
+            <caption>
+            	<div class="annotations">{
+            		annotations(classFile, method).map { annotation ⇒ 
+            		    <span class="annotation">{ annotation }</span><br /> 
+            		} 
+            	}</div>
+        		{ caption(classFile, method) }
+        	</caption>
             <thead>
             <tr><th class="pc">PC</th>
                 <th class="instruction">Instruction</th>
@@ -237,23 +241,17 @@ object XHTML {
         { exceptionHandlers }
         </div>
     }
-    
+
     private def annotations(classFile: Option[ClassFile], method: Option[Method]): Seq[String] = {
-        val annotations = method.map(m => m.runtimeVisibleAnnotations.getOrElse(IndexedSeq())).getOrElse(IndexedSeq())
-        annotations.map { annotation =>
-            val typeName = "@" + annotation.annotationType.toJava
-            val parameters = annotation.elementValuePairs.map { case ElementValuePair(name, value) =>
-                name + " = " + value
-            }.mkString("(", ",", ")")
-            typeName + parameters
-        }
+        val annotations = method.map(m ⇒ m.runtimeVisibleAnnotations.getOrElse(Nil)).getOrElse(Nil)
+        annotations.map(_.toJava)
     }
-    
+
     private def caption(classFile: Option[ClassFile], method: Option[Method]): String = {
-        val modifiers = method.map(m => if (m.isStatic) "static " else "").getOrElse("")
-        val typeName = classFile.map(_.thisType.toJava + ".").getOrElse("")
-        val methodName = method.map(m => m.name + m.descriptor.toUMLNotation + " - ").getOrElse("")
-        modifiers + typeName + methodName + "Results"
+        val modifiers = if (method.isDefined && method.get.isStatic) "static " else ""
+        val typeName = classFile.map(_.thisType.toJava+".").getOrElse("")
+        val methodName = method.map(m ⇒ m.name + m.descriptor.toJava(m.name)+" - ").getOrElse("")
+        modifiers + typeName + methodName+"Results"
     }
 
     private def indexExceptionHandlers(code: Code) =

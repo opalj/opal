@@ -41,4 +41,7 @@ package resolved
  */
 case class ElementValuePair(
     name: String,
-    value: ElementValue)
+    value: ElementValue) {
+    
+    def toJava: String = name + "=" + value
+}
