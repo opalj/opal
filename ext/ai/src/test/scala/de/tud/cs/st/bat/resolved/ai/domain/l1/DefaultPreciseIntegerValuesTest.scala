@@ -49,8 +49,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.ParallelTestExecution
 
 /**
- * This test(suite) just loads a very large number of class files and performs
- * an abstract interpretation of the methods.
+ * This test(suite) tests various aspects related to the handling of integer values.
  *
  * @author Michael Eichberg
  */

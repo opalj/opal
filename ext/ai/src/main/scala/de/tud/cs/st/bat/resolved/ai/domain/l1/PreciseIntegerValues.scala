@@ -66,9 +66,9 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
      * This is a runtime configurable setting that may affect the overall precision of
      * subsequent analyses that require knowledge about integers.
      */
-    def maxSpread = 25
+    def maxSpread: Int = 25
 
-    protected def spread(a: Int, b: Int) = Math.abs(a - b)
+    protected def spread(a: Int, b: Int): Int = Math.abs(a - b)
 
     /**
      * Determines if an exception is thrown in case of a '''potential''' division by zero.
@@ -77,7 +77,7 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
      * However, if we know that the denominator is 0 a corresponding exception will be
      * thrown.
      */
-    def divisionByZeroIfUnknown = true
+    def divisionByZeroIfUnknown: Boolean = true
 
     /**
      * Abstracts over all values with computational type `integer`.
@@ -316,8 +316,12 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
 
     override def iinc(pc: PC, value: DomainValue, increment: Int) =
         value match {
-            case v: IntegerValue ⇒ v.update(v.value + increment)
-            case _               ⇒ value
+            case v: IntegerValue ⇒
+                v.update(v.value + increment)
+            case _ ⇒
+                // The given value is "some (unknown) integer value"
+                // hence, we can directly return it.
+                value
         }
 
     //
@@ -333,8 +337,13 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
     override def i2s(pc: PC, value: DomainValue): DomainValue =
         getIntValue(value)(v ⇒ ShortValue(pc, v.toShort))(ShortValue(pc))
 
-    override def i2d(pc: PC, value: DomainValue): DomainValue = DoubleValue(pc)
-    override def i2f(pc: PC, value: DomainValue): DomainValue = FloatValue(pc)
-    override def i2l(pc: PC, value: DomainValue): DomainValue = LongValue(pc)
+    override def i2d(pc: PC, value: DomainValue): DomainValue =
+        getIntValue(value)(v ⇒ DoubleValue(pc, v.toDouble))(DoubleValue(pc))
+
+    override def i2f(pc: PC, value: DomainValue): DomainValue =
+        getIntValue(value)(v ⇒ FloatValue(pc, v.toFloat))(FloatValue(pc))
+
+    override def i2l(pc: PC, value: DomainValue): DomainValue =
+        getIntValue(value)(v ⇒ LongValue(pc, v.toLong))(LongValue(pc))
 }
 
