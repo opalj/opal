@@ -243,15 +243,14 @@ object XHTML {
     }
 
     private def annotations(classFile: Option[ClassFile], method: Option[Method]): Seq[String] = {
-        val annotations = method.map(m ⇒ m.runtimeVisibleAnnotations.getOrElse(Nil)).getOrElse(Nil)
-        annotations.map(_.toJava)
+        method.flatMap(m ⇒ m.runtimeVisibleAnnotations).map(_.map(_.toJava)).getOrElse(Nil)
     }
 
     private def caption(classFile: Option[ClassFile], method: Option[Method]): String = {
         val modifiers = if (method.isDefined && method.get.isStatic) "static " else ""
         val typeName = classFile.map(_.thisType.toJava+".").getOrElse("")
-        val methodName = method.map(m ⇒ m.name + m.descriptor.toJava(m.name)+" - ").getOrElse("")
-        modifiers + typeName + methodName+"Results"
+        val methodName = method.map(m ⇒ m.toJava+" - ").getOrElse("")
+        modifiers + typeName + methodName
     }
 
     private def indexExceptionHandlers(code: Code) =

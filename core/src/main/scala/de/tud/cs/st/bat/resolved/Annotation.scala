@@ -46,6 +46,7 @@ package resolved
  * a [[de.tud.cs.st.bat.resolved.RuntimeVisibleParameterAnnotationTable]] attribute.
  *
  * @author Michael Eichberg
+ * @author Arne Lottmann
  */
 case class Annotation(
     annotationType: FieldType,

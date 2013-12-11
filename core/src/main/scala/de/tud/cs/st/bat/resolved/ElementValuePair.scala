@@ -38,6 +38,7 @@ package resolved
  * An annotation's name-value pair.
  *
  * @author Michael Eichberg
+ * @author Arne Lottmann
  */
 case class ElementValuePair(
     name: String,

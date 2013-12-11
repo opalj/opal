@@ -38,6 +38,7 @@ package resolved
  * An annotation's value.
  *
  * @author Michael Eichberg
+ * @author Arne Lottmann
  */
 sealed trait ElementValue
         extends Attribute {
@@ -112,12 +113,12 @@ case class ClassValue(
     value: Type)
         extends ElementValue {
 
-    def toJava = value.toJava
+    def toJava = value.toJava+".class"
 }
 
 case class EnumValue(
     enumType: ObjectType,
-    val constName: String)
+    constName: String)
         extends ElementValue {
 
     def toJava = enumType.toJava+"."+constName
