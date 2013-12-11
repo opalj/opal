@@ -37,34 +37,65 @@ package ai
 package domain
 package l1
 
-trait PreciseDomain[+I]
-    extends Domain[I]
-    with Origin
-    with DefaultDomainValueBinding[I]
-    with DefaultPreciseIntegerValues[I]
-    with DefaultPreciseReferenceValues[I]
-    with StringValues[I]
-    with DefaultPreciseLongValues[I]
-    with l0.DefaultTypeLevelFloatValues[I]
-    with l0.DefaultTypeLevelDoubleValues[I]
-    with l0.TypeLevelArrayInstructions
-    with TypeLevelFieldAccessInstructionsWithNullPointerHandling
-    with TypeLevelInvokeInstructionsWithNullPointerHandling
-    with l0.DefaultClassHierarchy
+import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
-class PreciseConfigurableDomain[+I](
-    val identifier: I)
-        extends PreciseDomain[I]
-        with IgnoreMethodResults
-        with IgnoreSynchronization
+import org.junit.runner.RunWith
+import org.scalatest.junit.JUnitRunner
+import org.scalatest.FlatSpec
+import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.concurrent.TimeLimitedTests
+import org.scalatest.time._
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.ParallelTestExecution
 
-class PreciseRecordingDomain[I](
-    val identifier: I)
-        extends PreciseDomain[I]
-        with IgnoreMethodResults
-        with RecordLastReturnedValues[I]
-        with RecordAllThrownExceptions[I]
-        with RecordReturnInstructions[I]
-        with IgnoreSynchronization
-        
+/**
+ * This test(suite) checks if DefaultPreciseLongValues is working fine
+ *
+ * @author Riadh Chtara
+ */
+@RunWith(classOf[JUnitRunner])
+class DefaultPreciseLongValuesTest
+        extends FlatSpec
+        with ShouldMatchers
+        with ParallelTestExecution {
 
+    val domain = new PreciseConfigurableDomain("DefaultPreciseLongValuesTest")
+    import domain._
+
+    //
+    // TESTS
+    //
+
+    behavior of "LongRange values"
+
+    it should ("be able to join two identical values") in {
+        val v = LongRange(0, 0)
+        v.join(-1, v) should be(NoUpdate)
+    }
+
+    it should ("be able to join two overlapping values") in {
+        val v1 = LongRange(0, 1)
+        val v2 = LongRange(0, 2)
+
+        v1.join(-1, v2) should be(StructuralUpdate(LongRange(0, 2)))
+        v2.join(-1, v1) should be(NoUpdate)
+
+        val v3 = LongRange(-10, 10)
+        //v3.join(-1, v1) should be(NoUpdate)
+        v1.join(-1, v3) should be(StructuralUpdate(v3))
+
+        val v4 = LongRange(1, 0)
+        val v5 = LongRange(-3, -10)
+        v4.join(-1, v5) should be(StructuralUpdate(LongRange(1, -10)))
+
+        val v6 = LongRange(-3, -102)
+        v4.join(-1, v6) should be(StructuralUpdate(ALongValue())) // > SPREAD!
+    }
+
+    it should ("be able to join with ALongValue") in {
+        val v1 = LongRange(0, 1)
+
+        v1.join(-1, ALongValue()) should be(StructuralUpdate(ALongValue()))
+    }
+
+}
