@@ -38,9 +38,7 @@ package util
 
 import instructions._
 
-import scala.util.control.ControlThrowable
 import scala.xml.Node
-
 import java.io.File
 
 /**
@@ -53,7 +51,11 @@ import java.io.File
 object XHTML {
 
     import language.existentials
+
     import de.tud.cs.st.util.ControlAbstractions._
+
+    import scala.xml.{ Text, Unparsed }
+    import scala.util.control.ControlThrowable
 
     private[this] val dumpMutex = new Object
     /**
@@ -217,14 +219,19 @@ object XHTML {
                 }
             ).map(eh ⇒ <p>{ eh }</p>)
 
+        val annotations =
+            this.annotations(classFile, method) map { annotation ⇒
+                <span class="annotation">
+                { Unparsed(annotation.replace("\n", "<br>").replace("\t", "&nbsp;&nbsp;&nbsp;")) }
+                </span><br />
+            }
+
         <div>
         <table>
             <caption>
-            	<div class="annotations">{
-            		annotations(classFile, method).map { annotation ⇒ 
-            		    <span class="annotation">{ annotation }</span><br /> 
-            		} 
-            	}</div>
+            	<div class="annotations">
+                { annotations }
+                </div>
         		{ caption(classFile, method) }
         	</caption>
             <thead>
@@ -249,7 +256,7 @@ object XHTML {
     private def caption(classFile: Option[ClassFile], method: Option[Method]): String = {
         val modifiers = if (method.isDefined && method.get.isStatic) "static " else ""
         val typeName = classFile.map(_.thisType.toJava+".").getOrElse("")
-        val methodName = method.map(m ⇒ m.toJava+" - ").getOrElse("")
+        val methodName = method.map(m ⇒ m.toJava).getOrElse("")
         modifiers + typeName + methodName
     }
 
@@ -278,8 +285,8 @@ object XHTML {
         locals: Array[_ <: AnyRef],
         exceptionHandlers: Option[String]): Node = {
         <tr class={ if (operands eq null /*||/&& locals eq null*/ ) "not_evaluated" else "evaluated" }>
-            <td class="pc">{ scala.xml.Unparsed(pc.toString + "<br>" + exceptionHandlers.getOrElse("")) }</td>
-            <td class="instruction">{ scala.xml.Unparsed(scala.xml.Text(instruction.toString(pc)).toString.replace("\n", "<br>")) }</td>
+            <td class="pc">{ Unparsed(pc.toString + "<br>" + exceptionHandlers.getOrElse("")) }</td>
+            <td class="instruction">{ Unparsed(instruction.toString(pc).replace("\n", "<br>")) }</td>
             <td class="stack">{ dumpStack(operands) }</td>
             <td class="locals">{ dumpLocals(locals) }</td>
             <td class="properties">{ domain.properties(pc).getOrElse("<None>") }</td>

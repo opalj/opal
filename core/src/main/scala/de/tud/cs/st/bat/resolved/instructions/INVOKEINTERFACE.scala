@@ -44,7 +44,7 @@ case class INVOKEINTERFACE(
     declaringClass: ObjectType, // an interface or class type to be precise
     name: String, // an interface or class type to be precise
     methodDescriptor: MethodDescriptor)
-        extends DynamicMethodInvocationInstruction {
+        extends VirtualMethodInvocationInstruction {
 
     def opcode: Int = 185
 
@@ -54,5 +54,6 @@ case class INVOKEINTERFACE(
 
     def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 5
 
+    // Required to avoid that Scala generates a default toString method!
     override def toString = super.toString
 }

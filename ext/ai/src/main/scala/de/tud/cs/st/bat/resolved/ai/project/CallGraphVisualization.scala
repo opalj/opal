@@ -207,22 +207,24 @@ object CallGraphVisualization {
         //        println(consoleOutput.mkString("\n"))
 
         // The exceptions________________________________________________________________:
-        println("Exceptions: "+exceptions.size)
-        println(exceptions.mkString("Exceptions:\n\t", "\n\t", "\t"))
+        if (exceptions.size > 0) {
+            println("Exceptions: "+exceptions.size)
+            println(exceptions.mkString("Exceptions:\n\t", "\n\t", "\t"))
+        }
 
         // Generate and show the graph
         toDot.generateAndOpenDOT("CallGraph", nodes)
 
         // Write out the statistics about the calls relation
-        writeAndOpenDesktopApplication(
-            callGraph.callsStatistics(),
-            "CallGraphStatistics(calls)",
-            ".tsv.txt")
+        //        writeAndOpenDesktopApplication(
+        //            callGraph.callsStatistics(),
+        //            "CallGraphStatistics(calls)",
+        //            ".tsv.txt")
 
         // Write out the statistics about the called-by relation
-        writeAndOpenDesktopApplication(
-            callGraph.calledByStatistics(),
-            "CallGraphStatistics(calledBy)",
-            ".tsv.txt")
+        //        writeAndOpenDesktopApplication(
+        //            callGraph.calledByStatistics(),
+        //            "CallGraphStatistics(calledBy)",
+        //            ".tsv.txt")
     }
 }

@@ -54,7 +54,7 @@ case class Annotation(
 
     def toJava: String = {
         val name = annotationType.toJava
-        val parameters = elementValuePairs.map(_.toJava).mkString("(", ",", ")")
+        val parameters = elementValuePairs.map(_.toJava).mkString("(\n\t", ",\n\t", "\n)")
         "@"+name + parameters
     }
 }

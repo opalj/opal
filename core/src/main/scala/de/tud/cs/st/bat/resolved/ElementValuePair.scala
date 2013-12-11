@@ -44,5 +44,5 @@ case class ElementValuePair(
     name: String,
     value: ElementValue) {
     
-    def toJava: String = name + "=" + value
+    def toJava: String = name + "=" + value.toJava
 }

@@ -45,7 +45,7 @@ import java.net.URL
   *
   * @author Michael Eichberg
   */
-object DynamicAndStaticMethodCalls extends AnalysisExecutor {
+object VirtualAndStaticMethodCalls extends AnalysisExecutor {
 
     val analysis = new Analysis[URL, BasicReport] {
 
@@ -53,7 +53,7 @@ object DynamicAndStaticMethodCalls extends AnalysisExecutor {
 
         def analyze(project: Project[URL], parameters: Seq[String] = List.empty) = {
             var staticCalls = 0
-            var dynamicCalls = 0
+            var virtualCalls = 0
             for {
                 classFile ← project.classFiles
                 method ← classFile.methods if method.body.isDefined
@@ -61,15 +61,15 @@ object DynamicAndStaticMethodCalls extends AnalysisExecutor {
                 if instruction != null
                 if instruction.isInstanceOf[MethodInvocationInstruction]
             } {
-                if (instruction.isInstanceOf[DynamicMethodInvocationInstruction])
-                    dynamicCalls += 1
+                if (instruction.isInstanceOf[VirtualMethodInvocationInstruction])
+                    virtualCalls += 1
                 else
                     staticCalls += 1
             }
 
             BasicReport(
                 "Number of invokestatic/invokespecial instructions: "+staticCalls+"\n"+
-                    "Number of invokedynamic/invokeinterface/invokevirtual instructions: "+dynamicCalls
+                    "Number of invokedynamic/invokeinterface/invokevirtual instructions: "+virtualCalls
             )
         }
     }

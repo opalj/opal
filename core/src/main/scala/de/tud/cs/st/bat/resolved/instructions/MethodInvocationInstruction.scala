@@ -54,7 +54,7 @@ abstract class MethodInvocationInstruction extends Instruction {
 
 }
 
-abstract class DynamicMethodInvocationInstruction extends MethodInvocationInstruction
+abstract class VirtualMethodInvocationInstruction extends MethodInvocationInstruction
 
 abstract class StaticMethodInvocationInstruction extends MethodInvocationInstruction
 
