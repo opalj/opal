@@ -49,4 +49,11 @@ package resolved
  */
 case class Annotation(
     annotationType: FieldType,
-    elementValuePairs: ElementValuePairs) 
+    elementValuePairs: ElementValuePairs) {
+
+    def toJava: String = {
+        val name = annotationType.toJava
+        val parameters = elementValuePairs.map(_.toJava).mkString("(", ",", ")")
+        "@"+name + parameters
+    }
+}
