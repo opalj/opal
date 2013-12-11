@@ -38,6 +38,7 @@ package domain
 package tracing
 
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
+import de.tud.cs.st.bat.resolved.instructions.ReturnInstruction
 
 /**
  * Enables the tracing of a single boolean property where the precise semantics
@@ -46,7 +47,10 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  * @author Michael Eichberg
  */
 trait SimpleBooleanPropertyTracing[+I]
-        extends PropertyTracing[I] { domain ⇒
+        extends PropertyTracing[I]
+        with RecordReturnFromMethodInstructions[I] { domain ⇒
+
+    def code: Code
 
     /**
      * A name associated with the property. Used for debugging purposes only.
@@ -76,12 +80,14 @@ trait SimpleBooleanPropertyTracing[+I]
 
     def initialPropertyValue: DomainProperty = new BooleanProperty(false)
 
-    def hasPropertyOnExit[ReturnInstructions <% Set[PC]](
-        returnInstructions: ReturnInstructions): Boolean = {
-        //println(
-        // identifier+" "+
-        // returnedValues.map(getProperty(_)).mkString(","))
-        returnInstructions forall { getProperty(_).state }
+    def hasPropertyOnExit: Boolean = {
+        allReturnInstructions forall { pc ⇒ getProperty(pc).state }
+    }
+
+    def hasPropertyOnNormalReturn: Boolean = {
+        allReturnInstructions forall { pc ⇒
+            !code.instructions(pc).isInstanceOf[ReturnInstruction] || getProperty(pc).state
+        }
     }
 }
 

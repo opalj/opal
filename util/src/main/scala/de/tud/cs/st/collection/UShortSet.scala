@@ -53,6 +53,11 @@ trait UShortSet {
     def foreach[U](f: /*ushortValue:*/ Int ⇒ U): Unit
 
     /**
+     * Returns `true` if the predicate `f` returns true for all values of the set.
+     */
+    def forall(f: /*ushortValue:*/ Int ⇒ Boolean): Boolean
+    
+    /**
      * Returns a new iterator. The iterator is primarily defined to facilitate
      * the integration with Scala's standard collections API.
      *

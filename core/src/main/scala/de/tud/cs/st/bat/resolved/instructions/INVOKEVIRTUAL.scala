@@ -44,7 +44,7 @@ case class INVOKEVIRTUAL(
     declaringClass: ReferenceType, // an interface, class or array type to be precise
     name: String, 
     methodDescriptor: MethodDescriptor)
-        extends DynamicMethodInvocationInstruction {
+        extends VirtualMethodInvocationInstruction {
 
     def opcode: Int = 182
 
@@ -54,5 +54,6 @@ case class INVOKEVIRTUAL(
 
     def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 3
 
-    override def toString = super.toString
+    // Required to avoid that Scala generates a default toString method!
+    override def toString = super.toString 
 }

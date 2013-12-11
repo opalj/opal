@@ -38,60 +38,104 @@ package resolved
  * An annotation's value.
  *
  * @author Michael Eichberg
+ * @author Arne Lottmann
  */
-sealed trait ElementValue extends Attribute 
+sealed trait ElementValue
+        extends Attribute {
+
+    def toJava: String
+}
 
 case class ByteValue(
     value: Byte)
-        extends ElementValue
+        extends ElementValue {
+
+    def toJava = value.toString
+}
 
 case class CharValue(
     value: Char)
-        extends ElementValue
+        extends ElementValue {
+
+    def toJava = value.toString
+}
 
 case class DoubleValue(
     value: Double)
-        extends ElementValue
+        extends ElementValue {
+
+    def toJava = value.toString
+}
 
 case class FloatValue(
     value: Float)
-        extends ElementValue
+        extends ElementValue {
+
+    def toJava = value.toString
+}
 
 case class IntValue(
     value: Int)
-        extends ElementValue
+        extends ElementValue {
+
+    def toJava = value.toString
+}
 
 case class LongValue(
     value: Long)
-        extends ElementValue
+        extends ElementValue {
+
+    def toJava = value.toString
+}
 
 case class ShortValue(
     value: Short)
-        extends ElementValue
+        extends ElementValue {
+
+    def toJava = value.toString
+}
 
 case class BooleanValue(
     value: Boolean)
-        extends ElementValue
+        extends ElementValue {
+
+    def toJava = value.toString
+}
 
 case class StringValue(
     value: String)
-        extends ElementValue
+        extends ElementValue {
+
+    def toJava = "\""+value.toString+"\""
+}
 
 case class ClassValue(
     value: Type)
-        extends ElementValue
+        extends ElementValue {
+
+    def toJava = value.toJava+".class"
+}
 
 case class EnumValue(
     enumType: ObjectType,
-    val constName: String)
-        extends ElementValue
+    constName: String)
+        extends ElementValue {
+
+    def toJava = enumType.toJava+"."+constName
+}
 
 case class ArrayValue(
     values: IndexedSeq[ElementValue])
-        extends ElementValue
+        extends ElementValue {
+
+    def toJava = values.map(_.toJava).mkString("{", ",", "}")
+}
 
 case class AnnotationValue(
     annotation: Annotation)
-        extends ElementValue 
+        extends ElementValue {
+
+    def toJava = annotation.toJava
+}
 
 

@@ -48,8 +48,6 @@ trait DefaultTypeLevelReferenceValues[+I]
         extends DefaultDomainValueBinding[I]
         with TypeLevelReferenceValues[I] { domain ⇒
 
-    //    import collection.immutable.{Set => SortedList}
-    //    type UpperBound = collection.immutable.Set[ReferenceType]
     type UpperBound = UIDList[ReferenceType]
 
     // -----------------------------------------------------------------------------------
@@ -355,31 +353,25 @@ trait DefaultTypeLevelReferenceValues[+I]
     // FACTORY METHODS
     //
 
-    def newNullValue(pc: PC): DomainValue =
+    override def NullValue(pc: PC): DomainValue =
         MReferenceValue(UIDList.empty)
 
-    def nonNullReferenceValue(pc: PC, objectType: ObjectType): DomainValue =
+    override def NonNullReferenceValue(pc: PC, objectType: ObjectType): DomainValue =
         AReferenceValue(objectType)
 
-    def newReferenceValue(referenceType: ReferenceType): DomainValue =
+    override def ReferenceValue(pc: PC, referenceType: ReferenceType): DomainValue =
         AReferenceValue(referenceType)
 
-    def newReferenceValue(pc: PC, referenceType: ReferenceType): DomainValue =
+    override def NewObject(pc: PC, referenceType: ReferenceType): DomainValue =
         AReferenceValue(referenceType)
 
-    def newObject(pc: PC, referenceType: ReferenceType): DomainValue =
+    override def InitializedObject(pc: PC, referenceType: ReferenceType): DomainValue =
         AReferenceValue(referenceType)
 
-    def newInitializedObject(pc: PC, referenceType: ReferenceType): DomainValue =
-        newObject(pc, referenceType)
-
-    def newArray(pc: PC, referenceType: ArrayType): DomainValue =
-        newInitializedObject(pc, referenceType)
-
-    def newStringValue(pc: PC, value: String): DomainValue =
+    override def StringValue(pc: PC, value: String): DomainValue =
         AReferenceValue(ObjectType.String)
 
-    def newClassValue(pc: PC, t: Type): DomainValue =
+    override def ClassValue(pc: PC, t: Type): DomainValue =
         AReferenceValue(ObjectType.Class)
 
 }

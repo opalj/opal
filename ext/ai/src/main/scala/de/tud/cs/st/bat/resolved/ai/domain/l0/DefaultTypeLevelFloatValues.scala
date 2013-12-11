@@ -50,7 +50,7 @@ trait DefaultTypeLevelFloatValues[+I]
         extends DefaultDomainValueBinding[I]
         with TypeLevelFloatValues[I] {
 
-    case object FloatValue extends super.FloatValue {
+    case object AFloatValue extends super.FloatValue {
 
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = NoUpdate
 
@@ -58,21 +58,13 @@ trait DefaultTypeLevelFloatValues[+I]
 
         override def summarize(pc: PC, value: DomainValue): DomainValue = this
 
-        override def adapt[ThatI >: I](
-            targetDomain: Domain[ThatI],
-            pc: PC): targetDomain.DomainValue =
-            targetDomain match {
-                case thatDomain: DefaultTypeLevelFloatValues[ThatI] ⇒
-                    thatDomain.FloatValue.asInstanceOf[targetDomain.DomainValue]
-                case _ ⇒ super.adapt(targetDomain, pc)
-            }
+        override def adapt[ThatI >: I](target: Domain[ThatI], pc: PC): target.DomainValue =
+            target.FloatValue(pc)
     }
 
-    def newFloatValue(): FloatValue = FloatValue
+    override def FloatValue(pc: PC): DomainValue = AFloatValue
 
-    def newFloatValue(pc: PC): DomainValue = FloatValue
-
-    def newFloatValue(pc: PC, value: Float): FloatValue = FloatValue
+    override def FloatValue(pc: PC, value: Float): FloatValue = AFloatValue
 }
 
 

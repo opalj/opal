@@ -71,7 +71,7 @@ trait VTACallGraphDomain[Source, I] extends CHACallGraphDomain[Source, I] {
 //
 //            if (callees.isEmpty)
 //                addUnresolvedMethodCall(
-//                    callerClassFile.thisClass, caller, pc,
+//                    callerclassFile.thisType, caller, pc,
 //                    declaringClassType, name, descriptor)
 //            else {
 //                addCallEdge(caller, pc, callees)
@@ -115,6 +115,8 @@ class DefaultVTACallGraphDomain[Source](
     val theMethod: Method)
         extends Domain[Int]
         with DefaultDomainValueBinding[Int]
+        with IgnoreMethodResults
+        with IgnoreSynchronization
         with l0.DefaultTypeLevelIntegerValues[Int]
         with l0.DefaultTypeLevelLongValues[Int]
         with l0.DefaultTypeLevelFloatValues[Int]
@@ -124,7 +126,6 @@ class DefaultVTACallGraphDomain[Source](
         with l0.TypeLevelArrayInstructions
         with l0.TypeLevelFieldAccessInstructions
         with l0.TypeLevelInvokeInstructions
-        with l0.DoNothingOnReturnFromMethod
         with l1.ProjectBasedClassHierarchy[Source]
         with VTACallGraphDomain[Source, Int] {
 

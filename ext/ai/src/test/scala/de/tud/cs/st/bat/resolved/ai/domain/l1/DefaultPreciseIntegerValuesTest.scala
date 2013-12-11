@@ -49,8 +49,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.ParallelTestExecution
 
 /**
- * This test(suite) just loads a very large number of class files and performs
- * an abstract interpretation of the methods.
+ * This test(suite) tests various aspects related to the handling of integer values.
  *
  * @author Michael Eichberg
  */
@@ -66,36 +65,35 @@ class DefaultPreciseIntegerValuesTest
     //
     // TESTS
     //
-
-    behavior of "the default precise integer values domain"
+   
+    behavior of "IntegerRange values"
 
     it should ("be able to join two identical values") in {
-        val v = IntegerValue(0, 0)
+        val v = IntegerRange(0, 0)
         v.join(-1, v) should be(NoUpdate)
     }
 
     it should ("be able to join two overlapping values") in {
-        val v1 = IntegerValue(0, 1)
-        val v2 = IntegerValue(0, 2)
+        val v1 = IntegerRange(0, 1)
+        val v2 = IntegerRange(0, 2)
 
-        v1.join(-1, v2) should be(StructuralUpdate(IntegerValue(0, 2)))
+        v1.join(-1, v2) should be(StructuralUpdate(IntegerRange(0, 2)))
         v2.join(-1, v1) should be(NoUpdate)
 
-        val v3 = IntegerValue(-10, 10)
+        val v3 = IntegerRange(-10, 10)
         //v3.join(-1, v1) should be(NoUpdate)
         v1.join(-1, v3) should be(StructuralUpdate(v3))
 
-        val v4 = IntegerValue(1, 0)
-        val v5 = IntegerValue(-3, -10)
-        v4.join(-1, v5) should be(StructuralUpdate(IntegerValue(1, -10)))
+        val v4 = IntegerRange(1, 0)
+        val v5 = IntegerRange(-3, -10)
+        v4.join(-1, v5) should be(StructuralUpdate(IntegerRange(1, -10)))
 
-        val v6 = IntegerValue(-3, -102)
+        val v6 = IntegerRange(-3, -102)
         v4.join(-1, v6) should be(StructuralUpdate(AnIntegerValue())) // > SPREAD!
     }
 
     it should ("be able to join with AnIntegerValue") in {
-        val v1 = IntegerValue(0, 1)
-        val v2 = IntegerValue(0, 2)
+        val v1 = IntegerRange(0, 1)
 
         v1.join(-1, AnIntegerValue()) should be(StructuralUpdate(AnIntegerValue()))
     }

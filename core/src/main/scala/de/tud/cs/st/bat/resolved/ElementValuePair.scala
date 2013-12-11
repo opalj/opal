@@ -38,7 +38,11 @@ package resolved
  * An annotation's name-value pair.
  *
  * @author Michael Eichberg
+ * @author Arne Lottmann
  */
 case class ElementValuePair(
     name: String,
-    value: ElementValue)
+    value: ElementValue) {
+    
+    def toJava: String = name + "=" + value.toJava
+}

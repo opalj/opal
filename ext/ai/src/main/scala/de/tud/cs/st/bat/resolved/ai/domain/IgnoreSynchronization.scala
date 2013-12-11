@@ -36,27 +36,60 @@ package resolved
 package ai
 package domain
 
-import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
+import de.tud.cs.st.util.{ Yes, No, Unknown }
 
 /**
- * Implementation of a Domain's `isSubtypeOf(...)` method that delegates to
- * the corresponding method defined by the class `ClassHierarchy`.
+ * Provides a default implementation for the instructions related to synchronization.
  *
  * @author Michael Eichberg
  */
-trait ClassHierarchyDomain { this: Domain[_] ⇒
+trait IgnoreSynchronization { this: SomeDomain ⇒
+
+    protected[this] def sideEffectOnlyOrNullPointerException(
+        pc: PC,
+        value: DomainValue): Computation[Nothing, ExceptionValue] = {
+        isNull(value) match {
+            case Yes ⇒
+                ThrowsException(InitializedObject(pc, ObjectType.NullPointerException))
+            case No ⇒
+                ComputationWithSideEffectOnly
+            case Unknown ⇒
+                ComputationWithSideEffectOrException(
+                    InitializedObject(pc, ObjectType.NullPointerException)
+                )
+        }
+    }
 
     /**
-     * This project's class hierarchy.
+     * Handles a `monitorenter` instruction.
+     *
+     * @note The default implementation checks if the given value is `null` and raises
+     * an exception if it is `null` or maybe `null`. In the later case or in case that
+     * the value is known not to be `null` the given value is (also) returned as this
+     * computation's results.
      */
-    def classHierarchy: analyses.ClassHierarchy
+    override def monitorenter(
+        pc: PC,
+        value: DomainValue): Computation[Nothing, ExceptionValue] = {
+        sideEffectOnlyOrNullPointerException(pc, value)
+    }
 
     /**
-     * @see `de.tud.cs.st.bat.resolved.analyses.ClassHierarchy.isSubtypeOf(ReferenceType,
-     * 		ReferenceType)`
+     * Handles a `monitorenter` instruction.
+     *
+     * @note The default implementation checks if the given value is `null` and raises
+     * an exception if it is `null` or maybe `null`. In the later case or in case that
+     * the value is known not to be `null` the given value is (also) returned as this
+     * computation's results.
      */
-    override def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer =
-        classHierarchy.isSubtypeOf(subtype, supertype)
-
+    override def monitorexit(
+        pc: PC,
+        value: DomainValue): Computation[Nothing, ExceptionValue] = {
+        sideEffectOnlyOrNullPointerException(pc, value)
+    }
 }
+
+
+
+
 

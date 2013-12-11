@@ -44,13 +44,14 @@ import scala.util.control.ControlThrowable
  * A highly-configurable abstract interpreter for BAT's resolved representation of Java
  * bytecode.
  *
- * This interpreter basically iterates over all instructions of a method and computes the
- * result of each instruction using an exchangeable [[de.tud.cs.st.bat.resolved.ai.Domain]].
+ * This interpreter basically traverses all instructions of a method in depth-first order
+ * and computes the result of each instruction using an exchangeable
+ * [[de.tud.cs.st.bat.resolved.ai.Domain]].
  *
  * ==Interacting with BATAI==
  * The primary means how to make use of the abstract interpreter is to perform
  * an abstract interpretation of a method using a customized `Domain`. This
- * customized domain can then be used to build, e.g., a call graph or to
+ * customized domain can be used, e.g., to build a call graph or to
  * do other intra-/interprocedural analyses. Additionally, it is possible to analyze the
  * result of an abstract interpretation.
  *
@@ -61,9 +62,15 @@ import scala.util.control.ControlThrowable
  * Hence, it is possible to use a single instance to analyze multiple methods in parallel.
  * However, if you want to be able to selectively abort the abstract interpretation
  * of some methods or want to selectively trace the interpretation of some methods, then
- * you should use multiple instances.
+ * you should use multiple abstract interpreter instances.
+ * Creating new instances Abstract Interpreter instances is extremely cheap as this class
+ * does not have any associated state.
  *
- * @define UseOfDomain
+ * ==Customizing the Abstract Interpreter==
+ * Customization of the abstract interpreter is done by creating new subclasses that
+ * override the relevant methods (in particular: `isInterrupted` and `tracer`).
+ *
+ * @note
  *     BATAI does not make assumptions about the number of domain objects that
  *     are used. However, if a single domain is used by multiple abstract interpreters,
  *     the domain has to be thread-safe. The latter is trivially the case when the domain
@@ -71,7 +78,7 @@ import scala.util.control.ControlThrowable
  *
  * @author Michael Eichberg
  */
-trait AI[D <: Domain[_]] {
+trait AI[D <: SomeDomain] {
 
     import AI._
 
@@ -85,12 +92,12 @@ trait AI[D <: Domain[_]] {
      * continue with the analysis.
      *
      * Called by BATAI during the abstract interpretation of a method to determine whether
-     * the computation should be aborted. This method is always called before the
-     * evaluation of the next instruction. I.e., after the evaluation of an instruction
+     * the computation should be aborted. This method is ''always called directly before
+     * the evaluation of the first/next instruction''. I.e., after the evaluation of an instruction
      * and the update of the memory as well as stating all constraints.
      *
      * @note When the abstract interpreter is currently waiting on the result of the
-     *    interpretation of a called method, it may take some time before the
+     *    interpretation of a called method it may take some time before the
      *    interpretation of the current method (this abstract interpreter) is actually
      *    aborted.
      *
@@ -106,7 +113,7 @@ trait AI[D <: Domain[_]] {
      * This method is called by BATAI at various different points (see
      * [[de.tud.cs.st.bat.resolved.ai.AITracer]]) to report the analysis progress.
      *
-     * To attach a tracer to the abstract interpreter '''override this
+     * '''To attach a tracer to the abstract interpreter override this
      * method in subclasses''' and return some tracer object.
      */
     def tracer: Option[AITracer] = None
@@ -118,7 +125,6 @@ trait AI[D <: Domain[_]] {
      *  @param method A non-native, non-abstract method of the given class file that
      *      will be analyzed. All parameters are initialized with sensible default values.
      *  @param domain The domain that will be used for the abstract interpretation.
-     *  @note $UseOfDomain
      */
     def apply(
         classFile: ClassFile,
@@ -126,7 +132,8 @@ trait AI[D <: Domain[_]] {
         domain: D) = perform(classFile, method, domain)(None)
 
     /**
-     * Returns the initial set of operands when a new method is analyzed.
+     * Returns the initial set of operands that will be used for for the abstract
+     * interpretation of the given method.
      *
      * In general, an empty set is returned as the JVM specification mandates
      * that the operand stack is empty at the very beginning of a method.
@@ -152,8 +159,13 @@ trait AI[D <: Domain[_]] {
      *
      * This method is called by the `perform` method with the same signature. It
      * may be overridden by subclasses to perform some additional processing. In
-     * that case, however, it is highly recommended to call this method to do the
+     * that case, however, it is highly recommended to call this method to finalize the
      * initial assignment.
+     *
+     * @param classFile The class file which defines the given method.
+     * @param method A non-native, non-abstract method. I.e., a method that has an
+     *      implementation in Java bytecode.
+     * @param domain The domain object that will be used for the abstract interpretation.
      */
     protected def initialLocals(
         classFile: ClassFile,
@@ -168,27 +180,30 @@ trait AI[D <: Domain[_]] {
                 l.size >= (method.parameterTypes.size + (if (method.isStatic) 0 else 1)),
                 "the number of initial values is less than the number of parameters")
 
-            if (l.size >= method.body.get.maxLocals)
+            val code = method.body.get
+            if (l.size >= code.maxLocals)
                 l.toArray
             else {
                 // the number of given locals is smaller than the number of max locals
                 // (the former number still has to be larger or equal to the number of 
-                // parameter values (including "this")
-                val locals = new Array[domain.DomainValue](method.body.get.maxLocals)
+                // parameter values (including "this"))
+                val locals = new Array[domain.DomainValue](code.maxLocals)
                 for (i ← (0 until l.size))
-                    locals.update(i, l(i))
+                    locals(i) = l(i)
                 locals
             }
         }.getOrElse { // there are no locals at all...
-            val locals = new Array[domain.DomainValue](method.body.get.maxLocals)
+            val code = method.body.get
+            val locals = new Array[domain.DomainValue](code.maxLocals)
             var localVariableIndex = 0
 
+            // Calculates the initial "PC" associated with a method's parameter.
             def origin(localVariableIndex: Int) = -localVariableIndex - 1
 
             if (!method.isStatic) {
-                val thisType = classFile.thisClass
+                val thisType = classFile.thisType
                 val thisValue =
-                    domain.nonNullReferenceValue(origin(localVariableIndex), thisType)
+                    domain.NonNullReferenceValue(origin(localVariableIndex), thisType)
                 locals.update(localVariableIndex, thisValue)
                 localVariableIndex += 1 /*==thisType.computationalType.operandSize*/
             }
@@ -196,7 +211,7 @@ trait AI[D <: Domain[_]] {
                 val ct = parameterType.computationalType
                 locals.update(
                     localVariableIndex,
-                    domain.newTypedValue(origin(localVariableIndex), parameterType))
+                    domain.TypedValue(origin(localVariableIndex), parameterType))
                 localVariableIndex += ct.operandSize
             }
             locals
@@ -216,10 +231,10 @@ trait AI[D <: Domain[_]] {
      *
      * @param classFile Some class file; needed to determine the type of `this` if
      *      the method is an instance method.
-     * @param method A non-abstract, non-native method of the given class file; i.e.,
+     * @param method A non-abstract, non-native method of the given class file. I.e.,
      *      a method with a body.
-     * @param domain The abstract domain that is used to perform "abstract" computations
-     *      w.r.t. the domain's values.
+     * @param domain The abstract domain that will be used for the abstract interpretation
+     *      of the given method.
      * @param someLocals The initial register assignment (the parameters passed to the
      * 		method). If the values passed to a method are already known, the
      *      abstract interpretation will be performed under that assumption. The specified
@@ -233,7 +248,6 @@ trait AI[D <: Domain[_]] {
      *      If the interpretation was aborted, the returned result
      *      object contains all necessary information to continue the interpretation
      *      if needed/desired.
-     * @note $UseOfDomain
      */
     def perform(
         classFile: ClassFile,
@@ -252,7 +266,7 @@ trait AI[D <: Domain[_]] {
     }
 
     /**
-     * Performs an abstract interpretation of the given code snippet using
+     * Performs an abstract interpretation of the given (byte)code using
      * the given domain and the initial operand stack and initial register assignment.
      */
     protected[ai] def perform(
@@ -281,14 +295,16 @@ trait AI[D <: Domain[_]] {
      *
      * @param code The bytecode that will be interpreted using the given domain.
      * @param domain The domain that will be used to perform the domain
-     * 		dependent computations.
+     *      dependent computations.
      * @param initialWorklist The list of program counters with which the interpretation
      *      will continue. If the method was never analyzed before, the list should just
      *      contain the value "0"; i.e., we start with the interpretation of the
      *      first instruction.
      * @param alreadyEvaluated The list of the program counters (PC) of the instructions
-     * 		that were already evaluated. Initially (i.e., if the given code is analyzed
-     *   	the first time) this list is empty.
+     *      that were already evaluated. Initially (i.e., if the given code is analyzed
+     *      the first time) this list is empty.
+     *      This list is primarily needed to correctly resolve jumps to sub routines
+     *      (`JSR(_W)` and `RET` instructions.)
      * @param operandsArray The array that contains the operand stacks. Each value
      *      in the array contains the operand stack before the instruction with the
      *      corresponding index is executed. This array can be empty except of the
@@ -302,7 +318,6 @@ trait AI[D <: Domain[_]] {
      *      '''The `localsArray` data structure is mutated by BATAI and it is therefore
      *      _highly recommended that no `Domain` directly mutates the state of
      *      this array__.'''
-     * @note $UseOfDomain
      */
     protected[ai] def continueInterpretation(
         code: Code,
@@ -320,7 +335,7 @@ trait AI[D <: Domain[_]] {
         val instructions: Array[Instruction] = code.instructions
 
         // The entire state of the computation is (from the perspective of the AI)
-        // encapsulated by the following three data-structures:
+        // encapsulated by the following data-structures:
         /* 1 */ // operandsArray
         /* 2 */ // localsArray
         /* 3 */ var worklist = initialWorkList
@@ -335,7 +350,7 @@ trait AI[D <: Domain[_]] {
         /**
          * Prepares the AI to continue the interpretation with the instruction
          * at the given target (`targetPC`). Basically, the operand stack
-         * and the local variables are updated with the given ones and the
+         * and the local variables are updated using the given ones and the
          * target program counter is added to the `workList`.
          */
         def gotoTarget(
@@ -356,13 +371,12 @@ trait AI[D <: Domain[_]] {
                     val mergeResult = domain.join(
                         targetPC, currentOperands, currentLocals, operands, locals
                     )
-                    if (tracer.isDefined)
-                        tracer.get.join[domain.type](
-                            domain,
-                            targetPC, currentOperands, currentLocals, operands, locals,
-                            mergeResult,
-                            forceContinuation
-                        )
+                    if (tracer.isDefined) tracer.get.join[domain.type](
+                        domain,
+                        targetPC, currentOperands, currentLocals, operands, locals,
+                        mergeResult,
+                        forceContinuation
+                    )
                     mergeResult match {
                         case NoUpdate ⇒
                             forceContinuation
@@ -482,7 +496,7 @@ trait AI[D <: Domain[_]] {
                         domain, pc, instruction, operands, locals
                     )
 
-                def pcOfNextInstruction = code.indexOfNextInstruction(pc)
+                def pcOfNextInstruction = code.pcOfNextInstruction(pc)
 
                 /**
                  * Handles all '''if''' instructions that perform a comparison with a fixed
@@ -530,7 +544,7 @@ trait AI[D <: Domain[_]] {
                     val value1 = remainingOperands.head
                     remainingOperands = remainingOperands.tail
                     val branchTarget = pc + branchInstruction.branchoffset
-                    val nextPC = code.indexOfNextInstruction(pc)
+                    val nextPC = code.pcOfNextInstruction(pc)
 
                     domainTest(value1, value2) match {
                         case Yes ⇒ gotoTarget(pc, branchTarget, remainingOperands, locals)
@@ -860,7 +874,7 @@ trait AI[D <: Domain[_]] {
                             // if the operand of the athrow exception is null, a new 
                             // NullPointerException is raised by the JVM
                             handleException(
-                                newInitializedObject(pc, NullPointerException)
+                                InitializedObject(pc, NullPointerException)
                             )
                         }
                         if (isExceptionValueNull.maybeNo) {
@@ -1312,74 +1326,74 @@ trait AI[D <: Domain[_]] {
                     //
 
                     case 1 /*aconst_null*/ ⇒
-                        fallThrough(domain.newNullValue(pc) :: operands)
+                        fallThrough(domain.NullValue(pc) :: operands)
 
                     case 16 /*bipush*/ ⇒
                         val value = instruction.asInstanceOf[BIPUSH].value.toByte
-                        fallThrough(domain.newByteValue(pc, value) :: operands)
+                        fallThrough(domain.ByteValue(pc, value) :: operands)
 
                     case 14 /*dconst_0*/ ⇒
-                        fallThrough(domain.newDoubleValue(pc, 0.0d) :: operands)
+                        fallThrough(domain.DoubleValue(pc, 0.0d) :: operands)
                     case 15 /*dconst_1*/ ⇒
-                        fallThrough(domain.newDoubleValue(pc, 1.0d) :: operands)
+                        fallThrough(domain.DoubleValue(pc, 1.0d) :: operands)
 
                     case 11 /*fconst_0*/ ⇒
-                        fallThrough(domain.newFloatValue(pc, 0.0f) :: operands)
+                        fallThrough(domain.FloatValue(pc, 0.0f) :: operands)
                     case 12 /*fconst_1*/ ⇒
-                        fallThrough(domain.newFloatValue(pc, 1.0f) :: operands)
+                        fallThrough(domain.FloatValue(pc, 1.0f) :: operands)
                     case 13 /*fconst_2*/ ⇒
-                        fallThrough(domain.newFloatValue(pc, 2.0f) :: operands)
+                        fallThrough(domain.FloatValue(pc, 2.0f) :: operands)
 
                     case 2 /*iconst_m1*/ ⇒
-                        fallThrough(domain.newIntegerValue(pc, -1) :: operands)
+                        fallThrough(domain.IntegerValue(pc, -1) :: operands)
                     case 3 /*iconst_0*/ ⇒
-                        fallThrough(domain.newIntegerValue(pc, 0) :: operands)
+                        fallThrough(domain.IntegerValue(pc, 0) :: operands)
                     case 4 /*iconst_1*/ ⇒
-                        fallThrough(domain.newIntegerValue(pc, 1) :: operands)
+                        fallThrough(domain.IntegerValue(pc, 1) :: operands)
                     case 5 /*iconst_2*/ ⇒
-                        fallThrough(domain.newIntegerValue(pc, 2) :: operands)
+                        fallThrough(domain.IntegerValue(pc, 2) :: operands)
                     case 6 /*iconst_3*/ ⇒
-                        fallThrough(domain.newIntegerValue(pc, 3) :: operands)
+                        fallThrough(domain.IntegerValue(pc, 3) :: operands)
                     case 7 /*iconst_4*/ ⇒
-                        fallThrough(domain.newIntegerValue(pc, 4) :: operands)
+                        fallThrough(domain.IntegerValue(pc, 4) :: operands)
                     case 8 /*iconst_5*/ ⇒
-                        fallThrough(domain.newIntegerValue(pc, 5) :: operands)
+                        fallThrough(domain.IntegerValue(pc, 5) :: operands)
 
                     case 9 /*lconst_0*/ ⇒
-                        fallThrough(domain.newLongValue(pc, 0l) :: operands)
+                        fallThrough(domain.LongValue(pc, 0l) :: operands)
                     case 10 /*lconst_1*/ ⇒
-                        fallThrough(domain.newLongValue(pc, 1l) :: operands)
+                        fallThrough(domain.LongValue(pc, 1l) :: operands)
 
                     case 18 /*ldc*/ ⇒ instruction match {
                         case LoadInt(v) ⇒
-                            fallThrough(domain.newIntegerValue(pc, v) :: operands)
+                            fallThrough(domain.IntegerValue(pc, v) :: operands)
                         case LoadFloat(v) ⇒
-                            fallThrough(domain.newFloatValue(pc, v) :: operands)
+                            fallThrough(domain.FloatValue(pc, v) :: operands)
                         case LoadString(v) ⇒
-                            fallThrough(domain.newStringValue(pc, v) :: operands)
+                            fallThrough(domain.StringValue(pc, v) :: operands)
                         case LoadClass(v) ⇒
-                            fallThrough(domain.newClassValue(pc, v) :: operands)
+                            fallThrough(domain.ClassValue(pc, v) :: operands)
                     }
                     case 19 /*ldc_w*/ ⇒ instruction match {
                         case LoadInt_W(v) ⇒
-                            fallThrough(domain.newIntegerValue(pc, v) :: operands)
+                            fallThrough(domain.IntegerValue(pc, v) :: operands)
                         case LoadFloat_W(v) ⇒
-                            fallThrough(domain.newFloatValue(pc, v) :: operands)
+                            fallThrough(domain.FloatValue(pc, v) :: operands)
                         case LoadString_W(v) ⇒
-                            fallThrough(domain.newStringValue(pc, v) :: operands)
+                            fallThrough(domain.StringValue(pc, v) :: operands)
                         case LoadClass_W(v) ⇒
-                            fallThrough(domain.newClassValue(pc, v) :: operands)
+                            fallThrough(domain.ClassValue(pc, v) :: operands)
                     }
                     case 20 /*ldc2_w*/ ⇒ instruction match {
                         case LoadLong(v) ⇒
-                            fallThrough(domain.newLongValue(pc, v) :: operands)
+                            fallThrough(domain.LongValue(pc, v) :: operands)
                         case LoadDouble(v) ⇒
-                            fallThrough(domain.newDoubleValue(pc, v) :: operands)
+                            fallThrough(domain.DoubleValue(pc, v) :: operands)
                     }
 
                     case 17 /*sipush*/ ⇒
                         val value = instruction.asInstanceOf[SIPUSH].value.toShort
-                        fallThrough(domain.newShortValue(pc, value) :: operands)
+                        fallThrough(domain.ShortValue(pc, value) :: operands)
 
                     //
                     // RELATIONAL OPERATORS
@@ -1653,9 +1667,9 @@ trait AI[D <: Domain[_]] {
                                     // if objectref is a subtype => UNCHANGED
                                     fallThrough()
                                 case No ⇒
-                                    handleException(newInitializedObject(pc, ClassCastException))
+                                    handleException(InitializedObject(pc, ClassCastException))
                                 case Unknown ⇒
-                                    handleException(newInitializedObject(pc, ClassCastException))
+                                    handleException(InitializedObject(pc, ClassCastException))
                                     val (newOperands, newLocals) =
                                         establishUpperBound(
                                             pc,
@@ -1676,12 +1690,12 @@ trait AI[D <: Domain[_]] {
 
                         val result =
                             if (isNull(objectref).yes)
-                                domain.newBooleanValue(pc, false)
+                                domain.BooleanValue(pc, false)
                             else
                                 domain.isSubtypeOf(objectref, referenceType) match {
-                                    case Yes     ⇒ domain.newBooleanValue(pc, true)
-                                    case No      ⇒ domain.newBooleanValue(pc, false)
-                                    case Unknown ⇒ domain.newBooleanValue(pc)
+                                    case Yes     ⇒ domain.BooleanValue(pc, true)
+                                    case No      ⇒ domain.BooleanValue(pc, false)
+                                    case Unknown ⇒ domain.BooleanValue(pc)
                                 }
                         fallThrough(result :: rest)
                     }
@@ -1694,7 +1708,7 @@ trait AI[D <: Domain[_]] {
 
                     case 187 /*new*/ ⇒ {
                         val newObject = instruction.asInstanceOf[NEW]
-                        fallThrough(domain.newObject(pc, newObject.objectType) :: operands)
+                        fallThrough(domain.NewObject(pc, newObject.objectType) :: operands)
                     }
 
                     case 0 /*nop*/    ⇒ fallThrough()
@@ -1714,7 +1728,6 @@ trait AI[D <: Domain[_]] {
                     interpreterException(
                         t, domain, worklist, evaluated)(
                             operandsArray, localsArray)
-
             }
         }
 

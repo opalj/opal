@@ -74,6 +74,11 @@ case class INVOKEDYNAMIC(
 
     def runtimeExceptions: List[ObjectType] = INVOKEDYNAMIC.runtimeExceptions
 
+    override def toString: String =
+        "INVOKEDYNAMIC\n"+
+            bootstrapMethod.toString+"\n"+
+            "Target("+name+" "+methodDescriptor.toUMLNotation+")"
+
 }
 
 object INVOKEDYNAMIC {

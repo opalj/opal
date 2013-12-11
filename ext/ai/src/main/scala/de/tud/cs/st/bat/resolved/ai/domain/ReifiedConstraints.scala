@@ -37,28 +37,48 @@ package ai
 package domain
 
 /**
- * Mixin this trait if you want to reify the stated constraints. This is particularly
- * useful for testing and debugging purposes.
+ * Mixin this trait if you want to reify the stated constraints. This trait
+ * need to mixed in after all traits that actually handle constraints.
+ *
+ * This is particularly useful for testing and debugging purposes.
  *
  * @author Michael Eichberg
  */
 trait ReifiedConstraints[+I] extends Domain[I] {
 
-    /*abstract*/ def addConstraint(constraint: ReifiedConstraint)
+    /**
+     * (Indirectly) called by BATAI for a new value-based constraint. 
+     */
+    /*abstract*/ def nextConstraint(constraint: ReifiedConstraint)
 
+    /**
+     * Representation of a reified constraint.
+     */
     trait ReifiedConstraint {
 
+        /**
+         * The pc associated with the constraint.
+         */
         def pc: Int
 
+        /**
+         * A textual description of the constraint.
+         */
         def constraint: String
 
     }
 
+    /**
+     * Representation of a constraint related to a single value.
+     */
     case class ReifiedSingleValueConstraint(
         pc: Int,
         value: DomainValue,
         constraint: String) extends ReifiedConstraint
 
+    /**
+     * Representation of a constraint related to two values.
+     */
     case class ReifiedTwoValuesConstraint(
         pc: Int,
         value1: DomainValue, value2: DomainValue,
@@ -70,7 +90,7 @@ trait ReifiedConstraints[+I] extends Domain[I] {
         operands: Operands,
         locals: Locals): (Operands, Locals) = {
 
-        addConstraint(ReifiedSingleValueConstraint(pc, value, "is null"))
+        nextConstraint(ReifiedSingleValueConstraint(pc, value, "is null"))
         super.establishIsNull(pc, value, operands, locals)
     }
 
@@ -80,7 +100,7 @@ trait ReifiedConstraints[+I] extends Domain[I] {
         operands: Operands,
         locals: Locals): (Operands, Locals) = {
 
-        addConstraint(ReifiedSingleValueConstraint(pc, value, "is not null"))
+        nextConstraint(ReifiedSingleValueConstraint(pc, value, "is not null"))
         super.establishIsNonNull(pc, value, operands, locals)
     }
 
@@ -91,7 +111,7 @@ trait ReifiedConstraints[+I] extends Domain[I] {
         operands: Operands,
         locals: Locals): (Operands, Locals) = {
 
-        addConstraint(ReifiedTwoValuesConstraint(pc, value1, value2, "equals"))
+        nextConstraint(ReifiedTwoValuesConstraint(pc, value1, value2, "equals"))
         super.establishAreEqualReferences(pc, value1, value2, operands, locals)
     }
 
@@ -102,7 +122,7 @@ trait ReifiedConstraints[+I] extends Domain[I] {
         operands: Operands,
         locals: Locals): (Operands, Locals) = {
 
-        addConstraint(ReifiedTwoValuesConstraint(pc, value1, value2, "is not equal to"))
+        nextConstraint(ReifiedTwoValuesConstraint(pc, value1, value2, "is not equal to"))
         super.establishAreNotEqualReferences(pc, value1, value2, operands, locals)
     }
 
@@ -113,7 +133,7 @@ trait ReifiedConstraints[+I] extends Domain[I] {
         operands: Operands,
         locals: Locals): (Operands, Locals) = {
 
-        addConstraint(ReifiedSingleValueConstraint(pc, value, "is subtype of "+bound.toJava))
+        nextConstraint(ReifiedSingleValueConstraint(pc, value, "is subtype of "+bound.toJava))
         super.establishUpperBound(pc, bound, value, operands, locals)
     }
 
@@ -127,7 +147,7 @@ trait ReifiedConstraints[+I] extends Domain[I] {
         operands: Operands,
         locals: Locals): (Operands, Locals) = {
 
-        addConstraint(ReifiedSingleValueConstraint(pc, value, "is "+theValue))
+        nextConstraint(ReifiedSingleValueConstraint(pc, value, "is "+theValue))
         super.establishValue(pc, theValue, value, operands, locals)
     }
 
@@ -138,7 +158,7 @@ trait ReifiedConstraints[+I] extends Domain[I] {
         operands: Operands,
         locals: Locals): (Operands, Locals) = {
 
-        addConstraint(ReifiedTwoValuesConstraint(pc, value1, value2, " == "))
+        nextConstraint(ReifiedTwoValuesConstraint(pc, value1, value2, " == "))
         super.establishAreEqual(pc, value1, value2, operands, locals)
     }
 
@@ -149,7 +169,7 @@ trait ReifiedConstraints[+I] extends Domain[I] {
         operands: Operands,
         locals: Locals): (Operands, Locals) = {
 
-        addConstraint(ReifiedTwoValuesConstraint(pc, value1, value2, " != "))
+        nextConstraint(ReifiedTwoValuesConstraint(pc, value1, value2, " != "))
         super.establishAreNotEqual(pc, value1, value2, operands, locals)
     }
 
@@ -160,7 +180,7 @@ trait ReifiedConstraints[+I] extends Domain[I] {
         operands: Operands,
         locals: Locals): (Operands, Locals) = {
 
-        addConstraint(ReifiedTwoValuesConstraint(pc, value1, value2, " < "))
+        nextConstraint(ReifiedTwoValuesConstraint(pc, value1, value2, " < "))
         super.establishIsLessThan(pc, value1, value2, operands, locals)
     }
 
@@ -171,7 +191,7 @@ trait ReifiedConstraints[+I] extends Domain[I] {
         operands: Operands,
         locals: Locals): (Operands, Locals) = {
 
-        addConstraint(ReifiedTwoValuesConstraint(pc, value1, value2, " <= "))
+        nextConstraint(ReifiedTwoValuesConstraint(pc, value1, value2, " <= "))
         super.establishIsLessThanOrEqualTo(pc, value1, value2, operands, locals)
     }
 }

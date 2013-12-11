@@ -63,10 +63,14 @@ class PropertyTracingTest
     import util.XHTML.dumpOnFailureDuringValidation
     import PropertyTracingTest._
 
-    class AnalysisDomain(identifier: String)
-            extends l1.PreciseConfigurableDomain[String](identifier)
-            with RecordReturnValues[String]
+    class AnalysisDomain(val method: Method)
+            extends l1.PreciseDomain[String]
+            with IgnoreSynchronization
             with SimpleBooleanPropertyTracing[String] {
+
+        override def identifier = method.toJava
+
+        override def code: Code = method.body.get
 
         override def propertyName = "isSanitized"
 
@@ -75,7 +79,7 @@ class PropertyTracingTest
             declaringClass: ObjectType,
             name: String,
             methodDescriptor: MethodDescriptor,
-            operands: List[DomainValue]): OptionalReturnValueOrExceptions = {
+            operands: List[DomainValue]): MethodCallResult = {
 
             // let's check if the first parameter (_ == -2) passed to a method is 
             // passed to a method called sanitize...
@@ -85,7 +89,7 @@ class PropertyTracingTest
             super.invokestatic(pc, declaringClass, name, methodDescriptor, operands)
         }
 
-        def isSanitized(): Boolean = hasPropertyOnExit(returnedValues)
+        def isSanitized(): Boolean = hasPropertyOnExit
     }
 
     private def evaluateMethod(name: String)(f: AnalysisDomain ⇒ Unit) {
@@ -94,16 +98,15 @@ class PropertyTracingTest
          * parameter to a method) is always sanitized (within the method.) I.e.,
          * that the value is passed to a function called sanitizer.
          */
-        val method = classFile.methods.find(_.name == name).get
-        val domain = new AnalysisDomain(name)
+        val method = classFile.findMethod(name).get
+        val domain = new AnalysisDomain(method)
         val result = BaseTracingAI(classFile, method, domain)
         dumpOnFailureDuringValidation(
             Some(classFile),
             Some(method),
             method.body.get,
-            result) {
-                f(domain)
-            }
+            result
+        ) { f(domain) }
     }
 
     behavior of "an abstract interpreter that enables the tracing of control-flow dependent properties"
@@ -173,5 +176,5 @@ private object PropertyTracingTest {
         TestSupport.locateTestResources("classfiles/ai.jar", "ext/ai"))
 
     val classFile = classFiles.map(_._1).
-        find(_.thisClass.className == "ai/domain/Sanitization").get
+        find(_.thisType.fqn == "ai/domain/Sanitization").get
 }

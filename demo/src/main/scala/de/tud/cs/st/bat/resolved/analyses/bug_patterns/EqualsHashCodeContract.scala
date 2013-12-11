@@ -82,11 +82,11 @@ class EqualsHashCodeContract[Source]
             if (definesEqualsMethod != definesHashCodeMethod) {
                 mutex.synchronized {
                     reports = ClassBasedReport(
-                        project.source(classFile.thisClass),
-                        classFile.thisClass.className,
+                        project.source(classFile.thisType),
+                        classFile.thisType.fqn,
                         Some("issue"),
                         "The class: "+
-                            classFile.thisClass.className+
+                            classFile.thisType.fqn+
                             " does not satisfy java.lang.Object's equals-hashCode contract.") :: reports
                 }
             }

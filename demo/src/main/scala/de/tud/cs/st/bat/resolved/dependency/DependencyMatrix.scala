@@ -100,7 +100,7 @@ object DependencyMatrix {
                 jarFile ← jarFiles
                 (classFile, _) ← ClassFiles(jarFile)
             } {
-                require(classFile.thisClass ne null)
+                require(classFile.thisType ne null)
                 count += 1
                 dependencyExtractor.process(classFile)
             }

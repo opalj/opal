@@ -46,7 +46,15 @@ package resolved
  * a [[de.tud.cs.st.bat.resolved.RuntimeVisibleParameterAnnotationTable]] attribute.
  *
  * @author Michael Eichberg
+ * @author Arne Lottmann
  */
 case class Annotation(
     annotationType: FieldType,
-    elementValuePairs: ElementValuePairs) 
+    elementValuePairs: ElementValuePairs) {
+
+    def toJava: String = {
+        val name = annotationType.toJava
+        val parameters = elementValuePairs.map(_.toJava).mkString("(\n\t", ",\n\t", "\n)")
+        "@"+name + parameters
+    }
+}

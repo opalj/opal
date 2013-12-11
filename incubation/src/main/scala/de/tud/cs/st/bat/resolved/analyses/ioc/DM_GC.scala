@@ -46,7 +46,7 @@ object DM_GC extends (Project[_] ⇒ Iterable[(ClassFile, Method, Instruction)])
         var garbageCollectingMethods: List[(ClassFile, Method, Instruction)] = Nil
 
         for ( // we don't care about gc calls in java.lang and also about gc calls that happen inside of methods related to garbage collection (heuristic)
-            classFile ← project.classFiles if !classFile.thisClass.className.startsWith("java/lang");
+            classFile ← project.classFiles if !classFile.thisType.fqn.startsWith("java/lang");
             method ← classFile.methods if method.body.isDefined && !"(^gc)|(gc$)".r.findFirstIn(method.name).isDefined;
             instruction ← method.body.get.instructions
         ) {

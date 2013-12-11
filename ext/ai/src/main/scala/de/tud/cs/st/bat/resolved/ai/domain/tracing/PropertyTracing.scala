@@ -41,8 +41,12 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 /**
  * Enables the tracing of some user-defined property while a method is analyzed.
+ * A possible property could be, e.g., whether a certain check is performed on
+ * all intra-procedural control flows.
  *
- * After the analysis, the property is associated with all executed instructions.
+ * After the abstract interpretation of a method, the property is associated with
+ * all ''executed instructions'' and can be queried. For example to get the information
+ * whether the check was performed on all paths to all exit points.
  *
  * @author Michael Eichberg
  */
@@ -56,11 +60,14 @@ trait PropertyTracing[+I] extends Domain[I] { domain ⇒
 
     def initialPropertyValue(): DomainProperty
 
+    /**
+     * The type of the property. E.g., `Boolean` or some other type.
+     */
     implicit val DomainPropertyTag: reflect.ClassTag[DomainProperty]
 
     /**
      * The array which stores the value the property has when the respective.
-     * Instruction is executed. As in case of BATAI
+     * instruction is executed.
      */
     protected var propertiesArray: Array[DomainProperty] = _
 
@@ -75,9 +82,20 @@ trait PropertyTracing[+I] extends Domain[I] { domain ⇒
 
     def getProperty(pc: Int): DomainProperty = propertiesArray(pc)
 
+    /**
+     * Returns a string representation of the property associated with the given
+     * instruction. This string representation is used by BATAI's tools to enable
+     * a meaningful representation of the property.
+     *
+     * (Run `de...ai.util.InterpretMethod` with a domain that traces properties.)
+     */
     override def properties(pc: Int): Option[String] =
         Option(propertiesArray(pc)).map(_.toString())
 
+    /**
+     * Called by BATAI to inform the domain that a flow between the instruction
+     * with the `currentPC` and `successorPC` will happen. 
+     */
     override def flow(currentPC: Int, successorPC: Int): Boolean = {
         if (propertiesArray(successorPC) eq null) {
             propertiesArray(successorPC) = propertiesArray(currentPC)

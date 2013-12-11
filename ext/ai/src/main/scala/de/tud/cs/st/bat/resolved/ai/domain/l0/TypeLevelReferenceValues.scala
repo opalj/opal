@@ -91,7 +91,7 @@ trait TypeLevelReferenceValues[+I] extends Domain[I] {
     //
 
     def areEqualReferences(value1: DomainValue, value2: DomainValue): Answer =
-        // we could check if it is conceivable that both value are not equal based 
+        // we could check if it is conceivable that both values are not equal based 
         // on the available type information...
         Unknown
 
@@ -132,43 +132,28 @@ trait TypeLevelReferenceValues[+I] extends Domain[I] {
 
     // -----------------------------------------------------------------------------------
     //
-    // HANDLING OF ARRAY RELATED COMPUTATIONS
+    // CREATING ARRAY REPRESENTATIONS
     //
     // -----------------------------------------------------------------------------------
-
-    def newArray(pc: PC, referenceType: ArrayType): DomainValue
 
     //
     // CREATE ARRAY
     //
-    def newarray(
+    override def newarray(
         pc: PC,
         count: DomainValue,
         componentType: FieldType): Computation[DomainValue, DomainValue] =
         //ComputedValueAndException(TypedValue(ArrayType(componentType)), TypedValue(ObjectType.NegativeArraySizeException))
-        ComputedValue(newArray(pc, ArrayType(componentType)))
+        ComputedValue(InitializedObject(pc, ArrayType(componentType)))
 
     /**
      * @note The componentType may be (again) an array type.
      */
-    def multianewarray(
+    override def multianewarray(
         pc: PC,
         counts: List[DomainValue],
         arrayType: ArrayType): Computation[DomainValue, DomainValue] =
         //ComputedValueAndException(TypedValue(arrayType), TypedValue(ObjectType.NegativeArraySizeException))
-        ComputedValue(newArray(pc, arrayType))
-
-    //
-    // LOAD FROM AND STORE VALUE IN ARRAYS
-    //
-    def aaload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
-        typeOfValue(arrayref) match {
-            case IsReferenceValueWithSingleBound(ArrayType(componentType)) ⇒
-                ComputedValue(newTypedValue(pc, componentType))
-            case _ ⇒
-                domainException(this, "component type unknown: "+arrayref)
-        }
-
-    def aastore(pc: PC, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
-        ComputationWithSideEffectOnly
+        ComputedValue(InitializedObject(pc, arrayType))
+ 
 }

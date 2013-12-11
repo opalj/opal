@@ -44,9 +44,11 @@ package domain
  */
 trait RecordConstraints[I] extends ReifiedConstraints[I] {
 
-    @volatile var constraints: Set[ReifiedConstraint] = Set.empty
+    @volatile private[this] var constraints: Set[ReifiedConstraint] = Set.empty
     
-    def addConstraint(constraint: ReifiedConstraint) {
+    def allConstraints : Set[ReifiedConstraint]  = constraints
+    
+    override def nextConstraint(constraint: ReifiedConstraint) : Unit = {
         constraints += constraint
     }
 }

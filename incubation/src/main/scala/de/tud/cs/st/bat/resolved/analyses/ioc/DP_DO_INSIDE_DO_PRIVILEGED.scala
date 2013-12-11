@@ -54,7 +54,7 @@ object DP_DO_INSIDE_DO_PRIVILEGED extends (Project[_] ⇒ Iterable[(ClassFile, M
         import BaseAnalyses._
 
         for (
-            classFile ← project.classFiles if !classFile.interfaces.exists {
+            classFile ← project.classFiles if !classFile.interfaceTypes.exists {
                 case `priviledgedAction`          ⇒ true
                 case `priviledgedExceptionAction` ⇒ true
                 case _                            ⇒ false

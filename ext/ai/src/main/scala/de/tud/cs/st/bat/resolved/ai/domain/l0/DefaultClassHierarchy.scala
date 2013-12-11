@@ -33,44 +33,41 @@
 package de.tud.cs.st
 package bat
 package resolved
+package ai
+package domain
+package l0
 
-
-import instructions._
-import analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
-
-import java.net.URL
+import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 /**
-  * Counts the number of static and virtual method calls.
-  *
-  * @author Michael Eichberg
-  */
-object DynamicAndStaticMethodCalls extends AnalysisExecutor {
+ * Implementation of a Domain's `isSubtypeOf(...)` method that delegates to
+ * the corresponding method defined by the class `...resolved.analyses.ClassHierarchy`.
+ *  
+ * This class uses BAT's `preInitializedClassHierarchy` (see `ClassHierarchy` for details)
+ * for answering queries.
+ *
+ * @author Michael Eichberg
+ */
+trait DefaultClassHierarchy extends ClassHierarchy { this: SomeDomain ⇒
 
-    val analysis = new Analysis[URL, BasicReport] {
+    import analyses.ClassHierarchy
 
-        def description: String = "Counts the number of static and virtual method calls."
+    /**
+     * Returns the predefined class hierarchy unless explicitly overridden. BAT's
+     * built-in default class hierarchy only reflects the type-hierarchy between the
+     * most basic types – in particular between the exceptions potentially thrown
+     * by JVM instructions.
+     *
+     * @note '''This method is intended to be overridden.'''
+     */
+    override def classHierarchy: ClassHierarchy = DefaultClassHierarchy.classHierarchy
 
-        def analyze(project: Project[URL], parameters: Seq[String] = List.empty) = {
-            var staticCalls = 0
-            var dynamicCalls = 0
-            for {
-                classFile ← project.classFiles
-                method ← classFile.methods if method.body.isDefined
-                instruction ← method.body.get.instructions
-                if instruction != null
-                if instruction.isInstanceOf[MethodInvocationInstruction]
-            } {
-                if (instruction.isInstanceOf[DynamicMethodInvocationInstruction])
-                    dynamicCalls += 1
-                else
-                    staticCalls += 1
-            }
-
-            BasicReport(
-                "Number of invokestatic/invokespecial instructions: "+staticCalls+"\n"+
-                    "Number of invokedynamic/invokeinterface/invokevirtual instructions: "+dynamicCalls
-            )
-        }
-    }
 }
+private object DefaultClassHierarchy {
+
+    import analyses.ClassHierarchy
+
+    val classHierarchy: ClassHierarchy = ClassHierarchy.preInitializedClassHierarchy
+
+}
+

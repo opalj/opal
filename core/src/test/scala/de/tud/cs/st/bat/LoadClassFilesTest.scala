@@ -60,7 +60,7 @@ import util.ControlAbstractions._
 class LoadClassFilesTest extends FlatSpec with ShouldMatchers{
 
     def simpleValidator(classFile: ClassFile) {
-        assert(!(classFile.thisClass.className eq null))
+        assert(!(classFile.thisType.fqn eq null))
     }
 
     behavior of "BAT"

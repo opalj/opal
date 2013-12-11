@@ -203,7 +203,7 @@ object SignatureParser {
                             case 'J' ⇒ Success(LongType, in.rest)
                             case 'S' ⇒ Success(ShortType, in.rest)
                             case 'Z' ⇒ Success(BooleanType, in.rest)
-                            case x   ⇒ Failure("unknown base type identifier", in.rest)
+                            case x   ⇒ Failure("unknown base type identifier: "+x, in.rest)
                         }
                     }
                 }

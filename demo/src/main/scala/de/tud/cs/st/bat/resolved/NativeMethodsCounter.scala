@@ -53,7 +53,7 @@ object NativeMethodsCounter extends AnalysisExecutor {
                 for (
                     classFile ← project.classFiles;
                     method ← classFile.methods if method.isNative
-                ) yield classFile.thisClass.toJava+" <- "+method.toJava
+                ) yield classFile.thisType.toJava+" <- "+method.toJava
 
             BasicReport(
                 "Native methods found ("+nativeMethods.size+")\n"+

@@ -46,10 +46,10 @@ object CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE extends (Project[_] ⇒ Iterable[(C
         val cloneable = ObjectType("java/lang/Cloneable")
         for {
             classFile ← project.classFiles
-            if classFile.superClass.isDefined // classFile != java.lang.Object
+            if classFile.superclassType.isDefined // classFile != java.lang.Object
             if !classFile.isAnnotationDeclaration
             method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object)) ← classFile.methods
-            if !project.classHierarchy.isSubtypeOf(classFile.thisClass, cloneable).no
+            if !project.classHierarchy.isSubtypeOf(classFile.thisType, cloneable).no
         } yield (classFile, method)
     }
 

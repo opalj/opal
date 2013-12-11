@@ -39,7 +39,8 @@ package project
 import domain._
 import domain.l0
 import domain.l1
-import analyses._
+
+import analyses.Project
 
 import scala.collection.Set
 import scala.collection.Map
@@ -65,7 +66,7 @@ import scala.collection.Map
  */
 trait CHACallGraphDomain[Source, I]
         extends CallGraphDomain[Source, I]
-        with ClassHierarchyDomain {
+        with ClassHierarchy {
 
     //
     // Helper data structures  
@@ -112,7 +113,7 @@ trait CHACallGraphDomain[Source, I]
                     addCallEdge(pc, Iterable(callee))
                 case None ⇒
                     addUnresolvedMethodCall(
-                        theClassFile.thisClass, theMethod, pc,
+                        theClassFile.thisType, theMethod, pc,
                         declaringClass, name, descriptor
                     )
             }
@@ -132,7 +133,7 @@ trait CHACallGraphDomain[Source, I]
 
         if (callees.isEmpty)
             addUnresolvedMethodCall(
-                theClassFile.thisClass, theMethod, pc,
+                theClassFile.thisType, theMethod, pc,
                 declaringClassType, name, descriptor)
         else {
             addCallEdge(pc, callees)
@@ -144,7 +145,7 @@ trait CHACallGraphDomain[Source, I]
         declaringClass: ReferenceType,
         name: String,
         descriptor: MethodDescriptor,
-        operands: List[DomainValue]): OptionalReturnValueOrExceptions = {
+        operands: List[DomainValue]): MethodCallResult = {
         if (declaringClass.isArrayType) {
             staticMethodCall(pc, ObjectType.Object, name, descriptor)
         } else {
@@ -158,7 +159,7 @@ trait CHACallGraphDomain[Source, I]
         declaringClass: ObjectType,
         name: String,
         descriptor: MethodDescriptor,
-        operands: List[DomainValue]): OptionalReturnValueOrExceptions = {
+        operands: List[DomainValue]): MethodCallResult = {
         virtualMethodCall(pc, declaringClass, name, descriptor, operands)
         super.invokeinterface(pc, declaringClass, name, descriptor, operands)
     }
@@ -171,7 +172,7 @@ trait CHACallGraphDomain[Source, I]
         declaringClass: ObjectType,
         name: String,
         descriptor: MethodDescriptor,
-        operands: List[DomainValue]): OptionalReturnValueOrExceptions = {
+        operands: List[DomainValue]): MethodCallResult = {
         // for invokespecial the dynamic type is not "relevant" and the
         // first method that we find is the one that needs to be concrete 
         staticMethodCall(pc, declaringClass, name, descriptor)
@@ -186,7 +187,7 @@ trait CHACallGraphDomain[Source, I]
         declaringClass: ObjectType,
         name: String,
         descriptor: MethodDescriptor,
-        operands: List[DomainValue]): OptionalReturnValueOrExceptions = {
+        operands: List[DomainValue]): MethodCallResult = {
         staticMethodCall(pc, declaringClass, name, descriptor)
         super.invokestatic(pc, declaringClass, name, descriptor, operands)
     }
@@ -202,6 +203,8 @@ class DefaultCHACallGraphDomain[Source](
     val theMethod: Method)
         extends Domain[Int]
         with DefaultDomainValueBinding[Int]
+        with IgnoreMethodResults
+        with IgnoreSynchronization
         with l0.DefaultTypeLevelIntegerValues[Int]
         with l0.DefaultTypeLevelLongValues[Int]
         with l0.DefaultTypeLevelFloatValues[Int]
@@ -210,7 +213,6 @@ class DefaultCHACallGraphDomain[Source](
         with l0.TypeLevelArrayInstructions
         with l0.TypeLevelFieldAccessInstructions
         with l0.TypeLevelInvokeInstructions
-        with l0.DoNothingOnReturnFromMethod
         with l1.ProjectBasedClassHierarchy[Source]
         with CHACallGraphDomain[Source, Int] {
 

@@ -37,25 +37,34 @@ package ai
 package domain
 package l1
 
+trait PreciseDomain[+I]
+    extends Domain[I]
+    with Origin
+    with DefaultDomainValueBinding[I]
+    with DefaultPreciseIntegerValues[I]
+    with DefaultPreciseReferenceValues[I]
+    with StringValues[I]
+    with l0.DefaultTypeLevelLongValues[I]
+    with l0.DefaultTypeLevelFloatValues[I]
+    with l0.DefaultTypeLevelDoubleValues[I]
+    with l0.TypeLevelArrayInstructions
+    with TypeLevelFieldAccessInstructionsWithNullPointerHandling
+    with TypeLevelInvokeInstructionsWithNullPointerHandling
+    with l0.DefaultClassHierarchy
 
 class PreciseConfigurableDomain[+I](
     val identifier: I)
-        extends Domain[I]
-        with Origin
-        with DefaultDomainValueBinding[I]
-        with DefaultPreciseIntegerValues[I]
-        with DefaultPreciseReferenceValues[I]
-        with StringValues[I]
-        with l0.DefaultTypeLevelLongValues[I]
-        with l0.DefaultTypeLevelFloatValues[I]
-        with l0.DefaultTypeLevelDoubleValues[I]
-        with l0.TypeLevelArrayInstructions
-        with TypeLevelFieldAccessInstructionsWithNullPointerHandling
-        with TypeLevelInvokeInstructionsWithNullPointerHandling
-        with l0.DoNothingOnReturnFromMethod
-        with l0.BasicTypeHierarchy
+        extends PreciseDomain[I]
+        with IgnoreMethodResults
+        with IgnoreSynchronization
 
-class PreciseRecordingDomain[I](identifier: I)
-    extends PreciseConfigurableDomain[I](identifier)
-    with RecordReturnValues[I]
+class PreciseRecordingDomain[I](
+    val identifier: I)
+        extends PreciseDomain[I]
+        with IgnoreMethodResults
+        with RecordLastReturnedValues[I]
+        with RecordAllThrownExceptions[I]
+        with RecordReturnInstructions[I]
+        with IgnoreSynchronization
+        
 

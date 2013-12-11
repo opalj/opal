@@ -142,7 +142,7 @@ object MoreCheckers {
         }(mu ⇒ println("Memory required for the bytecode representation ("+classFilesCount+"): "+(mu / 1024.0 / 1024.0)+" MByte"))
         val classHierarchy = ClassHierarchy(classFiles)
 
-        val getClassFile: Map[ObjectType, ClassFile] = classFiles.map(cf ⇒ (cf.thisClass, cf)).toMap // SAME AS IN PROJECT
+        val getClassFile: Map[ObjectType, ClassFile] = classFiles.map(cf ⇒ (cf.thisType, cf)).toMap // SAME AS IN PROJECT
         println("Press return to continue."); System.in.read()
 
         //println("Number of class files: "+classFilesCount)
@@ -169,7 +169,7 @@ object MoreCheckers {
                         case Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object)) ⇒ true;
                         case _ ⇒ false;
                     })
-                } yield classFile.thisClass.className
+                } yield classFile.thisType.fqn
             }
             else
                 List.empty[String]
@@ -181,7 +181,7 @@ object MoreCheckers {
             for {
                 classFile ← classFiles
                 if !classFile.isInterfaceDeclaration && !classFile.isAnnotationDeclaration
-                superClass ← classFile.superClass.toList
+                superClass ← classFile.superclassType.toList
                 method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object)) ← classFile.methods
                 if !method.isAbstract
                 if !method.body.get.instructions.exists {
@@ -195,10 +195,10 @@ object MoreCheckers {
         // FINDBUGS: CN: Class defines clone() but doesn't implement Cloneable (CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE)
         var cloneButNotCloneable = time {
             for {
-                classFile ← classFiles if !classFile.isAnnotationDeclaration && classFile.superClass.isDefined
+                classFile ← classFiles if !classFile.isAnnotationDeclaration && classFile.superclassType.isDefined
                 method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object)) ← classFile.methods
-                if !classHierarchy.isSubtypeOf(classFile.thisClass, ObjectType("java/lang/Cloneable")).no
-            } yield (classFile.thisClass.className, method.name)
+                if !classHierarchy.isSubtypeOf(classFile.thisType, ObjectType("java/lang/Cloneable")).no
+            } yield (classFile.thisType.fqn, method.name)
         }(t ⇒ collect("CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE", t /*nsToSecs(t)*/ ))
         println(", " /*"\tViolations: "*/ /*+cloneButNotCloneable.mkString(", ")*/ +cloneButNotCloneable.size)
 
@@ -223,7 +223,7 @@ object MoreCheckers {
         var garbageCollectingMethods: List[(ClassFile, Method, Instruction)] = Nil
         time {
             for ( // we don't care about gc calls in java.lang and also about gc calls that happen inside of methods related to garbage collection (heuristic)
-                classFile ← classFiles if !classFile.thisClass.className.startsWith("java/lang");
+                classFile ← classFiles if !classFile.thisType.fqn.startsWith("java/lang");
                 method ← classFile.methods if method.body.isDefined && !"(^gc)|(gc$)".r.findFirstIn(method.name).isDefined;
                 instruction ← method.body.get.instructions
             ) {
@@ -269,7 +269,7 @@ object MoreCheckers {
         var abstractCovariantEquals = time {
             for (
                 classFile ← classFiles;
-                method @ Method(_, "equals", MethodDescriptor(Seq(classFile.thisClass), BooleanType)) ← classFile.methods if method.isAbstract
+                method @ Method(_, "equals", MethodDescriptor(Seq(classFile.thisType), BooleanType)) ← classFile.methods if method.isAbstract
             ) yield (classFile, method);
         }(t ⇒ collect("EQ_ABSTRACT_SELF", t /*nsToSecs(t)*/ ))
         println(", " /*"\tViolations: "*/ +abstractCovariantEquals.size)
@@ -317,7 +317,7 @@ object MoreCheckers {
         var unusedFields: List[(ClassFile, Traversable[String])] = Nil
         time {
             for (classFile ← classFiles if !classFile.isInterfaceDeclaration) {
-                val declaringClass = classFile.thisClass
+                val declaringClass = classFile.thisType
                 var privateFields = (for (field ← classFile.fields if field.isPrivate) yield field.name).toSet
                 for (
                     method ← classFile.methods if method.body.isDefined;
@@ -341,7 +341,7 @@ object MoreCheckers {
         //                allFields = for (
         //                    classFile ← classFiles.toList if !classFile.isInterfaceDeclaration;
         //                    field ← classFile.fields if !(field.isStatic && field.isFinal)
-        //                ) yield (classFile.thisClass, field.name);
+        //                ) yield (classFile.thisType, field.name);
         //                for (
         //                    classFile ← classFiles if !classFile.isInterfaceDeclaration;
         //                    method ← classFile.methods; // if method.body.isDefined;

@@ -80,11 +80,11 @@ class CovariantEqualsMethodDefined[Source]
             if (definesCovariantEqualsMethod && !definesEqualsMethod) {
                 mutex.synchronized {
                     reports = ClassBasedReport(
-                        project.source(classFile.thisClass),
-                        classFile.thisClass.className,
+                        project.source(classFile.thisType),
+                        classFile.thisType.fqn,
                         Some("issue"),
                         "The class: "+
-                            classFile.thisClass.className+
+                            classFile.thisType.fqn+
                             " defines a covariant equals method, but does not also define the standard equals method.") :: reports
                 }
             }

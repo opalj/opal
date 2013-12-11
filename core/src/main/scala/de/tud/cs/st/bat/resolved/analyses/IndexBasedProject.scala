@@ -71,16 +71,13 @@ import java.net.URL
  */
 class IndexBasedProject[Source: reflect.ClassTag] private (
     val classFilesCount: Int,
-    // The arrays are private to avoid that clients accidentally mutate them! 
-    // I.e., this classe's data structures are indeed mutable, but they are never
-    // mutated by this class and they are not exposed to clients either.
-
+    /* The arrays are private to avoid that clients accidentally mutate them! 
+       I.e., this class' data structures are indeed mutable, but they are never
+       mutated by this class and they are not exposed to clients either. */
     // Mapping between an ObjectType('s id) and the ClassFile object which defines the type
     private[this] val classesMap: Array[ClassFile],
-
     // Mapping between an ObjectType('s id) and its defining source file 
     private[this] val sourcesMap: Array[Source],
-
     val classHierarchy: ClassHierarchy)
         extends ProjectLike[Source] {
 
@@ -125,7 +122,7 @@ class IndexBasedProject[Source: reflect.ClassTag] private (
 
     def method(methodID: Int): Method = methodsMap(methodID)
 
-    def classFile(classFileID: Int): ClassFile = classesMap(classFileID)
+    def classFile(objectTypeID: Int): ClassFile = classesMap(objectTypeID)
 
     /**
      * Looks up the ClassFile that contains the given method.
@@ -139,28 +136,51 @@ class IndexBasedProject[Source: reflect.ClassTag] private (
             f(classFile)
         }
 
+    override def forallClassFiles[U](f: ClassFile ⇒ Boolean): Boolean = {
+        foreachNonNullValueOf(classesMap) { (id, classFile) ⇒
+            if (!f(classFile))
+                return false
+        }
+        true
+    }
+
     override def foreachMethod[U](f: Method ⇒ U): Unit =
         foreachNonNullValueOf(classesMap) { (id, classFile) ⇒
             classFile.methods.foreach(f)
         }
 
+    override def forallMethods[U](f: Method ⇒ Boolean): Boolean = {
+        foreachNonNullValueOf(classesMap) { (id, classFile) ⇒
+            if (!classFile.methods.forall(f))
+                return false
+        }
+        true
+    }
+
     override def toString: String = {
         val classesAndSources =
             (classesMap.view zip sourcesMap.view).view.filter(_._1 ne null)
         val classDescriptions =
-            classesAndSources.map(cs ⇒ cs._1.thisClass.toJava+" « "+cs._2.toString+" »")
+            classesAndSources.map(cs ⇒ cs._1.thisType.toJava+" « "+cs._2.toString+" »")
 
         "IndexBasedProject( "+classDescriptions.mkString("\n\t", "\n\t", "\n")+")"
     }
 }
 
 /**
- * Factory object to create [[de.tud.cs.st.bat.resolved.analyses.IndexBasedProject]]s.
+ * Defines factory methods to create
+ * [[de.tud.cs.st.bat.resolved.analyses.IndexBasedProject]]s.
  *
  * @author Michael Eichberg
  */
 object IndexBasedProject {
 
+    /**
+     * Creates a new IndexBasedProject.
+     *
+     * @param classFiles The list of class files of this project.
+     *    [Thread Safety] The underlying data structure has to support concurrent access.
+     */
     def apply[Source: reflect.ClassTag](
         classFiles: Iterable[(ClassFile, Source)]): IndexBasedProject[Source] = {
 
@@ -169,7 +189,7 @@ object IndexBasedProject {
         import ExecutionContext.Implicits.global
 
         val classHierarchyFuture: Future[ClassHierarchy] = future {
-            ClassHierarchy(classFiles.map(_._1))
+            ClassHierarchy(classFiles.view.map(_._1))
         }
 
         val classes = new Array[ClassFile](ObjectType.objectTypesCount)
@@ -178,7 +198,7 @@ object IndexBasedProject {
         var classFilesCount = 0
         for ((classFile, source) ← classFiles) {
             classFilesCount += 1
-            val id = classFile.thisClass.id
+            val id = classFile.thisType.id
             classes(id) = classFile
             sources(id) = source
         }

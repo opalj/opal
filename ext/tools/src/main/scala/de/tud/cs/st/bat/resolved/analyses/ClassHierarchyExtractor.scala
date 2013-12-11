@@ -76,7 +76,7 @@ object ClassHierarchyExtractor {
                 filterPrefix)
         val allRelevantSubtypes =
             classHierarchy.allSubtypes(supertype).filter { candidateType ⇒
-                candidateType.className.startsWith(filterPrefix)
+                candidateType.fqn.startsWith(filterPrefix)
             } + supertype
         var specLines = allRelevantSubtypes.map { aType ⇒
             var specLine =
@@ -85,14 +85,14 @@ object ClassHierarchyExtractor {
                         "interface "
                     else
                         "class "
-                ) + aType.className
+                ) + aType.fqn
             val superclassType = classHierarchy.superclassType(aType)
             if (superclassType.isDefined) {
-                specLine += " extends "+superclassType.get.className
+                specLine += " extends "+superclassType.get.fqn
                 val superinterfaceTypes = classHierarchy.superinterfaceTypes(aType)
                 if (superinterfaceTypes.isDefined) {
                     specLine +=
-                        " implements "+superinterfaceTypes.get.map(_.className).mkString(", ")
+                        " implements "+superinterfaceTypes.get.map(_.fqn).mkString(", ")
                 }
             }
             specLine

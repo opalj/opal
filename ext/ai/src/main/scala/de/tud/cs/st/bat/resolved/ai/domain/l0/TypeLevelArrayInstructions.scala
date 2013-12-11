@@ -55,8 +55,19 @@ package l0
 trait TypeLevelArrayInstructions { this: Domain[_] ⇒
 
     //
-    // STORING AND LOADING VALUES FROM ARRAYS
+    // STORING VALUES IN AND LOADING VALUES FROM ARRAYS
     //
+
+    override def aaload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
+        typeOfValue(arrayref) match {
+            case IsReferenceValueWithSingleBound(ArrayType(componentType)) ⇒
+                ComputedValue(TypedValue(pc, componentType))
+            case _ ⇒
+                domainException(this, "component type unknown: "+arrayref)
+        }
+
+    override def aastore(pc: PC, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
+        ComputationWithSideEffectOnly
 
     override def baload(
         pc: PC,
@@ -64,7 +75,7 @@ trait TypeLevelArrayInstructions { this: Domain[_] ⇒
         arrayref: DomainValue): ArrayLoadResult = {
         val refIsNull = isNull(arrayref)
         if (refIsNull.yes) {
-            ThrowsException(Seq(newInitializedObject(pc, ObjectType.NullPointerException)))
+            ThrowsException(Seq(InitializedObject(pc, ObjectType.NullPointerException)))
         } else {
             // in this branch we ingore the maybeYes case...
             // this is a byte or boolean load!
@@ -75,9 +86,7 @@ trait TypeLevelArrayInstructions { this: Domain[_] ⇒
                             // all further types have to be the same!
                             if (upperBound.isArrayType)
                                 return ComputedValue(
-                                    newTypedValue(
-                                        pc,
-                                        upperBound.asArrayType.componentType))
+                                    TypedValue(pc, upperBound.asArrayType.componentType))
                         }
                     }
                     domainException(this, "type information missing: "+arrayref)
@@ -90,32 +99,32 @@ trait TypeLevelArrayInstructions { this: Domain[_] ⇒
         ComputationWithSideEffectOnly
 
     override def caload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
-        ComputedValue(newCharValue(pc))
+        ComputedValue(CharValue(pc))
     override def castore(pc: PC, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
         ComputationWithSideEffectOnly
 
     override def daload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
-        ComputedValue(newDoubleValue(pc))
+        ComputedValue(DoubleValue(pc))
     override def dastore(pc: PC, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
         ComputationWithSideEffectOnly
 
     override def faload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
-        ComputedValue(newFloatValue(pc))
+        ComputedValue(FloatValue(pc))
     override def fastore(pc: PC, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
         ComputationWithSideEffectOnly
 
     override def iaload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
-        ComputedValue(newIntegerValue(pc))
+        ComputedValue(IntegerValue(pc))
     override def iastore(pc: PC, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
         ComputationWithSideEffectOnly
 
     override def laload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
-        ComputedValue(newLongValue(pc))
+        ComputedValue(LongValue(pc))
     override def lastore(pc: PC, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
         ComputationWithSideEffectOnly
 
     override def saload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
-        ComputedValue(newShortValue(pc))
+        ComputedValue(ShortValue(pc))
     override def sastore(pc: PC, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
         ComputationWithSideEffectOnly
 
@@ -123,7 +132,7 @@ trait TypeLevelArrayInstructions { this: Domain[_] ⇒
     // LENGTH OF AN ARRAY
     //
     override def arraylength(pc: PC, value: DomainValue): Computation[DomainValue, DomainValue] =
-        ComputedValue(newIntegerValue(pc))
+        ComputedValue(IntegerValue(pc))
 }
 
 

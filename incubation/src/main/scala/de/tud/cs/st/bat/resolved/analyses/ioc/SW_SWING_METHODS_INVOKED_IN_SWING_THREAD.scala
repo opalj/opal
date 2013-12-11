@@ -53,11 +53,11 @@ object SW_SWING_METHODS_INVOKED_IN_SWING_THREAD extends (Project[_] ⇒ Iterable
                 method.isPublic &&
                 method.isStatic &&
                 method.name == "main" ||
-                classFile.thisClass.className.toLowerCase.indexOf("benchmark") >= 0
+                classFile.thisType.fqn.toLowerCase.indexOf("benchmark") >= 0
             );
             (INVOKEVIRTUAL(targetType, name, desc), idx) ← withIndex(method.body.get.instructions) if (
                 targetType.isObjectType &&
-                targetType.asInstanceOf[ObjectType].className.startsWith("javax/swing/")) &&
+                targetType.asInstanceOf[ObjectType].fqn.startsWith("javax/swing/")) &&
                 (
                     name == "show" && desc == MethodDescriptor(IndexedSeq.empty[FieldType], VoidType) ||
                     name == "pack" && desc == MethodDescriptor(IndexedSeq.empty[FieldType], VoidType) ||

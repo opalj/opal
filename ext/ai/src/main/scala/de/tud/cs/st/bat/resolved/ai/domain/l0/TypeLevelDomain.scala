@@ -56,30 +56,24 @@ trait TypeLevelDomain[+I]
     with DefaultTypeLevelLongValues[I]
     with DefaultTypeLevelFloatValues[I]
     with DefaultTypeLevelDoubleValues[I]
-
-/**
- * A complete definition of a domain except of the domain's identifier.
- *
- * @author Michael Eichberg
- */
-trait AbstractBaseDomain[+I]
-    extends TypeLevelDomain[I]
     with TypeLevelArrayInstructions
     with TypeLevelFieldAccessInstructions
     with TypeLevelInvokeInstructions
-    with DoNothingOnReturnFromMethod
-    with BasicTypeHierarchy
+    with DefaultClassHierarchy
 
 /**
- * This is a ready to use domain which sets the domain identifier to "TypeLevelDomain".
+ * This is a ready to use domain which sets the domain identifier to "BaseTypeLevelDomain".
  *
  * This domain is primarily useful for testing and debugging purposes.
  *
  * @author Michael Eichberg
  */
-class BaseDomain extends AbstractBaseDomain[String] {
+class BaseDomain
+        extends TypeLevelDomain[String]
+        with IgnoreMethodResults
+        with IgnoreSynchronization {
 
-    def identifier = "TypeLevelDomain"
+    def identifier = "BaseTypeLevelDomain"
 
 }
 
@@ -90,9 +84,15 @@ class BaseDomain extends AbstractBaseDomain[String] {
  */
 class BaseConfigurableDomain[+I](
     val identifier: I)
-        extends Domain[I]
-        with AbstractBaseDomain[I]
+        extends TypeLevelDomain[I]
+        with IgnoreMethodResults
+        with IgnoreSynchronization
 
-class BaseRecordingDomain[I](identifier: I)
-    extends BaseConfigurableDomain[I](identifier)
-    with RecordReturnValues[I] 
+class BaseRecordingDomain[I](
+    val identifier: I)
+        extends TypeLevelDomain[I]
+        with IgnoreMethodResults
+        with IgnoreSynchronization
+        with RecordLastReturnedValues[I]
+        with RecordAllThrownExceptions[I]
+        with RecordReturnInstructions[I]

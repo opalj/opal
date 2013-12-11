@@ -102,7 +102,7 @@ case class PackageNameBasedMatcher(
         srcElemIds: SourceElementIDsMap): SortedSet[SourceElementID] = {
         var sourceElementIDs: SortedSet[SourceElementID] = SortedSet.empty
         project.classFiles.filter { classFile ⇒
-            val thisClassPackageName = classFile.thisClass.packageName
+            val thisClassPackageName = classFile.thisType.packageName
             thisClassPackageName.startsWith(packageName) && (
                 matchSubpackages ||
                 thisClassPackageName.length() == packageName.length()
@@ -138,7 +138,7 @@ case class ClassMatcher(
         var sourceElementIDs: SortedSet[SourceElementID] = SortedSet.empty
         project.classFiles.filter((classFile) ⇒
             {
-                val otherClassName = classFile.thisClass.className
+                val otherClassName = classFile.thisType.fqn
                 otherClassName.startsWith(className) && (
                     matchPrefix ||
                     otherClassName.length == className.length)
@@ -163,7 +163,7 @@ case class RegexClassMatcher(
         var sourceElementIDs: SortedSet[SourceElementID] = SortedSet()
 
         project.classFiles.filter { classFile ⇒
-            val className = classFile.thisClass.className.replace('/', '.')
+            val className = classFile.thisType.fqn.replace('/', '.')
             matcher.findFirstIn(className).isDefined
         }.foreach((classFile) ⇒ {
             sourceElementIDs += srcElemIds.sourceElementID(classFile)

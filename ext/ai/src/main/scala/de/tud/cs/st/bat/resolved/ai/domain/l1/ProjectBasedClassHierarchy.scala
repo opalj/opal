@@ -37,20 +37,24 @@ package ai
 package domain
 package l1
 
-import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
-
-import analyses.ClassHierarchy
-
 /**
- * Delegates type hierarchy related questions to a project's class hierarchy.
+ * Delegates type hierarchy related queries to the project's class hierarchy.
  *
  * @author Michael Eichberg
  */
-trait ProjectBasedClassHierarchy[Source] extends ClassHierarchyDomain { this: Domain[_] ⇒
+trait ProjectBasedClassHierarchy[Source] extends ClassHierarchy { this: SomeDomain ⇒
 
-    def project: analyses.Project[Source]
+    import analyses.{ ClassHierarchy, Project }
 
-    override def classHierarchy: ClassHierarchy = project.classHierarchy
+    /**
+     * Returns project that is currently analyzed.
+     */
+    def project: Project[Source]
+
+    /**
+     * Returns the project's class hierarchy.
+     */
+    override final def classHierarchy: ClassHierarchy = project.classHierarchy
 
 }
 

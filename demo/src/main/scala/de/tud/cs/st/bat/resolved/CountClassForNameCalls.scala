@@ -66,7 +66,7 @@ object CountClassForNameCalls extends AnalysisExecutor {
                 INVOKESTATIC(Class, "forName", `descriptor`) ← instructions
             } yield {
                 classForNameCount += 1
-                classFile.thisClass.className+" { "+method.toJava+" }"
+                classFile.thisType.fqn+" { "+method.toJava+" }"
             }
 
             BasicReport("Class.forName(String) was called: "+classForNameCount+" times.\n\t"+

@@ -36,56 +36,23 @@ package resolved
 package ai
 package domain
 
-import language.implicitConversions
-
 /**
- * A domain that records the values returned by the method/the exceptions thrown
- * by a method.
+ * A `Domain` that does nothing if a method returns ab-/normally.
  *
- * ==Thread Safety==
- * This class is not thread safe. I.e., this domain can only be used if
- * an instance of this domain is not used by multiple threads.
+ * @note This trait's method is not intended to be overridden. If you need to do some
+ * 		special processing just directly implement
+ *   	the respective method and mixin the traits that ignore the rest.
  *
  * @author Michael Eichberg
  */
-trait RecordReturnValues[+I] extends Domain[I] {
-
-    var returnedValues: Set[(String, Int, Value)] = Set.empty
-
-    protected implicit def returnedValueToReturnInstructions(
-        returnedValues: Set[(String, Int, Value)]): Set[PC] = {
-        returnedValues.map(_._2)
-    }
-
-    override def areturn(pc: Int, value: DomainValue) {
-        returnedValues += (("areturn", pc, value))
-    }
-
-    override def dreturn(pc: Int, value: DomainValue) {
-        returnedValues += (("dreturn", pc, value))
-    }
-
-    override def freturn(pc: Int, value: DomainValue) {
-        returnedValues += (("freturn", pc, value))
-    }
-
-    override def ireturn(pc: Int, value: DomainValue) {
-        returnedValues += (("ireturn", pc, value))
-    }
-
-    override def lreturn(pc: Int, value: DomainValue) {
-        returnedValues += (("lreturn", pc, value))
-    }
-
-    override def returnVoid(pc: Int) {
-        returnedValues += (("return", pc, null))
-    }
-
-    override def abruptMethodExecution(pc: Int, exception: DomainValue) {
-        returnedValues += (("throws", pc, exception))
-    }
+trait IgnoreMethodResults
+        extends IgnoreVoidReturns
+        with IgnoreThrownExceptions
+        with IgnoreReturnedValues { this: SomeDomain ⇒
 
 }
+
+
 
 
 

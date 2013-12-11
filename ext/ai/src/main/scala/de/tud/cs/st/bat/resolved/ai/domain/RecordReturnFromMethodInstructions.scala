@@ -35,33 +35,59 @@ package bat
 package resolved
 package ai
 package domain
-package l0
+
+import language.implicitConversions
+
+import collection.mutable.UShortSet
 
 /**
- * Provides default implementations for a `Domain`'s return methods that do nothing.
+ * Records the program counters of all instructions that lead to a abnormal/normal
+ * return from the method.
+ *
+ * ==Usage==
+ * A domain that mixes in this trait should only be used to analyze a single method.
+ *
+ * ==Thread Safety==
+ * This class is not thread safe. I.e., this domain can only be used if
+ * an instance of this domain is not used by multiple threads.
  *
  * @author Michael Eichberg
  */
-trait DoNothingOnReturnFromMethod { this: Domain[_] ⇒
+trait RecordReturnFromMethodInstructions[+I] extends Domain[I] {
 
-    override def areturn(pc: PC, value: DomainValue): Unit = { /* Do nothing. */ }
+    @volatile private[this] var returnInstructions: UShortSet = UShortSet.empty
 
-    override def dreturn(pc: PC, value: DomainValue): Unit = { /* Do nothing. */ }
+    def allReturnInstructions: PCs = returnInstructions
 
-    override def freturn(pc: PC, value: DomainValue): Unit = { /* Do nothing. */ }
+    override def areturn(pc: PC, value: DomainValue) {
+        returnInstructions += pc
+    }
 
-    override def ireturn(pc: PC, value: DomainValue): Unit = { /* Do nothing. */ }
+    override def dreturn(pc: PC, value: DomainValue) {
+        returnInstructions += pc
+    }
 
-    override def lreturn(pc: PC, value: DomainValue): Unit = { /* Do nothing. */ }
+    override def freturn(pc: PC, value: DomainValue) {
+        returnInstructions += pc
+    }
 
-    override def returnVoid(pc: PC): Unit = { /* Do nothing. */ }
+    override def ireturn(pc: PC, value: DomainValue) {
+        returnInstructions += pc
+    }
 
-    override def abruptMethodExecution(pc: PC, exception: DomainValue): Unit = {
-        /* Do nothing. */
+    override def lreturn(pc: PC, value: DomainValue) {
+        returnInstructions += pc
+    }
+
+    override def returnVoid(pc: PC) {
+        returnInstructions += pc
+    }
+
+    // handles all kinds of abrupt method returns 
+    override def abruptMethodExecution(pc: PC, exception: DomainValue) {
+        returnInstructions += pc
     }
 }
-
-
 
 
 

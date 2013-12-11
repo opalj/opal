@@ -63,7 +63,7 @@ class LoadClassFilesInParallelTest
         with ParallelTestExecution {
 
     def simpleValidator(classFile: ClassFile) {
-        classFile.thisClass.className should not be null
+        classFile.thisType.fqn should not be null
     }
 
     behavior of "BAT"

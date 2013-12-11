@@ -48,11 +48,11 @@ object SIC_INNER_SHOULD_BE_STATIC_ANON extends (Project[_] ⇒ Iterable[ClassFil
      * A heuristic for determining whether an inner class is inside an anonymous inner class based on the class name
      */
     def isWithinAnonymousInnerClass(classFile: ClassFile): Boolean = {
-        withinAnonymousClass.findFirstIn(classFile.thisClass.className).isDefined
+        withinAnonymousClass.findFirstIn(classFile.thisType.fqn).isDefined
     }
 
     def lastIndexOfInnerClassEncoding(classFile: ClassFile): Int = {
-        val name = classFile.thisClass.className
+        val name = classFile.thisType.fqn
         math.max(name.lastIndexOf('$'), name.lastIndexOf('+'))
     }
 
@@ -69,7 +69,7 @@ object SIC_INNER_SHOULD_BE_STATIC_ANON extends (Project[_] ⇒ Iterable[ClassFil
     def isAnonymousInnerClass(classFile: ClassFile): Boolean = {
         val lastSpecialChar = lastIndexOfInnerClassEncoding(classFile)
         isInnerClass(classFile) &&
-            Character.isDigit(classFile.thisClass.className.charAt(lastSpecialChar + 1))
+            Character.isDigit(classFile.thisType.fqn.charAt(lastSpecialChar + 1))
     }
 
     /**
@@ -104,7 +104,7 @@ object SIC_INNER_SHOULD_BE_STATIC_ANON extends (Project[_] ⇒ Iterable[ClassFil
             classFile ← project.classFiles if (isAnonymousInnerClass(classFile) &&
                 canConvertToStaticInnerClass(classFile)
             );
-            declaringClass = classFile.thisClass;
+            declaringClass = classFile.thisType;
             field @ Field(_, name, fieldType) ← classFile.fields if (isOuterThisField(field) &&
                 !readFields.contains((declaringClass, name, fieldType)) &&
                 !constructorReadsOuterThisField(classFile)

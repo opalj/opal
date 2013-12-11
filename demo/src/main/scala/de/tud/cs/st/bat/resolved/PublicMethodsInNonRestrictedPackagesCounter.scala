@@ -82,12 +82,12 @@ object PublicMethodsInNonRestrictedPackagesCounter extends AnalysisExecutor {
                 for {
                     classFile ← project.classFiles
                     if classFile.isPublic
-                    if !restrictedPackages.exists(classFile.thisClass.className.startsWith(_))
+                    if !restrictedPackages.exists(classFile.thisType.fqn.startsWith(_))
                     method ← classFile.methods
                     if (method.isPublic || (method.isProtected && !classFile.isFinal))
                     if method.body.isDefined
                 } yield (
-                    classFile.thisClass,
+                    classFile.thisType,
                     method,
                     method.parameterTypes.filter(_.isReferenceType).size
                 )

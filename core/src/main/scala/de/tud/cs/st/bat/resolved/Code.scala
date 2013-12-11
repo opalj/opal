@@ -49,14 +49,22 @@ case class Code(
     attributes: Attributes)
         extends Attribute {
 
-    def exceptionHandlersFor(pc: Int): Iterable[ExceptionHandler] = {
+    def exceptionHandlersFor(pc: PC): Iterable[ExceptionHandler] = {
         exceptionHandlers.view.filter { handler ⇒
             handler.startPC <= pc && handler.endPC > pc
         }
     }
 
-    def indexOfNextInstruction(pc: Int) = {
-        instructions(pc).indexOfNextInstruction(pc, this)
+    //    def indexOfNextInstruction(pc: PC) = {
+    //        instructions(pc).indexOfNextInstruction(pc, this)
+    //    }
+    @inline final def pcOfNextInstruction(currentPC: PC): PC = {
+        val max_pc = instructions.size
+        var nextPC = currentPC + 1
+        while (nextPC < max_pc && (instructions(nextPC) eq null))
+            nextPC += 1
+
+        nextPC
     }
 
     /**
@@ -105,14 +113,14 @@ case class Code(
      *
      * @param pc A valid index in the code array.
      */
-    def isModifiedByWide(pc: Int): Boolean = pc > 0 && instructions(pc - 1) == WIDE
+    def isModifiedByWide(pc: PC): Boolean = pc > 0 && instructions(pc - 1) == WIDE
 
     /**
      * Collects all instructions for which the given function is defined.
      *
      * ==Usage scenario==
-     * Use this function if you want to search for and collect specific instructions, but
-     * where you do not immediately require the program counter/index of the instruction
+     * Use this function if you want to search for and collect specific instructions and
+     * when you do not immediately require the program counter/index of the instruction
      * in the instruction array to make the decision whether you want to collect the
      * instruction.
      *
@@ -134,10 +142,10 @@ case class Code(
      *      defined combined with the index (program counter) of the instruction in the
      *      code array.
      */
-    def collect[B](f: PartialFunction[Instruction, B]): Seq[(Int, B)] = {
+    def collect[B](f: PartialFunction[Instruction, B]): Seq[(PC, B)] = {
         val max_pc = instructions.size
         var pc = 0
-        var result: List[(Int, B)] = List.empty
+        var result: List[(PC, B)] = List.empty
         while (pc < max_pc) {
             val instruction = instructions(pc)
             if (instruction ne null) {
@@ -165,7 +173,7 @@ case class Code(
      *  }) // .flatten should equal (Seq(...))
      * }}}
      */
-    def collectWithIndex[B](f: PartialFunction[(Int, Instruction), B]): Seq[B] = {
+    def collectWithIndex[B](f: PartialFunction[(PC, Instruction), B]): Seq[B] = {
         val max_pc = instructions.size
         var pc = 0
         var result: List[B] = List.empty
@@ -185,7 +193,7 @@ case class Code(
      * Applies the given function to the first instruction for which the given function
      * is defined.
      */
-    def collectFirstWithIndex[B](f: PartialFunction[(Int, Instruction), B]): Option[B] = {
+    def collectFirstWithIndex[B](f: PartialFunction[(PC, Instruction), B]): Option[B] = {
         val max_pc = instructions.size
         var pc = 0
         while (pc < max_pc) {
@@ -202,7 +210,7 @@ case class Code(
      * Tests if an instruction matches the given filter. If so, the index of the first
      * matching instruction is returned.
      */
-    def find(f: Instruction ⇒ Boolean): Option[Int] = {
+    def find(f: Instruction ⇒ Boolean): Option[PC] = {
         val max_pc = instructions.size
         var pc = 0
         while (pc < max_pc) {
@@ -219,7 +227,7 @@ case class Code(
      * Returns a new sequence that pairs the program_counter of an instruction with the
      * instruction.
      */
-    def associateWithIndex(): Seq[(Int, Instruction)] = collect { case i ⇒ i }
+    def associateWithIndex(): Seq[(PC, Instruction)] = collect { case i ⇒ i }
 
     /**
      * Slides over the code array and tries to apply the given function to each sequence
@@ -249,7 +257,7 @@ case class Code(
      */
     def slidingCollect[B](
         windowSize: Int)(
-            f: PartialFunction[(Int, Seq[Instruction]), B]): Seq[B] = {
+            f: PartialFunction[(PC, Seq[Instruction]), B]): Seq[B] = {
         require(windowSize > 0)
 
         import scala.collection.immutable.Queue
@@ -258,14 +266,6 @@ case class Code(
         var instrs: Queue[Instruction] = Queue.empty
         var firstPC, lastPC = 0
         var elementsInQueue = 0
-
-        @scala.annotation.tailrec def pcOfNextInstruction(currentPC: Int): Int = {
-            val nextPC = currentPC + 1
-            if (nextPC >= max_pc || (instructions(nextPC) ne null))
-                nextPC
-            else
-                pcOfNextInstruction(nextPC)
-        }
 
         //
         // INITIALIZATION

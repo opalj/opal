@@ -55,12 +55,12 @@ object UG_SYNC_SET_UNSYNC_GET extends (Project[_] ⇒ Iterable[(ClassFile, Metho
                 !method.isSynchronized &&
                 method.parameterTypes.length == 0 &&
                 method.returnType != VoidType) {
-                unSyncedGetters += ((classFile.thisClass.className+"."+method.name.substring(3), method))
+                unSyncedGetters += ((classFile.thisType.fqn+"."+method.name.substring(3), method))
             } else if (method.name.startsWith("set") &&
                 method.isSynchronized &&
                 method.parameterTypes.length == 1 &&
                 method.returnType == VoidType) {
-                syncedSetters += ((classFile.thisClass.className+"."+method.name.substring(3), (classFile, method)))
+                syncedSetters += ((classFile.thisType.fqn+"."+method.name.substring(3), (classFile, method)))
             }
         }
         for (property ← syncedSetters.keySet.intersect(unSyncedGetters.keySet))

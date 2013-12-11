@@ -348,7 +348,7 @@ class ClassHierarchy private (
         var classFiles = Map[ObjectType, ClassFile]()
         foreachSuperclass(objectType, classes) { classFile ⇒
             if (classFileFilter(classFile))
-                classFiles = classFiles.updated(classFile.thisClass, classFile)
+                classFiles = classFiles.updated(classFile.thisType, classFile)
         }
         classFiles.values
     }
@@ -639,12 +639,12 @@ class ClassHierarchy private (
             classFile.fields find { field ⇒
                 (field.fieldType eq fieldType) && (field.name == fieldName)
             } orElse {
-                classFile.interfaces collectFirst { supertype ⇒
+                classFile.interfaceTypes collectFirst { supertype ⇒
                     resolveFieldReference(supertype, fieldName, fieldType, project) match {
                         case Some(resolvedFieldReference) ⇒ resolvedFieldReference
                     }
                 } orElse {
-                    classFile.superClass flatMap { supertype ⇒
+                    classFile.superclassType flatMap { supertype ⇒
                         resolveFieldReference(supertype, fieldName, fieldType, project)
                     }
                 }
@@ -745,7 +745,7 @@ class ClassHierarchy private (
         methodDescriptor: MethodDescriptor,
         project: SomeProject): Option[Method] = {
 
-        classFile.interfaces foreach { superinterface: ObjectType ⇒
+        classFile.interfaceTypes foreach { superinterface: ObjectType ⇒
             project(superinterface) map { superclass ⇒
                 val result =
                     lookupMethodInInterface(
@@ -1082,10 +1082,10 @@ object ClassHierarchy {
          */
         def processClassFile(classFile: ClassFile) =
             process(
-                classFile.thisClass,
+                classFile.thisType,
                 classFile.isInterfaceDeclaration,
-                classFile.superClass,
-                HashSet.empty ++ classFile.interfaces
+                classFile.superclassType,
+                HashSet.empty ++ classFile.interfaceTypes
             )
 
         /**

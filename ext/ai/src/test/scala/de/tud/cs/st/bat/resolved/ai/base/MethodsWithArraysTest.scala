@@ -80,8 +80,8 @@ class MethodsWithArraysTest
     it should "be able to analyze a method that processes a byte array" in {
         evaluateMethod("byteArrays", domain ⇒ {
             import domain._
-            domain.returnedValues should be(
-                Set(("ireturn", 15, newByteValue))
+            domain.allReturnedValues should be(
+                Map((15 -> AByteValue))
             )
         })
     }
@@ -89,8 +89,8 @@ class MethodsWithArraysTest
     it should "be able to analyze a method that processes a boolean array" in {
         evaluateMethod("booleanArrays", domain ⇒ {
             import domain._
-            domain.returnedValues should be(
-                Set(("ireturn", 14, newBooleanValue))
+            domain.allReturnedValues should be(
+                Map((14 -> ABooleanValue))
             )
         })
     }
@@ -100,6 +100,5 @@ private object MethodsWithArraysTest {
     val classFiles = Java7Framework.ClassFiles(
         TestSupport.locateTestResources("classfiles/ai.jar", "ext/ai"))
 
-    val classFile = classFiles.map(_._1).
-        find(_.thisClass.className == "ai/MethodsWithArrays").get
+    val classFile = classFiles.map(_._1).find(_.thisType.fqn == "ai/MethodsWithArrays").get
 }

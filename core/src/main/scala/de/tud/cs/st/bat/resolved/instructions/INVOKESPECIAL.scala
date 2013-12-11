@@ -55,6 +55,7 @@ case class INVOKESPECIAL(
 
     def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 3
 
+    // Required to avoid that Scala generates a default toString method!
     override def toString = super.toString
-    
+
 }

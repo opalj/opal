@@ -60,13 +60,13 @@ trait TypeLevelFieldAccessInstructions { this: Domain[_] ⇒
         objectref: DomainValue,
         declaringClass: ObjectType,
         name: String,
-        fieldType: FieldType) = ComputedValue(newTypedValue(pc, fieldType))
+        fieldType: FieldType) = ComputedValue(TypedValue(pc, fieldType))
 
     override def getstatic(
         pc: PC,
         declaringClass: ObjectType,
         name: String,
-        fieldType: FieldType) = ComputedValue(newTypedValue(pc, fieldType))
+        fieldType: FieldType) = ComputedValue(TypedValue(pc, fieldType))
 
     override def putfield(
         pc: PC,

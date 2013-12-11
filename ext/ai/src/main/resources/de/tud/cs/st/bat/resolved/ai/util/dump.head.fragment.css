@@ -20,6 +20,10 @@ caption{
 	margin: 0;
 	background-color: gray;
 	color : white;
+	text-align: left;
+}
+div.annotations{
+	font-size: 0.8em;	
 }
 th{
 	vertical-align: top;

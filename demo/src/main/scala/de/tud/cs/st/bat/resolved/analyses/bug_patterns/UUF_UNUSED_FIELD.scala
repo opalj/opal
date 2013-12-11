@@ -50,7 +50,7 @@ object UUF_UNUSED_FIELD extends (Project[_] ⇒ Iterable[(ClassFile, Field)]) {
             classFile ← project.classFiles
             if !classFile.isInterfaceDeclaration
         } {
-            val declaringClass = classFile.thisClass
+            val declaringClass = classFile.thisType
             var privateFields: Map[String, (ClassFile, Field)] = Map.empty
             for (field ← classFile.fields if field.isPrivate) {
                 privateFields += field.name -> (classFile, field)
