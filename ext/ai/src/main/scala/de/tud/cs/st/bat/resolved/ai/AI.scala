@@ -327,6 +327,11 @@ trait AI[D <: SomeDomain] {
             operandsArray: Array[List[domain.DomainValue]],
             localsArray: Array[Array[domain.DomainValue]]): AIResult[domain.type] = {
 
+        if (tracer.isDefined)
+            tracer.get.continuingInterpretation(
+                code, domain)(
+                    initialWorkList, alreadyEvaluated, operandsArray, localsArray)
+
         import domain._
         import ObjectType._
         type SingleValueDomainTest = (DomainValue) ⇒ Answer

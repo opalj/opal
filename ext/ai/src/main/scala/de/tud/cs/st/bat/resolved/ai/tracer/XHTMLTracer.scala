@@ -58,10 +58,10 @@ private[ai] object FlowEntity {
 }
 
 /**
-  * A tracer that generates an HTML document.
-  *
-  * @author Michael Eichberg
-  */
+ * A tracer that generates an HTML document.
+ *
+ * @author Michael Eichberg
+ */
 trait XHTMLTracer extends AITracer {
 
     private[this] var flow: List[List[FlowEntity]] = List(List.empty)
@@ -106,8 +106,8 @@ trait XHTMLTracer extends AITracer {
     }
 
     def dumpXHTML(title: String): scala.xml.Node = {
-        import scala.collection.immutable.{SortedMap,SortedSet}
-        
+        import scala.collection.immutable.{ SortedMap, SortedSet }
+
         val inOrderFlow = flow.map(_.reverse).reverse
         var pathsCount = 0
         var pcs = SortedSet.empty[PC]
@@ -245,6 +245,16 @@ trait XHTMLTracer extends AITracer {
         </html>
     }
 
+    def continuingInterpretation[D <: SomeDomain](
+        code: Code,
+        domain: D)(
+            initialWorkList: List[PC],
+            alreadyEvaluated: List[PC],
+            operandsArray: Array[List[domain.DomainValue]],
+            localsArray: Array[Array[domain.DomainValue]]) {
+        /*ignored*/
+    }
+
     private[this] var continuingWithBranch = true
 
     def flow(currentPC: PC, successorPC: PC) = {
@@ -298,8 +308,8 @@ trait XHTMLTracer extends AITracer {
         subroutineInstructions: List[PC]): Unit = { /*ignored*/ }
 
     /**
-      * Called when a ret instruction is encountered.
-      */
+     * Called when a ret instruction is encountered.
+     */
     def ret[D <: SomeDomain](
         domain: D,
         pc: PC,

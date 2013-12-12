@@ -41,10 +41,10 @@ import instructions._
  * Defines the interface between the abstract interpreter and a module for
  * tracing the interpreter's behavior. In general, a tracer is first registered with an
  * abstract interpreter. After that, when a method is analyzed, BATAI calls the
- * tracer's methods at the respective points in time. 
- * 
- * A tracer is registered with an abstract interpreter by creating a new subclass of 
- * `AI` and overriding the method `tracer`. 
+ * tracer's methods at the respective points in time.
+ *
+ * A tracer is registered with an abstract interpreter by creating a new subclass of
+ * `AI` and overriding the method `tracer`.
  *
  * @note In general, all mutable data structures (e.g. the current locals) passed
  *      to the tracer must not be mutated by it.
@@ -52,6 +52,18 @@ import instructions._
  * @author Michael Eichberg
  */
 trait AITracer {
+
+    /**
+     * Called by BATAI immediately before the (abstract) interpretation of the 
+     * specified code is performed. 
+     */
+    def continuingInterpretation[D <: SomeDomain](
+        code: Code,
+        domain: D)(
+            initialWorkList: List[PC],
+            alreadyEvaluated: List[PC],
+            operandsArray: Array[List[domain.DomainValue]],
+            localsArray: Array[Array[domain.DomainValue]]) 
 
     /**
      * Called by BATAI before an instruction is evaluated.
@@ -72,16 +84,16 @@ trait AITracer {
         locals: Array[D#DomainValue]): Unit
 
     /**
-     * Called by BATAI after an instruction (`currentPC`) was evaluated and before the 
-     * `targetPC` is evaluated. 
-     * 
-     * This method is only called if the instruction with the program counter 
+     * Called by BATAI after an instruction (`currentPC`) was evaluated and before the
+     * `targetPC` is evaluated.
+     *
+     * This method is only called if the instruction with the program counter
      * `targetPC` will be evaluated. I.e., when the abstract interpreter
      * determines that the evaluation of an instruction does not change the abstract
-     * state (associated with the successor instruction) and, therefore, will not 
+     * state (associated with the successor instruction) and, therefore, will not
      * schedule the successor instruction this method is not called.
-     * 
-     * In case of `if` or `switch` instructions `flow` may be 
+     *
+     * In case of `if` or `switch` instructions `flow` may be
      * called multiple times before the method `instructionEvaluation` is called again.
      *
      * Recall that BATAI performs a depth-first exploration.
