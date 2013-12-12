@@ -47,14 +47,15 @@ case class BootstrapMethodTable(methods: BootstrapMethods) extends Attribute
  * @author Michael Eichberg
  */
 case class BootstrapMethod(
-    methodHandle: MethodHandle,
-    bootstrapArguments: BootstrapArguments) {
-    
+        methodHandle: MethodHandle,
+        bootstrapArguments: BootstrapArguments) {
+
     def toJava: String = methodHandle.toJava(bootstrapArguments)
 }
 
 /**
- * A marker trait to identify those constant pool values that can be arguments of boot strap methods.
+ * A marker trait to identify those constant pool values that can be arguments of boot
+ * strap methods.
  *
  * @author Michael Eichberg
  */
@@ -73,12 +74,12 @@ sealed trait FieldAccessMethodHandle extends MethodHandle {
     def declaringType: ObjectType
     def name: String
     def fieldType: FieldType
-    
+
     override def toJava(bootstrapArguments: BootstrapArguments): String = {
         val handleType = getClass.getSimpleName.toString
-        val fieldName = declaringType.toJava + "." + name 
-        val returnType = ": " + fieldType.toJava
-        handleType + ": " + fieldName + returnType
+        val fieldName = declaringType.toJava+"."+name
+        val returnType = ": "+fieldType.toJava
+        handleType+": "+fieldName + returnType
     }
 }
 
@@ -110,15 +111,15 @@ trait MethodCallMethodHandle extends MethodHandle {
     def receiverType: ReferenceType
     def name: String
     def methodDescriptor: MethodDescriptor
-    
+
     override def toJava(bootstrapArguments: BootstrapArguments): String = {
         val handleType = getClass.getSimpleName.toString
         val typeName = receiverType.toJava
-        val methodCall = name + methodDescriptor.parameterTypes.map(_.toJava).mkString("(", ",", ")") + ": " + methodDescriptor.returnType.toJava
-        handleType + ": " + typeName + "." + methodCall
+        val methodCall = name + methodDescriptor.toUMLNotation
+        handleType+": "+typeName+"."+methodCall
     }
 }
-        
+
 case class InvokeVirtualMethodHandle(
     receiverType: ReferenceType,
     name: String,
