@@ -33,32 +33,30 @@
 package de.tud.cs.st.bat.test.invokedynamic.annotations;
 
 /**
- * Describes whether the byte code of a method call is a standard call (invokevirtual,
- * invokestatic, invokespecial, invokeinterface), an invokedynamic, or a call made through
- * use of the Java reflection API. 
+ * Describes whether the method call instruction is a standard invoke instruction (invokevirtual,
+ * invokestatic, invokespecial, invokeinterface), an invokedynamic, or a call made through use of
+ * the Java reflection API.
  * 
  * @author Arne Lottmann
  */
 public enum TargetResolution {
-	/**
-	 * Describes a method call that results in one of the following instructions:
-	 * 
-	 * <ul>
-	 * <li>invokevirtual
-	 * <li>invokestatic
-	 * <li>invokespecial
-	 * <li>invokeinterface
-	 * </ul>
-	 * 
-	 * .
-	 */
-	DEFAULT,
-	/**
-	 * Describes a method call that results in an invokedynamic instruction.
-	 */
-	DYNAMIC,
-	/**
-	 * Describes a method call that is made through use of the Java reflection API.
-	 */
-	REFLECTIVE
+    /**
+     * Describes a method call made using one of the following instructions:
+     * <ul>
+     * <li>invokevirtual</li>
+     * <li>invokestatic</li>
+     * <li>invokespecial</li>
+     * <li>invokeinterface</li>
+     * </ul>
+     * .
+     */
+    DEFAULT,
+    /**
+     * Describes a method call based on an invokedynamic instruction.
+     */
+    DYNAMIC,
+    /**
+     * Describes a reflective method call.
+     */
+    REFLECTIVE
 }

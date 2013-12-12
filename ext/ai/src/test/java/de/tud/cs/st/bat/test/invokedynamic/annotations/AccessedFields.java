@@ -44,5 +44,6 @@ import static java.lang.annotation.ElementType.*;
 @Retention(RUNTIME)
 @Target(METHOD)
 public @interface AccessedFields {
-	AccessedField[] value();
+
+    AccessedField[] value();
 }

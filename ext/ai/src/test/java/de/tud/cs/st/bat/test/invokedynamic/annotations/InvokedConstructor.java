@@ -37,15 +37,18 @@ import static java.lang.annotation.RetentionPolicy.*;
 import static java.lang.annotation.ElementType.*;
 
 /**
- * Describes a constructor call made by an invokedynamic instruction or through use of the
- * Java reflection API.
- *  
+ * Describes a constructor call made by an invokedynamic instruction or through use of the Java
+ * reflection API.
+ * 
  * @author Arne Lottmann
  */
 @Retention(RUNTIME)
 @Target(METHOD)
 public @interface InvokedConstructor {
-	Class<?> receiverType();
-	Class<?>[] parameterTypes() default {};
-	int lineNumber() default -1;
+
+    Class<?> receiverType();
+
+    Class<?>[] parameterTypes() default {};
+
+    int lineNumber() default -1;
 }

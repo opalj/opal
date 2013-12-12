@@ -44,5 +44,6 @@ import static java.lang.annotation.ElementType.*;
 @Retention(RUNTIME)
 @Target(METHOD)
 public @interface InvokedConstructors {
-	InvokedConstructor[] value();
+
+    InvokedConstructor[] value();
 }

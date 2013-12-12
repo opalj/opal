@@ -44,11 +44,18 @@ import static java.lang.annotation.ElementType.*;
 @Retention(RUNTIME)
 @Target(METHOD)
 public @interface InvokedMethod {
-	TargetResolution resolution() default TargetResolution.DEFAULT;
-	Class<?> receiverType();
-	String name();
-	Class<?> returnType();
-	Class<?>[] parameterTypes() default {};
-	int lineNumber() default -1;
-	boolean isStatic() default false;
+
+    TargetResolution resolution() default TargetResolution.DEFAULT;
+
+    Class<?> receiverType();
+
+    String name();
+
+    Class<?> returnType();
+
+    Class<?>[] parameterTypes() default {};
+
+    int lineNumber() default -1;
+
+    boolean isStatic() default false;
 }
