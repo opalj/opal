@@ -49,15 +49,25 @@ case class Code(
     attributes: Attributes)
         extends Attribute {
 
+    def programCounters: Iterator[PC] = new Iterator[PC] {
+        var pc = 0 // there is always at least one instruction
+
+        def next = {
+            val next = pc
+            pc = pcOfNextInstruction(pc)
+            next
+        }
+
+        def hasNext = pc < instructions.size
+
+    }
+
     def exceptionHandlersFor(pc: PC): Iterable[ExceptionHandler] = {
         exceptionHandlers.view.filter { handler ⇒
             handler.startPC <= pc && handler.endPC > pc
         }
     }
 
-    //    def indexOfNextInstruction(pc: PC) = {
-    //        instructions(pc).indexOfNextInstruction(pc, this)
-    //    }
     @inline final def pcOfNextInstruction(currentPC: PC): PC = {
         val max_pc = instructions.size
         var nextPC = currentPC + 1
