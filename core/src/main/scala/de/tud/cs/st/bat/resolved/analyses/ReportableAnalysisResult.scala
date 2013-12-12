@@ -125,8 +125,10 @@ case class ClassBasedReport[+S](
         extends SourceLocationBasedReport[S] {
 
     def consoleReport(locationIdentifier: (S) ⇒ String): String = {
-        source.getOrElse("!PROJECT_EXTERNAL:")+
-            ":!CLASS<"+className+">: "+
+        (source match {
+            case Some(s) ⇒ locationIdentifier(s)
+            case None    ⇒ "!PROJECT_EXTERNAL:"
+        })+":!CLASS<"+className+">: "+
             messageType.map(_+": ").getOrElse("") +
             message
     }
@@ -193,7 +195,7 @@ case class ReportableAnalysisAdapter[Source, AnalysisResult](
     def analyze(
         project: Project[Source],
         parameters: Seq[String]): ReportableAnalysisResult = {
-        new BasicReport(converter(analysis.analyze(project,parameters)))
+        new BasicReport(converter(analysis.analyze(project, parameters)))
     }
 }
 
