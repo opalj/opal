@@ -43,6 +43,7 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  * Domain to track long values at a configurable level of precision.
  *
  * @author Riadh Chtara
+ * @author Michael Eichberg
  */
 trait PreciseLongValues[+I] extends Domain[I] {
 
@@ -199,7 +200,7 @@ trait PreciseLongValues[+I] extends Domain[I] {
             else if (v1 == v2) IntegerValue(pc, 0)
             else IntegerValue(pc, -1)
         } {
-            LongValue(pc)
+            IntegerValue(pc)
         }
 
     //
