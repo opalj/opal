@@ -39,13 +39,15 @@ package l1
 
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
+import ObjectType.ArithmeticException
+
 /**
  * Domain to track long values at a configurable level of precision.
  *
  * @author Riadh Chtara
  * @author Michael Eichberg
  */
-trait PreciseLongValues[+I] extends Domain[I] {
+trait PreciseLongValues[+I] extends Domain[I] with Configuration {
 
     // -----------------------------------------------------------------------------------
     //
@@ -72,15 +74,6 @@ trait PreciseLongValues[+I] extends Domain[I] {
     protected def spread(a: Long, b: Long): Long = Math.abs(a - b)
 
     /**
-     * Determines if an exception is thrown in case of a '''potential''' division by zero.
-     * I.e., this setting controls whether we throw a division by zero exception if we
-     * know nothing about the concrete value of the denominator or not.
-     * However, if we know that the denominator is 0 a corresponding exception will be
-     * thrown.
-     */
-    def divisionByZeroIfUnknownLong: Boolean = true
-
-    /**
      * Abstracts over all values with computational type `long`.
      */
     sealed trait LongLikeValue extends Value { this: DomainValue ⇒
@@ -105,41 +98,35 @@ trait PreciseLongValues[+I] extends Domain[I] {
 
         val value: Long
 
-        /**
-         * Creates a new LongValue with the given value as the current value,
-         * but the same initial value. Please note that it is ok if the new value
-         * is between the current value and the initial value. It is only required
-         * that the join operation is monotonic.
-         *
-         * @note
-         * This method must not check whether the initial value and the new value
-         * exceed the spread. This is done by the join method.
-         */
-        def update(newValue: Long): DomainValue
-
     }
 
     abstract override def typeOfValue(value: DomainValue): TypesAnswer =
         value match {
             case longLikeValue: LongLikeValue ⇒ IsLongValue
-            case _                                  ⇒ super.typeOfValue(value)
+            case _                            ⇒ super.typeOfValue(value)
         }
 
     //
     // QUESTION'S ABOUT VALUES
     //
 
-    def getLongValue[T](value: DomainValue)(f: Long ⇒ T)(orElse: ⇒ T): T =
+    def withLongValueOrElse[T](value: DomainValue)(f: Long ⇒ T)(orElse: ⇒ T): T =
         value match {
             case v: LongValue ⇒ f(v.value)
-            case _               ⇒ orElse
+            case _            ⇒ orElse
         }
 
-    def getLongValues[T](
+    def withLongValuesOrElse[T](
         value1: DomainValue,
         value2: DomainValue)(
             f: (Long, Long) ⇒ T)(orElse: ⇒ T): T =
-        getLongValue(value1) { v1 ⇒ getLongValue(value2) { v2 ⇒ f(v1, v2) }(orElse) } {
+        withLongValueOrElse(value1) { v1 ⇒
+            withLongValueOrElse(value2) { v2 ⇒
+                f(v1, v2)
+            } {
+                orElse
+            }
+        } {
             orElse
         }
 
@@ -147,13 +134,17 @@ trait PreciseLongValues[+I] extends Domain[I] {
         value: DomainValue,
         lowerBound: Long,
         upperBound: Long): Boolean =
-        getLongValue(value) { v ⇒ lowerBound <= v && v <= upperBound } { true }
+        withLongValueOrElse(value) {
+            v ⇒ lowerBound <= v && v <= upperBound
+        } {
+            true
+        }
 
     def isSomeValueNotInRange(
         value: DomainValue,
         lowerBound: Long,
         upperBound: Long): Boolean =
-        getLongValue(value) { v ⇒
+        withLongValueOrElse(value) { v ⇒
             v < lowerBound || v > upperBound
         } {
             !(lowerBound == Long.MinValue && upperBound == Long.MaxValue)
@@ -162,16 +153,20 @@ trait PreciseLongValues[+I] extends Domain[I] {
     abstract override def isLessThan(
         smallerValue: DomainValue,
         largerValue: DomainValue): Answer =
-        getLongValues(smallerValue, largerValue) { (v1, v2) ⇒
+        withLongValuesOrElse(smallerValue, largerValue) { (v1, v2) ⇒
             Answer(v1 < v2)
-        } { Unknown }
+        } {
+            Unknown
+        }
 
     abstract override def isLessThanOrEqualTo(
         smallerOrEqualValue: DomainValue,
         equalOrLargerValue: DomainValue): Answer =
-        getLongValues(smallerOrEqualValue, equalOrLargerValue) { (v1, v2) ⇒
+        withLongValuesOrElse(smallerOrEqualValue, equalOrLargerValue) { (v1, v2) ⇒
             Answer(v1 <= v2)
-        } { Unknown }
+        } {
+            Unknown
+        }
 
     def updateValueLong(
         oldValue: DomainValue,
@@ -182,7 +177,6 @@ trait PreciseLongValues[+I] extends Domain[I] {
             operands.map { operand ⇒ if (operand eq oldValue) newValue else operand },
             locals.map { local ⇒ if (local eq oldValue) newValue else local }
         )
-
 
     // -----------------------------------------------------------------------------------
     //
@@ -195,7 +189,7 @@ trait PreciseLongValues[+I] extends Domain[I] {
     //
 
     override def lcmp(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        getLongValues(value1, value2) { (v1, v2) ⇒
+        withLongValuesOrElse(value1, value2) { (v1, v2) ⇒
             if (v1 > v2) IntegerValue(pc, 1)
             else if (v1 == v2) IntegerValue(pc, 0)
             else IntegerValue(pc, -1)
@@ -206,103 +200,109 @@ trait PreciseLongValues[+I] extends Domain[I] {
     //
     // UNARY EXPRESSIONS
     //
-        
-    override def lneg(pc: PC, value: DomainValue) = value match {
-        case v: LongValue ⇒ v.update(-v.value)
-        case _               ⇒ value
-    }
+
+    override def lneg(pc: PC, value: DomainValue) =
+        withLongValueOrElse(value) { v ⇒
+            LongValue(pc, -v)
+        } {
+            LongValue(pc)
+        }
 
     //
     // BINARY EXPRESSIONS
     //
 
+    def linc(pc: PC, value: DomainValue, increment: Long) =
+        withLongValueOrElse(value) { v ⇒
+            LongValue(pc, v + increment)
+        } {
+            LongValue(pc)
+        }
+
+    override def ldiv(
+        pc: PC,
+        value1: DomainValue,
+        value2: DomainValue): Computation[DomainValue, DomainValue] =
+        withLongValuesOrElse(value1, value2) { (v1, v2) ⇒
+            if (v2 == 0)
+                ThrowsException(InitializedObject(pc, ArithmeticException))
+            else
+                ComputedValue(LongValue(pc, v1 / v2))
+        } {
+            if (throwArithmeticExceptions)
+                ComputedValueAndException(
+                    LongValue(pc),
+                    InitializedObject(pc, ArithmeticException))
+            else
+                ComputedValue(LongValue(pc))
+        }
+
     override def ladd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        getLongValues(value1, value2) { (v1, v2) ⇒
+        withLongValuesOrElse(value1, value2) { (v1, v2) ⇒
             LongValue(pc, v1 + v2)
         } {
             LongValue(pc)
         }
 
     override def land(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        getLongValues(value1, value2) { (v1, v2) ⇒
+        withLongValuesOrElse(value1, value2) { (v1, v2) ⇒
             LongValue(pc, v1 & v2)
         } {
             LongValue(pc)
         }
 
-    override def ldiv(pc: PC, value1: DomainValue, value2: DomainValue): Computation[DomainValue, DomainValue] =
-        getLongValues(value1, value2) { (v1, v2) ⇒
-            if (v2 == 0)
-                ThrowsException(InitializedObject(pc, ObjectType.ArithmeticException))
-            else
-                ComputedValue(LongValue(pc, v1 / v2))
-        } {
-            if (divisionByZeroIfUnknownLong)
-                ComputedValueAndException(
-                    LongValue(pc),
-                    InitializedObject(pc, ObjectType.ArithmeticException))
-            else
-                ComputedValue(LongValue(pc))
-        }
-
     override def lmul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        getLongValues(value1, value2) { (v1, v2) ⇒
+        withLongValuesOrElse(value1, value2) { (v1, v2) ⇒
             LongValue(pc, v1 * v2)
         } {
             LongValue(pc)
         }
 
     override def lor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        getLongValues(value1, value2) { (v1, v2) ⇒
+        withLongValuesOrElse(value1, value2) { (v1, v2) ⇒
             LongValue(pc, v1 | v2)
         } {
             LongValue(pc)
         }
 
     override def lrem(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        getLongValues(value1, value2) { (v1, v2) ⇒
+        withLongValuesOrElse(value1, value2) { (v1, v2) ⇒
             LongValue(pc, v1 % v2)
         } {
             LongValue(pc)
         }
 
     override def lshl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        getLongValues(value1, value2) { (v1, v2) ⇒
-            LongValue (pc, v1 << v2)            
+        withLongValuesOrElse(value1, value2) { (v1, v2) ⇒
+            LongValue(pc, v1 << v2)
         } {
             LongValue(pc)
         }
 
     override def lshr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        getLongValues(value1, value2) { (v1, v2) ⇒
+        withLongValuesOrElse(value1, value2) { (v1, v2) ⇒
             LongValue(pc, v1 >> v2)
         } {
             LongValue(pc)
         }
 
     override def lsub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        getLongValues(value1, value2) { (v1, v2) ⇒
+        withLongValuesOrElse(value1, value2) { (v1, v2) ⇒
             LongValue(pc, v1 - v2)
         } {
             LongValue(pc)
         }
 
     override def lushr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        getLongValues(value1, value2) { (v1, v2) ⇒
+        withLongValuesOrElse(value1, value2) { (v1, v2) ⇒
             LongValue(pc, v1 >>> v2)
         }(LongValue(pc))
 
     override def lxor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        getLongValues(value1, value2) { (v1, v2) ⇒
+        withLongValuesOrElse(value1, value2) { (v1, v2) ⇒
             LongValue(pc, v1 ^ v2)
         } {
             LongValue(pc)
-        }
-
-    def linc(pc: PC, value: DomainValue, increment: Long) =
-        value match {
-            case v: LongValue ⇒ v.update(v.value + increment)
-            case _               ⇒ value
         }
 
     //
@@ -310,12 +310,12 @@ trait PreciseLongValues[+I] extends Domain[I] {
     //
 
     override def l2d(pc: PC, value: DomainValue): DomainValue =
-        getLongValue(value)(v ⇒ DoubleValue(pc, v.toDouble))(DoubleValue(pc))
+        withLongValueOrElse(value) { v ⇒ DoubleValue(pc, v.toDouble) } { DoubleValue(pc) }
 
     override def l2f(pc: PC, value: DomainValue): DomainValue =
-        getLongValue(value)(v ⇒ FloatValue(pc, v.toFloat))(FloatValue(pc))
+        withLongValueOrElse(value) { v ⇒ FloatValue(pc, v.toFloat) } { FloatValue(pc) }
 
     override def l2i(pc: PC, value: DomainValue): DomainValue =
-        getLongValue(value)(v ⇒ IntegerValue(pc, v.toInt))(IntegerValue(pc))
+        withLongValueOrElse(value) { v ⇒ IntegerValue(pc, v.toInt) } { IntegerValue(pc) }
 }
 

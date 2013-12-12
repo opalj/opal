@@ -64,21 +64,13 @@ trait DefaultPreciseLongValues[+I]
 
         override def adapt[ThatI >: I](
             targetDomain: Domain[ThatI],
-            pc: PC): targetDomain.DomainValue =
-            if (targetDomain.isInstanceOf[DefaultPreciseLongValues[ThatI]]) {
-                val thatDomain = targetDomain.asInstanceOf[DefaultPreciseLongValues[ThatI]]
-                thatDomain.ALongValue.asInstanceOf[targetDomain.DomainValue]
-            } else {
-                super.adapt(targetDomain, pc)
-            }
+            pc: PC): targetDomain.DomainValue = targetDomain.LongValue(pc)
     }
 
     case class LongRange(
         val initial: Long,
         val value: Long)
             extends super.LongValue {
-        
-        def update(newValue: Long): DomainValue = LongRange(initial, newValue)
 
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] =
             value match {
@@ -134,8 +126,8 @@ trait DefaultPreciseLongValues[+I]
     }
 
     override def LongValue(pc: PC): DomainValue = ALongValue()
-    
-    override def LongValue(pc: PC, value: Long) = new LongRange(value,value)
+
+    override def LongValue(pc: PC, value: Long) = new LongRange(value, value)
 
 }
 
