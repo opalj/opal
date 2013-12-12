@@ -59,9 +59,7 @@ sealed abstract class MethodDescriptor extends BootstrapArgument {
     def toJava(methodName: String): String =
         returnType.toJava+" "+
             methodName+
-            "("+
-            parameterTypes.map(_.toJava).mkString(",")+
-            ")"
+            "("+parameterTypes.map(_.toJava).mkString(",")+")"
 
     def toUMLNotation: String =
         "("+{
@@ -69,7 +67,7 @@ sealed abstract class MethodDescriptor extends BootstrapArgument {
                 ""
             else
                 (parameterTypes.head.toJava /: parameterTypes.tail)(_+", "+_.toJava)
-        }+") : "+returnType.toJava
+        }+"): "+returnType.toJava
 
     override def toString: String = "MethodDescriptor("+toUMLNotation+")"
 
