@@ -130,10 +130,11 @@ trait DefaultPreciseLongValues[+I]
                 super.adapt(targetDomain, pc)
             }
 
-        override def toString: String = "LongRage(initial="+initial+", value="+value+")"
+        override def toString: String = "LongRange(initial="+initial+", value="+value+")"
     }
 
     override def LongValue(pc: PC): DomainValue = ALongValue()
+    
     override def LongValue(pc: PC, value: Long) = new LongRange(value,value)
 
 }

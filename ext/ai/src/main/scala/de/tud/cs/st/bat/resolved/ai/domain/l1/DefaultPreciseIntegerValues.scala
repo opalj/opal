@@ -130,7 +130,7 @@ trait DefaultPreciseIntegerValues[+I]
                 super.adapt(targetDomain, pc)
             }
 
-        override def toString: String = "IntegerRage(initial="+initial+", value="+value+")"
+        override def toString: String = "IntegerRange(initial="+initial+", value="+value+")"
     }
 
     override def BooleanValue(pc: PC): DomainValue = AnIntegerValue()
