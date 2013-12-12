@@ -53,7 +53,7 @@ trait TypeLevelDoubleValues[+I] extends Domain[I] {
     // -----------------------------------------------------------------------------------
 
     /**
-     * General abstraction over double values that satisfies BATAI's requirements.
+     * Abstracts over double values at the type level.
      */
     trait DoubleValue extends Value { this: DomainValue ⇒
 
