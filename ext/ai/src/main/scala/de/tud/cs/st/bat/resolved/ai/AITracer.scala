@@ -56,6 +56,11 @@ trait AITracer {
     /**
      * Called by BATAI immediately before the (abstract) interpretation of the 
      * specified code is performed. 
+     * 
+     * The tracer is not expected to make any changes to the data structures 
+     * (operandsArray and localsArray). If the tracer makes such changes, it is 
+     * the responsibility of the tracer to ensure that the updates are meaningful.
+     * BATAI will not perform any checks. 
      */
     def continuingInterpretation[D <: SomeDomain](
         code: Code,
@@ -85,7 +90,7 @@ trait AITracer {
 
     /**
      * Called by BATAI after an instruction (`currentPC`) was evaluated and before the
-     * `targetPC` is evaluated.
+     * `targetPC` may be evaluated.
      *
      * This method is only called if the instruction with the program counter
      * `targetPC` will be evaluated. I.e., when the abstract interpreter
