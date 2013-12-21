@@ -44,7 +44,7 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  *
  * @author Michael Eichberg
  */
-trait TypeLevelIntegerValues[+I] extends Domain[I] {
+trait TypeLevelIntegerValues[+I] extends Domain[I] with IntegerValuesComparison {
 
     // -----------------------------------------------------------------------------------
     //
@@ -67,47 +67,51 @@ trait TypeLevelIntegerValues[+I] extends Domain[I] {
                 case SomeUpdate(value) ⇒ value
             }
 
-        protected[TypeLevelIntegerValues] def typesAnswer: TypesAnswer
     }
 
-    trait BooleanValue extends ComputationalTypeIntegerValue { this: DomainValue ⇒
-        override final def typesAnswer: TypesAnswer = IsBooleanValue
-    }
-    trait ByteValue extends ComputationalTypeIntegerValue { this: DomainValue ⇒
-        override final def typesAnswer: TypesAnswer = IsByteValue
-    }
-    trait CharValue extends ComputationalTypeIntegerValue { this: DomainValue ⇒
-        override final def typesAnswer: TypesAnswer = IsCharValue
-    }
-    trait ShortValue extends ComputationalTypeIntegerValue { this: DomainValue ⇒
-        override final def typesAnswer: TypesAnswer = IsShortValue
-    }
-    trait IntegerValue extends ComputationalTypeIntegerValue { this: DomainValue ⇒
-        override final def typesAnswer: TypesAnswer = IsIntegerValue
-    }
+    trait BooleanValue
+        extends ComputationalTypeIntegerValue
+        with IsBooleanValue { this: DomainValue ⇒ }
+
+    trait ByteValue
+        extends ComputationalTypeIntegerValue
+        with IsByteValue { this: DomainValue ⇒ }
+
+    trait CharValue
+        extends ComputationalTypeIntegerValue
+        with IsCharValue { this: DomainValue ⇒ }
+
+    trait ShortValue
+        extends ComputationalTypeIntegerValue
+        with IsShortValue { this: DomainValue ⇒ }
+
+    trait IntegerValue
+        extends ComputationalTypeIntegerValue
+        with IsIntegerValue { this: DomainValue ⇒ }
 
     //
     // QUESTION'S ABOUT VALUES
     //
-
-    abstract override def typeOfValue(value: DomainValue): TypesAnswer = value match {
-        case ctiv: ComputationalTypeIntegerValue ⇒ ctiv.typesAnswer
-        case _                                   ⇒ super.typeOfValue(value)
-    }
 
     override def areEqual(value1: DomainValue, value2: DomainValue): Answer = Unknown
 
     override def isSomeValueInRange(
         value: DomainValue,
         lowerBound: Int,
-        upperBound: Int): Boolean =
-        true
+        upperBound: Int): Answer =
+        Unknown
 
     override def isSomeValueNotInRange(
         value: DomainValue,
         lowerBound: Int,
-        upperBound: Int): Boolean =
-        true
+        upperBound: Int): Answer =
+        Unknown
+
+    override def isSomeValueInRange(
+        value: DomainValue,
+        lowerBound: DomainValue,
+        upperBound: DomainValue): Answer =
+        Unknown
 
     override def isLessThan(
         smallerValue: DomainValue,
@@ -140,7 +144,10 @@ trait TypeLevelIntegerValues[+I] extends Domain[I] {
     override def iand(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         IntegerValue(pc)
 
-    override def idiv(pc: PC, value1: DomainValue, value2: DomainValue) =
+    override def idiv(
+        pc: PC,
+        value1: DomainValue,
+        value2: DomainValue): IntegerLikeValueOrArithmeticException =
         ComputedValue(IntegerValue(pc))
 
     override def imul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
@@ -149,8 +156,11 @@ trait TypeLevelIntegerValues[+I] extends Domain[I] {
     override def ior(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         IntegerValue(pc)
 
-    override def irem(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        IntegerValue(pc)
+    override def irem(
+        pc: PC,
+        value1: DomainValue,
+        value2: DomainValue): IntegerLikeValueOrArithmeticException =
+        ComputedValue(IntegerValue(pc))
 
     override def ishl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         IntegerValue(pc)

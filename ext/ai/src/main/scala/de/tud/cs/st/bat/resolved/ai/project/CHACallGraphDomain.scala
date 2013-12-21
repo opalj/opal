@@ -203,14 +203,15 @@ class DefaultCHACallGraphDomain[Source](
     val theMethod: Method)
         extends Domain[Int]
         with DefaultDomainValueBinding[Int]
+        with GeneralizedArrayHandling
+        with Configuration
         with IgnoreMethodResults
         with IgnoreSynchronization
         with l0.DefaultTypeLevelIntegerValues[Int]
         with l0.DefaultTypeLevelLongValues[Int]
         with l0.DefaultTypeLevelFloatValues[Int]
         with l0.DefaultTypeLevelDoubleValues[Int]
-        with l0.DefaultTypeLevelReferenceValues[Int]
-        with l0.TypeLevelArrayInstructions
+        with l0.DefaultTypeLevelReferenceValues[Int]       
         with l0.TypeLevelFieldAccessInstructions
         with l0.TypeLevelInvokeInstructions
         with l1.ProjectBasedClassHierarchy[Source]

@@ -35,15 +35,20 @@ package bat
 package resolved
 package ai
 package domain
-package l1
+
+import de.tud.cs.st.util.Answer
 
 /**
+ * Optional functionality related to integer values that is not required by the BATAI
+ * core.
+ *
  * @author Michael Eichberg
  */
-trait Origin { this: SomeDomain ⇒
+trait IntegerValuesComparison { this: SomeDomain ⇒
 
-    def origin(value: DomainValue): Iterable[PC] = {
-        domainException(this, "the origin of \""+value+"\" is not available")
-    }
+    def isSomeValueInRange(
+        value: DomainValue,
+        lowerBound: DomainValue,
+        upperBound: DomainValue): Answer
 
 }

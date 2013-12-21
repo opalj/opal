@@ -46,12 +46,12 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  *
  * @author Michael Eichberg
  */
-trait PreciseReferenceValues[+I] extends Domain[I] {
+trait PreciseReferenceValues[+I] extends Domain[I] with GeneralizedArrayHandling {
 
     /**
      * Abstracts over all values with computational type `reference`.
      */
-    trait ReferenceValue extends Value { this: DomainValue ⇒
+    trait ReferenceValue extends Value with IsReferenceValue { this: DomainValue ⇒
 
         /**
          * Returns `ComputationalTypeReference`.
@@ -94,7 +94,7 @@ trait PreciseReferenceValues[+I] extends Domain[I] {
          * information related to this value is precise, i.e., if we know that we
          * precisely capture the runtime type of this value.
          */
-        def addUpperBound(pc: PC, upperBound: ReferenceType): DomainValue
+        def refineUpperTypeBound(pc: PC, supertype: ReferenceType): DomainValue
 
         /**
          * Returns `true` if the type information about this value is precise.
@@ -145,7 +145,7 @@ trait PreciseReferenceValues[+I] extends Domain[I] {
             value2IsNull.isDefined &&
             (value1IsNull.yes || value2IsNull.yes)) {
             Answer(value1IsNull == value2IsNull)
-        }  else {
+        } else {
             // TODO [IMPROVE - areEqualReferences] If the two values are not in a subtype relationship they cannot be equal.
             Unknown
         }
@@ -175,7 +175,7 @@ trait PreciseReferenceValues[+I] extends Domain[I] {
         operands: Operands,
         locals: Locals): (Operands, Locals) = {
         val referenceValue: ReferenceValue = asReferenceValue(value)
-        val newReferenceValue = referenceValue.addUpperBound(pc, bound)
+        val newReferenceValue = referenceValue.refineUpperTypeBound(pc, bound)
         if (referenceValue eq newReferenceValue)
             (
                 operands,
@@ -244,40 +244,54 @@ trait PreciseReferenceValues[+I] extends Domain[I] {
     //
     // -----------------------------------------------------------------------------------
 
-    def ArrayReferenceValue(pc: PC, referenceType: ReferenceType): DomainValue
+    override def arrayload(
+        pc: PC,
+        index: DomainValue,
+        arrayRef: DomainValue): ArrayLoadResult = {
+        val upperTypeBound = asReferenceValue(arrayRef).upperTypeBound
+        ComputedValue(TypedValue(pc, upperTypeBound.head))
+    }
+
+    /**
+     * @note It is in general not necessary to override this method. If you need some
+     *      special handling if a value is stored in an array, override the method
+     *      `doArraystore`.
+     * @see `doArraystore` for furhter information.
+     */
+    override def arraystore(
+        pc: PC,
+        value: DomainValue,
+        index: DomainValue,
+        arrayref: DomainValue): ArrayStoreResult =
+        ComputationWithSideEffectOnly
+
+    /**
+     * @note If the domain supports a more precise handling of arrays and can
+     *      return the length of an array, this method  needs to be overridden.
+     */
+    override def arraylength(
+        pc: PC,
+        arrayref: DomainValue): Computation[DomainValue, ExceptionValue] =
+        ComputedValue(IntegerValue(pc))
 
     //
     // CREATE ARRAY
     //
-    override def newarray(pc: PC,
-                 count: DomainValue,
-                 componentType: FieldType): Computation[DomainValue, DomainValue] =
+    override def newarray(
+        pc: PC,
+        count: DomainValue,
+        componentType: FieldType): Computation[DomainValue, DomainValue] =
         //ComputedValueAndException(TypedValue(ArrayType(componentType)), TypedValue(ObjectType.NegativeArraySizeException))
-        ComputedValue(ArrayReferenceValue(pc, ArrayType(componentType)))
+        ComputedValue(InitializedObject(pc, ArrayType(componentType)))
 
     /**
      * @note The componentType may be (again) an array type.
      */
-    override def multianewarray(pc: PC,
-                       counts: List[DomainValue],
-                       arrayType: ArrayType) =
+    override def multianewarray(
+        pc: PC,
+        counts: List[DomainValue],
+        arrayType: ArrayType) =
         //ComputedValueAndException(TypedValue(arrayType), TypedValue(ObjectType.NegativeArraySizeException))
-        ComputedValue(ArrayReferenceValue(pc, arrayType))
+        ComputedValue(InitializedObject(pc, arrayType))
 
-    //
-    // LOAD FROM AND STORE VALUE IN ARRAYS
-    //
-    override def aaload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
-        typeOfValue(arrayref) match {
-            case IsReferenceValueWithSingleBound(ArrayType(componentType)) ⇒
-                ComputedValue(TypedValue(pc, componentType))
-            case _ ⇒
-                domainException(
-                    this,
-                    "cannot determine the type of the array's content: "+arrayref
-                )
-        }
-
-    override def aastore(pc: PC, value: DomainValue, index: DomainValue, arrayref: DomainValue) =
-        ComputationWithSideEffectOnly
 }

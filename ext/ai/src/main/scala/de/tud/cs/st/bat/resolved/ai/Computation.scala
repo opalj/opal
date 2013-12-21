@@ -86,6 +86,23 @@ sealed trait Computation[+V, +E] {
     def returnsNormally: Boolean
 }
 
+object Computation {
+
+    def apply[E](es: Seq[E]): Computation[Nothing, Seq[E]] = {
+        if (es.isEmpty)
+            ComputationWithSideEffectOnly
+        else
+            ComputationWithSideEffectOrException(es)
+    }
+
+    def apply[V, E](v: V, es: Seq[E]): Computation[V, Seq[E]] = {
+        if (es.isEmpty)
+            ComputedValue(v)
+        else
+            ComputedValueAndException(v, es)
+    }
+}
+
 /**
  * Encapsulates the result of a computation that returned normally and
  * that did not throw an exception.
@@ -145,7 +162,7 @@ final case class ThrowsException[+E](
 
 /**
  * Encapsulates the result of a computation that returned normally (but which
- * did not return some value) or that threw an exception.
+ * did not return some value) or that threw an exception/multiple exceptions.
  */
 final case class ComputationWithSideEffectOrException[+E](
     exceptions: E)

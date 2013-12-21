@@ -52,7 +52,9 @@ trait TypeLevelLongValues[+I] extends Domain[I] {
     //
     // -----------------------------------------------------------------------------------
 
-    trait LongValue extends Value { this: DomainValue ⇒
+    trait LongValue
+            extends Value
+            with IsLongValue { this: DomainValue ⇒
 
         override final def computationalType: ComputationalType = ComputationalTypeLong
 
@@ -63,12 +65,6 @@ trait TypeLevelLongValues[+I] extends Domain[I] {
     // HANDLING OF COMPUTATIONS
     //
     // -----------------------------------------------------------------------------------
-
-    abstract override def typeOfValue(value: DomainValue): TypesAnswer =
-        value match {
-            case _: LongValue ⇒ IsLongValue
-            case _            ⇒ super.typeOfValue(value)
-        }
 
     //
     // RELATIONAL OPERATORS
@@ -91,7 +87,10 @@ trait TypeLevelLongValues[+I] extends Domain[I] {
     override def land(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         LongValue(pc)
 
-    override def ldiv(pc: PC, value1: DomainValue, value2: DomainValue) =
+    override def ldiv(
+        pc: PC,
+        value1: DomainValue,
+        value2: DomainValue): IntegerLikeValueOrArithmeticException =
         ComputedValue(LongValue(pc))
 
     override def lmul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
@@ -100,8 +99,11 @@ trait TypeLevelLongValues[+I] extends Domain[I] {
     override def lor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         LongValue(pc)
 
-    override def lrem(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        LongValue(pc)
+    override def lrem(
+        pc: PC,
+        value1: DomainValue,
+        value2: DomainValue): IntegerLikeValueOrArithmeticException =
+        ComputedValue(LongValue(pc))
 
     override def lshl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         LongValue(pc)
@@ -122,13 +124,13 @@ trait TypeLevelLongValues[+I] extends Domain[I] {
     // CONVERSION INSTRUCTIONS
     //
 
-    override def l2d(pc: PC, value: DomainValue): DomainValue = 
+    override def l2d(pc: PC, value: DomainValue): DomainValue =
         DoubleValue(pc)
-        
-    override def l2f(pc: PC, value: DomainValue): DomainValue = 
+
+    override def l2f(pc: PC, value: DomainValue): DomainValue =
         FloatValue(pc)
-        
-    override def l2i(pc: PC, value: DomainValue): DomainValue = 
+
+    override def l2i(pc: PC, value: DomainValue): DomainValue =
         IntegerValue(pc)
 }
 

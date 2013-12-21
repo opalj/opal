@@ -49,17 +49,13 @@ trait DefaultPreciseReferenceValues[+I]
         with Origin
         with PreciseReferenceValues[I] { domain ⇒
 
-    type UpperBound = Set[ReferenceType]
-
-    // -----------------------------------------------------------------------------------
+    // ---------------------------------1--------------------------------------------------
     //
     // REPRESENTATION OF REFERENCE VALUES
     //
     // -----------------------------------------------------------------------------------
 
-    trait ReferenceValue
-            extends super.ReferenceValue
-            with IsReferenceValue {
+    trait ReferenceValue extends super.ReferenceValue  {
         this: DomainValue ⇒
     }
 
@@ -69,27 +65,12 @@ trait DefaultPreciseReferenceValues[+I]
 
     class AReferenceValue protected[DefaultPreciseReferenceValues] (
         val pc: PC,
-        val upperBound: UpperBound,
-        val isNull: Answer,
+        val upperTypeBound: UpperTypeBound,
+        override val isNull: Answer,
         val isPrecise: Boolean)
-            extends ReferenceValue { self: DomainValue ⇒
+            extends ReferenceValue { value: DomainValue ⇒
 
-        override def upperBounds: Iterable[ValueBasedUpperBound] =
-            Iterable(
-                new ValueBasedUpperBound {
-                    override def isNull: Answer = self.isNull
-                    override def isPrecise: Boolean = self.isPrecise
-                    override def upperBound: UpperBound = self.upperBound
-                    override def isSubtypeOf(referenceType: ReferenceType): Answer =
-                        self.isSubtypeOf(referenceType)
-                }
-            )
-
-        override def hasSingleBound: Option[ReferenceType] =
-            if (upperBound.size == 1)
-                Some(upperBound.head)
-            else
-                None
+        override def referenceValues: Iterable[IsAReferenceValue] = Iterable(this)
 
         /**
          * Determines if this reference value is a subtype of the given supertype by
@@ -103,13 +84,17 @@ trait DefaultPreciseReferenceValues[+I]
         def isSubtypeOf(supertype: ReferenceType): Answer = {
             assume(this.isNull.maybeNo)
 
-            val answer: Answer = ((No: Answer) /: upperBound) { (a, t) ⇒
-                val isSubtypeOf = domain.isSubtypeOf(t, supertype)
-                if (isSubtypeOf.yes) {
-                    return Yes
-                } else {
-                    a merge isSubtypeOf
+            val answer: Answer = {
+                var answer: Answer = No
+                upperTypeBound foreach { t ⇒
+                    val isSubtypeOf = domain.isSubtypeOf(t, supertype)
+                    if (isSubtypeOf.yes) {
+                        return Yes
+                    } else {
+                        answer merge isSubtypeOf
+                    }
                 }
+                answer
             }
             answer match {
                 case No if isPrecise ⇒
@@ -132,15 +117,15 @@ trait DefaultPreciseReferenceValues[+I]
             assume(this.isNull.isUndefined)
 
             if (isNull.yes)
-                AReferenceValue(this.pc, Set.empty[ReferenceType], Yes, true)
+                AReferenceValue(this.pc, UIDList.empty, Yes, true)
             else
-                AReferenceValue(this.pc, upperBound, isNull, isPrecise)
+                AReferenceValue(this.pc, upperTypeBound, isNull, isPrecise)
         }
 
-        def addUpperBound(pc: PC, theUpperBound: ReferenceType): AReferenceValue = {
+        def refineUpperTypeBound(pc: PC, supertype: ReferenceType): AReferenceValue = {
             assume(this.isNull.maybeNo)
 
-            isSubtypeOf(theUpperBound) match {
+            isSubtypeOf(supertype) match {
                 case Yes ⇒ this
                 case No if isPrecise ⇒
                     // Actually, it does not make sense to establish a new bound for a 
@@ -151,63 +136,62 @@ trait DefaultPreciseReferenceValues[+I]
                     // and in this case it may make sense to establish a more stringent
                     // bound for the others.
                     this
-                case No if upperBound.forall(domain.isSubtypeOf(theUpperBound, _).yes) ⇒
+                case No if upperTypeBound.forall(domain.isSubtypeOf(supertype, _).yes) ⇒
                     // The new upperBound is a subtype of all previous bounds and 
                     // hence completely replaces this value's type bound.
-                    AReferenceValue(this.pc, Set(theUpperBound), isNull, isPrecise)
+                    AReferenceValue(this.pc, UIDList(supertype), isNull, isPrecise)
                 case _ /* (No && !isPrecise || Unknown) */ ⇒
-                    var newValueTypes = Set.empty[ReferenceType]
-                    var addTheUpperBound = true
-                    upperBound foreach { anUpperBound ⇒
-                        if (theUpperBound == anUpperBound) {
+                    var newUpperBoundType: UIDList[ReferenceType] = UIDList.empty
+                    var addSupertype = true
+                    upperTypeBound foreach { (anUpperTypeBound: ReferenceType) ⇒
+                        if (supertype == anUpperTypeBound) {
                             /* do nothing */
-                        } else if (domain.isSubtypeOf(theUpperBound, anUpperBound).yes) {
+                        } else if (domain.isSubtypeOf(supertype, anUpperTypeBound).yes) {
                             /* do nothing (we may add theUpperBound later) */
-                        } else if (domain.isSubtypeOf(anUpperBound, theUpperBound).yes) {
-                            addTheUpperBound = false
-                            newValueTypes = newValueTypes + anUpperBound
+                        } else if (domain.isSubtypeOf(anUpperTypeBound, supertype).yes) {
+                            addSupertype = false
+                            newUpperBoundType = newUpperBoundType + anUpperTypeBound
                         } else {
-                            newValueTypes = newValueTypes + anUpperBound
+                            newUpperBoundType = newUpperBoundType + anUpperTypeBound
                         }
                     }
-                    if (addTheUpperBound)
-                        newValueTypes = newValueTypes + theUpperBound
+                    if (addSupertype)
+                        newUpperBoundType = newUpperBoundType + supertype
 
-                    AReferenceValue(this.pc, newValueTypes, isNull, isPrecise)
+                    AReferenceValue(this.pc, newUpperBoundType, isNull, isPrecise)
             }
         }
 
         override def doJoin(mergePC: Int, value: DomainValue): Update[DomainValue] = {
             value match {
-                case v @ AReferenceValue(otherPC, otherTypeBounds, otherIsNull, otherIsPrecise) ⇒
+                case v @ AReferenceValue(otherPC, otherUpperTypeBounds, otherIsNull, otherIsPrecise) ⇒
                     if (otherPC != this.pc)
                         return StructuralUpdate(MultipleReferenceValues(Set(this, v)))
-
                     if (this.isNull == otherIsNull &&
-                        this.upperBound == otherTypeBounds &&
+                        this.upperTypeBound == otherUpperTypeBounds &&
                         (this.isPrecise == false || this.isPrecise == otherIsPrecise))
                         return NoUpdate
 
-                    var newTypeBounds = this.upperBound
-                    otherTypeBounds foreach { otherTypeBound ⇒
-                        var addOtherTypeBounds = true
-                        newTypeBounds = newTypeBounds.filterNot { vt ⇒
-                            domain.isSubtypeOf(otherTypeBound, vt) match {
+                    var newUpperTypeBound = this.upperTypeBound
+                    otherUpperTypeBounds foreach { (otherUpperTypeBound: ReferenceType) ⇒
+                        var addOtherUpperTypeBounds = true
+                        newUpperTypeBound = newUpperTypeBound filterNot { vt ⇒
+                            domain.isSubtypeOf(otherUpperTypeBound, vt) match {
                                 case Yes ⇒
                                     true
                                 case _ ⇒
-                                    if (domain.isSubtypeOf(vt, otherTypeBound).yes)
-                                        addOtherTypeBounds = false
+                                    if (domain.isSubtypeOf(vt, otherUpperTypeBound).yes)
+                                        addOtherUpperTypeBounds = false
                                     false
                             }
                         }
-                        if (addOtherTypeBounds)
-                            newTypeBounds = newTypeBounds + otherTypeBound
+                        if (addOtherUpperTypeBounds)
+                            newUpperTypeBound = newUpperTypeBound + otherUpperTypeBound
                     }
                     StructuralUpdate(
                         AReferenceValue(
                             this.pc,
-                            newTypeBounds,
+                            newUpperTypeBound,
                             this.isNull merge otherIsNull,
                             this.isPrecise && otherIsPrecise))
 
@@ -231,7 +215,7 @@ trait DefaultPreciseReferenceValues[+I]
         protected[DefaultPreciseReferenceValues] def adaptAReferenceValue[ThatI >: I](
             targetDomain: DefaultPreciseReferenceValues[ThatI],
             pc: PC): targetDomain.AReferenceValue =
-            targetDomain.AReferenceValue(pc, this.upperBound, this.isNull, this.isPrecise)
+            targetDomain.AReferenceValue(pc, this.upperTypeBound, this.isNull, this.isPrecise)
 
         override def summarize(pc: PC): DomainValue = this
 
@@ -242,27 +226,27 @@ trait DefaultPreciseReferenceValues[+I]
             value match {
                 case mrv: MultipleReferenceValues ⇒
                     domain.summarizeReferenceValues(pc, mrv.values + this)
-                case other @ AReferenceValue(otherPC, otherTypeBounds, otherIsNull, otherIsPrecise) ⇒
+                case other @ AReferenceValue(otherPC, otherUpperTypeBounds, otherIsNull, otherIsPrecise) ⇒
                     if (this.isNull.yes) {
                         if (otherIsNull.yes)
                             if (this.pc == otherPC)
                                 this
                             else
-                                AReferenceValue(pc, Set.empty[ReferenceType], Yes, true)
+                                AReferenceValue(pc, UIDList.empty, Yes, true)
                         else
                             MultipleReferenceValues(Set(this, other))
                     } else if (otherIsNull.yes) {
                         MultipleReferenceValues(Set(this, other))
-                    } else if (this.upperBound == otherTypeBounds) {
+                    } else if (this.upperTypeBound == otherUpperTypeBounds) {
                         AReferenceValue(
                             pc,
-                            this.upperBound,
+                            this.upperTypeBound,
                             this.isNull merge otherIsNull,
                             this.isPrecise && otherIsPrecise)
-                    } else if (domain.isSubtypeOf(this.upperBound, otherTypeBounds)) {
-                        AReferenceValue(pc, otherTypeBounds, this.isNull merge otherIsNull, false)
-                    } else if (domain.isSubtypeOf(otherTypeBounds, this.upperBound)) {
-                        AReferenceValue(pc, this.upperBound, this.isNull merge otherIsNull, false)
+                    } else if (domain.isSubtypeOf(this.upperTypeBound, otherUpperTypeBounds)) {
+                        AReferenceValue(pc, otherUpperTypeBounds, this.isNull merge otherIsNull, false)
+                    } else if (domain.isSubtypeOf(otherUpperTypeBounds, this.upperTypeBound)) {
+                        AReferenceValue(pc, this.upperTypeBound, this.isNull merge otherIsNull, false)
                     } else {
                         MultipleReferenceValues(Set(this, other))
                     }
@@ -277,7 +261,7 @@ trait DefaultPreciseReferenceValues[+I]
                         this.pc == that.pc &&
                         this.isPrecise == that.isPrecise &&
                         this.isNull == that.isNull &&
-                        this.upperBound == that.upperBound)
+                        this.upperTypeBound == that.upperTypeBound)
                 case _ ⇒ false
             }
         }
@@ -287,12 +271,12 @@ trait DefaultPreciseReferenceValues[+I]
         override def hashCode: Int = // TODO How to cache lazy vals?
             (((41 + pc) * 41 + isPrecise.hashCode()) *
                 41 + isNull.hashCode()) *
-                41 + upperBound.hashCode()
+                41 + upperTypeBound.hashCode()
 
         override def toString() =
             isNull match {
                 case Yes ⇒ "Null(pc="+pc+")"
-                case _ ⇒ upperBound.map(_.toJava).mkString(" with ")+
+                case _ ⇒ upperTypeBound.map(_.toJava).mkString(" with ")+
                     "(pc="+pc+
                     ", isNull="+isNull+
                     ", isPrecise="+isPrecise+")"
@@ -305,10 +289,13 @@ trait DefaultPreciseReferenceValues[+I]
      * a subtype of the second type.
      */
     protected def isSubtypeOf(
-        typeBoundsA: UpperBound,
-        typeBoundsB: UpperBound): Boolean = {
-        typeBoundsA.forall(aType ⇒
-            typeBoundsB.exists(bType ⇒ domain.isSubtypeOf(aType, bType).yes))
+        upperTypeBoundsA: UpperTypeBound,
+        upperTypeBoundsB: UpperTypeBound): Boolean = {
+        upperTypeBoundsA forall { aType ⇒
+            upperTypeBoundsB exists { bType ⇒
+                domain.isSubtypeOf(aType, bType).yes
+            }
+        }
     }
 
     protected def summarizeReferenceValues(
@@ -322,26 +309,22 @@ trait DefaultPreciseReferenceValues[+I]
      * Extractor for `AReferenceValue`s.
      */
     object AReferenceValue {
-        def unapply(arv: AReferenceValue): Option[(PC, UpperBound, Answer, Boolean)] =
-            Some((arv.pc, arv.upperBound, arv.isNull, arv.isPrecise))
+        def unapply(arv: AReferenceValue): Option[(PC, UpperTypeBound, Answer, Boolean)] =
+            Some((arv.pc, arv.upperTypeBound, arv.isNull, arv.isPrecise))
     }
 
     case class MultipleReferenceValues(
         val values: Set[AReferenceValue])
             extends ReferenceValue { this: DomainValue ⇒
 
-        def upperBounds: Iterable[ValueBasedUpperBound] =
-            values.view.map(_.upperBounds.head)
+        override def upperTypeBound: UpperTypeBound = {
+            // we have to calculate the least common supertype of all values...
+            sys.error("not yet implemented")
+        }
 
-        def hasSingleBound: Option[ReferenceType] =
-            values.head.hasSingleBound.flatMap { thisBound ⇒
-                if (values.tail.forall(_.hasSingleBound.map(_ == thisBound).getOrElse(false)))
-                    Some(thisBound)
-                else
-                    None
-            }
+        override def referenceValues: Iterable[IsAReferenceValue] = values
 
-        lazy val isPrecise: Boolean = values.forall(_.isPrecise)
+        override lazy val isPrecise: Boolean = values.forall(_.isPrecise)
 
         private[this] def calculateIsNull(): Answer =
             (values.head.isNull /: values.tail) { (c, n) ⇒
@@ -351,7 +334,7 @@ trait DefaultPreciseReferenceValues[+I]
                 else
                     answer
             }
-        lazy val isNull: Answer = calculateIsNull()
+        override lazy val isNull: Answer = calculateIsNull()
 
         override def summarize(pc: PC): DomainValue =
             domain.summarizeReferenceValues(pc, values)
@@ -424,12 +407,12 @@ trait DefaultPreciseReferenceValues[+I]
             }
         }
 
-        override def addUpperBound(pc: PC, upperBound: ReferenceType): DomainValue =
+        override def refineUpperTypeBound(pc: PC, supertype: ReferenceType): DomainValue =
             updateValues { aReferenceValue: AReferenceValue ⇒
                 if (aReferenceValue.isNull.yes)
                     None
                 else
-                    Some(aReferenceValue.addUpperBound(pc, upperBound))
+                    Some(aReferenceValue.refineUpperTypeBound(pc, supertype))
             }
 
         override def doJoin(mergePC: Int, value: DomainValue): Update[DomainValue] = {
@@ -501,40 +484,37 @@ trait DefaultPreciseReferenceValues[+I]
      */
     def AReferenceValue(
         pc: PC,
-        upperBound: UpperBound,
+        upperTypeBound: UpperTypeBound,
         isNull: Answer,
         isPrecise: Boolean): AReferenceValue =
-        new AReferenceValue(pc, upperBound, isNull, isPrecise)
+        new AReferenceValue(pc, upperTypeBound, isNull, isPrecise)
 
     final def AReferenceValue(
         pc: PC,
         referenceType: ReferenceType,
         isNull: Answer,
         isPrecise: Boolean): AReferenceValue =
-        AReferenceValue(pc, Set(referenceType), isNull, isPrecise)
+        AReferenceValue(pc, UIDList(referenceType), isNull, isPrecise)
 
     override def NullValue(pc: PC): DomainValue =
-        AReferenceValue(pc, Set.empty[ReferenceType], Yes, true)
+        AReferenceValue(pc, UIDList.empty, Yes, true)
 
     override def ReferenceValue(pc: PC, referenceType: ReferenceType): DomainValue =
-        AReferenceValue(pc, Set(referenceType), Unknown, false)
+        AReferenceValue(pc, UIDList(referenceType), Unknown, false)
 
     override def NonNullReferenceValue(pc: PC, objectType: ObjectType): DomainValue =
-        AReferenceValue(pc, Set[ReferenceType](objectType), No, false)
+        AReferenceValue(pc, UIDList[ReferenceType](objectType), No, false)
 
     override def NewObject(pc: PC, referenceType: ReferenceType): DomainValue =
-        AReferenceValue(pc, Set[ReferenceType](referenceType), No, true)
+        AReferenceValue(pc, UIDList[ReferenceType](referenceType), No, true)
 
     override def InitializedObject(pc: PC, referenceType: ReferenceType): DomainValue =
         NewObject(pc, referenceType)
 
     override def StringValue(pc: PC, value: String): DomainValue =
-        AReferenceValue(pc, Set[ReferenceType](ObjectType.String), No, true)
+        AReferenceValue(pc, UIDList[ReferenceType](ObjectType.String), No, true)
 
     override def ClassValue(pc: PC, t: Type): DomainValue =
-        AReferenceValue(pc, Set[ReferenceType](ObjectType.Class), No, true)
-
-    def ArrayReferenceValue(pc: PC, referenceType: ReferenceType): DomainValue =
-        InitializedObject(pc, referenceType)
+        AReferenceValue(pc, UIDList[ReferenceType](ObjectType.Class), No, true)
 
 }

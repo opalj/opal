@@ -120,8 +120,9 @@ package object ai {
      *      makes it possible to distinguish between precise types and type bounds is at
      *      the sole discretion of the domain.
      */
-    type UpperBound = Iterable[ReferenceType]
-
+    type UpperTypeBound = UIDList[ReferenceType]
+     
+    
     /**
      * A set of program counters.
      */

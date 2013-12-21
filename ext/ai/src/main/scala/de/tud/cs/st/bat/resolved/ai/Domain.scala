@@ -484,6 +484,24 @@ trait Domain[+I] {
     //
     // -----------------------------------------------------------------------------------
 
+    final def justThrows(value: ExceptionValue): ThrowsException[ExceptionValues] =
+        ThrowsException(Seq(value))
+
+    final def throws(value: ExceptionValue): ThrowsException[ExceptionValue] =
+        ThrowsException(value)
+
+    def ClassCastException(pc: PC): ExceptionValue =
+        InitializedObject(pc, ObjectType.ClassCastException)
+
+    def NullPointerException(pc: PC): ExceptionValue =
+        InitializedObject(pc, ObjectType.NullPointerException)
+
+    def ArrayIndexOutOfBoundsException(pc: PC): ExceptionValue =
+        InitializedObject(pc, ObjectType.ArrayIndexOutOfBoundsException)
+
+    def ArrayStoreException(pc: PC): ExceptionValue =
+        InitializedObject(pc, ObjectType.ArrayStoreException)
+
     /**
      * Factory method to create domain values with a specific type. I.e., values for
      * which we have some type information but no value or location information.
@@ -728,12 +746,12 @@ trait Domain[+I] {
     /**
      * Factory method to create a `DomainValue` that represents a new, '''initialized'''
      * object of the given type and that was created (explicitly or implicitly) by the
-     * instruction with the specified program counter. 
-     * 
+     * instruction with the specified program counter.
+     *
      * ==General Remarks==
-     * The given type usually identifies a class type (not an interface type) that is 
-     * not abstract, but in some cases (e.g. consider `java.awt.Toolkit()`) 
-     * it may be useful/meaningful to relax this requirement and to state that the 
+     * The given type usually identifies a class type (not an interface type) that is
+     * not abstract, but in some cases (e.g. consider `java.awt.Toolkit()`)
+     * it may be useful/meaningful to relax this requirement and to state that the
      * class precisely represents the runtime type – even
      * so the class is abstract. However, such decisions need to be made by the domain.
      *
@@ -796,11 +814,13 @@ trait Domain[+I] {
     // -----------------------------------------------------------------------------------
 
     /**
-     * Returns `true` iff at least one possible extension of the given `value` is in the
-     * specified range; that is if the intersection of the range of values captured
-     * by the given `value` and the specified range is non-empty.
+     * Returns `Yes` or `Unknown` iff at least one possible extension of the given
+     * `value` is in the specified range; that is if the intersection of the range of
+     * values captured by the given `value` and the specified range is non-empty.
+     *
      * For example, if the given value captures all positive integer values and the
-     * specified range is [-1,1] then the answer has to be Yes.
+     * specified range is [-1,1] then the answer has to be `Yes`. If we know nothing
+     * about the potential extension of the given value the answer will be `Unknown`.
      *
      * @param value A value that has to be of computational type integer.
      * @param lowerBound The range's lower bound (inclusive).
@@ -809,16 +829,21 @@ trait Domain[+I] {
     /*ABSTRACT*/ def isSomeValueInRange(
         value: DomainValue,
         lowerBound: Int,
-        upperBound: Int): Boolean
+        upperBound: Int): Answer
 
     /**
-     * Returns `true` iff at least one possible extension of given value is not in the
+     * Returns `Yes` or Unknown` iff at least one (possible) extension of given value is not in the
      * specified range; that is, if the set difference of the range of values captured
      * by the given `value` and  the specified range is non-empty.
-     * For example, if the given `value` represents the integer value `10` and the
-     * specified range is [0,Integer.MAX_VALUE] then the answer has to be `false`. But,
+     * For example, if the given `value` has the integer value `10` and the
+     * specified range is [0,Integer.MAX_VALUE] then the answer has to be `No`. But,
      * if the given `value` represents the range [-5,Integer.MAX_VALUE] and the specified
-     * range is again [0,Integer.MAX_VALUE] then the answer has to be `true`.
+     * range is again [0,Integer.MAX_VALUE] then the answer has to be `Yes` `Unknown`.
+     *
+     * The answer is Yes iff the analysis determined that at runtime `value`  will have
+     * a value that is not in the specified range. If the analysis(domain) is not able
+     * to determine whether the value is or is not in the given range then the answer
+     * has to be unknown.
      *
      * @param value A value that has to be of computational type integer.
      * @param lowerBound The range's lower bound (inclusive).
@@ -827,7 +852,7 @@ trait Domain[+I] {
     /*ABSTRACT*/ def isSomeValueNotInRange(
         value: DomainValue,
         lowerBound: Int,
-        upperBound: Int): Boolean
+        upperBound: Int): Answer
 
     /**
      * Determines whether the given value is `null` (`Yes`), maybe `null` (`Unknown`) or
@@ -890,7 +915,11 @@ trait Domain[+I] {
      * }
      * }}}
      */
-    def typeOfValue(value: DomainValue): TypesAnswer = HasUnknownType
+    def typeOfValue(value: DomainValue): TypesAnswer =
+        value match {
+            case ta: TypesAnswer ⇒ ta
+            case _               ⇒ TypeUnknown
+        }
 
     /**
      * Tries to determine if the type referred to as `subtype` is a subtype of the
@@ -910,7 +939,7 @@ trait Domain[+I] {
      * @note The returned value is only meaningful if the value does not represent
      *      the runtime value `null`.
      */
-    /*ABSTRACT*/ def isSubtypeOf(
+    /*ABSTRACT*/ def isSubtypeOf( // TODO Rename maybeSubtypeOf
         value: DomainValue,
         supertype: ReferenceType): Answer
 
@@ -1240,37 +1269,73 @@ trait Domain[+I] {
      */
     type ArrayStoreResult = Computation[Nothing, ExceptionValues]
 
+    //
+    // STORING VALUES IN AND LOADING VALUES FROM ARRAYS
+    //
+
     def aaload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
-    def aastore(pc: PC, value: DomainValue, index: DomainValue,
-                arrayref: DomainValue): ArrayStoreResult
+
+    def aastore(
+        pc: PC,
+        value: DomainValue,
+        index: DomainValue,
+        arrayref: DomainValue): ArrayStoreResult
 
     def baload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
-    def bastore(pc: PC, value: DomainValue, index: DomainValue,
-                arrayref: DomainValue): ArrayStoreResult
+
+    def bastore(
+        pc: PC,
+        value: DomainValue,
+        index: DomainValue,
+        arrayref: DomainValue): ArrayStoreResult
 
     def caload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
-    def castore(pc: PC, value: DomainValue, index: DomainValue,
-                arrayref: DomainValue): ArrayStoreResult
+
+    def castore(
+        pc: PC,
+        value: DomainValue,
+        index: DomainValue,
+        arrayref: DomainValue): ArrayStoreResult
 
     def daload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
-    def dastore(pc: PC, value: DomainValue, index: DomainValue,
-                arrayref: DomainValue): ArrayStoreResult
+
+    def dastore(
+        pc: PC,
+        value: DomainValue,
+        index: DomainValue,
+        arrayref: DomainValue): ArrayStoreResult
 
     def faload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
-    def fastore(pc: PC, value: DomainValue, index: DomainValue,
-                arrayref: DomainValue): ArrayStoreResult
+
+    def fastore(
+        pc: PC,
+        value: DomainValue,
+        index: DomainValue,
+        arrayref: DomainValue): ArrayStoreResult
 
     def iaload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
-    def iastore(pc: PC, value: DomainValue, index: DomainValue,
-                arrayref: DomainValue): ArrayStoreResult
+
+    def iastore(
+        pc: PC,
+        value: DomainValue,
+        index: DomainValue,
+        arrayref: DomainValue): ArrayStoreResult
 
     def laload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
-    def lastore(pc: PC, value: DomainValue, index: DomainValue,
-                arrayref: DomainValue): ArrayStoreResult
+
+    def lastore(
+        pc: PC,
+        value: DomainValue,
+        index: DomainValue,
+        arrayref: DomainValue): ArrayStoreResult
 
     def saload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
-    def sastore(pc: PC, value: DomainValue, index: DomainValue,
-                arrayref: DomainValue): ArrayStoreResult
+
+    def sastore(
+        pc: PC,
+        value: DomainValue,
+        index: DomainValue,
+        arrayref: DomainValue): ArrayStoreResult
 
     //
     // LENGTH OF AN ARRAY
@@ -1279,7 +1344,9 @@ trait Domain[+I] {
     /**
      * Returns the array's length or throws a `NullPointerException`.
      */
-    def arraylength(pc: PC, arrayref: DomainValue): Computation[DomainValue, ExceptionValue]
+    def arraylength(
+        pc: PC,
+        arrayref: DomainValue): Computation[DomainValue, ExceptionValue]
 
     //
     // TYPE CONVERSION
@@ -1365,40 +1432,44 @@ trait Domain[+I] {
      *
      * @return The field's value or a new `NullPointerException`.
      */
-    def getfield(pc: PC,
-                 objectref: DomainValue,
-                 declaringClass: ObjectType,
-                 name: String,
-                 fieldType: FieldType): Computation[DomainValue, ExceptionValue]
+    def getfield(
+        pc: PC,
+        objectref: DomainValue,
+        declaringClass: ObjectType,
+        name: String,
+        fieldType: FieldType): Computation[DomainValue, ExceptionValue]
 
     /**
      * Returns the field's value.
      *
      * @return The field's value or a new `LinkageException`.
      */
-    def getstatic(pc: PC,
-                  declaringClass: ObjectType,
-                  name: String,
-                  fieldType: FieldType): Computation[DomainValue, Nothing]
+    def getstatic(
+        pc: PC,
+        declaringClass: ObjectType,
+        name: String,
+        fieldType: FieldType): Computation[DomainValue, Nothing]
 
     /**
      * Sets the fields values if the given `objectref` is not `null`.
      */
-    def putfield(pc: PC,
-                 objectref: DomainValue,
-                 value: DomainValue,
-                 declaringClass: ObjectType,
-                 name: String,
-                 fieldType: FieldType): Computation[Nothing, ExceptionValue]
+    def putfield(
+        pc: PC,
+        objectref: DomainValue,
+        value: DomainValue,
+        declaringClass: ObjectType,
+        name: String,
+        fieldType: FieldType): Computation[Nothing, ExceptionValue]
 
     /**
      * Sets the fields values if the given class can be found.
      */
-    def putstatic(pc: PC,
-                  value: DomainValue,
-                  declaringClass: ObjectType,
-                  name: String,
-                  fieldType: FieldType): Computation[Nothing, Nothing]
+    def putstatic(
+        pc: PC,
+        value: DomainValue,
+        declaringClass: ObjectType,
+        name: String,
+        fieldType: FieldType): Computation[Nothing, Nothing]
 
     //
     // METHOD INVOCATIONS
@@ -1464,7 +1535,7 @@ trait Domain[+I] {
     /**
      * Computation that returns a numeric value or an `ObjectType.ArithmeticException`.
      */
-    type IntegerDivisionResult = Computation[DomainValue, ExceptionValue]
+    type IntegerLikeValueOrArithmeticException = Computation[DomainValue, ExceptionValue]
 
     def dadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
     def ddiv(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
@@ -1480,10 +1551,10 @@ trait Domain[+I] {
 
     def iadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
     def iand(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
-    def idiv(pc: PC, value1: DomainValue, value2: DomainValue): IntegerDivisionResult
+    def idiv(pc: PC, value1: DomainValue, value2: DomainValue): IntegerLikeValueOrArithmeticException
     def imul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
     def ior(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
-    def irem(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def irem(pc: PC, value1: DomainValue, value2: DomainValue): IntegerLikeValueOrArithmeticException
     def ishl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
     def ishr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
     def isub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
@@ -1493,10 +1564,10 @@ trait Domain[+I] {
 
     def ladd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
     def land(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
-    def ldiv(pc: PC, value1: DomainValue, value2: DomainValue): IntegerDivisionResult
+    def ldiv(pc: PC, value1: DomainValue, value2: DomainValue): IntegerLikeValueOrArithmeticException
     def lmul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
     def lor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
-    def lrem(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def lrem(pc: PC, value1: DomainValue, value2: DomainValue): IntegerLikeValueOrArithmeticException
     def lshl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
     def lshr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
     def lsub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue

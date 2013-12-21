@@ -49,14 +49,14 @@ package l0
  * @author Michael Eichberg
  */
 trait TypeLevelDomain[+I]
-    extends Domain[I]
+    extends Domain[I]    
     with DefaultDomainValueBinding[I]
+    with Configuration
     with DefaultTypeLevelReferenceValues[I]
     with DefaultTypeLevelIntegerValues[I]
     with DefaultTypeLevelLongValues[I]
     with DefaultTypeLevelFloatValues[I]
     with DefaultTypeLevelDoubleValues[I]
-    with TypeLevelArrayInstructions
     with TypeLevelFieldAccessInstructions
     with TypeLevelInvokeInstructions
     with DefaultClassHierarchy

@@ -43,11 +43,12 @@ import java.util.zip.ZipFile
 import java.io.DataInputStream
 import java.io.ByteArrayInputStream
 
+import scala.Console._
 import scala.util.control.ControlThrowable
 
 /**
  * Performs an abstract interpretation of all methods of the given class file(s).
- * 
+ *
  * This class is very helpful during the development and testing of new domains.
  *
  * @author Michael Eichberg
@@ -179,17 +180,19 @@ object InterpretMethods {
                 report +=
                     "\n"+exClass+"("+exInstances.size+")__________________________\n"
 
-                report += exInstances.map(
-                    ex ⇒ {
-                        Console.UNDERLINED + ex._1.thisType.fqn+"\033[24m"+"{ "+
-                            ex._2.toJava+" => "+
-                            Console.BOLD +
-                            Option(ex._3).map { ex ⇒
-                                (ex.getClass().getSimpleName()+" => "+ex.getMessage()).trim
-                            }.getOrElse("")+
-                            "\033[21m"+
-                            " }"
-                    }).mkString("\n\t", ",\n\t", "\n")
+                report += exInstances.map(ex ⇒ {
+                    val (classFile, method, throwable) = ex
+                    UNDERLINED + classFile.thisType.fqn+"\033[24m"+"{ "+
+                        method.toJava+" => "+
+                        RED +
+                        (if (throwable != null)
+                            (throwable.getClass().getSimpleName()+" => "+throwable.getMessage()).trim
+                        else
+                            ""
+                        ) +
+                        RESET+
+                        " }"
+                }).mkString("\n\t", ",\n\t", "\n")
             })
             report +=
                 "\nDuring the interpretation of "+

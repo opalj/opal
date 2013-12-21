@@ -76,7 +76,9 @@ trait PreciseLongValues[+I] extends Domain[I] with Configuration {
     /**
      * Abstracts over all values with computational type `long`.
      */
-    sealed trait LongLikeValue extends Value { this: DomainValue ⇒
+    sealed trait LongLikeValue
+            extends Value
+            with IsLongValue { this: DomainValue ⇒
 
         final def computationalType: ComputationalType = ComputationalTypeLong
 
@@ -99,12 +101,6 @@ trait PreciseLongValues[+I] extends Domain[I] with Configuration {
         val value: Long
 
     }
-
-    abstract override def typeOfValue(value: DomainValue): TypesAnswer =
-        value match {
-            case longLikeValue: LongLikeValue ⇒ IsLongValue
-            case _                            ⇒ super.typeOfValue(value)
-        }
 
     //
     // QUESTION'S ABOUT VALUES
@@ -222,7 +218,7 @@ trait PreciseLongValues[+I] extends Domain[I] with Configuration {
     override def ldiv(
         pc: PC,
         value1: DomainValue,
-        value2: DomainValue): Computation[DomainValue, DomainValue] =
+        value2: DomainValue): IntegerLikeValueOrArithmeticException =
         withLongValuesOrElse(value1, value2) { (v1, v2) ⇒
             if (v2 == 0)
                 ThrowsException(InitializedObject(pc, ArithmeticException))
@@ -265,11 +261,22 @@ trait PreciseLongValues[+I] extends Domain[I] with Configuration {
             LongValue(pc)
         }
 
-    override def lrem(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def lrem(
+        pc: PC,
+        value1: DomainValue,
+        value2: DomainValue): IntegerLikeValueOrArithmeticException =
         withLongValuesOrElse(value1, value2) { (v1, v2) ⇒
-            LongValue(pc, v1 % v2)
+            if (v2 == 0l)
+                ThrowsException(InitializedObject(pc, ArithmeticException))
+            else
+                ComputedValue(LongValue(pc, v1 % v2))
         } {
-            LongValue(pc)
+            if (throwArithmeticExceptions)
+                ComputedValueAndException(
+                    LongValue(pc),
+                    InitializedObject(pc, ArithmeticException))
+            else
+                ComputedValue(LongValue(pc))
         }
 
     override def lshl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
