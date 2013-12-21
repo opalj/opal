@@ -37,14 +37,13 @@ package ai
 package domain
 package l0
 
-import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
-
 /**
  * Implementation of a Domain's `isSubtypeOf(...)` method that delegates to
  * the corresponding method defined by the class `...resolved.analyses.ClassHierarchy`.
- *  
+ *
  * This class uses BAT's `preInitializedClassHierarchy` (see `ClassHierarchy` for details)
- * for answering queries.
+ * for answering queries. Hence, you should only ever use this trait if you just
+ * want to do some testing or debugging.
  *
  * @author Michael Eichberg
  */

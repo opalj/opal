@@ -288,7 +288,7 @@ sealed trait UIDList[+T <: UID] { thisList ⇒
     /**
      * Passes all elements of this list to the given function.
      */
-    @inline final def foreach[X >: T <: UID, U](f: X ⇒ U): Unit = {
+    @inline final def foreach[U](f: T ⇒ U): Unit = {
         var rest: UIDList[T] = thisList
         while (rest.nonEmpty) {
             f(rest.head)

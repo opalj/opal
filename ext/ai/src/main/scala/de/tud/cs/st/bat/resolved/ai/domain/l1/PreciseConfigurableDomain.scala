@@ -39,6 +39,7 @@ package l1
 
 trait PreciseDomain[+I]
     extends Domain[I]
+    with GeneralizedArrayHandling
     with Origin
     with DefaultDomainValueBinding[I]
     with DefaultPreciseIntegerValues[I]
@@ -47,7 +48,6 @@ trait PreciseDomain[+I]
     with DefaultPreciseLongValues[I]
     with l0.DefaultTypeLevelFloatValues[I]
     with l0.DefaultTypeLevelDoubleValues[I]
-    with l0.TypeLevelArrayInstructions
     with TypeLevelFieldAccessInstructionsWithNullPointerHandling
     with TypeLevelInvokeInstructionsWithNullPointerHandling
     with l0.DefaultClassHierarchy

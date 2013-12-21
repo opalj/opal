@@ -143,7 +143,7 @@ object CallGraphVisualization {
         println("Maximum number of method calls over all methods: "+maxCallSitesPerMethod)
 
         //
-        // Let's create visualization
+        // Let's create the visualization
         //
         import de.tud.cs.st.util.graphs.{ toDot, SimpleNode, Node }
         val nodes: Set[Node] = {

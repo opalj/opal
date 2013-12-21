@@ -46,9 +46,8 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  */
 trait DefaultTypeLevelReferenceValues[+I]
         extends DefaultDomainValueBinding[I]
-        with TypeLevelReferenceValues[I] { domain ⇒
-
-    type UpperBound = UIDList[ReferenceType]
+        with TypeLevelReferenceValues[I] {
+    domain: Configuration with IntegerValuesComparison ⇒
 
     // -----------------------------------------------------------------------------------
     //
@@ -56,70 +55,82 @@ trait DefaultTypeLevelReferenceValues[+I]
     //
     // -----------------------------------------------------------------------------------
 
-    case class AReferenceValue protected[DefaultTypeLevelReferenceValues] (
-        upperBound: ReferenceType)
-            extends super.ReferenceValue
-            with IsReferenceValue { value ⇒
+    protected class ANullValue extends super.NullValue { this: DomainValue ⇒
 
-        override lazy val upperBounds: Iterable[ValueBasedUpperBound] =
-            Iterable(
-                new ValueBasedUpperBound {
-                    override def isNull: Answer = Unknown
-                    override def isPrecise: Boolean = false // TODO Add a test such as "classHierarchy.hasSubtypes(...)
-                    override def upperBound: ai.UpperBound = Iterable(value.upperBound)
-                    override def isSubtypeOf(supertype: ReferenceType): Answer =
-                        value.isSubtypeOf(supertype)
-                }
-            )
+        override def doJoin(joinPC: Int, other: DomainValue): Update[DomainValue] = {
+            val that = asReferenceValue(other)
+            if (that.isNull.yes)
+                NoUpdate
+            else
+                StructuralUpdate(
+                    if (that.isNull.maybeNo)
+                        other
+                    else that match {
+                        case AReferenceValue(typeBound) ⇒
+                            ReferenceValue(joinPC, typeBound)
+                        case MReferenceValue(typeBound) ⇒
+                            ReferenceValue(joinPC, typeBound)
+                    }
+                )
+        }
+    }
 
-        override def hasSingleBound: Option[ReferenceType] = Some(upperBound)
+    protected class AReferenceValue(
+        val theUpperTypeBound: ReferenceType)
+            extends super.ClassValue { value ⇒
+
+        override def referenceValues: Iterable[IsAReferenceValue] = Iterable(this)
+
+        override def upperTypeBound: UpperTypeBound = UIDList(theUpperTypeBound)
 
         override def isSubtypeOf(supertype: ReferenceType): Answer = {
-            // TODO if the class hierarchy has better support to identify whether to types __may be__ in a subtype relation..
-            if (domain.isSubtypeOf(upperBound, supertype).yes)
-                Yes
-            else
-                Unknown
+            val isSubtypeOf = domain.isSubtypeOf(theUpperTypeBound, supertype)
+            isSubtypeOf match {
+                case Yes             ⇒ Yes
+                case No if isPrecise ⇒ No
+                case _               ⇒ Unknown
+            }
         }
 
         // NARROWING OPERATION
-        override def addUpperBound(
+        override def refineUpperTypeBound(
             pc: PC,
-            additionalUpperBound: ReferenceType): ReferenceValue = {
+            supertype: ReferenceType): ReferenceValue = {
             // BATAI calls this method only if a previous "subtype of" test 
-            // (typeOf(this.value) <: additionalUpperBound ?) 
+            // (this.typeOfvalue <: supertype ?) 
             // returned unknown or no and we are now on the branch where this relation
-            // has to hold. Hence, we only need handle the case where 
-            // the new bound is more strict than the previous bound.  
-            if (domain.isSubtypeOf(additionalUpperBound, upperBound).yes)
-                AReferenceValue(additionalUpperBound)
+            // has to hold. Hence, we only need to handle the case where 
+            // supertype is more strict than/is a subtype of typeOfValue.
+            val isSubtypeOf = domain.isSubtypeOf(supertype, theUpperTypeBound)
+            if (isSubtypeOf.yes)
+                ReferenceValue(pc, supertype)
             else
                 // probably some (abstract) class and an interface or two
                 // unrelated interfaces
-                MReferenceValue(UIDList(upperBound, additionalUpperBound))
+                ReferenceValue(pc, UIDList(theUpperTypeBound, supertype))
         }
 
         // WIDENING OPERATION
         override def doJoin(joinPC: Int, other: DomainValue): Update[DomainValue] = {
-            val thisUpperBound = this.upperBound
+            val thisTypeBound = this.theUpperTypeBound
             other match {
-                case AReferenceValue(thatUpperBound) ⇒
-                    if ((thisUpperBound eq thatUpperBound) ||
-                        domain.isSubtypeOf(thatUpperBound, thisUpperBound).yes)
+                case AReferenceValue(thatTypeBound) ⇒
+                    if ((thisTypeBound eq thatTypeBound) ||
+                        domain.isSubtypeOf(thatTypeBound, thisTypeBound).yes)
                         NoUpdate
-                    else if (domain.isSubtypeOf(thisUpperBound, thatUpperBound).yes)
+                    else if (domain.isSubtypeOf(thisTypeBound, thatTypeBound).yes)
                         StructuralUpdate(other)
                     else
                         StructuralUpdate(
-                            MReferenceValue(UIDList(thisUpperBound, thatUpperBound))
+                            ReferenceValue(joinPC, UIDList(thisTypeBound, thatTypeBound))
                         )
-                case MReferenceValue(thatUpperBound) ⇒
-                    val newUpperBound = thatUpperBound filter { thatBound ⇒
-                        domain.isSubtypeOf(thisUpperBound, thatBound) match {
+                case MReferenceValue(thatUpperTypeBound) ⇒
+                    val newTypeBound = thatUpperTypeBound filter { thatType ⇒
+                        domain.isSubtypeOf(thisTypeBound, thatType) match {
                             case Yes ⇒
                                 return StructuralUpdate(other)
                             case No ⇒
-                                if (domain.isSubtypeOf(thatBound, thisUpperBound).yes)
+                                if (domain.isSubtypeOf(thatType, thisTypeBound).yes)
                                     false
                                 else
                                     true
@@ -127,64 +138,40 @@ trait DefaultTypeLevelReferenceValues[+I]
                                 true
                         }
                     }
-                    if (newUpperBound.isEmpty)
+                    if (newTypeBound.isEmpty)
                         // all upper bounds of "other" are a subtype of this upper bound
                         NoUpdate
                     else
-                        StructuralUpdate(MReferenceValue(newUpperBound + thisUpperBound))
+                        StructuralUpdate(
+                            ReferenceValue(joinPC, newTypeBound + thisTypeBound)
+                        )
+                case NullValue() ⇒
+                    NoUpdate
             }
         }
 
-        override def adapt[ThatI >: I](
-            targetDomain: Domain[ThatI],
-            pc: PC): targetDomain.DomainValue =
-            targetDomain match {
-                case thatDomain: DefaultTypeLevelReferenceValues[ThatI] ⇒
-                    adaptAReferenceValue(thatDomain, pc).asInstanceOf[targetDomain.DomainValue]
-                case _ ⇒
-                    super.adapt(targetDomain, pc)
-            }
-
-        // [Scala 2.10.3] This private method is needed to avoid that the compiler crashes! 
-        private[this] def adaptAReferenceValue[ThatI >: I](
-            targetDomain: DefaultTypeLevelReferenceValues[ThatI],
-            pc: PC): targetDomain.AReferenceValue =
-            targetDomain.AReferenceValue(this.upperBound)
+        override def adapt[ThatI >: I](target: Domain[ThatI], pc: PC): target.DomainValue =
+            target.ReferenceValue(pc, theUpperTypeBound)
 
         override def summarize(pc: PC): DomainValue = this
 
         override def summarize(pc: PC, value: DomainValue): DomainValue =
-            sys.error("not implemented")
+            this.join(pc, value) match {
+                case StructuralUpdate(value) ⇒ value
+                case _                       ⇒ this
+            }
     }
 
-    /**
-     * Determines the nullness-property of the given value.
-     *
-     * @param value A value of type `ReferenceValue`.
-     */
-    def isNull(value: DomainValue): Answer = value match {
-        case MReferenceValue(UIDList.empty) ⇒ Yes
-        case _                              ⇒ Unknown
+    object AReferenceValue {
+        def unapply(that: AReferenceValue): Option[ReferenceType] =
+            Some(that.theUpperTypeBound)
     }
 
-    case class MReferenceValue protected[DefaultTypeLevelReferenceValues] (
-        upperBound: UpperBound)
-            extends super.ReferenceValue
-            with IsReferenceValue { value ⇒
+    protected class MReferenceValue(
+        val upperTypeBound: UpperTypeBound)
+            extends super.ReferenceValue { value ⇒
 
-        override lazy val upperBounds: Iterable[ValueBasedUpperBound] =
-            Iterable(
-                new ValueBasedUpperBound {
-                    override def isNull: Answer = Unknown
-                    // TODO If we know that there are no subtypes...
-                    override def isPrecise: Boolean = false
-                    override def upperBound: ai.UpperBound = value.upperBound.toIterable
-                    override def isSubtypeOf(supertype: ReferenceType): Answer =
-                        value.isSubtypeOf(supertype)
-                }
-            )
-
-        override def hasSingleBound: Option[ReferenceType] = None
+        override def referenceValues: Iterable[IsAReferenceValue] = Iterable(this)
 
         /**
          * Determines if this value is a subtype of the given supertype by
@@ -196,41 +183,44 @@ trait DefaultTypeLevelReferenceValues[+I]
          *   	does not distinguish between class types and interface types.
          */
         override def isSubtypeOf(supertype: ReferenceType): Answer = {
-            if (upperBound exists { thisType ⇒ domain.isSubtypeOf(thisType, supertype).yes })
+            val isSubtypeOf = upperTypeBound exists { anUpperTypeBound ⇒
+                domain.isSubtypeOf(anUpperTypeBound, supertype).yes
+            }
+            if (isSubtypeOf)
                 Yes
             else
                 Unknown
         }
 
-        override def addUpperBound(
+        override def refineUpperTypeBound(
             pc: PC,
-            additionalUpperBound: ReferenceType): ReferenceValue = {
+            supertype: ReferenceType): ReferenceValue = {
             // BATAI calls this method only if a previous "subtype of" test 
             // (typeOf(this.value) <: additionalUpperBound ?) 
             // returned unknown. Hence, we only handle the case where the new bound
             // is more strict than the previous bound.
 
-            var newUpperBound: UIDList[ReferenceType] = UIDList.empty
-            upperBound foreach { (existingUpperBound: ReferenceType) ⇒
+            var newUpperTypeBound: UIDList[ReferenceType] = UIDList.empty
+            upperTypeBound foreach { (anUpperTypeBound: ReferenceType) ⇒
                 // ATTENTION: "!..yes" is not the same as "no" (there is also unknown)
-                if (!domain.isSubtypeOf(additionalUpperBound, existingUpperBound).yes)
-                    newUpperBound = newUpperBound + existingUpperBound
+                if (!domain.isSubtypeOf(supertype, anUpperTypeBound).yes)
+                    newUpperTypeBound = newUpperTypeBound + anUpperTypeBound
             }
-            if (newUpperBound.size == 0)
-                AReferenceValue(additionalUpperBound)
+            if (newUpperTypeBound.size == 0)
+                ReferenceValue(pc, supertype)
             else
-                MReferenceValue(newUpperBound + additionalUpperBound)
+                ReferenceValue(pc, newUpperTypeBound + supertype)
         }
 
         override def doJoin(joinPC: Int, that: DomainValue): Update[DomainValue] = {
             that match {
-                case AReferenceValue(thatUpperBound) ⇒
-                    val newUpperBound = this.upperBound filter { thisBound ⇒
-                        domain.isSubtypeOf(thatUpperBound, thisBound) match {
+                case AReferenceValue(thatUpperTypeBound) ⇒
+                    val newUpperTypeBound = this.upperTypeBound filter { thisBound ⇒
+                        domain.isSubtypeOf(thatUpperTypeBound, thisBound) match {
                             case Yes ⇒
                                 return NoUpdate
                             case No ⇒
-                                if (domain.isSubtypeOf(thisBound, thatUpperBound).yes)
+                                if (domain.isSubtypeOf(thisBound, thatUpperTypeBound).yes)
                                     false
                                 else
                                     true
@@ -238,37 +228,39 @@ trait DefaultTypeLevelReferenceValues[+I]
                                 true
                         }
                     }
-                    if (newUpperBound.isEmpty)
+                    if (newUpperTypeBound.isEmpty)
                         // all upper bounds of "other" are a subtype of this upper bound
                         StructuralUpdate(that)
                     else
-                        StructuralUpdate(MReferenceValue(newUpperBound + thatUpperBound))
-                case MReferenceValue(thatUpperBound) ⇒
-                    val thisUpperBound = this.upperBound
-                    if (thisUpperBound == thatUpperBound)
+                        StructuralUpdate(
+                            ReferenceValue(joinPC, newUpperTypeBound + thatUpperTypeBound)
+                        )
+                case MReferenceValue(thatUpperTypeBound) ⇒
+                    val thisUpperTypeBound = this.upperTypeBound
+                    if (thisUpperTypeBound == thatUpperTypeBound)
                         return NoUpdate
                     val thisDomain = domain
-                    var newUpperBound = thisUpperBound
-                    thatUpperBound foreach { (otherTypeBound: ReferenceType) ⇒
+                    var newUpperTypeBound = thisUpperTypeBound
+                    thatUpperTypeBound foreach { (otherUpperTypeBound: ReferenceType) ⇒
                         var addOtherTypeBounds = true
-                        newUpperBound = newUpperBound filterNot { vt ⇒
-                            if (thisDomain.isSubtypeOf(otherTypeBound, vt).yes)
+                        newUpperTypeBound = newUpperTypeBound filterNot { vt ⇒
+                            if (thisDomain.isSubtypeOf(otherUpperTypeBound, vt).yes)
                                 true
                             else {
-                                if (thisDomain.isSubtypeOf(vt, otherTypeBound).yes)
+                                if (thisDomain.isSubtypeOf(vt, otherUpperTypeBound).yes)
                                     addOtherTypeBounds = false
                                 false
                             }
                         }
                         if (addOtherTypeBounds)
-                            newUpperBound = newUpperBound + otherTypeBound
+                            newUpperTypeBound = newUpperTypeBound + otherUpperTypeBound
                     }
-                    if (newUpperBound eq thisUpperBound) {
+                    if (newUpperTypeBound eq thisUpperTypeBound) {
                         NoUpdate
-                    } else if (newUpperBound eq thatUpperBound) {
+                    } else if (newUpperTypeBound eq thatUpperTypeBound) {
                         StructuralUpdate(that)
                     } else
-                        StructuralUpdate(MReferenceValue(newUpperBound))
+                        StructuralUpdate(ReferenceValue(joinPC, newUpperTypeBound))
             }
         }
 
@@ -276,49 +268,40 @@ trait DefaultTypeLevelReferenceValues[+I]
             targetDomain: Domain[ThatI],
             pc: PC): targetDomain.DomainValue =
             targetDomain match {
-                case thatDomain: DefaultTypeLevelReferenceValues[ThatI] ⇒
-                    adaptMReferenceValue(thatDomain, pc).asInstanceOf[targetDomain.DomainValue]
+                case td: DefaultTypeLevelReferenceValues[_] ⇒
+                    td.ReferenceValue(pc, this.upperTypeBound).asInstanceOf[targetDomain.DomainValue]
                 case _ ⇒ super.adapt(targetDomain, pc)
             }
-
-        protected[DefaultTypeLevelReferenceValues] def adaptMReferenceValue[ThatI >: I](
-            targetDomain: DefaultTypeLevelReferenceValues[ThatI],
-            pc: PC): targetDomain.MReferenceValue =
-            targetDomain.MReferenceValue(this.upperBound)
 
         override def summarize(pc: PC): DomainValue = this
 
         override def summarize(pc: PC, value: DomainValue): DomainValue = {
-            if (this eq value)
-                return this
-
-            val MReferenceValue(otherTypeBounds) = value
-            if (this.upperBound == otherTypeBounds ||
-                domain.isSubtypeOf(otherTypeBounds, this.upperBound)) {
-                this
-            } else if (domain.isSubtypeOf(this.upperBound, otherTypeBounds)) {
-                value
-            } else {
-                sys.error("needs to be implemented")
-                //MReferenceValue(null: ReferenceType) // TODO calculate the least upper bound...
+            join(pc, value) match {
+                case NoUpdate                 ⇒ this
+                case SomeUpdate(updatedValue) ⇒ updatedValue
             }
         }
 
-        override def equals(other: Any): Boolean =
-            other match {
-                case that: MReferenceValue ⇒
-                    (that eq this) || (
-                        (that canEqual this) &&
-                        this.upperBound == that.upperBound)
-                case _ ⇒ false
-            }
-
-        protected def canEqual(other: MReferenceValue): Boolean = true
-
-        override lazy val hashCode: Int = (upperBound.hashCode() * 41)
+        //        override def equals(other: Any): Boolean =
+        //            other match {
+        //                case that: MReferenceValue ⇒
+        //                    (that eq this) || (
+        //                        (that canEqual this) &&
+        //                        this.upperTypeBound == that.upperTypeBound)
+        //                case _ ⇒ false
+        //            }
+        //
+        //        protected def canEqual(other: MReferenceValue): Boolean = true
+        //
+        //        override lazy val hashCode: Int = (upperTypeBound.hashCode() * 41)
 
         override def toString() =
-            "TypeLevelReferenceValue("+upperBound.map(_.toJava).mkString(" with ")+")"
+            "TypeLevelReferenceValue("+upperTypeBound.map(_.toJava).mkString(" with ")+")"
+    }
+
+    object MReferenceValue {
+        def unapply(that: MReferenceValue): Option[UpperTypeBound] =
+            Some(that.upperTypeBound)
     }
 
     /**
@@ -326,10 +309,13 @@ trait DefaultTypeLevelReferenceValues[+I]
      * a subtype of the second type.
      */
     protected def isSubtypeOf(
-        typeBoundsA: UpperBound,
-        typeBoundsB: UpperBound): Boolean = {
-        typeBoundsA.forall(aType ⇒
-            typeBoundsB.exists(bType ⇒ domain.isSubtypeOf(aType, bType).yes))
+        typeBoundsA: UpperTypeBound,
+        typeBoundsB: UpperTypeBound): Boolean = {
+        typeBoundsA forall { aType ⇒
+            typeBoundsB exists { bType ⇒
+                domain.isSubtypeOf(aType, bType).yes
+            }
+        }
     }
 
     protected def summarizeReferenceValues(
@@ -340,38 +326,75 @@ trait DefaultTypeLevelReferenceValues[+I]
         }
 
     //
-    // INFORMATION ABOUT REFERENCE VALUES
-    //
-
-    abstract override def typeOfValue(value: DomainValue): TypesAnswer =
-        value match {
-            case that: IsReferenceValue ⇒ that
-            case _                      ⇒ super.typeOfValue(value)
-        }
-
-    //
     // FACTORY METHODS
     //
 
-    override def NullValue(pc: PC): DomainValue =
-        MReferenceValue(UIDList.empty)
+    private[this] val TheNullValue: ReferenceValue = new ANullValue()
+    override def NullValue(pc: PC): ReferenceValue = TheNullValue
 
-    override def NonNullReferenceValue(pc: PC, objectType: ObjectType): DomainValue =
-        AReferenceValue(objectType)
+    override def NonNullReferenceValue(pc: PC, objectType: ObjectType): ReferenceValue =
+        new AReferenceValue(objectType)
 
-    override def ReferenceValue(pc: PC, referenceType: ReferenceType): DomainValue =
-        AReferenceValue(referenceType)
+    override def ReferenceValue(pc: PC, referenceType: ReferenceType): ReferenceValue =
+        new AReferenceValue(referenceType)
 
-    override def NewObject(pc: PC, referenceType: ReferenceType): DomainValue =
-        AReferenceValue(referenceType)
+    /**
+     * Factory method to create a `DomainValue` that represents ''either a reference
+     * value that has the given type bound and is initialized or the value `null`''. However, the
+     * information whether the value is `null` or not is not available. Furthermore, the
+     * type may also be an upper bound. I.e., we may have multiple types that and
+     * the runtime type is guaranteed to be a subtype of all given types.
+     *
+     * The domain may ignore the information about the value and the origin (`pc`), but
+     * it has to remain possible for the domain to identify the component type of an
+     * array.
+     *
+     * ==Summary==
+     * The properties of the domain value are:
+     *
+     *  - Initialized: '''yes''' (the constructor was called)
+     *  - Type: '''Upper Bound'''
+     *  - Null: '''MayBe''' (It is unknown whether the value is `null` or not.)
+     */
+    def ReferenceValue(pc: PC, upperTypeBound: UpperTypeBound): ReferenceValue =
+        new MReferenceValue(upperTypeBound)
 
-    override def InitializedObject(pc: PC, referenceType: ReferenceType): DomainValue =
-        AReferenceValue(referenceType)
+    override def NewObject(pc: PC, referenceType: ReferenceType): ReferenceValue =
+        new AReferenceValue(referenceType)
+
+    override def InitializedObject(pc: PC, referenceType: ReferenceType): ReferenceValue =
+        new AReferenceValue(referenceType)
 
     override def StringValue(pc: PC, value: String): DomainValue =
-        AReferenceValue(ObjectType.String)
+        new AReferenceValue(ObjectType.String)
 
     override def ClassValue(pc: PC, t: Type): DomainValue =
-        AReferenceValue(ObjectType.Class)
+        new AReferenceValue(ObjectType.Class)
+
+    // -----------------------------------------------------------------------------------
+    //
+    // CREATING ARRAY REPRESENTATIONS
+    //
+    // -----------------------------------------------------------------------------------
+
+    //
+    // CREATE ARRAY
+    //
+    override def newarray(
+        pc: PC,
+        count: DomainValue,
+        componentType: FieldType): Computation[DomainValue, DomainValue] =
+        //ComputedValueAndException(TypedValue(ArrayType(componentType)), TypedValue(ObjectType.NegativeArraySizeException))
+        ComputedValue(InitializedObject(pc, ArrayType(componentType)))
+
+    /**
+     * @note The componentType may be (again) an array type.
+     */
+    override def multianewarray(
+        pc: PC,
+        counts: List[DomainValue],
+        arrayType: ArrayType): Computation[DomainValue, DomainValue] =
+        //ComputedValueAndException(TypedValue(arrayType), TypedValue(ObjectType.NegativeArraySizeException))
+        ComputedValue(InitializedObject(pc, arrayType))
 
 }

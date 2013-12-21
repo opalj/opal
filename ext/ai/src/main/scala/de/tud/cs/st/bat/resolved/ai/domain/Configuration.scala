@@ -51,7 +51,7 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  *
  * @author Michael Eichberg
  */
-trait Configuration { this: SomeDomain ⇒
+trait Configuration {
 
     /**
      * @return `true`

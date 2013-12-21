@@ -35,54 +35,14 @@ package bat
 package resolved
 package ai
 package domain
-package l1
-
-import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 /**
- * Enables the tracing of concrete string values and can, e.g., be used to
- * resolve static "class.forName(...)" calls.
- *
  * @author Michael Eichberg
  */
-trait StringValues[+I] extends DefaultPreciseReferenceValues[I] {
+trait Origin { this: SomeDomain ⇒
 
-    class AStringValue(
-        pc: Int, // sets the pc value of the superclass
-        val value: String)
-            extends AReferenceValue(pc, UIDList(ObjectType.String), No, true) { this: DomainValue ⇒
-
-        override def adapt[ThatI >: I](targetDomain: Domain[ThatI], pc: Int): targetDomain.DomainValue =
-            // I would prefer to write (but the compiler crashes!): 
-            // targetDomain match {
-            // 	case otherDomain: StringValues[ThatI] ⇒
-            //      new otherDomain.AStringValue(pc, this.value).asInstanceOf[targetDomain.DomainValue]
-            //  case _ ⇒ super.adapt(targetDomain, pc)
-            // }
-            if (targetDomain.isInstanceOf[StringValues[ThatI]]) {
-                val otherDomain = targetDomain.asInstanceOf[StringValues[ThatI]]
-                val newStringValue = new otherDomain.AStringValue(pc, this.value)
-                newStringValue.asInstanceOf[targetDomain.DomainValue]
-            } else
-                super.adapt(targetDomain, pc)
-
-        override def equals(other: Any): Boolean = {
-            super.equals(other) &&
-                other.asInstanceOf[AStringValue].value == this.value
-        }
-
-        override protected def canEqual(other: AReferenceValue): Boolean =
-            other.isInstanceOf[AStringValue]
-
-        override def hashCode: Int = super.hashCode + 41 * value.hashCode()
-
-        override def toString(): String = "String(pc="+pc+", value=\""+value+"\")"
-
+    def origin(value: DomainValue): Iterable[PC] = {
+        domainException(this, "the origin of \""+value+"\" is not available")
     }
 
-    override def StringValue(pc: Int, value: String): DomainValue = 
-        new AStringValue(pc, value)
-
 }
-
-

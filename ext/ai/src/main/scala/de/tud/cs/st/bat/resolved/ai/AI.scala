@@ -333,7 +333,6 @@ trait AI[D <: SomeDomain] {
                     initialWorkList, alreadyEvaluated, operandsArray, localsArray)
 
         import domain._
-        import ObjectType._
         type SingleValueDomainTest = (DomainValue) ⇒ Answer
         type TwoValuesDomainTest = (DomainValue, DomainValue) ⇒ Answer
 
@@ -822,13 +821,13 @@ trait AI[D <: SomeDomain] {
                             var previousKey = firstKey
                             for ((key, offset) ← switch.npairs) {
                                 if (!branchToDefaultRequired && (key - previousKey) > 1) {
-                                    if ((previousKey until key).exists(v ⇒ domain.isSomeValueInRange(index, v, v))) {
+                                    if ((previousKey until key).exists(v ⇒ domain.isSomeValueInRange(index, v, v).maybeYes)) {
                                         branchToDefaultRequired = true
                                     } else {
                                         previousKey = key
                                     }
                                 }
-                                if (domain.isSomeValueInRange(index, key, key)) {
+                                if (domain.isSomeValueInRange(index, key, key).maybeYes) {
                                     val branchTarget = pc + offset
                                     val (updatedOperands, updatedLocals) =
                                         domain.establishValue(branchTarget, key, index, remainingOperands, locals)
@@ -836,7 +835,7 @@ trait AI[D <: SomeDomain] {
                                 }
                             }
                             if (branchToDefaultRequired ||
-                                domain.isSomeValueNotInRange(index, firstKey, switch.npairs(switch.npairs.size - 1)._1)) {
+                                domain.isSomeValueNotInRange(index, firstKey, switch.npairs(switch.npairs.size - 1)._1).maybeYes) {
                                 gotoTarget(pc, pc + switch.defaultOffset, remainingOperands, locals)
                             }
                         }
@@ -849,7 +848,7 @@ trait AI[D <: SomeDomain] {
                         val high = tableswitch.high
                         var v = low
                         while (v <= high) {
-                            if (domain.isSomeValueInRange(index, v, v)) {
+                            if (domain.isSomeValueInRange(index, v, v).maybeYes) {
                                 val branchTarget = pc + tableswitch.jumpOffsets(v - low)
                                 val (updatedOperands, updatedLocals) =
                                     domain.establishValue(branchTarget, v, index, remainingOperands, locals)
@@ -857,7 +856,7 @@ trait AI[D <: SomeDomain] {
                             }
                             v = v + 1
                         }
-                        if (domain.isSomeValueNotInRange(index, low, high)) {
+                        if (domain.isSomeValueNotInRange(index, low, high).maybeYes) {
                             gotoTarget(pc, pc + tableswitch.defaultOffset, remainingOperands, locals)
                         }
 
@@ -878,9 +877,7 @@ trait AI[D <: SomeDomain] {
                         if (isExceptionValueNull.maybeYes) {
                             // if the operand of the athrow exception is null, a new 
                             // NullPointerException is raised by the JVM
-                            handleException(
-                                InitializedObject(pc, NullPointerException)
-                            )
+                            handleException(NullPointerException(pc))
                         }
                         if (isExceptionValueNull.maybeNo) {
                             val (updatedOperands, updatedLocals) = {
@@ -896,7 +893,7 @@ trait AI[D <: SomeDomain] {
                             val updatedExceptionValue = updatedOperands.head
 
                             domain.typeOfValue(exceptionValue) match {
-                                case HasUnknownType ⇒
+                                case TypeUnknown ⇒
                                     code.exceptionHandlersFor(pc).foreach { eh ⇒
                                         val branchTarget = eh.handlerPC
                                         // unless we have a "finally" handler, we can state
@@ -1505,7 +1502,8 @@ trait AI[D <: SomeDomain] {
                     }
                     case 112 /*irem*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThrough(domain.irem(pc, value1, value2) :: rest)
+                        val computation = domain.irem(pc, value1, value2)
+                        computationWithReturnValueAndException(computation, rest)
                     }
                     case 120 /*ishl*/ ⇒ {
                         val value2 :: value1 :: rest = operands
@@ -1551,7 +1549,8 @@ trait AI[D <: SomeDomain] {
                     }
                     case 113 /*lrem*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThrough(domain.lrem(pc, value1, value2) :: rest)
+                        val computation = domain.lrem(pc, value1, value2)
+                        computationWithReturnValueAndException(computation, rest)
                     }
                     case 121 /*lshl*/ ⇒ {
                         val value2 :: value1 :: rest = operands
@@ -1671,10 +1670,9 @@ trait AI[D <: SomeDomain] {
                                     // if objectref is null => UNCHANGED (see spec. for details)
                                     // if objectref is a subtype => UNCHANGED
                                     fallThrough()
-                                case No ⇒
-                                    handleException(InitializedObject(pc, ClassCastException))
+                                case No ⇒ handleException(ClassCastException(pc))
                                 case Unknown ⇒
-                                    handleException(InitializedObject(pc, ClassCastException))
+                                    handleException(ClassCastException(pc))
                                     val (newOperands, newLocals) =
                                         establishUpperBound(
                                             pc,

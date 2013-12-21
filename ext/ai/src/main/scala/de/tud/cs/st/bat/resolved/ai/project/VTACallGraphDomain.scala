@@ -123,7 +123,6 @@ class DefaultVTACallGraphDomain[Source](
         with l0.DefaultTypeLevelDoubleValues[Int]
         with l1.DefaultPreciseReferenceValues[Int]
         //with l1.StringValues[Int]
-        with l0.TypeLevelArrayInstructions
         with l0.TypeLevelFieldAccessInstructions
         with l0.TypeLevelInvokeInstructions
         with l1.ProjectBasedClassHierarchy[Source]

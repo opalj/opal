@@ -35,7 +35,7 @@ package bat
 package resolved
 package ai
 
-import de.tud.cs.st.util.Answer
+import de.tud.cs.st.util.{ Answer, Yes }
 
 /**
  * The answer of a domain to a query about a value's specific type.
@@ -57,7 +57,7 @@ sealed trait TypesAnswer
  *
  * @author Michael Eichberg
  */
-case object HasUnknownType extends TypesAnswer
+case object TypeUnknown extends TypesAnswer
 
 /**
  * The value has the primitive type.
@@ -67,40 +67,56 @@ sealed trait IsPrimitiveValue extends TypesAnswer {
 }
 
 object IsPrimitiveValue {
-    def unapplay(answer: IsPrimitiveValue): Option[BaseType] = Some(answer.primitiveType)
+    def unapplay(answer: IsPrimitiveValue): Option[BaseType] =
+        Some(answer.primitiveType)
 }
 
-case object IsBooleanValue extends IsPrimitiveValue { final val primitiveType = BooleanType }
+trait IsBooleanValue extends IsPrimitiveValue {
+    final def primitiveType = BooleanType
+}
 
-case object IsByteValue extends IsPrimitiveValue { final val primitiveType = ByteType }
+trait IsByteValue extends IsPrimitiveValue {
+    final def primitiveType = ByteType
+}
 
-case object IsCharValue extends IsPrimitiveValue { final val primitiveType = CharType }
+trait IsCharValue extends IsPrimitiveValue {
+    final def primitiveType = CharType
+}
 
-case object IsShortValue extends IsPrimitiveValue { final val primitiveType = ShortType }
+trait IsShortValue extends IsPrimitiveValue {
+    final def primitiveType = ShortType
+}
 
-case object IsIntegerValue extends IsPrimitiveValue { final val primitiveType = IntegerType }
+trait IsIntegerValue extends IsPrimitiveValue {
+    final def primitiveType = IntegerType
+}
 
-case object IsFloatValue extends IsPrimitiveValue { final val primitiveType = FloatType }
+trait IsFloatValue extends IsPrimitiveValue {
+    final def primitiveType = FloatType
+}
 
-case object IsLongValue extends IsPrimitiveValue { final val primitiveType = LongType }
+trait IsLongValue extends IsPrimitiveValue {
+    final def primitiveType = LongType
+}
 
-case object IsDoubleValue extends IsPrimitiveValue { final val primitiveType = DoubleType }
+trait IsDoubleValue extends IsPrimitiveValue {
+    final def primitiveType = DoubleType
+}
 
 /**
  * The value is a reference value.
  *
  * @author Michael Eichberg
  */
-trait IsReferenceValue extends TypesAnswer {
+trait IsReferenceValue extends TypesAnswer with IsAReferenceValue {
 
     /**
      * In general a domain value can represent several distinct values (depending
      * on the control flow). Each of these values can have a different upper bound and
      * an upper bound can consist of several interfaces and a class.
      */
-    def upperBounds: Iterable[ValueBasedUpperBound]
+    def referenceValues: Iterable[IsAReferenceValue] // TODO make iterator!!!
 
-    def hasSingleBound: Option[ReferenceType]
 }
 
 /**
@@ -110,42 +126,83 @@ trait IsReferenceValue extends TypesAnswer {
  */
 object IsReferenceValue {
 
-    def unapply(answer: IsReferenceValue): Option[Iterable[ValueBasedUpperBound]] = {
-        Some(answer.upperBounds)
+    def unapply(value: IsReferenceValue): Option[Iterable[IsAReferenceValue]] = {
+        Some(value.referenceValues)
     }
 }
 
 /**
- * Defines an extractor method for instances of `IsReferenceValue` objects.
+ * Characterizes a single reference value. Captures the information about one of the values
+ * a domain value may refer to. For example, in the following:
+ * {{{
+ * val o = If(...) new Object() else "STRING"
+ * }}}
+ * o is a reference value (`IsReferenceValue`) that refers to two "primitive" values each
+ * represented by an instance of an `IsAReferenceValue` (`new Object()` and `"STRING"`).
  *
  * @author Michael Eichberg
  */
-object IsReferenceValueWithSingleBound {
-
-    def unapply(answer: IsReferenceValue): Option[ReferenceType] =
-        answer.hasSingleBound
-
-}
-
-/**
- * The upper bound of a single value. Captures the information about one of the values
- * a domain value may refer to.
- *
- * @author Michael Eichberg
- */
-trait ValueBasedUpperBound {
-
-    def isNull: Answer
-
-    def isPrecise: Boolean
-
-    def upperBound: UpperBound
+trait IsAReferenceValue {
 
     /**
-     * @note The function `isSubtypeOf` is not determined if `isNull` returns `Yes`;
+     * If `Yes` the value is statically known to be `null` at runtime. In this
+     * case the upper bound  is (has to be) empty. If the answer is `Unknown` then the
+     * analysis was not able to statically determine whether the value is `null` or
+     * is not `null`. In this case the upper bound is expected to be non-empty.
+     * If the answer is `No` then the value is statically known not to be `null`. In this
+     * case, the upper bound may precisely identify the runtime type or still just identify
+     * an upper bound.
+     */
+    def isNull: Answer
+
+    /**
+     * Returns `true` if the type information is precise. I.e., the type precisely
+     * models the runtime type of the value.
+     *
+     * @note If value is known to be `null`, `isPrecise` will also return `true`.
+     */
+    def isPrecise: Boolean
+
+    /**
+     * The upper bound of the value's type. The upper bound is empty if this
+     * value is `null` (i.e., `isNUll == Yes`). The upper bound will only contain
+     * a single type if the type is precise. (i.e., `isPrecise == true`). Otherwise,
+     * the upper type bound will contain one or more types that are not in an inheritance
+     * relation, but which will ''correctly'' approximate the runtime type.
+     */
+    def upperTypeBound: UpperTypeBound
+
+    /**
+     * Checks if the type of this value is a subtype of the specified
+     * reference type under the assumption that this value is not `null`!
+     *
+     * Basically, this method implements the same semantics as the `ClassHierarchy`'s
+     * `isSubtypeOf` method, but it additionally  checks if the type of this value
+     * '''could be a subtype'' of the given supertype. I.e., if this value's type
+     * identifies a supertype of the given `supertype` the answer is unknown.
+     *
+     * For example, assume that the type of this reference value is
+     * `java.util.Collection` and we know/have to assume that this is only an
+     * upper bound. In this case an answer is `No` if and only if it is impossible
+     * that the runtime type is a subtype of the given supertype. This
+     * condition holds, for example, for `java.io.File` which is not a subclass
+     * of `java.util.Collection` and which does not have any further subclasses (in
+     * the JDK). I.e., the classes `java.io.File` and `java.util.Collection` are
+     * not in an inheritance relationship. However, if the specified supertype would
+     * be `java.util.List` the answer would be unknown.
+     *
+     * @note The function `isSubtypeOf` is not defined if `isNull` returns `Yes`;
      *      if `isNull` is `Unknown` then the result is given under the
      *      assumption that the value is not `null` at runtime.
      */
     def isSubtypeOf(referenceType: ReferenceType): Answer
 }
 
+/**
+ * @author Michael Eichberg
+ */
+object IsNullValue {
+
+    def unapply(rv: IsReferenceValue): Boolean = rv.isNull == Yes
+
+}

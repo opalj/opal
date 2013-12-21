@@ -48,17 +48,17 @@ trait DefaultPreciseReferenceValuesWithClosedHierarchy[+I]
 
     override def AReferenceValue(
         pc: PC,
-        upperBound: UpperBound,
+        upperTypeBound: UpperTypeBound,
         isNull: Answer,
         isPrecise: Boolean): AReferenceValue = {
-        if (!isPrecise && upperBound.size == 1) {
-            upperBound.head match {
+        if (!isPrecise && upperTypeBound.size == 1) {
+            upperTypeBound.head match {
                 case ot: ObjectType ⇒
                     val isPrecise = classHierarchy.hasSubtypes(ot).no
-                    AReferenceValue(-1, upperBound, isNull, isPrecise)
-                case _ ⇒ super.AReferenceValue(pc, upperBound, isNull, isPrecise)
+                    AReferenceValue(-1, upperTypeBound, isNull, isPrecise)
+                case _ ⇒ super.AReferenceValue(pc, upperTypeBound, isNull, isPrecise)
             }
         } else
-            super.AReferenceValue(pc, upperBound, isNull, isPrecise)
+            super.AReferenceValue(pc, upperTypeBound, isNull, isPrecise)
     }
 }

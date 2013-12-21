@@ -47,8 +47,6 @@ import analyses.{ Project, ClassHierarchy }
  */
 trait TypeLevelInvokeInstructionsWithNullPointerHandling { this: SomeDomain ⇒
 
-    import ObjectType._
-
     protected[this] def ReturnValue(pc: PC, someType: Type): Option[DomainValue] = {
         if (someType.isVoidType)
             None
@@ -61,14 +59,12 @@ trait TypeLevelInvokeInstructionsWithNullPointerHandling { this: SomeDomain ⇒
         methodDescriptor: MethodDescriptor,
         operands: List[DomainValue]): MethodCallResult =
         isNull(operands.last) match {
-            case Yes ⇒
-                ThrowsException(Set(InitializedObject(pc, NullPointerException)))
-            case No ⇒
-                ComputedValue(ReturnValue(pc, methodDescriptor.returnType))
+            case Yes ⇒ justThrows(NullPointerException(pc))
+            case No  ⇒ ComputedValue(ReturnValue(pc, methodDescriptor.returnType))
             case Unknown ⇒
                 ComputedValueAndException(
                     ReturnValue(pc, methodDescriptor.returnType),
-                    Set(InitializedObject(pc, NullPointerException)))
+                    Set(NullPointerException(pc)))
         }
 
     override def invokevirtual(
