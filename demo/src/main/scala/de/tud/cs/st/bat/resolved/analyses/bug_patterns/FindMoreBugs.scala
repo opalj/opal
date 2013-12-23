@@ -49,7 +49,7 @@ object FindMoreBugs extends AnalysisExecutor {
 
     val analysis: Analysis[URL, ReportableAnalysisResult] = aggregator
 
-    aggregator.register(new NonSerializableClassHasASerializableInnerClass[URL])
+    //aggregator.register(new NonSerializableClassHasASerializableInnerClass[URL])
     aggregator.register(new CovariantEqualsMethodDefined[URL])
     aggregator.register(new EqualsHashCodeContract[URL])
 

@@ -915,17 +915,17 @@ class ClassHierarchy private (
     def directSubtypesOf(objectType: ObjectType): Set[ObjectType] = {
         val id = objectType.id
 
-        val directSubtypes = {
+        var directSubtypes = {
             val subclassTypes = this.subclassTypesMap(id)
             if (subclassTypes ne null)
-                subclassTypes.asInstanceOf[HashSet[ObjectType]]
+                subclassTypes
             else
                 HashSet.empty[ObjectType]
         }
 
         val subinterfaceTypes = this.subinterfaceTypesMap(id)
         if (subinterfaceTypes ne null)
-            directSubtypes ++ subinterfaceTypes
+            directSubtypes = directSubtypes ++ subinterfaceTypes
 
         directSubtypes
     }

@@ -57,12 +57,14 @@ object InvokeDynamicPrinter extends AnalysisExecutor {
                     method ← classFile.methods if method.body.isDefined
                     INVOKEDYNAMIC(bootstrap, name, descriptor) ← method.body.get.instructions
                 } yield {
-                    bootstrap+"\n"+name+"\n"+descriptor
+                    bootstrap.toJava + "\nArguments:\t" +
+                    bootstrap.bootstrapArguments.mkString("{",",","}") + "\nCalling:\t" +
+                    descriptor.toJava(name)
                 }
 
             BasicReport(
                 invokedynamics.size+" invokedynamic instructions found.\n"+
-                    invokedynamics.mkString("\n", "\n\n\n", "\n"))
+                    invokedynamics.mkString("\n", "\n\n", "\n"))
         }
     }
 }

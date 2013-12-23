@@ -30,41 +30,33 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
-package ai
-package domain
-package l1
+package de.tud.cs.st.bat.test.invokedynamic.annotations;
 
-trait PreciseDomain[+I]
-    extends Domain[I]
-    with Origin
-    with DefaultDomainValueBinding[I]
-    with DefaultPreciseIntegerValues[I]
-    with DefaultPreciseReferenceValues[I]
-    with StringValues[I]
-    with DefaultPreciseLongValues[I]
-    with l0.DefaultTypeLevelFloatValues[I]
-    with l0.DefaultTypeLevelDoubleValues[I]
-    with l0.TypeLevelArrayInstructions
-    with TypeLevelFieldAccessInstructionsWithNullPointerHandling
-    with TypeLevelInvokeInstructionsWithNullPointerHandling
-    with l0.DefaultClassHierarchy
-
-class PreciseConfigurableDomain[+I](
-    val identifier: I)
-        extends PreciseDomain[I]
-        with IgnoreMethodResults
-        with IgnoreSynchronization
-
-class PreciseRecordingDomain[I](
-    val identifier: I)
-        extends PreciseDomain[I]
-        with IgnoreMethodResults
-        with RecordLastReturnedValues[I]
-        with RecordAllThrownExceptions[I]
-        with RecordReturnInstructions[I]
-        with IgnoreSynchronization
-        
-
+/**
+ * Describes whether the method call instruction is a standard invoke instruction (invokevirtual,
+ * invokestatic, invokespecial, invokeinterface), an invokedynamic, or a call made through use of
+ * the Java reflection API.
+ * 
+ * @author Arne Lottmann
+ */
+public enum TargetResolution {
+    /**
+     * Describes a method call made using one of the following instructions:
+     * <ul>
+     * <li>invokevirtual</li>
+     * <li>invokestatic</li>
+     * <li>invokespecial</li>
+     * <li>invokeinterface</li>
+     * </ul>
+     * .
+     */
+    DEFAULT,
+    /**
+     * Describes a method call based on an invokedynamic instruction.
+     */
+    DYNAMIC,
+    /**
+     * Describes a reflective method call.
+     */
+    REFLECTIVE
+}

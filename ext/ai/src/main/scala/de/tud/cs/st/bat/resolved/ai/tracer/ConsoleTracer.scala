@@ -70,6 +70,19 @@ trait ConsoleTracer extends AITracer {
                 }.mkString("\tlocals:\n\t\t", "\n\t\t", "\n")+"\t]")
     }
 
+    def continuingInterpretation[D <: SomeDomain](
+        code: Code,
+        domain: D)(
+            initialWorkList: List[PC],
+            alreadyEvaluated: List[PC],
+            operandsArray: Array[List[domain.DomainValue]],
+            localsArray: Array[Array[domain.DomainValue]]) {
+        println(Console.BLACK_B+Console.WHITE+"Starting Code Analysis"+Console.RESET)
+        println("Number of registers:      "+code.maxLocals)
+        println("Size of operand stack:    "+code.maxStack)
+        //println("Program counters:         "+code.programCounters.mkString(", "))     
+    }
+
     def flow(currentPC: PC, targetPC: PC) { /* ignored */ }
 
     def join[D <: SomeDomain](

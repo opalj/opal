@@ -47,11 +47,15 @@ case class BootstrapMethodTable(methods: BootstrapMethods) extends Attribute
  * @author Michael Eichberg
  */
 case class BootstrapMethod(
-    methodHandle: MethodHandle,
-    bootstrapArguments: BootstrapArguments)
+        methodHandle: MethodHandle,
+        bootstrapArguments: BootstrapArguments) {
+
+    def toJava: String = methodHandle.toJava(bootstrapArguments)
+}
 
 /**
- * A marker trait to identify those constant pool values that can be arguments of boot strap methods.
+ * A marker trait to identify those constant pool values that can be arguments of boot
+ * strap methods.
  *
  * @author Michael Eichberg
  */
@@ -62,61 +66,86 @@ trait BootstrapArgument
  *
  * @author Michael Eichberg
  */
-sealed trait MethodHandle extends BootstrapArgument
+sealed trait MethodHandle extends BootstrapArgument {
+    def toJava(bootstrapArguments: BootstrapArguments): String
+}
+
+sealed trait FieldAccessMethodHandle extends MethodHandle {
+    def declaringType: ObjectType
+    def name: String
+    def fieldType: FieldType
+
+    override def toJava(bootstrapArguments: BootstrapArguments): String = {
+        val handleType = getClass.getSimpleName.toString
+        val fieldName = declaringType.toJava+"."+name
+        val returnType = ": "+fieldType.toJava
+        handleType+": "+fieldName + returnType
+    }
+}
 
 case class GetFieldMethodHandle(
     declaringType: ObjectType,
     name: String,
     fieldType: FieldType)
-        extends MethodHandle
+        extends FieldAccessMethodHandle
 
 case class GetStaticMethodHandle(
     declaringType: ObjectType,
     name: String,
     fieldType: FieldType)
-        extends MethodHandle
+        extends FieldAccessMethodHandle
 
 case class PutFieldMethodHandle(
     declaringType: ObjectType,
     name: String,
     fieldType: FieldType)
-        extends MethodHandle
+        extends FieldAccessMethodHandle
 
 case class PutStaticMethodHandle(
     declaringType: ObjectType,
     name: String,
     fieldType: FieldType)
-        extends MethodHandle
+        extends FieldAccessMethodHandle
+
+trait MethodCallMethodHandle extends MethodHandle {
+    def receiverType: ReferenceType
+    def name: String
+    def methodDescriptor: MethodDescriptor
+
+    override def toJava(bootstrapArguments: BootstrapArguments): String = {
+        val handleType = getClass.getSimpleName.toString
+        val typeName = receiverType.toJava
+        val methodCall = name + methodDescriptor.toUMLNotation
+        handleType+": "+typeName+"."+methodCall
+    }
+}
 
 case class InvokeVirtualMethodHandle(
     receiverType: ReferenceType,
     name: String,
-    methodDesriptor: MethodDescriptor)
-        extends MethodHandle
+    methodDescriptor: MethodDescriptor)
+        extends MethodCallMethodHandle
 
 case class InvokeStaticMethodHandle(
     receiverType: ReferenceType,
     name: String,
-    methodDesriptor: MethodDescriptor)
-        extends MethodHandle
+    methodDescriptor: MethodDescriptor)
+        extends MethodCallMethodHandle
 
 case class InvokeSpecialMethodHandle(
     receiverType: ReferenceType,
     name: String,
-    methodDesriptor: MethodDescriptor)
-        extends MethodHandle
+    methodDescriptor: MethodDescriptor)
+        extends MethodCallMethodHandle
 
 case class NewInvokeSpecialMethodHandle(
     receiverType: ReferenceType,
     name: String,
-    methodDesriptor: MethodDescriptor)
-        extends MethodHandle
+    methodDescriptor: MethodDescriptor)
+        extends MethodCallMethodHandle
 
 case class InvokeInterfaceMethodHandle(
     receiverType: ReferenceType,
     name: String,
-    methodDesriptor: MethodDescriptor)
-        extends MethodHandle
-
-
-
+    methodDescriptor: MethodDescriptor)
+        extends MethodCallMethodHandle

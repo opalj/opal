@@ -33,38 +33,40 @@
 package de.tud.cs.st
 package bat
 package resolved
-package ai
-package domain
-package l1
 
-trait PreciseDomain[+I]
-    extends Domain[I]
-    with Origin
-    with DefaultDomainValueBinding[I]
-    with DefaultPreciseIntegerValues[I]
-    with DefaultPreciseReferenceValues[I]
-    with StringValues[I]
-    with DefaultPreciseLongValues[I]
-    with l0.DefaultTypeLevelFloatValues[I]
-    with l0.DefaultTypeLevelDoubleValues[I]
-    with l0.TypeLevelArrayInstructions
-    with TypeLevelFieldAccessInstructionsWithNullPointerHandling
-    with TypeLevelInvokeInstructionsWithNullPointerHandling
-    with l0.DefaultClassHierarchy
+import analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
+import java.net.URL
 
-class PreciseConfigurableDomain[+I](
-    val identifier: I)
-        extends PreciseDomain[I]
-        with IgnoreMethodResults
-        with IgnoreSynchronization
+/**
+  * Prints out all runtime visible annotations.
+  *
+  * @author Arne Lottmann
+  * @author Michael Eichberg
+  */
+object AnnotationPrinter extends AnalysisExecutor {
 
-class PreciseRecordingDomain[I](
-    val identifier: I)
-        extends PreciseDomain[I]
-        with IgnoreMethodResults
-        with RecordLastReturnedValues[I]
-        with RecordAllThrownExceptions[I]
-        with RecordReturnInstructions[I]
-        with IgnoreSynchronization
-        
+    val analysis = new Analysis[URL, BasicReport] {
 
+        def description: String = "Prints out all runtime visible annotations."
+
+        def analyze(project: Project[URL], parameters: Seq[String]) = {
+            val annotations =
+                for {
+                    classFile ← project.classFiles
+                    method ← classFile.methods
+                    annotations = method.runtimeVisibleAnnotations
+                    if (annotations.isDefined)
+                    annotation ← annotations.get
+                } yield {
+                    "on method: "+classFile.thisType.toJava+"."+method.name +
+                        method.parameterTypes.mkString("(", ",", ")")+"\n"+
+                        annotation.elementValuePairs.map(pair ⇒ "%-15s: %s".format(pair.name, pair.value.toJava)).
+                        mkString("\t@"+annotation.annotationType.toJava+"\n\t", "\n\t", "\n")
+                }
+
+            BasicReport(
+                annotations.size+" annotations found.\n"+
+                    annotations.mkString("\n", "\n", "\n"))
+        }
+    }
+}

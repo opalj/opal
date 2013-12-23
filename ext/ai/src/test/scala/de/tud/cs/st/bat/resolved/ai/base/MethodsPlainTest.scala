@@ -108,7 +108,7 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "fOne").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(AFloatValue))
+        domain.returnedValue should be(Some(FloatValue(IrrelevantPC)))
     }
 
     //
@@ -369,7 +369,7 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "fAdd").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(AFloatValue))
+        domain.returnedValue should be(Some(FloatValue(IrrelevantPC)))
     }
 
     it should "be able to analyze a method that divides two float values" in {
@@ -377,14 +377,14 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "fDiv").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(AFloatValue))
+        domain.returnedValue should be(Some(FloatValue(IrrelevantPC)))
     }
     it should "be able to analyze a method that multiplies two float values" in {
         val domain = new RecordingDomain; import domain._
         val method = classFile.methods.find(_.name == "fMul").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(AFloatValue))
+        domain.returnedValue should be(Some(FloatValue(IrrelevantPC)))
     }
 
     it should "be able to analyze a method that reminder an float values" in {
@@ -392,14 +392,14 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "fRem").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(AFloatValue))
+        domain.returnedValue should be(Some(FloatValue(IrrelevantPC)))
     }
     it should "be able to analyze a method that substracts two float values" in {
         val domain = new RecordingDomain; import domain._
         val method = classFile.methods.find(_.name == "fSub").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(AFloatValue))
+        domain.returnedValue should be(Some(FloatValue(IrrelevantPC)))
     }
 
     //
@@ -430,7 +430,7 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "iToFloat").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(AFloatValue))
+        domain.returnedValue should be(Some(FloatValue(IrrelevantPC)))
     }
     it should "be able to analyze a method that casts an int to a long" in {
         val domain = new RecordingDomain; import domain._
@@ -462,7 +462,7 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "lToFloat").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(AFloatValue))
+        domain.returnedValue should be(Some(FloatValue(IrrelevantPC)))
     }
     it should "be able to analyze a method that casts an long to a int" in {
         val domain = new RecordingDomain; import domain._
@@ -480,7 +480,7 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "dToFloat").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(AFloatValue))
+        domain.returnedValue should be(Some(FloatValue(IrrelevantPC)))
     }
     it should "be able to analyze a method that casts an double to a int" in {
         val domain = new RecordingDomain; import domain._
@@ -527,7 +527,7 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "fNeg").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(AFloatValue))
+        domain.returnedValue should be(Some(FloatValue(IrrelevantPC)))
     }
 
     it should "be able to analyze a method that returns a negativ double value" in {
@@ -588,7 +588,7 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "getValue").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(AFloatValue))
+        domain.returnedValue should be(Some(FloatValue(IrrelevantPC)))
     }
 
     //
@@ -606,7 +606,7 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "getSValue").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(AFloatValue))
+        domain.returnedValue should be(Some(FloatValue(IrrelevantPC)))
     }
     //
     // LOADS AND STORES
@@ -655,7 +655,7 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "localFloat").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(AFloatValue))
+        domain.returnedValue should be(Some(FloatValue(IrrelevantPC)))
     }
 
     it should "be able to analyze object load and store commands" in {
@@ -712,21 +712,21 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "pushFloatConst0").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(AFloatValue))
+        domain.returnedValue should be(Some(FloatValue(IrrelevantPC)))
     }
     it should "be able to analyze a push of float const1 value" in {
         val domain = new RecordingDomain; import domain._
         val method = classFile.methods.find(_.name == "pushFloatConst1").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(AFloatValue))
+        domain.returnedValue should be(Some(FloatValue(IrrelevantPC)))
     }
     it should "be able to analyze a push of float const2 value" in {
         val domain = new RecordingDomain; import domain._
         val method = classFile.methods.find(_.name == "pushFloatConst2").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(AFloatValue))
+        domain.returnedValue should be(Some(FloatValue(IrrelevantPC)))
     }
     it should "be able to analyze a push of int const-1 value" in {
         val domain = new RecordingDomain; import domain._
@@ -911,7 +911,7 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "floatArray").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
-        domain.returnedValue should be(Some(AFloatValue))
+        domain.returnedValue should be(Some(FloatValue(IrrelevantPC)))
     }
 
     it should "be able to analyze to load and store a int in an array" in {

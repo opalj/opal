@@ -39,10 +39,26 @@ package tracer
 import instructions._
 
 /**
+ * A tracer that forwards every call to all registered tracers.
  *
  * @author Michael Eichberg
  */
 class MultiTracer(val tracers: AITracer*) extends AITracer {
+
+    def continuingInterpretation[D <: SomeDomain](
+        code: Code,
+        domain: D)(
+            initialWorkList: List[PC],
+            alreadyEvaluated: List[PC],
+            operandsArray: Array[List[domain.DomainValue]],
+            localsArray: Array[Array[domain.DomainValue]]) {
+        tracers.foreach(tracer ⇒
+            tracer.continuingInterpretation(
+                code, domain)(
+                    initialWorkList, alreadyEvaluated, operandsArray, localsArray)
+
+        )
+    }
 
     def instructionEvalution[D <: SomeDomain](
         domain: D,

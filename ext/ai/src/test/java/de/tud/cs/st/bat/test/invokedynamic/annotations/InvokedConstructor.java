@@ -30,41 +30,25 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
-package ai
-package domain
-package l1
+package de.tud.cs.st.bat.test.invokedynamic.annotations;
 
-trait PreciseDomain[+I]
-    extends Domain[I]
-    with Origin
-    with DefaultDomainValueBinding[I]
-    with DefaultPreciseIntegerValues[I]
-    with DefaultPreciseReferenceValues[I]
-    with StringValues[I]
-    with DefaultPreciseLongValues[I]
-    with l0.DefaultTypeLevelFloatValues[I]
-    with l0.DefaultTypeLevelDoubleValues[I]
-    with l0.TypeLevelArrayInstructions
-    with TypeLevelFieldAccessInstructionsWithNullPointerHandling
-    with TypeLevelInvokeInstructionsWithNullPointerHandling
-    with l0.DefaultClassHierarchy
+import java.lang.annotation.*;
+import static java.lang.annotation.RetentionPolicy.*;
+import static java.lang.annotation.ElementType.*;
 
-class PreciseConfigurableDomain[+I](
-    val identifier: I)
-        extends PreciseDomain[I]
-        with IgnoreMethodResults
-        with IgnoreSynchronization
+/**
+ * Describes a constructor call made by an invokedynamic instruction or through use of the Java
+ * reflection API.
+ * 
+ * @author Arne Lottmann
+ */
+@Retention(RUNTIME)
+@Target(METHOD)
+public @interface InvokedConstructor {
 
-class PreciseRecordingDomain[I](
-    val identifier: I)
-        extends PreciseDomain[I]
-        with IgnoreMethodResults
-        with RecordLastReturnedValues[I]
-        with RecordAllThrownExceptions[I]
-        with RecordReturnInstructions[I]
-        with IgnoreSynchronization
-        
+    Class<?> receiverType();
 
+    Class<?>[] parameterTypes() default {};
+
+    int lineNumber() default -1;
+}
