@@ -5,7 +5,7 @@ with extensibility, adaptability and scalability in mind. In general, BAT is thr
 BAT in particular provides support for an easily customizable abstract interpretation of Java bytecode. Additionally, it has built-in support for the analysis of static source code dependencies and generally provides extensive support for pattern-matching on Java bytecode. 
 
 # Project Structure
-BAT consists of four main projects:
+BAT consists of several projects:
 
 * **Core**: The core project provides functionality necessary for reading and traversing Java class files.  
 **Util**: Conceptually belongs to the Core project, but contains source code that needs to be compiled before it is possible to 
@@ -23,6 +23,8 @@ is in particular used to validate parts of BAT's architecture.
 	
 * **Incubation**: Contains code that is not yet finished, but which already provides some useful functionality. In some cases the code is under active development and in some cases the code was just not finished and no decision has been made what to do with it.
 
+* **FindREALBugs**: (This project is in its very early stages!) FindBugs reloaded. For further information go to: [FindREALBugs](https://bitbucket.org/delors/bat/wiki/FindREALBugs)
 
+# Further Information #
 [BATAI Wiki Home](https://bitbucket.org/delors/bat/wiki/Home)
  
