@@ -24,5 +24,5 @@ is in particular used to validate parts of BAT's architecture.
 * **Incubation**: Contains code that is not yet finished, but which already provides some useful functionality. In some cases the code is under active development and in some cases the code was just not finished and no decision has been made what to do with it.
 
 
-[[https://bitbucket.org/delors/bat/wiki/Home]]
+[https://bitbucket.org/delors/bat/wiki/Home](BATAI Wiki Home)
  
