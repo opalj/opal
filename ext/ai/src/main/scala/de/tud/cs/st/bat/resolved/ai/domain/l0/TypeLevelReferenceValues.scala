@@ -327,7 +327,10 @@ trait TypeLevelReferenceValues[+I] extends Domain[I] with GeneralizedArrayHandli
     override def arraylength(
         pc: PC,
         arrayref: DomainValue): Computation[DomainValue, ExceptionValue] = {
-        asArrayValue(arrayref).length(pc)
+        if (isNull(arrayref).yes)
+            throws(NullPointerException(pc))
+        else
+            asArrayValue(arrayref).length(pc)
     }
 
     // -----------------------------------------------------------------------------------

@@ -164,7 +164,8 @@ trait DefaultTypeLevelReferenceValues[+I]
                 case ArrayValue(thatUpperTypeBound) ⇒
                     if (thatUpperTypeBound eq thisUpperTypeBound)
                         NoUpdate
-                    else if (thisUpperTypeBound.isBaseType || thatUpperTypeBound.isBaseType) {
+                    else if (thisUpperTypeBound.componentType.isBaseType ||
+                        thatUpperTypeBound.componentType.isBaseType) {
                         // Scenario:
                         // E.g., imagine that we have a method that "just" wants to 
                         // serialize some data. In such a case the method may be passed 
