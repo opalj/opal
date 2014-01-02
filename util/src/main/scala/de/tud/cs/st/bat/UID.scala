@@ -411,4 +411,11 @@ object UIDList {
             UIDList(e1)
         else
             new UIDSList(e2, new UIDSList(e1, empty))
+
+    def unapplySeq[T <: UID](list: UIDList[T]): Option[Seq[T]] = {
+        if (list.isEmpty)
+            None
+        else
+            Some(list.iterator.toSeq)
+    }
 }
