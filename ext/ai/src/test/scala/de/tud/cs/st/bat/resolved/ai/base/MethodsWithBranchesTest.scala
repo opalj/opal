@@ -92,12 +92,19 @@ class MethodsWithBranchesTest
             domain.allReturnedValues should be(
                 Map((5 -> AnIntegerValue), (7 -> AnIntegerValue)))
 
-            domain.allConstraints should be(
-                Set(
-                    ReifiedSingleValueConstraint(
-                        4, domain.TypedValue(-1, ObjectType.Object), "is null"),
-                    ReifiedSingleValueConstraint(
-                        6, domain.TypedValue(-1, ObjectType.Object), "is not null")))
+            domain.allConstraints exists { constraint ⇒
+                val ReifiedSingleValueConstraint(pc, value, kind) = constraint
+                pc == 4 &&
+                    domain.isValueSubtypeOf(value, ObjectType.Object).yes &&
+                    kind == "is null"
+            } should be(true)
+
+            domain.allConstraints exists { constraint ⇒
+                val ReifiedSingleValueConstraint(pc, value, kind) = constraint
+                pc == 6 &&
+                    domain.isValueSubtypeOf(value, ObjectType.Object).yes &&
+                    kind == "is not null"
+            } should be(true)
         }
     }
 
@@ -113,12 +120,19 @@ class MethodsWithBranchesTest
             domain.allReturnedValues should be(
                 Map((5 -> AnIntegerValue), (7 -> AnIntegerValue)))
 
-            domain.allConstraints should be(
-                Set(
-                    ReifiedSingleValueConstraint(
-                        4, domain.TypedValue(-1, ObjectType.Object), "is not null"),
-                    ReifiedSingleValueConstraint(
-                        6, domain.TypedValue(-1, ObjectType.Object), "is null")))
+            domain.allConstraints exists { constraint ⇒
+                val ReifiedSingleValueConstraint(pc, value, kind) = constraint
+                pc == 6 &&
+                    domain.isValueSubtypeOf(value, ObjectType.Object).yes &&
+                    kind == "is null"
+            } should be(true)
+
+            domain.allConstraints exists { constraint ⇒
+                val ReifiedSingleValueConstraint(pc, value, kind) = constraint
+                pc == 4 &&
+                    domain.isValueSubtypeOf(value, ObjectType.Object).yes &&
+                    kind == "is not null"
+            } should be(true)
         }
     }
 

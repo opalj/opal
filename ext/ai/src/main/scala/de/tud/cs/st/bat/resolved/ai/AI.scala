@@ -595,7 +595,7 @@ trait AI[D <: SomeDomain] {
                             upperBounds forall { typeBounds ⇒
                                 // as a side effect we also add the handler to the set
                                 // of targets
-                                typeBounds.isSubtypeOf(catchType.get) match {
+                                typeBounds.isValueSubtypeOf(catchType.get) match {
                                     case No ⇒
                                         false
                                     case Yes ⇒
@@ -926,7 +926,7 @@ trait AI[D <: SomeDomain] {
                                                 // this is a finally handler
                                                 true
                                             } else {
-                                                upperBound.isSubtypeOf(catchType.get) match {
+                                                upperBound.isValueSubtypeOf(catchType.get) match {
                                                     case No ⇒
                                                         false
                                                     case Yes ⇒
@@ -1665,7 +1665,7 @@ trait AI[D <: SomeDomain] {
                         if (isNull(objectref).yes)
                             fallThrough()
                         else
-                            isSubtypeOf(objectref, supertype) match {
+                            isValueSubtypeOf(objectref, supertype) match {
                                 case Yes ⇒
                                     // if objectref is null => UNCHANGED (see spec. for details)
                                     // if objectref is a subtype => UNCHANGED
@@ -1695,7 +1695,7 @@ trait AI[D <: SomeDomain] {
                             if (isNull(objectref).yes)
                                 domain.BooleanValue(pc, false)
                             else
-                                domain.isSubtypeOf(objectref, referenceType) match {
+                                domain.isValueSubtypeOf(objectref, referenceType) match {
                                     case Yes     ⇒ domain.BooleanValue(pc, true)
                                     case No      ⇒ domain.BooleanValue(pc, false)
                                     case Unknown ⇒ domain.BooleanValue(pc)

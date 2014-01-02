@@ -46,6 +46,10 @@ import de.tud.cs.st.util.Answer
  */
 trait IntegerValuesComparison { this: SomeDomain ⇒
 
+    /**
+     * Tests if the given value is in the range `[lowerBound, upperBound]`. I.e., both
+     * bounds are inclusive.
+     */
     def isSomeValueInRange(
         value: DomainValue,
         lowerBound: DomainValue,

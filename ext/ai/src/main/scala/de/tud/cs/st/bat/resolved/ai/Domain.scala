@@ -514,7 +514,8 @@ trait Domain[+I] {
      * values are given and initial values need to be generated. This method is not
      * used elsewhere by BATAI.
      *
-     * BATAI assigns the `pc` "-1" to the first parameter and -2 for the second...
+     * BATAI assigns the `pc` "-1" to the first parameter and -2 for the second... This
+     * property is, however, not ensured by this method.     
      */
     def TypedValue(pc: PC, valueType: Type): DomainValue = valueType match {
         case BooleanType       ⇒ BooleanValue(pc)
@@ -693,7 +694,7 @@ trait Domain[+I] {
      * Factory method to create a `DomainValue` that represents ''either a reference
      * value that has the given type and is initialized or the value `null`''. However, the
      * information whether the value is `null` or not is not available. Furthermore, the
-     * type may also be an upper bound.
+     * type may also just be an upper bound.
      *
      * The domain may ignore the information about the value and the origin (`pc`), but
      * it has to remain possible for the domain to identify the component type of an
@@ -741,7 +742,7 @@ trait Domain[+I] {
      *      `multianewarray` instructions and in both cases an exception may be thrown
      *      (e.g., `NegativeArraySizeException`).
      */
-    def NewObject(pc: PC, referenceType: ReferenceType): DomainValue
+    def NewObject(pc: PC, objectType: ObjectType): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents a new, '''initialized'''
@@ -939,7 +940,7 @@ trait Domain[+I] {
      * @note The returned value is only meaningful if the value does not represent
      *      the runtime value `null`.
      */
-    /*ABSTRACT*/ def isSubtypeOf( // TODO Rename maybeSubtypeOf
+    /*ABSTRACT*/ def isValueSubtypeOf(
         value: DomainValue,
         supertype: ReferenceType): Answer
 

@@ -87,7 +87,7 @@ trait PreciseReferenceValues[+I] extends Domain[I] with GeneralizedArrayHandling
          * not in an inheritance relationship. However, if the specified supertype would be
          * `java.util.List` the answer would be unknown.
          */
-        def isSubtypeOf(supertype: ReferenceType): Answer
+        def isValueSubtypeOf(supertype: ReferenceType): Answer
 
         /**
          * Adds an upper bound. This call can be ignored if the type
@@ -158,9 +158,9 @@ trait PreciseReferenceValues[+I] extends Domain[I] with GeneralizedArrayHandling
      */
     def isNull(value: DomainValue): Answer = asReferenceValue(value).isNull
 
-    def isSubtypeOf(
+    def isValueSubtypeOf(
         value: DomainValue,
-        supertype: ReferenceType): Answer = asReferenceValue(value).isSubtypeOf(supertype)
+        supertype: ReferenceType): Answer = asReferenceValue(value).isValueSubtypeOf(supertype)
 
     // -----------------------------------------------------------------------------------
     //

@@ -81,7 +81,7 @@ trait DefaultPreciseReferenceValues[+I]
          * that a `No` answer means that it is impossible that any represented runtime
          * value is actually a subtype of the given supertype.
          */
-        def isSubtypeOf(supertype: ReferenceType): Answer = {
+        override def isValueSubtypeOf(supertype: ReferenceType): Answer = {
             assume(this.isNull.maybeNo)
 
             val answer: Answer = {
@@ -125,7 +125,7 @@ trait DefaultPreciseReferenceValues[+I]
         def refineUpperTypeBound(pc: PC, supertype: ReferenceType): AReferenceValue = {
             assume(this.isNull.maybeNo)
 
-            isSubtypeOf(supertype) match {
+            isValueSubtypeOf(supertype) match {
                 case Yes ⇒ this
                 case No if isPrecise ⇒
                     // Actually, it does not make sense to establish a new bound for a 
@@ -362,14 +362,14 @@ trait DefaultPreciseReferenceValues[+I]
             } else
                 super.adapt(targetDomain, pc)
 
-        def isSubtypeOf(supertype: ReferenceType): Answer = {
+        def isValueSubtypeOf(supertype: ReferenceType): Answer = {
             // Recall that the client has to make an "isNull" check before calling
             // isSubtypeOf. Hence, at least one AReferenceValue has to be
             // non null.
             val relevantValues = values.view.filter(_.isNull.maybeNo)
-            val firstAnswer = relevantValues.head.isSubtypeOf(supertype)
+            val firstAnswer = relevantValues.head.isValueSubtypeOf(supertype)
             (firstAnswer /: relevantValues.tail) { (answer, nextReferenceValue) ⇒
-                (answer merge nextReferenceValue.isSubtypeOf(supertype)).
+                (answer merge nextReferenceValue.isValueSubtypeOf(supertype)).
                     orElse { return Unknown }
             }
         }
@@ -505,11 +505,11 @@ trait DefaultPreciseReferenceValues[+I]
     override def NonNullReferenceValue(pc: PC, objectType: ObjectType): DomainValue =
         AReferenceValue(pc, UIDList[ReferenceType](objectType), No, false)
 
-    override def NewObject(pc: PC, referenceType: ReferenceType): DomainValue =
-        AReferenceValue(pc, UIDList[ReferenceType](referenceType), No, true)
+    override def NewObject(pc: PC, objectType: ObjectType): DomainValue =
+        AReferenceValue(pc, UIDList[ReferenceType](objectType), No, true)
 
     override def InitializedObject(pc: PC, referenceType: ReferenceType): DomainValue =
-        NewObject(pc, referenceType)
+        AReferenceValue(pc, UIDList[ReferenceType](referenceType), No, true)
 
     override def StringValue(pc: PC, value: String): DomainValue =
         AReferenceValue(pc, UIDList[ReferenceType](ObjectType.String), No, true)

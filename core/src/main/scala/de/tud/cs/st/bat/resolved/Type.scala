@@ -119,7 +119,7 @@ case object ComputationalTypeDouble
  * ==Comparing Types/Performance==
  * Given that the comparison of types is a standard operation in static analysis that
  * is usually done over and over again great care was taken to enable an efficient
- * comparison of types. It is - '''without exception''' - always possbible to compare
+ * comparison of types. It is - '''without exception''' - always possible to compare
  * types using reference equality (i.e., the `eq`/`ne` operators). For each type there
  * will always be exactly one object that represents that type.
  *
@@ -132,10 +132,17 @@ case object ComputationalTypeDouble
 sealed abstract class Type {
 
     def isFieldType: Boolean = false
-    def isBaseType: Boolean = false
-    def isReferenceType: Boolean = false
 
     def isVoidType: Boolean = false
+
+    /**
+     * Returns `true` if this type is a base type (also called primitive type). 
+     * Each type is either:
+     *  - a base type, 
+     *  - a reference type or 
+     *  - the type void.
+     */
+    def isBaseType: Boolean = false
     def isByteType: Boolean = false
     def isCharType: Boolean = false
     def isShortType: Boolean = false
@@ -144,6 +151,16 @@ sealed abstract class Type {
     def isFloatType: Boolean = false
     def isDoubleType: Boolean = false
     def isBooleanType: Boolean = false
+    
+    /**
+     * Returns `true` if this type is a reference type; that is, an array type or an
+     * object type. 
+     * Each type is either:
+     *  - a base type, 
+     *  - a reference type or 
+     *  - the type void.
+     */
+    def isReferenceType: Boolean = false
     def isArrayType: Boolean = false
     def isObjectType: Boolean = false
 

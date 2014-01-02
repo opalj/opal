@@ -67,7 +67,7 @@ sealed trait IsPrimitiveValue extends TypesAnswer {
 }
 
 object IsPrimitiveValue {
-    def unapplay(answer: IsPrimitiveValue): Option[BaseType] =
+    def unapply(answer: IsPrimitiveValue): Option[BaseType] =
         Some(answer.primitiveType)
 }
 
@@ -146,12 +146,12 @@ trait IsAReferenceValue {
 
     /**
      * If `Yes` the value is statically known to be `null` at runtime. In this
-     * case the upper bound  is (has to be) empty. If the answer is `Unknown` then the
+     * case the upper bound is (has to be) empty. If the answer is `Unknown` then the
      * analysis was not able to statically determine whether the value is `null` or
      * is not `null`. In this case the upper bound is expected to be non-empty.
      * If the answer is `No` then the value is statically known not to be `null`. In this
-     * case, the upper bound may precisely identify the runtime type or still just identify
-     * an upper bound.
+     * case, the upper bound may precisely identify the runtime type or still just
+     * identify an upper bound.
      */
     def isNull: Answer
 
@@ -167,8 +167,14 @@ trait IsAReferenceValue {
      * The upper bound of the value's type. The upper bound is empty if this
      * value is `null` (i.e., `isNUll == Yes`). The upper bound will only contain
      * a single type if the type is precise. (i.e., `isPrecise == true`). Otherwise,
-     * the upper type bound will contain one or more types that are not in an inheritance
-     * relation, but which will ''correctly'' approximate the runtime type.
+     * the upper type bound will contain one or more types that are not known to be
+     * in an inheritance relation, but which will ''correctly'' approximate the runtime
+     * type.
+     *
+     * @note If only a part of a project is analyzed, the class hierarchy may be
+     *      fragmented and it may happen that two classes that are indeed in an
+     *      inheritance relation if we would analyzed the complete project are reported
+     *      in the upper type bound.
      */
     def upperTypeBound: UpperTypeBound
 
@@ -195,7 +201,7 @@ trait IsAReferenceValue {
      *      if `isNull` is `Unknown` then the result is given under the
      *      assumption that the value is not `null` at runtime.
      */
-    def isSubtypeOf(referenceType: ReferenceType): Answer
+    def isValueSubtypeOf(referenceType: ReferenceType): Answer
 }
 
 /**
