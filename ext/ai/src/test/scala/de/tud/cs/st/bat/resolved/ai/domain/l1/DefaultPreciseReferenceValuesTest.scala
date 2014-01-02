@@ -112,7 +112,7 @@ class DefaultPreciseReferenceValuesTest
 
     it should ("be able to create an AReferenceValue with the expected values") in {
         ref1 match {
-            case AReferenceValue(444, Set1(ObjectType.Object), No, true) ⇒ // OK
+            case AReferenceValue(444, UIDList(ObjectType.Object), No, true) ⇒ // OK
             case v ⇒ fail("expected: "+ref1+";actual: "+v)
         }
     }
