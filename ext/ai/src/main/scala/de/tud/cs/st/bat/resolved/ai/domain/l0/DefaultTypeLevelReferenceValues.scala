@@ -80,7 +80,7 @@ trait DefaultTypeLevelReferenceValues[+I]
                     // IMPROVE We could check if this array's type and the given value's type are in no inheritance hierarchy
                     // IMPROVE We could check if the type of the other value is precise and if so if this type is a supertype of it
                     Unknown
-            }
+                    }
         }
 
         override def doLoad(
@@ -136,7 +136,7 @@ trait DefaultTypeLevelReferenceValues[+I]
                                 ReferenceValue(joinPC, ObjectType.Object)
                             else
                                 ReferenceValue(joinPC, newUpperTypeBound)
-                        )
+                )
                     }
 
                 case MReferenceValue(thatUpperTypeBound) ⇒
@@ -191,7 +191,7 @@ trait DefaultTypeLevelReferenceValues[+I]
                             // in geneal - to support array values with multiple type 
                             // bounds, which we currently don't do.
                             StructuralUpdate(ArrayValue(joinPC, ArrayType.ArrayOfObjects))
-                    }
+            }
                 case NullValue() ⇒
                     NoUpdate
             }
@@ -278,10 +278,10 @@ trait DefaultTypeLevelReferenceValues[+I]
                             else
                                 ReferenceValue(joinPC, newUpperTypeBound)
                         )
-                    }
+            }
                 case NullValue() ⇒
                     NoUpdate
-            }
+        }
         }
 
         override def adapt[ThatI >: I](target: Domain[ThatI], pc: PC): target.DomainValue =
@@ -403,11 +403,11 @@ trait DefaultTypeLevelReferenceValues[+I]
                         val isSerializable =
                             thisUpperTypeBound exists { thatType ⇒
                                 domain.isSubtypeOf(thatType, ObjectType.Serializable).yes
-                            }
+            }
                         val isCloneable =
                             thisUpperTypeBound exists { thatType ⇒
                                 domain.isSubtypeOf(thatType, ObjectType.Cloneable).yes
-                            }
+        }
                         if (isSerializable && isCloneable)
                             StructuralUpdate(ReferenceValue(joinPC, TypeLevelReferenceValues.SerializableAndCloneable))
                         else if (isSerializable)
@@ -443,7 +443,7 @@ trait DefaultTypeLevelReferenceValues[+I]
 
         override def toString() =
             "ReferenceValue("+upperTypeBound.map(_.toJava).mkString(" with ")+")"
-    }
+            }
 
     object MReferenceValue {
         def unapply(that: MReferenceValue): Option[UpperTypeBound] =

@@ -38,7 +38,6 @@ package domain
 package l0
 
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
-import de.tud.cs.st.bat.resolved.ai.ComputationWithSideEffectOrException
 
 /**
  * This (partial-)domain implements the basic support for performing
@@ -114,7 +113,7 @@ trait TypeLevelReferenceValues[+I] extends Domain[I] with GeneralizedArrayHandli
      * A reference value that is associated with a single (upper) type (bound).
      *
      * @note This class was introduced for performance reasons.
-     */
+         */
     protected trait SReferenceValue[T <: ReferenceType] extends ReferenceValue {
         this: DomainValue ⇒
 

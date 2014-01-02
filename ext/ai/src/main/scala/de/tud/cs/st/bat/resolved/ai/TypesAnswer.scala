@@ -146,12 +146,12 @@ trait IsAReferenceValue {
 
     /**
      * If `Yes` the value is statically known to be `null` at runtime. In this
-     * case the upper bound is (has to be) empty. If the answer is `Unknown` then the
+     * case the upper bound  is (has to be) empty. If the answer is `Unknown` then the
      * analysis was not able to statically determine whether the value is `null` or
      * is not `null`. In this case the upper bound is expected to be non-empty.
      * If the answer is `No` then the value is statically known not to be `null`. In this
-     * case, the upper bound may precisely identify the runtime type or still just
-     * identify an upper bound.
+     * case, the upper bound may precisely identify the runtime type or still just identify
+     * an upper bound.
      */
     def isNull: Answer
 
