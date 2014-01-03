@@ -95,7 +95,7 @@ trait ConsoleTracer extends AITracer {
         result: Update[(D#Operands, D#Locals)],
         forcedContinuation: Boolean): Unit = {
 
-        print(Console.BLUE + pc+": MERGE :")
+        print(Console.BLUE + pc+": MERGE: ")
         result match {
             case NoUpdate ⇒ println("no changes; forced continuation="+forcedContinuation)
             case u @ SomeUpdate((updatedOperands, updatedLocals)) ⇒
