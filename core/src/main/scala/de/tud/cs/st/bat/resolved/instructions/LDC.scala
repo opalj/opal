@@ -59,7 +59,11 @@ case class LoadFloat(value: Float) extends LDC[Float]
 
 case class LoadClass(value: ReferenceType) extends LDC[ReferenceType]
 
-case class LoadString(value: String) extends LDC[String]
+case class LoadString(value: String) extends LDC[String] {
+
+    override def toString: String = "LoadString(\""+value+"\")"
+
+}
 
 object LDC {
 
