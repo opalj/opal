@@ -484,7 +484,7 @@ class ClassHierarchy private (
     }
 
     /**
-     * Determines if `subtype` is a subtype of `supertype` given the available
+     * Determines if `subtype` is a subtype of `supertype` using this 
      * class hierarchy.
      *
      * This method can be used as a foundation for implementing the logic of the JVM's
@@ -498,11 +498,16 @@ class ClassHierarchy private (
      *    if `subtype` is not a subtype of `supertype` and `Unknown` if the analysis is
      *    not conclusive. The latter can happen if the class hierarchy is not
      *    completely available and hence precise information about a type's supertypes
-     * @note The answer `No` does not necessarily imply that two runtime values for
-     *    which the given types are only upper boundaries are not (w.r.t. their
+     *    is not available.
+     * @note The answer `No` does not necessarily imply that two '''runtime values''' for
+     *    which the given types are only upper bounds are not (w.r.t. their
      *    runtime types) in a subtype relation. E.g., if `subtype` denotes the type
      *    `java.util.List` and `supertype` denotes the type `java.util.ArrayList` then
-     *    the answer is clearly `No`. But, at runtime, this may not be the case.
+     *    the answer is clearly `No`. But, at runtime, this may not be the case. I.e.,
+     *    only the answer `Yes` is conclusive. In case of `No` further information
+     *    needs to be taken into account by the caller to determine what it means that
+     *    the (upper) type (bounds) of the underlying values are not in an inheritance 
+     *    relation.
      */
     def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer = {
         if ((subtype eq supertype) || (supertype eq Object))
@@ -557,7 +562,7 @@ class ClassHierarchy private (
      *      field is non-static if get-/putfield is used and static if a get/putstatic is
      *      used to access the field. In the latter case the JVM would throw a
      *      `LinkingException`.
-     *      Furthermore, if the field cannot be found it is the responsibility of the
+     *      Furthermore, if the field cannot be found, it is the responsibility of the
      *      caller to handle that situation.
      *
      * @note Resolution is final. I.e., either this algorithm has found the defining field
@@ -994,7 +999,7 @@ object ClassHierarchy {
     import de.tud.cs.st.util.ControlAbstractions.foreachNonNullValueOf
 
     /**
-     * Creates a ClassHierarchy object that predefines the type hierarchy related to
+     * Creates a `ClassHierarchy` that captures the type hierarchy related to
      * the exceptions thrown by specific Java bytecode instructions.
      *
      * This class hierarchy is primarily useful for testing purposes.
