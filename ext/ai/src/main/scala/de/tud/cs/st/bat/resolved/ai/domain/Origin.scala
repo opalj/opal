@@ -41,8 +41,16 @@ package domain
  */
 trait Origin { this: SomeDomain ⇒
 
-    def origin(value: DomainValue): Iterable[PC] = {
-        domainException(this, "the origin of \""+value+"\" is not available")
-    }
+    /**
+     * Returns the origin(s) of the value if the information is available.
+     *
+     * @return The source(s) of the given value if the information is available.
+     *      Whether the information is available depends on the concrete domains.
+     *      This trait only defines a general contract how to get access to a
+     *      value's origin (I.e., the pc of the instruction which created the
+     *      respective value.)
+     *      By default this method returns an empty `Iterable`.
+     */
+    def origin(value: DomainValue): Iterable[PC] = Iterable.empty
 
 }
