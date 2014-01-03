@@ -45,7 +45,7 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  *
  * ==Extending/Implementing This Domain==
  * The following implementation decisions need to be taken into account when
- * inherting from this trait:
+ * inheriting from this trait:
  *  - By default equality of `DomainValue`s that represent reference values is
  *    reference based. I.e., two instances of `DomainValue`s that represent
  *    reference values are never equal. However, subclasses may implement their
@@ -68,7 +68,6 @@ trait TypeLevelReferenceValues[+I]
     /**
      * Abstracts over all values with computational type `reference`. I.e.,
      * abstracts over class and array values and also the `null` value.
-     *
      */
     protected trait ReferenceValue extends Value with IsReferenceValue {
         this: DomainValue ⇒
@@ -83,11 +82,12 @@ trait TypeLevelReferenceValues[+I]
          * Summarizes this value and the given value by `join`ing both values and
          * returning the joined value.
          *
+         * @param pc The PC that will be used by the new summarized value unless
+         *      the summary returns this value.
          * @param value A value with computational type reference value.
-         *
          * @note Though the default implementation will always work, it may not provide
-         * 		the desired/necessary level of abstraction. In such cases, this method
-         *   	needs to be overridden.
+         *      the desired/necessary level of abstraction. In such cases, this method
+         *      needs to be overridden.
          */
         override def summarize(pc: PC, value: DomainValue): DomainValue = {
             this.join(pc, value) match {
@@ -218,15 +218,6 @@ trait TypeLevelReferenceValues[+I]
 
         override def upperTypeBound: UpperTypeBound = UIDList(theUpperTypeBound)
 
-        override def isValueSubtypeOf(supertype: ReferenceType): Answer = {
-            val isSubtypeOf = domain.isSubtypeOf(theUpperTypeBound, supertype)
-            isSubtypeOf match {
-                case Yes             ⇒ Yes
-                case No if isPrecise ⇒ No
-                case _               ⇒ Unknown
-            }
-        }
-
         override def summarize(pc: PC): DomainValue = this
 
         override def toString: String = "ReferenceValue("+theUpperTypeBound.toJava+")"
@@ -235,7 +226,6 @@ trait TypeLevelReferenceValues[+I]
 
     protected trait ObjectValue extends ReferenceValue {
         this: DomainValue ⇒
-
     }
 
     protected trait ArrayValue extends ReferenceValue {
@@ -253,6 +243,10 @@ trait TypeLevelReferenceValues[+I]
             potentialExceptions: ExceptionValues): ArrayLoadResult
 
         def load(pc: PC, index: DomainValue): ArrayLoadResult = {
+            // @note
+            // The case "this.isNull == Yes" will not occur as the value "null" is always
+            // represented by an instance of the respective class and this situation
+            // is checked for by the domain-level method.
 
             val validIndex =
                 isSomeValueInRange(index, IntegerConstant0, getLength(pc))
@@ -283,7 +277,8 @@ trait TypeLevelReferenceValues[+I]
             pc: PC,
             value: DomainValue,
             index: DomainValue): ArrayStoreResult = {
-            // the case "isNull == Yes" will not occur as the value "null" is always
+            // @note
+            // The case "this.isNull == Yes" will not occur as the value "null" is always
             // represented by an instance of the respective class
 
             val validIndex =
@@ -319,15 +314,17 @@ trait TypeLevelReferenceValues[+I]
     def asReferenceValue(value: DomainValue): ReferenceValue =
         value.asInstanceOf[ReferenceValue]
 
-    def asObjectValue(value: DomainValue): ClassValue =
-        value.asInstanceOf[ClassValue]
+    def asObjectValue(value: DomainValue): ObjectValue =
+        value.asInstanceOf[ObjectValue]
 
     def asArrayValue(value: DomainValue): ArrayValue =
         value.asInstanceOf[ArrayValue]
 
+    // -----------------------------------------------------------------------------------
     //
     // QUESTION'S ABOUT VALUES
     //
+    // -----------------------------------------------------------------------------------
 
     override def areEqualReferences(value1: DomainValue, value2: DomainValue): Answer =
         // we could check if it is conceivable that both values are not equal based 
@@ -362,7 +359,7 @@ trait TypeLevelReferenceValues[+I]
     //
     // CREATE ARRAY
     //
-    
+
     override def newarray(
         pc: PC,
         count: DomainValue,
@@ -392,13 +389,18 @@ trait TypeLevelReferenceValues[+I]
      * exception (`NullPointerException` or `IndexOutOfBoundsException`).
      *
      * @note It is in general not necessary to override this method. If you need
-     *      some special handling refine the trait `ArrayValue`.
+     *      some special handling refine the `load` method defined by the trait
+     *      `ArrayValue`.
      */
     override def arrayload(
         pc: PC,
         index: DomainValue,
-        arrayRef: DomainValue): ArrayLoadResult = {
-        asArrayValue(arrayRef).load(pc, index)
+        arrayref: DomainValue): ArrayLoadResult = {
+        if (isNull(arrayref).yes)
+            justThrows(NullPointerException(pc))
+        else
+            // if the bytecode is valid, the type cast (asArrayValue) is safe
+            asArrayValue(arrayref).load(pc, index)
     }
 
     /**
@@ -406,14 +408,19 @@ trait TypeLevelReferenceValues[+I]
      * (`NullPointerException`, `ArrayStoreException` or `IndexOutOfBoundsException`).
      *
      * @note It is in general not necessary to override this method. If you need
-     *      some special handling refine the trait `ArrayValue`.
+     *      some special handling refine the `store` method defined by the trait
+     *      `ArrayValue`.
      */
     override def arraystore(
         pc: PC,
         value: DomainValue,
         index: DomainValue,
         arrayref: DomainValue): ArrayStoreResult = {
-        asArrayValue(arrayref).store(pc, value, index)
+        if (isNull(arrayref).yes)
+            justThrows(NullPointerException(pc))
+        else
+            // if the bytecode is valid, the type cast (asArrayValue) is safe
+            asArrayValue(arrayref).store(pc, value, index)
     }
 
     /**
@@ -439,21 +446,40 @@ trait TypeLevelReferenceValues[+I]
     // -----------------------------------------------------------------------------------
 
     /**
+     * Factory method to create a new domain value that represents a newly created
+     * array (non-null) with an unknown size that is empty.
+     *
+     * ==Typical Usage==
+     * This factory method is (implicitly) used, e.g., by BATAI when a new array
+     * instruction is found.
+     *
      * ==Summary==
-     * The properties of the domain value are:
+     * The properties of the value are:
      *
      *  - Type: '''Precise'''
      *  - Null: '''No'''
+     *  - Size: '''Unknown'''
      */
     def NewArray(pc: PC, arrayType: ArrayType): DomainValue
 
     /**
+     * Creates a new `DomainValue` that represents an array value with unknown
+     * values and where the specified type may also just be an upper type bound
+     * (unless the component type is a primitive type or an array of primitives.)
+     *
+     * ==Typical Usage==
+     * This factory method is (typically) used to create a domain value that represents
+     * an array if we know nothing specific about the array. E.g., if you want to
+     * analyze a method that takes an array as a parameter.
      *
      * ==Summary==
-     * The properties of the domain value are:
-     *
+     * The properties of the value are:
      *  - Type: '''Upper Bound'''
-     *  - Null: '''MayBe'''
+     *  - Null: '''Unknown'''
+     *  - Size: '''Unknown'''
+     *
+     * @note Java Arrays are covariant. I.e., `Object[] a = new Serializable[100];`
+     *      is valid.
      */
     def ArrayValue(pc: PC, arrayType: ArrayType): DomainValue
 
@@ -533,9 +559,18 @@ trait TypeLevelReferenceValues[+I]
         locals: Locals): (Operands, Locals) =
         updateIsNull(pc, value, Yes, operands, locals)
 }
+/**
+ * Defines domain-independent, commonly used upper type bounds.
+ *
+ * @author Michael Eichberg
+ */
 object TypeLevelReferenceValues {
 
+    /**
+     * Least upper type bound of Java arrays. That is, every Java array
+     * is always `Serializable` and `Cloneable`.
+     */
     val SerializableAndCloneable: UpperTypeBound =
-        UIDList.empty + ObjectType.Serializable + ObjectType.Cloneable
+        UIDList(ObjectType.Serializable, ObjectType.Cloneable)
 
 }
