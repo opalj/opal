@@ -375,12 +375,13 @@ trait AI[D <: SomeDomain] {
                     val mergeResult = domain.join(
                         targetPC, currentOperands, currentLocals, operands, locals
                     )
-                    if (tracer.isDefined) tracer.get.join[domain.type](
-                        domain,
-                        targetPC, currentOperands, currentLocals, operands, locals,
-                        mergeResult,
-                        forceContinuation
-                    )
+                    if (tracer.isDefined)
+                        tracer.get.join[domain.type](
+                            domain,
+                            targetPC, currentOperands, currentLocals, operands, locals,
+                            mergeResult,
+                            forceContinuation
+                        )
                     mergeResult match {
                         case NoUpdate ⇒
                             forceContinuation
