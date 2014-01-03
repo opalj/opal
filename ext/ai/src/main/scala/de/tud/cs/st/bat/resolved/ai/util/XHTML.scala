@@ -255,9 +255,9 @@ object XHTML {
 
     private def caption(classFile: Option[ClassFile], method: Option[Method]): String = {
         val modifiers = if (method.isDefined && method.get.isStatic) "static " else ""
-        val typeName = classFile.map(_.thisType.toJava+".").getOrElse("")
-        val methodName = method.map(m ⇒ m.toJava).getOrElse("")
-        modifiers + typeName + methodName
+        val typeName = classFile.map(_.thisType.toJava).getOrElse("")
+        val methodName = method.map(m ⇒ m.toJava).getOrElse("&lt; method &gt;")
+        modifiers + typeName +"{ "+ methodName+" }"
     }
 
     private def indexExceptionHandlers(code: Code) =
