@@ -113,7 +113,7 @@ trait IsReferenceValue extends TypesAnswer with IsAReferenceValue {
     /**
      * In general a domain value can represent several distinct values (depending
      * on the control flow). Each of these values can have a different upper bound and
-     * an upper bound can consist of several interfaces and a class.
+     * an upper bound can in turn consist of several interfaces and a class.
      */
     def referenceValues: Iterable[IsAReferenceValue] // TODO make iterator!!!
 

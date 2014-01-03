@@ -302,7 +302,7 @@ trait DefaultTypeLevelReferenceValues[+I]
 
     protected class MReferenceValue(
         val upperTypeBound: UpperTypeBound)
-            extends super.ReferenceValue { value ⇒
+            extends super.ObjectValue { value ⇒
 
         override def referenceValues: Iterable[IsAReferenceValue] = Iterable(this)
 

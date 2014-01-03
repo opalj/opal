@@ -237,7 +237,7 @@ trait Domain[+I] {
          *
          * In general, creating a summary of a value may be useful/required
          * for values that are potentially returned by a called method and which
-         * will be used by the calling method when continuing the interpretation. For example,
+         * will then be used by the calling method. For example,
          * it may be useful to precisely track the flow of values within a method to
          * be able to distinguish between all sources of a value (E.g., to be able to
          * distinguish between a `NullPointerException` created by instruction A and another
@@ -246,7 +246,7 @@ trait Domain[+I] {
          * method and, hence, keeping all information would just waste memory and
          * a summary may be sufficient.
          *
-         * @note __The precise semantics and usage of `summarize(...)` can be determined
+         * @note __The precise semantics and usage of `summarize(...)` is determined
          *      by the domain as BATAI does not use/call this method.__ This method
          *      is solely predefined to facilitate the development of project-wide
          *      analyses.
@@ -254,7 +254,11 @@ trait Domain[+I] {
         def summarize(pc: PC): DomainValue
 
         /**
-         * Creates a summary value of this value and the given value.
+         * Creates a summary value of this value and the given value. For example,
+         * imagine that the result of the abstract interpretation of a method is a set
+         * of different values. In such a case it may be usefull/sufficient to continue
+         * the abstract interpretation of the calling method using a value that abstracts
+         * over all values of the called method.
          *
          * (See `summarize(PC)` for further details.)
          *
@@ -515,7 +519,7 @@ trait Domain[+I] {
      * used elsewhere by BATAI.
      *
      * BATAI assigns the `pc` "-1" to the first parameter and -2 for the second... This
-     * property is, however, not ensured by this method.     
+     * property is, however, not ensured by this method.
      */
     def TypedValue(pc: PC, valueType: Type): DomainValue = valueType match {
         case BooleanType       ⇒ BooleanValue(pc)
@@ -893,7 +897,7 @@ trait Domain[+I] {
      * real type.
      *
      * This default implementation always returns
-     * [[de.tud.cs.st.bat.resolved.ai.HasUnknownType]].
+     * [[de.tud.cs.st.bat.resolved.ai.TypeUnknown]].
      *
      * ==Implementing `typeOfValue`==
      * This method is typically not implemented by a single `Domain` trait/object, but is

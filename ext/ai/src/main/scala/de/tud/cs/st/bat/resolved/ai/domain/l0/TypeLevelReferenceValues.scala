@@ -40,16 +40,35 @@ package l0
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 /**
- * This (partial-)domain implements the basic support for performing
+ * This (partial-)domain implements the foundations for performing
  * computations related to reference values.
+ *
+ * ==Extending/Implementing This Domain==
+ * The following implementation decisions need to be taken into account when
+ * inherting from this trait:
+ *  - By default equality of `DomainValue`s that represent reference values is
+ *    reference based. I.e., two instances of `DomainValue`s that represent
+ *    reference values are never equal. However, subclasses may implement their
+ *    own strategy.
+ *  - Instances of `DomainValue`s are always treated as immutable. Every
+ *    update of a value's properties creates a new value. This is a general design
+ *    decision underlying BATAI and should not be changed.
+ *  - A new instance of a `DomainValue` is always exclusively created by one of the
+ *    factory methods. (The factory methods generally start with a capital letter
+ *    and are correspondingly documented.) This greatly facilitates domain adaptability
+ *    and selective customizations.
  *
  * @author Michael Eichberg
  */
-trait TypeLevelReferenceValues[+I] extends Domain[I] with GeneralizedArrayHandling {
+trait TypeLevelReferenceValues[+I]
+        extends Domain[I]
+        with GeneralizedArrayHandling {
     domain: Configuration with IntegerValuesComparison ⇒
 
     /**
-     * Abstracts over all values with computational type `reference`.
+     * Abstracts over all values with computational type `reference`. I.e.,
+     * abstracts over class and array values and also the `null` value.
+     *
      */
     protected trait ReferenceValue extends Value with IsReferenceValue {
         this: DomainValue ⇒
@@ -57,18 +76,63 @@ trait TypeLevelReferenceValues[+I] extends Domain[I] with GeneralizedArrayHandli
         /**
          * Returns `ComputationalTypeReference`.
          */
-        final override def computationalType: ComputationalType = ComputationalTypeReference
+        final override def computationalType: ComputationalType =
+            ComputationalTypeReference
 
-        override def summarize(pc: PC, value: DomainValue): DomainValue =
+        /**
+         * Summarizes this value and the given value by `join`ing both values and
+         * returning the joined value.
+         *
+         * @param value A value with computational type reference value.
+         *
+         * @note Though the default implementation will always work, it may not provide
+         * 		the desired/necessary level of abstraction. In such cases, this method
+         *   	needs to be overridden.
+         */
+        override def summarize(pc: PC, value: DomainValue): DomainValue = {
             this.join(pc, value) match {
                 case SomeUpdate(value) ⇒ value
                 case _                 ⇒ this
             }
+        }
 
+        /**
+         * Returns `Yes` iff this value is guaranteed to be `null` at runtime and
+         * returns `No` iff the value is not `null` at runtime, in all other cases
+         * `Unknown` is returned.
+         *
+         * This default implementation always returns `Unknown`.
+         */
         override def isNull: Answer = Unknown
 
+        /**
+         * Returns `true` if the type information associated with this value is precise.
+         * I.e., the type information associated with this value precisely models the
+         * runtime type. If, `isPrecise` returns true, the type of this value can
+         * generally be assumed to represent a class type (not an interface type) or
+         * an array type. However, this domain also supports the case that `isPrecise`
+         * returns `true` even though the associated type identifies an interface type
+         * or an abstract class type. The later case may be interesting
+         *
+         * This default implementation always returns `false`.
+         */
         override def isPrecise: Boolean = false
 
+        /**
+         * Tests if this value's type is potentially a subtype of the given type.
+         * This test should take the precision of the type information into account.
+         * That is, if the currently available type information is not precise and
+         * the given type has a subtype that is always a subtype of the current
+         * upper type bound, then `Unknown` should to be returned. Given that it may be
+         * computationally intensive to determine whether two types have a common subtype
+         * it may be better to just return `Unknown` in case that this type and the
+         * given type are not in a direct inheritance relationship.
+         *
+         * This default implementation always returns `Unknown`.
+         *
+         * @note If this value represents the `null` value this method is not supported.
+         */
+        @throws[DomainException]("if this value is null")
         override def isValueSubtypeOf(referenceType: ReferenceType): Answer = Unknown
 
         /**
@@ -76,25 +140,54 @@ trait TypeLevelReferenceValues[+I] extends Domain[I] with GeneralizedArrayHandli
          */
         def refineUpperTypeBound(pc: PC, supertype: ReferenceType): DomainValue
 
+        /**
+         * Updates the "null"ness property of this value.
+         *
+         * @note If this value represents the `null` value this method is not supported.
+         */
+        @throws[DomainException]("if this value is null")
         def updateIsNull(pc: PC, isNull: Answer): DomainValue
 
     }
 
+    /**
+     * Represents the value `null`. Null values are basically found in the following two
+     * cases:
+     *  1. A null value was pushed onto the stack using `aconst_null`.
+     *  2. A reference value that is not guaranteed to be non-null is tested against
+     *    `null` using `ifnull` or `ifnonnull` and we are now on the branch where
+     *    the value has to be `null`.
+     */
     protected trait NullValue extends ReferenceValue {
         this: DomainValue ⇒
 
         final override def referenceValues: Iterable[IsAReferenceValue] = Iterable(this)
 
+        /**
+         * Returns `Yes`.
+         */
         final override def isNull = Yes
 
+        /**
+         * Returns `true`.
+         */
         final override def isPrecise = true
 
+        /**
+         * Returns an empty upper type bound.
+         */
         final override def upperTypeBound: UpperTypeBound = UIDList.empty
 
-        final override def updateIsNull(pc: PC, isNull: Answer): DomainValue =
+        /**
+         * Throws a new `DomainException` that states that this method is not supported.
+         */
+        final override def updateIsNull(pc: PC, isNull: Answer): Nothing =
             domainException(domain, "this value is null; changing that doesn't make sense")
 
-        final override def isValueSubtypeOf(referenceType: ReferenceType): Answer =
+        /**
+         * Throws a new `DomainException` that states that this method is not supported.
+         */
+        final override def isValueSubtypeOf(referenceType: ReferenceType): Nothing =
             domainException(domain, "isSubtypeOf is not defined for \"null\" values")
 
         override def refineUpperTypeBound(
@@ -103,7 +196,9 @@ trait TypeLevelReferenceValues[+I] extends Domain[I] with GeneralizedArrayHandli
 
         override def summarize(pc: PC): DomainValue = this
 
-        override def adapt[ThatI >: I](target: Domain[ThatI], pc: PC): target.DomainValue =
+        override def adapt[ThatI >: I](
+            target: Domain[ThatI],
+            pc: PC): target.DomainValue =
             target.NullValue(pc)
 
         override def toString: String = "ReferenceValue(null)"
@@ -113,7 +208,7 @@ trait TypeLevelReferenceValues[+I] extends Domain[I] with GeneralizedArrayHandli
      * A reference value that is associated with a single (upper) type (bound).
      *
      * @note This class was introduced for performance reasons.
-         */
+     */
     protected trait SReferenceValue[T <: ReferenceType] extends ReferenceValue {
         this: DomainValue ⇒
 
@@ -146,6 +241,10 @@ trait TypeLevelReferenceValues[+I] extends Domain[I] with GeneralizedArrayHandli
     protected trait ArrayValue extends ReferenceValue {
         this: DomainValue ⇒
 
+        /**
+         * Returns `Yes` if we can statically determine that the given value can
+         * be stored in the array represented by this `ArrayValue`.
+         */
         /*ABSTRACT*/ def isAssignable(value: DomainValue): Answer
 
         /*ABSTRACT*/ def doLoad(
@@ -251,7 +350,7 @@ trait TypeLevelReferenceValues[+I] extends Domain[I] with GeneralizedArrayHandli
         asReferenceValue(value).isNull
 
     object NullValue {
-        def unapply(value: DomainValue): Boolean = asReferenceValue(value).isNull.yes
+        def unapply(value: NullValue): Boolean = true
     }
 
     // -----------------------------------------------------------------------------------
@@ -263,10 +362,11 @@ trait TypeLevelReferenceValues[+I] extends Domain[I] with GeneralizedArrayHandli
     //
     // CREATE ARRAY
     //
+    
     override def newarray(
         pc: PC,
         count: DomainValue,
-        componentType: FieldType): Computation[DomainValue, DomainValue] = {
+        componentType: FieldType): Computation[DomainValue, ExceptionValue] = {
         //ComputedValueAndException(TypedValue(ArrayType(componentType)), TypedValue(ObjectType.NegativeArraySizeException))
 
         ComputedValue(NewArray(pc, ArrayType(componentType)))
@@ -278,7 +378,7 @@ trait TypeLevelReferenceValues[+I] extends Domain[I] with GeneralizedArrayHandli
     override def multianewarray(
         pc: PC,
         counts: List[DomainValue],
-        arrayType: ArrayType): Computation[DomainValue, DomainValue] = {
+        arrayType: ArrayType): Computation[DomainValue, ExceptionValue] = {
         //ComputedValueAndException(TypedValue(arrayType), TypedValue(ObjectType.NegativeArraySizeException))
         ComputedValue(NewArray(pc, arrayType))
     }
