@@ -401,14 +401,6 @@ trait AI[D <: SomeDomain] {
             }
         }
 
-        def gotoTargets(
-            sourcePC: PC,
-            targetPCs: Iterable[PC],
-            operands: Operands,
-            locals: Locals) {
-            targetPCs.foreach(gotoTarget(sourcePC, _, operands, locals))
-        }
-
         while (worklist.nonEmpty) {
             if (isInterrupted) {
                 val result = AIResultBuilder.aborted(
