@@ -1004,7 +1004,10 @@ object ClassHierarchy {
      *
      * This class hierarchy is primarily useful for testing purposes.
      */
-    def preInitializedClassHierarchy: ClassHierarchy = apply(Traversable.empty)
+    // The preInitializedClassHierarchy is used by the algorithm that calculates
+    // the intra-procedural control-flow graph! Hence, it has to be a "val"
+    // and should not be a "def".
+    val preInitializedClassHierarchy: ClassHierarchy = apply(Traversable.empty)
 
     /**
      * Create the class hierarchy by analyzing the given class files and
