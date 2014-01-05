@@ -68,6 +68,17 @@ trait DefaultTypeLevelReferenceValues[+I]
         val theUpperTypeBound: ArrayType)
             extends super.ArrayValue with SReferenceValue[ArrayType] {
 
+        override def isValueSubtypeOf(supertype: ReferenceType): Answer = {
+            val isSubtypeOf = domain.isSubtypeOf(theUpperTypeBound, supertype)
+            isSubtypeOf match {
+                case Yes ⇒ Yes
+                case No if isPrecise ||
+                    theUpperTypeBound.componentType.isBaseType ||
+                    (supertype.isArrayType && supertype.asArrayType.componentType.isBaseType) ⇒ No
+                case _ ⇒ Unknown
+            }
+        }
+
         override def isAssignable(value: DomainValue): Answer = {
             typeOfValue(value) match {
                 case IsPrimitiveValue(primitiveType) ⇒
@@ -206,6 +217,15 @@ trait DefaultTypeLevelReferenceValues[+I]
     protected class SObjectValue(
         val theUpperTypeBound: ObjectType)
             extends super.ObjectValue with SReferenceValue[ObjectType] { value ⇒
+
+        override def isValueSubtypeOf(supertype: ReferenceType): Answer = {
+            val isSubtypeOf = domain.isSubtypeOf(theUpperTypeBound, supertype)
+            isSubtypeOf match {
+                case Yes             ⇒ Yes
+                case No if isPrecise ⇒ No
+                case _               ⇒ Unknown
+            }
+        }
 
         // NARROWING OPERATION
         override def refineUpperTypeBound(
@@ -475,36 +495,42 @@ trait DefaultTypeLevelReferenceValues[+I]
     // FACTORY METHODS
     //
 
-    private[this] val TheNullValue: ReferenceValue = new NullValue()
+    protected[this] val TheNullValue: ReferenceValue = new NullValue()
+
+    /**
+     * @inheritdoc
+     * This implementation always returns the singleton instance `TheNullValue`.
+     */
     override def NullValue(pc: PC): ReferenceValue = TheNullValue
 
+    /**
+     * @inheritdoc
+     * This implementation always directly creates a new `SObjectValue`.
+     */
     override def NonNullReferenceValue(pc: PC, objectType: ObjectType): ReferenceValue =
         new SObjectValue(objectType)
 
-    /**
-     * ==Summary==
-     * The properties of the domain value are:
-     *
-     *  - Type: '''Precise'''
-     *  - Null: '''No'''
-     */
     override def NewArray(pc: PC, arrayType: ArrayType): ArrayValue =
         new ArrayValue(arrayType)
 
-    /**
-     *
-     * ==Summary==
-     * The properties of the domain value are:
-     *
-     *  - Type: '''Upper Bound'''
-     *  - Null: '''MayBe'''
-     */
     override def ArrayValue(pc: PC, arrayType: ArrayType): ArrayValue =
         new ArrayValue(arrayType)
 
+    def ObjectValue(pc: PC, objectType: ObjectType): ReferenceValue =
+        new SObjectValue(objectType)
+
+    /**
+     * @inheritdoc
+     *
+     * Depending on the kind of reference type (array or class type) this method
+     * just calls the respective factory method: `ArrayValue(PC,ArrayType)`
+     * or `ObjectValue(PC,ObjectType)`.
+     *
+     * @note It is generally not necessary to override this method.
+     */
     override def ReferenceValue(pc: PC, referenceType: ReferenceType): ReferenceValue =
         referenceType match {
-            case ot: ObjectType ⇒ new SObjectValue(ot)
+            case ot: ObjectType ⇒ ObjectValue(pc, ot)
             case at: ArrayType  ⇒ ArrayValue(pc, at)
         }
 
@@ -533,11 +559,21 @@ trait DefaultTypeLevelReferenceValues[+I]
     override def NewObject(pc: PC, objectType: ObjectType): ReferenceValue =
         new SObjectValue(objectType)
 
+    /**
+     * @inheritdoc
+     *
+     * Depending on the kind of reference type (array or class type) this method
+     * just calls the respective factory method: `ArrayValue(PC,ArrayType)`
+     * or `ObjectValue(PC,ObjectType)`.
+     *
+     * @note It is generally necessary to override this method when you want to track
+     *      a value`s properties ('''type''' and '''isPrecise''') more precisely.
+     */
     override def InitializedObject(pc: PC, referenceType: ReferenceType): ReferenceValue =
         if (referenceType.isArrayType)
-            new ArrayValue(referenceType.asArrayType)
+            ArrayValue(pc, referenceType.asArrayType)
         else
-            new SObjectValue(referenceType.asObjectType)
+            ObjectValue(pc, referenceType.asObjectType)
 
     override def StringValue(pc: PC, value: String): DomainValue =
         new SObjectValue(ObjectType.String)
