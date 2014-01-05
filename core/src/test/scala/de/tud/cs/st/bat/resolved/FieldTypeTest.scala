@@ -47,56 +47,38 @@ class FieldTypeTest extends FunSuite with ParallelTestExecution {
 
     test("Byte Field Descriptor") {
         val fieldType = FieldType("B")
+        assert(fieldType.toJavaClass == java.lang.Byte.TYPE)
         assert(fieldType == ByteType)
     }
 
     test("Char Field Descriptor") {
         val fieldType = FieldType("C")
+        assert(fieldType.toJavaClass == java.lang.Character.TYPE)
         assert(fieldType == CharType)
     }
 
     test("Double Field Descriptor") {
         val fieldType = FieldType("D")
+        assert(fieldType.toJavaClass == java.lang.Double.TYPE)
         assert(fieldType == DoubleType)
     }
 
     test("Float Field Descriptor") {
         val fieldType = FieldType("F")
+        assert(fieldType.toJavaClass == java.lang.Float.TYPE)
         assert(fieldType == FloatType)
     }
 
     test("Integer Field Descriptor") {
         val fieldType = FieldType("I")
+        assert(fieldType.toJavaClass == java.lang.Integer.TYPE)
         assert(fieldType == IntegerType)
     }
 
     test("Long Field Descriptor") {
         val fieldType = FieldType("J")
+        assert(fieldType.toJavaClass == java.lang.Long.TYPE)
         assert(fieldType == LongType)
     }
 
-    test("ObjectType Field Descriptor") {
-        val fieldType = FieldType("Ljava/lang/Object;")
-        val ObjectType(className) = fieldType
-        assert(className === "java/lang/Object")
-    }
-
-    test("ArrayType (Array of References) Field Descriptor") {
-        val fieldType = FieldType("[Ljava/lang/Object;")
-        val ArrayType(componentType) = fieldType
-        assert(componentType === FieldType("Ljava/lang/Object;"))
-    }
-
-    test("ArrayType (Array of Primitives) Field Descriptor") {
-        val fieldType = FieldType("[J")
-        val ArrayType(componentType) = fieldType
-        assert(componentType === LongType)
-    }
-
-    test("ArrayType (Array of Array of Primitives) Field Descriptor") {
-        val fieldType = FieldType("[[S")
-        fieldType match {
-            case ArrayType(ArrayType(ShortType)) ⇒ /*OK*/
-        }
-    }
 }
