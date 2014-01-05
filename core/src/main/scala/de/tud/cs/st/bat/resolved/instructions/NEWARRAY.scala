@@ -48,6 +48,33 @@ case class NEWARRAY(
 
     def mnemonic: String = "newarray"
 
-    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 2
+    final override def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+        currentPC + 2
 
+    override def toString: String = "NEWARRAY("+NEWARRAY.getType(atype).toJava+"[])"
+
+}
+
+object NEWARRAY {
+
+    def getType(atype: Int): BaseType = {
+        (atype: @annotation.switch) match {
+            case BooleanType.atype ⇒
+                BooleanType
+            case CharType.atype ⇒
+                CharType
+            case FloatType.atype ⇒
+                FloatType
+            case DoubleType.atype ⇒
+                DoubleType
+            case ByteType.atype ⇒
+                ByteType
+            case ShortType.atype ⇒
+                ShortType
+            case IntegerType.atype ⇒
+                IntegerType
+            case LongType.atype ⇒
+                LongType
+        }
+    }
 }

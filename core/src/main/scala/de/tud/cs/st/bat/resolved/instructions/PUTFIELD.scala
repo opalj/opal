@@ -38,7 +38,7 @@ package instructions
 /**
  * Set field in object.
  *
- * @see [[de.tud.cs.st.bat.resolved.instructions.FieldAccess]] for additional 
+ * @see [[de.tud.cs.st.bat.resolved.instructions.FieldAccess]] for additional
  *      pattern matching support.
  *
  * @author Michael Eichberg
@@ -53,8 +53,14 @@ case class PUTFIELD(
 
     def mnemonic: String = "putfield"
 
-    def runtimeExceptions: List[ObjectType] = FieldAccess.runtimeExceptions
+    final override def runtimeExceptions: List[ObjectType] =
+        FieldAccess.runtimeExceptions
+
+    final override def nextInstructions(currentPC: PC, code: Code): PCs =
+        Instruction.nextInstructionOrExceptionHandler(
+            this, currentPC, code, ObjectType.NullPointerException
+        )
 
     override def toString = "put "+declaringClass.toJava+"."+name+" : "+fieldType.toJava
-    
+
 }

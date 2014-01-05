@@ -42,6 +42,42 @@ package instructions
  */
 abstract class ArrayAccessInstruction extends Instruction {
 
-    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 1
+    final override def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+        currentPC + 1
+
+}
+
+abstract class ArrayStoreInstruction extends ArrayAccessInstruction {
+
+}
+
+abstract class PrimitiveArrayStoreInstruction extends ArrayAccessInstruction {
+
+    final override def runtimeExceptions: List[ObjectType] =
+        PrimitiveArrayAccess.runtimeExceptions
+
+    final override def nextInstructions(currentPC: PC, code: Code): PCs =
+        Instruction.nextInstructionOrExceptionHandlers(
+            this, currentPC, code, PrimitiveArrayAccess.runtimeExceptions)
+
+}
+
+abstract class ArrayLoadInstruction extends ArrayAccessInstruction {
+
+    final override def runtimeExceptions: List[ObjectType] =
+        ArrayLoadInstruction.runtimeExceptions
+
+    final override def nextInstructions(currentPC: PC, code: Code): PCs =
+        Instruction.nextInstructionOrExceptionHandlers(
+            this, currentPC, code, runtimeExceptions)
+
+}
+
+object ArrayLoadInstruction {
+
+    final val runtimeExceptions: List[ObjectType] = {
+        import ObjectType._
+        List(ArrayIndexOutOfBoundsException, NullPointerException)
+    }
 
 }

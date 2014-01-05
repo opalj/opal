@@ -49,6 +49,6 @@ abstract class ArithmeticInstruction extends Instruction
  */
 object ArithmeticInstruction {
 
-    val runtimeExceptions = List(ObjectType.ArithmeticException)
+    final val runtimeExceptions = List(ObjectType.ArithmeticException)
 
 }

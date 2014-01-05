@@ -48,5 +48,10 @@ case class RET(
 
     def mnemonic: String = "ret"
 
-    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 2
+    final override def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+        currentPC + 2
+
+    final override def nextInstructions(currentPC: PC, code: Code): PCs =
+        BATException("to determine the next instruction that will be executed a data-/control-flow analysis needs to be executed; this information is not directly available")
+
 }

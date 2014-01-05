@@ -35,7 +35,6 @@ package bat
 package resolved
 package instructions
 
-
 /**
  * Super class of all bytecode instructions that always jump to a specific
  * target instruction.
@@ -46,8 +45,14 @@ abstract class UnconditionalBranchInstruction extends ControlTransferInstruction
 
     def branchoffset: Int
 
+    final override def nextInstructions(currentPC: PC, code: Code): PCs =
+        collection.mutable.UShortSet(currentPC + branchoffset)
+
     override def toString(currentPC: Int) =
-        getClass().getSimpleName+" "+(currentPC + branchoffset) + (if (branchoffset >= 0) "↓" else "↑")
+        getClass().getSimpleName+" "+
+            (currentPC + branchoffset) +
+            (if (branchoffset >= 0) "↓" else "↑")
+
 }
 object UnconditionalBranch {
 

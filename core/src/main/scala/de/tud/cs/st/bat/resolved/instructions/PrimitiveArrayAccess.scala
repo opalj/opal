@@ -40,11 +40,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-trait PrimitiveArrayAccess {
-
-    final def runtimeExceptions: List[ObjectType] = PrimitiveArrayAccess.runtimeExceptions
-
-}
+trait PrimitiveArrayAccess { }
 object PrimitiveArrayAccess {
 
     val runtimeExceptions = List(ObjectType.ArrayIndexOutOfBoundsException, ObjectType.NullPointerException)

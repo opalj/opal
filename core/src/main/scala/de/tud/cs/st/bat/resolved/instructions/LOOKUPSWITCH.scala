@@ -44,15 +44,21 @@ package instructions
  */
 case class LOOKUPSWITCH(
     defaultOffset: Int,
-    npairs: IndexedSeq[(Int, Int)])
+    npairs: IndexedSeq[(Int, PC)])
         extends CompoundConditionalBranchInstruction {
 
     def opcode: Int = 171
 
     def mnemonic: String = "lookupswitch"
 
-    def indexOfNextInstruction(currentPC: Int, code: Code): Int = {
+    final override def indexOfNextInstruction(currentPC: Int, code: Code): Int = {
         currentPC + 1 + (3 - (currentPC % 4)) + 8 + npairs.size * 8
+    }
+
+    final override def nextInstructions(currentPC: PC, code: Code): PCs = {
+        var pcs = collection.mutable.UShortSet(currentPC + defaultOffset)
+        npairs foreach (npair ⇒ { val (_, offset) = npair; pcs += (currentPC + offset) })
+        pcs
     }
 
     override def toString(pc: Int): String = {

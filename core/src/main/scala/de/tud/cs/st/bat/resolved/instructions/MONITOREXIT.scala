@@ -46,6 +46,10 @@ case object MONITOREXIT extends SynchronizationInstruction {
 
     def mnemonic: String = "monitorexit"
 
-    val runtimeExceptions: List[ObjectType] = List(ObjectType.NullPointerException, ObjectType.IllegalMonitorStateException)
+    final override val runtimeExceptions: List[ObjectType] =
+        List(ObjectType.NullPointerException, ObjectType.IllegalMonitorStateException)
 
+    final override def nextInstructions(currentPC: PC, code: Code): PCs =
+        Instruction.nextInstructionOrExceptionHandlers(
+            this, currentPC, code, runtimeExceptions)
 }

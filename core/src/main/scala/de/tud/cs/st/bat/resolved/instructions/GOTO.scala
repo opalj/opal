@@ -48,6 +48,7 @@ case class GOTO(
 
     def mnemonic: String = "goto"
 
-    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 3
+    final override def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+        currentPC + 3
 
 }

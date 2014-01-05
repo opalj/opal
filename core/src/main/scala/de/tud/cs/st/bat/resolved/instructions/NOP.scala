@@ -36,10 +36,10 @@ package resolved
 package instructions
 
 /**
-  * Do nothing.
-  *
-  * @author Michael Eichberg
-  */
+ * Do nothing.
+ *
+ * @author Michael Eichberg
+ */
 case object NOP extends Instruction {
 
     def opcode: Int = 0
@@ -48,5 +48,10 @@ case object NOP extends Instruction {
 
     def runtimeExceptions: List[ObjectType] = Nil
 
-    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 1
+    final override def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+        currentPC + 1
+
+    final override def nextInstructions(currentPC: PC, code: Code): PCs =
+        collection.mutable.UShortSet(indexOfNextInstruction(currentPC, code))
+
 }

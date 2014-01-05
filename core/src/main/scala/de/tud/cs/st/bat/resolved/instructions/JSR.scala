@@ -49,5 +49,5 @@ case class JSR(
     def mnemonic: String = "jsr"
 
     def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 3
-  
+    
 }

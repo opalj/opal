@@ -48,9 +48,14 @@ case class NEW(
 
     def mnemonic: String = "new"
 
-    def runtimeExceptions: List[ObjectType] = Nil
+    final override def runtimeExceptions: List[ObjectType] = Nil
 
-    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 3
+    final override def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+        currentPC + 3
+
+    final override def nextInstructions(currentPC: PC, code: Code): PCs =
+        Instruction.nextInstructionOrExceptionHandler(
+            this, currentPC, code, ObjectType.OutOfMemoryError)
 
     override def toString: String = "NEW "+objectType.toJava
 }

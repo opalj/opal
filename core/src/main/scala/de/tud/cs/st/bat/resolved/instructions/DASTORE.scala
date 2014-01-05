@@ -40,7 +40,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case object DASTORE extends ArrayAccessInstruction with PrimitiveArrayAccess {
+case object DASTORE extends PrimitiveArrayStoreInstruction with PrimitiveArrayAccess {
 
     def opcode: Int = 82
 

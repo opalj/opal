@@ -316,3 +316,12 @@ case class Code(
     }
 
 }
+object Code {
+
+    /**
+     * Used solely to determine the potential handlers in case that an exception is
+     * thrown by an instruction.
+     */
+    protected[resolved] def preDefinedClassHierarchy =
+        analyses.ClassHierarchy.preInitializedClassHierarchy
+}

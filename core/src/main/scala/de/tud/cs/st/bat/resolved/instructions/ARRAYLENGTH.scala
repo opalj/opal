@@ -46,7 +46,14 @@ case object ARRAYLENGTH extends Instruction {
 
     def mnemonic: String = "arraylength"
 
-    val runtimeExceptions: List[ObjectType] = List(ObjectType.NullPointerException)
+    final override val runtimeExceptions: List[ObjectType] =
+        List(ObjectType.NullPointerException)
 
-    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 1
+    final override def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+        currentPC + 1
+
+    final override def nextInstructions(currentPC: PC, code: Code): PCs =
+        Instruction.nextInstructionOrExceptionHandler(
+            this, currentPC, code, ObjectType.NullPointerException)
+
 }

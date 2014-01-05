@@ -40,7 +40,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case object FALOAD extends ArrayAccessInstruction with PrimitiveArrayAccess {
+case object FALOAD extends ArrayLoadInstruction with PrimitiveArrayAccess {
 
     def opcode: Int = 48
 
