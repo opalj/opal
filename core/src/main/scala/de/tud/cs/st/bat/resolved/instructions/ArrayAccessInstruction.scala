@@ -40,7 +40,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-abstract class ArrayAccessInstruction extends ArithmeticInstruction {
+abstract class ArrayAccessInstruction extends Instruction {
 
     def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 1
 
