@@ -632,6 +632,7 @@ final object ObjectType {
     // exceptions may be created at runtime by the JVM)
     final val ExceptionInInitializerError = ObjectType("java/lang/ExceptionInInitializerError")
     final val BootstrapMethodError = ObjectType("java/lang/BootstrapMethodError")
+    final val OutOfMemoryError = ObjectType("java/lang/OutOfMemoryError")
 
     final val NullPointerException = ObjectType("java/lang/NullPointerException")
     final val ArrayIndexOutOfBoundsException = ObjectType("java/lang/ArrayIndexOutOfBoundsException")
