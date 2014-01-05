@@ -91,20 +91,24 @@ object UShortSetDemo {
                                                   //| )
     _10_20_30_40 + 45                             //> res25: de.tud.cs.st.collection.mutable.UShortSet = UShortSet(10,20,30,40,45
                                                   //| )
+                                                  
+    UShortSet(12,23)                              //> res26: de.tud.cs.st.collection.mutable.UShortSet = UShortSet(12,23)
+    UShortSet(12,12)                              //> res27: de.tud.cs.st.collection.mutable.UShortSet = UShortSet(12)
+    UShortSet(23,11)                              //> res28: de.tud.cs.st.collection.mutable.UShortSet = UShortSet(11,23)
 
     try {
         empty + 66666
     } catch {
         case _: IllegalArgumentException ⇒ "OK"
-    }                                             //> res26: Object = OK
+    }                                             //> res29: Object = OK
 
     try {
         empty + -1
     } catch {
         case _: IllegalArgumentException ⇒ "OK"
-    }                                             //> res27: Object = OK
+    }                                             //> res30: Object = OK
     
     UShortSet.create(0,5,3,10,19,200,65,56,56,3,0).size == 8
-                                                  //> res28: Boolean = true
+                                                  //> res31: Boolean = true
     
 }

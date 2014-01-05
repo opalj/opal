@@ -339,6 +339,23 @@ object UShortSet {
         new UShortSet2(uShortValue)
     }
 
+    /**
+     * Creates a new set of unsigned short values which contains the given value.
+     */
+    @inline def apply(uShortValue1: Int, uShortValue2: Int): UShortSet = {
+        if (uShortValue1 < MinValue || uShortValue1 > MaxValue)
+            throw new IllegalArgumentException("value out of range: "+uShortValue1)
+        if (uShortValue2 < MinValue || uShortValue2 > MaxValue)
+            throw new IllegalArgumentException("value out of range: "+uShortValue1)
+
+        if (uShortValue1 == uShortValue2)
+            new UShortSet2(uShortValue1)
+        else if (uShortValue1 < uShortValue2)
+            new UShortSet2(uShortValue1, uShortValue2)
+        else
+            new UShortSet2(uShortValue2, uShortValue1)
+    }
+
     def create(uShortValues: Int*): UShortSet = {
         uShortValues match {
             case Nil              ⇒ EmptyUShortSet
