@@ -232,6 +232,11 @@ object ReturnType {
 
 }
 
+/**
+ * Represents the Java keyword `void`.
+ *
+ * @author Michael Eichberg
+ */
 sealed abstract class VoidType private () extends Type with ReturnTypeSignature {
 
     final override def isVoidType = true
@@ -736,6 +741,10 @@ final object ArrayType {
         newAT
     }
 
+    /**
+     * Factory method to create an Array of the given component type with the given
+     * dimension.
+     */
     @annotation.tailrec def apply(dimension: Int, componentType: FieldType): ArrayType = {
         val at = apply(componentType)
         if (dimension > 1)
@@ -759,7 +768,8 @@ object ArrayElementType {
 }
 
 /**
- * Defines an extractor to match against any `ObjectType` except `java.lang.Object`.
+ * Defines an extractor to match a type against any `ObjectType`
+ * except `java.lang.Object`.
  *
  * @author Michael Eichberg
  */
@@ -775,6 +785,8 @@ object NotJavaLangObject {
  * @author Michael Eichberg
  */
 object NotVoid {
+
     def unapply(someType: Type): Boolean = someType ne VoidType
+
 }
 
