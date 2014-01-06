@@ -36,13 +36,35 @@ package resolved
 package instructions
 
 /**
- * An instruction that loads or stores a value in an array.
+ * An instruction that loads a value stored in an array.
  *
  * @author Michael Eichberg
  */
-abstract class ArrayAccessInstruction extends Instruction {
+abstract class ArrayLoadInstruction extends ArrayAccessInstruction {
 
-    final override def indexOfNextInstruction(currentPC: Int, code: Code): Int =
-        currentPC + 1
+    final override def runtimeExceptions: List[ObjectType] =
+        ArrayLoadInstruction.runtimeExceptions
+
+    final override def nextInstructions(currentPC: PC, code: Code): PCs =
+        Instruction.nextInstructionOrExceptionHandlers(
+            this, currentPC, code, runtimeExceptions)
+
+}
+
+/**
+ * Defines common properties of instructions that load values stored in arrays.
+ *
+ * @author Michael Eichberg
+ */
+object ArrayLoadInstruction {
+
+    /**
+     * The exceptions that are potentially thrown by instructions that load values
+     * stored in an array.
+     */
+    final val runtimeExceptions: List[ObjectType] = {
+        import ObjectType._
+        List(ArrayIndexOutOfBoundsException, NullPointerException)
+    }
 
 }

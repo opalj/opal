@@ -36,13 +36,24 @@ package resolved
 package instructions
 
 /**
- * An instruction that loads or stores a value in an array.
+ * An instruction that stores a value in an array.
  *
  * @author Michael Eichberg
  */
-abstract class ArrayAccessInstruction extends Instruction {
+abstract class ArrayStoreInstruction extends ArrayAccessInstruction 
 
-    final override def indexOfNextInstruction(currentPC: Int, code: Code): Int =
-        currentPC + 1
+/**
+ * An instruction that stores a primitive value in an array of primitive values.
+ *
+ * @author Michael Eichberg
+ */
+abstract class PrimitiveArrayStoreInstruction extends ArrayAccessInstruction {
+
+    final override def runtimeExceptions: List[ObjectType] =
+        PrimitiveArrayAccess.runtimeExceptions
+
+    final override def nextInstructions(currentPC: PC, code: Code): PCs =
+        Instruction.nextInstructionOrExceptionHandlers(
+            this, currentPC, code, PrimitiveArrayAccess.runtimeExceptions)
 
 }

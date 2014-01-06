@@ -40,9 +40,15 @@ package instructions
  *
  * @author Michael Eichberg
  */
-trait PrimitiveArrayAccess { }
+trait PrimitiveArrayAccess {}
+
 object PrimitiveArrayAccess {
 
-    val runtimeExceptions = List(ObjectType.ArrayIndexOutOfBoundsException, ObjectType.NullPointerException)
+    /**
+     * The exceptions that are potentially thrown by instructions that load or store
+     * values in an array of primitive values.
+     */
+    val runtimeExceptions: List[ObjectType] =
+        List(ObjectType.ArrayIndexOutOfBoundsException, ObjectType.NullPointerException)
 
 }
