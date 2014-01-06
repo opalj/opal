@@ -96,11 +96,10 @@ case class ClassTypeSignature(
     def objectType: ObjectType = {
         val className = new java.lang.StringBuilder(packageIdentifier.getOrElse(""))
         className.append(simpleClassTypeSignature.simpleName)
-        classTypeSignatureSuffix.foreach(
-            scts ⇒ {
-                className.append('$')
-                className.append(scts.simpleName)
-            })
+        classTypeSignatureSuffix foreach { scts ⇒
+            className.append('$')
+            className.append(scts.simpleName)
+        }
 
         ObjectType(className.toString)
     }
@@ -137,6 +136,7 @@ case class ProperTypeArgument(
     varianceIndicator: Option[VarianceIndicator],
     fieldTypeSignature: FieldTypeSignature)
         extends TypeArgument {
+    
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
 }
 
@@ -147,8 +147,8 @@ sealed trait VarianceIndicator extends SignatureElement {
     // EMPTY
 }
 /**
- * If you have declaration such as <? extends Entry> then the "? extends" part
- * is represented by the CovariantIndicator.
+ * If you have a declaration such as &lt;? extends Entry&gt; then the "? extends" part
+ * is represented by the `CovariantIndicator`.
  */
 sealed trait CovariantIndicator extends VarianceIndicator {
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)

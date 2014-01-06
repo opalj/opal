@@ -110,7 +110,7 @@ final class Method private (
     def toJava(): String = descriptor.toJava(name)
 
     /**
-     * Defines a absolute order on `Method` instances w.r.t. their method signatures.
+     * Defines an absolute order on `Method` instances w.r.t. their method signatures.
      * The order is defined by lexicographically comparing the names of the methods
      * and – in case that the names of both methods are identical – by comparing
      * their method descriptors.

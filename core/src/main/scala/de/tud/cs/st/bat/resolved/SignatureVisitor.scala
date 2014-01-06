@@ -126,9 +126,9 @@ trait TraversingVisitor extends SignatureVisitor[Unit] {
 }
 
 /**
- * Traverses a signature and calls for each Type the given method.
+ * Traverses a signature and calls for each `Type` the given method.
  *
- * '''Thread Safety'''
+ * ==Thread Safety==
  * This class is thread-safe and reusable. I.e., you can use one instance
  * of this visitor to simultaneously process multiple signatures. In this
  * case, however, the given function f also has to be thread safe.

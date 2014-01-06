@@ -71,7 +71,10 @@ sealed trait AccessFlag extends AccessFlagsMatcher {
     /**
      * Determines if this access flag is set in the given `access_flags` bit vector.
      * E.g., to determine if a method's static modifier is set it is sufficient
-     * to call {{{ACC_STATIC isElementOf method.access_flags}}}.
+     * to call:
+     * {{{
+     * ACC_STATIC isElementOf method.access_flags
+     * }}}
      */
     def isElementOf(access_flags: Int): Boolean = (access_flags & mask) != 0
 
