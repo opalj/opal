@@ -49,8 +49,13 @@ trait DefaultTypeLevelReferenceValues[+I]
         with TypeLevelReferenceValues[I] {
     domain: Configuration with IntegerValuesComparison ⇒
 
-    protected class NullValue
-            extends super.NullValue {
+    // ---------------------------------1-------------------------------------------------
+    //
+    // REPRESENTATION OF REFERENCE VALUES
+    //
+    // -----------------------------------------------------------------------------------
+
+    protected class NullValue extends super.NullValue {
 
         override def doJoin(joinPC: Int, other: DomainValue): Update[DomainValue] = {
             val that = asReferenceValue(other)
@@ -470,27 +475,6 @@ trait DefaultTypeLevelReferenceValues[+I]
             Some(that.upperTypeBound)
     }
 
-    /**
-     * Determines if the type described by the first set of upper type bounds is
-     * a subtype of the second type.
-     */
-    protected def isSubtypeOf(
-        typeBoundsA: UpperTypeBound,
-        typeBoundsB: UpperTypeBound): Boolean = {
-        typeBoundsA forall { aType ⇒
-            typeBoundsB exists { bType ⇒
-                domain.isSubtypeOf(aType, bType).yes
-            }
-        }
-    }
-
-    protected def summarizeReferenceValues(
-        pc: PC,
-        values: Iterable[DomainValue]): DomainValue =
-        (values.head.summarize(pc) /: values.tail) {
-            (c, n) ⇒ c.summarize(pc, n)
-        }
-
     //
     // FACTORY METHODS
     //
@@ -510,7 +494,10 @@ trait DefaultTypeLevelReferenceValues[+I]
     override def NonNullReferenceValue(pc: PC, objectType: ObjectType): ReferenceValue =
         new SObjectValue(objectType)
 
-    override def NewArray(pc: PC, arrayType: ArrayType): ArrayValue =
+    override def NewArray(pc: PC, count: DomainValue, arrayType: ArrayType): ArrayValue =
+        new ArrayValue(arrayType)
+
+    override def NewArray(pc: PC, counts: List[DomainValue], arrayType: ArrayType): ArrayValue =
         new ArrayValue(arrayType)
 
     override def ArrayValue(pc: PC, arrayType: ArrayType): ArrayValue =
@@ -522,7 +509,7 @@ trait DefaultTypeLevelReferenceValues[+I]
     /**
      * @inheritdoc
      *
-     * Depending on the kind of reference type (array or class type) this method
+     * Depending on the kind of reference type (array or class/interface type) this method
      * just calls the respective factory method: `ArrayValue(PC,ArrayType)`
      * or `ObjectValue(PC,ObjectType)`.
      *

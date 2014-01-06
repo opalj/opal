@@ -40,8 +40,7 @@ package l0
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 /**
- * This (partial-)domain implements the foundations for performing
- * computations related to reference values.
+ * Implements the foundations for performing computations related to reference values.
  *
  * ==Extending/Implementing This Domain==
  * The following implementation decisions need to be taken into account when
@@ -137,6 +136,11 @@ trait TypeLevelReferenceValues[+I]
 
         /**
          * Adds a new, additional upper bound to this value's type.
+         *
+         * This call can be ignored if the type
+         * information related to this value is precise, i.e., if we know that we
+         * precisely capture the runtime type of this value. However, refining
+         * the uppper type bound for a `null` value is not supported.
          */
         def refineUpperTypeBound(pc: PC, supertype: ReferenceType): DomainValue
 
@@ -181,12 +185,14 @@ trait TypeLevelReferenceValues[+I]
         /**
          * Throws a new `DomainException` that states that this method is not supported.
          */
+        @throws[DomainException]("always - this method is not supported")
         final override def updateIsNull(pc: PC, isNull: Answer): Nothing =
             domainException(domain, "this value is null; changing that doesn't make sense")
 
         /**
          * Throws a new `DomainException` that states that this method is not supported.
          */
+        @throws[DomainException]("always - this method is not supported")
         final override def isValueSubtypeOf(referenceType: ReferenceType): Nothing =
             domainException(domain, "isSubtypeOf is not defined for \"null\" values")
 
@@ -224,10 +230,16 @@ trait TypeLevelReferenceValues[+I]
 
     }
 
+    /**
+     * Represents a class/interface value.
+     */
     protected trait ObjectValue extends ReferenceValue {
         this: DomainValue ⇒
     }
 
+    /**
+     * Represents an array value.
+     */
     protected trait ArrayValue extends ReferenceValue {
         this: DomainValue ⇒
 
@@ -237,6 +249,9 @@ trait TypeLevelReferenceValues[+I]
          */
         /*ABSTRACT*/ def isAssignable(value: DomainValue): Answer
 
+        /**
+         *
+         */
         /*ABSTRACT*/ def doLoad(
             pc: PC,
             index: DomainValue,
@@ -254,10 +269,10 @@ trait TypeLevelReferenceValues[+I]
                 return justThrows(ArrayIndexOutOfBoundsException(pc))
 
             var thrownExceptions = List.empty[ExceptionValue]
-            if (validIndex.maybeNo && throwArrayIndexOutOfBoundsException)
-                thrownExceptions = ArrayIndexOutOfBoundsException(pc) :: thrownExceptions
             if (isNull.maybeYes && throwNullPointerException)
                 thrownExceptions = NullPointerException(pc) :: thrownExceptions
+            if (validIndex.maybeNo && throwArrayIndexOutOfBoundsException)
+                thrownExceptions = ArrayIndexOutOfBoundsException(pc) :: thrownExceptions
 
             doLoad(pc, index, thrownExceptions)
         }
@@ -311,6 +326,11 @@ trait TypeLevelReferenceValues[+I]
         }
     }
 
+    /**
+     * Returns the given value as a DomainValue. Basically just performs a type cast
+     * and is intended to be used to communicate that the value has to be a reference
+     * value (if the underlying byte code is valid.)
+     */
     def asReferenceValue(value: DomainValue): ReferenceValue =
         value.asInstanceOf[ReferenceValue]
 
@@ -326,12 +346,72 @@ trait TypeLevelReferenceValues[+I]
     //
     // -----------------------------------------------------------------------------------
 
-    override def areEqualReferences(value1: DomainValue, value2: DomainValue): Answer =
-        // we could check if it is conceivable that both values are not equal based 
-        // on the available type information... However, if we only have a 
-        // fragmented/incomplete class hierarchy, the information is most likely of limited
-        // value
-        Unknown
+    /**
+     * Determines if the type described by the first set of upper type bounds is
+     * a subtype of the second type. I.e., it checks if for all types of the
+     * subtypes upper type bound a type in the supertypes type exists that is a
+     * supertype of the respective subtype.
+     */
+    protected def isSubtypeOf(
+        subtypes: UpperTypeBound,
+        supertypes: UpperTypeBound): Boolean = {
+        subtypes forall { subtype ⇒
+            supertypes exists { supertype ⇒
+                domain.isSubtypeOf(subtype, supertype).yes
+            }
+        }
+    }
+
+    protected def summarizeReferenceValues(
+        pc: PC,
+        values: Iterable[DomainValue]): DomainValue =
+        (values.head.summarize(pc) /: values.tail) {
+            (c, n) ⇒ c.summarize(pc, n)
+        }
+
+    /**
+     * Tests if both values refer to the same object instance.
+     *
+     * Though this is in general intractable, there are some cases where a definitive
+     * answer is possible.
+     *
+     * This implementation completely handles the case where at least one value
+     * definitively represents the `null` value.
+     * If both values represent non-null values (or just maybe `null` values) `Unknown`
+     * is returned.
+     *
+     * @note This method is intended to be overridden by subclasses and may be the first
+     *      one this is called (super call) by the overriding method to handle checks
+     *      related to null. E.g.
+     *      {{{
+     *      super.areEqualReferences(value1,value2).orElse {
+     *          ...
+     *      }
+     *      }}}
+     *
+     * @param value1 A value of type `ReferenceValue`.
+     * @param value2 A value of type `ReferenceValue`.
+     */
+    override def areEqualReferences(value1: DomainValue, value2: DomainValue): Answer = {
+        val v1 = asReferenceValue(value1)
+        val v2 = asReferenceValue(value2)
+        val value1IsNull = v1.isNull
+        val value2IsNull = v2.isNull
+        if (value1IsNull.yes && value2IsNull.isDefined)
+            // both are null or the second one is definitively not null
+            Answer(value2IsNull.yes)
+        else if (value2IsNull.yes && value1IsNull.isDefined)
+            // both are null or the first one is definitively not null
+            Answer(value1IsNull.yes)
+        else if (v1.isPrecise && v2.isPrecise && v1.upperTypeBound != v2.upperTypeBound)
+            No
+        else
+            // we could also check if it is conceivable that both values are not equal based 
+            // on the available type information... However, if we only have a 
+            // fragmented/incomplete class hierarchy, the information is most likely of limited
+            // value
+            Unknown
+    }
 
     final override def isValueSubtypeOf(
         value: DomainValue,
@@ -346,6 +426,9 @@ trait TypeLevelReferenceValues[+I]
     final override def isNull(value: DomainValue): Answer =
         asReferenceValue(value).isNull
 
+    /**
+     * Defines an extractor method facilitate matching `NullValue`s.
+     */
     object NullValue {
         def unapply(value: NullValue): Boolean = true
     }
@@ -360,24 +443,52 @@ trait TypeLevelReferenceValues[+I]
     // CREATE ARRAY
     //
 
+    /**
+     *
+     * @note It is generally not necessary to override this method.
+     */
     override def newarray(
         pc: PC,
         count: DomainValue,
         componentType: FieldType): Computation[DomainValue, ExceptionValue] = {
-        //ComputedValueAndException(TypedValue(ArrayType(componentType)), TypedValue(ObjectType.NegativeArraySizeException))
+        val validCount =
+            isSomeValueInRange(count, 0, Int.MaxValue)
+        if (validCount.no)
+            return throws(NegativeArraySizeException(pc))
 
-        ComputedValue(NewArray(pc, ArrayType(componentType)))
+        val newarray = NewArray(pc, count, ArrayType(componentType))
+        if (validCount.isUndefined && throwNegativeArraySizeException)
+            ComputedValueAndException(newarray, NegativeArraySizeException(pc))
+        else
+            ComputedValue(newarray)
     }
 
     /**
      * @note The componentType may be (again) an array type.
+     * @note It is generally not necessary to override this method.
      */
     override def multianewarray(
         pc: PC,
         counts: List[DomainValue],
         arrayType: ArrayType): Computation[DomainValue, ExceptionValue] = {
-        //ComputedValueAndException(TypedValue(arrayType), TypedValue(ObjectType.NegativeArraySizeException))
-        ComputedValue(NewArray(pc, arrayType))
+        var validCounts: Answer = Yes
+        counts foreach { (count) ⇒
+            val validCount = isSomeValueInRange(count, 0, Int.MaxValue)
+            if (validCount.no)
+                return throws(NegativeArraySizeException(pc))
+            else if (validCount.isUndefined)
+                validCounts = Unknown
+        }
+
+        val newarray =
+            if (counts.tail.isEmpty)
+                NewArray(pc, counts.head, arrayType)
+            else
+                NewArray(pc, counts, arrayType)
+        if (validCounts.isUndefined && throwNegativeArraySizeException)
+            ComputedValueAndException(newarray, NegativeArraySizeException(pc))
+        else
+            ComputedValue(newarray)
     }
 
     //
@@ -447,7 +558,7 @@ trait TypeLevelReferenceValues[+I]
 
     /**
      * Factory method to create a new domain value that represents a newly created
-     * array (non-null) with an unknown size that is empty.
+     * array (non-null) with the size determined by count that is empty.
      *
      * ==Typical Usage==
      * This factory method is (implicitly) used, e.g., by BATAI when a new array
@@ -458,9 +569,27 @@ trait TypeLevelReferenceValues[+I]
      *
      *  - Type: '''Precise'''
      *  - Null: '''No'''
-     *  - Size: '''Unknown'''
+     *  - Size: '''Count'''
      */
-    def NewArray(pc: PC, arrayType: ArrayType): DomainValue
+    def NewArray(pc: PC, count: DomainValue, arrayType: ArrayType): DomainValue
+
+    /**
+     * Factory method to create a new domain value that represents a newly created
+     * array (non-null) with the size determined by count that is empty.
+     *
+     * ==Typical Usage==
+     * This factory method is (implicitly) used, e.g., by BATAI when a new array
+     * instruction is found.
+     *
+     * ==Summary==
+     * The properties of the value are:
+     *
+     *  - Type: '''Precise'''
+     *  - Null: '''No'''
+     *  - Size: '''Counts''' (for the number of dimension for which a
+     *  					value (count) is given)
+     */
+    def NewArray(pc: PC, counts: List[DomainValue], arrayType: ArrayType): DomainValue
 
     /**
      * Creates a new `DomainValue` that represents an array value with unknown

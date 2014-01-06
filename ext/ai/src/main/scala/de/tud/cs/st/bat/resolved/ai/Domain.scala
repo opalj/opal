@@ -500,6 +500,9 @@ trait Domain[+I] {
     def NullPointerException(pc: PC): ExceptionValue =
         InitializedObject(pc, ObjectType.NullPointerException)
 
+    def NegativeArraySizeException(pc: PC): ExceptionValue =
+        InitializedObject(pc, ObjectType.NegativeArraySizeException)
+
     def ArrayIndexOutOfBoundsException(pc: PC): ExceptionValue =
         InitializedObject(pc, ObjectType.ArrayIndexOutOfBoundsException)
 
