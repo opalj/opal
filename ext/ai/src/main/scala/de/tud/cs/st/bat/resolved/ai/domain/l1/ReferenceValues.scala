@@ -44,10 +44,10 @@ import scala.collection.SortedSet
 /**
  * @author Michael Eichberg
  */
-trait DefaultPreciseReferenceValues[+I]
-        extends DefaultDomainValueBinding[I]
-        with Origin
-        with PreciseReferenceValues[I] { domain ⇒
+trait ReferenceValues[+I]
+        extends l0.DefaultTypeLevelReferenceValues[I]
+        with Origin {
+    domain: Configuration with IntegerValuesComparison ⇒
 
     // ---------------------------------1--------------------------------------------------
     //
