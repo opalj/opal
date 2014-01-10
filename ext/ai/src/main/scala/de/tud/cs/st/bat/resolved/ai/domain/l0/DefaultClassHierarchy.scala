@@ -49,8 +49,6 @@ package l0
  */
 trait DefaultClassHierarchy extends ClassHierarchy { this: SomeDomain ⇒
 
-    import analyses.ClassHierarchy
-
     /**
      * Returns the predefined class hierarchy unless explicitly overridden. BAT's
      * built-in default class hierarchy only reflects the type-hierarchy between the
@@ -59,14 +57,9 @@ trait DefaultClassHierarchy extends ClassHierarchy { this: SomeDomain ⇒
      *
      * @note '''This method is intended to be overridden.'''
      */
-    override def classHierarchy: ClassHierarchy = DefaultClassHierarchy.classHierarchy
+    override def classHierarchy: analyses.ClassHierarchy =
+        Code.preDefinedClassHierarchy
 
 }
-private object DefaultClassHierarchy {
 
-    import analyses.ClassHierarchy
-
-    val classHierarchy: ClassHierarchy = ClassHierarchy.preInitializedClassHierarchy
-
-}
 

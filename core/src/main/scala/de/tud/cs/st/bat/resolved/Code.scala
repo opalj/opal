@@ -234,7 +234,7 @@ case class Code(
     }
 
     /**
-     * Returns a new sequence that pairs the program_counter of an instruction with the
+     * Returns a new sequence that pairs the program counter of an instruction with the
      * instruction.
      */
     def associateWithIndex(): Seq[(PC, Instruction)] = collect { case i ⇒ i }
@@ -316,12 +316,18 @@ case class Code(
     }
 
 }
+
+/**
+ * Defines constants useful when analyzing a method's code.
+ *
+ * @author Michael Eichberg
+ */
 object Code {
 
     /**
-     * Used solely to determine the potential handlers in case that an exception is
+     * Used to determine the potential handlers in case that an exception is
      * thrown by an instruction.
      */
-    protected[resolved] def preDefinedClassHierarchy =
+    protected[resolved] val preDefinedClassHierarchy =
         analyses.ClassHierarchy.preInitializedClassHierarchy
 }
