@@ -34,6 +34,7 @@ package de.tud.cs.st
 package bat
 
 import scala.annotation.tailrec
+import scala.collection.SortedSet
 
 /**
  * Mixed in by data structures that have – by construction - unique ids. I.e., two
@@ -412,10 +413,32 @@ object UIDList {
         else
             new UIDSList(e2, new UIDSList(e1, empty))
 
+    def apply[T <: UID](set: scala.collection.Set[T]): UIDList[T] = {
+        if (set.isEmpty)
+            UIDList.empty
+        else if (set.size == 1)
+            apply(set.head)
+        else {
+            var list: UIDList[T] = UIDList.empty
+            set foreach { list += _ }
+            list
+        }
+    }
+
     def unapplySeq[T <: UID](list: UIDList[T]): Option[Seq[T]] = {
         if (list.isEmpty)
             None
         else
             Some(list.iterator.toSeq)
+    }
+}
+
+object SingleElementUIDList {
+
+    def unapply[T <: UID](list: UIDList[T]): Option[T] = {
+        if (list.tail.isEmpty)
+            Some(list.head)
+        else
+            None
     }
 }
