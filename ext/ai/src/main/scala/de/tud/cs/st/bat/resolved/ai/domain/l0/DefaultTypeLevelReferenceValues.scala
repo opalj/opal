@@ -47,7 +47,173 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 trait DefaultTypeLevelReferenceValues[+I]
         extends DefaultDomainValueBinding[I]
         with TypeLevelReferenceValues[I] {
-    domain: Configuration with IntegerValuesComparison ⇒
+    domain: Configuration with IntegerValuesComparison with ClassHierarchy ⇒
+
+    protected def allSupertypesOf(
+        types: UIDList[ObjectType],
+        reflexive: Boolean): scala.collection.Set[ObjectType] = {
+        // TODO [Performance] The creation of the set of all supertypes of multiple types could be improved
+        val allSupertypesOf = scala.collection.mutable.HashSet.empty[ObjectType]
+        types foreach { t ⇒
+            allSupertypesOf ++= classHierarchy.allSupertypes(t, reflexive)
+        }
+        allSupertypesOf
+    }
+
+    /**
+     * Selects all types of the given set of types that do not have any subtype
+     * in the given set.
+     *
+     * @param types A set of types that contains for each value (type) stored in the
+     *      set all direct and indirect supertypes or none. For example, the intersection
+     *      of the sets of all supertypes (as returned, e.g., by
+     *      `ClassHiearchy.allSupertypes`) of two (independent) types satisfies this
+     *      condition.
+     */
+    protected def leafTypes(
+        types: scala.collection.Set[ObjectType]): Either[ObjectType, UIDList[ObjectType]] = {
+        val lts = types filter { aType ⇒
+            !(classHierarchy.directSubtypesOf(aType) exists { t ⇒ types.contains(t) })
+        }
+        if (lts.isEmpty)
+            Left(ObjectType.Object)
+        else if (lts.size == 1)
+            Left(lts.head)
+        else {
+            Right(UIDList[ObjectType](lts))
+        }
+    }
+
+    /**
+     * Tries to calculate the most specific common supertype of the given types.
+     * If `reflexive` is `false`, no two types across both sets have to be in
+     * an inheritance relation.
+     *
+     * @param upperTypeBoundB A list (set) of `ObjectType`s that are not in an
+     *      inheritance relation.
+     */
+    protected def joinUpperTypeBounds(
+        upperTypeBoundsA: UIDList[ObjectType],
+        upperTypeBoundsB: UIDList[ObjectType],
+        reflexive: Boolean): Either[ObjectType, UIDList[ObjectType]] = {
+
+        val allSupertypesOfA = allSupertypesOf(upperTypeBoundsA, reflexive)
+        val allSupertypesOfB = allSupertypesOf(upperTypeBoundsB, reflexive)
+        val commonSupertypes = allSupertypesOfA intersect allSupertypesOfB
+        leafTypes(commonSupertypes)
+    }
+
+    /**
+     * Tries to calculate the most specific common supertype of the given types.
+     * If `reflexive` is `false`, the types do not have to be in an inheritance relation.
+     *
+     * @param upperTypeBoundB A list (set) of `ObjectType`s that are not in an
+     *      inheritance relation.
+     */
+    protected def joinObjectTypes(
+        upperTypeBoundA: ObjectType,
+        upperTypeBoundB: UIDList[ObjectType],
+        reflexive: Boolean): Either[ObjectType, UIDList[ObjectType]] = {
+
+        val allSupertypesOfA = classHierarchy.allSupertypes(upperTypeBoundA, reflexive)
+        val allSupertypesOfB = allSupertypesOf(upperTypeBoundB, reflexive)
+        val commonSupertypes = allSupertypesOfA intersect allSupertypesOfB
+        leafTypes(commonSupertypes)
+    }
+
+    /**
+     * Tries to calculate the most specific common supertype of the two given types.
+     * If `reflexive` is `false`, the two types do not have to be in an inheritance relation.
+     */
+    protected def joinObjectTypes(
+        upperTypeBoundA: ObjectType,
+        upperTypeBoundB: ObjectType,
+        reflexive: Boolean): Either[ObjectType, UIDList[ObjectType]] = {
+
+        val allSupertypesOfA = classHierarchy.allSupertypes(upperTypeBoundA, reflexive)
+        val allSupertypesOfB = classHierarchy.allSupertypes(upperTypeBoundB, reflexive)
+        val commonSupertypes = allSupertypesOfA intersect allSupertypesOfB
+        leafTypes(commonSupertypes)
+    }
+
+    protected def joinAnyArrayTypeWithMultipleTypesBound(
+        thatUpperTypeBound: UIDList[ObjectType]): Either[ObjectType, UIDList[ObjectType]] = {
+        import ObjectType._
+        import TypeLevelReferenceValues.SerializableAndCloneable
+        if (thatUpperTypeBound == SerializableAndCloneable)
+            Right(thatUpperTypeBound)
+        else {
+            val isSerializable =
+                thatUpperTypeBound exists { thatType ⇒
+                    domain.isSubtypeOf(thatType, Serializable).yes
+                }
+            val isCloneable =
+                thatUpperTypeBound exists { thatType ⇒
+                    domain.isSubtypeOf(thatType, Cloneable).yes
+                }
+            if (isSerializable && isCloneable)
+                Right(SerializableAndCloneable)
+            else if (isSerializable)
+                Left(Serializable)
+            else if (isCloneable)
+                Left(Cloneable)
+            else
+                Left(Object)
+        }
+    }
+
+    protected def joinAnyArrayTypeWithObjectType(
+        thatUpperTypeBound: ObjectType): Either[ObjectType, UIDList[ObjectType]] = {
+        import ObjectType._
+        if ((thatUpperTypeBound eq Object) ||
+            (thatUpperTypeBound eq Serializable) ||
+            (thatUpperTypeBound eq Cloneable))
+            Left(thatUpperTypeBound)
+        else {
+            var newUpperTypeBound: UIDList[ObjectType] = UIDList.empty
+            if (domain.isSubtypeOf(thatUpperTypeBound, Serializable).yes)
+                newUpperTypeBound += Serializable
+            if (domain.isSubtypeOf(thatUpperTypeBound, Cloneable).yes)
+                newUpperTypeBound += Cloneable
+            if (newUpperTypeBound.isEmpty)
+                Left(Object)
+            else if (newUpperTypeBound.tail.isEmpty)
+                Left(newUpperTypeBound.head)
+            else
+                Right(newUpperTypeBound)
+        }
+    }
+
+    protected def joinArrayTypes(
+        thisUpperTypeBound: ArrayType,
+        thatUpperTypeBound: ArrayType): Either[ArrayType, UIDList[ObjectType]] = {
+        if (thisUpperTypeBound eq thatUpperTypeBound)
+            Left(thisUpperTypeBound)
+        else if (thisUpperTypeBound.componentType.isBaseType ||
+            thatUpperTypeBound.componentType.isBaseType) {
+            // Scenario:
+            // E.g., imagine that we have a method that "just" wants to 
+            // serialize some data. In such a case the method may be passed 
+            // different arrays with different primitive values.
+            Right(TypeLevelReferenceValues.SerializableAndCloneable)
+        } else {
+            // When we reach this point, 
+            // both component types are reference types
+            val thatComponentType = thatUpperTypeBound.componentType.asReferenceType
+            val thisComponentType = thisUpperTypeBound.componentType.asReferenceType
+            if (domain.isSubtypeOf(thatComponentType, thisComponentType).yes)
+                Left(thisUpperTypeBound)
+            else if (domain.isSubtypeOf(thisComponentType, thatComponentType).yes)
+                Left(thatUpperTypeBound)
+            else
+                // This is the most general fallback and we are losing some information
+                // when compared to a solution that calculates the least 
+                // upper type bound. However, in that case we need - 
+                // in general - to support array values with multiple type 
+                // bounds, which we currently don't do.
+                Left(ArrayType.ArrayOfObjects)
+        }
+    }
 
     // ---------------------------------1-------------------------------------------------
     //
@@ -64,7 +230,10 @@ trait DefaultTypeLevelReferenceValues[+I]
                 NoUpdate
             else
                 StructuralUpdate(
-                    if (thatIsNull.maybeYes) other else that.updateIsNull(joinPC, Unknown)
+                    if (thatIsNull.maybeYes)
+                        other
+                    else
+                        that.updateIsNull(joinPC, Unknown)
                 )
         }
     }
@@ -108,12 +277,10 @@ trait DefaultTypeLevelReferenceValues[+I]
                 potentialExceptions)
         }
 
-        override def updateIsNull(pc: PC, isNull: Answer): DomainValue = {
-            isNull match {
-                case Yes ⇒ NullValue(pc)
-                case _   ⇒ this
-            }
-        }
+        override protected def doUpdateIsNull(pc: PC, isNull: Answer): DomainValue =
+            // it does not matter wether isNull is "No" or "Unknown"... we simply
+            // ignore it
+            this
 
         // NARROWING OPERATION
         override def refineUpperTypeBound(
@@ -127,7 +294,9 @@ trait DefaultTypeLevelReferenceValues[+I]
             if (supertype.isArrayType)
                 ReferenceValue(pc, supertype)
             else {
-                domainException(domain, "refining the upper type bound of an array value to a non-array value is not supported")
+                domainException(
+                    domain,
+                    "cannot refine an array value to a non-array value")
             }
         }
 
@@ -136,85 +305,47 @@ trait DefaultTypeLevelReferenceValues[+I]
             val thisUpperTypeBound = this.theUpperTypeBound
             other match {
                 case SObjectValue(thatUpperTypeBound) ⇒
-                    import ObjectType._
-                    if ((thatUpperTypeBound eq Object) ||
-                        (thatUpperTypeBound eq Serializable) ||
-                        (thatUpperTypeBound eq Cloneable))
-                        StructuralUpdate(other)
-                    else {
-                        var newUpperTypeBound: UpperTypeBound = UIDList.empty
-                        if (domain.isSubtypeOf(thatUpperTypeBound, ObjectType.Serializable).yes)
-                            newUpperTypeBound += ObjectType.Serializable
-                        if (domain.isSubtypeOf(thatUpperTypeBound, ObjectType.Cloneable).yes)
-                            newUpperTypeBound += ObjectType.Cloneable
-                        StructuralUpdate(
-                            if (newUpperTypeBound.isEmpty)
-                                ReferenceValue(joinPC, ObjectType.Object)
-                            else
-                                ReferenceValue(joinPC, newUpperTypeBound)
-                        )
+                    joinAnyArrayTypeWithObjectType(thatUpperTypeBound) match {
+                        case Left(`thatUpperTypeBound`) ⇒
+                            StructuralUpdate(other)
+                        case Left(newUpperTypeBound) ⇒
+                            StructuralUpdate(ReferenceValue(joinPC, newUpperTypeBound))
+                        case Right(newUpperTypeBound) ⇒
+                            StructuralUpdate(ReferenceValue(joinPC, newUpperTypeBound))
                     }
 
-                case MReferenceValue(thatUpperTypeBound) ⇒
-                    if (thatUpperTypeBound == TypeLevelReferenceValues.SerializableAndCloneable)
-                        StructuralUpdate(other)
-                    else {
-                        val isSerializable =
-                            thatUpperTypeBound exists { thatType ⇒
-                                domain.isSubtypeOf(thatType, ObjectType.Serializable).yes
-                            }
-                        val isCloneable =
-                            thatUpperTypeBound exists { thatType ⇒
-                                domain.isSubtypeOf(thatType, ObjectType.Cloneable).yes
-                            }
-                        if (isSerializable && isCloneable)
-                            StructuralUpdate(ReferenceValue(joinPC, TypeLevelReferenceValues.SerializableAndCloneable))
-                        else if (isSerializable)
-                            StructuralUpdate(ReferenceValue(joinPC, ObjectType.Serializable))
-                        else if (isCloneable)
-                            StructuralUpdate(ReferenceValue(joinPC, ObjectType.Cloneable))
-                        else
-                            StructuralUpdate(ReferenceValue(joinPC, ObjectType.Object))
+                case MObjectValue(thatUpperTypeBound) ⇒
+                    joinAnyArrayTypeWithMultipleTypesBound(thatUpperTypeBound) match {
+                        case Right(`thatUpperTypeBound`) ⇒
+                            StructuralUpdate(other)
+                        case Left(newUpperTypeBound) ⇒
+                            StructuralUpdate(ReferenceValue(joinPC, newUpperTypeBound))
+                        case Right(newUpperTypeBound) ⇒
+                            // this case should not occur...
+                            StructuralUpdate(ReferenceValue(joinPC, newUpperTypeBound))
                     }
 
                 case ArrayValue(thatUpperTypeBound) ⇒
-                    if (thatUpperTypeBound eq thisUpperTypeBound)
-                        NoUpdate
-                    else if (thisUpperTypeBound.componentType.isBaseType ||
-                        thatUpperTypeBound.componentType.isBaseType) {
-                        // Scenario:
-                        // E.g., imagine that we have a method that "just" wants to 
-                        // serialize some data. In such a case the method may be passed 
-                        // different arrays with different values.
-                        StructuralUpdate(
-                            ReferenceValue(
-                                joinPC,
-                                TypeLevelReferenceValues.SerializableAndCloneable)
-                        )
-                    } else {
-                        // When we reach this point, 
-                        // both component types are reference types
-                        val thatComponentType = thatUpperTypeBound.componentType.asReferenceType
-                        val thisComponentType = thisUpperTypeBound.componentType.asReferenceType
-                        if (domain.isSubtypeOf(thatComponentType, thisComponentType).yes)
+                    joinArrayTypes(this.theUpperTypeBound, thatUpperTypeBound) match {
+                        case Left(`thisUpperTypeBound`) ⇒
                             NoUpdate
-                        else if (domain.isSubtypeOf(thisComponentType, thatComponentType).yes)
+                        case Left(`thatUpperTypeBound`) ⇒
                             StructuralUpdate(other)
-                        else
-                            // This is the most general fallback and we are losing some information
-                            // when compared to a solution that calculates the least 
-                            // upper type bound. However, in that case we need - 
-                            // in geneal - to support array values with multiple type 
-                            // bounds, which we currently don't do.
-                            StructuralUpdate(ArrayValue(joinPC, ArrayType.ArrayOfObjects))
+                        case Left(newUpperTypeBound) ⇒
+                            StructuralUpdate(ArrayValue(joinPC, newUpperTypeBound))
+                        case Right(newUpperTypeBound) ⇒
+                            StructuralUpdate(ReferenceValue(joinPC, newUpperTypeBound))
                     }
+
                 case NullValue() ⇒
                     NoUpdate
             }
-
         }
     }
 
+    /**
+     * Enables matching of `DomainValue`s that are array values.
+     */
     object ArrayValue {
         def unapply(value: ArrayValue): Some[ArrayType] = Some(value.theUpperTypeBound)
     }
@@ -223,6 +354,13 @@ trait DefaultTypeLevelReferenceValues[+I]
         val theUpperTypeBound: ObjectType)
             extends super.ObjectValue with SReferenceValue[ObjectType] { value ⇒
 
+        /**
+         * @inhertdoc
+         *
+         * @note It is often not necessary to override this method as this method already
+         *      takes the property whether the upper type bound '''is precise''' into
+         *      account.
+         */
         override def isValueSubtypeOf(supertype: ReferenceType): Answer = {
             val isSubtypeOf = domain.isSubtypeOf(theUpperTypeBound, supertype)
             isSubtypeOf match {
@@ -236,6 +374,9 @@ trait DefaultTypeLevelReferenceValues[+I]
         override def refineUpperTypeBound(
             pc: PC,
             supertype: ReferenceType): ReferenceValue = {
+            if (supertype eq theUpperTypeBound)
+                return this
+
             // BATAI calls this method only if a previous "subtype of" test 
             // (this.typeOfvalue <: supertype ?) 
             // returned unknown and we are now on the branch where this relation
@@ -244,10 +385,27 @@ trait DefaultTypeLevelReferenceValues[+I]
             val isSubtypeOf = domain.isSubtypeOf(supertype, theUpperTypeBound)
             if (isSubtypeOf.yes)
                 ReferenceValue(pc, supertype)
-            else
+            else {
+                if (supertype.isArrayType)
+                    domainException(domain,
+                        "impossible refinement "+theUpperTypeBound.toJava+
+                            " => "+supertype.toJava)
+
                 // probably some (abstract) class and an interface or two
                 // unrelated interfaces
-                ReferenceValue(pc, UIDList(theUpperTypeBound, supertype))
+                ReferenceValue(pc, UIDList(theUpperTypeBound, supertype.asObjectType))
+            }
+        }
+
+        protected def asStructuralUpdate(
+            joinPC: PC,
+            newUpperTypeBound: Either[ObjectType, UIDList[ObjectType]]): Update[DomainValue] = {
+            newUpperTypeBound match {
+                case Left(newUpperTypeBound) ⇒
+                    StructuralUpdate(ReferenceValue(joinPC, newUpperTypeBound))
+                case Right(newUpperTypeBound) ⇒
+                    StructuralUpdate(ReferenceValue(joinPC, newUpperTypeBound))
+            }
         }
 
         // WIDENING OPERATION
@@ -260,50 +418,52 @@ trait DefaultTypeLevelReferenceValues[+I]
                         NoUpdate
                     else if (domain.isSubtypeOf(thisUpperTypeBound, thatUpperTypeBound).yes)
                         StructuralUpdate(other)
-                    else
-                        StructuralUpdate(
-                            ReferenceValue(joinPC, UIDList(thisUpperTypeBound, thatUpperTypeBound))
-                        )
-                case MReferenceValue(thatUpperTypeBound) ⇒
-                    val newUpperTypeBound = thatUpperTypeBound filter { thatType ⇒
-                        domain.isSubtypeOf(thisUpperTypeBound, thatType) match {
-                            case Yes ⇒
-                                return StructuralUpdate(other)
-                            case No ⇒
-                                if (domain.isSubtypeOf(thatType, thisUpperTypeBound).yes)
-                                    false
-                                else
-                                    true
-                            case Unknown ⇒
-                                true
-                        }
-                    }
-                    if (newUpperTypeBound.isEmpty)
-                        // all upper bounds of "other" are a subtype of this upper bound
-                        NoUpdate
-                    else
-                        StructuralUpdate(
-                            ReferenceValue(joinPC, newUpperTypeBound + thisUpperTypeBound)
-                        )
-                case ArrayValue(thatUpperTypeBound) ⇒
-                    import ObjectType._
-                    if ((theUpperTypeBound eq Object) ||
-                        (theUpperTypeBound eq Serializable) ||
-                        (theUpperTypeBound eq Cloneable))
-                        NoUpdate
                     else {
-                        var newUpperTypeBound: UpperTypeBound = UIDList.empty
-                        if (domain.isSubtypeOf(theUpperTypeBound, ObjectType.Serializable).yes)
-                            newUpperTypeBound += ObjectType.Serializable
-                        if (domain.isSubtypeOf(theUpperTypeBound, ObjectType.Cloneable).yes)
-                            newUpperTypeBound += ObjectType.Cloneable
-                        StructuralUpdate(
-                            if (newUpperTypeBound.isEmpty)
-                                ReferenceValue(joinPC, ObjectType.Object)
-                            else
-                                ReferenceValue(joinPC, newUpperTypeBound)
-                        )
+                        asStructuralUpdate(
+                            joinPC,
+                            joinObjectTypes(thisUpperTypeBound, thatUpperTypeBound, false))
                     }
+
+                case MObjectValue(thatUpperTypeBound) ⇒
+                    var isNewUpperTypeBound = false
+                    val newUpperTypeBound =
+                        thatUpperTypeBound filter { thatType ⇒
+                            if (domain.isSubtypeOf(thatType, thisUpperTypeBound).yes)
+                                return NoUpdate
+
+                            // collect all types this type is a subtype of
+                            val isSubtypeOf = domain.isSubtypeOf(thisUpperTypeBound, thatType).yes
+                            if (!isSubtypeOf)
+                                // we filtered at least one type
+                                isNewUpperTypeBound = true
+                            isSubtypeOf
+                        }
+                    if (newUpperTypeBound.nonEmpty) {
+                        if (isNewUpperTypeBound)
+                            StructuralUpdate(
+                                ReferenceValue(joinPC, newUpperTypeBound + thisUpperTypeBound)
+                            )
+                        else
+                            // thisUpperTypeBound is a subtype of all types of thatUpperTypeBound
+                            StructuralUpdate(other)
+                    } else {
+                        // thisUpperTypeBound was not a sub-/supertype of any type of thatUpperTypeBound
+                        asStructuralUpdate(
+                            joinPC,
+                            joinObjectTypes(thisUpperTypeBound, thatUpperTypeBound, false))
+                    }
+
+                case that: ArrayValue ⇒
+                    val thisUpperTypeBound = this.theUpperTypeBound
+                    joinAnyArrayTypeWithObjectType(thisUpperTypeBound) match {
+                        case Left(`thisUpperTypeBound`) ⇒
+                            NoUpdate
+                        case Left(newUpperTypeBound) ⇒
+                            StructuralUpdate(ReferenceValue(joinPC, newUpperTypeBound))
+                        case Right(newUpperTypeBound) ⇒
+                            StructuralUpdate(ReferenceValue(joinPC, newUpperTypeBound))
+                    }
+
                 case NullValue() ⇒
                     NoUpdate
             }
@@ -312,21 +472,23 @@ trait DefaultTypeLevelReferenceValues[+I]
         override def adapt[ThatI >: I](target: Domain[ThatI], pc: PC): target.DomainValue =
             target.ReferenceValue(pc, theUpperTypeBound)
 
-        override def updateIsNull(pc: PC, isNull: Answer): DomainValue = {
-            isNull match {
-                case Yes ⇒ NullValue(pc)
-                case _   ⇒ this
-            }
-        }
+        override protected def doUpdateIsNull(pc: PC, isNull: Answer): ReferenceValue =
+            this
+
     }
 
     object SObjectValue {
-        def unapply(that: SObjectValue): Some[ReferenceType] =
-            Some(that.theUpperTypeBound)
+        def unapply(that: SObjectValue): Some[ObjectType] = Some(that.theUpperTypeBound)
     }
 
-    protected class MReferenceValue(
-        val upperTypeBound: UpperTypeBound)
+    /**
+     * @param upperTypeBound All types from which the (precise, but unknown) type of the
+     *      represented value inherits. I.e., the value represented by this domain value
+     *      is known to have a type that (in)directly inherits from all given types at
+     *      the same time.
+     */
+    protected class MObjectValue(
+        val upperTypeBound: UIDList[ObjectType])
             extends super.ObjectValue { value ⇒
 
         override def referenceValues: Iterable[IsAReferenceValue] = Iterable(this)
@@ -337,8 +499,8 @@ trait DefaultTypeLevelReferenceValues[+I]
          * domain.
          *
          * @note This is a very basic implementation that cannot determine that this
-         * 		value is '''not''' a subtype of the given type as this implementation
-         *   	does not distinguish between class types and interface types.
+         *      value is '''not''' a subtype of the given type as this implementation
+         *      does not distinguish between class types and interface types.
          */
         override def isValueSubtypeOf(supertype: ReferenceType): Answer = {
             val isSubtypeOf = upperTypeBound exists { anUpperTypeBound ⇒
@@ -352,22 +514,24 @@ trait DefaultTypeLevelReferenceValues[+I]
 
         override def refineUpperTypeBound(
             pc: PC,
-            supertype: ReferenceType): ReferenceValue = {
+            supertype: ReferenceType): DomainValue = {
             // BATAI calls this method only if a previous "subtype of" test 
             // (typeOf(this.value) <: additionalUpperBound ?) 
             // returned unknown. Hence, we only handle the case where the new bound
             // is more strict than the previous bound.
 
-            var newUpperTypeBound: UIDList[ReferenceType] = UIDList.empty
-            upperTypeBound foreach { (anUpperTypeBound: ReferenceType) ⇒
+            var newUpperTypeBound: UIDList[ObjectType] = UIDList.empty
+            upperTypeBound foreach { anUpperTypeBound ⇒
                 // ATTENTION: "!..yes" is not the same as "no" (there is also unknown)
                 if (!domain.isSubtypeOf(supertype, anUpperTypeBound).yes)
                     newUpperTypeBound = newUpperTypeBound + anUpperTypeBound
             }
             if (newUpperTypeBound.size == 0)
                 ReferenceValue(pc, supertype)
+            else if (supertype.isObjectType)
+                ReferenceValue(pc, newUpperTypeBound + supertype.asObjectType)
             else
-                ReferenceValue(pc, newUpperTypeBound + supertype)
+                TheIllegalValue
         }
 
         override def doJoin(joinPC: Int, that: DomainValue): Update[DomainValue] = {
@@ -393,13 +557,13 @@ trait DefaultTypeLevelReferenceValues[+I]
                         StructuralUpdate(
                             ReferenceValue(joinPC, newUpperTypeBound + thatUpperTypeBound)
                         )
-                case MReferenceValue(thatUpperTypeBound) ⇒
+                case MObjectValue(thatUpperTypeBound) ⇒
                     val thisUpperTypeBound = this.upperTypeBound
                     if (thisUpperTypeBound == thatUpperTypeBound)
                         return NoUpdate
                     val thisDomain = domain
                     var newUpperTypeBound = thisUpperTypeBound
-                    thatUpperTypeBound foreach { (otherUpperTypeBound: ReferenceType) ⇒
+                    thatUpperTypeBound foreach { (otherUpperTypeBound: ObjectType) ⇒
                         var addOtherTypeBounds = true
                         newUpperTypeBound = newUpperTypeBound filterNot { vt ⇒
                             if (thisDomain.isSubtypeOf(otherUpperTypeBound, vt).yes)
@@ -415,7 +579,7 @@ trait DefaultTypeLevelReferenceValues[+I]
                     }
                     if (newUpperTypeBound eq thisUpperTypeBound) {
                         NoUpdate
-                    } else if (newUpperTypeBound eq thatUpperTypeBound) {
+                    } else if (newUpperTypeBound == thatUpperTypeBound) {
                         StructuralUpdate(that)
                     } else
                         StructuralUpdate(ReferenceValue(joinPC, newUpperTypeBound))
@@ -457,12 +621,8 @@ trait DefaultTypeLevelReferenceValues[+I]
                 case _ ⇒ super.adapt(targetDomain, pc)
             }
 
-        override def updateIsNull(pc: PC, isNull: Answer): DomainValue = {
-            isNull match {
-                case Yes ⇒ NullValue(pc)
-                case _   ⇒ this
-            }
-        }
+        override protected def doUpdateIsNull(pc: PC, isNull: Answer): DomainValue =
+            this
 
         override def summarize(pc: PC): DomainValue = this
 
@@ -470,8 +630,8 @@ trait DefaultTypeLevelReferenceValues[+I]
             "ReferenceValue("+upperTypeBound.map(_.toJava).mkString(" with ")+")"
     }
 
-    object MReferenceValue {
-        def unapply(that: MReferenceValue): Option[UpperTypeBound] =
+    object MObjectValue {
+        def unapply(that: MObjectValue): Option[UIDList[ObjectType]] =
             Some(that.upperTypeBound)
     }
 
@@ -535,12 +695,12 @@ trait DefaultTypeLevelReferenceValues[+I]
      *  - Type: '''Upper Bound'''
      *  - Null: '''MayBe''' (It is unknown whether the value is `null` or not.)
      */
-    def ReferenceValue(pc: PC, upperTypeBound: UpperTypeBound): ReferenceValue = {
-        assert(upperTypeBound.nonEmpty)
+    def ReferenceValue(pc: PC, upperTypeBound: UIDList[ObjectType]): ReferenceValue = {
+        assume(upperTypeBound.nonEmpty)
         if (upperTypeBound.tail.isEmpty)
             ReferenceValue(pc, upperTypeBound.head)
         else
-            new MReferenceValue(upperTypeBound)
+            new MObjectValue(upperTypeBound)
     }
 
     override def NewObject(pc: PC, objectType: ObjectType): ReferenceValue =

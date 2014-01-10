@@ -47,29 +47,368 @@ import scala.collection.SortedSet
 trait ReferenceValues[+I]
         extends l0.DefaultTypeLevelReferenceValues[I]
         with Origin {
-    domain: Configuration with IntegerValuesComparison ⇒
+    domain: Configuration with IntegerValuesComparison with ClassHierarchy ⇒
 
-    // ---------------------------------1--------------------------------------------------
-    //
-    // REPRESENTATION OF REFERENCE VALUES
-    //
-    // -----------------------------------------------------------------------------------
-
-    trait ReferenceValue extends super.ReferenceValue {
-        this: DomainValue ⇒
+    protected def leastCommonSupertype(a: ObjectType, b: ObjectType): UIDList[ObjectType] = {
+        UIDList.empty // TODO
     }
 
-    //
-    // REPRESENTATIONS OF CONCRETE REFERENCE VALUES
-    //    
+    trait SingleOriginReferenceValue extends ReferenceValue with SingleOriginValue {
 
-    class AReferenceValue protected[DefaultPreciseReferenceValues] (
+        /*ABSTRACT*/ protected def doJoinWithNonNullValueWithSameOrigin(
+            joinPC: PC,
+            that: SingleOriginReferenceValue): Update[DomainValue]
+
+        protected def doJoinWithMultipleReferencesValues(
+            joinPC: PC,
+            that: MultipleReferencesValue): Update[DomainValue] = {
+
+            var updated: Boolean = false
+            val values = that.values map { value ⇒
+                if (this.pc == value.pc)
+                    this.join(joinPC, value) match {
+                        case NoUpdate ⇒
+                            return StructuralUpdate(that)
+                        case SomeUpdate(value: SingleOriginReferenceValue) ⇒
+                            updated = true
+                            value
+                        case _ ⇒
+                            domainException(
+                                domain,
+                                "unexpected: update lead to a value with multiple origins")
+                    }
+                else
+                    value
+            }
+            if (updated)
+                StructuralUpdate(MultipleReferencesValue(values))
+            else
+                StructuralUpdate(MultipleReferencesValue(values + this))
+        }
+
+        protected def doJoinWithNullValueWithSameOrigin(
+            joinPC: PC,
+            that: NullValue): Update[DomainValue] = {
+            if (this.isNull.maybeYes)
+                // the other value is also a null value or maybe "null"
+                NoUpdate
+            else
+                StructuralUpdate(this.updateIsNull(joinPC, Unknown))
+        }
+
+        protected override def doJoin(
+            joinPC: PC,
+            other: DomainValue): Update[DomainValue] = {
+            if (this eq other)
+                return NoUpdate
+            else {
+                other match {
+                    case that: SingleOriginReferenceValue ⇒
+                        if (this.pc == that.pc) that match {
+                            case that: NullValue ⇒
+                                doJoinWithNullValueWithSameOrigin(joinPC, that)
+                            case _ ⇒
+                                doJoinWithNonNullValueWithSameOrigin(joinPC, that)
+                        }
+                        else
+                            StructuralUpdate(
+                                MultipleReferencesValue(Set(this, that)))
+                    case that: MultipleReferencesValue ⇒
+                        doJoinWithMultipleReferencesValues(joinPC, that)
+                }
+            }
+        }
+    }
+
+    protected class NullValue(
+        val pc: PC)
+            extends super.NullValue with SingleOriginReferenceValue {
+
+        protected override def doJoinWithNonNullValueWithSameOrigin(
+            joinPC: PC,
+            that: SingleOriginReferenceValue): Update[DomainValue] = {
+            if (that.isNull.isUndefined)
+                StructuralUpdate(that)
+            else
+                StructuralUpdate(that.updateIsNull(joinPC, Unknown))
+        }
+
+        override def equals(other: Any): Boolean = {
+            other match {
+                case that: NullValue ⇒ (that canEqual this) && that.pc == this.pc
+                case _               ⇒ false
+            }
+        }
+
+        def canEqual(other: NullValue): Boolean = true
+
+        override def hashCode: Int = pc
+
+        override def toString() = "null( pc="+pc+")"
+    }
+
+    protected class ArrayValue(
         val pc: PC,
-        val upperTypeBound: UpperTypeBound,
         override val isNull: Answer,
-        val isPrecise: Boolean)
-            extends ReferenceValue { value: DomainValue ⇒
+        override val isPrecise: Boolean,
+        theUpperTypeBound: ArrayType)
+            extends super.ArrayValue(theUpperTypeBound) with SingleOriginReferenceValue {
 
+        override def doJoinWithNonNullValueWithSameOrigin(
+            joinPC: Int,
+            other: SingleOriginReferenceValue): Update[DomainValue] = {
+            val newIsNull = this.isNull merge other.isNull
+            val newIsPrecise = this.isPrecise && other.isPrecise
+
+            other match {
+                case that: SObjectValue ⇒
+                    val thatUpperTypeBound = that.theUpperTypeBound
+                    joinAnyArrayTypeWithObjectType(thatUpperTypeBound) match {
+                        case Left(`thatUpperTypeBound`) if (
+                            that.isNull == newIsNull && that.isPrecise == newIsPrecise) ⇒
+                            StructuralUpdate(other)
+                        case Left(newUpperTypeBound) ⇒
+                            StructuralUpdate(
+                                ObjectValue(
+                                    this.pc, newIsNull, newIsPrecise, newUpperTypeBound))
+                        case Right(newUpperTypeBound) ⇒
+                            StructuralUpdate(
+                                ReferenceValue(
+                                    this.pc, newIsNull, newIsPrecise, newUpperTypeBound))
+                    }
+
+                case that: MObjectValue ⇒
+                    val thatUpperTypeBound = that.upperTypeBound
+                    joinAnyArrayTypeWithMultipleTypesBound(thatUpperTypeBound) match {
+                        case Right(`thatUpperTypeBound`) if (
+                            that.isNull == newIsNull && that.isPrecise == newIsPrecise) ⇒
+                            StructuralUpdate(other)
+                        case Right(newUpperTypeBound) ⇒
+                            // this case should not occur...
+                            StructuralUpdate(
+                                ReferenceValue(
+                                    this.pc, newIsNull, newIsPrecise, newUpperTypeBound))
+                        case Left(newUpperTypeBound) ⇒
+                            StructuralUpdate(
+                                ObjectValue(
+                                    this.pc, newIsNull, newIsPrecise, newUpperTypeBound))
+                    }
+
+                case that: ArrayValue ⇒
+                    val thisUpperTypeBound = this.theUpperTypeBound
+                    val thatUpperTypeBound = that.theUpperTypeBound
+                    joinWithArrayType(thatUpperTypeBound) match {
+                        case Left(`thisUpperTypeBound`) if (
+                            this.isNull == newIsNull && this.isPrecise == newIsPrecise) ⇒
+                            NoUpdate
+                        case Left(`thatUpperTypeBound`) if (
+                            that.isNull == newIsNull && that.isPrecise == newIsPrecise) ⇒
+                            StructuralUpdate(other)
+                        case Left(newUpperTypeBound) ⇒
+                            StructuralUpdate(
+                                ArrayValue(
+                                    this.pc, newIsNull, newIsPrecise, newUpperTypeBound))
+                        case Right(newUpperTypeBound) ⇒
+                            StructuralUpdate(
+                                ReferenceValue(
+                                    this.pc, newIsNull, newIsPrecise, newUpperTypeBound))
+                    }
+            }
+        }
+
+        override def adapt[ThatI >: I](
+            targetDomain: Domain[ThatI],
+            pc: PC): targetDomain.DomainValue =
+            targetDomain match {
+                case thatDomain: ReferenceValues[ThatI] ⇒
+                    thatDomain.ArrayValue(
+                        pc,
+                        isNull,
+                        isPrecise,
+                        theUpperTypeBound).asInstanceOf[targetDomain.DomainValue]
+                case thatDomain: l0.DefaultTypeLevelReferenceValues[ThatI] ⇒
+                    thatDomain.ArrayValue(
+                        pc,
+                        theUpperTypeBound).asInstanceOf[targetDomain.DomainValue]
+                case _ ⇒ super.adapt(targetDomain, pc)
+            }
+
+        override protected def doUpdateIsNull(pc: PC, isNull: Answer): DomainValue =
+            ArrayValue(this.pc, isNull, isPrecise, theUpperTypeBound)
+
+        override def equals(other: Any): Boolean = {
+            other match {
+                case that: ArrayValue ⇒
+                    (
+                        (that eq this) ||
+                        (
+                            (that canEqual this) &&
+                            this.pc == that.pc &&
+                            this.isPrecise == that.isPrecise &&
+                            this.isNull == that.isNull &&
+                            (this.upperTypeBound eq that.upperTypeBound)
+                        )
+                    )
+                case _ ⇒ false
+            }
+        }
+
+        protected def canEqual(other: ArrayValue): Boolean = true
+
+        override def hashCode: Int =
+            (((pc) * 41 +
+                (if (isPrecise) 101 else 3)) * 13 +
+                isNull.hashCode()) * 79 +
+                upperTypeBound.hashCode()
+
+        override def toString() = {
+            var description = theUpperTypeBound.toJava+"( pc="+pc
+            if (isNull.isUndefined) description += "; isNull=maybe"
+            if (!isPrecise) description += ", isUpperBound"
+            description += " )"
+            description
+        }
+    }
+
+    /**
+     * @param pc The origin of the value (or the pseudo-origin (e.g., the index of
+     *      the parameter) if the true origin is not known.)
+     */
+    protected class SObjectValue(
+        val pc: PC,
+        override val isNull: Answer,
+        override val isPrecise: Boolean,
+        theUpperTypeBound: ObjectType)
+            extends super.SObjectValue(theUpperTypeBound) with SingleOriginValue {
+
+        require(this.isNull.maybeNo)
+
+        override def doUpdateIsNull(pc: PC, isNull: Answer): ReferenceValue =
+            ObjectValue(this.pc, isNull, this.isPrecise, this.theUpperTypeBound)
+
+        override def refineUpperTypeBound(
+            pc: PC,
+            supertype: ReferenceType): ReferenceValue = {
+            if (isPrecise)
+                // Actually, it doesn't make sense to allow calls to this method if
+                // the type is precise. However, we have to handle this case 
+                // gracefully since it is possible that the value represented by
+                // this "SObjectValue" is just one of many instances represented 
+                // by a domain value on the stack/in a register 
+                // and in this case it may make sense to establish a more stringent
+                // bound for the others.
+                return this
+            if (supertype eq theUpperTypeBound)
+                return this
+
+            if (domain.isSubtypeOf(supertype, theUpperTypeBound).yes) {
+                // this also handles the case where we cast an Object to an array
+                ReferenceValue(this.pc, isNull, false, supertype)
+            } else if (domain.isSubtypeOf(theUpperTypeBound, supertype).yes) {
+                // useless refinement...
+                this
+            } else {
+                if (supertype.isArrayType)
+                    domainException(domain,
+                        "impossible refinement "+theUpperTypeBound.toJava+
+                            " => "+supertype.toJava)
+
+                ReferenceValue(
+                    this.pc,
+                    isNull,
+                    false,
+                    UIDList(supertype.asObjectType, theUpperTypeBound))
+            }
+        }
+
+        override def doJoinWithNonNullValueWithSameOrigin(
+            joinPC: Int,
+            other: SingleOriginReferenceValue): Update[DomainValue] = {
+            other match {
+                case that: SObjectValue ⇒
+                    if (this.isNull == that.isNull &&
+                        (this.theUpperTypeBound eq that.theUpperTypeBound) &&
+                        (this.isPrecise == false || this.isPrecise == that.isPrecise))
+                        NoUpdate
+                    else {
+                        // both values have the same origin but have different properties
+                        val lcs = leastCommonSupertype(
+                            this.theUpperTypeBound,
+                            that.theUpperTypeBound)
+                        if ((lcs.head eq theUpperTypeBound) && lcs.tail.isEmpty)
+                            NoUpdate
+                        else
+                            StructuralUpdate(
+                                ReferenceValue(
+                                    this.pc,
+                                    this.isNull merge that.isNull,
+                                    this.isPrecise && that.isPrecise,
+                                    lcs))
+                    }
+                case that: MObjectValue ⇒ // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+                case that: ArrayValue   ⇒ // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+            }
+        }
+
+        override def adapt[ThatI >: I](
+            targetDomain: Domain[ThatI],
+            pc: PC): targetDomain.DomainValue =
+            targetDomain match {
+                case thatDomain: ReferenceValues[ThatI] ⇒
+                    thatDomain.ReferenceValue(
+                        pc,
+                        isNull,
+                        isPrecise,
+                        theUpperTypeBound).asInstanceOf[targetDomain.DomainValue]
+                case thatDomain: l0.DefaultTypeLevelReferenceValues[ThatI] ⇒
+                    thatDomain.ReferenceValue(
+                        pc,
+                        theUpperTypeBound).asInstanceOf[targetDomain.DomainValue]
+                case _ ⇒ super.adapt(targetDomain, pc)
+            }
+
+        override def equals(other: Any): Boolean = {
+            other match {
+                case that: SObjectValue ⇒
+                    (
+                        (that eq this) ||
+                        (
+                            (that canEqual this) &&
+                            this.pc == that.pc &&
+                            this.isPrecise == that.isPrecise &&
+                            this.isNull == that.isNull &&
+                            (this.upperTypeBound eq that.upperTypeBound)
+                        )
+                    )
+                case _ ⇒ false
+            }
+        }
+
+        protected def canEqual(other: SObjectValue): Boolean = true
+
+        override def hashCode: Int =
+            (((theUpperTypeBound.hashCode()) * 41 +
+                (if (isPrecise) 11 else 101)) * 13 +
+                isNull.hashCode()) * 79 +
+                pc
+
+        override def toString() = {
+            var description = theUpperTypeBound.toJava+"( pc="+pc
+            if (isNull.isUndefined) description += "; isNull=maybe"
+            if (!isPrecise) description += ", isUpperBound"
+            description += " )"
+            description
+        }
+
+    }
+
+    protected class MObjectValue(
+        val pc: PC,
+        override val isNull: Answer,
+        override val isPrecise: Boolean,
+        upperTypeBound: UIDList[ObjectType])
+            extends super.MObjectValue(upperTypeBound) with SingleOriginValue {
+        /*
         override def referenceValues: Iterable[IsAReferenceValue] = Iterable(this)
 
         /**
@@ -251,39 +590,40 @@ trait ReferenceValues[+I]
                         MultipleReferenceValues(Set(this, other))
                     }
             }
-        }
+        }*/
 
         override def equals(other: Any): Boolean = {
             other match {
-                case that: AReferenceValue ⇒
-                    (that eq this) || (
-                        (that canEqual this) &&
+                case that: MObjectValue ⇒
+                    (this eq that) || (
+                        (this canEqual that) &&
                         this.pc == that.pc &&
                         this.isPrecise == that.isPrecise &&
                         this.isNull == that.isNull &&
-                        this.upperTypeBound == that.upperTypeBound)
+                        (this.upperTypeBound eq that.upperTypeBound))
                 case _ ⇒ false
             }
         }
 
-        protected def canEqual(other: AReferenceValue): Boolean = true
+        protected def canEqual(other: MObjectValue): Boolean = true
 
-        override def hashCode: Int = // TODO How to cache lazy vals?
-            (((41 + pc) * 41 + isPrecise.hashCode()) *
-                41 + isNull.hashCode()) *
-                41 + upperTypeBound.hashCode()
+        override def hashCode: Int =
+            (((upperTypeBound.hashCode()) * 41 +
+                (if (isPrecise) 11 else 101)) * 13 +
+                isNull.hashCode()) * 79 +
+                pc
 
-        override def toString() =
-            isNull match {
-                case Yes ⇒ "Null(pc="+pc+")"
-                case _ ⇒ upperTypeBound.map(_.toJava).mkString(" with ")+
-                    "(pc="+pc+
-                    ", isNull="+isNull+
-                    ", isPrecise="+isPrecise+")"
-            }
+        override def toString() = {
+            var description = upperTypeBound.map(_.toJava).mkString(" with ")+"( pc="+pc
+            if (isNull.isUndefined) description += "; isNull=maybe"
+            if (!isPrecise) description += ", isUpperBound"
+            description += " )"
+            description
+        }
 
     }
 
+    /* 
     /**
      * Determines if the type described by the first set of upper type bounds is
      * a subtype of the second type.
@@ -312,9 +652,11 @@ trait ReferenceValues[+I]
         def unapply(arv: AReferenceValue): Option[(PC, UpperTypeBound, Answer, Boolean)] =
             Some((arv.pc, arv.upperTypeBound, arv.isNull, arv.isPrecise))
     }
+    
+    */
 
-    case class MultipleReferenceValues(
-        val values: Set[AReferenceValue])
+    class MultipleReferencesValue(
+        val values: Set[SingleOriginReferenceValue])
             extends ReferenceValue { this: DomainValue ⇒
 
         override def upperTypeBound: UpperTypeBound = {
@@ -451,7 +793,7 @@ trait ReferenceValues[+I]
                         newValues ++= otherRemainingArvs
                         updateType = StructuralUpdateType
                     }
-                    updateType(MultipleReferenceValues(newValues))
+                    updateType(MultiReferencesValue(newValues))
             }
         }
 
@@ -469,16 +811,13 @@ trait ReferenceValues[+I]
             case _                               ⇒ super.origin(value)
         }
 
-    abstract override def typeOfValue(value: DomainValue): TypesAnswer =
-        value match {
-            case r: IsReferenceValue ⇒ r
-            case _                   ⇒ super.typeOfValue(value)
-        }
+    */
 
     //
     // FACTORY METHODS
     //
-
+    /*
+    
     /**
      * ___The factory method___ that creates a new instance of an `AReferenceValue`.
      */
@@ -495,10 +834,7 @@ trait ReferenceValues[+I]
         isNull: Answer,
         isPrecise: Boolean): AReferenceValue =
         AReferenceValue(pc, UIDList(referenceType), isNull, isPrecise)
-
-    override def NullValue(pc: PC): DomainValue =
-        AReferenceValue(pc, UIDList.empty, Yes, true)
-
+    
     override def ReferenceValue(pc: PC, referenceType: ReferenceType): DomainValue =
         AReferenceValue(pc, UIDList(referenceType), Unknown, false)
 
@@ -516,5 +852,65 @@ trait ReferenceValues[+I]
 
     override def ClassValue(pc: PC, t: Type): DomainValue =
         AReferenceValue(pc, UIDList[ReferenceType](ObjectType.Class), No, true)
+*/
+
+    override def NonNullReferenceValue(pc: PC, objectType: ObjectType): ReferenceValue =
+        ObjectValue(pc, No, false, objectType)
+
+    def ArrayValue(
+        pc: PC,
+        isNull: Answer,
+        isPrecise: Boolean,
+        theUpperTypeBound: ArrayType): ReferenceValue = {
+        ArrayValue(pc, theUpperTypeBound)
+    }
+
+    override def ObjectValue(pc: PC, objectType: ObjectType): ReferenceValue =
+        ObjectValue(pc, Unknown, false, objectType)
+
+    def ObjectValue(
+        pc: PC,
+        isNull: Answer,
+        isPrecise: Boolean,
+        theUpperTypeBound: ObjectType): ReferenceValue = {
+        new SObjectValue(pc, isNull, isPrecise, theUpperTypeBound)
+    }
+
+    def MultipleReferencesValue(
+        values: Set[SingleOriginReferenceValue]): ReferenceValue
+
+    def ReferenceValue(
+        pc: PC,
+        isNull: Answer,
+        isPrecise: Boolean,
+        theUpperTypeBound: ReferenceType): ReferenceValue = {
+        theUpperTypeBound match {
+            case arrayType: ArrayType   ⇒ ArrayValue(pc, isNull, isPrecise, arrayType)
+            case objectType: ObjectType ⇒ ObjectValue(pc, isNull, isPrecise, objectType)
+        }
+    }
+
+    def ReferenceValue(
+        pc: PC,
+        isNull: Answer,
+        isPrecise: Boolean,
+        theUpperTypeBound: UIDList[ObjectType]): ReferenceValue = {
+        null
+    }
+
+    override def NewObject(pc: PC, objectType: ObjectType): ReferenceValue =
+        ObjectValue(pc, No, true, objectType)
+
+    override def InitializedObject(pc: PC, referenceType: ReferenceType): ReferenceValue =
+        if (referenceType.isArrayType)
+            ArrayValue(pc, No, true, referenceType.asArrayType)
+        else
+            ObjectValue(pc, No, true, referenceType.asObjectType)
+
+    override def StringValue(pc: PC, value: String): DomainValue =
+        ObjectValue(pc, No, true, ObjectType.String)
+
+    override def ClassValue(pc: PC, t: Type): DomainValue =
+        ObjectValue(pc, No, true, ObjectType.Class)
 
 }

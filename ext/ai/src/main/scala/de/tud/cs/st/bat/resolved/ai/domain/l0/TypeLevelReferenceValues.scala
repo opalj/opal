@@ -89,6 +89,9 @@ trait TypeLevelReferenceValues[+I]
          *      needs to be overridden.
          */
         override def summarize(pc: PC, value: DomainValue): DomainValue = {
+            if (this eq value)
+                return this
+
             this.join(pc, value) match {
                 case SomeUpdate(value) ⇒ value
                 case _                 ⇒ this
@@ -150,7 +153,24 @@ trait TypeLevelReferenceValues[+I]
          * @note If this value represents the `null` value this method is not supported.
          */
         @throws[DomainException]("if this value is null")
-        def updateIsNull(pc: PC, isNull: Answer): DomainValue
+        def updateIsNull(pc: PC, isNull: Answer): DomainValue = {
+            if (this.isNull == isNull)
+                this
+            else if (isNull.yes)
+                NullValue(pc)
+            else
+                doUpdateIsNull(pc, isNull)
+        }
+
+        /**
+         * @param isNull The new "null"ness property of this value. `isNull` is
+         *      guaranteed to be different from the result returned by `this.isNull`
+         *      and is also guaranteed to be either `Yes` or `Unknown`.
+         * @note A domain value is always allowed to simply return `this` (the self reference)
+         *      if the "null"ness property of the value is already "Unknown". However,
+         *      in this case the subsequent analyses will be less precise.
+         */
+        protected def doUpdateIsNull(pc: PC, isNull: Answer): DomainValue
 
     }
 
@@ -186,8 +206,8 @@ trait TypeLevelReferenceValues[+I]
          * Throws a new `DomainException` that states that this method is not supported.
          */
         @throws[DomainException]("always - this method is not supported")
-        final override def updateIsNull(pc: PC, isNull: Answer): Nothing =
-            domainException(domain, "this value is null; changing that doesn't make sense")
+        final override def doUpdateIsNull(pc: PC, isNull: Answer): Nothing =
+            domainException(domain, "this value is null; changing that is impossible")
 
         /**
          * Throws a new `DomainException` that states that this method is not supported.
@@ -645,8 +665,8 @@ trait TypeLevelReferenceValues[+I]
         operands: Operands,
         locals: Locals): (Operands, Locals) = {
         val referenceValue: ReferenceValue = asReferenceValue(value)
-        val newReferenceValue = referenceValue.updateIsNull(pc, isNull)
-        if (referenceValue eq newReferenceValue)
+        val newReferenceValue: DomainValue = referenceValue.updateIsNull(pc, isNull)
+        if (referenceValue == newReferenceValue)
             (
                 operands,
                 locals
@@ -659,12 +679,12 @@ trait TypeLevelReferenceValues[+I]
     }
 
     /**
-     * Updates the nullness property (`isNull == No`) of the given value.
+     * Updates the "null"ness property (`isNull == No`) of the given value.
      *
      * Calls `updateIsNull` on the given `ReferenceValue` and replaces every occurrence
      * on the stack/in a register with the updated value.
      *
-     * @param value A `ReferenceValue`.
+     * @param value A `ReferenceValue` that does not represent the value `null`.
      */
     override def establishIsNonNull(
         pc: PC,
@@ -674,7 +694,7 @@ trait TypeLevelReferenceValues[+I]
         updateIsNull(pc, value, No, operands, locals)
 
     /**
-     * Updates the nullness property (`isNull == Yes`) of the given value.
+     * Updates the "null"ness property (`isNull == Yes`) of the given value.
      *
      * Calls `updateIsNull` on the given `ReferenceValue` and replaces every occurrence
      * on the stack/in a register with the updated value.
@@ -699,7 +719,7 @@ object TypeLevelReferenceValues {
      * Least upper type bound of Java arrays. That is, every Java array
      * is always `Serializable` and `Cloneable`.
      */
-    val SerializableAndCloneable: UpperTypeBound =
+    val SerializableAndCloneable: UIDList[ObjectType] =
         UIDList(ObjectType.Serializable, ObjectType.Cloneable)
 
 }
