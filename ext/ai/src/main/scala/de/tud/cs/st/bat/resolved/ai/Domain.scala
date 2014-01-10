@@ -189,7 +189,7 @@ trait Domain[+I] {
          *
          * Conceptually, the join of an object with itself has to return the object
          * itself. Note, that this is a conceptual requirement as such a call
-         * (`this.doJoin(..,this)`) will never happen.
+         * (`this.doJoin(..,this)`) will not be done by BATAI.
          *
          * ==Performance==
          * In general, the domain should try to minimize the number of objects that it
