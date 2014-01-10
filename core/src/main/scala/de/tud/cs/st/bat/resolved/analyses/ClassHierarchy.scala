@@ -49,19 +49,6 @@ import ObjectType.Object
 /**
  * Represents the '''visible part of a project's class hierarchy'''.
  *
- * Only the part of a project's class hierarchy is reified that is referred to in
- * the ''class declarations'' of the analyzed classes. I.e., those classes
- * which are directly referred to in class declarations, but for which the respective
- * class file was not analyzed, are also considered to be visible and are integrated in
- * the class hierarchy. However, types only referred to in the body of a method, but for
- * which neither the defining class file is analyzed nor a class exists that inherits from
- * them are not integrated.
- * For example, if the class file of the class `java.util.ArrayList` is analyzed, then the
- * class hierarchy will have some information about, e.g., `java.util.List`
- * from which `ArrayList` inherits. However, the information about `List` is incomplete
- * and `List` will be a boundary class unless we also analyze the class file that
- * defines `java.util.List`.
- *
  * The type `java.lang.Object` is always part of the class hierarchy.
  *
  * ==Thread safety==
@@ -294,11 +281,16 @@ class ClassHierarchy private (
     /**
      * The set of all supertypes of the given type.
      *
+     * @param reflexive If `true` the returned set will also contain the given type. 
+     * 
      * @note This method is only defined if the type is known.
      */
-    def allSupertypes(objectType: ObjectType): Set[ObjectType] = {
+    def allSupertypes(
+        objectType: ObjectType,
+        reflexive: Boolean = false): Set[ObjectType] = {
         val supertypes = HashSet.empty[ObjectType]
         foreachSupertype(objectType) { supertypes.add(_) }
+        if (reflexive) supertypes.add(objectType)
         supertypes
     }
 
@@ -484,7 +476,7 @@ class ClassHierarchy private (
     }
 
     /**
-     * Determines if `subtype` is a subtype of `supertype` using this 
+     * Determines if `subtype` is a subtype of `supertype` using this
      * class hierarchy.
      *
      * This method can be used as a foundation for implementing the logic of the JVM's
@@ -506,7 +498,7 @@ class ClassHierarchy private (
      *    the answer is clearly `No`. But, at runtime, this may not be the case. I.e.,
      *    only the answer `Yes` is conclusive. In case of `No` further information
      *    needs to be taken into account by the caller to determine what it means that
-     *    the (upper) type (bounds) of the underlying values are not in an inheritance 
+     *    the (upper) type (bounds) of the underlying values are not in an inheritance
      *    relation.
      */
     def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer = {
@@ -938,7 +930,7 @@ class ClassHierarchy private (
     /**
      * Returns a view of the class hierarchy as a graph (which can then be transformed
      * into a dot representation [[http://www.graphviz.org Graphviz]]). This
-     * graph can be a multi-graph if we don't see the complete class hierarchy.
+     * graph can be a multi-graph if the class hierarchy contains wholes.
      */
     def toGraph(): Node = new Node {
 
@@ -994,28 +986,34 @@ class ClassHierarchy private (
  */
 object ClassHierarchy {
 
-    import scala.collection.mutable.HashSet
-    import scala.collection.mutable.HashMap
-    import de.tud.cs.st.util.ControlAbstractions.foreachNonNullValueOf
-
     /**
      * Creates a `ClassHierarchy` that captures the type hierarchy related to
      * the exceptions thrown by specific Java bytecode instructions.
      *
      * This class hierarchy is primarily useful for testing purposes.
      */
-    // The preInitializedClassHierarchy is used by the algorithm that calculates
-    // the intra-procedural control-flow graph! Hence, it has to be a "val"
-    // and should not be a "def".
-    val preInitializedClassHierarchy: ClassHierarchy = apply(Traversable.empty)
+    def preInitializedClassHierarchy: ClassHierarchy = apply(Traversable.empty)
 
     /**
-     * Create the class hierarchy by analyzing the given class files and
+     * Creates the class hierarchy by analyzing the given class files and
      * the specified predefined class hierarchies. By default the class hierarchy
      * related to the exceptions thrown by bytecode instructions are predefined
      * as well as the class hierarchy related to the main classes of the JDK.
      * See the file `ClassHierarchyJVMExceptions.ths` and `ClassHierarchyJLS.ths`
      * (text files) for further details.
+     *
+     * Basically, only the part of a project's class hierarchy is reified that is referred
+     * to in the ''class declarations'' of the analyzed classes  I.e., those classes
+     * which are directly referred to in class declarations, but for which the respective
+     * class file was not analyzed, are also considered to be visible and are integrated in
+     * the class hierarchy. However, types only referred to in the body of a method, but for
+     * which neither the defining class file is analyzed nor a class exists that inherits from
+     * them are not integrated.
+     * For example, if the class file of the class `java.util.ArrayList` is analyzed, then the
+     * class hierarchy will have some information about, e.g., `java.util.List`
+     * from which `ArrayList` inherits. However, the information about `List` is incomplete
+     * and `List` will be a boundary class unless we also analyze the class file that
+     * defines `java.util.List`.
      */
     def apply(
         classFiles: Traversable[ClassFile],
@@ -1023,6 +1021,10 @@ object ClassHierarchy {
             () ⇒ { getClass().getResourceAsStream("ClassHierarchyJLS.ths") },
             () ⇒ { getClass().getResourceAsStream("ClassHierarchyJVMExceptions.ths") }
         )): ClassHierarchy = {
+
+        import scala.collection.mutable.HashSet
+        import scala.collection.mutable.HashMap
+        import de.tud.cs.st.util.ControlAbstractions.foreachNonNullValueOf
 
         def processPredefinedClassHierarchy(
             createInputStream: () ⇒ java.io.InputStream): Iterator[TypeDeclaration] = {
