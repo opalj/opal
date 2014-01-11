@@ -37,7 +37,18 @@ package resolved
 import instructions._
 
 /**
- * Representation of a method's code attribute.
+ * Representation of a method's code attribute, that is, representation of a method's
+ * implementation.
+ *
+ * @param maxStack The maximum size of the stack during the execution of the method.
+ *      This value is determined by the compile and is not necessarily the equivalent
+ *      to the minimun. However, in vast majority of cases it is the minimum.
+ * @param maxLocals The number of registers/local variables needed to execute the method.
+ * @param instructions The instructions of this `Code` array/`Code` block. Since the code
+ *      array is not completely filled (it contains null values) the preferred way
+ *      to iterate over all instructions is to use for-comprehensions and pattern
+ *      matching or to use one of the predefined methods. The `Code` array must not
+ *      be mutated!
  *
  * @author Michael Eichberg
  */
@@ -49,25 +60,43 @@ case class Code(
     attributes: Attributes)
         extends Attribute {
 
-    def programCounters: Iterator[PC] = new Iterator[PC] {
-        var pc = 0 // there is always at least one instruction
+    /**
+     * Returns a new iterator to iterate over the program counters of the instructions
+     * of this `Code` block.
+     */
+    def programCounters: Iterator[PC] =
+        new Iterator[PC] {
+            var pc = 0 // there is always at least one instruction
 
-        def next = {
-            val next = pc
-            pc = pcOfNextInstruction(pc)
-            next
+            def next = {
+                val next = pc
+                pc = pcOfNextInstruction(pc)
+                next
+            }
+
+            def hasNext = pc < instructions.size
         }
 
-        def hasNext = pc < instructions.size
-
-    }
-
-    def exceptionHandlersFor(pc: PC): Iterable[ExceptionHandler] = {
+    /**
+     * Returns a view of all potential exception handlers (if any) for the
+     * instruction with the given program counter (`pc`).
+     *
+     * @param pc The program counter of an instruction of this `Code` array.
+     */
+    def exceptionHandlersFor(pc: PC): Iterable[ExceptionHandler] =
         exceptionHandlers.view.filter { handler ⇒
             handler.startPC <= pc && handler.endPC > pc
         }
-    }
 
+    /**
+     * Returns the program counter of the next instruction after the instruction with
+     * the given counter (`currentPC`).
+     *
+     * @param currentPC The program counter of an instruction. If `currentPC` is the
+     *      program counter of the last instruction of the code block then the returned
+     *      program counter will be equivalent to the length of the Code/Instructions
+     *      array.
+     */
     @inline final def pcOfNextInstruction(currentPC: PC): PC = {
         val max_pc = instructions.size
         var nextPC = currentPC + 1
