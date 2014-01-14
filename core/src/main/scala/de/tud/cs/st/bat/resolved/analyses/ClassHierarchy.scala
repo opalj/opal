@@ -47,7 +47,8 @@ import scala.collection.mutable.HashMap
 import ObjectType.Object
 
 /**
- * Represents the '''visible part of a project's class hierarchy'''.
+ * Represents '''a project's class hierarchy'''. The class hierarchy only contains
+ * information about those classes that were explicitly added to it.
  *
  * The type `java.lang.Object` is always part of the class hierarchy.
  *
@@ -113,9 +114,12 @@ class ClassHierarchy private (
     ObjectType.setObjectTypeCreationListener(objectTypesCreationListener)
 
     /**
-     * Returns the `ObjectType` with the given Id.
+     * Returns the `ObjectType` with the given Id. The id has to be the id of a valid
+     * ObjectType.
      */
     final def getObjectType(objectTypeId: Int): Option[ObjectType] = {
+        require(objectTypeId < 0 || objectTypeId >= objectTypesMap.length)
+
         Option(
             try {
                 objectTypesMapRWLock.readLock().lock()
@@ -136,9 +140,11 @@ class ClassHierarchy private (
     }
 
     /**
+     * Tests if the given objectType is known and if so executes the given function.
+     *
      * @example
      * {{{
-     * ifKnown(ObjectType.Serializable)(isDirectSupertypeInformationComplete)
+     * ifKnown(ObjectType.Serializable){isDirectSupertypeInformationComplete}
      * }}}
      */
     @inline final def ifKnown[T](objectType: ObjectType)(f: ObjectType ⇒ T): Option[T] = {
@@ -158,18 +164,26 @@ class ClassHierarchy private (
     /**
      * Tests if the given `objectType` defines an interface type.
      *
-     * @note This method is only defined if the type is known.
+     * @param objectType A known `ObjectType`. (See `ClassHierarchy.isKnown`,
+     *      `ClassHierarchy.ifKnown` for further details).
      */
     @inline def isInterface(objectType: ObjectType) = interfaceTypesMap(objectType.id)
 
     /**
-     * Returns true if the type hierarchy information w.r.t. the given type's supertypes
+     * Returns `true` if the type hierarchy information w.r.t. the given type's supertypes
      * is complete.
      */
     @inline def isDirectSupertypeInformationComplete(objectType: ObjectType): Boolean =
         (objectType eq Object) ||
             isKnown(objectType) && (superclassTypeMap(objectType.id) ne null)
 
+    /**
+     * Returns `true` if the supertype information for the given type and all its
+     * supertypes (class and interface types) is complete.
+     *
+     * @param objectType A known `ObjectType`. (See `ClassHierarchy.isKnown`,
+     *      `ClassHierarchy.ifKnown` for further details).
+     */
     @inline def isSupertypeInformationComplete(objectType: ObjectType): Boolean = {
         (objectType eq Object) || {
             val id = objectType.id
@@ -179,6 +193,20 @@ class ClassHierarchy private (
         }
     }
 
+    /**
+     * Retuns `Yes` if the class hierarchy contains subtypes of the given type and `No` if
+     * it contains no subtypes. `Unknown` is returnec if the given
+     * type is not known.
+     *
+     * Please note, that the answer maybe `No` even though the (running) project will
+     * contain (in)direct subtypes of the given type.
+     * For example, this will be the case if the class hierarchy is not
+     * complete, because not all class files (libraries) used by the project that is
+     * analyzed are also analyzed. A second case is that some class files are generated
+     * at runtime that inherit from the given `ObjectType`.
+     *
+     * @param objectType Some `ObjectType`.
+     */
     def hasSubtypes(objectType: ObjectType): Answer = {
         val id = objectType.id
         if (id < subclassTypesMap.length /*& id < subinterfaceTypesMap.length */ ) {
@@ -190,14 +218,18 @@ class ClassHierarchy private (
 
     /**
      * The set of all class- and interface-types that (directly or indirectly)
-     * inherit from the given type. The given type is not included in the returned
-     * set.
+     * inherit from the given type.
      *
+     * @param objectType A known `ObjectType`. (See `ClassHierarchy.isKnown`,
+     *      `ClassHierarchy.ifKnown` for further details).
+     * @param reflexive If `true` the given type is also included in the returned
+     *      set.
      * @return The set of all direct and indirect subtypes of the given type.
-     * @note If you don't need the set, it is more efficient to use `foreachSubtype
+     *
+     * @note If you don't need the set, it is more efficient to use `foreachSubtype`.
      */
-    def allSubtypes(objectType: ObjectType): Set[ObjectType] = {
-        val subtypes = HashSet.empty[ObjectType]
+    def allSubtypes(objectType: ObjectType, reflexive: Boolean): Set[ObjectType] = {
+        val subtypes = if (reflexive) HashSet(objectType) else HashSet.empty[ObjectType]
         foreachSubtype(objectType) { subtype ⇒ subtypes add subtype }
         subtypes
     }
@@ -207,9 +239,8 @@ class ClassHierarchy private (
      * If the given `objectType` identifies an interface type then it is possible
      * that `f` is passed the same `ObjectType` multiple times.
      *
-     * @note This method is only defined if the type is known.
-     *
-     * @param objectType An object type.
+     * @param objectType A known `ObjectType`. (See `ClassHierarchy.isKnown`,
+     *      `ClassHierarchy.ifKnown` for further details).
      */
     def foreachSubtype(objectType: ObjectType)(f: ObjectType ⇒ Unit) {
 
@@ -257,9 +288,8 @@ class ClassHierarchy private (
      * It is possible that the same super interface type `I` is passed multiple
      * times to `f` when `I` is implemented multiple times by the given type's supertypes.
      *
-     * @note This method is only defined if the type is known.
-     *
-     * @param objectType A type known to the class hierarchy.
+     * @param objectType A known `ObjectType`. (See `ClassHierarchy.isKnown`,
+     *      `ClassHierarchy.ifKnown` for further details).
      */
     def foreachSupertype(objectType: ObjectType)(f: ObjectType ⇒ Unit) {
         val id = objectType.id
@@ -281,9 +311,10 @@ class ClassHierarchy private (
     /**
      * The set of all supertypes of the given type.
      *
-     * @param reflexive If `true` the returned set will also contain the given type. 
-     * 
-     * @note This method is only defined if the type is known.
+     * @param reflexive If `true` the returned set will also contain the given type.
+     *
+     * @param objectType A known `ObjectType`. (See `ClassHierarchy.isKnown`,
+     *      `ClassHierarchy.ifKnown` for further details).
      */
     def allSupertypes(
         objectType: ObjectType,
@@ -304,9 +335,8 @@ class ClassHierarchy private (
      * The algorithm first iterates over the type's super classes
      * before it iterates over the super interfaces.
      *
-     * @note This method is only defined if the type is known.
-     *
-     * @param objectType A type known to the class hierarchy.
+     * @param objectType A known `ObjectType`. (See `ClassHierarchy.isKnown`,
+     *      `ClassHierarchy.ifKnown` for further details).
      */
     def foreachSuperclass(
         objectType: ObjectType,
@@ -323,13 +353,13 @@ class ClassHierarchy private (
      * Returns the set of all classes/interfaces from which the given type inherits
      * and for which the respective class file is available.
      *
+     * @param objectType A known `ObjectType`. (See `ClassHierarchy.isKnown`,
+     *      `ClassHierarchy.ifKnown` for further details).
+     * @return An `Iterable` over all class files of all super types of the given
+     *      `objectType` that pass the given filter and for which the class file
+     *      is available.
      * @note It may be more efficient to use `foreachSuperclass(ObjectType,
      *      ObjectType ⇒ Option[ClassFile])(ClassFile => Unit)`
-     * @note This method is only defined if the type is known.
-     *
-     * @return An iterable over all class files of all super types of the given
-     *      `objectType` that pass the given filter and for which the class file
-     *      is available. The iterable guarantees
      */
     def superclasses(
         objectType: ObjectType,
@@ -378,12 +408,12 @@ class ClassHierarchy private (
      * for handling `null` values and for considering the runtime type needs to be
      * implemented by the caller of this method.
      *
-     * @note This method is only defined if the type is known.
-     *
+     * @param subtype Any `ObjectType`.
+     * @param supertype Any `ObjectType`.
      * @return `Yes` if `subtype` is a subtype of the given `supertype`. `No`
      *      if `subtype` is not a subtype of `supertype` and `Unknown` if the analysis is
      *      not conclusive. The latter can happen if the class hierarchy is not
-     *      completely available and hence precise information about a type's supertypes
+     *      complete and hence precise information about a type's supertypes
      *      is not available.
      */
     def isSubtypeOf(subtype: ObjectType, theSupertype: ObjectType): Answer = {
@@ -484,8 +514,8 @@ class ClassHierarchy private (
      * for handling `null` values and for considering the runtime type needs to be
      * implemented by the caller of this method.
      *
-     * @param subtype A class or array type.
-     * @param supertype A class or array type.
+     * @param subtype Any class, interface  or array type.
+     * @param supertype Any class, interface or array type.
      * @return `Yes` if `subtype` is indeed a subtype of the given `supertype`. `No`
      *    if `subtype` is not a subtype of `supertype` and `Unknown` if the analysis is
      *    not conclusive. The latter can happen if the class hierarchy is not
@@ -546,7 +576,7 @@ class ClassHierarchy private (
      * for the resolution of unresolved symbolic references.)
      *
      * Resolving a symbolic reference is particularly required to, e.g., get a field's
-     * annotations or to get a field's value (if it is static, final and has a constant
+     * annotations or to get a field's value (if it is `static`, `final` and has a constant
      * value).
      *
      * @note This implementation does not check for `IllegalAccessError`. This check
@@ -623,8 +653,9 @@ class ClassHierarchy private (
      *      reference field.
      * @param fieldName The name of the accessed field.
      * @param fieldType The type of the accessed field (the field descriptor).
-     * @param classes A function to lookup the class that implements a given `ObjectType`.
-     * @return The concrete class that defines the referenced field.
+     * @param project The project associated with this class hiearchy.
+     * @return The field that is referred to; if any. To get the defining `ClassFile`
+     *      you can use the `project`.
      */
     def resolveFieldReference(
         c: ObjectType,
@@ -652,7 +683,7 @@ class ClassHierarchy private (
     /**
      * Tries to resolve a method reference as specified by the JVM specification.
      * I.e., the algorithm tries to find the class that actually declares the referenced
-     * method. Resolution of signature polymorphic method calls is also supported; for
+     * method. Resolution of '''signature polymorphic''' method calls is also supported; for
      * details see `lookupMethodDefinition`).
      *
      * This method is the basis for the implementation of the semantics
@@ -661,7 +692,7 @@ class ClassHierarchy private (
      * necessary that the caller makes a distinction between the statically (at compile time)
      * identified declaring class and the dynamic type of the receiver in case of
      * `invokevirtual` and `invokeinterface` instructions. I.e., additional processing
-     * is necessary.
+     * is necessary on the client side.
      *
      * @note Generally, if the type of the receiver is not precise the receiver object's
      *    subtypes should also be searched for method implementations (at least those
@@ -671,8 +702,9 @@ class ClassHierarchy private (
      *    such as whether the resolved method is accessible, may be necessary.
      *
      * @param receiverType The type of the object that receives the method call. The
-     *    type must be a class type and must not be an interface type.
-     * @return The resolved method and its defining class or `None`.
+     *      type must be a class type and must not be an interface type.
+     * @return The resolved method `Some(`'''METHOD'''`)` or `None`.
+     *      To get the defining class file use the project's respective method.
      */
     def resolveMethodReference(
         receiverType: ObjectType,
@@ -764,7 +796,7 @@ class ClassHierarchy private (
      * superclasses of the class of the given receiver type.
      *
      * This method does not take visibility modifiers or the static modifier into account.
-     * If necessary, such checks needs to be done by the caller.
+     * If necessary, such checks need to be done by the caller.
      *
      * This method supports resolution of `signature polymorphic methods`
      * (in this case however, it needs to be checked that the respective invoke
@@ -775,12 +807,14 @@ class ClassHierarchy private (
      *    it might be more meaningful to still create a dependency to the receiver's class
      *    than to look up the actual definition in one of the receiver's super classes.
      *
-     * @return `Some((ClassFile,Method))` if the method is found. `None` if the method
+     * @return `Some(Method)` if the method is found. `None` if the method
      *    is not found. This can basically happen under two circumstances:
      *    First, not all class files referred to/used by the project are (yet) analyzed;
      *    i.e., we do not have all class files belonging to the project.
      *    Second, the analyzed class files do not belong together (they either belong to
      *    different projects or to incompatible versions of the same project.)
+     *
+     *    To get the method's defining class file use the project's respective method.
      */
     def lookupMethodDefinition(
         receiverType: ObjectType,
@@ -795,9 +829,8 @@ class ClassHierarchy private (
             var methodOption =
                 if (classFileOption.isDefined) {
                     val classFile = classFileOption.get
-                    classFile.findMethod(methodName, methodDescriptor).
-                        orElse {
-                            /* FROM THE SPECIFICATION:
+                    classFile.findMethod(methodName, methodDescriptor).orElse {
+                        /* FROM THE SPECIFICATION:
                          * Method resolution attempts to look up the referenced method in C and 
                          * its superclasses:
                          * If C declares exactly one method with the name specified by the 
@@ -811,14 +844,14 @@ class ClassHierarchy private (
                          * - It has a return type of Object.
                          * - It has the ACC_VARARGS and ACC_NATIVE flags set.
                          */
-                            if (receiverType eq ObjectType.MethodHandle)
-                                classFile.findMethod(
-                                    methodName,
-                                    MethodDescriptor.SignaturePolymorphicMethod).find(
-                                        _.isNativeAndVarargs)
-                            else
-                                None
-                        }
+                        if (receiverType eq ObjectType.MethodHandle)
+                            classFile.findMethod(
+                                methodName,
+                                MethodDescriptor.SignaturePolymorphicMethod).find(
+                                    _.isNativeAndVarargs)
+                        else
+                            None
+                    }
                 } else
                     None
 
@@ -849,7 +882,7 @@ class ClassHierarchy private (
      *  @param methodDescriptor The method's descriptor.
      *  @param project Required to get a type's implementing class file.
      *       This method expects unrestricted access to the pool of all class files.
-     *  @param classesFiler A function that returns true, if the runtime type of
+     *  @param classesFiler A function that returns `true`, if the runtime type of
      *       the `receiverType` may be of the type defined by the given object type. For
      *       example, if you analyze a project and perform a lookup of all methods that
      *       implement the method `toString`, then this set would probably be very large.
@@ -1161,6 +1194,11 @@ object ClassHierarchy {
     }
 }
 
+/**
+ * Stores the information about a type's supertypes.
+ *
+ * @author Michael Eichberg
+ */
 case class TypeDeclaration(
     objectType: ObjectType,
     isInterfaceType: Boolean,
