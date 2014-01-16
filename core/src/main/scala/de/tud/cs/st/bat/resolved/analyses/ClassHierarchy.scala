@@ -66,7 +66,7 @@ import ObjectType.Object
  *      They only ''class type'' that is allowed to have a non-empty set of subinterfaces
  *      is `java.lang.Object`.
  *
- * @note It is generally considered to be an error to pass an instance of an `ObjectType`
+ * @note Unless explicitly documented, it is an error to pass an instance of `ObjectType`
  *      to any method if the `ObjectType` was not previously added. If in doubt, first
  *      check if the type is known (`isKnown`/`ifKnown`).
  * @author Michael Eichberg
@@ -118,7 +118,7 @@ class ClassHierarchy private (
      * ObjectType.
      */
     final def getObjectType(objectTypeId: Int): Option[ObjectType] = {
-        require(objectTypeId < 0 || objectTypeId >= objectTypesMap.length)
+        require(0 <= objectTypeId && objectTypeId < objectTypesMap.length)
 
         Option(
             try {
@@ -157,7 +157,7 @@ class ClassHierarchy private (
     /**
      * Returns `true` if the type is unknown. This is true for all types that are
      * referred to in the body of a method, but which are not referred to in the
-     * declaration of some class (file) that was analyzed.
+     * declarations of the class files that were analyzed.
      */
     def isUnknown(objectType: ObjectType): Boolean = !isKnown(objectType)
 
@@ -167,7 +167,8 @@ class ClassHierarchy private (
      * @param objectType A known `ObjectType`. (See `ClassHierarchy.isKnown`,
      *      `ClassHierarchy.ifKnown` for further details).
      */
-    @inline def isInterface(objectType: ObjectType) = interfaceTypesMap(objectType.id)
+    @inline def isInterface(objectType: ObjectType): Boolean = 
+        interfaceTypesMap(objectType.id)
 
     /**
      * Returns `true` if the type hierarchy information w.r.t. the given type's supertypes
@@ -311,10 +312,9 @@ class ClassHierarchy private (
     /**
      * The set of all supertypes of the given type.
      *
-     * @param reflexive If `true` the returned set will also contain the given type.
-     *
      * @param objectType A known `ObjectType`. (See `ClassHierarchy.isKnown`,
      *      `ClassHierarchy.ifKnown` for further details).
+     * @param reflexive If `true` the returned set will also contain the given type.
      */
     def allSupertypes(
         objectType: ObjectType,
