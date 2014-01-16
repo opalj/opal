@@ -39,9 +39,8 @@ package domain
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 /**
- * This (partial-)domain implements the necessary support for performing
- * computations w.r.t. reference value. This domain performs
- * all computations at the type level.
+ * This (partial-)domain abstracts over the concrete methods for performing 
+ * array operations and provides an interface at a higher abstraction level.
  *
  * @author Michael Eichberg
  */
