@@ -49,6 +49,9 @@ trait DefaultTypeLevelReferenceValues[+I]
         with TypeLevelReferenceValues[I] {
     domain: Configuration with IntegerValuesComparison with ClassHierarchy ⇒
 
+    /**
+     * Calculates the set of all supertypes of the given `types`.
+     */
     protected def allSupertypesOf(
         types: UIDList[ObjectType],
         reflexive: Boolean): scala.collection.Set[ObjectType] = {
@@ -87,7 +90,7 @@ trait DefaultTypeLevelReferenceValues[+I]
     /**
      * Tries to calculate the most specific common supertype of the given types.
      * If `reflexive` is `false`, no two types across both sets have to be in
-     * an inheritance relation.
+     * an inheritance relation; if in doubt use `true`.
      *
      * @param upperTypeBoundB A list (set) of `ObjectType`s that are not in an
      *      inheritance relation.
@@ -105,7 +108,8 @@ trait DefaultTypeLevelReferenceValues[+I]
 
     /**
      * Tries to calculate the most specific common supertype of the given types.
-     * If `reflexive` is `false`, the types do not have to be in an inheritance relation.
+     * If `reflexive` is `false`, the given types do not have to be in an
+     * inheritance relation.
      *
      * @param upperTypeBoundB A list (set) of `ObjectType`s that are not in an
      *      inheritance relation.
@@ -136,6 +140,12 @@ trait DefaultTypeLevelReferenceValues[+I]
         leafTypes(commonSupertypes)
     }
 
+    /**
+     * Calculates the most specific common supertype of any array type and some
+     * class-/interface type.
+     *
+     * Recall that (Java) arrays implement `Cloneable` and `Serializable`.
+     */
     protected def joinAnyArrayTypeWithMultipleTypesBound(
         thatUpperTypeBound: UIDList[ObjectType]): Either[ObjectType, UIDList[ObjectType]] = {
         import ObjectType._
@@ -162,6 +172,12 @@ trait DefaultTypeLevelReferenceValues[+I]
         }
     }
 
+    /**
+     * Calculates the most specific common supertype of any array type and some
+     * class-/interface type.
+     *
+     * Recall that (Java) arrays implement `Cloneable` and `Serializable`.
+     */
     protected def joinAnyArrayTypeWithObjectType(
         thatUpperTypeBound: ObjectType): Either[ObjectType, UIDList[ObjectType]] = {
         import ObjectType._
@@ -184,6 +200,13 @@ trait DefaultTypeLevelReferenceValues[+I]
         }
     }
 
+    /**
+     * Calculates the most specific common supertype of two array types.
+     *
+     * @return `Left(<SOME_ARRAYTYPE>)` if the calculated type can be represented using
+     *      an `ArrayType` and `Right(UIDList(ObjectType.Serializable, ObjectType.Cloneable))`
+     *      if the two arrays do not have an `ArrayType` as a most specific common supertype.
+     */
     protected def joinArrayTypes(
         thisUpperTypeBound: ArrayType,
         thatUpperTypeBound: ArrayType): Either[ArrayType, UIDList[ObjectType]] = {

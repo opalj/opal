@@ -62,7 +62,209 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 trait TypeLevelReferenceValues[+I]
         extends Domain[I]
         with GeneralizedArrayHandling {
-    domain: Configuration with IntegerValuesComparison ⇒
+    domain: Configuration with IntegerValuesComparison with ClassHierarchy ⇒
+
+    // ---------------------------------1-------------------------------------------------
+    //
+    // COMMON FUNCTIONALITY TO CALCULATE THE MOST SPECIFIC COMMON SUPERTYPE OF TWO 
+    // TYPES / TWO UPPER TYPE BOUNDS
+    //
+    // -----------------------------------------------------------------------------------
+
+    /**
+     * Calculates the set of all supertypes of the given `types`.
+     */
+    protected def allSupertypesOf(
+        types: UIDList[ObjectType],
+        reflexive: Boolean): scala.collection.Set[ObjectType] = {
+        // TODO [Performance] The creation of the set of all supertypes of multiple types could be improved
+        val allSupertypesOf = scala.collection.mutable.HashSet.empty[ObjectType]
+        types foreach { t ⇒
+            allSupertypesOf ++= classHierarchy.allSupertypes(t, reflexive)
+        }
+        allSupertypesOf
+    }
+
+    /**
+     * Selects all types of the given set of types that do not have any subtype
+     * in the given set.
+     *
+     * @param types A set of types that contains for each value (type) stored in the
+     *      set all direct and indirect supertypes or none. For example, the intersection
+     *      of the sets of all supertypes (as returned, e.g., by
+     *      `ClassHiearchy.allSupertypes`) of two (independent) types satisfies this
+     *      condition.
+     */
+    protected def leafTypes(
+        types: scala.collection.Set[ObjectType]): Either[ObjectType, UIDList[ObjectType]] = {
+        val lts = types filter { aType ⇒
+            !(classHierarchy.directSubtypesOf(aType) exists { t ⇒ types.contains(t) })
+        }
+        if (lts.isEmpty)
+            Left(ObjectType.Object)
+        else if (lts.size == 1)
+            Left(lts.head)
+        else {
+            Right(UIDList[ObjectType](lts))
+        }
+    }
+
+    /**
+     * Tries to calculate the most specific common supertype of the given types.
+     * If `reflexive` is `false`, no two types across both sets have to be in
+     * an inheritance relation; if in doubt use `true`.
+     *
+     * @param upperTypeBoundB A list (set) of `ObjectType`s that are not in an
+     *      inheritance relation.
+     */
+    protected def joinUpperTypeBounds(
+        upperTypeBoundsA: UIDList[ObjectType],
+        upperTypeBoundsB: UIDList[ObjectType],
+        reflexive: Boolean): Either[ObjectType, UIDList[ObjectType]] = {
+
+        val allSupertypesOfA = allSupertypesOf(upperTypeBoundsA, reflexive)
+        val allSupertypesOfB = allSupertypesOf(upperTypeBoundsB, reflexive)
+        val commonSupertypes = allSupertypesOfA intersect allSupertypesOfB
+        leafTypes(commonSupertypes)
+    }
+
+    /**
+     * Tries to calculate the most specific common supertype of the given types.
+     * If `reflexive` is `false`, the given types do not have to be in an
+     * inheritance relation.
+     *
+     * @param upperTypeBoundB A list (set) of `ObjectType`s that are not in an
+     *      inheritance relation.
+     */
+    protected def joinObjectTypes(
+        upperTypeBoundA: ObjectType,
+        upperTypeBoundB: UIDList[ObjectType],
+        reflexive: Boolean): Either[ObjectType, UIDList[ObjectType]] = {
+
+        val allSupertypesOfA = classHierarchy.allSupertypes(upperTypeBoundA, reflexive)
+        val allSupertypesOfB = allSupertypesOf(upperTypeBoundB, reflexive)
+        val commonSupertypes = allSupertypesOfA intersect allSupertypesOfB
+        leafTypes(commonSupertypes)
+    }
+
+    /**
+     * Tries to calculate the most specific common supertype of the two given types.
+     * If `reflexive` is `false`, the two types do not have to be in an inheritance relation.
+     */
+    protected def joinObjectTypes(
+        upperTypeBoundA: ObjectType,
+        upperTypeBoundB: ObjectType,
+        reflexive: Boolean): Either[ObjectType, UIDList[ObjectType]] = {
+
+        val allSupertypesOfA = classHierarchy.allSupertypes(upperTypeBoundA, reflexive)
+        val allSupertypesOfB = classHierarchy.allSupertypes(upperTypeBoundB, reflexive)
+        val commonSupertypes = allSupertypesOfA intersect allSupertypesOfB
+        leafTypes(commonSupertypes)
+    }
+
+    /**
+     * Calculates the most specific common supertype of any array type and some
+     * class-/interface type.
+     *
+     * Recall that (Java) arrays implement `Cloneable` and `Serializable`.
+     */
+    protected def joinAnyArrayTypeWithMultipleTypesBound(
+        thatUpperTypeBound: UIDList[ObjectType]): Either[ObjectType, UIDList[ObjectType]] = {
+        import ObjectType._
+        import TypeLevelReferenceValues.SerializableAndCloneable
+        if (thatUpperTypeBound == SerializableAndCloneable)
+            Right(thatUpperTypeBound)
+        else {
+            val isSerializable =
+                thatUpperTypeBound exists { thatType ⇒
+                    domain.isSubtypeOf(thatType, Serializable).yes
+                }
+            val isCloneable =
+                thatUpperTypeBound exists { thatType ⇒
+                    domain.isSubtypeOf(thatType, Cloneable).yes
+                }
+            if (isSerializable && isCloneable)
+                Right(SerializableAndCloneable)
+            else if (isSerializable)
+                Left(Serializable)
+            else if (isCloneable)
+                Left(Cloneable)
+            else
+                Left(Object)
+        }
+    }
+
+    /**
+     * Calculates the most specific common supertype of any array type and some
+     * class-/interface type.
+     *
+     * Recall that (Java) arrays implement `Cloneable` and `Serializable`.
+     */
+    protected def joinAnyArrayTypeWithObjectType(
+        thatUpperTypeBound: ObjectType): Either[ObjectType, UIDList[ObjectType]] = {
+        import ObjectType._
+        if ((thatUpperTypeBound eq Object) ||
+            (thatUpperTypeBound eq Serializable) ||
+            (thatUpperTypeBound eq Cloneable))
+            Left(thatUpperTypeBound)
+        else {
+            var newUpperTypeBound: UIDList[ObjectType] = UIDList.empty
+            if (domain.isSubtypeOf(thatUpperTypeBound, Serializable).yes)
+                newUpperTypeBound += Serializable
+            if (domain.isSubtypeOf(thatUpperTypeBound, Cloneable).yes)
+                newUpperTypeBound += Cloneable
+            if (newUpperTypeBound.isEmpty)
+                Left(Object)
+            else if (newUpperTypeBound.tail.isEmpty)
+                Left(newUpperTypeBound.head)
+            else
+                Right(newUpperTypeBound)
+        }
+    }
+
+    /**
+     * Calculates the most specific common supertype of two array types.
+     *
+     * @return `Left(<SOME_ARRAYTYPE>)` if the calculated type can be represented using
+     *      an `ArrayType` and `Right(UIDList(ObjectType.Serializable, ObjectType.Cloneable))`
+     *      if the two arrays do not have an `ArrayType` as a most specific common supertype.
+     */
+    protected def joinArrayTypes(
+        thisUpperTypeBound: ArrayType,
+        thatUpperTypeBound: ArrayType): Either[ArrayType, UIDList[ObjectType]] = {
+        if (thisUpperTypeBound eq thatUpperTypeBound)
+            Left(thisUpperTypeBound)
+        else if (thisUpperTypeBound.componentType.isBaseType ||
+            thatUpperTypeBound.componentType.isBaseType) {
+            // Scenario:
+            // E.g., imagine that we have a method that "just" wants to 
+            // serialize some data. In such a case the method may be passed 
+            // different arrays with different primitive values.
+            Right(TypeLevelReferenceValues.SerializableAndCloneable)
+        } else {
+            // When we reach this point, 
+            // both component types are reference types
+            val thatComponentType = thatUpperTypeBound.componentType.asReferenceType
+            val thisComponentType = thisUpperTypeBound.componentType.asReferenceType
+            if (domain.isSubtypeOf(thatComponentType, thisComponentType).yes)
+                Left(thisUpperTypeBound)
+            else if (domain.isSubtypeOf(thisComponentType, thatComponentType).yes)
+                Left(thatUpperTypeBound)
+            else
+                // This is the most general fallback and we are losing some information
+                // when compared to a solution that calculates the least 
+                // upper type bound. However, in that case we need - 
+                // in general - to support array values with multiple type 
+                // bounds, which we currently don't do.
+                Left(ArrayType.ArrayOfObjects)
+        }
+    }
+
+    // ---------------------------------1-------------------------------------------------
+    //
+    // REPRESENTATION OF REFERENCE VALUES
+    //
+    // -----------------------------------------------------------------------------------
 
     /**
      * Abstracts over all values with computational type `reference`. I.e.,
