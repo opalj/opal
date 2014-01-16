@@ -64,7 +64,7 @@ trait TypeLevelReferenceValues[+I]
         with GeneralizedArrayHandling {
     domain: Configuration with IntegerValuesComparison with ClassHierarchy ⇒
 
-    // ---------------------------------1-------------------------------------------------
+    // -----------------------------------------------------------------------------------
     //
     // COMMON FUNCTIONALITY TO CALCULATE THE MOST SPECIFIC COMMON SUPERTYPE OF TWO 
     // TYPES / TWO UPPER TYPE BOUNDS
