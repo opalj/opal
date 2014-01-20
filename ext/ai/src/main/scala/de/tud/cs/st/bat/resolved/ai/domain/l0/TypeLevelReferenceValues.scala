@@ -77,13 +77,15 @@ trait TypeLevelReferenceValues[+I]
     protected def allSupertypesOf(
         types: UIDList[ObjectType],
         reflexive: Boolean): scala.collection.Set[ObjectType] = {
-        // TODO [Performance] The creation of the set of all supertypes of multiple types could be improved
         val allSupertypesOf = scala.collection.mutable.HashSet.empty[ObjectType]
-        types foreach { t ⇒
-            allSupertypesOf ++= classHierarchy.allSupertypes(t, reflexive)
+        types foreach { (t: ObjectType) ⇒
+            if (!allSupertypesOf.contains(t))
+                allSupertypesOf ++= classHierarchy.allSupertypes(t, reflexive)
         }
         allSupertypesOf
     }
+
+    // TODO [Performance] we could implement a function "intersectWithAllSupertypesOf(baseType: ObjectType,types : Set[ObjectType], reflexive : Boolean) to avoid that we first calculate two sets of supertypes and then need to calculate the intersection
 
     /**
      * Selects all types of the given set of types that do not have any subtype
@@ -97,6 +99,9 @@ trait TypeLevelReferenceValues[+I]
      */
     protected def leafTypes(
         types: scala.collection.Set[ObjectType]): Either[ObjectType, UIDList[ObjectType]] = {
+        if (types.size == 1)
+            return Left(types.head)
+
         val lts = types filter { aType ⇒
             !(classHierarchy.directSubtypesOf(aType) exists { t ⇒ types.contains(t) })
         }
@@ -105,7 +110,7 @@ trait TypeLevelReferenceValues[+I]
         else if (lts.size == 1)
             Left(lts.head)
         else {
-            Right(UIDList[ObjectType](lts))
+            Right(UIDList(lts))
         }
     }
 
@@ -122,6 +127,9 @@ trait TypeLevelReferenceValues[+I]
         upperTypeBoundsB: UIDList[ObjectType],
         reflexive: Boolean): Either[ObjectType, UIDList[ObjectType]] = {
 
+        if (upperTypeBoundsA == upperTypeBoundsB)
+            return Right(upperTypeBoundsA)
+
         val allSupertypesOfA = allSupertypesOf(upperTypeBoundsA, reflexive)
         val allSupertypesOfB = allSupertypesOf(upperTypeBoundsB, reflexive)
         val commonSupertypes = allSupertypesOfA intersect allSupertypesOfB
@@ -135,14 +143,43 @@ trait TypeLevelReferenceValues[+I]
      *
      * @param upperTypeBoundB A list (set) of `ObjectType`s that are not in an
      *      inheritance relation.
+     * @return Returns (if reflexive is `true`)
+     * 		`upperTypeBoundA` if it is a supertype of at least one type
+     * 		of `upperTypeBoundB`. Returns `upperTypeBoundB` if `upperTypeBoundA` is
+     *   	a subtype of all types of `upperTypeBoundB`. Otherwise a new upper type
+     *    	bound is calculated and returned.
      */
     protected def joinObjectTypes(
         upperTypeBoundA: ObjectType,
         upperTypeBoundB: UIDList[ObjectType],
         reflexive: Boolean): Either[ObjectType, UIDList[ObjectType]] = {
 
-        val allSupertypesOfA = classHierarchy.allSupertypes(upperTypeBoundA, reflexive)
-        val allSupertypesOfB = allSupertypesOf(upperTypeBoundB, reflexive)
+        if (reflexive) {
+            var aIsSubtypeOfAllOfb = true
+            val newUpperTypeBound = upperTypeBoundB filter { (b: ObjectType) ⇒
+                if (domain.isSubtypeOf(b, upperTypeBoundA).yes)
+                    return Left(upperTypeBoundA)
+
+                if (domain.isSubtypeOf(upperTypeBoundA, b).yes) {
+                    true
+                } else {
+                    aIsSubtypeOfAllOfb = false
+                    false
+                }
+            }
+            if (aIsSubtypeOfAllOfb)
+                return Right(upperTypeBoundB)
+            if (newUpperTypeBound.nonEmpty) {
+                if (newUpperTypeBound.tail.isEmpty)
+                    Left(newUpperTypeBound.head)
+                else
+                    return Right(newUpperTypeBound)
+            }
+        }
+        // if we reach this point the types are in no inheritance relationship
+
+        val allSupertypesOfA = classHierarchy.allSupertypes(upperTypeBoundA, false)
+        val allSupertypesOfB = allSupertypesOf(upperTypeBoundB, false)
         val commonSupertypes = allSupertypesOfA intersect allSupertypesOfB
         leafTypes(commonSupertypes)
     }
@@ -156,8 +193,17 @@ trait TypeLevelReferenceValues[+I]
         upperTypeBoundB: ObjectType,
         reflexive: Boolean): Either[ObjectType, UIDList[ObjectType]] = {
 
-        val allSupertypesOfA = classHierarchy.allSupertypes(upperTypeBoundA, reflexive)
-        val allSupertypesOfB = classHierarchy.allSupertypes(upperTypeBoundB, reflexive)
+        if (reflexive) {
+            if (upperTypeBoundA eq upperTypeBoundB)
+                return Left(upperTypeBoundA)
+            if (domain.isSubtypeOf(upperTypeBoundB, upperTypeBoundA).yes)
+                return Left(upperTypeBoundA)
+            if (domain.isSubtypeOf(upperTypeBoundA, upperTypeBoundB).yes)
+                return Left(upperTypeBoundB)
+        }
+
+        val allSupertypesOfA = classHierarchy.allSupertypes(upperTypeBoundA, false)
+        val allSupertypesOfB = classHierarchy.allSupertypes(upperTypeBoundB, false)
         val commonSupertypes = allSupertypesOfA intersect allSupertypesOfB
         leafTypes(commonSupertypes)
     }
@@ -280,27 +326,6 @@ trait TypeLevelReferenceValues[+I]
             ComputationalTypeReference
 
         /**
-         * Summarizes this value and the given value by `join`ing both values and
-         * returning the joined value.
-         *
-         * @param pc The PC that will be used by the new summarized value unless
-         *      the summary returns this value.
-         * @param value A value with computational type reference value.
-         * @note Though the default implementation will always work, it may not provide
-         *      the desired/necessary level of abstraction. In such cases, this method
-         *      needs to be overridden.
-         */
-        override def summarize(pc: PC, value: DomainValue): DomainValue = {
-            if (this eq value)
-                return this
-
-            this.join(pc, value) match {
-                case SomeUpdate(value) ⇒ value
-                case _                 ⇒ this
-            }
-        }
-
-        /**
          * Returns `Yes` iff this value is guaranteed to be `null` at runtime and
          * returns `No` iff the value is not `null` at runtime, in all other cases
          * `Unknown` is returned.
@@ -308,6 +333,20 @@ trait TypeLevelReferenceValues[+I]
          * This default implementation always returns `Unknown`.
          */
         override def isNull: Answer = Unknown
+
+        /**
+         * Refines this value's `isNull` property if meaningful.
+         *
+         * @param pc The program counter of the instruction that was the reason
+         * 		for the refinement.
+         * @param isNull This value's new null-ness property. `isNull` either
+         * 		has to be `Yes` or `No`.
+         * @return The refined value, if the refinement was meaningful. Otherwise
+         * 		`this`. Note, if this value's `isNull` property is `Unknown`
+         * 		`this` may also be returned, but in that case subsequent analyses may
+         *   	be less precise.
+         */
+        def refineIsNull(pc: PC, isNull: Answer): DomainValue
 
         /**
          * Returns `true` if the type information associated with this value is precise.
@@ -332,47 +371,23 @@ trait TypeLevelReferenceValues[+I]
          * it may be better to just return `Unknown` in case that this type and the
          * given type are not in a direct inheritance relationship.
          *
-         * This default implementation always returns `Unknown`.
-         *
          * @note If this value represents the `null` value this method is not supported.
+         *
+         * @return The default implementation always returns `Unknown`.
          */
         @throws[DomainException]("if this value is null")
         override def isValueSubtypeOf(referenceType: ReferenceType): Answer = Unknown
 
         /**
-         * Adds a new, additional upper bound to this value's type.
+         * Refines the upper bound to this value's type.
          *
          * This call can be ignored if the type
          * information related to this value is precise, i.e., if we know that we
          * precisely capture the runtime type of this value. However, refining
-         * the uppper type bound for a `null` value is not supported.
-         */
-        def refineUpperTypeBound(pc: PC, supertype: ReferenceType): DomainValue
-
-        /**
-         * Updates the "null"ness property of this value.
-         *
-         * @note If this value represents the `null` value this method is not supported.
+         * the upper type bound for a `null` value is not supported.
          */
         @throws[DomainException]("if this value is null")
-        def updateIsNull(pc: PC, isNull: Answer): DomainValue = {
-            if (this.isNull == isNull)
-                this
-            else if (isNull.yes)
-                NullValue(pc)
-            else
-                doUpdateIsNull(pc, isNull)
-        }
-
-        /**
-         * @param isNull The new "null"ness property of this value. `isNull` is
-         *      guaranteed to be different from the result returned by `this.isNull`
-         *      and is also guaranteed to be either `Yes` or `Unknown`.
-         * @note A domain value is always allowed to simply return `this` (the self reference)
-         *      if the "null"ness property of the value is already "Unknown". However,
-         *      in this case the subsequent analyses will be less precise.
-         */
-        protected def doUpdateIsNull(pc: PC, isNull: Answer): DomainValue
+        def refineUpperTypeBound(pc: PC, supertype: ReferenceType): DomainValue
 
     }
 
@@ -394,6 +409,8 @@ trait TypeLevelReferenceValues[+I]
          */
         final override def isNull = Yes
 
+        final override def refineIsNull(pc: PC, isNull: Answer): DomainValue = this
+
         /**
          * Returns `true`.
          */
@@ -403,13 +420,6 @@ trait TypeLevelReferenceValues[+I]
          * Returns an empty upper type bound.
          */
         final override def upperTypeBound: UpperTypeBound = UIDList.empty
-
-        /**
-         * Throws a new `DomainException` that states that this method is not supported.
-         */
-        @throws[DomainException]("always - this method is not supported")
-        final override def doUpdateIsNull(pc: PC, isNull: Answer): Nothing =
-            domainException(domain, "this value is null; changing that is impossible")
 
         /**
          * Throws a new `DomainException` that states that this method is not supported.
@@ -457,6 +467,7 @@ trait TypeLevelReferenceValues[+I]
      */
     protected trait ObjectValue extends ReferenceValue {
         this: DomainValue ⇒
+
     }
 
     /**
@@ -586,10 +597,16 @@ trait TypeLevelReferenceValues[+I]
 
     protected def summarizeReferenceValues(
         pc: PC,
-        values: Iterable[DomainValue]): DomainValue =
-        (values.head.summarize(pc) /: values.tail) {
-            (c, n) ⇒ c.summarize(pc, n)
+        values: Iterable[DomainValue]): DomainValue = {
+        val summarizedValues = values.map(_.summarize(pc))
+
+        summarizedValues.tail.foldLeft(summarizedValues.head) { (summarizedValue, nextValue) ⇒
+            summarizedValue.join(pc, nextValue) match {
+                case NoUpdate             ⇒ summarizedValue
+                case SomeUpdate(newValue) ⇒ newValue
+            }
         }
+    }
 
     /**
      * Tests if both values refer to the same object instance.
@@ -840,50 +857,53 @@ trait TypeLevelReferenceValues[+I]
     //
     // -----------------------------------------------------------------------------------
 
+    protected def updateOperandsAndLocals(
+        oldValue: DomainValue,
+        newValue: DomainValue,
+        operands: Operands,
+        locals: Locals): (Operands, Locals) = {
+        if (oldValue == newValue)
+            (
+                operands,
+                locals
+            )
+        else
+            (
+                operands.map(op ⇒ if (op eq oldValue) newValue else op),
+                locals.map(l ⇒ if (l eq oldValue) newValue else l)
+            )
+    }
+
     override def establishUpperBound(
         pc: PC,
         bound: ReferenceType,
         value: DomainValue,
         operands: Operands,
         locals: Locals): (Operands, Locals) = {
-        val referenceValue: ReferenceValue = asReferenceValue(value)
-        val newReferenceValue = referenceValue.refineUpperTypeBound(pc, bound)
-        if (referenceValue eq newReferenceValue)
-            (
-                operands,
-                locals
-            )
-        else
-            (
-                operands.map(op ⇒ if (op eq value) newReferenceValue else op),
-                locals.map(l ⇒ if (l eq value) newReferenceValue else l)
-            )
+        updateOperandsAndLocals(
+            value,
+            asReferenceValue(value).refineUpperTypeBound(pc, bound),
+            operands,
+            locals)
     }
 
-    protected def updateIsNull(
+    protected def refineIsNull(
         pc: PC,
         value: DomainValue,
         isNull: Answer,
         operands: Operands,
         locals: Locals): (Operands, Locals) = {
-        val referenceValue: ReferenceValue = asReferenceValue(value)
-        val newReferenceValue: DomainValue = referenceValue.updateIsNull(pc, isNull)
-        if (referenceValue == newReferenceValue)
-            (
-                operands,
-                locals
-            )
-        else
-            (
-                operands.map(op ⇒ if (op eq value) newReferenceValue else op),
-                locals.map(l ⇒ if (l eq value) newReferenceValue else l)
-            )
+        updateOperandsAndLocals(
+            value,
+            asReferenceValue(value).refineIsNull(pc, isNull),
+            operands,
+            locals)
     }
 
     /**
-     * Updates the "null"ness property (`isNull == No`) of the given value.
+     * Refines the "null"ness property (`isNull == No`) of the given value.
      *
-     * Calls `updateIsNull` on the given `ReferenceValue` and replaces every occurrence
+     * Calls `refineIsNull` on the given `ReferenceValue` and replaces every occurrence
      * on the stack/in a register with the updated value.
      *
      * @param value A `ReferenceValue` that does not represent the value `null`.
@@ -893,12 +913,12 @@ trait TypeLevelReferenceValues[+I]
         value: DomainValue,
         operands: Operands,
         locals: Locals): (Operands, Locals) =
-        updateIsNull(pc, value, No, operands, locals)
+        refineIsNull(pc, value, No, operands, locals)
 
     /**
      * Updates the "null"ness property (`isNull == Yes`) of the given value.
      *
-     * Calls `updateIsNull` on the given `ReferenceValue` and replaces every occurrence
+     * Calls `refineIsNull` on the given `ReferenceValue` and replaces every occurrence
      * on the stack/in a register with the updated value.
      *
      * @param value A `ReferenceValue`.
@@ -908,7 +928,7 @@ trait TypeLevelReferenceValues[+I]
         value: DomainValue,
         operands: Operands,
         locals: Locals): (Operands, Locals) =
-        updateIsNull(pc, value, Yes, operands, locals)
+        refineIsNull(pc, value, Yes, operands, locals)
 }
 /**
  * Defines domain-independent, commonly used upper type bounds.

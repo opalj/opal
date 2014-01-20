@@ -41,6 +41,11 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 import analyses.ClassHierarchy
 
+/**
+ * Mixin in this trait makes sense if all class files belonging to a project are analyzed
+ * and at runtime no further subclasses will show up. It makes sense – in particular –
+ * when analyzing applications.
+ */
 trait DefaultPreciseReferenceValuesWithClosedHierarchy[+I]
         extends DefaultPreciseReferenceValues[I] {
 
