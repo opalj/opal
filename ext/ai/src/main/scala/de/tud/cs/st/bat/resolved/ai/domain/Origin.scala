@@ -58,7 +58,7 @@ trait Origin { this : SomeDomain =>
     }
 
     /**
-     * Returns the origin(s) of the value if the information is available.
+     * Returns the origin(s) of the given value if the information is available.
      *
      * @return The source(s) of the given value if the information is available.
      *      Whether the information is available depends on the concrete domains.

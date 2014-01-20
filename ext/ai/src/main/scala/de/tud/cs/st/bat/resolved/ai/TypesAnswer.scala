@@ -156,14 +156,6 @@ trait IsAReferenceValue {
     def isNull: Answer
 
     /**
-     * Returns `true` if the type information is precise. I.e., the type precisely
-     * models the runtime type of the value.
-     *
-     * @note If value is known to be `null`, `isPrecise` will also return `true`.
-     */
-    def isPrecise: Boolean
-
-    /**
      * The upper bound of the value's type. The upper bound is empty if this
      * value is `null` (i.e., `isNUll == Yes`). The upper bound will only contain
      * a single type if the type is precise. (i.e., `isPrecise == true`). Otherwise,
@@ -177,6 +169,14 @@ trait IsAReferenceValue {
      *      in the upper type bound.
      */
     def upperTypeBound: UpperTypeBound
+
+    /**
+     * Returns `true` if the type information is precise. I.e., the type precisely
+     * models the runtime type of the value.
+     *
+     * @note If value is known to be `null`, `isPrecise` will also return `true`.
+     */
+    def isPrecise: Boolean
 
     /**
      * Checks if the type of this value is a subtype of the specified

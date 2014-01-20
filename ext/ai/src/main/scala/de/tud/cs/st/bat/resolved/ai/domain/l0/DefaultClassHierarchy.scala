@@ -42,8 +42,8 @@ package l0
  * the corresponding method defined by the class `...resolved.analyses.ClassHierarchy`.
  *
  * This class uses BAT's `preInitializedClassHierarchy` (see `ClassHierarchy` for details)
- * for answering queries. Hence, you should only ever use this trait if you just
- * want to do some testing or debugging.
+ * for answering queries. '''Hence, you should only ever use this trait if you just
+ * want to do some testing or debugging.'''
  *
  * @author Michael Eichberg
  */
