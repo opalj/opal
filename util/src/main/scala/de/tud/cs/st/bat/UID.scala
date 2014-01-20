@@ -331,13 +331,13 @@ private final class UIDSList[T <: UID](
             case that: UIDList[T] ⇒
                 var thisRest: UIDList[T] = this
                 var thatRest: UIDList[T] = that
-                while (thisRest.nonEmpty && thatRest.nonEmpty) {
+                while ((thisRest ne thatRest) && thisRest.nonEmpty && thatRest.nonEmpty) {
                     if (thisRest.head.id != thatRest.head.id)
                         return false;
                     thisRest = thisRest.tail
                     thatRest = thatRest.tail
                 }
-                thisRest.isEmpty && thatRest.isEmpty
+                thisRest eq thatRest
             case _ ⇒
                 false
         }
