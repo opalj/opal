@@ -252,23 +252,7 @@ trait Domain[+I] {
          *      analyses.
          */
         def summarize(pc: PC): DomainValue
-
-        /**
-         * Creates a summary value of this value and the given value. For example,
-         * imagine that the result of the abstract interpretation of a method is a set
-         * of different values. In such a case it may be usefull/sufficient to continue
-         * the abstract interpretation of the calling method using a value that abstracts
-         * over all values of the called method.
-         *
-         * (See `summarize(PC)` for further details.)
-         *
-         * @note __The precise semantics and usage of `summarize(...)` can be determined
-         *      by the domain as BATAI does not use/call this method.__
-         *      This method is solely predefined to facilitate the development of
-         *      project-wide analyses.
-         */
-        def summarize(pc: PC, value: DomainValue): DomainValue
-
+ 
         /**
          * Adapts this value to the given domain (default: throws a domain exception
          * that adaptation is not supported). '''This method needs to be overridden
