@@ -300,10 +300,11 @@ trait DefaultPreciseReferenceValues[+I]
 
     protected def summarizeReferenceValues(
         pc: PC,
-        values: Iterable[DomainValue]): DomainValue =
-        (values.head.summarize(pc) /: values.tail) {
-            (c, n) ⇒ c.summarize(pc, n)
-        }
+        values:  Iterable[DomainValue]): DomainValue =
+            sys.error("not supported")
+//        (values.head.summarize(pc) /: values.tail) {
+//            (c, n) ⇒ c.summarize(pc, n)
+//        }
 
     /**
      * Extractor for `AReferenceValue`s.
