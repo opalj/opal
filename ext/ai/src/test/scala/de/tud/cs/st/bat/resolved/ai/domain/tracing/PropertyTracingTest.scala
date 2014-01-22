@@ -42,7 +42,7 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 import org.scalatest.concurrent.TimeLimitedTests
 import org.scalatest.time._
 import org.scalatest.BeforeAndAfterAll
@@ -57,7 +57,7 @@ import com.sun.org.apache.bcel.internal.generic.INVOKEVIRTUAL
 @RunWith(classOf[JUnitRunner])
 class PropertyTracingTest
         extends FlatSpec
-        with ShouldMatchers
+        with Matchers
         with ParallelTestExecution {
 
     import debug.XHTML.dumpOnFailureDuringValidation

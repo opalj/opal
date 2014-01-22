@@ -45,7 +45,7 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.ParallelTestExecution
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 
 /**
  * Basic tests of the abstract interpreter related to handling arrays.
@@ -55,7 +55,7 @@ import org.scalatest.matchers.ShouldMatchers
 @RunWith(classOf[JUnitRunner])
 class MethodsWithArraysTest
         extends FlatSpec
-        with ShouldMatchers
+        with Matchers
         with ParallelTestExecution {
 
     import MethodsWithArraysTest._

@@ -43,7 +43,7 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.Spec
 import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 
 /**
   * Tests that the dependency extractor does not report dependencies to primitive types
@@ -52,7 +52,7 @@ import org.scalatest.matchers.ShouldMatchers
   * @author Michael Eichberg
   */
 @RunWith(classOf[JUnitRunner])
-class DependenciesToPrimitiveTypesTest extends FlatSpec with ShouldMatchers {
+class DependenciesToPrimitiveTypesTest extends FlatSpec with Matchers {
 
     //
     //

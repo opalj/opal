@@ -46,7 +46,7 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.ParallelTestExecution
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 import org.scalatest.matchers.MatchResult
 
 /**
@@ -58,7 +58,7 @@ import org.scalatest.matchers.MatchResult
 @RunWith(classOf[JUnitRunner])
 class MethodsPlainTest
         extends FlatSpec
-        with ShouldMatchers /*with BeforeAndAfterAll */
+        with Matchers /*with BeforeAndAfterAll */
         with ParallelTestExecution {
 
     private[this] val IrrelevantPC = Int.MinValue

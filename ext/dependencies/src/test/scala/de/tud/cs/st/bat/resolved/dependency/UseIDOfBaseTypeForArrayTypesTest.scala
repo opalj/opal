@@ -44,7 +44,7 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.Spec
 import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 
 /**
  * Tests that the dependency extractor does not report dependencies to array types but
@@ -55,7 +55,7 @@ import org.scalatest.matchers.ShouldMatchers
 @RunWith(classOf[JUnitRunner])
 class UseIDOfBaseTypeForArrayTypesTest
         extends FlatSpec
-        with ShouldMatchers
+        with Matchers
         with BeforeAndAfterAll {
 
     //

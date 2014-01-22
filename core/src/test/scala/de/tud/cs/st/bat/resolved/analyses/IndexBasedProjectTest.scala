@@ -38,7 +38,7 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 import org.scalatest.ParallelTestExecution
 
 import reader.Java7Framework.ClassFiles
@@ -51,7 +51,7 @@ import reader.Java7Framework.ClassFiles
 @RunWith(classOf[JUnitRunner])
 class IndexBasedProjectTest
         extends FlatSpec
-        with ShouldMatchers
+        with Matchers
         with ParallelTestExecution {
 
     import IndexBasedProjectTest._

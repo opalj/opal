@@ -37,7 +37,7 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 import org.scalatest.ParallelTestExecution
 
 /**
@@ -48,7 +48,7 @@ import org.scalatest.ParallelTestExecution
 @RunWith(classOf[JUnitRunner])
 class AccessFlagsMatcherTest
         extends FlatSpec
-        with ShouldMatchers /*with BeforeAndAfterAll */
+        with Matchers /*with BeforeAndAfterAll */
         with ParallelTestExecution {
 
     behavior of "a simple access flags matcher"

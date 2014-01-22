@@ -43,7 +43,7 @@ import reader.Java7Framework.ClassFile
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 
 /**
  * This test(suite) just loads a very large number of class files and performs
@@ -52,7 +52,7 @@ import org.scalatest.matchers.ShouldMatchers
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class InterpretManyMethodsTest extends FlatSpec with ShouldMatchers {
+class InterpretManyMethodsTest extends FlatSpec with Matchers {
 
     import de.tud.cs.st.util.ControlAbstractions._
     import debug.InterpretMethods.interpret
