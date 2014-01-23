@@ -38,11 +38,11 @@ import analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
 import java.net.URL
 
 /**
-  * Prints out all runtime visible annotations.
-  *
-  * @author Arne Lottmann
-  * @author Michael Eichberg
-  */
+ * Prints out all runtime visible annotations.
+ *
+ * @author Arne Lottmann
+ * @author Michael Eichberg
+ */
 object AnnotationPrinter extends AnalysisExecutor {
 
     val analysis = new Analysis[URL, BasicReport] {
@@ -54,9 +54,7 @@ object AnnotationPrinter extends AnalysisExecutor {
                 for {
                     classFile ← project.classFiles
                     method ← classFile.methods
-                    annotations = method.runtimeVisibleAnnotations
-                    if (annotations.isDefined)
-                    annotation ← annotations.get
+                    annotation ← method.runtimeVisibleAnnotations ++ method.runtimeInvisibleAnnotations
                 } yield {
                     "on method: "+classFile.thisType.toJava+"."+method.name +
                         method.parameterTypes.mkString("(", ",", ")")+"\n"+

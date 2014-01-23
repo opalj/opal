@@ -72,11 +72,17 @@ final class Method private (
 
     override final def asMethod = this
 
-    def runtimeVisibleParameterAnnotations: Option[ParameterAnnotations] =
-        attributes collectFirst { case RuntimeVisibleParameterAnnotationTable(pas) ⇒ pas }
+    def runtimeVisibleParameterAnnotations: ParameterAnnotations =
+        (attributes collectFirst { case RuntimeVisibleParameterAnnotationTable(pas) ⇒ pas }) match {
+            case Some(annotations) ⇒ annotations
+            case None              ⇒ IndexedSeq.empty
+        }
 
-    def runtimeInvisibleParameterAnnotations: Option[ParameterAnnotations] =
-        attributes collectFirst { case RuntimeInvisibleParameterAnnotationTable(pas) ⇒ pas }
+    def runtimeInvisibleParameterAnnotations: ParameterAnnotations =
+        (attributes collectFirst { case RuntimeInvisibleParameterAnnotationTable(pas) ⇒ pas }) match {
+            case Some(annotations) ⇒ annotations
+            case None              ⇒ IndexedSeq.empty
+        }
 
     // This is directly supported due to its need for the resolution of signature 
     // polymorphic methods. 

@@ -83,4 +83,15 @@ package object resolved {
     final def CodeError(message: String, code: Code, pc: Int) =
         throw AnalysisFailedException(generalBATExceptionMessage + message, code, pc)
 
+    def annotationsToJava(
+        annotations: Annotations,
+        before: String = "",
+        after: String = ""): String = {
+        if (annotations.nonEmpty) {
+            before + annotations.map(_.toJava).mkString(" ") + after
+        } else {
+            ""
+        }
+    }
+
 }

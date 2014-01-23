@@ -220,7 +220,7 @@ object XHTML {
             ).map(eh ⇒ <p>{ eh }</p>)
 
         val annotations =
-            this.annotations(classFile, method) map { annotation ⇒
+            this.annotations(method) map { annotation ⇒
                 <span class="annotation">
                 { Unparsed(annotation.replace("\n", "<br>").replace("\t", "&nbsp;&nbsp;&nbsp;")) }
                 </span><br />
@@ -249,8 +249,10 @@ object XHTML {
         </div>
     }
 
-    private def annotations(classFile: Option[ClassFile], method: Option[Method]): Seq[String] = {
-        method.flatMap(m ⇒ m.runtimeVisibleAnnotations).map(_.map(_.toJava)).getOrElse(Nil)
+    private def annotations(method: Option[Method]): Seq[String] = {
+        val annotations =
+            method.map(m ⇒ (m.runtimeVisibleAnnotations ++ m.runtimeInvisibleAnnotations))
+        annotations.map(_.map(_.toJava)).getOrElse(Nil)
     }
 
     private def caption(classFile: Option[ClassFile], method: Option[Method]): String = {

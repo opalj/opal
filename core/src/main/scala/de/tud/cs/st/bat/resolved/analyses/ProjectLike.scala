@@ -45,10 +45,10 @@ import java.net.URL
  * Primary abstraction of a Java project. This class is basically just a container
  * for `ClassFile`s. Additionally, it makes project wide information available such as
  * the class hierarchy.
- * 
+ *
  * ==Creating Projects==
- * Projects are generally created using factory methods. E.g., the companion object of 
- * [[de.tud.cs.st.bat.resolved.analyses.IndexBasedProject]] defines the respective 
+ * Projects are generally created using factory methods. E.g., the companion object of
+ * [[de.tud.cs.st.bat.resolved.analyses.IndexBasedProject]] defines the respective
  * factory method.
  *
  * ==Thread Safety==
@@ -101,6 +101,13 @@ abstract class ProjectLike[Source] extends (ObjectType ⇒ Option[ClassFile]) {
      * defines the method was added.)
      */
     def classFile(method: Method): ClassFile
+
+    /**
+     * Returns the given field's class file. This method is only defined if
+     * the field was previously added to this project. (I.e., the class file which
+     * defines the field was added.)
+     */
+    def classFile(field: Field): ClassFile
 
     /**
      * Calls the given method for class file of this project.
@@ -220,7 +227,7 @@ private object ProjectLike {
             val err = Console.err
             import err.{ println, print }
             import Console._
-            print(BOLD + MAGENTA )
+            print(BOLD + MAGENTA)
             print("Creating multiple project instances is not recommded. ")
             println("See the documentation of: ")
             println("\t"+classOf[ProjectLike[_]].getName())

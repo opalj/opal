@@ -44,11 +44,17 @@ trait CommonAttributes {
 
     protected def attributes: Attributes
 
-    def runtimeVisibleAnnotations: Option[Annotations] =
-        attributes collectFirst { case RuntimeVisibleAnnotationTable(vas) ⇒ vas }
+    def runtimeVisibleAnnotations: Annotations =
+        attributes collectFirst { case RuntimeVisibleAnnotationTable(vas) ⇒ vas } match {
+            case Some(annotations) ⇒ annotations
+            case None              ⇒ IndexedSeq.empty
+        }
 
-    def runtimeInvisibleAnnotations: Option[Annotations] =
-        attributes collectFirst { case RuntimeInvisibleAnnotationTable(ias) ⇒ ias }
+    def runtimeInvisibleAnnotations: Annotations =
+        attributes collectFirst { case RuntimeInvisibleAnnotationTable(ias) ⇒ ias } match {
+            case Some(annotations) ⇒ annotations
+            case None              ⇒ IndexedSeq.empty
+        }
 
     /**
      * True if this element was created by the compiler.

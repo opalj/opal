@@ -215,16 +215,18 @@ object ACC_ENUM extends AccessFlag {
     override def toString = "ENUM"
 }
 
+/**
+ * Convenience methods related to access flags.
+ *
+ * @author Michael Eichberg
+ */
 object AccessFlags {
 
     def toStrings(
         accessFlags: Int,
-        ctx: AccessFlagsContext,
-        sep: String = ", "): Iterator[String] = {
-        (
-            AccessFlagsIterator(accessFlags, ctx) map { accessFlag ⇒
-                accessFlag.javaName.getOrElse("["+accessFlag.toString+"]")
-            }
-        )
+        ctx: AccessFlagsContext): Iterator[String] = {
+        AccessFlagsIterator(accessFlags, ctx) map { accessFlag ⇒
+            accessFlag.javaName.getOrElse("["+accessFlag.toString+"]")
+        }
     }
 }

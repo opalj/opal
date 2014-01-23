@@ -92,24 +92,44 @@ trait PropertyTracing[+I] extends Domain[I] { domain ⇒
     override def properties(pc: Int): Option[String] =
         Option(propertiesArray(pc)).map(_.toString())
 
-    /**
-     * Called by BATAI to inform the domain that a flow between the instruction
-     * with the `currentPC` and `successorPC` will happen. 
-     */
-    override def flow(currentPC: Int, successorPC: Int): Boolean = {
-        if (propertiesArray(successorPC) eq null) {
-            propertiesArray(successorPC) = propertiesArray(currentPC)
-            true
-        } else {
-            propertiesArray(successorPC) merge propertiesArray(currentPC) match {
-                case NoUpdate ⇒ false
-                case StructuralUpdate(property) ⇒
-                    propertiesArray(successorPC) = property
-                    true
-                case MetaInformationUpdate(property) ⇒
-                    propertiesArray(successorPC) = property
-                    false
+    override def flow(
+        currentPC: PC,
+        successorPC: PC,
+        operandsArray: Array[List[DomainValue]],
+        localsArray: Array[Array[DomainValue]],
+        worklist: List[PC],
+        tracer: Option[AITracer]): List[PC] = {
+
+        val forceScheduling: Boolean = {
+            if (propertiesArray(successorPC) eq null) {
+                propertiesArray(successorPC) = propertiesArray(currentPC)
+                true
+            } else {
+                propertiesArray(successorPC) merge propertiesArray(currentPC) match {
+                    case NoUpdate ⇒ false
+                    case StructuralUpdate(property) ⇒
+                        propertiesArray(successorPC) = property
+                        true
+                    case MetaInformationUpdate(property) ⇒
+                        propertiesArray(successorPC) = property
+                        false
+                }
             }
+        }
+        if (forceScheduling && worklist.head != successorPC) {
+            val filteredList = removeFirst(worklist, successorPC)
+            if (tracer.isDefined) {
+                if (filteredList eq worklist)
+                    // the instruction was not yet scheduled for another
+                    // evaluation
+                    tracer.get.flow(currentPC, successorPC)
+                else
+                    // the instruction was just moved to the beginning
+                    tracer.get.rescheduled(currentPC, successorPC)
+            }
+            successorPC :: filteredList
+        } else {
+            worklist
         }
     }
 }

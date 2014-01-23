@@ -89,6 +89,14 @@ class IndexBasedProject[Source: reflect.ClassTag] private (
         lookupTable
     }
 
+    private[this] val classFileOfField = {
+        val lookupTable = new Array[ClassFile](Field.fieldsCount)
+        foreachClassFile { classFile: ClassFile ⇒
+            classFile.fields foreach { field ⇒ lookupTable(field.id) = classFile }
+        }
+        lookupTable
+    }
+
     import de.tud.cs.st.util.ControlAbstractions.foreachNonNullValueOf
 
     /**
@@ -123,6 +131,13 @@ class IndexBasedProject[Source: reflect.ClassTag] private (
     def method(methodID: Int): Method = methodsMap(methodID)
 
     def classFile(objectTypeID: Int): ClassFile = classesMap(objectTypeID)
+
+    /**
+     * Looks up the ClassFile that contains the given field.
+     *
+     * The complexity of this operation is O(1).
+     */
+    override def classFile(field: Field): ClassFile = classFileOfField(field.id)
 
     /**
      * Looks up the ClassFile that contains the given method.
