@@ -51,7 +51,7 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
             initialWorkList: List[PC],
             alreadyEvaluated: List[PC],
             operandsArray: Array[List[domain.DomainValue]],
-            localsArray: Array[Array[domain.DomainValue]]) {
+            localsArray: Array[Array[domain.DomainValue]]): Unit = {
         tracers.foreach(tracer ⇒
             tracer.continuingInterpretation(
                 code, domain)(
@@ -65,7 +65,7 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
         pc: PC,
         instruction: Instruction,
         operands: List[D#DomainValue],
-        locals: Array[D#DomainValue]) {
+        locals: Array[D#DomainValue]): Unit = {
         tracers.foreach(
             _.instructionEvalution(
                 domain,
@@ -75,8 +75,12 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
                 locals))
     }
 
-    def flow(currentPC: PC, targetPC: PC) {
+    def flow(currentPC: PC, targetPC: PC): Unit = {
         tracers.foreach(_.flow(currentPC, targetPC))
+    }
+
+    def rescheduled(sourcePC: PC, targetPC: PC): Unit = {
+        tracers.foreach(_.rescheduled(sourcePC, targetPC))
     }
 
     def join[D <: SomeDomain](
@@ -86,8 +90,7 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
         thisLocals: D#Locals,
         otherOperands: D#Operands,
         otherLocals: D#Locals,
-        result: Update[(D#Operands, D#Locals)],
-        forcedContinuation: Boolean) {
+        result: Update[(D#Operands, D#Locals)]): Unit = {
         tracers.foreach(
             _.join[D](
                 domain,
@@ -96,15 +99,14 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
                 thisLocals,
                 otherOperands,
                 otherLocals,
-                result,
-                forcedContinuation)
+                result)
         )
     }
 
     def abruptMethodExecution[D <: SomeDomain](
         domain: D,
         pc: Int,
-        exception: D#DomainValue) {
+        exception: D#DomainValue): Unit = {
         tracers.foreach(_.abruptMethodExecution(domain, pc, exception))
     }
 
@@ -113,7 +115,7 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
         pc: PC,
         returnAddress: PC,
         oldWorklist: List[PC],
-        newWorklist: List[PC]) {
+        newWorklist: List[PC]): Unit = {
         tracers.foreach(
             _.ret(
                 domain,
@@ -130,7 +132,7 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
         domain: D,
         pc: Int,
         returnAddress: Int,
-        subroutineInstructions: List[Int]) {
+        subroutineInstructions: List[Int]): Unit = {
         tracers.foreach(
             _.returnFromSubroutine(
                 domain,
@@ -139,7 +141,7 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
                 subroutineInstructions))
     }
 
-    def result[D <: SomeDomain](result: AIResult[D]) {
+    def result[D <: SomeDomain](result: AIResult[D]): Unit = {
         tracers.foreach(_.result(result))
     }
 }

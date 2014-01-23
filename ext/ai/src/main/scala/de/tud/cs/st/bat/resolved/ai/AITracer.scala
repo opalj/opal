@@ -54,13 +54,13 @@ import instructions._
 trait AITracer {
 
     /**
-     * Called by BATAI immediately before the (abstract) interpretation of the 
-     * specified code is performed. 
-     * 
-     * The tracer is not expected to make any changes to the data structures 
-     * (operandsArray and localsArray). If the tracer makes such changes, it is 
+     * Called by BATAI immediately before the (abstract) interpretation of the
+     * specified code is performed.
+     *
+     * The tracer is not expected to make any changes to the data structures
+     * (operandsArray and localsArray). If the tracer makes such changes, it is
      * the responsibility of the tracer to ensure that the updates are meaningful.
-     * BATAI will not perform any checks. 
+     * BATAI will not perform any checks.
      */
     def continuingInterpretation[D <: SomeDomain](
         code: Code,
@@ -68,7 +68,7 @@ trait AITracer {
             initialWorkList: List[PC],
             alreadyEvaluated: List[PC],
             operandsArray: Array[List[domain.DomainValue]],
-            localsArray: Array[Array[domain.DomainValue]]) 
+            localsArray: Array[Array[domain.DomainValue]])
 
     /**
      * Called by BATAI before an instruction is evaluated.
@@ -106,6 +106,18 @@ trait AITracer {
     def flow(currentPC: PC, targetPC: PC): Unit
 
     /**
+     * Called if the instruction with the targetPC was rescheduled. I.e., the 
+     * instruction was already scheduled for evaluation in the future, but was now
+     * rescheduled for a more immediate evaluation. I.e., it was moved to the first 
+     * position in the list that contains the instructions that will be evaluated.
+     * However, further instructions may be appended to the list before the 
+     * next `instructionEvaluation` takes place.
+     * 
+     * Recall that BATAI performs a depth-first exploration.
+     */
+    def rescheduled(sourcePC: PC, targetPC: PC): Unit
+
+    /**
      * Called by BATAI whenever two paths converge and the values on the operand stack
      * and the registers are joined.
      *
@@ -125,8 +137,7 @@ trait AITracer {
         thisLocals: D#Locals,
         otherOperands: D#Operands,
         otherLocals: D#Locals,
-        result: Update[(D#Operands, D#Locals)],
-        forcedContinuation: Boolean)
+        result: Update[(D#Operands, D#Locals)])
 
     /**
      * Called when the analyzed method throws an exception (i.e., the interpreter

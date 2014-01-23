@@ -37,15 +37,15 @@ package ai
 
 import instructions._
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
-
 import scala.util.control.ControlThrowable
+import scala.annotation.tailrec
 
 /**
  * A highly-configurable abstract interpreter for BAT's resolved representation of Java
  * bytecode.
  *
  * This interpreter basically traverses all instructions of a method in depth-first order
- * and computes the result of each instruction using an exchangeable
+ * and evaluates each instruction using an exchangeable
  * [[de.tud.cs.st.bat.resolved.ai.Domain]].
  *
  * ==Interacting with BATAI==
@@ -72,9 +72,9 @@ import scala.util.control.ControlThrowable
  *
  * @note
  *     BATAI does not make assumptions about the number of domain objects that
- *     are used. However, if a single domain is used by multiple abstract interpreters,
- *     the domain has to be thread-safe. The latter is trivially the case when the domain
- *     object itself does not have any state.
+ *     are used. However, if a single domain is used by multiple abstract interpreters that
+ *     are executed concurrently, the domain has to be thread-safe. 
+ *     The latter is trivially the case when the domain object itself does not have any state.
  *
  * @author Michael Eichberg
  */
@@ -107,8 +107,8 @@ trait AI[D <: SomeDomain] {
     def isInterrupted: Boolean = false
 
     /**
-     * The tracer (default: `None`) that is used by BATAI for reporting the current
-     * operation.
+     * The tracer (default: `None`) that is called by BATAI during the abstract
+     * interpretation of a method.
      *
      * This method is called by BATAI at various different points (see
      * [[de.tud.cs.st.bat.resolved.ai.AITracer]]) to report the analysis progress.
@@ -316,7 +316,7 @@ trait AI[D <: SomeDomain] {
      *      Each value in the array contains the local variable assignments before
      *      the instruction with the corresponding program counter is executed.
      *      '''The `localsArray` data structure is mutated by BATAI and it is therefore
-     *      _highly recommended that no `Domain` directly mutates the state of
+     *      __highly recommended that no `Domain` directly mutates the state of
      *      this array__.'''
      */
     protected[ai] def continueInterpretation(
@@ -363,51 +363,63 @@ trait AI[D <: SomeDomain] {
             targetPC: PC,
             operands: Operands,
             locals: Locals) {
-            val doGotoTarget: Boolean = {
-                val forceContinuation = domain.flow(sourcePC, targetPC)
-                val currentOperands = operandsArray(targetPC)
-                if (currentOperands == null /* || localsArray(targetPC) == null )*/ ) {
-                    // we analyze the instruction for the first time ...
-                    operandsArray(targetPC) = operands
-                    localsArray(targetPC) = locals
-                    true // => do goto target
-                } else {
-                    val currentLocals = localsArray(targetPC)
-                    val mergeResult = domain.join(
-                        targetPC, currentOperands, currentLocals, operands, locals
-                    )
-                    if (tracer.isDefined) tracer.get.join[domain.type](
-                        domain,
-                        targetPC, currentOperands, currentLocals, operands, locals,
-                        mergeResult,
-                        forceContinuation
-                    )
-                    mergeResult match {
-                        case NoUpdate ⇒
-                            forceContinuation
-                        case StructuralUpdate((updatedOperands, updatedLocals)) ⇒
-                            operandsArray(targetPC) = updatedOperands
-                            localsArray(targetPC) = updatedLocals
-                            true // => do goto target
-                        case MetaInformationUpdate((updatedOperands, updatedLocals)) ⇒
-                            operandsArray(targetPC) = updatedOperands
-                            localsArray(targetPC) = updatedLocals
-                            forceContinuation
-                    }
-                }
-            }
-            if (doGotoTarget) {
+            // The worklist containing the PC is manipulated ...:
+            // - here (by this method)
+            // - by the JSR / RET instructions
+            // - the main loop that processes the worklist
+
+            val currentOperands = operandsArray(targetPC)
+            if (currentOperands == null /* || localsArray(targetPC) == null )*/ ) {
+                // we analyze the instruction for the first time ...
+                operandsArray(targetPC) = operands
+                localsArray(targetPC) = locals
                 worklist = targetPC :: worklist
                 if (tracer.isDefined) tracer.get.flow(sourcePC, targetPC)
-            }
-        }
+            } else {
+                val currentLocals = localsArray(targetPC)
+                val mergeResult = domain.join(
+                    targetPC, currentOperands, currentLocals, operands, locals
+                )
+                if (tracer.isDefined) tracer.get.join[domain.type](
+                    domain,
+                    targetPC,
+                    currentOperands, currentLocals, operands, locals,
+                    mergeResult
+                )
+                mergeResult match {
+                    case NoUpdate ⇒
+                        false
+                    case StructuralUpdate((updatedOperands, updatedLocals)) ⇒
+                        operandsArray(targetPC) = updatedOperands
+                        localsArray(targetPC) = updatedLocals
+                        // we want depth-first evaluation
+                        val filteredList = removeFirst(worklist, targetPC)
+                        worklist = targetPC :: filteredList
+                        if (tracer.isDefined) {
+                            if (filteredList eq worklist)
+                                // the instruction was not yet scheduled for another
+                                // evaluation
+                                tracer.get.flow(sourcePC, targetPC)
+                            else
+                                // the instruction was just moved to the beginning
+                                tracer.get.rescheduled(sourcePC, targetPC)
+                        }
 
-        def gotoTargets(
-            sourcePC: PC,
-            targetPCs: Iterable[PC],
-            operands: Operands,
-            locals: Locals) {
-            targetPCs.foreach(gotoTarget(sourcePC, _, operands, locals))
+                    case MetaInformationUpdate((updatedOperands, updatedLocals)) ⇒
+                        operandsArray(targetPC) = updatedOperands
+                        localsArray(targetPC) = updatedLocals
+                        // we want depth-first evaluation
+                        val filteredList = removeFirst(worklist, targetPC)
+                        if (filteredList ne worklist) {
+                            worklist = targetPC :: filteredList
+                            if (tracer.isDefined)
+                                tracer.get.rescheduled(sourcePC, targetPC)
+                        }
+                }
+            }
+
+            worklist = domain.flow(
+                sourcePC, targetPC, operandsArray, localsArray, worklist, tracer)
         }
 
         while (worklist.nonEmpty) {
@@ -424,7 +436,11 @@ trait AI[D <: SomeDomain] {
                 return result
             }
             try {
-                // the worklist is manipulated here and by the JSR / RET instructions 
+                // The central worklist containing the PC is manipulated at the following
+                // places:
+                // - here 
+                // - by the JSR / RET instructions
+                // - by the "gotoTarget" method
                 val pc: Int = {
                     // Check if we we have a return from the evaluation of a subroutine.
                     // I.e., all paths in a subroutine are explored and we know all
@@ -453,7 +469,7 @@ trait AI[D <: SomeDomain] {
                                     returnAddress,
                                     evaluated.takeWhile { pc ⇒
                                         val opcode = instructions(pc).opcode
-                                        opcode != 168 && opcode != 201
+                                        opcode != 168 /*JSR*/ && opcode != 201 /*JSR_W*/
                                     }
                                 )
                             val updatedLocals = locals.updated(lvIndex, null.asInstanceOf[domain.DomainValue])
@@ -468,12 +484,14 @@ trait AI[D <: SomeDomain] {
                             localsArray(previousInstruction) = null
                             previousInstruction = evaluated.head; evaluated = evaluated.tail
                             previousInstructionOpcode = instructions(previousInstruction).opcode
-                        } while (previousInstructionOpcode != 168 &&
-                            previousInstructionOpcode != 201)
+                        } while (previousInstructionOpcode != 168 /*JSR*/ &&
+                            previousInstructionOpcode != 201 /*JSR_W*/ )
 
                         // it may be possible that – after the return from a 
                         // call to a subroutine – we have nothing further to do and
-                        // the computation ends
+                        // the computation ends (in the bytecode there is at least
+                        // one further instruction, but we may evaluated that one 
+                        // already and the evaluation context didn't change).
                         if (worklist.isEmpty) {
                             val result = AIResultBuilder.completed(
                                 code,
@@ -714,6 +732,7 @@ trait AI[D <: SomeDomain] {
                     //
                     // UNCONDITIONAL TRANSFER OF CONTROL
                     //
+
                     case 167 /*goto*/
                         | 200 /*goto_w*/ ⇒
                         val branchtarget = pc + as[UnconditionalBranchInstruction](instruction).branchoffset
@@ -732,7 +751,7 @@ trait AI[D <: SomeDomain] {
                     //      present in the subroutine call chain. (Subroutines can be 
                     //      nested when using try-finally constructs from within a 
                     //      finally clause.)
-                    // - Each instance of type return Address can be returned to at most
+                    // - Each instance of type return address can be returned to at most
                     //      once.
                     case 168 /*jsr*/
                         | 201 /*jsr_w*/ ⇒
@@ -1664,11 +1683,11 @@ trait AI[D <: SomeDomain] {
                         val objectref = operands.head
                         val supertype = instruction.asInstanceOf[CHECKCAST].referenceType
                         if (isNull(objectref).yes)
+                            // if objectref is null => UNCHANGED (see spec. for details)
                             fallThrough()
                         else
                             isSubtypeOf(objectref, supertype) match {
                                 case Yes ⇒
-                                    // if objectref is null => UNCHANGED (see spec. for details)
                                     // if objectref is a subtype => UNCHANGED
                                     fallThrough()
                                 case No ⇒

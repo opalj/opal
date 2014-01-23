@@ -728,12 +728,12 @@ trait Domain[+I] {
     /**
      * Factory method to create a `DomainValue` that represents a new, '''initialized'''
      * object of the given type and that was created (explicitly or implicitly) by the
-     * instruction with the specified program counter. 
-     * 
+     * instruction with the specified program counter.
+     *
      * ==General Remarks==
-     * The given type usually identifies a class type (not an interface type) that is 
-     * not abstract, but in some cases (e.g. consider `java.awt.Toolkit()`) 
-     * it may be useful/meaningful to relax this requirement and to state that the 
+     * The given type usually identifies a class type (not an interface type) that is
+     * not abstract, but in some cases (e.g. consider `java.awt.Toolkit()`)
+     * it may be useful/meaningful to relax this requirement and to state that the
      * class precisely represents the runtime type – even
      * so the class is abstract. However, such decisions need to be made by the domain.
      *
@@ -1645,28 +1645,64 @@ trait Domain[+I] {
     /**
      * '''Called by BATAI after performing a computation'''; that is, after
      * evaluating the effect of the instruction with `currentPC` on the stack and register.
-     * This function basically informs the domain about which instruction(s)
-     * will be executed next. The flow function is always called one or more times
-     * (e.g., in case of `if` or `switch` instructions) after the evaluation of some
-     * instruction (even those that are domain independent such as `dup` and `xLoad`
-     * which `just` manipulate the registers and stack in a generic way).
+     * This function basically informs the domain about the instruction that
+     * will be evaluated in the future. The flow function is called for every possible
+     * successor of the instruction with the `currentPC`. In some cases it may even be
+     * the case that the flow function is called multiple times with the same pair
+     * of program counters: (`currentPC`, `successorPC`). This may happen, e.g., in case
+     * of a switch instruction where multiple values have the same body/target instruction.
+     * E.g., as in the following snippet:
+     * {{{
+     * switch (i) {
+     * case 1:
+     * case 2:
+     * case 3: System.out.println("Great.");
+     * default: System.out.println("Not So Great.");
+     * }
+     * }}}
+     * The flow function is also called after instructions that are domain independent
+     * such as `dup` and `xLoad` instructions which ''just'' manipulate the registers
+     * and stack in a generic way.
      * This enables the domain to precisely follow the evaluation
      * progress and in particular to perform control-flow dependent analyses.
      *
-     * The `flow` method is called before the `join` method. Hence, if the abstract
-     * state that is associated with the instruction with the program counter
-     * `successorPC` does not change and this function does not return `true` the
-     * path will not be followed.
-     *
-     * @return The return value determines whether the abstract interpreter has to
-     *      schedule the interpretation of the instruction with the given
-     *      program counter `successorPC`.
-     *      In general, this method is expected to return `false`. In this case the
-     *      abstract interpreter will only schedule the interpretation of the successor
-     *      instruction when the abstract state has changed when compared to its previous
-     *      state.
+     * @param currentPC The program counter of the instruction that is evaluated.
+     * @param successorPC The program counter of an instruction that is a potential
+     *      successor of the instruction with `currentPC`. If the had of the
+     *      given `worklist` is not `successorPC` the abstract interpreter did
+     *      not (again) schedule the evaluation of the instruction with `successorPC`.
+     *      This means that the instruction was evaluated in the past and that
+     *      the abstract did not change in a way that a reevaluation is (from the point
+     *      of view of the AI) not necessary.
+     * @param operandsArray The array that associates every instruction with its
+     *      operand stack that is in effect.  Note, that only those elements of the
+     *      array contain values that are related to instructions. The other elements
+     *      are `null`.
+     * @param localsArray The array that associates every instruction with its current
+     *      register values. Note, that only those elements of the
+     *      array contain values that are related to instructions. The other elements
+     *      are `null`.
+     * @param worklist The current list of instructions that will be evaluated next.
+     * @return The updated worklist. In most cases this is simply the given `worklist`.
+     *      However, if you want to force the evaluation of the instruction
+     *      with the pc `successorPC`, it is sufficient to test whether the list already
+     *      contains `successorPC` and – if not – to prepend it. If the worklist
+     *      already contains `successorPC`, the domain is always allowed to move
+     *      the PC to the beginning of the worklist.
+     *      If the domain updates the worklist, it is the responsibility of the domain
+     *      to call the tracer and to inform it about the changes.
+     *      Note that the worklist is not allowed to contain duplicates.
+     * @note The domain is allowed to modify the `worklist`, `operandsArray` and 
+     *      `localsArray. However, the AI will not check that all constraints 
+     *      are satisfied.    
      */
-    def flow(currentPC: PC, successorPC: PC): Boolean = false
+    def flow(
+        currentPC: PC,
+        successorPC: PC,
+        operandsArray: Array[List[DomainValue]],
+        localsArray: Array[Array[DomainValue]],
+        worklist: List[PC],
+        tracer: Option[AITracer]): List[PC] = worklist
 
     /**
      * Creates a summary of the given domain values. For the precise details

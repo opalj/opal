@@ -77,10 +77,19 @@ trait ConsoleTracer extends AITracer {
             alreadyEvaluated: List[PC],
             operandsArray: Array[List[domain.DomainValue]],
             localsArray: Array[Array[domain.DomainValue]]) {
-        println(Console.BLACK_B+Console.WHITE+"Starting Code Analysis"+Console.RESET)
+        println(Console.BLACK_B + Console.WHITE+"Starting Code Analysis"+Console.RESET)
         println("Number of registers:      "+code.maxLocals)
         println("Size of operand stack:    "+code.maxStack)
         //println("Program counters:         "+code.programCounters.mkString(", "))     
+    }
+
+    def rescheduled(sourcePC: PC, targetPC: PC): Unit = {
+        println(
+            Console.CYAN_B +
+                Console.RED+
+                "rescheduled the evaluation of the instruction with the program counter: "+
+                targetPC +
+                Console.RESET)
     }
 
     def flow(currentPC: PC, targetPC: PC) { /* ignored */ }
@@ -92,14 +101,13 @@ trait ConsoleTracer extends AITracer {
         thisLocals: D#Locals,
         otherOperands: D#Operands,
         otherLocals: D#Locals,
-        result: Update[(D#Operands, D#Locals)],
-        forcedContinuation: Boolean): Unit = {
+        result: Update[(D#Operands, D#Locals)]): Unit = {
 
         print(Console.BLUE + pc+": MERGE :")
         result match {
-            case NoUpdate ⇒ println("no changes; forced continuation="+forcedContinuation)
+            case NoUpdate ⇒ println("no changes")
             case u @ SomeUpdate((updatedOperands, updatedLocals)) ⇒
-                println(u.updateType+"; forced continuation="+forcedContinuation)
+                println(u.updateType)
                 println(
                     thisOperands.
                         zip(otherOperands).
