@@ -260,6 +260,17 @@ final class ClassFile private (
             case _               ⇒ false
         }
 
+    override def toString: String = {
+        "ClassFile(\n\t"+
+            AccessFlags.toStrings(accessFlags, AccessFlagsContexts.CLASS).mkString("", " ", " ") +
+            thisType.toJava+"\n"+
+            superclassType.map("\textends "+_.toJava+"\n").getOrElse("") +
+            (if (interfaceTypes.nonEmpty) interfaceTypes.mkString("\t", "with", "\n") else "") +
+            annotationsToJava(runtimeVisibleAnnotations, "\t", "\n") +
+            annotationsToJava(runtimeInvisibleAnnotations, "\t", "\n")+
+            "\t{version="+majorVersion+"."+minorVersion+"}\n)"
+    }
+
     protected[resolved] def updateAttributes(newAttributes: Attributes): ClassFile = {
         new ClassFile(
             this.minorVersion, this.majorVersion, this.accessFlags,
