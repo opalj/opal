@@ -73,7 +73,7 @@ import scala.annotation.tailrec
  * @note
  *     BATAI does not make assumptions about the number of domain objects that
  *     are used. However, if a single domain is used by multiple abstract interpreters that
- *     are executed concurrently, the domain has to be thread-safe. 
+ *     are executed concurrently, the domain has to be thread-safe.
  *     The latter is trivially the case when the domain object itself does not have any state.
  *
  * @author Michael Eichberg
@@ -387,8 +387,8 @@ trait AI[D <: SomeDomain] {
                     mergeResult
                 )
                 mergeResult match {
-                    case NoUpdate ⇒
-                        false
+                    case NoUpdate ⇒ /* nothing to do*/
+
                     case StructuralUpdate((updatedOperands, updatedLocals)) ⇒
                         operandsArray(targetPC) = updatedOperands
                         localsArray(targetPC) = updatedLocals
