@@ -124,15 +124,15 @@ class DefaultPreciseReferenceValuesTest
 
     it should ("represent both values after a merge of two independent value") in {
         val IsReferenceValue(values) = typeOfValue(ref1MergeRef2)
-        values should contain(ref1)
-        values should contain(ref2)
+        values.exists(_ == ref1) should be(true)
+        values.exists(_ == ref2) should be(true)
     }
 
     it should ("represent all three values when we merge \"some value\" with another \"value\"") in {
         val IsReferenceValue(values) = typeOfValue(ref1MergeRef2MergeRef3)
-        values should contain(ref1)
-        values should contain(ref2)
-        values should contain(ref3)
+        values.exists(_ == ref1) should be(true)
+        values.exists(_ == ref2) should be(true)
+        values.exists(_ == ref3) should be(true)
     }
 
     it should ("be able to merge two value sets that contain equal values") in {

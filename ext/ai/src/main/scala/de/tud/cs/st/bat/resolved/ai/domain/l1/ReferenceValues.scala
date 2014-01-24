@@ -496,7 +496,7 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
                         this.pc == that.pc &&
                         this.isPrecise == that.isPrecise &&
                         this.isNull == that.isNull &&
-                        (this.upperTypeBound eq that.upperTypeBound)
+                        (this.theUpperTypeBound eq that.theUpperTypeBound)
                     )
                 )
                 case _ ⇒ false
