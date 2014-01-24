@@ -387,6 +387,10 @@ class ClassHierarchy private (
         }
     }
 
+    /**
+     * Returns the immediate superclass of the given object type, if the given
+     * type is known and if it has a superclass.
+     */
     def superclassType(objectType: ObjectType): Option[ObjectType] = {
         if (isKnown(objectType)) {
             val superclassType = superclassTypeMap(objectType.id)
