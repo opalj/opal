@@ -202,7 +202,7 @@ trait AI[D <: SomeDomain] {
             if (!method.isStatic) {
                 val thisType = classFile.thisType
                 val thisValue =
-                    domain.NonNullReferenceValue(origin(localVariableIndex), thisType)
+                    domain.NonNullObjectValue(origin(localVariableIndex), thisType)
                 locals.update(localVariableIndex, thisValue)
                 localVariableIndex += 1 /*==thisType.computationalType.operandSize*/
             }
@@ -899,7 +899,7 @@ trait AI[D <: SomeDomain] {
                             // if the operand of the athrow exception is null, a new 
                             // NullPointerException is raised by the JVM
                             handleException(
-                                InitializedObject(pc, ObjectType.NullPointerException)
+                                InitializedObjectValue(pc, ObjectType.NullPointerException)
                             )
                         }
                         if (isExceptionValueNull.maybeNo) {
@@ -1688,18 +1688,19 @@ trait AI[D <: SomeDomain] {
                         if (isNull(objectref).yes)
                             // if objectref is null => UNCHANGED (see spec. for details)
                             fallThrough()
-                        else
+                        else {
+                            import ObjectType.ClassCastException
                             isValueSubtypeOf(objectref, supertype) match {
                                 case Yes ⇒
                                     // if objectref is a subtype => UNCHANGED
                                     fallThrough()
                                 case No ⇒
                                     handleException(
-                                        InitializedObject(pc, ObjectType.ClassCastException)
+                                        InitializedObjectValue(pc, ClassCastException)
                                     )
                                 case Unknown ⇒
                                     handleException(
-                                        InitializedObject(pc, ObjectType.ClassCastException)
+                                        InitializedObjectValue(pc, ClassCastException)
                                     )
                                     val (newOperands, newLocals) =
                                         establishUpperBound(
@@ -1710,6 +1711,7 @@ trait AI[D <: SomeDomain] {
                                             locals)
                                     fallThrough(newOperands, newLocals)
                             }
+                        }
 
                     //
                     // "OTHER" INSTRUCTIONS

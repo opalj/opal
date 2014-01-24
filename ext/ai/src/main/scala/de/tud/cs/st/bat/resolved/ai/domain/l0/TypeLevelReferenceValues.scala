@@ -783,9 +783,77 @@ trait TypeLevelReferenceValues[+I]
 
     // -----------------------------------------------------------------------------------
     //
-    // ADDITIONAL FACTORY METHODS
+    // FACTORY METHODS
     //
     // -----------------------------------------------------------------------------------
+
+    //
+    // REFINEMENT OF EXISTING DOMAIN VALUE FACTORY METHODS
+    //
+
+    override def NullValue(pc: PC): DomainNullValue
+
+    override def ReferenceValue(
+        pc: PC,
+        upperTypeBound: ReferenceType): DomainReferenceValue = {
+        if (upperTypeBound.isArrayType)
+            ArrayValue(pc, upperTypeBound.asArrayType)
+        else
+            ObjectValue(pc, upperTypeBound.asObjectType)
+    }
+
+    override def NonNullObjectValue(pc: PC, objectType: ObjectType): DomainObjectValue =
+        ObjectValue(pc, objectType)
+
+    override def NewObject(pc: PC, objectType: ObjectType): DomainObjectValue =
+        ObjectValue(pc, objectType)
+
+    override def InitializedObjectValue(pc: PC, objectType: ObjectType): DomainObjectValue =
+        ObjectValue(pc, objectType)
+
+    override def StringValue(pc: PC, value: String): DomainObjectValue =
+        ObjectValue(pc, ObjectType.String)
+
+    override def ClassValue(pc: PC, t: Type): DomainObjectValue =
+        ObjectValue(pc, ObjectType.Class)
+
+    //
+    // DECLARATION OF ADDITIONAL DOMAIN VALUE FACTORY METHODS
+    //
+
+    /**
+     * Factory method to create a `DomainValue` that represents ''either an class-/interface
+     * value that has the given type or the value `null`''. However, the
+     * information whether the value is `null` or not is not available. Furthermore, the
+     * type may also just be an upper bound and it is not known if the value is
+     * properly initialized.
+     *
+     * ==Summary==
+     * The properties of the domain value are:
+     *
+     *  - Initialized: '''Unknown'''
+     *  - Type: '''Upper Bound'''
+     *  - Null: '''Unknown'''
+     *  - Content: '''Unknown'''
+     */
+    protected[domain] def ObjectValue(pc: PC, objectType: ObjectType): DomainObjectValue
+
+    /**
+     * Factory method to create a `DomainValue` that represents ''either an class-/interface
+     * value that has the given types as an upper bound or the value `null`''. However, the
+     * information whether the value is `null` or not is not available. Furthermore, the
+     * type may also just be an upper bound and it is not known if the value is
+     * properly initialized.
+     *
+     * ==Summary==
+     * The properties of the domain value are:
+     *
+     *  - Initialized: '''Unknown''' (i.e., it is not guaranteed that the constructor was called.)
+     *  - Type: '''Upper Bound'''
+     *  - Null: '''Unknown'''
+     *  - Content: '''Unknown'''
+     */
+    protected[domain] def ObjectValue(pc: PC, upperTypeBound: UIDList[ObjectType]): DomainObjectValue
 
     /**
      * Factory method to create a new domain value that represents a newly created
@@ -801,8 +869,10 @@ trait TypeLevelReferenceValues[+I]
      *  - Type: '''Precise'''
      *  - Null: '''No'''
      *  - Size: '''Count'''
+     *  - Content: '''Empty'''
      */
-    def NewArray(pc: PC, count: DomainValue, arrayType: ArrayType): DomainArrayValue
+    def NewArray(pc: PC, count: DomainValue, arrayType: ArrayType): DomainArrayValue =
+        ArrayValue(pc, arrayType)
 
     /**
      * Factory method to create a new domain value that represents a newly created
@@ -817,10 +887,11 @@ trait TypeLevelReferenceValues[+I]
      *
      *  - Type: '''Precise'''
      *  - Null: '''No'''
-     *  - Size: '''Counts''' (for the number of dimension for which a
-     *  					value (count) is given)
+     *  - Size: '''Depending on the values in `counts`'''
+     *  - Content: '''Empty'''
      */
-    def NewArray(pc: PC, counts: List[DomainValue], arrayType: ArrayType): DomainArrayValue
+    def NewArray(pc: PC, counts: List[DomainValue], arrayType: ArrayType): DomainArrayValue =
+        ArrayValue(pc, arrayType)
 
     /**
      * Creates a new `DomainValue` that represents an array value with unknown
@@ -837,11 +908,11 @@ trait TypeLevelReferenceValues[+I]
      *  - Type: '''Upper Bound'''
      *  - Null: '''Unknown'''
      *  - Size: '''Unknown'''
-     *
+     *  - Content: '''Unknown'''
      * @note Java Arrays are covariant. I.e., `Object[] a = new Serializable[100];`
      *      is valid.
      */
-    def ArrayValue(pc: PC, arrayType: ArrayType): DomainArrayValue
+    protected[domain] def ArrayValue(pc: PC, arrayType: ArrayType): DomainArrayValue
 
     // -----------------------------------------------------------------------------------
     //

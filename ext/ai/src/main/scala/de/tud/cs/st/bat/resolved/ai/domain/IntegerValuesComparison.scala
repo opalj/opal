@@ -39,15 +39,16 @@ package domain
 import de.tud.cs.st.util.Answer
 
 /**
- * Optional functionality related to integer values that is not required by the BATAI
- * core.
+ * Optional functionality related to extracting a concrete integer value from some
+ * domain value with computational type integer that is not required by the BATAI core.
  *
  * @author Michael Eichberg
  */
 trait IntegerValuesComparison { this: SomeDomain ⇒
 
     /**
-     * Tests if the given value is in the range `[lowerBound, upperBound]`. I.e., both
+     * Tests if the given value, which has to have computational type integer,
+     * is in the range `[lowerBound, upperBound]`. I.e., both
      * bounds are inclusive.
      */
     def isSomeValueInRange(

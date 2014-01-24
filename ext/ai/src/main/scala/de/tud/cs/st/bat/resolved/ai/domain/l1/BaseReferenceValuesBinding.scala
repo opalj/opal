@@ -48,8 +48,9 @@ trait BaseReferenceValuesBinding[+I] extends l1.ReferenceValues[I] {
     domain: Configuration with IntegerValuesComparison with ClassHierarchy ⇒
 
     // Let's fix the type hierarchy
-    
+
     type DomainReferenceValue = ReferenceValue
+
 
     type DomainSingleOriginReferenceValue = SingleOriginReferenceValue
     type DomainNullValue = NullValue
@@ -62,75 +63,37 @@ trait BaseReferenceValuesBinding[+I] extends l1.ReferenceValues[I] {
     // FACTORY METHODS
     //
 
-    override def NullValue(pc: PC): DomainNullValue = new NullValue(pc)
+    override def NullValue(pc: PC): DomainNullValue =
+        new NullValue(pc)
 
-    override def NonNullReferenceValue(pc: PC, objectType: ObjectType): DomainReferenceValue =
-        ObjectValue(pc, No, false, objectType)
-
-    def ArrayValue(
+    override protected[domain] def ObjectValue(
         pc: PC,
         isNull: Answer,
         isPrecise: Boolean,
-        theUpperTypeBound: ArrayType): SingleOriginReferenceValue = {
-        new ArrayValue(pc, isNull, isPrecise, theUpperTypeBound)
-    }
-
-    override def ObjectValue(pc: PC, objectType: ObjectType): DomainSingleOriginReferenceValue =
-        ObjectValue(pc, Unknown, false, objectType)
-
-    def ObjectValue(
-        pc: PC,
-        isNull: Answer,
-        isPrecise: Boolean,
-        theUpperTypeBound: ObjectType): DomainSingleOriginReferenceValue = {
+        theUpperTypeBound: ObjectType): DomainObjectValue =
         new SObjectValue(pc, isNull, isPrecise, theUpperTypeBound)
-    }
 
-    def MultipleReferenceValues(
-        values: scala.collection.Set[SingleOriginReferenceValue]): DomainMultipleReferenceValues = {
-        new MultipleReferenceValues(values)
-    }
-
-    def ReferenceValue(
+    override protected[domain] def ObjectValue(
         pc: PC,
         isNull: Answer,
-        isPrecise: Boolean,
-        theUpperTypeBound: ReferenceType): ReferenceValue = {
-        theUpperTypeBound match {
-            case arrayType: ArrayType   ⇒ ArrayValue(pc, isNull, isPrecise, arrayType)
-            case objectType: ObjectType ⇒ ObjectValue(pc, isNull, isPrecise, objectType)
-        }
-    }
-
-    override def ReferenceValue(pc: PC, upperTypeBound: UIDList[ObjectType]): ReferenceValue = {
+        upperTypeBound: UIDList[ObjectType]): DomainObjectValue = {
         assume(upperTypeBound.nonEmpty)
         if (upperTypeBound.tail.isEmpty)
-            ReferenceValue(pc, upperTypeBound.head)
+            ObjectValue(pc, isNull, false, upperTypeBound.head)
         else
-            ReferenceValue(pc, Unknown, upperTypeBound)
+            new MObjectValue(pc, isNull, upperTypeBound)
     }
 
-    def ReferenceValue(
+    override protected[domain] def ArrayValue(
         pc: PC,
         isNull: Answer,
-        upperTypeBound: UIDList[ObjectType]): SingleOriginReferenceValue = {
+        isPrecise: Boolean,
+        theUpperTypeBound: ArrayType): DomainArrayValue =
+        new ArrayValue(pc, isNull, isPrecise, theUpperTypeBound)
 
-        new MObjectValue(pc, isNull, upperTypeBound)
-    }
-
-    override def NewObject(pc: PC, objectType: ObjectType): ReferenceValue =
-        ObjectValue(pc, No, true, objectType)
-
-    override def InitializedObject(pc: PC, referenceType: ReferenceType): ReferenceValue =
-        if (referenceType.isArrayType)
-            ArrayValue(pc, No, true, referenceType.asArrayType)
-        else
-            ObjectValue(pc, No, true, referenceType.asObjectType)
-
-    override def StringValue(pc: PC, value: String): DomainValue =
-        ObjectValue(pc, No, true, ObjectType.String)
-
-    override def ClassValue(pc: PC, t: Type): DomainValue =
-        ObjectValue(pc, No, true, ObjectType.Class)
+    override protected[domain] def MultipleReferenceValues(
+        values: scala.collection.Set[SingleOriginReferenceValue]): DomainMultipleReferenceValues =
+        new MultipleReferenceValues(values)
 
 }
+

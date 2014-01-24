@@ -39,22 +39,14 @@ package domain
 /**
  * @author Michael Eichberg
  */
-trait Origin { this : SomeDomain => 
+trait Origin { this: SomeDomain ⇒
 
-    trait SingleOriginValue  {
+    trait SingleOriginValue {
         def pc: PC
-    }
-
-    object SingleOriginValue {
-        def unapply(value: SingleOriginValue): Option[PC] = Some(value.pc)
     }
 
     trait MultipleOriginsValue {
         def pcs: Iterable[PC]
-    }
-
-    object MultipleOriginsValue {
-        def unapply(value: MultipleOriginsValue): Option[Iterable[PC]] = Some(value.pcs)
     }
 
     /**
@@ -69,8 +61,8 @@ trait Origin { this : SomeDomain =>
      */
     def origin(value: DomainValue): Iterable[PC] =
         value match {
-            case SingleOriginValue(pc)     ⇒ Iterable[PC](pc)
-            case MultipleOriginsValue(pcs) ⇒ pcs
+            case sov: SingleOriginValue    ⇒ Iterable[PC](sov.pc)
+            case mov: MultipleOriginsValue ⇒ mov.pcs
             case _                         ⇒ Iterable.empty
         }
 

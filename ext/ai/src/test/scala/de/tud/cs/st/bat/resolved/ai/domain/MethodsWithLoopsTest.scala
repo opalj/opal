@@ -33,7 +33,7 @@
 package de.tud.cs.st.bat
 package resolved
 package ai
-package base
+package domain
 
 import reader.Java7Framework
 

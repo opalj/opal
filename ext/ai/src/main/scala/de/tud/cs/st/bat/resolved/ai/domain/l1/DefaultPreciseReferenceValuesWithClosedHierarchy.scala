@@ -41,29 +41,29 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 import analyses.ClassHierarchy
 
-/**
- * Mixin in this trait makes sense if all class files belonging to a project are analyzed
- * and at runtime no further subclasses will show up. It makes sense – in particular –
- * when analyzing applications.
- */
-trait DefaultPreciseReferenceValuesWithClosedHierarchy[+I]
-        extends DefaultPreciseReferenceValues[I] {
-
-    def classHierarchy: ClassHierarchy
-
-    override def AReferenceValue(
-        pc: PC,
-        upperTypeBound: UpperTypeBound,
-        isNull: Answer,
-        isPrecise: Boolean): AReferenceValue = {
-        if (!isPrecise && upperTypeBound.size == 1) {
-            upperTypeBound.head match {
-                case ot: ObjectType ⇒
-                    val isPrecise = classHierarchy.hasSubtypes(ot).no
-                    AReferenceValue(-1, upperTypeBound, isNull, isPrecise)
-                case _ ⇒ super.AReferenceValue(pc, upperTypeBound, isNull, isPrecise)
-            }
-        } else
-            super.AReferenceValue(pc, upperTypeBound, isNull, isPrecise)
-    }
-}
+///**
+// * Mixin in this trait makes sense if all class files belonging to a project are analyzed
+// * and at runtime no further subclasses will show up. It makes sense – in particular –
+// * when analyzing applications.
+// */
+//trait DefaultPreciseReferenceValuesWithClosedHierarchy[+I]
+//        extends DefaultPreciseReferenceValues[I] {
+//
+//    def classHierarchy: ClassHierarchy
+//
+//    override def AReferenceValue(
+//        pc: PC,
+//        upperTypeBound: UpperTypeBound,
+//        isNull: Answer,
+//        isPrecise: Boolean): AReferenceValue = {
+//        if (!isPrecise && upperTypeBound.size == 1) {
+//            upperTypeBound.head match {
+//                case ot: ObjectType ⇒
+//                    val isPrecise = classHierarchy.hasSubtypes(ot).no
+//                    AReferenceValue(-1, upperTypeBound, isNull, isPrecise)
+//                case _ ⇒ super.AReferenceValue(pc, upperTypeBound, isNull, isPrecise)
+//            }
+//        } else
+//            super.AReferenceValue(pc, upperTypeBound, isNull, isPrecise)
+//    }
+//}

@@ -320,14 +320,7 @@
 //            }
 //
 //    }
-//
-//    // TODO place in some special "Origin trait" to make the method abstract overridable!
-//    def origin(value: DomainValue): Iterable[Int] = value match {
-//        case aRefVal: AReferenceValue        ⇒ Iterable[Int](aRefVal.pc)
-//        case MultipleReferenceValues(values) ⇒ values.map(aRefVal ⇒ aRefVal.pc)
-//        case _                               ⇒ Iterable.empty[Int] // TODO replace with super call as soon as this method becomes abstract override 
-//    }
-//
+
 //    /**
 //     * Extractor for `AReferenceValue`s.
 //     */

@@ -464,19 +464,19 @@ trait Domain[+I] {
         ThrowsException(value)
 
     def ClassCastException(pc: PC): ExceptionValue =
-        InitializedObject(pc, ObjectType.ClassCastException)
+        InitializedObjectValue(pc, ObjectType.ClassCastException)
 
     def NullPointerException(pc: PC): ExceptionValue =
-        InitializedObject(pc, ObjectType.NullPointerException)
+        InitializedObjectValue(pc, ObjectType.NullPointerException)
 
     def NegativeArraySizeException(pc: PC): ExceptionValue =
-        InitializedObject(pc, ObjectType.NegativeArraySizeException)
+        InitializedObjectValue(pc, ObjectType.NegativeArraySizeException)
 
     def ArrayIndexOutOfBoundsException(pc: PC): ExceptionValue =
-        InitializedObject(pc, ObjectType.ArrayIndexOutOfBoundsException)
+        InitializedObjectValue(pc, ObjectType.ArrayIndexOutOfBoundsException)
 
     def ArrayStoreException(pc: PC): ExceptionValue =
-        InitializedObject(pc, ObjectType.ArrayStoreException)
+        InitializedObjectValue(pc, ObjectType.ArrayStoreException)
 
     /**
      * Factory method to create domain values with a specific type. I.e., values for
@@ -679,9 +679,10 @@ trait Domain[+I] {
      * ==Summary==
      * The properties of the domain value are:
      *
-     *  - Initialized: '''yes''' (the constructor was called)
+     *  - Initialized: '''yes''' (if non-null then the constructor was called)
      *  - Type: '''Upper Bound'''
-     *  - Null: '''MayBe''' (It is unknown whether the value is `null` or not.)
+     *  - Null: '''Unknown''' 
+     *  - Content: '''Unknown'''
      */
     def ReferenceValue(pc: PC, referenceType: ReferenceType): DomainValue
 
@@ -696,7 +697,7 @@ trait Domain[+I] {
      *  - Type: '''Upper Bound'''
      *  - Null: '''No''' (This value is not `null`.)
      */
-    def NonNullReferenceValue(pc: PC, objectType: ObjectType): DomainValue
+    def NonNullObjectValue(pc: PC, objectType: ObjectType): DomainValue
 
     /**
      * Creates a new `DomainValue` that represents ''a new,
@@ -721,9 +722,9 @@ trait Domain[+I] {
     def NewObject(pc: PC, objectType: ObjectType): DomainValue
 
     /**
-     * Factory method to create a `DomainValue` that represents a new, '''initialized'''
-     * object of the given type and that was created (explicitly or implicitly) by the
-     * instruction with the specified program counter.
+     * Factory method to create a `DomainValue` that represents an '''initialized'''
+     * reference value of the given type and that was created (explicitly or implicitly)
+     * by the instruction with the specified program counter.
      *
      * ==General Remarks==
      * The given type usually identifies a class type (not an interface type) that is
@@ -744,7 +745,7 @@ trait Domain[+I] {
      *      correctly models the runtime type.)
      *  - Null: '''No''' (This value is not `null`.)
      */
-    def InitializedObject(pc: PC, referenceType: ReferenceType): DomainValue
+    def InitializedObjectValue(pc: PC, objectType: ObjectType): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given string value

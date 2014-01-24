@@ -55,82 +55,83 @@ import scala.collection.Map
  */
 trait VTACallGraphDomain[Source, I] extends CHACallGraphDomain[Source, I] {
 
-//    @inline private[this] def virtualMethodCall(
-//        pc: PC,
-//        declaringClassType: ReferenceType,
-//        name: String,
-//        descriptor: MethodDescriptor,
-//        operands: List[DomainValue]) {
-//        // MODIFIED CHA - we used the type information that is readily available
-//
-//        @inline def lookupImplementingMethods(receiverClassType: ObjectType) {
-//            val callees = cache.getOrElseUpdate(
-//                declaringClassType, new MethodSignature(name, descriptor),
-//                classHierarchy.lookupImplementingMethods(
-//                    receiverClassType, name, descriptor, project))
-//
-//            if (callees.isEmpty)
-//                addUnresolvedMethodCall(
-//                    callerclassFile.thisType, caller, pc,
-//                    declaringClassType, name, descriptor)
-//            else {
-//                addCallEdge(caller, pc, callees)
-//            }
-//        }
-//
-//        //        val IsReferenceValue(receiver) = typeOfValue(operands.last)
-//        //        if (receiver.size == 1 && receiver.head.upperBound.size == 1) {
-//        //            // Here, we could do much more... (e.g., calculate a single common upper type 
-//        //            // and use that for the lookup...)
-//        //            val valueBasedUpperBound = receiver.head
-//        //            val receiverType = valueBasedUpperBound.upperBound.head
-//        //            if (receiverType.isArrayType) {
-//        //                fixedMethodCall(pc, ObjectType.Object, name, descriptor)
-//        //            } else if (valueBasedUpperBound.isPrecise) {
-//        //                fixedMethodCall(
-//        //                    pc,
-//        //                    receiverType.asObjectType,
-//        //                    name,
-//        //                    descriptor)
-//        //            } else {
-//        //                val classType = receiverType.asObjectType
-//        //                if (isSubtypeOf(classType, declaringClassType).yes)
-//        //                    lookupImplementingMethods(classType)
-//        //                else
-//        //                    lookupImplementingMethods(declaringClassType.asObjectType)
-//        //            }
-//        //        } else {
-//        lookupImplementingMethods(declaringClassType.asObjectType)
-//        //        }
-//    }
+    //    @inline private[this] def virtualMethodCall(
+    //        pc: PC,
+    //        declaringClassType: ReferenceType,
+    //        name: String,
+    //        descriptor: MethodDescriptor,
+    //        operands: List[DomainValue]) {
+    //        // MODIFIED CHA - we used the type information that is readily available
+    //
+    //        @inline def lookupImplementingMethods(receiverClassType: ObjectType) {
+    //            val callees = cache.getOrElseUpdate(
+    //                declaringClassType, new MethodSignature(name, descriptor),
+    //                classHierarchy.lookupImplementingMethods(
+    //                    receiverClassType, name, descriptor, project))
+    //
+    //            if (callees.isEmpty)
+    //                addUnresolvedMethodCall(
+    //                    callerclassFile.thisType, caller, pc,
+    //                    declaringClassType, name, descriptor)
+    //            else {
+    //                addCallEdge(caller, pc, callees)
+    //            }
+    //        }
+    //
+    //        //        val IsReferenceValue(receiver) = typeOfValue(operands.last)
+    //        //        if (receiver.size == 1 && receiver.head.upperBound.size == 1) {
+    //        //            // Here, we could do much more... (e.g., calculate a single common upper type 
+    //        //            // and use that for the lookup...)
+    //        //            val valueBasedUpperBound = receiver.head
+    //        //            val receiverType = valueBasedUpperBound.upperBound.head
+    //        //            if (receiverType.isArrayType) {
+    //        //                fixedMethodCall(pc, ObjectType.Object, name, descriptor)
+    //        //            } else if (valueBasedUpperBound.isPrecise) {
+    //        //                fixedMethodCall(
+    //        //                    pc,
+    //        //                    receiverType.asObjectType,
+    //        //                    name,
+    //        //                    descriptor)
+    //        //            } else {
+    //        //                val classType = receiverType.asObjectType
+    //        //                if (isSubtypeOf(classType, declaringClassType).yes)
+    //        //                    lookupImplementingMethods(classType)
+    //        //                else
+    //        //                    lookupImplementingMethods(declaringClassType.asObjectType)
+    //        //            }
+    //        //        } else {
+    //        lookupImplementingMethods(declaringClassType.asObjectType)
+    //        //        }
+    //    }
 
 }
-/**
- * Domain object which is used to calculate the call graph.
- */
-class DefaultVTACallGraphDomain[Source](
-    val project: Project[Source],
-    val cache: CallGraphCache[MethodSignature, Iterable[Method]],
-    val theClassFile: ClassFile,
-    val theMethod: Method)
-        extends Domain[Int]
-        with DefaultDomainValueBinding[Int]
-        with IgnoreMethodResults
-        with IgnoreSynchronization
-        with l0.DefaultTypeLevelIntegerValues[Int]
-        with l0.DefaultTypeLevelLongValues[Int]
-        with l0.DefaultTypeLevelFloatValues[Int]
-        with l0.DefaultTypeLevelDoubleValues[Int]
-        with l1.DefaultPreciseReferenceValues[Int]
-        //with l1.StringValues[Int]
-        with l0.TypeLevelFieldAccessInstructions
-        with l0.TypeLevelInvokeInstructions
-        with l1.ProjectBasedClassHierarchy[Source]
-        with VTACallGraphDomain[Source, Int] {
-
-    def identifier = theMethod.id
-
-}
+///**
+// * Domain object which is used to calculate the call graph.
+// */
+//class DefaultVTACallGraphDomain[Source](
+//    val project: Project[Source],
+//    val cache: CallGraphCache[MethodSignature, Iterable[Method]],
+//    val theClassFile: ClassFile,
+//    val theMethod: Method)
+//        extends Domain[Int]
+//        with Configuration
+//        with DefaultDomainValueBinding[Int]
+//        with IgnoreMethodResults
+//        with IgnoreSynchronization
+//        with l0.DefaultTypeLevelIntegerValues[Int]
+//        with l0.DefaultTypeLevelLongValues[Int]
+//        with l0.DefaultTypeLevelFloatValues[Int]
+//        with l0.DefaultTypeLevelDoubleValues[Int]
+//        with l1.BaseReferenceValuesBinding[Int]
+//        //with l1.StringValues[Int]
+//        with l0.TypeLevelFieldAccessInstructions
+//        with l0.TypeLevelInvokeInstructions
+//        with l1.ProjectBasedClassHierarchy[Source]
+//        with VTACallGraphDomain[Source, Int] {
+//
+//    def identifier = theMethod.id
+//
+//}
 
 
 

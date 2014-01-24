@@ -34,11 +34,10 @@ package de.tud.cs.st
 package bat
 package resolved
 package ai
-package base
+package domain
 
 import reader.Java7Framework.ClassFiles
-import domain._
-import domain.l0._
+import l0._
 
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 

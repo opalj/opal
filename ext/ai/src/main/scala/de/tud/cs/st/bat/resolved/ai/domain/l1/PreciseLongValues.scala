@@ -218,20 +218,21 @@ trait PreciseLongValues[+I] extends Domain[I] with Configuration {
     override def ldiv(
         pc: PC,
         value1: DomainValue,
-        value2: DomainValue): IntegerLikeValueOrArithmeticException =
+        value2: DomainValue): IntegerLikeValueOrArithmeticException = {
         withLongValuesOrElse(value1, value2) { (v1, v2) ⇒
             if (v2 == 0)
-                ThrowsException(InitializedObject(pc, ArithmeticException))
+                ThrowsException(InitializedObjectValue(pc, ArithmeticException))
             else
                 ComputedValue(LongValue(pc, v1 / v2))
         } {
             if (throwArithmeticExceptions)
                 ComputedValueAndException(
                     LongValue(pc),
-                    InitializedObject(pc, ArithmeticException))
+                    InitializedObjectValue(pc, ArithmeticException))
             else
                 ComputedValue(LongValue(pc))
         }
+    }
 
     override def ladd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         withLongValuesOrElse(value1, value2) { (v1, v2) ⇒
@@ -267,14 +268,14 @@ trait PreciseLongValues[+I] extends Domain[I] with Configuration {
         value2: DomainValue): IntegerLikeValueOrArithmeticException =
         withLongValuesOrElse(value1, value2) { (v1, v2) ⇒
             if (v2 == 0l)
-                ThrowsException(InitializedObject(pc, ArithmeticException))
+                ThrowsException(InitializedObjectValue(pc, ArithmeticException))
             else
                 ComputedValue(LongValue(pc, v1 % v2))
         } {
             if (throwArithmeticExceptions)
                 ComputedValueAndException(
                     LongValue(pc),
-                    InitializedObject(pc, ArithmeticException))
+                    InitializedObjectValue(pc, ArithmeticException))
             else
                 ComputedValue(LongValue(pc))
         }

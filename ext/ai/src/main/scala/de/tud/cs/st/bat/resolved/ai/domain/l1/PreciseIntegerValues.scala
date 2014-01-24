@@ -44,7 +44,10 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  *
  * @author Michael Eichberg
  */
-trait PreciseIntegerValues[+I] extends Domain[I] with Configuration {
+trait PreciseIntegerValues[+I]
+        extends Domain[I]
+        with Configuration
+        with IntegerValuesComparison {
 
     // -----------------------------------------------------------------------------------
     //
@@ -111,6 +114,10 @@ trait PreciseIntegerValues[+I] extends Domain[I] with Configuration {
 
     }
 
+    object IntegerValue {
+        def unapply(v: IntegerValue): Option[Int] = Some(v.value)
+    }
+
     //
     // QUESTION'S ABOUT VALUES
     //
@@ -153,6 +160,22 @@ trait PreciseIntegerValues[+I] extends Domain[I] with Configuration {
             Answer(lowerBound <= v && v <= upperBound)
         } {
             Unknown
+        }
+    }
+
+    override def isSomeValueInRange(
+        value: DomainValue,
+        lowerBound: DomainValue,
+        upperBound: DomainValue): Answer = {
+
+        (value, lowerBound, upperBound) match {
+            case (IntegerValue(v), IntegerValue(l), IntegerValue(u)) ⇒
+                Answer(l <= v && v <= u)
+            case (IntegerValue(v), IntegerValue(l), _) if v <= l ⇒
+                if (v == l) Yes else No
+            case (IntegerValue(v), _, IntegerValue(u)) if v >= u ⇒
+                if (v == u) Yes else No
+            case _ ⇒ Unknown
         }
     }
 
@@ -254,20 +277,22 @@ trait PreciseIntegerValues[+I] extends Domain[I] with Configuration {
     override def idiv(
         pc: PC,
         value1: DomainValue,
-        value2: DomainValue): IntegerLikeValueOrArithmeticException =
+        value2: DomainValue): IntegerLikeValueOrArithmeticException = {
+        import ObjectType.ArithmeticException
         getIntValues(value1, value2) { (v1, v2) ⇒
             if (v2 == 0)
-                ThrowsException(InitializedObject(pc, ObjectType.ArithmeticException))
+                ThrowsException(InitializedObjectValue(pc, ArithmeticException))
             else
                 ComputedValue(IntegerValue(pc, v1 / v2))
         } {
             if (throwArithmeticExceptions)
                 ComputedValueAndException(
                     IntegerValue(pc),
-                    InitializedObject(pc, ObjectType.ArithmeticException))
+                    InitializedObjectValue(pc, ArithmeticException))
             else
                 ComputedValue(IntegerValue(pc))
         }
+    }
 
     override def imul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         getIntValues(value1, value2) { (v1, v2) ⇒
@@ -286,20 +311,21 @@ trait PreciseIntegerValues[+I] extends Domain[I] with Configuration {
     override def irem(
         pc: PC,
         value1: DomainValue,
-        value2: DomainValue): IntegerLikeValueOrArithmeticException =
+        value2: DomainValue): IntegerLikeValueOrArithmeticException = {
+        import ObjectType.ArithmeticException
         getIntValues(value1, value2) { (v1, v2) ⇒
             if (v2 == 0)
-                ThrowsException(InitializedObject(pc, ObjectType.ArithmeticException))
+                ThrowsException(InitializedObjectValue(pc, ArithmeticException))
             else
                 ComputedValue(IntegerValue(pc, v1 % v2))
         } {
             if (throwArithmeticExceptions)
                 ComputedValueAndException(
-                    IntegerValue(pc),
-                    InitializedObject(pc, ObjectType.ArithmeticException))
+                    IntegerValue(pc), InitializedObjectValue(pc, ArithmeticException))
             else
                 ComputedValue(IntegerValue(pc))
         }
+    }
 
     override def ishl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         getIntValues(value1, value2) { (v1, v2) ⇒

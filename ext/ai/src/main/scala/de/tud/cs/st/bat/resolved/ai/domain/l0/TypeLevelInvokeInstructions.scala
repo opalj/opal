@@ -56,7 +56,7 @@ import de.tud.cs.st.bat.resolved.ai.IsReferenceValue
  *
  * @author Michael Eichberg
  */
-trait TypeLevelInvokeInstructions { this: Domain[_] ⇒
+trait TypeLevelInvokeInstructions { this: SomeDomain ⇒
 
     import ObjectType._
 

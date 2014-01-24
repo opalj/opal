@@ -33,10 +33,10 @@
 package de.tud.cs.st.bat
 package resolved
 package ai
-package base
+package domain
 
 import reader.Java7Framework
-import domain.l0.BaseRecordingDomain
+import l0.BaseRecordingDomain
 
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 

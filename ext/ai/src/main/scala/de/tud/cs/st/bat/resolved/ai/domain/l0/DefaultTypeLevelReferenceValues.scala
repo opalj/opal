@@ -56,7 +56,7 @@ trait DefaultTypeLevelReferenceValues[+I]
     // -----------------------------------------------------------------------------------
 
     type DomainNullValue <: NullValue with DomainReferenceValue
-    type DomainObjectValue <: ObjectValue with DomainReferenceValue
+    type DomainObjectValue <: ObjectValue with DomainReferenceValue // <= SObject.. and MObject...
     type DomainArrayValue <: ArrayValue with DomainReferenceValue
 
     protected class NullValue
@@ -150,7 +150,7 @@ trait DefaultTypeLevelReferenceValues[+I]
                         case Left(newUpperTypeBound) ⇒
                             StructuralUpdate(ReferenceValue(joinPC, newUpperTypeBound))
                         case Right(newUpperTypeBound) ⇒
-                            StructuralUpdate(ReferenceValue(joinPC, newUpperTypeBound))
+                            StructuralUpdate(ObjectValue(joinPC, newUpperTypeBound))
                     }
 
                 case MObjectValue(thatUpperTypeBound) ⇒
@@ -161,7 +161,7 @@ trait DefaultTypeLevelReferenceValues[+I]
                             StructuralUpdate(ReferenceValue(joinPC, newUpperTypeBound))
                         case Right(newUpperTypeBound) ⇒
                             // this case should not occur...
-                            StructuralUpdate(ReferenceValue(joinPC, newUpperTypeBound))
+                            StructuralUpdate(ObjectValue(joinPC, newUpperTypeBound))
                     }
 
                 case ArrayValue(thatUpperTypeBound) ⇒
@@ -173,7 +173,7 @@ trait DefaultTypeLevelReferenceValues[+I]
                         case Left(newUpperTypeBound) ⇒
                             StructuralUpdate(ArrayValue(joinPC, newUpperTypeBound))
                         case Right(newUpperTypeBound) ⇒
-                            StructuralUpdate(ReferenceValue(joinPC, newUpperTypeBound))
+                            StructuralUpdate(ObjectValue(joinPC, newUpperTypeBound))
                     }
 
                 case NullValue() ⇒
@@ -192,7 +192,7 @@ trait DefaultTypeLevelReferenceValues[+I]
     protected trait ObjectValue extends super.ObjectValue {
         this: DomainObjectValue ⇒
 
-        override def refineIsNull(pc: PC, isNull: Answer): DomainValue = {
+        override def refineIsNull(pc: PC, isNull: Answer): DomainReferenceValue = {
             if (isNull.yes)
                 NullValue(pc)
             else
@@ -204,9 +204,9 @@ trait DefaultTypeLevelReferenceValues[+I]
             newUpperTypeBound: Either[ObjectType, UIDList[ObjectType]]): Update[DomainValue] = {
             newUpperTypeBound match {
                 case Left(newUpperTypeBound) ⇒
-                    StructuralUpdate(ReferenceValue(joinPC, newUpperTypeBound))
+                    StructuralUpdate(ObjectValue(joinPC, newUpperTypeBound))
                 case Right(newUpperTypeBound) ⇒
-                    StructuralUpdate(ReferenceValue(joinPC, newUpperTypeBound))
+                    StructuralUpdate(ObjectValue(joinPC, newUpperTypeBound))
             }
         }
     }
@@ -247,7 +247,10 @@ trait DefaultTypeLevelReferenceValues[+I]
             // supertype is more strict than this type's upper type bound.
             val isSubtypeOf = domain.isSubtypeOf(supertype, theUpperTypeBound)
             if (isSubtypeOf.yes)
-                ReferenceValue(pc, supertype)
+                if (supertype.isArrayType)
+                    ArrayValue(pc, supertype.asArrayType)
+                else
+                    ObjectValue(pc, supertype.asObjectType)
             else {
                 if (supertype.isArrayType)
                     domainException(domain,
@@ -256,7 +259,7 @@ trait DefaultTypeLevelReferenceValues[+I]
 
                 // probably some (abstract) class and an interface or two
                 // unrelated interfaces
-                ReferenceValue(pc, UIDList(theUpperTypeBound, supertype.asObjectType))
+                ObjectValue(pc, UIDList(theUpperTypeBound, supertype.asObjectType))
             }
         }
 
@@ -289,9 +292,9 @@ trait DefaultTypeLevelReferenceValues[+I]
                         case Left(`thisUpperTypeBound`) ⇒
                             NoUpdate
                         case Left(newUpperTypeBound) ⇒
-                            StructuralUpdate(ReferenceValue(joinPC, newUpperTypeBound))
+                            StructuralUpdate(ObjectValue(joinPC, newUpperTypeBound))
                         case Right(newUpperTypeBound) ⇒
-                            StructuralUpdate(ReferenceValue(joinPC, newUpperTypeBound))
+                            StructuralUpdate(ObjectValue(joinPC, newUpperTypeBound))
                     }
 
                 case NullValue() ⇒
@@ -337,6 +340,16 @@ trait DefaultTypeLevelReferenceValues[+I]
             if (isSubtypeOf)
                 Yes
             else
+                /* No | Unknown*/
+                // In general, we could check whether a type exists that is a
+                // proper subtype of the type identified by this value's type bounds 
+                // and that is also a subtype of the given `supertype`. 
+                //
+                // If such a type does not exist the answer is truly `no` (if we 
+                // assume that we know the complete type hierarchy); 
+                // if we don't know the complete hierarchy or if we currently 
+                // analyze a library the answer generally has to be `Unknown`
+                // unless we also consider the classes that are final or ....
                 Unknown
         }
 
@@ -357,7 +370,7 @@ trait DefaultTypeLevelReferenceValues[+I]
             if (newUpperTypeBound.size == 0)
                 ReferenceValue(pc, supertype)
             else if (supertype.isObjectType)
-                ReferenceValue(pc, newUpperTypeBound + supertype.asObjectType)
+                ObjectValue(pc, newUpperTypeBound + supertype.asObjectType)
             else
                 domainException(
                     domain,
@@ -405,7 +418,8 @@ trait DefaultTypeLevelReferenceValues[+I]
             pc: PC): targetDomain.DomainValue =
             targetDomain match {
                 case td: DefaultTypeLevelReferenceValues[_] ⇒
-                    td.ReferenceValue(pc, this.upperTypeBound).asInstanceOf[targetDomain.DomainValue]
+                    td.ObjectValue(pc, this.upperTypeBound).
+                        asInstanceOf[targetDomain.DomainValue]
                 case _ ⇒ super.adapt(targetDomain, pc)
             }
 
@@ -419,26 +433,4 @@ trait DefaultTypeLevelReferenceValues[+I]
         def unapply(that: MObjectValue): Option[UIDList[ObjectType]] =
             Some(that.upperTypeBound)
     }
-
-    //
-    // REFINEMENT OF AND DECLARATION OF ADDITIONAL FACTORY METHODS
-    //
-
-    override def NullValue(pc: PC): DomainNullValue
-
-    override def ReferenceValue(pc: PC, referenceType: ReferenceType): DomainReferenceValue
-
-    def ReferenceValue(pc: PC, upperTypeBound: UIDList[ObjectType]): DomainObjectValue
-
-    override def NonNullReferenceValue(pc: PC, objectType: ObjectType): DomainReferenceValue
-
-    override def NewObject(pc: PC, objectType: ObjectType): DomainObjectValue
-
-    override def InitializedObject(pc: PC, referenceType: ReferenceType): DomainObjectValue
-
-    def ArrayValue(pc: PC, arrayType: ArrayType): DomainArrayValue
-
-    override def StringValue(pc: PC, value: String): DomainObjectValue
-
-    override def ClassValue(pc: PC, t: Type): DomainReferenceValue
 }
