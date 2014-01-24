@@ -163,7 +163,7 @@ object MoreCheckers {
             val cloneable = ObjectType("java/lang/Cloneable")
             if (classHierarchy.isKnown(cloneable)) {
                 for {
-                    cloneables ← classHierarchy.allSubtypes(cloneable)
+                    cloneables ← classHierarchy.allSubtypes(cloneable,false)
                     classFile ← getClassFile.get(cloneable).toList
                     if !classFile.methods.exists({
                         case Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object)) ⇒ true;
@@ -211,7 +211,7 @@ object MoreCheckers {
             // we will not be able to identify this issue unless we have identified the whole
             // class hierarchy.
             for {
-                comparable ← classHierarchy.allSubtypes(ObjectType("java/lang/Comparable"))
+                comparable ← classHierarchy.allSubtypes(ObjectType("java/lang/Comparable"),false)
                 classFile ← getClassFile.get(comparable).toList
                 method @ Method(_, "compareTo", MethodDescriptor(Seq(parameterType), IntegerType)) ← classFile.methods
                 if parameterType != ObjectType("java/lang/Object")
@@ -302,7 +302,7 @@ object MoreCheckers {
         //        }
         val classesWithoutDefaultConstructor = time {
             for (
-                serializableClasses ← classHierarchy.allSubtypes(ObjectType("java/io/Serializable"));
+                serializableClasses ← classHierarchy.allSubtypes(ObjectType("java/io/Serializable"),false);
                 superclass ← classHierarchy.allSupertypes(serializableClasses) if getClassFile.isDefinedAt(superclass) && // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available
                     {
                         val superClassFile = getClassFile(superclass)
