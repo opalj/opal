@@ -71,6 +71,8 @@ trait TypeLevelReferenceValues[+I]
     //
     // -----------------------------------------------------------------------------------
 
+    // TODO [Next Step] Think about how to calculate common super types if the class hierarchy is not complete
+
     /**
      * Calculates the set of all supertypes of the given `types`.
      */
@@ -312,12 +314,17 @@ trait TypeLevelReferenceValues[+I]
     //
     // -----------------------------------------------------------------------------------
 
+    type DomainReferenceValue <: ReferenceValue with DomainValue
+    type DomainNullValue <: NullValue with DomainReferenceValue
+    type DomainObjectValue <: ObjectValue with DomainReferenceValue
+    type DomainArrayValue <: ArrayValue with DomainReferenceValue
+
     /**
      * Abstracts over all values with computational type `reference`. I.e.,
      * abstracts over class and array values and also the `null` value.
      */
     protected trait ReferenceValue extends Value with IsReferenceValue {
-        this: DomainValue ⇒
+        this: DomainReferenceValue ⇒
 
         /**
          * Returns `ComputationalTypeReference`.
@@ -346,7 +353,7 @@ trait TypeLevelReferenceValues[+I]
          * 		`this` may also be returned, but in that case subsequent analyses may
          *   	be less precise.
          */
-        def refineIsNull(pc: PC, isNull: Answer): DomainValue
+        def refineIsNull(pc: PC, isNull: Answer): DomainReferenceValue
 
         /**
          * Returns `true` if the type information associated with this value is precise.
@@ -375,7 +382,7 @@ trait TypeLevelReferenceValues[+I]
          *
          * @return The default implementation always returns `Unknown`.
          */
-        @throws[DomainException]("if this value is null")
+        @throws[DomainException]("if this value is null (isNull.yes == true)")
         override def isValueSubtypeOf(referenceType: ReferenceType): Answer = Unknown
 
         /**
@@ -386,8 +393,8 @@ trait TypeLevelReferenceValues[+I]
          * precisely capture the runtime type of this value. However, refining
          * the upper type bound for a `null` value is not supported.
          */
-        @throws[DomainException]("if this value is null")
-        def refineUpperTypeBound(pc: PC, supertype: ReferenceType): DomainValue
+        @throws[DomainException]("if this value is null (isNull.yes == ")
+        def refineUpperTypeBound(pc: PC, supertype: ReferenceType): DomainReferenceValue
 
     }
 
@@ -400,7 +407,7 @@ trait TypeLevelReferenceValues[+I]
      *    the value has to be `null`.
      */
     protected trait NullValue extends ReferenceValue {
-        this: DomainValue ⇒
+        this: DomainNullValue ⇒
 
         final override def referenceValues: Iterable[IsAReferenceValue] = Iterable(this)
 
@@ -409,7 +416,7 @@ trait TypeLevelReferenceValues[+I]
          */
         final override def isNull = Yes
 
-        final override def refineIsNull(pc: PC, isNull: Answer): DomainValue = this
+        final override def refineIsNull(pc: PC, isNull: Answer): DomainNullValue = this
 
         /**
          * Returns `true`.
@@ -428,15 +435,12 @@ trait TypeLevelReferenceValues[+I]
         final override def isValueSubtypeOf(referenceType: ReferenceType): Nothing =
             domainException(domain, "isSubtypeOf is not defined for \"null\" values")
 
-        override def refineUpperTypeBound(
-            pc: PC,
-            supertype: ReferenceType): DomainValue = this
+        override def refineUpperTypeBound(pc: PC, supertype: ReferenceType): this.type =
+            this
 
-        override def summarize(pc: PC): DomainValue = this
+        override def summarize(pc: PC): this.type = this
 
-        override def adapt[ThatI >: I](
-            target: Domain[ThatI],
-            pc: PC): target.DomainValue =
+        override def adapt[ThatI >: I](target: Domain[ThatI], pc: PC): target.DomainValue =
             target.NullValue(pc)
 
         override def toString: String = "ReferenceValue(null)"
@@ -447,26 +451,27 @@ trait TypeLevelReferenceValues[+I]
      *
      * @note This class was introduced for performance reasons.
      */
-    protected trait SReferenceValue[T <: ReferenceType] extends ReferenceValue {
-        this: DomainValue ⇒
+    protected trait SReferenceValue[T <: ReferenceType] {
+        this: DomainReferenceValue ⇒
 
         val theUpperTypeBound: T
 
-        override def referenceValues: Iterable[IsAReferenceValue] = Iterable(this)
+        final override def referenceValues: Iterable[IsAReferenceValue] = Iterable(this)
 
-        override def upperTypeBound: UpperTypeBound = UIDList(theUpperTypeBound)
+        final override def upperTypeBound: UpperTypeBound = UIDList(theUpperTypeBound)
 
-        override def summarize(pc: PC): DomainValue = this
+        final override def summarize(pc: PC): this.type = this
 
         override def toString: String = "ReferenceValue("+theUpperTypeBound.toJava+")"
 
     }
 
     /**
-     * Represents a class/interface value.
+     * Represents a class/interface value which may have a single class and/or
+     * multiple interfaces as its upper type bound.
      */
     protected trait ObjectValue extends ReferenceValue {
-        this: DomainValue ⇒
+        this: DomainObjectValue ⇒
 
     }
 
@@ -474,7 +479,7 @@ trait TypeLevelReferenceValues[+I]
      * Represents an array value.
      */
     protected trait ArrayValue extends ReferenceValue {
-        this: DomainValue ⇒
+        this: DomainArrayValue ⇒
 
         /**
          * Returns `Yes` if we can statically determine that the given value can
@@ -564,14 +569,14 @@ trait TypeLevelReferenceValues[+I]
      * and is intended to be used to communicate that the value has to be a reference
      * value (if the underlying byte code is valid.)
      */
-    def asReferenceValue(value: DomainValue): ReferenceValue =
-        value.asInstanceOf[ReferenceValue]
+    def asReferenceValue(value: DomainValue): DomainReferenceValue =
+        value.asInstanceOf[DomainReferenceValue]
 
-    def asObjectValue(value: DomainValue): ObjectValue =
-        value.asInstanceOf[ObjectValue]
+    def asObjectValue(value: DomainValue): DomainObjectValue =
+        value.asInstanceOf[DomainObjectValue]
 
-    def asArrayValue(value: DomainValue): ArrayValue =
-        value.asInstanceOf[ArrayValue]
+    def asArrayValue(value: DomainValue): DomainArrayValue =
+        value.asInstanceOf[DomainArrayValue]
 
     // -----------------------------------------------------------------------------------
     //
@@ -591,19 +596,6 @@ trait TypeLevelReferenceValues[+I]
         subtypes forall { subtype ⇒
             supertypes exists { supertype ⇒
                 domain.isSubtypeOf(subtype, supertype).yes
-            }
-        }
-    }
-
-    protected def summarizeReferenceValues(
-        pc: PC,
-        values: Iterable[DomainValue]): DomainValue = {
-        val summarizedValues = values.map(_.summarize(pc))
-
-        summarizedValues.tail.foldLeft(summarizedValues.head) { (summarizedValue, nextValue) ⇒
-            summarizedValue.join(pc, nextValue) match {
-                case NoUpdate             ⇒ summarizedValue
-                case SomeUpdate(newValue) ⇒ newValue
             }
         }
     }
@@ -709,7 +701,7 @@ trait TypeLevelReferenceValues[+I]
     override def multianewarray(
         pc: PC,
         counts: List[DomainValue],
-        arrayType: ArrayType): Computation[DomainValue, ExceptionValue] = {
+        arrayType: ArrayType): Computation[DomainArrayValue, ExceptionValue] = {
         var validCounts: Answer = Yes
         counts foreach { (count) ⇒
             val validCount = isSomeValueInRange(count, 0, Int.MaxValue)
@@ -810,7 +802,7 @@ trait TypeLevelReferenceValues[+I]
      *  - Null: '''No'''
      *  - Size: '''Count'''
      */
-    def NewArray(pc: PC, count: DomainValue, arrayType: ArrayType): DomainValue
+    def NewArray(pc: PC, count: DomainValue, arrayType: ArrayType): DomainArrayValue
 
     /**
      * Factory method to create a new domain value that represents a newly created
@@ -828,7 +820,7 @@ trait TypeLevelReferenceValues[+I]
      *  - Size: '''Counts''' (for the number of dimension for which a
      *  					value (count) is given)
      */
-    def NewArray(pc: PC, counts: List[DomainValue], arrayType: ArrayType): DomainValue
+    def NewArray(pc: PC, counts: List[DomainValue], arrayType: ArrayType): DomainArrayValue
 
     /**
      * Creates a new `DomainValue` that represents an array value with unknown
@@ -849,7 +841,7 @@ trait TypeLevelReferenceValues[+I]
      * @note Java Arrays are covariant. I.e., `Object[] a = new Serializable[100];`
      *      is valid.
      */
-    def ArrayValue(pc: PC, arrayType: ArrayType): DomainValue
+    def ArrayValue(pc: PC, arrayType: ArrayType): DomainArrayValue
 
     // -----------------------------------------------------------------------------------
     //

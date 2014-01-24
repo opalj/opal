@@ -67,7 +67,7 @@ trait Origin { this : SomeDomain =>
      *      respective value.)
      *      By default this method returns an empty `Iterable`.
      */
-    abstract override def origin(value: DomainValue): Iterable[PC] =
+    def origin(value: DomainValue): Iterable[PC] =
         value match {
             case SingleOriginValue(pc)     ⇒ Iterable[PC](pc)
             case MultipleOriginsValue(pcs) ⇒ pcs

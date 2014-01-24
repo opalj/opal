@@ -252,7 +252,7 @@ trait Domain[+I] {
          *      analyses.
          */
         def summarize(pc: PC): DomainValue
- 
+
         /**
          * Adapts this value to the given domain (default: throws a domain exception
          * that adaptation is not supported). '''This method needs to be overridden
@@ -356,14 +356,6 @@ trait Domain[+I] {
                 Domain.this,
                 "creating a summary of an IllegalValue is meaningless")
 
-        @throws[DomainException]("always")
-        override def summarize(
-            pc: PC,
-            value: DomainValue): DomainValue =
-            domainException(
-                Domain.this,
-                "creating a summary of some value and an IllegalValue is meaningless")
-
         override def adapt[ThatI >: I](
             targetDomain: Domain[ThatI],
             pc: PC): targetDomain.DomainValue =
@@ -434,13 +426,6 @@ trait Domain[+I] {
         override def summarize(pc: PC): DomainValue =
             domainException(
                 Domain.this, "summarizing this return address values is not supported")
-
-        @throws[DomainException]("always")
-        override def summarize(
-            pc: PC,
-            value: DomainValue): DomainValue =
-            domainException(
-                Domain.this, "summarizing return address values is not supported")
 
         override def adapt[ThatI >: I](
             targetDomain: Domain[ThatI],
@@ -1755,9 +1740,9 @@ trait Domain[+I] {
      *      If the domain updates the worklist, it is the responsibility of the domain
      *      to call the tracer and to inform it about the changes.
      *      Note that the worklist is not allowed to contain duplicates.
-     * @note The domain is allowed to modify the `worklist`, `operandsArray` and 
-     *      `localsArray. However, the AI will not check that all constraints 
-     *      are satisfied.    
+     * @note The domain is allowed to modify the `worklist`, `operandsArray` and
+     *      `localsArray. However, the AI will not check that all constraints
+     *      are satisfied.
      */
     def flow(
         currentPC: PC,
@@ -1774,11 +1759,22 @@ trait Domain[+I] {
      * @param pc The program counter that will be used for the summary value if
      *      a new value is returned that abstracts over/summarizes the given values.
      * @param values An `Iterable` over one or more values.
+     *
+     * @note The current algorithm is very generic and should satisfy most needs, but
+     * 		it is also not very efficient. However, it should be easy to tailor it for a
+     *   	specific domain, if need be.
      */
-    def summarize(pc: PC, values: Iterable[DomainValue]): DomainValue =
-        (values.head.summarize(pc) /: values.tail) {
-            (c, n) ⇒ c.summarize(pc, n)
+    def summarize(pc: PC, values: Iterable[DomainValue]): DomainValue = {
+        var summary = values.head.summarize(pc)
+        values.tail foreach { value ⇒
+            summary.join(pc, value.summarize(pc)) match {
+                case NoUpdate ⇒ /*nothing to do*/
+                case SomeUpdate(newSummary) ⇒
+                    summary = newSummary.summarize(pc)
+            }
         }
+        summary
+    }
 
     /**
      * Returns a string representation of the properties associated with

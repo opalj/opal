@@ -219,40 +219,6 @@ trait DefaultPreciseReferenceValues[+I]
 
         override def summarize(pc: PC): DomainValue = this
 
-        override def summarize(pc: PC, value: DomainValue): DomainValue = {
-            if (this eq value)
-                return this
-
-            value match {
-                case mrv: MultipleReferenceValues ⇒
-                    domain.summarizeReferenceValues(pc, mrv.values + this)
-                case other @ AReferenceValue(otherPC, otherUpperTypeBounds, otherIsNull, otherIsPrecise) ⇒
-                    if (this.isNull.yes) {
-                        if (otherIsNull.yes)
-                            if (this.pc == otherPC)
-                                this
-                            else
-                                AReferenceValue(pc, UIDList.empty, Yes, true)
-                        else
-                            MultipleReferenceValues(Set(this, other))
-                    } else if (otherIsNull.yes) {
-                        MultipleReferenceValues(Set(this, other))
-                    } else if (this.upperTypeBound == otherUpperTypeBounds) {
-                        AReferenceValue(
-                            pc,
-                            this.upperTypeBound,
-                            this.isNull merge otherIsNull,
-                            this.isPrecise && otherIsPrecise)
-                    } else if (domain.isSubtypeOf(this.upperTypeBound, otherUpperTypeBounds)) {
-                        AReferenceValue(pc, otherUpperTypeBounds, this.isNull merge otherIsNull, false)
-                    } else if (domain.isSubtypeOf(otherUpperTypeBounds, this.upperTypeBound)) {
-                        AReferenceValue(pc, this.upperTypeBound, this.isNull merge otherIsNull, false)
-                    } else {
-                        MultipleReferenceValues(Set(this, other))
-                    }
-            }
-        }
-
         override def equals(other: Any): Boolean = {
             other match {
                 case that: AReferenceValue ⇒
@@ -339,14 +305,6 @@ trait DefaultPreciseReferenceValues[+I]
 
         override def summarize(pc: PC): DomainValue =
             domain.summarizeReferenceValues(pc, values)
-
-        override def summarize(pc: PC, value: DomainValue): DomainValue =
-            value match {
-                case aRefVal: AReferenceValue ⇒
-                    domain.summarizeReferenceValues(pc, this.values + aRefVal)
-                case MultipleReferenceValues(otherValues) ⇒
-                    domain.summarizeReferenceValues(pc, this.values ++ otherValues)
-            }
 
         override def adapt[TDI >: I](
             targetDomain: Domain[TDI],

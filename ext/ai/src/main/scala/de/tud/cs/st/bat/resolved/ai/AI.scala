@@ -896,7 +896,11 @@ trait AI[D <: SomeDomain] {
                         if (isExceptionValueNull.maybeYes) {
                             // if the operand of the athrow exception is null, a new 
                             // NullPointerException is raised by the JVM
-                            handleException(NullPointerException(pc))
+                            // if the operand of the athrow exception is null, a new 
+                            // NullPointerException is raised by the JVM
+                            handleException(
+                                InitializedObject(pc, ObjectType.NullPointerException)
+                            )
                         }
                         if (isExceptionValueNull.maybeNo) {
                             val (updatedOperands, updatedLocals) = {
@@ -1689,9 +1693,14 @@ trait AI[D <: SomeDomain] {
                                 case Yes ⇒
                                     // if objectref is a subtype => UNCHANGED
                                     fallThrough()
-                                case No ⇒ handleException(ClassCastException(pc))
+                                case No ⇒
+                                    handleException(
+                                        InitializedObject(pc, ObjectType.ClassCastException)
+                                    )
                                 case Unknown ⇒
-                                    handleException(ClassCastException(pc))
+                                    handleException(
+                                        InitializedObject(pc, ObjectType.ClassCastException)
+                                    )
                                     val (newOperands, newLocals) =
                                         establishUpperBound(
                                             pc,

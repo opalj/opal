@@ -55,9 +55,15 @@ trait DefaultTypeLevelReferenceValues[+I]
     //
     // -----------------------------------------------------------------------------------
 
-    protected class NullValue extends super.NullValue {
+    type DomainNullValue <: NullValue with DomainReferenceValue
+    type DomainObjectValue <: ObjectValue with DomainReferenceValue
+    type DomainArrayValue <: ArrayValue with DomainReferenceValue
 
-        override def doJoin(joinPC: Int, other: DomainValue): Update[DomainValue] = {
+    protected class NullValue
+            extends super.NullValue {
+        this: DomainNullValue ⇒
+
+        override protected def doJoin(joinPC: Int, other: DomainValue): Update[DomainValue] = {
             other match {
                 case that: NullValue ⇒ NoUpdate
                 case that: ReferenceValue ⇒
@@ -69,9 +75,11 @@ trait DefaultTypeLevelReferenceValues[+I]
 
     protected class ArrayValue(
         val theUpperTypeBound: ArrayType)
-            extends super.ArrayValue with SReferenceValue[ArrayType] {
+            extends super.ArrayValue
+            with SReferenceValue[ArrayType] {
+        this: DomainArrayValue ⇒
 
-        final override def refineIsNull(pc: PC, isNull: Answer): DomainValue = {
+        override def refineIsNull(pc: PC, isNull: Answer): DomainReferenceValue = {
             if (isNull.yes)
                 NullValue(pc)
             else
@@ -116,14 +124,14 @@ trait DefaultTypeLevelReferenceValues[+I]
         // NARROWING OPERATION
         override def refineUpperTypeBound(
             pc: PC,
-            supertype: ReferenceType): DomainValue = {
+            supertype: ReferenceType): DomainReferenceValue = {
             // BATAI calls this method only if a previous "subtype of" test 
             // (this.typeOfvalue <: supertype ?) 
             // returned unknown and we are now on the branch where this relation
             // has to hold. Hence, we only need to handle the case where 
             // supertype is more strict than this type's upper type bound.
             if (supertype.isArrayType)
-                ReferenceValue(pc, supertype)
+                ArrayValue(pc, supertype.asArrayType)
             else {
                 domainException(
                     domain,
@@ -132,7 +140,7 @@ trait DefaultTypeLevelReferenceValues[+I]
         }
 
         // WIDENING OPERATION
-        override def doJoin(joinPC: Int, other: DomainValue): Update[DomainValue] = {
+        override protected def doJoin(joinPC: Int, other: DomainValue): Update[DomainValue] = {
             val thisUpperTypeBound = this.theUpperTypeBound
             other match {
                 case SObjectValue(thatUpperTypeBound) ⇒
@@ -181,10 +189,10 @@ trait DefaultTypeLevelReferenceValues[+I]
         def unapply(value: ArrayValue): Some[ArrayType] = Some(value.theUpperTypeBound)
     }
 
-    trait ObjectValue extends super.ObjectValue {
-        this: DomainValue ⇒
+    protected trait ObjectValue extends super.ObjectValue {
+        this: DomainObjectValue ⇒
 
-        final override def refineIsNull(pc: PC, isNull: Answer): DomainValue = {
+        override def refineIsNull(pc: PC, isNull: Answer): DomainValue = {
             if (isNull.yes)
                 NullValue(pc)
             else
@@ -205,7 +213,9 @@ trait DefaultTypeLevelReferenceValues[+I]
 
     protected class SObjectValue(
         val theUpperTypeBound: ObjectType)
-            extends ObjectValue with SReferenceValue[ObjectType] { value ⇒
+            extends ObjectValue
+            with SReferenceValue[ObjectType] {
+        this: DomainObjectValue ⇒
 
         /**
          * @inhertdoc
@@ -226,7 +236,7 @@ trait DefaultTypeLevelReferenceValues[+I]
         // NARROWING OPERATION
         override def refineUpperTypeBound(
             pc: PC,
-            supertype: ReferenceType): ReferenceValue = {
+            supertype: ReferenceType): DomainReferenceValue = {
             if (supertype eq theUpperTypeBound)
                 return this
 
@@ -251,7 +261,7 @@ trait DefaultTypeLevelReferenceValues[+I]
         }
 
         // WIDENING OPERATION
-        override def doJoin(joinPC: Int, other: DomainValue): Update[DomainValue] = {
+        override protected def doJoin(joinPC: Int, other: DomainValue): Update[DomainValue] = {
             val thisUpperTypeBound = this.theUpperTypeBound
             other match {
                 case SObjectValue(thatUpperTypeBound) ⇒
@@ -306,7 +316,8 @@ trait DefaultTypeLevelReferenceValues[+I]
      */
     protected class MObjectValue(
         val upperTypeBound: UIDList[ObjectType])
-            extends ObjectValue { value ⇒
+            extends ObjectValue {
+        value: DomainObjectValue ⇒
 
         override def referenceValues: Iterable[IsAReferenceValue] = Iterable(this)
 
@@ -331,7 +342,7 @@ trait DefaultTypeLevelReferenceValues[+I]
 
         override def refineUpperTypeBound(
             pc: PC,
-            supertype: ReferenceType): DomainValue = {
+            supertype: ReferenceType): DomainReferenceValue = {
             // BATAI calls this method only if a previous "subtype of" test 
             // (typeOf(this.value) <: additionalUpperBound ?) 
             // returned unknown. Hence, we only handle the case where the new bound
@@ -348,10 +359,12 @@ trait DefaultTypeLevelReferenceValues[+I]
             else if (supertype.isObjectType)
                 ReferenceValue(pc, newUpperTypeBound + supertype.asObjectType)
             else
-                TheIllegalValue
+                domainException(
+                    domain,
+                    "impossible refinement: "+upperTypeBound+" => "+supertype.toJava)
         }
 
-        override def doJoin(joinPC: Int, other: DomainValue): Update[DomainValue] = {
+        override protected def doJoin(joinPC: Int, other: DomainValue): Update[DomainValue] = {
             val thisUpperTypeBound = this.upperTypeBound
             other match {
                 case SObjectValue(thatUpperTypeBound) ⇒
@@ -408,96 +421,24 @@ trait DefaultTypeLevelReferenceValues[+I]
     }
 
     //
-    // FACTORY METHODS
+    // REFINEMENT OF AND DECLARATION OF ADDITIONAL FACTORY METHODS
     //
 
-    protected[this] val TheNullValue: ReferenceValue = new NullValue()
+    override def NullValue(pc: PC): DomainNullValue
 
-    /**
-     * @inheritdoc
-     * This implementation always returns the singleton instance `TheNullValue`.
-     */
-    override def NullValue(pc: PC): ReferenceValue = TheNullValue
+    override def ReferenceValue(pc: PC, referenceType: ReferenceType): DomainReferenceValue
 
-    /**
-     * @inheritdoc
-     * This implementation always directly creates a new `SObjectValue`.
-     */
-    override def NonNullReferenceValue(pc: PC, objectType: ObjectType): ReferenceValue =
-        new SObjectValue(objectType)
+    def ReferenceValue(pc: PC, upperTypeBound: UIDList[ObjectType]): DomainObjectValue
 
-    override def NewArray(pc: PC, count: DomainValue, arrayType: ArrayType): ArrayValue =
-        new ArrayValue(arrayType)
+    override def NonNullReferenceValue(pc: PC, objectType: ObjectType): DomainReferenceValue
 
-    override def NewArray(pc: PC, counts: List[DomainValue], arrayType: ArrayType): ArrayValue =
-        new ArrayValue(arrayType)
+    override def NewObject(pc: PC, objectType: ObjectType): DomainObjectValue
 
-    override def ArrayValue(pc: PC, arrayType: ArrayType): ArrayValue =
-        new ArrayValue(arrayType)
+    override def InitializedObject(pc: PC, referenceType: ReferenceType): DomainObjectValue
 
-    def ObjectValue(pc: PC, objectType: ObjectType): ReferenceValue =
-        new SObjectValue(objectType)
+    def ArrayValue(pc: PC, arrayType: ArrayType): DomainArrayValue
 
-    /**
-     * @inheritdoc
-     *
-     * Depending on the kind of reference type (array or class/interface type) this method
-     * just calls the respective factory method: `ArrayValue(PC,ArrayType)`
-     * or `ObjectValue(PC,ObjectType)`.
-     *
-     * @note It is generally not necessary to override this method.
-     */
-    override def ReferenceValue(pc: PC, referenceType: ReferenceType): ReferenceValue =
-        referenceType match {
-            case ot: ObjectType ⇒ ObjectValue(pc, ot)
-            case at: ArrayType  ⇒ ArrayValue(pc, at)
-        }
+    override def StringValue(pc: PC, value: String): DomainObjectValue
 
-    /**
-     * Factory method to create a `DomainValue` that represents ''either a reference
-     * value that has the given type bound and is initialized or the value `null`''.
-     * However, the information whether the value is `null` or not is not available.
-     * Furthermore, the type may also be an upper bound. I.e., we may have multiple types
-     * and the runtime type is guaranteed to be a subtype of all given types.
-     *
-     * ==Summary==
-     * The properties of the domain value are:
-     *
-     *  - Initialized: '''yes''' (the constructor was called)
-     *  - Type: '''Upper Bound'''
-     *  - Null: '''MayBe''' (It is unknown whether the value is `null` or not.)
-     */
-    def ReferenceValue(pc: PC, upperTypeBound: UIDList[ObjectType]): ReferenceValue = {
-        assume(upperTypeBound.nonEmpty)
-        if (upperTypeBound.tail.isEmpty)
-            ReferenceValue(pc, upperTypeBound.head)
-        else
-            new MObjectValue(upperTypeBound)
-    }
-
-    override def NewObject(pc: PC, objectType: ObjectType): ReferenceValue =
-        new SObjectValue(objectType)
-
-    /**
-     * @inheritdoc
-     *
-     * Depending on the kind of reference type (array or class type) this method
-     * just calls the respective factory method: `ArrayValue(PC,ArrayType)`
-     * or `ObjectValue(PC,ObjectType)`.
-     *
-     * @note It is generally necessary to override this method when you want to track
-     *      a value`s properties ('''type''' and '''isPrecise''') more precisely.
-     */
-    override def InitializedObject(pc: PC, referenceType: ReferenceType): ReferenceValue =
-        if (referenceType.isArrayType)
-            ArrayValue(pc, referenceType.asArrayType)
-        else
-            ObjectValue(pc, referenceType.asObjectType)
-
-    override def StringValue(pc: PC, value: String): DomainValue =
-        new SObjectValue(ObjectType.String)
-
-    override def ClassValue(pc: PC, t: Type): DomainValue =
-        new SObjectValue(ObjectType.Class)
-
+    override def ClassValue(pc: PC, t: Type): DomainReferenceValue
 }

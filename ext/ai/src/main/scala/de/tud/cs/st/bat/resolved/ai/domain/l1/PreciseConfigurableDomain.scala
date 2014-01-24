@@ -43,7 +43,7 @@ trait PreciseDomain[+I]
     with Origin
     with DefaultDomainValueBinding[I]
     with DefaultPreciseIntegerValues[I]
-    with DefaultPreciseReferenceValues[I]
+    with BaseReferenceValuesBinding[I]
     with StringValues[I]
     with DefaultPreciseLongValues[I]
     with l0.DefaultTypeLevelFloatValues[I]

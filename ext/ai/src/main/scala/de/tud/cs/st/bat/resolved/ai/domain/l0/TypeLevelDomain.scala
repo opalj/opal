@@ -52,7 +52,7 @@ trait TypeLevelDomain[+I]
     extends Domain[I]    
     with DefaultDomainValueBinding[I]
     with Configuration
-    with DefaultTypeLevelReferenceValues[I]
+    with BaseReferenceValuesBinding[I]
     with DefaultTypeLevelIntegerValues[I]
     with DefaultTypeLevelLongValues[I]
     with DefaultTypeLevelFloatValues[I]

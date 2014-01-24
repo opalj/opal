@@ -61,12 +61,6 @@ trait TypeLevelIntegerValues[+I] extends Domain[I] with IntegerValuesComparison 
 
         override def summarize(pc: PC): DomainValue = this
 
-        override def summarize(pc: PC, value: DomainValue): DomainValue =
-            this.join(pc, value) match {
-                case NoUpdate          ⇒ this
-                case SomeUpdate(value) ⇒ value
-            }
-
     }
 
     trait BooleanValue
