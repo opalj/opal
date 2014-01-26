@@ -42,16 +42,16 @@ import tracer.ConsoleTracer
 import tracer.XHTMLTracer
 
 /**
- * A small interpreter that enables us to easily perform the abstract interpretation of a
- * specific method.
+ * A small basic framework that facilitates the abstract interpretation of a
+ * specific method using a configurable domain.
  *
  * @author Michael Eichberg
  */
 object InterpretMethod {
 
-    import language.existentials
+    import scala.language.existentials
 
-    private object AI extends AI[Domain[_]] {
+    private object AI extends AI[SomeDomain] {
 
         override def isInterrupted = Thread.interrupted()
 
@@ -67,8 +67,8 @@ object InterpretMethod {
      *
      * @param args The first element must be the name of a class file, a jar file
      * 		or a directory containing the former. The second element must
-     *   	denote the name of a class and the third must denote the name of a method
-     *    	of the respective class. If the method is overloaded the first method
+     * 		denote the name of a class and the third must denote the name of a method
+     * 		of the respective class. If the method is overloaded the first method
      * 		is returned.
      */
     def main(args: Array[String]) {
@@ -108,7 +108,7 @@ object InterpretMethod {
             }
         val classFile = {
             def lookupClass(fqn: String): Option[ClassFile] =
-                classFiles.map(_._1).find(_.thisType.fqn == fqn) match {
+                classFiles.map(_._1).find(_.fqn == fqn) match {
                     case someClassFile @ Some(_)   ⇒ someClassFile
                     case None if fqn.contains('.') ⇒ lookupClass(fqn.replace('.', '/'))
                     case None                      ⇒ None

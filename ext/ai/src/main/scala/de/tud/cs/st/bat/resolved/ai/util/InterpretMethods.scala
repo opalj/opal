@@ -39,6 +39,7 @@ package util
 import reader.Java7Framework.ClassFile
 import domain.l0.BaseConfigurableDomain
 
+import java.io.File
 import java.util.zip.ZipFile
 import java.io.DataInputStream
 import java.io.ByteArrayInputStream
@@ -47,9 +48,10 @@ import scala.Console._
 import scala.util.control.ControlThrowable
 
 /**
- * Performs an abstract interpretation of all methods of the given class file(s).
+ * Performs an abstract interpretation of all methods of the given class file(s) using
+ * a configurable domain.
  *
- * This class is very helpful during the development and testing of new domains.
+ * This class is meant to support the development and testing of new domains.
  *
  * @author Michael Eichberg
  */
@@ -77,155 +79,163 @@ object InterpretMethods {
                 Class.forName(args.head.substring(8)).asInstanceOf[Class[_ <: Domain[_]]],
                 args.tail.map(new java.io.File(_)),
                 true).
-                map(System.err.println(_))
+                map(errors ⇒ System.err.println(errors._1+"(for details:"+errors._2+")"))
         } else {
             interpret(
                 classOf[BaseConfigurableDomain[_]],
                 args.map(new java.io.File(_)),
                 true).
-                map(System.err.println(_))
+                map(errors ⇒ System.err.println(errors._1+"(for details:"+errors._2+")"))
         }
     }
 
-    val timeLimit: Long = 250l //milliseconds
+    val interruptAfter: Long = 250l //milliseconds
 
     def interpret(
-        domainClass: Class[_ <: Domain[_]],
-        files: Seq[java.io.File],
-        beVerbose: Boolean = false): Option[String] = {
+        domainClass: Class[_ <: SomeDomain],
+        files: Seq[File],
+        beVerbose: Boolean = false): Option[(String, Option[File])] = {
 
         reset('OVERALL)
         reset('READING)
         reset('PARSING)
         reset('AI)
 
-        var collectedExceptions: List[(String, ClassFile, Method, Throwable)] = List()
         var classesCount = 0
         var methodsCount = 0
 
         val domainConstructor = domainClass.getConstructor(classOf[Object])
 
-        time('OVERALL) {
+        val collectedExceptions = time('OVERALL) {
             val theFiles = files.flatMap { file ⇒
                 if (file.isDirectory())
                     file.listFiles()
                 else
                     List(file)
             }
-            for {
-                file ← theFiles
-                if (file.toString().endsWith(".jar"))
-                jarFile = {
-                    if (beVerbose) println(Console.BOLD + file.toString + Console.RESET)
-                    new ZipFile(file)
-                }
-                jarEntry ← (jarFile).entries
-                if !jarEntry.isDirectory && jarEntry.getName.endsWith(".class")
-            } {
-                val data = new Array[Byte](jarEntry.getSize().toInt)
-                time('READING) {
-                    process {
-                        new DataInputStream(jarFile.getInputStream(jarEntry))
-                    } { in ⇒
-                        in.readFully(data)
-                    }
-                }
-                analyzeClassFile(file.getName(), data)
-            }
 
-            def analyzeClassFile(resource: String, data: Array[Byte]) {
+            def analyzeClassFile(
+                resource: String,
+                data: Array[Byte]): Seq[(String, ClassFile, Method, Throwable)] = {
                 val classFile = time('PARSING) {
                     ClassFile(new DataInputStream(new ByteArrayInputStream(data)))
                 }
                 classesCount += 1
-                if (beVerbose) println(classFile.thisType.fqn)
-                for (method ← classFile.methods; if method.body.isDefined) {
-                    methodsCount += 1
-                    if (beVerbose) println("  =>  "+method.toJava)
-                    //                    val runnable = new Runnable {
-                    //                        def run() {
-                    try {
-                        time('AI) {
-                            if (BaseAI(
-                                classFile,
-                                method,
-                                domainConstructor.newInstance((classFile, method))).wasAborted)
-                                throw new InterruptedException();
-                        }
-                    } catch {
-                        case ct: ControlThrowable ⇒ throw ct
-                        case t: Throwable ⇒ {
-                            // basically, we want to catch everything!
-                            collectedExceptions = (resource, classFile, method, t) :: collectedExceptions
+                if (beVerbose) println(classFile.fqn)
+                val collectedExceptions = (
+                    for (method ← classFile.methods.filter(_.body.isDefined).par) yield {
+                        methodsCount += 1
+                        if (beVerbose) println("  =>  "+method.toJava)
+                        try {
+                            time('AI) {
+                                if (BaseAI(
+                                    classFile,
+                                    method,
+                                    domainConstructor.newInstance((classFile, method))).wasAborted)
+                                    throw new InterruptedException();
+                            }
+                            None
+                        } catch {
+                            case ct: ControlThrowable ⇒ throw ct
+                            case t: Throwable ⇒ {
+                                // basically, we want to catch everything!
+                                Some((resource, classFile, method, t))
+                            }
                         }
                     }
-                    //                        }
-                    //                    }
-                    //                    val thread = new Thread(runnable)
-                    //                    thread.start
-                    //                    thread.join(timeLimit)
-                    //                    thread.interrupt
-                    //                    thread.join()
-                }
+                )
+                collectedExceptions.filter(_.isDefined).map(_.get).seq
             }
+
+            (
+                for {
+                    file ← theFiles
+                    if (file.toString().endsWith(".jar"))
+                    jarFile = {
+                        if (beVerbose) println(Console.BOLD + file.toString + Console.RESET)
+                        new ZipFile(file)
+                    }
+                    jarEntry ← (jarFile).entries
+                    if !jarEntry.isDirectory && jarEntry.getName.endsWith(".class")
+                } yield {
+                    val data = new Array[Byte](jarEntry.getSize().toInt)
+                    time('READING) {
+                        process {
+                            new DataInputStream(jarFile.getInputStream(jarEntry))
+                        } { in ⇒ in.readFully(data) }
+                    }
+                    analyzeClassFile(file.getName(), data)
+                }
+            ).flatten
         }
 
         if (collectedExceptions.nonEmpty) {
-            var report = "Exceptions: "
+            val body =
+                for ((exResource, exInstances) ← collectedExceptions.groupBy(e ⇒ e._1)) yield {
 
-            collectedExceptions.groupBy(e ⇒ e._1) foreach { ge ⇒
-                val (exResource, exInstances) = ge
-                report +=
-                    ("\n"+exResource+"("+exInstances.size+")").padTo(80, '_')
+                    val exDetails =
+                        exInstances.map { ex ⇒
+                            val (_, classFile, method, throwable) = ex
+                            <div>
+                            	<b>{ classFile.thisType.fqn }</b> 
+                        		<i>"{ method.toJava }"</i> 
+                        		<div>{ throwableToXHTML(throwable) }</div>
+                        	</div>
+                        }
 
-                report +=
-                    exInstances.map { ex ⇒
-                        val (resource, classFile, method, throwable) = ex
-                        UNDERLINED + classFile.thisType.fqn+"\033[24m"+"{ "+
-                            method.toJava+" => "+
-                            RED +
-                            (if (throwable != null)
-                                throwableToString(throwable)
-                            else
-                                ""
-                            ) +
-                            RESET+
-                            " }"
-                    }.mkString("\n\t", ",\n\t", "\n")
-            }
-            report +=
-                "\nDuring the interpretation of "+
-                methodsCount+" methods in "+
-                classesCount+" classes (overall: "+nsToSecs(getTime('OVERALL))+
-                "secs. (reading: "+nsToSecs(getTime('READING))+
-                "secs., parsing: "+nsToSecs(getTime('PARSING))+
-                "secs., ai: "+nsToSecs(getTime('AI))+
-                "secs.)) "+collectedExceptions.size+" exceptions occured."
-            Some(report)
+                    <section>
+                    <h1>{ exResource }</h1>
+                    <p>Number of thrown exceptions: { exInstances.size }</p>{ exDetails }
+                    </section>
+                }
+
+            val node =
+                XHTML.htmlTemplate(
+                    Some("Exceptions Thrown During Interpretation"),
+                    scala.xml.NodeSeq.fromSeq(body.toSeq))
+            val file = XHTML.writeAndOpenDump(node)
+
+            Some(
+                (
+                    "During the interpretation of "+
+                    methodsCount+" methods in "+
+                    classesCount+" classes (overall: "+nsToSecs(getTime('OVERALL))+
+                    "secs. (reading: "+nsToSecs(getTime('READING))+
+                    "secs., parsing: "+nsToSecs(getTime('PARSING))+
+                    "secs., ai: "+nsToSecs(getTime('AI))+
+                    "secs.)) "+collectedExceptions.size+" exceptions occured."
+                ),
+                file
+            )
         } else {
             None
         }
     }
 
-    def throwableToString(throwable: Throwable): String = {
+    def throwableToXHTML(throwable: Throwable): scala.xml.Node = {
         val baseThrowable = throwable match {
             case ie: InterpreterException[_] ⇒ ie.throwable
             case _                           ⇒ throwable
         }
-        val stackTrace =
-            Option(
-                if (baseThrowable.getStackTrace() != null && baseThrowable.getStackTrace().size > 0)
-                    baseThrowable.getStackTrace()
-                else
-                    null
-            )
 
-        (
-            baseThrowable.getClass().getSimpleName() +
-            stackTrace.map(s ⇒ Console.GREEN+" ("+s(0).getClassName()+":"+s(0).getLineNumber()+") "+Console.RED).getOrElse("")+
-            " => "+
-            baseThrowable.getMessage()
-        ).trim
+        if (baseThrowable.getStackTrace() == null ||
+            baseThrowable.getStackTrace().size == 0) {
+            <div>{ baseThrowable.getClass().getSimpleName() + " " + baseThrowable.getMessage() }</div>
+        } else {
+            val stackElements =
+                for { stackElement ← baseThrowable.getStackTrace() } yield {
+                    <tr>
+                		<td>{ stackElement.getClassName() }</td>
+                		<td>{ stackElement.getMethodName() }</td>
+						<td>{ stackElement.getLineNumber() }</td>
+						</tr>
+                }
+
+            <details>
+                <summary>{ baseThrowable.getClass().getSimpleName() + " " + baseThrowable.getMessage() }</summary>
+                <table>{ stackElements }</table>
+            </details>
+        }
     }
 
 }

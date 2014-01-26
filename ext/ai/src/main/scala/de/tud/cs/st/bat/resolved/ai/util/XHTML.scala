@@ -39,6 +39,7 @@ package util
 import instructions._
 
 import scala.xml.Node
+import scala.xml.NodeSeq
 import java.io.File
 
 /**
@@ -151,13 +152,9 @@ object XHTML {
         }
     }
 
-    def dump(classFile: Option[ClassFile],
-             method: Option[Method],
-             code: Code,
-             domain: SomeDomain,
-             operandsArray: Array[_ <: List[_ <: AnyRef]],
-             localsArray: Array[_ <: Array[_ <: AnyRef]],
-             title: Option[String] = None): Node = {
+    def htmlTemplate(
+        title: Option[String] = None,
+        body: NodeSeq): Node = {
         // HTML 5 XML serialization (XHTML 5)
         <html xmlns="http://www.w3.org/1999/xhtml">
         <head>
@@ -168,9 +165,22 @@ object XHTML {
         </head>
         <body>
         { scala.xml.Unparsed(title.getOrElse("")) }
-        { dumpTable(classFile, method, code, domain, operandsArray, localsArray) }
+        { body }
         </body>
         </html>
+    }
+
+    def dump(
+        classFile: Option[ClassFile],
+        method: Option[Method],
+        code: Code,
+        domain: SomeDomain,
+        operandsArray: Array[_ <: List[_ <: AnyRef]],
+        localsArray: Array[_ <: Array[_ <: AnyRef]],
+        title: Option[String] = None): Node = {
+        htmlTemplate(
+            title,
+            dumpTable(classFile, method, code, domain, operandsArray, localsArray))
     }
 
     def writeAndOpenDump(node: Node): Option[File] = {
@@ -187,7 +197,7 @@ object XHTML {
                 desktop.open(file)
                 return Some(file)
             }
-            println("No desktop support existing - cannot open the dump in a browser.")
+            println("No desktop support available - cannot open the dump in a browser.")
         } catch {
             case e: Exception ⇒
                 println("Opening the AI dump in the OS's default app failed: "+e.getMessage)
@@ -259,7 +269,7 @@ object XHTML {
         val modifiers = if (method.isDefined && method.get.isStatic) "static " else ""
         val typeName = classFile.map(_.thisType.toJava).getOrElse("")
         val methodName = method.map(m ⇒ m.toJava).getOrElse("&lt; method &gt;")
-        modifiers + typeName +"{ "+ methodName+" }"
+        modifiers + typeName+"{ "+methodName+" }"
     }
 
     private def indexExceptionHandlers(code: Code) =
