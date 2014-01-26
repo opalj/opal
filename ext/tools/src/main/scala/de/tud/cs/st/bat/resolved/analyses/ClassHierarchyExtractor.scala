@@ -90,7 +90,7 @@ object ClassHierarchyExtractor {
             if (superclassType.isDefined) {
                 specLine += " extends "+superclassType.get.fqn
                 val superinterfaceTypes = classHierarchy.superinterfaceTypes(aType)
-                if (superinterfaceTypes.isDefined) {
+                if (superinterfaceTypes.isDefined && superinterfaceTypes.get.nonEmpty) {
                     specLine +=
                         " implements "+superinterfaceTypes.get.map(_.fqn).mkString(", ")
                 }
