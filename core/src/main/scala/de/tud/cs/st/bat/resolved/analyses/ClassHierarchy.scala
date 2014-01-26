@@ -167,7 +167,7 @@ class ClassHierarchy private (
      * @param objectType A known `ObjectType`. (See `ClassHierarchy.isKnown`,
      *      `ClassHierarchy.ifKnown` for further details).
      */
-    @inline def isInterface(objectType: ObjectType): Boolean = 
+    @inline def isInterface(objectType: ObjectType): Boolean =
         interfaceTypesMap(objectType.id)
 
     /**
@@ -375,6 +375,13 @@ class ClassHierarchy private (
         classFiles.values
     }
 
+    /**
+     * Returns `Some(<SUPERTYPES>)` if this type is known and information about the
+     * supertypes is available. I.e., if this type is not known `None` is returned;
+     * if the given type's superinterfaces are known (even if this class does not
+     * implement (directly or indirectly) any interface) `Some(Set(<ObJECTTYPES>))` is
+     * returned.
+     */
     def superinterfaceTypes(objectType: ObjectType): Option[Set[ObjectType]] = {
         if (isKnown(objectType)) {
             val superinterfaceTypes = superinterfaceTypesMap(objectType.id)
@@ -1056,7 +1063,8 @@ object ClassHierarchy {
         classFiles: Traversable[ClassFile],
         predefinedClassHierarchies: Seq[() ⇒ java.io.InputStream] = List(
             () ⇒ { getClass().getResourceAsStream("ClassHierarchyJLS.ths") },
-            () ⇒ { getClass().getResourceAsStream("ClassHierarchyJVMExceptions.ths") }
+            () ⇒ { getClass().getResourceAsStream("ClassHierarchyJVMExceptions.ths") },
+            () ⇒ { getClass().getResourceAsStream("ClassHierarchyJava7-java.lang.reflect.ths") }
         )): ClassHierarchy = {
 
         import scala.collection.mutable.HashSet
