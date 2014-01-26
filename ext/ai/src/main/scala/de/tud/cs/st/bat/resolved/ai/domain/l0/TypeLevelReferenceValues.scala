@@ -97,10 +97,14 @@ trait TypeLevelReferenceValues[+I]
      *      set all direct and indirect supertypes or none. For example, the intersection
      *      of the sets of all supertypes (as returned, e.g., by
      *      `ClassHiearchy.allSupertypes`) of two (independent) types satisfies this
-     *      condition.
+     *      condition. If `types` is empty, the returned leaf type is `ObjectType.Object`.
+     *      which should always be a safe fallback.
      */
     protected def leafTypes(
         types: scala.collection.Set[ObjectType]): Either[ObjectType, UIDList[ObjectType]] = {
+        if (types.isEmpty)
+            return Left(ObjectType.Object)
+
         if (types.size == 1)
             return Left(types.head)
 
@@ -108,9 +112,7 @@ trait TypeLevelReferenceValues[+I]
             classHierarchy.isUnknown(aType) ||
                 !(classHierarchy.directSubtypesOf(aType) exists { t ⇒ types.contains(t) })
         }
-        if (lts.isEmpty)
-            Left(ObjectType.Object)
-        else if (lts.size == 1)
+        if (lts.size == 1)
             Left(lts.head)
         else {
             Right(UIDList(lts))
@@ -164,10 +166,10 @@ trait TypeLevelReferenceValues[+I]
                     return Left(upperTypeBoundA)
 
                 if (domain.isSubtypeOf(upperTypeBoundA, b).yes) {
-                    true
+                    true // => in newUpperTypeBound
                 } else {
                     aIsSubtypeOfAllOfb = false
-                    false
+                    false // => no in newUpperTypeBound
                 }
             }
             if (aIsSubtypeOfAllOfb)
@@ -181,6 +183,11 @@ trait TypeLevelReferenceValues[+I]
         }
         // if we reach this point the types are in no inheritance relationship
 
+        if (classHierarchy.isUnknown(upperTypeBoundA)) {
+            // there is nothing that we can do...
+            return Left(ObjectType.Object)
+        }
+
         val allSupertypesOfA = classHierarchy.allSupertypes(upperTypeBoundA, false)
         val allSupertypesOfB = allSupertypesOf(upperTypeBoundB, false)
         val commonSupertypes = allSupertypesOfA intersect allSupertypesOfB
@@ -189,7 +196,10 @@ trait TypeLevelReferenceValues[+I]
 
     /**
      * Tries to calculate the most specific common supertype of the two given types.
-     * If `reflexive` is `false`, the two types do not have to be in an inheritance relation.
+     * If `reflexive` is `false`, the two types do not have to be in an inheritance
+     * relation.
+     *
+     * If the class hierarchy is not complete, a best guess is made.
      */
     protected def joinObjectTypes(
         upperTypeBoundA: ObjectType,
@@ -205,10 +215,17 @@ trait TypeLevelReferenceValues[+I]
                 return Left(upperTypeBoundB)
         }
 
+        if (classHierarchy.isUnknown(upperTypeBoundA) ||
+            classHierarchy.isUnknown(upperTypeBoundB)) {
+            // there is not too much that we can do...
+            return Left(ObjectType.Object)
+        }
+
         val allSupertypesOfA = classHierarchy.allSupertypes(upperTypeBoundA, false)
         val allSupertypesOfB = classHierarchy.allSupertypes(upperTypeBoundB, false)
         val commonSupertypes = allSupertypesOfA intersect allSupertypesOfB
         leafTypes(commonSupertypes)
+
     }
 
     /**
@@ -476,10 +493,16 @@ trait TypeLevelReferenceValues[+I]
 
     }
 
+    trait ArrayAbstraction {
+        def load(pc: PC, index: DomainValue): ArrayLoadResult
+        def store(pc: PC, value: DomainValue, index: DomainValue): ArrayStoreResult
+        def length(pc: PC): Computation[DomainValue, ExceptionValue]
+    }
+
     /**
      * Represents an array value.
      */
-    protected trait ArrayValue extends ReferenceValue {
+    protected trait ArrayValue extends ReferenceValue with ArrayAbstraction {
         this: DomainArrayValue ⇒
 
         /**
@@ -491,7 +514,7 @@ trait TypeLevelReferenceValues[+I]
         /**
          *
          */
-        /*ABSTRACT*/ def doLoad(
+        /*ABSTRACT*/ protected def doLoad(
             pc: PC,
             index: DomainValue,
             potentialExceptions: ExceptionValues): ArrayLoadResult
@@ -503,7 +526,7 @@ trait TypeLevelReferenceValues[+I]
             // is checked for by the domain-level method.
 
             val validIndex =
-                isSomeValueInRange(index, IntegerConstant0, getLength(pc))
+                isSomeValueInRange(index, IntegerConstant0, doGetLength(pc))
             if (validIndex.no)
                 return justThrows(ArrayIndexOutOfBoundsException(pc))
 
@@ -516,7 +539,7 @@ trait TypeLevelReferenceValues[+I]
             doLoad(pc, index, thrownExceptions)
         }
 
-        def doArraystore(
+        protected def doArraystore(
             pc: PC,
             value: DomainValue,
             index: DomainValue): Unit = { /* Empty by default. */ }
@@ -536,7 +559,7 @@ trait TypeLevelReferenceValues[+I]
             // represented by an instance of the respective class
 
             val validIndex =
-                isSomeValueInRange(index, IntegerConstant0, getLength(pc))
+                isSomeValueInRange(index, IntegerConstant0, doGetLength(pc))
             if (validIndex.no)
                 return justThrows(ArrayIndexOutOfBoundsException(pc))
 
@@ -554,14 +577,14 @@ trait TypeLevelReferenceValues[+I]
             ComputationWithSideEffectOrException(thrownExceptions)
         }
 
-        def getLength(pc: PC): DomainValue =
+        protected def doGetLength(pc: PC): DomainValue =
             IntegerValue(pc)
 
         def length(pc: PC): Computation[DomainValue, ExceptionValue] = {
             if (isNull == Unknown && throwNullPointerException)
-                ComputedValueAndException(getLength(pc), NullPointerException(pc))
+                ComputedValueAndException(doGetLength(pc), NullPointerException(pc))
             else
-                ComputedValue(getLength(pc))
+                ComputedValue(doGetLength(pc))
         }
     }
 
@@ -576,8 +599,12 @@ trait TypeLevelReferenceValues[+I]
     def asObjectValue(value: DomainValue): DomainObjectValue =
         value.asInstanceOf[DomainObjectValue]
 
-    def asArrayValue(value: DomainValue): DomainArrayValue =
-        value.asInstanceOf[DomainArrayValue]
+    def asArrayAbstraction(value: DomainValue): ArrayAbstraction = {
+        value match {
+            case aa: ArrayAbstraction ⇒ aa
+            case _                    ⇒ throw new ClassCastException("no array value: "+value)
+        }
+    }
 
     // -----------------------------------------------------------------------------------
     //
@@ -743,7 +770,7 @@ trait TypeLevelReferenceValues[+I]
             justThrows(NullPointerException(pc))
         else
             // if the bytecode is valid, the type cast (asArrayValue) is safe
-            asArrayValue(arrayref).load(pc, index)
+            asArrayAbstraction(arrayref).load(pc, index)
     }
 
     /**
@@ -763,7 +790,7 @@ trait TypeLevelReferenceValues[+I]
             justThrows(NullPointerException(pc))
         else
             // if the bytecode is valid, the type cast (asArrayValue) is safe
-            asArrayValue(arrayref).store(pc, value, index)
+            asArrayAbstraction(arrayref).store(pc, value, index)
     }
 
     /**
@@ -779,7 +806,7 @@ trait TypeLevelReferenceValues[+I]
         if (isNull(arrayref).yes)
             throws(NullPointerException(pc))
         else
-            asArrayValue(arrayref).length(pc)
+            asArrayAbstraction(arrayref).length(pc)
     }
 
     // -----------------------------------------------------------------------------------
