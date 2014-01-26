@@ -44,10 +44,10 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.matchers.ShouldMatchers
 
 /**
-  * Tests that BATAI's implemented design is as expected.
-  *
-  * @author Michael Eichberg
-  */
+ * Tests that BATAI's implemented design is as expected.
+ *
+ * @author Michael Eichberg
+ */
 @RunWith(classOf[JUnitRunner])
 class ArchitectureTest extends FlatSpec with ShouldMatchers with BeforeAndAfterAll {
 
@@ -85,7 +85,7 @@ class ArchitectureTest extends FlatSpec with ShouldMatchers with BeforeAndAfterA
 
                 'Core is_only_allowed_to_use empty
 
-                'Domains is_only_allowed_to_use 'Core
+                'Domains is_only_allowed_to_use ('Core, 'Util)
 
                 'Project is_only_allowed_to_use ('Core, 'Domains)
 
@@ -98,7 +98,7 @@ class ArchitectureTest extends FlatSpec with ShouldMatchers with BeforeAndAfterA
         val result = analyze(Directory("."))
         if (result.nonEmpty) {
             println("Violations:\n\t"+result.mkString("\n\t"))
-            fail("The implemented and the specified architecture do not conform (see the console for details).")
+            fail("The implemented and the specified architecture are not consistent (see the console for details).")
         }
     }
 }
