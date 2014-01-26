@@ -99,7 +99,7 @@ object InterpretMethods {
         reset('PARSING)
         reset('AI)
 
-        var collectedExceptions: List[(ClassFile, Method, Throwable)] = List()
+        var collectedExceptions: List[(String, ClassFile, Method, Throwable)] = List()
         var classesCount = 0
         var methodsCount = 0
 
@@ -156,7 +156,7 @@ object InterpretMethods {
                         case ct: ControlThrowable ⇒ throw ct
                         case t: Throwable ⇒ {
                             // basically, we want to catch everything!
-                            collectedExceptions = (classFile, method, t) :: collectedExceptions
+                            collectedExceptions = (resource, classFile, method, t) :: collectedExceptions
                         }
                     }
                     //                        }
@@ -173,27 +173,26 @@ object InterpretMethods {
         if (collectedExceptions.nonEmpty) {
             var report = "Exceptions: "
 
-            var groupedExceptions = collectedExceptions.groupBy(e ⇒ e._3.getClass().getName())
-            groupedExceptions.map(ge ⇒ {
-                val (exClass, exInstances) = ge
+            collectedExceptions.groupBy(e ⇒ e._1) foreach { ge ⇒
+                val (exResource, exInstances) = ge
+                report +=
+                    ("\n"+exResource+"("+exInstances.size+")").padTo(80, '_')
 
                 report +=
-                    "\n"+exClass+"("+exInstances.size+")__________________________\n"
-
-                report += exInstances.map(ex ⇒ {
-                    val (classFile, method, throwable) = ex
-                    UNDERLINED + classFile.thisType.fqn+"\033[24m"+"{ "+
-                        method.toJava+" => "+
-                        RED +
-                        (if (throwable != null)
-                            (throwable.getClass().getSimpleName()+" => "+throwable.getMessage()).trim
-                        else
-                            ""
-                        ) +
-                        RESET+
-                        " }"
-                }).mkString("\n\t", ",\n\t", "\n")
-            })
+                    exInstances.map { ex ⇒
+                        val (resource, classFile, method, throwable) = ex
+                        UNDERLINED + classFile.thisType.fqn+"\033[24m"+"{ "+
+                            method.toJava+" => "+
+                            RED +
+                            (if (throwable != null)
+                                throwableToString(throwable)
+                            else
+                                ""
+                            ) +
+                            RESET+
+                            " }"
+                    }.mkString("\n\t", ",\n\t", "\n")
+            }
             report +=
                 "\nDuring the interpretation of "+
                 methodsCount+" methods in "+
@@ -206,6 +205,27 @@ object InterpretMethods {
         } else {
             None
         }
+    }
+
+    def throwableToString(throwable: Throwable): String = {
+        val baseThrowable = throwable match {
+            case ie: InterpreterException[_] ⇒ ie.throwable
+            case _                           ⇒ throwable
+        }
+        val stackTrace =
+            Option(
+                if (baseThrowable.getStackTrace() != null && baseThrowable.getStackTrace().size > 0)
+                    baseThrowable.getStackTrace()
+                else
+                    null
+            )
+
+        (
+            baseThrowable.getClass().getSimpleName() +
+            stackTrace.map(s ⇒ Console.GREEN+" ("+s(0).getClassName()+":"+s(0).getLineNumber()+") "+Console.RED).getOrElse("")+
+            " => "+
+            baseThrowable.getMessage()
+        ).trim
     }
 
 }
