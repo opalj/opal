@@ -55,6 +55,7 @@ import org.scalatest.matchers.ShouldMatchers
 class InterpretManyMethodsTest extends FlatSpec with ShouldMatchers {
 
     import de.tud.cs.st.util.ControlAbstractions._
+    import util.InterpretMethods.interpret
 
     behavior of "BATAI"
 
@@ -67,20 +68,10 @@ class InterpretManyMethodsTest extends FlatSpec with ShouldMatchers {
     it should (
         "be able to interpret all methods using the BaseConfigurableDomain in "+
         files.map(_.getName).mkString("\n\t\t", "\n\t\t", "\n")
-    ) in {
-            util.InterpretMethods.interpret(
-                classOf[BaseConfigurableDomain[_]],
-                files
-            ).map(fail(_))
-        }
+    ) in { interpret(classOf[BaseConfigurableDomain[_]], files).map(fail(_)) }
 
     it should (
         "be able to interpret all methods using the PreciseConfigurableDomain in "+
         files.map(_.getName).mkString("\n\t\t", "\n\t\t", "\n")
-    ) in {
-            util.InterpretMethods.interpret(
-                classOf[PreciseConfigurableDomain[_]],
-                files
-            ).map(fail(_))
-        }
+    ) in { interpret(classOf[PreciseConfigurableDomain[_]], files).map(fail(_)) }
 }
