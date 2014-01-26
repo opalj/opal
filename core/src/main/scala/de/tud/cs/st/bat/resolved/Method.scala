@@ -190,7 +190,7 @@ object Method {
  * {{{
  * for {
  *      classFile ← project.classFiles
- *      method @ MethodWithBody(code) ← classFile.methods
+ *      method @ MethodBody(code) ← classFile.methods
  * } {
  *      // the type of method is "..resolved.Method"
  *      // the type of code is "..resolved.Code"
@@ -199,6 +199,6 @@ object Method {
  *
  * @author Michael Eichberg
  */
-object MethodWithBody {
+object MethodBody {
     def unapply(method: Method): Option[Code] = method.body
 }
