@@ -81,7 +81,7 @@ trait TypeLevelReferenceValues[+I]
         reflexive: Boolean): scala.collection.Set[ObjectType] = {
         val allSupertypesOf = scala.collection.mutable.HashSet.empty[ObjectType]
         types foreach { (t: ObjectType) ⇒
-            if (!allSupertypesOf.contains(t))
+            if (!allSupertypesOf.contains(t) && classHierarchy.isKnown(t))
                 allSupertypesOf ++= classHierarchy.allSupertypes(t, reflexive)
         }
         allSupertypesOf
@@ -105,7 +105,8 @@ trait TypeLevelReferenceValues[+I]
             return Left(types.head)
 
         val lts = types filter { aType ⇒
-            !(classHierarchy.directSubtypesOf(aType) exists { t ⇒ types.contains(t) })
+            classHierarchy.isUnknown(aType) ||
+                !(classHierarchy.directSubtypesOf(aType) exists { t ⇒ types.contains(t) })
         }
         if (lts.isEmpty)
             Left(ObjectType.Object)
