@@ -950,6 +950,58 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
         override def toString() = values.mkString("OneOf(\n\t", ",\n\t", ")")
     }
 
+    protected class MultipleReferenceValuesArrayAbstraction(
+        val mrv: MultipleReferenceValues)
+            extends ArrayAbstraction {
+
+        //        
+        //    def mergeDomainValues[D <: SomeDomain with Singleton](
+        //        pc: PC,
+        //        v1: D#DomainValue,
+        //        v2: D#DomainValue): D#DomainValue = {
+        //        v1.join(pc, v2) match {
+        //            case NoUpdate      ⇒ v1
+        //            case SomeUpdate(v) ⇒ v
+        //        }
+        //    }
+        //    
+        //    def mergeMultipleExceptionValues[D <: SomeDomain with Singleton](
+        //        pc: PC,
+        //        v1: D#DomainValue,
+        //        v2: D#DomainValue): D#DomainValue = {
+        //        
+        //    }
+        //        
+        def load(pc: PC, index: DomainValue): ArrayLoadResult = {
+            sys.error("not yet supported")
+            //            val computations = mrv.values map (asArrayAbstraction(_).load(pc, index))
+            //            computations reduce { (c1, c2) ⇒ mergeComputations(c1, c2) }
+        }
+
+        def store(pc: PC, value: DomainValue, index: DomainValue): ArrayStoreResult = {
+            sys.error("not yet supported")
+            //            val computations = mrv.values map (asArrayAbstraction(_).store(pc, value, index))
+            //            computations reduce { (c1, c2) ⇒ mergeComputations(c1, c2) }
+        }
+
+        def length(pc: PC): Computation[DomainValue, ExceptionValue] = {
+            sys.error("not yet supported")
+            //            val computations = mrv.values map (asArrayAbstraction(_).length(pc))
+            //            computations reduce { (c1, c2) ⇒ mergeComputations(c1, c2) }
+        }
+    }
+
+    override def asArrayAbstraction(value: DomainValue): ArrayAbstraction = {
+        value match {
+            case aa: ArrayAbstraction ⇒
+                aa
+            case mrv: MultipleReferenceValues ⇒
+                new MultipleReferenceValuesArrayAbstraction(mrv)
+            case _ ⇒
+                throw new ClassCastException("no array value: "+value)
+        }
+    }
+
     // -----------------------------------------------------------------------------------
     //
     // FACTORY METHODS
