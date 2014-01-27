@@ -62,13 +62,13 @@ trait AITracer {
      * the responsibility of the tracer to ensure that the updates are meaningful.
      * BATAI will not perform any checks.
      */
-    def continuingInterpretation[D <: SomeDomain](
+    def continuingInterpretation[D <: SomeDomain with Singleton](
         code: Code,
-        domain: D)(
-            initialWorkList: List[PC],
-            alreadyEvaluated: List[PC],
-            operandsArray: Array[List[domain.DomainValue]],
-            localsArray: Array[Array[domain.DomainValue]])
+        domain: D,
+        initialWorkList: List[PC],
+        alreadyEvaluated: List[PC],
+        operandsArray: Array[List[D#DomainValue]],
+        localsArray: Array[Array[D#DomainValue]])
 
     /**
      * Called by BATAI before an instruction is evaluated.
@@ -81,7 +81,7 @@ trait AITracer {
      * @param locals The registers before the execution of the instruction. '''The Array
      *      must not be mutated.'''
      */
-    def instructionEvalution[D <: SomeDomain](
+    def instructionEvalution[D <: SomeDomain with Singleton](
         domain: D,
         pc: PC,
         instruction: Instruction,
@@ -103,19 +103,25 @@ trait AITracer {
      *
      * Recall that BATAI performs a depth-first exploration.
      */
-    def flow(currentPC: PC, targetPC: PC): Unit
+    def flow[D <: SomeDomain with Singleton](
+        domain: D,
+        currentPC: PC,
+        targetPC: PC): Unit
 
     /**
-     * Called if the instruction with the targetPC was rescheduled. I.e., the 
+     * Called if the instruction with the targetPC was rescheduled. I.e., the
      * instruction was already scheduled for evaluation in the future, but was now
-     * rescheduled for a more immediate evaluation. I.e., it was moved to the first 
+     * rescheduled for a more immediate evaluation. I.e., it was moved to the first
      * position in the list that contains the instructions that will be evaluated.
-     * However, further instructions may be appended to the list before the 
+     * However, further instructions may be appended to the list before the
      * next `instructionEvaluation` takes place.
-     * 
+     *
      * Recall that BATAI performs a depth-first exploration.
      */
-    def rescheduled(sourcePC: PC, targetPC: PC): Unit
+    def rescheduled[D <: SomeDomain with Singleton](
+        domain: D,
+        sourcePC: PC,
+        targetPC: PC): Unit
 
     /**
      * Called by BATAI whenever two paths converge and the values on the operand stack
@@ -130,7 +136,7 @@ trait AITracer {
      * @param result The result of joining the operand stacks and register
      * 		assignment.
      */
-    def join[D <: SomeDomain](
+    def join[D <: SomeDomain with Singleton](
         domain: D,
         pc: PC,
         thisOperands: D#Operands,
@@ -144,7 +150,7 @@ trait AITracer {
      * evaluates an `athrow` instruction) that is not caught within
      * the method.
      */
-    def abruptMethodExecution[D <: SomeDomain](
+    def abruptMethodExecution[D <: SomeDomain with Singleton](
         domain: D,
         pc: Int,
         exception: D#DomainValue)
@@ -152,7 +158,7 @@ trait AITracer {
     /**
      * Called when a `RET` instruction is encountered.
      */
-    def ret[D <: SomeDomain](
+    def ret[D <: SomeDomain with Singleton](
         domain: D,
         pc: PC,
         returnAddress: PC,
@@ -162,7 +168,7 @@ trait AITracer {
     /**
      * Called when the evaluation of a subroutine (JSR/RET) is completed.
      */
-    def returnFromSubroutine[D <: SomeDomain](
+    def returnFromSubroutine[D <: SomeDomain with Singleton](
         domain: D,
         pc: Int,
         returnAddress: Int,
@@ -172,5 +178,5 @@ trait AITracer {
      * Called by BATAI when the abstract interpretation of a method has completed/was
      * interrupted.
      */
-    def result[D <: SomeDomain](result: AIResult[D])
+    def result[D <: SomeDomain with Singleton](result: AIResult[D])
 }

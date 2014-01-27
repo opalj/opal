@@ -148,8 +148,9 @@ trait Domain[+I] {
          */
         def computationalType: ComputationalType
 
+        @throws[DomainException]("This method is not supported.")
         private[ai] def asReturnAddressValue: PC =
-            aiException("this value ("+this+") is not a return address")
+            throw new DomainException("this value ("+this+") is not a return address")
 
         /**
          * Joins this value and the given value.
@@ -270,14 +271,9 @@ trait Domain[+I] {
          * @note __The precise semantics of `adapt` can be determined by the domain
          *      as BATAI does not use/call this method.__
          */
-        @throws[DomainException]("If it is not possble to adapt this value to the target domain.")
-        def adapt[TDI >: I](
-            targetDomain: Domain[TDI],
-            pc: PC): targetDomain.DomainValue =
-            domainException(
-                Domain.this,
-                "adapting this value for the target domain is not supported")
-
+        @throws[DomainException]("Adaptation of this value is not supported.")
+        def adapt[TDI >: I](target: Domain[TDI], pc: PC): target.DomainValue =
+            throw new DomainException("This value "+this+" cannot be adapted for "+target)
     }
 
     /**
@@ -334,15 +330,13 @@ trait Domain[+I] {
      */
     protected class IllegalValue extends Value { this: DomainIllegalValue ⇒
 
-        @throws[DomainException]("always")
+        @throws[DomainException]("This method is not supported.")
         final override def computationalType: ComputationalType =
-            domainException(
-                Domain.this,
-                "a dead/an illegal value does not have a computational type")
+            throw DomainException("the illegal value has no computational type")
 
-        @throws[DomainException]("always")
+        @throws[DomainException]("This method is not supported.")
         override protected def doJoin(pc: PC, other: DomainValue): Update[DomainValue] =
-            domainException(Domain.this, "unsupported; call join(...)")
+            throw DomainException("this method is not supported")
 
         override def join(pc: PC, other: DomainValue): Update[DomainValue] =
             if (other eq TheIllegalValue)
@@ -350,16 +344,12 @@ trait Domain[+I] {
             else
                 MetaInformationUpdateIllegalValue
 
-        @throws[DomainException]("always")
+        @throws[DomainException]("This method is not supported.")
         override def summarize(pc: PC): DomainValue =
-            domainException(
-                Domain.this,
-                "creating a summary of an IllegalValue is meaningless")
+            throw DomainException("creating a summary of an illegal value is meaningless")
 
-        override def adapt[ThatI >: I](
-            targetDomain: Domain[ThatI],
-            pc: PC): targetDomain.DomainValue =
-            targetDomain.TheIllegalValue
+        override def adapt[TDI >: I](target: Domain[TDI], pc: PC): target.DomainValue =
+            target.TheIllegalValue
 
         override def toString: String = "IllegalValue"
     }
@@ -378,7 +368,7 @@ trait Domain[+I] {
     val TheIllegalValue: DomainIllegalValue
 
     /**
-     * If the result of the merge of two values is a non-legal value. The result has
+     * The result of the merge of two incompatible values has
      * to be reported as a `MetaInformationUpdate`.
      */
     def MetaInformationUpdateIllegalValue: MetaInformationUpdate[DomainIllegalValue]
@@ -393,9 +383,9 @@ trait Domain[+I] {
      *      implementation errors early on.
      */
     final def StructuralUpdateIllegalValue: StructuralUpdate[Nothing] =
-        domainException(Domain.this,
-            "The join of two values with incompatible values "+
-                "always has to result in a MetaInformationUpdate.")
+        throw new DomainException(
+            "implementation error (see documentation of Domain.StructuralUpdateIllegalValue())"
+        )
 
     /**
      * Stores a single return address (i.e., a program counter/index into the code array).
@@ -416,21 +406,19 @@ trait Domain[+I] {
         final override def computationalType: ComputationalType =
             ComputationalTypeReturnAddress
 
+        @throws[DomainException]("This method is not supported.")
         override protected def doJoin(pc: PC, other: DomainValue): Update[DomainValue] =
             // Note that the framework already handles the case where this 
             // value is joined with itself! A join of this value with a different return 
             // address value does not make sense!
-            domainException(Domain.this, "return address values cannot be joined")
+            throw DomainException("return address values cannot be joined")
 
-        @throws[DomainException]("always")
+        @throws[DomainException]("This method is not supported.")
         override def summarize(pc: PC): DomainValue =
-            domainException(
-                Domain.this, "summarizing this return address values is not supported")
+            throw DomainException("summarizing return address values is meaningless")
 
-        override def adapt[ThatI >: I](
-            targetDomain: Domain[ThatI],
-            pc: PC): targetDomain.DomainValue =
-            targetDomain.ReturnAddressValue(address)
+        override def adapt[TDI >: I](target: Domain[TDI], pc: PC): target.DomainValue =
+            target.ReturnAddressValue(address)
 
         override def toString = "ReturnAddress("+address+")"
     }
@@ -503,7 +491,8 @@ trait Domain[+I] {
         case LongType          ⇒ LongValue(pc)
         case DoubleType        ⇒ DoubleValue(pc)
         case rt: ReferenceType ⇒ ReferenceValue(pc, rt)
-        case VoidType          ⇒ domainException(this, "there are no void typed values")
+        case VoidType ⇒
+            throw DomainException("a domain value cannot have the type void")
     }
 
     /**
@@ -681,7 +670,7 @@ trait Domain[+I] {
      *
      *  - Initialized: '''yes''' (if non-null then the constructor was called)
      *  - Type: '''Upper Bound'''
-     *  - Null: '''Unknown''' 
+     *  - Null: '''Unknown'''
      *  - Content: '''Unknown'''
      */
     def ReferenceValue(pc: PC, referenceType: ReferenceType): DomainValue

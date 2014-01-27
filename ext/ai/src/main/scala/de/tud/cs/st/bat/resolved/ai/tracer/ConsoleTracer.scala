@@ -52,7 +52,7 @@ trait ConsoleTracer extends AITracer {
             value.toString().replaceAll("\n\t", "\n\t\t\t").replaceAll("\n\\)", "\n\t\t)")
     }
 
-    def instructionEvalution[D <: SomeDomain](
+    override def instructionEvalution[D <: SomeDomain with Singleton](
         domain: D,
         pc: PC,
         instruction: Instruction,
@@ -70,31 +70,36 @@ trait ConsoleTracer extends AITracer {
                 }.mkString("\tlocals:\n\t\t", "\n\t\t", "\n")+"\t]")
     }
 
-    def continuingInterpretation[D <: SomeDomain](
+    override def continuingInterpretation[D <: SomeDomain with Singleton](
         code: Code,
-        domain: D)(
-            initialWorkList: List[PC],
-            alreadyEvaluated: List[PC],
-            operandsArray: Array[List[domain.DomainValue]],
-            localsArray: Array[Array[domain.DomainValue]]) {
+        domain: D,
+        initialWorkList: List[PC],
+        alreadyEvaluated: List[PC],
+        operandsArray: Array[List[D#DomainValue]],
+        localsArray: Array[Array[D#DomainValue]]) {
         println(Console.BLACK_B + Console.WHITE+"Starting Code Analysis"+Console.RESET)
         println("Number of registers:      "+code.maxLocals)
         println("Size of operand stack:    "+code.maxStack)
         //println("Program counters:         "+code.programCounters.mkString(", "))     
     }
 
-    def rescheduled(sourcePC: PC, targetPC: PC): Unit = {
+    override def rescheduled[D <: SomeDomain with Singleton](
+        domain: D,
+        sourcePC: PC,
+        targetPC: PC): Unit = {
         println(
-            Console.CYAN_B +
-                Console.RED+
+            Console.CYAN_B + Console.RED+
                 "rescheduled the evaluation of the instruction with the program counter: "+
                 targetPC +
                 Console.RESET)
     }
 
-    def flow(currentPC: PC, targetPC: PC) { /* ignored */ }
+    override def flow[D <: SomeDomain with Singleton](
+        domain: D,
+        currentPC: PC,
+        targetPC: PC) { /* ignored */ }
 
-    def join[D <: SomeDomain](
+    override def join[D <: SomeDomain with Singleton](
         domain: D,
         pc: PC,
         thisOperands: D#Operands,
@@ -140,7 +145,7 @@ trait ConsoleTracer extends AITracer {
         println(Console.RESET)
     }
 
-    def abruptMethodExecution[D <: SomeDomain](
+    override def abruptMethodExecution[D <: SomeDomain with Singleton](
         domain: D,
         pc: Int,
         exception: D#DomainValue): Unit = {
@@ -150,7 +155,7 @@ trait ConsoleTracer extends AITracer {
             Console.RESET)
     }
 
-    def returnFromSubroutine[D <: SomeDomain](
+    override def returnFromSubroutine[D <: SomeDomain with Singleton](
         domain: D,
         pc: PC,
         returnAddress: PC,
@@ -165,7 +170,7 @@ trait ConsoleTracer extends AITracer {
     /**
      * Called when a ret instruction is encountered.
      */
-    def ret[D <: SomeDomain](
+    override def ret[D <: SomeDomain with Singleton](
         domain: D,
         pc: PC,
         returnAddress: PC,
@@ -179,5 +184,5 @@ trait ConsoleTracer extends AITracer {
             Console.RESET)
     }
 
-    def result[D <: SomeDomain](result: AIResult[D]) { /*ignored*/ }
+    override def result[D <: SomeDomain with Singleton](result: AIResult[D]) { /*ignored*/ }
 }

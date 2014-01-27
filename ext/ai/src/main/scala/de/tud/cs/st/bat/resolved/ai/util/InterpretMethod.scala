@@ -152,20 +152,20 @@ object InterpretMethod {
                 result.localsArray,
                 Some("Result("+domainClass.getName()+"): "+(new java.util.Date).toString)))
         } catch {
-            case ie @ InterpreterException(throwable, domain, worklist, evaluated, operands, locals) ⇒
-                writeAndOpenDump(dump(
-                    Some(classFile),
-                    Some(method),
-                    method.body.get,
-                    domain,
-                    operands,
-                    locals,
+            case ie @ InterpreterException(message, domain, worklist, evaluated, operands, locals) ⇒
+                val header =
                     Some("<p><b>"+domainClass.getName()+"</b></p>"+
-                        throwable.getLocalizedMessage()+"<br>"+
-                        throwable.getStackTrace().mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n") +
+                        message+"<br>"+
+                        ie.getStackTrace().mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n") +
                         evaluated.reverse.mkString("Evaluated instructions:\n<br>", ",", "<br>") +
                         worklist.mkString("Remaining worklist:\n<br>", ", ", "<br>")
-                    )))
+                    )
+                val evaluationDump =
+                    dump(
+                        Some(classFile), Some(method), method.body.get,
+                        domain, operands, locals, header
+                    )
+                writeAndOpenDump(evaluationDump)
                 throw ie
         }
     }

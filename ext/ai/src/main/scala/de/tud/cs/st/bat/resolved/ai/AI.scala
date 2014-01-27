@@ -40,19 +40,19 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 import scala.util.control.ControlThrowable
 
 /**
- * A highly-configurable abstract interpreter for BAT's resolved representation of Java
- * bytecode.
+ * A highly-configurable framework for the (abstract) interpretation of Java bytecode
+ * that relies on BAT's resolved representation of Java bytecode.
  *
- * This interpreter basically traverses all instructions of a method in depth-first order
+ * This framework basically traverses all instructions of a method in depth-first order
  * and evaluates each instruction using an exchangeable
  * [[de.tud.cs.st.bat.resolved.ai.Domain]].
  *
  * ==Interacting with BATAI==
- * The primary means how to make use of the abstract interpreter is to perform
- * an abstract interpretation of a method using a customized `Domain`. This
+ * The primary means how to make use of this framework is to perform
+ * an abstract interpretation of a method using a customized `Domain`. That
  * customized domain can be used, e.g., to build a call graph or to
- * do other intra-/interprocedural analyses. Additionally, it is possible to analyze the
- * result of an abstract interpretation.
+ * do other intra-/interprocedural analyses while the code is analyzed.
+ * Additionally, it is possible to analyze the result of an abstract interpretation.
  *
  * ==Thread Safety==
  * This class is thread-safe as long as the `AITracer` (if any) and the used domain
@@ -62,18 +62,20 @@ import scala.util.control.ControlThrowable
  * However, if you want to be able to selectively abort the abstract interpretation
  * of some methods or want to selectively trace the interpretation of some methods, then
  * you should use multiple abstract interpreter instances.
- * Creating new instances Abstract Interpreter instances is extremely cheap as this class
- * does not have any associated state.
+ * Creating new instances is extremely cheap as this class
+ * does not have any significant associated state.
  *
- * ==Customizing the Abstract Interpreter==
+ * ==Customizing the Abstract Interpretation Framework==
  * Customization of the abstract interpreter is done by creating new subclasses that
  * override the relevant methods (in particular: `isInterrupted` and `tracer`).
  *
  * @note
  *     BATAI does not make assumptions about the number of domain objects that
- *     are used. However, if a single domain is used by multiple abstract interpreters that
- *     are executed concurrently, the domain has to be thread-safe.
- *     The latter is trivially the case when the domain object itself does not have any state.
+ *     are used. However, if a single domain object is used by multiple instances
+ *     of this class and the abstract interpretation are executed concurrently, then
+ *     the domain has to be thread-safe.
+ *     The latter is trivially the case when the domain object itself does not have
+ *     any state.
  *
  * @author Michael Eichberg
  */
@@ -92,8 +94,8 @@ trait AI[D <: SomeDomain] {
      *
      * Called by BATAI during the abstract interpretation of a method to determine whether
      * the computation should be aborted. This method is ''always called directly before
-     * the evaluation of the first/next instruction''. I.e., after the evaluation of an instruction
-     * and the update of the memory as well as stating all constraints.
+     * the evaluation of the first/next instruction''. I.e., after the evaluation of an
+     * instruction and the update of the memory as well as stating all constraints.
      *
      * @note When the abstract interpreter is currently waiting on the result of the
      *    interpretation of a called method it may take some time before the
@@ -114,16 +116,20 @@ trait AI[D <: SomeDomain] {
      *
      * '''To attach a tracer to the abstract interpreter override this
      * method in subclasses''' and return some tracer object.
+     *
+     * BATAI enables the attachment/detachment of tracers at any time.
      */
     def tracer: Option[AITracer] = None
 
     /**
-     *  Performs an abstract interpretation of the given method with the given domain.
+     *  Performs an abstract interpretation of the given method using the given domain.
      *
      *  @param classFile The method's defining class file.
      *  @param method A non-native, non-abstract method of the given class file that
-     *      will be analyzed. All parameters are initialized with sensible default values.
-     *  @param domain The domain that will be used for the abstract interpretation.
+     *      will be analyzed. All parameters are automatically initialized with sensible
+     *      default values.
+     *  @param domain The domain that will be used to perform computations related
+     *  	to values.
      */
     def apply(
         classFile: ClassFile,
@@ -164,7 +170,8 @@ trait AI[D <: SomeDomain] {
      * @param classFile The class file which defines the given method.
      * @param method A non-native, non-abstract method. I.e., a method that has an
      *      implementation in Java bytecode.
-     * @param domain The domain object that will be used for the abstract interpretation.
+     * @param domain The domain that will be used to perform computations related
+     *  	to values.
      */
     protected def initialLocals(
         classFile: ClassFile,
@@ -175,18 +182,19 @@ trait AI[D <: SomeDomain] {
         import domain.DomainValueTag
 
         someLocals.map { l ⇒
-            assume(
-                l.size >= (method.parameterTypes.size + (if (method.isStatic) 0 else 1)),
-                "the number of initial values is less than the number of parameters")
+            if (l.size < (method.parameterTypes.size + (if (method.isStatic) 0 else 1)))
+                throw new IllegalArgumentException(
+                    "the number of initial values is less than the number of parameters"
+                )
 
-            val code = method.body.get
-            if (l.size >= code.maxLocals)
+            val maxLocals = method.body.get.maxLocals
+            if (l.size >= maxLocals)
                 l.toArray
             else {
                 // the number of given locals is smaller than the number of max locals
                 // (the former number still has to be larger or equal to the number of 
                 // parameter values (including "this"))
-                val locals = new Array[domain.DomainValue](code.maxLocals)
+                val locals = new Array[domain.DomainValue](maxLocals)
                 for (i ← (0 until l.size))
                     locals(i) = l(i)
                 locals
@@ -254,14 +262,9 @@ trait AI[D <: SomeDomain] {
         domain: D)(
             someLocals: Option[IndexedSeq[domain.DomainValue]] = None): AIResult[domain.type] = {
 
-        assume(method.body.isDefined, "the method ("+method.toJava+") has no body")
-
-        val code = method.body.get
-
-        perform(
-            code, domain)(
-                initialOperands(classFile, method, domain),
-                initialLocals(classFile, method, domain)(someLocals))
+        perform(method.body.get, domain)(
+            initialOperands(classFile, method, domain),
+            initialLocals(classFile, method, domain)(someLocals))
     }
 
     /**
@@ -308,14 +311,14 @@ trait AI[D <: SomeDomain] {
      *      in the array contains the operand stack before the instruction with the
      *      corresponding index is executed. This array can be empty except of the
      *      indexes that are referred to by the `initialWorklist`.
-     *      '''The `operandsArray` data structure is mutated by BATAI and it is therefore
-     *      __highly recommended that no `Domain` directly mutates the state of
+     *      '''The `operandsArray` data structure is mutated by BATAI and it is
+     *      __recommended that a `Domain` does not directly mutate the state of
      *      this array__.'''
      * @param localsArray The array that contains the local variable assignments.
      *      Each value in the array contains the local variable assignments before
      *      the instruction with the corresponding program counter is executed.
-     *      '''The `localsArray` data structure is mutated by BATAI and it is therefore
-     *      __highly recommended that no `Domain` directly mutates the state of
+     *      '''The `localsArray` data structure is mutated by BATAI and it is
+     *      __recommended that a `Domain` does not directly mutate the state of
      *      this array__.'''
      */
     protected[ai] def continueInterpretation(
@@ -327,9 +330,8 @@ trait AI[D <: SomeDomain] {
             localsArray: Array[Array[domain.DomainValue]]): AIResult[domain.type] = {
 
         if (tracer.isDefined)
-            tracer.get.continuingInterpretation(
-                code, domain)(
-                    initialWorkList, alreadyEvaluated, operandsArray, localsArray)
+            tracer.get.continuingInterpretation[domain.type](
+                code, domain, initialWorkList, alreadyEvaluated, operandsArray, localsArray)
 
         import domain._
         import ObjectType._
@@ -373,7 +375,9 @@ trait AI[D <: SomeDomain] {
                 operandsArray(targetPC) = operands
                 localsArray(targetPC) = locals
                 worklist = targetPC :: worklist
-                if (tracer.isDefined) tracer.get.flow(sourcePC, targetPC)
+                if (tracer.isDefined)
+                    tracer.get.flow[domain.type](domain, sourcePC, targetPC)
+
             } else {
                 val currentLocals = localsArray(targetPC)
                 val mergeResult = domain.join(
@@ -392,27 +396,27 @@ trait AI[D <: SomeDomain] {
                         operandsArray(targetPC) = updatedOperands
                         localsArray(targetPC) = updatedLocals
                         // we want depth-first evaluation
-                        val filteredList = removeFirst(worklist, targetPC)
+                        val filteredList = util.removeFirst(worklist, targetPC)
                         worklist = targetPC :: filteredList
                         if (tracer.isDefined) {
                             if (filteredList eq worklist)
                                 // the instruction was not yet scheduled for another
                                 // evaluation
-                                tracer.get.flow(sourcePC, targetPC)
+                                tracer.get.flow[domain.type](domain, sourcePC, targetPC)
                             else
                                 // the instruction was just moved to the beginning
-                                tracer.get.rescheduled(sourcePC, targetPC)
+                                tracer.get.rescheduled[domain.type](domain, sourcePC, targetPC)
                         }
 
                     case MetaInformationUpdate((updatedOperands, updatedLocals)) ⇒
                         operandsArray(targetPC) = updatedOperands
                         localsArray(targetPC) = updatedLocals
                         // we want depth-first evaluation
-                        val filteredList = removeFirst(worklist, targetPC)
+                        val filteredList = util.removeFirst(worklist, targetPC)
                         if (filteredList ne worklist) {
                             worklist = targetPC :: filteredList
                             if (tracer.isDefined)
-                                tracer.get.rescheduled(sourcePC, targetPC)
+                                tracer.get.rescheduled[domain.type](domain, sourcePC, targetPC)
                         }
                 }
             }
@@ -462,7 +466,7 @@ trait AI[D <: SomeDomain] {
                             val operands = operandsArray(retPC)
                             val locals = localsArray(retPC)
                             if (tracer.isDefined)
-                                tracer.get.returnFromSubroutine(
+                                tracer.get.returnFromSubroutine[domain.type](
                                     domain,
                                     retPC,
                                     returnAddress,
@@ -777,7 +781,7 @@ trait AI[D <: SomeDomain] {
                         }
                         worklist = head.reverse ::: (-lvIndex :: pc :: tail.tail)
                         if (tracer.isDefined) {
-                            tracer.get.ret(
+                            tracer.get.ret[domain.type](
                                 domain,
                                 pc,
                                 locals(lvIndex).asReturnAddressValue,
@@ -1750,23 +1754,22 @@ trait AI[D <: SomeDomain] {
                     case opcode       ⇒ BATException("unsupported opcode: "+opcode)
                 }
             } catch {
-                case ct: ControlThrowable ⇒ throw ct
-                case de: DomainException ⇒ throw de.enrich(
-                    worklist,
-                    evaluated,
-                    operandsArray.asInstanceOf[Array[List[de.domain.type#DomainValue]]],
-                    localsArray.asInstanceOf[Array[Array[de.domain.type#DomainValue]]]
-                )
+                case ct: ControlThrowable ⇒
+                    throw ct
+                case DomainException(message) ⇒
+                    throw new InterpreterException[domain.type](
+                        message, domain, worklist, evaluated, operandsArray, localsArray
+                    )
                 case t: Throwable ⇒
-                    interpreterException(
-                        t, domain, worklist, evaluated)(
-                            operandsArray, localsArray)
+                    val message = t.getLocalizedMessage()
+                    throw new InterpreterException[domain.type](
+                        message, domain, worklist, evaluated, operandsArray, localsArray
+                    )
             }
         }
 
         val result =
-            AIResultBuilder.completed(code, domain)(
-                evaluated, operandsArray, localsArray)
+            AIResultBuilder.completed(code, domain)(evaluated, operandsArray, localsArray)
         if (tracer.isDefined)
             tracer.get.result(result)
         result

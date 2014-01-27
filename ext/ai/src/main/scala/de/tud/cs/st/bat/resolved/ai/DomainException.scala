@@ -36,19 +36,10 @@ package resolved
 package ai
 
 /**
- * A general, non-recoverable exception occured.
- *
- * @param message A short message describing the exception. Can be `null`.
- * @param cause The root cause. Can be `null`.
+ * An exception related to performing computations in a specific domain occurred.
+ * This exception is intended to be used if the exception occured inside the `Domain`.
  *
  * @author Michael Eichberg
  */
-class AIException(
-    message: String,
-    cause: Throwable = null,
-    enableSuppression: Boolean = false,
-    writableStackTrace: Boolean = true)
-        extends RuntimeException(message, cause, enableSuppression, writableStackTrace)
-
-
+case class DomainException(message: String) extends AIException(message) 
 

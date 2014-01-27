@@ -1,5 +1,5 @@
 /* License (BSD Style License):
- * Copyright (c) 2009 - 2013
+ * Copyright (c) 2009 - 2014
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -35,20 +35,36 @@ package bat
 package resolved
 package ai
 
+import de.tud.cs.st.util.Answer
+
+import scala.collection.Set
+
 /**
- * A general, non-recoverable exception occured.
- *
- * @param message A short message describing the exception. Can be `null`.
- * @param cause The root cause. Can be `null`.
+ * Common utility functionality
  *
  * @author Michael Eichberg
  */
-class AIException(
-    message: String,
-    cause: Throwable = null,
-    enableSuppression: Boolean = false,
-    writableStackTrace: Boolean = true)
-        extends RuntimeException(message, cause, enableSuppression, writableStackTrace)
+package object util {
 
-
-
+    /**
+     * Removes the first occurrence of the specified pc from the list.
+     * If the pc is not found, the original list is returned. I.e., it is
+     * possible to check whether the list is modified or not using
+     * a reference comparison (`eq`).
+     */
+    @inline def removeFirst(worklist: List[PC], pc: PC): List[PC] = {
+        var newWorklist: List[PC] = List.empty
+        var removedPC: Boolean = false
+        var remainingWorklist = worklist
+        while (remainingWorklist.nonEmpty) {
+            val thePC = remainingWorklist.head
+            if (thePC == pc) {
+                return newWorklist.reverse ::: remainingWorklist.tail
+            } else {
+                newWorklist = thePC :: newWorklist
+            }
+            remainingWorklist = remainingWorklist.tail
+        }
+        worklist
+    }
+}

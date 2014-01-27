@@ -95,9 +95,7 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
                             return StructuralUpdate(
                                 MultipleReferenceValues(other.values - that + newValue))
                         case _ ⇒
-                            domainException(
-                                domain,
-                                "unexpected: update led to a value with multiple origins")
+                            throw DomainException("internal implementation error; two values with the same origin resulted in a value with multiple origins")
                     }
             }
 
@@ -188,7 +186,7 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
             else if (isNull.no)
                 this(isNull = No)
             else
-                domainException(domain, "refining \"isNull\" to Unknown is not supported")
+                throw DomainException("refining \"isNull\" to Unknown is not supported")
         }
     }
 
@@ -827,7 +825,7 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
                 isNull match {
                     case Yes ⇒ this.values filter { _.isNull.maybeYes }
                     case No  ⇒ this.values filter { _.isNull.maybeNo }
-                    case _   ⇒ domainException(domain, "unsupported refinement")
+                    case _   ⇒ throw DomainException("unsupported refinement")
                 }
             var valueRefined = false
             val refinedValues: scala.collection.Set[DomainSingleOriginReferenceValue] =
@@ -904,9 +902,7 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
                                         MultipleReferenceValues(this.values - thisValue + newValue))
 
                                 case _ ⇒
-                                    domainException(
-                                        domain,
-                                        "unexpected: update led to a value with multiple origins")
+                                    throw DomainException("join of two values with the same origin resulted in a value with multiple origins")
                             }
                     }
 

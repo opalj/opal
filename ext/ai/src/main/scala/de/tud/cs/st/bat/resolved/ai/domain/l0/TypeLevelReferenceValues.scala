@@ -605,14 +605,14 @@ trait TypeLevelReferenceValues[+I]
          */
         @throws[DomainException]("Always thrown (it is not possible to give a generic answer, as the answer depends on the context (instanceof/classcast/...)).")
         final override def isValueSubtypeOf(referenceType: ReferenceType): Nothing =
-            domainException(domain, "isSubtypeOf is not defined for \"null\" values")
+            throw DomainException("isSubtypeOf is not defined for \"null\" values")
 
         override def refineUpperTypeBound(pc: PC, supertype: ReferenceType): this.type =
             this
 
         override def summarize(pc: PC): this.type = this
 
-        override def adapt[ThatI >: I](target: Domain[ThatI], pc: PC): target.DomainValue =
+        override def adapt[TDI >: I](target: Domain[TDI], pc: PC): target.DomainValue =
             target.NullValue(pc)
 
         override def toString: String = "ReferenceValue(null)"

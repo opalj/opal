@@ -117,15 +117,15 @@ trait PropertyTracing[+I] extends Domain[I] { domain ⇒
             }
         }
         if (forceScheduling && worklist.head != successorPC) {
-            val filteredList = removeFirst(worklist, successorPC)
+            val filteredList = util.removeFirst(worklist, successorPC)
             if (tracer.isDefined) {
                 if (filteredList eq worklist)
                     // the instruction was not yet scheduled for another
                     // evaluation
-                    tracer.get.flow(currentPC, successorPC)
+                    tracer.get.flow[domain.type](domain,currentPC, successorPC)
                 else
                     // the instruction was just moved to the beginning
-                    tracer.get.rescheduled(currentPC, successorPC)
+                    tracer.get.rescheduled[domain.type](domain,currentPC, successorPC)
             }
             successorPC :: filteredList
         } else {

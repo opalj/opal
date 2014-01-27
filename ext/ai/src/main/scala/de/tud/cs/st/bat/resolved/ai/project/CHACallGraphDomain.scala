@@ -214,7 +214,7 @@ class DefaultCHACallGraphDomain[Source](
         with l0.DefaultReferenceValuesBinding[Int]       
         with l0.TypeLevelFieldAccessInstructions
         with l0.TypeLevelInvokeInstructions
-        with l1.ProjectBasedClassHierarchy[Source]
+        with ProjectBasedClassHierarchy[Source]
         with CHACallGraphDomain[Source, Int] {
 
     def identifier = theMethod.id

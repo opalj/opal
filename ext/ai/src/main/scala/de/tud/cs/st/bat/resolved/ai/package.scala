@@ -34,10 +34,6 @@ package de.tud.cs.st
 package bat
 package resolved
 
-import de.tud.cs.st.util.Answer
-
-import scala.collection.Set
-
 /**
  * This package defines classes and traits used by BAT's abstract interpretation
  * framework – called BATAI in the following. Please note, that BATAI just refers
@@ -64,55 +60,23 @@ package object ai {
 
     type SomeAI[D <: SomeDomain] = AI[_ >: D]
 
-    @throws[AIException]
-    def aiException(message: String, cause: Throwable = null): Nothing =
-        throw new AIException(message, cause)
-
     /**
-     * Exception that is thrown if the framework identifies an error in the concrete
-     * implementation of a specific domain. I.e., the error is related to an error in
-     * a user's implementation of a domain.
+     * A set of program counters.
      */
-    @throws[DomainException]
-    def domainException(
-        domain: SomeDomain,
-        message: String): Nothing =
-        throw DomainException(domain, message)
-
-    type SomeInterpreterException = InterpreterException[_]
+    type PCs = collection.UShortSet
 
     /**
-     * Creates and throws an `InterpreterException`.
-     */
-    @throws[SomeInterpreterException]
-    def interpreterException[D <: SomeDomain](
-        throwable: Throwable,
-        domain: D,
-        worklist: List[PC],
-        evaluated: List[PC])(
-            operandsArray: Array[_ <: List[_ <: domain.DomainValue]],
-            localsArray: Array[_ <: Array[_ <: domain.DomainValue]]): Nothing = {
-        throw InterpreterException[SomeDomain](
-            throwable,
-            domain,
-            worklist,
-            evaluated,
-            operandsArray,
-            localsArray
-        )
-    }
-
-    /**
-     * An upper bound represents the available type information about a reference value.
+     * An upper type bound represents the available type information about a reference value.
      * It is always "just" an upper bound for a concrete type; i.e., we know that
      * the runtime type has to be a subtype of the type identified by the upper bound.
      * Furthermore, an upper bound can identify multiple '''independent''' types. E.g.,
      * a type bound for array objects could be: `java.io.Serializable` and
      * `java.lang.Cloneable`. Here, independent means that no two types of the bound
-     * are in a subtype relationship. Hence, an upper bound is always a special set.
+     * are in a subtype relationship. Hence, an upper bound is always a special set where
+     * the values are not equals and are not in an inheritance relation.
      *
      * In general, an upper bound identifies a single class type and a set of independent
-     * interface types which are known to be implemented by the current object. '''Even if
+     * interface types that are known to be implemented by the current object. '''Even if
      * the type contains a class type''' it may just be a super class of the concrete type
      * and, hence, just represent an abstraction.
      *
@@ -121,32 +85,4 @@ package object ai {
      *      the sole discretion of the domain.
      */
     type UpperTypeBound = UIDList[ReferenceType]
-     
-    
-    /**
-     * A set of program counters.
-     */
-    type PCs = collection.UShortSet
-
-    /**
-     * Removes the first occurrence of the specified pc from the list.
-     * If the pc is not found, the original list is returned. I.e., it is
-     * possible to check whether the list is modified or not using
-     * a reference comparison (`eq`).
-     */
-    @inline def removeFirst(worklist: List[PC], pc: PC): List[PC] = {
-        var newWorklist: List[PC] = List.empty
-        var removedPC: Boolean = false
-        var remainingWorklist = worklist
-        while (remainingWorklist.nonEmpty) {
-            val thePC = remainingWorklist.head
-            if (thePC == pc) {
-                return newWorklist.reverse ::: remainingWorklist.tail
-            } else {
-                newWorklist = thePC :: newWorklist
-            }
-            remainingWorklist = remainingWorklist.tail
-        }
-        worklist
-    }
 }

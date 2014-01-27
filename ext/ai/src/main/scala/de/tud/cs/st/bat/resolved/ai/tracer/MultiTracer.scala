@@ -45,45 +45,48 @@ import instructions._
  */
 class MultiTracer(val tracers: AITracer*) extends AITracer {
 
-    def continuingInterpretation[D <: SomeDomain](
+    override def continuingInterpretation[D <: SomeDomain with Singleton](
         code: Code,
-        domain: D)(
-            initialWorkList: List[PC],
-            alreadyEvaluated: List[PC],
-            operandsArray: Array[List[domain.DomainValue]],
-            localsArray: Array[Array[domain.DomainValue]]): Unit = {
-        tracers.foreach(tracer ⇒
+        domain: D,
+        initialWorkList: List[PC],
+        alreadyEvaluated: List[PC],
+        operandsArray: Array[List[D#DomainValue]],
+        localsArray: Array[Array[D#DomainValue]]): Unit = {
+        tracers foreach { tracer ⇒
             tracer.continuingInterpretation(
-                code, domain)(
-                    initialWorkList, alreadyEvaluated, operandsArray, localsArray)
-
-        )
+                code, domain, initialWorkList, alreadyEvaluated, operandsArray, localsArray
+            )
+        }
     }
 
-    def instructionEvalution[D <: SomeDomain](
+    override def instructionEvalution[D <: SomeDomain with Singleton](
         domain: D,
         pc: PC,
         instruction: Instruction,
         operands: List[D#DomainValue],
         locals: Array[D#DomainValue]): Unit = {
-        tracers.foreach(
-            _.instructionEvalution(
-                domain,
-                pc,
-                instruction,
-                operands,
-                locals))
+        tracers foreach { tracer ⇒
+            tracer.instructionEvalution(
+                domain, pc, instruction, operands, locals
+            )
+        }
     }
 
-    def flow(currentPC: PC, targetPC: PC): Unit = {
-        tracers.foreach(_.flow(currentPC, targetPC))
+    override def flow[D <: SomeDomain with Singleton](
+        domain: D,
+        currentPC: PC,
+        targetPC: PC): Unit = {
+        tracers foreach { _.flow(domain, currentPC, targetPC) }
     }
 
-    def rescheduled(sourcePC: PC, targetPC: PC): Unit = {
-        tracers.foreach(_.rescheduled(sourcePC, targetPC))
+    override def rescheduled[D <: SomeDomain with Singleton](
+        domain: D,
+        sourcePC: PC,
+        targetPC: PC): Unit = {
+        tracers foreach { _.rescheduled(domain, sourcePC, targetPC) }
     }
 
-    def join[D <: SomeDomain](
+    override def join[D <: SomeDomain with Singleton](
         domain: D,
         pc: PC,
         thisOperands: D#Operands,
@@ -91,57 +94,49 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
         otherOperands: D#Operands,
         otherLocals: D#Locals,
         result: Update[(D#Operands, D#Locals)]): Unit = {
-        tracers.foreach(
-            _.join[D](
-                domain,
-                pc,
-                thisOperands,
-                thisLocals,
-                otherOperands,
-                otherLocals,
-                result)
-        )
+        tracers foreach { tracer ⇒
+            tracer.join[D](
+                domain, pc,
+                thisOperands, thisLocals, otherOperands, otherLocals, result)
+        }
     }
 
-    def abruptMethodExecution[D <: SomeDomain](
+    override def abruptMethodExecution[D <: SomeDomain with Singleton](
         domain: D,
         pc: Int,
         exception: D#DomainValue): Unit = {
-        tracers.foreach(_.abruptMethodExecution(domain, pc, exception))
+        tracers foreach { _.abruptMethodExecution(domain, pc, exception) }
     }
 
-    def ret[D <: SomeDomain](
+    override def ret[D <: SomeDomain with Singleton](
         domain: D,
         pc: PC,
         returnAddress: PC,
         oldWorklist: List[PC],
         newWorklist: List[PC]): Unit = {
-        tracers.foreach(
-            _.ret(
-                domain,
-                pc,
-                returnAddress,
-                oldWorklist,
-                newWorklist))
+        tracers foreach { tracer ⇒
+            tracer.ret(
+                domain, pc, returnAddress, oldWorklist, newWorklist
+            )
+        }
     }
 
     /**
      * Called when the evaluation of a subroutine (JSR/RET) is completed.
      */
-    def returnFromSubroutine[D <: SomeDomain](
+    override def returnFromSubroutine[D <: SomeDomain with Singleton](
         domain: D,
         pc: Int,
         returnAddress: Int,
         subroutineInstructions: List[Int]): Unit = {
-        tracers.foreach(
-            _.returnFromSubroutine(
-                domain,
-                pc,
-                returnAddress,
-                subroutineInstructions))
+        tracers foreach { tracer ⇒
+            tracer.returnFromSubroutine(
+                domain, pc, returnAddress, subroutineInstructions
+            )
+        }
     }
 
-    def result[D <: SomeDomain](result: AIResult[D]): Unit = {
-        tracers.foreach(_.result(result))
+    override def result[D <: SomeDomain with Singleton](result: AIResult[D]): Unit = {
+        tracers foreach { _.result(result) }
     }
 }

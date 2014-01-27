@@ -177,9 +177,9 @@ object XHTML {
         domain: SomeDomain,
         operandsArray: Array[_ <: List[_ <: AnyRef]],
         localsArray: Array[_ <: Array[_ <: AnyRef]],
-        title: Option[String] = None): Node = {
+        header: Option[String] = None): Node = {
         htmlTemplate(
-            title,
+            header,
             dumpTable(classFile, method, code, domain, operandsArray, localsArray))
     }
 

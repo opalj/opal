@@ -245,27 +245,27 @@ trait XHTMLTracer extends AITracer {
         </html>
     }
 
-    def continuingInterpretation[D <: SomeDomain](
+    def continuingInterpretation[D <: SomeDomain with Singleton](
         code: Code,
-        domain: D)(
-            initialWorkList: List[PC],
-            alreadyEvaluated: List[PC],
-            operandsArray: Array[List[domain.DomainValue]],
-            localsArray: Array[Array[domain.DomainValue]]) {
+        domain: D,
+        initialWorkList: List[PC],
+        alreadyEvaluated: List[PC],
+        operandsArray: Array[List[D#DomainValue]],
+        localsArray: Array[Array[D#DomainValue]]) {
         /*ignored*/
     }
 
     private[this] var continuingWithBranch = true
 
-    def flow(currentPC: PC, successorPC: PC) = {
+    def flow[D <: SomeDomain with Singleton](domain: D, currentPC: PC, successorPC: PC) = {
         continuingWithBranch = currentPC < successorPC
     }
 
-    def rescheduled(sourcePC: PC, targetPC: PC): Unit = {
+    def rescheduled[D <: SomeDomain with Singleton](domain: D, sourcePC: PC, targetPC: PC): Unit = {
         /*ignored for now*/
     }
 
-    def instructionEvalution[D <: SomeDomain](
+    def instructionEvalution[D <: SomeDomain with Singleton with Singleton](
         domain: D,
         pc: PC,
         instruction: Instruction,
@@ -286,7 +286,7 @@ trait XHTMLTracer extends AITracer {
         continuingWithBranch = false
     }
 
-    def join[D <: SomeDomain](
+    override def join[D <: SomeDomain with Singleton](
         domain: D,
         pc: PC,
         thisOperands: D#Operands,
@@ -297,14 +297,14 @@ trait XHTMLTracer extends AITracer {
         /*ignored*/
     }
 
-    def abruptMethodExecution[D <: SomeDomain](
+    override def abruptMethodExecution[D <: SomeDomain with Singleton](
         domain: D,
         pc: Int,
         exception: D#DomainValue): Unit = {
         /*ignored*/
     }
 
-    def returnFromSubroutine[D <: SomeDomain](
+    override def returnFromSubroutine[D <: SomeDomain with Singleton](
         domain: D,
         pc: PC,
         returnAddress: PC,
@@ -313,14 +313,14 @@ trait XHTMLTracer extends AITracer {
     /**
      * Called when a ret instruction is encountered.
      */
-    def ret[D <: SomeDomain](
+    override def ret[D <: SomeDomain with Singleton](
         domain: D,
         pc: PC,
         returnAddress: PC,
         oldWorklist: List[PC],
         newWorklist: List[PC]): Unit = { /*ignored*/ }
 
-    def result[D <: SomeDomain](result: AIResult[D]): Unit = {
+    override def result[D <: SomeDomain with Singleton](result: AIResult[D]): Unit = {
         writeAndOpenDump(dumpXHTML((new java.util.Date).toString()))
     }
 

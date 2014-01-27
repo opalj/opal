@@ -36,19 +36,18 @@ package resolved
 package ai
 
 /**
- * A general, non-recoverable exception occured.
- *
- * @param message A short message describing the exception. Can be `null`.
- * @param cause The root cause. Can be `null`.
+ * Exception that is thrown by BATAI's main loop when the abstract interpretation of a
+ * method's implementation was not possible.
  *
  * @author Michael Eichberg
  */
-class AIException(
+case class InterpreterException[D <: SomeDomain with Singleton](
     message: String,
-    cause: Throwable = null,
-    enableSuppression: Boolean = false,
-    writableStackTrace: Boolean = true)
-        extends RuntimeException(message, cause, enableSuppression, writableStackTrace)
-
+    domain: D,
+    worklist: List[PC],
+    evaluated: List[PC],
+    operandsArray: Array[List[D#DomainValue]],
+    localsArray: Array[Array[D#DomainValue]])
+        extends AIException(message)
 
 

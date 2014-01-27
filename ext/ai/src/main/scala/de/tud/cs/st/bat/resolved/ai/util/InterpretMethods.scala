@@ -215,17 +215,13 @@ object InterpretMethods {
     }
 
     def throwableToXHTML(throwable: Throwable): scala.xml.Node = {
-        val baseThrowable = throwable match {
-            case ie: InterpreterException[_] ⇒ ie.throwable
-            case _                           ⇒ throwable
-        }
 
-        if (baseThrowable.getStackTrace() == null ||
-            baseThrowable.getStackTrace().size == 0) {
-            <div>{ baseThrowable.getClass().getSimpleName() + " " + baseThrowable.getMessage() }</div>
+        if (throwable.getStackTrace() == null ||
+            throwable.getStackTrace().size == 0) {
+            <div>{ throwable.getClass().getSimpleName() + " " + throwable.getMessage() }</div>
         } else {
             val stackElements =
-                for { stackElement ← baseThrowable.getStackTrace() } yield {
+                for { stackElement ← throwable.getStackTrace() } yield {
                     <tr>
                 		<td>{ stackElement.getClassName() }</td>
                 		<td>{ stackElement.getMethodName() }</td>
@@ -234,7 +230,7 @@ object InterpretMethods {
                 }
 
             <details>
-                <summary>{ baseThrowable.getClass().getSimpleName() + " " + baseThrowable.getMessage() }</summary>
+                <summary>{ throwable.getClass().getSimpleName() + " " + throwable.getMessage() }</summary>
                 <table>{ stackElements }</table>
             </details>
         }
