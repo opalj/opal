@@ -35,7 +35,6 @@ package bat
 package resolved
 package ai
 package domain
-package l1
 
 /**
  * Delegates type hierarchy related queries to the project's class hierarchy.

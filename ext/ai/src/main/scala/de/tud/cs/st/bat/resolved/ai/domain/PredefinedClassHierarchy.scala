@@ -35,19 +35,16 @@ package bat
 package resolved
 package ai
 package domain
-package l0
 
 /**
- * Implementation of a Domain's `isSubtypeOf(...)` method that delegates to
- * the corresponding method defined by the class `...resolved.analyses.ClassHierarchy`.
- *
  * This class uses BAT's `preInitializedClassHierarchy` (see `ClassHierarchy` for details)
- * for answering queries. '''Hence, you should only ever use this trait if you just
- * want to do some testing or debugging.'''
+ * for class hierarchy related queries.
+ *
+ * '''Hence, you should only ever use this trait if you just want to do some testing.'''
  *
  * @author Michael Eichberg
  */
-trait DefaultClassHierarchy extends ClassHierarchy { this: SomeDomain ⇒
+trait PredefinedClassHierarchy extends ClassHierarchy { this: SomeDomain ⇒
 
     /**
      * Returns the predefined class hierarchy unless explicitly overridden. BAT's

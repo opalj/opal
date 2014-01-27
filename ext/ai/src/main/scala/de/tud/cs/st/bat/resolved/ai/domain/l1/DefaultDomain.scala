@@ -48,7 +48,7 @@ trait DefaultDomain[+I]
     with l0.DefaultTypeLevelDoubleValues[I]
     with TypeLevelFieldAccessInstructionsWithNullPointerHandling
     with TypeLevelInvokeInstructionsWithNullPointerHandling
-    with l0.DefaultClassHierarchy
+    with PredefinedClassHierarchy
 
 class DefaultConfigurableDomain[+I](
     val identifier: I)

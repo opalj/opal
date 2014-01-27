@@ -211,7 +211,7 @@ class DefaultCHACallGraphDomain[Source](
         with l0.DefaultTypeLevelLongValues[Int]
         with l0.DefaultTypeLevelFloatValues[Int]
         with l0.DefaultTypeLevelDoubleValues[Int]
-        with l0.BaseReferenceValuesBinding[Int]       
+        with l0.DefaultReferenceValuesBinding[Int]       
         with l0.TypeLevelFieldAccessInstructions
         with l0.TypeLevelInvokeInstructions
         with l1.ProjectBasedClassHierarchy[Source]

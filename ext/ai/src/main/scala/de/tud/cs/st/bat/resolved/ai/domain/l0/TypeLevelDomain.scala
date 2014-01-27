@@ -59,7 +59,7 @@ trait TypeLevelDomain[+I]
     with DefaultTypeLevelDoubleValues[I]
     with TypeLevelFieldAccessInstructions
     with TypeLevelInvokeInstructions
-    with DefaultClassHierarchy
+    with PredefinedClassHierarchy
 
 /**
  * This is a ready to use domain which sets the domain identifier to "BaseTypeLevelDomain".
