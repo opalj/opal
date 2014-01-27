@@ -64,6 +64,18 @@ trait TypeLevelReferenceValues[+I]
         with GeneralizedArrayHandling {
     domain: Configuration with IntegerValuesComparison with ClassHierarchy ⇒
 
+    /**
+     * Thrown to indicate that some refinement was not possible.
+     *
+     * @author Michael Eichberg
+     */
+    case class ImpossibleRefinement(
+        value: DomainValue,
+        refinementGoal: String)
+            extends Exception(
+                "refining "+value+" failed: "+refinementGoal,
+                null, true, false)
+
     protected def mergeDomainValues(pc: PC, v1: DomainValue, v2: DomainValue): DomainValue = {
         v1.join(pc, v2) match {
             case NoUpdate      ⇒ v1
@@ -533,7 +545,7 @@ trait TypeLevelReferenceValues[+I]
          *
          * @return The default implementation always returns `Unknown`.
          */
-        @throws[DomainException]("if this value is null (isNull.yes == true)")
+        @throws[DomainException]("If this value is null (isNull.yes == true).")
         override def isValueSubtypeOf(referenceType: ReferenceType): Answer = Unknown
 
         /**
@@ -544,7 +556,7 @@ trait TypeLevelReferenceValues[+I]
          * precisely capture the runtime type of this value. However, refining
          * the upper type bound for a `null` value is not supported.
          */
-        @throws[DomainException]("if this value is null (isNull.yes == ")
+        @throws[ImpossibleRefinement]("If the refinement is not meaningful.")
         def refineUpperTypeBound(pc: PC, supertype: ReferenceType): DomainReferenceValue
 
     }
@@ -591,7 +603,7 @@ trait TypeLevelReferenceValues[+I]
         /**
          * Throws a new `DomainException` that states that this method is not supported.
          */
-        @throws[DomainException]("always - this method is not supported")
+        @throws[DomainException]("Always thrown (it is not possible to give a generic answer, as the answer depends on the context (instanceof/classcast/...)).")
         final override def isValueSubtypeOf(referenceType: ReferenceType): Nothing =
             domainException(domain, "isSubtypeOf is not defined for \"null\" values")
 

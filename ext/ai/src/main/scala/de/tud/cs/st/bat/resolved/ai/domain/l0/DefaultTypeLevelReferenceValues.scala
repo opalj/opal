@@ -132,11 +132,8 @@ trait DefaultTypeLevelReferenceValues[+I]
             // supertype is more strict than this type's upper type bound.
             if (supertype.isArrayType)
                 ArrayValue(pc, supertype.asArrayType)
-            else {
-                domainException(
-                    domain,
-                    "cannot refine an array value to a non-array value")
-            }
+            else
+                throw ImpossibleRefinement(this, "cast to a non-array value: "+supertype)
         }
 
         // WIDENING OPERATION
@@ -262,9 +259,7 @@ trait DefaultTypeLevelReferenceValues[+I]
                     ObjectValue(pc, supertype.asObjectType)
             else {
                 if (supertype.isArrayType)
-                    domainException(domain,
-                        "impossible refinement "+theUpperTypeBound.toJava+
-                            " => "+supertype.toJava)
+                    throw ImpossibleRefinement(this, "cast to array type: "+supertype.toJava)
 
                 // probably some (abstract) class and an interface or two
                 // unrelated interfaces
@@ -381,9 +376,7 @@ trait DefaultTypeLevelReferenceValues[+I]
             else if (supertype.isObjectType)
                 ObjectValue(pc, newUpperTypeBound + supertype.asObjectType)
             else
-                domainException(
-                    domain,
-                    "impossible refinement: "+upperTypeBound+" => "+supertype.toJava)
+                throw ImpossibleRefinement(this, "incompatible bounds: "+supertype.toJava)
         }
 
         override protected def doJoin(joinPC: Int, other: DomainValue): Update[DomainValue] = {

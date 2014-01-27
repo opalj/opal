@@ -380,9 +380,8 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
                 this
             } else {
                 if (supertype.isArrayType)
-                    domainException(domain,
-                        "impossible refinement "+theUpperTypeBound.toJava+
-                            " => "+supertype.toJava)
+                    throw ImpossibleRefinement(this, "incompatible bound "+supertype.toJava)
+
                 // basically, we are adding another type bound
                 ObjectValue(
                     this.pc,
@@ -555,9 +554,7 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
             else if (supertype.isObjectType)
                 ObjectValue(pc, isNull, newUpperTypeBound + supertype.asObjectType)
             else
-                domainException(
-                    domain,
-                    "impossible refinement: "+upperTypeBound+" => "+supertype.toJava)
+                throw ImpossibleRefinement(this, "incompatible bound "+supertype.toJava)
         }
 
         protected def doJoinWithNonNullValueWithSameOrigin(
@@ -864,9 +861,14 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
                     if (isSubtypeOf.yes)
                         newValues += value
                     else if (isSubtypeOf.isUndefined) {
-                        val newValue = value.refineUpperTypeBound(pc, supertype)
-                        valueRefined = valueRefined || (newValue ne value)
-                        newValues += newValue.asInstanceOf[DomainSingleOriginReferenceValue]
+                        try {
+                            val newValue = value.refineUpperTypeBound(pc, supertype)
+                            valueRefined = valueRefined || (newValue ne value)
+                            newValues += newValue.asInstanceOf[DomainSingleOriginReferenceValue]
+                        } catch {
+                            case _: ImpossibleRefinement ⇒ /*let's filter this value*/
+                            case t: Throwable            ⇒ throw t
+                        }
                     }
                     // if isSubtypeOf.no then we can just remove it
                 }
