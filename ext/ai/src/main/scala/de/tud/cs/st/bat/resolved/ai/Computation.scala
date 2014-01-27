@@ -40,7 +40,9 @@ package ai
  * result is either some value `V` or some exception(s) `E`. In some cases, however,
  * when the domain cannot '''precisely''' determine the result, it may be both: some
  * exceptional value(s) and a value. In the latter case BATAI will generally follow all
- * possible paths.
+ * possible paths. Please note, that a computation that declares to return a result
+ * (i.e., `V` is not `Nothing`) must either return a result and/or throw an exception, but
+ * is not allowed to return no result and no exceptions!
  *
  * @tparam V The result of the computation. Typically a `DomainValue`.
  *      If the computation is executed for its side
@@ -201,6 +203,21 @@ case object ComputationWithSideEffectOnly extends Computation[Nothing, Nothing] 
             "the computation succeeded without an exception"
         )
 }
-      
 
+object ComputationWithResultAndException {
 
+    def unapply[V, E](c: Computation[V, E]): Option[(V, E)] =
+        if (c.hasResult && c.throwsException) Some((c.result, c.exceptions)) else None
+}
+
+object ComputationWithResult {
+
+    def unapply[V](c: Computation[V, _]): Option[V] =
+        if (c.hasResult) Some(c.result) else None
+}
+
+object ComputationWithException {
+
+    def unapply[E](c: Computation[_, E]): Option[E] =
+        if (c.throwsException) Some(c.exceptions) else None
+}
