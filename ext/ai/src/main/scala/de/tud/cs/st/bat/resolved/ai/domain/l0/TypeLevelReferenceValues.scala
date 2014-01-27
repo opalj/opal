@@ -64,6 +64,130 @@ trait TypeLevelReferenceValues[+I]
         with GeneralizedArrayHandling {
     domain: Configuration with IntegerValuesComparison with ClassHierarchy ⇒
 
+    protected def mergeDomainValues(pc: PC, v1: DomainValue, v2: DomainValue): DomainValue = {
+        v1.join(pc, v2) match {
+            case NoUpdate      ⇒ v1
+            case SomeUpdate(v) ⇒ v
+        }
+    }
+
+    /**
+     * Merges those exceptions that have the same upper type bound. This ensures
+     * that per exception type only one DomainValue (which may be a
+     * `MultipleReferenceValues`) is used.
+     */
+    protected def mergeMultipleExceptionValues(
+        pc: PC,
+        v1s: ExceptionValues,
+        v2s: ExceptionValues): ExceptionValues = {
+        var v: List[ExceptionValue] = Nil
+        var remainingv2s = v2s
+        v1s foreach { v1 ⇒
+            val v1UTB = domain.asObjectValue(v1).upperTypeBound
+            remainingv2s find (domain.asObjectValue(_).upperTypeBound == v1UTB) match {
+                case Some(v2) ⇒
+                    remainingv2s = remainingv2s filterNot (_ == v2)
+                    v = (mergeDomainValues(pc, v1, v2)) :: v
+                case None ⇒
+                    v = v1 :: v
+            }
+        }
+        v ++ remainingv2s
+    }
+
+    def mergeDEsComputations(
+        pc: PC,
+        c1: Computation[DomainValue, ExceptionValues],
+        c2: Computation[DomainValue, ExceptionValues]): Computation[DomainValue, ExceptionValues] = {
+
+        c1 match {
+            case ComputationWithResultAndException(r1, e1) ⇒
+                c2 match {
+                    case ComputationWithResultAndException(r2, e2) ⇒
+                        ComputedValueAndException(mergeDomainValues(pc, r1, r2), mergeMultipleExceptionValues(pc, e1, e2))
+                    case ComputationWithResult(r2) ⇒
+                        ComputedValueAndException(mergeDomainValues(pc, r1, r2), e1)
+                    case ComputationWithException(e2) ⇒
+                        ComputedValueAndException(r1, mergeMultipleExceptionValues(pc, e1, e2))
+                }
+
+            case ComputationWithResult(r1) ⇒
+                c2 match {
+                    case ComputationWithResultAndException(r2, e2) ⇒
+                        ComputedValueAndException(mergeDomainValues(pc, r1, r2), e2)
+                    case ComputationWithResult(r2) ⇒
+                        ComputedValue(mergeDomainValues(pc, r1, r2))
+                    case ComputationWithException(e2) ⇒
+                        ComputedValueAndException(r1, e2)
+                }
+
+            case ComputationWithException(e1) ⇒
+                c2 match {
+                    case ComputationWithResultAndException(r2, e2) ⇒
+                        ComputedValueAndException(r2, mergeMultipleExceptionValues(pc, e1, e2))
+                    case ComputationWithResult(r2) ⇒
+                        ComputedValueAndException(r2, e1)
+                    case ComputationWithException(e2) ⇒
+                        ThrowsException(mergeMultipleExceptionValues(pc, e1, e2))
+                }
+        }
+    }
+
+    def mergeEsComputations(
+        pc: PC,
+        c1: Computation[Nothing, ExceptionValues],
+        c2: Computation[Nothing, ExceptionValues]): Computation[Nothing, ExceptionValues] = {
+
+        (c1, c2) match {
+            case (ComputationWithException(e1), ComputationWithException(e2)) ⇒
+                ComputationWithSideEffectOrException(mergeMultipleExceptionValues(pc, e1, e2))
+            case (ComputationWithException(e1), _ /*ComputationWithoutException*/ ) ⇒
+                c1
+            case (_ /*ComputationWithoutException*/ , ComputationWithException(e2)) ⇒
+                c2
+            case _ ⇒
+                ComputationWithSideEffectOnly
+        }
+    }
+
+    def mergeDEComputations(
+        pc: PC,
+        c1: Computation[DomainValue, ExceptionValue],
+        c2: Computation[DomainValue, ExceptionValue]): Computation[DomainValue, ExceptionValue] = {
+
+        c1 match {
+            case ComputationWithResultAndException(r1, e1) ⇒
+                c2 match {
+                    case ComputationWithResultAndException(r2, e2) ⇒
+                        ComputedValueAndException(mergeDomainValues(pc, r1, r2), mergeDomainValues(pc, e1, e2))
+                    case ComputationWithResult(r2) ⇒
+                        ComputedValueAndException(mergeDomainValues(pc, r1, r2), e1)
+                    case ComputationWithException(e2) ⇒
+                        ComputedValueAndException(r1, mergeDomainValues(pc, e1, e2))
+                }
+
+            case ComputationWithResult(r1) ⇒
+                c2 match {
+                    case ComputationWithResultAndException(r2, e2) ⇒
+                        ComputedValueAndException(mergeDomainValues(pc, r1, r2), e2)
+                    case ComputationWithResult(r2) ⇒
+                        ComputedValue(mergeDomainValues(pc, r1, r2))
+                    case ComputationWithException(e2) ⇒
+                        ComputedValueAndException(r1, e2)
+                }
+
+            case ComputationWithException(e1) ⇒
+                c2 match {
+                    case ComputationWithResultAndException(r2, e2) ⇒
+                        ComputedValueAndException(r2, mergeDomainValues(pc, e1, e2))
+                    case ComputationWithResult(r2) ⇒
+                        ComputedValueAndException(r2, e1)
+                    case ComputationWithException(e2) ⇒
+                        ThrowsException(mergeDomainValues(pc, e1, e2))
+                }
+        }
+    }
+
     // -----------------------------------------------------------------------------------
     //
     // COMMON FUNCTIONALITY TO CALCULATE THE MOST SPECIFIC COMMON SUPERTYPE OF TWO 
@@ -337,11 +461,20 @@ trait TypeLevelReferenceValues[+I]
     type DomainObjectValue <: ObjectValue with DomainReferenceValue
     type DomainArrayValue <: ArrayValue with DomainReferenceValue
 
+    trait ArrayAbstraction {
+        def load(pc: PC, index: DomainValue): ArrayLoadResult
+        def store(pc: PC, value: DomainValue, index: DomainValue): ArrayStoreResult
+        def length(pc: PC): Computation[DomainValue, ExceptionValue]
+    }
+
     /**
      * Abstracts over all values with computational type `reference`. I.e.,
      * abstracts over class and array values and also the `null` value.
      */
-    protected trait ReferenceValue extends Value with IsReferenceValue {
+    protected trait ReferenceValue
+            extends Value
+            with IsReferenceValue
+            with ArrayAbstraction {
         this: DomainReferenceValue ⇒
 
         /**
@@ -446,6 +579,15 @@ trait TypeLevelReferenceValues[+I]
          */
         final override def upperTypeBound: UpperTypeBound = UIDList.empty
 
+        final override def load(pc: PC, index: DomainValue): ArrayLoadResult =
+            justThrows(NullPointerException(pc))
+
+        final override def store(pc: PC, value: DomainValue, index: DomainValue): ArrayStoreResult =
+            justThrows(NullPointerException(pc))
+
+        final override def length(pc: PC): Computation[DomainValue, ExceptionValue] =
+            throws(NullPointerException(pc))
+
         /**
          * Throws a new `DomainException` that states that this method is not supported.
          */
@@ -493,16 +635,10 @@ trait TypeLevelReferenceValues[+I]
 
     }
 
-    trait ArrayAbstraction {
-        def load(pc: PC, index: DomainValue): ArrayLoadResult
-        def store(pc: PC, value: DomainValue, index: DomainValue): ArrayStoreResult
-        def length(pc: PC): Computation[DomainValue, ExceptionValue]
-    }
-
     /**
      * Represents an array value.
      */
-    protected trait ArrayValue extends ReferenceValue with ArrayAbstraction {
+    protected trait ArrayValue extends ReferenceValue {
         this: DomainArrayValue ⇒
 
         /**
@@ -519,7 +655,7 @@ trait TypeLevelReferenceValues[+I]
             index: DomainValue,
             potentialExceptions: ExceptionValues): ArrayLoadResult
 
-        def load(pc: PC, index: DomainValue): ArrayLoadResult = {
+        override def load(pc: PC, index: DomainValue): ArrayLoadResult = {
             // @note
             // The case "this.isNull == Yes" will not occur as the value "null" is always
             // represented by an instance of the respective class and this situation
@@ -550,7 +686,7 @@ trait TypeLevelReferenceValues[+I]
          *      `doArraystore`.
          * @see `doArraystore` for further information.
          */
-        def store(
+        override def store(
             pc: PC,
             value: DomainValue,
             index: DomainValue): ArrayStoreResult = {
@@ -580,7 +716,7 @@ trait TypeLevelReferenceValues[+I]
         protected def doGetLength(pc: PC): DomainValue =
             IntegerValue(pc)
 
-        def length(pc: PC): Computation[DomainValue, ExceptionValue] = {
+        override def length(pc: PC): Computation[DomainValue, ExceptionValue] = {
             if (isNull == Unknown && throwNullPointerException)
                 ComputedValueAndException(doGetLength(pc), NullPointerException(pc))
             else
@@ -1020,6 +1156,7 @@ trait TypeLevelReferenceValues[+I]
         operands: Operands,
         locals: Locals): (Operands, Locals) =
         refineIsNull(pc, value, Yes, operands, locals)
+
 }
 /**
  * Defines domain-independent, commonly used upper type bounds.

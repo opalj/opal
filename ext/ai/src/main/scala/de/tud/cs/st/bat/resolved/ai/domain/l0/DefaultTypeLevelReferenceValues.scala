@@ -209,6 +209,15 @@ trait DefaultTypeLevelReferenceValues[+I]
                     StructuralUpdate(ObjectValue(joinPC, newUpperTypeBound))
             }
         }
+
+        override def load(pc: PC, index: DomainValue): ArrayLoadResult =
+            domainException(domain, "not an array value: "+this)
+
+        override def store(pc: PC, value: DomainValue, index: DomainValue): ArrayStoreResult =
+            domainException(domain, "not an array value: "+this)
+
+        override def length(pc: PC): Computation[DomainValue, ExceptionValue] =
+            domainException(domain, "not an array value: "+this)
     }
 
     protected class SObjectValue(
