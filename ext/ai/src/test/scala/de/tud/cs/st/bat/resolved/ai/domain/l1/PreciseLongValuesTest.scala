@@ -59,7 +59,7 @@ class PreciseLongValuesTest
         with ShouldMatchers
         with ParallelTestExecution {
 
-    val domain = new PreciseConfigurableDomain("PreciseLongValuesTest")
+    val domain = new DefaultConfigurableDomain("PreciseLongValuesTest")
     import domain._
 
     //

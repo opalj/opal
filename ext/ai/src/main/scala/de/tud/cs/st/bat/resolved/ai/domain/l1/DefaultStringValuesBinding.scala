@@ -44,56 +44,20 @@ import scala.collection.SortedSet
 /**
  * @author Michael Eichberg
  */
-trait BaseReferenceValuesBinding[+I] extends l1.ReferenceValues[I] {
+trait DefaultStringValuesBinding[+I]
+        extends l1.DefaultReferenceValuesBinding[I]
+        with StringValues[I] {
     domain: Configuration with IntegerValuesComparison with ClassHierarchy ⇒
 
     // Let's fix the type hierarchy
-
-    type DomainReferenceValue = ReferenceValue
-
-
-    type DomainSingleOriginReferenceValue = SingleOriginReferenceValue
-    type DomainNullValue = NullValue
-    type DomainObjectValue = ObjectValue
-    type DomainArrayValue = ArrayValue
-
-    type DomainMultipleReferenceValues = MultipleReferenceValues
+    type DomainStringValue = StringValue
 
     //
     // FACTORY METHODS
     //
 
-    override def NullValue(pc: PC): DomainNullValue =
-        new NullValue(pc)
-
-    override protected[domain] def ObjectValue(
-        pc: PC,
-        isNull: Answer,
-        isPrecise: Boolean,
-        theUpperTypeBound: ObjectType): DomainObjectValue =
-        new SObjectValue(pc, isNull, isPrecise, theUpperTypeBound)
-
-    override protected[domain] def ObjectValue(
-        pc: PC,
-        isNull: Answer,
-        upperTypeBound: UIDList[ObjectType]): DomainObjectValue = {
-        assume(upperTypeBound.nonEmpty)
-        if (upperTypeBound.tail.isEmpty)
-            ObjectValue(pc, isNull, false, upperTypeBound.head)
-        else
-            new MObjectValue(pc, isNull, upperTypeBound)
-    }
-
-    override protected[domain] def ArrayValue(
-        pc: PC,
-        isNull: Answer,
-        isPrecise: Boolean,
-        theUpperTypeBound: ArrayType): DomainArrayValue =
-        new ArrayValue(pc, isNull, isPrecise, theUpperTypeBound)
-
-    override protected[domain] def MultipleReferenceValues(
-        values: scala.collection.Set[SingleOriginReferenceValue]): DomainMultipleReferenceValues =
-        new MultipleReferenceValues(values)
+    override def StringValue(pc: PC, value: String): DomainObjectValue =
+        new StringValue(pc, value)
 
 }
 

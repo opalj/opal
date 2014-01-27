@@ -60,12 +60,12 @@ class MethodsWithExceptionsTest
         with ParallelTestExecution {
 
     import util.XHTML.dumpOnFailureDuringValidation
-    import domain.l1.PreciseRecordingDomain
+    import domain.l1
     import MethodsWithExceptionsTest._
     import de.tud.cs.st.collection.mutable.UShortSet
 
-    private def evaluateMethod(name: String)(f: PreciseRecordingDomain[String] ⇒ Unit) {
-        val domain = new PreciseRecordingDomain(name)
+    private def evaluateMethod(name: String)(f: l1.DefaultRecordingDomain[String] ⇒ Unit) {
+        val domain = new l1.DefaultRecordingDomain(name)
         val method = classFile.methods.find(_.name == name).get
         val result = BaseAI(classFile, method, domain)
 

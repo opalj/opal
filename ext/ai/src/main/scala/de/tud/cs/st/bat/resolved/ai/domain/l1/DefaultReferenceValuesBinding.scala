@@ -39,63 +39,61 @@ package l1
 
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
-import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FlatSpec
-import org.scalatest.matchers.ShouldMatchers
-import org.scalatest.concurrent.TimeLimitedTests
-import org.scalatest.time._
-import org.scalatest.BeforeAndAfterAll
-import org.scalatest.ParallelTestExecution
+import scala.collection.SortedSet
 
 /**
- * This test(suite) checks if DefaultPreciseLongValues is working fine
- *
- * @author Riadh Chtara
+ * @author Michael Eichberg
  */
-@RunWith(classOf[JUnitRunner])
-class DefaultPreciseLongValuesTest
-        extends FlatSpec
-        with ShouldMatchers
-        with ParallelTestExecution {
+trait DefaultReferenceValuesBinding[+I] extends l1.ReferenceValues[I] {
+    domain: Configuration with IntegerValuesComparison with ClassHierarchy ⇒
 
-    val domain = new DefaultConfigurableDomain("DefaultPreciseLongValuesTest")
-    import domain._
+    // Let's fix the type hierarchy
+
+    type DomainReferenceValue = ReferenceValue
+
+
+    type DomainSingleOriginReferenceValue = SingleOriginReferenceValue
+    type DomainNullValue = NullValue
+    type DomainObjectValue = ObjectValue
+    type DomainArrayValue = ArrayValue
+
+    type DomainMultipleReferenceValues = MultipleReferenceValues
 
     //
-    // TESTS
+    // FACTORY METHODS
     //
 
-    behavior of "LongRange values"
+    override def NullValue(pc: PC): DomainNullValue =
+        new NullValue(pc)
 
-    it should ("be able to join two identical values") in {
-        val v = LongRange(0, 0)
-        v.join(-1, v) should be(NoUpdate)
+    override protected[domain] def ObjectValue(
+        pc: PC,
+        isNull: Answer,
+        isPrecise: Boolean,
+        theUpperTypeBound: ObjectType): DomainObjectValue =
+        new SObjectValue(pc, isNull, isPrecise, theUpperTypeBound)
+
+    override protected[domain] def ObjectValue(
+        pc: PC,
+        isNull: Answer,
+        upperTypeBound: UIDList[ObjectType]): DomainObjectValue = {
+        assume(upperTypeBound.nonEmpty)
+        if (upperTypeBound.tail.isEmpty)
+            ObjectValue(pc, isNull, false, upperTypeBound.head)
+        else
+            new MObjectValue(pc, isNull, upperTypeBound)
     }
 
-    it should ("be able to join two overlapping values") in {
-        val v1 = LongRange(0, 1)
-        val v2 = LongRange(0, 2)
+    override protected[domain] def ArrayValue(
+        pc: PC,
+        isNull: Answer,
+        isPrecise: Boolean,
+        theUpperTypeBound: ArrayType): DomainArrayValue =
+        new ArrayValue(pc, isNull, isPrecise, theUpperTypeBound)
 
-        v1.join(-1, v2) should be(StructuralUpdate(LongRange(0, 2)))
-        v2.join(-1, v1) should be(NoUpdate)
-
-        val v3 = LongRange(-10, 10)
-        //v3.join(-1, v1) should be(NoUpdate)
-        v1.join(-1, v3) should be(StructuralUpdate(v3))
-
-        val v4 = LongRange(1, 0)
-        val v5 = LongRange(-3, -10)
-        v4.join(-1, v5) should be(StructuralUpdate(LongRange(1, -10)))
-
-        val v6 = LongRange(-3, -102)
-        v4.join(-1, v6) should be(StructuralUpdate(ALongValue())) // > SPREAD!
-    }
-
-    it should ("be able to join with ALongValue") in {
-        val v1 = LongRange(0, 1)
-
-        v1.join(-1, ALongValue()) should be(StructuralUpdate(ALongValue()))
-    }
+    override protected[domain] def MultipleReferenceValues(
+        values: scala.collection.Set[SingleOriginReferenceValue]): DomainMultipleReferenceValues =
+        new MultipleReferenceValues(values)
 
 }
+

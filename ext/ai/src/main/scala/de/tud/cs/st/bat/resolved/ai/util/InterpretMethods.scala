@@ -65,7 +65,9 @@ object InterpretMethods {
     val performanceEvaluationContext = new de.tud.cs.st.util.debug.PerformanceEvaluation {}
     import performanceEvaluationContext._
 
-    def println(s: String) { System.out.println(s); System.out.flush() }
+    def println(s: String): Unit = {
+        this.synchronized { System.out.println(s); System.out.flush() }
+    }
 
     def main(args: Array[String]) {
         if (args.size == 0) {

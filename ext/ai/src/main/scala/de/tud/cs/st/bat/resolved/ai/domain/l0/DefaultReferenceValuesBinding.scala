@@ -44,7 +44,7 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  *
  * @author Michael Eichberg
  */
-trait BaseReferenceValuesBinding[+I] extends DefaultTypeLevelReferenceValues[I] {
+trait DefaultReferenceValuesBinding[+I] extends DefaultTypeLevelReferenceValues[I] {
     domain: Configuration with IntegerValuesComparison with ClassHierarchy ⇒
 
     type DomainReferenceValue = ReferenceValue

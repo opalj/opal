@@ -37,12 +37,12 @@ package ai
 package domain
 package l1
 
-trait PreciseDomain[+I]
+trait DefaultDomain[+I]
     extends Domain[I]
     with DefaultDomainValueBinding[I]
+    with DefaultReferenceValuesBinding[I]
+    with DefaultStringValuesBinding[I]
     with DefaultPreciseIntegerValues[I]
-    with BaseReferenceValuesBinding[I]
-  //  with StringValues[I]
     with DefaultPreciseLongValues[I]
     with l0.DefaultTypeLevelFloatValues[I]
     with l0.DefaultTypeLevelDoubleValues[I]
@@ -50,15 +50,15 @@ trait PreciseDomain[+I]
     with TypeLevelInvokeInstructionsWithNullPointerHandling
     with l0.DefaultClassHierarchy
 
-class PreciseConfigurableDomain[+I](
+class DefaultConfigurableDomain[+I](
     val identifier: I)
-        extends PreciseDomain[I]
+        extends DefaultDomain[I]
         with IgnoreMethodResults
         with IgnoreSynchronization
 
-class PreciseRecordingDomain[I](
+class DefaultRecordingDomain[I](
     val identifier: I)
-        extends PreciseDomain[I]
+        extends DefaultDomain[I]
         with IgnoreMethodResults
         with RecordLastReturnedValues[I]
         with RecordAllThrownExceptions[I]

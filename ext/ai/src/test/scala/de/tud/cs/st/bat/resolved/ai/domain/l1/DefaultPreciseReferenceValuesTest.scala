@@ -60,7 +60,7 @@ class DefaultPreciseReferenceValuesTest
         with ShouldMatchers
         with ParallelTestExecution {
 
-    val domain = new PreciseConfigurableDomain("Reference Values Tests") {
+    val domain = new DefaultConfigurableDomain("Reference Values Tests") {
 
     }
     import domain._

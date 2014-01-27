@@ -64,7 +64,7 @@ class PropertyTracingTest
     import PropertyTracingTest._
 
     class AnalysisDomain(val method: Method)
-            extends l1.PreciseDomain[String]
+            extends l1.DefaultDomain[String]
             with IgnoreSynchronization
             with SimpleBooleanPropertyTracing[String] {
 

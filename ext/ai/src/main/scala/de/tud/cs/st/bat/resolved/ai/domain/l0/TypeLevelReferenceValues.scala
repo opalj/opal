@@ -564,7 +564,7 @@ trait TypeLevelReferenceValues[+I]
     /**
      * Represents the value `null`. Null values are basically found in the following two
      * cases:
-     *  1. A null value was pushed onto the stack using `aconst_null`.
+     *  1. The value `null` was pushed onto the stack using `aconst_null`.
      *  2. A reference value that is not guaranteed to be non-null is tested against
      *    `null` using `ifnull` or `ifnonnull` and we are now on the branch where
      *    the value has to be `null`.
