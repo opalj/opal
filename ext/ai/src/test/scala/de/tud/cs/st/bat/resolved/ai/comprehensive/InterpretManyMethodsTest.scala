@@ -69,7 +69,7 @@ class InterpretManyMethodsTest extends FlatSpec with ShouldMatchers {
         "be able to interpret all methods using the BaseConfigurableDomain in "+
         files.map(_.getName).mkString("\n\t\t", "\n\t\t", "\n")) in {
             interpret(classOf[BaseConfigurableDomain[_]], files) map { errors ⇒
-                fail(errors._1+"details: "+errors._2.getOrElse("not available")+")")
+                fail(errors._1+" (details: "+errors._2.getOrElse("not available")+")")
             }
         }
 
@@ -77,7 +77,7 @@ class InterpretManyMethodsTest extends FlatSpec with ShouldMatchers {
         "be able to interpret all methods using the PreciseConfigurableDomain in "+
         files.map(_.getName).mkString("\n\t\t", "\n\t\t", "\n")) in {
             interpret(classOf[PreciseConfigurableDomain[_]], files) map { errors ⇒
-                fail(errors._1+"details: "+errors._2.getOrElse("not available")+")")
+                fail(errors._1+" (details: "+errors._2.getOrElse("not available")+")")
             }
         }
 }
