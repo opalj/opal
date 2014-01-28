@@ -1,5 +1,5 @@
 /* License (BSD Style License):
- * Copyright (c) 2009 - 2013
+ * Copyright (c) 2009 - 2014
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -26,49 +26,25 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package de.tud.cs.st.bat
 
-/**
- * Defines methods to return common attributes from the attributes table of
- * class, field and method declarations.
- *
- * @author Michael Eichberg
- */
-trait CommonAttributes {
+import resolved._
 
-    protected def attributes: Attributes
+object MatchingAccessFlags {
+    val resource = () ⇒ this.getClass.getResourceAsStream("ConstantPoolTags.class")
+    val classFile = resolved.reader.Java7Framework.ClassFile(resource)
+    val fields = classFile.fields
 
-    def runtimeVisibleAnnotations: Annotations =
-        attributes collectFirst { case RuntimeVisibleAnnotationTable(vas) ⇒ vas } match {
-            case Some(annotations) ⇒ annotations
-            case None              ⇒ IndexedSeq.empty
-        }
+    val publicFinalStaticFields = fields.collectFirst({ case f @ Field(PUBLIC_STATIC_FINAL(), _, _) ⇒ f })
 
-    def runtimeInvisibleAnnotations: Annotations =
-        attributes collectFirst { case RuntimeInvisibleAnnotationTable(ias) ⇒ ias } match {
-            case Some(annotations) ⇒ annotations
-            case None              ⇒ IndexedSeq.empty
-        }
+    val nonStaticFields = fields.collectFirst({ case f @ Field(NOT_STATIC(), _, _) ⇒ f })
 
-    /**
-     * True if this element was created by the compiler.
-     */
-    def isSynthetic: Boolean = attributes contains Synthetic
-
-    /**
-     * Returns true if this (field, method, class) declaration is declared
-     * as deprecated.
-     *
-     * ==Note==
-     * The deprecated attribute is always set by the Java compiler when either the
-     * deprecated annotation or the JavaDoc tag is used.
-     */
-    def isDeprecated: Boolean = attributes contains Deprecated
+    // some new matcher
+    val PRIVATE_FINAL = ACC_PRIVATE & ACC_FINAL
+    val privateFinalFields = fields.collectFirst({ case f @ Field(PRIVATE_FINAL(), _, _) ⇒ f })
 
 }

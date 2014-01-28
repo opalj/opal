@@ -126,4 +126,26 @@ package object ai {
      * A set of program counters.
      */
     type PCs = collection.UShortSet
+
+    /**
+     * Removes the first occurrence of the specified pc from the list.
+     * If the pc is not found, the original list is returned. I.e., it is
+     * possible to check whether the list is modified or not using
+     * a reference comparison (`eq`).
+     */
+    @inline def removeFirst(worklist: List[PC], pc: PC): List[PC] = {
+        var newWorklist: List[PC] = List.empty
+        var removedPC: Boolean = false
+        var remainingWorklist = worklist
+        while (remainingWorklist.nonEmpty) {
+            val thePC = remainingWorklist.head
+            if (thePC == pc) {
+                return newWorklist.reverse ::: remainingWorklist.tail
+            } else {
+                newWorklist = thePC :: newWorklist
+            }
+            remainingWorklist = remainingWorklist.tail
+        }
+        worklist
+    }
 }

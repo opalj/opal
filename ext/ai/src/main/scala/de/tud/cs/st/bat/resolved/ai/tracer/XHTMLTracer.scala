@@ -261,6 +261,10 @@ trait XHTMLTracer extends AITracer {
         continuingWithBranch = currentPC < successorPC
     }
 
+    def rescheduled(sourcePC: PC, targetPC: PC): Unit = {
+        /*ignored for now*/
+    }
+
     def instructionEvalution[D <: SomeDomain](
         domain: D,
         pc: PC,
@@ -289,8 +293,7 @@ trait XHTMLTracer extends AITracer {
         thisLocals: D#Locals,
         otherOperands: D#Operands,
         otherLocals: D#Locals,
-        result: Update[(D#Operands, D#Locals)],
-        forcedContinuation: Boolean): Unit = {
+        result: Update[(D#Operands, D#Locals)]): Unit = {
         /*ignored*/
     }
 

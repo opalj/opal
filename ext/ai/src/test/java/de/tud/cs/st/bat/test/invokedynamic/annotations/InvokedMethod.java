@@ -51,7 +51,7 @@ public @interface InvokedMethod {
 
     String name();
 
-    Class<?> returnType();
+    Class<?> returnType() default Void.class;
 
     Class<?>[] parameterTypes() default {};
 
