@@ -662,7 +662,6 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
             description += "; isUpperBound)"
             description
         }
-
     }
 
     /**
@@ -742,12 +741,15 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
         override lazy val isPrecise: Boolean = calculateIsPrecise()
 
         private[this] def calculateIsPrecise(): Boolean = {
-            val values = this.values.dropWhile(_.isNull.yes)
+            val values = this.values.filterNot(_.isNull.yes)
             if (values.nonEmpty) {
-                val theUpperTypeBound = values.head.upperTypeBound
+                val firstValue = values.head
+                if (!firstValue.isPrecise)
+                    return false
+                val theUpperTypeBound = firstValue.upperTypeBound
                 values.tail foreach { value ⇒
                     if (!value.isPrecise ||
-                        (value.isNull.maybeNo && value.upperTypeBound != theUpperTypeBound))
+                        theUpperTypeBound != value.upperTypeBound)
                         return false
                 }
             }
