@@ -659,7 +659,7 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
         override def toString() = {
             var description = upperTypeBound.map(_.toJava).mkString(" with ")+"(pc="+pc
             if (isNull.isUndefined) description += "; isNull=maybe"
-            description += ")"
+            description += "; isUpperBound)"
             description
         }
 
