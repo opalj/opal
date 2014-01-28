@@ -62,8 +62,8 @@ trait VTACallGraphDomain[Source, I] extends CHACallGraphDomain[Source, I] { doma
         descriptor: MethodDescriptor,
         operands: List[DomainValue]) {
         // MODIFIED CHA - we used the type information that is readily available
-
-        val IsAReferenceValue(value) = typeOfValue(operands.last)
+        val receiver = operands.last
+        val IsAReferenceValue(value) = typeOfValue(receiver)
 
         // Possible Cases:
         //  - the value is precise and has a single type => static call
@@ -73,6 +73,7 @@ trait VTACallGraphDomain[Source, I] extends CHACallGraphDomain[Source, I] { doma
         //    standard virtual call with the upper type bound set to the declaring class.
         //  - the value is null => call to the constructor of NullPointerException
         //  - the value maybe null => additional call to the constructor of NullPointerException
+
         val isNull = value.isNull
         if (isNull.maybeYes) {
             staticMethodCall(
@@ -93,13 +94,16 @@ trait VTACallGraphDomain[Source, I] extends CHACallGraphDomain[Source, I] { doma
                 else
                     staticMethodCall(pc, upperTypeBound.head.asObjectType, name, descriptor, operands)
             } else {
+                if (isPrecise) println(receiver)
+
                 for (utb ← upperTypeBound) {
-                    if (utb.isArrayType)
+                    if (utb.isArrayType) {
                         staticMethodCall(pc, ObjectType.Object, name, descriptor, operands)
-                    else if (domain.isSubtypeOf(utb, declaringClassType).maybeYes)
+                    } else if (domain.isSubtypeOf(utb, declaringClassType).maybeYes)
                         super.virtualMethodCall(pc, utb.asObjectType, name, descriptor, operands)
-                    else
+                    else {
                         super.virtualMethodCall(pc, declaringClassType, name, descriptor, operands)
+                    }
                 }
             }
         }
@@ -127,7 +131,7 @@ class DefaultVTACallGraphDomain[Source](
         with l0.TypeLevelFieldAccessInstructions
         with l0.TypeLevelInvokeInstructions
         with ProjectBasedClassHierarchy[Source]
-        with CHACallGraphDomain[Source, Int] {
+        with VTACallGraphDomain[Source, Int] {
 
     def identifier = theMethod.id
 
