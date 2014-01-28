@@ -52,11 +52,19 @@ case class CallGraphConstructionException(
     import Console._
 
     override def toString: String = {
+        val stacktrace = underlyingException.getStackTrace()
+        val stacktraceExcerpt =
+            if (stacktrace != null && stacktrace.size > 0) {
+                val top = stacktrace(0)
+                Some(top.getFileName()+"["+top.getClassName()+":"+top.getLineNumber()+"]")
+            } else
+                None
         classFile.thisType.toJava+"{ "+
             method.toJava+" ⚡ "+
             RED +
             underlyingException.getClass().getSimpleName()+": "+
             underlyingException.getMessage() +
+            stacktraceExcerpt.map(": "+_).getOrElse("") +
             RESET+
             " }"
     }
