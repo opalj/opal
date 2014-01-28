@@ -218,7 +218,7 @@ object CallGraphVisualization {
         // The exceptions________________________________________________________________:
         if (exceptions.size > 0) {
             println("Exceptions: "+exceptions.size)
-            println(exceptions.mkString("Exceptions:\n\t", "\n\t", "\t"))
+            println(exceptions.mkString("Exceptions that occured while analyzing...:\n\t", "\n\t", "\t"))
         }
 
         // Generate and show the graph

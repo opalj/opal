@@ -1756,14 +1756,15 @@ trait AI[D <: SomeDomain] {
             } catch {
                 case ct: ControlThrowable ⇒
                     throw ct
-                case DomainException(message) ⇒
-                    throw new InterpreterException[domain.type](
-                        message, domain, worklist, evaluated, operandsArray, localsArray
+
+                case cause @ DomainException(message) ⇒
+                    throw new InterpretationFailedException[domain.type](
+                        cause, domain, worklist, evaluated, operandsArray, localsArray
                     )
-                case t: Throwable ⇒
-                    val message = t.getLocalizedMessage()
-                    throw new InterpreterException[domain.type](
-                        message, domain, worklist, evaluated, operandsArray, localsArray
+
+                case cause: Throwable ⇒                    
+                    throw new InterpretationFailedException[domain.type](
+                        cause, domain, worklist, evaluated, operandsArray, localsArray
                     )
             }
         }

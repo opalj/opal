@@ -41,13 +41,13 @@ package ai
  *
  * @author Michael Eichberg
  */
-case class InterpreterException[D <: SomeDomain with Singleton](
-    message: String,
+case class InterpretationFailedException[D <: SomeDomain with Singleton](
+    cause: Throwable,
     domain: D,
     worklist: List[PC],
     evaluated: List[PC],
     operandsArray: Array[List[D#DomainValue]],
     localsArray: Array[Array[D#DomainValue]])
-        extends AIException(message)
+        extends AIException("the interpretation failed",cause)
 
 

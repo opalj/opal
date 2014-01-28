@@ -140,9 +140,7 @@ object InterpretMethod {
 
         try {
             val result =
-                AI(classFile,
-                    method,
-                    domainConstructor.newInstance((classFile, method)))
+                AI(classFile, method, domainConstructor.newInstance((classFile, method)))
             writeAndOpenDump(dump(
                 Some(classFile),
                 Some(method),
@@ -152,10 +150,10 @@ object InterpretMethod {
                 result.localsArray,
                 Some("Result("+domainClass.getName()+"): "+(new java.util.Date).toString)))
         } catch {
-            case ie @ InterpreterException(message, domain, worklist, evaluated, operands, locals) ⇒
+            case ie @ InterpretationFailedException(cause, domain, worklist, evaluated, operands, locals) ⇒
                 val header =
                     Some("<p><b>"+domainClass.getName()+"</b></p>"+
-                        message+"<br>"+
+                        cause.getMessage()+"<br>"+
                         ie.getStackTrace().mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n") +
                         evaluated.reverse.mkString("Evaluated instructions:\n<br>", ",", "<br>") +
                         worklist.mkString("Remaining worklist:\n<br>", ", ", "<br>")
