@@ -302,6 +302,8 @@ sealed trait UIDList[+T <: UID] { thisList ⇒
     def mkString(start: String, sep: String, end: String): String =
         toIterable.mkString(start, sep, end)
 
+    override def toString: String = mkString("UIDSList(", ",", ")")
+
 }
 
 private final class UIDSList[T <: UID](
