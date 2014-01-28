@@ -34,13 +34,22 @@ package de.tud.cs.st
 package bat
 package resolved
 package ai
-package util
+package debug
 
 import instructions._
 
+import java.awt.Desktop
+import java.io.FileOutputStream
+import java.io.File
+
 import scala.xml.Node
 import scala.xml.NodeSeq
-import java.io.File
+import scala.xml.Unparsed
+import scala.xml.Text
+import scala.xml.Unparsed
+
+import scala.language.existentials
+import scala.util.control.ControlThrowable
 
 /**
  * Several utility methods to facilitate the development of the abstract interpreter/
@@ -51,12 +60,7 @@ import java.io.File
  */
 object XHTML {
 
-    import language.existentials
-
     import de.tud.cs.st.util.ControlAbstractions._
-
-    import scala.xml.{ Text, Unparsed }
-    import scala.util.control.ControlThrowable
 
     private[this] val dumpMutex = new Object
     /**
@@ -95,16 +99,11 @@ object XHTML {
                 if ((currentTime - lastDump) > minimumDumpInterval) {
                     lastDump = currentTime
                     val title = Some("Generated due to exception: "+e.getMessage())
-                    val dump =
-                        util.XHTML.dump(
-                            Some(classFile),
-                            Some(method),
-                            method.body.get,
-                            domain,
-                            operandsArray,
-                            localsArray,
-                            title)
-                    util.XHTML.writeAndOpenDump(dump) //.map(_.deleteOnExit)
+                    val dump = XHTML.dump(
+                        Some(classFile), Some(method), method.body.get,
+                        domain, operandsArray, localsArray,
+                        title)
+                    XHTML.writeAndOpenDump(dump) //.map(_.deleteOnExit)
                 } else {
                     Console.err.println("Dump suppressed: "+e.getMessage())
                 }

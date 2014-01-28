@@ -42,15 +42,16 @@ import reflect.ClassTag
 /**
  * A domain is the fundamental abstraction mechanism in BATAI that enables the customization
  * of BATAI towards the needs of a specific analysis. A domain encodes the semantics of
- * computations with respect to a domain's values. Customizing a domain is the
+ * computations (e.g., the addition of two values) with respect to a domain's values
+ * (e.g., the representation of integer values). Customizing a domain is the
  * fundamental mechanism of adapting BATAI to one's needs.
  *
  * This trait defines the interface between the abstract interpretation framework (BATAI)
  * and some (user defined) domain. I.e., this interface defines all methods that
  * are needed by BATAI to perform an abstract interpretation. While it is perfectly
- * possible to implement a new domain by inheriting from this trait it is recommended
+ * possible to implement a new domain by inheriting from this trait, it is recommended
  * to first study the already implemented domains and to use them as a foundation.
- * To facilitate the usage of BATAI, several classes/traits that implement parts of
+ * To facilitate the usage of BATAI several classes/traits that implement parts of
  * this `Domain` trait are pre-defined and can be flexibly combined (mixed together)
  * when needed.
  *

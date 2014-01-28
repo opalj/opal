@@ -34,10 +34,7 @@ package de.tud.cs.st
 package bat
 package resolved
 package ai
-package util
-
-import reader.Java7Framework.ClassFile
-import domain.l0.BaseConfigurableDomain
+package debug
 
 import java.io.File
 import java.util.zip.ZipFile
@@ -45,7 +42,13 @@ import java.io.DataInputStream
 import java.io.ByteArrayInputStream
 
 import scala.Console._
+
 import scala.util.control.ControlThrowable
+
+import de.tud.cs.st.util.ControlAbstractions.process
+import de.tud.cs.st.util.debug.nsToSecs
+
+import scala.collection.JavaConversions.enumerationAsScalaIterator
 
 /**
  * Performs an abstract interpretation of all methods of the given class file(s) using
@@ -56,11 +59,6 @@ import scala.util.control.ControlThrowable
  * @author Michael Eichberg
  */
 object InterpretMethods {
-
-    import de.tud.cs.st.util.debug._
-    import de.tud.cs.st.util.ControlAbstractions._
-
-    import scala.collection.JavaConversions._
 
     val performanceEvaluationContext = new de.tud.cs.st.util.debug.PerformanceEvaluation {}
     import performanceEvaluationContext._
@@ -84,7 +82,7 @@ object InterpretMethods {
                 map(errors ⇒ System.err.println(errors._1+"(for details:"+errors._2+")"))
         } else {
             interpret(
-                classOf[BaseConfigurableDomain[_]],
+                classOf[domain.l0.BaseConfigurableDomain[_]],
                 args.map(new java.io.File(_)),
                 true).
                 map(errors ⇒ System.err.println(errors._1+"(for details:"+errors._2+")"))
@@ -120,7 +118,9 @@ object InterpretMethods {
                 resource: String,
                 data: Array[Byte]): Seq[(String, ClassFile, Method, Throwable)] = {
                 val classFile = time('PARSING) {
-                    ClassFile(new DataInputStream(new ByteArrayInputStream(data)))
+                    reader.Java7Framework.ClassFile(
+                        new DataInputStream(new ByteArrayInputStream(data))
+                    )
                 }
                 classesCount += 1
                 if (beVerbose) println(classFile.fqn)

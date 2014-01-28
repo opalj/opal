@@ -63,7 +63,7 @@ class MethodsPlainTest
 
     private[this] val IrrelevantPC = Int.MinValue
 
-    import util.XHTML.dumpOnFailureDuringValidation
+    import debug.XHTML.dumpOnFailureDuringValidation
     import MethodsPlainTest._
 
     behavior of "the abstract interpreter"

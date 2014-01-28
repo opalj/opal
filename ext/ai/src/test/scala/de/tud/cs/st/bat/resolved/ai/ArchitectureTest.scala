@@ -62,10 +62,6 @@ class ArchitectureTest extends FlatSpec with ShouldMatchers with BeforeAndAfterA
                         classes("""de\.tud\.cs\.st\.bat\.resolved\.ai\..+Test.*""".r)
                 }
 
-                ensemble('AITracers) {
-                    "de.tud.cs.st.bat.resolved.ai.tracer.*"
-                }
-
                 ensemble('Domain_Tracing) {
                     "de.tud.cs.st.bat.resolved.ai.domain.tracing.*" except
                         classes("""de\.tud\.cs\.st\.bat\.resolved\.ai\.domain\.tracing\..+Test.*""".r)
@@ -76,22 +72,30 @@ class ArchitectureTest extends FlatSpec with ShouldMatchers with BeforeAndAfterA
                 }
 
                 ensemble('Domains) {
-                    "de.tud.cs.st.bat.resolved.ai.domain.*"
+                    "de.tud.cs.st.bat.resolved.ai.domain.*" except
+                        classes("""de\.tud\.cs\.st\.bat\.resolved\.ai\.domain\..+Test.*""".r)
                 }
 
                 ensemble('Project) {
-                    "de.tud.cs.st.bat.resolved.ai.project.*"
+                    "de.tud.cs.st.bat.resolved.ai.project.*" except
+                        classes("""de\.tud\.cs\.st\.bat\.resolved\.ai\.project\..+Test.*""".r)
                 }
 
-                'Core is_only_allowed_to_use empty
+                ensemble('Debug) {
+                    "de.tud.cs.st.bat.resolved.ai.debug.*"
+                }
 
-                'Domains is_only_allowed_to_use ('Core, 'Util)
+                'Util is_only_allowed_to_use empty
 
-                'Project is_only_allowed_to_use ('Core, 'Domains)
+                'Core is_only_allowed_to_use ('Util)
 
-                'AITracers is_only_allowed_to_use ('Core, 'Util)
+                'Domains is_only_allowed_to_use ('Util, 'Core)
 
-                'Domain_Tracing is_only_allowed_to_use ('Core, 'Domains)
+                'Project is_only_allowed_to_use ('Util, 'Core, 'Domains)
+
+                'Domain_Tracing is_only_allowed_to_use ('Util, 'Core, 'Domains)
+                
+                // 'Debug is allowed to use everything  
             }
         import expected._
 

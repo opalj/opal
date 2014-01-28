@@ -732,7 +732,7 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
             }
         }
 
-        override def referenceValues: Iterable[IsAReferenceValue] = values
+        override def referenceValues: Iterator[IsAReferenceValue] = values.iterator
 
         /**
          * Returns `true` if the upper type bound of this value precisely captures the

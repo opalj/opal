@@ -34,50 +34,40 @@ package de.tud.cs.st
 package bat
 package resolved
 package ai
-package comprehensive
+package project
 
-import domain.l0
-import domain.l1
-import reader.Java7Framework.ClassFile
-
-import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FlatSpec
-import org.scalatest.matchers.ShouldMatchers
+import domain._
+import bat.resolved.analyses._
+import scala.collection.Set
+import scala.collection.Map
 
 /**
- * This test(suite) just loads a very large number of class files and performs
- * an abstract interpretation of the methods.
+ * Configuration of a call graph algorithm that uses CHA.
+ *
+ * ==Thread Safety==
+ * This class is thread-safe (it contains no mutable state.)
+ *
+ * ==Usage==
+ * Instances of this class are passed to a `CallGraphFactory`'s `create` method.
  *
  * @author Michael Eichberg
  */
-@RunWith(classOf[JUnitRunner])
-class InterpretManyMethodsTest extends FlatSpec with ShouldMatchers {
+class VTACallGraphAlgorithmConfiguration[Source]
+        extends CallGraphAlgorithmConfiguration[Source] {
 
-    import de.tud.cs.st.util.ControlAbstractions._
-    import debug.InterpretMethods.interpret
+    type Contour = MethodSignature
+    type Value = Iterable[Method]
+    type Cache = CallGraphCache[Contour, Value]
+    def Cache(): this.type#Cache = new CallGraphCache[MethodSignature, Iterable[Method]]
 
-    behavior of "BATAI"
-
-    // The jars of the "BAT core" project
-    val directoryWithJARs = "../../../../../core/src/test/resources/classfiles"
-    val files =
-        TestSupport.locateTestResources(directoryWithJARs, "ext/ai").listFiles.
-            filter(file ⇒ file.isFile && file.canRead() && file.getName.endsWith(".jar"))
-
-    it should (
-        "be able to interpret all methods using the BaseConfigurableDomain in "+
-        files.map(_.getName).mkString("\n\t\t", "\n\t\t", "\n")) in {
-            interpret(classOf[l0.BaseConfigurableDomain[_]], files) map { errors ⇒
-                fail(errors._1+" (details: "+errors._2.getOrElse("not available")+")")
-            }
-        }
-
-    it should (
-        "be able to interpret all methods using the PreciseConfigurableDomain in "+
-        files.map(_.getName).mkString("\n\t\t", "\n\t\t", "\n")) in {
-            interpret(classOf[l1.DefaultConfigurableDomain[_]], files) map { errors ⇒
-                fail(errors._1+" (details: "+errors._2.getOrElse("not available")+")")
-            }
-        }
+    type I = Int
+    def Domain(
+        theProject: Project[Source],
+        cache: Cache,
+        classFile: ClassFile,
+        method: Method): CHACallGraphDomain[Source, Int] =
+        new DefaultVTACallGraphDomain(theProject, cache, classFile, method)
 }
+
+
+

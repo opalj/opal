@@ -60,7 +60,7 @@ class PropertyTracingTest
         with ShouldMatchers
         with ParallelTestExecution {
 
-    import util.XHTML.dumpOnFailureDuringValidation
+    import debug.XHTML.dumpOnFailureDuringValidation
     import PropertyTracingTest._
 
     class AnalysisDomain(val method: Method)

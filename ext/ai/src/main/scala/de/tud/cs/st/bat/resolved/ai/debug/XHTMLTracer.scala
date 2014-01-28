@@ -36,11 +36,11 @@ package resolved
 package ai
 package tracer
 
+import scala.language.existentials
+
 import instructions._
 
-import util.XHTML._
-
-import language.existentials
+import debug.XHTML._
 
 case class FlowEntity(
         val pc: PC,

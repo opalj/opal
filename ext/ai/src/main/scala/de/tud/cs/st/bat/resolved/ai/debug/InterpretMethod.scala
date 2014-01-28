@@ -34,12 +34,14 @@ package de.tud.cs.st
 package bat
 package resolved
 package ai
-package util
+package debug
 
-import domain.l0.BaseConfigurableDomain
+import scala.language.existentials
+
 import tracer.MultiTracer
 import tracer.ConsoleTracer
 import tracer.XHTMLTracer
+import domain.l0.BaseConfigurableDomain
 
 /**
  * A small basic framework that facilitates the abstract interpretation of a
@@ -48,8 +50,6 @@ import tracer.XHTMLTracer
  * @author Michael Eichberg
  */
 object InterpretMethod {
-
-    import scala.language.existentials
 
     private object AI extends AI[SomeDomain] {
 
@@ -136,7 +136,7 @@ object InterpretMethod {
                         return ;
                 }
 
-        import util.XHTML.{ dump, writeAndOpenDump }
+        import debug.XHTML.{ dump, writeAndOpenDump }
 
         try {
             val result =

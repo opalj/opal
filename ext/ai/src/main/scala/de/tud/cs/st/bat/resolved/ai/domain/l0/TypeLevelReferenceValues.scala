@@ -572,7 +572,7 @@ trait TypeLevelReferenceValues[+I]
     protected trait NullValue extends ReferenceValue {
         this: DomainNullValue ⇒
 
-        final override def referenceValues: Iterable[IsAReferenceValue] = Iterable(this)
+        final override def referenceValues: Iterator[IsAReferenceValue] = Iterator(this)
 
         /**
          * Returns `Yes`.
@@ -628,7 +628,7 @@ trait TypeLevelReferenceValues[+I]
 
         val theUpperTypeBound: T
 
-        final override def referenceValues: Iterable[IsAReferenceValue] = Iterable(this)
+        final override def referenceValues: Iterator[IsAReferenceValue] = Iterator(this)
 
         final override def upperTypeBound: UpperTypeBound = UIDList(theUpperTypeBound)
 

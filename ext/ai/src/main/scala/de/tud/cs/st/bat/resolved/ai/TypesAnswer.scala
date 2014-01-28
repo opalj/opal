@@ -115,7 +115,7 @@ trait IsReferenceValue extends TypesAnswer with IsAReferenceValue {
      * on the control flow). Each of these values can have a different upper bound and
      * an upper bound can in turn consist of several interfaces and a class.
      */
-    def referenceValues: Iterable[IsAReferenceValue] // TODO make iterator!!!
+    def referenceValues: Iterator[IsAReferenceValue] 
 
 }
 
@@ -126,7 +126,7 @@ trait IsReferenceValue extends TypesAnswer with IsAReferenceValue {
  */
 object IsReferenceValue {
 
-    def unapply(value: IsReferenceValue): Option[Iterable[IsAReferenceValue]] = {
+    def unapply(value: IsReferenceValue): Option[Iterator[IsAReferenceValue]] = {
         Some(value.referenceValues)
     }
 }
@@ -202,6 +202,10 @@ trait IsAReferenceValue {
      *      assumption that the value is not `null` at runtime.
      */
     def isValueSubtypeOf(referenceType: ReferenceType): Answer
+}
+
+object IsAReferenceValue {
+    def unapply(value: IsAReferenceValue): Option[IsAReferenceValue] = Some(value)
 }
 
 /**

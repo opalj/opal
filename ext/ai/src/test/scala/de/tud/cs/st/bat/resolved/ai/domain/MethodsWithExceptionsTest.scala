@@ -59,7 +59,7 @@ class MethodsWithExceptionsTest
         with ShouldMatchers
         with ParallelTestExecution {
 
-    import util.XHTML.dumpOnFailureDuringValidation
+    import debug.XHTML.dumpOnFailureDuringValidation
     import domain.l1
     import MethodsWithExceptionsTest._
     import de.tud.cs.st.collection.mutable.UShortSet

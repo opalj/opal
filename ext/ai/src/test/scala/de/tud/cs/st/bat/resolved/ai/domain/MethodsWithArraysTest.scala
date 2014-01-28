@@ -66,7 +66,7 @@ class MethodsWithArraysTest
         val method = classFile.methods.find(_.name == name).get
         val result = BaseAI(classFile, method, domain)
 
-        util.XHTML.dumpOnFailureDuringValidation(
+        de.tud.cs.st.bat.resolved.ai.debug.XHTML.dumpOnFailureDuringValidation(
             Some(classFile),
             Some(method),
             method.body.get,

@@ -55,11 +55,11 @@ trait AIProject[Source, D <: Domain[_] with Report] {
      */
     def ai: AI[D]
 
-            /**
-             * If `true` all entry points will be analyzed in parallel.
-             */
-            protected def analyzeInParallel: Boolean = true
-            
+    /**
+     * If `true` all entry points will be analyzed in parallel.
+     */
+    protected def analyzeInParallel: Boolean = true
+
     /**
      * Returns the (initial) domain object that will be used to analyze an entry point.
      *
@@ -104,16 +104,17 @@ trait AIProject[Source, D <: Domain[_] with Report] {
     def analyze(
         project: Project[Source],
         parameters: Seq[String]): ReportableAnalysisResult = {
-        val entryPointsIterator=
+        val entryPointsIterator =
             if (analyzeInParallel)
                 entryPoints(project).par.iterator
             else
                 entryPoints(project).iterator
-        val reports = (for ((classFile, method) ← entryPointsIterator) yield {
-            val theDomain = domain(project, classFile, method)
-            ai(classFile, method, theDomain)
-            theDomain.report
-        }).toIterable
+        val reports =
+            (for ((classFile, method) ← entryPointsIterator) yield {
+                val theDomain = domain(project, classFile, method)
+                ai(classFile, method, theDomain)
+                theDomain.report
+            }).toIterable
         val theReports: Iterable[String] = reports.filter(_.isDefined).map(_.get)
         bat.resolved.analyses.BasicReport(
             "Number of reports: "+theReports.size+"\n"+theReports.mkString("\n"))

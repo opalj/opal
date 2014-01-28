@@ -138,7 +138,7 @@ class DefaultPreciseReferenceValuesTest
     it should ("be able to merge two value sets that contain equal values") in {
         val IsReferenceValue(values312) = typeOfValue(ref3MergeRef1MergeRef2)
         val IsReferenceValue(values123) = typeOfValue(ref1MergeRef2MergeRef3)
-        values312 should be(values123)
+        values312.toSet should be(values123.toSet)
     }
 
     it should ("be able to merge two value sets where the original set is a superset of the second set") in {

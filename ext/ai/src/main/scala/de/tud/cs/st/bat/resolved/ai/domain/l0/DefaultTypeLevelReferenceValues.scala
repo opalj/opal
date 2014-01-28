@@ -326,7 +326,7 @@ trait DefaultTypeLevelReferenceValues[+I]
             extends ObjectValue {
         value: DomainObjectValue ⇒
 
-        override def referenceValues: Iterable[IsAReferenceValue] = Iterable(this)
+        override def referenceValues: Iterator[IsAReferenceValue] = Iterator(this)
 
         /**
          * Determines if this value is a subtype of the given supertype by
