@@ -962,7 +962,7 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
             }
         }
 
-        override def toString() = values.mkString("OneOf(\n\t", ",\n\t", ")")
+        override def toString() = values.mkString("OneOf(\t", ",\n\t", ")")
     }
 
     // -----------------------------------------------------------------------------------
