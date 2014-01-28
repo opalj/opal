@@ -40,7 +40,7 @@ import de.tud.cs.st.util.Answer
 import scala.collection.Set
 
 /**
- * Common utility functionality
+ * Common utility functionality.
  *
  * @author Michael Eichberg
  */
