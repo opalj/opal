@@ -149,4 +149,9 @@ class DefaultPreciseReferenceValuesTest
         ref1AltMergeRef2Alt.join(-1, ref1MergeRef2MergeRef3) should be(StructuralUpdate(ref1MergeRef2MergeRef3))
     }
 
+    it should ("calculate a meaningful upper type bound if I have multiple different types of reference values") in {
+        val nullRef = NullValue(444)
+        summarize(-1, List(ref1, nullRef, ref2)) should be(ObjectValue(-1, Unknown, false, ObjectType.Object))
+    }
+
 }
