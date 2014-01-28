@@ -40,7 +40,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case object BASTORE extends ArrayAccessInstruction with PrimitiveArrayAccess {
+case object BASTORE extends PrimitiveArrayStoreInstruction with PrimitiveArrayAccess {
 
     def opcode: Int = 84
 

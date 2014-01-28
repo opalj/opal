@@ -60,11 +60,11 @@ class PropertyTracingTest
         with ShouldMatchers
         with ParallelTestExecution {
 
-    import util.XHTML.dumpOnFailureDuringValidation
+    import debug.XHTML.dumpOnFailureDuringValidation
     import PropertyTracingTest._
 
     class AnalysisDomain(val method: Method)
-            extends l1.PreciseDomain[String]
+            extends l1.DefaultDomain[String]
             with IgnoreSynchronization
             with SimpleBooleanPropertyTracing[String] {
 

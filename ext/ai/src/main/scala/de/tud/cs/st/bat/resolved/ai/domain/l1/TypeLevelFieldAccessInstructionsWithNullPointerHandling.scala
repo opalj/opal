@@ -53,21 +53,18 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  */
 trait TypeLevelFieldAccessInstructionsWithNullPointerHandling { this: SomeDomain ⇒
 
-    import ObjectType.NullPointerException
-
     def getfield(
         pc: PC,
         objectref: DomainValue,
         declaringClass: ObjectType,
         name: String,
-        fieldType: FieldType): Computation[DomainValue, DomainValue] =
+        fieldType: FieldType): Computation[DomainValue, ExceptionValue] =
         isNull(objectref) match {
-            case Yes ⇒
-                ThrowsException(InitializedObject(pc, NullPointerException))
+            case Yes ⇒ throws(NullPointerException(pc))
             case Unknown ⇒
                 ComputedValueAndException(
                     TypedValue(pc, fieldType),
-                    InitializedObject(pc, NullPointerException))
+                    NullPointerException(pc))
             case No ⇒
                 ComputedValue(TypedValue(pc, fieldType))
         }
@@ -85,15 +82,11 @@ trait TypeLevelFieldAccessInstructionsWithNullPointerHandling { this: SomeDomain
         value: DomainValue,
         declaringClass: ObjectType,
         name: String,
-        fieldType: FieldType): Computation[Nothing, DomainValue] =
+        fieldType: FieldType): Computation[Nothing, ExceptionValue] =
         isNull(objectref) match {
-            case Yes ⇒
-                ThrowsException(InitializedObject(pc, NullPointerException))
-            case Unknown ⇒
-                ComputationWithSideEffectOrException(
-                    InitializedObject(pc, NullPointerException))
-            case No ⇒
-                ComputationWithSideEffectOnly
+            case Yes     ⇒ throws(NullPointerException(pc))
+            case Unknown ⇒ ComputationWithSideEffectOrException(NullPointerException(pc))
+            case No      ⇒ ComputationWithSideEffectOnly
         }
 
     def putstatic(

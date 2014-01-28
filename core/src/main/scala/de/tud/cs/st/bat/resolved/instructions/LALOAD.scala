@@ -41,7 +41,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case object LALOAD extends ArrayAccessInstruction with PrimitiveArrayAccess {
+case object LALOAD extends ArrayLoadInstruction with PrimitiveArrayAccess {
 
     def opcode: Int = 47
 

@@ -48,7 +48,7 @@ import scala.collection.Map
  * This class is thread-safe (it contains no mutable state.)
  *
  * ==Usage==
- * Instance of this call are passed to a `CallGraphFactory`'s `create` method.
+ * Instances of this class are passed to a `CallGraphFactory`'s `create` method.
  *
  * @author Michael Eichberg
  */

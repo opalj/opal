@@ -43,7 +43,8 @@ package instructions
  */
 abstract class SynchronizationInstruction extends Instruction {
 
-    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 1
+    final override def indexOfNextInstruction(currentPC: Int, code: Code): Int = 
+        currentPC + 1
 
 }
 

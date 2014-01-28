@@ -48,7 +48,8 @@ sealed abstract class FieldAccess extends Instruction {
 
     def fieldType: FieldType
 
-    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 3
+    final override def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+        currentPC + 3
 
 }
 

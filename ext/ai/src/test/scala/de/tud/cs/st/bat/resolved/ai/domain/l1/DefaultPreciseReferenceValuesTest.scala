@@ -60,8 +60,12 @@ class DefaultPreciseReferenceValuesTest
         with ShouldMatchers
         with ParallelTestExecution {
 
-    val domain = new PreciseConfigurableDomain("Reference Values Tests")
+    val domain = new DefaultConfigurableDomain("Reference Values Tests") {
+
+    }
     import domain._
+
+    val File = ObjectType("java/io/File")
 
     // Helper object to match against Sets which contain one element
     object Set1 {
@@ -69,27 +73,23 @@ class DefaultPreciseReferenceValuesTest
             if (s.size == 1) Some(s.head) else None
     }
 
-    val ref1 = AReferenceValue(444, ObjectType.Object, No, true)
+    val ref1 = ObjectValue(444, No, true, ObjectType.Object)
 
-    val ref1Alt = AReferenceValue(444, ObjectType.Object, No, true)
+    val ref1Alt = ObjectValue(444, No, true, ObjectType.Object)
 
-    val ref2 = AReferenceValue(668, ObjectType("java/io/File"), No, true)
+    val ref2 = ObjectValue(668, No, true, File)
 
-    val ref2Alt = AReferenceValue(668, ObjectType("java/io/File"), No, true)
+    val ref2Alt = ObjectValue(668, No, true, File)
 
-    val ref3 = AReferenceValue(732, ObjectType("java/io/File"), No, true)
+    val ref3 = ObjectValue(732, No, true, File)
 
-    val ref1MergeRef2 =
-        ref1.join(-1, ref2).value.asInstanceOf[MultipleReferenceValues]
+    val ref1MergeRef2 = ref1.join(-1, ref2).value
 
-    val ref1AltMergeRef2Alt =
-        ref1Alt.join(-1, ref2Alt).value.asInstanceOf[MultipleReferenceValues]
+    val ref1AltMergeRef2Alt = ref1Alt.join(-1, ref2Alt).value
 
-    val ref1MergeRef2MergeRef3 =
-        ref1MergeRef2.join(-1, ref3).value.asInstanceOf[MultipleReferenceValues]
+    val ref1MergeRef2MergeRef3 = ref1MergeRef2.join(-1, ref3).value
 
-    val ref3MergeRef1MergeRef2 =
-        ref3.join(-1, ref1MergeRef2).value.asInstanceOf[MultipleReferenceValues]
+    val ref3MergeRef1MergeRef2 = ref3.join(-1, ref1MergeRef2).value
 
     //
     // TESTS
@@ -98,22 +98,23 @@ class DefaultPreciseReferenceValuesTest
     behavior of "the domain that models reference values at the type level"
 
     it should ("be able to handle upper bounds updates") in {
-        val File = ObjectType("java/io/File")
-        val theObject = AReferenceValue(-1, ObjectType.Object, No, false)
-        val theFile = AReferenceValue(-1, File, No, false)
 
-        val update1 = theObject.addUpperBound(-1, File)
-        update1.upperBound.head should be(File)
-        val update2 = theFile.addUpperBound(-1, File)
-        update2.upperBound.head should be(File)
-        val update3 = theFile.addUpperBound(-1, ObjectType.Object)
-        update3.upperBound.head should be(File)
+        val theObject = ObjectValue(-1, No, false, ObjectType.Object)
+        val theFile = ObjectValue(-1, No, false, File)
+
+        val update1 = theObject.refineUpperTypeBound(-1, File)
+        update1.upperTypeBound.head should be(File)
+        val update2 = theFile.refineUpperTypeBound(-1, File)
+        update2.upperTypeBound.head should be(File)
+        val update3 = theFile.refineUpperTypeBound(-1, ObjectType.Object)
+        update3.upperTypeBound.head should be(File)
     }
 
-    it should ("be able to create an AReferenceValue with the expected values") in {
+    it should ("be able to create an ObjectValue with the expected values") in {
+        val ref = ReferenceValue(444, No, true, ObjectType.Object)
         ref1 match {
-            case AReferenceValue(444, Set1(ObjectType.Object), No, true) ⇒ // OK
-            case v ⇒ fail("expected: "+ref1+";actual: "+v)
+            case `ref` ⇒ // OK
+            case v     ⇒ fail("expected: "+ref1+";actual: "+v)
         }
     }
 
@@ -122,18 +123,22 @@ class DefaultPreciseReferenceValuesTest
     }
 
     it should ("represent both values after a merge of two independent value") in {
-        ref1MergeRef2.values should contain(ref1)
-        ref1MergeRef2.values should contain(ref2)
+        val IsReferenceValue(values) = typeOfValue(ref1MergeRef2)
+        values.exists(_ == ref1) should be(true)
+        values.exists(_ == ref2) should be(true)
     }
 
     it should ("represent all three values when we merge \"some value\" with another \"value\"") in {
-        ref1MergeRef2MergeRef3.values should contain(ref1)
-        ref1MergeRef2MergeRef3.values should contain(ref2)
-        ref1MergeRef2MergeRef3.values should contain(ref3)
+        val IsReferenceValue(values) = typeOfValue(ref1MergeRef2MergeRef3)
+        values.exists(_ == ref1) should be(true)
+        values.exists(_ == ref2) should be(true)
+        values.exists(_ == ref3) should be(true)
     }
 
     it should ("be able to merge two value sets that contain equal values") in {
-        ref3MergeRef1MergeRef2.values should be(ref1MergeRef2MergeRef3.values)
+        val IsReferenceValue(values312) = typeOfValue(ref3MergeRef1MergeRef2)
+        val IsReferenceValue(values123) = typeOfValue(ref1MergeRef2MergeRef3)
+        values312.toSet should be(values123.toSet)
     }
 
     it should ("be able to merge two value sets where the original set is a superset of the second set") in {

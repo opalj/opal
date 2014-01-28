@@ -41,6 +41,10 @@ package instructions
  */
 abstract class FloatingPointRemainderInstruction extends RemainderInstruction {
 
-    def runtimeExceptions(): List[ObjectType] = Nil
+    final override def runtimeExceptions(): List[ObjectType] = Nil
+    
+    final override def nextInstructions(currentPC: PC, code: Code): PCs = 
+        collection.mutable.UShortSet(indexOfNextInstruction(currentPC, code))
+    
 
 }

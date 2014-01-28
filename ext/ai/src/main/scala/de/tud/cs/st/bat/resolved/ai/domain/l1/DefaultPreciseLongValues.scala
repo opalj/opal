@@ -60,8 +60,6 @@ trait DefaultPreciseLongValues[+I]
 
         override def summarize(pc: PC): DomainValue = this
 
-        override def summarize(pc: PC, value: DomainValue): DomainValue = this
-
         override def adapt[ThatI >: I](
             targetDomain: Domain[ThatI],
             pc: PC): targetDomain.DomainValue = targetDomain.LongValue(pc)
@@ -104,13 +102,7 @@ trait DefaultPreciseLongValues[+I]
             }
 
         override def summarize(pc: PC): DomainValue = this
-
-        override def summarize(pc: PC, value: DomainValue): DomainValue =
-            doJoin(pc, value) match {
-                case NoUpdate             ⇒ this
-                case SomeUpdate(newValue) ⇒ newValue
-            }
-
+  
         override def adapt[ThatI >: I](
             targetDomain: Domain[ThatI],
             pc: PC): targetDomain.DomainValue =

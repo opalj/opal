@@ -36,17 +36,33 @@ package resolved
 package instructions
 
 /**
- * An instruction that invokes another method.
+ * An instruction that "invokes" something. This can be, e.g., the invocation of a method
+ * or the dynamic invocation (using `invokedynamic`) of a field read.
  *
  * @author Michael Eichberg
  */
-abstract class MethodInvocationInstruction extends Instruction {
-
-    def declaringClass: ReferenceType
+abstract class InvocationInstruction extends Instruction {
 
     def name: String
 
     def methodDescriptor: MethodDescriptor
+
+    final override def nextInstructions(currentPC: PC, code: Code): PCs = {
+        // Here, we basically have no idea which exceptions may be thrown hence,
+        // we make the safe assumption that any handler is a potential successor!
+        val excpetionHandlerPCs = Instruction.allExceptionHandlers(currentPC, code)
+        excpetionHandlerPCs + indexOfNextInstruction(currentPC, code)
+    }
+}
+
+/**
+ * An instruction that invokes another method.
+ *
+ * @author Michael Eichberg
+ */
+abstract class MethodInvocationInstruction extends InvocationInstruction {
+
+    def declaringClass: ReferenceType
 
     override def toString: String =
         this.getClass().getSimpleName()+"\n"+

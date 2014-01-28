@@ -70,7 +70,7 @@ class NonSerializableClassHasASerializableInnerClass[Source]
         val Serializable = ObjectType.Serializable
 
         for {
-            serializableType ← project.classHierarchy.allSubtypes(Serializable)
+            serializableType ← project.classHierarchy.allSubtypes(Serializable,false)
             classFile = project(serializableType).get
             (outerType, NOT_STATIC()) ← classFile.outerType
             /* if we know nothing about the class, then we never generate a warning */

@@ -54,15 +54,12 @@ trait TypeLevelFloatValues[+I] extends Domain[I] {
     /**
      * Abstracts over all values with computational type `float`.
      */
-    trait FloatValue extends Value { this: DomainValue ⇒
+    trait FloatValue
+            extends Value
+            with IsFloatValue { this: DomainValue ⇒
+
         override final def computationalType: ComputationalType = ComputationalTypeFloat
     }
-
-    abstract override def typeOfValue(value: DomainValue): TypesAnswer =
-        value match {
-            case r: FloatValue ⇒ IsFloatValue
-            case _             ⇒ super.typeOfValue(value)
-        }
 
     // -----------------------------------------------------------------------------------
     //

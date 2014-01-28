@@ -110,7 +110,7 @@ object AIResultBuilder {
  * concrete AIResult instance. I.e., if we would remove the type parameter 
  * we would introduce a path dependence to a particular AIResult's instance and the actual 
  * type would be "this.domain.type" and "this.domain.DomainValue". */
-sealed abstract class AIResult[D <: Domain[_]] {
+sealed abstract class AIResult[D <: SomeDomain with Singleton] {
     val code: Code
     val domain: D
     val worklist: List[Int]
@@ -124,14 +124,14 @@ sealed abstract class AIResult[D <: Domain[_]] {
     def wasAborted: Boolean
 }
 
-sealed abstract class AIAborted[D <: Domain[_]] extends AIResult[D] {
+sealed abstract class AIAborted[D <: SomeDomain with Singleton] extends AIResult[D] {
 
     def wasAborted: Boolean = true
 
     def continueInterpretation(ai: AI[_ >: D]): AIResult[domain.type]
 }
 
-sealed abstract class AICompleted[D <: Domain[_]] extends AIResult[D] {
+sealed abstract class AICompleted[D <: SomeDomain with Singleton] extends AIResult[D] {
 
     val worklist: List[Int] = List.empty
 

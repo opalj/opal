@@ -48,6 +48,7 @@ case class ANEWARRAY(
 
     def mnemonic: String = "anewarray"
 
-    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 3
+    final override def indexOfNextInstruction(currentPC: Int, code: Code): Int = 
+        currentPC + 3
 
 }

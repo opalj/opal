@@ -64,9 +64,13 @@ final case object Category2ComputationalTypeCategory
  */
 sealed abstract class ComputationalType(
         computationTypeCategory: ComputationalTypeCategory) {
+
     def operandSize = computationTypeCategory.operandSize
+
     def isPrimitiveType: Boolean
+
     def category = computationTypeCategory.id
+
 }
 case object ComputationalTypeInt
         extends ComputationalType(Category1ComputationalTypeCategory) {
@@ -78,7 +82,7 @@ case object ComputationalTypeFloat
 }
 case object ComputationalTypeReference
         extends ComputationalType(Category1ComputationalTypeCategory) {
-    def isPrimitiveType = true
+    def isPrimitiveType = true // TODO [Bug?] Why does isPrimitiveType return true for ComputationalTypeReference values?
 }
 case object ComputationalTypeReturnAddress
         extends ComputationalType(Category1ComputationalTypeCategory) {
@@ -96,20 +100,17 @@ case object ComputationalTypeDouble
 /**
  * Represents a JVM type.
  *
+ * Programmatically, we distinguish three major kinds of types:
+ *  - base types/primitive types
+ *  - reference types
+ *  - the type void.
+ *
  * ==General Information==
- * '''From the JVM specification'''
+ * ''From the JVM specification''
  *
  * There are three kinds of reference types: class types, array types, and interface
  * types. Their values are references to dynamically created class instances, arrays,
  * or class instances or arrays that implement interfaces, respectively.
- *
- * An array type consists of a component type with a single dimension (whose length is
- * not given by the type). The component type of an array type may itself be an array
- * type. If, starting from any array type, one considers its component type, and then
- * (if that is also an array type) the component type of that type, and so on, eventually
- * one must reach a component type that is not an array type; this is called the element
- * type of the array type. The element type of an array type is necessarily either a
- * primitive type, or a class type, or an interface type.
  *
  * A reference value may also be the special null reference, a reference to no object,
  * which will be denoted here by null. The null reference initially has no runtime type,
@@ -119,23 +120,35 @@ case object ComputationalTypeDouble
  * ==Comparing Types/Performance==
  * Given that the comparison of types is a standard operation in static analysis that
  * is usually done over and over again great care was taken to enable an efficient
- * comparison of types. It is - '''without exception''' - always possbible to compare
+ * comparison of types. It is - '''without exception''' - always possible to compare
  * types using reference equality (i.e., the `eq`/`ne` operators). For each type there
- * will always be exactly one object that represents that type.
+ * will always be exactly one object that represents that specific type.
  *
  * Additionally, a stable order is defined between types that is based on a type's
- * kind (primitive types &lt; array types &lt; class/interface types) and the uid of the
- * types in case of reference types.
+ * kind and the unique id of the types in case of reference types.
+ * The order is:
+ * ''void type &lt; primitive types &lt; array types &lt; class/interface types''
+ *
  *
  * @author Michael Eichberg
  */
 sealed abstract class Type {
 
+    /**
+     * Returns `true` if this type can be used by fields. Returns `true` unless
+     * this type represents `void`.
+     */
     def isFieldType: Boolean = false
-    def isBaseType: Boolean = false
-    def isReferenceType: Boolean = false
 
+    /**
+     * Returns `true` if this type represents `void`; `false` otherwise.
+     */
     def isVoidType: Boolean = false
+
+    /**
+     * Returns `true` if this type is a base type (also called primitive type).
+     */
+    def isBaseType: Boolean = false
     def isByteType: Boolean = false
     def isCharType: Boolean = false
     def isShortType: Boolean = false
@@ -144,6 +157,16 @@ sealed abstract class Type {
     def isFloatType: Boolean = false
     def isDoubleType: Boolean = false
     def isBooleanType: Boolean = false
+
+    /**
+     * Returns `true` if this type is a reference type; that is, an array type or an
+     * object type.
+     * Each type is either:
+     *  - a base type,
+     *  - a reference type or
+     *  - the type void.
+     */
+    def isReferenceType: Boolean = false
     def isArrayType: Boolean = false
     def isObjectType: Boolean = false
 
@@ -161,7 +184,36 @@ sealed abstract class Type {
         throw new ClassCastException(
             "a "+this.getClass().getSimpleName()+" cannot be cast to an ObjectType")
 
+    /**
+     * A String representation of this type as it would be used in Java source code.
+     */
     def toJava: String
+
+    /**
+     * Returns the binary name of this type as used by the Java runtime. Basically
+     * returns the same name as produced by `Class.getName`.
+     */
+    def toBinaryJavaName: String
+
+    /**
+     * Returns the Java class object representing this type.
+     *
+     * This is generally only useful in very special cases and – to be meaningful at all –
+     * it is necessary that the class path used for running the static analysis also
+     * contains the classes that are analyzed. This is (often) only the case for the JDK.
+     *
+     * However, one example where this is useful is the creation of a real object of
+     * a specific type and to use that object when a method is called on that object.
+     * This avoids the reimplementation of the respective logic as part of the analysis.
+     * For example, if you want to get the `String` that is created by a specific
+     * `StringBuffer` it is possible to implement the API of StringBuffer as part of
+     * your analysis or (probably more efficient) to just create an instance of a
+     * `StringBuffer` object and to redirect every call to the real object. In this case
+     * only some general logic is required to redirect calls and to convert the values
+     * between the representation used by the analysis and the representation required
+     * by the called method.
+     */
+    def toJavaClass: java.lang.Class[_]
 
     /**
      * The unique id of this type.
@@ -180,16 +232,26 @@ object ReturnType {
 
 }
 
+/**
+ * Represents the Java keyword `void`.
+ *
+ * @author Michael Eichberg
+ */
 sealed abstract class VoidType private () extends Type with ReturnTypeSignature {
 
-    override final def isVoidType = true
+    final override def isVoidType = true
 
-    override final def computationalType: ComputationalType =
+    final override def computationalType: ComputationalType =
         throw new UnsupportedOperationException("\"void\" does not have a computational type")
 
-    override final def accept[T](sv: SignatureVisitor[T]): T = sv.visit(this)
+    final override def accept[T](sv: SignatureVisitor[T]): T = sv.visit(this)
 
     override def toJava: String = "void"
+
+    override def toBinaryJavaName: String =
+        BATException("the void type does not have a Java binary name")
+
+    override def toJavaClass: java.lang.Class[_] = java.lang.Void.TYPE
 
     override def toString() = "VoidType"
 
@@ -199,7 +261,7 @@ case object VoidType extends VoidType
 
 sealed abstract class FieldType extends Type {
 
-    override final def isFieldType = true
+    final override def isFieldType = true
 }
 /**
  * Factory object to parse field type (descriptors) to get field type objects.
@@ -224,11 +286,11 @@ object FieldType {
 
 sealed abstract class ReferenceType extends FieldType with UID {
 
-    override final def isReferenceType = true
+    final override def isReferenceType = true
 
-    override final def asReferenceType: ReferenceType = this
+    final override def asReferenceType: ReferenceType = this
 
-    override final def computationalType = ComputationalTypeReference
+    final override def computationalType = ComputationalTypeReference
 
     /**
      * Each reference type is associated with a unique id. Object types get ids &gt;= 0
@@ -252,7 +314,7 @@ object ReferenceType {
 
 sealed abstract class BaseType extends FieldType with TypeSignature {
 
-    override final def isBaseType = true
+    final override def isBaseType = true
 
     def atype: Int
 
@@ -261,9 +323,9 @@ sealed abstract class BaseType extends FieldType with TypeSignature {
 
 sealed abstract class ByteType private () extends BaseType {
 
-    override final def isByteType = true
+    final override def isByteType = true
 
-    override final def computationalType = ComputationalTypeInt
+    final override def computationalType = ComputationalTypeInt
 
     final val atype = 8
 
@@ -271,21 +333,30 @@ sealed abstract class ByteType private () extends BaseType {
 
     def toJava: String = "byte"
 
+    override def toBinaryJavaName: String = "B"
+
+    override def toJavaClass: java.lang.Class[_] = java.lang.Byte.TYPE
+
     override def toString() = "ByteType"
 }
 case object ByteType extends ByteType
 
 sealed abstract class CharType private () extends BaseType {
 
-    override final def isCharType = true
+    final override def isCharType = true
 
-    override final def computationalType = ComputationalTypeInt
+    final override def computationalType = ComputationalTypeInt
 
-    override final def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
+    final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     final val atype = 5
 
     def toJava: String = "char"
+
+    override def toBinaryJavaName: String = "C"
+
+    override def toJavaClass: java.lang.Class[_] =
+        java.lang.Character.TYPE
 
     override def toString() = "CharType"
 
@@ -294,15 +365,20 @@ final case object CharType extends CharType
 
 sealed abstract class DoubleType private () extends BaseType {
 
-    override final def isDoubleType = true
+    final override def isDoubleType = true
 
-    override final def computationalType = ComputationalTypeDouble
+    final override def computationalType = ComputationalTypeDouble
 
-    override final def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
+    final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     final val atype = 7
 
     def toJava: String = "double"
+
+    override def toBinaryJavaName: String = "D"
+
+    override def toJavaClass: java.lang.Class[_] =
+        java.lang.Double.TYPE
 
     override def toString() = "DoubleType"
 
@@ -311,15 +387,20 @@ case object DoubleType extends DoubleType
 
 sealed abstract class FloatType private () extends BaseType {
 
-    override final def isFloatType = true
+    final override def isFloatType = true
 
-    override final def computationalType = ComputationalTypeFloat
+    final override def computationalType = ComputationalTypeFloat
 
-    override final def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
+    final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     final val atype = 6
 
     def toJava: String = "float"
+
+    override def toBinaryJavaName: String = "F"
+
+    override def toJavaClass: java.lang.Class[_] =
+        java.lang.Float.TYPE
 
     override def toString() = "FloatType"
 
@@ -328,15 +409,20 @@ case object FloatType extends FloatType
 
 sealed abstract class ShortType private () extends BaseType {
 
-    override final def isShortType = true
+    final override def isShortType = true
 
-    override final def computationalType = ComputationalTypeInt
+    final override def computationalType = ComputationalTypeInt
 
-    override final def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
+    final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     final val atype = 9
 
     def toJava: String = "short"
+
+    override def toBinaryJavaName: String = "S"
+
+    override def toJavaClass: java.lang.Class[_] =
+        java.lang.Short.TYPE
 
     override def toString() = "ShortType"
 
@@ -345,15 +431,20 @@ case object ShortType extends ShortType
 
 sealed abstract class IntegerType private () extends BaseType {
 
-    override final def isIntegerType = true
+    final override def isIntegerType = true
 
-    override final def computationalType = ComputationalTypeInt
+    final override def computationalType = ComputationalTypeInt
 
-    override final def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
+    final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     final val atype = 10
 
     def toJava: String = "int"
+
+    override def toBinaryJavaName: String = "I"
+
+    override def toJavaClass: java.lang.Class[_] =
+        java.lang.Integer.TYPE
 
     override def toString() = "IntegerType"
 
@@ -362,15 +453,20 @@ case object IntegerType extends IntegerType
 
 sealed abstract class LongType private () extends BaseType {
 
-    override final def isLongType = true
+    final override def isLongType = true
 
-    override final def computationalType = ComputationalTypeLong
+    final override def computationalType = ComputationalTypeLong
 
-    override final def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
+    final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     final val atype = 11
 
     def toJava: String = "long"
+
+    override def toBinaryJavaName: String = "J"
+
+    override def toJavaClass: java.lang.Class[_] =
+        java.lang.Long.TYPE
 
     override def toString() = "LongType"
 
@@ -379,15 +475,20 @@ case object LongType extends LongType
 
 sealed abstract class BooleanType private () extends BaseType {
 
-    override final def isBooleanType = true
+    final override def isBooleanType = true
 
-    override final def computationalType = ComputationalTypeInt
+    final override def computationalType = ComputationalTypeInt
 
-    override final def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
+    final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     final val atype = 4
 
     def toJava: String = "boolean"
+
+    override def toBinaryJavaName: String = "Z"
+
+    override def toJavaClass: java.lang.Class[_] =
+        java.lang.Boolean.TYPE
 
     override def toString() = "BooleanType"
 
@@ -397,6 +498,7 @@ case object BooleanType extends BooleanType
 /**
  * Represents an `ObjectType`.
  *
+ * @param id The unique id associated with this type.
  * @param fqn The fully qualified name of the class or interface in binary notation
  *      (e.g. "java/lang/Object").
  */
@@ -414,6 +516,11 @@ final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
     def packageName: String = ObjectType.packageName(fqn)
 
     override def toJava: String = fqn.replace('/', '.')
+
+    override def toBinaryJavaName: String = "L"+toJava+";"
+
+    override def toJavaClass: java.lang.Class[_] =
+        classOf[Type].getClassLoader().loadClass(toJava)
 
     override def toString = "ObjectType("+fqn+")"
 
@@ -464,11 +571,11 @@ final object ObjectType {
     /**
      * Factory method to create `ObjectType`s.
      *
-     * @param fqn The fully qualified name of a class or interface type in 
+     * @param fqn The fully qualified name of a class or interface type in
      *      binary notation.
      * @note `ObjectType` objects are cached internally to reduce the overall memory
      *      requirements and to ensure that only one instance of an `ObjectType` exists
-     *      per fully qualified name. Hence, comparing `ObjectTypes` using reference 
+     *      per fully qualified name. Hence, comparing `ObjectTypes` using reference
      *      comparison is explicitly supported.
      */
     def apply(fqn: String): ObjectType = {
@@ -530,6 +637,7 @@ final object ObjectType {
     // exceptions may be created at runtime by the JVM)
     final val ExceptionInInitializerError = ObjectType("java/lang/ExceptionInInitializerError")
     final val BootstrapMethodError = ObjectType("java/lang/BootstrapMethodError")
+    final val OutOfMemoryError = ObjectType("java/lang/OutOfMemoryError")
 
     final val NullPointerException = ObjectType("java/lang/NullPointerException")
     final val ArrayIndexOutOfBoundsException = ObjectType("java/lang/ArrayIndexOutOfBoundsException")
@@ -545,27 +653,63 @@ final object ObjectType {
     final val Cloneable = ObjectType("java/lang/Cloneable")
 }
 
+/**
+ * Represents an array type.
+ *
+ * ==Comparing `ArrayType`s==
+ * To facilitate comparisons of (array) types, each array type is represented
+ * at any given time, by exactly one instance of `ArrayType`.
+ *
+ * ==General Information==
+ * ''From the JVM specification''
+ *
+ * An array type consists of a '''component type''' with a single dimension (whose length is
+ * not given by the type). The component type of an array type may itself be an array
+ * type. If, starting from any array type, one considers its component type, and then
+ * (if that is also an array type) the component type of that type, and so on, eventually
+ * one must reach a component type that is not an array type; this is called the '''element
+ * type of the array type'''. The element type of an array type is necessarily either a
+ * primitive type, or a class type, or an interface type.
+ *
+ * @author Michael Eichberg
+ */
 final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
     val id: Int,
     val componentType: FieldType)
         extends ReferenceType {
 
-    override final def isArrayType = true
+    final override def isArrayType = true
 
-    override def asArrayType = this
+    final override def asArrayType = this
 
+    /**
+     * Returns this array type's element type.
+     *
+     */
     def elementType: FieldType = componentType match {
         case at: ArrayType ⇒ at.elementType
         case _             ⇒ componentType
     }
 
-    def toJava: String = componentType.toJava+"[]"
+    override def toJava: String = componentType.toJava+"[]"
 
-    // the default equals and hashCode methods are a perfect fit.
+    override def toBinaryJavaName: String = "["+componentType.toBinaryJavaName
+
+    override def toJavaClass: java.lang.Class[_] = {
+        java.lang.Class.forName(toBinaryJavaName)
+    }
+
+    // The default equals and hashCode methods are a perfect fit.
 
     override def toString = "ArrayType("+componentType.toString+")"
 
 }
+
+/**
+ * Defines factory and extractor methods for `ArrayType`s.
+ *
+ * @author Michael Eichberg
+ */
 final object ArrayType {
 
     import java.util.concurrent.atomic.AtomicInteger
@@ -597,6 +741,10 @@ final object ArrayType {
         newAT
     }
 
+    /**
+     * Factory method to create an Array of the given component type with the given
+     * dimension.
+     */
     @annotation.tailrec def apply(dimension: Int, componentType: FieldType): ArrayType = {
         val at = apply(componentType)
         if (dimension > 1)
@@ -609,19 +757,36 @@ final object ArrayType {
 
     final val ArrayOfObjects = ArrayType(ObjectType.Object)
 }
+
+/**
+ * Facilitates matching against an array's element type.
+ *
+ * @author Michael Eichberg
+ */
 object ArrayElementType {
     def unapply(at: ArrayType): Option[FieldType] = Some(at.elementType)
 }
 
 /**
- * Defines an extractor to match against any `ObjectType` except `java.lang.Object`.
+ * Defines an extractor to match a type against any `ObjectType`
+ * except `java.lang.Object`.
+ *
+ * @author Michael Eichberg
  */
 object NotJavaLangObject {
 
     def unapply(objectType: ObjectType): Boolean = objectType ne ObjectType.Object
 }
 
+/**
+ * Defines an extractor to match against any `Type` except `void`. Can be useful, e.g.,
+ * when matching `MethodDescriptor`s to select all methods that return something.
+ *
+ * @author Michael Eichberg
+ */
 object NotVoid {
+
     def unapply(someType: Type): Boolean = someType ne VoidType
+
 }
 

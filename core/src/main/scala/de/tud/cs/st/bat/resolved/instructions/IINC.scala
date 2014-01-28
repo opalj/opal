@@ -58,5 +58,9 @@ case class IINC(
             currentPC + 1 + 2
         }
     }
+    
+    override def nextInstructions(currentPC: PC, code: Code): PCs = {
+        collection.mutable.UShortSet(indexOfNextInstruction(currentPC, code))
+    }
 
 }

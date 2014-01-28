@@ -49,12 +49,12 @@ sealed trait Answer {
     /**
      * Returns `true` if the answer is `Yes` or `Unknown`, `false` otherwise.
      */
-    def maybeYes: Boolean
+    def maybeYes: Boolean // TODO [Rename] isUnknownOrYes
 
     /**
      * Returns `true` if the answer is `No` or `Unknown`, `false` otherwise.
      */
-    def maybeNo: Boolean
+    def maybeNo: Boolean // TODO [Rename] isUnknownOrNo
 
     /**
      * Returns `true` if and only if the answer is `Yes`. This implies that `isDefined`

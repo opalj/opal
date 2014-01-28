@@ -44,14 +44,15 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  * which could lead to some kind of exception.
  *
  * Basically all domains that perform some kind of abstraction should mix in this trait
- * and query the respective method.
+ * and query the respective method to decide if a respective exception should be thrown
+ * if it is possible that an exception may be thrown.
  *
  * ==Usage==
  * If you need to adapt a setting just override the respective method in your domain.
  *
  * @author Michael Eichberg
  */
-trait Configuration { this: SomeDomain ⇒
+trait Configuration {
 
     /**
      * @return `true`

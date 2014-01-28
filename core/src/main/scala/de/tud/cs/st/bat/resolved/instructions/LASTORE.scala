@@ -41,7 +41,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case object LASTORE extends ArrayAccessInstruction with PrimitiveArrayAccess {
+case object LASTORE extends PrimitiveArrayStoreInstruction with PrimitiveArrayAccess {
 
     def opcode: Int = 80
 

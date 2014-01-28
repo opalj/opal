@@ -53,8 +53,11 @@ case class GETSTATIC(
 
     def mnemonic: String = "getstatic"
 
-    def runtimeExceptions: List[ObjectType] = Nil
+    final override def runtimeExceptions: List[ObjectType] = Nil
+
+    final override def nextInstructions(currentPC: PC, code: Code): PCs =
+        collection.mutable.UShortSet(indexOfNextInstruction(currentPC, code))
 
     override def toString = "get static "+declaringClass.toJava+"."+name+" : "+fieldType.toJava
-    
+
 }

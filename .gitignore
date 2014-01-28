@@ -1,6 +1,5 @@
 target
 build
-build.properties
 .DS_Store
 .cache
 .classpath

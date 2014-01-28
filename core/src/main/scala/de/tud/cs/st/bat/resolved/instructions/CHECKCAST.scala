@@ -48,10 +48,18 @@ case class CHECKCAST(
 
     def mnemonic: String = "checkcast"
 
-    def runtimeExceptions: List[ObjectType] = CHECKCAST.runtimeExceptions
+    final override def runtimeExceptions: List[ObjectType] = CHECKCAST.runtimeExceptions
 
-    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 3
+    final override def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+        currentPC + 3
 
+    final override def nextInstructions(currentPC: PC, code: Code): PCs = {
+        Instruction.nextInstructionOrExceptionHandler(
+            this, currentPC, code, ObjectType.ClassCastException)
+    }
+
+    override def toString : String = "CHECKCAST("+referenceType.toJava+")"
+    
 }
 
 object CHECKCAST {

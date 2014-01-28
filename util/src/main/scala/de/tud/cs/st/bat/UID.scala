@@ -34,6 +34,7 @@ package de.tud.cs.st
 package bat
 
 import scala.annotation.tailrec
+import scala.collection.SortedSet
 
 /**
  * Mixed in by data structures that have – by construction - unique ids. I.e., two
@@ -288,7 +289,7 @@ sealed trait UIDList[+T <: UID] { thisList ⇒
     /**
      * Passes all elements of this list to the given function.
      */
-    @inline final def foreach[X >: T <: UID, U](f: X ⇒ U): Unit = {
+    @inline final def foreach[U](f: T ⇒ U): Unit = {
         var rest: UIDList[T] = thisList
         while (rest.nonEmpty) {
             f(rest.head)
@@ -330,13 +331,13 @@ private final class UIDSList[T <: UID](
             case that: UIDList[T] ⇒
                 var thisRest: UIDList[T] = this
                 var thatRest: UIDList[T] = that
-                while (thisRest.nonEmpty && thatRest.nonEmpty) {
+                while ((thisRest ne thatRest) && thisRest.nonEmpty && thatRest.nonEmpty) {
                     if (thisRest.head.id != thatRest.head.id)
                         return false;
                     thisRest = thisRest.tail
                     thatRest = thatRest.tail
                 }
-                thisRest.isEmpty && thatRest.isEmpty
+                thisRest eq thatRest
             case _ ⇒
                 false
         }
@@ -411,4 +412,33 @@ object UIDList {
             UIDList(e1)
         else
             new UIDSList(e2, new UIDSList(e1, empty))
+
+    def apply[T <: UID](set: scala.collection.Set[T]): UIDList[T] = {
+        if (set.isEmpty)
+            UIDList.empty
+        else if (set.size == 1)
+            apply(set.head)
+        else {
+            var list: UIDList[T] = UIDList.empty
+            set foreach { list += _ }
+            list
+        }
+    }
+
+    def unapplySeq[T <: UID](list: UIDList[T]): Option[Seq[T]] = {
+        if (list.isEmpty)
+            None
+        else
+            Some(list.iterator.toSeq)
+    }
+}
+
+object SingleElementUIDList {
+
+    def unapply[T <: UID](list: UIDList[T]): Option[T] = {
+        if (list.tail.isEmpty)
+            Some(list.head)
+        else
+            None
+    }
 }

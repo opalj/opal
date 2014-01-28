@@ -36,10 +36,10 @@ package resolved
 package ai
 package comprehensive
 
-import domain.l0.BaseConfigurableDomain
-import domain.l1.PreciseConfigurableDomain
-
+import domain.l0
+import domain.l1
 import reader.Java7Framework.ClassFile
+
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
@@ -55,6 +55,7 @@ import org.scalatest.matchers.ShouldMatchers
 class InterpretManyMethodsTest extends FlatSpec with ShouldMatchers {
 
     import de.tud.cs.st.util.ControlAbstractions._
+    import debug.InterpretMethods.interpret
 
     behavior of "BATAI"
 
@@ -66,21 +67,17 @@ class InterpretManyMethodsTest extends FlatSpec with ShouldMatchers {
 
     it should (
         "be able to interpret all methods using the BaseConfigurableDomain in "+
-        files.map(_.getName).mkString("\n\t\t", "\n\t\t", "\n")
-    ) in {
-            util.InterpretMethods.interpret(
-                classOf[BaseConfigurableDomain[_]],
-                files
-            ).map(fail(_))
+        files.map(_.getName).mkString("\n\t\t", "\n\t\t", "\n")) in {
+            interpret(classOf[l0.BaseConfigurableDomain[_]], files) map { errors ⇒
+                fail(errors._1+" (details: "+errors._2.getOrElse("not available")+")")
+            }
         }
 
     it should (
         "be able to interpret all methods using the PreciseConfigurableDomain in "+
-        files.map(_.getName).mkString("\n\t\t", "\n\t\t", "\n")
-    ) in {
-            util.InterpretMethods.interpret(
-                classOf[PreciseConfigurableDomain[_]],
-                files
-            ).map(fail(_))
+        files.map(_.getName).mkString("\n\t\t", "\n\t\t", "\n")) in {
+            interpret(classOf[l1.DefaultConfigurableDomain[_]], files) map { errors ⇒
+                fail(errors._1+" (details: "+errors._2.getOrElse("not available")+")")
+            }
         }
 }

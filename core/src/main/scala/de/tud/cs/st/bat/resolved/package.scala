@@ -77,6 +77,7 @@ package object resolved {
     type SourceElementID = Int
 
     type PC = Int
+    type PCs = collection.UShortSet
 
     @throws[AnalysisFailedException]
     final def CodeError(message: String, code: Code, pc: Int) =

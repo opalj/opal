@@ -45,6 +45,37 @@ import org.scalatest.ParallelTestExecution
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class ArrayTypeTest extends FunSuite with ParallelTestExecution {
 
+    test("ArrayType (Array of References) Field Descriptor") {
+        val fieldType = FieldType("[Ljava/lang/Object;")
+        val ArrayType(componentType) = fieldType
+        assert(componentType === FieldType("Ljava/lang/Object;"))
+    }
+
+    test("ArrayType (Array of Primitives) Field Descriptor") {
+        val fieldType = FieldType("[J")
+        val ArrayType(componentType) = fieldType
+        assert(componentType === LongType)
+    }
+
+    test("ArrayType (Array of Array of Primitives) Field Descriptor") {
+        val fieldType = FieldType("[[S")
+        fieldType match {
+            case ArrayType(ArrayType(ShortType)) ⇒ /*OK*/
+        }
+    }
+    
+    test("toJavaClass") {
+        val at1 = FieldType("[Ljava/lang/Object;")
+        val at1Class = at1.toJavaClass
+        assert(at1Class == classOf[Array[Object]])
+
+        val at2 = ArrayType(ObjectType("java/util/List"))
+        assert(at2.toJavaClass == classOf[Array[java.util.List[_]]])
+
+        val at3 = ArrayType(IntegerType)
+        assert(at3.toJavaClass == classOf[Array[Int]])
+    }
+
     test("Equality") {
         val at1 = FieldType("[Ljava/lang/Object;")
         val at2 = FieldType("[Ljava/lang/Object;")

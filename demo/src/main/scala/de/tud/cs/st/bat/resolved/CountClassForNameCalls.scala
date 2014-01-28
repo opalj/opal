@@ -40,12 +40,12 @@ import analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
 import java.net.URL
 
 /**
- * Counts the number of `Class.forName` calls.
- *
- * Primarily demonstrates how to match instructions and how to use the `AnalysisExecutor`.
- *
- * @author Michael Eichberg
- */
+  * Counts the number of `Class.forName` calls.
+  *
+  * Primarily demonstrates how to match instructions and how to use the `AnalysisExecutor`.
+  *
+  * @author Michael Eichberg
+  */
 object CountClassForNameCalls extends AnalysisExecutor {
 
     val analysis = new Analysis[URL, BasicReport] {
@@ -56,21 +56,33 @@ object CountClassForNameCalls extends AnalysisExecutor {
             var classForNameCount = 0
 
             import ObjectType.{ String, Class }
+            // Next, we create a descriptor of a method that takes a single parameter of 
+            // type "String" and that returns a value of type Class.
             val descriptor = MethodDescriptor(String, Class)
-            val invokes = for {
-                classFile ← project.classFiles
-                method ← classFile.methods
-                body = method.body
-                if body.isDefined
-                instructions = body.get.instructions
-                INVOKESTATIC(Class, "forName", `descriptor`) ← instructions
-            } yield {
-                classForNameCount += 1
-                classFile.thisType.fqn+" { "+method.toJava+" }"
-            }
+            val invokes = (
+                // The following collects all calls of the method "forName" on
+                // an object of type Class.
+                for {
+                    // Let's traverse all methods of all class files that have a 
+                    // concrete (non-native) implementation. 
+                    classFile ← project.classFiles
+                    method @ MethodWithBody(code) ← classFile.methods
+                    // Associate each instruction with its index to make it possible
+                    // to distinguish multiple invocations of "Class.forName" within
+                    // the same method.
+                    instructions = code.associateWithIndex
+                    // Match all invocations of the method:
+                    // Class.forName(String) : Class<?>
+                    (pc, INVOKESTATIC(Class, "forName", `descriptor`)) ← instructions
+                } yield {
+                    classForNameCount += 1
+                    classFile.thisType.fqn+" { "+method.toJava+"{ pc="+pc+" } }"
+                }
+            ).toSet
 
-            BasicReport("Class.forName(String) was called: "+classForNameCount+" times.\n\t"+
-                invokes.toSet.mkString("\n\t")
+            BasicReport(
+                "Class.forName(String) was called: "+classForNameCount+" times.\n\t"+
+                    invokes.mkString("\n\t")
             )
         }
     }

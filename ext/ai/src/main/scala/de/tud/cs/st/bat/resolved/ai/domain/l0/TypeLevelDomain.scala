@@ -49,17 +49,17 @@ package l0
  * @author Michael Eichberg
  */
 trait TypeLevelDomain[+I]
-    extends Domain[I]
+    extends Domain[I]    
     with DefaultDomainValueBinding[I]
-    with DefaultTypeLevelReferenceValues[I]
+    with Configuration
+    with DefaultReferenceValuesBinding[I]
     with DefaultTypeLevelIntegerValues[I]
     with DefaultTypeLevelLongValues[I]
     with DefaultTypeLevelFloatValues[I]
     with DefaultTypeLevelDoubleValues[I]
-    with TypeLevelArrayInstructions
     with TypeLevelFieldAccessInstructions
     with TypeLevelInvokeInstructions
-    with DefaultClassHierarchy
+    with PredefinedClassHierarchy
 
 /**
  * This is a ready to use domain which sets the domain identifier to "BaseTypeLevelDomain".

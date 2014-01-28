@@ -11,3 +11,4 @@ libraryDependencies in ThisBuild += "junit" % "junit" % "4.10" % "test"
 
 libraryDependencies in ThisBuild += "org.scalatest" % "scalatest_2.10" % "1.9.1" % "test"
 
+EclipseKeys.createSrc := EclipseCreateSrc.Default + EclipseCreateSrc.Resource

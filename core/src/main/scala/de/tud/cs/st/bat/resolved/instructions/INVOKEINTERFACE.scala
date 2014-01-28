@@ -50,9 +50,11 @@ case class INVOKEINTERFACE(
 
     def mnemonic: String = "invokeinterface"
 
-    def runtimeExceptions: List[ObjectType] = MethodInvocationInstruction.runtimeExceptions
+    final override def runtimeExceptions: List[ObjectType] = 
+        MethodInvocationInstruction.runtimeExceptions
 
-    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 5
+    final override def indexOfNextInstruction(currentPC: Int, code: Code): Int = 
+        currentPC + 5
 
     // Required to avoid that Scala generates a default toString method!
     override def toString = super.toString

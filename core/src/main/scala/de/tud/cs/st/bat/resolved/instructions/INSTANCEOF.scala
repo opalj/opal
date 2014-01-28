@@ -48,9 +48,14 @@ case class INSTANCEOF(
 
     def mnemonic: String = "instanceof"
 
-    def runtimeExceptions: List[ObjectType] = Nil
+    final override def runtimeExceptions: List[ObjectType] = Nil
 
-    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 3
+    final override def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+        currentPC + 3
 
+    final override def nextInstructions(currentPC: PC, code: Code): PCs =
+        collection.mutable.UShortSet(indexOfNextInstruction(currentPC, code))
+
+    override def toString: String = "INSTANCEOF("+referenceType.toJava+")"
 }
 

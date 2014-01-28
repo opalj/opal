@@ -46,9 +46,9 @@ import scala.annotation.tailrec
  *  or the class [[de.tud.cs.st.bat.AccessFlagsIterator]] or the classes which
  *  inherit from [[de.tud.cs.st.bat.AccessFlag]].
  * @param thisType The type implemented by this class file.
- * @param superClass The class type from which this class inherits. `None` if this
+ * @param superclassType The class type from which this class inherits. `None` if this
  *      class file defines `java.lang.Object`.
- * @param interfaces The set of implemented interfaces. May be empty.
+ * @param interfaceTypes The set of implemented interfaces. May be empty.
  * @param fields The declared fields. May be empty. The list is sorted by name.
  * @param methods The declared methods. May be empty. The list is first sorted by name,
  *      and then by method descriptor.

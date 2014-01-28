@@ -55,6 +55,47 @@ public class MethodsWithArrays {
         return values[length - 1];
     }
 
+    public static Object covariantArrays(boolean b) {
+        Object[] foo = null;
+
+        if (b)
+            foo = new java.util.List[1];
+        else
+            foo = new java.util.Set[2];
+
+        Object o = foo[0];
+
+        return o;
+    }
+
+    public static Object integerArraysFrenzy(int id, Object data) {
+        // Inspiration: java/awt/image/DirectColorModel Object getDataElements(int,Object)
+        int intpixel[] = null;
+        if (id == 3 && data != null) {
+            intpixel = (int[]) data;
+        } else {
+            intpixel = new int[1];
+        }
+
+        switch (id) {
+        case 1: {
+            byte bdata[];
+            if (data == null) {
+                bdata = new byte[1];
+            } else {
+                bdata = (byte[]) data;
+            }
+            bdata[0] = (byte) (/* 0xff & */intpixel[0]);
+            return bdata;
+        }
+        case 3:
+            return intpixel;
+        }
+
+        throw new UnsupportedOperationException("What the heck is B?");
+
+    }
+
     //
     // COMPARISON
 
@@ -102,6 +143,9 @@ public class MethodsWithArrays {
 
         Object o = new java.util.ArrayList[0];
         Object s = new java.io.Serializable[10][5];
+
+        out.println(o instanceof java.io.Serializable);
+        out.println(o instanceof java.lang.Cloneable);
 
         out.println(o instanceof Object[]); // true
         out.println(o instanceof java.io.Serializable[]); // true

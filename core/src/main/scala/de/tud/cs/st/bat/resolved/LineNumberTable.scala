@@ -48,10 +48,10 @@ case class LineNumberTable(
      *
      * @param pc The program counter/the index of an instruction in the code array for
      *    which we want to determine the source line.
-     * @return The line number of the instruction with the given pc, if the this
-     *    information is available.
+     * @return The line number of the instruction with the given pc, if the line number
+     *    is available.
      */
-    def lookupLineNumber(pc: Int): Option[Int] = {
+    def lookupLineNumber(pc: PC): Option[Int] = {
         import scala.util.control.Breaks
         val breaks = new Breaks
         import breaks.{ break, breakable }

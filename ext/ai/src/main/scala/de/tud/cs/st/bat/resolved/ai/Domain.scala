@@ -42,15 +42,16 @@ import reflect.ClassTag
 /**
  * A domain is the fundamental abstraction mechanism in BATAI that enables the customization
  * of BATAI towards the needs of a specific analysis. A domain encodes the semantics of
- * computations with respect to a domain's values. Customizing a domain is the
+ * computations (e.g., the addition of two values) with respect to a domain's values
+ * (e.g., the representation of integer values). Customizing a domain is the
  * fundamental mechanism of adapting BATAI to one's needs.
  *
  * This trait defines the interface between the abstract interpretation framework (BATAI)
  * and some (user defined) domain. I.e., this interface defines all methods that
  * are needed by BATAI to perform an abstract interpretation. While it is perfectly
- * possible to implement a new domain by inheriting from this trait it is recommended
+ * possible to implement a new domain by inheriting from this trait, it is recommended
  * to first study the already implemented domains and to use them as a foundation.
- * To facilitate the usage of BATAI, several classes/traits that implement parts of
+ * To facilitate the usage of BATAI several classes/traits that implement parts of
  * this `Domain` trait are pre-defined and can be flexibly combined (mixed together)
  * when needed.
  *
@@ -148,8 +149,9 @@ trait Domain[+I] {
          */
         def computationalType: ComputationalType
 
+        @throws[DomainException]("This method is not supported.")
         private[ai] def asReturnAddressValue: PC =
-            aiException("this value ("+this+") is not a return address")
+            throw new DomainException("this value ("+this+") is not a return address")
 
         /**
          * Joins this value and the given value.
@@ -189,7 +191,7 @@ trait Domain[+I] {
          *
          * Conceptually, the join of an object with itself has to return the object
          * itself. Note, that this is a conceptual requirement as such a call
-         * (`this.doJoin(..,this)`) will never happen.
+         * (`this.doJoin(..,this)`) will not be done by BATAI.
          *
          * ==Performance==
          * In general, the domain should try to minimize the number of objects that it
@@ -237,7 +239,7 @@ trait Domain[+I] {
          *
          * In general, creating a summary of a value may be useful/required
          * for values that are potentially returned by a called method and which
-         * will be used by the calling method when continuing the interpretation. For example,
+         * will then be used by the calling method. For example,
          * it may be useful to precisely track the flow of values within a method to
          * be able to distinguish between all sources of a value (E.g., to be able to
          * distinguish between a `NullPointerException` created by instruction A and another
@@ -246,24 +248,12 @@ trait Domain[+I] {
          * method and, hence, keeping all information would just waste memory and
          * a summary may be sufficient.
          *
-         * @note __The precise semantics and usage of `summarize(...)` can be determined
+         * @note __The precise semantics and usage of `summarize(...)` is determined
          *      by the domain as BATAI does not use/call this method.__ This method
          *      is solely predefined to facilitate the development of project-wide
          *      analyses.
          */
         def summarize(pc: PC): DomainValue
-
-        /**
-         * Creates a summary value of this value and the given value.
-         *
-         * (See `summarize(PC)` for further details.)
-         *
-         * @note __The precise semantics and usage of `summarize(...)` can be determined
-         *      by the domain as BATAI does not use/call this method.__
-         *      This method is solely predefined to facilitate the development of
-         *      project-wide analyses.
-         */
-        def summarize(pc: PC, value: DomainValue): DomainValue
 
         /**
          * Adapts this value to the given domain (default: throws a domain exception
@@ -282,14 +272,9 @@ trait Domain[+I] {
          * @note __The precise semantics of `adapt` can be determined by the domain
          *      as BATAI does not use/call this method.__
          */
-        @throws[DomainException]("If it is not possble to adapt this value to the target domain.")
-        def adapt[TDI >: I](
-            targetDomain: Domain[TDI],
-            pc: PC): targetDomain.DomainValue =
-            domainException(
-                Domain.this,
-                "adapting this value for the target domain is not supported")
-
+        @throws[DomainException]("Adaptation of this value is not supported.")
+        def adapt[TDI >: I](target: Domain[TDI], pc: PC): target.DomainValue =
+            throw new DomainException("This value "+this+" cannot be adapted for "+target)
     }
 
     /**
@@ -346,15 +331,13 @@ trait Domain[+I] {
      */
     protected class IllegalValue extends Value { this: DomainIllegalValue ⇒
 
-        @throws[DomainException]("always")
+        @throws[DomainException]("This method is not supported.")
         final override def computationalType: ComputationalType =
-            domainException(
-                Domain.this,
-                "a dead/an illegal value does not have a computational type")
+            throw DomainException("the illegal value has no computational type")
 
-        @throws[DomainException]("always")
+        @throws[DomainException]("This method is not supported.")
         override protected def doJoin(pc: PC, other: DomainValue): Update[DomainValue] =
-            domainException(Domain.this, "unsupported; call join(...)")
+            throw DomainException("this method is not supported")
 
         override def join(pc: PC, other: DomainValue): Update[DomainValue] =
             if (other eq TheIllegalValue)
@@ -362,24 +345,12 @@ trait Domain[+I] {
             else
                 MetaInformationUpdateIllegalValue
 
-        @throws[DomainException]("always")
+        @throws[DomainException]("This method is not supported.")
         override def summarize(pc: PC): DomainValue =
-            domainException(
-                Domain.this,
-                "creating a summary of an IllegalValue is meaningless")
+            throw DomainException("creating a summary of an illegal value is meaningless")
 
-        @throws[DomainException]("always")
-        override def summarize(
-            pc: PC,
-            value: DomainValue): DomainValue =
-            domainException(
-                Domain.this,
-                "creating a summary of some value and an IllegalValue is meaningless")
-
-        override def adapt[ThatI >: I](
-            targetDomain: Domain[ThatI],
-            pc: PC): targetDomain.DomainValue =
-            targetDomain.TheIllegalValue
+        override def adapt[TDI >: I](target: Domain[TDI], pc: PC): target.DomainValue =
+            target.TheIllegalValue
 
         override def toString: String = "IllegalValue"
     }
@@ -398,7 +369,7 @@ trait Domain[+I] {
     val TheIllegalValue: DomainIllegalValue
 
     /**
-     * If the result of the merge of two values is a non-legal value. The result has
+     * The result of the merge of two incompatible values has
      * to be reported as a `MetaInformationUpdate`.
      */
     def MetaInformationUpdateIllegalValue: MetaInformationUpdate[DomainIllegalValue]
@@ -413,9 +384,9 @@ trait Domain[+I] {
      *      implementation errors early on.
      */
     final def StructuralUpdateIllegalValue: StructuralUpdate[Nothing] =
-        domainException(Domain.this,
-            "The join of two values with incompatible values "+
-                "always has to result in a MetaInformationUpdate.")
+        throw new DomainException(
+            "implementation error (see documentation of Domain.StructuralUpdateIllegalValue())"
+        )
 
     /**
      * Stores a single return address (i.e., a program counter/index into the code array).
@@ -436,28 +407,19 @@ trait Domain[+I] {
         final override def computationalType: ComputationalType =
             ComputationalTypeReturnAddress
 
+        @throws[DomainException]("This method is not supported.")
         override protected def doJoin(pc: PC, other: DomainValue): Update[DomainValue] =
             // Note that the framework already handles the case where this 
             // value is joined with itself! A join of this value with a different return 
             // address value does not make sense!
-            domainException(Domain.this, "return address values cannot be joined")
+            throw DomainException("return address values cannot be joined")
 
-        @throws[DomainException]("always")
+        @throws[DomainException]("This method is not supported.")
         override def summarize(pc: PC): DomainValue =
-            domainException(
-                Domain.this, "summarizing this return address values is not supported")
+            throw DomainException("summarizing return address values is meaningless")
 
-        @throws[DomainException]("always")
-        override def summarize(
-            pc: PC,
-            value: DomainValue): DomainValue =
-            domainException(
-                Domain.this, "summarizing return address values is not supported")
-
-        override def adapt[ThatI >: I](
-            targetDomain: Domain[ThatI],
-            pc: PC): targetDomain.DomainValue =
-            targetDomain.ReturnAddressValue(address)
+        override def adapt[TDI >: I](target: Domain[TDI], pc: PC): target.DomainValue =
+            target.ReturnAddressValue(address)
 
         override def toString = "ReturnAddress("+address+")"
     }
@@ -484,6 +446,27 @@ trait Domain[+I] {
     //
     // -----------------------------------------------------------------------------------
 
+    final def justThrows(value: ExceptionValue): ThrowsException[ExceptionValues] =
+        ThrowsException(Seq(value))
+
+    final def throws(value: ExceptionValue): ThrowsException[ExceptionValue] =
+        ThrowsException(value)
+
+    def ClassCastException(pc: PC): ExceptionValue =
+        InitializedObjectValue(pc, ObjectType.ClassCastException)
+
+    def NullPointerException(pc: PC): ExceptionValue =
+        InitializedObjectValue(pc, ObjectType.NullPointerException)
+
+    def NegativeArraySizeException(pc: PC): ExceptionValue =
+        InitializedObjectValue(pc, ObjectType.NegativeArraySizeException)
+
+    def ArrayIndexOutOfBoundsException(pc: PC): ExceptionValue =
+        InitializedObjectValue(pc, ObjectType.ArrayIndexOutOfBoundsException)
+
+    def ArrayStoreException(pc: PC): ExceptionValue =
+        InitializedObjectValue(pc, ObjectType.ArrayStoreException)
+
     /**
      * Factory method to create domain values with a specific type. I.e., values for
      * which we have some type information but no value or location information.
@@ -496,7 +479,8 @@ trait Domain[+I] {
      * values are given and initial values need to be generated. This method is not
      * used elsewhere by BATAI.
      *
-     * BATAI assigns the `pc` "-1" to the first parameter and -2 for the second...
+     * BATAI assigns the `pc` "-1" to the first parameter and -2 for the second... This
+     * property is, however, not ensured by this method.
      */
     def TypedValue(pc: PC, valueType: Type): DomainValue = valueType match {
         case BooleanType       ⇒ BooleanValue(pc)
@@ -508,7 +492,8 @@ trait Domain[+I] {
         case LongType          ⇒ LongValue(pc)
         case DoubleType        ⇒ DoubleValue(pc)
         case rt: ReferenceType ⇒ ReferenceValue(pc, rt)
-        case VoidType          ⇒ domainException(this, "there are no void typed values")
+        case VoidType ⇒
+            throw DomainException("a domain value cannot have the type void")
     }
 
     /**
@@ -675,7 +660,7 @@ trait Domain[+I] {
      * Factory method to create a `DomainValue` that represents ''either a reference
      * value that has the given type and is initialized or the value `null`''. However, the
      * information whether the value is `null` or not is not available. Furthermore, the
-     * type may also be an upper bound.
+     * type may also just be an upper bound.
      *
      * The domain may ignore the information about the value and the origin (`pc`), but
      * it has to remain possible for the domain to identify the component type of an
@@ -684,9 +669,10 @@ trait Domain[+I] {
      * ==Summary==
      * The properties of the domain value are:
      *
-     *  - Initialized: '''yes''' (the constructor was called)
+     *  - Initialized: '''yes''' (if non-null then the constructor was called)
      *  - Type: '''Upper Bound'''
-     *  - Null: '''MayBe''' (It is unknown whether the value is `null` or not.)
+     *  - Null: '''Unknown'''
+     *  - Content: '''Unknown'''
      */
     def ReferenceValue(pc: PC, referenceType: ReferenceType): DomainValue
 
@@ -701,7 +687,7 @@ trait Domain[+I] {
      *  - Type: '''Upper Bound'''
      *  - Null: '''No''' (This value is not `null`.)
      */
-    def NonNullReferenceValue(pc: PC, objectType: ObjectType): DomainValue
+    def NonNullObjectValue(pc: PC, objectType: ObjectType): DomainValue
 
     /**
      * Creates a new `DomainValue` that represents ''a new,
@@ -723,12 +709,12 @@ trait Domain[+I] {
      *      `multianewarray` instructions and in both cases an exception may be thrown
      *      (e.g., `NegativeArraySizeException`).
      */
-    def NewObject(pc: PC, referenceType: ReferenceType): DomainValue
+    def NewObject(pc: PC, objectType: ObjectType): DomainValue
 
     /**
-     * Factory method to create a `DomainValue` that represents a new, '''initialized'''
-     * object of the given type and that was created (explicitly or implicitly) by the
-     * instruction with the specified program counter.
+     * Factory method to create a `DomainValue` that represents an '''initialized'''
+     * reference value of the given type and that was created (explicitly or implicitly)
+     * by the instruction with the specified program counter.
      *
      * ==General Remarks==
      * The given type usually identifies a class type (not an interface type) that is
@@ -749,7 +735,7 @@ trait Domain[+I] {
      *      correctly models the runtime type.)
      *  - Null: '''No''' (This value is not `null`.)
      */
-    def InitializedObject(pc: PC, referenceType: ReferenceType): DomainValue
+    def InitializedObjectValue(pc: PC, objectType: ObjectType): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given string value
@@ -796,11 +782,13 @@ trait Domain[+I] {
     // -----------------------------------------------------------------------------------
 
     /**
-     * Returns `true` iff at least one possible extension of the given `value` is in the
-     * specified range; that is if the intersection of the range of values captured
-     * by the given `value` and the specified range is non-empty.
+     * Returns `Yes` or `Unknown` iff at least one possible extension of the given
+     * `value` is in the specified range; that is if the intersection of the range of
+     * values captured by the given `value` and the specified range is non-empty.
+     *
      * For example, if the given value captures all positive integer values and the
-     * specified range is [-1,1] then the answer has to be Yes.
+     * specified range is [-1,1] then the answer has to be `Yes`. If we know nothing
+     * about the potential extension of the given value the answer will be `Unknown`.
      *
      * @param value A value that has to be of computational type integer.
      * @param lowerBound The range's lower bound (inclusive).
@@ -809,16 +797,21 @@ trait Domain[+I] {
     /*ABSTRACT*/ def isSomeValueInRange(
         value: DomainValue,
         lowerBound: Int,
-        upperBound: Int): Boolean
+        upperBound: Int): Answer
 
     /**
-     * Returns `true` iff at least one possible extension of given value is not in the
+     * Returns `Yes` or Unknown` iff at least one (possible) extension of given value is not in the
      * specified range; that is, if the set difference of the range of values captured
      * by the given `value` and  the specified range is non-empty.
-     * For example, if the given `value` represents the integer value `10` and the
-     * specified range is [0,Integer.MAX_VALUE] then the answer has to be `false`. But,
+     * For example, if the given `value` has the integer value `10` and the
+     * specified range is [0,Integer.MAX_VALUE] then the answer has to be `No`. But,
      * if the given `value` represents the range [-5,Integer.MAX_VALUE] and the specified
-     * range is again [0,Integer.MAX_VALUE] then the answer has to be `true`.
+     * range is again [0,Integer.MAX_VALUE] then the answer has to be `Yes` `Unknown`.
+     *
+     * The answer is Yes iff the analysis determined that at runtime `value`  will have
+     * a value that is not in the specified range. If the analysis(domain) is not able
+     * to determine whether the value is or is not in the given range then the answer
+     * has to be unknown.
      *
      * @param value A value that has to be of computational type integer.
      * @param lowerBound The range's lower bound (inclusive).
@@ -827,7 +820,7 @@ trait Domain[+I] {
     /*ABSTRACT*/ def isSomeValueNotInRange(
         value: DomainValue,
         lowerBound: Int,
-        upperBound: Int): Boolean
+        upperBound: Int): Answer
 
     /**
      * Determines whether the given value is `null` (`Yes`), maybe `null` (`Unknown`) or
@@ -867,7 +860,7 @@ trait Domain[+I] {
      * real type.
      *
      * This default implementation always returns
-     * [[de.tud.cs.st.bat.resolved.ai.HasUnknownType]].
+     * [[de.tud.cs.st.bat.resolved.ai.TypeUnknown]].
      *
      * ==Implementing `typeOfValue`==
      * This method is typically not implemented by a single `Domain` trait/object, but is
@@ -890,7 +883,11 @@ trait Domain[+I] {
      * }
      * }}}
      */
-    def typeOfValue(value: DomainValue): TypesAnswer = HasUnknownType
+    def typeOfValue(value: DomainValue): TypesAnswer =
+        value match {
+            case ta: TypesAnswer ⇒ ta
+            case _               ⇒ TypeUnknown
+        }
 
     /**
      * Tries to determine if the type referred to as `subtype` is a subtype of the
@@ -910,7 +907,7 @@ trait Domain[+I] {
      * @note The returned value is only meaningful if the value does not represent
      *      the runtime value `null`.
      */
-    /*ABSTRACT*/ def isSubtypeOf(
+    /*ABSTRACT*/ def isValueSubtypeOf(
         value: DomainValue,
         supertype: ReferenceType): Answer
 
@@ -1240,37 +1237,73 @@ trait Domain[+I] {
      */
     type ArrayStoreResult = Computation[Nothing, ExceptionValues]
 
+    //
+    // STORING VALUES IN AND LOADING VALUES FROM ARRAYS
+    //
+
     def aaload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
-    def aastore(pc: PC, value: DomainValue, index: DomainValue,
-                arrayref: DomainValue): ArrayStoreResult
+
+    def aastore(
+        pc: PC,
+        value: DomainValue,
+        index: DomainValue,
+        arrayref: DomainValue): ArrayStoreResult
 
     def baload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
-    def bastore(pc: PC, value: DomainValue, index: DomainValue,
-                arrayref: DomainValue): ArrayStoreResult
+
+    def bastore(
+        pc: PC,
+        value: DomainValue,
+        index: DomainValue,
+        arrayref: DomainValue): ArrayStoreResult
 
     def caload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
-    def castore(pc: PC, value: DomainValue, index: DomainValue,
-                arrayref: DomainValue): ArrayStoreResult
+
+    def castore(
+        pc: PC,
+        value: DomainValue,
+        index: DomainValue,
+        arrayref: DomainValue): ArrayStoreResult
 
     def daload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
-    def dastore(pc: PC, value: DomainValue, index: DomainValue,
-                arrayref: DomainValue): ArrayStoreResult
+
+    def dastore(
+        pc: PC,
+        value: DomainValue,
+        index: DomainValue,
+        arrayref: DomainValue): ArrayStoreResult
 
     def faload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
-    def fastore(pc: PC, value: DomainValue, index: DomainValue,
-                arrayref: DomainValue): ArrayStoreResult
+
+    def fastore(
+        pc: PC,
+        value: DomainValue,
+        index: DomainValue,
+        arrayref: DomainValue): ArrayStoreResult
 
     def iaload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
-    def iastore(pc: PC, value: DomainValue, index: DomainValue,
-                arrayref: DomainValue): ArrayStoreResult
+
+    def iastore(
+        pc: PC,
+        value: DomainValue,
+        index: DomainValue,
+        arrayref: DomainValue): ArrayStoreResult
 
     def laload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
-    def lastore(pc: PC, value: DomainValue, index: DomainValue,
-                arrayref: DomainValue): ArrayStoreResult
+
+    def lastore(
+        pc: PC,
+        value: DomainValue,
+        index: DomainValue,
+        arrayref: DomainValue): ArrayStoreResult
 
     def saload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult
-    def sastore(pc: PC, value: DomainValue, index: DomainValue,
-                arrayref: DomainValue): ArrayStoreResult
+
+    def sastore(
+        pc: PC,
+        value: DomainValue,
+        index: DomainValue,
+        arrayref: DomainValue): ArrayStoreResult
 
     //
     // LENGTH OF AN ARRAY
@@ -1279,7 +1312,9 @@ trait Domain[+I] {
     /**
      * Returns the array's length or throws a `NullPointerException`.
      */
-    def arraylength(pc: PC, arrayref: DomainValue): Computation[DomainValue, ExceptionValue]
+    def arraylength(
+        pc: PC,
+        arrayref: DomainValue): Computation[DomainValue, ExceptionValue]
 
     //
     // TYPE CONVERSION
@@ -1365,40 +1400,44 @@ trait Domain[+I] {
      *
      * @return The field's value or a new `NullPointerException`.
      */
-    def getfield(pc: PC,
-                 objectref: DomainValue,
-                 declaringClass: ObjectType,
-                 name: String,
-                 fieldType: FieldType): Computation[DomainValue, ExceptionValue]
+    def getfield(
+        pc: PC,
+        objectref: DomainValue,
+        declaringClass: ObjectType,
+        name: String,
+        fieldType: FieldType): Computation[DomainValue, ExceptionValue]
 
     /**
      * Returns the field's value.
      *
      * @return The field's value or a new `LinkageException`.
      */
-    def getstatic(pc: PC,
-                  declaringClass: ObjectType,
-                  name: String,
-                  fieldType: FieldType): Computation[DomainValue, Nothing]
+    def getstatic(
+        pc: PC,
+        declaringClass: ObjectType,
+        name: String,
+        fieldType: FieldType): Computation[DomainValue, Nothing]
 
     /**
      * Sets the fields values if the given `objectref` is not `null`.
      */
-    def putfield(pc: PC,
-                 objectref: DomainValue,
-                 value: DomainValue,
-                 declaringClass: ObjectType,
-                 name: String,
-                 fieldType: FieldType): Computation[Nothing, ExceptionValue]
+    def putfield(
+        pc: PC,
+        objectref: DomainValue,
+        value: DomainValue,
+        declaringClass: ObjectType,
+        name: String,
+        fieldType: FieldType): Computation[Nothing, ExceptionValue]
 
     /**
      * Sets the fields values if the given class can be found.
      */
-    def putstatic(pc: PC,
-                  value: DomainValue,
-                  declaringClass: ObjectType,
-                  name: String,
-                  fieldType: FieldType): Computation[Nothing, Nothing]
+    def putstatic(
+        pc: PC,
+        value: DomainValue,
+        declaringClass: ObjectType,
+        name: String,
+        fieldType: FieldType): Computation[Nothing, Nothing]
 
     //
     // METHOD INVOCATIONS
@@ -1464,7 +1503,7 @@ trait Domain[+I] {
     /**
      * Computation that returns a numeric value or an `ObjectType.ArithmeticException`.
      */
-    type IntegerDivisionResult = Computation[DomainValue, ExceptionValue]
+    type IntegerLikeValueOrArithmeticException = Computation[DomainValue, ExceptionValue]
 
     def dadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
     def ddiv(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
@@ -1480,10 +1519,10 @@ trait Domain[+I] {
 
     def iadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
     def iand(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
-    def idiv(pc: PC, value1: DomainValue, value2: DomainValue): IntegerDivisionResult
+    def idiv(pc: PC, value1: DomainValue, value2: DomainValue): IntegerLikeValueOrArithmeticException
     def imul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
     def ior(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
-    def irem(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def irem(pc: PC, value1: DomainValue, value2: DomainValue): IntegerLikeValueOrArithmeticException
     def ishl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
     def ishr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
     def isub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
@@ -1493,10 +1532,10 @@ trait Domain[+I] {
 
     def ladd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
     def land(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
-    def ldiv(pc: PC, value1: DomainValue, value2: DomainValue): IntegerDivisionResult
+    def ldiv(pc: PC, value1: DomainValue, value2: DomainValue): IntegerLikeValueOrArithmeticException
     def lmul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
     def lor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
-    def lrem(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def lrem(pc: PC, value1: DomainValue, value2: DomainValue): IntegerLikeValueOrArithmeticException
     def lshl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
     def lshr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
     def lsub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
@@ -1692,9 +1731,9 @@ trait Domain[+I] {
      *      If the domain updates the worklist, it is the responsibility of the domain
      *      to call the tracer and to inform it about the changes.
      *      Note that the worklist is not allowed to contain duplicates.
-     * @note The domain is allowed to modify the `worklist`, `operandsArray` and 
-     *      `localsArray. However, the AI will not check that all constraints 
-     *      are satisfied.    
+     * @note The domain is allowed to modify the `worklist`, `operandsArray` and
+     *      `localsArray. However, the AI will not check that all constraints
+     *      are satisfied.
      */
     def flow(
         currentPC: PC,
@@ -1711,11 +1750,22 @@ trait Domain[+I] {
      * @param pc The program counter that will be used for the summary value if
      *      a new value is returned that abstracts over/summarizes the given values.
      * @param values An `Iterable` over one or more values.
+     *
+     * @note The current algorithm is very generic and should satisfy most needs, but
+     * 		it is also not very efficient. However, it should be easy to tailor it for a
+     *   	specific domain, if need be.
      */
-    def summarize(pc: PC, values: Iterable[DomainValue]): DomainValue =
-        (values.head.summarize(pc) /: values.tail) {
-            (c, n) ⇒ c.summarize(pc, n)
+    def summarize(pc: PC, values: Iterable[DomainValue]): DomainValue = {
+        var summary = values.head.summarize(pc)
+        values.tail foreach { value ⇒
+            summary.join(pc, value.summarize(pc)) match {
+                case NoUpdate ⇒ /*nothing to do*/
+                case SomeUpdate(newSummary) ⇒
+                    summary = newSummary.summarize(pc)
+            }
         }
+        summary
+    }
 
     /**
      * Returns a string representation of the properties associated with

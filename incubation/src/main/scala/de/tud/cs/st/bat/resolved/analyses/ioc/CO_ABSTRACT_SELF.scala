@@ -45,7 +45,7 @@ object CO_ABSTRACT_SELF extends (Project[_] ⇒ Iterable[(ClassFile, Method)]) {
 
     def apply(project: Project[_]) =
         for {
-            comparable ← project.classHierarchy.allSubtypes(ObjectType("java/lang/Comparable"))
+            comparable ← project.classHierarchy.allSubtypes(ObjectType("java/lang/Comparable"),false)
             classFile ← project.classFile(comparable).toSeq
             if (classFile.isAbstract)
             method @ Method(_, "compareTo", MethodDescriptor(Seq(NotJavaLangObject()), IntegerType)) ← classFile.methods

@@ -64,6 +64,23 @@ trait Instruction {
      */
     def indexOfNextInstruction(currentPC: Int, code: Code): Int
 
+    /**
+     * Returns the set of instructions that may be executed next at runtime. This
+     * method takes potentially thrown exceptions into account. I.e., every instruction
+     * that may throw an exception checks if it occurs within a catch block and
+     * – if so – checks if an appropriate handler exists and – if so – also returns
+     * the first instruction of the handler.
+     *
+     * @return The absolute addresses of the instructions that may be executed next
+     *      at runtime.
+     */
+    def nextInstructions(currentPC: PC, code: Code): PCs
+
+    /**
+     * Returns a string representation of this instruction. If this instruction is a
+     * (conditional) jump instruction then the PCs of the target instructions should
+     * be given using absolute PCs.
+     */
     def toString(currentPC: Int): String = toString()
 
 }
@@ -76,5 +93,61 @@ object Instruction {
 
     def unapply(instruction: Instruction): Option[(Int, String, List[ObjectType])] = {
         Some((instruction.opcode, instruction.mnemonic, instruction.runtimeExceptions))
+    }
+
+    import collection.mutable.UShortSet
+
+    private[instructions] def allExceptionHandlers(
+        currentPC: PC,
+        code: Code): UShortSet /* <= mutable by purpose! */ = {
+        var pcs = UShortSet.empty
+        code.exceptionHandlersFor(currentPC) foreach { handler ⇒
+            pcs += handler.handlerPC
+        }
+        pcs
+    }
+
+    private[instructions] def nextInstructionOrExceptionHandlers(
+        instruction: Instruction,
+        currentPC: PC,
+        code: Code,
+        exceptions: List[ObjectType]): UShortSet /* <= mutable by purpose! */ = {
+
+        var pcs = UShortSet(instruction.indexOfNextInstruction(currentPC, code))
+
+        def processException(exception: ObjectType) {
+            code.exceptionHandlersFor(currentPC) find { handler ⇒
+                handler.catchType.isEmpty ||
+                    Code.preDefinedClassHierarchy.isSubtypeOf(
+                        exception,
+                        handler.catchType.get).yes
+            } match {
+                case Some(handler) ⇒ pcs += handler.startPC
+                case _             ⇒ /* exception is not handled */
+            }
+        }
+
+        exceptions foreach processException
+
+        pcs
+    }
+
+    private[instructions] def nextInstructionOrExceptionHandler(
+        instruction: Instruction,
+        currentPC: PC,
+        code: Code,
+        exception: ObjectType): UShortSet /* <= mutable by purpose! */ = {
+
+        val nextInstruction = instruction.indexOfNextInstruction(currentPC, code)
+
+        code.exceptionHandlersFor(currentPC) find { handler ⇒
+            handler.catchType.isEmpty ||
+                Code.preDefinedClassHierarchy.isSubtypeOf(
+                    exception,
+                    handler.catchType.get).yes
+        } match {
+            case Some(handler) ⇒ UShortSet(nextInstruction, handler.startPC)
+            case None          ⇒ UShortSet(nextInstruction)
+        }
     }
 }

@@ -46,4 +46,7 @@ abstract class BitwiseInstruction extends ArithmeticInstruction {
 
     def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 1
 
+    override def nextInstructions(currentPC: PC, code: Code): PCs = {
+        collection.mutable.UShortSet(indexOfNextInstruction(currentPC, code))
+    }
 }

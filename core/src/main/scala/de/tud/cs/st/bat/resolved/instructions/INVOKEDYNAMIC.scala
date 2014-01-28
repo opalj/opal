@@ -37,7 +37,8 @@ package instructions
 
 case object UNRESOLVED_INVOKEDYNAMIC extends Instruction {
 
-    private def error = BATException("this invokedynamic instruction was not correctly resolved")
+    private def error : Nothing = 
+        BATException("this invokedynamic instruction was not correctly resolved")
 
     def bootstrapMethod: BootstrapMethod = error
 
@@ -52,6 +53,8 @@ case object UNRESOLVED_INVOKEDYNAMIC extends Instruction {
     def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 5
 
     def runtimeExceptions: List[ObjectType] = INVOKEDYNAMIC.runtimeExceptions
+    
+    override def nextInstructions(currentPC: PC, code: Code): PCs = error
 
 }
 
@@ -64,7 +67,7 @@ case class INVOKEDYNAMIC(
     bootstrapMethod: BootstrapMethod,
     name: String,
     methodDescriptor: MethodDescriptor)
-        extends Instruction {
+        extends InvocationInstruction {
 
     def opcode: Int = 186
 

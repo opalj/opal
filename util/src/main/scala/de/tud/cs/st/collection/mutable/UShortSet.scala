@@ -325,12 +325,14 @@ private object EmptyUShortSet extends UShortSet {
 object UShortSet {
 
     /**
-     * The empty set.
+     * The empty (sorted) set of unsigned short values.
      */
     val empty: UShortSet = EmptyUShortSet
 
     /**
      * Creates a new set of unsigned short values which contains the given value.
+     *
+     * @param uShortValue An integer value in the range [0,0xFFFF).
      */
     @inline def apply(uShortValue: Int): UShortSet = {
         if (uShortValue < MinValue || uShortValue > MaxValue)
@@ -339,6 +341,29 @@ object UShortSet {
         new UShortSet2(uShortValue)
     }
 
+    /**
+     * Creates a new sorted set of unsigned short values of the given values.
+     *
+     * @param uShortValue1 An integer value in the range [0,0xFFFF).
+     * @param uShortValue2 An integer value in the range [0,0xFFFF).
+     */
+    @inline def apply(uShortValue1: Int, uShortValue2: Int): UShortSet = {
+        if (uShortValue1 < MinValue || uShortValue1 > MaxValue)
+            throw new IllegalArgumentException("value out of range: "+uShortValue1)
+        if (uShortValue2 < MinValue || uShortValue2 > MaxValue)
+            throw new IllegalArgumentException("value out of range: "+uShortValue1)
+
+        if (uShortValue1 == uShortValue2)
+            new UShortSet2(uShortValue1)
+        else if (uShortValue1 < uShortValue2)
+            new UShortSet2(uShortValue1, uShortValue2)
+        else
+            new UShortSet2(uShortValue2, uShortValue1)
+    }
+
+    /**
+     * Creates a new sorted set of unsigned short values.
+     */
     def create(uShortValues: Int*): UShortSet = {
         uShortValues match {
             case Nil              ⇒ EmptyUShortSet
