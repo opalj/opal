@@ -131,7 +131,7 @@ object CallGraphVisualization {
 
         // Some statistics 
         import callGraph.{ calls, callsCount, calledByCount, foreachCallingMethod }
-        print("Classes: "+project.classFiles.size+"; Methods: "+Method.methodsCount)
+        println("Classes: "+project.classFiles.size+"; Methods: "+Method.methodsCount)
         println("Methods with at least one resolved call: "+callsCount)
         println("Methods which are called by at least one method: "+calledByCount)
 
