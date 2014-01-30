@@ -57,7 +57,7 @@ import util.ControlAbstractions._
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class LoadClassFilesTest extends FlatSpec with Matchers{
+class LoadClassFilesTest extends FlatSpec with Matchers {
 
     def simpleValidator(classFile: ClassFile) {
         assert(!(classFile.thisType.fqn eq null))
