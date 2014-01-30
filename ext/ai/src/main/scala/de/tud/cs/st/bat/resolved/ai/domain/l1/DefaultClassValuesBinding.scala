@@ -50,14 +50,14 @@ trait DefaultClassValuesBinding[+I]
     domain: Configuration with IntegerValuesComparison with ClassHierarchy ⇒
 
     // Let's fix the type hierarchy
-    type DomainClassValue = AClassValue
+    type DomainClassValue = ClassValue
 
     //
     // FACTORY METHODS
     //
 
     override def ClassValue(pc: PC, value: Type): DomainObjectValue =
-        new AClassValue(pc, value)
+        new ClassValue(pc, value)
 
 }
 

@@ -33,34 +33,48 @@
 package ai.domain;
 
 /**
- * This class's method contains statically referenced Class objects to test the ClassValues resolution.
+ * This class's method contains statically referenced Class objects to test the
+ * ClassValues resolution.
  * 
  * @author Arne Lottmann
  */
 public class PlainClassesJava {
-	public Class<?> staticClassValue() {
-		return String.class;
-	}
-	
-	public Class<?> literalStringInClassForName() throws ClassNotFoundException {
-		return Class.forName("java.lang.Integer");
-	}
-	
-	public Class<?> stringVariableInClassForName() throws ClassNotFoundException {
-		String className = "java.lang.Integer";
-		return Class.forName(className);
-	}
-	
-	public Class<?> literalStringAsParameterInClassForName() throws ClassNotFoundException {
-		return getClass("java.lang.Integer");
-	}
-	
-	private Class<?> getClass(String className) throws ClassNotFoundException {
-		return Class.forName(className);
-	}
-	
-	public Class<?> stringVariableAsParameterInClassForName() throws ClassNotFoundException {
-		String className = "java.lang.Integer";
-		return getClass(className);
-	}
+
+    public Class<?> staticClassValue() {
+        return String.class;
+    }
+
+   
+    public Class<?> noLiteralStringInClassForName(String s) throws ClassNotFoundException {
+        return Class.forName(s,false,this.getClass().getClassLoader());
+    }
+   
+    
+    public Class<?> literalStringInLongClassForName() throws ClassNotFoundException {
+        return Class.forName("java.lang.Integer",false,this.getClass().getClassLoader());
+    }
+    
+    public Class<?> literalStringInClassForName() throws ClassNotFoundException {
+        return Class.forName("java.lang.Integer");
+    }
+
+    public Class<?> stringVariableInClassForName() throws ClassNotFoundException {
+        String className = "java.lang.Integer";
+        return Class.forName(className);
+    }
+
+    public Class<?> literalStringAsParameterInClassForName()
+            throws ClassNotFoundException {
+        return getClass("java.lang.Integer");
+    }
+
+    private Class<?> getClass(String className) throws ClassNotFoundException {
+        return Class.forName(className);
+    }
+
+    public Class<?> stringVariableAsParameterInClassForName()
+            throws ClassNotFoundException {
+        String className = "java.lang.Integer";
+        return getClass(className);
+    }
 }

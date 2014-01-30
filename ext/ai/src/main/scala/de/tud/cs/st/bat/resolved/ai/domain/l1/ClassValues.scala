@@ -43,18 +43,26 @@ import de.tud.cs.st.util.No
  * Enables the tracing of concrete Class values and can, e.g., be used to resolve
  * groovy's invokedynamic constructor calls.
  *
- * This class overrides invokestatic and, in certain cases, delegates to the superclass
- * implementation. Therefore, in a mixin hierarchy, ClassValues needs to come after a type
- * that implements invokestatic.
+ * This class overrides `invokestatic` and only delegates to the default implementation
+ * if it cannot successfully handle the call. Hence, this trait needs to be mixed in after
+ * the trait that handles the default case but before all other traits that "just"
+ * analyze invokestatic calls.
+ * {{{
+ * class MyDomain
+ *  extends DefaultTypeLevelInvokeInstructions
+ *  with ClassValues
+ *  with <DOES ANAYLZE INVOKE CALLS>
+ * }}}
  *
+ * @author Michael Eichberg (fixes for multi-parameter Class.forName(...) calls)
  * @author Arne Lottmann
  */
 trait ClassValues[+I] extends StringValues[I] {
     domain: Configuration with IntegerValuesComparison with ClassHierarchy ⇒
 
-    type DomainClassValue <: AClassValue with DomainObjectValue
+    type DomainClassValue <: ClassValue with DomainObjectValue
 
-    class AClassValue(
+    class ClassValue(
         pc: Int,
         val value: Type)
             extends SObjectValue(pc, No, true, ObjectType.Class) {
@@ -69,7 +77,8 @@ trait ClassValues[+I] extends StringValues[I] {
             case _                    ⇒ false
         }
 
-        override protected def canEqual(other: SObjectValue): Boolean = other.isInstanceOf[AClassValue]
+        override protected def canEqual(other: SObjectValue): Boolean =
+            other.isInstanceOf[ClassValue]
 
         override def hashCode: Int = super.hashCode + 71 * value.hashCode
 
@@ -86,34 +95,48 @@ trait ClassValues[+I] extends StringValues[I] {
         methodDescriptor: MethodDescriptor,
         operands: List[DomainValue]): MethodCallResult = {
 
-        handleClassForNameCalls(pc, declaringClass, name, methodDescriptor, operands) match {
-            case Some(result: MethodCallResult) ⇒ result
-            case None                           ⇒ 
-            	super.invokestatic(pc, declaringClass, name, methodDescriptor, operands)
+        import ClassValues._
+
+        def asClassValue(className: String): MethodCallResult = {
+            val classValue = ReferenceType(className.replace('.', '/'))
+            ComputedValue(Some(ClassValue(pc, classValue)))
         }
-    }
 
-    private def handleClassForNameCalls(
-        pc: PC,
-        declaringClass: ReferenceType,
-        name: String,
-        methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): Option[MethodCallResult] = {
+        if ((declaringClass eq ObjectType.Class) &&
+            (name == "forName") &&
+            operands.nonEmpty) {
 
-        if (isJavaLangClassForName(declaringClass, name, methodDescriptor)) {
-            val StringValue(head) = operands.head
-            val classValue = ReferenceType(head.replace('.', '/'))
-            Some(ComputedValue(Some(ClassValue(pc, classValue))))
+            operands.last match {
+                case StringValue(value) ⇒
+                    methodDescriptor match {
+                        case `forName_String`                     ⇒ asClassValue(value)
+                        case `forName_String_boolean_ClassLoader` ⇒ asClassValue(value)
+                        case _ ⇒
+                            throw new DomainException(
+                                "unsupported Class { "+
+                                    methodDescriptor.toJava("forName")+
+                                    "}")
+                    }
+
+                case _ ⇒
+                    // call default handler (the first arguement is not a string)
+                    super.invokestatic(pc, declaringClass, name, methodDescriptor, operands)
+
+            }
         } else {
-            None
+            // call default handler
+            super.invokestatic(pc, declaringClass, name, methodDescriptor, operands)
         }
     }
+}
 
-    private def isJavaLangClassForName(
-        declaringClass: Type,
-        name: String,
-        methodDescriptor: MethodDescriptor): Boolean = {
+private object ClassValues {
 
-        (declaringClass eq ObjectType.Class) && (name == "forName") && (methodDescriptor.returnType eq ObjectType.Class)
-    }
+    val forName_String =
+        MethodDescriptor(ObjectType.String, ObjectType.Class)
+
+    val forName_String_boolean_ClassLoader =
+        MethodDescriptor(
+            IndexedSeq(ObjectType.String, BooleanType, ObjectType("java/lang/ClassLoader")),
+            ObjectType.Class)
 }

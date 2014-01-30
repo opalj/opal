@@ -37,14 +37,17 @@ package ai
 package domain
 package l1
 
+import de.tud.cs.st.bat.TestSupport
+import reader.Java7Framework.ClassFiles
+
 import org.scalatest.ParallelTestExecution
 import org.scalatest.matchers.ShouldMatchers
 import org.scalatest.FlatSpec
-import de.tud.cs.st.bat.TestSupport
-import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
-import reader.Java7Framework.ClassFiles
+import org.junit.runner.RunWith
 import org.junit.Ignore
+
+import de.tud.cs.st.util._
 
 /**
  * Simple test case for ClassValues.
@@ -65,21 +68,35 @@ class ClassValuesTest
         val domain = new RecordingDomain("Test static class values"); import domain._
         val method = classFile.methods.find(m ⇒ m.name == "staticClassValue").get
         BaseAI(classFile, method, domain)
-        domain.returnedValue.map(_.asInstanceOf[AClassValue].value) should be(Some(ObjectType("java/lang/String")))
+        domain.returnedValue.map(_.asInstanceOf[ClassValue].value) should be(Some(ObjectType("java/lang/String")))
     }
 
-    it should ("be able to trace literal strings in Class.forName calls") in {
+    it should ("be able to handle the case that we are not able to resolve the class") in {
+        val method = classFile.methods.find(m ⇒ m.name == "noLiteralStringInClassForName").get
+        val domain = new RecordingDomain(method.toJava); import domain._
+        BaseAI(classFile, method, domain)
+        domain.returnedValue should be(Some(ObjectValue(9, Unknown, false, ObjectType.Class)))
+    }
+
+    it should ("be able to trace literal strings in Class.forName(String) calls") in {
         val domain = new RecordingDomain("Test literal strings in Class.forName class"); import domain._
         val method = classFile.methods.find(m ⇒ m.name == "literalStringInClassForName").get
         BaseAI(classFile, method, domain)
-        domain.returnedValue.map(_.asInstanceOf[AClassValue].value) should be(Some(ObjectType("java/lang/Integer")))
+        domain.returnedValue.map(_.asInstanceOf[ClassValue].value) should be(Some(ObjectType("java/lang/Integer")))
+    }
+
+    it should ("be able to trace literal strings in Class.forName(String,boolean,ClassLoader) calls") in {
+        val method = classFile.methods.find(m ⇒ m.name == "literalStringInLongClassForName").get
+        val domain = new RecordingDomain(method.toJava); import domain._
+        BaseAI(classFile, method, domain)
+        domain.returnedValue.map(_.asInstanceOf[ClassValue].value) should be(Some(ObjectType("java/lang/Integer")))
     }
 
     it should ("be able to trace known string variables in Class.forName calls") in {
         val domain = new RecordingDomain("Test literal strings in Class.forName class"); import domain._
         val method = classFile.methods.find(m ⇒ m.name == "stringVariableInClassForName").get
         BaseAI(classFile, method, domain)
-        domain.returnedValue.map(_.asInstanceOf[AClassValue].value) should be(Some(ObjectType("java/lang/Integer")))
+        domain.returnedValue.map(_.asInstanceOf[ClassValue].value) should be(Some(ObjectType("java/lang/Integer")))
     }
 
     // these following test cases require a more precise domain
@@ -89,14 +106,14 @@ class ClassValuesTest
         val domain = new RecordingDomain("Test literal strings in Class.forName class"); import domain._
         val method = classFile.methods.find(m ⇒ m.name == "literalStringAsParameterInClassForName").get
         BaseAI(classFile, method, domain)
-        domain.returnedValue.map(_.asInstanceOf[AClassValue].value) should be(Some(ObjectType("java/lang/Integer")))
+        domain.returnedValue.map(_.asInstanceOf[ClassValue].value) should be(Some(ObjectType("java/lang/Integer")))
     }
 
     ignore should ("be able to trace known string variables in method parameters in Class.forName calls") in {
         val domain = new RecordingDomain("Test literal strings in Class.forName class"); import domain._
         val method = classFile.methods.find(m ⇒ m.name == "stringVariableAsParameterInClassForName").get
         BaseAI(classFile, method, domain)
-        domain.returnedValue.map(_.asInstanceOf[AClassValue].value) should be(Some(ObjectType("java/lang/Integer")))
+        domain.returnedValue.map(_.asInstanceOf[ClassValue].value) should be(Some(ObjectType("java/lang/Integer")))
     }
 }
 
