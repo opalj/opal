@@ -40,7 +40,7 @@ import bat.resolved.analyses.{ SomeProject, Project }
 import bat.resolved.ai.domain._
 
 /**
- * Factory to create call graphs.
+ * Factory object to create call graphs.
  *
  * @author Michael Eichberg
  */
@@ -113,6 +113,7 @@ object CallGraphFactory {
             Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() /*+ 1*/)
         val completionService =
             new ExecutorCompletionService[MethodAnalysisResult](executorService)
+            
         @inline def submitMethod(method: Method): Unit = {
             if (methodSubmitted(method.id))
                 return

@@ -113,19 +113,18 @@ object CallGraphVisualization {
         //
         // GRAPH CONSTRUCTION
         //
+        import CallGraphFactory.defaultEntryPointsForLibraries
         val (callGraph, unresolvedMethodCalls, exceptions) =
             memory {
                 time {
-                    CallGraphFactory.create(
-                        project,
-                        CallGraphFactory.defaultEntryPointsForLibraries(project),
-                        args(0) match {
-                            case "VTA" ⇒
-                                new VTACallGraphAlgorithmConfiguration[java.net.URL]()
-                            case _ ⇒
-                                new CHACallGraphAlgorithmConfiguration[java.net.URL]()
-                        }
-                    )
+                    val callGraphAlgorithm = args(0) match {
+                        case "VTA" ⇒
+                            new VTACallGraphAlgorithmConfiguration[java.net.URL]()
+                        case _ /*CHA*/ ⇒
+                            new CHACallGraphAlgorithmConfiguration[java.net.URL]()
+                    }
+                    val entryPoints = defaultEntryPointsForLibraries(project)
+                    CallGraphFactory.create(project, entryPoints, callGraphAlgorithm)
                 } { t ⇒ println("Creating the call graph took: "+nsToSecs(t)) }
             } { m ⇒ println("Required memory for call graph: "+asMB(m)) }
 

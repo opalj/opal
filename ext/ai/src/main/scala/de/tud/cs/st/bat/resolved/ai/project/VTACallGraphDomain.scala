@@ -110,7 +110,9 @@ trait VTACallGraphDomain[Source, I] extends CHACallGraphDomain[Source, I] { doma
     }
 }
 /**
- * Domain object which is used to calculate the call graph.
+ * Domain object which is used to calculate the call graph using variable type analysis.
+ *
+ * @author Michael Eichberg
  */
 class DefaultVTACallGraphDomain[Source](
     val project: Project[Source],
