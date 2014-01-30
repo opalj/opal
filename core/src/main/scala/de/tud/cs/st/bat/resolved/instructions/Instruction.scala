@@ -43,7 +43,8 @@ package instructions
 trait Instruction {
 
     /**
-     *  The opcode of the instruction as defined by the JVM specification.
+     *  The opcode of the instruction as defined by the JVM specification. The
+     *  opcode is a value in the range [0..255].
      */
     def opcode: Int
 
@@ -53,9 +54,11 @@ trait Instruction {
     def mnemonic: String
 
     /**
-     * The exceptions that may be thrown by the JVM at runtime if the execution of this instruction fails.
-     * I.e., these are neither exceptions that are explicitly created and then thrown by user code nor
-     * errors that my arise due to an invalid code base.
+     * The exceptions that may be thrown by the JVM at runtime if the execution of 
+     * this instruction fails.
+     * I.e., these are neither exceptions that are explicitly created and then thrown 
+     * by user code nor errors that my arise due to an invalid code base (e.g. 
+     * `LinkageError`s).
      */
     def runtimeExceptions: List[ObjectType]
 
@@ -71,7 +74,7 @@ trait Instruction {
      * – if so – checks if an appropriate handler exists and – if so – also returns
      * the first instruction of the handler.
      *
-     * @return The absolute addresses of the instructions that may be executed next
+     * @return The absolute addresses of '''all instructions''' that may be executed next
      *      at runtime.
      */
     def nextInstructions(currentPC: PC, code: Code): PCs
@@ -79,7 +82,12 @@ trait Instruction {
     /**
      * Returns a string representation of this instruction. If this instruction is a
      * (conditional) jump instruction then the PCs of the target instructions should
-     * be given using absolute PCs.
+     * be given using absolute PCs. The string representation should be compact
+     * and suitable for output on the console and should represent the instruction
+     * in its entirety. 
+     * 
+     * @param currentPC The program counter of this instruction. Used to resolve relative
+     *      jump targets.
      */
     def toString(currentPC: Int): String = toString()
 
@@ -97,6 +105,7 @@ object Instruction {
 
     import collection.mutable.UShortSet
 
+    // TODO move to the Code class
     private[instructions] def allExceptionHandlers(
         currentPC: PC,
         code: Code): UShortSet /* <= mutable by purpose! */ = {

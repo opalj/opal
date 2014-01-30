@@ -42,9 +42,9 @@ package instructions
  */
 case object AASTORE extends ArrayAccessInstruction {
 
-    def opcode: Int = 83
+    override def opcode: Int = 83
 
-    def mnemonic: String = "aastore"
+    override def mnemonic: String = "aastore"
 
     final override val runtimeExceptions: List[ObjectType] = {
         import ObjectType._
