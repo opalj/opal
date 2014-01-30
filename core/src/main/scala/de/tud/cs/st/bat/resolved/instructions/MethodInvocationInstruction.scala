@@ -56,7 +56,8 @@ abstract class InvocationInstruction extends Instruction {
 }
 
 /**
- * An instruction that invokes another method.
+ * An instruction that invokes another method (does not consider invokedynamic
+ * instructions.)
  *
  * @author Michael Eichberg
  */
@@ -72,6 +73,11 @@ abstract class MethodInvocationInstruction extends InvocationInstruction {
 
 abstract class VirtualMethodInvocationInstruction extends MethodInvocationInstruction
 
+/**
+ * Invocation of a method where the target method is statically resovled.
+ *
+ * @author Michael Eichberg
+ */
 abstract class StaticMethodInvocationInstruction extends MethodInvocationInstruction
 
 object MethodInvocationInstruction {
