@@ -66,15 +66,6 @@ object UID {
     }
 }
 
-/**
- * Ordering for sorted collections of elements of type `UID`.
- *
- * @author Michael Eichberg
- */
-object UIDBasedOrdering extends Ordering[UID] {
-    def compare(a: UID, b: UID): Int = a.id - b.id
-}
-
 private final class UIDIterator[T <: UID](
     private[this] var list: UIDList[T])
         extends Iterator[T] {
