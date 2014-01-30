@@ -41,7 +41,7 @@ import java.io.ByteArrayInputStream
 
 import org.scalatest.FlatSpec
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.ParallelTestExecution
@@ -57,7 +57,7 @@ import util.ControlAbstractions._
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class LoadClassFilesTest extends FlatSpec with ShouldMatchers{
+class LoadClassFilesTest extends FlatSpec with Matchers{
 
     def simpleValidator(classFile: ClassFile) {
         assert(!(classFile.thisType.fqn eq null))

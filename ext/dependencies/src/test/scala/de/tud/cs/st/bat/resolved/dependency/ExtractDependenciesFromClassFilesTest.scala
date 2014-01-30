@@ -35,18 +35,10 @@ package bat
 package resolved
 package dependency
 
-import reader.Java7Framework
-
-import java.io.File
+import org.scalatest.FlatSpec
+import org.scalatest.Matchers
+import de.tud.cs.st.bat.resolved.reader.Java7Framework
 import java.util.zip.ZipFile
-import java.util.zip.ZipEntry
-import org.scalatest.Suite
-import org.scalatest.Reporter
-import org.scalatest.Stopper
-import org.scalatest.Tracker
-import org.scalatest.events.TestStarting
-import org.scalatest.events.TestSucceeded
-import org.scalatest.events.TestFailed
 
 /**
  * Tests whether all class files contained in the "test/classfiles" directory
@@ -55,65 +47,34 @@ import org.scalatest.events.TestFailed
  *
  * @author Thomas Schlosser
  * @author Michael Eichberg
+ * @author Marco Jacobasch
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
-class ExtractDependenciesFromClassFilesTest extends Suite {
+class ExtractDependenciesFromClassFilesTest extends FlatSpec with Matchers {
 
-    /*
-    * Registry of all class files stored in the zip files found in the test data directory.
-    */
-    private val testCases = {
+  for {
+    file ← TestSupport.locateTestResources("classfiles", "ext/dependencies").listFiles()
+    if (file.isFile && file.canRead && file.getName.endsWith(".jar"))
+  } {
+    val zipfile = new ZipFile(file)
+    val zipentries = (zipfile).entries
+    while (zipentries.hasMoreElements) {
+      val zipentry = zipentries.nextElement
+      if (!zipentry.isDirectory && zipentry.getName.endsWith(".class")) {
 
-        var tcs = scala.collection.immutable.Map[String, (ZipFile, ZipEntry)]()
-
-        var files = TestSupport.locateTestResources("classfiles", "ext/dependencies").listFiles()
-
-        for {
-            file ← files
-            if (file.isFile && file.canRead && file.getName.endsWith(".jar"))
-        } {
-            val zipfile = new ZipFile(file)
-            val zipentries = (zipfile).entries
-            while (zipentries.hasMoreElements) {
-                val zipentry = zipentries.nextElement
-                if (!zipentry.isDirectory && zipentry.getName.endsWith(".class")) {
-                    val testCase = ("Extract dependencies of class file: "+zipfile.getName+" - "+zipentry.getName -> (zipfile, zipentry))
-                    tcs = tcs + testCase
-                }
-            }
+        val dependencyExtractor = new DependencyExtractor(new SourceElementIDsMap {}) with NoSourceElementsVisitor {
+          def processDependency(src: Int, trgt: Int, dType: DependencyType) {
+            /* DO NOTHING */
+          }
         }
 
-        tcs
-    }
-
-    override lazy val testNames: Set[String] = (Set[String]() /: (testCases.keys))(_ + _)
-
-    override def tags: Map[String, Set[String]] = Map()
-
-    override def runTest(testName: String,
-                         reporter: Reporter,
-                         stopper: Stopper,
-                         configMap: Map[String, Any],
-                         tracker: Tracker) {
-
-        val ordinal = tracker.nextOrdinal
-        reporter(TestStarting(ordinal, "BasicDependencyExtractorTests", None, testName))
-        try {
-            val dependencyExtractor = new DependencyExtractor(new SourceElementIDsMap {}) with NoSourceElementsVisitor {
-                def processDependency(src: Int, trgt: Int, dType: DependencyType) {
-                    /* DO NOTHING */
-                }
-            }
-
-            val (file, entry) = testCases(testName)
-
-            var classFile = Java7Framework.ClassFile(() ⇒ file.getInputStream(entry))
-
-            dependencyExtractor.process(classFile)
-
-            reporter(TestSucceeded(ordinal, "BasicDependencyExtractorTests", None, testName))
-        } catch {
-            case t: Throwable ⇒ reporter(TestFailed(ordinal, "Failure", "BasicDependencyExtractorTests", None, testName, Some(t)))
+        it should ("be able to extract dependencies of class file " + zipentry.getName + " in " + zipfile.getName) in {
+          var classFile = Java7Framework.ClassFile(() ⇒ zipfile.getInputStream(zipentry))
+          dependencyExtractor.process(classFile)
         }
+
+      }
     }
+  }
+
 }

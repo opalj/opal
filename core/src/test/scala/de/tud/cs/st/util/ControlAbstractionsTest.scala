@@ -39,7 +39,7 @@ import org.scalatest.ParallelTestExecution
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 
 /**
  * Tests the implemented control abstractions.
@@ -47,7 +47,7 @@ import org.scalatest.matchers.ShouldMatchers
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class ControlAbstractionsTest extends FlatSpec with ShouldMatchers with ParallelTestExecution {
+class ControlAbstractionsTest extends FlatSpec with Matchers with ParallelTestExecution {
 
     behavior of "The ControlAbstractions.foreachNonNullValueOf macro"
     import ControlAbstractions.foreachNonNullValueOf

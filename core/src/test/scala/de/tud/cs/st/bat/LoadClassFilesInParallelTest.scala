@@ -40,7 +40,7 @@ import java.io.DataInputStream
 import java.io.ByteArrayInputStream
 
 import org.scalatest.FlatSpec
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.ParallelTestExecution
@@ -59,7 +59,7 @@ import util.ControlAbstractions._
 @RunWith(classOf[JUnitRunner])
 class LoadClassFilesInParallelTest
         extends FlatSpec
-        with ShouldMatchers
+        with Matchers
         with ParallelTestExecution {
 
     def simpleValidator(classFile: ClassFile) {

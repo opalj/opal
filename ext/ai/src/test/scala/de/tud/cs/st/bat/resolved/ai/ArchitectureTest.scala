@@ -41,7 +41,7 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 
 /**
  * Tests that BATAI's implemented design is as expected.
@@ -49,7 +49,7 @@ import org.scalatest.matchers.ShouldMatchers
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class ArchitectureTest extends FlatSpec with ShouldMatchers with BeforeAndAfterAll {
+class ArchitectureTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
     behavior of "BATAI's implemented architecture"
 
