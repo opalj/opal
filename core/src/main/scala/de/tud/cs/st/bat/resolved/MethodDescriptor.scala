@@ -223,12 +223,12 @@ object HasNoArgsAndReturnsVoid {
  */
 object MethodDescriptor {
 
+    def unapply(md: MethodDescriptor) = Some(md.parameterTypes, md.returnType)
+    
     def NoArgsAndReturnVoid: MethodDescriptor = NoArgumentAndNoReturnValueMethodDescriptor
 
     final val SignaturePolymorphicMethod: MethodDescriptor =
         new SingleArgumentMethodDescriptor(ArrayType.ArrayOfObjects, ObjectType.Object)
-
-    def unapply(md: MethodDescriptor) = Some(md.parameterTypes, md.returnType)
 
     def apply(parameterType: FieldType, returnType: Type): MethodDescriptor =
         new SingleArgumentMethodDescriptor(parameterType, returnType)
