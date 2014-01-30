@@ -601,70 +601,13 @@ class ClassHierarchy private (
      * @note Resolution is final. I.e., either this algorithm has found the defining field
      *      or the field is not defined by one of the loaded classes. Searching for the
      *      field in subclasses is not meaningful as Java does not do dynamic field
-     *      reference resolution. For further details study the following code:
-     * <pre><code>
-     * static class Super {
-     *
-     *  public int x = 0;
-     *
-     *  public int y = 0;
-     *
-     *  public int z = 0;
-     *
-     *  public String toString() { return String.valueOf(x); }
-     * }
-     *
-     * static interface I { int y = -1; }
-     *
-     * static class Sub extends Super implements I {
-     *
-     *  public int x = 1;
-     *
-     *
-     *  // public java.lang.String toString(); [FILTERED]
-     *  //
-     *  //  4  ldc <String "super.x="> [24]
-     *  //  6  invokespecial java.lang.StringBuilder(java.lang.String) [26]
-     *  //  9  aload_0 [this]
-     *  // 10  invokespecial fields.FieldReferenceResolution$Super.toString() : java.lang.String [29]
-     *  //
-     *  // 21  ldc <String "sub.x="> [37]
-     *  // 26  aload_0 [this]
-     *  // 27  getfield fields.FieldReferenceResolution$Sub.x : int [14]
-     *  //
-     *  // 38  ldc <String "((Super)this).y="> [42]
-     *  // 43  aload_0 [this]
-     *  // 44  getfield fields.FieldReferenceResolution$Super.y : int [44]
-     *  //
-     *  // 55  ldc <String "super.y="> [47]
-     *  // 60  aload_0 [this]
-     *  // 61  getfield fields.FieldReferenceResolution$Super.y : int [44]
-     *  //
-     *  // 72  ldc <String "((I)this).y="> [49]
-     *  // 77  iconst_m1
-     *  //
-     *  // 86  ldc <String "this.z="> [51]
-     *  // 91  aload_0 [this]
-     *  // 92  getfield fields.FieldReferenceResolution$Sub.z : int [53] // <= HERE, we need to resolve the reference!
-     *
-     *  public String toString() {
-     *   return
-     *   "super.x=" + super.toString()/* super.x */+ "; " +
-     *   "sub.x=" + this.x + "; " + // => super.x=0; sub.x=1
-     *   "((Super)this).y=" + ((Super) this).y + "; " +
-     *   "super.y=" + super.y + "; " +
-     *   "((I)this).y=" + ((I) this).y + "; " +
-     *   "this.z=" + this.z;
-     *   // <=> super.x=0; sub.x=1; ((Super)this).y=0; super.y=0; ((I)this).y=-1; this.z=0
-     *  }
-     * }
-     * </code></pre>
+     *      reference resolution. 
      *
      * @param c The class (or a superclass thereof) that is expected to define the
      *      reference field.
      * @param fieldName The name of the accessed field.
      * @param fieldType The type of the accessed field (the field descriptor).
-     * @param project The project associated with this class hiearchy.
+     * @param project The project associated with this class hierarchy.
      * @return The field that is referred to; if any. To get the defining `ClassFile`
      *      you can use the `project`.
      */
