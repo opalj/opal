@@ -40,7 +40,9 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case object DCONST_1 extends LoadConstantInstruction with ImplicitValue {
+case object DCONST_1 extends LoadConstantInstruction[Double] with ImplicitValue {
+
+    override def value: Double = 1.0d
 
     def opcode: Int = 15
 

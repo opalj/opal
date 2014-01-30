@@ -42,25 +42,29 @@ import language.existentials
  *
  * @author Michael Eichberg
  */
-sealed abstract class LDC_W[@specialized(Int,Float) T] extends LoadConstantInstruction {
+sealed abstract class LDC_W[@specialized(Int, Float) T]
+        extends LoadConstantInstruction[T] {
 
-    def value: T
+    override def opcode: Int = 19
 
-    def opcode: Int = 19
+    override def mnemonic: String = "ldc_w"
 
-    def mnemonic: String = "ldc_w"
-
-    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 3
+    override def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 3
 }
 
-case class LoadInt_W(value: Int) extends LDC_W[Int]
+final case class LoadInt_W(value: Int) extends LDC_W[Int]
 
-case class LoadFloat_W(value: Float) extends LDC_W[Float]
+final case class LoadFloat_W(value: Float) extends LDC_W[Float]
 
-case class LoadClass_W(value: ReferenceType) extends LDC_W[ReferenceType]
+final case class LoadClass_W(value: ReferenceType) extends LDC_W[ReferenceType]
 
-case class LoadString_W(value: String) extends LDC_W[String]
+final case class LoadString_W(value: String) extends LDC_W[String]
 
+/**
+ * Defines factory and extractor methods for LDC_W instructions.
+ *
+ * @author Michael Eichberg
+ */
 object LDC_W {
 
     def apply(constantValue: ConstantValue[_]): LDC_W[_] = {
@@ -69,7 +73,8 @@ object LDC_W {
             case f: Float         ⇒ LoadFloat_W(f)
             case r: ReferenceType ⇒ LoadClass_W(r)
             case s: String        ⇒ LoadString_W(s)
-            case _                ⇒ BATException("unsupported constant value: "+constantValue)
+            case _ ⇒
+                throw new BATException("unsupported constant value: "+constantValue)
         }
     }
 

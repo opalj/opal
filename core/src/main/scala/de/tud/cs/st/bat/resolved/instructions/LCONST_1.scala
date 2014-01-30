@@ -35,16 +35,17 @@ package bat
 package resolved
 package instructions
 
-
 /**
  * Push the long constant 1 onto the operand stack.
  *
  * @author Michael Eichberg
  */
-case object LCONST_1 extends LoadConstantInstruction with ImplicitValue {
+case object LCONST_1 extends LoadConstantInstruction[Long] with ImplicitValue {
 
-    def opcode: Int = 10
+    override def value: Long = 1l
 
-    def mnemonic: String = "lconst_1"
+    override def opcode: Int = 10
+
+    override def mnemonic: String = "lconst_1"
 
 }

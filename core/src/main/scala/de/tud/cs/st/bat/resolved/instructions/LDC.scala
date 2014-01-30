@@ -42,29 +42,32 @@ import language.existentials
  *
  * @author Michael Eichberg
  */
-sealed abstract class LDC[@specialized(Int, Float) T] extends LoadConstantInstruction {
+sealed abstract class LDC[@specialized(Int, Float) T]
+        extends LoadConstantInstruction[T] {
 
-    def value: T
+    override def opcode: Int = 18
 
-    def opcode: Int = 18
+    override def mnemonic: String = "ldc"
 
-    def mnemonic: String = "ldc"
-
-    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 2
+    override def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 2
 }
 
-case class LoadInt(value: Int) extends LDC[Int]
+final case class LoadInt(value: Int) extends LDC[Int]
 
-case class LoadFloat(value: Float) extends LDC[Float]
+final case class LoadFloat(value: Float) extends LDC[Float]
 
-case class LoadClass(value: ReferenceType) extends LDC[ReferenceType]
+final case class LoadClass(value: ReferenceType) extends LDC[ReferenceType]
 
-case class LoadString(value: String) extends LDC[String] {
+final case class LoadString(value: String) extends LDC[String] {
 
     override def toString: String = "LoadString(\""+value+"\")"
 
 }
-
+/**
+ * Defines factory and extractor methods for LDC instructions.
+ *
+ * @author Michael Eichberg
+ */
 object LDC {
 
     def apply(constantValue: ConstantValue[_]): LDC[_] = {
@@ -73,7 +76,8 @@ object LDC {
             case f: Float         ⇒ LoadFloat(f)
             case r: ReferenceType ⇒ LoadClass(r)
             case s: String        ⇒ LoadString(s)
-            case _                ⇒ BATException("unsupported constant value: "+constantValue)
+            case _ ⇒
+                throw new BATException("unsupported constant value: "+constantValue)
         }
     }
 

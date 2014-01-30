@@ -1751,7 +1751,8 @@ trait AI[D <: SomeDomain] {
                     case 0 /*nop*/    ⇒ fallThrough()
                     case 196 /*wide*/ ⇒ fallThrough()
 
-                    case opcode       ⇒ BATException("unsupported opcode: "+opcode)
+                    case opcode ⇒
+                        throw new BATException("unsupported opcode: "+opcode)
                 }
             } catch {
                 case ct: ControlThrowable ⇒
@@ -1762,7 +1763,7 @@ trait AI[D <: SomeDomain] {
                         cause, domain, worklist, evaluated, operandsArray, localsArray
                     )
 
-                case cause: Throwable ⇒                    
+                case cause: Throwable ⇒
                     throw new InterpretationFailedException[domain.type](
                         cause, domain, worklist, evaluated, operandsArray, localsArray
                     )

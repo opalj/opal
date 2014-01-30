@@ -32,20 +32,21 @@
  */
 package de.tud.cs.st
 package bat
-package resolved
-package instructions
 
 /**
- * Push the float constant 0.0 onto the operand stack.
+ * Convenience methods related to access flags.
  *
  * @author Michael Eichberg
  */
-case object FCONST_0 extends LoadConstantInstruction[Float] with ImplicitValue {
+object AccessFlags {
 
-    override def value: Float = 0.0f
-
-    override def opcode: Int = 11
-
-    override def mnemonic: String = "fconst_0"
+    /**
+     * Returns the names of the access flags set in a respective vector.
+     */
+    def toStrings(accessFlags: Int, ctx: AccessFlagsContext): Iterator[String] = {
+        AccessFlagsIterator(accessFlags, ctx) map { accessFlag ⇒
+            accessFlag.javaName.getOrElse("["+accessFlag.toString+"]")
+        }
+    }
 
 }

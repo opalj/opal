@@ -38,5 +38,7 @@ package de.tud.cs.st
  *
  * @author Michael Eichberg
  */
-class BATException(message: String) extends RuntimeException(message)
+class BATException(
+    message: String)
+        extends RuntimeException(message)
 

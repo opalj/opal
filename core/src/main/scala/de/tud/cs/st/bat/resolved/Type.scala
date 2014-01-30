@@ -160,7 +160,7 @@ sealed abstract class Type {
 
     /**
      * Returns `true` if this type is a reference type; that is, an array type or an
-     * object type.
+     * object type (class/interface type).
      * Each type is either:
      *  - a base type,
      *  - a reference type or
@@ -249,7 +249,7 @@ sealed abstract class VoidType private () extends Type with ReturnTypeSignature 
     override def toJava: String = "void"
 
     override def toBinaryJavaName: String =
-        BATException("the void type does not have a Java binary name")
+        throw new UnsupportedOperationException("the void type does not have a Java binary name")
 
     override def toJavaClass: java.lang.Class[_] = java.lang.Void.TYPE
 

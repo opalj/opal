@@ -51,7 +51,9 @@ class AccessFlagsMatcherTest
         with Matchers /*with BeforeAndAfterAll */
         with ParallelTestExecution {
 
-    behavior of "a simple access flags matcher"
+    import AccessFlagsMatcher._
+
+    behavior of "an AccessFlagsMatcher"
 
     it should "be able to correctly match a class file's access flags (PUBLIC)" in {
         val accessFlags = ACC_PUBLIC.mask
@@ -66,8 +68,6 @@ class AccessFlagsMatcherTest
             case _               ⇒ /*success*/
         }
     }
-
-    behavior of "a multiple access flags matcher"
 
     it should "be able to correctly match a class file's access flags (PUBLIC ABSTRACT)" in {
         val accessFlags = ACC_PUBLIC.mask | ACC_ABSTRACT.mask

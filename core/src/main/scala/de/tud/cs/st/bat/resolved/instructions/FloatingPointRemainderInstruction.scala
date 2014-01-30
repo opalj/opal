@@ -34,6 +34,7 @@ package de.tud.cs.st
 package bat
 package resolved
 package instructions
+
 /**
  * An instruction that calculates the remainder of two primitive floating point values.
  *
@@ -42,9 +43,8 @@ package instructions
 abstract class FloatingPointRemainderInstruction extends RemainderInstruction {
 
     final override def runtimeExceptions(): List[ObjectType] = Nil
-    
-    final override def nextInstructions(currentPC: PC, code: Code): PCs = 
+
+    final override def nextInstructions(currentPC: PC, code: Code): PCs =
         collection.mutable.UShortSet(indexOfNextInstruction(currentPC, code))
-    
 
 }

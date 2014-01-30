@@ -35,17 +35,18 @@ package bat
 package resolved
 package instructions
 
-
 /**
  * Push short.
  *
  * @author Michael Eichberg
  */
-case class SIPUSH(val value: Int) extends LoadConstantInstruction {
+case class SIPUSH(
+    override val value: Int)
+        extends LoadConstantInstruction[Int] {
 
-    def opcode: Int = 17
+    override def opcode: Int = 17
 
-    def mnemonic: String = "sipush"
+    override def mnemonic: String = "sipush"
 
-    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 3
+    override def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 3
 }

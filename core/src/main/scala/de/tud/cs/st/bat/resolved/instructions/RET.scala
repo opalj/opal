@@ -44,14 +44,17 @@ case class RET(
     val lvIndex: Int)
         extends ControlTransferInstruction {
 
-    def opcode: Int = 169
+    override def opcode: Int = 169
 
-    def mnemonic: String = "ret"
+    override def mnemonic: String = "ret"
 
     final override def indexOfNextInstruction(currentPC: Int, code: Code): Int =
         currentPC + 2
 
     final override def nextInstructions(currentPC: PC, code: Code): PCs =
-        BATException("to determine the next instruction that will be executed a data-/control-flow analysis needs to be executed; this information is not directly available")
+        throw new UnsupportedOperationException(
+            "to determine the next instruction that will be executed "+
+                "a data-/control-flow analysis needs to be executed; "+
+                "without such an analysis this information is not directly available")
 
 }

@@ -57,55 +57,60 @@ sealed trait ConstantValue[T >: Nothing] extends Attribute with BootstrapArgumen
     def valueToString: String
 
     def toBoolean: Boolean =
-        BATException("This value ("+this+") cannot be converted to a boolean value.")
+        throw new BATException(this+" cannot be converted to a boolean value")
 
     def toByte: Byte =
-        BATException("This value ("+this+") cannot be converted to a byte value.")
+        throw new BATException(this+" cannot be converted to a byte value")
 
     def toChar: Char =
-        BATException("This value ("+this+") cannot be converted to an char value.")
+        throw new BATException(this+" cannot be converted to an char value")
 
     def toShort: Short =
-        BATException("This value ("+this+") cannot be converted to a short value.")
+        throw new BATException(this+" cannot be converted to a short value")
 
     def toInt: Int =
-        BATException("This value ("+this+") cannot be converted to an int value.")
+        throw new BATException(this+" cannot be converted to an int value")
 
     def toLong: Long =
-        BATException("This value ("+this+") cannot be converted to a long value.")
+        throw new BATException(this+" cannot be converted to a long value")
 
     def toFloat: Float =
-        BATException("This value ("+this+") cannot be converted to a float value.")
+        throw new BATException(this+" cannot be converted to a float value")
 
     def toDouble: Double =
-        BATException("This value ("+this+") cannot be converted to a double value.")
+        throw new BATException(this+" cannot be converted to a double value")
 
     def toUTF8: String =
-        BATException("This value ("+this+") cannot be converted to a String(UTF8) value.")
+        throw new BATException(this+" cannot be converted to a String(UTF8) value")
 
     def toClass: ReferenceType =
-        BATException("This value ("+this+") cannot be converted to a class value.")
+        throw new BATException(this+" cannot be converted to a class value")
 
 }
+/**
+ * Facilitates matching constant values.
+ *
+ * @author Michael Eichberg
+ */
 object ConstantValue {
 
     def unapply[T](constantValue: ConstantValue[T]): Option[(T, Type)] =
         Some((constantValue.value, constantValue.valueType))
 }
 
-case class ConstantLong(value: Long) extends ConstantValue[Long] {
+final case class ConstantLong(value: Long) extends ConstantValue[Long] {
 
     override def toLong = value
 
-    def valueToString = value.toString
+    override def valueToString = value.toString
 
-    def valueType = LongType
+    override def valueType = LongType
 
 }
 
-case class ConstantInteger(value: Int) extends ConstantValue[Int] {
+final case class ConstantInteger(value: Int) extends ConstantValue[Int] {
 
-    override def toBoolean = value != 0 
+    override def toBoolean = value != 0
 
     override def toByte = value.toByte
 
@@ -115,55 +120,55 @@ case class ConstantInteger(value: Int) extends ConstantValue[Int] {
 
     override def toInt = value
 
-    def valueToString = value.toString
+    override def valueToString = value.toString
 
-    def valueType = IntegerType
+    override def valueType = IntegerType
 
 }
 
-case class ConstantDouble(value: Double) extends ConstantValue[Double] {
+final case class ConstantDouble(value: Double) extends ConstantValue[Double] {
 
     override def toDouble = value
 
-    def valueToString = value.toString
+    override def valueToString = value.toString
 
-    def valueType = DoubleType
+    override def valueType = DoubleType
 
 }
 
-case class ConstantFloat(value: Float) extends ConstantValue[Float] {
+final case class ConstantFloat(value: Float) extends ConstantValue[Float] {
 
     override def toFloat = value
 
-    def valueToString = value.toString
+    override def valueToString = value.toString
 
-    def valueType = FloatType
+    override def valueType = FloatType
 
 }
 
-case class ConstantString(value: String) extends ConstantValue[String] {
+final case class ConstantString(value: String) extends ConstantValue[String] {
 
     override def toUTF8 = value
 
-    def valueToString = value.toString
+    override def valueToString = value.toString
 
-    def valueType = ObjectType.String
+    override def valueType = ObjectType.String
 
 }
 
 /**
  * ConstantClass is, e.g., used by `anewarray` and `multianewarray` instructions.
  *
- * A `ConstantClass` attribute is not a `Field` attribute. I.e., it is never used to 
- * set the value of a static field. 
+ * A `ConstantClass` attribute is not a `Field` attribute. I.e., it is never used to
+ * set the value of a static field.
  */
-case class ConstantClass(value: ReferenceType) extends ConstantValue[ReferenceType] {
+final case class ConstantClass(value: ReferenceType) extends ConstantValue[ReferenceType] {
 
     override def toClass = value
 
-    def valueToString = value.toJava
+    override def valueToString = value.toJava
 
-    def valueType = ObjectType.Class
+    override def valueType = ObjectType.Class
 
 }
 

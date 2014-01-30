@@ -42,29 +42,34 @@ import language.existentials
  *
  * @author Michael Eichberg
  */
-sealed abstract class LDC2_W[@specialized(Long,Double) T <: Any] extends LoadConstantInstruction {
+sealed abstract class LDC2_W[@specialized(Long, Double) T <: Any]
+        extends LoadConstantInstruction[T] {
 
-    def value: T
+    override def opcode: Int = 20
 
-    def opcode: Int = 20
+    override def mnemonic: String = "ldc2_w"
 
-    def mnemonic: String = "ldc2_w"
-
-    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 1 + 2
+    override def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 1 + 2
 
 }
 
-case class LoadLong(value: Long) extends LDC2_W[Long]
+final case class LoadLong(value: Long) extends LDC2_W[Long]
 
-case class LoadDouble(value: Double) extends LDC2_W[Double]
+final case class LoadDouble(value: Double) extends LDC2_W[Double]
 
+/**
+ * Defines factory and extractor methods for LDC2_W instructions.
+ *
+ * @author Michael Eichberg
+ */
 object LDC2_W {
 
     def apply(constantValue: ConstantValue[_]): LDC2_W[_] = {
         constantValue.value match {
             case v: Long   ⇒ LoadLong(v)
             case d: Double ⇒ LoadDouble(d)
-            case _         ⇒ BATException("unsupported LDC2_W constant value: "+constantValue)
+            case _ ⇒
+                throw new BATException("unsupported LDC2_W constant value: "+constantValue)
         }
     }
 

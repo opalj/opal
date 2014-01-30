@@ -38,16 +38,11 @@ package bat
  * the access flags of a class file, a field or a method, it is then possible
  * to iterate over the flags (synthetic, public, deprecated, etc.) that are set.
  *
- * @param accessFlags the class( file member)'s access flags
- * @param ctx the accessFlags' context; the interpretation of the access
- * 	flags bit vector partially depends on the concrete source element that
- * 	defines the accessFlags.
- *
  * @author Michael Eichberg
  */
 class AccessFlagsIterator private (
-    var flags: Int,
-    potentialAccessFlags: IndexedSeq[AccessFlag])
+    private[this] var flags: Int,
+    val potentialAccessFlags: IndexedSeq[AccessFlag])
         extends Iterator[AccessFlag] {
 
     private[this] var index = -1
@@ -62,7 +57,7 @@ class AccessFlagsIterator private (
                 return potentialAccessFlags(index)
             }
         }
-        BATException("Unknown access flag(s): "+Integer.toHexString(flags))
+        throw new BATException("Unknown access flag(s): "+Integer.toHexString(flags))
     }
 }
 
@@ -71,10 +66,15 @@ class AccessFlagsIterator private (
  */
 object AccessFlagsIterator {
 
+    /**
+     * Creates a new `AccessFlagsIterator`.
+     *
+     * @param accessFlags The class( file member)'s access flags.
+     * @param ctx The accessFlags' context; the interpretation of the access
+     *      flags bit vector partially depends on the concrete source element that
+     *      defines the accessFlags.
+     */
     def apply(accessFlags: Int, ctx: AccessFlagsContext) =
-        new AccessFlagsIterator(
-            accessFlags,
-            AccessFlagsContexts.potentialAccessFlags(ctx)
-        )
+        new AccessFlagsIterator(accessFlags, AccessFlagsContexts.potentialAccessFlags(ctx))
 }
 
