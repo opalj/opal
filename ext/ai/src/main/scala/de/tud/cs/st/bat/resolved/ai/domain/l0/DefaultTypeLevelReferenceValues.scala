@@ -224,7 +224,7 @@ trait DefaultTypeLevelReferenceValues[+I]
         this: DomainObjectValue ⇒
 
         /**
-         * @inhertdoc
+         * @inheritdoc
          *
          * @note It is often not necessary to override this method as this method already
          *      takes the property whether the upper type bound '''is precise''' into
