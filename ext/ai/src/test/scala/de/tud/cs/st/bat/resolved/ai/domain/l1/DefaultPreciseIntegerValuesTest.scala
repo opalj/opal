@@ -65,7 +65,7 @@ class DefaultPreciseIntegerValuesTest
     //
     // TESTS
     //
-   
+
     behavior of "IntegerRange values"
 
     it should ("be able to join two identical values") in {
@@ -96,6 +96,14 @@ class DefaultPreciseIntegerValuesTest
         val v1 = IntegerRange(0, 1)
 
         v1.join(-1, AnIntegerValue()) should be(StructuralUpdate(AnIntegerValue()))
+    }
+
+    behavior of "AnIntegerValue"
+
+    it should ("be able to adapt to the same domain") in {
+        val v1 = AnIntegerValue()
+
+        v1.adapt(domain, -1) should be(AnIntegerValue())
     }
 
 }
