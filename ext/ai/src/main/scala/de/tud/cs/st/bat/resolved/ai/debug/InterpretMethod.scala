@@ -37,10 +37,6 @@ package ai
 package debug
 
 import scala.language.existentials
-
-import tracer.MultiTracer
-import tracer.ConsoleTracer
-import tracer.XHTMLTracer
 import domain.l0.BaseConfigurableDomain
 
 /**

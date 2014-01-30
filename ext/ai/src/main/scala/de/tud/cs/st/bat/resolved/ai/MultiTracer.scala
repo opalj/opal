@@ -34,9 +34,9 @@ package de.tud.cs.st
 package bat
 package resolved
 package ai
-package tracer
 
 import instructions._
+import de.tud.cs.st.bat.resolved.Code
 
 /**
  * A tracer that forwards every call to all registered tracers.
