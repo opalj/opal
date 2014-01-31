@@ -61,46 +61,46 @@ trait ConstantPoolBinding extends Constant_PoolReader {
 
     trait Constant_Pool_Entry extends bat.reader.ConstantPoolEntry {
         def asString: String =
-            BATException("conversion to string is not supported")
+            throw new BATException("conversion to string is not supported")
 
         def asFieldType: FieldType =
-            BATException("conversion to field type is not supported")
+            throw new BATException("conversion to field type is not supported")
 
         def asMethodDescriptor: MethodDescriptor =
-            BATException("conversion to method descriptor is not supported")
+            throw new BATException("conversion to method descriptor is not supported")
 
         def asFieldTypeSignature: FieldTypeSignature =
-            BATException("conversion to field type signature is not supported")
+            throw new BATException("conversion to field type signature is not supported")
 
         def asSignature(implicit ap: AttributeParent): Signature =
-            BATException("conversion to signature attribute is not supported")
+            throw new BATException("conversion to signature attribute is not supported")
 
         def asConstantValue(implicit cp: Constant_Pool): ConstantValue[_] =
-            BATException("conversion to constant value is not supported")
+            throw new BATException("conversion to constant value is not supported")
 
         def asFieldref(implicit cp: Constant_Pool): (ObjectType, String, FieldType) =
-            BATException("conversion to field ref is not supported")
+            throw new BATException("conversion to field ref is not supported")
 
         def asMethodref(implicit cp: Constant_Pool): (ReferenceType, String, MethodDescriptor) =
-            BATException("conversion to method ref is not supported")
+            throw new BATException("conversion to method ref is not supported")
 
         def asObjectType(implicit cp: Constant_Pool): ObjectType =
-            BATException("conversion to object type is not supported")
+            throw new BATException("conversion to object type is not supported")
 
         def asReferenceType(implicit cp: Constant_Pool): ReferenceType =
-            BATException("conversion to object type is not supported")
+            throw new BATException("conversion to object type is not supported")
 
         def asBootstrapArgument(implicit cp: Constant_Pool): BootstrapArgument =
-            BATException("conversion to bootstrap argument is not supported")
+            throw new BATException("conversion to bootstrap argument is not supported")
 
         def asMethodHandle(implicit cp: Constant_Pool): MethodHandle =
-            BATException("conversion to method handle is not supported")
+            throw new BATException("conversion to method handle is not supported")
 
         def asNameAndType: CONSTANT_NameAndType_info =
-            BATException("conversion to name and type info is not supported")
+            throw new BATException("conversion to name and type info is not supported")
 
         def asInvokeDynamic: CONSTANT_InvokeDynamic_info =
-            BATException("conversion to invoke dynamic info is not supported")
+            throw new BATException("conversion to invoke dynamic info is not supported")
     }
 
     val Constant_Pool_EntryManifest: ClassTag[Constant_Pool_Entry] = implicitly
@@ -191,7 +191,7 @@ trait ConstantPoolBinding extends Constant_PoolReader {
                 case AttributesParent.Method ⇒
                     SignatureParser.parseMethodTypeSignature(value)
                 case AttributesParent.Code ⇒
-                    BATException("found signature attribute stored in a code_attribute's attributes table")
+                    throw new BATException("unexpected signature attribute found in a code_attribute's attributes table")
             }
 
         override def asConstantValue(implicit cp: Constant_Pool) =

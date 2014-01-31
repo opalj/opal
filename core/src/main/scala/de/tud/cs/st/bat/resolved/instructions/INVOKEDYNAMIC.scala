@@ -35,23 +35,33 @@ package bat
 package resolved
 package instructions
 
-case object UNRESOLVED_INVOKEDYNAMIC extends Instruction {
+/**
+ * Represents an "unresolved" invoke dynamic instruction. Here, unresolved refers
+ * to the fact that no all information are yet available because they are not
+ * yet loaded. To successfully resolve invokedynamic instructions it is necessary
+ * to read a class file's attributes which are read in at the very end. This requires
+ * that invoke dynamic instructions can only be resolved in a second step.
+ *
+ * @author Michael Eichberg
+ */
+case object UNRESOLVED_INVOKEDYNAMIC extends InvocationInstruction {
 
-    private def error = BATException("this invokedynamic instruction was not correctly resolved")
+    private def error: Nothing =
+        throw new BATException("this invokedynamic instruction was not resolved")
 
     def bootstrapMethod: BootstrapMethod = error
 
-    def name: String = error
+    override def name: String = error
 
-    def methodDescriptor: MethodDescriptor = error
+    override def methodDescriptor: MethodDescriptor = error
 
-    def opcode: Int = 186
+    override def opcode: Int = 186
 
-    def mnemonic: String = "invokedynamic"
+    override def mnemonic: String = "invokedynamic"
 
-    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 5
+    override def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 5
 
-    def runtimeExceptions: List[ObjectType] = INVOKEDYNAMIC.runtimeExceptions
+    override def runtimeExceptions: List[ObjectType] = INVOKEDYNAMIC.runtimeExceptions
 
 }
 
@@ -61,18 +71,18 @@ case object UNRESOLVED_INVOKEDYNAMIC extends Instruction {
  * @author Michael Eichberg
  */
 case class INVOKEDYNAMIC(
-    bootstrapMethod: BootstrapMethod,
-    name: String,
-    methodDescriptor: MethodDescriptor)
-        extends Instruction {
+    val bootstrapMethod: BootstrapMethod,
+    override val name: String,
+    override val methodDescriptor: MethodDescriptor)
+        extends InvocationInstruction {
 
-    def opcode: Int = 186
+    override def opcode: Int = 186
 
-    def mnemonic: String = "invokedynamic"
+    override def mnemonic: String = "invokedynamic"
 
-    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 5
+    override def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 5
 
-    def runtimeExceptions: List[ObjectType] = INVOKEDYNAMIC.runtimeExceptions
+    override def runtimeExceptions: List[ObjectType] = INVOKEDYNAMIC.runtimeExceptions
 
     override def toString: String =
         "INVOKEDYNAMIC\n"+

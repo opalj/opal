@@ -40,7 +40,9 @@ package ai
  * result is either some value `V` or some exception(s) `E`. In some cases, however,
  * when the domain cannot '''precisely''' determine the result, it may be both: some
  * exceptional value(s) and a value. In the latter case BATAI will generally follow all
- * possible paths.
+ * possible paths. Please note, that a computation that declares to return a result
+ * (i.e., `V` is not `Nothing`) must either return a result and/or throw an exception, but
+ * is not allowed to return no result and no exceptions!
  *
  * @tparam V The result of the computation. Typically a `DomainValue`.
  *      If the computation is executed for its side
@@ -84,6 +86,23 @@ sealed trait Computation[+V, +E] {
      * throwing an exception.
      */
     def returnsNormally: Boolean
+}
+
+object Computation {
+
+    def apply[E](es: Seq[E]): Computation[Nothing, Seq[E]] = {
+        if (es.isEmpty)
+            ComputationWithSideEffectOnly
+        else
+            ComputationWithSideEffectOrException(es)
+    }
+
+    def apply[V, E](v: V, es: Seq[E]): Computation[V, Seq[E]] = {
+        if (es.isEmpty)
+            ComputedValue(v)
+        else
+            ComputedValueAndException(v, es)
+    }
 }
 
 /**
@@ -145,7 +164,7 @@ final case class ThrowsException[+E](
 
 /**
  * Encapsulates the result of a computation that returned normally (but which
- * did not return some value) or that threw an exception.
+ * did not return some value) or that threw an exception/multiple exceptions.
  */
 final case class ComputationWithSideEffectOrException[+E](
     exceptions: E)
@@ -184,6 +203,21 @@ case object ComputationWithSideEffectOnly extends Computation[Nothing, Nothing] 
             "the computation succeeded without an exception"
         )
 }
-      
 
+object ComputationWithResultAndException {
 
+    def unapply[V, E](c: Computation[V, E]): Option[(V, E)] =
+        if (c.hasResult && c.throwsException) Some((c.result, c.exceptions)) else None
+}
+
+object ComputationWithResult {
+
+    def unapply[V](c: Computation[V, _]): Option[V] =
+        if (c.hasResult) Some(c.result) else None
+}
+
+object ComputationWithException {
+
+    def unapply[E](c: Computation[_, E]): Option[E] =
+        if (c.throwsException) Some(c.exceptions) else None
+}

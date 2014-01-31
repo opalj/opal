@@ -49,7 +49,7 @@ import analyses.Project
  *
  * ==Usage==
  * This class is used internally by the methods of the `CallGraphFactory` to build
- * the call graph.
+ * the call graph. That method takes care of all thread-safety issues.
  *
  * @author Michael Eichberg
  */

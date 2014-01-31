@@ -44,7 +44,10 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  *
  * @author Michael Eichberg
  */
-trait PreciseIntegerValues[+I] extends Domain[I] {
+trait PreciseIntegerValues[+I]
+        extends Domain[I]
+        with Configuration
+        with IntegerValuesComparison {
 
     // -----------------------------------------------------------------------------------
     //
@@ -66,30 +69,23 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
      * This is a runtime configurable setting that may affect the overall precision of
      * subsequent analyses that require knowledge about integers.
      */
-    def maxSpreadInteger: Int  = 25
+    def maxSpreadInteger: Int = 25
 
     protected def spread(a: Int, b: Int): Int = Math.abs(a - b)
 
     /**
-     * Determines if an exception is thrown in case of a '''potential''' division by zero.
-     * I.e., this setting controls whether we throw a division by zero exception if we
-     * know nothing about the concrete value of the denominator or not.
-     * However, if we know that the denominator is 0 a corresponding exception will be
-     * thrown.
-     */
-    def divisionByZeroIfUnknownInteger: Boolean = true
-
-    /**
      * Abstracts over all values with computational type `integer`.
      */
-    sealed trait IntegerLikeValue extends Value { this: DomainValue ⇒
+    sealed trait IntegerLikeValue
+            extends Value
+            with IsIntegerValue { this: DomainValue ⇒
 
         final def computationalType: ComputationalType = ComputationalTypeInt
 
     }
 
     /**
-     * Represents a specific, but unknown integer value.
+     * Represents an (unknown) integer value.
      *
      * Models the top value of this domain's lattice.
      */
@@ -118,11 +114,9 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
 
     }
 
-    abstract override def typeOfValue(value: DomainValue): TypesAnswer =
-        value match {
-            case _: IntegerLikeValue ⇒ IsIntegerValue
-            case _                   ⇒ super.typeOfValue(value)
-        }
+    object IntegerValue {
+        def unapply(v: IntegerValue): Option[Int] = Some(v.value)
+    }
 
     //
     // QUESTION'S ABOUT VALUES
@@ -142,7 +136,13 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
         value2: DomainValue)(
             f: (Int, Int) ⇒ T)(
                 orElse: ⇒ T): T =
-        getIntValue(value1) { v1 ⇒ getIntValue(value2) { v2 ⇒ f(v1, v2) }(orElse) } {
+        getIntValue(value1) { v1 ⇒
+            getIntValue(value2) { v2 ⇒
+                f(v1, v2)
+            } {
+                orElse
+            }
+        } {
             orElse
         }
 
@@ -152,18 +152,46 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
     override def isSomeValueInRange(
         value: DomainValue,
         lowerBound: Int,
-        upperBound: Int): Boolean =
-        getIntValue(value) { v ⇒ lowerBound <= v && v <= upperBound } { true }
+        upperBound: Int): Answer = {
+        if (lowerBound == Int.MinValue && upperBound == Int.MaxValue)
+            return Yes
+
+        getIntValue(value) { v ⇒
+            Answer(lowerBound <= v && v <= upperBound)
+        } {
+            Unknown
+        }
+    }
+
+    override def isSomeValueInRange(
+        value: DomainValue,
+        lowerBound: DomainValue,
+        upperBound: DomainValue): Answer = {
+
+        (value, lowerBound, upperBound) match {
+            case (IntegerValue(v), IntegerValue(l), IntegerValue(u)) ⇒
+                Answer(l <= v && v <= u)
+            case (IntegerValue(v), IntegerValue(l), _) if v <= l ⇒
+                if (v == l) Yes else No
+            case (IntegerValue(v), _, IntegerValue(u)) if v >= u ⇒
+                if (v == u) Yes else No
+            case _ ⇒ Unknown
+        }
+    }
 
     override def isSomeValueNotInRange(
         value: DomainValue,
         lowerBound: Int,
-        upperBound: Int): Boolean =
+        upperBound: Int): Answer = {
+        if (lowerBound == Int.MinValue && upperBound == Int.MaxValue)
+            return No
+
         getIntValue(value) { v ⇒
-            v < lowerBound || v > upperBound
+            Answer(v < lowerBound || v > upperBound)
         } {
-            !(lowerBound == Int.MinValue && upperBound == Int.MaxValue)
+            Unknown
         }
+    }
 
     override def isLessThan(
         smallerValue: DomainValue,
@@ -246,20 +274,25 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
             IntegerValue(pc)
         }
 
-    override def idiv(pc: PC, value1: DomainValue, value2: DomainValue): Computation[DomainValue, DomainValue] =
+    override def idiv(
+        pc: PC,
+        value1: DomainValue,
+        value2: DomainValue): IntegerLikeValueOrArithmeticException = {
+        import ObjectType.ArithmeticException
         getIntValues(value1, value2) { (v1, v2) ⇒
             if (v2 == 0)
-                ThrowsException(InitializedObject(pc, ObjectType.ArithmeticException))
+                ThrowsException(InitializedObjectValue(pc, ArithmeticException))
             else
                 ComputedValue(IntegerValue(pc, v1 / v2))
         } {
-            if (divisionByZeroIfUnknownInteger)
+            if (throwArithmeticExceptions)
                 ComputedValueAndException(
                     IntegerValue(pc),
-                    InitializedObject(pc, ObjectType.ArithmeticException))
+                    InitializedObjectValue(pc, ArithmeticException))
             else
                 ComputedValue(IntegerValue(pc))
         }
+    }
 
     override def imul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         getIntValues(value1, value2) { (v1, v2) ⇒
@@ -275,12 +308,24 @@ trait PreciseIntegerValues[+I] extends Domain[I] {
             IntegerValue(pc)
         }
 
-    override def irem(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def irem(
+        pc: PC,
+        value1: DomainValue,
+        value2: DomainValue): IntegerLikeValueOrArithmeticException = {
+        import ObjectType.ArithmeticException
         getIntValues(value1, value2) { (v1, v2) ⇒
-            IntegerValue(pc, v1 % v2)
+            if (v2 == 0)
+                ThrowsException(InitializedObjectValue(pc, ArithmeticException))
+            else
+                ComputedValue(IntegerValue(pc, v1 % v2))
         } {
-            IntegerValue(pc)
+            if (throwArithmeticExceptions)
+                ComputedValueAndException(
+                    IntegerValue(pc), InitializedObjectValue(pc, ArithmeticException))
+            else
+                ComputedValue(IntegerValue(pc))
         }
+    }
 
     override def ishl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         getIntValues(value1, value2) { (v1, v2) ⇒

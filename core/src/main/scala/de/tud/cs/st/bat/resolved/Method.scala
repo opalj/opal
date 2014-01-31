@@ -116,7 +116,7 @@ final class Method private (
     def toJava(): String = descriptor.toJava(name)
 
     /**
-     * Defines a absolute order on `Method` instances w.r.t. their method signatures.
+     * Defines an absolute order on `Method` instances w.r.t. their method signatures.
      * The order is defined by lexicographically comparing the names of the methods
      * and – in case that the names of both methods are identical – by comparing
      * their method descriptors.
@@ -144,6 +144,8 @@ final class Method private (
 }
 /**
  * Defines factory and extractor methods for `Method` objects.
+ *
+ * @author Michael Eichberg
  */
 object Method {
 
@@ -179,4 +181,24 @@ object Method {
 
     def unapply(method: Method): Option[(Int, String, MethodDescriptor)] =
         Some((method.accessFlags, method.name, method.descriptor))
+}
+/**
+ * Provides pattern matching facilities for methods with bodies.
+ *
+ * @example
+ * Matching all methods that have a method body:
+ * {{{
+ * for {
+ *      classFile ← project.classFiles
+ *      method @ MethodWithBody(code) ← classFile.methods
+ * } {
+ *      // the type of method is "..resolved.Method"
+ *      // the type of code is "..resolved.Code"
+ * }
+ * }}}
+ *
+ * @author Michael Eichberg
+ */
+object MethodWithBody {
+    def unapply(method: Method): Option[Code] = method.body
 }

@@ -47,4 +47,7 @@ abstract class StoreLocalVariableInstruction extends Instruction {
 
     def runtimeExceptions(): List[ObjectType] = Nil
 
+    override def nextInstructions(currentPC: PC, code: Code): PCs = {
+        collection.mutable.UShortSet(indexOfNextInstruction(currentPC, code))
+    }
 }

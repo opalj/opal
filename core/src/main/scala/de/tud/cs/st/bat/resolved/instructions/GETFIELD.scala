@@ -46,7 +46,7 @@ package instructions
  * }}}
  * `os.length` is determined using the special `arraylength` instruction.
  *
- * @see [[de.tud.cs.st.bat.resolved.instructions.FieldAccess]] for additional 
+ * @see [[de.tud.cs.st.bat.resolved.instructions.FieldAccess]] for additional
  *      pattern matching support.
  *
  * @author Michael Eichberg
@@ -61,8 +61,14 @@ case class GETFIELD(
 
     def mnemonic: String = "getfield"
 
-    def runtimeExceptions: List[ObjectType] = FieldAccess.runtimeExceptions
+    final override def runtimeExceptions: List[ObjectType] = 
+        FieldAccess.runtimeExceptions
 
-    override def toString = "get "+declaringClass.toJava+"."+name+" : "+fieldType.toJava  
-    
+    final override def nextInstructions(currentPC: PC, code: Code): PCs =
+        Instruction.nextInstructionOrExceptionHandler(
+            this, currentPC, code, ObjectType.NullPointerException
+        )
+
+    override def toString = "get "+declaringClass.toJava+"."+name+" : "+fieldType.toJava
+
 }

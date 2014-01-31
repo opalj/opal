@@ -56,8 +56,6 @@ trait DefaultTypeLevelLongValues[+I]
 
         override def summarize(pc: PC): DomainValue = this
 
-        override def summarize(pc: PC, value: DomainValue): DomainValue = this
-
         override def adapt[ThatI >: I](
             targetDomain: Domain[ThatI],
             pc: PC): targetDomain.DomainValue =

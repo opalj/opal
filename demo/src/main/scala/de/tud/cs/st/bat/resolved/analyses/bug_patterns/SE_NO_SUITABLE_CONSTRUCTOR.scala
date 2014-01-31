@@ -37,16 +37,16 @@ package bug_patterns.ioc
 import instructions._
 
 /**
-  * A superclass of a `Serializable` class must define a no-args constructor.
-  *
-  * @author Ralf Mitschke
-  */
+ * A superclass of a `Serializable` class must define a no-args constructor.
+ *
+ * @author Ralf Mitschke
+ */
 object SE_NO_SUITABLE_CONSTRUCTOR extends (Project[_] ⇒ Iterable[ClassFile]) {
 
     def apply(project: Project[_]) = {
         val serializable = ObjectType("java/io/Serializable")
         for {
-            serializableClass ← project.classHierarchy.allSubtypes(serializable)
+            serializableClass ← project.classHierarchy.allSubtypes(serializable, false)
             superClass ← project.classHierarchy.allSupertypes(serializableClass)
             superClassFile ← project.classFile(superClass)
             if !superClassFile.isInterfaceDeclaration &&

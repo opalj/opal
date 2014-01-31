@@ -228,7 +228,7 @@ private object ProjectLike {
             import err.{ println, print }
             import Console._
             print(BOLD + MAGENTA)
-            print("Creating multiple project instances is not recommded. ")
+            print("Creating multiple project instances is not recommended. ")
             println("See the documentation of: ")
             println("\t"+classOf[ProjectLike[_]].getName())
             println("for further details.")

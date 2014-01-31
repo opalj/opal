@@ -40,10 +40,12 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case object FCONST_1 extends LoadConstantInstruction with ImplicitValue {
+case object FCONST_1 extends LoadConstantInstruction[Float] with ImplicitValue {
 
-    def opcode: Int = 12
+    override def value: Float = 1.0f
 
-    def mnemonic: String = "fconst_1"
+    override def opcode: Int = 12
+
+    override def mnemonic: String = "fconst_1"
 
 }

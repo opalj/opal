@@ -86,6 +86,8 @@ class CallGraph[Source] private[project] (
      */
     // In case of the CHA Call Graph this could also be easily calculated on-demand, 
     // since we do not use any information that is not readily available.
+    // However, we collect/store that information for the time being to make the 
+    // implementation more uniform.
     def calls(method: Method): Map[PC, Iterable[Method]] = {
         val callees = callsMap(method.id)
         if (callees ne null) callees else Map.empty
@@ -125,7 +127,7 @@ class CallGraph[Source] private[project] (
 
     /**
      * Statistics about the number of potential targets per call site.
-     * (TSV format (tab-separated file) - can easily read by most spreadsheet
+     * (TSV format (tab-separated file) - can easily be read by most spreadsheet
      * applications).
      */
     def callsStatistics(maxNumberOfResults: Int = 65536): String = {
@@ -157,7 +159,7 @@ class CallGraph[Source] private[project] (
 
     /**
      * Statistics about the number of methods that potentially call a specific method.
-     * (TSV format (tab-separated file) - can easily read by most spreadsheet
+     * (TSV format (tab-separated file) - can easily be read by most spreadsheet
      * applications).
      */
     def calledByStatistics(maxNumberOfResults: Int = 65536): String = {

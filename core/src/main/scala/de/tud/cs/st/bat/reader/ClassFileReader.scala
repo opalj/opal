@@ -395,6 +395,4 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         // file.isDirectory
         (for (innerFile ← file.listFiles().par) yield ClassFiles(innerFile)).seq.flatten
     }
-
 }
-

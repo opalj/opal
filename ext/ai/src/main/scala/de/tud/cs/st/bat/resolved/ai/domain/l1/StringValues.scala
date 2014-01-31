@@ -45,44 +45,42 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  *
  * @author Michael Eichberg
  */
-trait StringValues[+I] extends DefaultPreciseReferenceValues[I] {
+trait StringValues[+I] extends ReferenceValues[I] {
+    domain: Configuration with IntegerValuesComparison with ClassHierarchy ⇒
 
-    class AStringValue(
-        pc: Int, // sets the pc value of the superclass
+    type DomainStringValue <: StringValue with DomainObjectValue
+
+    class StringValue(
+        pc: PC, // sets the pc value of the superclass
         val value: String)
-            extends AReferenceValue(pc, Set(ObjectType.String), No, true) { this: DomainValue ⇒
+            extends SObjectValue(pc, No, true, ObjectType.String) {
+        this: DomainObjectValue ⇒
 
-        override def adapt[ThatI >: I](targetDomain: Domain[ThatI], pc: Int): targetDomain.DomainValue =
-            // I would prefer to write (but the compiler crashes!): 
-            // targetDomain match {
-            // 	case otherDomain: StringValues[ThatI] ⇒
-            //      new otherDomain.AStringValue(pc, this.value).asInstanceOf[targetDomain.DomainValue]
-            //  case _ ⇒ super.adapt(targetDomain, pc)
-            // }
-            if (targetDomain.isInstanceOf[StringValues[ThatI]]) {
-                val otherDomain = targetDomain.asInstanceOf[StringValues[ThatI]]
-                val newStringValue = new otherDomain.AStringValue(pc, this.value)
-                newStringValue.asInstanceOf[targetDomain.DomainValue]
-            } else
-                super.adapt(targetDomain, pc)
+        override def adapt[TDI >: I](target: Domain[TDI], pc: Int): target.DomainValue =
+            target.StringValue(pc, this.value)
 
         override def equals(other: Any): Boolean = {
-            super.equals(other) &&
-                other.asInstanceOf[AStringValue].value == this.value
+            other match {
+                case sv: DomainStringValue ⇒ super.equals(other) && sv.value == this.value
+                case _                     ⇒ false
+            }
         }
 
-        override protected def canEqual(other: AReferenceValue): Boolean =
-            other.isInstanceOf[AStringValue]
+        override protected def canEqual(other: SObjectValue): Boolean =
+            other.isInstanceOf[StringValue]
 
-        override def hashCode: Int = super.hashCode + 41 * value.hashCode()
+        override def hashCode: Int = super.hashCode * 41 + value.hashCode()
 
         override def toString(): String = "String(pc="+pc+", value=\""+value+"\")"
 
     }
+    
+    object StringValue {
+        def unapply(value: StringValue): Option[String] = Some(value.value)
+    }
 
-    override def StringValue(pc: Int, value: String): DomainValue = 
-        new AStringValue(pc, value)
-
+    // Need to be implemented (the default implementation is now longer sufficient!)
+    override def StringValue(pc: PC, value: String): DomainObjectValue
 }
 
 

@@ -41,7 +41,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case object CALOAD extends ArrayAccessInstruction with PrimitiveArrayAccess {
+case object CALOAD extends ArrayLoadInstruction with PrimitiveArrayAccess {
 
     def opcode: Int = 52
 

@@ -42,8 +42,16 @@ package instructions
  */
 abstract class LoadLocalVariableInstruction extends Instruction {
 
+    /**
+     * The index of the local variable(register) that is loaded and put on top 
+     * of the operand stack.
+     */
     def lvIndex: Int
 
-    def runtimeExceptions(): List[ObjectType] = Nil
+    override def runtimeExceptions: List[ObjectType] = Nil
+
+    override def nextInstructions(currentPC: PC, code: Code): PCs = {
+        collection.mutable.UShortSet(indexOfNextInstruction(currentPC, code))
+    }
 
 }

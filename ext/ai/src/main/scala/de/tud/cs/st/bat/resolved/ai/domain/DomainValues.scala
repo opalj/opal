@@ -37,7 +37,7 @@ package ai
 package domain
 
 /**
- * Encapsulates a domain and some values created by the respective domain.
+ * Encapsulates a `domain` and some values created by the respective domain.
  *
  * Using the class `DomainValues` enables type-safety when we need to store and
  * pass on a `Domain` object and some of its values.

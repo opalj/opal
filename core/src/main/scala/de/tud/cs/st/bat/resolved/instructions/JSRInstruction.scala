@@ -40,5 +40,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-abstract class JSRInstruction extends UnconditionalBranchInstruction 
+abstract class JSRInstruction extends UnconditionalBranchInstruction {
+    
+}
 

@@ -52,8 +52,14 @@ case class TABLESWITCH(
 
     def mnemonic: String = "tableswitch"
 
-    def indexOfNextInstruction(currentPC: Int, code: Code): Int = {
+    final override def indexOfNextInstruction(currentPC: Int, code: Code): Int = {
         currentPC + 1 + (3 - (currentPC % 4)) + 12 + jumpOffsets.size * 4
+    }
+    
+    final override def nextInstructions(currentPC: PC, code: Code): PCs = {
+        var pcs = collection.mutable.UShortSet(currentPC + defaultOffset)
+        jumpOffsets foreach (offset ⇒ { pcs += (currentPC + offset) })
+        pcs
     }
 
     override def toString(pc: Int): String =

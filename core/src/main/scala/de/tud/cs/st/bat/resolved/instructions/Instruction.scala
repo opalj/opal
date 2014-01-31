@@ -43,7 +43,8 @@ package instructions
 trait Instruction {
 
     /**
-     *  The opcode of the instruction as defined by the JVM specification.
+     *  The opcode of the instruction as defined by the JVM specification. The
+     *  opcode is a value in the range [0..255].
      */
     def opcode: Int
 
@@ -53,9 +54,11 @@ trait Instruction {
     def mnemonic: String
 
     /**
-     * The exceptions that may be thrown by the JVM at runtime if the execution of this instruction fails.
-     * I.e., these are neither exceptions that are explicitly created and then thrown by user code nor
-     * errors that my arise due to an invalid code base.
+     * The exceptions that may be thrown by the JVM at runtime if the execution of 
+     * this instruction fails.
+     * I.e., these are neither exceptions that are explicitly created and then thrown 
+     * by user code nor errors that my arise due to an invalid code base (e.g. 
+     * `LinkageError`s).
      */
     def runtimeExceptions: List[ObjectType]
 
@@ -64,6 +67,28 @@ trait Instruction {
      */
     def indexOfNextInstruction(currentPC: Int, code: Code): Int
 
+    /**
+     * Returns the set of instructions that may be executed next at runtime. This
+     * method takes potentially thrown exceptions into account. I.e., every instruction
+     * that may throw an exception checks if it occurs within a catch block and
+     * – if so – checks if an appropriate handler exists and – if so – also returns
+     * the first instruction of the handler.
+     *
+     * @return The absolute addresses of '''all instructions''' that may be executed next
+     *      at runtime.
+     */
+    def nextInstructions(currentPC: PC, code: Code): PCs
+
+    /**
+     * Returns a string representation of this instruction. If this instruction is a
+     * (conditional) jump instruction then the PCs of the target instructions should
+     * be given using absolute PCs. The string representation should be compact
+     * and suitable for output on the console and should represent the instruction
+     * in its entirety. 
+     * 
+     * @param currentPC The program counter of this instruction. Used to resolve relative
+     *      jump targets.
+     */
     def toString(currentPC: Int): String = toString()
 
 }
@@ -76,5 +101,62 @@ object Instruction {
 
     def unapply(instruction: Instruction): Option[(Int, String, List[ObjectType])] = {
         Some((instruction.opcode, instruction.mnemonic, instruction.runtimeExceptions))
+    }
+
+    import collection.mutable.UShortSet
+
+    // TODO move to the Code class
+    private[instructions] def allExceptionHandlers(
+        currentPC: PC,
+        code: Code): UShortSet /* <= mutable by purpose! */ = {
+        var pcs = UShortSet.empty
+        code.exceptionHandlersFor(currentPC) foreach { handler ⇒
+            pcs += handler.handlerPC
+        }
+        pcs
+    }
+
+    private[instructions] def nextInstructionOrExceptionHandlers(
+        instruction: Instruction,
+        currentPC: PC,
+        code: Code,
+        exceptions: List[ObjectType]): UShortSet /* <= mutable by purpose! */ = {
+
+        var pcs = UShortSet(instruction.indexOfNextInstruction(currentPC, code))
+
+        def processException(exception: ObjectType) {
+            code.exceptionHandlersFor(currentPC) find { handler ⇒
+                handler.catchType.isEmpty ||
+                    Code.preDefinedClassHierarchy.isSubtypeOf(
+                        exception,
+                        handler.catchType.get).yes
+            } match {
+                case Some(handler) ⇒ pcs += handler.startPC
+                case _             ⇒ /* exception is not handled */
+            }
+        }
+
+        exceptions foreach processException
+
+        pcs
+    }
+
+    private[instructions] def nextInstructionOrExceptionHandler(
+        instruction: Instruction,
+        currentPC: PC,
+        code: Code,
+        exception: ObjectType): UShortSet /* <= mutable by purpose! */ = {
+
+        val nextInstruction = instruction.indexOfNextInstruction(currentPC, code)
+
+        code.exceptionHandlersFor(currentPC) find { handler ⇒
+            handler.catchType.isEmpty ||
+                Code.preDefinedClassHierarchy.isSubtypeOf(
+                    exception,
+                    handler.catchType.get).yes
+        } match {
+            case Some(handler) ⇒ UShortSet(nextInstruction, handler.startPC)
+            case None          ⇒ UShortSet(nextInstruction)
+        }
     }
 }

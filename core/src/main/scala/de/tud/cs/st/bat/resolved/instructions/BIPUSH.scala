@@ -41,13 +41,13 @@ package instructions
  * @author Michael Eichberg
  */
 case class BIPUSH(
-    value: Int)
-        extends LoadConstantInstruction {
+    override val value: Int)
+        extends LoadConstantInstruction[Int] {
 
-    def opcode: Int = 16
+    override def opcode: Int = 16
 
-    def mnemonic: String = "bipush"
+    override def mnemonic: String = "bipush"
 
-    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 2
+    override def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 2
 
 }

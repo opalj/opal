@@ -40,7 +40,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case object BALOAD extends ArrayAccessInstruction with PrimitiveArrayAccess {
+case object BALOAD extends ArrayLoadInstruction with PrimitiveArrayAccess {
 
     def opcode: Int = 51
 

@@ -36,12 +36,12 @@ package resolved
 package analyses
 
 /**
-  * Writes out (a subset of) the class hierarchy in the format used by the
-  * `de.tud.cs.st.bat.resolved.analyses.ClassHierarchy` to create the pre-initialized
-  * class hierarchy.
-  *
-  * @author Michael Eichberg
-  */
+ * Writes out (a subset of) the class hierarchy in the format used by the
+ * `de.tud.cs.st.bat.resolved.analyses.ClassHierarchy` to create the pre-initialized
+ * class hierarchy.
+ *
+ * @author Michael Eichberg
+ */
 object ClassHierarchyExtractor {
 
     def main(args: Array[String]) {
@@ -54,8 +54,8 @@ object ClassHierarchyExtractor {
             sys.exit(-1)
         }
 
-        val supertypeName = args(0).replace('.','/')
-        val filterPrefix = args(1).replace('.','/')
+        val supertypeName = args(0).replace('.', '/')
+        val filterPrefix = args(1).replace('.', '/')
         val jars = args.drop(2)
 
         val classFiles = (List.empty[(ClassFile, java.net.URL)] /: jars)(_ ++ ClassFiles(_))
@@ -75,9 +75,9 @@ object ClassHierarchyExtractor {
                 " limited to subclasses that start with: "+
                 filterPrefix)
         val allRelevantSubtypes =
-            classHierarchy.allSubtypes(supertype).filter { candidateType ⇒
+            classHierarchy.allSubtypes(supertype, true).filter { candidateType ⇒
                 candidateType.fqn.startsWith(filterPrefix)
-            } + supertype
+            }
         var specLines = allRelevantSubtypes.map { aType ⇒
             var specLine =
                 (
@@ -90,7 +90,7 @@ object ClassHierarchyExtractor {
             if (superclassType.isDefined) {
                 specLine += " extends "+superclassType.get.fqn
                 val superinterfaceTypes = classHierarchy.superinterfaceTypes(aType)
-                if (superinterfaceTypes.isDefined) {
+                if (superinterfaceTypes.isDefined && superinterfaceTypes.get.nonEmpty) {
                     specLine +=
                         " implements "+superinterfaceTypes.get.map(_.fqn).mkString(", ")
                 }

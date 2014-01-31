@@ -55,17 +55,13 @@ trait TypeLevelDoubleValues[+I] extends Domain[I] {
     /**
      * Abstracts over double values at the type level.
      */
-    trait DoubleValue extends Value { this: DomainValue ⇒
+    trait DoubleValue
+            extends Value
+            with IsDoubleValue { this: DomainValue ⇒
 
         override final def computationalType: ComputationalType = ComputationalTypeDouble
 
     }
-
-    abstract override def typeOfValue(value: DomainValue): TypesAnswer =
-        value match {
-            case r: DoubleValue ⇒ IsDoubleValue
-            case _              ⇒ super.typeOfValue(value)
-        }
 
     // -----------------------------------------------------------------------------------
     //

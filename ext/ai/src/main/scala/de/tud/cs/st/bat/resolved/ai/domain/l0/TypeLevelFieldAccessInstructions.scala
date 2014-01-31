@@ -53,7 +53,7 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
-trait TypeLevelFieldAccessInstructions { this: Domain[_] ⇒
+trait TypeLevelFieldAccessInstructions { this: SomeDomain ⇒
 
     override def getfield(
         pc: PC,

@@ -60,24 +60,15 @@ trait DefaultPreciseIntegerValues[+I]
 
         override def summarize(pc: PC): DomainValue = this
 
-        override def summarize(pc: PC, value: DomainValue): DomainValue = this
-
-        override def adapt[ThatI >: I](
-            targetDomain: Domain[ThatI],
-            pc: PC): targetDomain.DomainValue =
-            if (targetDomain.isInstanceOf[DefaultPreciseIntegerValues[ThatI]]) {
-                val thatDomain = targetDomain.asInstanceOf[DefaultPreciseIntegerValues[ThatI]]
-                thatDomain.AnIntegerValue.asInstanceOf[targetDomain.DomainValue]
-            } else {
-                super.adapt(targetDomain, pc)
-            }
+        override def adapt[TDI >: I](target: Domain[TDI], pc: PC): target.DomainValue =
+            target.IntegerValue(pc)
     }
 
     case class IntegerRange(
         val initial: Int,
         val value: Int)
             extends super.IntegerValue {
-        
+
         def update(newValue: Int): DomainValue = IntegerRange(initial, newValue)
 
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] =
@@ -113,12 +104,6 @@ trait DefaultPreciseIntegerValues[+I]
 
         override def summarize(pc: PC): DomainValue = this
 
-        override def summarize(pc: PC, value: DomainValue): DomainValue =
-            doJoin(pc, value) match {
-                case NoUpdate             ⇒ this
-                case SomeUpdate(newValue) ⇒ newValue
-            }
-
         override def adapt[ThatI >: I](
             targetDomain: Domain[ThatI],
             pc: PC): targetDomain.DomainValue =
@@ -138,16 +123,16 @@ trait DefaultPreciseIntegerValues[+I]
         if (value) IntegerValue(pc, 1) else IntegerValue(pc, 0)
 
     override def ByteValue(pc: PC): DomainValue = AnIntegerValue()
-    override def ByteValue(pc: PC, value: Byte) = new IntegerRange(value,value)
+    override def ByteValue(pc: PC, value: Byte) = new IntegerRange(value, value)
 
     override def ShortValue(pc: PC): DomainValue = AnIntegerValue()
-    override def ShortValue(pc: PC, value: Short) = new IntegerRange(value,value)
+    override def ShortValue(pc: PC, value: Short) = new IntegerRange(value, value)
 
     override def CharValue(pc: PC): DomainValue = AnIntegerValue()
-    override def CharValue(pc: PC, value: Char) = new IntegerRange(value,value)
+    override def CharValue(pc: PC, value: Char) = new IntegerRange(value, value)
 
     override def IntegerValue(pc: PC): DomainValue = AnIntegerValue()
-    override def IntegerValue(pc: PC, value: Int) = new IntegerRange(value,value)
+    override def IntegerValue(pc: PC, value: Int) = new IntegerRange(value, value)
 
 }
 

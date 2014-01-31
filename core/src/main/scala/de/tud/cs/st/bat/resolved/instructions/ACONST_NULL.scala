@@ -40,9 +40,11 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case object ACONST_NULL extends LoadConstantInstruction with ImplicitValue {
+case object ACONST_NULL extends LoadConstantInstruction[Null] with ImplicitValue {
 
-    def opcode: Int = 1
+    override def value: Null = null
 
-    def mnemonic: String = "aconst_null"
+    override def opcode: Int = 1
+
+    override def mnemonic: String = "aconst_null"
 }

@@ -36,7 +36,7 @@ package resolved
 package instructions
 
 /**
- * Trait that can be mixed in if the local variable index of a load or store instruction
+ * Trait that is mixed in if the local variable index of a load or store instruction
  * ((a,i,l,...)load/store_X) is predefined.
  *
  * @author Michael Eichberg

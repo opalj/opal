@@ -46,5 +46,9 @@ abstract class StackManagementInstruction extends Instruction {
     def runtimeExceptions(): List[ObjectType] = Nil
 
     def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 1
+    
+    override def nextInstructions(currentPC: PC, code: Code): PCs = {
+        collection.mutable.UShortSet(indexOfNextInstruction(currentPC, code))
+    }
 }
 

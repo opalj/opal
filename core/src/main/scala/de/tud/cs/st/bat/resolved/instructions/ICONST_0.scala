@@ -36,14 +36,16 @@ package resolved
 package instructions
 
 /**
- * Push int constant.
+ * Push int constant value 0.
  *
  * @author Michael Eichberg
  */
-case object ICONST_0 extends LoadConstantInstruction with ImplicitValue {
+case object ICONST_0 extends LoadConstantInstruction[Int] with ImplicitValue {
 
-    def opcode: Int = 3
+    override def value: Int = 0
 
-    def mnemonic: String = "iconst_0"
+    override def opcode: Int = 3
+
+    override def mnemonic: String = "iconst_0"
 
 }

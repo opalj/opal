@@ -50,13 +50,11 @@ trait IgnoreSynchronization { this: SomeDomain ⇒
         value: DomainValue): Computation[Nothing, ExceptionValue] = {
         isNull(value) match {
             case Yes ⇒
-                ThrowsException(InitializedObject(pc, ObjectType.NullPointerException))
+                ThrowsException(NullPointerException(pc))
             case No ⇒
                 ComputationWithSideEffectOnly
             case Unknown ⇒
-                ComputationWithSideEffectOrException(
-                    InitializedObject(pc, ObjectType.NullPointerException)
-                )
+                ComputationWithSideEffectOrException(NullPointerException(pc))
         }
     }
 

@@ -40,14 +40,10 @@ package instructions
  *
  * @author Michael Eicberg
  */
-case object AALOAD extends ArrayAccessInstruction {
+case object AALOAD extends ArrayLoadInstruction {
 
     def opcode: Int = 50
 
     def mnemonic: String = "aaload"
 
-    val runtimeExceptions: List[ObjectType] = {
-        import ObjectType._
-        List(ArrayIndexOutOfBoundsException, NullPointerException)
-    }
 }

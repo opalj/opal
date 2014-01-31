@@ -42,7 +42,7 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 import org.scalatest.concurrent.TimeLimitedTests
 import org.scalatest.time._
 import org.scalatest.BeforeAndAfterAll
@@ -56,16 +56,16 @@ import org.scalatest.ParallelTestExecution
 @RunWith(classOf[JUnitRunner])
 class DefaultPreciseIntegerValuesTest
         extends FlatSpec
-        with ShouldMatchers
+        with Matchers
         with ParallelTestExecution {
 
-    val domain = new PreciseConfigurableDomain("DefaultPreciseIntegerValuesTest")
+    val domain = new DefaultConfigurableDomain("DefaultPreciseIntegerValuesTest")
     import domain._
 
     //
     // TESTS
     //
-   
+
     behavior of "IntegerRange values"
 
     it should ("be able to join two identical values") in {
@@ -96,6 +96,14 @@ class DefaultPreciseIntegerValuesTest
         val v1 = IntegerRange(0, 1)
 
         v1.join(-1, AnIntegerValue()) should be(StructuralUpdate(AnIntegerValue()))
+    }
+
+    behavior of "AnIntegerValue"
+
+    it should ("be able to adapt to the same domain") in {
+        val v1 = AnIntegerValue()
+
+        v1.adapt(domain, -1) should be(AnIntegerValue())
     }
 
 }

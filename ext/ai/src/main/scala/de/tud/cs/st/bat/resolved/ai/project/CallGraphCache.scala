@@ -60,7 +60,7 @@ package project
  * val cache = new CallGraphCache[MethodSignature,Iterable[Method]]
  * }}}
  *
- * @note Creating a new cache is a computationally intensive task that scales
+ * @note Creating a new cache is comparatively expensive and scales
  *      with the number of `ObjectType`s in a project.
  *
  * @author Michael Eichberg
@@ -80,13 +80,13 @@ class CallGraphCache[Contour, Value] {
      * `f` is evaluated and the cache is updated accordingly before the value is returned.
      * In some rare cases it may be the case that two or more functions that are associated
      * with the same `declaringClass` and `contour` are evaluated concurrently. In such
-     * a case the result of only one function is stored in the cache and will later be 
+     * a case the result of only one function is stored in the cache and will later be
      * returned.
      */
     def getOrElseUpdate(
         declaringClass: ReferenceType,
-        contour: Contour,
-        f: ⇒ Value): Value = {
+        contour: Contour)(
+            f: ⇒ Value): Value = {
 
         val id = declaringClass.id
         val cachedResults = cache(declaringClass.id)
@@ -94,8 +94,8 @@ class CallGraphCache[Contour, Value] {
         if (cachedValue != null)
             cachedValue
         else {
-            // This is expected provide a better trade-off than to always synchronize
-            // the evaluation of f w.r.t. to ObjectType based cache.
+            // This is expected provide a better trade-off then to always synchronize
+            // the evaluation of `f` w.r.t. to ObjectType based cache.
             val value = f
             cachedResults.put(contour, value)
             value

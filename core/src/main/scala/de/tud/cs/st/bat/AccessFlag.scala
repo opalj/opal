@@ -55,7 +55,7 @@ sealed trait AccessFlag extends AccessFlagsMatcher {
     def mask: Int
 
     /**
-     * Facilitates pattern matching against this AccessFlag.
+     * Facilitates pattern matching against this `AccessFlag`.
      *
      * ==Example==
      * {{{
@@ -71,16 +71,24 @@ sealed trait AccessFlag extends AccessFlagsMatcher {
     /**
      * Determines if this access flag is set in the given `access_flags` bit vector.
      * E.g., to determine if a method's static modifier is set it is sufficient
-     * to call {{{ACC_STATIC isElementOf method.access_flags}}}.
+     * to call:
+     * {{{
+     * ACC_STATIC isElementOf method.access_flags
+     * }}}
      */
     def isElementOf(access_flags: Int): Boolean = (access_flags & mask) != 0
 
 }
 
+/**
+ * Common supertype of all explicit visibility modifiers/access flags.
+ *
+ * @author Michael Eichberg
+ */
 sealed trait VisibilityModifier extends AccessFlag
 
 /**
- * Utility methods related to the visibility modifiers.
+ * Defines extractor methods related to visibility modifiers.
  *
  * @author Michael Eichberg
  */
@@ -92,44 +100,51 @@ object VisibilityModifier {
     private val SOME_PRIVATE = Some(ACC_PRIVATE)
     private val SOME_PROTECTED = Some(ACC_PROTECTED)
 
+    /**
+     * Returns the specified visibility modifier.
+     *
+     * @param accessFlags The access flags of a class or a member thereof.
+     * @return The visibility modifier of the respective element or `None` if the
+     *      element has default visibility.
+     */
     def get(accessFlags: Int): Option[VisibilityModifier] =
         ((accessFlags & VisibilityModifier.mask): @scala.annotation.switch) match {
             case 1 /*ACC_PUBLIC.mask*/    ⇒ SOME_PUBLIC
             case 2 /*ACC_PRIVATE.mask*/   ⇒ SOME_PRIVATE
             case 4 /*ACC_PROTECTED.mask*/ ⇒ SOME_PROTECTED
-            case _                        ⇒ None
+            case _                        ⇒ None /*DEFAULT VISIBILITY*/
         }
 
     def unapply(accessFlags: Int): Option[VisibilityModifier] = get(accessFlags)
 }
 
 object ACC_PUBLIC extends VisibilityModifier {
-    final val javaName: Option[String] = Some("public")
-    final val mask: Int = 0x0001
+    final override val javaName: Option[String] = Some("public")
+    final override val mask: Int = 0x0001
     override def toString = "PUBLIC"
 }
 
 object ACC_PRIVATE extends VisibilityModifier {
-    final val javaName: Option[String] = Some("private")
-    final val mask: Int = 0x0002
+    final override val javaName: Option[String] = Some("private")
+    final override val mask: Int = 0x0002
     override def toString = "PRIVATE"
 }
 
 object ACC_PROTECTED extends VisibilityModifier {
-    final val javaName: Option[String] = Some("protected")
-    final val mask: Int = 0x0004
+    final override val javaName: Option[String] = Some("protected")
+    final override val mask: Int = 0x0004
     override def toString = "PROTECTED"
 }
 
 object ACC_STATIC extends AccessFlag {
-    final val javaName: Option[String] = Some("static")
-    final val mask = 0x0008
+    final override val javaName: Option[String] = Some("static")
+    final override val mask = 0x0008
     override def toString = "STATIC"
 }
 
 object ACC_FINAL extends AccessFlag {
-    final val javaName: Option[String] = Some("final")
-    final val mask = 0x0010
+    final override val javaName: Option[String] = Some("final")
+    final override val mask = 0x0010
     override def toString = "FINAL"
 }
 
@@ -140,14 +155,14 @@ object ACC_SUPER extends AccessFlag {
 }
 
 object ACC_SYNCHRONIZED extends AccessFlag {
-    final val javaName: Option[String] = Some("synchronized")
-    final val mask = 0x0020
+    final override val javaName: Option[String] = Some("synchronized")
+    final override val mask = 0x0020
     override def toString = "SYNCHRONIZED"
 }
 
 object ACC_VOLATILE extends AccessFlag {
-    final val javaName: Option[String] = Some("volatile")
-    final val mask = 0x0040
+    final override val javaName: Option[String] = Some("volatile")
+    final override val mask = 0x0040
     override def toString = "VOLATILE"
 }
 
@@ -158,14 +173,14 @@ object ACC_BRIDGE extends AccessFlag {
 }
 
 object ACC_TRANSIENT extends AccessFlag {
-    final val javaName: Option[String] = Some("transient")
-    final val mask = 0x0080
+    final override val javaName: Option[String] = Some("transient")
+    final override val mask = 0x0080
     override def toString = "TRANSIENT"
 }
 
 object ACC_VARARGS extends AccessFlag {
-    final val javaName: Option[String] = None
-    final val mask = 0x0080
+    final override val javaName: Option[String] = None
+    final override val mask = 0x0080
     override def toString = "VARARGS"
 }
 
@@ -177,53 +192,38 @@ object ACC_NATIVE extends AccessFlag {
 
 object ACC_INTERFACE extends AccessFlag {
     // this flag modifies the semantics of a class, but it is not an additional flag
-    final val javaName: Option[String] = None
-    final val mask = 0x0200
+    final override val javaName: Option[String] = None
+    final override val mask = 0x0200
     override def toString = "INTERFACE"
 }
 
 object ACC_ABSTRACT extends AccessFlag {
-    final val javaName: Option[String] = Some("abstract")
-    final val mask = 0x0400
+    final override val javaName: Option[String] = Some("abstract")
+    final override val mask = 0x0400
     override def toString = "ABSTRACT"
 }
 
 object ACC_STRICT extends AccessFlag {
-    final val javaName: Option[String] = Some("strictfp")
+    final override val javaName: Option[String] = Some("strictfp")
     final val mask = 0x0800
     override def toString = "STRICT"
 }
 
 object ACC_SYNTHETIC extends AccessFlag {
-    final val javaName: Option[String] = None
-    final val mask = 0x1000
+    final override val javaName: Option[String] = None
+    final override val mask = 0x1000
     override def toString = "SYNTHETIC"
 }
 
 object ACC_ANNOTATION extends AccessFlag {
-    final val javaName: Option[String] = None
-    final val mask = 0x2000
+    final override val javaName: Option[String] = None
+    final override val mask = 0x2000
     override def toString = "ANNOTATION"
 }
 
 object ACC_ENUM extends AccessFlag {
-    final val javaName: Option[String] = None
-    final val mask = 0x4000
+    final override val javaName: Option[String] = None
+    final override val mask = 0x4000
     override def toString = "ENUM"
 }
 
-/**
- * Convenience methods related to access flags.
- *
- * @author Michael Eichberg
- */
-object AccessFlags {
-
-    def toStrings(
-        accessFlags: Int,
-        ctx: AccessFlagsContext): Iterator[String] = {
-        AccessFlagsIterator(accessFlags, ctx) map { accessFlag ⇒
-            accessFlag.javaName.getOrElse("["+accessFlag.toString+"]")
-        }
-    }
-}

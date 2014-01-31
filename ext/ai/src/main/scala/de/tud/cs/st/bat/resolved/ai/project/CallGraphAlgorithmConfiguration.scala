@@ -49,9 +49,15 @@ import bat.resolved.ai.domain._
  */
 trait CallGraphAlgorithmConfiguration[Source] {
 
+    /**
+     * The contour identifies the key of the CallGraphCache.
+     */
     type Contour
+
     type Value
+
     type Cache <: CallGraphCache[Contour, Value]
+
     /**
      * Creates a new cache that is used to cache intermediate results while
      * computing the call graph.
@@ -61,9 +67,14 @@ trait CallGraphAlgorithmConfiguration[Source] {
     def Cache(): this.type#Cache
 
     type I /*Domain Identifier*/
+
     /**
-     * Creates a new domain object that will be used to analyze the given
+     * Returns the domain object that will be used to analyze the given
      * method.
+     *
+     * If the same Domain object is returned multiple times, the respective
+     * object has to be thread-safe. In general, it is easier to design the `Domain`
+     * in such a way that every call of this method can return a new instance.
      */
     def Domain(
         theProject: Project[Source],

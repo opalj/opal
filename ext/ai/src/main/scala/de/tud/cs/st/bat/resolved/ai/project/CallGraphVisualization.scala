@@ -59,18 +59,19 @@ object CallGraphVisualization {
      *      the methods that are included in the call graph.
      */
     def main(args: Array[String]) {
-        if ((args.size < 2) || (args.size > 3)) {
+        if ((args.size < 3) || (args.size > 4)) {
             println("You have to specify the method that should be analyzed.")
-            println("\t1) A jar/class file or a directory containing jar/class files.")
-            println("\t2) A pattern that specifies which class/interface types should be included in the output.")
-            println("\t3) The number of seconds (max. 30) before the analysis starts (e.g., to attach a profiler).")
+            println("\t1) The algorithm to use (CHA or VTA).")
+            println("\t2) A jar/class file or a directory containing jar/class files.")
+            println("\t3) A pattern that specifies which class/interface types should be included in the output.")
+            println("\t4 - Optional) The number of seconds (max. 30) before the analysis starts (e.g., to attach a profiler).")
             sys.exit(-1)
         }
 
         // To make it possible to attach a profiler: 
-        if (args.size == 3) {
+        if (args.size == 4) {
             try {
-                val secs = Integer.parseInt(args(2), 10)
+                val secs = Integer.parseInt(args(3), 10)
                 if (secs > 30) {
                     Console.err.println("\t3) The number of seconds before the analysis starts (e.g., to attach a profiler).")
                     sys.exit(-30)
@@ -90,7 +91,7 @@ object CallGraphVisualization {
         val project =
             memory {
                 time {
-                    val fileName = args(0)
+                    val fileName = args(1)
                     val file = new java.io.File(fileName)
                     if (!file.exists()) {
                         println(RED+"file does not exist: "+fileName + RESET)
@@ -107,43 +108,50 @@ object CallGraphVisualization {
                     bat.resolved.analyses.IndexBasedProject(classFiles)
                 } { t ⇒ println("Setting up the project took: "+nsToSecs(t)) }
             } { m ⇒ println("Required memory for base representation: "+asMB(m)) }
-        val fqnFilter = args(1)
+        val fqnFilter = args(2)
 
         //
         // GRAPH CONSTRUCTION
         //
+        import CallGraphFactory.defaultEntryPointsForLibraries
         val (callGraph, unresolvedMethodCalls, exceptions) =
             memory {
                 time {
-                    CallGraphFactory.create(
-                        project,
-                        CallGraphFactory.defaultEntryPointsForLibraries(project),
-                        new CHACallGraphAlgorithmConfiguration())
+                    val callGraphAlgorithm = args(0) match {
+                        case "VTA" ⇒
+                            new VTACallGraphAlgorithmConfiguration[java.net.URL]()
+                        case _ /*CHA*/ ⇒
+                            new CHACallGraphAlgorithmConfiguration[java.net.URL]()
+                    }
+                    val entryPoints = defaultEntryPointsForLibraries(project)
+                    CallGraphFactory.create(project, entryPoints, callGraphAlgorithm)
                 } { t ⇒ println("Creating the call graph took: "+nsToSecs(t)) }
             } { m ⇒ println("Required memory for call graph: "+asMB(m)) }
 
         // Some statistics 
         import callGraph.{ calls, callsCount, calledByCount, foreachCallingMethod }
-        println("Classes: "+project.classFiles.size)
-        println("Methods: "+Method.methodsCount)
+        println("Classes: "+project.classFiles.size+"; Methods: "+Method.methodsCount)
         println("Methods with at least one resolved call: "+callsCount)
         println("Methods which are called by at least one method: "+calledByCount)
 
+        var callGraphEdgesCount = 0
         var maxCallSitesPerMethod = 0
         var maxTargets = 0
         foreachCallingMethod { (method, callees) ⇒
             val calleesCount = callees.size
+            callGraphEdgesCount += calleesCount
             if (calleesCount > maxCallSitesPerMethod) maxCallSitesPerMethod = calleesCount
             for (targets ← callees.values) {
                 val targetsCount = targets.size
                 if (targetsCount > maxTargets) maxTargets = targetsCount
             }
         }
+        println("Number of all call edges: "+callGraphEdgesCount)
         println("Maximum number of targets over all calls: "+maxTargets)
         println("Maximum number of method calls over all methods: "+maxCallSitesPerMethod)
 
         //
-        // Let's create visualization
+        // Let's create the visualization
         //
         import de.tud.cs.st.util.graphs.{ toDot, SimpleNode, Node }
         val nodes: Set[Node] = {
@@ -209,11 +217,17 @@ object CallGraphVisualization {
         // The exceptions________________________________________________________________:
         if (exceptions.size > 0) {
             println("Exceptions: "+exceptions.size)
-            println(exceptions.mkString("Exceptions:\n\t", "\n\t", "\t"))
+            println(exceptions.mkString("Exceptions that occured while analyzing...:\n\t", "\n\t", "\t"))
         }
 
         // Generate and show the graph
         toDot.generateAndOpenDOT("CallGraph", nodes)
+        println("Callgraph:")
+        println("Number of nodes: "+nodes.size)
+        val edges = nodes.foldLeft(0) { (l, r) ⇒
+            l + { var c = 0; r.foreachSuccessor(n ⇒ c += 1); c }
+        }
+        println("Number of edges: "+edges)
 
         // Write out the statistics about the calls relation
         //        writeAndOpenDesktopApplication(

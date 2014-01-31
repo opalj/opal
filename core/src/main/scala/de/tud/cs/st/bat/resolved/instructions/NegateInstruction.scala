@@ -42,8 +42,12 @@ package instructions
  */
 abstract class NegateInstruction extends ArithmeticInstruction {
 
-    def runtimeExceptions(): List[ObjectType] = Nil
+    final override def runtimeExceptions(): List[ObjectType] = Nil
 
-    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 1
+    final override def indexOfNextInstruction(currentPC: Int, code: Code): Int = 
+        currentPC + 1
 
+    final override def nextInstructions(currentPC: PC, code: Code): PCs = 
+        collection.mutable.UShortSet(indexOfNextInstruction(currentPC, code))
+    
 }

@@ -40,8 +40,16 @@ package instructions
  *
  * @author Michael Eichberg
  */
-abstract class LoadConstantInstruction extends Instruction {
+abstract class LoadConstantInstruction[T] extends Instruction {
 
-    def runtimeExceptions(): List[ObjectType] = Nil
+    /**
+     * The value that is put onto the stack.
+     */
+    def value: T
 
+    override def runtimeExceptions(): List[ObjectType] = Nil
+
+    override def nextInstructions(currentPC: PC, code: Code): PCs = {
+        collection.mutable.UShortSet(indexOfNextInstruction(currentPC, code))
+    }
 }

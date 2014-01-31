@@ -47,16 +47,30 @@ package project
 case class CallGraphConstructionException(
         classFile: ClassFile,
         method: Method,
-        underlyingException: Exception) {
+        cause: Exception) {
 
     import Console._
 
     override def toString: String = {
+        val realCause =
+            cause match {
+                case ife: InterpretationFailedException[_] ⇒ ife.cause
+                case _                                     ⇒ cause
+            }
+
+        val stacktrace = realCause.getStackTrace()
+        val stacktraceExcerpt =
+            if (stacktrace != null && stacktrace.size > 0) {
+                val top = stacktrace(0)
+                Some(top.getFileName()+"["+top.getClassName()+":"+top.getLineNumber()+"]")
+            } else
+                None
         classFile.thisType.toJava+"{ "+
             method.toJava+" ⚡ "+
             RED +
-            underlyingException.getClass().getSimpleName()+": "+
-            underlyingException.getMessage() +
+            realCause.getClass().getSimpleName()+": "+
+            realCause.getMessage() +
+            stacktraceExcerpt.map(": "+_).getOrElse("") +
             RESET+
             " }"
     }

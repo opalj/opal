@@ -39,28 +39,60 @@ package bat
  *
  * @author Michael Eichberg
  */
-trait AccessFlagsMatcher { outer ⇒
+trait AccessFlagsMatcher { left ⇒
 
     def unapply(accessFlags: Int): Boolean
 
+    protected def mask: Int
+
     /**
-     * Creates a new matcher that matches accessFlag vectors where all flags
+     * Creates a new matcher that matches `accessFlags` vectors where all flags
      * defined by this `mask` and the mask of the given matcher are matched.
      */
-    def &(accessFlagsMatcher: AccessFlagsMatcher): AccessFlagsMatcher =
+    def &(right: AccessFlagsMatcher): AccessFlagsMatcher =
         new AccessFlagsMatcher {
-            def unapply(accessFlags: Int): Boolean =
-                outer.unapply(accessFlags) && accessFlagsMatcher.unapply(accessFlags)
+            val mask = left.mask | right.mask
+            def unapply(accessFlags: Int): Boolean = (accessFlags & mask) == mask
         }
 
     /**
-     * Creates a new matcher that matches accessFlag vectors where none of the flags
+     * Creates a new matcher that matches `accessFlags` vectors where none of the flags
      * defined by `mask` is set.
      */
     def unary_!(): AccessFlagsMatcher =
         new AccessFlagsMatcher {
-            override def unapply(accessFlags: Int): Boolean = !outer.unapply(accessFlags)
+            val mask = left.mask
+            override def unapply(accessFlags: Int): Boolean = (accessFlags & mask) == 0
         }
+}
+
+/**
+ * Predefines several access flags matchers.
+ *
+ * @example
+ * The predefined matchers are used in the following way:
+ * {{{
+ * case Method(PUBLIC_STATIC(),...) =>
+ * case Field(PUBLIC_STATIC_FINAL(),...) =>
+ * }}}
+ *
+ * @author Michael Eichberg
+ */
+object AccessFlagsMatcher {
+
+    val PUBLIC_INTERFACE = ACC_PUBLIC & ACC_INTERFACE
+    val PUBLIC_ABSTRACT = ACC_PUBLIC & ACC_ABSTRACT
+    val PUBLIC_FINAL = ACC_PUBLIC & ACC_FINAL
+    val PRIVATE_FINAL = ACC_PRIVATE & ACC_FINAL
+    val PUBLIC_STATIC = ACC_PUBLIC & ACC_STATIC
+    val PUBLIC_STATIC_FINAL = PUBLIC_FINAL & ACC_STATIC
+    val NOT_INTERFACE = !ACC_INTERFACE
+    val NOT_STATIC = !ACC_STATIC
+    val NOT_PRIVATE = !ACC_PRIVATE
+    val NOT_FINAL = !ACC_FINAL
+    val NOT_SYNCHRONIZED = !ACC_SYNCHRONIZED
+    val NOT_NATIVE = !ACC_NATIVE
+    val NOT_ABSTRACT = !ACC_ABSTRACT
 }
 
 

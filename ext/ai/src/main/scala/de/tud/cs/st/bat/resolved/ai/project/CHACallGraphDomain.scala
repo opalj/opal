@@ -53,13 +53,13 @@ import scala.collection.Map
  * Virtual calls on Arrays (clone(), toString(),...) are replaced by calls to the
  * respective methods of `java.lang.Object`.
  *
- * Signature polymorphic methods are correctly resolved (done by the
- * `lookupImplementingMethod` method defined in `ClassHierarchy`.)
+ * Signature polymorphic methods are correctly resolved (done by the method
+ * `lookupImplementingMethod` defined in `ClassHierarchy`.)
  *
  * ==Thread Safety==
  * '''This domain is not thread-safe'''. Hence, it can only be used by one abstract interpreter
  * at a time. However, it is no problem to have multiple abstract interpreters that
- * process different methods where each uses its own instance of a CHACallGraphDomain
+ * process different methods each using its own instance of a CHACallGraphDomain
  * object.
  *
  * @author Michael Eichberg
@@ -101,11 +101,13 @@ trait CHACallGraphDomain[Source, I]
 
     def allCallEdges: List[(Method, PC, Iterable[Method])] = callEdges
 
-    @inline private[this] def staticMethodCall(
+    // handles method calls where target method is statically resolved
+    @inline protected[this] def staticMethodCall(
         pc: PC,
         declaringClass: ObjectType,
         name: String,
-        descriptor: MethodDescriptor) {
+        descriptor: MethodDescriptor,
+        operands: List[DomainValue]): Unit = {
         classHierarchy.lookupMethodDefinition(
             declaringClass, name, descriptor, project
         ) match {
@@ -119,17 +121,20 @@ trait CHACallGraphDomain[Source, I]
             }
     }
 
-    @inline private[this] def virtualMethodCall(
+    @inline protected[this] def virtualMethodCall(
         pc: PC,
-        declaringClassType: ReferenceType,
+        declaringClassType: ObjectType,
         name: String,
         descriptor: MethodDescriptor,
-        operands: List[DomainValue]) {
+        operands: List[DomainValue]): Unit = {
 
-        val callees = cache.getOrElseUpdate(
-            declaringClassType, new MethodSignature(name, descriptor),
-            classHierarchy.lookupImplementingMethods(
-                declaringClassType.asObjectType, name, descriptor, project))
+        val methodSignature = new MethodSignature(name, descriptor)
+        val callees =
+            cache.getOrElseUpdate(declaringClassType, methodSignature) {
+                classHierarchy.lookupImplementingMethods(
+                    declaringClassType, name, descriptor, project
+                )
+            }
 
         if (callees.isEmpty)
             addUnresolvedMethodCall(
@@ -146,12 +151,13 @@ trait CHACallGraphDomain[Source, I]
         name: String,
         descriptor: MethodDescriptor,
         operands: List[DomainValue]): MethodCallResult = {
+        val result = super.invokevirtual(pc, declaringClass, name, descriptor, operands)
         if (declaringClass.isArrayType) {
-            staticMethodCall(pc, ObjectType.Object, name, descriptor)
+            staticMethodCall(pc, ObjectType.Object, name, descriptor, operands)
         } else {
-            virtualMethodCall(pc, declaringClass, name, descriptor, operands)
+            virtualMethodCall(pc, declaringClass.asObjectType, name, descriptor, operands)
         }
-        super.invokevirtual(pc, declaringClass, name, descriptor, operands)
+        result
     }
 
     abstract override def invokeinterface(
@@ -160,8 +166,9 @@ trait CHACallGraphDomain[Source, I]
         name: String,
         descriptor: MethodDescriptor,
         operands: List[DomainValue]): MethodCallResult = {
+        val result = super.invokeinterface(pc, declaringClass, name, descriptor, operands)
         virtualMethodCall(pc, declaringClass, name, descriptor, operands)
-        super.invokeinterface(pc, declaringClass, name, descriptor, operands)
+        result
     }
 
     /**
@@ -173,10 +180,11 @@ trait CHACallGraphDomain[Source, I]
         name: String,
         descriptor: MethodDescriptor,
         operands: List[DomainValue]): MethodCallResult = {
+        val result = super.invokespecial(pc, declaringClass, name, descriptor, operands)
         // for invokespecial the dynamic type is not "relevant" and the
         // first method that we find is the one that needs to be concrete 
-        staticMethodCall(pc, declaringClass, name, descriptor)
-        super.invokespecial(pc, declaringClass, name, descriptor, operands)
+        staticMethodCall(pc, declaringClass, name, descriptor, operands)
+        result
     }
 
     /**
@@ -188,13 +196,16 @@ trait CHACallGraphDomain[Source, I]
         name: String,
         descriptor: MethodDescriptor,
         operands: List[DomainValue]): MethodCallResult = {
-        staticMethodCall(pc, declaringClass, name, descriptor)
-        super.invokestatic(pc, declaringClass, name, descriptor, operands)
+        val result = super.invokestatic(pc, declaringClass, name, descriptor, operands)
+        staticMethodCall(pc, declaringClass, name, descriptor, operands)
+        result
     }
 }
 
 /**
  * Domain object which is used to calculate the call graph.
+ *
+ * @author Michael Eichberg
  */
 class DefaultCHACallGraphDomain[Source](
     val project: Project[Source],
@@ -203,17 +214,18 @@ class DefaultCHACallGraphDomain[Source](
     val theMethod: Method)
         extends Domain[Int]
         with DefaultDomainValueBinding[Int]
+        with GeneralizedArrayHandling
+        with Configuration
         with IgnoreMethodResults
         with IgnoreSynchronization
         with l0.DefaultTypeLevelIntegerValues[Int]
         with l0.DefaultTypeLevelLongValues[Int]
         with l0.DefaultTypeLevelFloatValues[Int]
         with l0.DefaultTypeLevelDoubleValues[Int]
-        with l0.DefaultTypeLevelReferenceValues[Int]
-        with l0.TypeLevelArrayInstructions
+        with l0.DefaultReferenceValuesBinding[Int]
         with l0.TypeLevelFieldAccessInstructions
         with l0.TypeLevelInvokeInstructions
-        with l1.ProjectBasedClassHierarchy[Source]
+        with ProjectBasedClassHierarchy[Source]
         with CHACallGraphDomain[Source, Int] {
 
     def identifier = theMethod.id

@@ -37,7 +37,7 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 import org.scalatest.ParallelTestExecution
 
 /**
@@ -48,10 +48,12 @@ import org.scalatest.ParallelTestExecution
 @RunWith(classOf[JUnitRunner])
 class AccessFlagsMatcherTest
         extends FlatSpec
-        with ShouldMatchers /*with BeforeAndAfterAll */
+        with Matchers /*with BeforeAndAfterAll */
         with ParallelTestExecution {
 
-    behavior of "a simple access flags matcher"
+    import AccessFlagsMatcher._
+
+    behavior of "an AccessFlagsMatcher"
 
     it should "be able to correctly match a class file's access flags (PUBLIC)" in {
         val accessFlags = ACC_PUBLIC.mask
@@ -66,8 +68,6 @@ class AccessFlagsMatcherTest
             case _               ⇒ /*success*/
         }
     }
-
-    behavior of "a multiple access flags matcher"
 
     it should "be able to correctly match a class file's access flags (PUBLIC ABSTRACT)" in {
         val accessFlags = ACC_PUBLIC.mask | ACC_ABSTRACT.mask

@@ -43,6 +43,22 @@ import org.scalatest.ParallelTestExecution
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class ObjectTypeTest extends FunSuite with ParallelTestExecution {
 
+    test("ObjectType Field Descriptor") {
+        val fieldType = FieldType("Ljava/lang/Object;")
+        val ObjectType(className) = fieldType
+        assert(className === "java/lang/Object")
+    }
+
+    test("toJavaClass") {
+        val ot2 = ObjectType("java/lang/Object")
+        val ot3 = ObjectType("java/lang/String")
+        val ot4 = ObjectType("java/util/List")
+
+        assert(ot2.toJavaClass == classOf[Object])
+        assert(ot3.toJavaClass == classOf[String])
+        assert(ot4.toJavaClass == classOf[java.util.List[_]])
+    }
+
     test("Structural Equality") {
         val ot1 = ObjectType("java/lang/Object")
         val ot2 = ObjectType("java/lang/Object")

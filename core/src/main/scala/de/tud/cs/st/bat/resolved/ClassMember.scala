@@ -53,7 +53,11 @@ trait ClassMember extends SourceElement with CommonAttributes {
 
     def isNonFinal: Boolean = !isFinal
 }
-
+/**
+ * Defines an extractor method for class members.
+ *
+ * @author Michael Eichberg
+ */
 object ClassMember {
 
     def unapply(classMember: ClassMember): Option[Int] = Some(classMember.accessFlags)
