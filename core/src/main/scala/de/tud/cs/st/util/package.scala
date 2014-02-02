@@ -31,32 +31,34 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package de.tud.cs.st
-package util
+
+import java.io.File
 
 /**
- * Functionality often required when measuring the performance.
+ * Various helper methods.
  *
  * @author Michael Eichberg
  */
-package object debug {
+package object util {
 
-    final def nanoSecondsToSeconds(value: Long): Double =
-        value.toDouble / 1000.0d / 1000.0d / 1000.0d
-
-    final def nsToSecs(value: Long): Double =
-        nanoSecondsToSeconds(value)
-
-    final def nanoSecondsToMilliseconds(value: Long): Double =
-        value.toDouble / 1000.0d / 1000.0d
-
-    final def asSeconds(startTimeInNanoSeconds: Long, endTimeInNanoSeconds: Long): Double =
-        nanoSecondsToSeconds(endTimeInNanoSeconds - startTimeInNanoSeconds)
-
+    /**
+     * Writes the given string (`data`) to a temporary file using the given prefix and suffix.
+     * Afterwards the system's native application that claims to be able to handle
+     * files with the given suffix is opened. If this fails the string is printed to
+     * the console.
+     * @param fileNamePrefix A string the identifies the content of the file. (E.g.,
+     *      "ClassHierarchy" or "CHACallGraph")
+     * @param fileNameSuffix The suffix of the file that identifies the used file format.
+     * @return The name of the file if it was possible to write the file and open
+     *   the native application.
+     */
     def writeAndOpenDesktopApplication(
         data: String,
         fileNamePrefix: String,
-        fileNameSuffix: String) {
+        fileNameSuffix: String): Option[File] = {
+
         import ControlAbstractions._
+
         try {
             val desktop = java.awt.Desktop.getDesktop()
             val file = java.io.File.createTempFile(fileNamePrefix, fileNameSuffix)
@@ -64,8 +66,17 @@ package object debug {
                 fos.write(data.getBytes("UTF-8"))
             }
             desktop.open(file)
+            Some(file)
         } catch {
-            case _: Error | _: Exception ⇒ println(data)
+            case ct: scala.util.control.ControlThrowable ⇒ throw ct
+            case t: Throwable ⇒ {
+                println(
+                    "An exception occured while writing/opening the file: "+
+                        t.getLocalizedMessage())
+                println(data)
+                None
+            }
         }
     }
+
 }

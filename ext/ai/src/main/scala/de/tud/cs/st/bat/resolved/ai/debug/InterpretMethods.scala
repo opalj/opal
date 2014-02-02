@@ -46,7 +46,8 @@ import scala.Console._
 import scala.util.control.ControlThrowable
 
 import de.tud.cs.st.util.ControlAbstractions.process
-import de.tud.cs.st.util.debug.nsToSecs
+import de.tud.cs.st.util.debug.PerformanceEvaluation
+import de.tud.cs.st.util.debug.PerformanceEvaluation.ns2sec
 
 import scala.collection.JavaConversions.enumerationAsScalaIterator
 
@@ -60,7 +61,7 @@ import scala.collection.JavaConversions.enumerationAsScalaIterator
  */
 object InterpretMethods {
 
-    val performanceEvaluationContext = new de.tud.cs.st.util.debug.PerformanceEvaluation {}
+    val performanceEvaluationContext = new PerformanceEvaluation
     import performanceEvaluationContext._
 
     def println(s: String): Unit = {
@@ -201,10 +202,10 @@ object InterpretMethods {
                 (
                     "During the interpretation of "+
                     methodsCount+" methods in "+
-                    classesCount+" classes (overall: "+nsToSecs(getTime('OVERALL))+
-                    "secs. (reading: "+nsToSecs(getTime('READING))+
-                    "secs., parsing: "+nsToSecs(getTime('PARSING))+
-                    "secs., ai: "+nsToSecs(getTime('AI))+
+                    classesCount+" classes (overall: "+ns2sec(getTime('OVERALL))+
+                    "secs. (reading: "+ns2sec(getTime('READING))+
+                    "secs., parsing: "+ns2sec(getTime('PARSING))+
+                    "secs., ai: "+ns2sec(getTime('AI))+
                     "secs.)) "+collectedExceptions.size+" exceptions occured."
                 ),
                 file

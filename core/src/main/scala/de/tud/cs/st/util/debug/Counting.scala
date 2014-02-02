@@ -35,7 +35,11 @@ package util
 package debug
 
 /**
- * Counts how often some piece of code is executed.
+ * Counts how often some piece of code is executed. Usually it is sufficient
+ * to create an instance of this object and the execute some piece of code using
+ * the function `time(Symbol,=>T)`. Afterwards it is possible to query this object
+ * to detailed information about how often `time` was evaluated and abou the
+ * accumulated time.
  *
  * @author Michael Eichberg
  */
@@ -45,20 +49,34 @@ class Counting extends PerformanceEvaluation {
 
     private[this] val count: Map[Symbol, Int] = Map()
 
+    /**
+     * Times and counts the execution of `f` and associates the information with the
+     * given symbol `s`.
+     */
     override def time[T](s: Symbol)(f: ⇒ T): T = {
         count.update(s, count.getOrElseUpdate(s, 0) + 1)
         super.time(s)(f)
     }
 
+    /**
+     * Returns how often some function `f` that was tagged using the given symbol
+     * was executed.
+     */
     def getCount(sym: Symbol): Int = {
         count.getOrElse(sym, 0)
     }
 
+    /**
+     * Resets all information associated with the given symbol.
+     */
     override def reset(sym: Symbol) {
         count.update(sym, 0)
         super.reset(sym)
     }
 
+    /**
+     * Resets the information associated with all symbols.
+     */
     override def resetAll {
         count.clear()
         super.resetAll()

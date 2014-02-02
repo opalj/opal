@@ -53,7 +53,7 @@ class PerformanceEvaluation {
      *
      * @param s Symbol used to put multiple measurements into relation.
      * @param f The function that will be evaluated and for which the execution
-     * time will be measured.
+     *      time will be measured.
      */
     def time[T](s: Symbol)(f: ⇒ T): T = {
         val startTime = System.nanoTime
@@ -78,7 +78,12 @@ class PerformanceEvaluation {
         times.clear()
     }
 }
-
+/**
+ * Collection of helper functions useful when evaluating the performance of some
+ * code.
+ *
+ * @author Michael Eichberg
+ */
 object PerformanceEvaluation {
 
     def asMB(bytesCount: Long): String = {
@@ -86,9 +91,18 @@ object PerformanceEvaluation {
         f"$mbs%.2f MB" // String interpolation
     }
 
+    final def ns2sec(nanoseconds: Long): Double =
+        nanoseconds.toDouble / 1000.0d / 1000.0d / 1000.0d
+
+    final def ns2ms(nanoseconds: Long): Double =
+        nanoseconds.toDouble / 1000.0d / 1000.0d
+
+    final def asSec(startTimeInNanoseconds: Long, endTimeInNanoseconds: Long): Double =
+        ns2sec(endTimeInNanoseconds - startTimeInNanoseconds)
+
     /**
      * Measures the amount of memory that is used as a side-effect
-     * of executing the given method.
+     * of executing the given function `f`.
      */
     def memory[T](f: ⇒ T)(mu: Long ⇒ Unit): T = {
         val memoryMXBean = java.lang.management.ManagementFactory.getMemoryMXBean
@@ -102,10 +116,10 @@ object PerformanceEvaluation {
     }
 
     /**
-     * Times the execution of a given method f (function literal / code block).
+     * Times the execution of a given function `f`.
      *
      * @param r A function that is passed the time (in nano seconds) that it
-     *  took to evaluate the function f.
+     *      took to evaluate `f`. `r` is called even if `f` fails.
      */
     def time[T](f: ⇒ T)(r: Long ⇒ Unit): T = {
         val startTime: Long = System.nanoTime

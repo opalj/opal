@@ -46,9 +46,10 @@ package project
  */
 object CallGraphVisualization {
 
-    import de.tud.cs.st.util.debug._
-    import de.tud.cs.st.util.debug.PerformanceEvaluation.{ time, memory, asMB }
-    import Console._
+    import de.tud.cs.st.util.debug.PerformanceEvaluation.{ time, memory, asMB, ns2sec }
+
+    import scala.Console.{ err, RED, RESET }
+    import java.net.URL
 
     /**
      * Traces the interpretation of a single method and prints out the results.
@@ -60,7 +61,7 @@ object CallGraphVisualization {
      */
     def main(args: Array[String]) {
         if ((args.size < 3) || (args.size > 4)) {
-            println("You have to specify the method that should be analyzed.")
+            println("You have to specify:")
             println("\t1) The algorithm to use (CHA or VTA).")
             println("\t2) A jar/class file or a directory containing jar/class files.")
             println("\t3) A pattern that specifies which class/interface types should be included in the output.")
@@ -73,13 +74,13 @@ object CallGraphVisualization {
             try {
                 val secs = Integer.parseInt(args(3), 10)
                 if (secs > 30) {
-                    Console.err.println("\t3) The number of seconds before the analysis starts (e.g., to attach a profiler).")
+                    err.println("\t4) The number of seconds before the analysis starts (max. 30).")
                     sys.exit(-30)
                 }
                 Thread.sleep(secs * 1000)
             } catch {
                 case _: NumberFormatException ⇒
-                    Console.err.println("\t3) The number of seconds before the analysis starts (e.g., to attach a profiler).")
+                    err.println("\t4) The number of seconds before the analysis starts (max 30).")
                     sys.exit(-31)
             }
         }
@@ -106,7 +107,7 @@ object CallGraphVisualization {
                                 sys.exit(-3)
                         }
                     bat.resolved.analyses.IndexBasedProject(classFiles)
-                } { t ⇒ println("Setting up the project took: "+nsToSecs(t)) }
+                } { t ⇒ println("Setting up the project took: "+ns2sec(t)) }
             } { m ⇒ println("Required memory for base representation: "+asMB(m)) }
         val fqnFilter = args(2)
 
@@ -114,18 +115,19 @@ object CallGraphVisualization {
         // GRAPH CONSTRUCTION
         //
         import CallGraphFactory.defaultEntryPointsForLibraries
+        val callGraphAlgorithm = args(0)
         val (callGraph, unresolvedMethodCalls, exceptions) =
             memory {
                 time {
-                    val callGraphAlgorithm = args(0) match {
+                    val callGraphAlgorithmConfig = args(0) match {
                         case "VTA" ⇒
-                            new VTACallGraphAlgorithmConfiguration[java.net.URL]()
+                            new VTACallGraphAlgorithmConfiguration[URL]()
                         case _ /*CHA*/ ⇒
-                            new CHACallGraphAlgorithmConfiguration[java.net.URL]()
+                            new CHACallGraphAlgorithmConfiguration[URL]()
                     }
                     val entryPoints = defaultEntryPointsForLibraries(project)
-                    CallGraphFactory.create(project, entryPoints, callGraphAlgorithm)
-                } { t ⇒ println("Creating the call graph took: "+nsToSecs(t)) }
+                    CallGraphFactory.create(project, entryPoints, callGraphAlgorithmConfig)
+                } { t ⇒ println("Creating the call graph took: "+ns2sec(t)) }
             } { m ⇒ println("Required memory for call graph: "+asMB(m)) }
 
         // Some statistics 
@@ -153,6 +155,7 @@ object CallGraphVisualization {
         //
         // Let's create the visualization
         //
+        import de.tud.cs.st.util.writeAndOpenDesktopApplication
         import de.tud.cs.st.util.graphs.{ toDot, SimpleNode, Node }
         val nodes: Set[Node] = {
 
@@ -221,7 +224,9 @@ object CallGraphVisualization {
         }
 
         // Generate and show the graph
-        toDot.generateAndOpenDOT("CallGraph", nodes)
+        writeAndOpenDesktopApplication(
+            toDot.generateDot(nodes),
+            callGraphAlgorithm+"CallGraph", ".dot")
         println("Callgraph:")
         println("Number of nodes: "+nodes.size)
         val edges = nodes.foldLeft(0) { (l, r) ⇒

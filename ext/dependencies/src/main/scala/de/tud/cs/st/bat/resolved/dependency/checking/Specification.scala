@@ -321,8 +321,7 @@ class Specification
 
     def analyze(classFileProviders: Traversable[(ClassFile, URL)]*): Set[Violation] = {
 
-        import de.tud.cs.st.util.debug.PerformanceEvaluation.time
-        import de.tud.cs.st.util.debug._
+        import de.tud.cs.st.util.debug.PerformanceEvaluation.{ ns2sec, time }
 
         // 1. create and update the support data structures
         var project: IndexBasedProject[URL] = null
@@ -351,7 +350,7 @@ class Specification
             for {
                 classFileProvider ← classFileProviders
                 cs @ (classFile, source) ← classFileProvider
-            } {                
+            } {
                 classFiles = cs :: classFiles
                 dependencyExtractor.process(classFile)
             }
@@ -362,7 +361,7 @@ class Specification
                     "1. Reading "+
                     project.classFilesCount+" class files (defined types: "+
                     project.objectTypesCount+") and extracting dependencies took "+
-                    nsToSecs(executionTime).toString+" seconds."+
+                    ns2sec(executionTime).toString+" seconds."+
                     Console.BLACK)
         }
 
@@ -393,7 +392,7 @@ class Specification
             Console.println(
                 Console.GREEN+
                     "2. Determing the extension of the ensembles finished in "+
-                    nsToSecs(executionTime).toString+" seconds."+
+                    ns2sec(executionTime).toString+" seconds."+
                     Console.BLACK)
         }
 
@@ -412,7 +411,7 @@ class Specification
             Console.println(
                 Console.GREEN+
                     "3. Checking the specified dependency constraints finished in "+
-                    nsToSecs(executionTime).toString+
+                    ns2sec(executionTime).toString+
                     " seconds."+
                     Console.BLACK)
         }
