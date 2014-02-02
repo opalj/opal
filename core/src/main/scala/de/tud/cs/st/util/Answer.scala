@@ -99,7 +99,7 @@ sealed trait Answer {
      * If this answer is not defined the given function is evaluated and that
      * result is returned, otherwise this answer is returned.
      */
-    def orElse(f: ⇒ Answer): Answer = this
+    def orElse(f: ⇒ Answer): Answer = this // TODO [Rename] ifUndefined
 }
 /**
  * Defines factory methods for answer objects.
