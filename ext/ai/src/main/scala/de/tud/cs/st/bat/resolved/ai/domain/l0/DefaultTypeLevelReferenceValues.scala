@@ -67,7 +67,7 @@ trait DefaultTypeLevelReferenceValues[+I]
             other match {
                 case that: NullValue ⇒ NoUpdate
                 case that: ReferenceValue ⇒
-                    assume(that.isNull.maybeYes)
+                    assume(that.isNull.isYesOrUnknown)
                     StructuralUpdate(other)
             }
         }
@@ -80,7 +80,7 @@ trait DefaultTypeLevelReferenceValues[+I]
         this: DomainArrayValue ⇒
 
         override def refineIsNull(pc: PC, isNull: Answer): DomainReferenceValue = {
-            if (isNull.yes)
+            if (isNull.isYes)
                 NullValue(pc)
             else
                 this
@@ -190,7 +190,7 @@ trait DefaultTypeLevelReferenceValues[+I]
         this: DomainObjectValue ⇒
 
         override def refineIsNull(pc: PC, isNull: Answer): DomainReferenceValue = {
-            if (isNull.yes)
+            if (isNull.isYes)
                 NullValue(pc)
             else
                 this
@@ -252,7 +252,7 @@ trait DefaultTypeLevelReferenceValues[+I]
             // has to hold. Hence, we only need to handle the case where 
             // supertype is more strict than this type's upper type bound.
             val isSubtypeOf = domain.isSubtypeOf(supertype, theUpperTypeBound)
-            if (isSubtypeOf.yes)
+            if (isSubtypeOf.isYes)
                 if (supertype.isArrayType)
                     ArrayValue(pc, supertype.asArrayType)
                 else
@@ -339,7 +339,7 @@ trait DefaultTypeLevelReferenceValues[+I]
          */
         override def isValueSubtypeOf(supertype: ReferenceType): Answer = {
             val isSubtypeOf = upperTypeBound exists { anUpperTypeBound ⇒
-                domain.isSubtypeOf(anUpperTypeBound, supertype).yes
+                domain.isSubtypeOf(anUpperTypeBound, supertype).isYes
             }
             if (isSubtypeOf)
                 Yes
@@ -368,7 +368,7 @@ trait DefaultTypeLevelReferenceValues[+I]
             var newUpperTypeBound: UIDList[ObjectType] = UIDList.empty
             upperTypeBound foreach { (anUpperTypeBound: ObjectType) ⇒
                 // ATTENTION: "!..yes" is not the same as "no" (there is also unknown)
-                if (!domain.isSubtypeOf(supertype, anUpperTypeBound).yes)
+                if (!domain.isSubtypeOf(supertype, anUpperTypeBound).isYes)
                     newUpperTypeBound = newUpperTypeBound + anUpperTypeBound
             }
             if (newUpperTypeBound.size == 0)

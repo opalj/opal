@@ -41,65 +41,60 @@ package util
 sealed trait Answer {
 
     /**
+     * Returns `true` if and only if the answer is `Yes`.
+     */
+    def isYes: Boolean
+
+    /**
+     * Returns `true` if and only if the answer is `No`.
+     */
+    def isNo: Boolean
+    /**
+     * Returns `true` if the result of a computation is the answer `Unknown`.
+     *
+     * Effectively the same as a comparison with "Unknown".
+     */
+    def isUnknown: Boolean
+
+    /**
+     * Returns `true` if the answer is `Yes` or `Unknown`, `false` otherwise.
+     */
+    def isNotNo: Boolean
+
+    final def isYesOrUnknown: Boolean = isNotNo
+
+    /**
+     * Returns `true` if the answer is `No` or `Unknown`, `false` otherwise.
+     */
+    def isNotYes: Boolean
+
+    final def isNoOrUnknown: Boolean = isNotYes
+
+    /**
+     * Returns `true` if the answer is either `Yes` or `No`; false if this answer
+     * represents `Unknown`.
+     */
+    def isYesOrNo: Boolean
+
+    /**
      * The negation of this `Answer`. If the answer is `Unknown` the negation is
      * still `Unknown`.
      */
     def negate: Answer
 
     /**
-     * Returns `true` if the answer is `Yes` or `Unknown`, `false` otherwise.
-     */
-    def maybeYes: Boolean // TODO [Rename] isUnknownOrYes
-
-    /**
-     * Returns `true` if the answer is `No` or `Unknown`, `false` otherwise.
-     */
-    def maybeNo: Boolean // TODO [Rename] isUnknownOrNo
-
-    /**
-     * Returns `true` if and only if the answer is `Yes`. This implies that `isDefined`
-     * is also `true`.
-     */
-    def yes: Boolean
-
-    /**
-     * Returns `true` if and only if the answer is `No`. This implies that `isDefined`
-     * is also `true`.
-     */
-    def no: Boolean
-
-    /**
-     * Returns `true` in case of a definitive answer, that is, if the answer is
-     * either `Yes` or `No`.
-     */
-    def isDefined: Boolean
-
-    /**
-     * Returns `true` in case that no definitive answer can be given.
-     * Calling `isUndefined` is effectively the same as a (reference) comparison of
-     * an `Answer` with `Unknown`.
-     */
-    def isUndefined: Boolean
-
-    /**
-     * Merges this answer with the given answer. Basically, if the other
+     * Joins this answer and the given answer. Basically, if the other
      * `Answer` is identical to this answer `this` answer is returned, otherwise
      * `Unknown` is returned.
+     * Facilitates the concatenation of answers using `&=`.
      */
-    def merge(other: Answer): Answer
+    def &(other: Answer): Answer
 
     /**
-     * Joins this answer and the given answer.
-     * Same as merge, but enables us to easily concatenate `Answer`s using `&=` if
-     * the answer is stored in a `var`(iable).
+     * If this answer represents Unknown the given function is evaluated and that
+     * result is returned, otherwise `this` answer is returned.
      */
-    def &(other: Answer): Answer = merge(other)
-
-    /**
-     * If this answer is not defined the given function is evaluated and that
-     * result is returned, otherwise this answer is returned.
-     */
-    def orElse(f: ⇒ Answer): Answer = this // TODO [Rename] ifUndefined
+    def ifUnknown(f: ⇒ Answer): Answer = this
 }
 /**
  * Defines factory methods for answer objects.
@@ -111,45 +106,47 @@ object Answer {
  * Represents a `Yes` answer to a question.
  */
 final case object Yes extends Answer {
-    def negate = No
-    def maybeYes: Boolean = true
-    def maybeNo: Boolean = false
-    def yes: Boolean = true
-    def no: Boolean = false
-    def isDefined: Boolean = true
-    def isUndefined: Boolean = false
+    override def isYes: Boolean = true
+    override def isNo: Boolean = false
+    override def isUnknown: Boolean = false
 
-    def merge(other: Answer) = if (other eq this) this else Unknown
+    override def isNotNo: Boolean = true
+    override def isNotYes: Boolean = false
+    override def isYesOrNo: Boolean = true
+
+    override def negate = No
+    override def &(other: Answer) = if (other eq this) this else Unknown
 }
 /**
  * Represents a `No` answer to a question.
  */
 final case object No extends Answer {
-    def negate = Yes
-    def maybeYes: Boolean = false
-    def maybeNo: Boolean = true
-    def yes: Boolean = false
-    def no: Boolean = true
-    def isDefined: Boolean = true
-    def isUndefined: Boolean = false
+    override def isYes: Boolean = false
+    override def isNo: Boolean = true
+    override def isUnknown: Boolean = false
 
-    def merge(other: Answer) = if (other eq this) this else Unknown
+    override def isNotNo: Boolean = false
+    override def isNotYes: Boolean = true
+    override def isYesOrNo: Boolean = true
+
+    override def negate = Yes
+    override def &(other: Answer) = if (other eq this) this else Unknown
 }
 /**
  * Represents an `Unknown` answer to a question.
  */
 final case object Unknown extends Answer {
-    def negate = this
-    def maybeYes: Boolean = true
-    def maybeNo: Boolean = true
-    def yes: Boolean = false
-    def no: Boolean = false
-    def isDefined: Boolean = false
-    def isUndefined: Boolean = true
+    override def isYes: Boolean = false
+    override def isNo: Boolean = false
+    override def isUnknown: Boolean = true
 
-    def merge(other: Answer) = Unknown
+    override def isNotNo: Boolean = true
+    override def isNotYes: Boolean = true
+    override def isYesOrNo: Boolean = false
 
-    override def orElse(f: ⇒ Answer): Answer = f
+    override def negate = this
+    override def &(other: Answer) = Unknown
+    override def ifUnknown(f: ⇒ Answer): Answer = f
 }
 
 

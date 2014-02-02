@@ -53,7 +53,7 @@ abstract class ReturnInstruction extends Instruction {
             handler.catchType.isEmpty ||
                 Code.preDefinedClassHierarchy.isSubtypeOf(
                     ObjectType.IllegalMonitorStateException,
-                    handler.catchType.get).yes
+                    handler.catchType.get).isYes
         } match {
             case Some(handler) ⇒ collection.mutable.UShortSet(handler.startPC)
             case None          ⇒ collection.mutable.UShortSet.empty

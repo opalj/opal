@@ -75,7 +75,7 @@ trait VTACallGraphDomain[Source, I] extends CHACallGraphDomain[Source, I] { doma
         //  - the value maybe null => additional call to the constructor of NullPointerException
 
         val isNull = value.isNull
-        if (isNull.maybeYes) {
+        if (isNull.isYesOrUnknown) {
             staticMethodCall(
                 pc,
                 ObjectType.NullPointerException,
@@ -84,7 +84,7 @@ trait VTACallGraphDomain[Source, I] extends CHACallGraphDomain[Source, I] { doma
                 List(domain.NullPointerException(pc)))
         }
         // there may be additional calls
-        if (isNull.maybeNo) {
+        if (isNull.isNoOrUnknown) {
             val isPrecise = value.isPrecise
             val upperTypeBound = value.upperTypeBound
             if (isPrecise && upperTypeBound.tail.isEmpty) {
@@ -99,7 +99,7 @@ trait VTACallGraphDomain[Source, I] extends CHACallGraphDomain[Source, I] { doma
                 for (utb ← upperTypeBound) {
                     if (utb.isArrayType) {
                         staticMethodCall(pc, ObjectType.Object, name, descriptor, operands)
-                    } else if (domain.isSubtypeOf(utb, declaringClassType).maybeYes)
+                    } else if (domain.isSubtypeOf(utb, declaringClassType).isYesOrUnknown)
                         super.virtualMethodCall(pc, utb.asObjectType, name, descriptor, operands)
                     else {
                         super.virtualMethodCall(pc, declaringClassType, name, descriptor, operands)

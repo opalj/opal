@@ -197,7 +197,7 @@ object MoreCheckers {
             for {
                 classFile ← classFiles if !classFile.isAnnotationDeclaration && classFile.superclassType.isDefined
                 method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object)) ← classFile.methods
-                if !classHierarchy.isSubtypeOf(classFile.thisType, ObjectType("java/lang/Cloneable")).no
+                if !classHierarchy.isSubtypeOf(classFile.thisType, ObjectType("java/lang/Cloneable")).isNo
             } yield (classFile.thisType.fqn, method.name)
         }(t ⇒ collect("CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE", t /*nsToSecs(t)*/ ))
         println(", " /*"\tViolations: "*/ /*+cloneButNotCloneable.mkString(", ")*/ +cloneButNotCloneable.size)

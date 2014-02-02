@@ -844,13 +844,13 @@ trait AI[D <: SomeDomain] {
                             var previousKey = firstKey
                             for ((key, offset) ← switch.npairs) {
                                 if (!branchToDefaultRequired && (key - previousKey) > 1) {
-                                    if ((previousKey until key).exists(v ⇒ domain.isSomeValueInRange(index, v, v).maybeYes)) {
+                                    if ((previousKey until key).exists(v ⇒ domain.isSomeValueInRange(index, v, v).isYesOrUnknown)) {
                                         branchToDefaultRequired = true
                                     } else {
                                         previousKey = key
                                     }
                                 }
-                                if (domain.isSomeValueInRange(index, key, key).maybeYes) {
+                                if (domain.isSomeValueInRange(index, key, key).isYesOrUnknown) {
                                     val branchTarget = pc + offset
                                     val (updatedOperands, updatedLocals) =
                                         domain.establishValue(branchTarget, key, index, remainingOperands, locals)
@@ -858,7 +858,7 @@ trait AI[D <: SomeDomain] {
                                 }
                             }
                             if (branchToDefaultRequired ||
-                                domain.isSomeValueNotInRange(index, firstKey, switch.npairs(switch.npairs.size - 1)._1).maybeYes) {
+                                domain.isSomeValueNotInRange(index, firstKey, switch.npairs(switch.npairs.size - 1)._1).isYesOrUnknown) {
                                 gotoTarget(pc, pc + switch.defaultOffset, remainingOperands, locals)
                             }
                         }
@@ -871,7 +871,7 @@ trait AI[D <: SomeDomain] {
                         val high = tableswitch.high
                         var v = low
                         while (v <= high) {
-                            if (domain.isSomeValueInRange(index, v, v).maybeYes) {
+                            if (domain.isSomeValueInRange(index, v, v).isYesOrUnknown) {
                                 val branchTarget = pc + tableswitch.jumpOffsets(v - low)
                                 val (updatedOperands, updatedLocals) =
                                     domain.establishValue(branchTarget, v, index, remainingOperands, locals)
@@ -879,7 +879,7 @@ trait AI[D <: SomeDomain] {
                             }
                             v = v + 1
                         }
-                        if (domain.isSomeValueNotInRange(index, low, high).maybeYes) {
+                        if (domain.isSomeValueNotInRange(index, low, high).isYesOrUnknown) {
                             gotoTarget(pc, pc + tableswitch.defaultOffset, remainingOperands, locals)
                         }
 
@@ -897,7 +897,7 @@ trait AI[D <: SomeDomain] {
                         // they appear in the corresponding exception handler table.
                         val exceptionValue = operands.head
                         val isExceptionValueNull = isNull(exceptionValue)
-                        if (isExceptionValueNull.maybeYes) {
+                        if (isExceptionValueNull.isYesOrUnknown) {
                             // if the operand of the athrow exception is null, a new 
                             // NullPointerException is raised by the JVM
                             // if the operand of the athrow exception is null, a new 
@@ -906,10 +906,10 @@ trait AI[D <: SomeDomain] {
                                 InitializedObjectValue(pc, ObjectType.NullPointerException)
                             )
                         }
-                        if (isExceptionValueNull.maybeNo) {
+                        if (isExceptionValueNull.isNoOrUnknown) {
                             val (updatedOperands, updatedLocals) = {
                                 val operands = List(exceptionValue)
-                                if (isExceptionValueNull.isUndefined)
+                                if (isExceptionValueNull.isUnknown)
                                     establishIsNonNull(
                                         pc, exceptionValue,
                                         operands,
@@ -1689,7 +1689,7 @@ trait AI[D <: SomeDomain] {
                     case 192 /*checkcast*/ ⇒
                         val objectref = operands.head
                         val supertype = instruction.asInstanceOf[CHECKCAST].referenceType
-                        if (isNull(objectref).yes)
+                        if (isNull(objectref).isYes)
                             // if objectref is null => UNCHANGED (see spec. for details)
                             fallThrough()
                         else {
@@ -1726,7 +1726,7 @@ trait AI[D <: SomeDomain] {
                         val referenceType = instruction.asInstanceOf[INSTANCEOF].referenceType
 
                         val result =
-                            if (isNull(objectref).yes)
+                            if (isNull(objectref).isYes)
                                 domain.BooleanValue(pc, false)
                             else
                                 domain.isValueSubtypeOf(objectref, referenceType) match {

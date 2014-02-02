@@ -468,7 +468,7 @@ class ClassHierarchy private (
                 var answer: Answer = No
                 superinterfaceTypes foreach { intermediateType ⇒
                     var anotherAnswer = implementsInterface(intermediateType, theSupertype)
-                    if (anotherAnswer.yes)
+                    if (anotherAnswer.isYes)
                         return Yes
                     answer &= anotherAnswer
                 }
@@ -481,7 +481,7 @@ class ClassHierarchy private (
                 if (supertypeIsInterface) {
                     var doesInheritFromInterface =
                         implementsInterface(subclassType, theSupertype)
-                    if (doesInheritFromInterface.yes)
+                    if (doesInheritFromInterface.isYes)
                         Yes
                     else
                         answerSoFar & doesInheritFromInterface
@@ -495,7 +495,7 @@ class ClassHierarchy private (
                     return Yes
 
                 var answer = isSubtypeOf(superSubclassType)
-                if (answer.yes)
+                if (answer.isYes)
                     Yes
                 else
                     inheritsFromInterface(answer)

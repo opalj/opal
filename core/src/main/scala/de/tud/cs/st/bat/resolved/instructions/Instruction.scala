@@ -129,7 +129,7 @@ object Instruction {
                 handler.catchType.isEmpty ||
                     Code.preDefinedClassHierarchy.isSubtypeOf(
                         exception,
-                        handler.catchType.get).yes
+                        handler.catchType.get).isYes
             } match {
                 case Some(handler) ⇒ pcs += handler.startPC
                 case _             ⇒ /* exception is not handled */
@@ -153,7 +153,7 @@ object Instruction {
             handler.catchType.isEmpty ||
                 Code.preDefinedClassHierarchy.isSubtypeOf(
                     exception,
-                    handler.catchType.get).yes
+                    handler.catchType.get).isYes
         } match {
             case Some(handler) ⇒ UShortSet(nextInstruction, handler.startPC)
             case None          ⇒ UShortSet(nextInstruction)

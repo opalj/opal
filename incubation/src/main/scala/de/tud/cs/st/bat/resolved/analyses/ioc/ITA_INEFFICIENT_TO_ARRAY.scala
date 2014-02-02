@@ -56,7 +56,7 @@ object ITA_INEFFICIENT_TO_ARRAY extends (Project[_] ⇒ Iterable[(ClassFile, Met
         if (!t.isObjectType) {
             false
         } else {
-            classHierarchy.isSubtypeOf(t.asInstanceOf[ObjectType], collectionInterface).maybeNo ||
+            classHierarchy.isSubtypeOf(t.asInstanceOf[ObjectType], collectionInterface).isNoOrUnknown ||
                 t == listInterface // TODO needs more heuristic or more analysis
         }
     }
