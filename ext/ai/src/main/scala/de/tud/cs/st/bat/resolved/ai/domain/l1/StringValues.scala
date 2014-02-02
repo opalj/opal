@@ -45,7 +45,7 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  *
  * @author Michael Eichberg
  */
-trait StringValues[+I] extends ReferenceValues[I] {
+trait StringValues[+I] extends ReferenceValues[I] with JavaObjectConversion {
     domain: Configuration with IntegerValuesComparison with ClassHierarchy ⇒
 
     type DomainStringValue <: StringValue with DomainObjectValue
@@ -81,6 +81,23 @@ trait StringValues[+I] extends ReferenceValues[I] {
 
     // Need to be implemented (the default implementation is now longer sufficient!)
     override def StringValue(pc: PC, value: String): DomainObjectValue
+
+    abstract override def toJavaObject(value: DomainValue): Option[Object] = {
+        if (value.isInstanceOf[StringValue]) {
+            return Some(new java.lang.String(value.asInstanceOf[StringValue].value))
+        } else {
+            super.toJavaObject(value)
+        }
+    }
+
+    abstract override def toDomainValue(pc: PC, value: Object): DomainValue = {
+        if (value.isInstanceOf[String]) {
+            StringValue(pc, value.asInstanceOf[String])
+        } else {
+            super.toDomainValue(pc, value)
+        }
+    }
+
 }
 
 
