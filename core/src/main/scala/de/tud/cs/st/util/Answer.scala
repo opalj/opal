@@ -97,9 +97,13 @@ sealed trait Answer {
     def ifUnknown(f: ⇒ Answer): Answer = this
 }
 /**
- * Defines factory methods for answer objects.
+ * Factory for `Answer` objects.
  */
 object Answer {
+    /**
+     * Returns [[de.tud.cs.st.util.Yes]] if `value` is `true` and
+     * [[de.tud.cs.st.util.No]] otherwise.
+     */
     def apply(value: Boolean): Answer = if (value) Yes else No
 }
 /**
