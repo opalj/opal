@@ -32,51 +32,34 @@
  */
 package de.tud.cs.st
 package util
-package debug
 
 /**
- * Counts how often some piece of code is executed. Usually it is sufficient
- * to create an instance of this object and the execute some piece of code using
- * the function `time(Symbol,=>T)`. Afterwards it is possible to query this object
- * to detailed information about how often `time` was evaluated and abou the
- * accumulated time.
+ * A basic facility to model shared and exclusive access to some functionality/data
+ * structure.
  *
  * @author Michael Eichberg
  */
-class Counting extends PerformanceEvaluation {
+trait Locking {
 
-    import scala.collection.mutable.Map
+    import java.util.concurrent.locks.ReentrantReadWriteLock
+    private[this] val rwLock = new ReentrantReadWriteLock()
 
-    private[this] val count: Map[Symbol, Int] = Map()
-
-    /**
-     * Times and counts the execution of `f` and associates the information with the
-     * given symbol `s`.
-     */
-    override protected[this] def doUpdateTimes(s: Symbol, duration: Long) : Unit = {
-        super.doUpdateTimes(s, duration)
-        count.update(s, count.getOrElseUpdate(s, 0) + 1)
+    def withWriteLock[B](f: ⇒ B): B = {
+        try {
+            rwLock.writeLock().lock()
+            f
+        } finally {
+            rwLock.writeLock().unlock()
+        }
     }
 
-    /**
-     * Resets all information associated with the given symbol.
-     */
-    override protected[this] def doReset(sym: Symbol): Unit = {
-        super.reset(sym)
-        count.update(sym, 0)
+    def withReadLock[B](f: ⇒ B): B = {
+        try {
+            rwLock.readLock().lock()
+            f
+        } finally {
+            rwLock.readLock().unlock()
+        }
     }
-
-    override protected[this] def doResetAll(): Unit = {
-        super.resetAll()
-        count.clear()
-    }
-
-    /**
-     * Returns how often some function `f` that was tagged using the given symbol
-     * was executed.
-     */
-    def getCount(s: Symbol): Int = withReadLock { doGetCount(s) }
-
-    protected[this] def doGetCount(s: Symbol): Int = count.getOrElse(s, 0)
-
 }
+
