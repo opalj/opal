@@ -60,7 +60,7 @@ trait VTACallGraphDomain[Source, I] extends CHACallGraphDomain[Source, I] { doma
         declaringClassType: ObjectType,
         name: String,
         descriptor: MethodDescriptor,
-        operands: List[DomainValue]) {
+        operands: List[DomainValue]): Unit = {
         // MODIFIED CHA - we used the type information that is readily available
         val receiver = operands.last
         val IsAReferenceValue(value) = typeOfValue(receiver)
@@ -83,6 +83,7 @@ trait VTACallGraphDomain[Source, I] extends CHACallGraphDomain[Source, I] { doma
                 MethodDescriptor.NoArgsAndReturnVoid,
                 List(domain.NullPointerException(pc)))
         }
+
         // there may be additional calls
         if (isNull.isNoOrUnknown) {
             val isPrecise = value.isPrecise
@@ -92,17 +93,24 @@ trait VTACallGraphDomain[Source, I] extends CHACallGraphDomain[Source, I] { doma
                 if (theType.isArrayType)
                     staticMethodCall(pc, ObjectType.Object, name, descriptor, operands)
                 else
-                    staticMethodCall(pc, upperTypeBound.head.asObjectType, name, descriptor, operands)
+                    staticMethodCall(pc, theType.asObjectType, name, descriptor, operands)
             } else {
-                if (isPrecise) println(receiver)
+                // _Also_ supports the case where we have a "precise type", but
+                // multiple types as an upper bound. This is useful in some selected
+                // cases where the class is generated dynamically at runtime and 
+                // hence, the currently available information is simply the best that
+                // is available.
 
                 for (utb ← upperTypeBound) {
                     if (utb.isArrayType) {
                         staticMethodCall(pc, ObjectType.Object, name, descriptor, operands)
-                    } else if (domain.isSubtypeOf(utb, declaringClassType).isYesOrUnknown)
-                        super.virtualMethodCall(pc, utb.asObjectType, name, descriptor, operands)
-                    else {
+                    } else if (domain.isSubtypeOf(declaringClassType, utb).isYes) {
+                        // for whatever reason, but the invoke's declaring class type
+                        // is "more" precise
                         super.virtualMethodCall(pc, declaringClassType, name, descriptor, operands)
+                        return // it doesn't make sense
+                    } else {
+                        super.virtualMethodCall(pc, utb.asObjectType, name, descriptor, operands)
                     }
                 }
             }
