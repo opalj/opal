@@ -76,19 +76,13 @@ trait TypeLevelReferenceValues[+I]
                 "refining "+value+" failed: "+refinementGoal,
                 null, true, false)
 
-    protected def mergeDomainValues(pc: PC, v1: DomainValue, v2: DomainValue): DomainValue = {
-        v1.join(pc, v2) match {
-            case NoUpdate      ⇒ v1
-            case SomeUpdate(v) ⇒ v
-        }
-    }
-
     /**
      * Merges those exceptions that have the same upper type bound. This ensures
      * that per exception type only one DomainValue (which may be a
-     * `MultipleReferenceValues`) is used.
+     * `MultipleReferenceValues`) is used. The standard join/merge operation does
+     * the merge based on the origin of a value.
      */
-    protected def mergeMultipleExceptionValues(
+    def mergeMultipleExceptionValues(
         pc: PC,
         v1s: ExceptionValues,
         v2s: ExceptionValues): ExceptionValues = {

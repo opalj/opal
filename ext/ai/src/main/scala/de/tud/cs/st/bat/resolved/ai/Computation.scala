@@ -88,6 +88,11 @@ sealed trait Computation[+V, +E] {
     def returnsNormally: Boolean
 }
 
+/**
+ * Factory for `Computation` objects.
+ *
+ * @author Michael Eichberg
+ */
 object Computation {
 
     def apply[E](es: Seq[E]): Computation[Nothing, Seq[E]] = {

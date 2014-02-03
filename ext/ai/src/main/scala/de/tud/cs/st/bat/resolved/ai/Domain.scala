@@ -1563,6 +1563,18 @@ trait Domain[+I] {
     //
 
     /**
+     * Merges the given value v1 with the value v2.
+     *
+     * This operation is commutative.
+     */
+    def mergeDomainValues(pc: PC, v1: DomainValue, v2: DomainValue): DomainValue = {
+        v1.join(pc, v2) match {
+            case NoUpdate      ⇒ v1
+            case SomeUpdate(v) ⇒ v
+        }
+    }
+
+    /**
      * Joins the given operand stacks and local variables.
      *
      * In general there should be no need to override this method.
