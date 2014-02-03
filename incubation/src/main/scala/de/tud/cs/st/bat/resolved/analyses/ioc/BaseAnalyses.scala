@@ -138,14 +138,4 @@ object BaseAnalyses {
                 case _ ⇒ false
             }
     }
-
-    /**
-     * Returns a filtered sequence of instructions without the bytecode padding
-     * // FIXME Usage of "BaseAnalyses.withIndex" leads to grossly inefficient code!
-     */
-    def withIndex(instructions: Array[Instruction]): Seq[(Instruction, Int)] = {
-        instructions.zipWithIndex.filter {
-            case (instr, _) ⇒ instr != null
-        }
-    }
 }

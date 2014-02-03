@@ -50,15 +50,39 @@ package object analyses {
     type Project[Source] = ProjectLike[Source]
     type SomeProject = ProjectLike[_]
 
-    
     /**
-     * Converts a URL in a location identifier.
+     * Shortens an absolute path to one relative to the current working directory.
+     */
+    def absoluteToRelative(path: String): String = {
+        path.stripPrefix(System.getProperty("user.dir")+System.getProperty("file.separator"))
+    }
+
+    /**
+     * Turns the jar URL format into a string better suited for the console reports.
+     */
+    def prettifyJarUrl(jarurl: String): String = {
+        // Extract the paths of jar and class files.
+        // jar URL format: jar:file:<jar path>!/<inner class file path>
+        val split = jarurl.stripPrefix("jar:file:").split("!/")
+
+        val jar = absoluteToRelative(split.head)
+        val file = split.last
+
+        jar+"!/"+Console.BOLD+file+Console.RESET
+    }
+
+    /**
+     * Converts a URL into a string, intended to be displayed as part of console reports.
+     *
+     * Absolute file paths are shortened to be relative to the current directory,
+     * to avoid using up too much screen space in the console.
      */
     def urlToLocationIdentifier(url: URL): String = {
-        if (url.getProtocol() == "file")
-            url.getFile()
-        else
-            "!URL<"+url.toExternalForm()+">"
+        url.getProtocol() match {
+            case "file" => absoluteToRelative(url.getPath())
+            case "jar" => prettifyJarUrl(url.toExternalForm())
+            case _ => url.toExternalForm()
+        }
     }
 
     def fileToLocationIdentifier(file: File): String = file.getAbsolutePath()

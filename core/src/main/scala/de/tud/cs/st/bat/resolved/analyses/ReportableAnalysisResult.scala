@@ -87,19 +87,75 @@ object ReportableAnalysisResult {
 /**
  * Result of some analysis that just consists of some text.
  */
-case class BasicReport(
-    message: String)
-        extends ReportableAnalysisResult {
+case class BasicReport(message: String) extends ReportableAnalysisResult {
+    def consoleReport() = message
+}
 
-    def consoleReport() = {
-        message
+/**
+ * Defines factory methods for BasicReports.
+ */
+object BasicReport {
+    def apply(messages: Iterable[String]): BasicReport = {
+        BasicReport(messages.mkString("\n"))
     }
 }
 
-object BasicReport {
+/**
+ * Each report takes a severity parameter, which can be one of these pre-defined objects:
+ *  - [[Severity.Error]]
+ *  - [[Severity.Warning]]
+ *  - [[Severity.Info]]
+ *
+ * @author Daniel Klauer
+ */
+abstract class Severity {
+    /**
+     * Returns a string using text and ANSI color codes suitable for console output to
+     * allow humans to quickly identify the corresponding severity.
+     * 
+     * @param suffix An additional suffix string that will be appended to the severity
+     * text and will be colored in the same way. This is useful, for example, to append
+     * ": " to achieve a formatting such as "<severity>: " where this whole string uses
+     * the severity's color. This matches the colored formatting done by clang.
+     * 
+     * @return Human-readable string identifying this severity level, ready to be printed
+     * to the console.
+     */
+    def toAnsiColoredString(suffix: String): String
+}
 
-    def apply(messages: Iterable[String]): BasicReport = {
-        BasicReport(messages.mkString("\n"))
+/**
+ * Object used as wrapper namespace for the individual severity objects, to avoid polluting the
+ * global namespace.
+ *
+ * @author Daniel Klauer
+ */
+object Severity {
+    /**
+     * Should be used when reporting an issue that definitely is a bug.
+     */
+    case object Error extends Severity {
+        def toAnsiColoredString(suffix: String): String =
+            Console.BOLD + Console.RED+"error"+suffix+Console.RESET
+    }
+
+    /**
+     * Should be used when reporting an issue that could potentially be a bug under
+     * certain circumstances.
+     */
+    case object Warning extends Severity {
+        def toAnsiColoredString(suffix: String): String =
+            Console.BOLD + Console.YELLOW+"warning"+suffix+Console.RESET
+    }
+
+    /**
+     * Should be used when reporting non-serious information. This refers to issues that
+     * neither are bugs nor could lead to bugs, but may still be worth fixing (for example
+     * unused fields).
+     */
+    case object Info extends Severity {
+        def toAnsiColoredString(suffix: String): String =
+            Console.BOLD + Console.BLUE+"info"+suffix+Console.RESET
     }
 }
 
@@ -111,72 +167,117 @@ abstract class SourceLocationBasedReport[+S] {
 
     def source: Option[S]
 
+    /**
+     * Retrieves the `source` as a human-readable string for use in console reports.
+     * Every `SourceLocationBasedReport` should use this as a prefix in its console report string.
+     */
+    protected def getSourceAsString(locationIdentifier: (S) ⇒ String): String =
+        source.map(locationIdentifier(_)).getOrElse("<external>")
+
     def consoleReport(locationIdentifier: (S) ⇒ String): String
 }
 
 /**
- * Encapsulates a basic report of some issue related to a specific method or line of code.
+ * A report related to a specific class.
  */
 case class ClassBasedReport[+S](
     source: Option[S],
-    className: String,
-    messageType: Option[String],
+    severity: Severity,
+    classType: ObjectType,
     message: String)
         extends SourceLocationBasedReport[S] {
 
     def consoleReport(locationIdentifier: (S) ⇒ String): String = {
-        (source match {
-            case Some(s) ⇒ locationIdentifier(s)
-            case None    ⇒ "!PROJECT_EXTERNAL:"
-        })+":!CLASS<"+className+">: "+
-            messageType.map(_+": ").getOrElse("") +
+        getSourceAsString(locationIdentifier)+": "+
+            severity.toAnsiColoredString(": ")+
+            "class "+classType.toJava+": "+
             message
     }
 }
 
+/**
+ * A report related to a specific method.
+ */
 case class MethodBasedReport[+S](
     source: Option[S],
-    methodSignature: String,
-    messageType: Option[String],
+    severity: Severity,
+    methodDescriptor: MethodDescriptor,
+    methodName: String,
     message: String)
         extends SourceLocationBasedReport[S] {
 
     def consoleReport(locationIdentifier: (S) ⇒ String): String = {
-        source.getOrElse("!PROJECT_EXTERNAL:")+
-            ":!METHOD<"+methodSignature+">: "+
-            messageType.map(_+": ").getOrElse("") +
+        getSourceAsString(locationIdentifier)+": "+
+            severity.toAnsiColoredString(": ")+
+            "method "+methodName+": "+
             message
     }
 }
 
+/**
+ * Defines factory methods for MethodBasedReports.
+ */
+object MethodBasedReport {
+    def apply[S](
+        source: Option[S],
+        severity: Severity,
+        method: Method,
+        message: String): MethodBasedReport[S] = {
+        new MethodBasedReport(source, severity, method.descriptor, method.name, message)
+    }
+}
+
+/**
+ * A report related to a specific field.
+ */
 case class FieldBasedReport[+S](
     source: Option[S],
-    fieldSignature: String,
-    messageType: Option[String],
+    severity: Severity,
+    declaringClass: ObjectType,
+    fieldType: Option[Type],
+    fieldName: String,
     message: String)
         extends SourceLocationBasedReport[S] {
 
     def consoleReport(locationIdentifier: (S) ⇒ String): String = {
-        source.getOrElse("!PROJECT_EXTERNAL:")+
-            ":!FIELD<"+fieldSignature+">: "+
-            messageType.map(_+": ").getOrElse("") +
+        getSourceAsString(locationIdentifier)+": "+
+            severity.toAnsiColoredString(": ")+
+            "field "+declaringClass.fqn+"."+fieldName+": "+
             message
     }
 }
 
+/**
+ * Defines factory methods for FieldBasedReports.
+ */
+object FieldBasedReport {
+    def apply[S](
+        source: Option[S],
+        severity: Severity,
+        declaringClass: ObjectType,
+        field: Field,
+        message: String): FieldBasedReport[S] = {
+        new FieldBasedReport(source, severity, declaringClass,
+            Some(field.fieldType), field.name, message)
+    }
+}
+
+/**
+ * A report related to a specific line and column.
+ */
 case class LineAndColumnBasedReport[+S](
     source: Option[S],
+    severity: Severity,
     line: Option[Int],
     column: Option[Int],
-    messageType: Option[String],
     message: String)
         extends SourceLocationBasedReport[S] {
 
     def consoleReport(locationIdentifier: (S) ⇒ String): String = {
-        source.getOrElse("!PROJECT_EXTERNAL:") +
+        getSourceAsString(locationIdentifier)+":"+
             line.map(_+":").getOrElse("") +
             column.map(_+": ").getOrElse(" ") +
-            messageType.map(_+": ").getOrElse("") +
+            severity.toAnsiColoredString(": ") +
             message
     }
 }
@@ -198,4 +299,3 @@ case class ReportableAnalysisAdapter[Source, AnalysisResult](
         new BasicReport(converter(analysis.analyze(project, parameters)))
     }
 }
-
