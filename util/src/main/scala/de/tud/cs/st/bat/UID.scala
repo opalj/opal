@@ -288,6 +288,12 @@ sealed trait UIDList[+T <: UID] { thisList ⇒
         }
     }
 
+    final def foldLeft[B](b: B)(op: (B, T) ⇒ B): B = {
+        var result: B = b
+        foreach { elem ⇒ result = op(result, elem) }
+        result
+    }
+
     final def toIterable: Iterable[T] = new UIDIterable(thisList)
 
     def mkString(start: String, sep: String, end: String): String =

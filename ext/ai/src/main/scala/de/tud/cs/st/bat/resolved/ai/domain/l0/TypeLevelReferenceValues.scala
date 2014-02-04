@@ -428,31 +428,79 @@ trait TypeLevelReferenceValues[+I]
     protected def joinArrayTypes(
         thisUpperTypeBound: ArrayType,
         thatUpperTypeBound: ArrayType): Either[ArrayType, UIDList[ObjectType]] = {
+        // We have ALSO to consider the following corner cases:
+        // Foo[][] and Bar[][] => Object[][] (Object is the common super class)
+        // Object[] and int[][] => Object[] (which may contain arrays of int values...)
+        // Foo[] and int[][] => Object[]
+        // int[] and Object[][] => SerializableAndCloneable
+
         if (thisUpperTypeBound eq thatUpperTypeBound)
-            Left(thisUpperTypeBound)
-        else if (thisUpperTypeBound.componentType.isBaseType ||
-            thatUpperTypeBound.componentType.isBaseType) {
+            return Left(thisUpperTypeBound)
+
+        val thisUTBDim = thisUpperTypeBound.dimensions
+        val thatUTBDim = thatUpperTypeBound.dimensions
+
+        if (thisUTBDim < thatUTBDim) {
+            if (thisUpperTypeBound.elementType.isBaseType) {
+                if (thisUTBDim == 1)
+                    Right(TypeLevelReferenceValues.SerializableAndCloneable)
+                else
+                    Left(ArrayType(thisUTBDim - 1, ObjectType.Object))
+            } else {
+                Left(ArrayType(thisUTBDim, ObjectType.Object))
+            }
+        } else if (thisUTBDim > thatUTBDim) {
+            if (thatUpperTypeBound.elementType.isBaseType) {
+                if (thisUTBDim == 1)
+                    Right(TypeLevelReferenceValues.SerializableAndCloneable)
+                else
+                    Left(ArrayType(thatUTBDim - 1, ObjectType.Object))
+            } else {
+                Left(ArrayType(thatUTBDim, ObjectType.Object))
+            }
+        } else if (thisUpperTypeBound.elementType.isBaseType ||
+            thatUpperTypeBound.elementType.isBaseType) {
+            // => the number of dimensions is the same, but the elementType isn't
+            //    (if the element type would be the same, both object reference would 
+            //    refer to the same object and this would have been handled the very 
+            //    first test)            
             // Scenario:
             // E.g., imagine that we have a method that "just" wants to 
             // serialize some data. In such a case the method may be passed 
             // different arrays with different primitive values.
-            Right(TypeLevelReferenceValues.SerializableAndCloneable)
+            if (thisUTBDim == 1 /* && thatUTBDim == 1*/ )
+                Right(TypeLevelReferenceValues.SerializableAndCloneable)
+            else {
+                Left(ArrayType(thisUTBDim - 1, ObjectType.Object))
+            }
         } else {
-            // When we reach this point, 
-            // both component types are reference types
-            val thatComponentType = thatUpperTypeBound.componentType.asReferenceType
-            val thisComponentType = thisUpperTypeBound.componentType.asReferenceType
-            if (domain.isSubtypeOf(thatComponentType, thisComponentType).isYes)
-                Left(thisUpperTypeBound)
-            else if (domain.isSubtypeOf(thisComponentType, thatComponentType).isYes)
-                Left(thatUpperTypeBound)
-            else
-                // This is the most general fallback and we are losing some information
-                // when compared to a solution that calculates the least 
-                // upper type bound. However, in that case we need - 
-                // in general - to support array values with multiple type 
-                // bounds, which we currently don't do.
-                Left(ArrayType.ArrayOfObjects)
+            // When we reach this point, the dimensions are identical and both 
+            // elementTypes are reference types
+            val thatElementType = thatUpperTypeBound.elementType.asObjectType
+            val thisElementType = thisUpperTypeBound.elementType.asObjectType
+            Left(
+                ArrayType(
+                    thisUTBDim,
+                    joinObjectTypesUntilSingleUpperBound(
+                        thisElementType,
+                        thatElementType,
+                        true)
+                )
+            )
+        }
+    }
+
+    protected def joinObjectTypesUntilSingleUpperBound(
+        upperTypeBoundA: ObjectType,
+        upperTypeBoundB: ObjectType,
+        reflexive: Boolean): ObjectType = {
+        joinObjectTypes(upperTypeBoundA, upperTypeBoundB, reflexive) match {
+            case Left(newUpperTypeBound) ⇒
+                newUpperTypeBound
+            case Right(newUpperTypeBounds) ⇒
+                newUpperTypeBounds.tail.foldLeft(newUpperTypeBounds.head) { (c, n) ⇒
+                    joinObjectTypesUntilSingleUpperBound(c, n, false)
+                }
         }
     }
 
