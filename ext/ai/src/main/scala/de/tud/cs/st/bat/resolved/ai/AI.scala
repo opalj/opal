@@ -395,9 +395,10 @@ trait AI[D <: SomeDomain] {
                     case StructuralUpdate((updatedOperands, updatedLocals)) ⇒
                         operandsArray(targetPC) = updatedOperands
                         localsArray(targetPC) = updatedLocals
-                        // we want depth-first evaluation
-                        val filteredList = util.removeFirst(worklist, targetPC)
-                        worklist = targetPC :: filteredList
+                        // we want depth-first evaluation (, but we do not want to 
+                        // reschedule instructions that do not belong to the current
+                        // evaluation context/(sub-)routine.
+                        val filteredList = util.removeFirstWhile(worklist, targetPC) { _ >= 0 }
                         if (tracer.isDefined) {
                             if (filteredList eq worklist)
                                 // the instruction was not yet scheduled for another
@@ -407,13 +408,18 @@ trait AI[D <: SomeDomain] {
                                 // the instruction was just moved to the beginning
                                 tracer.get.rescheduled[domain.type](domain, sourcePC, targetPC)
                         }
+                        worklist = targetPC :: filteredList
 
                     case MetaInformationUpdate((updatedOperands, updatedLocals)) ⇒
                         operandsArray(targetPC) = updatedOperands
                         localsArray(targetPC) = updatedLocals
-                        // we want depth-first evaluation
-                        val filteredList = util.removeFirst(worklist, targetPC)
+                        // we want depth-first evaluation (, but we do not want to 
+                        // reschedule instructions that do not belong to the current
+                        // evaluation context/(sub-)routine.
+                        val filteredList = util.removeFirstWhile(worklist, targetPC) { _ >= 0 }
                         if (filteredList ne worklist) {
+                            // the instruction was scheduled, but as the next one
+                            // let's move the instruction to the beginning
                             worklist = targetPC :: filteredList
                             if (tracer.isDefined)
                                 tracer.get.rescheduled[domain.type](domain, sourcePC, targetPC)
@@ -438,80 +444,79 @@ trait AI[D <: SomeDomain] {
                     tracer.get.result(result)
                 return result
             }
-            try {
-                // The central worklist containing the PC is manipulated at the following
-                // places:
-                // - here 
-                // - by the JSR / RET instructions
-                // - by the "gotoTarget" method
-                val pc: Int = {
-                    // Check if we we have a return from the evaluation of a subroutine.
-                    // I.e., all paths in a subroutine are explored and we know all
-                    // exit points; we will now schedule the jump to the return
-                    // address and reset the subroutine's computation context
-                    while (worklist.head < 0) {
-                        // the structure is:
-                        // -lvIndex (:: RET_PC)* :: RETURN_ADDRESS :: SUBROUTINE
-                        val lvIndex = -worklist.head
+
+            // The central worklist containing the PC is manipulated at the following
+            // places:
+            // - here 
+            // - by the JSR / RET instructions
+            // - by the "gotoTarget" method
+            val pc: Int = {
+                // Check if we we have a return from the evaluation of a subroutine.
+                // I.e., all paths in a subroutine are explored and we know all
+                // exit points; we will now schedule the jump to the return
+                // address and reset the subroutine's computation context
+                while (worklist.head < 0) {
+                    // the structure is:
+                    // -lvIndex (:: RET_PC)* :: RETURN_ADDRESS :: SUBROUTINE
+                    val lvIndex = -worklist.head
+                    worklist = worklist.tail
+                    var retPCs = Set.empty[PC]
+                    do { // we have at least one RET_PC
+                        retPCs += worklist.head
                         worklist = worklist.tail
-                        var retPCs = Set.empty[PC]
-                        do { // we have at least one RET_PC
-                            retPCs += worklist.head
-                            worklist = worklist.tail
-                        } while (worklist.tail.head != SUBROUTINE)
-                        val returnAddress = worklist.head
-                        worklist = worklist.tail.tail // let's remove the subroutine marker
-                        retPCs.foreach { retPC ⇒
-                            // reset the local variable that stores the return address
-                            val operands = operandsArray(retPC)
-                            val locals = localsArray(retPC)
-                            if (tracer.isDefined)
-                                tracer.get.returnFromSubroutine[domain.type](
-                                    domain,
-                                    retPC,
-                                    returnAddress,
-                                    evaluated.takeWhile { pc ⇒
-                                        val opcode = instructions(pc).opcode
-                                        opcode != 168 /*JSR*/ && opcode != 201 /*JSR_W*/
-                                    }
-                                )
-                            val updatedLocals = locals.updated(lvIndex, null.asInstanceOf[domain.DomainValue])
-                            gotoTarget(retPC, returnAddress, operands, updatedLocals)
-                        }
-                        // clear all computations that were done
-                        // to make this subroutine callable again
-                        var previousInstruction = evaluated.head; evaluated = evaluated.tail
-                        var previousInstructionOpcode: Int = -1 // instructions(previousInstruction).opcode
-                        do {
-                            operandsArray(previousInstruction) = null
-                            localsArray(previousInstruction) = null
-                            previousInstruction = evaluated.head; evaluated = evaluated.tail
-                            previousInstructionOpcode = instructions(previousInstruction).opcode
-                        } while (previousInstructionOpcode != 168 /*JSR*/ &&
-                            previousInstructionOpcode != 201 /*JSR_W*/ )
-
-                        // it may be possible that – after the return from a 
-                        // call to a subroutine – we have nothing further to do and
-                        // the computation ends (in the bytecode there is at least
-                        // one further instruction, but we may evaluated that one 
-                        // already and the evaluation context didn't change).
-                        if (worklist.isEmpty) {
-                            val result = AIResultBuilder.completed(
-                                code,
-                                domain)(
-                                    evaluated,
-                                    operandsArray,
-                                    localsArray)
-                            if (tracer.isDefined)
-                                tracer.get.result(result)
-                            return result
-                        }
+                    } while (worklist.tail.head != SUBROUTINE)
+                    val returnAddress = worklist.head
+                    worklist = worklist.tail.tail // let's remove the subroutine marker
+                    retPCs.foreach { retPC ⇒
+                        // reset the local variable that stores the return address
+                        val operands = operandsArray(retPC)
+                        val locals = localsArray(retPC)
+                        if (tracer.isDefined)
+                            tracer.get.returnFromSubroutine[domain.type](
+                                domain,
+                                retPC,
+                                returnAddress,
+                                evaluated.takeWhile(_ != SUBROUTINE_START)
+                            )
+                        val updatedLocals = locals.updated(lvIndex, null.asInstanceOf[domain.DomainValue])
+                        gotoTarget(retPC, returnAddress, operands, updatedLocals)
                     }
-                    worklist.head
-                }
+                    // clear all computations that were done
+                    // to make this subroutine callable again
+                    var previousInstruction = evaluated.head
+                    evaluated = evaluated.tail
+                    var previousInstructionOpcode: Int = -1 // instructions(previousInstruction).opcode
+                    do {
+                        operandsArray(previousInstruction) = null
+                        localsArray(previousInstruction) = null
+                        previousInstruction = evaluated.head
+                        evaluated = evaluated.tail
+                    } while (previousInstruction != SUBROUTINE_START)
 
-                evaluated = pc :: evaluated
+                    // it may be possible that – after the return from a 
+                    // call to a subroutine – we have nothing further to do and
+                    // the computation ends (in the bytecode there is at least
+                    // one further instruction, but we may have evaluated that one 
+                    // already and the evaluation context didn't change).
+                    if (worklist.isEmpty) {
+                        val result = AIResultBuilder.completed(
+                            code,
+                            domain)(
+                                evaluated,
+                                operandsArray,
+                                localsArray)
+                        if (tracer.isDefined)
+                            tracer.get.result(result)
+                        return result
+                    }
+                }
+                // the PC of the next instruction...
+                worklist.head
+            }
+
+            try {
                 worklist = worklist.tail
+                evaluated = pc :: evaluated
                 val instruction = instructions(pc)
                 // the memory layout before executing the instruction with the given pc
                 val operands = operandsArray(pc)
@@ -760,12 +765,16 @@ trait AI[D <: SomeDomain] {
                         | 201 /*jsr_w*/ ⇒
                         val returnTarget = pcOfNextInstruction
                         worklist = SUBROUTINE_START :: returnTarget :: SUBROUTINE :: worklist
+                        evaluated = SUBROUTINE_START :: evaluated
                         val branchtarget = pc + as[JSRInstruction](instruction).branchoffset
                         gotoTarget(
                             pc,
                             branchtarget,
                             domain.ReturnAddressValue(returnTarget) :: operands,
                             locals)
+                        if (tracer.isDefined) {
+                            tracer.get.jumpToSubroutine(domain, pc)
+                        }
 
                     case 169 /*ret*/ ⇒
                         val lvIndex = as[RET](instruction).lvIndex
@@ -773,13 +782,13 @@ trait AI[D <: SomeDomain] {
                         // the SUBROUTINE_START marker by the local variable index
                         // to make it possible to later on clear it...
                         val oldWorklist = worklist
-                        var head = List.empty[PC]
+                        var beginning = List.empty[PC]
                         var tail = worklist
                         while (tail.head >= 0) { // until we found the subroutine marker or the "-local variable index" 
-                            head = tail.head :: head
+                            beginning = tail.head :: beginning
                             tail = tail.tail
                         }
-                        worklist = head.reverse ::: (-lvIndex :: pc :: tail.tail)
+                        worklist = beginning.reverse ::: (-lvIndex :: pc :: tail.tail)
                         if (tracer.isDefined) {
                             tracer.get.ret[domain.type](
                                 domain,
@@ -1799,13 +1808,13 @@ private object AI {
      * instruction of a subroutine; it is replaced by the local variable index
      * once we encounter a ret insruction.
      */
-    private final val SUBROUTINE_START: PC = -888 // some value smaller than -256
+    private final val SUBROUTINE_START: PC = -80000008 // some value smaller than -256
 
     /**
      * Special value that is added to the work list to mark the beginning of a
      * subroutine call.
      */
-    private final val SUBROUTINE: PC = -888888 // some value smaller than -2^16
+    private final val SUBROUTINE: PC = -90000009 // some value smaller than -2^16
 }
 
 /**
