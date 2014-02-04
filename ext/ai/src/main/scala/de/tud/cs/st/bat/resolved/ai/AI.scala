@@ -1760,12 +1760,12 @@ trait AI[D <: SomeDomain] {
 
                 case cause @ DomainException(message) ⇒
                     throw new InterpretationFailedException[domain.type](
-                        cause, domain, worklist, evaluated, operandsArray, localsArray
+                        cause, domain, pc, worklist, evaluated, operandsArray, localsArray
                     )
 
                 case cause: Throwable ⇒
                     throw new InterpretationFailedException[domain.type](
-                        cause, domain, worklist, evaluated, operandsArray, localsArray
+                        cause, domain, pc, worklist, evaluated, operandsArray, localsArray
                     )
             }
         }
