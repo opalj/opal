@@ -166,6 +166,11 @@ trait AITracer {
         newWorklist: List[PC])
 
     /**
+     * Called before a jump to a subroutine.
+     */
+    def jumpToSubroutine(domain: SomeDomain, pc: PC): Unit
+
+    /**
      * Called when the evaluation of a subroutine (JSR/RET) is completed.
      */
     def returnFromSubroutine[D <: SomeDomain with Singleton](

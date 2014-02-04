@@ -265,7 +265,7 @@ trait XHTMLTracer extends AITracer {
         /*ignored for now*/
     }
 
-    def instructionEvalution[D <: SomeDomain with Singleton with Singleton](
+    def instructionEvalution[D <: SomeDomain with Singleton](
         domain: D,
         pc: PC,
         instruction: Instruction,
@@ -303,6 +303,8 @@ trait XHTMLTracer extends AITracer {
         exception: D#DomainValue): Unit = {
         /*ignored*/
     }
+
+    override def jumpToSubroutine(domain: SomeDomain, pc: PC): Unit = { /* ignored */ }
 
     override def returnFromSubroutine[D <: SomeDomain with Singleton](
         domain: D,

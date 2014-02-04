@@ -54,7 +54,10 @@ object InterpretMethod {
         override val tracer =
             //Some(new ConsoleTracer {})
             Some(
-                new MultiTracer(new ConsoleTracer {}, new XHTMLTracer {})
+                new MultiTracer(
+                        new ConsoleTracer {},
+                        //new ConsoleEvaluationTracer {},
+                        new XHTMLTracer {})
             )
     }
 

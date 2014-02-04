@@ -34,29 +34,20 @@ package de.tud.cs.st
 package bat
 package resolved
 package ai
+package debug
 
-import instructions._
+import instructions.Instruction
 
 /**
- * A tracer that forwards every call to all registered tracers.
+ * A tracer that prints out the evaluation order on the console.
+ *
+ * Every AI should have its own instance.
  *
  * @author Michael Eichberg
  */
-class MultiTracer(val tracers: AITracer*) extends AITracer {
+trait ConsoleEvaluationTracer extends AITracer {
 
-    override def continuingInterpretation[D <: SomeDomain with Singleton](
-        code: Code,
-        domain: D,
-        initialWorkList: List[PC],
-        alreadyEvaluated: List[PC],
-        operandsArray: Array[List[D#DomainValue]],
-        localsArray: Array[Array[D#DomainValue]]): Unit = {
-        tracers foreach { tracer ⇒
-            tracer.continuingInterpretation(
-                code, domain, initialWorkList, alreadyEvaluated, operandsArray, localsArray
-            )
-        }
-    }
+    private[this] var indent = 0
 
     override def instructionEvalution[D <: SomeDomain with Singleton](
         domain: D,
@@ -64,26 +55,26 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
         instruction: Instruction,
         operands: List[D#DomainValue],
         locals: Array[D#DomainValue]): Unit = {
-        tracers foreach { tracer ⇒
-            tracer.instructionEvalution(
-                domain, pc, instruction, operands, locals
-            )
-        }
+        print(pc+" ")
     }
 
-    override def flow[D <: SomeDomain with Singleton](
+    override def continuingInterpretation[D <: SomeDomain with Singleton](
+        code: Code,
         domain: D,
-        currentPC: PC,
-        targetPC: PC): Unit = {
-        tracers foreach { _.flow(domain, currentPC, targetPC) }
-    }
+        initialWorkList: List[PC],
+        alreadyEvaluated: List[PC],
+        operandsArray: Array[List[D#DomainValue]],
+        localsArray: Array[Array[D#DomainValue]]) { /*EMPTY*/ }
 
     override def rescheduled[D <: SomeDomain with Singleton](
         domain: D,
         sourcePC: PC,
-        targetPC: PC): Unit = {
-        tracers foreach { _.rescheduled(domain, sourcePC, targetPC) }
-    }
+        targetPC: PC): Unit = { /*EMPTY*/ }
+
+    override def flow[D <: SomeDomain with Singleton](
+        domain: D,
+        currentPC: PC,
+        targetPC: PC): Unit = { /*EMPTY*/ }
 
     override def join[D <: SomeDomain with Singleton](
         domain: D,
@@ -92,56 +83,41 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
         thisLocals: D#Locals,
         otherOperands: D#Operands,
         otherLocals: D#Locals,
-        result: Update[(D#Operands, D#Locals)]): Unit = {
-        tracers foreach { tracer ⇒
-            tracer.join[D](
-                domain, pc,
-                thisOperands, thisLocals, otherOperands, otherLocals, result)
-        }
-    }
+        result: Update[(D#Operands, D#Locals)]): Unit = { /*EMPTY*/ }
 
     override def abruptMethodExecution[D <: SomeDomain with Singleton](
         domain: D,
         pc: Int,
-        exception: D#DomainValue): Unit = {
-        tracers foreach { _.abruptMethodExecution(domain, pc, exception) }
+        exception: D#DomainValue): Unit = { /*EMPTY*/ }
+
+    private[this] def printIndent = (0 until indent) foreach (i ⇒ print("\t"))
+    
+    override def jumpToSubroutine(domain: SomeDomain, pc: PC): Unit = {
+        println
+        printIndent
+        print(Console.BOLD+"↳\t︎"+Console.RESET)
+        indent += 1
     }
 
+    override def returnFromSubroutine[D <: SomeDomain with Singleton](
+        domain: D,
+        pc: PC,
+        returnAddress: PC,
+        subroutineInstructions: List[PC]): Unit = {
+        indent -= 1
+        println(Console.BOLD+"✓"+"(Resetting: "+subroutineInstructions.mkString(", ")+")"+Console.RESET)
+        printIndent
+    }
+
+    /**
+     * Called when a ret instruction is encountered.
+     */
     override def ret[D <: SomeDomain with Singleton](
         domain: D,
         pc: PC,
         returnAddress: PC,
         oldWorklist: List[PC],
-        newWorklist: List[PC]): Unit = {
-        tracers foreach { tracer ⇒
-            tracer.ret(
-                domain, pc, returnAddress, oldWorklist, newWorklist
-            )
-        }
-    }
+        newWorklist: List[PC]): Unit = { /*EMPTY*/ }
 
-    override def jumpToSubroutine(domain: SomeDomain, pc: PC): Unit = {
-        tracers foreach { tracer ⇒
-            tracer.jumpToSubroutine(domain, pc)
-        }
-    }
-
-    /**
-     * Called when the evaluation of a subroutine (JSR/RET) is completed.
-     */
-    override def returnFromSubroutine[D <: SomeDomain with Singleton](
-        domain: D,
-        pc: Int,
-        returnAddress: Int,
-        subroutineInstructions: List[Int]): Unit = {
-        tracers foreach { tracer ⇒
-            tracer.returnFromSubroutine(
-                domain, pc, returnAddress, subroutineInstructions
-            )
-        }
-    }
-
-    override def result[D <: SomeDomain with Singleton](result: AIResult[D]): Unit = {
-        tracers foreach { _.result(result) }
-    }
+    override def result[D <: SomeDomain with Singleton](result: AIResult[D]) { /*EMPTY*/ }
 }
