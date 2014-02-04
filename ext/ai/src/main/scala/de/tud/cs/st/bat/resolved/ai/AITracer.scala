@@ -152,7 +152,7 @@ trait AITracer {
      */
     def abruptMethodExecution[D <: SomeDomain with Singleton](
         domain: D,
-        pc: Int,
+        pc: PC,
         exception: D#DomainValue)
 
     /**
@@ -170,13 +170,13 @@ trait AITracer {
      */
     def returnFromSubroutine[D <: SomeDomain with Singleton](
         domain: D,
-        pc: Int,
-        returnAddress: Int,
-        subroutineInstructions: List[Int])
+        pc: PC,
+        returnAddress: PC,
+        subroutineInstructions: List[PC]): Unit
 
     /**
      * Called by BATAI when the abstract interpretation of a method has completed/was
      * interrupted.
      */
-    def result[D <: SomeDomain with Singleton](result: AIResult[D])
+    def result[D <: SomeDomain with Singleton](result: AIResult[D]): Unit
 }
