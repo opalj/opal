@@ -461,10 +461,13 @@ trait AI[D <: SomeDomain] {
                     val lvIndex = -worklist.head
                     worklist = worklist.tail
                     var retPCs = Set.empty[PC]
-                    do { // we have at least one RET_PC
+                    while (worklist.tail.head != SUBROUTINE) {
+                        // in case that a subroutine definitively throws on all paths
+                        // a (non-caught) exception, we will not have encountered a single
+                        // ret instruction
                         retPCs += worklist.head
                         worklist = worklist.tail
-                    } while (worklist.tail.head != SUBROUTINE)
+                    } 
                     val returnAddress = worklist.head
                     worklist = worklist.tail.tail // let's remove the subroutine marker
                     retPCs.foreach { retPC ⇒
