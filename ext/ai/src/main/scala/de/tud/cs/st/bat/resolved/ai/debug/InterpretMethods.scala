@@ -181,14 +181,16 @@ object InterpretMethods {
                             val (_, classFile, method, throwable) = ex
                             <div>
                             	<b>{ classFile.thisType.fqn }</b> 
-                        		<i>"{ method.toJava }"</i> 
+                        		<i>"{ method.toJava }"</i><br/>
+                        		{ "Length: " + method.body.get.instructions.length }
                         		<div>{ throwableToXHTML(throwable) }</div>
                         	</div>
                         }
 
                     <section>
                     <h1>{ exResource }</h1>
-                    <p>Number of thrown exceptions: { exInstances.size }</p>{ exDetails }
+                    <p>Number of thrown exceptions: { exInstances.size }</p>
+                    { exDetails }
                     </section>
                 }
 
@@ -217,23 +219,32 @@ object InterpretMethods {
 
     def throwableToXHTML(throwable: Throwable): scala.xml.Node = {
 
-        if (throwable.getStackTrace() == null ||
-            throwable.getStackTrace().size == 0) {
-            <div>{ throwable.getClass().getSimpleName() + " " + throwable.getMessage() }</div>
-        } else {
-            val stackElements =
-                for { stackElement ← throwable.getStackTrace() } yield {
-                    <tr>
+        val node =
+            if (throwable.getStackTrace() == null ||
+                throwable.getStackTrace().size == 0) {
+                <div>{ throwable.getClass().getSimpleName() + " " + throwable.getMessage() }</div>
+            } else {
+                val stackElements =
+                    for { stackElement ← throwable.getStackTrace() } yield {
+                        <tr>
                 		<td>{ stackElement.getClassName() }</td>
                 		<td>{ stackElement.getMethodName() }</td>
 						<td>{ stackElement.getLineNumber() }</td>
-						</tr>
-                }
+					</tr>
+                    }
+                val summary = throwable.getClass().getSimpleName()+" "+throwable.getMessage()
 
-            <details>
-                <summary>{ throwable.getClass().getSimpleName() + " " + throwable.getMessage() }</summary>
+                <details>
+                <summary>{ summary }</summary>
                 <table>{ stackElements }</table>
             </details>
+            }
+
+        if (throwable.getCause() ne null) {
+            val causedBy = throwableToXHTML(throwable.getCause())
+            <div style="background-color:yellow">{ node } <p>caused by:</p>{ causedBy }</div>
+        } else {
+            node
         }
     }
 

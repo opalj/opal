@@ -87,6 +87,7 @@ class ClassHierarchyTest
     val CloneableArray = ArrayType(Cloneable)
     val ObjectArray = ArrayType.ArrayOfObjects
     val intArray = ArrayType(IntegerType)
+    val arrayOfIntArray = ArrayType(ArrayType(IntegerType))
     val longArray = ArrayType(LongType)
 
     //
@@ -195,6 +196,9 @@ class ClassHierarchyTest
 
         isSubtypeOf(intArray, longArray) should be(No)
         isSubtypeOf(longArray, intArray) should be(No)
+
+        isSubtypeOf(arrayOfIntArray, ObjectArray) should be(Yes)
+        isSubtypeOf(arrayOfIntArray, SeriablizableArray) should be(Yes)
     }
 
     it should "correctly reflect the type hierarchy related to Arrays of Arrays" in {
@@ -224,8 +228,8 @@ class ClassHierarchyTest
 
         val mi = ObjectType("org/apache/tools/ant/taskdefs/MacroInstance")
         apacheANTCH.allSupertypes(mi) should be(Set(
-            ObjectType("org/apache/tools/ant/Task"), 
-            ObjectType("org/apache/tools/ant/TaskContainer"), 
+            ObjectType("org/apache/tools/ant/Task"),
+            ObjectType("org/apache/tools/ant/TaskContainer"),
             ObjectType("org/apache/tools/ant/DynamicAttribute")
         ))
     }
