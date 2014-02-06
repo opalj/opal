@@ -47,7 +47,7 @@ import scala.collection.Map
 
 /**
  * Domain object that can be used to calculate a call graph using CHA. This domain
- * basically collects for all invoke instructions of a method the potential target
+ * basically collects – for all invoke instructions of a method – the potential target
  * methods that may be invoked at runtime.
  *
  * Virtual calls on Arrays (clone(), toString(),...) are replaced by calls to the
@@ -57,10 +57,8 @@ import scala.collection.Map
  * `lookupImplementingMethod` defined in `ClassHierarchy`.)
  *
  * ==Thread Safety==
- * '''This domain is not thread-safe'''. Hence, it can only be used by one abstract interpreter
- * at a time. However, it is no problem to have multiple abstract interpreters that
- * process different methods each using its own instance of a CHACallGraphDomain
- * object.
+ * '''This domain is not thread-safe'''. However, given the strong coupling of a
+ * domain instance to a specific method this is usually not an issue.
  *
  * @author Michael Eichberg
  */
@@ -91,15 +89,15 @@ trait CHACallGraphDomain[Source, I]
 
     def allUnresolvedMethodCalls: List[UnresolvedMethodCall] = unresolvedMethodCalls
 
-    private[this] var callEdges = List.empty[(Method, PC, Iterable[Method])]
+    private[this] var callEdges = List.empty[(PC, Iterable[Method])]
 
     @inline final private[this] def addCallEdge(
         pc: PC,
         callees: Iterable[Method]): Unit = {
-        callEdges = (theMethod, pc, callees) :: callEdges
+        callEdges = (pc, callees) :: callEdges
     }
 
-    def allCallEdges: List[(Method, PC, Iterable[Method])] = callEdges
+    def allCallEdges: (Method, List[(PC, Iterable[Method])]) = (theMethod, callEdges)
 
     // handles method calls where target method is statically resolved
     @inline protected[this] def staticMethodCall(
