@@ -30,11 +30,11 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package calls.constructors;
+package callgraph.constructors;
 
-import base.AlternateBase;
-import base.Base;
-import base.ConcreteBase;
+import callgraph.base.AlternateBase;
+import callgraph.base.Base;
+import callgraph.base.ConcreteBase;
 import de.tud.cs.st.bat.test.invokedynamic.annotations.InvokedConstructor;
 
 /**
@@ -44,6 +44,15 @@ import de.tud.cs.st.bat.test.invokedynamic.annotations.InvokedConstructor;
  * NOTE<br />
  * This class is not meant to be (automatically) recompiled; it just serves documentation
  * purposes.
+ * 
+ * <!--
+ * 
+ * 
+ * INTENTIONALLY LEFT EMPTY (THIS AREA CAN BE EXTENDED/REDUCED TO MAKE SURE THAT THE
+ * SPECIFIED LINE NUMBERS ARE STABLE.
+ * 
+ * 
+ * -->
  * 
  * @author Marco Jacobasch
  */
