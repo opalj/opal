@@ -69,8 +69,6 @@ sealed abstract class MethodDescriptor extends BootstrapArgument {
                 (parameterTypes.head.toJava /: parameterTypes.tail)(_+", "+_.toJava)
         }+"): "+returnType.toJava
 
-    override def toString: String = "MethodDescriptor("+toUMLNotation+")"
-
     def <(other: MethodDescriptor): Boolean = {
         (this.parametersCount < other.parametersCount) || (
             this.parametersCount == other.parametersCount &&
@@ -89,6 +87,8 @@ sealed abstract class MethodDescriptor extends BootstrapArgument {
             }
         )
     }
+
+    override def toString: String = "MethodDescriptor("+toUMLNotation+")"
 }
 
 // 
@@ -143,7 +143,8 @@ private final class SingleArgumentMethodDescriptor(
     override def equals(other: Any): Boolean = {
         other match {
             case that: SingleArgumentMethodDescriptor ⇒
-                (that.parameterType eq this.parameterType) && (that.returnType eq this.returnType)
+                (that.parameterType eq this.parameterType) &&
+                    (that.returnType eq this.returnType)
             case _ ⇒
                 false
         }

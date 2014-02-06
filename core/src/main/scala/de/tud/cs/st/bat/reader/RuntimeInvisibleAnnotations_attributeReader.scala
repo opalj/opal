@@ -55,16 +55,15 @@ trait RuntimeInvisibleAnnotations_attributeReader extends AttributeReader {
 
     protected def Annotations(in: DataInputStream, cp: Constant_Pool): Annotations
 
-    protected def RuntimeInvisibleAnnotations_attribute(attribute_name_index: Constant_Pool_Index,
-                                                        attribute_length: Int,
-                                                        annotations: Annotations)(
-                                                            implicit constant_pool: Constant_Pool): RuntimeInvisibleAnnotations_attribute
+    protected def RuntimeInvisibleAnnotations_attribute(
+        attribute_name_index: Constant_Pool_Index,
+        attribute_length: Int,
+        annotations: Annotations)(
+            implicit constant_pool: Constant_Pool): RuntimeInvisibleAnnotations_attribute
 
     //
     // IMPLEMENTATION
     //
-
-    import util.ControlAbstractions.repeat
 
     registerAttributeReader(
         RuntimeInvisibleAnnotations_attributeReader.ATTRIBUTE_NAME ->
