@@ -66,17 +66,17 @@ public class DefaultConstructor {
         Base simpleBase = new SimpleBase();
     }
 
-    // TODO recievertype? annonymous class. lineNumber?
-    @SuppressWarnings("unused")
-    @InvokedConstructor(receiverType = AbstractBase.class, lineNumber = 73)
-    public void createAbstractBase() {
-        Base abstractBase = new AbstractBase() {
+    class MyBase extends AbstractBase {
 
-            @Override
-            public void abstractMethod() {
-                // empty
-            }
-        };
+        @Override
+        public void abstractMethod() {/* empty */
+        }
+    }
+
+    @SuppressWarnings("unused")
+    @InvokedConstructor(receiverType = DefaultConstructor.MyBase.class, lineNumber = 79)
+    public void createAbstractBase() {
+        Base abstractBase = new MyBase();
     }
 
     @SuppressWarnings("unused")
