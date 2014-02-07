@@ -128,7 +128,6 @@ class CallGraphBuilder[Source](val project: Project[Source]) {
             (caller, edges) ← allCallEdges
             (pc, callees) ← edges
         } {
-            print(caller.id+", ")
             var callSites = callsMap(caller.id)
             callsMap(caller.id) =
                 if (callSites eq null) {

@@ -82,13 +82,12 @@ class CallGraphThreadSafetyTest extends FlatSpec with Matchers {
 
     // Validate every method against the callgraph defined by annotations
     it should "always calculate the same call graph" in {
-        println(callGraphs.head._1.callsStatistics(50))
-        println(callGraphs.head._1.calledByStatistics(50))
-        
+        //        println(callGraphs.head._1.callsStatistics(50))
+        //        println(callGraphs.head._1.calledByStatistics(50))
+
         callGraphs.seq.reduce[(CallGraph[_], List[UnresolvedMethodCall], List[CallGraphConstructionException])] { (l, r) ⇒
             val (lcallGraph, lunresolvedMethodCalls, lexceptions) = l
             val (rcallGraph, runresolvedMethodCalls, rexceptions) = r
-            println("comparing: "+System.identityHashCode(lcallGraph)+"  "+System.identityHashCode(rcallGraph))
 
             lcallGraph.calledByCount should be(rcallGraph.calledByCount)
             lcallGraph.callsCount should be(rcallGraph.callsCount)
@@ -103,7 +102,7 @@ class CallGraphThreadSafetyTest extends FlatSpec with Matchers {
             lcallGraph.foreachCallingMethod((method, callees) ⇒ lcallsSet += ((method, callees)))
             var rcallsSet: Set[(Method, scala.collection.Map[PC, Iterable[Method]])] = Set.empty
             rcallGraph.foreachCallingMethod((method, callees) ⇒ rcallsSet += ((method, callees)))
-            
+
             lunresolvedMethodCalls.toSet should equal(runresolvedMethodCalls.toSet)
             lexceptions.toSet should equal(rexceptions.toSet)
 
