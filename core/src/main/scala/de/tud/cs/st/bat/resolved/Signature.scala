@@ -136,7 +136,7 @@ case class ProperTypeArgument(
     varianceIndicator: Option[VarianceIndicator],
     fieldTypeSignature: FieldTypeSignature)
         extends TypeArgument {
-    
+
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
 }
 
@@ -172,3 +172,44 @@ sealed trait Wildcard extends TypeArgument {
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
 }
 case object Wildcard extends Wildcard
+
+/**
+ * Facilitates matching the `ObjectType` that is defined by a `ClassTypeSignature`.
+ * Ignores all further type parameters.
+ */
+object BasicClassTypeSignature {
+    def unapply(cts: ClassTypeSignature): Option[ObjectType] = {
+        Some(cts.objectType)
+    }
+}
+
+/**
+ * Facilitates matching fields with generic types.
+ *
+ * @example
+ * {{{
+ *  val f : Field = ...
+ *  f.fieldTypeSignature match {
+ *      case GenericContainer(ContainerType,ElementType) => ...
+ *      case _ => ...
+ *  }
+ * }}}
+ *
+ * @author Michael Eichberg
+ */
+object GenericContainer { // matches : List<Object>
+    def unapply(cts: ClassTypeSignature): Option[(ObjectType, ObjectType)] = {
+        cts match {
+            case ClassTypeSignature(
+                Some(cpn),
+                SimpleClassTypeSignature(
+                    csn,
+                    Some(List(ProperTypeArgument(None, BasicClassTypeSignature(tp))))),
+                List()
+                ) ⇒
+                Some((ObjectType(cpn + csn), tp))
+            case _ ⇒
+                None
+        }
+    }
+}
