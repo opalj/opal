@@ -89,6 +89,7 @@ public class MethodsWithExceptions {
     // 28 return
     // Exception Table:
     // [pc: 0, pc: 17] -> 17 when : any
+    @SuppressWarnings("null")
     public static void withFinallyAndThrows(Throwable t) throws Throwable {
         try {
             if (t != null)
