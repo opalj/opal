@@ -69,7 +69,7 @@ public class Reflections {
         ((Base) new ConcreteBase()).implementedMethod();
     }
 
-    @InvokedConstructor(receiverType = SimpleBase.class, lineNumber = 76)
+    @InvokedConstructor(receiverType = SimpleBase.class, lineNumber = 76, isReflective = true)
     @InvokedMethod(receiverType = SimpleBase.class, name = "implementedMethod", lineNumber = 77)
     void callInstantiatedByReflection() throws InstantiationException,
             IllegalAccessException, ClassNotFoundException {
@@ -78,7 +78,7 @@ public class Reflections {
     }
 
     @InvokedConstructor(receiverType = SimpleBase.class, lineNumber = 84)
-    @InvokedMethod(receiverType = SimpleBase.class, name = "implementedMethod", lineNumber = 86)
+    @InvokedMethod(receiverType = SimpleBase.class, name = "implementedMethod", lineNumber = 86, isReflective = true)
     void callMethodByReflection() throws NoSuchMethodException, SecurityException,
             IllegalAccessException, IllegalArgumentException, InvocationTargetException {
         Base base = new SimpleBase();

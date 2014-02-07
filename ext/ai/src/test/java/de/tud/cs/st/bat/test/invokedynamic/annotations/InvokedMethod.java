@@ -58,4 +58,6 @@ public @interface InvokedMethod {
     int lineNumber() default -1;
 
     boolean isStatic() default false;
+    
+    boolean isReflective() default false;
 }

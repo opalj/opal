@@ -53,6 +53,9 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
 
     behavior of "The BATAI Call Graph"
 
+    // should be overridden by subclasses if the CallGraph also contains reflective calls
+    def ignoreReflectiveCalls: Boolean = true
+
     import Console._
 
     //
@@ -97,18 +100,26 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
     // Single Method Test
     def singleMethodTest(method: Method, annotation: Annotation): Unit = {
         val evps = annotation.elementValuePairs
-        val Some(fqnClass) =
+        val Some(receiver) =
             evps collectFirst (
-                { case ElementValuePair("receiverType", ClassValue(fqn)) ⇒ fqn })
+                { case ElementValuePair("receiverType", ClassValue(receiver)) ⇒ receiver })
         val Some(methodName) =
             evps collectFirst (
                 { case ElementValuePair("name", StringValue(name)) ⇒ name })
         val Some(lineNumber) =
             evps collectFirst (
                 { case ElementValuePair("lineNumber", IntValue(lineNumber)) ⇒ lineNumber })
+        val isReflective: Boolean =
+            (evps collectFirst (
+                { case ElementValuePair("isReflective", BooleanValue(isReflective)) ⇒ isReflective })
+            ).getOrElse(false)
 
-        // Suppress classFiles outside project
-        if (!project.classFile(fqnClass.asObjectType).isDefined)
+        // If the receiver class is not analyzed, forget about it
+        if (!project.classFile(receiver.asObjectType).isDefined)
+            return
+
+        // If we are not able to handle reflective calls and we have one, forget about it
+        if (isReflective && ignoreReflectiveCalls)
             return
 
         val callees = callGraph.calls(method).map { f ⇒
@@ -124,35 +135,42 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
         val calleeMatchingAnnotation = callees filter { f ⇒
             val Some(line) = method.body.get.lineNumberTable.get.lookupLineNumber(f._1)
             f._2.name.equals(methodName) &&
-                project.classFile(f._2).thisType.equals(fqnClass) &&
+                project.classFile(f._2).thisType.equals(receiver) &&
                 line == lineNumber
         }
 
         if (calleeMatchingAnnotation.size < 1) {
             val className = project.classFile(method).fqn
-            val message = className+" { "+method+" } has no annotated callee; expected: "+annotation.toJava
+            val message = className+" { "+method+" } has none of the specified callees; expected: "+annotation.toJava
             fail(message)
         }
 
         calleeMatchingAnnotation foreach { f ⇒
             f._2.name should be(methodName)
-            project.classFile(f._2).thisType should be(fqnClass)
+            project.classFile(f._2).thisType should be(receiver)
         }
     }
 
     // Single Constructor Test
     def singleConstructorTest(method: Method, annotation: Annotation): Unit = {
         val evps = annotation.elementValuePairs
-        val Some(fqnClass) =
+        val Some(receiver) =
             evps collectFirst (
-                { case ElementValuePair("receiverType", ClassValue(fqn)) ⇒ fqn })
+                { case ElementValuePair("receiverType", ClassValue(receiver)) ⇒ receiver })
+        // If the receiver class is not analyzed, forget about it
+        if (!project.classFile(receiver.asObjectType).isDefined)
+            return
 
         val Some(lineNumber) =
             evps collectFirst (
                 { case ElementValuePair("lineNumber", IntValue(lineNumber)) ⇒ lineNumber })
 
-        // Suppress classFiles outside project
-        if (!project.classFile(fqnClass.asObjectType).isDefined)
+        val isReflective: Boolean =
+            (evps collectFirst (
+                { case ElementValuePair("isReflective", BooleanValue(isReflective)) ⇒ isReflective })
+            ).getOrElse(false)
+        // If we are not able to handle reflective calls and we have one, forget about it
+        if (isReflective && ignoreReflectiveCalls)
             return
 
         val callees = callGraph.calls(method).map { f ⇒
@@ -168,19 +186,19 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
         val calleeMatchingAnnotation = callees filter { f ⇒
             val Some(line) = method.body.get.lineNumberTable.get.lookupLineNumber(f._1)
             f._2.name.equals("<init>") &&
-                project.classFile(f._2).thisType.equals(fqnClass) &&
+                project.classFile(f._2).thisType.equals(receiver) &&
                 line == lineNumber
         }
 
         if (calleeMatchingAnnotation.size < 1) {
             val className = project.classFile(method).fqn
-            val message = className+" { "+method+" } has no annotated constructor; expected: "+annotation.toJava
+            val message = className+" { "+method+" } has none of the specified constructor calls; expected: "+annotation.toJava
             fail(message)
         }
 
         calleeMatchingAnnotation foreach { f ⇒
             f._2.name should be("<init>")
-            project.classFile(f._2).thisType should be(fqnClass)
+            project.classFile(f._2).thisType should be(receiver)
         }
     }
 
