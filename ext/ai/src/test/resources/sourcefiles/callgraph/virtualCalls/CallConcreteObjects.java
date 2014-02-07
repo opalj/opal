@@ -80,10 +80,10 @@ public class CallConcreteObjects {
     };
 
     @InvokedMethods({
-            @InvokedMethod(receiverType = SimpleBase.class, name = "implementedMethod", lineNumber = 37),
-            @InvokedMethod(receiverType = ConcreteBase.class, name = "implementedMethod", lineNumber = 38),
-            @InvokedMethod(receiverType = AlternateBase.class, name = "implementedMethod", lineNumber = 39),
-            @InvokedMethod(receiverType = AbstractBase.class, name = "implementedMethod", lineNumber = 40) })
+            @InvokedMethod(receiverType = SimpleBase.class, name = "implementedMethod", lineNumber = 88),
+            @InvokedMethod(receiverType = ConcreteBase.class, name = "implementedMethod", lineNumber = 89),
+            @InvokedMethod(receiverType = AlternateBase.class, name = "implementedMethod", lineNumber = 90),
+            @InvokedMethod(receiverType = AbstractBase.class, name = "implementedMethod", lineNumber = 91) })
     void callImplementedMethod() {
         simpleBase.implementedMethod();
         concreteBase.implementedMethod();
@@ -92,22 +92,20 @@ public class CallConcreteObjects {
     }
 
     @InvokedMethods({
-            @InvokedMethod(receiverType = SimpleBase.class, name = "abstractMethod", lineNumber = 50),
-            @InvokedMethod(receiverType = ConcreteBase.class, name = "abstractMethod", lineNumber = 51),
-            @InvokedMethod(receiverType = AlternateBase.class, name = "abstractMethod", lineNumber = 52),
-            @InvokedMethod(receiverType = AbstractBase.class, name = "abstractMethod", lineNumber = 53) })
+            @InvokedMethod(receiverType = SimpleBase.class, name = "abstractMethod", lineNumber = 99),
+            @InvokedMethod(receiverType = ConcreteBase.class, name = "abstractMethod", lineNumber = 100),
+            @InvokedMethod(receiverType = AlternateBase.class, name = "abstractMethod", lineNumber = 101) })
     void callAbstractMethod() {
         simpleBase.abstractMethod();
         concreteBase.abstractMethod();
         alternerateBase.abstractMethod();
-        abstractBase.abstractMethod();
     }
 
     @InvokedMethods({
-            @InvokedMethod(receiverType = SimpleBase.class, name = "abstractImplementedMethod", lineNumber = 63),
-            @InvokedMethod(receiverType = ConcreteBase.class, name = "abstractImplementedMethod", lineNumber = 64),
-            @InvokedMethod(receiverType = AlternateBase.class, name = "abstractImplementedMethod", lineNumber = 65),
-            @InvokedMethod(receiverType = AbstractBase.class, name = "abstractImplementedMethod", lineNumber = 66) })
+            @InvokedMethod(receiverType = SimpleBase.class, name = "abstractImplementedMethod", lineNumber = 110),
+            @InvokedMethod(receiverType = AbstractBase.class, name = "abstractImplementedMethod", lineNumber = 111),
+            @InvokedMethod(receiverType = AbstractBase.class, name = "abstractImplementedMethod", lineNumber = 112),
+            @InvokedMethod(receiverType = AbstractBase.class, name = "abstractImplementedMethod", lineNumber = 113) })
     void callAbstractImplementedMethod() {
         simpleBase.abstractImplementedMethod();
         concreteBase.abstractImplementedMethod();
@@ -116,10 +114,10 @@ public class CallConcreteObjects {
     }
 
     @InvokedMethods({
-            @InvokedMethod(receiverType = SimpleBase.class, name = "interfaceMethod", lineNumber = 76),
-            @InvokedMethod(receiverType = ConcreteBase.class, name = "interfaceMethod", lineNumber = 77),
-            @InvokedMethod(receiverType = AlternateBase.class, name = "interfaceMethod", lineNumber = 78),
-            @InvokedMethod(receiverType = AbstractBase.class, name = "interfaceMethod", lineNumber = 79) })
+            @InvokedMethod(receiverType = SimpleBase.class, name = "interfaceMethod", lineNumber = 122),
+            @InvokedMethod(receiverType = AbstractBase.class, name = "interfaceMethod", lineNumber = 123),
+            @InvokedMethod(receiverType = AbstractBase.class, name = "interfaceMethod", lineNumber = 124),
+            @InvokedMethod(receiverType = AbstractBase.class, name = "interfaceMethod", lineNumber = 125) })
     void callInterfaceMethod() {
         simpleBase.interfaceMethod();
         concreteBase.interfaceMethod();

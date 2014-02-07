@@ -61,14 +61,14 @@ import de.tud.cs.st.bat.test.invokedynamic.annotations.InvokedConstructor;
 public class DefaultConstructor {
 
     @SuppressWarnings("unused")
-    @InvokedConstructor(receiverType = SimpleBase.class, lineNumber = 16)
+    @InvokedConstructor(receiverType = SimpleBase.class, lineNumber = 66)
     public void createSimpleBase() {
         Base simpleBase = new SimpleBase();
     }
 
     // TODO recievertype? annonymous class. lineNumber?
     @SuppressWarnings("unused")
-    @InvokedConstructor(receiverType = AbstractBase.class, lineNumber = 20)
+    @InvokedConstructor(receiverType = AbstractBase.class, lineNumber = 73)
     public void createAbstractBase() {
         Base abstractBase = new AbstractBase() {
 
@@ -80,13 +80,13 @@ public class DefaultConstructor {
     }
 
     @SuppressWarnings("unused")
-    @InvokedConstructor(receiverType = ConcreteBase.class, lineNumber = 31)
+    @InvokedConstructor(receiverType = ConcreteBase.class, lineNumber = 85)
     public void createConcreteBase() {
         Base concreteBase = new ConcreteBase();
     }
 
     @SuppressWarnings("unused")
-    @InvokedConstructor(receiverType = AlternateBase.class, lineNumber = 36)
+    @InvokedConstructor(receiverType = AlternateBase.class, lineNumber = 91)
     public void createAlternateBase() {
         Base alternerateBase = new AlternateBase();
     }

@@ -65,16 +65,16 @@ public class B implements Base {
     }
 
     @Override
-    @InvokedMethod(receiverType = A.class, name = "method", lineNumber = 20)
-    @InvokedConstructor(receiverType = A.class, lineNumber = 20)
+    @InvokedMethod(receiverType = A.class, name = "method", lineNumber = 71)
+    @InvokedConstructor(receiverType = A.class, lineNumber = 71)
     public void method() {
         new A().method();
     }
 
     @Override
     @InvokedMethods({
-            @InvokedMethod(receiverType = A.class, name = "method", lineNumber = 28),
-            @InvokedMethod(receiverType = B.class, name = "method", lineNumber = 28) })
+            @InvokedMethod(receiverType = A.class, name = "method", lineNumber = 79),
+            @InvokedMethod(receiverType = B.class, name = "method", lineNumber = 79) })
     public void methodParameter(@SuppressWarnings("hiding") Base b) {
         b.method();
     }

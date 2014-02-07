@@ -60,29 +60,29 @@ public class A implements Base {
     Base b = new B();
 
     @Override
-    @InvokedMethod(receiverType = B.class, name = "string", lineNumber = 14)
+    @InvokedMethod(receiverType = B.class, name = "string", lineNumber = 65)
     public String string() {
         return b.string();
     }
 
     @Override
-    @InvokedMethod(receiverType = B.class, name = "method", lineNumber = 21)
-    @InvokedConstructor(receiverType = B.class, lineNumber = 21)
+    @InvokedMethod(receiverType = B.class, name = "method", lineNumber = 72)
+    @InvokedConstructor(receiverType = B.class, lineNumber = 72)
     public void method() {
         new B().method();
     }
 
     @Override
     @InvokedMethods({
-            @InvokedMethod(receiverType = A.class, name = "method", lineNumber = 29),
-            @InvokedMethod(receiverType = B.class, name = "method", lineNumber = 29) })
+            @InvokedMethod(receiverType = A.class, name = "method", lineNumber = 80),
+            @InvokedMethod(receiverType = B.class, name = "method", lineNumber = 80) })
     public void methodParameter(@SuppressWarnings("hiding") Base b) {
         b.method();
     }
 
     @InvokedMethods({
-            @InvokedMethod(receiverType = A.class, name = "method", lineNumber = 36),
-            @InvokedMethod(receiverType = B.class, name = "method", lineNumber = 37) })
+            @InvokedMethod(receiverType = A.class, name = "method", lineNumber = 87),
+            @InvokedMethod(receiverType = B.class, name = "method", lineNumber = 88) })
     public void secondMethod() {
         new A().method();
         new B().method();

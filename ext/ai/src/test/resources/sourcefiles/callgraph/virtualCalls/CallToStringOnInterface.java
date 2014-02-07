@@ -48,6 +48,15 @@ import de.tud.cs.st.bat.test.invokedynamic.annotations.InvokedMethod;
  * This class is not meant to be (automatically) recompiled; it just serves documentation
  * purposes.
  * 
+ * <!--
+ * 
+ * 
+ * INTENTIONALLY LEFT EMPTY (THIS AREA CAN BE EXTENDED/REDUCED TO MAKE SURE THAT THE
+ * SPECIFIED LINE NUMBERS ARE STABLE.
+ * 
+ * 
+ * -->
+ * 
  * @author Marco Jacobasch
  */
 public class CallToStringOnInterface {
@@ -63,23 +72,23 @@ public class CallToStringOnInterface {
         }
     };
 
-    @InvokedMethod(receiverType = SimpleBase.class, name = "toString", returnType = String.class, lineNumber = 66)
+    @InvokedMethod(receiverType = SimpleBase.class, name = "toString", returnType = String.class, lineNumber = 77)
     void callToStringOnSimpleBase() {
         simpleBase.toString();
     }
 
-    @InvokedMethod(receiverType = ConcreteBase.class, name = "toString", returnType = String.class, lineNumber = 71)
+    @InvokedMethod(receiverType = Object.class, name = "toString", returnType = String.class, lineNumber = 82)
     void callToStringOnConcreteBase() {
         concreteBase.toString();
     }
 
-    @InvokedMethod(receiverType = AlternateBase.class, name = "toString", returnType = String.class, lineNumber = 75)
+    @InvokedMethod(receiverType = Object.class, name = "toString", returnType = String.class, lineNumber = 87)
     void callToStringOnAlternateBase() {
         alternerateBase.toString();
     }
 
-    @InvokedMethod(receiverType = AbstractBase.class, name = "toString", returnType = String.class, lineNumber = 80)
-    void callToStringonAbstractBase() {
+    @InvokedMethod(receiverType = Object.class, name = "toString", returnType = String.class, lineNumber = 92)
+    void callToStringOnAbstractBase() {
         abstractBase.toString();
     }
 

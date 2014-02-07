@@ -40,6 +40,15 @@ package callgraph.base;
  * This class is not meant to be (automatically) recompiled; it just serves documentation
  * purposes.
  * 
+ * <!--
+ * 
+ * 
+ * INTENTIONALLY LEFT EMPTY (THIS AREA CAN BE EXTENDED/REDUCED TO MAKE SURE THAT THE
+ * SPECIFIED LINE NUMBERS ARE STABLE.
+ * 
+ * 
+ * -->
+ * 
  * @author Marco Jacobasch
  */
 public abstract class AbstractBase implements Base {

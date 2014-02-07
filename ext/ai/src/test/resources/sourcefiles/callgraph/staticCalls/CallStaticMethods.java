@@ -58,17 +58,17 @@ import de.tud.cs.st.bat.test.invokedynamic.annotations.InvokedMethod;
  */
 public class CallStaticMethods {
 
-    @InvokedMethod(receiverType = AbstractBase.class, name = "staticMethod", isStatic = true, lineNumber = 13)
+    @InvokedMethod(receiverType = AbstractBase.class, name = "staticMethod", isStatic = true, lineNumber = 63)
     void callStaticAbstract() {
         AbstractBase.staticMethod();
     }
 
-    @InvokedMethod(receiverType = ConcreteBase.class, name = "staticMethod", isStatic = true, lineNumber = 18)
+    @InvokedMethod(receiverType = ConcreteBase.class, name = "staticMethod", isStatic = true, lineNumber = 68)
     void callStaticConcrete() {
         ConcreteBase.staticMethod();
     }
 
-    @InvokedMethod(receiverType = SimpleBase.class, name = "staticMethod", isStatic = true, lineNumber = 28)
+    @InvokedMethod(receiverType = SimpleBase.class, name = "staticMethod", isStatic = true, lineNumber = 73)
     void callStaticSimple() {
         SimpleBase.staticMethod();
     }

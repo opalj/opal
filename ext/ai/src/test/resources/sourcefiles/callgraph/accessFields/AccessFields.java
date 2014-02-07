@@ -44,6 +44,15 @@ import de.tud.cs.st.bat.test.invokedynamic.annotations.AccessedField;
  * This class is not meant to be (automatically) recompiled; it just serves documentation
  * purposes.
  * 
+ * <!--
+ * 
+ * 
+ * INTENTIONALLY LEFT EMPTY (THIS AREA CAN BE EXTENDED/REDUCED TO MAKE SURE THAT THE
+ * SPECIFIED LINE NUMBERS ARE STABLE.
+ * 
+ * 
+ * -->
+ * 
  * @author Marco Jacobasch
  */
 public class AccessFields {
@@ -51,25 +60,24 @@ public class AccessFields {
     ConcreteBase concreteBase = new ConcreteBase();
     AlternateBase alternerateBase = new AlternateBase();
 
-    @AccessedField(declaringType = ConcreteBase.class, fieldType = Integer.class, name = "integer", lineNumber = 13)
+    @AccessedField(declaringType = ConcreteBase.class, fieldType = Integer.class, name = "integer", lineNumber = 65)
     public int accessFieldInClass() {
         return concreteBase.integer;
     }
 
-    @AccessedField(declaringType = ConcreteBase.class, fieldType = String.class, name = "string", lineNumber = 18)
+    @AccessedField(declaringType = ConcreteBase.class, fieldType = String.class, name = "string", lineNumber = 70)
     public String accessFieldInSuperClass() {
         return concreteBase.string;
     }
 
-    @AccessedField(declaringType = AlternateBase.class, fieldType = String.class, name = "string", lineNumber = 23)
+    @AccessedField(declaringType = AlternateBase.class, fieldType = String.class, name = "string", lineNumber = 75)
     public String accessFieldInClassSameFieldNameInSuperClass() {
         return alternerateBase.string;
     }
 
-    @SuppressWarnings("static-access")
-    @AccessedField(declaringType = ConcreteBase.class, fieldType = Double.class, name = "DOUBLE_FIELD", lineNumber = 28)
+    @AccessedField(declaringType = ConcreteBase.class, fieldType = Double.class, name = "DOUBLE_FIELD", lineNumber = 80)
     public double accessStaticField() {
-        return concreteBase.DOUBLE_FIELD;
+        return ConcreteBase.DOUBLE_FIELD;
     }
 
     // TODO static super

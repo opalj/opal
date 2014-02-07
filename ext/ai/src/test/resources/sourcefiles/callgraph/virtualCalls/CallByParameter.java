@@ -37,8 +37,8 @@ import callgraph.base.AlternateBase;
 import callgraph.base.Base;
 import callgraph.base.ConcreteBase;
 import callgraph.base.SimpleBase;
-
 import de.tud.cs.st.bat.test.invokedynamic.annotations.InvokedMethod;
+import de.tud.cs.st.bat.test.invokedynamic.annotations.InvokedMethods;
 
 /**
  * This class was used to create a class file with some well defined attributes. The
@@ -57,32 +57,33 @@ import de.tud.cs.st.bat.test.invokedynamic.annotations.InvokedMethod;
  * 
  * -->
  * 
- * 
  * @author Marco Jacobasch
  */
 public class CallByParameter {
 
-    @InvokedMethod(receiverType = Base.class, name = "interfaceMethod", lineNumber = 55)
+    @InvokedMethods({
+            @InvokedMethod(receiverType = SimpleBase.class, name = "interfaceMethod", lineNumber = 68),
+            @InvokedMethod(receiverType = AbstractBase.class, name = "interfaceMethod", lineNumber = 68) })
     void callByInterface(Base object) {
         object.interfaceMethod();
     }
 
-    @InvokedMethod(receiverType = AbstractBase.class, name = "interfaceMethod", lineNumber = 19)
+    @InvokedMethod(receiverType = AbstractBase.class, name = "interfaceMethod", lineNumber = 73)
     void callByInterface(AbstractBase object) {
         object.interfaceMethod();
     }
 
-    @InvokedMethod(receiverType = ConcreteBase.class, name = "interfaceMethod", lineNumber = 24)
+    @InvokedMethod(receiverType = AbstractBase.class, name = "interfaceMethod", lineNumber = 78)
     void callByInterface(ConcreteBase object) {
         object.interfaceMethod();
     }
 
-    @InvokedMethod(receiverType = AlternateBase.class, name = "interfaceMethod", lineNumber = 29)
+    @InvokedMethod(receiverType = AbstractBase.class, name = "interfaceMethod", lineNumber = 83)
     void callByInterface(AlternateBase object) {
         object.interfaceMethod();
     }
 
-    @InvokedMethod(receiverType = SimpleBase.class, name = "interfaceMethod", lineNumber = 34)
+    @InvokedMethod(receiverType = SimpleBase.class, name = "interfaceMethod", lineNumber = 88)
     void callByInterface(SimpleBase object) {
         object.interfaceMethod();
     }

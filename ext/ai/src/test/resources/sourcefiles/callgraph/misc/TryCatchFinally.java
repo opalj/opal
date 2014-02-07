@@ -58,8 +58,8 @@ import de.tud.cs.st.bat.test.invokedynamic.annotations.InvokedMethod;
  */
 public class TryCatchFinally {
 
-    @InvokedConstructor(receiverType = SimpleBase.class, lineNumber = 16)
-    @InvokedMethod(receiverType = SimpleBase.class, name = "implementedMethod", lineNumber = 17)
+    @InvokedConstructor(receiverType = SimpleBase.class, lineNumber = 67)
+    @InvokedMethod(receiverType = SimpleBase.class, name = "implementedMethod", lineNumber = 68)
     void callVirtualMethodInCatch() {
         try {
             throw new Exception();
@@ -69,7 +69,7 @@ public class TryCatchFinally {
         }
     }
 
-    @InvokedMethod(receiverType = SimpleBase.class, name = "staticMethod", isStatic = true, lineNumber = 26)
+    @InvokedMethod(receiverType = SimpleBase.class, name = "staticMethod", isStatic = true, lineNumber = 77)
     void callStaticMethodInCatch() {
         try {
             throw new Exception();
@@ -78,8 +78,6 @@ public class TryCatchFinally {
         }
     }
 
-    @InvokedConstructor(receiverType = SimpleBase.class, lineNumber = 37)
-    @InvokedMethod(receiverType = SimpleBase.class, name = "implementedMethod", lineNumber = 38)
     void notCallVirtualMethodInCatch() {
         try {
             @SuppressWarnings("unused")
@@ -90,7 +88,6 @@ public class TryCatchFinally {
         }
     }
 
-    @InvokedMethod(receiverType = SimpleBase.class, name = "staticMethod", isStatic = true, lineNumber = 48)
     void notCallStaticMethodInCatch() {
         try {
             @SuppressWarnings("unused")
@@ -100,8 +97,8 @@ public class TryCatchFinally {
         }
     }
 
-    @InvokedConstructor(receiverType = SimpleBase.class, lineNumber = 60)
-    @InvokedMethod(receiverType = SimpleBase.class, name = "implementedMethod", lineNumber = 61)
+    @InvokedConstructor(receiverType = SimpleBase.class, lineNumber = 108)
+    @InvokedMethod(receiverType = SimpleBase.class, name = "implementedMethod", lineNumber = 109)
     void callVirtualMethodInFinally() {
         try {
             throw new Exception();
@@ -113,7 +110,7 @@ public class TryCatchFinally {
         }
     }
 
-    @InvokedMethod(receiverType = SimpleBase.class, name = "staticMethod", isStatic = true, lineNumber = 71)
+    @InvokedMethod(receiverType = SimpleBase.class, name = "staticMethod", isStatic = true, lineNumber = 120)
     void callStaticMethodInFinally() {
         try {
             throw new Exception();
