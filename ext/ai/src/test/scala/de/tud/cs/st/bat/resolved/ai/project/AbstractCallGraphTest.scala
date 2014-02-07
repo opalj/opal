@@ -107,28 +107,34 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
             evps collectFirst (
                 { case ElementValuePair("lineNumber", IntValue(lineNumber)) ⇒ lineNumber })
 
-        val zippedAndFlattenedCallGraph = callGraph.calls(method).map { f ⇒
+        // Suppress classFiles outside project
+        if (!project.classFile(fqnClass.asObjectType).isDefined)
+            return
+
+        val callees = callGraph.calls(method).map { f ⇒
             f._2.view.zipWithIndex map { case (value, index) ⇒ (f._1, value) }
         }.flatten
-        if (zippedAndFlattenedCallGraph.size == 0) {
+
+        if (callees.size == 0) {
             val className = project.classFile(method).fqn
-            val message = className+" { "+method+" } has no callers; expected: "+annotation.toJava
+            val message = className+" { "+method+" } has no callees; expected: "+annotation.toJava
             fail(message)
         }
 
-        val filteredCallGraph = zippedAndFlattenedCallGraph filter { f ⇒
-            f._2.name.equals(methodName) &&
-                project.classFile(f._2).thisType.equals(fqnClass)
-        }
-        filteredCallGraph.size should be > 0
-
-        val lineNumberFilteredCallGraph = filteredCallGraph filter { f ⇒
+        val calleeMatchingAnnotation = callees filter { f ⇒
             val Some(line) = method.body.get.lineNumberTable.get.lookupLineNumber(f._1)
-            line == lineNumber
+            f._2.name.equals(methodName) &&
+                project.classFile(f._2).thisType.equals(fqnClass) &&
+                line == lineNumber
         }
-        lineNumberFilteredCallGraph.size should be <= 1
 
-        lineNumberFilteredCallGraph foreach { f ⇒
+        if (calleeMatchingAnnotation.size < 1) {
+            val className = project.classFile(method).fqn
+            val message = className+" { "+method+" } has no annotated callee; expected: "+annotation.toJava
+            fail(message)
+        }
+
+        calleeMatchingAnnotation foreach { f ⇒
             f._2.name should be(methodName)
             project.classFile(f._2).thisType should be(fqnClass)
         }
@@ -145,24 +151,34 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
             evps collectFirst (
                 { case ElementValuePair("lineNumber", IntValue(lineNumber)) ⇒ lineNumber })
 
-        val zippedAndFlattenedCallGraph = callGraph.calls(method).map { f ⇒
+        // Suppress classFiles outside project
+        if (!project.classFile(fqnClass.asObjectType).isDefined)
+            return
+
+        val callees = callGraph.calls(method).map { f ⇒
             f._2.view.zipWithIndex map { case (value, index) ⇒ (f._1, value) }
         }.flatten
-        zippedAndFlattenedCallGraph.size should be > 0
 
-        val filteredCallGraph = zippedAndFlattenedCallGraph filter { f ⇒
-            f._2.name.equals("<init>") &&
-                project.classFile(f._2).thisType.equals(fqnClass)
+        if (callees.size == 0) {
+            val className = project.classFile(method).fqn
+            val message = className+" { "+method+" } has no called constructors; expected: "+annotation.toJava
+            fail(message)
         }
-        filteredCallGraph.size should be > 0
 
-        val lineNumberFilteredCallGraph = filteredCallGraph filter { f ⇒
+        val calleeMatchingAnnotation = callees filter { f ⇒
             val Some(line) = method.body.get.lineNumberTable.get.lookupLineNumber(f._1)
-            line == lineNumber
+            f._2.name.equals("<init>") &&
+                project.classFile(f._2).thisType.equals(fqnClass) &&
+                line == lineNumber
         }
-        lineNumberFilteredCallGraph.size should be <= 1
 
-        lineNumberFilteredCallGraph foreach { f ⇒
+        if (calleeMatchingAnnotation.size < 1) {
+            val className = project.classFile(method).fqn
+            val message = className+" { "+method+" } has no annotated constructor; expected: "+annotation.toJava
+            fail(message)
+        }
+
+        calleeMatchingAnnotation foreach { f ⇒
             f._2.name should be("<init>")
             project.classFile(f._2).thisType should be(fqnClass)
         }

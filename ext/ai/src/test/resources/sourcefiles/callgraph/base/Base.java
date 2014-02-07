@@ -33,24 +33,23 @@
 package callgraph.base;
 
 /**
- * This class was used to create a class file with some well defined attributes. The created class
- * is subsequently used by several tests.
+ * This class was used to create a class file with some well defined attributes. The
+ * created class is subsequently used by several tests.
  * 
  * NOTE<br />
- * This class is not meant to be (automatically) recompiled; it just serves documentation purposes.
+ * This class is not meant to be (automatically) recompiled; it just serves documentation
+ * purposes.
+ * 
+ * <!--
+ * 
+ * 
+ * INTENTIONALLY LEFT EMPTY (THIS AREA CAN BE EXTENDED/REDUCED TO MAKE SURE THAT THE
+ * SPECIFIED LINE NUMBERS ARE STABLE.
+ * 
+ * 
+ * -->
  * 
  * @author Marco Jacobasch
- */
-/*
- * TODO covariant TODO overloaded methods TODO PR fixture
- * 
- * TODO Arrays (-) TODO Generics (--) TODO synchronized (-*)
- * 
- * 
- * ----
- * 
- * TODO Fixtures annotieren TODO NoCalls+IgnoreCalls Annotations TODO Missing Annotation => warning
- * TODO Callgraph Test
  */
 public interface Base {
 
@@ -63,3 +62,14 @@ public interface Base {
     void implementedMethod();
 
 }
+/*
+ * TODO covariant TODO overloaded methods TODO PR fixture
+ * 
+ * TODO Arrays (-) TODO Generics (--) TODO synchronized (-*)
+ * 
+ * 
+ * ----
+ * 
+ * TODO Fixtures annotieren TODO NoCalls+IgnoreCalls Annotations TODO Missing Annotation
+ * => warning TODO Callgraph Test
+ */

@@ -59,27 +59,27 @@ import de.tud.cs.st.bat.test.invokedynamic.annotations.InvokedConstructor;
 public class ParameterizedConstructors {
 
     @SuppressWarnings("unused")
-    @InvokedConstructor(receiverType = ConcreteBase.class, parameterTypes = { String.class }, lineNumber = 15)
+    @InvokedConstructor(receiverType = ConcreteBase.class, parameterTypes = { String.class }, lineNumber = 64)
     public void createConcreteBaseSingleParameter() {
         Base concreteBase = new ConcreteBase("test");
     }
 
     @SuppressWarnings("unused")
-    @InvokedConstructor(receiverType = AlternateBase.class, parameterTypes = { String.class }, lineNumber = 20)
+    @InvokedConstructor(receiverType = AlternateBase.class, parameterTypes = { String.class }, lineNumber = 70)
     public void createAlternateBaseSingleParameter() {
         Base alternerateBase = new AlternateBase("test");
     }
 
     @SuppressWarnings("unused")
     @InvokedConstructor(receiverType = ConcreteBase.class, parameterTypes = {
-            String.class, Integer.class }, lineNumber = 25)
+            String.class, Integer.class }, lineNumber = 77)
     public void createConcreteBaseTwoParameters() {
         Base concreteBase = new ConcreteBase("test", 42);
     }
 
     @SuppressWarnings("unused")
     @InvokedConstructor(receiverType = AlternateBase.class, parameterTypes = {
-            String.class, Double.class }, lineNumber = 30)
+            String.class, Double.class }, lineNumber = 84)
     public void createAlternateBaseTwoParameters() {
         Base alternerateBase = new AlternateBase("test", 42);
     }

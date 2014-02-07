@@ -50,24 +50,35 @@ import de.tud.cs.st.bat.test.invokedynamic.annotations.InvokedMethod;
  * This class is not meant to be (automatically) recompiled; it just serves documentation
  * purposes.
  * 
+ * <!--
+ * 
+ * 
+ * INTENTIONALLY LEFT EMPTY (THIS AREA CAN BE EXTENDED/REDUCED TO MAKE SURE THAT THE
+ * SPECIFIED LINE NUMBERS ARE STABLE.
+ * 
+ * 
+ * -->
+ * 
  * @author Marco Jacobasch
  */
 public class Reflections {
 
-    @InvokedConstructor(receiverType = ConcreteBase.class, lineNumber = 17)
-    @InvokedMethod(receiverType = ConcreteBase.class, name = "implementedMethod", lineNumber = 17)
+    @InvokedConstructor(receiverType = ConcreteBase.class, lineNumber = 69)
+    @InvokedMethod(receiverType = ConcreteBase.class, name = "implementedMethod", lineNumber = 69)
     void callAfterCastingToInterface() {
         ((Base) new ConcreteBase()).implementedMethod();
     }
 
-    @InvokedMethod(receiverType = SimpleBase.class, name = "implementedMethod", lineNumber = 25)
+    @InvokedConstructor(receiverType = SimpleBase.class, lineNumber = 76)
+    @InvokedMethod(receiverType = SimpleBase.class, name = "implementedMethod", lineNumber = 77)
     void callInstantiatedByReflection() throws InstantiationException,
             IllegalAccessException, ClassNotFoundException {
         Base instance = (Base) Class.forName("fixture.SimpleBase").newInstance();
         instance.implementedMethod();
     }
 
-    @InvokedMethod(receiverType = SimpleBase.class, name = "implementedMethod", lineNumber = 34)
+    @InvokedConstructor(receiverType = SimpleBase.class, lineNumber = 84)
+    @InvokedMethod(receiverType = SimpleBase.class, name = "implementedMethod", lineNumber = 86)
     void callMethodByReflection() throws NoSuchMethodException, SecurityException,
             IllegalAccessException, IllegalArgumentException, InvocationTargetException {
         Base base = new SimpleBase();

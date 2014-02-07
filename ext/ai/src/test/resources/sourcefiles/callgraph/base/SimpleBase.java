@@ -40,6 +40,15 @@ package callgraph.base;
  * This class is not meant to be (automatically) recompiled; it just serves documentation
  * purposes.
  * 
+ * <!--
+ * 
+ * 
+ * INTENTIONALLY LEFT EMPTY (THIS AREA CAN BE EXTENDED/REDUCED TO MAKE SURE THAT THE
+ * SPECIFIED LINE NUMBERS ARE STABLE.
+ * 
+ * 
+ * -->
+ * 
  * @author Marco Jacobasch
  */
 public class SimpleBase implements Base {
@@ -66,6 +75,16 @@ public class SimpleBase implements Base {
 
     public static void staticMethod() {
         // empty
+    }
+
+    @Override
+    public String toString() {
+        return "SimpleBase";
+    }
+
+    @Override
+    public int hashCode() {
+        return 0;
     }
 
 }
