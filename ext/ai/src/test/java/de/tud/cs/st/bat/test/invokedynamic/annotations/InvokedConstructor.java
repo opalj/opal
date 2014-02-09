@@ -51,4 +51,6 @@ public @interface InvokedConstructor {
     Class<?>[] parameterTypes() default {};
 
     int lineNumber() default -1;
+    
+    boolean isReflective() default false;
 }

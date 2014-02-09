@@ -155,6 +155,11 @@ trait ConsoleTracer extends AITracer {
             Console.RESET)
     }
 
+    override def jumpToSubroutine(domain: SomeDomain, pc: PC): Unit = {
+        import Console._
+        println(YELLOW_B + BOLD+"JUMP TO SUBROUTINE : "+pc + RESET)
+    }
+
     override def returnFromSubroutine[D <: SomeDomain with Singleton](
         domain: D,
         pc: PC,

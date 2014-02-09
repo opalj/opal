@@ -44,6 +44,7 @@ package ai
 case class InterpretationFailedException[D <: SomeDomain with Singleton](
     cause: Throwable,
     domain: D,
+    pc : PC,
     worklist: List[PC],
     evaluated: List[PC],
     operandsArray: Array[List[D#DomainValue]],

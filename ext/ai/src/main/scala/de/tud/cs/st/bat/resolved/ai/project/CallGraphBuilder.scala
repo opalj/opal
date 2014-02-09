@@ -57,13 +57,13 @@ class CallGraphBuilder[Source](val project: Project[Source]) {
 
     type PCs = collection.mutable.UShortSet
 
-    private[this] var allCallEdges = List.empty[List[(Method, PC, Iterable[Method])]]
+    private[this] var allCallEdges = List.empty[(Method, List[(PC, Iterable[Method])])]
 
     /**
      * Adds the given `callEdges` to the call graph.
      */
-    def addCallEdges(callEdges: List[(Method, PC, Iterable[Method])]): Unit = {
-        if (callEdges.nonEmpty) {
+    def addCallEdges(callEdges: (Method, List[(PC, Iterable[Method])])): Unit = {
+        if (callEdges._2.nonEmpty) {
             allCallEdges = callEdges :: allCallEdges
         }
     }
@@ -85,8 +85,8 @@ class CallGraphBuilder[Source](val project: Project[Source]) {
         val calledByMapFuture: Future[Array[HashMap[Method, PCs]]] = future {
             val calledByMap: Array[HashMap[Method, PCs]] = new Array(project.methodsCount)
             for {
-                edges ← allCallEdges
-                (caller, pc, callees) ← edges
+                (caller, edges) ← allCallEdges
+                (pc, callees) ← edges
                 callee ← callees
             } {
                 val callers =
@@ -122,19 +122,19 @@ class CallGraphBuilder[Source](val project: Project[Source]) {
             calledByMap
         }
 
-        // the index is the id of the method that calls other methods
-        //val callsMap: Array[Map[PC, Iterable[Method]]] = new Array(project.methodsCount)
+        // the index in the array is the id of the method that calls other methods
         val callsMap: Array[Map[PC, Iterable[Method]]] = new Array(project.methodsCount)
         for {
-            edges ← allCallEdges
-            (caller, pc, callees) ← edges
+            (caller, edges) ← allCallEdges
+            (pc, callees) ← edges
         } {
             var callSites = callsMap(caller.id)
-            if (callSites eq null) {
-                callsMap(caller.id) = new Map.Map1(pc, callees)
-            } else {
-                callsMap(caller.id) = callSites.updated(pc, callees)
-            }
+            callsMap(caller.id) =
+                if (callSites eq null) {
+                    new Map.Map1(pc, callees)
+                } else {
+                    callSites.updated(pc, callees)
+                }
         }
 
         new CallGraph(

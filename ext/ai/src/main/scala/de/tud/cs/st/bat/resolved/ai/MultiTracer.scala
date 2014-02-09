@@ -120,6 +120,12 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
         }
     }
 
+    override def jumpToSubroutine(domain: SomeDomain, pc: PC): Unit = {
+        tracers foreach { tracer ⇒
+            tracer.jumpToSubroutine(domain, pc)
+        }
+    }
+
     /**
      * Called when the evaluation of a subroutine (JSR/RET) is completed.
      */

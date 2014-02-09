@@ -91,8 +91,8 @@ trait DefaultTypeLevelReferenceValues[+I]
             isSubtypeOf match {
                 case Yes ⇒ Yes
                 case No if isPrecise ||
-                    theUpperTypeBound.componentType.isBaseType ||
-                    (supertype.isArrayType && supertype.asArrayType.componentType.isBaseType) ⇒ No
+                    theUpperTypeBound.elementType.isBaseType ||
+                    (supertype.isArrayType && supertype.asArrayType.elementType.isBaseType) ⇒ No
                 case _ ⇒ Unknown
             }
         }
@@ -126,7 +126,7 @@ trait DefaultTypeLevelReferenceValues[+I]
             pc: PC,
             supertype: ReferenceType): DomainReferenceValue = {
             // BATAI calls this method only if a previous "subtype of" test 
-            // (this.typeOfvalue <: supertype ?) 
+            // (this.isValueSubtypeOf <: supertype ?) 
             // returned unknown and we are now on the branch where this relation
             // has to hold. Hence, we only need to handle the case where 
             // supertype is more strict than this type's upper type bound.
@@ -233,9 +233,16 @@ trait DefaultTypeLevelReferenceValues[+I]
         override def isValueSubtypeOf(supertype: ReferenceType): Answer = {
             val isSubtypeOf = domain.isSubtypeOf(theUpperTypeBound, supertype)
             isSubtypeOf match {
-                case Yes             ⇒ Yes
-                case No if isPrecise ⇒ No
-                case _               ⇒ Unknown
+                case Yes ⇒ Yes
+                case No if isPrecise ||
+                    (
+                        supertype.isArrayType &&
+                        // and it is impossible that this value is actually an array...
+                        (theUpperTypeBound ne ObjectType.Object) &&
+                        (theUpperTypeBound ne ObjectType.Serializable) &&
+                        (theUpperTypeBound ne ObjectType.Cloneable)
+                    ) ⇒ No
+                case _ ⇒ Unknown
             }
         }
 
@@ -338,23 +345,38 @@ trait DefaultTypeLevelReferenceValues[+I]
          *      does not distinguish between class types and interface types.
          */
         override def isValueSubtypeOf(supertype: ReferenceType): Answer = {
-            val isSubtypeOf = upperTypeBound exists { anUpperTypeBound ⇒
-                domain.isSubtypeOf(anUpperTypeBound, supertype).isYes
+            var isSubtypeOf: Answer = No
+            upperTypeBound foreach { anUpperTypeBound ⇒
+                domain.isSubtypeOf(anUpperTypeBound, supertype) match {
+                    case Yes     ⇒ return Yes // <= Shortcut evaluation
+                    case Unknown ⇒ isSubtypeOf = Unknown
+                    case No      ⇒ /*nothing to do*/
+                }
             }
-            if (isSubtypeOf)
-                Yes
-            else
-                /* No | Unknown*/
-                // In general, we could check whether a type exists that is a
-                // proper subtype of the type identified by this value's type bounds 
-                // and that is also a subtype of the given `supertype`. 
-                //
-                // If such a type does not exist the answer is truly `no` (if we 
-                // assume that we know the complete type hierarchy); 
-                // if we don't know the complete hierarchy or if we currently 
-                // analyze a library the answer generally has to be `Unknown`
-                // unless we also consider the classes that are final or ....
-                Unknown
+            /* No | Unknown*/
+            // In general, we could check whether a type exists that is a
+            // proper subtype of the type identified by this value's type bounds 
+            // and that is also a subtype of the given `supertype`. 
+            //
+            // If such a type does not exist the answer is truly `no` (if we 
+            // assume that we know the complete type hierarchy); 
+            // if we don't know the complete hierarchy or if we currently 
+            // analyze a library the answer generally has to be `Unknown`
+            // unless we also consider the classes that are final or ....
+
+            isSubtypeOf match {
+                // Yes is not possible here!
+
+                case No if (
+                    supertype.isArrayType &&
+                    upperTypeBound != TypeLevelReferenceValues.SerializableAndCloneable
+                ) ⇒
+                    // even if the upper bound is not precise we are now a 100% sure 
+                    // this value is not a subtype of the given supertype
+                    No
+                case _ ⇒
+                    Unknown
+            }
         }
 
         override def refineUpperTypeBound(

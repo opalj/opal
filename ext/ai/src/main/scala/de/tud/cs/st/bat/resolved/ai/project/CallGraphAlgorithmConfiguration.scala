@@ -69,12 +69,8 @@ trait CallGraphAlgorithmConfiguration[Source] {
     type I /*Domain Identifier*/
 
     /**
-     * Returns the domain object that will be used to analyze the given
+     * Returns the new domain object that will be used to analyze the given
      * method.
-     *
-     * If the same Domain object is returned multiple times, the respective
-     * object has to be thread-safe. In general, it is easier to design the `Domain`
-     * in such a way that every call of this method can return a new instance.
      */
     def Domain(
         theProject: Project[Source],

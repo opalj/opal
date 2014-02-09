@@ -152,7 +152,7 @@ trait AITracer {
      */
     def abruptMethodExecution[D <: SomeDomain with Singleton](
         domain: D,
-        pc: Int,
+        pc: PC,
         exception: D#DomainValue)
 
     /**
@@ -166,17 +166,22 @@ trait AITracer {
         newWorklist: List[PC])
 
     /**
+     * Called before a jump to a subroutine.
+     */
+    def jumpToSubroutine(domain: SomeDomain, pc: PC): Unit
+
+    /**
      * Called when the evaluation of a subroutine (JSR/RET) is completed.
      */
     def returnFromSubroutine[D <: SomeDomain with Singleton](
         domain: D,
-        pc: Int,
-        returnAddress: Int,
-        subroutineInstructions: List[Int])
+        pc: PC,
+        returnAddress: PC,
+        subroutineInstructions: List[PC]): Unit
 
     /**
      * Called by BATAI when the abstract interpretation of a method has completed/was
      * interrupted.
      */
-    def result[D <: SomeDomain with Singleton](result: AIResult[D])
+    def result[D <: SomeDomain with Singleton](result: AIResult[D]): Unit
 }

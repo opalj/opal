@@ -691,6 +691,13 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
         case _             ⇒ componentType
     }
 
+    /**
+     * The number of dimensions of this array. E.g. "Object[]" has one dimension and
+     * "Object[][]" has two dimensions.
+     */
+    def dimensions: Int =
+        1 + (componentType match { case at: ArrayType ⇒ at.dimensions; case _ ⇒ 0 })
+
     override def toJava: String = componentType.toJava+"[]"
 
     override def toBinaryJavaName: String = "["+componentType.toBinaryJavaName

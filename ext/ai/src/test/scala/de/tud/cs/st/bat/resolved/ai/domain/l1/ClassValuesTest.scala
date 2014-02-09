@@ -41,7 +41,7 @@ import de.tud.cs.st.bat.TestSupport
 import reader.Java7Framework.ClassFiles
 
 import org.scalatest.ParallelTestExecution
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
@@ -57,7 +57,7 @@ import de.tud.cs.st.util._
 @RunWith(classOf[JUnitRunner])
 class ClassValuesTest
         extends FlatSpec
-        with ShouldMatchers
+        with Matchers
         with ParallelTestExecution {
 
     import PlainClassesTest._
