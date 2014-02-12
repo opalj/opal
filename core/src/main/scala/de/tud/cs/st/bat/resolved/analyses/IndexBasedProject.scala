@@ -172,6 +172,18 @@ class IndexBasedProject[Source: reflect.ClassTag] private (
         true
     }
 
+    def statistics: String = {
+        val classFiles = classesMap.filter(_ != null)
+        "Project Statistics:"+
+            "\n\tClasses: "+classesMap.count(_ != null)+
+            " - Annotations: "+classFiles.foldLeft(0)(_ + _.annotations.size)+
+            "\n\tMethods: "+classFiles.foldLeft(0)(_ + _.methods.size)+
+            " - Annotations: "+classFiles.foldLeft(0)(_ + _.methods.foldLeft(0)((c, n) ⇒ c + n.annotations.size + n.parameterAnnotations.size))+
+            "\n\tFields: "+classFiles.foldLeft(0)(_ + _.fields.size)+
+            " - Annotations: "+classFiles.foldLeft(0)(_ + _.fields.foldLeft(0)((c, n) ⇒ c + n.annotations.size))+
+            "\n\tInstructions: "+classFiles.foldLeft(0)(_ + _.methods.filter(_.body.isDefined).foldLeft(0)(_ + _.body.get.instructions.count(_ != null)))
+    }
+
     override def toString: String = {
         val classesAndSources =
             (classesMap.view zip sourcesMap.view).view.filter(_._1 ne null)
