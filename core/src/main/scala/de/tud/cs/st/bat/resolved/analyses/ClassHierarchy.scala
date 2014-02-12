@@ -914,6 +914,16 @@ class ClassHierarchy private (
         directSubtypes
     }
 
+    def statistics: String = {
+        "Class Hierarchy Statistics:"+
+            "\n\tKnown types: "+knownTypesMap.count(_ != null)+
+            "\n\tInterface types: "+interfaceTypesMap.count(isInterface => isInterface)+
+            "\n\tIdentified Superclasses: "+superclassTypeMap.count(_ != null)+
+            "\n\tSuperinterfaces: "+superinterfaceTypesMap.filter(_ != null).foldLeft(0)(_ + _.size)+
+            "\n\tSubclasses: "+subclassTypesMap.filter(_ != null).foldLeft(0)(_ + _.size)+
+            "\n\tSubinterfaces: "+subinterfaceTypesMap.filter(_ != null).foldLeft(0)(_ + _.size)
+    }
+
     /**
      * Returns a view of the class hierarchy as a graph (which can then be transformed
      * into a dot representation [[http://www.graphviz.org Graphviz]]). This
