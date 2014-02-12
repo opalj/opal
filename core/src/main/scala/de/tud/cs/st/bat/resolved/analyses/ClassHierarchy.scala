@@ -1052,7 +1052,7 @@ object ClassHierarchy {
                             typeKind == "interface",
                             Option(superclassType).map(ObjectType(_)),
                             Option(superinterfaceTypes).map { superinterfaceTypes ⇒
-                                HashSet.empty ++ superinterfaceTypes.split(",").map(_.trim).map(ObjectType(_))
+                                HashSet.empty ++ superinterfaceTypes.split(',').map(_.trim).map(ObjectType(_))
                             }.getOrElse(HashSet.empty)
                         )
                     }
