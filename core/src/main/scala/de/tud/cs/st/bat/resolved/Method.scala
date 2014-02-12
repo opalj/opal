@@ -84,6 +84,9 @@ final class Method private (
             case None              ⇒ IndexedSeq.empty
         }
 
+    def parameterAnnotations: ParameterAnnotations =
+        runtimeVisibleParameterAnnotations ++ runtimeInvisibleParameterAnnotations
+
     // This is directly supported due to its need for the resolution of signature 
     // polymorphic methods. 
     final def isNativeAndVarargs = Method.isNativeAndVarargs(accessFlags)
