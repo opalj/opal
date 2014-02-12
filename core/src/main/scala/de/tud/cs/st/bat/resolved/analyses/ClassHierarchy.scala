@@ -1099,7 +1099,7 @@ object ClassHierarchy {
             // Update the class hierarchy from the point of view the newly added type 
             //
             knownTypesMap(objectType.id) = objectType
-            interfaceTypesMap(objectType.id) == isInterfaceType
+            interfaceTypesMap(objectType.id) = isInterfaceType
             superclassTypeMap(objectType.id) = theSuperclassType.getOrElse(null)
             superinterfaceTypesMap(objectType.id) = theSuperinterfaceTypes
 
