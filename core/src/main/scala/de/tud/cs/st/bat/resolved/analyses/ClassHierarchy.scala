@@ -601,7 +601,7 @@ class ClassHierarchy private (
      * @note Resolution is final. I.e., either this algorithm has found the defining field
      *      or the field is not defined by one of the loaded classes. Searching for the
      *      field in subclasses is not meaningful as Java does not do dynamic field
-     *      reference resolution. 
+     *      reference resolution.
      *
      * @param c The class (or a superclass thereof) that is expected to define the
      *      reference field.
@@ -1106,7 +1106,7 @@ object ClassHierarchy {
             theSuperinterfaceTypes: HashSet[ObjectType]) {
 
             //
-            // Update the class hierarchy from the point of view the newly added type 
+            // Update the class hierarchy from the point of view of the newly added type 
             //
             knownTypesMap(objectType.id) = objectType
             interfaceTypesMap(objectType.id) = isInterfaceType
