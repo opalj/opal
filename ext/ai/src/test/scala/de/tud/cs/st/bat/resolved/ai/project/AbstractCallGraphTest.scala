@@ -62,8 +62,10 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
     // Override to specify other fixtures or callgraph algorithms
     //
     def testFileName: String
+
     def testFilePath: String
-    def testCallGraphAlgorithm: CallGraphAlgorithmConfiguration[_]
+
+    def testCallGraphAlgorithm: CallGraphAlgorithmConfiguration[java.net.URL]
 
     //
     // ANNOTATIONTYPES
@@ -91,7 +93,7 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
         CallGraphFactory.create(
             project,
             CallGraphFactory.defaultEntryPointsForLibraries(project),
-            new CHACallGraphAlgorithmConfiguration())
+            testCallGraphAlgorithm)
 
     //
     // UTILITY FUNCTIONS
