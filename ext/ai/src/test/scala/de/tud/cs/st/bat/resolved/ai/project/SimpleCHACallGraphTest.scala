@@ -37,10 +37,15 @@ package ai
 package project
 
 /**
+ * Tests the generation of the call graph for a small project.
+ *
  * @author Marco Jacobasch
  */
 class SimpleCHACallGraphTest extends AbstractCallGraphTest {
+
     override def testFileName = "classfiles/simpleCallgraph.jar"
+
     override def testFilePath = "ext/ai"
+
     override def testCallGraphAlgorithm = new CHACallGraphAlgorithmConfiguration()
 }

@@ -40,7 +40,10 @@ package project
  * @author Marco Jacobasch
  */
 class SimpleVTACallGraphTest extends AbstractCallGraphTest {
+
     override def testFileName = "classfiles/simpleCallgraph.jar"
+
     override def testFilePath = "ext/ai"
+
     override def testCallGraphAlgorithm = new VTACallGraphAlgorithmConfiguration()
 }

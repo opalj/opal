@@ -40,7 +40,6 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-
 import reader.Java7Framework
 
 /**
@@ -85,6 +84,8 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
     def file = TestSupport.locateTestResources(testFileName, testFilePath)
     val classFiles = Java7Framework.ClassFiles(file)
     val project = bat.resolved.analyses.IndexBasedProject(classFiles)
+    //    /*DEBUG*/ println(project.statistics)
+    //    /*DEBUG*/ println(project.classHierarchy.statistics)
 
     //
     // GRAPH CONSTRUCTION
@@ -94,6 +95,8 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
             project,
             CallGraphFactory.defaultEntryPointsForLibraries(project),
             testCallGraphAlgorithm)
+    //    /*DEBUG*/ println(callGraph.callsStatistics(30000))
+    //    /*DEBUG*/ println(callGraph.calledByStatistics(30000))
 
     //
     // UTILITY FUNCTIONS
@@ -125,7 +128,8 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
             return
 
         val callees = callGraph.calls(method).map { f ⇒
-            f._2.view.zipWithIndex map { case (value, index) ⇒ (f._1, value) }
+            val (pc, callees) = f
+            callees map { ((pc, _)) }
         }.flatten
 
         if (callees.size == 0) {
@@ -176,7 +180,8 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
             return
 
         val callees = callGraph.calls(method).map { f ⇒
-            f._2.view.zipWithIndex map { case (value, index) ⇒ (f._1, value) }
+            val (pc, callees) = f
+            callees map { ((pc, _)) }
         }.flatten
 
         if (callees.size == 0) {
@@ -238,63 +243,67 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
         classFile ← project.classFiles
         method ← classFile.methods
     } {
-        it should "correctly identify all call targets for the method ("+method.id+") "+method+" in class "+classFile.fqn in {
+        it should "correctly identify all call targets for the method ("+
+            method.id+") "+method+" in class "+classFile.fqn in {
 
-            // single invocation per method
-            method.runtimeVisibleAnnotations filter (
-                _.annotationType equals (invokedMethodAnnotation)) foreach (singleMethodTest(method, _))
-
-            // multiple invocations per Method
-            method.runtimeVisibleAnnotations filter (
-                _.annotationType equals (invokedMethodsAnnotation)) foreach { f ⇒
-                    val Some(annotationArray) =
-                        f.elementValuePairs collectFirst (
-                            { case ElementValuePair("value", ArrayValue(array)) ⇒ array }
-                        )
-                    val annotations =
-                        annotationArray collect (
-                            { case AnnotationValue(annotation) ⇒ annotation }
-                        )
-                    annotations foreach (singleMethodTest(method, _))
+                // single invocation per method
+                method.runtimeVisibleAnnotations filter { annotation ⇒
+                    annotation.annotationType == invokedMethodAnnotation
+                } foreach { invokedMethod ⇒
+                    singleMethodTest(method, invokedMethod)
                 }
 
-            // single constructor call per method
-            method.runtimeVisibleAnnotations filter {
-                _.annotationType equals (invokedConstructorAnnotation)
-            } foreach (singleConstructorTest(method, _))
-
-            // multiple constructor calls per method
-            method.runtimeVisibleAnnotations filter (
-                _.annotationType equals (invokedConstructorsAnnotation)) foreach { f ⇒
+                // multiple invocations per Method
+                method.runtimeVisibleAnnotations filter { annotation ⇒
+                    annotation.annotationType == invokedMethodsAnnotation
+                } foreach { f ⇒
                     val Some(annotationArray) =
-                        f.elementValuePairs collectFirst (
+                        f.elementValuePairs collectFirst {
                             { case ElementValuePair("value", ArrayValue(array)) ⇒ array }
-                        )
-                    val annotations =
-                        annotationArray collect (
-                            { case AnnotationValue(annotation) ⇒ annotation }
-                        )
-                    annotations foreach (singleConstructorTest(method, _))
+                        }
+                    annotationArray foreach { anInvokedMethod ⇒
+                        val AnnotationValue(invokedMethod) = anInvokedMethod
+                        singleMethodTest(method, invokedMethod)
+                    }
                 }
 
-            // single field access per method
-            method.runtimeVisibleAnnotations filter {
-                _.annotationType equals (accessedFieldAnnotation)
-            } foreach (singleFieldAccessTest(method, _))
+                // single constructor call per method
+                method.runtimeVisibleAnnotations filter {
+                    _.annotationType equals (invokedConstructorAnnotation)
+                } foreach (singleConstructorTest(method, _))
 
-            // multiple field accesses per method
-            method.runtimeVisibleAnnotations filter (
-                _.annotationType equals (accessedFieldsAnnotation)) foreach { f ⇒
-                    val Some(annotationArray) =
-                        f.elementValuePairs collectFirst (
-                            { case ElementValuePair("value", ArrayValue(array)) ⇒ array }
-                        )
-                    val annotations =
-                        annotationArray collect (
-                            { case AnnotationValue(annotation) ⇒ annotation }
-                        )
-                    annotations foreach (singleFieldAccessTest(method, _))
-                }
-        }
+                // multiple constructor calls per method
+                method.runtimeVisibleAnnotations filter (
+                    _.annotationType equals (invokedConstructorsAnnotation)) foreach { f ⇒
+                        val Some(annotationArray) =
+                            f.elementValuePairs collectFirst (
+                                { case ElementValuePair("value", ArrayValue(array)) ⇒ array }
+                            )
+                        val annotations =
+                            annotationArray collect (
+                                { case AnnotationValue(annotation) ⇒ annotation }
+                            )
+                        annotations foreach (singleConstructorTest(method, _))
+                    }
+
+                // single field access per method
+                method.runtimeVisibleAnnotations filter {
+                    _.annotationType equals (accessedFieldAnnotation)
+                } foreach (singleFieldAccessTest(method, _))
+
+                // multiple field accesses per method
+                method.runtimeVisibleAnnotations filter (
+                    _.annotationType equals (accessedFieldsAnnotation)) foreach { f ⇒
+                        val Some(annotationArray) =
+                            f.elementValuePairs collectFirst (
+                                { case ElementValuePair("value", ArrayValue(array)) ⇒ array }
+                            )
+                        val annotations =
+                            annotationArray collect (
+                                { case AnnotationValue(annotation) ⇒ annotation }
+                            )
+                        annotations foreach (singleFieldAccessTest(method, _))
+                    }
+            }
     }
 }
