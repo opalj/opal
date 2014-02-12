@@ -74,15 +74,19 @@ public class A implements Base {
 
     @Override
     @InvokedMethods({
-            @InvokedMethod(receiverType = A.class, name = "method", lineNumber = 80),
-            @InvokedMethod(receiverType = B.class, name = "method", lineNumber = 80) })
+            @InvokedMethod(receiverType = A.class, name = "method", lineNumber = 83),
+            @InvokedMethod(receiverType = B.class, name = "method", lineNumber = 83),
+            @InvokedMethod(receiverType = A.class, name = "methodParameter", lineNumber = 82) })
     public void methodParameter(@SuppressWarnings("hiding") Base b) {
-        b.method();
+        if (b != null) {
+            this.methodParameter(null);
+            b.method();
+        }
     }
 
     @InvokedMethods({
-            @InvokedMethod(receiverType = A.class, name = "method", lineNumber = 87),
-            @InvokedMethod(receiverType = B.class, name = "method", lineNumber = 88) })
+            @InvokedMethod(receiverType = A.class, name = "method", lineNumber = 91),
+            @InvokedMethod(receiverType = B.class, name = "method", lineNumber = 92) })
     public void secondMethod() {
         new A().method();
         new B().method();
