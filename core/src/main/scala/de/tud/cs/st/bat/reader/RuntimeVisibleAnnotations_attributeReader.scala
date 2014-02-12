@@ -55,10 +55,11 @@ trait RuntimeVisibleAnnotations_attributeReader extends AttributeReader {
 
     def Annotations(in: DataInputStream, cp: Constant_Pool): Annotations
 
-    def RuntimeVisibleAnnotations_attribute(attribute_name_index: Constant_Pool_Index,
-                                            attribute_length: Int,
-                                            annotations: Annotations)(
-                                                implicit constant_pool: Constant_Pool): RuntimeVisibleAnnotations_attribute
+    def RuntimeVisibleAnnotations_attribute(
+        attribute_name_index: Constant_Pool_Index,
+        attribute_length: Int,
+        annotations: Annotations)(
+            implicit constant_pool: Constant_Pool): RuntimeVisibleAnnotations_attribute
 
     registerAttributeReader(
         RuntimeVisibleAnnotations_attributeReader.ATTRIBUTE_NAME ->
