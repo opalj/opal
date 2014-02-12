@@ -80,11 +80,11 @@ class ClassHierarchy private (
         private[this] val subclassTypesMap: Array[HashSet[ObjectType]],
         private[this] val subinterfaceTypesMap: Array[HashSet[ObjectType]]) {
 
-    assume(knownTypesMap.length == superclassTypeMap.length)
-    assume(knownTypesMap.length == interfaceTypesMap.length)
-    assume(knownTypesMap.length == superinterfaceTypesMap.length)
-    assume(knownTypesMap.length == subclassTypesMap.length)
-    assume(knownTypesMap.length == subinterfaceTypesMap.length)
+    require(knownTypesMap.length == superclassTypeMap.length)
+    require(knownTypesMap.length == interfaceTypesMap.length)
+    require(knownTypesMap.length == superinterfaceTypesMap.length)
+    require(knownTypesMap.length == subclassTypesMap.length)
+    require(knownTypesMap.length == subinterfaceTypesMap.length)
 
     import java.util.concurrent.locks.ReentrantReadWriteLock
 
