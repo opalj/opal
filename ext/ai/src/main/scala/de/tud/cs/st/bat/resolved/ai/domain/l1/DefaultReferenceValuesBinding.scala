@@ -51,7 +51,6 @@ trait DefaultReferenceValuesBinding[+I] extends l1.ReferenceValues[I] {
 
     type DomainReferenceValue = ReferenceValue
 
-
     type DomainSingleOriginReferenceValue = SingleOriginReferenceValue
     type DomainNullValue = NullValue
     type DomainObjectValue = ObjectValue

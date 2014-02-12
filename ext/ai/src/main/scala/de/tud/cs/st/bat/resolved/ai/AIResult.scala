@@ -124,6 +124,9 @@ sealed abstract class AIResult[D <: SomeDomain with Singleton] {
     def wasAborted: Boolean
 }
 
+/**
+ * Encapsulates the intermediate result of the abstract interpretation of a method.
+ */
 sealed abstract class AIAborted[D <: SomeDomain with Singleton] extends AIResult[D] {
 
     def wasAborted: Boolean = true
@@ -131,6 +134,9 @@ sealed abstract class AIAborted[D <: SomeDomain with Singleton] extends AIResult
     def continueInterpretation(ai: AI[_ >: D]): AIResult[domain.type]
 }
 
+/**
+ * Encapsulates the result of the abstract interpretation of a method.
+ */
 sealed abstract class AICompleted[D <: SomeDomain with Singleton] extends AIResult[D] {
 
     val worklist: List[Int] = List.empty

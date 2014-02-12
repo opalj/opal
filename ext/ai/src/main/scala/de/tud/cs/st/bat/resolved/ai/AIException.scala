@@ -36,9 +36,10 @@ package resolved
 package ai
 
 /**
- * A general, non-recoverable exception occured.
+ * A general, non-recoverable exception occurred.
  *
  * @param message A short message describing the exception. Can be `null`.
+ * 
  * @param cause The root cause. Can be `null`.
  *
  * @author Michael Eichberg

@@ -77,7 +77,7 @@ trait RecordThrownExceptions[+I] extends Domain[I] {
 
     /**
      * Joins the previously thrown exception and the newly thrown exception. Both
-     * exceptions are throw by the same instruction (same `pc`).
+     * exceptions are thrown by the same instruction (same `pc`).
      *
      * @note The instruction might be an `athrow` instruction or some other instruction
      *      that throws an exception.

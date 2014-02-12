@@ -47,8 +47,9 @@ import scala.collection.Set
 package object util {
 
     /**
-     * Removes the first occurrence of the specified pc from the list if the given
-     * `test` has not yet failed. If the test fails, the '''original''' list is returned.
+     * Removes the first occurrence of the specified program counter from the given list 
+     * if the given `test` has not yet failed. If the test fails, the '''original''' 
+     * list is returned.
      * The given test is executed before the test is made whether we have to remove
      * the element from the list.
      * If the original list is returned it is
