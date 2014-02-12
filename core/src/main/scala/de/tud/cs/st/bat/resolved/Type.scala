@@ -551,8 +551,8 @@ final object ObjectType {
     @throws[IllegalStateException]("if a corresponding listener is already registered")
     def setObjectTypeCreationListener(f: ObjectType ⇒ Unit): Unit = {
         objectTypeCreationListener = f
+        cacheRWLock.readLock().lock()
         try {
-            cacheRWLock.readLock().lock()
             val objectTypesIterator = cache.values().iterator()
             while (objectTypesIterator.hasNext) {
                 val objectType = objectTypesIterator.next.get()
@@ -579,8 +579,8 @@ final object ObjectType {
      *      comparison is explicitly supported.
      */
     def apply(fqn: String): ObjectType = {
+        cacheRWLock.readLock().lock()
         try {
-            cacheRWLock.readLock().lock()
             val wrOT = cache.get(fqn)
             if (wrOT != null) {
                 val OT = wrOT.get()
@@ -590,8 +590,17 @@ final object ObjectType {
         } finally {
             cacheRWLock.readLock().unlock()
         }
+
+        cacheRWLock.writeLock().lock()
         val newOT = try {
-            cacheRWLock.writeLock().lock()
+            // WE HAVE TO CHECK AGAIN
+            val wrOT = cache.get(fqn)
+            if (wrOT != null) {
+                val OT = wrOT.get()
+                if (OT != null)
+                    return OT;
+            }
+
             val newOT = new ObjectType(nextId.getAndIncrement(), fqn)
             val wrNewOT = new WeakReference(newOT)
             cache.put(fqn, wrNewOT)
