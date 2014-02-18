@@ -1784,8 +1784,8 @@ trait AI[D <: SomeDomain] {
 
         val result =
             AIResultBuilder.completed(code, domain)(evaluated, operandsArray, localsArray)
-        if (tracer.isDefined)
-            tracer.get.result(result)
+        domain.abstractInterpretationEnded(result)
+        if (tracer.isDefined) tracer.get.result(result)
         result
     }
 }
