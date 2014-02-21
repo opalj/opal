@@ -157,6 +157,7 @@ object Method {
     private def isNativeAndVarargs(accessFlags: Int) =
         (accessFlags & ACC_NATIVEAndACC_VARARGS) == ACC_NATIVEAndACC_VARARGS
 
+        // TODO Move the ID creation functionality to the Project
     private[this] val nextId = new java.util.concurrent.atomic.AtomicInteger(0)
 
     def methodsCount = nextId.get

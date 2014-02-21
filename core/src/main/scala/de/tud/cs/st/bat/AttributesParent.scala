@@ -34,7 +34,7 @@ package de.tud.cs.st
 package bat
 
 /**
- * Enumeration of all class file structures that can have attributes.
+ * Enumeration of all class file structures that can have (class file-level) attributes.
  *
  * @author Michael Eichberg
  */

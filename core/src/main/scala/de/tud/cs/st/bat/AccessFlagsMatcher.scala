@@ -72,8 +72,8 @@ trait AccessFlagsMatcher { left ⇒
  * @example
  * The predefined matchers are used in the following way:
  * {{{
- * case Method(PUBLIC_STATIC(),...) =>
- * case Field(PUBLIC_STATIC_FINAL(),...) =>
+ *  method match { case Method(PUBLIC_STATIC(),...) => ... } 
+ *  field match { case Field(PUBLIC_STATIC_FINAL(),...) => ... }
  * }}}
  *
  * @author Michael Eichberg
