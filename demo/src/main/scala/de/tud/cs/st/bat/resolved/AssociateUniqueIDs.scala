@@ -41,6 +41,7 @@ package resolved
  *
  * @author Michael Eichberg
  */
+@deprecated("Source elements no have unique ids right away")
 object AssociateUniqueIDs {
 
     val sourceElementIDs = new SourceElementIDsMap {}
