@@ -30,21 +30,34 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st.bat
+package de.tud.cs.st
+package bat
 
-import resolved._
-
+/**
+ * Demonstrates how to select fields that have certain access flags (public, static,...)
+ */
 object MatchingAccessFlags {
-    val resource = () ⇒ this.getClass.getResourceAsStream("ConstantPoolTags.class")
-    val classFile = resolved.reader.Java7Framework.ClassFile(resource)
+
+    import resolved.{ ClassFile, Field, reader }
+
+    val resource = () ⇒ this.getClass.getResourceAsStream("ConstantPoolTags$.class")
+    val classFile = reader.Java7Framework.ClassFile(resource)
     val fields = classFile.fields
 
-    val publicFinalStaticFields = fields.collectFirst({ case f @ Field(PUBLIC_STATIC_FINAL(), _, _) ⇒ f })
+    val publicFinalStaticFields = fields.collectFirst(
+        { case f @ Field(AccessFlagsMatcher.PUBLIC_STATIC_FINAL(), _, _) ⇒ f }
+    )
 
-    val nonStaticFields = fields.collectFirst({ case f @ Field(NOT_STATIC(), _, _) ⇒ f })
+    val nonStaticFields = fields.collectFirst(
+        { case f @ Field(AccessFlagsMatcher.NOT_STATIC(), _, _) ⇒ f }
+    )
 
-    // some new matcher
-    val PRIVATE_FINAL = ACC_PRIVATE & ACC_FINAL
-    val privateFinalFields = fields.collectFirst({ case f @ Field(PRIVATE_FINAL(), _, _) ⇒ f })
+    // create a new matcher
+    val PRIVATE_FINAL = ACC_PRIVATE && ACC_FINAL
+    val privateFinalFields =
+        fields.collectFirst({ case f @ Field(PRIVATE_FINAL(), _, _) ⇒ f })
 
+    val NOT___PRIVATE_FINAL = !(ACC_PRIVATE && ACC_FINAL)
+    val not___PrivateFinalFields =
+        fields.collectFirst({ case f @ Field(NOT___PRIVATE_FINAL(), _, _) ⇒ f })
 }
