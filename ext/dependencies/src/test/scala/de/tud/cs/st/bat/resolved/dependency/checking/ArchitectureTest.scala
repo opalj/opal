@@ -43,10 +43,10 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Matchers
 
 /**
-  * Tests that the dependency's framework implemented design is as expected.
-  *
-  * @author Michael Eichberg
-  */
+ * Tests that the dependency's framework implemented design is as expected.
+ *
+ * @author Michael Eichberg
+ */
 @RunWith(classOf[JUnitRunner])
 class ArchitectureTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
@@ -70,26 +70,6 @@ class ArchitectureTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
         val result = analyze(Directory("."))
         result should be(Set.empty)
-    }
-
-    it should "have a dependency between the checking related functionality and the core" in {
-
-        val illegal = new Specification {
-
-            ensemble('Dependency_Checking) {
-                "de.tud.cs.st.bat.resolved.dependency.checking.*"
-            }
-
-            ensemble('Dependency) {
-                "de.tud.cs.st.bat.resolved.dependency.*"
-            }
-
-            'Dependency_Checking is_only_allowed_to_use empty
-        }
-        import illegal._
-
-        val result = analyze(Directory("."))
-        result.nonEmpty should be(true)
     }
 
 }
