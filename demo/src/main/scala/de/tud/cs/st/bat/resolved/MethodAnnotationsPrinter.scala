@@ -38,16 +38,17 @@ import analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
 import java.net.URL
 
 /**
- * Prints out all runtime visible annotations.
+ * Prints out the method-level annotations of all methods. (I.e., class, field and
+ * parameter annotations are not printed.)
  *
  * @author Arne Lottmann
  * @author Michael Eichberg
  */
-object AnnotationPrinter extends AnalysisExecutor {
+object MethodAnnotationsPrinter extends AnalysisExecutor {
 
     val analysis = new Analysis[URL, BasicReport] {
 
-        def description: String = "Prints out all runtime visible annotations."
+        def description: String = "Prints out the annotations of methods."
 
         def analyze(project: Project[URL], parameters: Seq[String]) = {
             val annotations =
@@ -57,13 +58,13 @@ object AnnotationPrinter extends AnalysisExecutor {
                     annotation ← method.runtimeVisibleAnnotations ++ method.runtimeInvisibleAnnotations
                 } yield {
                     "on method: "+classFile.thisType.toJava+"."+method.name +
-                        method.parameterTypes.mkString("(", ",", ")")+"\n"+
+                        method.parameterTypes.map(_.toJava).mkString("(", ",", ")\n") +
                         annotation.elementValuePairs.map(pair ⇒ "%-15s: %s".format(pair.name, pair.value.toJava)).
                         mkString("\t@"+annotation.annotationType.toJava+"\n\t", "\n\t", "\n")
                 }
 
             BasicReport(
-                annotations.size+" annotations found.\n"+
+                annotations.size+" annotations found: "+
                     annotations.mkString("\n", "\n", "\n"))
         }
     }
