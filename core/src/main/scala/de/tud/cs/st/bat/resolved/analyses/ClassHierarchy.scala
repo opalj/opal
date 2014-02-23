@@ -914,6 +914,17 @@ class ClassHierarchy private (
         directSubtypes
     }
 
+    /**
+     * Calls the given function `f` for each type that is known to the class hierarchy.
+     */
+    def foreachKnownType[T](f: ObjectType ⇒ T): Unit = {
+        val knownTypes = knownTypesMap.view.filter(_ != null)
+        knownTypes.foreach(f(_))
+    }
+
+    /**
+     * Returns some statistical data about the class hierarchy.
+     */
     def statistics: String = {
         "Class Hierarchy Statistics:"+
             "\n\tKnown types: "+knownTypesMap.count(_ != null)+
