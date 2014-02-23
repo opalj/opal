@@ -39,10 +39,12 @@ import instructions._
 import java.net.URL
 
 /**
- * Finds classes that define a co-variant equals method, but not "standard" equals method.
+ * Finds classes that define only a co-variant `equals` method (an equals method
+ * where the parameter type is a subtype of `java.lang.Object`), but which do not
+ * also define a "standard" `equals` method.
  *
  * ==Implementation Note==
- * This analysis is implemented using the traditional approach where each analysis
+ * This analysis is implemented using a traditional approach where each analysis
  * analyzes the project's resources on its own and fully controls the process.
  *
  * @author Michael Eichberg
