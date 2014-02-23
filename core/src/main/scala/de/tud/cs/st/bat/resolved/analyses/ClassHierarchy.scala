@@ -40,7 +40,7 @@ import util.graphs.{ Node, toDot }
 import util.{ Answer, Yes, No, Unknown }
 
 import annotation.tailrec
-import scala.collection.{ Map, Set }
+import scala.collection.{ Map, Set, SeqView }
 import scala.collection.mutable.HashSet
 import scala.collection.mutable.HashMap
 
@@ -917,7 +917,7 @@ class ClassHierarchy private (
     def statistics: String = {
         "Class Hierarchy Statistics:"+
             "\n\tKnown types: "+knownTypesMap.count(_ != null)+
-            "\n\tInterface types: "+interfaceTypesMap.count(isInterface => isInterface)+
+            "\n\tInterface types: "+interfaceTypesMap.count(isInterface ⇒ isInterface)+
             "\n\tIdentified Superclasses: "+superclassTypeMap.count(_ != null)+
             "\n\tSuperinterfaces: "+superinterfaceTypesMap.filter(_ != null).foldLeft(0)(_ + _.size)+
             "\n\tSubclasses: "+subclassTypesMap.filter(_ != null).foldLeft(0)(_ + _.size)+
@@ -925,9 +925,27 @@ class ClassHierarchy private (
     }
 
     /**
+     * Returns the set of all root types. I.e., types which have no super type.
+     * @note
+     *    If we load an application and all the jars used to implement it or a library
+     *    and all the library it depends on then the class hierarchy '''should not'''
+     *    contain multiple root types.
+     * @note
+     *    This list is recalculated
+     *
+     */
+    def rootTypes: SeqView[ObjectType, Seq[ObjectType]] = {
+        val knownTypesView = knownTypesMap.toSeq.view
+        val rootTypes = knownTypesView filter { objectType ⇒
+            objectType != null && superclassTypeMap(objectType.id) == null
+        }
+        rootTypes
+    }
+
+    /**
      * Returns a view of the class hierarchy as a graph (which can then be transformed
      * into a dot representation [[http://www.graphviz.org Graphviz]]). This
-     * graph can be a multi-graph if the class hierarchy contains wholes.
+     * graph can be a multi-graph if the class hierarchy contains holes.
      */
     def toGraph(): Node = new Node {
 
@@ -1104,7 +1122,7 @@ object ClassHierarchy {
             isInterfaceType: Boolean,
             theSuperclassType: Option[ObjectType],
             theSuperinterfaceTypes: HashSet[ObjectType]) {
-            
+
             //
             // Update the class hierarchy from the point of view of the newly added type 
             //
