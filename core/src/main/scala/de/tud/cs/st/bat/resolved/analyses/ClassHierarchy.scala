@@ -1104,7 +1104,7 @@ object ClassHierarchy {
             isInterfaceType: Boolean,
             theSuperclassType: Option[ObjectType],
             theSuperinterfaceTypes: HashSet[ObjectType]) {
-
+            
             //
             // Update the class hierarchy from the point of view of the newly added type 
             //
@@ -1148,7 +1148,7 @@ object ClassHierarchy {
         }
         classFiles foreach { processClassFile(_) }
 
-        new ClassHierarchy(
+        val classHierarchy = new ClassHierarchy(
             knownTypesMap,
             interfaceTypesMap,
             superclassTypeMap,
@@ -1156,6 +1156,7 @@ object ClassHierarchy {
             subclassTypesMap,
             subinterfaceTypesMap
         )
+        classHierarchy
     }
 }
 

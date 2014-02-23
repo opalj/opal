@@ -37,6 +37,10 @@ package util
  * A basic facility to model shared and exclusive access to some functionality/data
  * structure.
  *
+ * ==Usage==
+ * To use this generic locking facility, you can either mix-in this trait or
+ * create a new instance.
+ *
  * @author Michael Eichberg
  */
 trait Locking {
@@ -61,5 +65,16 @@ trait Locking {
             rwLock.readLock().unlock()
         }
     }
+}
+/**
+ * Factory for Locking.
+ */
+object Locking {
+
+    /**
+     * Creates a new Reentrant Read-Write Lock.
+     */
+    def apply(): Locking = new Locking {}
+
 }
 

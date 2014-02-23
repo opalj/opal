@@ -49,4 +49,8 @@ object AccessFlags {
         }
     }
 
+    def toString(accessFlags: Int, ctx: AccessFlagsContext): String = {
+        toStrings(accessFlags, ctx).mkString(" ")
+    }
+
 }

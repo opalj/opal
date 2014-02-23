@@ -41,7 +41,7 @@ package bat
  *
  * @author Michael Eichberg
  */
-sealed trait AccessFlag extends AccessFlagsMatcher {
+sealed trait AccessFlag extends PrimitiveAccessFlagsMatcher {
 
     /**
      * The Java (source code) name of the access flag if it exists. E.g., Some("public"),
@@ -52,7 +52,7 @@ sealed trait AccessFlag extends AccessFlagsMatcher {
     /**
      * The int mask of this access flag as defined by the JVM specification.
      */
-    def mask: Int
+    override def mask: Int
 
     /**
      * Facilitates pattern matching against this `AccessFlag`.

@@ -532,6 +532,7 @@ final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
  */
 final object ObjectType {
 
+    // TODO Move the ID creation functionality to the Project
     import java.util.concurrent.atomic.AtomicInteger
     import java.util.concurrent.locks.ReentrantReadWriteLock
     import java.util.WeakHashMap

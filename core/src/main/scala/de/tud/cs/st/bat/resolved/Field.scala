@@ -122,6 +122,7 @@ final class Field private (
  */
 object Field {
 
+    // TODO Move the ID creation functionality to the Project
     private[this] val nextId = new java.util.concurrent.atomic.AtomicInteger(0)
 
     def fieldsCount = nextId.get

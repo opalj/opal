@@ -39,31 +39,66 @@ package bat
  *
  * @author Michael Eichberg
  */
-trait AccessFlagsMatcher { left ⇒
+sealed trait AccessFlagsMatcher { left ⇒
 
     def unapply(accessFlags: Int): Boolean
 
-    protected def mask: Int
-
     /**
      * Creates a new matcher that matches `accessFlags` vectors where all flags
-     * defined by this `mask` and the mask of the given matcher are matched.
+     * defined by this matcher and the given matcher have to be defined.
      */
-    def &(right: AccessFlagsMatcher): AccessFlagsMatcher =
+    def &&(right: AccessFlagsMatcher): AccessFlagsMatcher = {
         new AccessFlagsMatcher {
-            val mask = left.mask | right.mask
-            def unapply(accessFlags: Int): Boolean = (accessFlags & mask) == mask
+            def unapply(accessFlags: Int): Boolean = {
+                val leftMatched = left.unapply(accessFlags)
+                val rightMatched = right.unapply(accessFlags)
+                leftMatched && rightMatched
+            }
+
+            override def toString: String = left.toString+" && "+right.toString
         }
+    }
 
     /**
-     * Creates a new matcher that matches `accessFlags` vectors where none of the flags
-     * defined by `mask` is set.
+     * Creates a new matcher that matches `accessFlags` that do not have (all of) the
+     * accessFlags specified by the given matcher.
      */
     def unary_!(): AccessFlagsMatcher =
         new AccessFlagsMatcher {
-            val mask = left.mask
-            override def unapply(accessFlags: Int): Boolean = (accessFlags & mask) == 0
+            override def unapply(accessFlags: Int): Boolean = !left.unapply(accessFlags)
+            override def toString: String = "!("+left.toString+")"
         }
+}
+
+trait PrimitiveAccessFlagsMatcher extends AccessFlagsMatcher { left ⇒
+
+    /**
+     * An integer value that represents an access flags bit mask.
+     */
+    protected def mask: Int
+
+    override def &&(right: AccessFlagsMatcher): AccessFlagsMatcher = {
+        right match {
+            case PrimitiveAccessFlagsMatcher(rightMask) ⇒
+                new PrimitiveAccessFlagsMatcher {
+                    protected val mask = left.mask | rightMask
+                    def unapply(accessFlags: Int): Boolean = (accessFlags & mask) == mask
+                    override def toString: String = mask.toString
+                }
+            case _ ⇒ super.&&(right)
+        }
+    }
+
+    override def unary_!(): AccessFlagsMatcher =
+        new AccessFlagsMatcher { // <= it is no longer a primitive matcher
+            val mask = left.mask
+            override def unapply(accessFlags: Int): Boolean = (accessFlags & mask) != mask
+            override def toString: String = "!("+mask.toString+")"
+        }
+}
+object PrimitiveAccessFlagsMatcher {
+    def unapply(accessFlagsMatcher: PrimitiveAccessFlagsMatcher): Option[Int] =
+        Some(accessFlagsMatcher.mask)
 }
 
 /**
@@ -72,20 +107,20 @@ trait AccessFlagsMatcher { left ⇒
  * @example
  * The predefined matchers are used in the following way:
  * {{{
- * case Method(PUBLIC_STATIC(),...) =>
- * case Field(PUBLIC_STATIC_FINAL(),...) =>
+ *  method match { case Method(PUBLIC_STATIC(),...) => ... }
+ *  field match { case Field(PUBLIC_STATIC_FINAL(),...) => ... }
  * }}}
  *
  * @author Michael Eichberg
  */
 object AccessFlagsMatcher {
 
-    val PUBLIC_INTERFACE = ACC_PUBLIC & ACC_INTERFACE
-    val PUBLIC_ABSTRACT = ACC_PUBLIC & ACC_ABSTRACT
-    val PUBLIC_FINAL = ACC_PUBLIC & ACC_FINAL
-    val PRIVATE_FINAL = ACC_PRIVATE & ACC_FINAL
-    val PUBLIC_STATIC = ACC_PUBLIC & ACC_STATIC
-    val PUBLIC_STATIC_FINAL = PUBLIC_FINAL & ACC_STATIC
+    val PUBLIC_INTERFACE = ACC_PUBLIC && ACC_INTERFACE
+    val PUBLIC_ABSTRACT = ACC_PUBLIC && ACC_ABSTRACT
+    val PUBLIC_FINAL = ACC_PUBLIC && ACC_FINAL
+    val PRIVATE_FINAL = ACC_PRIVATE && ACC_FINAL
+    val PUBLIC_STATIC = ACC_PUBLIC && ACC_STATIC
+    val PUBLIC_STATIC_FINAL = PUBLIC_FINAL && ACC_STATIC
     val NOT_INTERFACE = !ACC_INTERFACE
     val NOT_STATIC = !ACC_STATIC
     val NOT_PRIVATE = !ACC_PRIVATE

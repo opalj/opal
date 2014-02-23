@@ -318,7 +318,7 @@ private object EmptyUShortSet extends UShortSet {
     def max = throw new UnsupportedOperationException("the set is empty")
 }
 /**
- * Factory object to create new sets of unsigned short values.
+ * Factory to create sets of unsigned short values.
  *
  * @author Michael Eichberg
  */

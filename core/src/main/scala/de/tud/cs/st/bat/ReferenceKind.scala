@@ -46,11 +46,14 @@ sealed abstract class ReferenceKind {
     def referenceKindName: String
 
 }
+/**
+ * Factory for `ReferenceKind` objects.
+ */
 object ReferenceKind {
 
-    private[this] val referenceKinds: Array[ReferenceKind] =
+    private val referenceKinds: Array[ReferenceKind] =
         Array(
-            null, // <=> Index 0
+            null, // <=> Index 0 is not used
             REF_getField,
             REF_getStatic,
             REF_putField,
