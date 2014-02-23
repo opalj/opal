@@ -1,0 +1,397 @@
+/* License (BSD Style License):
+ * Copyright (c) 2009 - 2014
+ * Software Technology Group
+ * Department of Computer Science
+ * Technische Universität Darmstadt
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *  - Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *  - Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *  - Neither the name of the Software Technology Group or Technische
+ *    Universität Darmstadt nor the names of its contributors may be used to
+ *    endorse or promote products derived from this software without specific
+ *    prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+package de.tud.cs.st
+package bat
+package resolved
+package analyses
+package observers
+
+import de.tud.cs.st.bat.resolved.instructions.FieldReadAccess
+
+/**
+ * Identifies usages of the Observer Design Pattern.
+ *
+ * (See the accompanying presentation for further details.)
+ *
+ * @author Linus Armakola
+ * @author Michael Eichberg
+ */
+object ObserverPatternUsage {
+
+    private def printUsage: Unit = {
+        println("Loads all classes stored in the jar files and analyses the usage of the observer pattern.")
+        println("Usage: java …ObserverPatternUsage <Folders/JAR file containing classes>+ -lib <Folders/JAR files containing library classes>*")
+    }
+
+    def main(args: Array[String]) {
+
+        import reader.Java7Framework.ClassFiles
+        import reader.Java7LibraryFramework.{ ClassFiles ⇒ LibraryClassFiles }
+
+        var readApplicationClasses = true
+        val applicationFiles = args.takeWhile(_ != "-lib")
+        val libraryFiles = {
+            val libs = args.dropWhile(_ != "-lib")
+            if (libs.nonEmpty)
+                libs.tail // drop the "-lib"
+            else
+                libs
+        }
+
+        def read(
+            args: Iterable[String],
+            classFilesReader: (String) ⇒ Iterable[(ClassFile, java.net.URL)]): Iterable[(ClassFile, java.net.URL)] = {
+            val allClassFiles = for (arg ← args) yield {
+                try {
+                    classFilesReader(arg)
+                } catch {
+                    case ct: scala.util.control.ControlThrowable ⇒
+                        throw ct
+                    case t: Throwable ⇒
+                        Console.err.println("Failed reading: "+arg+": "+t.getMessage)
+                        Iterable.empty[(ClassFile, java.net.URL)]
+                }
+            }
+            allClassFiles.flatten
+        }
+
+        val appClassFiles = read(applicationFiles, ClassFiles _)
+        val libClassFiles = read(libraryFiles, LibraryClassFiles _)
+        val allClassFiles = appClassFiles ++ libClassFiles
+
+        val project = IndexBasedProject(allClassFiles)
+        if (project.classHierarchy.rootTypes.tail.nonEmpty) {
+            Console.err.println(
+                "Warning: Class Hierarchy Not Complete: "+
+                    project.classHierarchy.rootTypes.
+                    filter(_ != ObjectType.Object).
+                    map(_.toJava).mkString(", "))
+        }
+        println("Application:\n\tClasses:"+appClassFiles.size)
+        println("\tMethods:"+appClassFiles.foldLeft(0)(_ + _._1.methods.filter(!_.isSynthetic).size))
+        println("\tNon-final Fields:"+appClassFiles.foldLeft(0)(_ + _._1.fields.filter(!_.isFinal).size))
+        println("Library:\n\tClasses:"+libClassFiles.size)
+        println("Overall "+project.statistics)
+
+        analyze(
+            appClassFiles.map(_._1.thisType).toSet,
+            libClassFiles.map(_._1.thisType).toSet,
+            project)
+    }
+
+    /**
+     * @param appTypes The types related to the application that is currently analyzed.
+     *      We only want to analyze the usage of the observer pattern w.r.t. the classes
+     *      implemented for the respective project and not for those that are reused
+     *      and which belong to the library.
+     * @param libTypes The types defined in the libraries used by the respective
+     *      application.
+     */
+    protected def analyze(
+        appTypes: Set[ObjectType],
+        libTypes: Set[ObjectType],
+        project: ProjectLike[java.net.URL]): Unit = {
+
+        val classHierarchy = project.classHierarchy
+        import classHierarchy.allSubtypes
+
+        // PART 0 - Identifying Observers
+        val allObservers = {
+            var observers = Set.empty[ObjectType]
+            classHierarchy foreachKnownType { ot ⇒
+                val fqn = ot.fqn // this is the Fully Qualified binary Name e.g., java/lang/Object
+                if (!observers.contains(ot) &&
+                    (fqn.endsWith("Observer") || fqn.endsWith("Listener"))) {
+                    observers ++= allSubtypes(ot, true)
+                }
+            }
+            observers
+        }
+        val allObserverInterfaces =
+            allObservers filter { observerCand ⇒
+                classHierarchy.isInterface(observerCand)
+                //                ||
+                //                    (project(observerCand).isDefined &&
+                //                        project(observerCand).get.methods.forall { method ⇒
+                //                            method.isInitializer || classHierarchy.
+                //                        }
+                //                    )
+            }
+        val appObserverClasses =
+            allObservers filter { ot ⇒
+                appTypes.contains(ot) && !classHierarchy.isInterface(ot)
+            }
+        val appObserverInterfaces = allObserverInterfaces.filter(appTypes.contains(_))
+
+        // PART 1 - Identifying Fields That Store Observers
+        val omCandFields = {
+            var candFields = Set.empty[(ClassFile, Field)]
+            for {
+                appType ← appTypes
+                classFile ← project(appType).toSeq
+                field ← classFile.fields
+                if field.fieldType.isReferenceType
+            } {
+                field.fieldType match {
+                    case ArrayType(ot: ObjectType) if (allObserverInterfaces.contains(ot)) ⇒
+                        candFields += ((classFile, field))
+                    case ot: ObjectType ⇒
+                        if (appObserverInterfaces.contains(ot))
+                            candFields += ((classFile, field))
+                        else { // check if it is a container type
+                            field.fieldTypeSignature match {
+                                case Some(GenericContainer(c, ot: ObjectType)) if allObserverInterfaces.contains(ot) ⇒
+                                    candFields += ((classFile, field))
+                                case _ ⇒
+                                /* Ignore */
+                            }
+                        }
+                    case _ ⇒ /* Ignore */
+                }
+            }
+            candFields
+        }
+
+        // Part 3 - Identifying Observables
+        val observables = omCandFields.map(_._1)
+
+        // PART 2 - Identifying Methods That Are Related To Managing Observers
+        // I.e., methods that have a parameter that is of the type of the observer
+        // e.g., addListener(Listener l)... removeListener(Listener l)
+        var omMethods: Set[(ClassFile, Method)] = Set.empty
+        // I.e., methods which access a field that stores observers
+        var onMethods: Set[(ClassFile, Method)] = Set.empty
+        for {
+            observable ← observables
+            observableType = observable.thisType
+            omFieldNames = omCandFields.filter(_._1 == observable).map(_._2.name)
+            method ← observable.methods
+        } {
+            if (method.parameterTypes.exists(pt ⇒ pt.isObjectType && allObserverInterfaces.contains(pt.asObjectType)))
+                omMethods += ((observable, method))
+            else if (method.body.isDefined &&
+                method.body.get.instructions.exists({
+                    case FieldReadAccess(`observableType`, name, _) if omFieldNames.contains(name) ⇒ true
+                    case _ ⇒ false
+                })) {
+                onMethods += ((observable, method))
+            }
+        }
+
+        // -------------------------------------------------------------------------------
+        // OUTPUT
+        // -------------------------------------------------------------------------------
+        import Console.{ BOLD, RESET }
+        println(BOLD+"Observer interfaces in project ("+allObserverInterfaces.size+"): "+RESET + allObserverInterfaces.map(_.toJava).mkString(", "))
+        println(BOLD+"Observer interfaces in application ("+appObserverInterfaces.size+"): "+RESET + appObserverInterfaces.map(_.toJava).mkString(", "))
+        println(BOLD+"Observer classes in application ("+appObserverClasses.size+"): "+RESET + appObserverClasses.map(_.toJava).mkString(", "))
+        println(BOLD+"Fields to store observers in application ("+omCandFields.size+"): "+RESET + omCandFields.map(e ⇒ e._1.thisType.toJava+"{ "+e._2.fieldType.toJava+" "+e._2.name+" }").mkString(", "))
+        println(BOLD+"Methods to manage observers in application ("+omMethods.size+"): "+RESET + omMethods.map(e ⇒ e._1.thisType.toJava+"{ "+e._2.toJava+" }").mkString(", "))
+        println(BOLD+"Methods that are related to observers in application ("+onMethods.size+"): "+RESET + onMethods.map(e ⇒ e._1.thisType.toJava+"{ "+e._2.toJava+" }").mkString(", "))
+    }
+
+    //
+    //    override def analysisParametersDescription: String =
+    //        "-class=<The class for which the transitive closure of used classes is determined>"
+    //
+    //    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Boolean =
+    //        parameters.size == 1 && parameters.head.startsWith("-class=")
+    //
+    //    val analysis = new Analysis[URL, BasicReport] {
+    //
+    //        def description: String = "Identifies usages of the Observer Pattern in a project."
+    //
+    //        def analyze(project: Project[URL], parameters: Seq[String]) = {
+    //            val subject = parameters.head.substring(7).replace('.', '/')
+    //            val totalClassfiles = project.classFiles.filter(_.thisType.fqn.startsWith(subject))
+    //            val totalMethods = for {
+    //                classFile ← totalClassfiles
+    //                method ← classFile.methods
+    //            } yield { method }
+    //
+    //            val totalFields = for {
+    //                classFile ← totalClassfiles
+    //                field ← classFile.fields
+    //            } yield { field }
+    //            val totalStats = Vector[String](("Total Classfiles: "+totalClassfiles.size.toString), ("Total Methods: "+totalMethods.size.toString), ("Total Fields: "+totalFields.size.toString))
+    //            //      find all Observerpattern relatad classnames
+    //            val javaObservables = project.classHierarchy.allSubtypes(ObjectType("java/util/Observable"), false).toSet
+    //            val javaObservers = project.classHierarchy.allSubtypes(ObjectType("java/util/Observer"), false).toSet
+    //            val javaEventObjects = project.classHierarchy.allSubtypes(ObjectType("java/util/EventObject"), false).toSet
+    //            val javaEventListeners = project.classHierarchy.allSubtypes(ObjectType("java/util/EventListener"), false).toSet
+    //            val observers = project.classFiles.filter(_.thisType.fqn.endsWith("Observer")).map(_.thisType)
+    //            val allObservers = observers.flatMap(project.classHierarchy.allSubtypes(_, false)).toSet
+    //            val listeners = project.classFiles.filter(_.thisType.fqn.endsWith("Listener")).map(_.thisType)
+    //            val allListeners = listeners.flatMap(project.classHierarchy.allSubtypes(_, false)).toSet
+    //            val allObserverObjectTypes = (javaObservables ++ javaObservers ++ javaEventObjects ++ javaEventListeners ++ allObservers ++ allListeners).toSet
+    //            //      Analisis for allObserverObjectTypes
+    //            analyzeSubject(allObserverObjectTypes, project, subject, totalStats, "allObserverObjectTypes")
+    //            //      Analisis for javaObservables
+    //            analyzeSubject(javaObservables, project, subject, totalStats, "javaObservables")
+    //            //      Analisis for javaObservers
+    //            analyzeSubject(javaObservers, project, subject, totalStats, "javaObservers")
+    //            //      Analisis for javaEventObjects
+    //            analyzeSubject(javaEventObjects, project, subject, totalStats, "javaEventObjects")
+    //            //      Analisis for javaEventListeners
+    //            analyzeSubject(javaEventListeners, project, subject, totalStats, "javaEventListeners")
+    //            //      Analisis for allObservers
+    //            analyzeSubject(allObservers, project, subject, totalStats, "allObservers")
+    //            //      Analisis for allListeners
+    //            analyzeSubject(allListeners, project, subject, totalStats, "allListeners")
+    //            // report
+    //            BasicReport("Analysis completed")
+    //        }
+    //    }
+    //
+    //    /**
+    //     * The main Analysis which looks for fields that are of given Type
+    //     */
+    //    def analyzeSubject(objectTypes: Set[ObjectType], project: Project[URL], subject: String, stats: Vector[String], analysisName: String) {
+    //        //      1. Collect all Fields that are of a type that is also in allObserverObjectTypes
+    //        val objectTypeFields = collectFields(project, subject, objectTypes)
+    //        //      2. Find all accesses on those fields and collect the accessed field with the current classfile and method
+    //        val objectTypeFieldAccessesForOutput = (collectFieldaccesses(project, objectTypeFields.toSet, subject)).toSet
+    //        val objectTypeClassFilesForOutput: Set[String] = for {
+    //            access ← objectTypeFieldAccessesForOutput
+    //        } yield {
+    //            access._1.thisType.fqn.replace('/', '.')
+    //        }
+    //        val objectTypeMethodsForOutput: Set[String] = for {
+    //            access ← objectTypeFieldAccessesForOutput
+    //        } yield {
+    //            (access._1.thisType.fqn+"{ "+access._2.toJava+" } -> "+access._3.name).replace('/', '.')
+    //        }
+    //        val objectTypeFieldsForOutput: Set[String] = for {
+    //            field ← objectTypeFields
+    //        } yield {
+    //            field.name
+    //        }
+    //        //    3. Complete stats
+    //        val allStats = stats ++ Vector[String](("Numbers concerning "+analysisName),
+    //            ("Number of accesses on fields: "+objectTypeFieldAccessesForOutput.size.toString),
+    //            ("Number of classfiles: "+objectTypeClassFilesForOutput.size.toString),
+    //            ("Number of methods that access fields: "+objectTypeMethodsForOutput.size.toString),
+    //            ("Number of fields that are accessed: "+objectTypeFieldsForOutput.size.toString))
+    //        //     4. Write the data to an .ods file named (subject + "_" + analysisName + ".ods")
+    //        val analysisList = Vector[Iterable[Any]](objectTypeClassFilesForOutput, objectTypeMethodsForOutput, objectTypeFieldsForOutput)
+    //        analysisToOds(analysisList, subject, allStats, analysisName)
+    //    }
+    //
+    //    /**
+    //     * Writes the collected data to a .ods file
+    //     */
+    //    def analysisToOds(analysisList: Vector[Iterable[Any]], subject: String, stats: Vector[String], analysisName: String) {
+    //        val columns = Array[AnyRef]("Total Numbers", "Unique ClassFiles in which one of the methods is called or a field is declared", "Unique Methods calls that create/interact with Oberservers/Listener Fields", "Unique Fields which store Observers/Listener")
+    //        var arrayColumnSize = 0
+    //        if (analysisList(0).size + analysisList(1).size + analysisList(2).size < 20) { arrayColumnSize = 20 } else {
+    //            arrayColumnSize = analysisList(0).size + analysisList(1).size + analysisList(2).size
+    //        }
+    //        val data = ofDim[AnyRef](arrayColumnSize, 6)
+    //        var j = 0; var n = 0;
+    //        stats.foreach(x ⇒ { data(n)(j) = x; n += 1 })
+    //        analysisList.foreach(x ⇒ { var n = 0; j += 1; x.foreach(i ⇒ { data(n)(j) = i.toString; n += 1 }) })
+    //        val model = new DefaultTableModel(data, columns)
+    //        val fileName = (analysisName+".ods")
+    //        val file = new File(fileName)
+    //        val spreadsheet = SpreadSheet.createEmpty(model)
+    //        spreadsheet.saveAs(file)
+    //    }
+    //
+    //    /**
+    //     * Collects all fields that are of a ObjectType which is also contained in the given Set[ObjectType]
+    //     */
+    //    def collectFields(project: Project[URL], subject: String, objectTypes: Set[ObjectType]): Set[Field] = {
+    //        var subjectLength = subject.length()
+    //        val javaCollections = project.classHierarchy.allSubtypes(ObjectType("java/util/Collections"), false).toSet
+    //        val result = for {
+    //            classFile ← project.classFiles
+    //            if classFile.thisType.fqn.startsWith(subject)
+    //            field ← classFile.fields
+    //            thisFieldType = field.fieldType
+    //            // if field if of ObjectType or is an array[ObjectType] check wether it is some kind of Listener
+    //            if ((thisFieldType.isObjectType && objectTypes.contains(thisFieldType.asObjectType))
+    //                || (thisFieldType.isArrayType && thisFieldType.asArrayType.elementType.isObjectType && objectTypes.contains(thisFieldType.asArrayType.elementType.asObjectType)))
+    //        } yield {
+    //            field
+    //        }
+    //        (result ++ collectLists(project, subject, objectTypes)).toSet
+    //    }
+    //
+    //    /**
+    //     * Collects all Lists of fields that are of a ObjectType which is also contained in the given Set[ObjectType]
+    //     */
+    //    def collectLists(project: Project[URL], subject: String, objectTypes: Set[ObjectType]): Iterable[Field] = {
+    //        var subjectLength = subject.length()
+    //        val javaCollections = project.classHierarchy.allSubtypes(ObjectType("java/util/Collections"), false).toSet
+    //        for {
+    //            classFile ← project.classFiles
+    //            if classFile.thisType.fqn.startsWith(subject)
+    //            field ← classFile.fields
+    //            thisFieldType = field.fieldType
+    //            if (field.fieldTypeSignature.isDefined)
+    //            Some(cts) = field.fieldTypeSignature
+    //            // if field if of ObjectType or is an array[ObjectType] check wether it is some kind of Listener
+    //            if ((thisFieldType.isObjectType && objectTypes.contains(thisFieldType.asObjectType))
+    //                || (thisFieldType.isArrayType && thisFieldType.asArrayType.elementType.isObjectType && objectTypes.contains(thisFieldType.asArrayType.elementType.asObjectType))
+    //                || (cts match {
+    //                    case GenericContainer(c, t) ⇒ true
+    //                    case _                      ⇒ false
+    //                }))
+    //        } yield {
+    //            field
+    //        }
+    //    }
+    //    /**
+    //     * collects all accesses on fields that are contained in the given Set[Fields]
+    //     */
+    //    def collectFieldaccesses(project: Project[URL], fields: Set[Field], subject: String): Set[(ClassFile, Method, Field)] = {
+    //        var subjectLength = subject.length()
+    //        val result = for {
+    //            classFile ← project.classFiles
+    //            if classFile.thisType.fqn.startsWith(subject)
+    //            method @ MethodWithBody(code) ← classFile.methods
+    //            if method.name != "<init>" && method.name != "<clinit>"
+    //            (_, fa) ← code.collect({ case fa @ FieldWriteAccess((declClass, name, _)) if fields.exists(f ⇒ f.name == name && declClass == project.classFile(f).thisType) ⇒ fa })
+    //        } yield {
+    //            val field = fields.find(f ⇒ f.name == fa.name && fa.declaringClass == project.classFile(f).thisType).get
+    //            (classFile, method, field)
+    //        }
+    //        result.toSet
+    //    }
+}
+
+class ReturnValue(classFiles: ClassFile, fields: Field, methods: Method) {
+    val classFile = classFiles
+    val field = fields
+    val method = methods
+}
