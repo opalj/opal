@@ -46,8 +46,6 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.ParallelTestExecution
 
 import resolved.ClassFile
-import resolved.reader.Java7Framework.ClassFiles
-import util.ControlAbstractions._
 
 /**
  * This test(suite) just loads a very large number of class files to make sure the library
@@ -62,8 +60,14 @@ class LoadClassFilesInParallelTest
         with Matchers
         with ParallelTestExecution {
 
-    def simpleValidator(classFile: ClassFile) {
+    private def commonValidator(classFile: ClassFile, source: java.net.URL): Unit = {
         classFile.thisType.fqn should not be null
+    }
+
+    private def interfaceValidator(classFile: ClassFile, source: java.net.URL): Unit = {
+        commonValidator(classFile, source)
+        // the body of no method should be available
+        classFile.methods.forall(m ⇒ m.body.isEmpty)
     }
 
     behavior of "BAT"
@@ -72,8 +76,17 @@ class LoadClassFilesInParallelTest
         file ← TestSupport.locateTestResources("classfiles").listFiles
         if (file.isFile && file.canRead && file.getName.endsWith(".jar"))
     } {
-        it should ("be able to read the classes in the jar file"+file.getPath+" in parallel") in {
-            ClassFiles(file).foreach(cs ⇒ { val (cf, _) = cs; simpleValidator(cf) })
+        it should ("be able to completely read all classes in the jar file"+file.getPath+" in parallel") in {
+            resolved.reader.Java7Framework.ClassFiles(file) foreach { cs ⇒
+                val (cf, s) = cs
+                commonValidator(cf, s)
+            }
+        }
+        it should ("be able to read the public interface of all classes in the jar file"+file.getPath+" in parallel") in {
+            resolved.reader.Java7LibraryFramework.ClassFiles(file) foreach { cs ⇒
+                val (cf, s) = cs
+                interfaceValidator(cf, s)
+            }
         }
     }
 }

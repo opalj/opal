@@ -35,27 +35,36 @@ package bat
 package resolved
 package reader
 
-import bat.reader.CodeReader
+import bat.reader.InterfacesReader
+import bat.reader.FieldsReader
+import bat.reader.MethodsReader
+import bat.reader.AttributesReader
+import bat.reader.SkipUnknown_attributeReader
 
 /**
- * This "framework" can be used to read in Java 7 (version 51) class files. All
- * standard information (as defined in the Java Virtual Machine Specification)
- * is represented.
+ * This "framework" can be used to read in Java 7 (version 51) class files if you
+ * are only interested in the public interface of a class.
  *
  * @author Michael Eichberg
  */
-class Java7Framework extends Java7LibraryFramework
-    with CodeAttributeBinding
-    with SourceDebugExtension_attributeBinding
-    with BootstrapMethods_attributeBinding
-    with StackMapTable_attributeBinding
-    with LineNumberTable_attributeBinding
-    with LocalVariableTable_attributeBinding
-    with LocalVariableTypeTable_attributeBinding
-    with Exceptions_attributeBinding
-    with BytecodeReaderAndBinding
-    with CodeReader
+class Java7LibraryFramework
+    extends ConstantPoolBinding
+    with ClassFileBinding
+    with InterfacesReader
+    with FieldsReader
+    with MethodsReader
+    with AttributesReader
+    /* If you want unknown attributes to be represented uncomment the following: */
+    // with Unknown_attributeBinding 
+    /* and comment out the following line: */
+    with SkipUnknown_attributeReader
+    with AnnotationsBinding
+    with InnerClasses_attributeBinding
+    with EnclosingMethod_attributeBinding
+    with SourceFile_attributeBinding
+    with Deprecated_attributeBinding
+    with Signature_attributeBinding
+    with Synthetic_attributeBinding
+    with ConstantValue_attributeBinding
 
-object Java7Framework extends Java7Framework
-
-
+object Java7LibraryFramework extends Java7LibraryFramework
