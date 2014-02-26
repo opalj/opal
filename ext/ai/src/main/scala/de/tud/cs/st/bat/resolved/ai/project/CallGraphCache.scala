@@ -51,6 +51,9 @@ package project
  * data-structures try to minimize potential contention. Hence, this is not a general
  * purpose cache. Using this cache is only appropriate if you need/will cache a lot
  * of information that is associated with different object types.
+ * 
+ * '''It is required that the cache object is created before the threads are created
+ * that use the cache!
  *
  * ==Example Usage==
  * To store the result of the computation of all target methods for a
@@ -106,7 +109,6 @@ class CallGraphCache[Contour, Value] {
 
     private[this] val cache: Array[Map[Contour, Value]] = {
         val size = ObjectType.objectTypesCount
-        //val concurrencyLevel = Runtime.getRuntime().availableProcessors()
         Array.fill(size)(TrieMap.empty)
     }
 

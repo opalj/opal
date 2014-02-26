@@ -61,6 +61,10 @@ class CallGraphBuilder[Source](val project: Project[Source]) {
 
     /**
      * Adds the given `callEdges` to the call graph.
+     *
+     * If `callEdges` contains another edge for a previously added `(Method,PC)` pair
+     * then this edge will be added to the potential targets for the respective
+     * invoke instruction (referred to by the `(Method,PC)` pair).
      */
     def addCallEdges(callEdges: (Method, List[(PC, Iterable[Method])])): Unit = {
         if (callEdges._2.nonEmpty) {
@@ -127,14 +131,19 @@ class CallGraphBuilder[Source](val project: Project[Source]) {
         for {
             (caller, edges) ← allCallEdges
             (pc, callees) ← edges
+            if callees.nonEmpty
         } {
-            var callSites = callsMap(caller.id)
-            callsMap(caller.id) =
-                if (callSites eq null) {
+            var callSite = callsMap(caller.id)
+            callsMap(caller.id) = {
+                if (callSite eq null) {
                     new Map.Map1(pc, callees)
                 } else {
-                    callSites.updated(pc, callees)
+                    if (callSite.contains(pc)) {
+                        callSite.updated(pc, callSite(pc) ++ callees)
+                    } else
+                        callSite.updated(pc, callees)
                 }
+            }
         }
 
         new CallGraph(

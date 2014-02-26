@@ -65,7 +65,7 @@ class VTACallGraphAlgorithmConfiguration[Source]
         theProject: Project[Source],
         cache: Cache,
         classFile: ClassFile,
-        method: Method): CHACallGraphDomain[Source, Int] =
+        method: Method): VTACallGraphDomain[Source, Int] =
         new DefaultVTACallGraphDomain(theProject, cache, classFile, method)
 }
 
