@@ -72,8 +72,18 @@ object ObserverPatternUsage {
                 libs
         }
 
-        val appClassFiles = read(applicationFiles, ClassFiles _)
-        val libClassFiles = read(libraryFiles, LibraryClassFiles _)
+        val (appClassFiles, appReadingErrors) = read(applicationFiles, ClassFiles _)
+        val (libClassFiles, libReadingErrors) = read(libraryFiles, LibraryClassFiles _)
+        if (appReadingErrors.nonEmpty) {
+            Console.err.println(
+                "Failed reading application class files:"+
+                    appReadingErrors.map(_.getMessage).mkString("\n\t", "\n\t", "\n\t"))
+        }
+        if (libReadingErrors.nonEmpty) {
+            Console.err.println(
+                "Failed reading libraries:"+
+                    libReadingErrors.map(_.getMessage).mkString("\n\t", "\n\t", "\n\t"))
+        }
         val allClassFiles = appClassFiles ++ libClassFiles
 
         val project = IndexBasedProject(allClassFiles)

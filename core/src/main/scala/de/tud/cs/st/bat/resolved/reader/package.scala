@@ -55,7 +55,8 @@ package object reader {
      */
     def read(
         args: Iterable[String],
-        classFilesReader: (File) ⇒ Iterable[(ClassFile, URL)]): Iterable[(ClassFile, URL)] = {
+        classFilesReader: (File) ⇒ Iterable[(ClassFile, URL)]): (Iterable[(ClassFile, URL)], List[Throwable]) = {
+        var exceptions: List[Throwable] = Nil
         val allClassFiles = for (arg ← args) yield {
             try {
                 classFilesReader(new File(arg))
@@ -63,11 +64,11 @@ package object reader {
                 case ct: scala.util.control.ControlThrowable ⇒
                     throw ct
                 case t: Throwable ⇒
-                    Console.err.println("Failed reading: "+arg+": "+t.getMessage)
+                    exceptions ::= t
                     Iterable.empty[(ClassFile, java.net.URL)]
             }
         }
-        allClassFiles.flatten
+        (allClassFiles.flatten, exceptions)
     }
 }
 
