@@ -74,7 +74,7 @@ class InterpretManyMethodsTest extends FlatSpec with Matchers {
         }
 
     it should (
-        "be able to interpret all methods using the PreciseConfigurableDomain in "+
+        "be able to interpret all methods using the DefaultConfigurableDomain in "+
         files.map(_.getName).mkString("\n\t\t", "\n\t\t", "\n")) in {
             interpret(classOf[l1.DefaultConfigurableDomain[_]], files) map { errors ⇒
                 fail(errors._1+" (details: "+errors._2.getOrElse("not available")+")")
