@@ -223,8 +223,8 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         // let's make sure that we support this class file's version
         require(
             major_version >= 45 && // at least JDK 1.1
-                (major_version < 51 || // Java 6 = 50.0
-                    (major_version == 51 && minor_version == 0)), // Java 7 == 51.0
+                (major_version < 52 || // Java 7 = 51.0
+                    (major_version == 52 && minor_version == 0)), // Java 8 == 52.0
             "Unsupported class file version: "+major_version+"."+minor_version)
 
         val cp = Constant_Pool(in)
