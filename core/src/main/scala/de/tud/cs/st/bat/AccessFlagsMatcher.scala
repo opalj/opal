@@ -49,11 +49,9 @@ sealed trait AccessFlagsMatcher { left ⇒
      */
     def &&(right: AccessFlagsMatcher): AccessFlagsMatcher = {
         new AccessFlagsMatcher {
-            def unapply(accessFlags: Int): Boolean = {
-                val leftMatched = left.unapply(accessFlags)
-                val rightMatched = right.unapply(accessFlags)
-                leftMatched && rightMatched
-            }
+
+            override def unapply(accessFlags: Int): Boolean =
+                left.unapply(accessFlags) && right.unapply(accessFlags)
 
             override def toString: String = left.toString+" && "+right.toString
         }
@@ -65,7 +63,9 @@ sealed trait AccessFlagsMatcher { left ⇒
      */
     def unary_!(): AccessFlagsMatcher =
         new AccessFlagsMatcher {
+
             override def unapply(accessFlags: Int): Boolean = !left.unapply(accessFlags)
+
             override def toString: String = "!("+left.toString+")"
         }
 }
