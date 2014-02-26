@@ -40,6 +40,7 @@ import util.graphs.{ Node, toDot }
 import reader.Java7Framework
 
 import java.net.URL
+import java.io.File
 
 /**
  * Primary abstraction of a Java project. This class is basically just a container
@@ -234,6 +235,14 @@ private object ProjectLike {
             println("for further details.")
             print(RESET)
         }
+    }
+
+    /**
+     * Given a reference to a class file, jar file or a folder containing jar and class
+     * files, all class files will be loaded and a project will be returned.
+     */
+    def createProject(file: File): ProjectLike[URL] = {
+        IndexBasedProject[URL](Java7Framework.ClassFiles(file))
     }
 }
 
