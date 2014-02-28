@@ -52,7 +52,7 @@ object AIResultBuilder {
      */
     def aborted(
         theCode: Code,
-        theDomain: Domain[_])(
+        theDomain: SomeDomain)(
             theWorklist: List[Int],
             theEvaluated: List[Int],
             theOperandsArray: Array[List[theDomain.DomainValue]],
@@ -81,7 +81,7 @@ object AIResultBuilder {
      */
     def completed(
         theCode: Code,
-        theDomain: Domain[_])(
+        theDomain: SomeDomain)(
             theEvaluated: List[Int],
             theOperandsArray: Array[List[theDomain.DomainValue]],
             theLocalsArray: Array[Array[theDomain.DomainValue]]): AICompleted[theDomain.type] = {
@@ -122,20 +122,49 @@ sealed abstract class AIResult[D <: SomeDomain with Singleton] {
      * Returns `true` if the abstract interpretation was aborted.
      */
     def wasAborted: Boolean
+
+    /**
+     * Textual representation of the state encapsulated by this result.
+     */
+    def stateToString: String = {
+        var result = ""
+        result += evaluated.mkString("Evaluated: ", ",", "\n")
+        result += worklist.mkString("(Remaining) Worklist: ", ",", "\n")
+        result +=
+            (
+                for {
+                    ((operands, locals), pc) ← (operandsArray.zip(localsArray)).zipWithIndex
+                    if operands != null /*|| locals != null*/
+                } yield {
+                    val localsWithIndex =
+                        for {
+                            (local, index) ← locals.zipWithIndex
+                            if (local != null)
+                        } yield {
+                            "("+index+":"+local+")"
+                        }
+
+                    "PC: "+pc + operands.mkString("\n\tOperands: ", " <- ", "") + localsWithIndex.mkString("\n\tLocals: [", ",", "]")
+                }
+            ).mkString("Operands and Locals: \n", "\n", "\n")
+        result
+    }
 }
 
 /**
- * Encapsulates the intermediate result of the abstract interpretation of a method.
+ * Encapsulates the intermediate result of an aborted abstract interpretation of a method.
  */
 sealed abstract class AIAborted[D <: SomeDomain with Singleton] extends AIResult[D] {
 
     def wasAborted: Boolean = true
 
     def continueInterpretation(ai: AI[_ >: D]): AIResult[domain.type]
+
+    override def stateToString: String = "Abstract Interpretation was aborted; "+super.stateToString
 }
 
 /**
- * Encapsulates the result of the abstract interpretation of a method.
+ * Encapsulates the final result of the successful abstract interpretation of a method.
  */
 sealed abstract class AICompleted[D <: SomeDomain with Singleton] extends AIResult[D] {
 
@@ -144,4 +173,6 @@ sealed abstract class AICompleted[D <: SomeDomain with Singleton] extends AIResu
     def wasAborted: Boolean = false
 
     def restartInterpretation(ai: AI[_ >: D]): AIResult[domain.type]
+    
+    override def stateToString: String = "Abstract Interpretation succeeded; "+super.stateToString
 }
