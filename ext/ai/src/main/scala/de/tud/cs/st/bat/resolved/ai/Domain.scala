@@ -1553,7 +1553,7 @@ trait Domain[+I] {
     def monitorenter(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue]
 
     /**
-     * Handles a `monitorenter` instruction.
+     * Handles a `monitorexit` instruction.
      */
     def monitorexit(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue]
 
