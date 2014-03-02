@@ -129,11 +129,8 @@ class UrUninitReadCalledFromSuperConstructor[Source]
          */
         def calls(source: Method, targetType: Type, target: Method): Boolean = {
             source.body.get.instructions.exists {
-                // TODO: Simplify by using a matcher that combines all these
-                case INVOKEINTERFACE(`targetType`, target.name, target.descriptor) ⇒ true
-                case INVOKEVIRTUAL(`targetType`, target.name, target.descriptor) ⇒ true
-                case INVOKESTATIC(`targetType`, target.name, target.descriptor) ⇒ true
-                case INVOKESPECIAL(`targetType`, target.name, target.descriptor) ⇒ true
+                case MethodInvocationInstruction(`targetType`, target.name,
+                    target.descriptor) ⇒ true
                 case _ ⇒ false
             }
         }
