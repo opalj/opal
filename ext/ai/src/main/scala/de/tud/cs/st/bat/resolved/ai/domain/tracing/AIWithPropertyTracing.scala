@@ -57,12 +57,12 @@ trait AIWithPropertyTracing[D <: PropertyTracing[_]] extends AI[D] {
      */
     override protected[ai] def perform(
         code: Code,
-        domain: D)(
-            initialOperands: List[domain.DomainValue],
-            initialLocals: Array[domain.DomainValue]): AIResult[domain.type] = {
+        theDomain: D)(
+            initialOperands: List[theDomain.DomainValue],
+            initialLocals: Array[theDomain.DomainValue]): AIResult { val domain: theDomain.type } = {
 
-        domain.initProperties(code, initialOperands, initialLocals)
-        super.perform(code, domain)(initialOperands, initialLocals)
+        theDomain.initProperties(code, initialOperands, initialLocals)
+        super.perform(code, theDomain)(initialOperands, initialLocals)
     }
 }
 

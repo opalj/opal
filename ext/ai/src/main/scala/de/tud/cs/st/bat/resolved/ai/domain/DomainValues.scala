@@ -44,8 +44,8 @@ package domain
  *
  * @author Michael Eichberg
  */
-sealed abstract class DomainValues[D <: SomeDomain] {
-    val domain: D
+sealed abstract class DomainValues {
+    val domain: SomeDomain
     val values: Iterable[domain.DomainValue]
 }
 
@@ -59,7 +59,7 @@ object DomainValues {
     def apply(
         valuesDomain: SomeDomain)(
             domainValues: Iterable[valuesDomain.DomainValue]) = {
-        new DomainValues[valuesDomain.type] {
+        new DomainValues {
             val domain: valuesDomain.type = valuesDomain
             val values: Iterable[domain.DomainValue] = domainValues
         }

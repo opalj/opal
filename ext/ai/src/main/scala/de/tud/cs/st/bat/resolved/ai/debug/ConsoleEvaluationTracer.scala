@@ -49,61 +49,61 @@ trait ConsoleEvaluationTracer extends AITracer {
 
     private[this] var indent = 0
 
-    override def instructionEvalution[D <: SomeDomain with Singleton](
-        domain: D,
-        pc: PC,
-        instruction: Instruction,
-        operands: List[D#DomainValue],
-        locals: Array[D#DomainValue]): Unit = {
+    override def instructionEvalution(
+        domain: SomeDomain)(
+            pc: PC,
+            instruction: Instruction,
+            operands: List[domain.DomainValue],
+            locals: Array[domain.DomainValue]): Unit = {
         print(pc+" ")
     }
 
-    override def continuingInterpretation[D <: SomeDomain with Singleton](
+    override def continuingInterpretation(
         code: Code,
-        domain: D,
-        initialWorkList: List[PC],
-        alreadyEvaluated: List[PC],
-        operandsArray: Array[List[D#DomainValue]],
-        localsArray: Array[Array[D#DomainValue]]) { /*EMPTY*/ }
+        domain: SomeDomain)(
+            initialWorkList: List[PC],
+            alreadyEvaluated: List[PC],
+            operandsArray: Array[List[domain.DomainValue]],
+            localsArray: Array[Array[domain.DomainValue]]) { /*EMPTY*/ }
 
-    override def rescheduled[D <: SomeDomain with Singleton](
-        domain: D,
-        sourcePC: PC,
-        targetPC: PC): Unit = { /*EMPTY*/ }
+    override def rescheduled(
+        domain: SomeDomain)(
+            sourcePC: PC,
+            targetPC: PC): Unit = { /*EMPTY*/ }
 
-    override def flow[D <: SomeDomain with Singleton](
-        domain: D,
-        currentPC: PC,
-        targetPC: PC): Unit = { /*EMPTY*/ }
+    override def flow(
+        domain: SomeDomain)(
+            currentPC: PC,
+            targetPC: PC): Unit = { /*EMPTY*/ }
 
-    override def join[D <: SomeDomain with Singleton](
-        domain: D,
-        pc: PC,
-        thisOperands: D#Operands,
-        thisLocals: D#Locals,
-        otherOperands: D#Operands,
-        otherLocals: D#Locals,
-        result: Update[(D#Operands, D#Locals)]): Unit = { /*EMPTY*/ }
+    override def join(
+        domain: SomeDomain)(
+            pc: PC,
+            thisOperands: domain.Operands,
+            thisLocals: domain.Locals,
+            otherOperands: domain.Operands,
+            otherLocals: domain.Locals,
+            result: Update[(domain.Operands, domain.Locals)]): Unit = { /*EMPTY*/ }
 
-    override def abruptMethodExecution[D <: SomeDomain with Singleton](
-        domain: D,
-        pc: Int,
-        exception: D#DomainValue): Unit = { /*EMPTY*/ }
+    override def abruptMethodExecution(
+        domain: SomeDomain)(
+            pc: Int,
+            exception: domain.DomainValue): Unit = { /*EMPTY*/ }
 
     private[this] def printIndent = (0 until indent) foreach (i ⇒ print("\t"))
-    
-    override def jumpToSubroutine(domain: SomeDomain, pc: PC): Unit = {
+
+    override def jumpToSubroutine(domain: SomeDomain)(pc: PC): Unit = {
         println
         printIndent
         print(Console.BOLD+"↳\t︎"+Console.RESET)
         indent += 1
     }
 
-    override def returnFromSubroutine[D <: SomeDomain with Singleton](
-        domain: D,
-        pc: PC,
-        returnAddress: PC,
-        subroutineInstructions: List[PC]): Unit = {
+    override def returnFromSubroutine(
+        domain: SomeDomain)(
+            pc: PC,
+            returnAddress: PC,
+            subroutineInstructions: List[PC]): Unit = {
         indent -= 1
         println(Console.BOLD+"✓"+"(Resetting: "+subroutineInstructions.mkString(", ")+")"+Console.RESET)
         printIndent
@@ -112,12 +112,12 @@ trait ConsoleEvaluationTracer extends AITracer {
     /**
      * Called when a ret instruction is encountered.
      */
-    override def ret[D <: SomeDomain with Singleton](
-        domain: D,
-        pc: PC,
-        returnAddress: PC,
-        oldWorklist: List[PC],
-        newWorklist: List[PC]): Unit = { /*EMPTY*/ }
+    override def ret(
+        domain: SomeDomain)(
+            pc: PC,
+            returnAddress: PC,
+            oldWorklist: List[PC],
+            newWorklist: List[PC]): Unit = { /*EMPTY*/ }
 
-    override def result[D <: SomeDomain with Singleton](result: AIResult[D]) { /*EMPTY*/ }
+    override def result(result: AIResult) { /*EMPTY*/ }
 }

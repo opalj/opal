@@ -56,9 +56,9 @@ object AIResultBuilder {
             theWorklist: List[Int],
             theEvaluated: List[Int],
             theOperandsArray: Array[List[theDomain.DomainValue]],
-            theLocalsArray: Array[Array[theDomain.DomainValue]]): AIAborted[theDomain.type] = {
+            theLocalsArray: Array[Array[theDomain.DomainValue]]): AIAborted { val domain: theDomain.type } = {
 
-        new AIAborted[theDomain.type] {
+        new AIAborted {
             val code: Code = theCode
             val domain: theDomain.type = theDomain
             val worklist: List[Int] = theWorklist
@@ -67,7 +67,7 @@ object AIResultBuilder {
             val localsArray: Array[Array[theDomain.DomainValue]] = theLocalsArray
 
             def continueInterpretation(
-                ai: AI[_ >: domain.type]): AIResult[domain.type] =
+                ai: AI[_ >: domain.type]): AIResult =
                 ai.continueInterpretation(
                     code, domain)(
                         worklist, evaluated, operandsArray, localsArray)
@@ -84,9 +84,9 @@ object AIResultBuilder {
         theDomain: SomeDomain)(
             theEvaluated: List[Int],
             theOperandsArray: Array[List[theDomain.DomainValue]],
-            theLocalsArray: Array[Array[theDomain.DomainValue]]): AICompleted[theDomain.type] = {
+            theLocalsArray: Array[Array[theDomain.DomainValue]]): AICompleted { val domain: theDomain.type } = {
 
-        new AICompleted[theDomain.type] {
+        new AICompleted {
             val code: Code = theCode
             val domain: theDomain.type = theDomain
             val evaluated: List[Int] = theEvaluated
@@ -94,7 +94,7 @@ object AIResultBuilder {
             val localsArray: Array[Array[theDomain.DomainValue]] = theLocalsArray
 
             def restartInterpretation(
-                ai: AI[_ >: theDomain.type]): AIResult[theDomain.type] =
+                ai: AI[_ >: theDomain.type]): AIResult =
                 ai.continueInterpretation(
                     code, domain)(
                         List(0), evaluated, operandsArray, localsArray)
@@ -110,9 +110,9 @@ object AIResultBuilder {
  * concrete AIResult instance. I.e., if we would remove the type parameter 
  * we would introduce a path dependence to a particular AIResult's instance and the actual 
  * type would be "this.domain.type" and "this.domain.DomainValue". */
-sealed abstract class AIResult[D <: SomeDomain with Singleton] {
+sealed abstract class AIResult {
     val code: Code
-    val domain: D
+    val domain: SomeDomain
     val worklist: List[Int]
     val evaluated: List[Int]
     val operandsArray: Array[List[domain.DomainValue]]
@@ -154,11 +154,11 @@ sealed abstract class AIResult[D <: SomeDomain with Singleton] {
 /**
  * Encapsulates the intermediate result of an aborted abstract interpretation of a method.
  */
-sealed abstract class AIAborted[D <: SomeDomain with Singleton] extends AIResult[D] {
+sealed abstract class AIAborted extends AIResult {
 
     def wasAborted: Boolean = true
 
-    def continueInterpretation(ai: AI[_ >: D]): AIResult[domain.type]
+    def continueInterpretation(ai: AI[_ >: domain.type]): AIResult
 
     override def stateToString: String = "Abstract Interpretation was aborted; "+super.stateToString
 }
@@ -166,13 +166,13 @@ sealed abstract class AIAborted[D <: SomeDomain with Singleton] extends AIResult
 /**
  * Encapsulates the final result of the successful abstract interpretation of a method.
  */
-sealed abstract class AICompleted[D <: SomeDomain with Singleton] extends AIResult[D] {
+sealed abstract class AICompleted extends AIResult {
 
     val worklist: List[Int] = List.empty
 
     def wasAborted: Boolean = false
 
-    def restartInterpretation(ai: AI[_ >: D]): AIResult[domain.type]
-    
+    def restartInterpretation(ai: AI[_ >: domain.type]): AIResult
+
     override def stateToString: String = "Abstract Interpretation succeeded; "+super.stateToString
 }

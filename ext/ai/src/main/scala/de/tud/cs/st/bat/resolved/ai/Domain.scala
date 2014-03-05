@@ -1762,15 +1762,14 @@ trait Domain[+I] {
         worklist: List[PC],
         tracer: Option[AITracer]): List[PC] = worklist
 
-
     /**
      * '''Called by (BAT)AI when the abstract interpretation of a method has ended.''' The
      * abstract interpretation of a method ends if either the fixpoint is reached or
      * the interpretation was aborted.
      */
     def abstractInterpretationEnded(
-        aiResult: AIResult[this.type]): Unit = { /* Nothing */ }
-						
+        aiResult: AIResult { val domain: Domain.this.type }): Unit = { /* Nothing */ }
+
     /**
      * Creates a summary of the given domain values. For the precise details
      * regarding the calculation of a summary see `Value.summarize(...)`.

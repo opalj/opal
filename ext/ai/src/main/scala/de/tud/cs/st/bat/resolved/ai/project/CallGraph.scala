@@ -50,7 +50,7 @@ import scala.collection.Map
  * Calls will never block.
  * 
  * ==Call Graph Construction==
- * The call graph is constructed by the [[de.tud.cs.st.bat.resolved.ai.CallGraphFactory]].
+ * The call graph is constructed by the [[de.tud.cs.st.bat.resolved.ai.project.CallGraphFactory]].
  *
  * @author Michael Eichberg
  */
