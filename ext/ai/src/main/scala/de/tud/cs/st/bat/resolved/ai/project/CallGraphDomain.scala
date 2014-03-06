@@ -69,7 +69,7 @@ trait CallGraphDomain[Source, I] extends Domain[I] {
      * @note This method should only be called after the abstract interpretation
      *      of `theMethod`.
      */
-    def allCallEdges: List[(Method, PC, Iterable[Method])]
+    def allCallEdges: (Method, List[(PC, Iterable[Method])])
 
     /**
      * Returns the list of all unresolved method calls of `theMethod`. A call

@@ -19,7 +19,7 @@ is in particular used to validate parts of BAT's architecture.
 
 * **Tools**: Programs that can directly be executed and which are useful when analyzing Java bytecode.
 
-* **Demo**: Contains working code samples that demonstrates how to use BAT. The code in the Demo project is primarily meant as a teaching resource. To start the examples, start the `sbt` console (Scala Build Tools) and change the current project to "Demo" (`project Demo`).
+* **Demo**: Contains working code samples that demonstrate how to use BAT. The code in the Demo project is primarily meant as a teaching resource. To start the examples, start the `sbt` console (Scala Build Tools) and change the current project to "Demo" (`project Demo`).
 	
 * **Incubation**: Contains code that is not yet finished, but which already provides some useful functionality. In some cases the code is under active development and in some cases the code was just not finished and no decision has been made what to do with it.
 

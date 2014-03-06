@@ -84,7 +84,7 @@ object XHTML {
         ai: AI[_ >: D],
         domain: D,
         minimumDumpInterval: Long = 1000l)(
-            f: AIResult[domain.type] ⇒ T): T = {
+            f: AIResult ⇒ T): T = {
         val result = ai(classFile, method, domain)
         val operandsArray = result.operandsArray
         val localsArray = result.localsArray
@@ -122,7 +122,7 @@ object XHTML {
         classFile: Option[ClassFile],
         method: Option[Method],
         code: Code,
-        result: AIResult[_ <: Domain[_]],
+        result: AIResult,
         minimumDumpInterval: Long = 1000l)(
             f: ⇒ T): T = {
         val operandsArray = result.operandsArray

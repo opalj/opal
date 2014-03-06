@@ -56,6 +56,9 @@ trait CommonAttributes {
             case None              ⇒ IndexedSeq.empty
         }
 
+    def annotations: Annotations =
+        runtimeVisibleAnnotations ++ runtimeInvisibleAnnotations
+
     /**
      * True if this element was created by the compiler.
      */

@@ -70,42 +70,70 @@ class AccessFlagsMatcherTest
     }
 
     it should "be able to correctly match a class file's access flags (PUBLIC ABSTRACT)" in {
-        val accessFlags = ACC_PUBLIC.mask | ACC_ABSTRACT.mask
+        val afPublicAbstract = ACC_PUBLIC.mask | ACC_ABSTRACT.mask
 
-        accessFlags match {
+        afPublicAbstract match {
             case ACC_PUBLIC() ⇒ /*success*/
             case _            ⇒ fail("did not match ACC_PUBLIC")
         }
 
-        accessFlags match {
+        afPublicAbstract match {
             case ACC_ABSTRACT() ⇒ /*success*/
             case _              ⇒ fail("did not match ACC_ABSTRACT")
         }
 
-        accessFlags match {
+        afPublicAbstract match {
             case ACC_INTERFACE() ⇒ fail("did match ACC_INTERFACE")
             case _               ⇒ /*success*/
         }
 
-        accessFlags match {
+        afPublicAbstract match {
             case PUBLIC_ABSTRACT() ⇒ /*success*/
             case _                 ⇒ fail("did not match ACC_PUBLIC and ACC_ABSTRACT")
         }
 
-        accessFlags match {
+        afPublicAbstract match {
             case PUBLIC_INTERFACE() ⇒ fail("did match ACC_PUBLIC & ACC_INTERFACE")
             case _                  ⇒ /*success*/
         }
 
-        accessFlags match {
+        afPublicAbstract match {
             case NOT_STATIC() ⇒ /*success*/
             case _            ⇒ fail("did match ACC_STATIC")
         }
 
-        val NOT_PUBLIC_ABSTRACT = !PUBLIC_ABSTRACT
-        accessFlags match {
-            case NOT_PUBLIC_ABSTRACT() ⇒ fail("did not match ACC_PUBLIC and ACC_ABSTRACT")
-            case _                     ⇒ /*success*/
+        val NOT___PUBLIC_ABSTRACT = !PUBLIC_ABSTRACT
+        afPublicAbstract match {
+            case NOT___PUBLIC_ABSTRACT() ⇒ fail("did match NOT (ACC_PUBLIC and ACC_ABSTRACT)")
+            case _                       ⇒ /*success*/
+        }
+
+        val NOT___PUBLIC_FINAL = !PUBLIC_FINAL
+        afPublicAbstract match {
+            case NOT___PUBLIC_FINAL() ⇒ /*success*/
+            case _                    ⇒ fail("did not match NOT (ACC_PUBLIC and ACC_FINAL)")
+        }
+
+        val PUBLIC___NOT_FINAL = ACC_PUBLIC && !ACC_FINAL
+        afPublicAbstract match {
+            case PUBLIC___NOT_FINAL() ⇒ /*success*/
+            case _                    ⇒ fail("did not match ACC_PUBLIC and NOT (ACC_FINAL)")
+        }
+
+        val NOT_PRIVATE___NOT_FINAL = (!ACC_PRIVATE) && (!ACC_FINAL)
+        afPublicAbstract match {
+            case NOT_PRIVATE___NOT_FINAL() ⇒ /*success*/
+            case _ ⇒
+                fail(AccessFlags.toString(afPublicAbstract, AccessFlagsContexts.METHOD)+
+                    " did not match "+NOT_PRIVATE___NOT_FINAL)
+        }
+
+        val NOT_NOT_PUBLIC = !(!ACC_PUBLIC)
+        afPublicAbstract match {
+            case NOT_NOT_PUBLIC() ⇒ /*success*/
+            case _ ⇒
+                fail(AccessFlags.toString(afPublicAbstract, AccessFlagsContexts.METHOD)+
+                    " did not match "+NOT_NOT_PUBLIC)
         }
     }
 }

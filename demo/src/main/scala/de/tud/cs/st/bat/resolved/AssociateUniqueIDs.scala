@@ -41,6 +41,7 @@ package resolved
  *
  * @author Michael Eichberg
  */
+@deprecated("Source elements no have unique ids right away")
 object AssociateUniqueIDs {
 
     val sourceElementIDs = new SourceElementIDsMap {}
@@ -78,12 +79,11 @@ object AssociateUniqueIDs {
             }
         }
 
-        import util.debug.PerformanceEvaluation.time
-        import util.debug.nsToSecs
+        import util.debug.PerformanceEvaluation.{ time, ns2sec }
         time {
             loadAllClassFiles()
         } { executionTime ⇒
-            println("Loading classes and generating ids took: "+nsToSecs(executionTime)+" secs.")
+            println("Loading classes and generating ids took: "+ns2sec(executionTime)+" sec.")
         }
     }
 }

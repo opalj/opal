@@ -65,10 +65,11 @@ trait RuntimeInvisibleParameterAnnotations_attributeReader extends AttributeRead
     /**
      * Factory method to create a representation of a RuntimeInvisibleParameterAnnotations_attribute.
      */
-    protected def RuntimeInvisibleParameterAnnotations_attribute(attribute_name_index: Constant_Pool_Index,
-                                                                 attribute_length: Int,
-                                                                 parameter_annotations: ParameterAnnotations)(
-                                                                     implicit constant_pool: Constant_Pool): RuntimeInvisibleParameterAnnotations_attribute
+    protected def RuntimeInvisibleParameterAnnotations_attribute(
+        attribute_name_index: Constant_Pool_Index,
+        attribute_length: Int,
+        parameter_annotations: ParameterAnnotations)(
+            implicit constant_pool: Constant_Pool): RuntimeInvisibleParameterAnnotations_attribute
 
     registerAttributeReader(
         RuntimeInvisibleParameterAnnotations_attributeReader.ATTRIBUTE_NAME ->

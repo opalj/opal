@@ -35,8 +35,6 @@ package bat
 package resolved
 package dependency
 
-import util.debug.nanoSecondsToMilliseconds
-
 import reader.Java7Framework.ClassFiles
 
 /**
@@ -48,8 +46,7 @@ import reader.Java7Framework.ClassFiles
  */
 object DependencyMatrix {
 
-    import util.debug.PerformanceEvaluation.time
-    import de.tud.cs.st.util.debug._
+    import util.debug.PerformanceEvaluation.{ time, ns2ms }
 
     private def printUsage: Unit = {
         println("Loads all classes stored in the jar files and creates a dependency matrix.")
@@ -108,7 +105,7 @@ object DependencyMatrix {
             println(
                 "\nReading all "+(count)+
                     " class files and building the dependency matrix required: "+
-                    nanoSecondsToMilliseconds(executionTime)+"milliseconds.")
+                    ns2ms(executionTime)+"milliseconds.")
         }
     }
 }

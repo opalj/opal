@@ -1,0 +1,43 @@
+# STATE DIAGRAM FOR BATAI
+
+digraph BATAI {
+	compound=true;
+	fontname=Helvetica;
+	node [shape=circle];
+	node [fontname=Helvetica];
+	edge [fontname=Helvetica];
+
+	rankdir = LR;
+	{rank = source; start;};
+	{rank = sink; end;};
+		
+	subgraph cluster_interpretation {
+
+		rankdir = LR;
+		{rank = source; preparation;};
+		{rank=sink; post_processing;}
+	 	preparation -> evaluation [label="\"worklist\".head",fontcolor="gray"];
+		evaluation -> propagation [label="«domain».flow(...)"];
+		propagation -> evaluation [style=dotted];
+		evaluation -> post_processing [label="all branches processed",fontcolor="gray"];
+		post_processing -> preparation [style=dotted];
+		
+		evaluation [style=filled,fillcolor=rosybrown];
+		propagation [label="per target\n post-\nprocessing",style=filled,fillcolor=mintcream];
+		preparation [style=filled,fillcolor=antiquewhite];
+		post_processing [style=filled,fillcolor=mintcream];
+
+		label="Interpreter Loop";
+		labeljust=l;
+	 }
+	 
+	 preparation -> end [label="AI.isInterrupted()"]
+	 preparation -> end [label="\"worklist\".isEmpty",fontcolor="gray"]
+	 start -> init [label="AI.perform(...)"];
+	 init -> preparation;
+
+     init [style=filled,fillcolor=antiquewhite];	 
+	 start [shape=doublecircle];
+	 end [shape=doublecircle];
+	 label = "BATAI Flow Chart";
+ }

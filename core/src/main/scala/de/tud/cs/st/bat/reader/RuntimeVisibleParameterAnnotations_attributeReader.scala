@@ -59,10 +59,11 @@ trait RuntimeVisibleParameterAnnotations_attributeReader extends AttributeReader
 
     def ParameterAnnotations(in: DataInputStream, cp: Constant_Pool): ParameterAnnotations
 
-    def RuntimeVisibleParameterAnnotations_attribute(attribute_name_index: Constant_Pool_Index,
-                                                     attribute_length: Int,
-                                                     parameter_annotations: ParameterAnnotations)(
-                                                         implicit constant_pool: Constant_Pool): RuntimeVisibleParameterAnnotations_attribute
+    def RuntimeVisibleParameterAnnotations_attribute(
+        attribute_name_index: Constant_Pool_Index,
+        attribute_length: Int,
+        parameter_annotations: ParameterAnnotations)(
+            implicit constant_pool: Constant_Pool): RuntimeVisibleParameterAnnotations_attribute
 
     registerAttributeReader(
         RuntimeVisibleParameterAnnotations_attributeReader.ATTRIBUTE_NAME ->

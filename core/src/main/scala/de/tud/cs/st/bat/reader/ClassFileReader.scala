@@ -34,9 +34,10 @@ package de.tud.cs.st
 package bat
 package reader
 
-import java.io.{ File, FileInputStream, InputStream, DataInputStream, BufferedInputStream }
+import java.io.{ File, FileInputStream, InputStream, DataInputStream, BufferedInputStream, ByteArrayInputStream }
 import java.util.zip.{ ZipFile, ZipEntry }
 import java.net.URL
+import java.util.zip.ZipInputStream
 
 /**
  * Implements the template method to read in a Java class file. Additionally,
@@ -222,8 +223,8 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         // let's make sure that we support this class file's version
         require(
             major_version >= 45 && // at least JDK 1.1
-                (major_version < 51 || // Java 6 = 50.0
-                    (major_version == 51 && minor_version == 0)), // Java 7 == 51.0
+                (major_version < 52 || // Java 7 = 51.0
+                    (major_version == 52 && minor_version == 0)), // Java 8 == 52.0
             "Unsupported class file version: "+major_version+"."+minor_version)
 
         val cp = Constant_Pool(in)
@@ -312,13 +313,18 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         val mutex = new Object
         var classFiles: List[(ClassFile, URL)] = Nil
 
-        def addClassFile(jf: ZipFile, je: ZipEntry, cf: ClassFile) = {
-            val jarFileURL = new File(jf.getName()).toURI().toURL().toExternalForm()
-            val url = new URL("jar:"+jarFileURL+"!/"+je.getName())
+        def addClassFile(cf: ClassFile, url: URL) = {
             mutex.synchronized {
                 classFiles = (cf, url) :: classFiles
             }
         }
+        //        def addClassFile(jf: ZipFile, je: ZipEntry, cf: ClassFile) = {
+        //            val jarFileURL = new File(jf.getName()).toURI().toURL().toExternalForm()
+        //            val url = new URL("jar:"+jarFileURL+"!/"+je.getName())
+        //            mutex.synchronized {
+        //                classFiles = (cf, url) :: classFiles
+        //            }
+        //        }
 
         ClassFiles(jarFile, addClassFile)
         classFiles
@@ -326,35 +332,81 @@ trait ClassFileReader extends Constant_PoolAbstractions {
 
     /**
      * Reads '''in parallel''' all class files stored in the given jar file. For each
-     * successfully read class file the function `f` is called.
+     * successfully read class file the function `classFileHandler` is called.
      *
-     * @param jarFile A valid jar file that contains `.class` files; other files
-     *      are ignored.
-     * @param f The function that is called for each class file in the given jar file.
+     * @param jarFile A valid jar file that contains `.class` files and other
+     *     `.jar` files; other files are ignored. Inner jar files are also unzipped.
+     * @param classFileHandler A function that is called for each class file in
+     *      the given jar file.
      *      Given that the jarFile is read in parallel '''this function has to be
      *      thread safe'''.
      * @param exceptionHandler The exception handler that is called when the reading
-     *      of a class file fails.
+     *      of a class file fails. '''This function has to be thread safe'''.
      */
-    // TODO  [Improvement][ClassFileReader] Support reading of jar files within jar files.
     def ClassFiles(
         jarFile: ZipFile,
-        f: (ZipFile, ZipEntry, ClassFile) ⇒ Unit,
+        classFileHandler: (ClassFile, URL) ⇒ Unit,
         exceptionHandler: (Exception) ⇒ Unit = e ⇒ Console.err.println(e)) {
+        val jarFileURL = new File(jarFile.getName()).toURI().toURL().toExternalForm()
+        ClassFiles(
+            "jar:"+jarFileURL+"!/",
+            jarFile,
+            classFileHandler,
+            exceptionHandler
+        )
+    }
+
+    private def ClassFiles(
+        jarFileURL: String, // the complete path to the given jar file.
+        jarFile: ZipFile,
+        classFileHandler: (ClassFile, URL) ⇒ Unit,
+        exceptionHandler: (Exception) ⇒ Unit) {
 
         import scala.collection.JavaConversions._
-        for (jarEntry ← (jarFile).entries.toIterable.par) {
+        for (jarEntry ← jarFile.entries.toIterable.par) {
             if (!jarEntry.isDirectory) {
                 val jarEntryName = jarEntry.getName
                 if (jarEntryName.endsWith(".class")) {
                     try {
+                        val url = new URL(jarFileURL + jarEntry.getName())
                         val classFile = ClassFile(jarFile, jarEntry)
-                        f(jarFile, jarEntry, classFile)
+                        classFileHandler(classFile, url)
+                    } catch {
+                        case e: Exception ⇒ exceptionHandler(e)
+                    }
+                } else if (jarEntryName.endsWith(".jar")) {
+                    try {
+                        val nextJarFileURL = jarFileURL+"jar:"+jarEntry.getName()+"!/"
+                        val jarData = new Array[Byte](jarEntry.getSize().toInt)
+                        val din = new DataInputStream(jarFile.getInputStream(jarEntry))
+                        din.readFully(jarData)
+                        din.close()
+                        ClassFiles(nextJarFileURL, jarData, classFileHandler, exceptionHandler)
                     } catch {
                         case e: Exception ⇒ exceptionHandler(e)
                     }
                 }
             }
+        }
+    }
+
+    private def ClassFiles(
+        jarFileURL: String,
+        jarData: Array[Byte],
+        classFileHandler: (ClassFile, URL) ⇒ Unit,
+        exceptionHandler: (Exception) ⇒ Unit): Unit = {
+        val pathToEntry = jarFileURL.substring(0, jarFileURL.length - 3)
+        val entry = pathToEntry.substring(pathToEntry.lastIndexOf('/') + 1)
+        val jarFile = File.createTempFile(entry, ".zip")
+
+        process { new java.io.FileOutputStream(jarFile) } { fout ⇒
+            fout.write(jarData)
+        }
+        ClassFiles(jarFileURL, new ZipFile(jarFile), classFileHandler, exceptionHandler)
+        try {
+            jarFile.delete()
+        } catch {
+            case e: Exception ⇒ Console.err.println("Failed deleting temporary file: "+e.getMessage())
         }
     }
 
@@ -377,7 +429,6 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     def ClassFiles(file: File): Seq[(ClassFile, URL)] = {
         if (file.isFile()) {
             if (file.getName.endsWith(".jar")) {
-                println("Processing: "+file.toString)
                 return ClassFiles(file.getAbsoluteFile.getPath)
             }
 

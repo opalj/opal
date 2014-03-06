@@ -252,6 +252,10 @@ final class ClassFile private (
         findMethod(0, methods.size - 1)
     }
 
+    /**
+     * This class file's `hasCode`. The `hashCode` is (by purpose) identical to
+     * the id of the `ObjectType` it implements.
+     */
     override def hashCode: Int = thisType.id
 
     override def equals(other: Any): Boolean =

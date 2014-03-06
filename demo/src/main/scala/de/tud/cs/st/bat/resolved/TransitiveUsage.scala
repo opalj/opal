@@ -53,8 +53,8 @@ object TransitiveUsage extends AnalysisExecutor {
     private[this] var extractedTypes = Set.empty[ObjectType]
 
     // To extract all usages we reuse the infrastructure that enables us to extract
-    // dependencies. In this case we just recorde referred to types and do not actually
-    // record the conrecte dependencies.
+    // dependencies. In this case we just record referred to types and do not actually
+    // record the concrete dependencies.
 
     object TypesCollector extends SourceElementIDs {
 

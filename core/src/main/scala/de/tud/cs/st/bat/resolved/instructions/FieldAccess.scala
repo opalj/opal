@@ -60,7 +60,8 @@ object FieldAccess {
 
     val runtimeExceptions = List(ObjectType.NullPointerException)
 
-    def unapply(fa: FieldAccess) = Some(fa.declaringClass, fa.name, fa.fieldType)
+    def unapply(fa: FieldAccess): Option[(ObjectType, String, FieldType)] =
+        Some(fa.declaringClass, fa.name, fa.fieldType)
 }
 
 abstract class FieldReadAccess extends FieldAccess
@@ -70,7 +71,8 @@ abstract class FieldReadAccess extends FieldAccess
  */
 object FieldReadAccess {
 
-    def unapply(fa: FieldReadAccess) = FieldAccess.unapply(fa)
+    def unapply(fa: FieldReadAccess): Option[(ObjectType, String, FieldType)] =
+        FieldAccess.unapply(fa)
 }
 
 abstract class FieldWriteAccess extends FieldAccess
@@ -80,5 +82,6 @@ abstract class FieldWriteAccess extends FieldAccess
  */
 object FieldWriteAccess {
 
-    def unapply(fa: FieldWriteAccess) = FieldAccess.unapply(fa)
+    def unapply(fa: FieldWriteAccess): Option[(ObjectType, String, FieldType)] =
+        FieldAccess.unapply(fa)
 }

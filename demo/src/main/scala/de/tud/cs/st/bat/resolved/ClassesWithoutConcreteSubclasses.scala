@@ -36,6 +36,7 @@ package resolved
 
 import analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
 import java.net.URL
+import scala.collection.SortedSet
 
 /**
  * Lists all abstract classes and interfaces that have no concrete subclasses in
@@ -47,20 +48,21 @@ object ClassesWithoutConcreteSubclasses extends AnalysisExecutor {
 
     val analysis = new Analysis[URL, BasicReport] {
 
-        def description: String = "Abstract classes and interfaces that have no concrete subclass in the given jars."
+        def description: String =
+            "Abstract classes and interfaces that have no concrete subclass in the given jars."
 
         def analyze(project: Project[URL], parameters: Seq[String]) = {
             val classTypes =
                 for {
                     classFile ← project.classFiles
-                    thisClass = classFile.thisType
                     if classFile.isAbstract
-                    if project.classHierarchy.directSubtypesOf(thisClass).isEmpty
-                } yield thisClass
+                    thisType = classFile.thisType
+                    if project.classHierarchy.directSubtypesOf(thisType).isEmpty
+                } yield thisType.toJava
 
             BasicReport(
                 "Abstract classes and interfaces without concrete subclasses: "+
-                    (scala.collection.immutable.SortedSet.empty[String] ++ classTypes.map(_.toJava)).mkString("\n\t", "\n\t", "\n"))
+                    SortedSet(classTypes).mkString("\n\t", "\n\t", "\n"))
         }
     }
 }

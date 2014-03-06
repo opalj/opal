@@ -51,9 +51,9 @@ trait Node {
     def toHRR: Option[String]
 
     /**
-     * The name of the background color base on the X11 color scheme.
+     * The name of the background color based on the X11 color scheme.
      *
-     * see [[http://www.graphviz.org/content/color-names]] for further details.
+     * See [[http://www.graphviz.org/content/color-names]] for further details.
      */
     def backgroundColor: Option[String]
 
@@ -74,6 +74,9 @@ trait Node {
      */
     def hasSuccessors(): Boolean
 
+    /**
+     * The hash code of this node. By default the hash code is the unique id.
+     */
     override def hashCode: Int = uniqueId
 
     override def equals(other: Any): Boolean = {

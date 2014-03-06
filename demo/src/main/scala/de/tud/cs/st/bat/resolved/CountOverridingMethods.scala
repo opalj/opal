@@ -43,7 +43,7 @@ import java.net.URL
  * This analysis is an overapproximation due to the fact that we do not consider
  * the relation between the visibility modifiers and packages.
  *
- * For example, a method m in a Class C in package c that is public does not override 
+ * For example, a method m in a Class C in package c that is public does not override
  * the method m in C's superclass B that is in package b and where the method has
  * default (package) visibility
  *
@@ -66,12 +66,9 @@ object CountOverridingMethods extends AnalysisExecutor {
                 methodDescriptor: MethodDescriptor)(
                     classFile: ClassFile): Boolean = {
 
-                classFile.methods.exists(
-                    _ match {
-                        case m @ Method(_, `methodName`, `methodDescriptor`) if !m.isAbstract && !m.isPrivate ⇒ true
-                        case _ ⇒ false
-                    }
-                )
+                classFile.findMethod(methodName, methodDescriptor).map(method ⇒
+                    !method.isAbstract && !method.isPrivate
+                ).getOrElse(false)
             }
 
             var results = List[String]()
@@ -84,20 +81,19 @@ object CountOverridingMethods extends AnalysisExecutor {
                 if !method.isStatic
                 if method.name != "<init>" && method.name != "<clinit>"
             } {
-                val hasOverriddenMethod = classFileHasImplementedMethod(method.name, method.descriptor) _
+                val implementsMethod = classFileHasImplementedMethod(method.name, method.descriptor) _
 
                 methodsCount += 1
-                classHierarchy.superclasses(
-                    classFile.thisType, project) {
-                        !(_: ClassFile).isInterfaceDeclaration
-                    }.find(superclass ⇒ hasOverriddenMethod(superclass)) match {
-                        case Some(cf) ⇒
-                            results = (classFile.thisType.fqn+
-                                " inherits from "+cf.thisType.fqn+
-                                " overrides "+method.name + method.descriptor.toUMLNotation) :: results
-                            methodsThatOverrideAnotherMethodCount += 1
-                        case None ⇒ /*OK*/
-                    }
+                classHierarchy.superclasses(classFile.thisType, project) {
+                    !(_: ClassFile).isInterfaceDeclaration
+                }.find(superclass ⇒ implementsMethod(superclass)) match {
+                    case Some(cf) ⇒
+                        results = (classFile.fqn+
+                            " inherits from "+cf.fqn+
+                            " overrides "+method.name + method.descriptor.toUMLNotation) :: results
+                        methodsThatOverrideAnotherMethodCount += 1
+                    case None ⇒ /*OK*/
+                }
             }
 
             BasicReport(

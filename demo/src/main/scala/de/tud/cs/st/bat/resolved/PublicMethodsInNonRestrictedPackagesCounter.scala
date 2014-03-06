@@ -77,24 +77,27 @@ object PublicMethodsInNonRestrictedPackagesCounter extends AnalysisExecutor {
 
         def description = "Counts the number of public methods in non-restricted packages."
 
-        def analyze(project: Project[URL],parameters : Seq[String] = List.empty) = {
+        def analyze(project: Project[URL], parameters: Seq[String] = List.empty) = {
             val methods =
                 for {
                     classFile ← project.classFiles
                     if classFile.isPublic
-                    if !restrictedPackages.exists(classFile.thisType.fqn.startsWith(_))
+                    if !restrictedPackages.exists(classFile.fqn.startsWith(_))
                     method ← classFile.methods
-                    if (method.isPublic || (method.isProtected && !classFile.isFinal))
                     if method.body.isDefined
+                    if (method.isPublic || (method.isProtected && !classFile.isFinal))
                 } yield (
-                    classFile.thisType,
-                    method,
+                    classFile.thisType.toJava,
+                    method.toJava,
                     method.parameterTypes.filter(_.isReferenceType).size
                 )
 
             BasicReport(
                 "Public methods in non-restricted packages found ("+methods.size+"):\n"+
-                    methods.map(t ⇒ t._1.toJava+" -> "+t._2.toJava+" ("+t._3+")").mkString("\t", "\n\t", "\n")+
+                    methods.map { t ⇒
+                        val (typeName, methodSignature, count) = t
+                        typeName+" -> "+methodSignature+" ("+count+")"
+                    }.mkString("\t", "\n\t", "\n")+
                     "Overall non-native method parameters: "+(methods.map(_._3).foldLeft(0)(_ + _))
             )
         }

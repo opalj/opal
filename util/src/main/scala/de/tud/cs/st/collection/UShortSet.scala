@@ -41,8 +41,10 @@ package collection
 trait UShortSet {
 
     /**
-     * Returns `true` if this set contains the given value. If the given value
-     * is not an unsigned short value [0..65535] the result is undefined.
+     * Returns `true` if this set contains the given value.
+     *
+     * If the given value is not an unsigned short value [0..65535] the
+     * result is undefined.
      */
     def contains(ushortValue: Int): Boolean
 
@@ -56,12 +58,12 @@ trait UShortSet {
      * Returns `true` if the predicate `f` returns true for all values of the set.
      */
     def forall(f: /*ushortValue:*/ Int ⇒ Boolean): Boolean
-    
+
     /**
      * Returns a new iterator. The iterator is primarily defined to facilitate
      * the integration with Scala's standard collections API.
      *
-     * @note Whenever possible try to use this set's native method
+     * @note Whenever possible try to use this set's native methods
      *      (e.g., foreach and contains) as they are guaranteed to be optimized for
      *      performance.
      */
@@ -71,10 +73,9 @@ trait UShortSet {
      * Returns a new iterable. The method is primarily defined to facilitate
      * the integration with Scala's standard collections API.
      *
-     * @note Whenever possible try to use this set's native method
+     * @note Whenever possible try to use this set's native methods
      *      (e.g., foreach and contains) as they are guaranteed to be optimized for
      *      performance.
-     *
      */
     def iterable: Iterable[Int]
 
@@ -82,6 +83,10 @@ trait UShortSet {
      * The maximum value in this set.
      */
     def max: Int
+
+    /**
+     * The last value in this set which is also the maximum value.
+     */
     def last = max
 
     /**

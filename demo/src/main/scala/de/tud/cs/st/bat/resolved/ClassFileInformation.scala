@@ -35,10 +35,10 @@ package bat
 package resolved
 
 /**
-  * Loads class files form a JAR archive and prints the signatures of the classes.
-  *
-  * @author Michael Eichberg
-  */
+ * Loads class files form a JAR archive and prints the signatures of the classes.
+ *
+ * @author Michael Eichberg
+ */
 object ClassFileInformation {
 
     def main(args: Array[String]) {
@@ -49,7 +49,7 @@ object ClassFileInformation {
             println("Usage: java …ClassFileInformation "+
                 "<JAR file containing class files> "+
                 "<Name of classfile (incl. path) contained in the JAR file>+")
-            println("Example:\n\tjava …ClassFileInformation /Library/Java/JavaVirtualMachines/jdk1.7.0_45.jdk/Contents/Home/jre/lib/rt.jar java/util/ArrayList.class")
+            println("Example:\n\tjava …ClassFileInformation /Library/Java/JavaVirtualMachines/jdk1.7.0_15.jdk/Contents/Home/jre/lib/rt.jar java/util/ArrayList.class")
             sys.exit(-1)
         }
 
@@ -57,24 +57,32 @@ object ClassFileInformation {
 
             // Load class file (the class file name has to correspond to the name of 
             // the file inside the archive.)
+            // The Java7Framework defines multiple other methods that make it convenient
+            // to load class files stored in folders or in jars within jars.
             val classFile = Java7Framework.ClassFile(args(0), classFileName)
             import classFile._
 
             // print the name of the type defined by this class file
             println(thisType.toJava)
 
-            superclassType.map(s ⇒ println("  extends "+s.toJava)) // java.lang.Object does not have a super class!
+            // superclassType returns an Option, because java.lang.Object does not have a super class
+            superclassType map { s ⇒ println("  extends "+s.toJava) }
             if (interfaceTypes.length > 0) {
                 println(interfaceTypes.map(_.toJava).mkString("  implement ", ", ", ""))
             }
 
+            // the source file attribute is an optional attribute and is only specified
+            // if the compiler settings are such that debug information is added to the
+            // compile class file.
             sourceFile map { s ⇒ println("\tSOURCEFILE: "+s) }
 
+            // The version of the class file. Basically, every major version of the
+            // JDK defines additional (new) features.
             println("\tVERSION: "+majorVersion+"."+minorVersion)
 
-            println(fields.mkString("\tFIELDS:\n\t","\n\t",""))
+            println(fields.mkString("\tFIELDS:\n\t", "\n\t", ""))
 
-            println(methods.mkString("\tMETHODS:\n\t","\n\t",""))
+            println(methods.mkString("\tMETHODS:\n\t", "\n\t", ""))
 
             println
         }

@@ -36,15 +36,16 @@ package resolved
 package analyses
 
 /**
-  * Creates a `dot` (Graphviz) based representation of the class hierarchy.
-  *
-  * @author Michael Eichberg
-  */
+ * Creates a `dot` (Graphviz) based representation of the class hierarchy.
+ *
+ * @author Michael Eichberg
+ */
 object ClassHierarchyVisualizer {
 
     def main(args: Array[String]) {
 
         import reader.Java7Framework.ClassFiles
+        import util.writeAndOpenDesktopApplication
         import util.graphs.{ Node, toDot }
 
         if (!args.forall(_.endsWith(".jar"))) {
@@ -62,6 +63,8 @@ object ClassHierarchyVisualizer {
             }
 
         val classHierarchyDescription =
-            toDot.generateAndOpenDOT("ClassHierarchy",Set(classHierarchy.toGraph), "back")
+            writeAndOpenDesktopApplication(
+                toDot.generateDot(Set(classHierarchy.toGraph), "back"),
+                "ClassHiearachy", ".dot")
     }
 }

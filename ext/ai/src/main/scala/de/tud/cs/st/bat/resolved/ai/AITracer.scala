@@ -62,13 +62,13 @@ trait AITracer {
      * the responsibility of the tracer to ensure that the updates are meaningful.
      * BATAI will not perform any checks.
      */
-    def continuingInterpretation[D <: SomeDomain with Singleton](
+    def continuingInterpretation(
         code: Code,
-        domain: D,
-        initialWorkList: List[PC],
-        alreadyEvaluated: List[PC],
-        operandsArray: Array[List[D#DomainValue]],
-        localsArray: Array[Array[D#DomainValue]])
+        domain: SomeDomain)(
+            initialWorkList: List[PC],
+            alreadyEvaluated: List[PC],
+            operandsArray: Array[List[domain.DomainValue]],
+            localsArray: Array[Array[domain.DomainValue]])
 
     /**
      * Called by BATAI before an instruction is evaluated.
@@ -81,12 +81,12 @@ trait AITracer {
      * @param locals The registers before the execution of the instruction. '''The Array
      *      must not be mutated.'''
      */
-    def instructionEvalution[D <: SomeDomain with Singleton](
-        domain: D,
-        pc: PC,
-        instruction: Instruction,
-        operands: List[D#DomainValue],
-        locals: Array[D#DomainValue]): Unit
+    def instructionEvalution(
+        domain: SomeDomain)(
+            pc: PC,
+            instruction: Instruction,
+            operands: List[domain.DomainValue],
+            locals: Array[domain.DomainValue]): Unit
 
     /**
      * Called by BATAI after an instruction (`currentPC`) was evaluated and before the
@@ -103,10 +103,10 @@ trait AITracer {
      *
      * Recall that BATAI performs a depth-first exploration.
      */
-    def flow[D <: SomeDomain with Singleton](
-        domain: D,
-        currentPC: PC,
-        targetPC: PC): Unit
+    def flow(
+        domain: SomeDomain)(
+            currentPC: PC,
+            targetPC: PC): Unit
 
     /**
      * Called if the instruction with the targetPC was rescheduled. I.e., the
@@ -118,10 +118,10 @@ trait AITracer {
      *
      * Recall that BATAI performs a depth-first exploration.
      */
-    def rescheduled[D <: SomeDomain with Singleton](
-        domain: D,
-        sourcePC: PC,
-        targetPC: PC): Unit
+    def rescheduled(
+        domain: SomeDomain)(
+            sourcePC: PC,
+            targetPC: PC): Unit
 
     /**
      * Called by BATAI whenever two paths converge and the values on the operand stack
@@ -136,47 +136,52 @@ trait AITracer {
      * @param result The result of joining the operand stacks and register
      * 		assignment.
      */
-    def join[D <: SomeDomain with Singleton](
-        domain: D,
-        pc: PC,
-        thisOperands: D#Operands,
-        thisLocals: D#Locals,
-        otherOperands: D#Operands,
-        otherLocals: D#Locals,
-        result: Update[(D#Operands, D#Locals)])
+    def join(
+        domain: SomeDomain)(
+            pc: PC,
+            thisOperands: domain.Operands,
+            thisLocals: domain.Locals,
+            otherOperands: domain.Operands,
+            otherLocals: domain.Locals,
+            result: Update[(domain.Operands, domain.Locals)])
 
     /**
      * Called when the analyzed method throws an exception (i.e., the interpreter
      * evaluates an `athrow` instruction) that is not caught within
      * the method.
      */
-    def abruptMethodExecution[D <: SomeDomain with Singleton](
-        domain: D,
-        pc: Int,
-        exception: D#DomainValue)
+    def abruptMethodExecution(
+        domain: SomeDomain)(
+            pc: PC,
+            exception: domain.DomainValue)
 
     /**
      * Called when a `RET` instruction is encountered.
      */
-    def ret[D <: SomeDomain with Singleton](
-        domain: D,
-        pc: PC,
-        returnAddress: PC,
-        oldWorklist: List[PC],
-        newWorklist: List[PC])
+    def ret(
+        domain: SomeDomain)(
+            pc: PC,
+            returnAddress: PC,
+            oldWorklist: List[PC],
+            newWorklist: List[PC])
+
+    /**
+     * Called before a jump to a subroutine.
+     */
+    def jumpToSubroutine(domain: SomeDomain)(pc: PC): Unit
 
     /**
      * Called when the evaluation of a subroutine (JSR/RET) is completed.
      */
-    def returnFromSubroutine[D <: SomeDomain with Singleton](
-        domain: D,
-        pc: Int,
-        returnAddress: Int,
-        subroutineInstructions: List[Int])
+    def returnFromSubroutine(
+        domain: SomeDomain)(
+            pc: PC,
+            returnAddress: PC,
+            subroutineInstructions: List[PC]): Unit
 
     /**
      * Called by BATAI when the abstract interpretation of a method has completed/was
      * interrupted.
      */
-    def result[D <: SomeDomain with Singleton](result: AIResult[D])
+    def result(result: AIResult): Unit
 }

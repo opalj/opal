@@ -122,10 +122,10 @@ trait PropertyTracing[+I] extends Domain[I] { domain ⇒
                 if (filteredList eq worklist)
                     // the instruction was not yet scheduled for another
                     // evaluation
-                    tracer.get.flow[domain.type](domain,currentPC, successorPC)
+                    tracer.get.flow(domain)(currentPC, successorPC)
                 else
                     // the instruction was just moved to the beginning
-                    tracer.get.rescheduled[domain.type](domain,currentPC, successorPC)
+                    tracer.get.rescheduled(domain)(currentPC, successorPC)
             }
             successorPC :: filteredList
         } else {

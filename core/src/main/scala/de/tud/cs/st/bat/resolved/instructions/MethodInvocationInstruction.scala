@@ -65,22 +65,32 @@ abstract class MethodInvocationInstruction extends InvocationInstruction {
 
     def declaringClass: ReferenceType
 
+    def isVirtualMethodCall: Boolean
+
     override def toString: String =
         this.getClass().getSimpleName()+"\n"+
             declaringClass.toJava+"\n"+name+" "+methodDescriptor.toUMLNotation
 
 }
 
-abstract class VirtualMethodInvocationInstruction extends MethodInvocationInstruction
+abstract class VirtualMethodInvocationInstruction extends MethodInvocationInstruction {
+    def isVirtualMethodCall: Boolean = true
+}
 
 /**
  * Invocation of a method where the target method is statically resovled.
  *
  * @author Michael Eichberg
  */
-abstract class StaticMethodInvocationInstruction extends MethodInvocationInstruction
+abstract class StaticMethodInvocationInstruction extends MethodInvocationInstruction {
+    def isVirtualMethodCall: Boolean = false
+}
 
 object MethodInvocationInstruction {
+
+    def unapply(instruction: MethodInvocationInstruction): Option[(ReferenceType, String, MethodDescriptor)] = {
+        Some(instruction.declaringClass, instruction.name, instruction.methodDescriptor)
+    }
 
     val runtimeExceptions = List(ObjectType.NullPointerException)
 

@@ -35,20 +35,25 @@ package bat
 package resolved
 
 /**
- * This package defines classes and traits used by BAT's abstract interpretation
- * framework – called BATAI in the following. Please note, that BATAI just refers
- * to the classes and traits defined in this package (`ai`). The classes and traits
- * defined in the sub-packages (in particular in `domain`) are not considered to
- * be part of the core of BATAI.
+ * Implementation of an abstract interpretation framework – called BATAI in the following.
+ *
+ * Please note, that BATAI just refers to the classes and traits defined in this package
+ * (`ai`). The classes and traits defined in the sub-packages (in particular in `domain`)
+ * are not considered to be part of the core of BATAI.
  *
  * @note This framework assumes that the analyzed bytecode is valid; i.e., the JVM's
- *      bytecode verifier would verify the code. Furthermore, load-time errors
- *      (e.g., `LinkageErrors`) are completely ignored to facilitate the analysis of
- *      parts of a project. In general, if the presented bytecode is not valid,
+ *      bytecode verifier would be able to verify the code. Furthermore, load-time errors
+ *      (e.g., `LinkageErrors`) are – by default – completely ignored to facilitate the
+ *      analysis of parts of a project. In general, if the presented bytecode is not valid,
  *      the result is undefined (i.e., BATAI may report meaningless results, crash or run
  *      indefinitely).
  *
- * @see [[de.tud.cs.st.bat.resolved.ai.AI]] - the main class
+ * @see [[de.tud.cs.st.bat.resolved.ai.AI]] - Implements the abstract interpreter that
+ *      process a methods code and uses a analysis-specific domain to perform the
+ *      abstract computations.
+ * @see [[de.tud.cs.st.bat.resolved.ai.Domain]] - The core interface between the abstract
+ *      interpretation framework and the abstract domain that is responsible for
+ *      performing the abstract computations.
  *
  * @author Michael Eichberg
  */
@@ -56,12 +61,26 @@ package object ai {
 
     import language.existentials
 
+    /**
+     * Type alias that abstracts over all domains. `Domain` object are parameterized
+     * over the source for which the domain object was created. For many analyses the
+     * source information associated with a domain is not relevant.
+     *
+     * @note This type alias serves comprehension purposes only.
+     */
     type SomeDomain = Domain[_]
 
+    /**
+     * Type alias that can be used if the AI can process all kinds of domains.
+     *
+     * @note This type alias serves comprehension purposes only.
+     */
     type SomeAI[D <: SomeDomain] = AI[_ >: D]
 
     /**
-     * A set of program counters.
+     * Type alias that is used to identify a set of program counters.
+     *
+     * @note This type alias serves comprehension purposes only.
      */
     type PCs = collection.UShortSet
 
@@ -73,7 +92,8 @@ package object ai {
      * a type bound for array objects could be: `java.io.Serializable` and
      * `java.lang.Cloneable`. Here, independent means that no two types of the bound
      * are in a subtype relationship. Hence, an upper bound is always a special set where
-     * the values are not equals and are not in an inheritance relation.
+     * the values are not equal and are not in an inheritance relation. However, 
+     * identifying independent types is the responsibility of the class hierarchy.
      *
      * In general, an upper bound identifies a single class type and a set of independent
      * interface types that are known to be implemented by the current object. '''Even if

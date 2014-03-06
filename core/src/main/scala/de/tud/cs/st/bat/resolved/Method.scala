@@ -84,6 +84,9 @@ final class Method private (
             case None              ⇒ IndexedSeq.empty
         }
 
+    def parameterAnnotations: ParameterAnnotations =
+        runtimeVisibleParameterAnnotations ++ runtimeInvisibleParameterAnnotations
+
     // This is directly supported due to its need for the resolution of signature 
     // polymorphic methods. 
     final def isNativeAndVarargs = Method.isNativeAndVarargs(accessFlags)
@@ -100,6 +103,12 @@ final class Method private (
 
     final def isAbstract: Boolean = (ACC_ABSTRACT.mask & accessFlags) != 0
 
+    final def isConstructor: Boolean = name == "<init>"
+
+    final def isStaticInitializer: Boolean = name == "<clinit>"
+
+    final def isInitialzer: Boolean = isConstructor || isStaticInitializer
+
     def returnType = descriptor.returnType
 
     def parameterTypes = descriptor.parameterTypes
@@ -112,8 +121,6 @@ final class Method private (
 
     def exceptionTable: Option[ExceptionTable] =
         attributes collectFirst { case et: ExceptionTable ⇒ et }
-
-    def toJava(): String = descriptor.toJava(name)
 
     /**
      * Defines an absolute order on `Method` instances w.r.t. their method signatures.
@@ -135,6 +142,8 @@ final class Method private (
             case _            ⇒ false
         }
 
+    def toJava(): String = descriptor.toJava(name)
+
     override def toString(): String = {
         AccessFlags.toStrings(accessFlags, AccessFlagsContexts.METHOD).mkString("", " ", " ") +
             descriptor.toJava(name) +
@@ -154,6 +163,7 @@ object Method {
     private def isNativeAndVarargs(accessFlags: Int) =
         (accessFlags & ACC_NATIVEAndACC_VARARGS) == ACC_NATIVEAndACC_VARARGS
 
+    // TODO Move the ID creation functionality to the Project
     private[this] val nextId = new java.util.concurrent.atomic.AtomicInteger(0)
 
     def methodsCount = nextId.get

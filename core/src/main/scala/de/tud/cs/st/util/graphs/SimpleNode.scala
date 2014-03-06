@@ -35,20 +35,29 @@ package util
 package graphs
 
 /**
- * Represents a node of a directed graph.
+ * Represents a mutable node of a directed graph. This class basically serves as a small
+ * adapter class for some arbitrary node.
  *
  * ==Thread Safety==
- * This class is thread-safe.
+ * This class is thread-safe. It is possible to add multiple nodes concurrently.
  *
  * @see The demo project for example usages.
  *
+ * @tparam I The type of the object that is associated with this node/the type of
+ *      the object for which this node object is created.
+ * @param identifier The underlying object. '''The underlying object must guarantee that
+ *      the `hashCode` of two object instances that are added to the same graph is different
+ *      whenever `equals` is `false`'''.
+ * @param identifierToString A function that converts "an" identifier to a string. By
+ *      default the given object' `toString` method is called.
  * @author Michael Eichberg
  */
 final class SimpleNode[I](
-        val identifier: I,
-        val identifierToString: I ⇒ String = (i: I) ⇒ i.toString,
-        val backgroundColor: Option[String] = None,
-        private var children: List[Node] = List.empty) extends Node {
+    val identifier: I,
+    val identifierToString: I ⇒ String = SimpleNode.any2String,
+    val backgroundColor: Option[String] = None,
+    private[this] var children: List[Node] = List.empty)
+        extends Node {
 
     def toHRR = Some(identifierToString(identifier))
 
@@ -72,5 +81,8 @@ final class SimpleNode[I](
 
     def hasSuccessors(): Boolean = children.synchronized(children.nonEmpty)
 
+}
+private object SimpleNode {
+    val any2String: (Any) ⇒ String = a ⇒ { a.toString }
 }
 

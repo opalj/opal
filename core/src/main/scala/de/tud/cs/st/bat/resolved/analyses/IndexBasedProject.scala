@@ -44,15 +44,14 @@ import java.net.URL
 /**
  * Primary abstraction of a Java project. This class is basically just a container
  * for `ClassFile`s. Additionally, it makes project wide information available such as
- * the class hierarchy, the list of all methods etc..
+ * the class hierarchy and the list of all fields and methods.
  *
  * ==Initialization==
  * To create a representation of a project use the companion object's factory method.
- * After creating a project, it is not possible to dynamically add/remove any class
- * files.
- *
+ * 
  * ==Thread Safety==
- * This class is de-facto immutable.
+ * This class is immutable. After creating a project, it is not possible to dynamically
+ * add/remove any class files.
  *
  * ==Implementation Details==
  * This class relies on the property that `ObjectType`s are associated with consecutive,
@@ -128,6 +127,11 @@ class IndexBasedProject[Source: reflect.ClassTag] private (
         map
     }
 
+    /**
+     * Returns the method with the specified id. If the id is not valid,
+     * if the id is not valid, the result is undetermined.(An exception may be
+     * thrown or `null` may be returned.)
+     */
     def method(methodID: Int): Method = methodsMap(methodID)
 
     def classFile(objectTypeID: Int): ClassFile = classesMap(objectTypeID)
@@ -172,6 +176,18 @@ class IndexBasedProject[Source: reflect.ClassTag] private (
         true
     }
 
+    def statistics: String = {
+        val classFiles = classesMap.filter(_ != null)
+        "Project Statistics:"+
+            "\n\tClasses: "+classesMap.count(_ != null)+
+            " - Annotations: "+classFiles.foldLeft(0)(_ + _.annotations.size)+
+            "\n\tMethods: "+classFiles.foldLeft(0)(_ + _.methods.size)+
+            " - Annotations: "+classFiles.foldLeft(0)(_ + _.methods.foldLeft(0)((c, n) ⇒ c + n.annotations.size + n.parameterAnnotations.size))+
+            "\n\tFields: "+classFiles.foldLeft(0)(_ + _.fields.size)+
+            " - Annotations: "+classFiles.foldLeft(0)(_ + _.fields.foldLeft(0)((c, n) ⇒ c + n.annotations.size))+
+            "\n\tInstructions: "+classFiles.foldLeft(0)(_ + _.methods.filter(_.body.isDefined).foldLeft(0)(_ + _.body.get.instructions.count(_ != null)))
+    }
+
     override def toString: String = {
         val classesAndSources =
             (classesMap.view zip sourcesMap.view).view.filter(_._1 ne null)
@@ -193,14 +209,14 @@ object IndexBasedProject {
     /**
      * Creates a new IndexBasedProject.
      *
-     * @param classFiles The list of class files of this project.
+     * @param allClassFiles The list of class files of this project.
      *    [Thread Safety] The underlying data structure has to support concurrent access.
      */
     def apply[Source: reflect.ClassTag](
         classFiles: Iterable[(ClassFile, Source)]): IndexBasedProject[Source] = {
 
-        import concurrent._
-        import concurrent.duration._
+        import concurrent.{ Future, Await, ExecutionContext, future }
+        import concurrent.duration.Duration
         import ExecutionContext.Implicits.global
 
         val classHierarchyFuture: Future[ClassHierarchy] = future {

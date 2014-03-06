@@ -35,11 +35,6 @@ package bat
 package resolved
 package reader
 
-import bat.reader.InterfacesReader
-import bat.reader.FieldsReader
-import bat.reader.MethodsReader
-import bat.reader.AttributesReader
-import bat.reader.SkipUnknown_attributeReader
 import bat.reader.CodeReader
 
 /**
@@ -49,34 +44,16 @@ import bat.reader.CodeReader
  *
  * @author Michael Eichberg
  */
-class Java7Framework
-    extends ConstantPoolBinding
-    with ClassFileBinding
-    with InterfacesReader
-    with FieldsReader
-    with MethodsReader
-    with AttributesReader
-    with BootstrapMethods_attributeBinding
-    /* If you want unknown attributes to be represented uncomment the following: */
-    // with Unknown_attributeBinding 
-    /* and comment out the following line: */
-    with SkipUnknown_attributeReader
-    with AnnotationsBinding
-    with StackMapTable_attributeBinding
-    with InnerClasses_attributeBinding
-    with EnclosingMethod_attributeBinding
-    with SourceFile_attributeBinding
+class Java7Framework extends Java7LibraryFramework
+    with CodeAttributeBinding
     with SourceDebugExtension_attributeBinding
-    with Deprecated_attributeBinding
-    with Signature_attributeBinding
-    with Synthetic_attributeBinding
+    with BootstrapMethods_attributeBinding
+    with StackMapTable_attributeBinding
     with LineNumberTable_attributeBinding
     with LocalVariableTable_attributeBinding
     with LocalVariableTypeTable_attributeBinding
     with Exceptions_attributeBinding
-    with ConstantValue_attributeBinding
     with BytecodeReaderAndBinding
-    with CodeAttributeBinding
     with CodeReader
 
 object Java7Framework extends Java7Framework
