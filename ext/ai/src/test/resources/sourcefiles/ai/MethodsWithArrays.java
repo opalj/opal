@@ -118,7 +118,7 @@ public class MethodsWithArrays {
         }
     }
 
-    public static int[] doIt() {
+    public static int[] zeroToNine() {
         int[] a = new int[10];
         int i = 0;
         while (i < 10) {
@@ -128,13 +128,60 @@ public class MethodsWithArrays {
         return a;
     }
 
-    public static int[] doItAbs(int initial) {
-        int i = initial;
-        int[] a = new int[10];
-        while (i < 10) {
-            a[i] = i;
-            i = i + 1;
+    public static int[] oneElement() {
+        int[] a = new int[1];
+        for (int i = 0; i < 1; i++)
+            a[i] = i + 1;
+        return a;
+    }
+
+    public static int[] threeElements() {
+        int[] a = new int[3];
+        for (int i = 0; i < 3; i++)
+            a[i] = i + 1;
+        return a;
+    }
+
+    public static int[] simpleSelectiveInitialization(int initial) {
+        int[] a = new int[1];
+        if (initial <= 5) {
+            a[0] = initial;
+        } else {
+            a[0] = -1;
         }
+
+        return a;
+    }
+
+    public static int[] selectiveInitialization(int initial) {
+        if (initial < 0)
+            throw new IllegalArgumentException();
+
+        int[] a = new int[4];
+        if (initial <= 2) {
+            int i = 0;
+            while (i < 2) {
+                a[i] = i;
+                i = i + 1;
+            }
+        } else {
+            int i = 2;
+            while (i < 4) {
+                a[i] = i;
+                i = i + 1;
+            }
+        }
+
+        return a;
+    }
+
+    public static Object[] pathsConverge(Object[] a) {
+        Object[] theArray = a;
+
+        if (theArray == null)
+            theArray = new java.io.Serializable[1];
+        else if (!(theArray instanceof java.io.Serializable[]))
+            theArray = new java.io.Serializable[1];
         return a;
     }
 

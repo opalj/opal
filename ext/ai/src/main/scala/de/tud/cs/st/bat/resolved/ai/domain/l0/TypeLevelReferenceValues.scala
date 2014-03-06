@@ -76,19 +76,13 @@ trait TypeLevelReferenceValues[+I]
                 "refining "+value+" failed: "+refinementGoal,
                 null, true, false)
 
-    protected def mergeDomainValues(pc: PC, v1: DomainValue, v2: DomainValue): DomainValue = {
-        v1.join(pc, v2) match {
-            case NoUpdate      ⇒ v1
-            case SomeUpdate(v) ⇒ v
-        }
-    }
-
     /**
      * Merges those exceptions that have the same upper type bound. This ensures
      * that per exception type only one DomainValue (which may be a
-     * `MultipleReferenceValues`) is used.
+     * `MultipleReferenceValues`) is used. The standard join/merge operation does
+     * the merge based on the origin of a value.
      */
-    protected def mergeMultipleExceptionValues(
+    def mergeMultipleExceptionValues(
         pc: PC,
         v1s: ExceptionValues,
         v2s: ExceptionValues): ExceptionValues = {
@@ -298,10 +292,10 @@ trait TypeLevelReferenceValues[+I]
         if (reflexive) {
             var aIsSubtypeOfAllOfb = true
             val newUpperTypeBound = upperTypeBoundB filter { (b: ObjectType) ⇒
-                if (domain.isSubtypeOf(b, upperTypeBoundA).yes)
+                if (domain.isSubtypeOf(b, upperTypeBoundA).isYes)
                     return Left(upperTypeBoundA)
 
-                if (domain.isSubtypeOf(upperTypeBoundA, b).yes) {
+                if (domain.isSubtypeOf(upperTypeBoundA, b).isYes) {
                     true // => in newUpperTypeBound
                 } else {
                     aIsSubtypeOfAllOfb = false
@@ -345,9 +339,9 @@ trait TypeLevelReferenceValues[+I]
         if (reflexive) {
             if (upperTypeBoundA eq upperTypeBoundB)
                 return Left(upperTypeBoundA)
-            if (domain.isSubtypeOf(upperTypeBoundB, upperTypeBoundA).yes)
+            if (domain.isSubtypeOf(upperTypeBoundB, upperTypeBoundA).isYes)
                 return Left(upperTypeBoundA)
-            if (domain.isSubtypeOf(upperTypeBoundA, upperTypeBoundB).yes)
+            if (domain.isSubtypeOf(upperTypeBoundA, upperTypeBoundB).isYes)
                 return Left(upperTypeBoundB)
         }
 
@@ -379,11 +373,11 @@ trait TypeLevelReferenceValues[+I]
         else {
             val isSerializable =
                 thatUpperTypeBound exists { thatType ⇒
-                    domain.isSubtypeOf(thatType, Serializable).yes
+                    domain.isSubtypeOf(thatType, Serializable).isYes
                 }
             val isCloneable =
                 thatUpperTypeBound exists { thatType ⇒
-                    domain.isSubtypeOf(thatType, Cloneable).yes
+                    domain.isSubtypeOf(thatType, Cloneable).isYes
                 }
             if (isSerializable && isCloneable)
                 Right(SerializableAndCloneable)
@@ -411,9 +405,9 @@ trait TypeLevelReferenceValues[+I]
             Left(thatUpperTypeBound)
         else {
             var newUpperTypeBound: UIDList[ObjectType] = UIDList.empty
-            if (domain.isSubtypeOf(thatUpperTypeBound, Serializable).yes)
+            if (domain.isSubtypeOf(thatUpperTypeBound, Serializable).isYes)
                 newUpperTypeBound += Serializable
-            if (domain.isSubtypeOf(thatUpperTypeBound, Cloneable).yes)
+            if (domain.isSubtypeOf(thatUpperTypeBound, Cloneable).isYes)
                 newUpperTypeBound += Cloneable
             if (newUpperTypeBound.isEmpty)
                 Left(Object)
@@ -434,31 +428,79 @@ trait TypeLevelReferenceValues[+I]
     protected def joinArrayTypes(
         thisUpperTypeBound: ArrayType,
         thatUpperTypeBound: ArrayType): Either[ArrayType, UIDList[ObjectType]] = {
+        // We have ALSO to consider the following corner cases:
+        // Foo[][] and Bar[][] => Object[][] (Object is the common super class)
+        // Object[] and int[][] => Object[] (which may contain arrays of int values...)
+        // Foo[] and int[][] => Object[]
+        // int[] and Object[][] => SerializableAndCloneable
+
         if (thisUpperTypeBound eq thatUpperTypeBound)
-            Left(thisUpperTypeBound)
-        else if (thisUpperTypeBound.componentType.isBaseType ||
-            thatUpperTypeBound.componentType.isBaseType) {
+            return Left(thisUpperTypeBound)
+
+        val thisUTBDim = thisUpperTypeBound.dimensions
+        val thatUTBDim = thatUpperTypeBound.dimensions
+
+        if (thisUTBDim < thatUTBDim) {
+            if (thisUpperTypeBound.elementType.isBaseType) {
+                if (thisUTBDim == 1)
+                    Right(TypeLevelReferenceValues.SerializableAndCloneable)
+                else
+                    Left(ArrayType(thisUTBDim - 1, ObjectType.Object))
+            } else {
+                Left(ArrayType(thisUTBDim, ObjectType.Object))
+            }
+        } else if (thisUTBDim > thatUTBDim) {
+            if (thatUpperTypeBound.elementType.isBaseType) {
+                if (thisUTBDim == 1)
+                    Right(TypeLevelReferenceValues.SerializableAndCloneable)
+                else
+                    Left(ArrayType(thatUTBDim - 1, ObjectType.Object))
+            } else {
+                Left(ArrayType(thatUTBDim, ObjectType.Object))
+            }
+        } else if (thisUpperTypeBound.elementType.isBaseType ||
+            thatUpperTypeBound.elementType.isBaseType) {
+            // => the number of dimensions is the same, but the elementType isn't
+            //    (if the element type would be the same, both object reference would 
+            //    refer to the same object and this would have been handled the very 
+            //    first test)            
             // Scenario:
             // E.g., imagine that we have a method that "just" wants to 
             // serialize some data. In such a case the method may be passed 
             // different arrays with different primitive values.
-            Right(TypeLevelReferenceValues.SerializableAndCloneable)
+            if (thisUTBDim == 1 /* && thatUTBDim == 1*/ )
+                Right(TypeLevelReferenceValues.SerializableAndCloneable)
+            else {
+                Left(ArrayType(thisUTBDim - 1, ObjectType.Object))
+            }
         } else {
-            // When we reach this point, 
-            // both component types are reference types
-            val thatComponentType = thatUpperTypeBound.componentType.asReferenceType
-            val thisComponentType = thisUpperTypeBound.componentType.asReferenceType
-            if (domain.isSubtypeOf(thatComponentType, thisComponentType).yes)
-                Left(thisUpperTypeBound)
-            else if (domain.isSubtypeOf(thisComponentType, thatComponentType).yes)
-                Left(thatUpperTypeBound)
-            else
-                // This is the most general fallback and we are losing some information
-                // when compared to a solution that calculates the least 
-                // upper type bound. However, in that case we need - 
-                // in general - to support array values with multiple type 
-                // bounds, which we currently don't do.
-                Left(ArrayType.ArrayOfObjects)
+            // When we reach this point, the dimensions are identical and both 
+            // elementTypes are reference types
+            val thatElementType = thatUpperTypeBound.elementType.asObjectType
+            val thisElementType = thisUpperTypeBound.elementType.asObjectType
+            Left(
+                ArrayType(
+                    thisUTBDim,
+                    joinObjectTypesUntilSingleUpperBound(
+                        thisElementType,
+                        thatElementType,
+                        true)
+                )
+            )
+        }
+    }
+
+    protected def joinObjectTypesUntilSingleUpperBound(
+        upperTypeBoundA: ObjectType,
+        upperTypeBoundB: ObjectType,
+        reflexive: Boolean): ObjectType = {
+        joinObjectTypes(upperTypeBoundA, upperTypeBoundB, reflexive) match {
+            case Left(newUpperTypeBound) ⇒
+                newUpperTypeBound
+            case Right(newUpperTypeBounds) ⇒
+                newUpperTypeBounds.tail.foldLeft(newUpperTypeBounds.head) { (c, n) ⇒
+                    joinObjectTypesUntilSingleUpperBound(c, n, false)
+                }
         }
     }
 
@@ -673,15 +715,15 @@ trait TypeLevelReferenceValues[+I]
             // represented by an instance of the respective class and this situation
             // is checked for by the domain-level method.
 
-            val validIndex =
+            val isIndexValid =
                 isSomeValueInRange(index, IntegerConstant0, doGetLength(pc))
-            if (validIndex.no)
+            if (isIndexValid.isNo)
                 return justThrows(ArrayIndexOutOfBoundsException(pc))
 
             var thrownExceptions = List.empty[ExceptionValue]
-            if (isNull.maybeYes && throwNullPointerException)
+            if (isNull.isYesOrUnknown && throwNullPointerException)
                 thrownExceptions = NullPointerException(pc) :: thrownExceptions
-            if (validIndex.maybeNo && throwArrayIndexOutOfBoundsException)
+            if (isIndexValid.isNoOrUnknown && throwArrayIndexOutOfBoundsException)
                 thrownExceptions = ArrayIndexOutOfBoundsException(pc) :: thrownExceptions
 
             doLoad(pc, index, thrownExceptions)
@@ -706,18 +748,18 @@ trait TypeLevelReferenceValues[+I]
             // The case "this.isNull == Yes" will not occur as the value "null" is always
             // represented by an instance of the respective class
 
-            val validIndex =
+            val isIndexValid =
                 isSomeValueInRange(index, IntegerConstant0, doGetLength(pc))
-            if (validIndex.no)
+            if (isIndexValid.isNo)
                 return justThrows(ArrayIndexOutOfBoundsException(pc))
 
-            if (isAssignable(value).no)
+            if (isAssignable(value).isNo)
                 return justThrows(ArrayStoreException(pc))
 
             var thrownExceptions = List.empty[ExceptionValue]
-            if (validIndex.maybeNo && throwArrayIndexOutOfBoundsException)
+            if (isIndexValid.isNoOrUnknown && throwArrayIndexOutOfBoundsException)
                 thrownExceptions = ArrayIndexOutOfBoundsException(pc) :: thrownExceptions
-            if (isNull.maybeYes && throwNullPointerException)
+            if (isNull.isYesOrUnknown && throwNullPointerException)
                 thrownExceptions = NullPointerException(pc) :: thrownExceptions
 
             doArraystore(pc, value, index)
@@ -771,7 +813,7 @@ trait TypeLevelReferenceValues[+I]
         supertypes: UpperTypeBound): Boolean = {
         subtypes forall { subtype ⇒
             supertypes exists { supertype ⇒
-                domain.isSubtypeOf(subtype, supertype).yes
+                domain.isSubtypeOf(subtype, supertype).isYes
             }
         }
     }
@@ -804,12 +846,12 @@ trait TypeLevelReferenceValues[+I]
         val v2 = asReferenceValue(value2)
         val value1IsNull = v1.isNull
         val value2IsNull = v2.isNull
-        if (value1IsNull.yes && value2IsNull.isDefined)
+        if (value1IsNull.isYes && value2IsNull.isYesOrNo)
             // both are null or the second one is definitively not null
-            Answer(value2IsNull.yes)
-        else if (value2IsNull.yes && value1IsNull.isDefined)
+            Answer(value2IsNull.isYes)
+        else if (value2IsNull.isYes && value1IsNull.isYesOrNo)
             // both are null or the first one is definitively not null
-            Answer(value1IsNull.yes)
+            Answer(value1IsNull.isYes)
         else if (v1.isPrecise && v2.isPrecise && v1.upperTypeBound != v2.upperTypeBound)
             No
         else
@@ -858,13 +900,12 @@ trait TypeLevelReferenceValues[+I]
         pc: PC,
         count: DomainValue,
         componentType: FieldType): Computation[DomainValue, ExceptionValue] = {
-        val validCount =
-            isSomeValueInRange(count, 0, Int.MaxValue)
-        if (validCount.no)
+        val validCount = isSomeValueInRange(count, 0, Int.MaxValue)
+        if (validCount.isNo)
             return throws(NegativeArraySizeException(pc))
 
         val newarray = NewArray(pc, count, ArrayType(componentType))
-        if (validCount.isUndefined && throwNegativeArraySizeException)
+        if (validCount.isUnknown && throwNegativeArraySizeException)
             ComputedValueAndException(newarray, NegativeArraySizeException(pc))
         else
             ComputedValue(newarray)
@@ -881,9 +922,9 @@ trait TypeLevelReferenceValues[+I]
         var validCounts: Answer = Yes
         counts foreach { (count) ⇒
             val validCount = isSomeValueInRange(count, 0, Int.MaxValue)
-            if (validCount.no)
+            if (validCount.isNo)
                 return throws(NegativeArraySizeException(pc))
-            else if (validCount.isUndefined)
+            else if (validCount.isUnknown)
                 validCounts = Unknown
         }
 
@@ -892,7 +933,7 @@ trait TypeLevelReferenceValues[+I]
                 NewArray(pc, counts.head, arrayType)
             else
                 NewArray(pc, counts, arrayType)
-        if (validCounts.isUndefined && throwNegativeArraySizeException)
+        if (validCounts.isUnknown && throwNegativeArraySizeException)
             ComputedValueAndException(newarray, NegativeArraySizeException(pc))
         else
             ComputedValue(newarray)
@@ -914,7 +955,7 @@ trait TypeLevelReferenceValues[+I]
         pc: PC,
         index: DomainValue,
         arrayref: DomainValue): ArrayLoadResult = {
-        if (isNull(arrayref).yes)
+        if (isNull(arrayref).isYes)
             justThrows(NullPointerException(pc))
         else
             // if the bytecode is valid, the type cast (asArrayValue) is safe
@@ -934,7 +975,7 @@ trait TypeLevelReferenceValues[+I]
         value: DomainValue,
         index: DomainValue,
         arrayref: DomainValue): ArrayStoreResult = {
-        if (isNull(arrayref).yes)
+        if (isNull(arrayref).isYes)
             justThrows(NullPointerException(pc))
         else
             // if the bytecode is valid, the type cast (asArrayValue) is safe
@@ -951,7 +992,7 @@ trait TypeLevelReferenceValues[+I]
     override def arraylength(
         pc: PC,
         arrayref: DomainValue): Computation[DomainValue, ExceptionValue] = {
-        if (isNull(arrayref).yes)
+        if (isNull(arrayref).isYes)
             throws(NullPointerException(pc))
         else
             asArrayAbstraction(arrayref).length(pc)

@@ -33,22 +33,27 @@
 package de.tud.cs.st
 
 /**
- * BAT is a generic Java bytecode library written in Scala that is designed with
- * scalability and adaptability in mind.
+ * BAT is a generic Java bytecode library written in Scala that is designed with 
+ * performance, scalability and adaptability in mind. 
+ * BAT's primary representation of Java byte code
+ * is the [[de.tud.cs.st.bat.resolved]] representation which is defined in the
+ * respective package.
  *
  * == This Package ==
  * Common constants and type definitions used across BAT.
  *
  * == General Design Rules ==
  * ===No `null` Values===
- * BAT does not make use of `null` values in its public interface. I.e., fields
- * will never contain `null` values,
- * method parameters must not be `null` and methods will never return `null`
- * values.
+ * BAT does not make use of `null` values in its public interface. I.e., fields that
+ * are accessible  will never contain `null` values and method methods will never
+ * return `null`. If a method accepts `null` as a value for a parameter it is always
+ * explicitly documented. In general, the behavior of methods that are passed `null`
+ * values is undefined.
  *
  * ===Thread Safety===
- * Unless explicitly noted, BAT is thread safe. I.e., it is possible to read and process
- * class files in parallel without explicit synchronization on the client side.
+ * Unless explicitly noted, '''BAT is thread safe'''. I.e., it is possible to read
+ * and process class files concurrently without explicit synchronization on the
+ * client side.
  *
  * @author Michael Eichberg
  */

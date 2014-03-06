@@ -105,7 +105,7 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
         protected def doJoinWithNullValueWithSameOrigin(
             joinPC: PC,
             that: NullValue): Update[DomainSingleOriginReferenceValue] = {
-            if (this.isNull.maybeYes)
+            if (this.isNull.isYesOrUnknown)
                 // the other value is also a null value or maybe "null"
                 NoUpdate
             else
@@ -147,7 +147,7 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
         override def apply(
             pc: PC = this.pc,
             isNull: Answer = Yes): DomainNullValue = {
-            require(isNull.yes)
+            require(isNull.isYes)
 
             NullValue(pc)
         }
@@ -155,7 +155,7 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
         protected override def doJoinWithNonNullValueWithSameOrigin(
             joinPC: PC,
             that: DomainSingleOriginReferenceValue): Update[DomainSingleOriginReferenceValue] = {
-            if (that.isNull.isUndefined)
+            if (that.isNull.isUnknown)
                 StructuralUpdate(that)
             else
                 StructuralUpdate(that(isNull = Unknown))
@@ -181,9 +181,9 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
         override def refineIsNull(pc: PC, isNull: Answer): DomainSingleOriginReferenceValue = {
             if (this.isNull == isNull)
                 this
-            else if (isNull.yes)
+            else if (isNull.isYes)
                 NullValue(this.pc)
-            else if (isNull.no)
+            else if (isNull.isNo)
                 this(isNull = No)
             else
                 throw DomainException("refining \"isNull\" to Unknown is not supported")
@@ -199,7 +199,7 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
             with NonNullSingleOriginReferenceValue {
         this: DomainArrayValue ⇒
 
-        require(this.isNull.maybeNo)
+        require(this.isNull.isNoOrUnknown)
 
         override def apply(pc: PC, isNull: Answer): DomainArrayValue = {
             ArrayValue(pc, isNull, isPrecise, theUpperTypeBound)
@@ -232,7 +232,7 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
                             StructuralUpdate(other)
 
                         case Left(newUpperTypeBound) ⇒
-                            val newIsNull = this.isNull merge that.isNull
+                            val newIsNull = this.isNull & that.isNull
                             val newIsPrecise = this.isPrecise && that.isPrecise &&
                                 (thisUpperTypeBound eq thatUpperTypeBound)
                             StructuralUpdate(
@@ -240,7 +240,7 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
                                     this.pc, newIsNull, newIsPrecise, newUpperTypeBound))
 
                         case Right(newUpperTypeBound) ⇒
-                            val newIsNull = this.isNull merge that.isNull
+                            val newIsNull = this.isNull & that.isNull
                             StructuralUpdate(
                                 ObjectValue(this.pc, newIsNull, newUpperTypeBound))
                     }
@@ -255,12 +255,12 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
                             StructuralUpdate(other)
 
                         case Left(newUpperTypeBound) ⇒
-                            val newIsNull = this.isNull merge that.isNull
+                            val newIsNull = this.isNull & that.isNull
                             StructuralUpdate(
                                 ObjectValue(this.pc, newIsNull, false, newUpperTypeBound))
 
                         case Right(newUpperTypeBound) ⇒
-                            val newIsNull = this.isNull merge that.isNull
+                            val newIsNull = this.isNull & that.isNull
                             StructuralUpdate(
                                 ObjectValue(this.pc, newIsNull, newUpperTypeBound))
                     }
@@ -272,12 +272,12 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
                             StructuralUpdate(other)
 
                         case Right(newUpperTypeBound) ⇒
-                            val newIsNull = this.isNull merge that.isNull
+                            val newIsNull = this.isNull & that.isNull
                             StructuralUpdate(
                                 ObjectValue(this.pc, newIsNull, newUpperTypeBound))
 
                         case Left(newUpperTypeBound) ⇒
-                            val newIsNull = this.isNull merge that.isNull
+                            val newIsNull = this.isNull & that.isNull
                             StructuralUpdate(
                                 ObjectValue(this.pc, newIsNull, false, newUpperTypeBound))
                     }
@@ -325,7 +325,7 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
 
         override def toString() = {
             var description = theUpperTypeBound.toJava+"(pc="+pc
-            if (isNull.isUndefined) description += "; isNull=maybe"
+            if (isNull.isUnknown) description += "; isNull=maybe"
             if (!isPrecise) description += ", isUpperBound"
             description += ")"
             description
@@ -349,7 +349,7 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
             with ObjectValue {
         this: DomainObjectValue ⇒
 
-        require(this.isNull.maybeNo)
+        require(this.isNull.isNoOrUnknown)
 
         override def apply(pc: PC, isNull: Answer): DomainSingleOriginReferenceValue = {
             ObjectValue(pc, isNull, isPrecise, theUpperTypeBound)
@@ -370,10 +370,10 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
             if (supertype eq theUpperTypeBound)
                 return this
 
-            if (domain.isSubtypeOf(supertype, theUpperTypeBound).yes) {
+            if (domain.isSubtypeOf(supertype, theUpperTypeBound).isYes) {
                 // this also handles the case where we cast an Object to an array
                 ReferenceValue(this.pc, isNull, false, supertype)
-            } else if (domain.isSubtypeOf(theUpperTypeBound, supertype).yes) {
+            } else if (domain.isSubtypeOf(theUpperTypeBound, supertype).isYes) {
                 // useless refinement...
                 this
             } else {
@@ -412,12 +412,12 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
                             // Though the upper type bound of this value may 
                             // also be an upper type bound for the other value
                             // it does not precisely capture the other value's type!
-                            val newIsNull = this.isNull merge that.isNull
+                            val newIsNull = this.isNull & that.isNull
                             StructuralUpdate(
                                 ObjectValue(this.pc, newIsNull, false, newUpperTypeBound))
 
                         case Right(newUpperTypeBound) ⇒
-                            val newIsNull = this.isNull merge that.isNull
+                            val newIsNull = this.isNull & that.isNull
                             StructuralUpdate(
                                 ObjectValue(this.pc, newIsNull, newUpperTypeBound))
                     }
@@ -432,7 +432,7 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
                             NoUpdate
 
                         case Left(newUpperTypeBound) ⇒
-                            val newIsNull = this.isNull merge that.isNull
+                            val newIsNull = this.isNull & that.isNull
                             StructuralUpdate(
                                 ObjectValue(this.pc, newIsNull, false, newUpperTypeBound))
 
@@ -440,7 +440,7 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
                             StructuralUpdate(other)
 
                         case Right(newUpperTypeBound) ⇒
-                            val newIsNull = this.isNull merge that.isNull
+                            val newIsNull = this.isNull & that.isNull
                             StructuralUpdate(
                                 ObjectValue(this.pc, newIsNull, newUpperTypeBound))
                     }
@@ -455,12 +455,12 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
                             NoUpdate
 
                         case Left(newUpperTypeBound) ⇒
-                            val newIsNull = this.isNull merge that.isNull
+                            val newIsNull = this.isNull & that.isNull
                             StructuralUpdate(
                                 ObjectValue(this.pc, newIsNull, false, newUpperTypeBound))
 
                         case Right(newUpperTypeBound) ⇒
-                            val newIsNull = this.isNull merge that.isNull
+                            val newIsNull = this.isNull & that.isNull
                             StructuralUpdate(
                                 ObjectValue(this.pc, newIsNull, newUpperTypeBound))
                     }
@@ -510,7 +510,7 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
 
         override def toString() = {
             var description = theUpperTypeBound.toJava+"(pc="+pc
-            if (isNull.isUndefined) description += "; isNull=maybe"
+            if (isNull.isUnknown) description += "; isNull=maybe"
             if (!isPrecise) description += ", isUpperBound"
             description += ")"
             description
@@ -544,7 +544,7 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
             var newUpperTypeBound: UIDList[ObjectType] = UIDList.empty
             upperTypeBound foreach { (anUpperTypeBound: ObjectType) ⇒
                 // ATTENTION: "!..yes" is not the same as "no" (there is also unknown)
-                if (!domain.isSubtypeOf(supertype, anUpperTypeBound).yes)
+                if (!domain.isSubtypeOf(supertype, anUpperTypeBound).isYes)
                     newUpperTypeBound = newUpperTypeBound + anUpperTypeBound
             }
             if (newUpperTypeBound.size == 0)
@@ -564,18 +564,18 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
                     val thatUpperTypeBound = that.upperTypeBound
                     joinUpperTypeBounds(thisUpperTypeBound, thatUpperTypeBound, true) match {
                         case Left(newUpperTypeBound) ⇒
-                            val newIsNull = this.isNull merge that.isNull
+                            val newIsNull = (this.isNull & that.isNull)
                             StructuralUpdate(
                                 ObjectValue(this.pc, newIsNull, false, newUpperTypeBound))
 
-                        case Right(`thisUpperTypeBound`) if this.isNull.isUndefined || this.isNull == that.isNull ⇒
+                        case Right(`thisUpperTypeBound`) if this.isNull.isUnknown || this.isNull == that.isNull ⇒
                             NoUpdate
 
-                        case Right(`thatUpperTypeBound`) if that.isNull.isUndefined || this.isNull == that.isNull ⇒
+                        case Right(`thatUpperTypeBound`) if that.isNull.isUnknown || this.isNull == that.isNull ⇒
                             StructuralUpdate(other)
 
                         case Right(newUpperTypeBound) ⇒
-                            val newIsNull = this.isNull merge that.isNull
+                            val newIsNull = this.isNull & that.isNull
                             StructuralUpdate(
                                 ObjectValue(this.pc, newIsNull, newUpperTypeBound))
                     }
@@ -583,22 +583,22 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
                 case that: SObjectValue ⇒
                     val thatUpperTypeBound = that.theUpperTypeBound
                     joinObjectTypes(thatUpperTypeBound, thisUpperTypeBound, true) match {
-                        case Left(`thatUpperTypeBound`) if that.isNull.isUndefined || this.isNull == that.isNull ⇒
+                        case Left(`thatUpperTypeBound`) if that.isNull.isUnknown || this.isNull == that.isNull ⇒
                             StructuralUpdate(other)
 
                         case Left(newUpperTypeBound) ⇒
                             // Though the upper type bound of this value may 
                             // also be an upper type bound for the other value
                             // it does not precisely capture the other value's type!
-                            val newIsNull = this.isNull merge that.isNull
+                            val newIsNull = this.isNull & that.isNull
                             StructuralUpdate(
                                 ObjectValue(this.pc, newIsNull, false, newUpperTypeBound))
 
-                        case Right(`thisUpperTypeBound`) if this.isNull.isUndefined || this.isNull == that.isNull ⇒
+                        case Right(`thisUpperTypeBound`) if this.isNull.isUnknown || this.isNull == that.isNull ⇒
                             NoUpdate
 
                         case Right(newUpperTypeBound) ⇒
-                            val newIsNull = this.isNull merge that.isNull
+                            val newIsNull = this.isNull & that.isNull
                             StructuralUpdate(
                                 ObjectValue(this.pc, newIsNull, newUpperTypeBound))
                     }
@@ -607,15 +607,15 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
                     joinAnyArrayTypeWithMultipleTypesBound(thisUpperTypeBound) match {
 
                         case Left(newUpperTypeBound) ⇒
-                            val newIsNull = this.isNull merge that.isNull
+                            val newIsNull = this.isNull & that.isNull
                             StructuralUpdate(
                                 ObjectValue(this.pc, newIsNull, false, newUpperTypeBound))
 
-                        case Right(`thisUpperTypeBound`) if this.isNull.isUndefined || this.isNull == that.isNull ⇒
+                        case Right(`thisUpperTypeBound`) if this.isNull.isUnknown || this.isNull == that.isNull ⇒
                             NoUpdate
 
                         case Right(newUpperTypeBound) ⇒
-                            val newIsNull = this.isNull merge that.isNull
+                            val newIsNull = this.isNull & that.isNull
                             StructuralUpdate(
                                 ObjectValue(this.pc, newIsNull, newUpperTypeBound))
                     }
@@ -658,7 +658,7 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
 
         override def toString() = {
             var description = upperTypeBound.map(_.toJava).mkString(" with ")+"(pc="+pc
-            if (isNull.isUndefined) description += "; isNull=maybe"
+            if (isNull.isUnknown) description += "; isNull=maybe"
             description += "; isUpperBound)"
             description
         }
@@ -683,7 +683,7 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
          * all values.
          */
         override lazy val upperTypeBound: UpperTypeBound = {
-            val values = this.values.dropWhile(_.isNull.yes)
+            val values = this.values.dropWhile(_.isNull.isYes)
             if (values.isEmpty)
                 // <=> all values are null values!
                 UIDList.empty
@@ -741,7 +741,7 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
         override lazy val isPrecise: Boolean = calculateIsPrecise()
 
         private[this] def calculateIsPrecise(): Boolean = {
-            val values = this.values.filterNot(_.isNull.yes)
+            val values = this.values.filterNot(_.isNull.isYes)
             if (values.nonEmpty) {
                 val firstValue = values.head
                 if (!firstValue.isPrecise)
@@ -761,15 +761,15 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
 
         private[this] def calculateIsNull(): Answer = {
             val firstAnswer = values.head.isNull
-            if (firstAnswer.isUndefined)
+            if (firstAnswer.isUnknown)
                 return Unknown
 
             (firstAnswer /: values.tail) { (currentAnswer, n) ⇒
                 val nextAnswer = n.isNull
-                if (nextAnswer.isUndefined)
+                if (nextAnswer.isUnknown)
                     return Unknown
 
-                currentAnswer merge nextAnswer
+                currentAnswer & nextAnswer
             }
         }
 
@@ -804,14 +804,14 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
             // Recall that the client has to make an "isNull" check before calling
             // isValueSubtypeOf. Hence, at least one of the possible reference values 
             // has to be non null.
-            val values = this.values.dropWhile(_.isNull.yes)
+            val values = this.values.dropWhile(_.isNull.isYes)
             var answer: Answer = values.head.isValueSubtypeOf(supertype)
             values.tail foreach { value ⇒
                 if (answer == Unknown)
                     return Unknown
 
-                if (!value.isNull.yes) {
-                    answer = answer merge value.isValueSubtypeOf(supertype)
+                if (!value.isNull.isYes) {
+                    answer = answer & value.isValueSubtypeOf(supertype)
                 }
             }
             // either Yes or No
@@ -825,8 +825,8 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
             // those updates that are meaningless.
             val relevantValues =
                 isNull match {
-                    case Yes ⇒ this.values filter { _.isNull.maybeYes }
-                    case No  ⇒ this.values filter { _.isNull.maybeNo }
+                    case Yes ⇒ this.values filter { _.isNull.isYesOrUnknown }
+                    case No  ⇒ this.values filter { _.isNull.isNoOrUnknown }
                     case _   ⇒ throw DomainException("unsupported refinement")
                 }
             var valueRefined = false
@@ -854,13 +854,13 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
             val newValues = HashSet.empty[DomainSingleOriginReferenceValue]
             var valueRefined = false
             this.values foreach { value ⇒
-                if (value.isNull.yes)
+                if (value.isNull.isYes)
                     newValues += value
                 else {
                     val isSubtypeOf = value.isValueSubtypeOf(supertype)
-                    if (isSubtypeOf.yes)
+                    if (isSubtypeOf.isYes)
                         newValues += value
-                    else if (isSubtypeOf.isUndefined) {
+                    else if (isSubtypeOf.isUnknown) {
                         try {
                             val newValue = value.refineUpperTypeBound(pc, supertype)
                             valueRefined = valueRefined || (newValue ne value)

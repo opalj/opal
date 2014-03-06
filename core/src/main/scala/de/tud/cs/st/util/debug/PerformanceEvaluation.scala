@@ -37,13 +37,16 @@ package debug
 /**
  * Measures the execution time of some code.
  *
+ * ==Thread Safety==
+ * This class is thread safe.
+ *
  * @author Michael Eichberg
  */
-class PerformanceEvaluation {
+class PerformanceEvaluation extends Locking {
 
-    import scala.collection.concurrent.{ Map, TrieMap }
+    import scala.collection.mutable.Map
 
-    private[this] val times: Map[Symbol, Long] = TrieMap.empty
+    private[this] val times: Map[Symbol, Long] = Map.empty
 
     /**
      * Times the execution of the given method / function literal / code block and
@@ -53,42 +56,119 @@ class PerformanceEvaluation {
      *
      * @param s Symbol used to put multiple measurements into relation.
      * @param f The function that will be evaluated and for which the execution
-     * time will be measured.
+     *      time will be measured.
      */
-    def time[T](s: Symbol)(f: ⇒ T): T = {
+    final def time[T](s: Symbol)(f: ⇒ T): T = {
         val startTime = System.nanoTime
         try {
             f
         } finally {
             val endTime = System.nanoTime
-            val old = times.getOrElseUpdate(s, 0l)
-            times.update(s, old + (endTime - startTime))
+            withWriteLock { doUpdateTimes(s, endTime - startTime) }
         }
     }
 
-    def getTime(sym: Symbol): Long = {
-        times.getOrElse(sym, 0l)
+    /**
+     *
+     * Called by the `time` method.
+     *
+     * ==Thread Safety==
+     * The `time` method takes care of the synchronization.
+     */
+    protected[this] def doUpdateTimes(s: Symbol, duration: Long): Unit = {
+        val old = times.getOrElseUpdate(s, 0l)
+        times.update(s, old + duration)
     }
 
-    def reset(s: Symbol) {
+    /**
+     * Returns the overall time spent by computations with the given symbol.
+     */
+    final def getTime(s: Symbol): Long = withReadLock { doGetTime(s) }
+
+    /**
+     * Called by the `getTime(Symbol)` method.
+     *
+     * ==Thread Safety==
+     * The `getTime` method takes care of the synchronization.
+     */
+    protected[this] def doGetTime(s: Symbol): Long = {
+        times.getOrElse(s, 0l)
+    }
+
+    /**
+     * Resets the overall time spent by computations with the given symbol.
+     */
+    final def reset(s: Symbol): Unit = {
+        withWriteLock { doReset(s) }
+    }
+
+    /**
+     * Called by the `reset(Symbol)` method.
+     *
+     * ==Thread Safety==
+     * The `reset` method takes care of the synchronization.
+     */
+    protected[this] def doReset(s: Symbol): Unit = {
         times.remove(s)
     }
 
-    def resetAll() {
+    /**
+     * Resets everything. The effect is comparable to creating a new
+     * `PerformanceEvaluation` object, but is a bit more efficient.
+     */
+    final def resetAll(): Unit = {
+        withWriteLock { doResetAll() }
+    }
+
+    /**
+     * Called by the `resetAll` method.
+     *
+     * ==Thread Safety==
+     * The `resetAll` method takes care of the synchronization.
+     */
+    protected[this] def doResetAll(): Unit = {
         times.clear()
     }
-}
 
+}
+/**
+ * Collection of helper functions useful when evaluating the performance of some
+ * code.
+ *
+ * @author Michael Eichberg
+ */
 object PerformanceEvaluation {
 
+    /**
+     * Converts the specified number of bytes into the corresponding nubmer of mega bytes
+     * and returns a textual representation.
+     */
     def asMB(bytesCount: Long): String = {
         val mbs = bytesCount / 1024 / 1024.0
         f"$mbs%.2f MB" // String interpolation
     }
 
     /**
+     * Converts the specified number of nanoseconds into seconds.
+     */
+    final def ns2sec(nanoseconds: Long): Double =
+        nanoseconds.toDouble / 1000.0d / 1000.0d / 1000.0d
+
+    /**
+     * Converts the specified number of nanoseconds into milliseconds.
+     */
+    final def ns2ms(nanoseconds: Long): Double =
+        nanoseconds.toDouble / 1000.0d / 1000.0d
+
+    /**
+     * Converts the specified time span and converts it into seconds.
+     */
+    final def asSec(startTimeInNanoseconds: Long, endTimeInNanoseconds: Long): Double =
+        ns2sec(endTimeInNanoseconds - startTimeInNanoseconds)
+
+    /**
      * Measures the amount of memory that is used as a side-effect
-     * of executing the given method.
+     * of executing the given function `f`.
      */
     def memory[T](f: ⇒ T)(mu: Long ⇒ Unit): T = {
         val memoryMXBean = java.lang.management.ManagementFactory.getMemoryMXBean
@@ -102,10 +182,10 @@ object PerformanceEvaluation {
     }
 
     /**
-     * Times the execution of a given method f (function literal / code block).
+     * Times the execution of a given function `f`.
      *
      * @param r A function that is passed the time (in nano seconds) that it
-     *  took to evaluate the function f.
+     *      took to evaluate `f`. `r` is called even if `f` fails.
      */
     def time[T](f: ⇒ T)(r: Long ⇒ Unit): T = {
         val startTime: Long = System.nanoTime

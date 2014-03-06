@@ -43,11 +43,14 @@ import scala.collection.Set
 import scala.collection.Map
 
 /**
- * Basic representation of a call graph.
+ * Basic representation of a (calculated) call graph.
  *
  * ==Thread Safety==
  * The call graph is immutable and can be accessed by multiple threads concurrently.
  * Calls will never block.
+ * 
+ * ==Call Graph Construction==
+ * The call graph is constructed by the [[de.tud.cs.st.bat.resolved.ai.project.CallGraphFactory]].
  *
  * @author Michael Eichberg
  */
@@ -59,11 +62,9 @@ class CallGraph[Source] private[project] (
     import de.tud.cs.st.util.ControlAbstractions.foreachNonNullValueOf
 
     /**
-     * Returns the invoke instructions (by means of a `Method`/`PC` pairs) that
+     * Returns the invoke instructions (by means of (`Method`,`PC`) pairs) that
      * call the given method. If this method is not called by any other method an
      * empty map is returned.
-     *
-     * The `UShortSet` models the set of program counters.
      */
     def calledBy(method: Method): Map[Method, PCs] = {
         val callers = calledByMap(method.id)
@@ -72,7 +73,7 @@ class CallGraph[Source] private[project] (
 
     /**
      * Returns the methods that are potentially invoked by the invoke instruction
-     * identified by the `method`/`pc` pair.
+     * identified by the (`method`,`pc`) pair. 
      */
     def calls(method: Method, pc: PC): Iterable[Method] = {
         val callees = callsMap(method.id)
@@ -138,7 +139,7 @@ class CallGraph[Source] private[project] (
             callSites forall { callSite ⇒
                 val (pc, targets) = callSite
                 result = List(
-                    method.id.toString,
+                    project.classFile(method).fqn,
                     "\""+method.toJava+"\"",
                     pc.toString,
                     targets.size.toString
@@ -150,8 +151,8 @@ class CallGraph[Source] private[project] (
         }
         // add(prepend) the line with the column titles
         result =
-            List("\"Method ID\"",
-                "\"Method Signature\"",
+            List("\"Class\"",
+                "\"Method\"",
                 "\"Callsite (PC)\"",
                 "\"Targets\"") :: result
         result.map(_.mkString("\t")).mkString("\n")
@@ -173,9 +174,9 @@ class CallGraph[Source] private[project] (
                 val (callerMethod, callingInstructions) = callingSite
                 result =
                     List(
-                        method.id.toString,
+                        project.classFile(method).fqn,
                         method.toJava,
-                        callerMethod.id.toString,
+                        project.classFile(callerMethod).fqn,
                         callerMethod.toJava,
                         callingInstructions.size.toString
                     ) :: result
@@ -186,9 +187,9 @@ class CallGraph[Source] private[project] (
         }
         // add(prepend) the line with the column titles
         result =
-            List("\"Method ID\"",
-                "\"Method Signature\"",
-                "\"Calling Method ID\"",
+            List("\"Class\"",
+                "\"Method\"",
+                "\"Class of calling Method\"",
                 "\"Calling Method\"",
                 "\"Calling Sites\"") :: result
         result.map(_.mkString("\t")).mkString("\n")

@@ -43,14 +43,10 @@ import java.io.PrintStream
  */
 trait UTF8Println {
 
-    def println(s: String) { UTF8Println.out.println(s) }
-
-    def print(s: String) { UTF8Println.out.print(s) }
-
-}
-
-object UTF8Println {
-
     val out: PrintStream = new PrintStream(System.out, true, "UTF-8")
+
+    def println(s: String) { out.println(s) }
+
+    def print(s: String) { out.print(s) }
 
 }

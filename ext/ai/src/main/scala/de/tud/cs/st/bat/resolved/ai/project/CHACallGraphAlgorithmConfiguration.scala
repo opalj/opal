@@ -36,10 +36,9 @@ package resolved
 package ai
 package project
 
+import analyses.Project
+
 import domain._
-import bat.resolved.analyses._
-import scala.collection.Set
-import scala.collection.Map
 
 /**
  * Configuration of a call graph algorithm that uses CHA.
@@ -58,9 +57,10 @@ class CHACallGraphAlgorithmConfiguration[Source]
     type Contour = MethodSignature
     type Value = Iterable[Method]
     type Cache = CallGraphCache[Contour, Value]
-    def Cache() : this.type#Cache = new CallGraphCache[MethodSignature, Iterable[Method]]
+    def Cache(): this.type#Cache = new CallGraphCache[MethodSignature, Iterable[Method]]
 
     type I = Int
+
     def Domain(
         theProject: Project[Source],
         cache: Cache,

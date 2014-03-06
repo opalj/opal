@@ -42,15 +42,15 @@ import analyses.{ Project, ClassHierarchy }
 
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
-trait MethodReturnInformation { this: Domain[_] ⇒
+trait MethodReturnInformation { theDomain: Domain[_] ⇒
 
-    def returnedValues(result: AIResult[this.type]): Seq[DomainValue]
+    def returnedValues(result: AIResult { val domain: theDomain.type }): Seq[DomainValue]
 
-    def thrownExceptions(result: AIResult[this.type]): Seq[DomainValue]
+    def thrownExceptions(result: AIResult { val domain: theDomain.type }): Seq[DomainValue]
 
 }
 
-trait DefaultMethodReturnInformation extends MethodReturnInformation { this: Domain[_] ⇒
+trait DefaultMethodReturnInformation extends MethodReturnInformation { theDomain: Domain[_] ⇒
 
     def returnVoid(pc: PC): Unit = { /* Do nothing. */ }
 
@@ -72,7 +72,7 @@ trait DefaultMethodReturnInformation extends MethodReturnInformation { this: Dom
 
     def lreturn(pc: PC, value: DomainValue): Unit = { _returnValueInstructions += pc }
 
-    def returnedValues(result: AIResult[this.type]): Seq[DomainValue] = {
+    def returnedValues(result: AIResult { val domain: theDomain.type }): Seq[DomainValue] = {
         _returnValueInstructions.toSeq.map(result.operandsArray(_).head)
     }
 
@@ -88,7 +88,7 @@ trait DefaultMethodReturnInformation extends MethodReturnInformation { this: Dom
         _throwInstructions += pc
     }
 
-    def thrownExceptions(result: AIResult[this.type]): Seq[DomainValue] = {
+    def thrownExceptions(result: AIResult { val domain: theDomain.type }): Seq[DomainValue] = {
         _throwInstructions.toSeq.map(result.operandsArray(_).head)
     }
 
@@ -96,60 +96,63 @@ trait DefaultMethodReturnInformation extends MethodReturnInformation { this: Dom
 
 trait PerformInvocations[+I, Source]
         extends Domain[I]
-        with l0.TypeLevelInvokeInstructions { thisDomain ⇒
+        with l0.TypeLevelInvokeInstructions { theDomain ⇒
 
     def project: Project[Source]
 
     private[this] def classHierarchy: ClassHierarchy = project.classHierarchy
 
-    def Operands(operands: Iterable[DomainValue]): DomainValues[thisDomain.type] =
-        DomainValues(thisDomain)(operands)
+    def Operands(operands: Iterable[DomainValue]): DomainValues =
+        DomainValues(theDomain)(operands)
 
     // the function to identify recursive calls
     def isRecursive(
         definingClass: ClassFile,
         method: Method,
-        operands: DomainValues[thisDomain.type]): Boolean
+        operands: DomainValues): Boolean
 
-    trait InvokeExecutionHandler[D <: Domain[_ >: I] with MethodReturnInformation] {
+    trait InvokeExecutionHandler[TDI >: I] {
 
         // the domain to use
-        val domain: D
+        val domain: Domain[TDI] with MethodReturnInformation
 
         // the abstract interpreter
         val ai: AI[_ >: domain.type]
 
+        def perform(
+            pc: PC,
+            definingClass: ClassFile,
+            method: Method,
+            parameters: Array[domain.DomainValue]): MethodCallResult = {
+            val aiResult = ai.perform(definingClass, method, domain)(Some(parameters))
+            transformResult(pc, aiResult)
+        }
+
         // the function to transform the result
-        def transformResult(callerPC: PC, result: AIResult[domain.type]): MethodCallResult = {
+        def transformResult(
+            callerPC: PC,
+            result: AIResult { val domain: InvokeExecutionHandler.this.domain.type }): MethodCallResult = {
             val returnedValues = result.domain.returnedValues(result)
             val computedValue =
                 if (returnedValues.isEmpty)
                     None
                 else {
                     val summarizedValue = result.domain.summarize(callerPC, returnedValues)
-                    Some(summarizedValue.adapt(thisDomain, callerPC))
+                    Some(summarizedValue.adapt(theDomain, callerPC))
                 }
             val thrownExceptions = result.domain.thrownExceptions(result)
             ComputedValueAndException(
                 computedValue,
-                thrownExceptions.map(_.adapt(thisDomain, callerPC)).toSet)
+                thrownExceptions.map(_.adapt(theDomain, callerPC)).toSet)
 
-        }
-
-        def perform(
-            pc: PC,
-            definingClass: ClassFile,
-            method: Method,
-            parameters: Array[domain.type#DomainValue]) = {
-            transformResult(pc, ai.perform(definingClass, method, domain)(Some(parameters)))
         }
     }
 
-    def invokeExecutionHandler(
+    def invokeExecutionHandler[TDI >: I](
         pc: PC,
         definingClass: ClassFile,
         method: Method,
-        operands: List[DomainValue]): InvokeExecutionHandler[_ <: Domain[I]]
+        operands: List[DomainValue]): InvokeExecutionHandler[TDI]
 
     override def invokevirtual(
         pc: PC,
@@ -222,7 +225,7 @@ trait PerformInvocations[+I, Source]
         operands: List[DomainValue]): MethodCallResult = {
 
         val executionHandler = invokeExecutionHandler(pc, definingClass, method, operands)
-        val parameters = operands.reverse.zipWithIndex.map { operand_index ⇒
+        val parameters = operands.view.reverse.zipWithIndex.map { operand_index ⇒
             val (operand, index) = operand_index
             operand.adapt(executionHandler.domain, -(index + 1))
         }.toArray(executionHandler.domain.DomainValueTag)

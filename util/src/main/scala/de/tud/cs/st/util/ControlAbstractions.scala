@@ -42,7 +42,17 @@ import reflect.api.Trees
 import java.io.InputStream
 
 /**
- * Defines additional control abstractions.
+ * Defines additional control abstractions. 
+ * 
+ * ==Usage==
+ * To use the control abstractions, it is sufficient to import them:
+ * 
+ * @example
+ * {{{
+ *  import ControlAbstractions.repeat
+ *  val result = repeat(5) { System.nanoTime }
+ * }}}
+ *   
  *
  * @author Michael Eichberg
  */
@@ -50,7 +60,8 @@ object ControlAbstractions {
 
     /**
      * This function takes a function `f` that creates a new `Closeable` resource
-     * (`f` is a named parameter) and a function `r` that processes an input stream.
+     * (`f` is a named parameter) and a function `r` that will processes the input stream
+     * after it was created by this function.
      * This function takes care of the correct handling of input streams.
      * When `r` has finished processing the input stream, the stream is closed.
      * If `f` returns `null`, `null` is passed to `r`.
@@ -67,15 +78,17 @@ object ControlAbstractions {
     }
 
     /**
-     * Macro that iterates over a given array `a` and calls the given function `f` for
-     * each non-null value in the array. 
+     * Iterates over a given array `a` and calls the given function `f` for
+     * each non-null value in the array.
+     * 
+     * '''This is a macro.''' 
      */
     def foreachNonNullValueOf[T <: AnyRef](
         a: Array[T])(
             f: (Int, T) ⇒ Unit): Unit = macro ControlAbstractionsImplementation.foreachNonNullValueOf[T]
 
     /**
-     * Macro that evaluates the given expression `f` with type `T` the given number of
+     * Evaluates the given expression `f` with type `T` the given number of
      * `times` and stores the result in an `IndexedSeq[T]`.
      *
      * ==Example Usage==
@@ -85,6 +98,8 @@ object ControlAbstractions {
      * }
      * }}}
      *
+     * '''This is a macro.''' 
+     * 
      * @param times The number of times the expression `f` is evaluated. The `times`
      *      expression is evaluated exactly once.
      * @param f An expression that is evaluated the given number of times unless an

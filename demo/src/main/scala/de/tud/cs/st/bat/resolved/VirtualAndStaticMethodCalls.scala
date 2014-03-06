@@ -1,5 +1,5 @@
 /* License (BSD Style License):
- * Copyright (c) 2009 - 2013
+ * Copyright (c) 2009 - 2014
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -34,17 +34,16 @@ package de.tud.cs.st
 package bat
 package resolved
 
-
 import instructions._
 import analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
 
 import java.net.URL
 
 /**
-  * Counts the number of static and virtual method calls.
-  *
-  * @author Michael Eichberg
-  */
+ * Counts the number of static and virtual method calls.
+ *
+ * @author Michael Eichberg
+ */
 object VirtualAndStaticMethodCalls extends AnalysisExecutor {
 
     val analysis = new Analysis[URL, BasicReport] {
@@ -56,12 +55,10 @@ object VirtualAndStaticMethodCalls extends AnalysisExecutor {
             var virtualCalls = 0
             for {
                 classFile ← project.classFiles
-                method ← classFile.methods if method.body.isDefined
-                instruction ← method.body.get.instructions
-                if instruction != null
-                if instruction.isInstanceOf[MethodInvocationInstruction]
+                MethodWithBody(code) ← classFile.methods
+                invokeInstruction @ MethodInvocationInstruction(_, _, _) ← code.instructions
             } {
-                if (instruction.isInstanceOf[VirtualMethodInvocationInstruction])
+                if (invokeInstruction.isVirtualMethodCall)
                     virtualCalls += 1
                 else
                     staticCalls += 1
@@ -69,7 +66,7 @@ object VirtualAndStaticMethodCalls extends AnalysisExecutor {
 
             BasicReport(
                 "Number of invokestatic/invokespecial instructions: "+staticCalls+"\n"+
-                    "Number of invokedynamic/invokeinterface/invokevirtual instructions: "+virtualCalls
+                    "Number of invokeinterface/invokevirtual instructions: "+virtualCalls
             )
         }
     }

@@ -44,98 +44,100 @@ import instructions._
  */
 class MultiTracer(val tracers: AITracer*) extends AITracer {
 
-    override def continuingInterpretation[D <: SomeDomain with Singleton](
+    override def continuingInterpretation(
         code: Code,
-        domain: D,
-        initialWorkList: List[PC],
-        alreadyEvaluated: List[PC],
-        operandsArray: Array[List[D#DomainValue]],
-        localsArray: Array[Array[D#DomainValue]]): Unit = {
+        domain: SomeDomain)(
+            initialWorkList: List[PC],
+            alreadyEvaluated: List[PC],
+            operandsArray: Array[List[domain.DomainValue]],
+            localsArray: Array[Array[domain.DomainValue]]): Unit = {
         tracers foreach { tracer ⇒
-            tracer.continuingInterpretation(
-                code, domain, initialWorkList, alreadyEvaluated, operandsArray, localsArray
+            tracer.continuingInterpretation(code, domain)(
+                initialWorkList, alreadyEvaluated, operandsArray, localsArray
             )
         }
     }
 
-    override def instructionEvalution[D <: SomeDomain with Singleton](
-        domain: D,
-        pc: PC,
-        instruction: Instruction,
-        operands: List[D#DomainValue],
-        locals: Array[D#DomainValue]): Unit = {
+    override def instructionEvalution(
+        domain: SomeDomain)(
+            pc: PC,
+            instruction: Instruction,
+            operands: List[domain.DomainValue],
+            locals: Array[domain.DomainValue]): Unit = {
         tracers foreach { tracer ⇒
-            tracer.instructionEvalution(
-                domain, pc, instruction, operands, locals
+            tracer.instructionEvalution(domain)(pc, instruction, operands, locals)
+        }
+    }
+
+    override def flow(
+        domain: SomeDomain)(
+            currentPC: PC,
+            targetPC: PC): Unit = {
+        tracers foreach { _.flow(domain)(currentPC, targetPC) }
+    }
+
+    override def rescheduled(
+        domain: SomeDomain)(
+            sourcePC: PC,
+            targetPC: PC): Unit = {
+        tracers foreach { _.rescheduled(domain)(sourcePC, targetPC) }
+    }
+
+    override def join(
+        domain: SomeDomain)(
+            pc: PC,
+            thisOperands: domain.Operands,
+            thisLocals: domain.Locals,
+            otherOperands: domain.Operands,
+            otherLocals: domain.Locals,
+            result: Update[(domain.Operands, domain.Locals)]): Unit = {
+        tracers foreach { tracer ⇒
+            tracer.join(domain)(
+                pc, thisOperands, thisLocals, otherOperands, otherLocals, result
             )
         }
     }
 
-    override def flow[D <: SomeDomain with Singleton](
-        domain: D,
-        currentPC: PC,
-        targetPC: PC): Unit = {
-        tracers foreach { _.flow(domain, currentPC, targetPC) }
+    override def abruptMethodExecution(
+        domain: SomeDomain)(
+            pc: Int,
+            exception: domain.DomainValue): Unit = {
+        tracers foreach { _.abruptMethodExecution(domain)(pc, exception) }
     }
 
-    override def rescheduled[D <: SomeDomain with Singleton](
-        domain: D,
-        sourcePC: PC,
-        targetPC: PC): Unit = {
-        tracers foreach { _.rescheduled(domain, sourcePC, targetPC) }
-    }
-
-    override def join[D <: SomeDomain with Singleton](
-        domain: D,
-        pc: PC,
-        thisOperands: D#Operands,
-        thisLocals: D#Locals,
-        otherOperands: D#Operands,
-        otherLocals: D#Locals,
-        result: Update[(D#Operands, D#Locals)]): Unit = {
+    override def ret(
+        domain: SomeDomain)(
+            pc: PC,
+            returnAddress: PC,
+            oldWorklist: List[PC],
+            newWorklist: List[PC]): Unit = {
         tracers foreach { tracer ⇒
-            tracer.join[D](
-                domain, pc,
-                thisOperands, thisLocals, otherOperands, otherLocals, result)
+            tracer.ret(domain)(pc, returnAddress, oldWorklist, newWorklist)
         }
     }
 
-    override def abruptMethodExecution[D <: SomeDomain with Singleton](
-        domain: D,
-        pc: Int,
-        exception: D#DomainValue): Unit = {
-        tracers foreach { _.abruptMethodExecution(domain, pc, exception) }
-    }
-
-    override def ret[D <: SomeDomain with Singleton](
-        domain: D,
-        pc: PC,
-        returnAddress: PC,
-        oldWorklist: List[PC],
-        newWorklist: List[PC]): Unit = {
+    override def jumpToSubroutine(domain: SomeDomain)(pc: PC): Unit = {
         tracers foreach { tracer ⇒
-            tracer.ret(
-                domain, pc, returnAddress, oldWorklist, newWorklist
-            )
+            tracer.jumpToSubroutine(domain)(pc)
         }
     }
 
     /**
      * Called when the evaluation of a subroutine (JSR/RET) is completed.
      */
-    override def returnFromSubroutine[D <: SomeDomain with Singleton](
-        domain: D,
-        pc: Int,
-        returnAddress: Int,
-        subroutineInstructions: List[Int]): Unit = {
+    override def returnFromSubroutine(
+        domain: SomeDomain)(
+            pc: Int,
+            returnAddress: Int,
+            subroutineInstructions: List[Int]): Unit = {
         tracers foreach { tracer ⇒
-            tracer.returnFromSubroutine(
-                domain, pc, returnAddress, subroutineInstructions
+            tracer.returnFromSubroutine(domain)(
+                pc, returnAddress, subroutineInstructions
             )
         }
     }
 
-    override def result[D <: SomeDomain with Singleton](result: AIResult[D]): Unit = {
+    override def result(result: AIResult): Unit = {
         tracers foreach { _.result(result) }
     }
 }

@@ -54,7 +54,10 @@ object InterpretMethod {
         override val tracer =
             //Some(new ConsoleTracer {})
             Some(
-                new MultiTracer(new ConsoleTracer {}, new XHTMLTracer {})
+                new MultiTracer(
+                        new ConsoleTracer {},
+                        //new ConsoleEvaluationTracer {},
+                        new XHTMLTracer {})
             )
     }
 
@@ -146,12 +149,13 @@ object InterpretMethod {
                 result.localsArray,
                 Some("Result("+domainClass.getName()+"): "+(new java.util.Date).toString)))
         } catch {
-            case ie @ InterpretationFailedException(cause, domain, worklist, evaluated, operands, locals) ⇒
+            case ie @ InterpretationFailedException(cause, domain, pc, worklist, evaluated, operands, locals) ⇒
                 val header =
                     Some("<p><b>"+domainClass.getName()+"</b></p>"+
                         cause.getMessage()+"<br>"+
-                        ie.getStackTrace().mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n") +
-                        evaluated.reverse.mkString("Evaluated instructions:\n<br>", ",", "<br>") +
+                        ie.getStackTrace().mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n")+
+                        "Current instruction: "+pc+"<br>"+
+                        evaluated.mkString("Evaluated instructions:\n<br>", ", ", "<br>") +
                         worklist.mkString("Remaining worklist:\n<br>", ", ", "<br>")
                     )
                 val evaluationDump =

@@ -37,7 +37,7 @@ package ai
 
 /**
  * An exception related to performing computations in a specific domain occurred.
- * This exception is intended to be used if the exception occured inside the `Domain`.
+ * This exception is intended to be used if the exception occurred inside the `Domain`.
  *
  * @author Michael Eichberg
  */

@@ -51,6 +51,9 @@ package project
  * data-structures try to minimize potential contention. Hence, this is not a general
  * purpose cache. Using this cache is only appropriate if you need/will cache a lot
  * of information that is associated with different object types.
+ * 
+ * '''It is required that the cache object is created before the threads are created
+ * that use the cache!
  *
  * ==Example Usage==
  * To store the result of the computation of all target methods for a
@@ -67,39 +70,54 @@ package project
  */
 class CallGraphCache[Contour, Value] {
 
-    import java.util.concurrent.{ ConcurrentHashMap ⇒ CHMap }
+    //    import java.util.concurrent.{ ConcurrentHashMap ⇒ CHMap }
+    //
+    //    private[this] val cache: Array[CHMap[Contour, Value]] = {
+    //        val size = ObjectType.objectTypesCount
+    //        val concurrencyLevel = Runtime.getRuntime().availableProcessors()
+    //        Array.fill(size)(new CHMap(16, concurrencyLevel))
+    //    }
+    //
+    //    /**
+    //     * If a value is already stored in the cache that value is returned, otherwise
+    //     * `f` is evaluated and the cache is updated accordingly before the value is returned.
+    //     * In some rare cases it may be the case that two or more functions that are associated
+    //     * with the same `declaringClass` and `contour` are evaluated concurrently. In such
+    //     * a case the result of only one function is stored in the cache and will later be
+    //     * returned.
+    //     */
+    //    def getOrElseUpdate(
+    //        declaringClass: ObjectType,
+    //        contour: Contour)(
+    //            f: ⇒ Value): Value = {
+    //
+    //        val id = declaringClass.id
+    //        val cachedResults = cache(declaringClass.id)
+    //        val cachedValue = cachedResults.get(contour)
+    //        if (cachedValue != null)
+    //            cachedValue
+    //        else {
+    //            // This is expected provide a better trade-off then to always synchronize
+    //            // the evaluation of `f` w.r.t. to ObjectType based cache.
+    //            val value = f
+    //            cachedResults.put(contour, value)
+    //            value
+    //        }
+    //    }
 
-    private[this] val cache: Array[CHMap[Contour, Value]] = {
+    import scala.collection.concurrent.{ Map, TrieMap }
+
+    private[this] val cache: Array[Map[Contour, Value]] = {
         val size = ObjectType.objectTypesCount
-        val concurrencyLevel = Runtime.getRuntime().availableProcessors()
-        Array.fill(size)(new CHMap(16, concurrencyLevel))
+        Array.fill(size)(TrieMap.empty)
     }
 
-    /**
-     * If a value is already stored in the cache that value is returned, otherwise
-     * `f` is evaluated and the cache is updated accordingly before the value is returned.
-     * In some rare cases it may be the case that two or more functions that are associated
-     * with the same `declaringClass` and `contour` are evaluated concurrently. In such
-     * a case the result of only one function is stored in the cache and will later be
-     * returned.
-     */
     def getOrElseUpdate(
-        declaringClass: ReferenceType,
+        declaringClass: ObjectType,
         contour: Contour)(
             f: ⇒ Value): Value = {
-
-        val id = declaringClass.id
-        val cachedResults = cache(declaringClass.id)
-        val cachedValue = cachedResults.get(contour)
-        if (cachedValue != null)
-            cachedValue
-        else {
-            // This is expected provide a better trade-off then to always synchronize
-            // the evaluation of `f` w.r.t. to ObjectType based cache.
-            val value = f
-            cachedResults.put(contour, value)
-            value
-        }
+        val contoursMap = cache(declaringClass.id)
+        contoursMap.getOrElseUpdate(contour, f)
     }
 }
 

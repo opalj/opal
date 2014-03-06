@@ -41,10 +41,10 @@ object UShort {
     /**
      * The maximum value of an unsigned short value (65535).
      */
-    final val MaxValue = 65535
+    final val MaxValue : Int = 65535
    
     /**
      * The minimum value of an unsigned short value (0).
      */
-    final val MinValue = 0
+    final val MinValue : Int = 0
 }

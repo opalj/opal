@@ -408,11 +408,12 @@ trait Domain[+I] {
             ComputationalTypeReturnAddress
 
         @throws[DomainException]("This method is not supported.")
-        override protected def doJoin(pc: PC, other: DomainValue): Update[DomainValue] =
-            // Note that the framework already handles the case where this 
-            // value is joined with itself! A join of this value with a different return 
-            // address value does not make sense!
+        override protected def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
+            // Note that the framework should already handle the case where this 
+            // value is joined with itself. Furthermore, a join of this value with a 
+            // different return address value does not make sense!
             throw DomainException("return address values cannot be joined")
+        }
 
         @throws[DomainException]("This method is not supported.")
         override def summarize(pc: PC): DomainValue =
@@ -1552,7 +1553,7 @@ trait Domain[+I] {
     def monitorenter(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue]
 
     /**
-     * Handles a `monitorenter` instruction.
+     * Handles a `monitorexit` instruction.
      */
     def monitorexit(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue]
 
@@ -1561,6 +1562,18 @@ trait Domain[+I] {
     // GENERAL METHODS
     //
     //
+
+    /**
+     * Merges the given value v1 with the value v2.
+     *
+     * This operation is commutative.
+     */
+    def mergeDomainValues(pc: PC, v1: DomainValue, v2: DomainValue): DomainValue = {
+        v1.join(pc, v2) match {
+            case NoUpdate      ⇒ v1
+            case SomeUpdate(v) ⇒ v
+        }
+    }
 
     /**
      * Joins the given operand stacks and local variables.
@@ -1727,7 +1740,13 @@ trait Domain[+I] {
      *      with the pc `successorPC`, it is sufficient to test whether the list already
      *      contains `successorPC` and – if not – to prepend it. If the worklist
      *      already contains `successorPC`, the domain is always allowed to move
-     *      the PC to the beginning of the worklist.
+     *      the PC to the beginning of the worklist. However, if the PC does not belong
+     *      to the same (sub)routine, it is not allowed to be moved to the beginning
+     *      of the worklist.
+     *      Note that the worklist may contain negative values or positive values between
+     *      two negative values. These values are used for handling subroutine calls
+     *      (jsr/ret) and should be be changed. Furthermore, no value should be moved
+     *      between two (sub-)routines.
      *      If the domain updates the worklist, it is the responsibility of the domain
      *      to call the tracer and to inform it about the changes.
      *      Note that the worklist is not allowed to contain duplicates.
@@ -1742,6 +1761,14 @@ trait Domain[+I] {
         localsArray: Array[Array[DomainValue]],
         worklist: List[PC],
         tracer: Option[AITracer]): List[PC] = worklist
+
+    /**
+     * '''Called by (BAT)AI when the abstract interpretation of a method has ended.''' The
+     * abstract interpretation of a method ends if either the fixpoint is reached or
+     * the interpretation was aborted.
+     */
+    def abstractInterpretationEnded(
+        aiResult: AIResult { val domain: Domain.this.type }): Unit = { /* Nothing */ }
 
     /**
      * Creates a summary of the given domain values. For the precise details

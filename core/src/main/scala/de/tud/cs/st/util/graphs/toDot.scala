@@ -35,15 +35,16 @@ package util
 package graphs
 
 /**
- * Generates a dot file for the given graph.
+ * Defines factory methods for the generation of (multi-) graphs.
  *
  * @author Michael Eichberg
  */
-trait toDot {
+object toDot {
 
     /**
-     * Generates a DOT file for the given graph. Requires that Node implements
-     * a content-based equals and hashCode method.
+     * Generates a string that describes a (multi-)graph using the ".dot" file format.
+     * The graph is implicitly defined by the given set of nodes.
+     * Requires that `Node` implements a content-based `equals` and `hashCode` method.
      */
     def generateDot(
         nodes: Set[Node],
@@ -64,7 +65,9 @@ trait toDot {
                 s +=
                     "\t"+nextNode.uniqueId+
                     "[label=\""+label+"\""+
-                    nextNode.backgroundColor.map(",style=filled,fillcolor=\""+_+"\"").getOrElse("")+
+                    nextNode.backgroundColor.map {
+                        color ⇒ ",style=filled,fillcolor=\""+color+"\""
+                    }.getOrElse("")+
                     "];\n"
             }
 
@@ -81,27 +84,5 @@ trait toDot {
         s += "}"
         s
     }
-
-    def generateAndOpenDOT(
-        fileNamePrefix: String,
-        nodes: Set[Node],
-        dir: String = "forward") {
-
-        import util.ControlAbstractions._
-
-        val graph = generateDot(nodes, dir)
-        try {
-            val desktop = java.awt.Desktop.getDesktop()
-            val file = java.io.File.createTempFile(fileNamePrefix, ".dot")
-            process { new java.io.FileOutputStream(file) } { fos ⇒
-                fos.write(graph.getBytes("UTF-8"))
-            }
-            desktop.open(file)
-        } catch {
-            case _: Error | _: Exception ⇒ println(graph)
-        }
-    }
 }
-
-object toDot extends toDot
 

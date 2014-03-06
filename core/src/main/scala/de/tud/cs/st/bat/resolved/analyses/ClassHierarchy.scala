@@ -40,7 +40,7 @@ import util.graphs.{ Node, toDot }
 import util.{ Answer, Yes, No, Unknown }
 
 import annotation.tailrec
-import scala.collection.{ Map, Set }
+import scala.collection.{ Map, Set, SeqView }
 import scala.collection.mutable.HashSet
 import scala.collection.mutable.HashMap
 
@@ -80,11 +80,11 @@ class ClassHierarchy private (
         private[this] val subclassTypesMap: Array[HashSet[ObjectType]],
         private[this] val subinterfaceTypesMap: Array[HashSet[ObjectType]]) {
 
-    assume(knownTypesMap.length == superclassTypeMap.length)
-    assume(knownTypesMap.length == interfaceTypesMap.length)
-    assume(knownTypesMap.length == superinterfaceTypesMap.length)
-    assume(knownTypesMap.length == subclassTypesMap.length)
-    assume(knownTypesMap.length == subinterfaceTypesMap.length)
+    require(knownTypesMap.length == superclassTypeMap.length)
+    require(knownTypesMap.length == interfaceTypesMap.length)
+    require(knownTypesMap.length == superinterfaceTypesMap.length)
+    require(knownTypesMap.length == subclassTypesMap.length)
+    require(knownTypesMap.length == subinterfaceTypesMap.length)
 
     import java.util.concurrent.locks.ReentrantReadWriteLock
 
@@ -468,7 +468,7 @@ class ClassHierarchy private (
                 var answer: Answer = No
                 superinterfaceTypes foreach { intermediateType ⇒
                     var anotherAnswer = implementsInterface(intermediateType, theSupertype)
-                    if (anotherAnswer.yes)
+                    if (anotherAnswer.isYes)
                         return Yes
                     answer &= anotherAnswer
                 }
@@ -481,7 +481,7 @@ class ClassHierarchy private (
                 if (supertypeIsInterface) {
                     var doesInheritFromInterface =
                         implementsInterface(subclassType, theSupertype)
-                    if (doesInheritFromInterface.yes)
+                    if (doesInheritFromInterface.isYes)
                         Yes
                     else
                         answerSoFar & doesInheritFromInterface
@@ -495,7 +495,7 @@ class ClassHierarchy private (
                     return Yes
 
                 var answer = isSubtypeOf(superSubclassType)
-                if (answer.yes)
+                if (answer.isYes)
                     Yes
                 else
                     inheritsFromInterface(answer)
@@ -601,7 +601,7 @@ class ClassHierarchy private (
      * @note Resolution is final. I.e., either this algorithm has found the defining field
      *      or the field is not defined by one of the loaded classes. Searching for the
      *      field in subclasses is not meaningful as Java does not do dynamic field
-     *      reference resolution. 
+     *      reference resolution.
      *
      * @param c The class (or a superclass thereof) that is expected to define the
      *      reference field.
@@ -915,9 +915,48 @@ class ClassHierarchy private (
     }
 
     /**
+     * Calls the given function `f` for each type that is known to the class hierarchy.
+     */
+    def foreachKnownType[T](f: ObjectType ⇒ T): Unit = {
+        val knownTypes = knownTypesMap.view.filter(_ != null)
+        knownTypes.foreach(f(_))
+    }
+
+    /**
+     * Returns some statistical data about the class hierarchy.
+     */
+    def statistics: String = {
+        "Class Hierarchy Statistics:"+
+            "\n\tKnown types: "+knownTypesMap.count(_ != null)+
+            "\n\tInterface types: "+interfaceTypesMap.count(isInterface ⇒ isInterface)+
+            "\n\tIdentified Superclasses: "+superclassTypeMap.count(_ != null)+
+            "\n\tSuperinterfaces: "+superinterfaceTypesMap.filter(_ != null).foldLeft(0)(_ + _.size)+
+            "\n\tSubclasses: "+subclassTypesMap.filter(_ != null).foldLeft(0)(_ + _.size)+
+            "\n\tSubinterfaces: "+subinterfaceTypesMap.filter(_ != null).foldLeft(0)(_ + _.size)
+    }
+
+    /**
+     * Returns the set of all root types. I.e., types which have no super type.
+     * @note
+     *    If we load an application and all the jars used to implement it or a library
+     *    and all the library it depends on then the class hierarchy '''should not'''
+     *    contain multiple root types.
+     * @note
+     *    This list is recalculated
+     *
+     */
+    def rootTypes: SeqView[ObjectType, Seq[ObjectType]] = {
+        val knownTypesView = knownTypesMap.toSeq.view
+        val rootTypes = knownTypesView filter { objectType ⇒
+            objectType != null && superclassTypeMap(objectType.id) == null
+        }
+        rootTypes
+    }
+
+    /**
      * Returns a view of the class hierarchy as a graph (which can then be transformed
      * into a dot representation [[http://www.graphviz.org Graphviz]]). This
-     * graph can be a multi-graph if the class hierarchy contains wholes.
+     * graph can be a multi-graph if the class hierarchy contains holes.
      */
     def toGraph(): Node = new Node {
 
@@ -1042,7 +1081,7 @@ object ClassHierarchy {
                             typeKind == "interface",
                             Option(superclassType).map(ObjectType(_)),
                             Option(superinterfaceTypes).map { superinterfaceTypes ⇒
-                                HashSet.empty ++ superinterfaceTypes.split(",").map(_.trim).map(ObjectType(_))
+                                HashSet.empty ++ superinterfaceTypes.split(',').map(_.trim).map(ObjectType(_))
                             }.getOrElse(HashSet.empty)
                         )
                     }
@@ -1096,10 +1135,10 @@ object ClassHierarchy {
             theSuperinterfaceTypes: HashSet[ObjectType]) {
 
             //
-            // Update the class hierarchy from the point of view the newly added type 
+            // Update the class hierarchy from the point of view of the newly added type 
             //
             knownTypesMap(objectType.id) = objectType
-            interfaceTypesMap(objectType.id) == isInterfaceType
+            interfaceTypesMap(objectType.id) = isInterfaceType
             superclassTypeMap(objectType.id) = theSuperclassType.getOrElse(null)
             superinterfaceTypesMap(objectType.id) = theSuperinterfaceTypes
 
@@ -1138,7 +1177,7 @@ object ClassHierarchy {
         }
         classFiles foreach { processClassFile(_) }
 
-        new ClassHierarchy(
+        val classHierarchy = new ClassHierarchy(
             knownTypesMap,
             interfaceTypesMap,
             superclassTypeMap,
@@ -1146,6 +1185,7 @@ object ClassHierarchy {
             subclassTypesMap,
             subinterfaceTypesMap
         )
+        classHierarchy
     }
 }
 

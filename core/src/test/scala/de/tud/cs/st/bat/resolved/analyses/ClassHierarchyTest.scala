@@ -87,22 +87,31 @@ class ClassHierarchyTest
     val CloneableArray = ArrayType(Cloneable)
     val ObjectArray = ArrayType.ArrayOfObjects
     val intArray = ArrayType(IntegerType)
+    val arrayOfIntArray = ArrayType(ArrayType(IntegerType))
     val longArray = ArrayType(LongType)
 
     //
     // Verify
     //
-    import preInitCH.isSubtypeOf
-    import preInitCH.isKnown
+
+    behavior of "the default ClassHierarchy"
+
+    it should "be upwards closed (complete)" in {
+        if (preInitCH.rootTypes.size != 4) {
+            fail(
+                "The default class hierarchy has unexpected root types (expected: java/lang/Object and java/security and sun/reflect related classes): "+
+                    preInitCH.rootTypes.mkString(", "))
+        }
+    }
 
     behavior of "the default ClassHierarchy's isKnown method"
 
     it should "return true for all known types" in {
-        isKnown(Throwable) should be(true)
+        preInitCH.isKnown(Throwable) should be(true)
     }
 
     it should "return false for all unknown types" in {
-        isKnown(AnUnknownType) should be(false)
+        preInitCH.isKnown(AnUnknownType) should be(false)
     }
 
     behavior of "the default ClassHierarchy's isDirectSupertypeInformationComplete method"
@@ -120,33 +129,33 @@ class ClassHierarchyTest
     behavior of "the default ClassHierarchy's isSubtypeOf method w.r.t. class types"
 
     it should "return Unknown if the \"subtype\" is unknown" in {
-        isSubtypeOf(AnUnknownType, Throwable) should be(Unknown)
+        preInitCH.isSubtypeOf(AnUnknownType, Throwable) should be(Unknown)
     }
 
     it should "return Yes if a class-type indirectly inherits an interface-type" in {
-        isSubtypeOf(ArithmeticException, Serializable) should be(Yes)
+        preInitCH.isSubtypeOf(ArithmeticException, Serializable) should be(Yes)
     }
 
     it should "always return Yes if both types are identical" in {
-        isSubtypeOf(ArithmeticException, ArithmeticException) should be(Yes)
-        isSubtypeOf(AnUnknownType, AnUnknownType) should be(Yes)
+        preInitCH.isSubtypeOf(ArithmeticException, ArithmeticException) should be(Yes)
+        preInitCH.isSubtypeOf(AnUnknownType, AnUnknownType) should be(Yes)
     }
 
     it should "return Yes for interface types when the given super type is Object even if the interface type's supertypes are not known" in {
-        isSubtypeOf(Serializable, Object) should be(Yes)
+        preInitCH.isSubtypeOf(Serializable, Object) should be(Yes)
     }
 
     it should "return No for a type that is not a subtype of another type and all type information is known" in {
         // "only" classes
-        isSubtypeOf(Error, Exception) should be(No)
-        isSubtypeOf(Exception, Error) should be(No)
-        isSubtypeOf(Exception, RuntimeException) should be(No)
+        preInitCH.isSubtypeOf(Error, Exception) should be(No)
+        preInitCH.isSubtypeOf(Exception, Error) should be(No)
+        preInitCH.isSubtypeOf(Exception, RuntimeException) should be(No)
 
         // "only" interfaces
-        isSubtypeOf(Serializable, Cloneable) should be(No)
+        preInitCH.isSubtypeOf(Serializable, Cloneable) should be(No)
 
         // class and interface
-        isSubtypeOf(ArithmeticException, Cloneable) should be(No)
+        preInitCH.isSubtypeOf(ArithmeticException, Cloneable) should be(No)
     }
 
     it should "return Unknown if two types are not in an inheritance relationship but the subtype's supertypes are not guaranteed to be known" in {
@@ -157,55 +166,58 @@ class ClassHierarchyTest
 
     it should "correctly reflect the base exception hierarchy" in {
 
-        isSubtypeOf(Throwable, Object) should be(Yes)
-        isSubtypeOf(Error, Throwable) should be(Yes)
-        isSubtypeOf(RuntimeException, Exception) should be(Yes)
-        isSubtypeOf(Exception, Throwable) should be(Yes)
+        preInitCH.isSubtypeOf(Throwable, Object) should be(Yes)
+        preInitCH.isSubtypeOf(Error, Throwable) should be(Yes)
+        preInitCH.isSubtypeOf(RuntimeException, Exception) should be(Yes)
+        preInitCH.isSubtypeOf(Exception, Throwable) should be(Yes)
 
-        isSubtypeOf(Object, Throwable) should be(No)
+        preInitCH.isSubtypeOf(Object, Throwable) should be(No)
 
-        isSubtypeOf(AnUnknownType, Object) should be(Yes)
-        isSubtypeOf(Object, AnUnknownType) should be(No)
+        preInitCH.isSubtypeOf(AnUnknownType, Object) should be(Yes)
+        preInitCH.isSubtypeOf(Object, AnUnknownType) should be(No)
 
     }
 
     behavior of "the ClassHierarchy's isSubtypeOf method w.r.t. Arrays"
 
     it should "correctly reflect the basic type hierarchy related to Arrays" in {
-        isSubtypeOf(ObjectArray, Object) should be(Yes)
-        isSubtypeOf(SeriablizableArray, ObjectArray) should be(Yes)
-        isSubtypeOf(CloneableArray, ObjectArray) should be(Yes)
-        isSubtypeOf(ObjectArray, ObjectArray) should be(Yes)
-        isSubtypeOf(SeriablizableArray, SeriablizableArray) should be(Yes)
-        isSubtypeOf(AnUnknownTypeArray, AnUnknownTypeArray) should be(Yes)
+        preInitCH.isSubtypeOf(ObjectArray, Object) should be(Yes)
+        preInitCH.isSubtypeOf(SeriablizableArray, ObjectArray) should be(Yes)
+        preInitCH.isSubtypeOf(CloneableArray, ObjectArray) should be(Yes)
+        preInitCH.isSubtypeOf(ObjectArray, ObjectArray) should be(Yes)
+        preInitCH.isSubtypeOf(SeriablizableArray, SeriablizableArray) should be(Yes)
+        preInitCH.isSubtypeOf(AnUnknownTypeArray, AnUnknownTypeArray) should be(Yes)
 
-        isSubtypeOf(Object, ObjectArray) should be(No)
-        isSubtypeOf(CloneableArray, SeriablizableArray) should be(No)
+        preInitCH.isSubtypeOf(Object, ObjectArray) should be(No)
+        preInitCH.isSubtypeOf(CloneableArray, SeriablizableArray) should be(No)
 
-        isSubtypeOf(AnUnknownTypeArray, SeriablizableArray) should be(Unknown)
+        preInitCH.isSubtypeOf(AnUnknownTypeArray, SeriablizableArray) should be(Unknown)
 
-        isSubtypeOf(SeriablizableArray, AnUnknownTypeArray) should be(No)
+        preInitCH.isSubtypeOf(SeriablizableArray, AnUnknownTypeArray) should be(No)
     }
 
     it should "correctly reflect the type hierarchy related to Arrays of primitives" in {
-        isSubtypeOf(intArray, Object) should be(Yes)
-        isSubtypeOf(intArray, Serializable) should be(Yes)
-        isSubtypeOf(intArray, Cloneable) should be(Yes)
-        isSubtypeOf(intArray, intArray) should be(Yes)
+        preInitCH.isSubtypeOf(intArray, Object) should be(Yes)
+        preInitCH.isSubtypeOf(intArray, Serializable) should be(Yes)
+        preInitCH.isSubtypeOf(intArray, Cloneable) should be(Yes)
+        preInitCH.isSubtypeOf(intArray, intArray) should be(Yes)
 
-        isSubtypeOf(intArray, longArray) should be(No)
-        isSubtypeOf(longArray, intArray) should be(No)
+        preInitCH.isSubtypeOf(intArray, longArray) should be(No)
+        preInitCH.isSubtypeOf(longArray, intArray) should be(No)
+
+        preInitCH.isSubtypeOf(arrayOfIntArray, ObjectArray) should be(Yes)
+        preInitCH.isSubtypeOf(arrayOfIntArray, SeriablizableArray) should be(Yes)
     }
 
     it should "correctly reflect the type hierarchy related to Arrays of Arrays" in {
-        isSubtypeOf(SeriablizableArrayOfArray, Object) should be(Yes)
-        isSubtypeOf(SeriablizableArrayOfArray, SeriablizableArrayOfArray) should be(Yes)
+        preInitCH.isSubtypeOf(SeriablizableArrayOfArray, Object) should be(Yes)
+        preInitCH.isSubtypeOf(SeriablizableArrayOfArray, SeriablizableArrayOfArray) should be(Yes)
 
-        isSubtypeOf(SeriablizableArrayOfArray, SeriablizableArray) should be(Yes)
-        isSubtypeOf(SeriablizableArrayOfArray, ObjectArray) should be(Yes)
-        isSubtypeOf(SeriablizableArrayOfArray, CloneableArray) should be(Yes)
+        preInitCH.isSubtypeOf(SeriablizableArrayOfArray, SeriablizableArray) should be(Yes)
+        preInitCH.isSubtypeOf(SeriablizableArrayOfArray, ObjectArray) should be(Yes)
+        preInitCH.isSubtypeOf(SeriablizableArrayOfArray, CloneableArray) should be(Yes)
 
-        isSubtypeOf(SeriablizableArrayOfArray, AnUnknownTypeArray) should be(No)
+        preInitCH.isSubtypeOf(SeriablizableArrayOfArray, AnUnknownTypeArray) should be(No)
     }
 
     // -----------------------------------------------------------------------------------
@@ -224,8 +236,8 @@ class ClassHierarchyTest
 
         val mi = ObjectType("org/apache/tools/ant/taskdefs/MacroInstance")
         apacheANTCH.allSupertypes(mi) should be(Set(
-            ObjectType("org/apache/tools/ant/Task"), 
-            ObjectType("org/apache/tools/ant/TaskContainer"), 
+            ObjectType("org/apache/tools/ant/Task"),
+            ObjectType("org/apache/tools/ant/TaskContainer"),
             ObjectType("org/apache/tools/ant/DynamicAttribute")
         ))
     }
