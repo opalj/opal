@@ -1,5 +1,12 @@
 package jdkBugsTest;
 
+/**
+ * This is a test for the JDKBugs Class.forName() analysis. It has a call to
+ * Clas.forName() and returns it back.
+ * 
+ * @author Lars
+ * 
+ */
 public class TrivialForward {
 
 	static String doSomething(String s) {

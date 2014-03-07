@@ -213,6 +213,8 @@ package taint {
 
     protected var callToClassForNameFound: Boolean = false;
 
+    var objectTypesWithCreatedInstance: List[ObjectType] = List.empty
+
     /**
      * @note
      * Calling this method only makes sense when the analysis of this domain's method
@@ -314,17 +316,63 @@ package taint {
 
     override def invokeinterface(pc: Int,
       declaringClass: ObjectType,
-      name: String,
+      methodName: String,
       methodDescriptor: MethodDescriptor,
-      operands: List[DomainValue]) = {
-      isRelevantCall(pc, name, methodDescriptor, operands)
-      // TODO ...
-      println("Warning: interface invoked - with:")
-      println("Declaring Class: " + declaringClass)
-      println("methodName: " + name)
-      println("operands: " + operands)
-      println("")
-      super.invokeinterface(pc, declaringClass, name, methodDescriptor, operands)
+      operands: List[DomainValue]): MethodCallResult = {
+
+      //      println("Interface invoked - with:")
+      //      println("Declaring Class: " + declaringClass)
+      //      println("methodName: " + methodName)
+      //      println("operands: " + operands)
+      //      println("pc: " + pc)
+      //      println("")
+
+      def doTypeLevelInvoke =
+        super.invokeinterface(pc, declaringClass, methodName, methodDescriptor, operands)
+
+      if (isIrelevantInvoke(methodDescriptor, declaringClass))
+        return doTypeLevelInvoke;
+
+      val relevantOperands = computeRelevantOperands(operands)
+      if (relevantOperands.isEmpty)
+        return doTypeLevelInvoke;
+
+      println("has relevant operands")
+
+      // If we reach this point, we have an invocation of a relevant method 
+      // with a relevant parameter that is not our final sink...
+      val method: Method =
+        classHierarchy.resolveInterfaceMethodReference(
+          declaringClass.asObjectType,
+          methodName,
+          methodDescriptor,
+          project).getOrElse {
+            return doTypeLevelInvoke
+          }
+
+      // look up every class that implements the method and was previously
+      // instanciated
+      val implementingMethods = classHierarchy.lookupImplementingMethods(
+        declaringClass.asObjectType,
+        methodName,
+        methodDescriptor,
+        project,
+        (objectTypesWithCreatedInstance.contains(_)))
+
+      // deepen the search for every found method implementation
+      implementingMethods.foreach { (m: Method) =>
+        {
+          val classFile = project.classFile(m)
+
+          if (method.isNative)
+            return doTypeLevelInvoke;
+
+          deepenSearch(pc, classFile, m, operands)
+
+        }
+      }
+      return doTypeLevelInvoke
+
     }
 
     override def invokevirtual(pc: Int,
@@ -333,11 +381,11 @@ package taint {
       methodDescriptor: MethodDescriptor,
       operands: List[DomainValue]): MethodCallResult = {
 
-      println("Warning: virtual invoked - with:")
-      println("Declaring Class: " + declaringClass)
-      println("methodName: " + name)
-      println("operands: " + operands)
-      println("")
+      //      println("Warning: virtual invoked - with:")
+      //      println("Declaring Class: " + declaringClass)
+      //      println("methodName: " + name)
+      //      println("operands: " + operands)
+      //      println("")
 
       def doTypeLevelInvoke =
         super.invokevirtual(pc, declaringClass, name, methodDescriptor, operands)
@@ -358,8 +406,7 @@ package taint {
       methodName: String,
       methodDescriptor: MethodDescriptor,
       operands: List[DomainValue]): MethodCallResult = {
-      // isRelevantCall(pc, methodName, methodDescriptor, operands)
-      // TODO ...
+
       println("Special invoked - with:")
       println("Declaring Class: " + declaringClass)
       println("methodName: " + methodName)
@@ -369,6 +416,13 @@ package taint {
 
       def doTypeLevelInvoke =
         super.invokespecial(pc, declaringClass, methodName, methodDescriptor, operands)
+
+      // check if its an instance creation - in this case we need to save
+      // the objectType so we can check for it in case of invokeInterface
+      if (methodName == "<init>") {
+        if (!objectTypesWithCreatedInstance.contains(declaringClass))
+          objectTypesWithCreatedInstance = declaringClass :: objectTypesWithCreatedInstance
+      }
 
       if (isIrelevantInvoke(methodDescriptor, declaringClass))
         return doTypeLevelInvoke;
@@ -412,12 +466,12 @@ package taint {
       methodDescriptor: MethodDescriptor,
       operands: List[DomainValue]): MethodCallResult = {
 
-      println("Static invoked - with:")
-      println("Declaring Class: " + declaringClass)
-      println("methodName: " + methodName)
-      println("operands: " + operands)
-      println("pc: " + pc)
-      println("")
+      //      println("Static invoked - with:")
+      //      println("Declaring Class: " + declaringClass)
+      //      println("methodName: " + methodName)
+      //      println("operands: " + operands)
+      //      println("pc: " + pc)
+      //      println("")
 
       def doTypeLevelInvoke =
         super.invokestatic(pc, declaringClass, methodName, methodDescriptor, operands)
@@ -465,12 +519,12 @@ package taint {
       declaringClass: ReferenceType,
       methodName: String,
       methodDescriptor: MethodDescriptor,
-      parameters: DomainValues[_ <: Domain[CallStackEntry]]): Boolean
+      parameters: DomainValues): Boolean
 
     final def isRecursiveCall(
       classFile: ClassFile,
       method: Method,
-      parameters: DomainValues[_ <: Domain[CallStackEntry]]): Boolean = {
+      parameters: DomainValues): Boolean = {
       isRecursiveCall(
         classFile.thisType,
         method.name,
@@ -576,6 +630,8 @@ package taint {
         // with a relevant parameter that is not our final sink and which is
         // not native and which is not a recursive call
 
+        val v = method.body.get
+
         val aiResult = BaseAI.perform(classFile, method, calleeDomain)(Some(calleeParameters))
         aiResult.domain.postAnalysis()
         if (!aiResult.domain.isRelevantValueReturned) {
@@ -615,6 +671,8 @@ package taint {
 
     val contextNode: SimpleNode[(RelevantParameters, String)] = {
 
+      objectTypesWithCreatedInstance = List.empty;
+
       val firstIndex = if (identifier._2.isStatic) 1 else 2
       val relevantParameters = {
         methodDescriptor.parameterTypes.zipWithIndex.filter { param_idx =>
@@ -629,7 +687,7 @@ package taint {
       declaringClass: ReferenceType,
       methodName: String,
       methodDescriptor: MethodDescriptor,
-      parameters: DomainValues[_ <: Domain[CallStackEntry]]): Boolean = {
+      parameters: DomainValues): Boolean = {
       this.declaringClass == declaringClass &&
         this.methodName == methodName &&
         this.methodDescriptor == methodDescriptor // &&
@@ -646,6 +704,8 @@ package taint {
 
     extends TaintAnalysisDomain[Source] {
 
+    objectTypesWithCreatedInstance = previousTaintAnalysisDomain.objectTypesWithCreatedInstance
+
     val contextNode = new SimpleNode((relevantParameters, contextIdentifier))
 
     def project = previousTaintAnalysisDomain.project
@@ -654,7 +714,7 @@ package taint {
       declaringClass: ReferenceType,
       methodName: String,
       methodDescriptor: MethodDescriptor,
-      parameters: DomainValues[_ <: Domain[CallStackEntry]]): Boolean = {
+      parameters: DomainValues): Boolean = {
       (this.declaringClass == declaringClass &&
         this.methodName == methodName &&
         this.methodDescriptor == methodDescriptor // && // TODO check that the analysis would be made under the same assumption (same parameters!)    

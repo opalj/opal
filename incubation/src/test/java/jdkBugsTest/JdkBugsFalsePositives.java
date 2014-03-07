@@ -2,6 +2,13 @@ package jdkBugsTest;
 
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * This is a test for the JDKBugs Class.forName() analysis. It contains
+ * previously false positives that were found while analyzing the jdk
+ * 
+ * @author Lars
+ * 
+ */
 public class JdkBugsFalsePositives {
 
 	// ================================================================================================
