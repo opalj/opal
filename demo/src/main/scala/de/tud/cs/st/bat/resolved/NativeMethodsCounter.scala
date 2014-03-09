@@ -46,10 +46,10 @@ object NativeMethodsCounter extends AnalysisExecutor {
 
         def analyze(project: Project[URL], parameters: Seq[String] = List.empty) = {
             val nativeMethods =
-                for (
+                for {
                     classFile ← project.classFiles;
                     method ← classFile.methods if method.isNative
-                ) yield classFile.thisType.toJava+"{ "+method.toJava+" }"
+                } yield classFile.thisType.toJava+"{ "+method.toJava+" }"
 
             BasicReport(
                 nativeMethods.size+" native methods found:"+
