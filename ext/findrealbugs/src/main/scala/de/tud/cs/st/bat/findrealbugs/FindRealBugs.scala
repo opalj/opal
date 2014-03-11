@@ -63,6 +63,8 @@ object FindRealBugs {
     val analyses: Map[String, Analysis] = Map(
         ("AnonymousInnerClassShouldBeStatic" ->
             new AnonymousInnerClassShouldBeStatic[URL]),
+        ("BitNops" ->
+            new BitNops[URL]),
         ("BoxingImmediatelyUnboxedToPerformCoercion" ->
             new BoxingImmediatelyUnboxedToPerformCoercion[URL]),
         ("CatchesIllegalMonitorStateException" ->
