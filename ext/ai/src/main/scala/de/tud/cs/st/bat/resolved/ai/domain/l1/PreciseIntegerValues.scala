@@ -122,7 +122,7 @@ trait PreciseIntegerValues[+I]
     // QUESTION'S ABOUT VALUES
     //
 
-    @inline protected final def getIntValue[T](
+    @inline final def getIntValue[T](
         value: DomainValue)(
             f: Int ⇒ T)(
                 orElse: ⇒ T): T =
