@@ -49,10 +49,10 @@ import bat.reader.SkipUnknown_attributeReader
  */
 class Java7LibraryFramework
     extends ConstantPoolBinding
+    with InterfacesBinding
+    with FieldsBinding
+    with MethodsBinding
     with ClassFileBinding
-    with InterfacesReader
-    with FieldsReader
-    with MethodsReader
     with AttributesReader
     /* If you want unknown attributes to be represented uncomment the following: */
     // with Unknown_attributeBinding 
