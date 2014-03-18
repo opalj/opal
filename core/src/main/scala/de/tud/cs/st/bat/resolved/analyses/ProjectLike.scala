@@ -200,6 +200,18 @@ abstract class ProjectLike[Source] extends (ObjectType ⇒ Option[ClassFile]) {
     def classFiles: Iterable[ClassFile]
 
     /**
+     * Converts this project abstraction into a standard Java `HashMap`.
+     *
+     * @note This method should only be used by Java projects that want to interact
+     *      with BAT.
+     */
+    def toJavaMap(): java.util.HashMap[ObjectType, ClassFile] = {
+        val map = new java.util.HashMap[ObjectType, ClassFile]
+        for (classFile ← classFiles) map.put(classFile.thisType, classFile)
+        map
+    }
+
+    /**
      * This project's class hierarchy.
      */
     val classHierarchy: ClassHierarchy
