@@ -44,9 +44,9 @@ case object ALOAD_0
         extends LoadLocalVariableInstruction
         with ImplicitLocalVariableIndex {
 
-    def lvIndex: Int = 0
+    override def lvIndex: Int = 0
 
-    def opcode: Int = 42
+    override def opcode: Int = 42
 
-    def mnemonic: String = "aload_0"
+    override def mnemonic: String = "aload_0"
 }
