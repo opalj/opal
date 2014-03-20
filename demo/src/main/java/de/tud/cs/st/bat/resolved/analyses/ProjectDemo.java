@@ -33,24 +33,46 @@
 package de.tud.cs.st.bat.resolved.analyses;
 
 import java.io.File;
-import java.util.Map;
 
+import scala.collection.JavaConversions;
 import de.tud.cs.st.bat.resolved.ClassFile;
-import de.tud.cs.st.bat.resolved.ObjectType;
+import de.tud.cs.st.bat.resolved.Method;
+import de.tud.cs.st.bat.resolved.ai.AIResult;
+import de.tud.cs.st.bat.resolved.ai.BaseAI;
+import de.tud.cs.st.bat.resolved.ai.debug.XHTML;
+import de.tud.cs.st.bat.resolved.ai.domain.l0.BaseDomain;
 
 /**
  * Demonstrates how to create and access a <code>Project</code> using Java.
  * 
  * @author Michael Eichberg
  */
+@SuppressWarnings("unchecked")
 public class ProjectDemo {
 
   public static void main(String[] args) {
-    ProjectLike<java.net.URL> projectLike = ProjectLike.createProject(new File(args[0]));
-    Map<ObjectType, ClassFile> project = projectLike.toJavaMap();
+    // Load a project
+    ProjectLike<java.net.URL> project = ProjectLike.createProject(new File(args[0]));
+
+    // Convert the project into a simple Map
+    // Map<ObjectType, ClassFile> project = projectLike.toJavaMap();
+
+    // Create an abstract interpreter (can be reused)
+    BaseAI ai = new BaseAI();
+
+    // Do something with it...
     System.out.println("The project contains:");
-    for (ClassFile classFile : project.values()) {
+    for (ClassFile classFile : JavaConversions.asJavaIterable(project.classFiles())) {
       System.out.println(" - " + classFile.thisType().toJava());
+
+      Iterable<Method> methods = JavaConversions
+          .asJavaIterable((scala.collection.Iterable<Method>) classFile.methods());
+      for (Method method : methods) {
+        if (method.body().isDefined()) {
+          AIResult result = ai.apply(classFile, method, new BaseDomain());
+          System.out.println(XHTML.dump(classFile, method, result, "Abstract Interpretation Succeeded"));
+        }
+      }
     }
   }
 }
