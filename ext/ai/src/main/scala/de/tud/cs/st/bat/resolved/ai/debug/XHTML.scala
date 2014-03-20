@@ -170,6 +170,21 @@ object XHTML {
     }
 
     def dump(
+        classFile: ClassFile,
+        method: Method,
+        result: AIResult,
+        header: String): String = {
+        dump(
+            Some(classFile),
+            Some(method),
+            result.code,
+            result.domain,
+            result.operandsArray,
+            result.localsArray,
+            Some(header)).toString
+    }
+
+    def dump(
         classFile: Option[ClassFile],
         method: Option[Method],
         code: Code,
