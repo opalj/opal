@@ -90,11 +90,11 @@ trait StringValues[+I] extends ReferenceValues[I] with JavaObjectConversion {
         }
     }
 
-    abstract override def toDomainValue(pc: PC, value: Object): DomainValue = {
+    abstract override def toDomainValue(pc: PC, value: Object, targetType: Type): DomainValue = {
         if (value.isInstanceOf[String]) {
             StringValue(pc, value.asInstanceOf[String])
         } else {
-            super.toDomainValue(pc, value)
+            super.toDomainValue(pc, value, targetType)
         }
     }
 

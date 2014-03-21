@@ -44,12 +44,24 @@ package l1
  */
 trait JavaObjectConversion { this: SomeDomain =>
 
+    /**
+     * Converts a given DomainValue to a java object representing the content and informations
+     * of the DomainValue
+     */
     def toJavaObject(value: DomainValue): Option[Object] = {
         None
     }
 
-    def toDomainValue(pc : PC, value: Object): DomainValue = {
-        val className = value.getClass().toString()
-        TypedValue(pc, ObjectType(className.replace('.', '/')))
+    /**
+     * Converts a instance of a java class to the corresponding DomainValue.
+     *
+     * The targetType describes the desired type of the DomainValue. When this type conflicts with 
+     * the actual type of the Java object, you have to choose the specified targetType.
+     * 
+     * I.e we could have a situation where value is of type java.lang.Integer, but the targetType is
+     * the primitve type int. 
+     */
+    def toDomainValue(pc : PC, value: Object, targetType: Type): DomainValue = {
+        TypedValue(pc, targetType)
     }
 }

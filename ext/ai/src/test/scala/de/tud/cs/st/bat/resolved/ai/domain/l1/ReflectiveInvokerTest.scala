@@ -99,7 +99,7 @@ class ReflectiveInvokerTest
         val descriptor = MethodDescriptor(IndexedSeq(), ObjectType.String)
         val operands = List(stringValue)
 
-        //String String.length()
+        //int String.length()
         val result = domain.invokeReflective(IrrelevantPC, declaringClass, "length", descriptor, operands)
         val javaResult = domain.lastObject.asInstanceOf[java.lang.Integer]
         javaResult should equal(4)
@@ -186,6 +186,16 @@ class ReflectiveInvokerTest
             domain.invokeReflective(IrrelevantPC, declaringClass, "someMethod", descriptor, operands)
         }
     }
+    
+    behavior of "the JavaObjectConversions trait"
+
+    it should ("convert to the correct target type") in {
+        val domain = createDomain()
+        import domain._
+        
+        val result = domain.toDomainValue(1, new Integer(42), IntegerType)        
+        result.computationalType should be(IntegerType.computationalType)
+    }
 
     class RecordingDomain[I](
         identifier: I)
@@ -204,10 +214,9 @@ class ReflectiveInvokerTest
             }
         }
 
-        override def toDomainValue(pc: PC, value: Object): DomainValue = {
+        override def toDomainValue(pc: PC, value: Object, targetType: Type): DomainValue = {
             lastObject = value
-            val className = value.getClass().toString()
-            TypedValue(pc, ObjectType(className.replace('.', '/')))
+            super.toDomainValue(pc, value, targetType)
         }
     }
 }

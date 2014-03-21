@@ -73,8 +73,8 @@ trait ReflectiveInvoker extends JavaObjectConversion { this: SomeDomain ⇒
             val method = declaringClass.toJavaClass.getDeclaredMethod(name, parameterClassTypes: _*)
             val result = method.invoke(javaInstance, javaParameters: _*)
 
-            if (result != null) {
-                Some(ComputedValue(Some(toDomainValue(pc, result))))
+            if (result != null) {                
+                Some(ComputedValue(Some(toDomainValue(pc, result, descriptor.returnType))))
             } else {
                 Some(ComputedValue(None))
             }
