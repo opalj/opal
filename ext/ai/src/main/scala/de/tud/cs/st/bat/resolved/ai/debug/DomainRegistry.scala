@@ -41,9 +41,13 @@ import analyses.ProjectLike
 
 /**
  * The domain registry is a registry for all domains that can be instantiated given
- * a `Project`, `ClassFile` and `Method`. The registry is primarily useful for tools
- * for debugging purposes that let the user/developer choose between different domains
- * and see the resulting output.
+ * a `Project`, `ClassFile` and `Method`.
+ *
+ * The registry was developed to support tools for debugging purposes that let
+ * the user/developer choose between different domains to do an abstract interpretation
+ * and to see the resulting output.
+ *
+ * The compatible domains that are part of BATAI are already registered.
  *
  * ==Thread Safety==
  * The registry is thread safe.
@@ -55,17 +59,46 @@ object DomainRegistry {
     private[this] var descriptions: Map[String, Class[_ <: SomeDomain]] = Map.empty
     private[this] var theRegistry: Map[Class[_ <: SomeDomain], (SomeProject, ClassFile, Method) ⇒ SomeDomain] = Map.empty
 
-    def register(domainDescription: String, domainClass: Class[_ <: SomeDomain], factory: (SomeProject, ClassFile, Method) ⇒ SomeDomain): Unit = {
+    /**
+     * Register a new domain that can be used to perform an abstract interpretation
+     * of a specific method.
+     *
+     * @param domainDescription A short description of the properties of the domain;
+     * 		in particular w.r.t. the kind of computations the domain does.
+     * @param domainClass The class of the domain.
+     * @param factory The factory method that will be used to create instances of the
+     * 		domain.
+     */
+    def register(
+        domainDescription: String,
+        domainClass: Class[_ <: SomeDomain],
+        factory: (SomeProject, ClassFile, Method) ⇒ SomeDomain): Unit = {
         this.synchronized {
             descriptions += ((domainDescription, domainClass))
             theRegistry += ((domainClass, factory))
         }
     }
 
+    /**
+     * Returns an `Iterable` to make it possible to iterate over the descriptions of
+     * the domain. Useful to show the (end-users) some meaningful descriptions.
+     */
     def domainDescriptions(): Iterable[String] = this.synchronized { descriptions.keys }
 
+    /**
+     * Returns the current view of the registry.
+     */
     def registry = this.synchronized { theRegistry }
 
+    /**
+     * Creates a new instance of the domain identified by the given `domainDescription`.
+     *
+     * @param domainDescription The description that identifies the domain.
+     * @param project The project.
+     * @param classFile A class file object that belongs to the given project.
+     * @param method A non-native/non-abstract method belonging to the specified class
+     * 		file.
+     */
     // primarily introduced to facilitate the interaction with Java
     def newDomain(
         domainDescription: String,
@@ -78,6 +111,16 @@ object DomainRegistry {
         }
     }
 
+    /**
+     * Creates a new instance of the domain identified by the given `domainClass`. To
+     * create the instance the registered factory method will be used.
+     *
+     * @param domainClass The class object of the domain.
+     * @param project The project.
+     * @param classFile A class file object that belongs to the given project.
+     * @param method A non-native/non-abstract method belonging to the specified class
+     * 		file.
+     */
     def newDomain(
         domainClass: Class[_ <: SomeDomain],
         project: SomeProject,
@@ -88,7 +131,7 @@ object DomainRegistry {
         }
     }
 
-    // initialize with the known default domains 
+    // initialize the registry with the known default domains 
     register(
         "The most basic domain; it does all computations at the type level.",
         classOf[domain.l0.BaseConfigurableDomain[(ClassFile, Method)]],
