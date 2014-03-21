@@ -33,41 +33,21 @@
 package BitNops;
 
 /**
- * Various & (AND) no-ops, all of which should be reported by BitNops.
+ * A common construct for which BitNops should not produce false-positive reports: A loop
+ * that "collects" flags into a variable. During the first iteration, the OR operation
+ * will be a no-op, but in later iterations it won't be.
  * 
  * @author Daniel Klauer
  */
-public class And {
+public class FlagCollectionLoop {
 
-    int testZeroLhs(int r) {
-        int l = 0;
-        return l & r;
-    }
+    void test() {
+        int x = 0;
 
-    int testZeroRhs(int l) {
-        int r = 0;
-        return l & r;
-    }
+        for (int i = 0; i < 10; i++) {
+            x |= 1 << i;
+        }
 
-    int testZeroBoth() {
-        int l = 0;
-        int r = 0;
-        return l & r;
-    }
-
-    int testMinusOneLhs(int r) {
-        int l = -1;
-        return l & r;
-    }
-
-    int testMinusOneRhs(int l) {
-        int r = -1;
-        return l & r;
-    }
-
-    int testMinusOneBoth() {
-        int l = -1;
-        int r = -1;
-        return l & r;
+        System.out.println(x);
     }
 }

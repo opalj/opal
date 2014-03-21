@@ -33,41 +33,18 @@
 package BitNops;
 
 /**
- * Various & (AND) no-ops, all of which should be reported by BitNops.
+ * Some AND/OR no-ops involving a `private` field as operand. Currently BitNops does not
+ * detect this case, but that may change in the future, if it can determine that the field
+ * is never written.
  * 
  * @author Daniel Klauer
  */
-public class And {
+public class InvolvingPrivateField {
 
-    int testZeroLhs(int r) {
-        int l = 0;
-        return l & r;
-    }
+    private int zero = 0;
 
-    int testZeroRhs(int l) {
-        int r = 0;
-        return l & r;
-    }
-
-    int testZeroBoth() {
-        int l = 0;
-        int r = 0;
-        return l & r;
-    }
-
-    int testMinusOneLhs(int r) {
-        int l = -1;
-        return l & r;
-    }
-
-    int testMinusOneRhs(int l) {
-        int r = -1;
-        return l & r;
-    }
-
-    int testMinusOneBoth() {
-        int l = -1;
-        int r = -1;
-        return l & r;
+    void test(int a) {
+        System.out.println(a | zero);
+        System.out.println(a & zero);
     }
 }

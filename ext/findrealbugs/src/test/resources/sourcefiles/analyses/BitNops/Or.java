@@ -33,7 +33,7 @@
 package BitNops;
 
 /**
- * Testclass for BitNops
+ * Various | (OR) no-ops, all of which should be reported by BitNops.
  * 
  * @author Daniel Klauer
  */
