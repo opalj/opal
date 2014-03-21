@@ -36,9 +36,10 @@ package resolved
 package analyses
 
 import reader.Java7Framework
+import reader.Java7LibraryFramework
+
 import java.net.URL
 import java.io.File
-import de.tud.cs.st.bat.resolved.reader.Java7LibraryFramework
 
 /**
  * Provides the necessary infrastructure to easily execute a given analysis that
@@ -49,6 +50,16 @@ import de.tud.cs.st.bat.resolved.reader.Java7LibraryFramework
  * To facilitate the usage of this trait several implicit conversions are defined that
  * wrap standard analyses ([[de.tud.cs.st.bat.resolved.analyses]]) such that they report
  * results that are reportable.
+ *
+ * This class distinguishes between class files belonging to the code base under
+ * analysis and those that belong to the libraries. Those belonging to the libraries
+ * are loaded using the `ClassFileReader` for library classes (basically, all method
+ * bodies are skipped [[de.tud.cs.st.bat.resolved.reader.Java7LibaryFramework]]).
+ * The parameter to specify library classes is `-libcp=`, the parameter to specify
+ * the "normal" classpath is `-cp=`.
+ *
+ * @author Michael Eichberg
+ * @author Arne Lottmann
  */
 trait AnalysisExecutor {
 
@@ -59,6 +70,8 @@ trait AnalysisExecutor {
      * has to start with a dash ("-") and has to contain an equals sign ("=") and
      * has to come after the list of jar files, class files or directories that
      * specify the classes that will be loaded.
+     *
+     * @note The parameter `-library=` is already predefined (see general documentation).
      */
     def analysisParametersDescription: String = ""
 
@@ -67,28 +80,23 @@ trait AnalysisExecutor {
 
     def printUsage() {
         println("Usage: java "+
-            this.getClass().getName()+
-            " <Directories or JAR files containing class files> "+
+            this.getClass().getName()+"\n"+
+            " -cp=<Directories or JAR files containing class files> (If no class path is specified the current folder is used.)\n"+
+            " -libcp=<Directories or JAR files containing class files>\n"+
             analysisParametersDescription)
         println(analysis.description)
         println(analysis.copyright)
     }
 
     def main(args: Array[String]) {
-        if (args.length == 0) {
-            printUsage()
-            sys.exit(-1)
-        }
 
         //
         // 1. check arguments
         //
-        val (params, sourceFiles) =
-            args.partition(arg ⇒ arg.startsWith("-") && arg.contains("="))
-
-        val (libraries, parameters) = params.partition(arg ⇒ arg.startsWith("-library="))
-
-        def checkFileIsReadableAndReturnIt(filename: String): File = {
+        def checkIfFilesAreReadableAndReturnThem(filenames: Array[String]): Array[File] = {
+            for (filename ← filenames) yield checkIfFileIsReadableAndReturnIt(filename)
+        }
+        def checkIfFileIsReadableAndReturnIt(filename: String): File = {
             val file = new File(filename)
             if (!file.exists ||
                 !file.canRead ||
@@ -102,14 +110,25 @@ trait AnalysisExecutor {
             file
         }
 
-        val files = for (arg ← sourceFiles) yield checkFileIsReadableAndReturnIt(arg)
-
-        val libraryFiles = for {
-            arg ← libraries.map(s ⇒ s.substring(s.indexOf("=") + 1))
-            library ← arg.split(File.pathSeparator)
-        } yield {
-            checkFileIsReadableAndReturnIt(library)
+        val (cp, args1) = {
+            args.partition(_.startsWith("-cp=")) match {
+                case (Array(), args1) ⇒
+                    (Array(System.getProperty("user.dir")), args1)
+                case (Array(cpParam), args1) ⇒
+                    (cpParam.substring(4).split(File.pathSeparator), args1)
+            }
         }
+        val cpFiles = checkIfFilesAreReadableAndReturnThem(cp)
+
+        val (libcp, parameters) = {
+            args1.partition(_.startsWith("-libcp=")) match {
+                case (Array(libParam), parameters) ⇒
+                    (libParam.substring(7).split(File.pathSeparator), parameters)
+                case result ⇒
+                    result
+            }
+        }
+        val libcpFiles = checkIfFilesAreReadableAndReturnThem(libcp)
 
         if (!checkAnalysisSpecificParameters(parameters)) {
             printUsage()
@@ -119,7 +138,7 @@ trait AnalysisExecutor {
         //
         // 2. setup project context
         //
-        val project: Project[URL] = setupProject(files, libraryFiles)
+        val project: Project[URL] = setupProject(cpFiles, libcpFiles)
 
         // 
         // 3. execute analysis
@@ -129,30 +148,31 @@ trait AnalysisExecutor {
         println(result.consoleReport)
     }
 
-    def setupProject(files: Iterable[File], libraryFiles: Iterable[File]): Project[URL] = {
-        println("Reading class files:")
+    def setupProject(cpFiles: Iterable[File], libcpFiles: Iterable[File]): Project[URL] = {
+        def readClassFiles(files: Iterable[File], reader: File ⇒ Seq[(ClassFile, URL)]): Iterable[(ClassFile, URL)] = {
+            (
+                for { file ← files } yield {
+                    println("\t"+file)
+                    reader(file)
+                }
+            ).flatten
+        }
 
-        val classFiles: Iterable[(ClassFile, URL)] = (
-            for {
-                file ← files
-            } yield {
-				println("\t" + file)
-				Java7Framework.ClassFiles(file)
-			}
-        ).flatten
+        println("Reading class files (found in):")
+        val classFiles = readClassFiles(cpFiles, Java7Framework.ClassFiles)
 
-        val libraryClassFiles: Iterable[(ClassFile, URL)] = (
-            for {
-                file ← libraryFiles
-            } yield {
-				println("\t" + file)
-				Java7LibraryFramework.ClassFiles(file)
-			}
-        ).flatten
+        val libraryClassFiles = {
+            if (libcpFiles.nonEmpty) {
+                println("Reading library class files (found in):")
+                readClassFiles(libcpFiles, Java7LibraryFramework.ClassFiles)
+            } else {
+                Iterable.empty[(ClassFile, URL)]
+            }
+        }
 
         var project = IndexBasedProject(classFiles ++ libraryClassFiles)
 
-        println("\tClass files loaded: "+project.classFilesCount)
+        println("Class files loaded: "+project.classFilesCount)
         project
     }
 }
