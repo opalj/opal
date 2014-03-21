@@ -36,9 +36,9 @@ package resolved
 package analyses
 
 import reader.Java7Framework
-
 import java.net.URL
 import java.io.File
+import de.tud.cs.st.bat.resolved.reader.Java7LibraryFramework
 
 /**
  * Provides the necessary infrastructure to easily execute a given analysis that
@@ -83,21 +83,32 @@ trait AnalysisExecutor {
         //
         // 1. check arguments
         //
-        val (parameters, sourceFiles) =
+        val (params, sourceFiles) =
             args.partition(arg ⇒ arg.startsWith("-") && arg.contains("="))
 
-        val files = for (arg ← sourceFiles) yield {
-            val file = new File(arg)
+        val (libraries, parameters) = params.partition(arg ⇒ arg.startsWith("-library="))
+
+        def checkFileIsReadableAndReturnIt(filename: String): File = {
+            val file = new File(filename)
             if (!file.exists ||
                 !file.canRead ||
-                !(arg.endsWith(".jar") ||
-                    arg.endsWith(".class") ||
+                !(filename.endsWith(".jar") ||
+                    filename.endsWith(".class") ||
                     file.isDirectory())) {
                 println("The file: "+file+" cannot be read or is not valid.")
                 printUsage()
                 sys.exit(-2)
             }
             file
+        }
+
+        val files = for (arg ← sourceFiles) yield checkFileIsReadableAndReturnIt(arg)
+
+        val libraryFiles = for {
+            arg ← libraries.map(s ⇒ s.substring(s.indexOf("=") + 1))
+            library ← arg.split(File.pathSeparator)
+        } yield {
+            checkFileIsReadableAndReturnIt(library)
         }
 
         if (!checkAnalysisSpecificParameters(parameters)) {
@@ -108,7 +119,7 @@ trait AnalysisExecutor {
         //
         // 2. setup project context
         //
-        val project: Project[URL] = setupProject(files)
+        val project: Project[URL] = setupProject(files, libraryFiles)
 
         // 
         // 3. execute analysis
@@ -118,16 +129,28 @@ trait AnalysisExecutor {
         println(result.consoleReport)
     }
 
-    def setupProject(files: Iterable[File]): Project[URL] = {
+    def setupProject(files: Iterable[File], libraryFiles: Iterable[File]): Project[URL] = {
         println("Reading class files:")
 
-        val classFiles = (
+        val classFiles: Iterable[(ClassFile, URL)] = (
             for {
-                file ← files if { println("\t"+file.toString()); true }
-            } yield Java7Framework.ClassFiles(file)
+                file ← files
+            } yield {
+				println("\t" + file)
+				Java7Framework.ClassFiles(file)
+			}
         ).flatten
 
-        var project = IndexBasedProject(classFiles)
+        val libraryClassFiles: Iterable[(ClassFile, URL)] = (
+            for {
+                file ← libraryFiles
+            } yield {
+				println("\t" + file)
+				Java7LibraryFramework.ClassFiles(file)
+			}
+        ).flatten
+
+        var project = IndexBasedProject(classFiles ++ libraryClassFiles)
 
         println("\tClass files loaded: "+project.classFilesCount)
         project
