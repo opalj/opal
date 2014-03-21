@@ -39,8 +39,9 @@ import de.tud.cs.st.bat.resolved.ClassFile;
 import de.tud.cs.st.bat.resolved.Method;
 import de.tud.cs.st.bat.resolved.ai.AIResult;
 import de.tud.cs.st.bat.resolved.ai.BaseAI;
+import de.tud.cs.st.bat.resolved.ai.Domain;
+import de.tud.cs.st.bat.resolved.ai.debug.DomainRegistry;
 import de.tud.cs.st.bat.resolved.ai.debug.XHTML;
-import de.tud.cs.st.bat.resolved.ai.domain.l0.BaseDomain;
 
 /**
  * Demonstrates how to create and access a <code>Project</code> using Java.
@@ -54,11 +55,20 @@ public class ProjectDemo {
     // Load a project
     ProjectLike<java.net.URL> project = ProjectLike.createProject(new File(args[0]));
 
-    // Convert the project into a simple Map
+    // Convert the project into a simple Map (NOT RECOMMENDED)
     // Map<ObjectType, ClassFile> project = projectLike.toJavaMap();
 
-    // Create an abstract interpreter (can be reused)
+    // Create an abstract interpreter (the same instance can be reused)
     BaseAI ai = new BaseAI();
+
+    // Alternatively choose between the available domains using the registry
+    Iterable<String> domainDescriptions =
+        JavaConversions.asJavaIterable(DomainRegistry.domainDescriptions());
+    System.out.println("The available domains are: ");
+    for (String domainDescription : domainDescriptions)
+      System.out.println("\t- " + domainDescription);
+    // let's assume the user has chosen the domain he wanted to use
+    String chosenDomain = domainDescriptions.iterator().next();
 
     // Do something with it...
     System.out.println("The project contains:");
@@ -69,8 +79,15 @@ public class ProjectDemo {
           .asJavaIterable((scala.collection.Iterable<Method>) classFile.methods());
       for (Method method : methods) {
         if (method.body().isDefined()) {
-          AIResult result = ai.apply(classFile, method, new BaseDomain());
-          System.out.println(XHTML.dump(classFile, method, result, "Abstract Interpretation Succeeded"));
+          // Use a fixed domain
+          // Domain<?> domain = new BaseDomain();
+          // OR use a user-specified domain
+          Domain<?> domain = DomainRegistry.newDomain(chosenDomain, project, classFile, method);
+
+          AIResult result = ai.apply(classFile, method, domain);
+          System.out.println(XHTML.dump(classFile, method, result,
+              "Abstract Interpretation Succeeded"));
+
         }
       }
     }
