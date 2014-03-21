@@ -55,11 +55,19 @@ package object reader {
      */
     def read(
         args: Iterable[String],
-        classFilesReader: (File) ⇒ Iterable[(ClassFile, URL)]): (Iterable[(ClassFile, URL)], List[Throwable]) = {
+        classFilesReader: File ⇒ Iterable[(ClassFile, URL)]): (Iterable[(ClassFile, URL)], List[Throwable]) = {
+        readClassFiles(args.map(new File(_)), classFilesReader)
+    }
+
+    def readClassFiles(
+        files: Iterable[File],
+        classFilesReader: File ⇒ Iterable[(ClassFile, URL)],
+        perArg: File ⇒ Unit = (f: File) ⇒ { /*do nothing*/ }): (Iterable[(ClassFile, URL)], List[Throwable]) = {
         var exceptions: List[Throwable] = Nil
-        val allClassFiles = for (arg ← args) yield {
+        val allClassFiles = for (file ← files) yield {
             try {
-                classFilesReader(new File(arg))
+                perArg(file)
+                classFilesReader(file)
             } catch {
                 case ct: scala.util.control.ControlThrowable ⇒
                     throw ct

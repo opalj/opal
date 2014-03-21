@@ -149,29 +149,33 @@ trait AnalysisExecutor {
     }
 
     def setupProject(cpFiles: Iterable[File], libcpFiles: Iterable[File]): Project[URL] = {
-        def readClassFiles(files: Iterable[File], reader: File ⇒ Seq[(ClassFile, URL)]): Iterable[(ClassFile, URL)] = {
-            (
-                for { file ← files } yield {
-                    println("\t"+file)
-                    reader(file)
-                }
-            ).flatten
-        }
-
         println("Reading class files (found in):")
-        val classFiles = readClassFiles(cpFiles, Java7Framework.ClassFiles)
+        val (classFiles, exceptions1) =
+            reader.readClassFiles(
+                cpFiles,
+                Java7Framework.ClassFiles,
+                (file) ⇒ println("\t"+file))
 
-        val libraryClassFiles = {
+        val (libraryClassFiles, exceptions2) = {
             if (libcpFiles.nonEmpty) {
                 println("Reading library class files (found in):")
-                readClassFiles(libcpFiles, Java7LibraryFramework.ClassFiles)
+                reader.readClassFiles(
+                    libcpFiles,
+                    Java7LibraryFramework.ClassFiles,
+                    (file) ⇒ println("\t"+file))
             } else {
-                Iterable.empty[(ClassFile, URL)]
+                (Iterable.empty[(ClassFile, URL)], List.empty[Throwable])
+            }
+        }
+        val allExceptions = exceptions1 ++ exceptions2
+        if (allExceptions.nonEmpty) {
+            Console.err.println("While reading the class files the following exceptions occured:")
+            for (exception ← exceptions1 ++ exceptions2) {
+                Console.err.println(exception.getMessage())
             }
         }
 
         var project = IndexBasedProject(classFiles, libraryClassFiles)
-
         println("Class files loaded: "+project.classFilesCount)
         project
     }
