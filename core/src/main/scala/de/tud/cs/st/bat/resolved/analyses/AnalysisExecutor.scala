@@ -170,7 +170,7 @@ trait AnalysisExecutor {
             }
         }
 
-        var project = IndexBasedProject(classFiles ++ libraryClassFiles)
+        var project = IndexBasedProject(classFiles, libraryClassFiles)
 
         println("Class files loaded: "+project.classFilesCount)
         project

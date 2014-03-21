@@ -64,6 +64,7 @@ class IndexBasedProjectTest
     behavior of "IndexBasedProject"
 
     import project.classFile
+    import project.isLibraryType
 
     it should "find the class methods.a.Super" in {
         classFile(SuperType) should be('Defined)
@@ -73,8 +74,28 @@ class IndexBasedProjectTest
         classFile(AbstractB) should be('Defined)
     }
 
+    it should "find the library class attributes.DeprecatedByAnnotation" in {
+        classFile(DeprecatedByAnnotation) should be('Defined)
+    }
+
     it should "not find the class java.lang.Object" in {
         classFile(ObjectType.Object) should not be ('Defined)
+    }
+
+    it should "identify the class java.lang.Object as belonging to the library" in {
+        isLibraryType(ObjectType.Object) should be(true)
+    }
+
+    it should "identify the class methods.a.Super as belonging to the core code" in {
+        isLibraryType(SuperType) should be(false)
+
+        isLibraryType(classFile(SuperType).get) should be(false)
+    }
+
+    it should "identify the class attributes.DeprecatedByAnnotation as belonging to the library code" in {
+        isLibraryType(DeprecatedByAnnotation) should be(true)
+
+        isLibraryType(classFile(DeprecatedByAnnotation).get) should be(true)
     }
 
     behavior of "Project's lookupMethodDeclaration method"
@@ -177,9 +198,11 @@ private object IndexBasedProjectTest {
     //
     //
     val resources = TestSupport.locateTestResources("classfiles/Methods.jar")
-    val project = IndexBasedProject(ClassFiles(resources))
+    val libraryResources = TestSupport.locateTestResources("classfiles/Attributes.jar")
+    val project = IndexBasedProject(ClassFiles(resources), ClassFiles(libraryResources))
 
     val SuperType = ObjectType("methods/a/Super")
     val DirectSub = ObjectType("methods/a/DirectSub")
     val AbstractB = ObjectType("methods/b/AbstractB")
+    val DeprecatedByAnnotation = ObjectType("attributes/DeprecatedByAnnotation")
 }

@@ -90,6 +90,17 @@ abstract class ProjectLike[Source] extends (ObjectType ⇒ Option[ClassFile]) {
     def source(objectType: ObjectType): Option[Source]
 
     /**
+     * Returns true if the given class file belongs to the library part of the project.
+     */
+    def isLibraryType(classFile: ClassFile): Boolean
+
+    /**
+     * Returns true if the given type file belongs to the library part of the project.
+     * This is generally the case if no class file was loaded for the given type.
+     */
+    def isLibraryType(objectType: ObjectType): Boolean
+
+    /**
      * Returns the class file that defines the given `objectType`; if any.
      *
      * @param objectType Some object type. (This method is defined for all `ObjectType`s.)
