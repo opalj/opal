@@ -80,19 +80,19 @@ class LongBitsToDoubleInvokedOnInt[Source]
         // In all method bodies, look for occurrences of (I2L, INVOKESTATIC) instruction
         // sequences, where the INVOKESTATIC is a call to 
         // java.lang.Double.longBitsToDouble().
-        for (
-            classFile ← project.classFiles;
-            method ← classFile.methods if method.body.isDefined;
-            pc ← method.body.get.slidingCollect(2) {
+        for {
+            classFile ← project.classFiles
+            method @ MethodWithBody(body) ← classFile.methods
+            pc ← body.slidingCollect(2) {
                 case (pc, Seq(I2L,
                     INVOKESTATIC(`doubleType`, "longBitsToDouble",
                         `longBitsToDoubleDescriptor`))) ⇒ pc
             }
-        ) yield {
+        } yield {
             LineAndColumnBasedReport(
                 project.source(classFile.thisType),
                 Severity.Error,
-                pcToOptionalLineNumber(method.body.get, pc),
+                pcToOptionalLineNumber(body, pc),
                 None,
                 "Passing int to Double.longBitsToDouble(long)")
         }

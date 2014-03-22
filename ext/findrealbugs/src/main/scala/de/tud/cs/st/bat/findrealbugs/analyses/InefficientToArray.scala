@@ -104,8 +104,8 @@ class InefficientToArray[Source]
         // on objects derived from the Collection classes.
         for {
             classFile ← project.classFiles
-            method ← classFile.methods if method.body.isDefined
-            pc ← method.body.get.slidingCollect(3)({
+            method @ MethodWithBody(body) ← classFile.methods
+            pc ← body.slidingCollect(3)({
                 case (pc, Seq(ICONST_0, ANEWARRAY(_), instr3)) if (instr3 match {
                     // TODO: Perhaps we should add a new VirtualMethodCall(...) pattern 
                     // matcher to BAT, which would allow INVOKEINTERFACE and INVOKEVIRTUAL
@@ -121,7 +121,7 @@ class InefficientToArray[Source]
             LineAndColumnBasedReport(
                 project.source(classFile.thisType),
                 Severity.Info,
-                pcToOptionalLineNumber(method.body.get, pc),
+                pcToOptionalLineNumber(body, pc),
                 None,
                 "Calling x.toArray(new T[0]) is inefficient, should be "+
                     "x.toArray(new T[x.size()])")
