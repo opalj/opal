@@ -33,41 +33,17 @@
 package BitNops;
 
 /**
- * Various & (AND) no-ops, all of which should be reported by BitNops.
+ * Some AND/OR no-ops involving a `public` field as operand. The field may be altered at
+ * runtime, so our static analyses cannot detect any issues here.
  * 
  * @author Daniel Klauer
  */
-public class And {
+public class InvolvingPublicField {
 
-    int testZeroLhs(int r) {
-        int l = 0;
-        return l & r;
-    }
+    public int zero = 0;
 
-    int testZeroRhs(int l) {
-        int r = 0;
-        return l & r;
-    }
-
-    int testZeroBoth() {
-        int l = 0;
-        int r = 0;
-        return l & r;
-    }
-
-    int testMinusOneLhs(int r) {
-        int l = -1;
-        return l & r;
-    }
-
-    int testMinusOneRhs(int l) {
-        int r = -1;
-        return l & r;
-    }
-
-    int testMinusOneBoth() {
-        int l = -1;
-        int r = -1;
-        return l & r;
+    void test(int a) {
+        System.out.println(a | zero);
+        System.out.println(a & zero);
     }
 }

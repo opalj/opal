@@ -33,41 +33,20 @@
 package BitNops;
 
 /**
- * Various & (AND) no-ops, all of which should be reported by BitNops.
+ * A class with a method containing instructions that AI won't reach when using precise
+ * integer values. BitNops should not crash due to this.
  * 
  * @author Daniel Klauer
  */
-public class And {
+public class UninterpretedInstructions {
 
-    int testZeroLhs(int r) {
-        int l = 0;
-        return l & r;
-    }
-
-    int testZeroRhs(int l) {
-        int r = 0;
-        return l & r;
-    }
-
-    int testZeroBoth() {
-        int l = 0;
-        int r = 0;
-        return l & r;
-    }
-
-    int testMinusOneLhs(int r) {
-        int l = -1;
-        return l & r;
-    }
-
-    int testMinusOneRhs(int l) {
-        int r = -1;
-        return l & r;
-    }
-
-    int testMinusOneBoth() {
-        int l = -1;
-        int r = -1;
-        return l & r;
+    public void test() {
+        int i = 0;
+        if (i == 0) {
+        } else {
+            // Unreachable code that won't be analyzed by AI
+            // (won't have operands information for these PCs)
+            i = i & 0;
+        }
     }
 }

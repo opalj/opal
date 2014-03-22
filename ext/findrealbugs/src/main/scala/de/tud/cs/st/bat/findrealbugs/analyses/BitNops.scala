@@ -40,41 +40,39 @@ import resolved._
 import resolved.analyses._
 import resolved.instructions._
 import ai._
-import ai.domain.l1._
+import ai.domain._
 
 /**
- * Can be used to extend a domain to record a list of useless operations,
- * such as `x | 0` (is always `x`) or `x | -1` (is always `-1`).
+ * A domain specifically for BitNops: only tracks individual integer values, but not
+ * floats, references, or ranged integer values.
  *
  * @author Daniel Klauer
  */
-private trait RecordBitNops extends PreciseIntegerValues[Method] {
-    /**
-     * Helper class to group a program counter and message string for a list of reports.
-     */
-    class PCReport(val pc: PC, val message: String)
+private class BitNopsDomain[T](override val identifier: T)
+        extends Domain[T]
+        with DefaultDomainValueBinding[T]
+        with Configuration
+        with PredefinedClassHierarchy
+        with l1.DefaultPreciseIntegerValues[T]
+        with l0.DefaultTypeLevelFloatValues[T]
+        with l0.DefaultTypeLevelDoubleValues[T]
+        with l0.TypeLevelFieldAccessInstructions
+        with l0.TypeLevelInvokeInstructions
+        with l0.DefaultTypeLevelLongValues[T]
+        with l0.DefaultReferenceValuesBinding[T]
+        with IgnoreMethodResults
+        with IgnoreSynchronization {
 
     /**
-     * List of reports recorded during the domain evaluation.
+     * We're only interested in certain specific values (0 and -1). Thus, we don't need
+     * to track values that are known to be within some range a..b at all.
      */
-    var reports: List[PCReport] = List.empty
-
-    /**
-     * Add a report to the recorder's list of reports.
-     *
-     * @param pc The program counter to report.
-     * @param message The message string to report.
-     */
-    private def addReport(pc: PC, message: Option[String]) = {
-        if (message.isDefined) {
-            reports = new PCReport(pc, message.get) :: reports
-        }
-    }
+    override def maxSpreadInteger: Int = 0
 
     /**
      * DomainValue matcher to allow matching IntegerValues.
      */
-    private object IntValue {
+    object IntValue {
         /**
          * unapply() method to allowing this object to be used as pattern matcher.
          *
@@ -86,54 +84,27 @@ private trait RecordBitNops extends PreciseIntegerValues[Method] {
         }
     }
 
-    /**
-     * Overrides the domain's ior() callback in order to look for certain bit OR
-     * operations.
-     *
-     * @param pc The current program counter.
-     * @param l The left hand side operand.
-     * @param r The right hand side operand.
-     * @return The result of the bit OR operation.
-     */
-    abstract override def ior(pc: PC, l: DomainValue, r: DomainValue): DomainValue = {
-        addReport(pc, (l, r) match {
-            case (IntValue(0), _) ⇒
+    def checkForNop(insn: Instruction, l: DomainValue, r: DomainValue): Option[String] = {
+        (insn, l, r) match {
+            case (IOR, IntValue(0), _) ⇒
                 Some("0 | x: bit or operation with 0 left operand is useless")
-            case (IntValue(-1), _) ⇒
+            case (IOR, IntValue(-1), _) ⇒
                 Some("-1 | x: bit or operation with -1 left operand always returns -1")
-            case (_, IntValue(0)) ⇒
+            case (IOR, _, IntValue(0)) ⇒
                 Some("x | 0: bit or operation with 0 right operand is useless")
-            case (_, IntValue(-1)) ⇒
+            case (IOR, _, IntValue(-1)) ⇒
                 Some("x | -1: bit or operation with -1 right operand always returns -1")
-            case _ ⇒
-                None
-        })
-        super.ior(pc, l, r)
-    }
-
-    /**
-     * Overrides the domain's iand() callback in order to look for certain bit AND
-     * operations.
-     *
-     * @param pc The current program counter.
-     * @param l The left hand side operand.
-     * @param r The right hand side operand.
-     * @return The result of the bit AND operation.
-     */
-    abstract override def iand(pc: PC, l: DomainValue, r: DomainValue): DomainValue = {
-        addReport(pc, (l, r) match {
-            case (IntValue(0), _) ⇒
+            case (IAND, IntValue(0), _) ⇒
                 Some("0 & x: bit and operation with 0 left operand always returns 0")
-            case (IntValue(-1), _) ⇒
+            case (IAND, IntValue(-1), _) ⇒
                 Some("-1 & x: bit and operation with -1 left operand is useless")
-            case (_, IntValue(0)) ⇒
+            case (IAND, _, IntValue(0)) ⇒
                 Some("x & 0: bit and operation with 0 right operand always returns 0")
-            case (_, IntValue(-1)) ⇒
+            case (IAND, _, IntValue(-1)) ⇒
                 Some("x & -1: bit and operation with -1 right operand is useless")
             case _ ⇒
                 None
-        })
-        super.ior(pc, l, r)
+        }
     }
 }
 
@@ -161,11 +132,11 @@ class BitNops[S]
 
         import AnalysesHelpers.pcToOptionalLineNumber
 
-        // Build a list of reports per method, then flatten that to get the overall list
-        // of reports.
-        (for {
+        var reports: List[LineAndColumnBasedReport[S]] = List.empty
+
+        for {
             classFile ← project.classFiles
-            method ← classFile.methods if method.body.isDefined
+            method @ MethodWithBody(body) ← classFile.methods
 
             // Only run AI if the method body contains the instructions we're looking for.
             //
@@ -188,24 +159,35 @@ class BitNops[S]
             // aspectj: 20m24s
             //   axion:    21s
             //
-            if method.body.get.instructions.exists {
-                case IOR | IAND ⇒ true;
-                case _          ⇒ false;
+            if body.instructions.exists {
+                case IOR | IAND ⇒ true
+                case _          ⇒ false
             }
-        } yield {
-            // Uses a domain with RecordBitNops to find no-ops in the method
-            val domain = new DefaultConfigurableDomain(method) with RecordBitNops
-            BaseAI(classFile, method, domain)
+        } {
+            val domain = new BitNopsDomain(method)
+            val results = BaseAI(classFile, method, domain)
 
-            // Turn the reports collected by RecordBitNops into
-            // LineAndColumnBasedReports
-            domain.reports.map(report ⇒
-                new LineAndColumnBasedReport(
-                    project.source(classFile.thisType),
-                    Severity.Info,
-                    pcToOptionalLineNumber(method.body.get, report.pc),
-                    None,
-                    report.message))
-        }).flatten
+            for {
+                pcWithInsn @ ((_, IOR) | (_, IAND)) ← results.code.associateWithIndex
+                pc = pcWithInsn._1
+                operands = results.operandsArray(pc)
+                if operands != null // can be null for unreached instructions (dead code from AI+Domain's POV)
+                l = operands.tail.head
+                r = operands.head
+                report = domain.checkForNop(pcWithInsn._2, l, r)
+                if report.isDefined
+            } {
+                reports =
+                    new LineAndColumnBasedReport(
+                        project.source(classFile.thisType),
+                        Severity.Info,
+                        pcToOptionalLineNumber(body, pc),
+                        None,
+                        report.get
+                    ) :: reports
+            }
+        }
+
+        reports
     }
 }

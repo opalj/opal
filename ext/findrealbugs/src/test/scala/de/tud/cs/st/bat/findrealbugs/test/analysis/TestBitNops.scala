@@ -52,134 +52,146 @@ class TestBitNops extends AnalysisTest {
 
     behavior of "BitNops"
 
-    it should "detect a useless 0 | x operation at BitNops/Or:41" in {
+    it should "detect a useless 0 | x operation at BitNops/Or:44" in {
         reports should contain(
             LineAndColumnBasedReport(
                 project.source(ObjectType("BitNops/Or")),
                 Severity.Info,
-                Some(41), None,
+                Some(44),
+                None,
                 "0 | x: bit or operation with 0 left operand is useless"))
     }
 
-    it should "detect a useless x | 0 operation at BitNops/Or:46" in {
+    it should "detect a useless x | 0 operation at BitNops/Or:49" in {
         reports should contain(
             LineAndColumnBasedReport(
                 project.source(ObjectType("BitNops/Or")),
                 Severity.Info,
-                Some(46), None,
+                Some(49),
+                None,
                 "x | 0: bit or operation with 0 right operand is useless"))
     }
 
-    it should "detect a useless 0 | 0 operation at BitNops/Or:52" in {
+    it should "detect a useless 0 | 0 operation at BitNops/Or:55" in {
         reports should (
             contain(LineAndColumnBasedReport(
                 project.source(ObjectType("BitNops/Or")),
                 Severity.Info,
-                Some(52), None,
+                Some(55),
+                None,
                 "0 | x: bit or operation with 0 left operand is useless"))
             or contain(LineAndColumnBasedReport(
                 project.source(ObjectType("BitNops/Or")),
                 Severity.Info,
-                Some(52), None,
+                Some(55),
+                None,
                 "x | 0: bit or operation with 0 right operand is useless")))
     }
 
-    it should "detect a -1 | x operation at BitNops/Or:57" in {
+    it should "detect a -1 | x operation at BitNops/Or:60" in {
         reports should contain(
             LineAndColumnBasedReport(
                 project.source(ObjectType("BitNops/Or")),
                 Severity.Info,
-                Some(57), None,
+                Some(60),
+                None,
                 "-1 | x: bit or operation with -1 left operand always returns -1"))
     }
 
-    it should "detect a x | -1 operation at BitNops/Or:62" in {
+    it should "detect a x | -1 operation at BitNops/Or:65" in {
         reports should contain(
             LineAndColumnBasedReport(
                 project.source(ObjectType("BitNops/Or")),
                 Severity.Info,
-                Some(62), None,
+                Some(65),
+                None,
                 "x | -1: bit or operation with -1 right operand always returns -1"))
     }
 
-    it should "detect a -1 | -1 operation at BitNops/Or:68" in {
+    it should "detect a -1 | -1 operation at BitNops/Or:71" in {
         reports should (
             contain(LineAndColumnBasedReport(
                 project.source(ObjectType("BitNops/Or")),
                 Severity.Info,
-                Some(68), None,
+                Some(71),
+                None,
                 "-1 | x: bit or operation with -1 left operand always returns -1"))
             or contain(LineAndColumnBasedReport(
                 project.source(ObjectType("BitNops/Or")),
                 Severity.Info,
-                Some(68), None,
+                Some(71),
+                None,
                 "x | -1: bit or operation with -1 right operand always returns -1")))
     }
 
-    it should "detect a useless 0 & x operation at BitNops/And:41" in {
+    it should "detect a useless 0 & x operation at BitNops/And:44" in {
         reports should contain(
             LineAndColumnBasedReport(
                 project.source(ObjectType("BitNops/And")),
                 Severity.Info,
-                Some(41), None,
+                Some(44),
+                None,
                 "0 & x: bit and operation with 0 left operand always returns 0"))
     }
 
-    it should "detect a useless x & 0 operation at BitNops/And:46" in {
+    it should "detect a useless x & 0 operation at BitNops/And:49" in {
         reports should contain(
             LineAndColumnBasedReport(
                 project.source(ObjectType("BitNops/And")),
                 Severity.Info,
-                Some(46), None,
+                Some(49),
+                None,
                 "x & 0: bit and operation with 0 right operand always returns 0"))
     }
 
-    it should "detect a useless 0 & 0 operation at BitNops/And:52" in {
+    it should "detect a useless 0 & 0 operation at BitNops/And:55" in {
         reports should (
             contain(LineAndColumnBasedReport(
                 project.source(ObjectType("BitNops/And")),
                 Severity.Info,
-                Some(52), None,
+                Some(55),
+                None,
                 "0 & x: bit and operation with 0 left operand always returns 0"))
             or contain(LineAndColumnBasedReport(
                 project.source(ObjectType("BitNops/And")),
                 Severity.Info,
-                Some(52), None,
+                Some(55),
+                None,
                 "x & 0: bit and operation with 0 right operand always returns 0")))
     }
 
-    it should "detect a -1 & x operation at BitNops/And:57" in {
+    it should "detect a -1 & x operation at BitNops/And:60" in {
         reports should contain(
             LineAndColumnBasedReport(
                 project.source(ObjectType("BitNops/And")),
                 Severity.Info,
-                Some(57),
+                Some(60),
                 None,
                 "-1 & x: bit and operation with -1 left operand is useless"))
     }
 
-    it should "detect a x & -1 operation at BitNops/And:62" in {
+    it should "detect a x & -1 operation at BitNops/And:65" in {
         reports should contain(
             LineAndColumnBasedReport(
                 project.source(ObjectType("BitNops/And")),
                 Severity.Info,
-                Some(62),
+                Some(65),
                 None,
                 "x & -1: bit and operation with -1 right operand is useless"))
     }
 
-    it should "detect a -1 & -1 operation at BitNops/And:68" in {
+    it should "detect a -1 & -1 operation at BitNops/And:71" in {
         reports should (
             contain(LineAndColumnBasedReport(
                 project.source(ObjectType("BitNops/And")),
                 Severity.Info,
-                Some(68),
+                Some(71),
                 None,
                 "-1 & x: bit and operation with -1 left operand is useless"))
             or contain(LineAndColumnBasedReport(
                 project.source(ObjectType("BitNops/And")),
                 Severity.Info,
-                Some(68),
+                Some(71),
                 None,
                 "x & -1: bit and operation with -1 right operand is useless")))
     }
