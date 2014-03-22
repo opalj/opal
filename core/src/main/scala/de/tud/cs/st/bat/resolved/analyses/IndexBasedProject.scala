@@ -37,8 +37,6 @@ package analyses
 
 import util.graphs.{ Node, toDot }
 
-import reader.Java7Framework
-
 import java.net.URL
 
 /**

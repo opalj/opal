@@ -37,8 +37,6 @@ package analyses
 
 import util.graphs.{ Node, toDot }
 
-import reader.Java7Framework
-
 import java.net.URL
 import java.io.File
 
@@ -56,7 +54,7 @@ import java.io.File
  * Implementations of the `ProjektLike` trait need to be thread-safe.
  *
  * @note
- *    This project abstraction does not support (incremenatl) project updates.
+ *    This project abstraction does not support (incremental) project updates.
  *    Furthermore, it makes use of some global, internal counters. Hence, if you want
  *    to analyze multiple projects in a row, it is highly recommended to analyze the
  *    different projects by associating BAT/each analysis with a different `ClassLoader`.
@@ -91,6 +89,9 @@ abstract class ProjectLike[Source] extends (ObjectType ⇒ Option[ClassFile]) {
 
     /**
      * Returns true if the given class file belongs to the library part of the project.
+     * This is only the case if the class file was explicitly identified as being
+     * part of the library. By default all class files are considered to belong the
+     * code base that will be analyzed.
      */
     def isLibraryType(classFile: ClassFile): Boolean
 
@@ -258,14 +259,6 @@ private object ProjectLike {
             println("for further details.")
             print(RESET)
         }
-    }
-
-    /**
-     * Given a reference to a class file, jar file or a folder containing jar and class
-     * files, all class files will be loaded and a project will be returned.
-     */
-    def createProject(file: File): ProjectLike[URL] = {
-        IndexBasedProject[URL](Java7Framework.ClassFiles(file))
     }
 }
 
