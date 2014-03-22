@@ -33,7 +33,7 @@
 package de.tud.cs.st.bat
 package resolved
 
-import reader.Java7Framework.ClassFiles
+import reader.Java8Framework.ClassFiles
 import analyses.IndexBasedProject
 import instructions._
 

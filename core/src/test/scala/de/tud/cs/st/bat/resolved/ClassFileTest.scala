@@ -42,7 +42,7 @@ import org.scalatest.ParallelTestExecution
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class ClassFileTest extends FunSuite with ParallelTestExecution {
 
-    import reader.Java7Framework.ClassFile
+    import reader.Java8Framework.ClassFile
 
     val codeJARFile = TestSupport.locateTestResources("classfiles/Code.jar")
     val cf1 = ClassFile(codeJARFile, "code/ImmutableList.class")

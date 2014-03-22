@@ -45,7 +45,7 @@ import org.scalatest.FlatSpec
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class ClassFileReaderTest extends FlatSpec with Matchers {
 
-    import Java7Framework.ClassFiles
+    import Java8Framework.ClassFiles
 
     behavior of "ClassFile reader"
 

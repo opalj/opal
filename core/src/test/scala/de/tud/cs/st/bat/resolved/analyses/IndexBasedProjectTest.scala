@@ -41,7 +41,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Matchers
 import org.scalatest.ParallelTestExecution
 
-import reader.Java7Framework.ClassFiles
+import reader.Java8Framework.ClassFiles
 
 /**
  * Tests the support for "project" related functionality.

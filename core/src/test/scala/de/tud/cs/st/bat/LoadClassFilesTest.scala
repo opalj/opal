@@ -46,7 +46,7 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.ParallelTestExecution
 
-import resolved.reader.Java7Framework.ClassFile
+import resolved.reader.Java8Framework.ClassFile
 import util.ControlAbstractions._
 
 /**

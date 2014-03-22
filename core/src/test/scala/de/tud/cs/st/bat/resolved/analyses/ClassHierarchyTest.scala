@@ -37,7 +37,7 @@ package analyses
 
 import util.{ Answer, Yes, No, Unknown }
 
-import reader.Java7Framework.ClassFiles
+import reader.Java8Framework.ClassFiles
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner

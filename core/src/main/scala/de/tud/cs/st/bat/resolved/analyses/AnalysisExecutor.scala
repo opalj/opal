@@ -35,8 +35,8 @@ package bat
 package resolved
 package analyses
 
-import reader.Java7Framework
-import reader.Java7LibraryFramework
+import reader.Java8Framework
+import reader.Java8LibraryFramework
 
 import java.net.URL
 import java.io.File
@@ -153,7 +153,7 @@ trait AnalysisExecutor {
         val (classFiles, exceptions1) =
             reader.readClassFiles(
                 cpFiles,
-                Java7Framework.ClassFiles,
+                Java8Framework.ClassFiles,
                 (file) ⇒ println("\t"+file))
 
         val (libraryClassFiles, exceptions2) = {
@@ -161,7 +161,7 @@ trait AnalysisExecutor {
                 println("Reading library class files (found in):")
                 reader.readClassFiles(
                     libcpFiles,
-                    Java7LibraryFramework.ClassFiles,
+                    Java8LibraryFramework.ClassFiles,
                     (file) ⇒ println("\t"+file))
             } else {
                 (Iterable.empty[(ClassFile, URL)], List.empty[Throwable])
