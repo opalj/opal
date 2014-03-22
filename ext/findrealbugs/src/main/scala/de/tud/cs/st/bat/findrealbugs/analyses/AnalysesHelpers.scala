@@ -68,9 +68,8 @@ object AnalysesHelpers {
     def getReadFields(classFiles: Traversable[ClassFile]): Traversable[ReadFieldInfo] = {
         for {
             classFile ← classFiles if !classFile.isInterfaceDeclaration
-            method ← classFile.methods if method.body.isDefined
-            FieldReadAccess(declaringClass,
-                name, fieldType) ← method.body.get.instructions
+            method @ MethodWithBody(body) ← classFile.methods
+            FieldReadAccess(declaringClass, name, fieldType) ← body.instructions
         } yield {
             ((classFile, method), (declaringClass, name, fieldType))
         }

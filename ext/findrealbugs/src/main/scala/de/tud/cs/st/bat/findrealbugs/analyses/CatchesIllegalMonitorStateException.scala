@@ -59,11 +59,14 @@ class CatchesIllegalMonitorStateException[Source]
      * @return Whether the method has an exception handler for the given exception.
      */
     private def catchesException(method: Method, exception: ObjectType): Boolean = {
-        method.body.isDefined &&
-            method.body.get.exceptionHandlers.exists {
-                case ExceptionHandler(_, _, _, Some(`exception`)) ⇒ true
-                case _ ⇒ false
-            }
+        method match {
+            case MethodWithBody(body) ⇒
+                body.exceptionHandlers.exists {
+                    case ExceptionHandler(_, _, _, Some(`exception`)) ⇒ true
+                    case _ ⇒ false
+                }
+            case _ ⇒ false
+        }
     }
 
     /**

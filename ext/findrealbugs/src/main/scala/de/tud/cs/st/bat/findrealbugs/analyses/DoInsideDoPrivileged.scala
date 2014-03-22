@@ -84,9 +84,9 @@ class DoInsideDoPrivileged[Source]
             classFile ← project.classFiles
             if !classFile.interfaceTypes.contains(PriviledgedActionType) &&
                 !classFile.interfaceTypes.contains(PriviledgedExceptionActionType)
-            method ← classFile.methods if method.body.isDefined
+            method @ MethodWithBody(body) ← classFile.methods
             (_, INVOKEVIRTUAL(ReflectFieldType | ReflectMethodType,
-                "setAccessible", _)) ← method.body.get.associateWithIndex
+                "setAccessible", _)) ← body.associateWithIndex
         } yield {
             MethodBasedReport(
                 project.source(classFile.thisType),

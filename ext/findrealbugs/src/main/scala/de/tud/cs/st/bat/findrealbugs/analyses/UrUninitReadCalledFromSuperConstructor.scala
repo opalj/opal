@@ -150,12 +150,11 @@ class UrUninitReadCalledFromSuperConstructor[Source]
 
         for {
             classFile ← project.classFiles
-            method ← classFile.methods
+            method @ MethodWithBody(body) ← classFile.methods
             if !method.isStatic &&
-                method.body.isDefined &&
                 method.name != "<init>" &&
                 isOverridingMethod(classFile, method)
-            GETFIELD(declaringClass, fieldName, fieldType) ← method.body.get.instructions
+            GETFIELD(declaringClass, fieldName, fieldType) ← body.instructions
             constructor ← classFile.constructors
             if declaresField(classFile, fieldName, fieldType)
             superConstructor ← findCalledSuperConstructor(constructor)
