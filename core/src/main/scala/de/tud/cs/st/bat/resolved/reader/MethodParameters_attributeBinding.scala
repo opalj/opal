@@ -32,20 +32,43 @@
  */
 package de.tud.cs.st
 package bat
+package resolved
+package reader
+
+import reflect.ClassTag
+
+import de.tud.cs.st.bat.reader.MethodParameters_attributeReader
 
 /**
- * Enumeration of all class file structures that can have attributes.
+ * Implements the factory methods to create line number tables and their entries.
  *
  * @author Michael Eichberg
  */
-object AttributesParent extends Enumeration {
+trait MethodParameters_attributeBinding
+        extends MethodParameters_attributeReader
+        with ConstantPoolBinding
+        with AttributeBinding {
 
-    val ClassFile = Value
-    
-    val Field = Value
-    
-    val Method = Value
-    
-    val Code = Value
+    type MethodParameter = de.tud.cs.st.bat.resolved.MethodParameter
+    override val MethodParameterManifest: ClassTag[MethodParameter] = implicitly
+
+    type MethodParameters_attribute = de.tud.cs.st.bat.resolved.MethodParameterTable
+
+    override def MethodParameters_attribute(
+        attribute_name_index: Constant_Pool_Index,
+        attribute_length: Int,
+        parameters: MethodParameters)(
+            implicit constant_pool: Constant_Pool): MethodParameters_attribute = {
+        new MethodParameterTable(parameters)
+    }
+
+    override def MethodParameter(
+        name_index: Constant_Pool_Index,
+        access_flags: Int)(
+            implicit constant_pool: Constant_Pool): MethodParameter = {
+        new MethodParameter(name_index.asString, access_flags)
+    }
 
 }
+
+

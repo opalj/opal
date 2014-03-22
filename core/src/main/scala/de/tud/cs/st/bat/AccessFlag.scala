@@ -227,3 +227,8 @@ object ACC_ENUM extends AccessFlag {
     override def toString = "ENUM"
 }
 
+object ACC_MANDATED extends AccessFlag {
+    final override val javaName: Option[String] = None
+    final override val mask = 0x8000
+    override def toString = "MANDATED"
+}

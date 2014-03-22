@@ -32,20 +32,13 @@
  */
 package de.tud.cs.st
 package bat
+package resolved
 
 /**
- * Enumeration of all class file structures that can have attributes.
+ * The description of a method parameter.
  *
  * @author Michael Eichberg
  */
-object AttributesParent extends Enumeration {
-
-    val ClassFile = Value
-    
-    val Field = Value
-    
-    val Method = Value
-    
-    val Code = Value
-
-}
+case class MethodParameter(
+    name: String,
+    access_flags: Int) 

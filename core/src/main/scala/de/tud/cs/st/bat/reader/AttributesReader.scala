@@ -83,35 +83,39 @@ trait AttributesReader
      * ==Names of the Attributes==
      * <b>Java 1/2</b>Attributes:<br/>
      * <ul>
-     * <li> ConstantValue_attribute </li>
-     * <li> Exceptions_attribute </li>
-     * <li> InnerClasses_attribute </li>
-     * <li> EnclosingMethod_attribute </li>
-     * <li> Synthetic_attribute </li>
-     * <li> SourceFile_attribute </li>
-     * <li> LineNumberTable_attribute </li>
-     * <li> LocalVariableTable_attribute </li>
-     * <li> LocalVariableTypeTable_attribute </li>
-     * <li> Deprecated_attribute </li>
-     * <li> Code_attribute => (CodeReader) </li>
+     * <li>ConstantValue_attribute </li>
+     * <li>Exceptions_attribute </li>
+     * <li>InnerClasses_attribute </li>
+     * <li>EnclosingMethod_attribute </li>
+     * <li>Synthetic_attribute </li>
+     * <li>SourceFile_attribute </li>
+     * <li>LineNumberTable_attribute </li>
+     * <li>LocalVariableTable_attribute </li>
+     * <li>LocalVariableTypeTable_attribute </li>
+     * <li>Deprecated_attribute </li>
+     * <li>Code_attribute => (CodeReader) </li>
      * </ul>
      * <b>Java 5</b>Attributes:<br />
      * <ul>
-     * <li> Signature_attribute </li>
-     * <li> SourceDebugExtension_attribute </li>
-     * <li> RuntimeVisibleAnnotations_attribute </li>
-     * <li> RuntimeInvisibleAnnotations_attribute </li>
-     * <li> RuntimeVisibleParameterAnnotations_attribute </li>
-     * <li> RuntimeInvisibleParameterAnnotations_attribute </li>
-     * <li> AnnotationDefault_attribute </li>
+     * <li>Signature_attribute </li>
+     * <li>SourceDebugExtension_attribute </li>
+     * <li>RuntimeVisibleAnnotations_attribute </li>
+     * <li>RuntimeInvisibleAnnotations_attribute </li>
+     * <li>RuntimeVisibleParameterAnnotations_attribute </li>
+     * <li>RuntimeInvisibleParameterAnnotations_attribute </li>
+     * <li>AnnotationDefault_attribute </li>
      * </ul>
      * <b>Java 6</b>Attributes:<br />
      * <ul>
-     * <li> StackMapTable_attribute </li>
+     * <li>StackMapTable_attribute </li>
      * </ul>
      * <b>Java 7</b>Attributes:<br />
      * <ul>
-     * <li> BootstrapMethods_attribute </li>
+     * <li>BootstrapMethods_attribute </li>
+     * </ul>
+     * <b>Java 8</b>Attributes:<br />
+     * <ul>
+     * <li>MethodParameters_attribute </li>
      * </ul>
      */
     private[this] var attributeReaders: Map[String, (AttributeParent, Constant_Pool, Constant_Pool_Index, DataInputStream) ⇒ Attribute] = Map()

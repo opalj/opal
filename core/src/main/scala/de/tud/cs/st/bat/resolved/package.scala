@@ -69,6 +69,7 @@ package object resolved {
     type StackMapFrames = IndexedSeq[StackMapFrame]
     type VerificationTypeInfoLocals = IndexedSeq[VerificationTypeInfo]
     type VerificationTypeInfoStack = IndexedSeq[VerificationTypeInfo]
+    type MethodParameters = IndexedSeq[MethodParameter]
 
     type Fields = IndexedSeq[Field]
 

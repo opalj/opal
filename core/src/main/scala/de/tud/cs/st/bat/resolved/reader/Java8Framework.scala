@@ -32,20 +32,22 @@
  */
 package de.tud.cs.st
 package bat
+package resolved
+package reader
+
+import bat.reader.CodeReader
 
 /**
- * Enumeration of all class file structures that can have attributes.
+ * This "framework" can be used to read Java 8 (version 52) class files. All
+ * standard information (as defined in the Java Virtual Machine Specification)
+ * is represented.
  *
  * @author Michael Eichberg
  */
-object AttributesParent extends Enumeration {
+class Java8Framework
+    extends Java7Framework
+    with MethodParameters_attributeBinding
 
-    val ClassFile = Value
-    
-    val Field = Value
-    
-    val Method = Value
-    
-    val Code = Value
+object Java8Framework extends Java8Framework
 
-}
+
