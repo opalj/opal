@@ -42,15 +42,3 @@ package resolved
 case class LocalVariableTable(
     localVariables: LocalVariables)
         extends Attribute
-
-/**
- * An entry in a local variable table.
- *
- * @author Michael Eichberg
- */
-case class LocalVariable(
-    startPC: Int,
-    length: Int,
-    name: String,
-    fieldType: FieldType,
-    index: Int) 

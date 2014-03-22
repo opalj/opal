@@ -33,48 +33,15 @@
 package de.tud.cs.st
 package bat
 package resolved
-package reader
-
-import reflect.ClassTag
-
-import de.tud.cs.st.bat.reader.LocalVariableTable_attributeReader
 
 /**
- * The factory methods to create local variable tables and their entries.
+ * An entry in a local variable table.
  *
  * @author Michael Eichberg
  */
-trait LocalVariableTable_attributeBinding
-        extends LocalVariableTable_attributeReader
-        with ConstantPoolBinding
-        with AttributeBinding {
-
-    type LocalVariableTable_attribute = de.tud.cs.st.bat.resolved.LocalVariableTable
-    type LocalVariableTableEntry = de.tud.cs.st.bat.resolved.LocalVariable
-    override val LocalVariableTableEntryManifest: ClassTag[LocalVariable] = implicitly
-
-    override def LocalVariableTableEntry(
-        start_pc: Int,
-        length: Int,
-        name_index: Constant_Pool_Index,
-        descriptor_index: Constant_Pool_Index,
-        index: Int)(
-            implicit cp: Constant_Pool): LocalVariable = {
-        new LocalVariable(
-            start_pc,
-            length,
-            name_index.asString,
-            descriptor_index.asFieldType,
-            index)
-    }
-
-    override def LocalVariableTable_attribute(
-        attribute_name_index: Constant_Pool_Index,
-        attribute_length: Int,
-        local_variable_table: LocalVariables)(
-            implicit constant_pool: Constant_Pool): LocalVariableTable =
-        new LocalVariableTable(local_variable_table)
-
-}
-
-
+case class LocalVariable(
+    startPC: Int,
+    length: Int,
+    name: String,
+    fieldType: FieldType,
+    index: Int) 

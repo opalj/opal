@@ -35,12 +35,12 @@ package bat
 package resolved
 
 /**
- * Exception that is thrown when an analysis fails.
+ * Exception that is thrown when an analysis of a method's implementation has failed.
  *
  * @author Michael Eichberg
  */
 case class AnalysisFailedException(
     message: String,
     code: Code,
-    pc: Int) extends RuntimeException(message)
+    pc: PC) extends RuntimeException(message)
 

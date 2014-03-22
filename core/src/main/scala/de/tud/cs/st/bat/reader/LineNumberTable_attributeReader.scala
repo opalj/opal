@@ -61,10 +61,11 @@ trait LineNumberTable_attributeReader extends AttributeReader {
     type LineNumberTableEntry
     implicit val LineNumberTableEntryManifest: ClassTag[LineNumberTableEntry]
 
-    def LineNumberTable_attribute(attribute_name_index: Constant_Pool_Index,
-                                  attribute_length: Int,
-                                  line_number_table: LineNumbers)(
-                                      implicit constant_pool: Constant_Pool): LineNumberTable_attribute
+    def LineNumberTable_attribute(
+        attribute_name_index: Constant_Pool_Index,
+        attribute_length: Int,
+        line_number_table: LineNumbers)(
+            implicit constant_pool: Constant_Pool): LineNumberTable_attribute
 
     def LineNumberTableEntry(start_pc: Int, line_number: Int): LineNumberTableEntry
 
