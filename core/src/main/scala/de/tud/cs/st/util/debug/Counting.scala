@@ -36,10 +36,10 @@ package debug
 
 /**
  * Counts how often some piece of code is executed. Usually it is sufficient
- * to create an instance of this object and the execute some piece of code using
+ * to create an instance of this object and to execute some piece of code using
  * the function `time(Symbol,=>T)`. Afterwards it is possible to query this object
- * to detailed information about how often `time` was evaluated and abou the
- * accumulated time.
+ * to get detailed information: (1) how often the function given to `time` was evaluated
+ * and (2) about the accumulated time.
  *
  * @author Michael Eichberg
  */
@@ -47,20 +47,17 @@ class Counting extends PerformanceEvaluation {
 
     import scala.collection.mutable.Map
 
-    private[this] val count: Map[Symbol, Int] = Map()
+    private[this] val count: Map[Symbol, Int] = Map.empty
 
     /**
      * Times and counts the execution of `f` and associates the information with the
      * given symbol `s`.
      */
-    override protected[this] def doUpdateTimes(s: Symbol, duration: Long) : Unit = {
+    override protected[this] def doUpdateTimes(s: Symbol, duration: Long): Unit = {
         super.doUpdateTimes(s, duration)
         count.update(s, count.getOrElseUpdate(s, 0) + 1)
     }
 
-    /**
-     * Resets all information associated with the given symbol.
-     */
     override protected[this] def doReset(sym: Symbol): Unit = {
         super.reset(sym)
         count.update(sym, 0)
