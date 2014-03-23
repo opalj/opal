@@ -41,4 +41,4 @@ package resolved
  */
 case class MethodParameter(
     name: String,
-    access_flags: Int) 
+    access_flags: Int)
