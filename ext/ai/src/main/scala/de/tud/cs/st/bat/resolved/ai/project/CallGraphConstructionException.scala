@@ -51,6 +51,22 @@ case class CallGraphConstructionException(
 
     import Console._
 
+    def toFullString: String = {
+        var message = "While analyzing: "+classFile.thisType.toJava+"{ "+method.toJava+" }\n\t"
+        val realCause =
+            cause match {
+                case ife: InterpretationFailedException[_] ⇒
+                    message += "[the abstract interpretation failed] reason:\n\t"
+                    ife.cause
+                case _ ⇒
+                    cause
+            }
+
+        message += realCause.toString
+        message += realCause.getStackTrace().map(_.toString()).mkString("\n\t", "\n\t", "")
+        message
+    }
+
     override def toString: String = {
         val realCause =
             cause match {
