@@ -34,54 +34,86 @@ package de.tud.cs.st
 package util
 
 import language.experimental.macros
-
 import reflect.ClassTag
 import reflect.macros.Context
 import reflect.api.Trees
-
 import java.io.InputStream
+import java.io.Closeable
 
 /**
- * Defines additional control abstractions. 
- * 
+ * Defines additional control abstractions.
+ *
  * ==Usage==
  * To use the control abstractions, it is sufficient to import them:
- * 
+ *
  * @example
  * {{{
  *  import ControlAbstractions.repeat
  *  val result = repeat(5) { System.nanoTime }
  * }}}
- *   
+ *
  *
  * @author Michael Eichberg
  */
 object ControlAbstractions {
 
-    /**
-     * This function takes a function `f` that creates a new `Closeable` resource
-     * (`f` is a named parameter) and a function `r` that will processes the input stream
-     * after it was created by this function.
-     * This function takes care of the correct handling of input streams.
-     * When `r` has finished processing the input stream, the stream is closed.
-     * If `f` returns `null`, `null` is passed to `r`.
-     */
-    def process[I <: { def close(): Unit }, T](f: ⇒ I)(r: I ⇒ T): T = {
-        import language.reflectiveCalls
+    // [DELETE ME - 2014/03/23]
+    //    /**
+    //     * This function takes a function `f` that creates a new `Closeable` resource
+    //     * (`f` is a named parameter) and a function `r` that will processes the input stream
+    //     * after it was created by this function.
+    //     * This function takes care of the correct handling of input streams.
+    //     * When `r` has finished processing the input stream, the stream is closed.
+    //     * If `f` returns `null`, `null` is passed to `r`.
+    //     */
+    //    def process[I <: { def close(): Unit }, T](f: ⇒ I)(r: I ⇒ T): T = {
+    //        import language.reflectiveCalls
+    //
+    //        val in = f
+    //        try {
+    //            r(in)
+    //        } finally {
+    //            if (in != null) in.close()
+    //        }
+    //    }
 
-        val in = f
+    /**
+     * This function takes a `Closeable` resource and a function `r` that will
+     * processes the closable resource.
+     * This function takes care of the correct handling of closable resources.
+     * When `r` has finished processing the resource, the resource is closed.
+     * If `closable` is `null`, `null` is passed to `r`.
+     */
+    def process[C <: Closeable, T](closable: C)(r: C ⇒ T): T = {
+        // creating the closeable (I) in the try block doesn't make sense, hence
+        // we don't need a by-name parameter.
         try {
-            r(in)
+            r(closable)
         } finally {
-            if (in != null) in.close()
+            if (closable != null) closable.close()
+        }
+    }
+
+    /**
+     * This function takes a `Source`  and a function `r` that will
+     * processes the source.
+     * This function takes care of the correct handling of resources.
+     * When `r` has finished processing the source, the source is closed.
+     * If `source` is `null`, `null` is passed to `r`.
+     */
+    def processSource[C <: scala.io.Source, T](source: C)(r: C ⇒ T): T = {
+        try {
+            r(source)
+        } finally {
+            if (source != null) source.close()
         }
     }
 
     /**
      * Iterates over a given array `a` and calls the given function `f` for
      * each non-null value in the array.
-     * 
-     * '''This is a macro.''' 
+     *
+     * '''This is a macro.'''
      */
     def foreachNonNullValueOf[T <: AnyRef](
         a: Array[T])(
@@ -98,8 +130,8 @@ object ControlAbstractions {
      * }
      * }}}
      *
-     * '''This is a macro.''' 
-     * 
+     * '''This is a macro.'''
+     *
      * @param times The number of times the expression `f` is evaluated. The `times`
      *      expression is evaluated exactly once.
      * @param f An expression that is evaluated the given number of times unless an
