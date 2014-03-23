@@ -235,7 +235,9 @@ object IndexBasedProject {
         import ExecutionContext.Implicits.global
 
         val classHierarchyFuture: Future[ClassHierarchy] = future {
-            ClassHierarchy(classFiles.view.map(_._1))
+            ClassHierarchy(
+                classFiles.view.map(_._1) ++ libraryClassFiles.view.map(_._1)
+            )
         }
 
         val classes = new Array[ClassFile](ObjectType.objectTypesCount)
