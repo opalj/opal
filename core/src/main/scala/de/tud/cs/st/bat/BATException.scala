@@ -31,6 +31,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package de.tud.cs.st
+package bat
 
 /**
  * Exception that is thrown if some error is detected that is most likely the
