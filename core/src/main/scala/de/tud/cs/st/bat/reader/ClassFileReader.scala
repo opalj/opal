@@ -45,12 +45,12 @@ import java.util.zip.ZipInputStream
  * sources (Streams, Files, JAR archives).
  *
  * This library supports class files from version 45 (Java 1.1) up to
- * version 51 (Java 7).
+ * version 52 (Java 8).
  *
  * ==Notes for Implementors==
  * Reading of the class file's major structures: the constant pool, fields, methods
- * the set of implemented interfaces, and the attributes is
- * delegated to special readers. This enables a very high-level of adaptability.
+ * and the attributes is delegated to special readers.
+ * This enables a very high-level of adaptability.
  *
  * ==Class File Structure==
  * <pre>
@@ -90,7 +90,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     type ClassFile
 
     /**
-     * The type of the object that represents a class's fields.
+     * The type of the object that represents the fields of a class.
      */
     type Fields
 
@@ -117,7 +117,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     /**
      * Reads the constant pool using the given stream.
      *
-     * When this method is called, the given stream has to be positioned at the very
+     * When this method is called the given stream has to be positioned at the very
      * beginning of the constant pool. This method is called by the template method that
      * reads in a class file to delegate the reading of the constant pool. Only
      * information belonging to the constant pool are allowed to be read.
@@ -129,20 +129,19 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     /**
      * Reads the information which interfaces are implemented/extended.
      *
-     * The given stream is positioned
-     * directly before a class file's "interfaces_count" field. This method is called by the
-     * template method that reads in a class file to delegate the reading of the
-     * extended interfaces.
+     * The given stream is positioned directly before a class file's "interfaces_count"
+     * field.
+     * This method is called by the template method that reads in a class file to
+     * delegate the reading of the extended interfaces.
      */
     protected def Interfaces(in: DataInputStream, cp: Constant_Pool): Interfaces
 
     /**
      * Reads all field declarations using the given stream and constant pool.
      *
-     * The given stream is positioned
-     * directly before a class file's "fields_count" field. This method is called by the
-     * template method that reads in a class file to delegate the reading of the
-     * declared fields.
+     * The given stream is positioned directly before a class file's "fields_count" field.
+     * This method is called by the template method that reads in a class file to
+     * delegate the reading of the declared fields.
      */
     protected def Fields(in: DataInputStream, cp: Constant_Pool): Fields
 
@@ -159,16 +158,18 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     /**
      * Reads all attributes using the given stream and constant pool.
      *
-     * The given stream is positioned directly before a class file's "attributes_count" field.
-     * This method is called by the template method that reads in a class file to delegate the
-     * reading of the attributes.
+     * The given stream is positioned directly before a class file's "attributes_count"
+     * field.
+     * This method is called by the template method that reads in a class file to
+     * delegate the reading of the attributes.
      *
      * '''From the Specification'''
      *
      * The attributes [...] appearing in the attributes table of a ClassFile
      * structure are the InnerClasses, EnclosingMethod, Synthetic, Signature,
      * SourceFile, SourceDebugExtension, Deprecated, RuntimeVisibleAnnotations,
-     * RuntimeInvisibleAnnotations, and BootstrapMethods attributes.
+     * RuntimeInvisibleAnnotations, BootstrapMethods, RuntimeVisibleTypeAnnotations,
+     * and RuntimeInvisibleTypeAnnotations attributes.
      */
     protected def Attributes(
         ap: AttributeParent,
@@ -208,14 +209,19 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     }
 
     /**
-     * Template method to read in a Java class file from the given input stream.
+     * Template method that reads a Java class file from the given input stream.
      *
-     * @param in The DataInputStream from which the class file will be read. The
+     * @param in The `DataInputStream from which the class file will be read. The
      *    stream is not closed by this method.
+     *    '''It is highly recommended that the stream is buffered; otherwise the
+     *    performance will be terrible!'''
      */
     def ClassFile(in: DataInputStream): ClassFile = {
         // magic
-        require(CLASS_FILE_MAGIC == in.readInt, "No Java class file.")
+        val readMagic = in.readInt
+        require(
+            CLASS_FILE_MAGIC == readMagic,
+            "No Java class file ("+readMagic+"; expected 0xCAFEBABE).")
 
         val minor_version = in.readUnsignedShort
         val major_version = in.readUnsignedShort
@@ -244,10 +250,11 @@ trait ClassFileReader extends Constant_PoolAbstractions {
             attributes
         )(cp)
 
-        // perform transformations that are specific to this class file
+        // Perform transformations that are specific to this class file.
+        // (Used, e.g., to finally resolve the invokedynamic instructions.) 
         classFile = applyDeferredActions(classFile, cp)
 
-        // perform general transformations on class files
+        // Perform general transformations on class files.
         classFilePostProcessors foreach { postProcessor ⇒
             classFile = postProcessor(classFile)
         }
@@ -260,37 +267,29 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     //
 
     /**
-     * Reads in a class file from `InputStream`.
+     * Reads in a class file.
      *
      * @param create A function that creates a new `InputStream` and
      *  which must not return `null`. If you already do have an open input stream
      *  which should not be closed after reading the class file use
-     *  `de.tud.cs.st.bat.reader.ClassFileReader.ClassFile(DataInputStream)` instead.
-     *  The (newly created) InputStream returned by calling `create` is closed by this method.
-     *  The created input stream will automatically be wrapped by BAT to enable efficient reading of the
-     *  class file.
+     *  `...ClassFileReader.ClassFile(java.io.DataInputStream) : ClassFile` instead.
+     *  The (newly created) `InputStream` returned by calling `create` is closed by
+     *  this method.
+     *  The created input stream will automatically be wrapped by BAT to enable
+     *  efficient reading of the class file.
      */
     def ClassFile(create: () ⇒ InputStream): ClassFile = {
         process(create() match {
-            case dis: DataInputStream ⇒ dis
-            case is                   ⇒ new DataInputStream(new BufferedInputStream(is))
-        }) {
-            ClassFile(_)
-        }
+            case dis: DataInputStream     ⇒ dis
+            case bis: BufferedInputStream ⇒ new DataInputStream(bis)
+            case is                       ⇒ new DataInputStream(new BufferedInputStream(is))
+        }) { in ⇒ ClassFile(in) }
     }
 
     protected[this] def ClassFile(jarFile: ZipFile, jarEntry: ZipEntry): ClassFile = {
-        ClassFile(() ⇒ jarFile.getInputStream(jarEntry))
-    }
-
-    /**
-     * Reads in a single class file from a Jar file.
-     *
-     * @param jarFileName the name of an existing ZIP/JAR file that contains class files.
-     * @param jarFileEntryName the name of a class file stored in the specified ZIP/JAR file.
-     */
-    def ClassFile(jarFileName: String, jarFileEntryName: String): ClassFile = {
-        ClassFile(new File(jarFileName), jarFileEntryName)
+        process(
+            new DataInputStream(new BufferedInputStream(jarFile.getInputStream(jarEntry)))
+        ) { in ⇒ ClassFile(in) }
     }
 
     /**
@@ -299,17 +298,39 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      * @param jarFile an existing ZIP/JAR file that contains class files.
      * @param jarFileEntryName the name of a class file stored in the specified ZIP/JAR file.
      */
+    @throws[java.io.IOException]("if the file is empty or the entry cannot be found")
     def ClassFile(jarFile: File, jarFileEntryName: String): ClassFile = {
+        if (jarFile.length() == 0)
+            throw new java.io.IOException("the file "+jarFile+" is empty")
+
         process { new ZipFile(jarFile) } { zf ⇒
             val jarEntry = zf.getEntry(jarFileEntryName)
+            if (jarEntry == null)
+                throw new java.io.IOException(
+                    "the file "+jarFile+" does not contain "+jarFileEntryName)
             ClassFile(zf, jarEntry)
         }
     }
 
     /**
-     * Reads in parallel all class files stored in the given zip file.
+     * Reads in a single class file from a Jar file.
+     *
+     * @param jarFileName the name of an existing ZIP/JAR file that contains class files.
+     * @param jarFileEntryName the name of a class file stored in the specified ZIP/JAR file.
      */
-    def ClassFiles(jarFile: ZipFile): Seq[(ClassFile, URL)] = {
+    @throws[java.io.IOException]("if the file is empty or the entry cannot be found")
+    def ClassFile(jarFilename: String, jarFileEntryName: String): ClassFile = {
+        ClassFile(new File(jarFilename), jarFileEntryName)
+    }
+
+    /**
+     * Reads in parallel all class files stored in the given jar/zip file.
+     *
+     * @param jarFile A reference of a valid (non-empty) ZipFile.
+     */
+    def ClassFiles(
+        jarFile: ZipFile,
+        exceptionHandler: (Exception) ⇒ Unit): Seq[(ClassFile, URL)] = {
         val mutex = new Object
         var classFiles: List[(ClassFile, URL)] = Nil
 
@@ -318,15 +339,8 @@ trait ClassFileReader extends Constant_PoolAbstractions {
                 classFiles = (cf, url) :: classFiles
             }
         }
-        //        def addClassFile(jf: ZipFile, je: ZipEntry, cf: ClassFile) = {
-        //            val jarFileURL = new File(jf.getName()).toURI().toURL().toExternalForm()
-        //            val url = new URL("jar:"+jarFileURL+"!/"+je.getName())
-        //            mutex.synchronized {
-        //                classFiles = (cf, url) :: classFiles
-        //            }
-        //        }
 
-        ClassFiles(jarFile, addClassFile)
+        ClassFiles(jarFile, addClassFile, exceptionHandler)
         classFiles
     }
 
@@ -346,7 +360,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     def ClassFiles(
         jarFile: ZipFile,
         classFileHandler: (ClassFile, URL) ⇒ Unit,
-        exceptionHandler: (Exception) ⇒ Unit = e ⇒ Console.err.println(e)) {
+        exceptionHandler: (Exception) ⇒ Unit) {
         val jarFileURL = new File(jarFile.getName()).toURI().toURL().toExternalForm()
         ClassFiles(
             "jar:"+jarFileURL+"!/",
@@ -363,8 +377,8 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         exceptionHandler: (Exception) ⇒ Unit) {
 
         import scala.collection.JavaConversions._
-        for (jarEntry ← jarFile.entries.toIterable.par) {
-            if (!jarEntry.isDirectory) {
+        for { jarEntry ← jarFile.entries.toIterable.par } {
+            if (!jarEntry.isDirectory && jarEntry.getSize() > 0) {
                 val jarEntryName = jarEntry.getName
                 if (jarEntryName.endsWith(".class")) {
                     try {
@@ -397,24 +411,19 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         exceptionHandler: (Exception) ⇒ Unit): Unit = {
         val pathToEntry = jarFileURL.substring(0, jarFileURL.length - 3)
         val entry = pathToEntry.substring(pathToEntry.lastIndexOf('/') + 1)
-        val jarFile = File.createTempFile(entry, ".zip")
-
-        process { new java.io.FileOutputStream(jarFile) } { fout ⇒
-            fout.write(jarData)
-        }
-        ClassFiles(jarFileURL, new ZipFile(jarFile), classFileHandler, exceptionHandler)
         try {
+            val jarFile = File.createTempFile(entry, ".zip")
+
+            process { new java.io.FileOutputStream(jarFile) } { fout ⇒
+                fout.write(jarData)
+            }
+            ClassFiles(jarFileURL, new ZipFile(jarFile), classFileHandler, exceptionHandler)
+
             jarFile.delete()
         } catch {
-            case e: Exception ⇒ Console.err.println("Failed deleting temporary file: "+e.getMessage())
+            case e: Exception ⇒ exceptionHandler(e)
         }
     }
-
-    /**
-     * Reads all class files from the given jar file.
-     */
-    def ClassFiles(jarFileName: String): Seq[(ClassFile, URL)] =
-        process(new ZipFile(jarFileName)) { zf ⇒ ClassFiles(zf) }
 
     /**
      * Loads class files from the given file location. If the file denotes
@@ -426,24 +435,39 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      * all class files in parallel. However, this does not effect analyses working on the
      * resulting `Seq`.
      */
-    def ClassFiles(file: File): Seq[(ClassFile, URL)] = {
+    def ClassFiles(
+        file: File,
+        exceptionHandler: (Exception) ⇒ Unit = ClassFileReader.defaultExceptionHandler): Seq[(ClassFile, URL)] = {
         if (file.isFile()) {
-            if (file.getName.endsWith(".jar")) {
-                return ClassFiles(file.getAbsoluteFile.getPath)
+            val filename = file.getName
+            if (file.length() == 0) {
+                Nil
+            } else if (filename.endsWith(".jar")) {
+                process(new ZipFile(file)) { zf ⇒
+                    ClassFiles(zf, exceptionHandler)
+                }
+            } else if (filename.endsWith(".class")) {
+                try {
+                    process(new DataInputStream(new BufferedInputStream(new FileInputStream(file)))) { in ⇒
+                        List((ClassFile(in), file.toURI().toURL()))
+                    }
+                } catch {
+                    case e: Exception ⇒
+                        exceptionHandler(e)
+                        Nil
+                }
+            } else {
+                Nil
             }
-
-            if (file.getName.endsWith(".class"))
-                return List(
-                    (
-                        ClassFile(() ⇒ new FileInputStream(file)),
-                        file.toURI().toURL()
-                    )
-                )
-
-            return Nil
+        } else /* if (file.isDirectory) */ {
+            (
+                for (innerFile ← file.listFiles().par)
+                    yield ClassFiles(innerFile, exceptionHandler)
+            ).flatten.seq
         }
-
-        // file.isDirectory
-        (for (innerFile ← file.listFiles().par) yield ClassFiles(innerFile)).seq.flatten
     }
+}
+private object ClassFileReader {
+    final val defaultExceptionHandler: (Exception) ⇒ Unit = (e) ⇒
+        e.printStackTrace(Console.err)
 }

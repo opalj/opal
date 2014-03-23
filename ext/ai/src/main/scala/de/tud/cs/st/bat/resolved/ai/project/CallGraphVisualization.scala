@@ -100,7 +100,7 @@ object CallGraphVisualization {
                     }
                     val classFiles =
                         try {
-                            reader.Java7Framework.ClassFiles(file)
+                            reader.Java8Framework.ClassFiles(file)
                         } catch {
                             case e: Exception ⇒
                                 println(RED+"cannot read file: "+e.getMessage() + RESET)

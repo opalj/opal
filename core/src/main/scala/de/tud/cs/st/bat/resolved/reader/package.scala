@@ -55,28 +55,25 @@ package object reader {
      */
     def read(
         args: Iterable[String],
-        classFilesReader: File ⇒ Iterable[(ClassFile, URL)]): (Iterable[(ClassFile, URL)], List[Throwable]) = {
+        classFilesReader: (File, (Exception) ⇒ Unit) ⇒ Iterable[(ClassFile, URL)]): (Iterable[(ClassFile, URL)], List[Exception]) = {
         readClassFiles(args.map(new File(_)), classFilesReader)
     }
 
     def readClassFiles(
         files: Iterable[File],
-        classFilesReader: File ⇒ Iterable[(ClassFile, URL)],
-        perArg: File ⇒ Unit = (f: File) ⇒ { /*do nothing*/ }): (Iterable[(ClassFile, URL)], List[Throwable]) = {
-        var exceptions: List[Throwable] = Nil
-        val allClassFiles = for (file ← files) yield {
-            try {
-                perArg(file)
-                classFilesReader(file)
-            } catch {
-                case ct: scala.util.control.ControlThrowable ⇒
-                    throw ct
-                case t: Throwable ⇒
-                    exceptions ::= t
-                    Iterable.empty[(ClassFile, java.net.URL)]
-            }
+        classFilesReader: (File, (Exception) ⇒ Unit) ⇒ Iterable[(ClassFile, URL)],
+        perArg: File ⇒ Unit = (f: File) ⇒ { /*do nothing*/ }): (Iterable[(ClassFile, URL)], List[Exception]) = {
+        val exceptionsMutex = new Object
+        var exceptions: List[Exception] = Nil
+        def addException(e: Exception) {
+            exceptionsMutex.synchronized { exceptions = e :: exceptions }
         }
-        (allClassFiles.flatten, exceptions)
+
+        val allClassFiles = for (file ← files.par) yield {
+            perArg(file)
+            classFilesReader(file, addException)
+        }
+        (allClassFiles.flatten.seq, exceptions)
     }
 }
 

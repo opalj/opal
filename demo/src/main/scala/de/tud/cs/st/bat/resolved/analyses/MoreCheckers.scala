@@ -41,29 +41,29 @@ import util.debug.{ Counting, PerformanceEvaluation }
 import reader.Java7Framework.ClassFiles
 
 /**
-  * Implementation of some simple static analyses to demonstrate the flexibility
-  * and power offered by Scala and BAT when analyzing class files.
-  *
-  * The implemented static analyses are inspired by Findbugs
-  * (http://findbugs.sourceforge.net/bugDescriptions.html).
-  * <ul>
-  * <li>0-FINDBUGS: CI: Class is final but declares protected field (CI_CONFUSED_INHERITANCE) // http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/ConfusedInheritance.java</li>
-  * <li>2-FINDBUGS: CN: Class implements Cloneable but does not define or use clone method (CN_IDIOM)</li>
-  * <li>2-FINDBUGS: CN: clone method does not call super.clone() (CN_IDIOM_NO_SUPER_CALL)</li>
-  * <li>2-FINDBUGS: CN: Class defines clone() but doesn't implement Cloneable (CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE)
-  * <li>1-FINDBUGS: Co: Abstract class defines covariant compareTo() method (CO_ABSTRACT_SELF)</li>
-  * <li>1-FINDBUGS: Co: Covariant compareTo() method defined (CO_SELF_NO_OBJECT)</li>
-  * <li>0-FINDBUGS: Dm: Explicit garbage collection; extremely dubious except in benchmarking code (DM_GC)</li>
-  * <li>1-FINDBUGS: Dm: Method invokes dangerous method runFinalizersOnExit (DM_RUN_FINALIZERS_ON_EXIT)</li>
-  * <li>1-FINDBUGS: Eq: Abstract class defines covariant equals() method (EQ_ABSTRACT_SELF)</li>
-  * <li>0-FINDBUGS: FI: Finalizer should be protected, not public (FI_PUBLIC_SHOULD_BE_PROTECTED)</li>
-  * <li>0-FINDBUGS: Se: Class is Serializable but its superclass doesn't define a void constructor (SE_NO_SUITABLE_CONSTRUCTOR)</li>
-  * <li>0-FINDBUGS: UuF: Unused field (UUF_UNUSED_FIELD)</li>
-  * <li>0-FINDBUGS: (IMSE_DONT_CATCH_IMSE) http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/DontCatchIllegalMonitorStateException.java</li>
-  * </ul>
-  *
-  * @author Michael Eichberg
-  */
+ * Implementation of some simple static analyses to demonstrate the flexibility
+ * and power offered by Scala and BAT when analyzing class files.
+ *
+ * The implemented static analyses are inspired by Findbugs
+ * (http://findbugs.sourceforge.net/bugDescriptions.html).
+ * <ul>
+ * <li>0-FINDBUGS: CI: Class is final but declares protected field (CI_CONFUSED_INHERITANCE) // http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/ConfusedInheritance.java</li>
+ * <li>2-FINDBUGS: CN: Class implements Cloneable but does not define or use clone method (CN_IDIOM)</li>
+ * <li>2-FINDBUGS: CN: clone method does not call super.clone() (CN_IDIOM_NO_SUPER_CALL)</li>
+ * <li>2-FINDBUGS: CN: Class defines clone() but doesn't implement Cloneable (CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE)
+ * <li>1-FINDBUGS: Co: Abstract class defines covariant compareTo() method (CO_ABSTRACT_SELF)</li>
+ * <li>1-FINDBUGS: Co: Covariant compareTo() method defined (CO_SELF_NO_OBJECT)</li>
+ * <li>0-FINDBUGS: Dm: Explicit garbage collection; extremely dubious except in benchmarking code (DM_GC)</li>
+ * <li>1-FINDBUGS: Dm: Method invokes dangerous method runFinalizersOnExit (DM_RUN_FINALIZERS_ON_EXIT)</li>
+ * <li>1-FINDBUGS: Eq: Abstract class defines covariant equals() method (EQ_ABSTRACT_SELF)</li>
+ * <li>0-FINDBUGS: FI: Finalizer should be protected, not public (FI_PUBLIC_SHOULD_BE_PROTECTED)</li>
+ * <li>0-FINDBUGS: Se: Class is Serializable but its superclass doesn't define a void constructor (SE_NO_SUITABLE_CONSTRUCTOR)</li>
+ * <li>0-FINDBUGS: UuF: Unused field (UUF_UNUSED_FIELD)</li>
+ * <li>0-FINDBUGS: (IMSE_DONT_CATCH_IMSE) http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/DontCatchIllegalMonitorStateException.java</li>
+ * </ul>
+ *
+ * @author Michael Eichberg
+ */
 object MoreCheckers {
 
     import PerformanceEvaluation.{ time, memory }
@@ -133,7 +133,7 @@ object MoreCheckers {
         val classFiles = memory {
             val cf = for (
                 zipFile ← jarFiles; // if { println("Reading: "+zipFile); true };
-                (classFile, _) ← ClassFiles(zipFile)
+                (classFile, _ /* drop urls */ ) ← ClassFiles(new java.io.File(zipFile))
             ) yield {
                 classFilesCount += 1
                 classFile
@@ -163,15 +163,14 @@ object MoreCheckers {
             val cloneable = ObjectType("java/lang/Cloneable")
             if (classHierarchy.isKnown(cloneable)) {
                 for {
-                    cloneables ← classHierarchy.allSubtypes(cloneable,false)
+                    cloneables ← classHierarchy.allSubtypes(cloneable, false)
                     classFile ← getClassFile.get(cloneable).toList
                     if !classFile.methods.exists({
                         case Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object)) ⇒ true;
                         case _ ⇒ false;
                     })
                 } yield classFile.thisType.fqn
-            }
-            else
+            } else
                 List.empty[String]
         } { t ⇒ collect("CN_IDIOM", t /*nsToSecs(t)*/ ) }
         println(", "+cloneableNoClone.size)
@@ -211,7 +210,7 @@ object MoreCheckers {
             // we will not be able to identify this issue unless we have identified the whole
             // class hierarchy.
             for {
-                comparable ← classHierarchy.allSubtypes(ObjectType("java/lang/Comparable"),false)
+                comparable ← classHierarchy.allSubtypes(ObjectType("java/lang/Comparable"), false)
                 classFile ← getClassFile.get(comparable).toList
                 method @ Method(_, "compareTo", MethodDescriptor(Seq(parameterType), IntegerType)) ← classFile.methods
                 if parameterType != ObjectType("java/lang/Object")
@@ -302,7 +301,7 @@ object MoreCheckers {
         //        }
         val classesWithoutDefaultConstructor = time {
             for (
-                serializableClasses ← classHierarchy.allSubtypes(ObjectType("java/io/Serializable"),false);
+                serializableClasses ← classHierarchy.allSubtypes(ObjectType("java/io/Serializable"), false);
                 superclass ← classHierarchy.allSupertypes(serializableClasses) if getClassFile.isDefinedAt(superclass) && // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available
                     {
                         val superClassFile = getClassFile(superclass)
