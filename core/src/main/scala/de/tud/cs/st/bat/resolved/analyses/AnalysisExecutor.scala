@@ -54,7 +54,7 @@ import java.io.File
  * This class distinguishes between class files belonging to the code base under
  * analysis and those that belong to the libraries. Those belonging to the libraries
  * are loaded using the `ClassFileReader` for library classes (basically, all method
- * bodies are skipped [[de.tud.cs.st.bat.resolved.reader.Java7LibaryFramework]]).
+ * bodies are skipped [[de.tud.cs.st.bat.resolved.reader.Java8LibraryFramework]]).
  * The parameter to specify library classes is `-libcp=`, the parameter to specify
  * the "normal" classpath is `-cp=`.
  *
