@@ -49,13 +49,17 @@ class ClassFileReaderTest extends FlatSpec with Matchers {
 
     behavior of "ClassFile reader"
 
-    val codeJARFile = TestSupport.locateTestResources("classfiles/AttributesAndCode.jar")
-    val classFiles = ClassFiles(codeJARFile)
-
     it should "be able to read class files stored in jar files stored within jar files (nested jar files)" in {
-        if (!classFiles.exists(_._1.fqn == "attributes/DeprecatedByAnnotation"))
+        val codeJARFile = TestSupport.locateTestResources("classfiles/AttributesAndCode.jar")
+        if (!ClassFiles(codeJARFile).exists(_._1.fqn == "attributes/DeprecatedByAnnotation"))
             fail("could not find the class attributes.DeprecatedByAnnotation")
 
+    }
+
+    it should "not crash when trying to read an empty (0-byte) .jar" in {
+        val emptyJARFile = TestSupport.locateTestResources("classfiles/Empty.jar")
+        emptyJARFile.length() should be(0)
+        ClassFiles(emptyJARFile) should be(empty)
     }
 
 }

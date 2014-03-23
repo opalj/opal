@@ -67,7 +67,10 @@ class LoadClassFilesTest extends FlatSpec with Matchers {
 
     for {
         file ← TestSupport.locateTestResources("classfiles").listFiles
-        if (file.isFile && file.canRead && file.getName.endsWith(".jar"))
+        if file.isFile
+        if file.canRead
+        if file.getName.endsWith(".jar")
+        if file.length() > 0
     } {
         val jarFile = new ZipFile(file)
         val jarEntries = (jarFile).entries

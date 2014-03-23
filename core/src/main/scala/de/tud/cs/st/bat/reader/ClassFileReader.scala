@@ -326,7 +326,8 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     /**
      * Reads in parallel all class files stored in the given jar/zip file.
      *
-     * @param jarFile A reference of a valid (non-empty) ZipFile.
+     * @param jarFile Some valid (non-empty) jar File.
+     * @return The loaded class files.
      */
     def ClassFiles(
         jarFile: ZipFile,
@@ -404,6 +405,12 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         }
     }
 
+    /**
+     * Loads class files from an in-memory representation of a jar file given in form
+     * of a byte array.
+     * This is done by writing the jar file data to a temporary file and then loading
+     * the class files from it as done with any other jar file.
+     */
     private def ClassFiles(
         jarFileURL: String,
         jarData: Array[Byte],
