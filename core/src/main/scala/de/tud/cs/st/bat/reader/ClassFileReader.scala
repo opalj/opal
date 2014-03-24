@@ -445,7 +445,9 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     def ClassFiles(
         file: File,
         exceptionHandler: (Exception) ⇒ Unit = ClassFileReader.defaultExceptionHandler): Seq[(ClassFile, URL)] = {
-        if (file.isFile()) {
+		if (!file.exists()) {
+			Nil
+        } else if (file.isFile()) {
             val filename = file.getName
             if (file.length() == 0) {
                 Nil
@@ -466,12 +468,17 @@ trait ClassFileReader extends Constant_PoolAbstractions {
             } else {
                 Nil
             }
-        } else /* if (file.isDirectory) */ {
-            (
-                for (innerFile ← file.listFiles().par)
-                    yield ClassFiles(innerFile, exceptionHandler)
-            ).flatten.seq
-        }
+        } else /* if(file.isDirectory()) */  {
+			val files = file.listFiles()
+			if (files != null) {
+				(
+                	for (innerFile ← files.par)
+                    	yield ClassFiles(innerFile, exceptionHandler)
+				).flatten.seq
+			} else {
+				Nil
+			}			
+		} 
     }
 }
 private object ClassFileReader {
