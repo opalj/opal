@@ -112,7 +112,9 @@ object FindRealBugs {
         ("UnusedPrivateFields" ->
             new UnusedPrivateFields[URL]),
         ("UrUninitReadCalledFromSuperConstructor" ->
-            new UrUninitReadCalledFromSuperConstructor[URL])
+            new UrUninitReadCalledFromSuperConstructor[URL]),
+        ("UselessIncrementInReturn" ->
+            new UselessIncrementInReturn[URL])
     )
 
     /**

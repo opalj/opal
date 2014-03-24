@@ -362,7 +362,7 @@ trait PreciseIntegerValues[+I]
             IntegerValue(pc)
         }
 
-    override def iinc(pc: PC, value: DomainValue, increment: Int) =
+    override def iinc(pc: PC, value: DomainValue, increment: Int): DomainValue =
         value match {
             case v: IntegerValue ⇒
                 v.update(v.value + increment)
