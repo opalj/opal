@@ -83,8 +83,8 @@ class SerializableNoSuitableConstructor[Source]
                 project.source(superClass),
                 Severity.Error,
                 superClass,
-                "Is superclass of a Serializable class but does not "+
-                    "define a zero-arguments constructor.")
+                "Is a superclass of a Serializable class ("+serializableClass.fqn+
+                    ") but does not define a zero-arguments constructor.")
         }
     }
 }
