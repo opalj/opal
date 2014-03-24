@@ -31,51 +31,22 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package de.tud.cs.st
-
-import java.io.File
+package bat
+package resolved
+package instructions
 
 /**
- * Various helper methods.
+ * An instruction that stores a primitive value in an array of primitive values.
  *
  * @author Michael Eichberg
  */
-package object util {
+abstract class PrimitiveArrayStoreInstruction extends ArrayAccessInstruction {
 
-    /**
-     * Writes the given string (`data`) to a temporary file using the given prefix and suffix.
-     * Afterwards the system's native application that claims to be able to handle
-     * files with the given suffix is opened. If this fails, the string is printed to
-     * the console.
-     * @param filenamePrefix A string the identifies the content of the file. (E.g.,
-     *      "ClassHierarchy" or "CHACallGraph")
-     * @param filenameSuffix The suffix of the file that identifies the used file format.
-     * @return The name of the file if it was possible to write the file and open
-     *   the native application.
-     */
-    def writeAndOpenDesktopApplication(
-        data: String,
-        filenamePrefix: String,
-        filenameSuffix: String): Option[File] = {
+    final override def runtimeExceptions: List[ObjectType] =
+        PrimitiveArrayAccess.runtimeExceptions
 
-        import ControlAbstractions._
+    final override def nextInstructions(currentPC: PC, code: Code): PCs =
+        Instruction.nextInstructionOrExceptionHandlers(
+            this, currentPC, code, PrimitiveArrayAccess.runtimeExceptions)
 
-        try {
-            val desktop = java.awt.Desktop.getDesktop()
-            val file = java.io.File.createTempFile(filenamePrefix, filenameSuffix)
-            process { new java.io.FileOutputStream(file) } { fos ⇒
-                fos.write(data.getBytes("UTF-8"))
-            }
-            desktop.open(file)
-            Some(file)
-        } catch {
-            case ct: scala.util.control.ControlThrowable ⇒ throw ct
-            case t: Throwable ⇒ {
-                Console.err.println(
-                    "An exception occured while writing/opening the file: "+
-                        t.getLocalizedMessage())
-                println(data)
-                None
-            }
-        }
-    }
 }

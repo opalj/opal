@@ -40,7 +40,7 @@ import reflect.ClassTag
 import de.tud.cs.st.bat.reader.MethodParameters_attributeReader
 
 /**
- * Implements the factory methods to create line number tables and their entries.
+ * Implements the factory methods to create method parameter tables and their entries.
  *
  * @author Michael Eichberg
  */
@@ -68,7 +68,6 @@ trait MethodParameters_attributeBinding
             implicit constant_pool: Constant_Pool): MethodParameter = {
         new MethodParameter(name_index.asString, access_flags)
     }
-
 }
 
 
