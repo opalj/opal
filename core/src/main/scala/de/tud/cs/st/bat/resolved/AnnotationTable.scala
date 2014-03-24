@@ -37,6 +37,10 @@ package resolved
 /**
  * The runtime (in)visible annotations of a class, method, or field.
  *
+ * @note At the JVM level, repeating annotations 
+ *     [[http://docs.oracle.com/javase/tutorial/java/annotations/type_annotations.html]]
+ *     have no explicit support.
+ *     For further information go to: [[http://cr.openjdk.java.net/~abuckley/8misc.pdf]].
  * @author Michael Eichberg
  */
 trait AnnotationTable extends Attribute {
