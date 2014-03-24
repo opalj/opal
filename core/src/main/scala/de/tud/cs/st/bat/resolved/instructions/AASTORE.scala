@@ -40,7 +40,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case object AASTORE extends ArrayAccessInstruction {
+case object AASTORE extends ArrayStoreInstruction {
 
     override def opcode: Int = 83
 
