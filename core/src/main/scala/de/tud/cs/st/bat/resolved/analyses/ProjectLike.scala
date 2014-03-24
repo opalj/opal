@@ -207,9 +207,19 @@ abstract class ProjectLike[Source] extends (ObjectType ⇒ Option[ClassFile]) {
     final val fieldCount = Field.fieldsCount
 
     /**
-     * This project's class files.
+     * All class files.
      */
     def classFiles: Iterable[ClassFile]
+
+    /**
+     * The class files that are the target of the analysis.
+     */
+    def projectClassFiles: Iterable[ClassFile]
+
+    /**
+     * The class files belonging to the library part.
+     */
+    def libraryClassFiles: Iterable[ClassFile]
 
     /**
      * Converts this project abstraction into a standard Java `HashMap`.
@@ -223,6 +233,13 @@ abstract class ProjectLike[Source] extends (ObjectType ⇒ Option[ClassFile]) {
         map
     }
 
+    /**
+     * Some basic statistics about this project.
+     * 
+     * (Calculated on-demand.)
+     */
+    def statistics: String
+    
     /**
      * This project's class hierarchy.
      */

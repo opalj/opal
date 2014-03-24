@@ -100,10 +100,13 @@ class IndexBasedProject[Source: reflect.ClassTag] private (
 
     import de.tud.cs.st.util.ControlAbstractions.foreachNonNullValueOf
 
-    /**
-     * This project's class files.
-     */
     override def classFiles: Iterable[ClassFile] = classesMap.view.filter(_ ne null)
+
+    override def projectClassFiles: Iterable[ClassFile] =
+        classesMap.view.filter(cf ⇒ (cf ne null) && !isLibraryType(cf))
+
+    override def libraryClassFiles: Iterable[ClassFile] =
+        classesMap.view.filter(cf ⇒ (cf ne null) && isLibraryType(cf))
 
     override def isLibraryType(classFile: ClassFile): Boolean = {
         libraryTypesMap(classFile.thisType.id)
@@ -186,7 +189,7 @@ class IndexBasedProject[Source: reflect.ClassTag] private (
         true
     }
 
-    def statistics: String = {
+    override def statistics: String = {
         val classFiles = classesMap.filter(_ != null)
         "Project Statistics:"+
             "\n\tClasses: "+classesMap.count(_ != null)+
