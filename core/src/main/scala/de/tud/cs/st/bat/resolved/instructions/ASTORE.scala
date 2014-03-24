@@ -45,8 +45,8 @@ case class ASTORE(
         extends StoreLocalVariableInstruction
         with ExplicitLocalVariableIndex {
 
-    def opcode: Int = 58
+    override def opcode: Int = 58
 
-    def mnemonic: String = "astore"
+    override def mnemonic: String = "astore"
 
 }
