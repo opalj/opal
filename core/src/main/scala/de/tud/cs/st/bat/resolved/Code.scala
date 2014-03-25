@@ -118,6 +118,12 @@ case class Code(
      */
     def lineNumberTable: Option[LineNumberTable] =
         attributes collectFirst { case lnt: LineNumberTable ⇒ lnt }
+		
+	/**
+	 * Returns the line number associated with the instruction with the given pc.
+	 */		
+    def lineNumber(pc : PC) : Option[Int] = 
+        lineNumberTable.flatMap(_.lookupLineNumber(pc))
 
     /**
      * Collects all local variable tables.
