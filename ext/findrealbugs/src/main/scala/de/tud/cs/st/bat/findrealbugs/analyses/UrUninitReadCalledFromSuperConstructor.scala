@@ -163,7 +163,7 @@ class UrUninitReadCalledFromSuperConstructor[Source]
                 calls(superConstructor, superClass.thisType, method)
         } yield {
             MethodBasedReport(
-                project.source(superClass.thisType),
+                project.source(classFile.thisType),
                 Severity.Error,
                 method,
                 "Called by super constructor ("+superClass.fqn+"), while the class' "+
