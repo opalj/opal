@@ -59,7 +59,8 @@ trait ConsoleTracer extends AITracer {
             pc+":"+instruction.toString(pc)+" [\n"+
                 operands.map { o ⇒
                     correctIndent(o)
-                }.mkString("\toperands:\n\t\t", "\n\t\t", "\n\t;\n") + locals.map { l ⇒
+                }.mkString("\toperands:\n\t\t", "\n\t\t", "\n\t;\n") +
+                locals.map { l ⇒
                     if (l eq null) "-" else l.toString
                 }.zipWithIndex.map { v ⇒
                     v._2+":"+correctIndent(v._1)
@@ -73,6 +74,7 @@ trait ConsoleTracer extends AITracer {
             alreadyEvaluated: List[PC],
             operandsArray: Array[List[domain.DomainValue]],
             localsArray: Array[Array[domain.DomainValue]]) {
+
         println(Console.BLACK_B + Console.WHITE+"Starting Code Analysis"+Console.RESET)
         println("Number of registers:      "+code.maxLocals)
         println("Size of operand stack:    "+code.maxStack)
@@ -82,7 +84,8 @@ trait ConsoleTracer extends AITracer {
     override def rescheduled(
         domain: SomeDomain)(
             sourcePC: PC,
-            targetPC: PC): Unit = {
+            targetPC: PC,
+            isExceptionalControlFlow: Boolean): Unit = {
         println(
             Console.CYAN_B + Console.RED+
                 "rescheduled the evaluation of the instruction with the program counter: "+
@@ -93,7 +96,8 @@ trait ConsoleTracer extends AITracer {
     override def flow(
         domain: SomeDomain)(
             currentPC: PC,
-            targetPC: PC) { /* ignored */ }
+            targetPC: PC,
+            isExceptionalControlFlow: Boolean) { /* ignored */ }
 
     override def join(
         domain: SomeDomain)(
@@ -185,5 +189,5 @@ trait ConsoleTracer extends AITracer {
             Console.RESET)
     }
 
-    override def result(result: AIResult) { /*ignored*/ }
+    override def result(result: AIResult): Unit = { /*ignored*/ }
 }

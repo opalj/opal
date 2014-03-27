@@ -52,7 +52,7 @@ trait DefaultStringValuesBinding[+I]
     // FACTORY METHODS
     //
 
-    override def StringValue(pc: PC, value: String): DomainObjectValue =
+    override def StringValue(pc: PC, value: String): DomainStringValue =
         new StringValue(pc, value)
 
 }

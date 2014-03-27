@@ -42,8 +42,9 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  */
 trait PreciseIntegerValues[+I]
         extends Domain[I]
-        with Configuration
+        with IntegerValuesProvider
         with IntegerValuesComparison {
+    this: Configuration ⇒
 
     // -----------------------------------------------------------------------------------
     //
@@ -118,7 +119,7 @@ trait PreciseIntegerValues[+I]
     // QUESTION'S ABOUT VALUES
     //
 
-    @inline final def getIntValue[T](
+    @inline final override def intValue[T](
         value: DomainValue)(
             f: Int ⇒ T)(
                 orElse: ⇒ T): T =
@@ -127,13 +128,19 @@ trait PreciseIntegerValues[+I]
             case _               ⇒ orElse
         }
 
-    @inline protected final def getIntValues[T](
+    @inline final override def intValueOption(value: DomainValue): Option[Int] =
+        value match {
+            case v: IntegerValue ⇒ Some(v.value)
+            case _               ⇒ None
+        }
+
+    @inline protected final def intValues[T](
         value1: DomainValue,
         value2: DomainValue)(
             f: (Int, Int) ⇒ T)(
                 orElse: ⇒ T): T =
-        getIntValue(value1) { v1 ⇒
-            getIntValue(value2) { v2 ⇒
+        intValue(value1) { v1 ⇒
+            intValue(value2) { v2 ⇒
                 f(v1, v2)
             } {
                 orElse
@@ -142,24 +149,24 @@ trait PreciseIntegerValues[+I]
             orElse
         }
 
-    override def areEqual(value1: DomainValue, value2: DomainValue): Answer =
-        getIntValues(value1, value2) { (v1, v2) ⇒ Answer(v1 == v2) } { Unknown }
+    override def intAreEqual(value1: DomainValue, value2: DomainValue): Answer =
+        intValues(value1, value2) { (v1, v2) ⇒ Answer(v1 == v2) } { Unknown }
 
-    override def isSomeValueInRange(
+    override def intIsSomeValueInRange(
         value: DomainValue,
         lowerBound: Int,
         upperBound: Int): Answer = {
         if (lowerBound == Int.MinValue && upperBound == Int.MaxValue)
             return Yes
 
-        getIntValue(value) { v ⇒
+        intValue(value) { v ⇒
             Answer(lowerBound <= v && v <= upperBound)
         } {
             Unknown
         }
     }
 
-    override def isSomeValueInRange(
+    override def intIsSomeValueInRange(
         value: DomainValue,
         lowerBound: DomainValue,
         upperBound: DomainValue): Answer = {
@@ -175,31 +182,31 @@ trait PreciseIntegerValues[+I]
         }
     }
 
-    override def isSomeValueNotInRange(
+    override def intIsSomeValueNotInRange(
         value: DomainValue,
         lowerBound: Int,
         upperBound: Int): Answer = {
         if (lowerBound == Int.MinValue && upperBound == Int.MaxValue)
             return No
 
-        getIntValue(value) { v ⇒
+        intValue(value) { v ⇒
             Answer(v < lowerBound || v > upperBound)
         } {
             Unknown
         }
     }
 
-    override def isLessThan(
+    override def intIsLessThan(
         smallerValue: DomainValue,
         largerValue: DomainValue): Answer =
-        getIntValues(smallerValue, largerValue) { (v1, v2) ⇒
+        intValues(smallerValue, largerValue) { (v1, v2) ⇒
             Answer(v1 < v2)
         } { Unknown }
 
-    override def isLessThanOrEqualTo(
+    override def intIsLessThanOrEqualTo(
         smallerOrEqualValue: DomainValue,
         equalOrLargerValue: DomainValue): Answer =
-        getIntValues(smallerOrEqualValue, equalOrLargerValue) { (v1, v2) ⇒
+        intValues(smallerOrEqualValue, equalOrLargerValue) { (v1, v2) ⇒
             Answer(v1 <= v2)
         } { Unknown }
 
@@ -213,7 +220,7 @@ trait PreciseIntegerValues[+I]
             locals.map { local ⇒ if (local eq oldValue) newValue else local }
         )
 
-    override def establishValue(
+    override def intEstablishValue(
         pc: PC,
         theValue: Int,
         value: DomainValue,
@@ -221,16 +228,16 @@ trait PreciseIntegerValues[+I]
         locals: Locals): (Operands, Locals) =
         updateValue(value, IntegerValue(pc, theValue), operands, locals)
 
-    override def establishAreEqual(
+    override def intEstablishAreEqual(
         pc: PC,
         value1: DomainValue,
         value2: DomainValue,
         operands: Operands,
         locals: Locals): (Operands, Locals) = {
-        getIntValue(value1) { v1 ⇒
+        intValue(value1) { v1 ⇒
             updateValue(value2, IntegerValue(pc, v1), operands, locals)
         } {
-            getIntValue(value2) { v2 ⇒
+            intValue(value2) { v2 ⇒
                 updateValue(value1, IntegerValue(pc, v2), operands, locals)
             } {
                 (operands, locals)
@@ -257,14 +264,14 @@ trait PreciseIntegerValues[+I]
     //
 
     override def iadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        getIntValues(value1, value2) { (v1, v2) ⇒
+        intValues(value1, value2) { (v1, v2) ⇒
             IntegerValue(pc, v1 + v2)
         } {
             IntegerValue(pc)
         }
 
     override def iand(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        getIntValues(value1, value2) { (v1, v2) ⇒
+        intValues(value1, value2) { (v1, v2) ⇒
             IntegerValue(pc, v1 & v2)
         } {
             IntegerValue(pc)
@@ -275,7 +282,7 @@ trait PreciseIntegerValues[+I]
         value1: DomainValue,
         value2: DomainValue): IntegerLikeValueOrArithmeticException = {
         import ObjectType.ArithmeticException
-        getIntValues(value1, value2) { (v1, v2) ⇒
+        intValues(value1, value2) { (v1, v2) ⇒
             if (v2 == 0)
                 ThrowsException(InitializedObjectValue(pc, ArithmeticException))
             else
@@ -291,14 +298,14 @@ trait PreciseIntegerValues[+I]
     }
 
     override def imul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        getIntValues(value1, value2) { (v1, v2) ⇒
+        intValues(value1, value2) { (v1, v2) ⇒
             IntegerValue(pc, v1 * v2)
         } {
             IntegerValue(pc)
         }
 
     override def ior(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        getIntValues(value1, value2) { (v1, v2) ⇒
+        intValues(value1, value2) { (v1, v2) ⇒
             IntegerValue(pc, v1 | v2)
         } {
             IntegerValue(pc)
@@ -309,7 +316,7 @@ trait PreciseIntegerValues[+I]
         value1: DomainValue,
         value2: DomainValue): IntegerLikeValueOrArithmeticException = {
         import ObjectType.ArithmeticException
-        getIntValues(value1, value2) { (v1, v2) ⇒
+        intValues(value1, value2) { (v1, v2) ⇒
             if (v2 == 0)
                 ThrowsException(InitializedObjectValue(pc, ArithmeticException))
             else
@@ -324,35 +331,35 @@ trait PreciseIntegerValues[+I]
     }
 
     override def ishl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        getIntValues(value1, value2) { (v1, v2) ⇒
+        intValues(value1, value2) { (v1, v2) ⇒
             IntegerValue(pc, v1 << v2)
         } {
             IntegerValue(pc)
         }
 
     override def ishr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        getIntValues(value1, value2) { (v1, v2) ⇒
+        intValues(value1, value2) { (v1, v2) ⇒
             IntegerValue(pc, v1 >> v2)
         } {
             IntegerValue(pc)
         }
 
     override def isub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        getIntValues(value1, value2) { (v1, v2) ⇒
+        intValues(value1, value2) { (v1, v2) ⇒
             IntegerValue(pc, v1 - v2)
         } {
             IntegerValue(pc)
         }
 
     override def iushr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        getIntValues(value1, value2) { (v1, v2) ⇒
+        intValues(value1, value2) { (v1, v2) ⇒
             IntegerValue(pc, v1 >>> v2)
         } {
             IntegerValue(pc)
         }
 
     override def ixor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        getIntValues(value1, value2) { (v1, v2) ⇒
+        intValues(value1, value2) { (v1, v2) ⇒
             IntegerValue(pc, v1 ^ v2)
         } {
             IntegerValue(pc)
@@ -373,21 +380,21 @@ trait PreciseIntegerValues[+I]
     //
 
     override def i2b(pc: PC, value: DomainValue): DomainValue =
-        getIntValue(value)(v ⇒ ByteValue(pc, v.toByte))(ByteValue(pc))
+        intValue(value)(v ⇒ ByteValue(pc, v.toByte))(ByteValue(pc))
 
     override def i2c(pc: PC, value: DomainValue): DomainValue =
-        getIntValue(value)(v ⇒ CharValue(pc, v.toChar))(CharValue(pc))
+        intValue(value)(v ⇒ CharValue(pc, v.toChar))(CharValue(pc))
 
     override def i2s(pc: PC, value: DomainValue): DomainValue =
-        getIntValue(value)(v ⇒ ShortValue(pc, v.toShort))(ShortValue(pc))
+        intValue(value)(v ⇒ ShortValue(pc, v.toShort))(ShortValue(pc))
 
     override def i2d(pc: PC, value: DomainValue): DomainValue =
-        getIntValue(value)(v ⇒ DoubleValue(pc, v.toDouble))(DoubleValue(pc))
+        intValue(value)(v ⇒ DoubleValue(pc, v.toDouble))(DoubleValue(pc))
 
     override def i2f(pc: PC, value: DomainValue): DomainValue =
-        getIntValue(value)(v ⇒ FloatValue(pc, v.toFloat))(FloatValue(pc))
+        intValue(value)(v ⇒ FloatValue(pc, v.toFloat))(FloatValue(pc))
 
     override def i2l(pc: PC, value: DomainValue): DomainValue =
-        getIntValue(value)(v ⇒ LongValue(pc, v.toLong))(LongValue(pc))
+        intValue(value)(v ⇒ LongValue(pc, v.toLong))(LongValue(pc))
 }
 

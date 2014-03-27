@@ -55,7 +55,7 @@ trait TypeLevelFieldAccessInstructionsWithNullPointerHandling { this: SomeDomain
         declaringClass: ObjectType,
         name: String,
         fieldType: FieldType): Computation[DomainValue, ExceptionValue] =
-        isNull(objectref) match {
+        refIsNull(objectref) match {
             case Yes ⇒ throws(NullPointerException(pc))
             case Unknown ⇒
                 ComputedValueAndException(
@@ -79,7 +79,7 @@ trait TypeLevelFieldAccessInstructionsWithNullPointerHandling { this: SomeDomain
         declaringClass: ObjectType,
         name: String,
         fieldType: FieldType): Computation[Nothing, ExceptionValue] =
-        isNull(objectref) match {
+        refIsNull(objectref) match {
             case Yes     ⇒ throws(NullPointerException(pc))
             case Unknown ⇒ ComputationWithSideEffectOrException(NullPointerException(pc))
             case No      ⇒ ComputationWithSideEffectOnly

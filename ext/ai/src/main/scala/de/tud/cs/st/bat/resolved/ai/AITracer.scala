@@ -42,8 +42,12 @@ import instructions._
  * A tracer is registered with an abstract interpreter by creating a new subclass of
  * `AI` and overriding the method `tracer`.
  *
- * @note In general, all mutable data structures (e.g. the current locals) passed
- *      to the tracer must not be mutated by it.
+ * @note In general, all mutable data structures (e.g. the current locals and the
+ *      operand stack) passed to the tracer should not be mutated as '''these data
+ *      structures are the original data structures on which the abstract interpreter
+ *      works and they are not copies'''.
+ *      However, using the `AITracer` it is possible to develop a debugger for BATAI and
+ *      to enable the user to perform certain mutations.
  *
  * @author Michael Eichberg
  */
@@ -54,7 +58,7 @@ trait AITracer {
      * specified code is performed.
      *
      * The tracer is not expected to make any changes to the data structures
-     * (operandsArray and localsArray). If the tracer makes such changes, it is
+     * (`operandsArray` and `localsArray`). If the tracer makes such changes, it is
      * the responsibility of the tracer to ensure that the updates are meaningful.
      * BATAI will not perform any checks.
      */
@@ -67,15 +71,14 @@ trait AITracer {
             localsArray: Array[Array[domain.DomainValue]])
 
     /**
-     * Called by BATAI before an instruction is evaluated.
+     * Called by BATAI always before an instruction is evaluated.
      *
      * This enables the tracer to precisely log the behavior of the abstract
      * interpreter, but also enables the tracer to interrupt the evaluation
      * to, e.g., enable stepping through a program.
      *
      * @param operands The operand stack before the execution of the instruction.
-     * @param locals The registers before the execution of the instruction. '''The Array
-     *      must not be mutated.'''
+     * @param locals The registers before the execution of the instruction.
      */
     def instructionEvalution(
         domain: SomeDomain)(
@@ -102,10 +105,11 @@ trait AITracer {
     def flow(
         domain: SomeDomain)(
             currentPC: PC,
-            targetPC: PC): Unit
+            targetPC: PC,
+            isExceptionalControlFlow: Boolean): Unit
 
     /**
-     * Called if the instruction with the targetPC was rescheduled. I.e., the
+     * Called if the instruction with the `targetPC` was rescheduled. I.e., the
      * instruction was already scheduled for evaluation in the future, but was now
      * rescheduled for a more immediate evaluation. I.e., it was moved to the first
      * position in the list that contains the instructions that will be evaluated.
@@ -117,7 +121,8 @@ trait AITracer {
     def rescheduled(
         domain: SomeDomain)(
             sourcePC: PC,
-            targetPC: PC): Unit
+            targetPC: PC,
+            isExceptionalControlFlow: Boolean): Unit
 
     /**
      * Called by BATAI whenever two paths converge and the values on the operand stack
@@ -142,17 +147,14 @@ trait AITracer {
             result: Update[(domain.Operands, domain.Locals)])
 
     /**
-     * Called when the analyzed method throws an exception (i.e., the interpreter
-     * evaluates an `athrow` instruction) that is not caught within
-     * the method.
+     * Called before a jump to a subroutine.
      */
-    def abruptMethodExecution(
-        domain: SomeDomain)(
-            pc: PC,
-            exception: domain.DomainValue)
+    def jumpToSubroutine(domain: SomeDomain)(pc: PC): Unit
 
     /**
-     * Called when a `RET` instruction is encountered.
+     * Called when a `RET` instruction is encountered. (That does not necessary imply
+     * that the evaluation of the subroutine as such has finished. It is possible
+     * that other paths still need to be pursued.)
      */
     def ret(
         domain: SomeDomain)(
@@ -162,18 +164,24 @@ trait AITracer {
             newWorklist: List[PC])
 
     /**
-     * Called before a jump to a subroutine.
-     */
-    def jumpToSubroutine(domain: SomeDomain)(pc: PC): Unit
-
-    /**
-     * Called when the evaluation of a subroutine (JSR/RET) is completed.
+     * Called when the evaluation of a subroutine (JSR/RET) as a whole is completed.
+     * I.e., all possible paths are analyzed and the fixpoint is reached.
      */
     def returnFromSubroutine(
         domain: SomeDomain)(
             pc: PC,
             returnAddress: PC,
             subroutineInstructions: List[PC]): Unit
+
+    /**
+     * Called when the analyzed method throws an exception (i.e., the interpreter
+     * evaluates an `athrow` instruction) that is not caught within
+     * the method.
+     */
+    def abruptMethodExecution(
+        domain: SomeDomain)(
+            pc: PC,
+            exception: domain.DomainValue)
 
     /**
      * Called by BATAI when the abstract interpretation of a method has completed/was

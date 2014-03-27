@@ -35,15 +35,20 @@ package debug
 import instructions.Instruction
 
 /**
- * A tracer that prints out the evaluation order on the console.
+ * A tracer that primarily prints out the evaluation order of the instructions on the
+ * console. This tracer is particularly useful to understand the handling of JSR/RET
+ * instructions.
  *
- * Every AI should have its own instance.
+ * ==Thread Safety==
+ * This tracer defines some internal state that is dependent on the evaluation state.
+ * Hence, '''this class is not thread safe and every AI should use its own instance'''.
  *
  * @author Michael Eichberg
  */
 trait ConsoleEvaluationTracer extends AITracer {
 
     private[this] var indent = 0
+    private[this] def printIndent = (0 until indent) foreach (i ⇒ print("\t"))
 
     override def instructionEvalution(
         domain: SomeDomain)(
@@ -65,12 +70,14 @@ trait ConsoleEvaluationTracer extends AITracer {
     override def rescheduled(
         domain: SomeDomain)(
             sourcePC: PC,
-            targetPC: PC): Unit = { /*EMPTY*/ }
+            targetPC: PC,
+            isExceptionalControlFlow: Boolean): Unit = { /*EMPTY*/ }
 
     override def flow(
         domain: SomeDomain)(
             currentPC: PC,
-            targetPC: PC): Unit = { /*EMPTY*/ }
+            targetPC: PC,
+            isExceptionalControlFlow: Boolean): Unit = { /*EMPTY*/ }
 
     override def join(
         domain: SomeDomain)(
@@ -85,8 +92,6 @@ trait ConsoleEvaluationTracer extends AITracer {
         domain: SomeDomain)(
             pc: Int,
             exception: domain.DomainValue): Unit = { /*EMPTY*/ }
-
-    private[this] def printIndent = (0 until indent) foreach (i ⇒ print("\t"))
 
     override def jumpToSubroutine(domain: SomeDomain)(pc: PC): Unit = {
         println
@@ -115,5 +120,5 @@ trait ConsoleEvaluationTracer extends AITracer {
             oldWorklist: List[PC],
             newWorklist: List[PC]): Unit = { /*EMPTY*/ }
 
-    override def result(result: AIResult) { /*EMPTY*/ }
+    override def result(result: AIResult): Unit = { /*EMPTY*/ }
 }

@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -42,13 +42,13 @@ import org.scalatest.Matchers
 
 /**
  * This system test(suite) just loads a very large number of class files and performs
- * an abstract interpretation of all methods. Basically, we test that we can load and
+ * an abstract interpretation of all methods. It basically tests if we can load and
  * process a large number of different classes without exceptions.
  *
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class BaseConfigurableDomainTest extends FlatSpec with Matchers {
+class DefaultConfigurableDomainTest extends FlatSpec with Matchers {
 
     import debug.InterpretMethods.interpret
 

@@ -46,13 +46,14 @@ import reader.Java7Framework
  */
 class CallGraphThreadSafetyTest extends FlatSpec with Matchers {
 
-    behavior of "the BATAICALLGRAPH"
-    def testFileName = "classfiles/simpleCallgraph.jar"
-    //def testFileName = "classfiles/callgraph.jar"
+    behavior of "BATAI's Call Graph Algorithm"
+
+    //def testFileName = "classfiles/simpleCallgraph.jar"
+    def testFileName = "classfiles/callgraph.jar"
     def testFilePath = "ext/ai"
     def testCallGraphAlgorithm = new CHACallGraphAlgorithmConfiguration()
 
-    val CallGraphInstances = 150
+    val CallGraphInstances = 50
 
     //
     // PROJECT SETUP
@@ -84,7 +85,9 @@ class CallGraphThreadSafetyTest extends FlatSpec with Matchers {
         //        println(callGraphs.head._1.calledByStatistics(50))
 
         // some prerequisites to make sure the test makes sense...
+        // the number of CallGraphs is as expected  
         callGraphs.size should be(CallGraphInstances)
+        // the CallGraphs are represented using different Objects
         callGraphs.seq.sliding(2).foreach(w ⇒ { val Seq(a, b) = w; a should not be (b) })
 
         // the actual comparison

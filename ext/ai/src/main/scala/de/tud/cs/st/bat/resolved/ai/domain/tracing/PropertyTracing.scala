@@ -91,9 +91,10 @@ trait PropertyTracing[+I] extends Domain[I] { domain ⇒
     override def flow(
         currentPC: PC,
         successorPC: PC,
+        isExceptionalControlFlow: Boolean,
+        worklist: List[PC],
         operandsArray: Array[List[DomainValue]],
         localsArray: Array[Array[DomainValue]],
-        worklist: List[PC],
         tracer: Option[AITracer]): List[PC] = {
 
         val forceScheduling: Boolean = {
@@ -118,10 +119,11 @@ trait PropertyTracing[+I] extends Domain[I] { domain ⇒
                 if (filteredList eq worklist)
                     // the instruction was not yet scheduled for another
                     // evaluation
-                    tracer.get.flow(domain)(currentPC, successorPC)
+                    tracer.get.flow(domain)(currentPC, successorPC, isExceptionalControlFlow)
                 else
                     // the instruction was just moved to the beginning
-                    tracer.get.rescheduled(domain)(currentPC, successorPC)
+                    tracer.get.rescheduled(domain)(currentPC, successorPC, isExceptionalControlFlow)
+
             }
             successorPC :: filteredList
         } else {

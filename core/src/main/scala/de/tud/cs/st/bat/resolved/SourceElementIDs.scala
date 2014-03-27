@@ -40,6 +40,7 @@ package resolved
  *
  * @author Michael Eichberg
  */
+@deprecated(message="All source elements now always have an idea",since="2014")
 trait SourceElementIDs {
 
     /**

@@ -253,11 +253,19 @@ trait XHTMLTracer extends AITracer {
 
     private[this] var continuingWithBranch = true
 
-    def flow(domain: SomeDomain)(currentPC: PC, successorPC: PC) = {
+    def flow(
+        domain: SomeDomain)(
+            currentPC: PC,
+            successorPC: PC,
+            isExceptionalControlFlow: Boolean) = {
         continuingWithBranch = currentPC < successorPC
     }
 
-    def rescheduled(domain: SomeDomain)(sourcePC: PC, targetPC: PC): Unit = {
+    def rescheduled(
+        domain: SomeDomain)(
+            sourcePC: PC,
+            targetPC: PC,
+            isExceptionalControlFlow: Boolean): Unit = {
         /*ignored for now*/
     }
 

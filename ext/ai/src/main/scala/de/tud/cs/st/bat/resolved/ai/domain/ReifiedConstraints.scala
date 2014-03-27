@@ -43,7 +43,7 @@ package domain
 trait ReifiedConstraints[+I] extends Domain[I] {
 
     /**
-     * (Indirectly) called by BATAI for a new value-based constraint. 
+     * (Indirectly) called by BATAI for a new value-based constraint.
      */
     /*abstract*/ def nextConstraint(constraint: ReifiedConstraint)
 
@@ -80,27 +80,27 @@ trait ReifiedConstraints[+I] extends Domain[I] {
         value1: DomainValue, value2: DomainValue,
         constraint: String) extends ReifiedConstraint
 
-    abstract override def establishIsNull(
+    abstract override def refEstablishIsNull(
         pc: Int,
         value: DomainValue,
         operands: Operands,
         locals: Locals): (Operands, Locals) = {
 
         nextConstraint(ReifiedSingleValueConstraint(pc, value, "is null"))
-        super.establishIsNull(pc, value, operands, locals)
+        super.refEstablishIsNull(pc, value, operands, locals)
     }
 
-    abstract override def establishIsNonNull(
+    abstract override def refEstablishIsNonNull(
         pc: Int,
         value: DomainValue,
         operands: Operands,
         locals: Locals): (Operands, Locals) = {
 
         nextConstraint(ReifiedSingleValueConstraint(pc, value, "is not null"))
-        super.establishIsNonNull(pc, value, operands, locals)
+        super.refEstablishIsNonNull(pc, value, operands, locals)
     }
 
-    abstract override def establishAreEqualReferences(
+    abstract override def refEstablishAreEqual(
         pc: Int,
         value1: DomainValue,
         value2: DomainValue,
@@ -108,10 +108,10 @@ trait ReifiedConstraints[+I] extends Domain[I] {
         locals: Locals): (Operands, Locals) = {
 
         nextConstraint(ReifiedTwoValuesConstraint(pc, value1, value2, "equals"))
-        super.establishAreEqualReferences(pc, value1, value2, operands, locals)
+        super.refEstablishAreEqual(pc, value1, value2, operands, locals)
     }
 
-    abstract override def establishAreNotEqualReferences(
+    abstract override def refEstablishAreNotEqual(
         pc: Int,
         value1: DomainValue,
         value2: DomainValue,
@@ -119,10 +119,10 @@ trait ReifiedConstraints[+I] extends Domain[I] {
         locals: Locals): (Operands, Locals) = {
 
         nextConstraint(ReifiedTwoValuesConstraint(pc, value1, value2, "is not equal to"))
-        super.establishAreNotEqualReferences(pc, value1, value2, operands, locals)
+        super.refEstablishAreNotEqual(pc, value1, value2, operands, locals)
     }
 
-    abstract override def establishUpperBound(
+    abstract override def refEstablishUpperBound(
         pc: Int,
         bound: ReferenceType,
         value: DomainValue,
@@ -130,13 +130,13 @@ trait ReifiedConstraints[+I] extends Domain[I] {
         locals: Locals): (Operands, Locals) = {
 
         nextConstraint(ReifiedSingleValueConstraint(pc, value, "is subtype of "+bound.toJava))
-        super.establishUpperBound(pc, bound, value, operands, locals)
+        super.refEstablishUpperBound(pc, bound, value, operands, locals)
     }
 
     //
     // W.r.t. Integer values
 
-    abstract override def establishValue(
+    abstract override def intEstablishValue(
         pc: Int,
         theValue: Int,
         value: DomainValue,
@@ -144,10 +144,10 @@ trait ReifiedConstraints[+I] extends Domain[I] {
         locals: Locals): (Operands, Locals) = {
 
         nextConstraint(ReifiedSingleValueConstraint(pc, value, "is "+theValue))
-        super.establishValue(pc, theValue, value, operands, locals)
+        super.intEstablishValue(pc, theValue, value, operands, locals)
     }
 
-    abstract override def establishAreEqual(
+    abstract override def intEstablishAreEqual(
         pc: Int,
         value1: DomainValue,
         value2: DomainValue,
@@ -155,10 +155,10 @@ trait ReifiedConstraints[+I] extends Domain[I] {
         locals: Locals): (Operands, Locals) = {
 
         nextConstraint(ReifiedTwoValuesConstraint(pc, value1, value2, " == "))
-        super.establishAreEqual(pc, value1, value2, operands, locals)
+        super.intEstablishAreEqual(pc, value1, value2, operands, locals)
     }
 
-    abstract override def establishAreNotEqual(
+    abstract override def intEstablishAreNotEqual(
         pc: Int,
         value1: DomainValue,
         value2: DomainValue,
@@ -166,10 +166,10 @@ trait ReifiedConstraints[+I] extends Domain[I] {
         locals: Locals): (Operands, Locals) = {
 
         nextConstraint(ReifiedTwoValuesConstraint(pc, value1, value2, " != "))
-        super.establishAreNotEqual(pc, value1, value2, operands, locals)
+        super.intEstablishAreNotEqual(pc, value1, value2, operands, locals)
     }
 
-    abstract override def establishIsLessThan(
+    abstract override def intEstablishIsLessThan(
         pc: Int,
         value1: DomainValue,
         value2: DomainValue,
@@ -177,10 +177,10 @@ trait ReifiedConstraints[+I] extends Domain[I] {
         locals: Locals): (Operands, Locals) = {
 
         nextConstraint(ReifiedTwoValuesConstraint(pc, value1, value2, " < "))
-        super.establishIsLessThan(pc, value1, value2, operands, locals)
+        super.intEstablishIsLessThan(pc, value1, value2, operands, locals)
     }
 
-    abstract override def establishIsLessThanOrEqualTo(
+    abstract override def intEstablishIsLessThanOrEqualTo(
         pc: Int,
         value1: DomainValue,
         value2: DomainValue,
@@ -188,7 +188,7 @@ trait ReifiedConstraints[+I] extends Domain[I] {
         locals: Locals): (Operands, Locals) = {
 
         nextConstraint(ReifiedTwoValuesConstraint(pc, value1, value2, " <= "))
-        super.establishIsLessThanOrEqualTo(pc, value1, value2, operands, locals)
+        super.intEstablishIsLessThanOrEqualTo(pc, value1, value2, operands, locals)
     }
 }
 

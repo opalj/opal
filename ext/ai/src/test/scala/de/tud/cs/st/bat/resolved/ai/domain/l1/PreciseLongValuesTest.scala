@@ -89,17 +89,17 @@ class PreciseLongValuesTest
     it should ("be able to check if a long value is less than another value") in {
         val v1 = LongValue(-1, 7)
         val v2 = LongValue(-1, 8)
-        isLessThan(v1, v2) should be(Answer(true))
-        isLessThan(v1, v1) should be(Answer(false))
-        isLessThan(v2, v1) should be(Answer(false))
+        longIsLessThan(v1, v2) should be(Answer(true))
+        longIsLessThan(v1, v1) should be(Answer(false))
+        longIsLessThan(v2, v1) should be(Answer(false))
     }
 
     it should ("be able to check if a long value is less than or equal another value") in {
         val v1 = LongValue(-1, 7)
         val v2 = LongValue(-1, 8)
-        isLessThanOrEqualTo(v1, v2) should be(Answer(true))
-        isLessThanOrEqualTo(v1, v1) should be(Answer(true))
-        isLessThanOrEqualTo(v2, v1) should be(Answer(false))
+        longIsLessThanOrEqualTo(v1, v2) should be(Answer(true))
+        longIsLessThanOrEqualTo(v1, v1) should be(Answer(true))
+        longIsLessThanOrEqualTo(v2, v1) should be(Answer(false))
     }
 
     //

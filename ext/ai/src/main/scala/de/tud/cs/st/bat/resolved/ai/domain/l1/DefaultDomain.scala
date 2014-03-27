@@ -33,23 +33,25 @@ package ai
 package domain
 package l1
 
-/** 
+/**
  * ClassValues must come after TypeLevelInvokeInstructionsWithNullPointerHandling.
- * @see ClassValues type documentation comment  
+ * @see ClassValues type documentation comment
  */
 trait DefaultDomain[+I]
     extends Domain[I]
     with DefaultDomainValueBinding[I]
-    with DefaultReferenceValuesBinding[I]
-    with DefaultStringValuesBinding[I]
+    with TypeLevelFieldAccessInstructionsWithNullPointerHandling
+    with TypeLevelInvokeInstructionsWithNullPointerHandling
+    //    with DefaultReferenceValuesBinding[I]
+    //    with DefaultStringValuesBinding[I] 
+    with DefaultClassValuesBinding[I]
+    with DefaultArrayValuesBinding[I]
     with DefaultPreciseIntegerValues[I]
     with DefaultPreciseLongValues[I]
     with l0.DefaultTypeLevelFloatValues[I]
     with l0.DefaultTypeLevelDoubleValues[I]
-    with TypeLevelFieldAccessInstructionsWithNullPointerHandling
-    with TypeLevelInvokeInstructionsWithNullPointerHandling
+    with DefaultPerInstructionPostProcessing[I]
     with PredefinedClassHierarchy
-    with ClassValues[I]
 
 class DefaultConfigurableDomain[+I](
     val identifier: I)

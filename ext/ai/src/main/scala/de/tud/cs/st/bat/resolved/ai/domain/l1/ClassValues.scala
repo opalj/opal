@@ -58,20 +58,40 @@ trait ClassValues[+I] extends StringValues[I] {
 
     type DomainClassValue <: ClassValue with DomainObjectValue
 
-    class ClassValue(
+    protected class ClassValue(
         pc: Int,
         val value: Type)
             extends SObjectValue(pc, No, true, ObjectType.Class) {
+        this: DomainClassValue ⇒
 
-        this: DomainObjectValue ⇒
+        override def doJoinWithNonNullValueWithSameOrigin(
+            joinPC: PC,
+            other: DomainSingleOriginReferenceValue): Update[DomainSingleOriginReferenceValue] = {
+
+            other match {
+                case that: ClassValue if (this.value eq that.value) ⇒
+                    NoUpdate
+                case _ ⇒
+                    val answer = super.doJoinWithNonNullValueWithSameOrigin(joinPC, other)
+                    if (answer == NoUpdate) {
+                        // => This class value and the other value have a corresponding
+                        //    abstract representation (w.r.t. the next abstraction level!)
+                        //    but we still need to drop the concrete information...
+                        StructuralUpdate(ObjectValue(pc, No, true, ObjectType.Class))
+                    } else {
+                        answer
+                    }
+            }
+        }
 
         override def adapt[TDI >: I](target: Domain[TDI], pc: Int): target.DomainValue =
             target.ClassValue(pc, this.value)
 
-        override def equals(other: Any): Boolean = other match {
-            case cv: DomainClassValue ⇒ super.equals(other) && cv.value == this.value
-            case _                    ⇒ false
-        }
+        override def equals(other: Any): Boolean =
+            other match {
+                case cv: ClassValue ⇒ super.equals(other) && cv.value == this.value
+                case _              ⇒ false
+            }
 
         override protected def canEqual(other: SObjectValue): Boolean =
             other.isInstanceOf[ClassValue]
@@ -93,7 +113,7 @@ trait ClassValues[+I] extends StringValues[I] {
 
         import ClassValues._
 
-        def asClassValue(className: String): MethodCallResult = {
+        def classForName(className: String): MethodCallResult = {
             val classValue = ReferenceType(className.replace('.', '/'))
             ComputedValue(Some(ClassValue(pc, classValue)))
         }
@@ -105,8 +125,8 @@ trait ClassValues[+I] extends StringValues[I] {
             operands.last match {
                 case StringValue(value) ⇒
                     methodDescriptor match {
-                        case `forName_String`                     ⇒ asClassValue(value)
-                        case `forName_String_boolean_ClassLoader` ⇒ asClassValue(value)
+                        case `forName_String`                     ⇒ classForName(value)
+                        case `forName_String_boolean_ClassLoader` ⇒ classForName(value)
                         case _ ⇒
                             throw new DomainException(
                                 "unsupported Class { "+

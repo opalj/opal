@@ -697,9 +697,6 @@ trait TypeLevelReferenceValues[+I]
          */
         /*ABSTRACT*/ def isAssignable(value: DomainValue): Answer
 
-        /**
-         *
-         */
         /*ABSTRACT*/ protected def doLoad(
             pc: PC,
             index: DomainValue,
@@ -712,7 +709,9 @@ trait TypeLevelReferenceValues[+I]
             // is checked for by the domain-level method.
 
             val isIndexValid =
-                isSomeValueInRange(index, IntegerConstant0, doGetLength(pc))
+                length.
+                    map((l: Int) ⇒ intIsSomeValueInRange(index, 0, l - 1)).
+                    getOrElse(intIsLessThan0(index).negate)
             if (isIndexValid.isNo)
                 return justThrows(ArrayIndexOutOfBoundsException(pc))
 
@@ -725,10 +724,11 @@ trait TypeLevelReferenceValues[+I]
             doLoad(pc, index, thrownExceptions)
         }
 
-        protected def doArraystore(
+        /*ABSTRACT*/ protected def doStore(
             pc: PC,
             value: DomainValue,
-            index: DomainValue): Unit = { /* Empty by default. */ }
+            index: DomainValue,
+            thrownExceptions: ExceptionValues): ArrayStoreResult
 
         /**
          * @note It is in general not necessary to override this method. If you need some
@@ -745,26 +745,31 @@ trait TypeLevelReferenceValues[+I]
             // represented by an instance of the respective class
 
             val isIndexValid =
-                isSomeValueInRange(index, IntegerConstant0, doGetLength(pc))
+                length.
+                    map((l: Int) ⇒ intIsSomeValueInRange(index, 0, l - 1)).
+                    getOrElse(intIsLessThan0(index).negate)
             if (isIndexValid.isNo)
                 return justThrows(ArrayIndexOutOfBoundsException(pc))
 
-            if (isAssignable(value).isNo)
+            val isAssignable = this.isAssignable(value)
+            if (isAssignable.isNo)
                 return justThrows(ArrayStoreException(pc))
 
             var thrownExceptions = List.empty[ExceptionValue]
-            if (isIndexValid.isNoOrUnknown && throwArrayIndexOutOfBoundsException)
+            if (isIndexValid.isUnknown && throwArrayIndexOutOfBoundsException)
                 thrownExceptions = ArrayIndexOutOfBoundsException(pc) :: thrownExceptions
+            if (isAssignable.isUnknown && throwArrayStoreException)
+                thrownExceptions = ArrayStoreException(pc) :: thrownExceptions
             if (isNull.isYesOrUnknown && throwNullPointerException)
                 thrownExceptions = NullPointerException(pc) :: thrownExceptions
 
-            doArraystore(pc, value, index)
-
-            ComputationWithSideEffectOrException(thrownExceptions)
+            doStore(pc, value, index, thrownExceptions)
         }
 
-        protected def doGetLength(pc: PC): DomainValue =
-            IntegerValue(pc)
+        protected def length: Option[Int] = None
+
+        protected final def doGetLength(pc: PC): DomainValue =
+            length.map(IntegerValue(pc, _)).getOrElse(IntegerValue(pc))
 
         override def length(pc: PC): Computation[DomainValue, ExceptionValue] = {
             if (isNull == Unknown && throwNullPointerException)
@@ -837,7 +842,7 @@ trait TypeLevelReferenceValues[+I]
      * @param value1 A value of type `ReferenceValue`.
      * @param value2 A value of type `ReferenceValue`.
      */
-    override def areEqualReferences(value1: DomainValue, value2: DomainValue): Answer = {
+    override def refAreEqual(value1: DomainValue, value2: DomainValue): Answer = {
         val v1 = asReferenceValue(value1)
         val v2 = asReferenceValue(value2)
         val value1IsNull = v1.isNull
@@ -868,7 +873,7 @@ trait TypeLevelReferenceValues[+I]
      *
      * @param value A value of type `ReferenceValue`.
      */
-    final override def isNull(value: DomainValue): Answer =
+    final override def refIsNull(value: DomainValue): Answer =
         asReferenceValue(value).isNull
 
     /**
@@ -896,7 +901,7 @@ trait TypeLevelReferenceValues[+I]
         pc: PC,
         count: DomainValue,
         componentType: FieldType): Computation[DomainValue, ExceptionValue] = {
-        val validCount = isSomeValueInRange(count, 0, Int.MaxValue)
+        val validCount = intIsSomeValueInRange(count, 0, Int.MaxValue)
         if (validCount.isNo)
             return throws(NegativeArraySizeException(pc))
 
@@ -917,7 +922,7 @@ trait TypeLevelReferenceValues[+I]
         arrayType: ArrayType): Computation[DomainArrayValue, ExceptionValue] = {
         var validCounts: Answer = Yes
         counts foreach { (count) ⇒
-            val validCount = isSomeValueInRange(count, 0, Int.MaxValue)
+            val validCount = intIsSomeValueInRange(count, 0, Int.MaxValue)
             if (validCount.isNo)
                 return throws(NegativeArraySizeException(pc))
             else if (validCount.isUnknown)
@@ -951,7 +956,7 @@ trait TypeLevelReferenceValues[+I]
         pc: PC,
         index: DomainValue,
         arrayref: DomainValue): ArrayLoadResult = {
-        if (isNull(arrayref).isYes)
+        if (refIsNull(arrayref).isYes)
             justThrows(NullPointerException(pc))
         else
             // if the bytecode is valid, the type cast (asArrayValue) is safe
@@ -971,7 +976,7 @@ trait TypeLevelReferenceValues[+I]
         value: DomainValue,
         index: DomainValue,
         arrayref: DomainValue): ArrayStoreResult = {
-        if (isNull(arrayref).isYes)
+        if (refIsNull(arrayref).isYes)
             justThrows(NullPointerException(pc))
         else
             // if the bytecode is valid, the type cast (asArrayValue) is safe
@@ -988,7 +993,7 @@ trait TypeLevelReferenceValues[+I]
     override def arraylength(
         pc: PC,
         arrayref: DomainValue): Computation[DomainValue, ExceptionValue] = {
-        if (isNull(arrayref).isYes)
+        if (refIsNull(arrayref).isYes)
             throws(NullPointerException(pc))
         else
             asArrayAbstraction(arrayref).length(pc)
@@ -1133,12 +1138,12 @@ trait TypeLevelReferenceValues[+I]
     //
     // -----------------------------------------------------------------------------------
 
-    protected def updateOperandsAndLocals(
+    protected[this] def updateOperandsAndLocals(
         oldValue: DomainValue,
         newValue: DomainValue,
         operands: Operands,
         locals: Locals): (Operands, Locals) = {
-        if (oldValue == newValue)
+        if (oldValue == newValue) // FIXME Should be eq, shouldn't it?
             (
                 operands,
                 locals
@@ -1149,8 +1154,8 @@ trait TypeLevelReferenceValues[+I]
                 locals.map(l ⇒ if (l eq oldValue) newValue else l)
             )
     }
-
-    override def establishUpperBound(
+    
+    override def refEstablishUpperBound(
         pc: PC,
         bound: ReferenceType,
         value: DomainValue,
@@ -1184,7 +1189,7 @@ trait TypeLevelReferenceValues[+I]
      *
      * @param value A `ReferenceValue` that does not represent the value `null`.
      */
-    override def establishIsNonNull(
+    override def refEstablishIsNonNull(
         pc: PC,
         value: DomainValue,
         operands: Operands,
@@ -1199,7 +1204,7 @@ trait TypeLevelReferenceValues[+I]
      *
      * @param value A `ReferenceValue`.
      */
-    override def establishIsNull(
+    override def refEstablishIsNull(
         pc: PC,
         value: DomainValue,
         operands: Operands,

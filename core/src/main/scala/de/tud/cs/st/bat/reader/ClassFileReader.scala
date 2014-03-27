@@ -176,7 +176,8 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      * Register a class file post processor. A class file post processor
      * can transform the completely read and reified class file. Post processors
      * can only be registered before the usage of a class file reader. '''Registering
-     * new `ClassFilePostProcessors` while processing class files is not supported'''.
+     * new `ClassFilePostProcessors` while processing class files is not supported
+     * and the behavior is undefined'''.
      */
     def registerClassFilePostProcessor(p: ClassFile ⇒ ClassFile): Unit = {
         classFilePostProcessors = p :: classFilePostProcessors
@@ -185,7 +186,11 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     /**
      * Template method that reads a Java class file from the given input stream.
      *
+     * All other methods to read a class file use this method to eventually parse a
+     * class file.
+     *
      * ==Class File Structure==
+     * Parses a class file that follows the following definition.
      * <pre>
      * ClassFile {
      *    u4 magic;
@@ -223,11 +228,13 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         val major_version = in.readUnsignedShort
 
         // let's make sure that we support this class file's version
-        require(
+        if (!(
             major_version >= 45 && // at least JDK 1.1
-                (major_version < 52 || // Java 7 = 51.0
-                    (major_version == 52 && minor_version == 0)), // Java 8 == 52.0
-            "Unsupported class file version: "+major_version+"."+minor_version)
+            (major_version < 52 /* Java 7 = 51.0 */ ||
+                (major_version == 52 && minor_version == 0 /*Java 8 == 52.0*/ ))))
+            throw new BATException(
+                "Unsupported class file version: "+major_version+"."+minor_version+
+                    " (Supported: 45(Java 1.1) <= version <= 52(Java 8))")
 
         val cp = Constant_Pool(in)
         val access_flags = in.readUnsignedShort

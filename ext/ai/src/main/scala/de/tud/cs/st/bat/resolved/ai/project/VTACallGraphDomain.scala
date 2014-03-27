@@ -130,6 +130,7 @@ class DefaultVTACallGraphDomain[Source](
         with IgnoreMethodResults
         with IgnoreSynchronization
         with l0.DefaultTypeLevelIntegerValues[Int]
+        with l0.DefaultIntegerValuesComparison
         with l0.DefaultTypeLevelLongValues[Int]
         with l0.DefaultTypeLevelFloatValues[Int]
         with l0.DefaultTypeLevelDoubleValues[Int]

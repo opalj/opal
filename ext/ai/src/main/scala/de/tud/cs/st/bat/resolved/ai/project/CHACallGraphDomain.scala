@@ -95,7 +95,7 @@ trait CHACallGraphDomain[Source, I]
 
     def allCallEdges: (Method, List[(PC, Iterable[Method])]) = (theMethod, callEdges)
 
-    // handles method calls where target method is statically resolved
+    // handles method calls where the target method can statically be resolved
     @inline protected[this] def staticMethodCall(
         pc: PC,
         declaringClass: ObjectType,
@@ -213,6 +213,7 @@ class DefaultCHACallGraphDomain[Source](
         with IgnoreMethodResults
         with IgnoreSynchronization
         with l0.DefaultTypeLevelIntegerValues[Int]
+        with l0.DefaultIntegerValuesComparison
         with l0.DefaultTypeLevelLongValues[Int]
         with l0.DefaultTypeLevelFloatValues[Int]
         with l0.DefaultTypeLevelDoubleValues[Int]

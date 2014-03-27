@@ -172,11 +172,12 @@ final class ClassFile private (
         var i = 0
         while (i < methodsCount) {
             val method = methods(i)
-            if (method.name == "<clinit>" &&
+            val methodName = method.name
+            if (methodName == "<clinit>" &&
                 method.descriptor == noArgsAndReturnVoidDescriptor &&
                 (majorVersion < 51 || method.isStatic))
                 return Some(method)
-            else if (method.name > "<clinit>")
+            else if (methodName > "<clinit>")
                 return None
             i += 1
         }

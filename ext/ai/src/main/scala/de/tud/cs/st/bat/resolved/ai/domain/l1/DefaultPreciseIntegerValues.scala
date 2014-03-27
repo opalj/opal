@@ -44,6 +44,7 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 trait DefaultPreciseIntegerValues[+I]
         extends DefaultDomainValueBinding[I]
         with PreciseIntegerValues[I] {
+    this: Configuration ⇒
 
     // ATTENTION: The functionality to propagate a constraint crucially depends on
     // the fact two integer values created at two different places are represented
@@ -67,24 +68,26 @@ trait DefaultPreciseIntegerValues[+I]
 
         def update(newValue: Int): DomainValue = IntegerRange(initial, newValue)
 
-        override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] =
-            value match {
-                case AnIntegerValue() ⇒ StructuralUpdate(value)
+        override def doJoin(pc: PC, other: DomainValue): Update[DomainValue] =
+            other match {
+                case AnIntegerValue() ⇒ StructuralUpdate(other)
                 case IntegerRange(otherInitial, otherValue) ⇒
                     // First check if they are growing in the same direction...
                     var increasing = (this.value - this.initial >= 0)
-                    if (increasing != (otherValue - otherInitial) >= 0)
+                    if (increasing != ((otherValue - otherInitial) >= 0))
                         return StructuralUpdate(AnIntegerValue())
 
-                    def result(newInitial: Int, newValue: Int) = {
-                        if (spread(newValue, newInitial) > maxSpreadInteger)
+                    def result(newInitial: Int, newValue: Int): Update[DomainValue] = {
+                        if (this.initial == newInitial && this.value == newValue)
+                            NoUpdate
+                        else if (otherInitial == newInitial && otherValue == newValue)
+                            StructuralUpdate(other)
+                        else if (spread(newValue, newInitial) > maxSpreadInteger)
                             StructuralUpdate(AnIntegerValue())
                         else if (newValue != this.value)
                             StructuralUpdate(IntegerRange(newInitial, newValue))
-                        else if (newInitial != this.initial)
+                        else // if (newInitial != this.initial)
                             MetaInformationUpdate(IntegerRange(newInitial, newValue))
-                        else
-                            NoUpdate
                     }
 
                     if (increasing)
@@ -95,7 +98,6 @@ trait DefaultPreciseIntegerValues[+I]
                         result(
                             Math.max(this.initial, otherInitial),
                             Math.min(this.value, otherValue))
-
             }
 
         override def summarize(pc: PC): DomainValue = this

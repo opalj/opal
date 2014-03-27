@@ -66,5 +66,4 @@ trait InterfacesReader extends Constant_PoolAbstractions {
             Interface(in.readUnsignedShort)(cp)
         }
     }
-
 }

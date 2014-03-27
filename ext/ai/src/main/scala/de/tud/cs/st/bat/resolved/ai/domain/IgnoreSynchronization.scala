@@ -44,7 +44,7 @@ trait IgnoreSynchronization { this: SomeDomain ⇒
     protected[this] def sideEffectOnlyOrNullPointerException(
         pc: PC,
         value: DomainValue): Computation[Nothing, ExceptionValue] = {
-        isNull(value) match {
+        refIsNull(value) match {
             case Yes ⇒
                 ThrowsException(NullPointerException(pc))
             case No ⇒

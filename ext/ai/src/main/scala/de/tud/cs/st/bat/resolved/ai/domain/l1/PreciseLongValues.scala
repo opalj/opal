@@ -122,7 +122,7 @@ trait PreciseLongValues[+I] extends Domain[I] with Configuration {
             orElse
         }
 
-    def isSomeValueInRange(
+    def longIsSomeValueInRange(
         value: DomainValue,
         lowerBound: Long,
         upperBound: Long): Boolean =
@@ -132,7 +132,7 @@ trait PreciseLongValues[+I] extends Domain[I] with Configuration {
             true
         }
 
-    def isSomeValueNotInRange(
+    def longIsSomeValueNotInRange(
         value: DomainValue,
         lowerBound: Long,
         upperBound: Long): Boolean =
@@ -142,7 +142,7 @@ trait PreciseLongValues[+I] extends Domain[I] with Configuration {
             !(lowerBound == Long.MinValue && upperBound == Long.MaxValue)
         }
 
-    abstract override def isLessThan(
+    def longIsLessThan(
         smallerValue: DomainValue,
         largerValue: DomainValue): Answer =
         withLongValuesOrElse(smallerValue, largerValue) { (v1, v2) ⇒
@@ -151,7 +151,7 @@ trait PreciseLongValues[+I] extends Domain[I] with Configuration {
             Unknown
         }
 
-    abstract override def isLessThanOrEqualTo(
+    def longIsLessThanOrEqualTo(
         smallerOrEqualValue: DomainValue,
         equalOrLargerValue: DomainValue): Answer =
         withLongValuesOrElse(smallerOrEqualValue, equalOrLargerValue) { (v1, v2) ⇒
@@ -160,7 +160,8 @@ trait PreciseLongValues[+I] extends Domain[I] with Configuration {
             Unknown
         }
 
-    def updateValueLong(
+        // TODO Does this make sense?
+    def longUpdateValue(
         oldValue: DomainValue,
         newValue: DomainValue,
         operands: Operands,

@@ -39,7 +39,7 @@ package ai
  */
 case class InterpretationFailedException[D <: SomeDomain with Singleton](
     cause: Throwable,
-    domain: D,
+    domain: D, // TODO Can we replace this with SomeDomain and a constructor with multiple arguements lists
     pc : PC,
     worklist: List[PC],
     evaluated: List[PC],

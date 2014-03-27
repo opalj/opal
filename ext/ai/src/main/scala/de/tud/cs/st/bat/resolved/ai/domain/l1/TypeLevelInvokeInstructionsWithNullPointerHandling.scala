@@ -54,7 +54,7 @@ trait TypeLevelInvokeInstructionsWithNullPointerHandling { this: SomeDomain ⇒
         pc: PC,
         methodDescriptor: MethodDescriptor,
         operands: List[DomainValue]): MethodCallResult =
-        isNull(operands.last) match {
+        refIsNull(operands.last) match {
             case Yes ⇒ justThrows(NullPointerException(pc))
             case No  ⇒ ComputedValue(ReturnValue(pc, methodDescriptor.returnType))
             case Unknown ⇒

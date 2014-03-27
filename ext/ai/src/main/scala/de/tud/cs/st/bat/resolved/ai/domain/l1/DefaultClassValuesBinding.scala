@@ -52,7 +52,7 @@ trait DefaultClassValuesBinding[+I]
     // FACTORY METHODS
     //
 
-    override def ClassValue(pc: PC, value: Type): DomainObjectValue =
+    override def ClassValue(pc: PC, value: Type): DomainClassValue =
         new ClassValue(pc, value)
 
 }

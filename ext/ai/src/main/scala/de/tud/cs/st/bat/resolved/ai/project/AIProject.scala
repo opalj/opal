@@ -43,7 +43,7 @@ import bat.resolved.analyses.{ Project, ReportableAnalysisResult }
  *
  * @author Michael Eichberg
  */
-trait AIProject[Source, D <: Domain[_] with Report] {
+trait AIProject[Source, D <: SomeDomain with Report] {
 
     /**
      * Returns the abstract interpreter that should be used for performing the abstract

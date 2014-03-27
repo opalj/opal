@@ -46,19 +46,39 @@ trait StringValues[+I] extends ReferenceValues[I] {
 
     type DomainStringValue <: StringValue with DomainObjectValue
 
-    class StringValue(
+    protected class StringValue (
         pc: PC, // sets the pc value of the superclass
         val value: String)
             extends SObjectValue(pc, No, true, ObjectType.String) {
-        this: DomainObjectValue ⇒
+        this: DomainStringValue ⇒
+
+        override def doJoinWithNonNullValueWithSameOrigin(
+            joinPC: PC,
+            other: DomainSingleOriginReferenceValue): Update[DomainSingleOriginReferenceValue] = {
+
+            other match {
+                case that: StringValue if (this.value eq that.value) ⇒
+                    NoUpdate
+                case _ ⇒
+                    val answer = super.doJoinWithNonNullValueWithSameOrigin(joinPC, other)
+                    if (answer == NoUpdate) {
+                        // => This string value and the other value have a corresponding
+                        //    abstract representation (w.r.t. the next abstraction level!)
+                        //    but we still need to drop the concrete information...
+                        StructuralUpdate(ObjectValue(pc, No, true, ObjectType.String))
+                    } else {
+                        answer
+                    }
+            }
+        }
 
         override def adapt[TDI >: I](target: Domain[TDI], pc: Int): target.DomainValue =
             target.StringValue(pc, this.value)
 
         override def equals(other: Any): Boolean = {
             other match {
-                case sv: DomainStringValue ⇒ super.equals(other) && sv.value == this.value
-                case _                     ⇒ false
+                case sv: StringValue ⇒ super.equals(other) && sv.value == this.value
+                case _               ⇒ false
             }
         }
 
@@ -70,12 +90,12 @@ trait StringValues[+I] extends ReferenceValues[I] {
         override def toString(): String = "String(pc="+pc+", value=\""+value+"\")"
 
     }
-    
+
     object StringValue {
         def unapply(value: StringValue): Option[String] = Some(value.value)
     }
 
-    // Need to be implemented (the default implementation is now longer sufficient!)
+    // Needs to be implemented (the default implementation is now longer sufficient!)
     override def StringValue(pc: PC, value: String): DomainObjectValue
 }
 

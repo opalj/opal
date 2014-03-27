@@ -129,10 +129,12 @@ object InterpretMethods {
                         if (beVerbose) println("  =>  "+method.toJava)
                         try {
                             time('AI) {
-                                if (BaseAI(
-                                    classFile,
-                                    method,
-                                    domainConstructor.newInstance((classFile, method))).wasAborted)
+                                val result =
+                                    BaseAI(
+                                        classFile,
+                                        method,
+                                        domainConstructor.newInstance((classFile, method)))
+                                if (result.wasAborted)
                                     throw new InterruptedException();
                             }
                             None

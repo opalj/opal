@@ -59,7 +59,7 @@ final class Method private (
     val accessFlags: Int,
     val name: String, // the name is interned to enable reference comparisons!
     val descriptor: MethodDescriptor,
-    val body: Option[Code],
+    val body: Option[Code], // TODO [SPL] Abstract over code; i.e., make Code a type param!
     val attributes: Attributes)
         extends ClassMember
         with UID {

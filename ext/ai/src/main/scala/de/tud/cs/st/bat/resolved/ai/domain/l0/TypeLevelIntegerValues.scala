@@ -40,7 +40,7 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  *
  * @author Michael Eichberg
  */
-trait TypeLevelIntegerValues[+I] extends Domain[I] with IntegerValuesComparison {
+trait TypeLevelIntegerValues[+I] extends Domain[I] {
 
     // -----------------------------------------------------------------------------------
     //
@@ -83,32 +83,26 @@ trait TypeLevelIntegerValues[+I] extends Domain[I] with IntegerValuesComparison 
     // QUESTION'S ABOUT VALUES
     //
 
-    override def areEqual(value1: DomainValue, value2: DomainValue): Answer = Unknown
+    override def intAreEqual(value1: DomainValue, value2: DomainValue): Answer = Unknown
 
-    override def isSomeValueInRange(
+    override def intIsSomeValueInRange(
         value: DomainValue,
         lowerBound: Int,
         upperBound: Int): Answer =
         Unknown
 
-    override def isSomeValueNotInRange(
+    override def intIsSomeValueNotInRange(
         value: DomainValue,
         lowerBound: Int,
         upperBound: Int): Answer =
         Unknown
 
-    override def isSomeValueInRange(
-        value: DomainValue,
-        lowerBound: DomainValue,
-        upperBound: DomainValue): Answer =
-        Unknown
-
-    override def isLessThan(
+    override def intIsLessThan(
         smallerValue: DomainValue,
         largerValue: DomainValue): Answer =
         Unknown
 
-    override def isLessThanOrEqualTo(
+    override def intIsLessThanOrEqualTo(
         smallerOrEqualValue: DomainValue,
         equalOrLargerValue: DomainValue): Answer =
         Unknown

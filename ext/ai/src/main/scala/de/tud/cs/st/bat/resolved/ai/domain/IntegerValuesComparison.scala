@@ -47,7 +47,7 @@ trait IntegerValuesComparison { this: SomeDomain ⇒
      * is in the range `[lowerBound, upperBound]`. I.e., both
      * bounds are inclusive.
      */
-    def isSomeValueInRange(
+    def intIsSomeValueInRange(
         value: DomainValue,
         lowerBound: DomainValue,
         upperBound: DomainValue): Answer

@@ -42,6 +42,7 @@ package resolved
  *
  * @author Michael Eichberg
  */
+@deprecated(message="All source elements now always have an idea",since="2014")
 trait CategorizedSourceElementIDs extends SourceElementIDs {
 
     def LOWEST_TYPE_ID: Int
@@ -77,6 +78,7 @@ trait CategorizedSourceElementIDs extends SourceElementIDs {
  * @author Michael Eichberg
  * @author Thomas Schlosser
  */
+@deprecated(message="All source elements now always have an idea",since="2014")
 trait SourceElementIDsMap extends CategorizedSourceElementIDs {
 
     import scala.collection.mutable.WeakHashMap

@@ -70,7 +70,7 @@ trait DefaultTypeLevelReferenceValues[+I]
     }
 
     protected class ArrayValue(
-        val theUpperTypeBound: ArrayType)
+        override val theUpperTypeBound: ArrayType)
             extends super.ArrayValue
             with SReferenceValue[ArrayType] {
         this: DomainArrayValue ⇒
@@ -108,7 +108,7 @@ trait DefaultTypeLevelReferenceValues[+I]
             }
         }
 
-        override def doLoad(
+        override protected def doLoad(
             pc: PC,
             index: DomainValue,
             potentialExceptions: ExceptionValues): ArrayLoadResult = {
@@ -116,6 +116,13 @@ trait DefaultTypeLevelReferenceValues[+I]
                 TypedValue(pc, theUpperTypeBound.componentType),
                 potentialExceptions)
         }
+
+        override protected def doStore(
+            pc: PC,
+            value: DomainValue,
+            index: DomainValue,
+            thrownExceptions: ExceptionValues): ArrayStoreResult =
+            ComputationWithSideEffectOrException(thrownExceptions)
 
         // NARROWING OPERATION
         override def refineUpperTypeBound(
@@ -214,7 +221,7 @@ trait DefaultTypeLevelReferenceValues[+I]
     }
 
     protected class SObjectValue(
-        val theUpperTypeBound: ObjectType)
+        override val theUpperTypeBound: ObjectType)
             extends ObjectValue
             with SReferenceValue[ObjectType] {
         this: DomainObjectValue ⇒
@@ -325,7 +332,7 @@ trait DefaultTypeLevelReferenceValues[+I]
      *      the same time.
      */
     protected class MObjectValue(
-        val upperTypeBound: UIDList[ObjectType])
+        override val upperTypeBound: UIDList[ObjectType])
             extends ObjectValue {
         value: DomainObjectValue ⇒
 
