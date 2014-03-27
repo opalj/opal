@@ -57,35 +57,17 @@ import java.io.Closeable
  */
 object ControlAbstractions {
 
-    // [DELETE ME - 2014/03/23]
-    //    /**
-    //     * This function takes a function `f` that creates a new `Closeable` resource
-    //     * (`f` is a named parameter) and a function `r` that will processes the input stream
-    //     * after it was created by this function.
-    //     * This function takes care of the correct handling of input streams.
-    //     * When `r` has finished processing the input stream, the stream is closed.
-    //     * If `f` returns `null`, `null` is passed to `r`.
-    //     */
-    //    def process[I <: { def close(): Unit }, T](f: ⇒ I)(r: I ⇒ T): T = {
-    //        import language.reflectiveCalls
-    //
-    //        val in = f
-    //        try {
-    //            r(in)
-    //        } finally {
-    //            if (in != null) in.close()
-    //        }
-    //    }
-
     /**
      * This function takes a `Closeable` resource and a function `r` that will
-     * processes the closable resource.
+     * process the closable resource.
      * This function takes care of the correct handling of closable resources.
-     * When `r` has finished processing the resource, the resource is closed.
-     * If `closable` is `null`, `null` is passed to `r`.
+     * When `r` has finished processing the resource or throws an exception, the
+     * resource is closed.
+     * @note If `closable` is `null`, `null` is passed to `r`.
      */
     def process[C <: Closeable, T](closable: C)(r: C ⇒ T): T = {
-        // creating the closeable (I) in the try block doesn't make sense, hence
+        // Implementation Note
+        // Creating the closeable (I) in the try block doesn't make sense, hence
         // we don't need a by-name parameter.
         try {
             r(closable)
@@ -95,11 +77,12 @@ object ControlAbstractions {
     }
 
     /**
-     * This function takes a `Source`  and a function `r` that will
-     * processes the source.
+     * This function takes a `Source` and a function `r` that will
+     * process the source.
      * This function takes care of the correct handling of resources.
-     * When `r` has finished processing the source, the source is closed.
-     * If `source` is `null`, `null` is passed to `r`.
+     * When `r` has finished processing the source or throws an exception,
+     * the source is closed.
+     * @note If `source` is `null`, `null` is passed to `r`.
      */
     def processSource[C <: scala.io.Source, T](source: C)(r: C ⇒ T): T = {
         try {
