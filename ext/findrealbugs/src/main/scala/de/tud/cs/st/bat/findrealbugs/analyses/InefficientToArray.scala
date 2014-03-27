@@ -121,7 +121,7 @@ class InefficientToArray[Source]
             LineAndColumnBasedReport(
                 project.source(classFile.thisType),
                 Severity.Info,
-                pcToOptionalLineNumber(body, pc),
+                body.lineNumber(pc),
                 None,
                 "Calling x.toArray(new T[0]) is inefficient, should be "+
                     "x.toArray(new T[x.size()])")

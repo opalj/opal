@@ -130,8 +130,6 @@ class BitNops[S]
         project: Project[S],
         parameters: Seq[String] = List.empty): Iterable[LineAndColumnBasedReport[S]] = {
 
-        import AnalysesHelpers.pcToOptionalLineNumber
-
         var reports: List[LineAndColumnBasedReport[S]] = List.empty
 
         for {
@@ -168,7 +166,7 @@ class BitNops[S]
             val results = BaseAI(classFile, method, domain)
 
             for {
-                pcWithInsn @ ((_, IOR) | (_, IAND)) ← results.code.associateWithIndex
+                pcWithInsn @ ((_, IOR) | (_, IAND)) ← body.associateWithIndex
                 pc = pcWithInsn._1
                 operands = results.operandsArray(pc)
                 if operands != null // can be null for unreached instructions (dead code from AI+Domain's POV)
@@ -181,7 +179,7 @@ class BitNops[S]
                     new LineAndColumnBasedReport(
                         project.source(classFile.thisType),
                         Severity.Info,
-                        pcToOptionalLineNumber(body, pc),
+                        body.lineNumber(pc),
                         None,
                         report.get
                     ) :: reports

@@ -75,17 +75,4 @@ object AnalysesHelpers {
         }
     }
 
-    /**
-     * Helper function to retrieve a line number for a certain program counter (pc). The
-     * result is optional because the `lineNumberTable` may be unavailable as well, in
-     * which case we cannot query the line number.
-     *
-     * @param code Code object to query line number from, e.g. `Method.body.get`.
-     * @param pc instruction index to query line number for, e.g. from
-     * `associateWithIndex()`.
-     * @return The line number or None if it's unavailable.
-     */
-    def pcToOptionalLineNumber(code: Code, pc: PC): Option[Int] = {
-        code.lineNumberTable.map(_.lookupLineNumber(pc)).getOrElse(None)
-    }
 }

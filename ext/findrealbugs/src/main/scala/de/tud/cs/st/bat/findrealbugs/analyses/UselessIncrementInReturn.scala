@@ -432,7 +432,7 @@ class UselessIncrementInReturn[S]
         } {
             val domain = new IincTracingDomain
             val result = BaseAI(classFile, method, domain)
-            val code = result.code.associateWithIndex
+            val code = body.associateWithIndex
 
             /**
              * Check whether the result of the IINC instruction (given as PC) is used
@@ -456,7 +456,7 @@ class UselessIncrementInReturn[S]
                     LineAndColumnBasedReport(
                         project.source(classFile.thisType),
                         Severity.Info,
-                        AnalysesHelpers.pcToOptionalLineNumber(body, iincPc),
+                        body.lineNumber(iincPc),
                         None,
                         "Increment during return statement is dead code"
                     ) :: reports
