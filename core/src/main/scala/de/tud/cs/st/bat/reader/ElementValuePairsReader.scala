@@ -39,6 +39,7 @@ import reflect.ClassTag
 import java.io.DataInputStream
 
 /**
+ * Generic parser for an annotation's element-value pairs.
  *
  * @author Michael Eichberg
  */
@@ -56,26 +57,65 @@ trait ElementValuePairsReader extends Constant_PoolAbstractions {
 
     type Annotation
 
-    def Annotation(in: DataInputStream, cp: Constant_Pool): Annotation
+    def Annotation(cp: Constant_Pool, in: DataInputStream): Annotation
 
     def ElementValuePair(
+        constant_pool: Constant_Pool,
         element_name_index: Constant_Pool_Index,
-        element_value: ElementValue)(
-            implicit constant_pool: Constant_Pool): ElementValuePair
+        element_value: ElementValue): ElementValuePair
 
-    def ByteValue(const_value_index: Constant_Pool_Index)(implicit constant_pool: Constant_Pool): ElementValue
-    def CharValue(const_value_index: Constant_Pool_Index)(implicit constant_pool: Constant_Pool): ElementValue
-    def DoubleValue(const_value_index: Constant_Pool_Index)(implicit constant_pool: Constant_Pool): ElementValue
-    def FloatValue(const_value_index: Constant_Pool_Index)(implicit constant_pool: Constant_Pool): ElementValue
-    def IntValue(const_value_index: Constant_Pool_Index)(implicit constant_pool: Constant_Pool): ElementValue
-    def LongValue(const_value_index: Constant_Pool_Index)(implicit constant_pool: Constant_Pool): ElementValue
-    def ShortValue(const_value_index: Constant_Pool_Index)(implicit constant_pool: Constant_Pool): ElementValue
-    def BooleanValue(const_value_index: Constant_Pool_Index)(implicit constant_pool: Constant_Pool): ElementValue
-    def StringValue(const_value_index: Constant_Pool_Index)(implicit constant_pool: Constant_Pool): ElementValue
-    def ClassValue(const_value_index: Constant_Pool_Index)(implicit constant_pool: Constant_Pool): ElementValue
-    def EnumValue(type_name_index: Constant_Pool_Index, const_name_index: Constant_Pool_Index)(implicit constant_pool: Constant_Pool): ElementValue
-    def AnnotationValue(annotation: Annotation)(implicit constant_pool: Constant_Pool): ElementValue
-    def ArrayValue(values: ElementValues)(implicit constant_pool: Constant_Pool): ElementValue
+    def ByteValue(
+        constant_pool: Constant_Pool,
+        const_value_index: Constant_Pool_Index): ElementValue
+
+    def CharValue(
+        constant_pool: Constant_Pool,
+        const_value_index: Constant_Pool_Index): ElementValue
+
+    def DoubleValue(
+        constant_pool: Constant_Pool,
+        const_value_index: Constant_Pool_Index): ElementValue
+
+    def FloatValue(
+        constant_pool: Constant_Pool,
+        const_value_index: Constant_Pool_Index): ElementValue
+
+    def IntValue(
+        constant_pool: Constant_Pool,
+        const_value_index: Constant_Pool_Index): ElementValue
+
+    def LongValue(
+        constant_pool: Constant_Pool,
+        const_value_index: Constant_Pool_Index): ElementValue
+
+    def ShortValue(
+        constant_pool: Constant_Pool,
+        const_value_index: Constant_Pool_Index): ElementValue
+
+    def BooleanValue(
+        constant_pool: Constant_Pool,
+        const_value_index: Constant_Pool_Index): ElementValue
+
+    def StringValue(
+        constant_pool: Constant_Pool,
+        const_value_index: Constant_Pool_Index): ElementValue
+
+    def ClassValue(
+        constant_pool: Constant_Pool,
+        const_value_index: Constant_Pool_Index): ElementValue
+
+    def EnumValue(
+        constant_pool: Constant_Pool,
+        type_name_index: Constant_Pool_Index,
+        const_name_index: Constant_Pool_Index): ElementValue
+
+    def AnnotationValue(
+        constant_pool: Constant_Pool,
+        annotation: Annotation): ElementValue
+
+    def ArrayValue(
+        constant_pool: Constant_Pool,
+        values: ElementValues): ElementValue
 
     //
     // IMPLEMENTATION
@@ -86,20 +126,20 @@ trait ElementValuePairsReader extends Constant_PoolAbstractions {
     type ElementValues = IndexedSeq[ElementValue]
     type ElementValuePairs = IndexedSeq[ElementValuePair]
 
-    def ElementValuePairs(in: DataInputStream, cp: Constant_Pool): ElementValuePairs = {
+    def ElementValuePairs(cp: Constant_Pool, in: DataInputStream): ElementValuePairs = {
         repeat(in.readUnsignedShort) {
-            ElementValuePair(in, cp)
+            ElementValuePair(cp, in)
         }
     }
 
-    def ElementValuePair(in: DataInputStream, cp: Constant_Pool): ElementValuePair =
-        ElementValuePair(in.readUnsignedShort, ElementValue(in, cp))(cp)
+    def ElementValuePair(cp: Constant_Pool, in: DataInputStream): ElementValuePair =
+        ElementValuePair(cp, in.readUnsignedShort, ElementValue(cp, in))
 
     /**
-     * Reads in an element value.
+     * Parses an element value.
      *
      * '''From the Specification'''
-     * <pre><code>
+     * <pre>
      * element_value {
      *    u1 tag;
      *    union {
@@ -120,24 +160,24 @@ trait ElementValuePairsReader extends Constant_PoolAbstractions {
      *      } array_value;
      *    } value;
      * }
-     * </code></pre>
+     * </pre>
      */
-    def ElementValue(in: DataInputStream, cp: Constant_Pool): ElementValue = {
+    def ElementValue(cp: Constant_Pool, in: DataInputStream): ElementValue = {
         val tag = in.readByte
         (tag: @scala.annotation.switch) match {
-            case 'B' ⇒ ByteValue(in.readUnsignedShort)(cp)
-            case 'C' ⇒ CharValue(in.readUnsignedShort)(cp)
-            case 'D' ⇒ DoubleValue(in.readUnsignedShort)(cp)
-            case 'F' ⇒ FloatValue(in.readUnsignedShort)(cp)
-            case 'I' ⇒ IntValue(in.readUnsignedShort)(cp)
-            case 'J' ⇒ LongValue(in.readUnsignedShort)(cp)
-            case 'S' ⇒ ShortValue(in.readUnsignedShort)(cp)
-            case 'Z' ⇒ BooleanValue(in.readUnsignedShort)(cp)
-            case 's' ⇒ StringValue(in.readUnsignedShort)(cp)
-            case 'e' ⇒ EnumValue(in.readUnsignedShort, in.readUnsignedShort)(cp)
-            case 'c' ⇒ ClassValue(in.readUnsignedShort)(cp)
-            case '@' ⇒ AnnotationValue(Annotation(in, cp))(cp)
-            case '[' ⇒ ArrayValue(repeat(in.readUnsignedShort) { ElementValue(in, cp) })(cp)
+            case 'B' ⇒ ByteValue(cp, in.readUnsignedShort)
+            case 'C' ⇒ CharValue(cp, in.readUnsignedShort)
+            case 'D' ⇒ DoubleValue(cp, in.readUnsignedShort)
+            case 'F' ⇒ FloatValue(cp, in.readUnsignedShort)
+            case 'I' ⇒ IntValue(cp, in.readUnsignedShort)
+            case 'J' ⇒ LongValue(cp, in.readUnsignedShort)
+            case 'S' ⇒ ShortValue(cp, in.readUnsignedShort)
+            case 'Z' ⇒ BooleanValue(cp, in.readUnsignedShort)
+            case 's' ⇒ StringValue(cp, in.readUnsignedShort)
+            case 'e' ⇒ EnumValue(cp, in.readUnsignedShort, in.readUnsignedShort)
+            case 'c' ⇒ ClassValue(cp, in.readUnsignedShort)
+            case '@' ⇒ AnnotationValue(cp, Annotation(cp, in))
+            case '[' ⇒ ArrayValue(cp, repeat(in.readUnsignedShort) { ElementValue(cp, in) })
         }
     }
 }

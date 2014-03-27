@@ -41,11 +41,11 @@ package bat
 object AttributesParent extends Enumeration {
 
     val ClassFile = Value
-    
+
     val Field = Value
-    
+
     val Method = Value
-    
+
     val Code = Value
 
 }

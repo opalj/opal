@@ -49,30 +49,8 @@ import java.util.zip.ZipInputStream
  *
  * ==Notes for Implementors==
  * Reading of the class file's major structures: the constant pool, fields, methods
- * and the attributes is delegated to special readers.
+ * and the attributes is delegated to corresponding readers.
  * This enables a very high-level of adaptability.
- *
- * ==Class File Structure==
- * <pre>
- * ClassFile {
- *    u4 magic;
- *    u2 minor_version;
- *    u2 major_version;
- *    u2 constant_pool_count;
- *    cp_info constant_pool[constant_pool_count-1];
- *    u2 access_flags;
- *    u2 this_class;
- *    u2 super_class;
- *    u2 interfaces_count;
- *    u2 interfaces[interfaces_count];
- *    u2 fields_count;
- *    field_info fields[fields_count];
- *    u2 methods_count;
- *    method_info methods[methods_count];
- *    u2 attributes_count;
- *    attribute_info attributes[attributes_count];
- * }
- * </pre>
  *
  * For further details see the JVM Specification: The ClassFile Structure.
  *
@@ -211,6 +189,28 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     /**
      * Template method that reads a Java class file from the given input stream.
      *
+     * ==Class File Structure==
+     * <pre>
+     * ClassFile {
+     *    u4 magic;
+     *    u2 minor_version;
+     *    u2 major_version;
+     *    u2 constant_pool_count;
+     *    cp_info constant_pool[constant_pool_count-1];
+     *    u2 access_flags;
+     *    u2 this_class;
+     *    u2 super_class;
+     *    u2 interfaces_count;
+     *    u2 interfaces[interfaces_count];
+     *    u2 fields_count;
+     *    field_info fields[fields_count];
+     *    u2 methods_count;
+     *    method_info methods[methods_count];
+     *    u2 attributes_count;
+     *    attribute_info attributes[attributes_count];
+     * }
+     * </pre>
+     *
      * @param in The `DataInputStream from which the class file will be read. The
      *    stream is not closed by this method.
      *    '''It is highly recommended that the stream is buffered; otherwise the
@@ -252,7 +252,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
 
         // Perform transformations that are specific to this class file.
         // (Used, e.g., to finally resolve the invokedynamic instructions.) 
-        classFile = applyDeferredActions(classFile, cp)
+        classFile = applyDeferredActions(cp, classFile)
 
         // Perform general transformations on class files.
         classFilePostProcessors foreach { postProcessor ⇒
@@ -445,8 +445,8 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     def ClassFiles(
         file: File,
         exceptionHandler: (Exception) ⇒ Unit = ClassFileReader.defaultExceptionHandler): Seq[(ClassFile, URL)] = {
-		if (!file.exists()) {
-			Nil
+        if (!file.exists()) {
+            Nil
         } else if (file.isFile()) {
             val filename = file.getName
             if (file.length() == 0) {
@@ -468,17 +468,17 @@ trait ClassFileReader extends Constant_PoolAbstractions {
             } else {
                 Nil
             }
-        } else /* if(file.isDirectory()) */  {
-			val files = file.listFiles()
-			if (files != null) {
-				(
-                	for (innerFile ← files.par)
-                    	yield ClassFiles(innerFile, exceptionHandler)
-				).flatten.seq
-			} else {
-				Nil
-			}			
-		} 
+        } else /* if(file.isDirectory()) */ {
+            val files = file.listFiles()
+            if (files != null) {
+                (
+                    for (innerFile ← files.par)
+                        yield ClassFiles(innerFile, exceptionHandler)
+                ).flatten.seq
+            } else {
+                Nil
+            }
+        }
     }
 }
 private object ClassFileReader {

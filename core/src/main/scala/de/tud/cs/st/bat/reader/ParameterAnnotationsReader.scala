@@ -39,6 +39,8 @@ import reflect.ClassTag
 import java.io.DataInputStream
 
 /**
+ * Generic parser for a method parameter's visible or invisible annotations.
+ *
  * @author Michael Eichberg
  */
 trait ParameterAnnotationsReader extends Constant_PoolAbstractions {
@@ -50,21 +52,23 @@ trait ParameterAnnotationsReader extends Constant_PoolAbstractions {
     type Annotation
     implicit val AnnotationManifest: ClassTag[Annotation]
 
-    def Annotation(in: DataInputStream, cp: Constant_Pool): Annotation
+    def Annotation(cp: Constant_Pool, in: DataInputStream): Annotation
 
     //
     // IMPLEMENTATION
     //
-    import util.ControlAbstractions.repeat
 
     type ParameterAnnotations = IndexedSeq[IndexedSeq[Annotation]]
 
     def ParameterAnnotations(
-        in: DataInputStream,
-        cp: Constant_Pool): ParameterAnnotations = {
+        cp: Constant_Pool,
+        in: DataInputStream): ParameterAnnotations = {
+
+        import util.ControlAbstractions.repeat
+
         repeat(in.readUnsignedByte) {
             repeat(in.readUnsignedShort) {
-                Annotation(in, cp)
+                Annotation(cp, in)
             }
         }
     }

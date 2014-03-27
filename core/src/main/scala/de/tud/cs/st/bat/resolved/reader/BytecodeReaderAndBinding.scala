@@ -227,7 +227,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                     val cpe = cp(in.readUnsignedShort).asInvokeDynamic
                     in.readByte // ignored; fixed value
                     in.readByte // ignored; fixed value
-                    registerDeferredAction { classFile ⇒
+                    registerDeferredAction(cp) { classFile ⇒
                         val bootstrapMethods = classFile.attributes collectFirst {
                             case BootstrapMethodTable(bms) ⇒ bms
                         }

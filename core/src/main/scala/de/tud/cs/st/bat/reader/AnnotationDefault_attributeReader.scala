@@ -37,21 +37,7 @@ package reader
 import java.io.DataInputStream
 
 /**
- * Reads in an annotation default attribute's data and passes it to a factory
- * method to create the attribute specific representation.
- *
- * '''From the Specification'''
- * The AnnotationDefault attribute is a variable-length attribute in the
- * attributes table of method_info structures representing elements of
- * annotation types.
- *
- * <pre>
- * AnnotationDefault_attribute {
- *  u2 attribute_name_index;
- *  u4 attribute_length;
- *  element_value default_value;
- * }
- * </pre>
+ * Generic parser for ''annotation default'' attributes.
  *
  * @author Michael Eichberg
  */
@@ -61,33 +47,46 @@ trait AnnotationDefault_attributeReader extends AttributeReader {
     // ABSTRACT DEFINITIONS
     //
 
-    type AnnotationDefault_attribute <: Attribute
     type ElementValue
 
     /**
      * Creates a new element value.
      */
-    def ElementValue(in: DataInputStream, cp: Constant_Pool): ElementValue
+    def ElementValue(cp: Constant_Pool, in: DataInputStream): ElementValue
+
+    type AnnotationDefault_attribute <: Attribute
 
     def AnnotationDefault_attribute(
+        constant_pool: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
         attribute_length: Int,
-        element_value: ElementValue)(
-            implicit constant_pool: Constant_Pool): AnnotationDefault_attribute
+        element_value: ElementValue): AnnotationDefault_attribute
 
     //
     // IMPLEMENTATION
     //
 
+    /*
+     * '''From the Specification'''
+     * <pre>
+     * AnnotationDefault_attribute {
+     *  u2 attribute_name_index;
+     *  u4 attribute_length;
+     *  element_value default_value;
+     * }
+     * </pre>
+     */
     registerAttributeReader(AnnotationDefault_attributeReader.ATTRIBTUE_NAME ->
         ((ap: AttributeParent, cp: Constant_Pool, attributeNameIndex: Constant_Pool_Index, in: DataInputStream) ⇒ {
             val attributeLength = in.readInt()
             AnnotationDefault_attribute(
-                attributeNameIndex, attributeLength, ElementValue(in, cp)
-            )(cp)
+                cp, attributeNameIndex, attributeLength, ElementValue(cp, in)
+            )
         }))
 }
-
+/**
+ * Common properties of `AnnotationDefault` attributes.
+ */
 object AnnotationDefault_attributeReader {
 
     val ATTRIBTUE_NAME = "AnnotationDefault"

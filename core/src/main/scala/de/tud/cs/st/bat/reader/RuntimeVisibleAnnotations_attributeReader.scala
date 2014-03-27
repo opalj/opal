@@ -37,41 +37,41 @@ package reader
 import java.io.DataInputStream
 
 /**
- * '''From the Specification'''
- * <pre>
- * RuntimeVisibleAnnotations_attribute {
- * 	u2 attribute_name_index;
- * 	u4 attribute_length;
- * 	u2 num_annotations;
- * 	annotation annotations[num_annotations];
- * }
- * </pre>
+ * Generic parser for `RuntimeVisibleAnnotations` attribute.
+ *
  * @author Michael Eichberg
  */
 trait RuntimeVisibleAnnotations_attributeReader extends AttributeReader {
 
-    type RuntimeVisibleAnnotations_attribute <: Attribute
     type Annotations
 
-    def Annotations(in: DataInputStream, cp: Constant_Pool): Annotations
+    def Annotations(cp: Constant_Pool, in: DataInputStream): Annotations
+
+    type RuntimeVisibleAnnotations_attribute <: Attribute
 
     def RuntimeVisibleAnnotations_attribute(
+        constant_pool: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
         attribute_length: Int,
-        annotations: Annotations)(
-            implicit constant_pool: Constant_Pool): RuntimeVisibleAnnotations_attribute
+        annotations: Annotations): RuntimeVisibleAnnotations_attribute
+
+    //
+    // IMPLEMENTATION
+    //
 
     registerAttributeReader(
         RuntimeVisibleAnnotations_attributeReader.ATTRIBUTE_NAME ->
             ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 val attribute_length = in.readInt()
                 RuntimeVisibleAnnotations_attribute(
-                    attribute_name_index, attribute_length, Annotations(in, cp)
-                )(cp)
+                    cp, attribute_name_index, attribute_length, Annotations(cp, in)
+                )
             })
     )
 }
-
+/**
+ * Common properties of `RuntimeVisibleAnnotations` attributes.
+ */
 object RuntimeVisibleAnnotations_attributeReader {
 
     val ATTRIBUTE_NAME = "RuntimeVisibleAnnotations"

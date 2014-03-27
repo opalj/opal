@@ -37,45 +37,55 @@ package reader
 import java.io.DataInputStream
 
 /**
- * '''From the Specification'''
- * <pre>
- * RuntimeVisibleParameterAnnotations_attribute {
- * 	u2 attribute_name_index;
- * 	u4 attribute_length;
- * 	u1 num_parameters;
- * 	{
- * 		u2 num_annotations;
- * 		annotation annotations[num_annotations];
- * 		} parameter_annotations[num_parameters];
- * 	}
- * </pre>
+ * Generic parser for `RuntimeVisibleParameterAnnotations` attributes.
  *
  * @author Michael Eichberg
  */
 trait RuntimeVisibleParameterAnnotations_attributeReader extends AttributeReader {
 
-    type RuntimeVisibleParameterAnnotations_attribute <: Attribute
     type ParameterAnnotations
 
-    def ParameterAnnotations(in: DataInputStream, cp: Constant_Pool): ParameterAnnotations
+    def ParameterAnnotations(cp: Constant_Pool, in: DataInputStream): ParameterAnnotations
+
+    type RuntimeVisibleParameterAnnotations_attribute <: Attribute
 
     def RuntimeVisibleParameterAnnotations_attribute(
+        constant_pool: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
         attribute_length: Int,
-        parameter_annotations: ParameterAnnotations)(
-            implicit constant_pool: Constant_Pool): RuntimeVisibleParameterAnnotations_attribute
+        parameter_annotations: ParameterAnnotations): RuntimeVisibleParameterAnnotations_attribute
 
+    //
+    // IMPLEMENTATION
+    //
+
+    /*
+     * '''From the Specification'''
+     * <pre>
+     * RuntimeVisibleParameterAnnotations_attribute {
+     *  u2 attribute_name_index;
+     *  u4 attribute_length;
+     *  u1 num_parameters;
+     *  {
+     *      u2 num_annotations;
+     *      annotation annotations[num_annotations];
+     *      } parameter_annotations[num_parameters];
+     *  }
+     * </pre>
+     */
     registerAttributeReader(
         RuntimeVisibleParameterAnnotations_attributeReader.ATTRIBUTE_NAME ->
             ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 val attribute_length = in.readInt()
                 RuntimeVisibleParameterAnnotations_attribute(
-                    attribute_name_index, attribute_length, ParameterAnnotations(in, cp)
-                )(cp)
+                    cp, attribute_name_index, attribute_length, ParameterAnnotations(cp, in)
+                )
             })
     )
 }
-
+/**
+ * Common properties of `RuntimeVisibleParameterAnnotations` attributes.
+ */
 object RuntimeVisibleParameterAnnotations_attributeReader {
 
     val ATTRIBUTE_NAME = "RuntimeVisibleParameterAnnotations"

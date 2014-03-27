@@ -39,21 +39,10 @@ import reflect.ClassTag
 import java.io.DataInputStream
 
 /**
- * Defines a template method to read in a set of annotations. This
+ * Generic parser to parse a list of annotations. This
  * reader is intended to be used in conjunction with the
  * Runtime(In)Visible(Parameter)Annotations_attributeReaders.
  *
- * ''' From the Specification'''
- *
- * <pre>
- * annotation {
- * 	u2 type_index;
- * 	u2 num_element_value_pairs;
- * 	{	u2 element_name_index;
- * 		element_value value;
- * 	}	element_value_pairs[num_element_value_pairs]
- * }
- * </pre>
  *
  * @author Michael Eichberg
  */
@@ -63,32 +52,47 @@ trait AnnotationsReader extends Constant_PoolAbstractions {
     // ABSTRACT DEFINITIONS
     //
 
+    type ElementValuePairs
+
+    def ElementValuePairs(cp: Constant_Pool, in: DataInputStream): ElementValuePairs
+
     type Annotation
     implicit val AnnotationManifest: ClassTag[Annotation]
 
-    type ElementValuePairs
-
-    def ElementValuePairs(in: DataInputStream, cp: Constant_Pool): ElementValuePairs
-
-    def Annotation(type_index: Constant_Pool_Index,
-                   element_value_pairs: ElementValuePairs)(
-                       implicit constant_pool: Constant_Pool): Annotation
+    def Annotation(
+        constant_pool: Constant_Pool,
+        type_index: Constant_Pool_Index,
+        element_value_pairs: ElementValuePairs): Annotation
 
     //
     // IMPLEMENTATION
     //
 
-    import util.ControlAbstractions.repeat
-
     type Annotations = IndexedSeq[Annotation]
 
-    def Annotations(in: DataInputStream, cp: Constant_Pool): Annotations = {
+    /**
+     * Reads the annotations of a annotations attributes.
+     *
+     * ''' From the Specification'''
+     * <pre>
+     * annotation {
+     *      u2 type_index;
+     *      u2 num_element_value_pairs;
+     *      {   u2 element_name_index;
+     *          element_value value;
+     *      }   element_value_pairs[num_element_value_pairs]
+     * }
+     * </pre>
+     */
+    def Annotations(cp: Constant_Pool, in: DataInputStream): Annotations = {
+        import util.ControlAbstractions.repeat
+
         repeat(in.readUnsignedShort) {
-            Annotation(in, cp)
+            Annotation(cp, in)
         }
     }
 
-    def Annotation(in: DataInputStream, cp: Constant_Pool): Annotation = {
-        Annotation(in.readUnsignedShort, ElementValuePairs(in, cp))(cp)
+    def Annotation(cp: Constant_Pool, in: DataInputStream): Annotation = {
+        Annotation(cp, in.readUnsignedShort, ElementValuePairs(cp, in))
     }
 }
