@@ -96,7 +96,7 @@ sealed trait UIDList[+T <: UID] { thisList ⇒
     /**
      * If the given element is not already stored in
      * this list, a new list is created and the element is added to it.
-     * In the element is already in this list, `this` list is returned.
+     * If the element is already in this list, `this` list is returned.
      */
     def +[X >: T <: UID](e: X): UIDList[X]
 
@@ -250,7 +250,7 @@ sealed trait UIDList[+T <: UID] { thisList ⇒
     /**
      * Passes all elements of this list to the given function.
      */
-    @inline final def foreach[U](f: T ⇒ U): Unit = {
+    @inline final def foreach(f: T ⇒ Unit): Unit = {
         var rest: UIDList[T] = thisList
         while (rest.nonEmpty) {
             f(rest.head)
