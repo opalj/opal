@@ -34,45 +34,56 @@ package de.tud.cs.st
 package util
 
 /**
- * Models a three state answer.
+ * Models a three state answer (`Yes`, `No`, `Unknown`).
  *
  * @author Michael Eichberg
  */
 sealed trait Answer {
 
     /**
-     * Returns `true` if and only if the answer is `Yes`.
+     * Returns `true` if and only if this answer is `Yes`.
+     *
+     * Effectively the same as a comparison with "Yes".
      */
     def isYes: Boolean
 
     /**
-     * Returns `true` if and only if the answer is `No`.
+     * Returns `true` if and only if this answer is `No`.
+     *
+     * Effectively the same as a comparison with "No".
      */
     def isNo: Boolean
+
     /**
-     * Returns `true` if the result of a computation is the answer `Unknown`.
+     * Returns `true` if and only if this answer is `Unknown`.
      *
      * Effectively the same as a comparison with "Unknown".
      */
     def isUnknown: Boolean
 
     /**
-     * Returns `true` if the answer is `Yes` or `Unknown`, `false` otherwise.
+     * Returns `true` if this answer is `Yes` or `Unknown`, `false` otherwise.
      */
     def isNotNo: Boolean
 
+    /**
+     * Returns `true` if this answer is `Yes` or `Unknown`, `false` otherwise.
+     */
     final def isYesOrUnknown: Boolean = isNotNo
 
     /**
-     * Returns `true` if the answer is `No` or `Unknown`, `false` otherwise.
+     * Returns `true` if this answer is `No` or `Unknown`, `false` otherwise.
      */
     def isNotYes: Boolean
 
+    /**
+     * Returns `true` if this answer is `No` or `Unknown`, `false` otherwise.
+     */
     final def isNoOrUnknown: Boolean = isNotYes
 
     /**
-     * Returns `true` if the answer is either `Yes` or `No`; false if this answer
-     * represents `Unknown`.
+     * Returns `true` if this answer is either `Yes` or `No`; false if this answer
+     * is `Unknown`.
      */
     def isYesOrNo: Boolean
 
@@ -83,21 +94,26 @@ sealed trait Answer {
     def negate: Answer
 
     /**
-     * Joins this answer and the given answer. Basically, if the other
-     * `Answer` is identical to this answer `this` answer is returned, otherwise
-     * `Unknown` is returned.
+     * Joins this answer and the given answer.
+     *
+     * If the other `Answer` is identical to this answer `this` answer is returned,
+     * otherwise `Unknown` is returned.
+     *
      * Facilitates the concatenation of answers using `&=`.
      */
     def &(other: Answer): Answer
 
     /**
-     * If this answer represents Unknown the given function is evaluated and that
+     * If this answer is unknown the given function is evaluated and that
      * result is returned, otherwise `this` answer is returned.
      */
     def ifUnknown(f: ⇒ Answer): Answer = this
 }
+
 /**
  * Factory for `Answer` objects.
+ *
+ * @author Michael Eichberg
  */
 object Answer {
     /**
@@ -106,6 +122,7 @@ object Answer {
      */
     def apply(value: Boolean): Answer = if (value) Yes else No
 }
+
 /**
  * Represents a `Yes` answer to a question.
  */

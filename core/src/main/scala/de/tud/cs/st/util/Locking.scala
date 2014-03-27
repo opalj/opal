@@ -80,7 +80,7 @@ trait Locking {
 object Locking {
 
     /**
-     * Creates a new Reentrant Read-Write Lock.
+     * Creates a new reentrant read-write lock.
      */
     def apply(): Locking = new Locking {}
 
