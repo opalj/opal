@@ -57,7 +57,7 @@ class TestUrUninitReadCalledFromSuperConstructor extends AnalysisTest {
     behavior of "UrUninitReadCalledFromSuperConstructor"
 
     val superclass =
-        "UrUninitReadCalledFromSuperConstructor/SuperclassWithAccessToSubclassDuringInit"
+        "UrUninitReadCalledFromSuperConstructor.SuperclassWithAccessToSubclassDuringInit"
 
     val subclass =
         "UrUninitReadCalledFromSuperConstructor/SubclassAccessedBySuperclassBeforeInit"
