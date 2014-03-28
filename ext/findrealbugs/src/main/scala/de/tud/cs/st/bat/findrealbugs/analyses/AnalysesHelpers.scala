@@ -37,11 +37,14 @@ package findrealbugs
 package analyses
 
 import resolved._
+import resolved.analyses._
 import resolved.instructions._
 
 /**
  * Helper methods common to FindRealBug's analyses.
  *
+ * @author Peter Spieler
+ * @author Roberts Kolosovs
  * @author Daniel Klauer
  * @author Ralf Mitschke
  */
@@ -75,4 +78,60 @@ object AnalysesHelpers {
         }
     }
 
+    val integerWrapper = ObjectType("java/lang/Integer")
+    val floatWrapper = ObjectType("java/lang/Float")
+    val doubleWrapper = ObjectType("java/lang/Double")
+    val booleanWrapper = ObjectType("java/lang/Boolean")
+    val characterWrapper = ObjectType("java/lang/Character")
+    val byteWrapper = ObjectType("java/lang/Byte")
+    val shortWrapper = ObjectType("java/lang/Short")
+    val longWrapper = ObjectType("java/lang/Long")
+
+    /**
+     * Checks if a given object type is a standard java wrapper class for a java primitive.
+     *
+     * @param objectType The type of the object to be checked.
+     * @return `true` if the type is a wrapper for Java primitive type, else `false`.
+     */
+    def isPrimitiveWrapper(objectType: ObjectType): Boolean = {
+        (objectType == integerWrapper || objectType == floatWrapper ||
+            objectType == doubleWrapper || objectType == booleanWrapper ||
+            objectType == characterWrapper || objectType == byteWrapper ||
+            objectType == shortWrapper || objectType == longWrapper)
+    }
+
+    /**
+     * Accumulates a list of all annotation types with a certain name in the project.
+     *
+     * @param project The project to be searched.
+     * @return A `Set` of all the annotation types.
+     */
+    def collectAnnotationTypes[Source](
+        project: Project[Source],
+        name: String): Set[ObjectType] = {
+        (for {
+            classFile ← project.classFiles
+            if (classFile.isAnnotationDeclaration &&
+                classFile.thisType.simpleName.equals(name))
+        } yield {
+            ObjectType(classFile.fqn)
+        }).toSet
+    }
+
+    /**
+     * Determines whether a class is annotated with one of the annotations in the given
+     * list.
+     *
+     * @param classFile The class to check.
+     * @param annotationTypes list of annotations to check for.
+     * @return `true` if the class is annotated with one of the annotations; `false`
+     * otherwise.
+     */
+    def isAnnotatedWith(
+        classFile: ClassFile,
+        annotationTypes: Set[ObjectType]): Boolean = {
+        classFile.annotations.exists(annotation ⇒
+            annotationTypes.exists(_ == annotation.annotationType)
+        )
+    }
 }

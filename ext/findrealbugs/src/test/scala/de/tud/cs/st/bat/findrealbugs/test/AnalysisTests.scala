@@ -68,18 +68,36 @@ object AnalysisTest {
      * @return A `Project` representing the class files from the provided .jar file.
      */
     def makeProjectFromJar(filename: String, useJDK: Boolean = false): Project[URL] = {
-        val classFiles = Java7Framework.ClassFiles(
-            TestSupport.locateTestResources("classfiles/analyses/"+filename,
-                "ext/findrealbugs"))
+        makeProjectFromJars(Seq(filename), useJDK)
+    }
+
+    /**
+     * Builds a project from one or more .jar files in src/test/resources/.
+     *
+     * @param filenames The files names, containing the path relative to
+     * ext/findrealbugs/src/test/resources/.
+     * @param useJDK Whether the JDK classes should be added to the project, if available.
+     * @return A `Project` representing the class files from the provided .jar file.
+     */
+    def makeProjectFromJars(
+        filenames: Seq[String],
+        useJDK: Boolean = false): Project[URL] = {
+
+        val classFiles = filenames.map(filename ⇒
+            Java7Framework.ClassFiles(
+                TestSupport.locateTestResources("classfiles/analyses/"+filename,
+                    "ext/findrealbugs")
+            )
+        ).flatten
 
         if (useJDK && jreClassFiles.nonEmpty) {
             println("Creating IndexBasedProject: "+classFiles.size+
-                " class files from "+filename+" and "+jreClassFiles.size+
+                " class files from "+filenames.mkString(", ")+" and "+jreClassFiles.size+
                 " JRE class files")
             IndexBasedProject(classFiles, jreClassFiles)
         } else {
             println("Creating IndexBasedProject: "+classFiles.size+
-                " class files from "+filename)
+                " class files from "+filenames.mkString(", "))
             IndexBasedProject(classFiles)
         }
     }
