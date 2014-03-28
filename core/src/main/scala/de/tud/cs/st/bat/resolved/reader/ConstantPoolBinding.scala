@@ -76,7 +76,7 @@ trait ConstantPoolBinding extends Constant_PoolReader {
             throw new BATException("conversion to signature attribute is not supported")
 
         def asConstantValue(implicit cp: Constant_Pool): ConstantValue[_] =
-            throw new BATException("conversion to constant value is not supported")
+            throw new BATException("conversion of "+this.getClass.getSimpleName+" to constant value is not supported")
 
         def asFieldref(implicit cp: Constant_Pool): (ObjectType, String, FieldType) =
             throw new BATException("conversion to field ref is not supported")
