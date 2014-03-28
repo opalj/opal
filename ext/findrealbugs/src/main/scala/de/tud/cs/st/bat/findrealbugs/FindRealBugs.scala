@@ -107,6 +107,8 @@ object FindRealBugs {
             new PublicFinalizeMethodShouldBeProtected[URL]),
         ("SerializableNoSuitableConstructor" ->
             new SerializableNoSuitableConstructor[URL]),
+        ("SuperclassUsesSubclassDuringinitialization" ->
+            new SuperclassUsesSubclassDuringInitialization[URL]),
         ("SwingMethodInvokedInSwingThread" ->
             new SwingMethodInvokedInSwingThread[URL]),
         ("SyncSetUnsyncGet" ->
