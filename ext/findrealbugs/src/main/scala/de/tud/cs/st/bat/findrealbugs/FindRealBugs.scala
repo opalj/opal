@@ -85,18 +85,24 @@ object FindRealBugs {
             new DoInsideDoPrivileged[URL]),
         ("EqualsHashCodeContract" ->
             new EqualsHashCodeContract[URL]),
+        ("FieldIsntImmutableInImmutableClass" ->
+            new FieldIsntImmutableInImmutableClass[URL]),
         ("FieldShouldBeFinal" ->
             new FieldShouldBeFinal[URL]),
         ("FieldShouldBePackageProtected" ->
             new FieldShouldBePackageProtected[URL]),
         ("FinalizeUseless" ->
             new FinalizeUseless[URL]),
+        ("ImmutableClassInheritsMutableClass" ->
+            new ImmutableClassInheritsMutableClass[URL]),
         ("ImplementsCloneableButNotClone" ->
             new ImplementsCloneableButNotClone[URL]),
         ("InefficientToArray" ->
             new InefficientToArray[URL]),
         ("LongBitsToDoubleInvokedOnInt" ->
             new LongBitsToDoubleInvokedOnInt[URL]),
+        ("NativeMethodInImmutableClass" ->
+            new NativeMethodInImmutableClass[URL]),
         ("NonSerializableClassHasASerializableInnerClass" ->
             new NonSerializableClassHasASerializableInnerClass[URL]),
         ("ManualGarbageCollection" ->
