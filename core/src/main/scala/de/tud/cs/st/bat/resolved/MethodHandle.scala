@@ -39,8 +39,19 @@ package resolved
  *
  * @author Michael Eichberg
  */
-sealed trait MethodHandle extends BootstrapArgument {
-    def toJava(bootstrapArguments: BootstrapArguments): String
+sealed trait MethodHandle extends ConstantValue[MethodHandle] {
+
+	final override def value: this.type = this
+
+    /**
+	 * Returns `ObjectType.MethodHandle`; 
+	 * the type of the value pushed onto the stack by an ldc(_w) instruction.
+	 */
+	override def valueType: ObjectType = ObjectType.MethodHandle
+
+	override def valueToString: String = this.toString
+		
+    def toJava: String
 }
 
 sealed trait FieldAccessMethodHandle extends MethodHandle {
@@ -48,7 +59,7 @@ sealed trait FieldAccessMethodHandle extends MethodHandle {
     def name: String
     def fieldType: FieldType
 
-    override def toJava(bootstrapArguments: BootstrapArguments): String = {
+    override def toJava: String = {
         val handleType = getClass.getSimpleName.toString
         val fieldName = declaringType.toJava+"."+name
         val returnType = ": "+fieldType.toJava
@@ -60,7 +71,7 @@ case class GetFieldMethodHandle(
     declaringType: ObjectType,
     name: String,
     fieldType: FieldType)
-        extends FieldAccessMethodHandle
+        extends FieldAccessMethodHandle 
 
 case class GetStaticMethodHandle(
     declaringType: ObjectType,
@@ -85,7 +96,7 @@ trait MethodCallMethodHandle extends MethodHandle {
     def name: String
     def methodDescriptor: MethodDescriptor
 
-    override def toJava(bootstrapArguments: BootstrapArguments): String = {
+    override def toJava: String = {
         val handleType = getClass.getSimpleName.toString
         val typeName = receiverType.toJava
         val methodCall = name + methodDescriptor.toUMLNotation

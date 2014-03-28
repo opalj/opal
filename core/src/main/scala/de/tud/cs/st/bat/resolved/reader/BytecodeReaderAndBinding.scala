@@ -86,7 +86,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                 case 43  ⇒ ALOAD_1
                 case 44  ⇒ ALOAD_2
                 case 45  ⇒ ALOAD_3
-                case 189 ⇒ ANEWARRAY(cp(in.readUnsignedShort).asConstantValue(cp).toClass)
+                case 189 ⇒ ANEWARRAY(cp(in.readUnsignedShort).asConstantValue(cp).toReferenceType)
                 case 176 ⇒ ARETURN
                 case 190 ⇒ ARRAYLENGTH
                 case 58  ⇒ ASTORE(lvIndex)
@@ -100,7 +100,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                 case 16  ⇒ BIPUSH(in.readByte /* value */ )
                 case 52  ⇒ CALOAD
                 case 85  ⇒ CASTORE
-                case 192 ⇒ CHECKCAST(cp(in.readUnsignedShort).asConstantValue(cp).toClass)
+                case 192 ⇒ CHECKCAST(cp(in.readUnsignedShort).asConstantValue(cp).toReferenceType)
                 case 144 ⇒ D2F
                 case 142 ⇒ D2I
                 case 143 ⇒ D2L
@@ -222,7 +222,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                 case 29  ⇒ ILOAD_3
                 case 104 ⇒ IMUL
                 case 116 ⇒ INEG
-                case 193 ⇒ INSTANCEOF(cp(in.readUnsignedShort).asConstantValue(cp).toClass)
+                case 193 ⇒ INSTANCEOF(cp(in.readUnsignedShort).asConstantValue(cp).toReferenceType)
                 case 186 ⇒
                     val cpe = cp(in.readUnsignedShort).asInvokeDynamic
                     in.readByte // ignored; fixed value
@@ -322,7 +322,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                 case 197 ⇒
                     MULTIANEWARRAY(
                         // componentType 
-                        cp(in.readUnsignedShort).asConstantValue(cp).toClass.asArrayType,
+                        cp(in.readUnsignedShort).asConstantValue(cp).toReferenceType.asArrayType,
                         //  dimensions 
                         in.readUnsignedByte
                     )

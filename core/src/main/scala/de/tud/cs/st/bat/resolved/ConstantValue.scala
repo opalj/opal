@@ -35,11 +35,13 @@ package bat
 package resolved
 
 /**
- * Represents constant values.
- *
+ * Represents constant values; i.e., values pushed onto the stack by the ldc(2)(_w) 
+ * instructions.
+ * @note A `MethodHandle` or MethodType (i.e., a `MethodDescriptor`) is also  
+ * 		a `ConstantValue`.
  * @author Michael Eichberg
  */
-sealed trait ConstantValue[T >: Nothing] extends Attribute with BootstrapArgument {
+trait ConstantValue[T >: Nothing] extends BootstrapArgument {
 
     /**
      * The concrete value.
@@ -55,7 +57,7 @@ sealed trait ConstantValue[T >: Nothing] extends Attribute with BootstrapArgumen
      * A string representation of the concrete value.
      */
     def valueToString: String
-
+	
     def toBoolean: Boolean =
         throw new BATException(this+" cannot be converted to a boolean value")
 
@@ -82,11 +84,26 @@ sealed trait ConstantValue[T >: Nothing] extends Attribute with BootstrapArgumen
 
     def toUTF8: String =
         throw new BATException(this+" cannot be converted to a String(UTF8) value")
-
-    def toClass: ReferenceType =
-        throw new BATException(this+" cannot be converted to a class value")
-
+		
+	def toReferenceType : ReferenceType =
+		throw new BATException(this+" cannot be converted to a reference type") 
 }
+
+/**
+ * ConstantClass is, e.g., used by `anewarray` and `multianewarray` instructions.
+ *
+ * A `ConstantClass` attribute is not a `Field` attribute. I.e., it is never used to
+ * set the value of a static field.
+ */
+final case class ConstantClass(value: ReferenceType) extends ConstantValue[ReferenceType] {
+
+    override def valueToString = value.toJava
+
+    override def valueType = ObjectType.Class
+
+	final override def toReferenceType : ReferenceType = value
+}
+
 /**
  * Facilitates matching constant values.
  *
@@ -97,8 +114,10 @@ object ConstantValue {
     def unapply[T](constantValue: ConstantValue[T]): Option[(T, Type)] =
         Some((constantValue.value, constantValue.valueType))
 }
+	
+sealed trait ConstantFieldValue[T >: Nothing] extends Attribute with ConstantValue[T] 
 
-final case class ConstantLong(value: Long) extends ConstantValue[Long] {
+final case class ConstantLong(value: Long) extends ConstantFieldValue[Long] {
 
     override def toLong = value
 
@@ -108,7 +127,7 @@ final case class ConstantLong(value: Long) extends ConstantValue[Long] {
 
 }
 
-final case class ConstantInteger(value: Int) extends ConstantValue[Int] {
+final case class ConstantInteger(value: Int) extends ConstantFieldValue[Int] {
 
     override def toBoolean = value != 0
 
@@ -126,7 +145,7 @@ final case class ConstantInteger(value: Int) extends ConstantValue[Int] {
 
 }
 
-final case class ConstantDouble(value: Double) extends ConstantValue[Double] {
+final case class ConstantDouble(value: Double) extends ConstantFieldValue[Double] {
 
     override def toDouble = value
 
@@ -136,7 +155,7 @@ final case class ConstantDouble(value: Double) extends ConstantValue[Double] {
 
 }
 
-final case class ConstantFloat(value: Float) extends ConstantValue[Float] {
+final case class ConstantFloat(value: Float) extends ConstantFieldValue[Float] {
 
     override def toFloat = value
 
@@ -146,7 +165,7 @@ final case class ConstantFloat(value: Float) extends ConstantValue[Float] {
 
 }
 
-final case class ConstantString(value: String) extends ConstantValue[String] {
+final case class ConstantString(value: String) extends ConstantFieldValue[String] {
 
     override def toUTF8 = value
 
@@ -156,20 +175,5 @@ final case class ConstantString(value: String) extends ConstantValue[String] {
 
 }
 
-/**
- * ConstantClass is, e.g., used by `anewarray` and `multianewarray` instructions.
- *
- * A `ConstantClass` attribute is not a `Field` attribute. I.e., it is never used to
- * set the value of a static field.
- */
-final case class ConstantClass(value: ReferenceType) extends ConstantValue[ReferenceType] {
-
-    override def toClass = value
-
-    override def valueToString = value.toJava
-
-    override def valueType = ObjectType.Class
-
-}
 
 

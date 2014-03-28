@@ -50,7 +50,7 @@ case class BootstrapMethod(
         methodHandle: MethodHandle,
         bootstrapArguments: BootstrapArguments) {
 
-    def toJava: String = methodHandle.toJava(bootstrapArguments)
+    def toJava: String = methodHandle.toJava
 }
 
 /**

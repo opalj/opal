@@ -47,13 +47,13 @@ trait ConstantValue_attributeBinding
         with ConstantPoolBinding
         with AttributeBinding {
 
-    type ConstantValue_attribute = ConstantValue[_]
+    type ConstantValue_attribute = ConstantFieldValue[_]
 
     def ConstantValue_attribute(
         attributeNameIndex: Constant_Pool_Index,
         constantValueIndex: Constant_Pool_Index)(
             implicit cp: Constant_Pool) = {
-        cp(constantValueIndex).asConstantValue
+        cp(constantValueIndex).asConstantFieldValue(cp)
     }
 
 }

@@ -58,6 +58,10 @@ final case class LoadFloat_W(value: Float) extends LDC_W[Float]
 
 final case class LoadClass_W(value: ReferenceType) extends LDC_W[ReferenceType]
 
+final case class LoadMethodHandle_W(value: MethodHandle) extends LDC_W[MethodHandle]
+
+final case class LoadMethodType_W(value: MethodDescriptor) extends LDC_W[MethodDescriptor]
+
 final case class LoadString_W(value: String) extends LDC_W[String]
 
 /**
@@ -73,6 +77,8 @@ object LDC_W {
             case f: Float         ⇒ LoadFloat_W(f)
             case r: ReferenceType ⇒ LoadClass_W(r)
             case s: String        ⇒ LoadString_W(s)
+			case mh: MethodHandle => LoadMethodHandle_W(mh)
+			case md: MethodDescriptor => LoadMethodType_W(md)			
             case _ ⇒
                 throw new BATException("unsupported constant value: "+constantValue)
         }

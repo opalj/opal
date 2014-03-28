@@ -75,8 +75,11 @@ trait ConstantPoolBinding extends Constant_PoolReader {
         def asSignature(implicit ap: AttributeParent): Signature =
             throw new BATException("conversion to signature attribute is not supported")
 
-        def asConstantValue(implicit cp: Constant_Pool): ConstantValue[_] =
-            throw new BATException("conversion of "+this.getClass.getSimpleName+" to constant value is not supported")
+	    def asConstantValue(implicit cp: Constant_Pool): ConstantValue[_] =
+	        throw new BATException("conversion of "+this.getClass.getSimpleName+" to constant value is not supported")
+
+		def asConstantFieldValue(implicit cp: Constant_Pool): ConstantFieldValue[_] =
+			throw new BATException("conversion of "+this.getClass.getSimpleName+" to constant field value is not supported")
 
         def asFieldref(implicit cp: Constant_Pool): (ObjectType, String, FieldType) =
             throw new BATException("conversion to field ref is not supported")
@@ -105,14 +108,10 @@ trait ConstantPoolBinding extends Constant_PoolReader {
 
     val Constant_Pool_EntryManifest: ClassTag[Constant_Pool_Entry] = implicitly
 
-    trait ConstantValueBootstrapArgument extends Constant_Pool_Entry {
-        override def asBootstrapArgument(implicit cp: Constant_Pool): BootstrapArgument =
-            asConstantValue
-    }
 
     case class CONSTANT_Class_info(
         name_index: Constant_Pool_Index)
-            extends ConstantValueBootstrapArgument {
+            extends Constant_Pool_Entry {
 
         override def asConstantValue(implicit cp: Constant_Pool) =
             ConstantClass(asReferenceType)
@@ -124,39 +123,67 @@ trait ConstantPoolBinding extends Constant_PoolReader {
             ReferenceType(name_index.asString)
 
         override def asBootstrapArgument(implicit cp: Constant_Pool): BootstrapArgument =
-            asConstantValue
+            asConstantValue(cp)
     }
+
+    trait CONSTANT_FieldValue_info extends Constant_Pool_Entry {
+	
+        final override def asConstantValue(implicit cp: Constant_Pool) : ConstantFieldValue[_] =
+            asConstantFieldValue(cp)
+				
+	}
 
     case class CONSTANT_Double_info(
         value: ConstantDouble)
-            extends ConstantValueBootstrapArgument {
+            extends CONSTANT_FieldValue_info {
+				
         def this(value: Double) { this(ConstantDouble(value)) }
-        override def asConstantValue(implicit cp: Constant_Pool) = value
+		
+        override def asConstantFieldValue(implicit cp: Constant_Pool) : ConstantDouble = value
+		
+        override def asBootstrapArgument(implicit cp: Constant_Pool): BootstrapArgument = {
+		   asConstantValue(cp)
+		}
     }
 
     case class CONSTANT_Float_info(
         value: ConstantFloat)
-            extends ConstantValueBootstrapArgument {
-        def this(value: Float) { this(ConstantFloat(value)) }
-        override def asConstantValue(implicit cp: Constant_Pool) = value
+            extends CONSTANT_FieldValue_info {
+        
+		def this(value: Float) { this(ConstantFloat(value)) }
+		
+        override def asConstantFieldValue(implicit cp: Constant_Pool) : ConstantFloat = value
+		
+        override def asBootstrapArgument(implicit cp: Constant_Pool): BootstrapArgument = {
+		   asConstantValue(cp)
+		}
     }
 
     case class CONSTANT_Integer_info(
         value: ConstantInteger)
-            extends ConstantValueBootstrapArgument {
+            extends CONSTANT_FieldValue_info {
 
         def this(value: Int) { this(ConstantInteger(value)) }
 
-        override def asConstantValue(implicit cp: Constant_Pool) = value
+        override def asConstantFieldValue(implicit cp: Constant_Pool) : ConstantInteger = value
+		
+        override def asBootstrapArgument(implicit cp: Constant_Pool): BootstrapArgument = {
+		   asConstantValue(cp)
+		}
 
     }
 
     case class CONSTANT_Long_info(
-            value: ConstantLong) extends ConstantValueBootstrapArgument {
+        value: ConstantLong) 
+			extends CONSTANT_FieldValue_info {
 
         def this(value: Long) { this(ConstantLong(value)) }
 
-        override def asConstantValue(implicit cp: Constant_Pool) = value
+        override def asConstantFieldValue(implicit cp: Constant_Pool) : ConstantLong = value
+		
+        override def asBootstrapArgument(implicit cp: Constant_Pool): BootstrapArgument = {
+		   asConstantValue(cp)
+		}
     }
 
     case class CONSTANT_Utf8_info(
@@ -201,10 +228,14 @@ trait ConstantPoolBinding extends Constant_PoolReader {
 
     case class CONSTANT_String_info(
         string_index: Constant_Pool_Index)
-            extends ConstantValueBootstrapArgument {
+            extends CONSTANT_FieldValue_info {
 
-        override def asConstantValue(implicit cp: Constant_Pool) =
+        override def asConstantFieldValue(implicit cp: Constant_Pool) : ConstantString =
             ConstantString(string_index.asString)
+			
+	    override def asBootstrapArgument(implicit cp: Constant_Pool): BootstrapArgument = {
+		   asConstantValue(cp)
+		}
     }
 
     case class CONSTANT_Fieldref_info(
@@ -286,7 +317,10 @@ trait ConstantPoolBinding extends Constant_PoolReader {
             extends Constant_Pool_Entry {
 
         override def asBootstrapArgument(implicit cp: Constant_Pool): BootstrapArgument =
-            asMethodHandle
+            asMethodHandle(cp)
+			
+	    override def asConstantValue(implicit cp: Constant_Pool) : MethodHandle =
+	        asMethodHandle(cp)	
 
         override def asMethodHandle(implicit cp: Constant_Pool): MethodHandle = {
             (this.referenceKind: @scala.annotation.switch) match {
@@ -341,8 +375,11 @@ trait ConstantPoolBinding extends Constant_PoolReader {
         def methodDescriptor(implicit cp: Constant_Pool): MethodDescriptor =
             cp(descriptorIndex).asMethodDescriptor
 
+	    override def asConstantValue(implicit cp: Constant_Pool) : MethodDescriptor =
+		    methodDescriptor(cp)	
+
         override def asBootstrapArgument(implicit cp: Constant_Pool): BootstrapArgument =
-            cp(descriptorIndex).asMethodDescriptor
+            methodDescriptor(cp)
     }
 
     /**
