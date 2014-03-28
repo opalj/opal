@@ -43,8 +43,8 @@ import scala.collection.Set
 package object util {
 
     /**
-     * Removes the first occurrence of the specified program counter from the given list 
-     * if the given `test` has not yet failed. If the test fails, the '''original''' 
+     * Removes the first occurrence of the specified program counter from the given list
+     * unless the given `test` has failed. If the test fails, the '''original'''
      * list is returned.
      * The given test is executed before the test is made whether we have to remove
      * the element from the list.
@@ -52,13 +52,13 @@ package object util {
      * possible to check whether the list is modified or not using
      * a reference comparison (`eq`).
      */
-    @inline def removeFirstWhile(worklist: List[PC], pc: PC)(test: PC ⇒ Boolean): List[PC] = {
+    @inline def removeFirstUnless(worklist: List[PC], pc: PC)(test: PC ⇒ Boolean): List[PC] = {
         var newWorklist: List[PC] = List.empty
         var removedPC: Boolean = false
         var remainingWorklist = worklist
         while (remainingWorklist.nonEmpty) {
             val thePC = remainingWorklist.head
-            if (!test(thePC))
+            if (test(thePC))
                 return worklist
             if (thePC == pc) {
                 return newWorklist.reverse ::: remainingWorklist.tail

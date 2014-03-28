@@ -53,7 +53,7 @@ import scala.util.control.ControlThrowable
  * ==Thread Safety==
  * This class is thread-safe. However, to make it possible to use one abstract
  * interpreter instance for the concurrent abstract interpretation of independent
- * methods, the `AITracer` (if any) has to be thread-safe to. IFD
+ * methods, the `AITracer` (if any) has to be thread-safe to.
  *
  * Hence, it is possible to use a single instance to analyze multiple methods in parallel.
  * However, if you want to be able to selectively abort the abstract interpretation
@@ -301,9 +301,9 @@ trait AI[D <: SomeDomain] {
      *      will continue. If the method was never analyzed before, the list should just
      *      contain the value "0"; i.e., we start with the interpretation of the
      *      first instruction.
-     *      Note that the worklist may contain negative values that are related to
-     *      a specific instruction per-se but which encode the necessary information
-     *      to handle subroutines. If we have a call to a subroutine we add the special
+     *      Note that the worklist may contain negative values. These values are not
+     *      related to a specific instruction per-se but encode the necessary information
+     *      to handle subroutines. In case of calls to a subroutine we add the special
      *      values `SUBROUTINE` and `SUBROUTINE_START` to the list to encode when the
      *      evaluation started. This is needed to completely process the subroutine
      *      (to explore all paths) before we finally return to the main method.
@@ -394,7 +394,7 @@ trait AI[D <: SomeDomain] {
             operands: Operands,
             locals: Locals) {
 
-            import util.removeFirstWhile
+            import util.removeFirstUnless
 
             // The worklist containing the PC is manipulated ...:
             // - here (by this method)
@@ -430,7 +430,7 @@ trait AI[D <: SomeDomain] {
                         // we want depth-first evaluation (, but we do not want to 
                         // reschedule instructions that do not belong to the current
                         // evaluation context/(sub-)routine.)
-                        val filteredList = removeFirstWhile(worklist, targetPC) { _ >= 0 }
+                        val filteredList = removeFirstUnless(worklist, targetPC) { _ < 0 }
                         if (tracer.isDefined) {
                             if (filteredList eq worklist)
                                 // the instruction was not yet scheduled for another
@@ -451,7 +451,7 @@ trait AI[D <: SomeDomain] {
                         // we want depth-first evaluation (, but we do not want to 
                         // reschedule instructions that do not belong to the current
                         // evaluation context/(sub-)routine.)
-                        val filteredList = removeFirstWhile(worklist, targetPC) { _ >= 0 }
+                        val filteredList = removeFirstUnless(worklist, targetPC) { _ < 0 }
                         if (filteredList ne worklist) {
                             // the instruction was scheduled, but not as the next one
                             // let's move the instruction to the beginning

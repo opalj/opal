@@ -1,14 +1,29 @@
 object AdaptingDomainValues {
 
 
+/*
+def cf[B] : (AnyRef) => Unit = { case x => println(x)}
+cf("foo")
+
+class My {
+def foreach(f : (String) => Unit) : Unit = {
+f("A")
+f("B")
+}
+}
+
+for (e <- new My) {println(e)
+}
+
 
 trait X {
 
 	trait Y
 }
 
-def f(x:X)(y :x.Y){}                              //> f: (x: AdaptingDomainValues.X)(y: x.Y)Unit
+def f(x:X)(y :x.Y){}
 
+*/
 
 
 /*

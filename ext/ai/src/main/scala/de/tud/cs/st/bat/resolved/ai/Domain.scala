@@ -73,7 +73,7 @@ import reflect.ClassTag
  * this `Domain` trait are pre-defined and can be flexibly combined (mixed together)
  * when needed.
  *
- * When you extends this trait or implement parts of it you should keep as many methods/
+ * When you extend this trait or implement parts of it you should keep as many methods/
  * fields private to facilitate mix-in composition of multiple traits.
  *
  * ==Thread Safety==
