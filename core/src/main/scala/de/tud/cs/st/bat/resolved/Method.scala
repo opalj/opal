@@ -95,11 +95,11 @@ final class Method private (
 
     final def isSynchronized: Boolean = (ACC_SYNCHRONIZED.mask & accessFlags) != 0
 
-    final def isBridge: Boolean = ACC_BRIDGE isElementOf accessFlags
+    final def isBridge: Boolean = (ACC_BRIDGE.mask & accessFlags) != 0
 
     final def isNative = (ACC_NATIVE.mask & accessFlags) != 0
 
-    final def isStrict: Boolean = ACC_STRICT isElementOf accessFlags
+    final def isStrict: Boolean = (ACC_STRICT.mask & accessFlags) != 0
 
     final def isAbstract: Boolean = (ACC_ABSTRACT.mask & accessFlags) != 0
 

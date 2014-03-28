@@ -37,7 +37,7 @@ package resolved
 /**
  * Represents a single field declaration/definition.
  *
- * @param id The unique id of this field. The id is an integer in the range
+ * @param id The project-wide unique id of this field. The id is an integer in the range
  *      [0..Field.fieldsCount].
  * @param accessFlags This field's access flags. To analyze the access flags
  *      bit vector use [[de.tud.cs.st.bat.AccessFlag]] or
@@ -47,14 +47,16 @@ package resolved
  *     Note, that this name is not required to be a valid Java programming
  *     language identifier.
  * @param fieldType The (erased) type of this field.
- * @param attributes The defined attributes. The JVM 7 specification defines
+ * @param attributes The defined attributes. The JVM 8 specification defines
  *     the following attributes for fields:
  *     * [[de.tud.cs.st.bat.resolved.ConstantValue]],
  *     * [[de.tud.cs.st.bat.resolved.Synthetic]],
  *     * [[de.tud.cs.st.bat.resolved.Signature]],
  *     * [[de.tud.cs.st.bat.resolved.Deprecated]],
- *     * [[de.tud.cs.st.bat.resolved.RuntimeVisibleAnnotationTable]] and
- *     * [[de.tud.cs.st.bat.resolved.RuntimeInvisibleAnnotationTable]].
+ *     * [[de.tud.cs.st.bat.resolved.RuntimeVisibleAnnotationTable]],
+ *     * [[de.tud.cs.st.bat.resolved.RuntimeInvisibleAnnotationTable]],
+ *     * [[de.tud.cs.st.bat.resolved.RuntimeVisibleTypeAnnotationTable]] and
+ *     * [[de.tud.cs.st.bat.resolved.RuntimeInvisibleTypeAnnotationTable]].
  *
  * @author Michael Eichberg
  */
@@ -71,9 +73,9 @@ final class Field private (
 
     override def asField = this
 
-    def isTransient: Boolean = ACC_TRANSIENT isElementOf accessFlags
+    def isTransient: Boolean = (ACC_TRANSIENT.mask & accessFlags) != 0
 
-    def isVolatile: Boolean = ACC_VOLATILE isElementOf accessFlags
+    def isVolatile: Boolean = (ACC_VOLATILE.mask & accessFlags) != 0
 
     /**
      * Returns this field's type signature.
@@ -92,10 +94,9 @@ final class Field private (
     /**
      * Defines an absolute order on `Field` objects w.r.t. their names and types.
      * The order is defined by first lexicographically comparing the names of the
-     * fields and – if the names are identical – by comparing the descriptors.
+     * fields and – if the names are identical – by comparing the types.
      *
-     * Hence, for two fields that have the same names and types, but which have
-     * different access flags the result will be `false`.
+     * Hence, for two fields that have the same name and type flags the result will be `false`.
      */
     def <(other: Field): Boolean =
         this.name < other.name || (

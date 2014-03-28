@@ -46,9 +46,9 @@ package de.tud.cs.st
  * ===No `null` Values===
  * BAT does not make use of `null` values in its public interface. I.e., fields that
  * are accessible  will never contain `null` values and method methods will never
- * return `null`. If a method accepts `null` as a value for a parameter it is always
- * explicitly documented. In general, the behavior of methods that are passed `null`
- * values is undefined.
+ * return `null`. If a method accepts `null` as a value for a parameter or returns 
+ * a `null` value it is always explicitly documented. 
+ * In general, the behavior of methods that are passed `null` values is undefined.
  *
  * ===Thread Safety===
  * Unless explicitly noted, '''BAT is thread safe'''. I.e., it is possible to read

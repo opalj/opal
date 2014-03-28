@@ -34,8 +34,8 @@ package de.tud.cs.st
 package bat
 
 /**
- * A class, field or method declaration's access flags. An access flag is
- * basically just a specific bit that can be combined with other
+ * A class, field or method declaration's access flags. An access flag (e.g., `public`
+ * or `static`) is basically just a specific bit that can be combined with other
  * access flags to create an integer based bit vector that represents all
  * flags defined for a class, method or field declaration.
  *
@@ -50,7 +50,7 @@ sealed trait AccessFlag extends PrimitiveAccessFlagsMatcher {
     def javaName: Option[String]
 
     /**
-     * The int mask of this access flag as defined by the JVM specification.
+     * The `Int` mask of this access flag as defined by the JVM specification.
      */
     override def mask: Int
 
@@ -64,19 +64,9 @@ sealed trait AccessFlag extends PrimitiveAccessFlagsMatcher {
      *
      * To create more complex matchers, use the `&` and `!` methods.
      *
-     * @return `True` iff all specified flags are set in the given access flags bit vector.
+     * @return `True` iff " `this` " flag is set in the given access flags bit vector.
      */
     def unapply(accessFlags: Int): Boolean = (accessFlags & mask) == mask
-
-    /**
-     * Determines if this access flag is set in the given `access_flags` bit vector.
-     * E.g., to determine if a method's static modifier is set it is sufficient
-     * to call:
-     * {{{
-     * ACC_STATIC isElementOf method.access_flags
-     * }}}
-     */
-    def isElementOf(access_flags: Int): Boolean = (access_flags & mask) != 0
 
 }
 
