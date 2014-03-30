@@ -78,6 +78,7 @@ class BoxingImmediatelyUnboxedToPerformCoercion[S]
         // java.lang class, where the called method's name ends in "Value"...
         for {
             classFile ← project.classFiles if classFile.majorVersion >= 49
+            if !project.isLibraryType(classFile)
             method @ MethodWithBody(body) ← classFile.methods
             Seq(
                 (_, INVOKESPECIAL(receiver1, _, MethodDescriptor(Seq(paramType), _))),

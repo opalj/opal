@@ -84,6 +84,7 @@ class CatchesIllegalMonitorStateException[Source]
         // IllegalMonitorStateException.
         for {
             classFile ← project.classFiles
+            if !project.isLibraryType(classFile)
             if classFile.isClassDeclaration
             method ← classFile.methods
             if catchesException(method, ObjectType.IllegalMonitorStateException)

@@ -82,6 +82,7 @@ class DoInsideDoPrivileged[Source]
         // java/lang/reflect/{Field|Method}.
         for {
             classFile ← project.classFiles
+            if !project.isLibraryType(classFile)
             if !classFile.interfaceTypes.contains(PriviledgedActionType) &&
                 !classFile.interfaceTypes.contains(PriviledgedExceptionActionType)
             method @ MethodWithBody(body) ← classFile.methods

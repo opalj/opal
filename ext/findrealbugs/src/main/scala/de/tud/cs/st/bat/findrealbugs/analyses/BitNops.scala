@@ -134,6 +134,7 @@ class BitNops[S]
 
         for {
             classFile ← project.classFiles
+            if !project.isLibraryType(classFile)
             method @ MethodWithBody(body) ← classFile.methods
 
             // Only run AI if the method body contains the instructions we're looking for.

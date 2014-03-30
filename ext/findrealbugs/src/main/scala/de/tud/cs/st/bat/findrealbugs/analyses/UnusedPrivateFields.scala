@@ -90,6 +90,7 @@ class UnusedPrivateFields[Source]
 
         val unusedFields = for (
             classFile ← project.classFiles if !classFile.isInterfaceDeclaration
+            if !project.isLibraryType(classFile)
         ) yield {
             val declaringClass = classFile.thisType
 

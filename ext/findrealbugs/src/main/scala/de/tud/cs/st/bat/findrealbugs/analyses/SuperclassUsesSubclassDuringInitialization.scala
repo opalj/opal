@@ -141,6 +141,7 @@ class SuperclassUsesSubclassDuringInitialization[Source]
 
         for {
             classFile ← project.classFiles
+            if !project.isLibraryType(classFile)
             clinit @ MethodWithBody(body) ← classFile.staticInitializer.toSeq
         } {
             val toplevelClass = classFile.thisType

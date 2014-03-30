@@ -82,6 +82,7 @@ class LongBitsToDoubleInvokedOnInt[Source]
         // java.lang.Double.longBitsToDouble().
         for {
             classFile ← project.classFiles
+            if !project.isLibraryType(classFile)
             method @ MethodWithBody(body) ← classFile.methods
             pc ← body.slidingCollect(2) {
                 case (pc, Seq(I2L,

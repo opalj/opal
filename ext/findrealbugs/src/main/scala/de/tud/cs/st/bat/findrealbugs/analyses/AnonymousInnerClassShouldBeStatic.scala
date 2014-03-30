@@ -169,6 +169,7 @@ class AnonymousInnerClassShouldBeStatic[Source]
         val readFields = AnalysesHelpers.getReadFields(project.classFiles).map(_._2)
         for {
             classFile ← project.classFiles
+            if !project.isLibraryType(classFile)
             if isAnonymousInnerClass(classFile) &&
                 canConvertToStaticInnerClass(classFile)
             field @ Field(_, name, fieldType) ← classFile.fields

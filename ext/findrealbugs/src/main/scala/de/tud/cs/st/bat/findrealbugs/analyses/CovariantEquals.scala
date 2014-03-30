@@ -80,6 +80,7 @@ class CovariantEquals[Source]
         parameters: Seq[String] = List.empty): Iterable[ClassBasedReport[Source]] = {
         for (
             classFile ← project.classFiles.filter(hasEqualsButNotEqualsObject(_))
+            if !project.isLibraryType(classFile)
         ) yield {
             ClassBasedReport(
                 project.source(classFile.thisType),

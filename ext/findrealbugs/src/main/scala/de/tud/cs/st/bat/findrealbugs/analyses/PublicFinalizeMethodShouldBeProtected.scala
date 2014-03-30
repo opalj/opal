@@ -67,6 +67,7 @@ class PublicFinalizeMethodShouldBeProtected[Source]
         // For all public finalize() methods...
         for {
             classFile ← project.classFiles
+            if !project.isLibraryType(classFile)
             method @ Method(ACC_PUBLIC(), "finalize",
                 MethodDescriptor.NoArgsAndReturnVoid) ← classFile.methods
         } yield {

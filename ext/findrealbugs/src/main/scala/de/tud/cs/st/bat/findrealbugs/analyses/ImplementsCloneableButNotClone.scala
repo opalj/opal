@@ -79,6 +79,7 @@ class ImplementsCloneableButNotClone[Source]
         for {
             cloneable ← project.classHierarchy.allSubtypes(ObjectType.Cloneable, false)
             classFile ← project.classFile(cloneable)
+            if !project.isLibraryType(classFile)
             if !classFile.methods.exists {
                 case Method(_, "clone", NoArgsAndReturnObject) ⇒ true
                 case _                                         ⇒ false

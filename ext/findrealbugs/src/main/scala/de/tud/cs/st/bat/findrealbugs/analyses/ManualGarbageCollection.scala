@@ -72,6 +72,7 @@ class ManualGarbageCollection[Source]
         // For all methods outside java.lang with "gc" in their name calling gc()...
         for {
             classFile ← project.classFiles
+            if !project.isLibraryType(classFile)
             if !classFile.thisType.fqn.startsWith("java/lang")
             method @ MethodWithBody(body) ← classFile.methods
             if !"(^gc)|(gc$)".r.findFirstIn(method.name).isDefined

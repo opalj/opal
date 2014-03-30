@@ -82,6 +82,7 @@ class NonSerializableClassHasASerializableInnerClass[Source]
         for {
             serializableType ← project.classHierarchy.allSubtypes(Serializable, false)
             classFile ← project(serializableType)
+            if !project.isLibraryType(classFile)
             (outerType, AccessFlagsMatcher.NOT_STATIC()) ← classFile.outerType
             /* if we know nothing about the class, then we never generate a warning */
             if isSubtypeOf(outerType, Serializable).isNo

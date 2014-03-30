@@ -74,9 +74,10 @@ class DmRunFinalizersOnExit[Source]
         project: Project[Source],
         parameters: Seq[String] = List.empty): Iterable[MethodBasedReport[Source]] = {
 
-        for (
-            classFile ← project.classFiles;
-            method @ MethodWithBody(body) ← classFile.methods;
+        for {
+            classFile ← project.classFiles
+            if !project.isLibraryType(classFile)
+            method @ MethodWithBody(body) ← classFile.methods
             instruction ← body.instructions.filter {
                 case INVOKESTATIC(SystemType, "runFinalizersOnExit",
                     `runFinalizersOnExitMethodDescriptor`) ⇒ true
@@ -84,7 +85,7 @@ class DmRunFinalizersOnExit[Source]
                     `runFinalizersOnExitMethodDescriptor`) ⇒ true
                 case _ ⇒ false
             }
-        ) yield {
+        } yield {
             // For each method that calls runFinalizersOnExit()...
             MethodBasedReport(
                 project.source(classFile.thisType),

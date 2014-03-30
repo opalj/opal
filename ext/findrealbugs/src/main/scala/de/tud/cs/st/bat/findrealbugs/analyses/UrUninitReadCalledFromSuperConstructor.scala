@@ -198,6 +198,7 @@ class UrUninitReadCalledFromSuperConstructor[Source]
 
         for {
             classFile ← project.classFiles
+            if !project.isLibraryType(classFile)
             method @ MethodWithBody(body) ← classFile.methods
             if !method.isStatic &&
                 !method.isConstructor &&

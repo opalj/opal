@@ -82,6 +82,7 @@ class FieldShouldBePackageProtected[Source]
         // fields, either `public` or `protected`, arrays and hash tables only.
         for {
             classFile ← project.classFiles if (!classFile.isInterfaceDeclaration)
+            if !project.isLibraryType(classFile)
             field ← classFile.fields
             if (field.isFinal &&
                 field.isStatic &&

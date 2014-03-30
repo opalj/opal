@@ -79,6 +79,7 @@ class SwingMethodInvokedInSwingThread[Source]
         // their name.
         for {
             classFile ← project.classFiles
+            if !project.isLibraryType(classFile)
             method @ MethodWithBody(body) ← classFile.methods
             if (method.isPublic &&
                 method.isStatic &&
