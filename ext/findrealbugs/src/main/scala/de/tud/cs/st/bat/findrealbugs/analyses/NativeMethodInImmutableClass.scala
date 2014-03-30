@@ -85,6 +85,7 @@ class NativeMethodInImmutableClass[Source]
             MethodBasedReport(
                 project.source(classFile.thisType),
                 Severity.Info,
+                classFile.thisType,
                 method,
                 "is a native method in an immutable class.")
         }

@@ -57,11 +57,13 @@ class TestDoInsideDoPrivileged extends AnalysisTest {
 
     it should "detect a java.lang.reflect.Field.setAccessible() call outside a "+
         "doPrivileged block" in {
+            val declaringClass =
+                ObjectType("DoInsideDoPrivileged/CallsSetAccessibleOutsideDoPrivileged")
             results should contain(
                 MethodBasedReport(
-                    project.source(ObjectType(
-                        "DoInsideDoPrivileged/CallsSetAccessibleOutsideDoPrivileged")),
+                    project.source(declaringClass),
                     Severity.Warning,
+                    declaringClass,
                     MethodDescriptor.NoArgsAndReturnVoid,
                     "method",
                     "Calls java.lang.reflect.Field|Method.setAccessible() outside of "+

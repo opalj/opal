@@ -63,6 +63,7 @@ class TestBadlyOverriddenAdapter extends AnalysisTest {
             results should contain(MethodBasedReport(
                 project.source(classToReport),
                 Severity.Warning,
+                classToReport,
                 MethodDescriptor(IndexedSeq(BooleanType), VoidType),
                 "mouseClicked",
                 "Does not override java.awt.event.MouseAdapter.mouseClicked()"+
@@ -78,6 +79,7 @@ class TestBadlyOverriddenAdapter extends AnalysisTest {
             results should contain(MethodBasedReport(
                 project.source(classToReport),
                 Severity.Warning,
+                classToReport,
                 MethodDescriptor.NoArgsAndReturnVoid,
                 "keyTyped",
                 "Does not override java.awt.event.KeyAdapter.keyTyped()"+

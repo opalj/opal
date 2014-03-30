@@ -57,6 +57,9 @@ class TestBitNops extends AnalysisTest {
             LineAndColumnBasedReport(
                 project.source(ObjectType("BitNops/Or")),
                 Severity.Info,
+                ObjectType("BitNops/Or"),
+                MethodDescriptor(IndexedSeq(IntegerType), IntegerType),
+                "testZeroLhs",
                 Some(44),
                 None,
                 "0 | x: bit or operation with 0 left operand is useless"))
@@ -67,6 +70,9 @@ class TestBitNops extends AnalysisTest {
             LineAndColumnBasedReport(
                 project.source(ObjectType("BitNops/Or")),
                 Severity.Info,
+                ObjectType("BitNops/Or"),
+                MethodDescriptor(IndexedSeq(IntegerType), IntegerType),
+                "testZeroRhs",
                 Some(49),
                 None,
                 "x | 0: bit or operation with 0 right operand is useless"))
@@ -77,12 +83,18 @@ class TestBitNops extends AnalysisTest {
             contain(LineAndColumnBasedReport(
                 project.source(ObjectType("BitNops/Or")),
                 Severity.Info,
+                ObjectType("BitNops/Or"),
+                MethodDescriptor(IndexedSeq.empty, IntegerType),
+                "testZeroBoth",
                 Some(55),
                 None,
                 "0 | x: bit or operation with 0 left operand is useless"))
             or contain(LineAndColumnBasedReport(
                 project.source(ObjectType("BitNops/Or")),
                 Severity.Info,
+                ObjectType("BitNops/Or"),
+                MethodDescriptor(IndexedSeq.empty, IntegerType),
+                "testZeroBoth",
                 Some(55),
                 None,
                 "x | 0: bit or operation with 0 right operand is useless")))
@@ -93,6 +105,9 @@ class TestBitNops extends AnalysisTest {
             LineAndColumnBasedReport(
                 project.source(ObjectType("BitNops/Or")),
                 Severity.Info,
+                ObjectType("BitNops/Or"),
+                MethodDescriptor(IndexedSeq(IntegerType), IntegerType),
+                "testMinusOneLhs",
                 Some(60),
                 None,
                 "-1 | x: bit or operation with -1 left operand always returns -1"))
@@ -103,6 +118,9 @@ class TestBitNops extends AnalysisTest {
             LineAndColumnBasedReport(
                 project.source(ObjectType("BitNops/Or")),
                 Severity.Info,
+                ObjectType("BitNops/Or"),
+                MethodDescriptor(IndexedSeq(IntegerType), IntegerType),
+                "testMinusOneRhs",
                 Some(65),
                 None,
                 "x | -1: bit or operation with -1 right operand always returns -1"))
@@ -113,12 +131,18 @@ class TestBitNops extends AnalysisTest {
             contain(LineAndColumnBasedReport(
                 project.source(ObjectType("BitNops/Or")),
                 Severity.Info,
+                ObjectType("BitNops/Or"),
+                MethodDescriptor(IndexedSeq.empty, IntegerType),
+                "testMinusOneBoth",
                 Some(71),
                 None,
                 "-1 | x: bit or operation with -1 left operand always returns -1"))
             or contain(LineAndColumnBasedReport(
                 project.source(ObjectType("BitNops/Or")),
                 Severity.Info,
+                ObjectType("BitNops/Or"),
+                MethodDescriptor(IndexedSeq.empty, IntegerType),
+                "testMinusOneBoth",
                 Some(71),
                 None,
                 "x | -1: bit or operation with -1 right operand always returns -1")))
@@ -129,6 +153,9 @@ class TestBitNops extends AnalysisTest {
             LineAndColumnBasedReport(
                 project.source(ObjectType("BitNops/And")),
                 Severity.Info,
+                ObjectType("BitNops/And"),
+                MethodDescriptor(IndexedSeq(IntegerType), IntegerType),
+                "testZeroLhs",
                 Some(44),
                 None,
                 "0 & x: bit and operation with 0 left operand always returns 0"))
@@ -139,6 +166,9 @@ class TestBitNops extends AnalysisTest {
             LineAndColumnBasedReport(
                 project.source(ObjectType("BitNops/And")),
                 Severity.Info,
+                ObjectType("BitNops/And"),
+                MethodDescriptor(IndexedSeq(IntegerType), IntegerType),
+                "testZeroRhs",
                 Some(49),
                 None,
                 "x & 0: bit and operation with 0 right operand always returns 0"))
@@ -149,12 +179,18 @@ class TestBitNops extends AnalysisTest {
             contain(LineAndColumnBasedReport(
                 project.source(ObjectType("BitNops/And")),
                 Severity.Info,
+                ObjectType("BitNops/And"),
+                MethodDescriptor(IndexedSeq.empty, IntegerType),
+                "testZeroBoth",
                 Some(55),
                 None,
                 "0 & x: bit and operation with 0 left operand always returns 0"))
             or contain(LineAndColumnBasedReport(
                 project.source(ObjectType("BitNops/And")),
                 Severity.Info,
+                ObjectType("BitNops/And"),
+                MethodDescriptor(IndexedSeq.empty, IntegerType),
+                "testZeroBoth",
                 Some(55),
                 None,
                 "x & 0: bit and operation with 0 right operand always returns 0")))
@@ -165,6 +201,9 @@ class TestBitNops extends AnalysisTest {
             LineAndColumnBasedReport(
                 project.source(ObjectType("BitNops/And")),
                 Severity.Info,
+                ObjectType("BitNops/And"),
+                MethodDescriptor(IndexedSeq(IntegerType), IntegerType),
+                "testMinusOneLhs",
                 Some(60),
                 None,
                 "-1 & x: bit and operation with -1 left operand is useless"))
@@ -175,6 +214,9 @@ class TestBitNops extends AnalysisTest {
             LineAndColumnBasedReport(
                 project.source(ObjectType("BitNops/And")),
                 Severity.Info,
+                ObjectType("BitNops/And"),
+                MethodDescriptor(IndexedSeq(IntegerType), IntegerType),
+                "testMinusOneRhs",
                 Some(65),
                 None,
                 "x & -1: bit and operation with -1 right operand is useless"))
@@ -185,12 +227,18 @@ class TestBitNops extends AnalysisTest {
             contain(LineAndColumnBasedReport(
                 project.source(ObjectType("BitNops/And")),
                 Severity.Info,
+                ObjectType("BitNops/And"),
+                MethodDescriptor(IndexedSeq.empty, IntegerType),
+                "testMinusOneBoth",
                 Some(71),
                 None,
                 "-1 & x: bit and operation with -1 left operand is useless"))
             or contain(LineAndColumnBasedReport(
                 project.source(ObjectType("BitNops/And")),
                 Severity.Info,
+                ObjectType("BitNops/And"),
+                MethodDescriptor(IndexedSeq.empty, IntegerType),
+                "testMinusOneBoth",
                 Some(71),
                 None,
                 "x & -1: bit and operation with -1 right operand is useless")))

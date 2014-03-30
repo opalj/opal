@@ -179,6 +179,9 @@ class BitNops[S]
                     new LineAndColumnBasedReport(
                         project.source(classFile.thisType),
                         Severity.Info,
+                        classFile.thisType,
+                        method.descriptor,
+                        method.name,
                         body.lineNumber(pc),
                         None,
                         report.get

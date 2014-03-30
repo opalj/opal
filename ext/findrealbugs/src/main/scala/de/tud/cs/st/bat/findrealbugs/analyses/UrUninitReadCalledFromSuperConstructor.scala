@@ -169,6 +169,9 @@ class UrUninitReadCalledFromSuperConstructor[Source]
                     LineAndColumnBasedReport(
                         project.source(classFile.thisType),
                         Severity.Error,
+                        classFile.thisType,
+                        constructor.descriptor,
+                        constructor.name,
                         constructor.body.get.lineNumber(pc),
                         None,
                         "INVOKESPECIAL on interface type; inconsistent project.")
@@ -214,6 +217,7 @@ class UrUninitReadCalledFromSuperConstructor[Source]
                 MethodBasedReport(
                     project.source(classFile.thisType),
                     Severity.Error,
+                    classFile.thisType,
                     method,
                     "Called by super constructor ("+superClass.thisType.toJava+"), "+
                         "while the class' fields are still uninitialized")

@@ -91,6 +91,7 @@ class DoInsideDoPrivileged[Source]
             MethodBasedReport(
                 project.source(classFile.thisType),
                 Severity.Warning,
+                classFile.thisType,
                 method,
                 "Calls java.lang.reflect.Field|Method.setAccessible() outside of "+
                     "doPrivileged block")

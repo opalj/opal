@@ -73,6 +73,7 @@ class PublicFinalizeMethodShouldBeProtected[Source]
             MethodBasedReport(
                 project.source(classFile.thisType),
                 Severity.Info,
+                classFile.thisType,
                 method,
                 "Should be protected")
         }

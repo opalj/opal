@@ -56,13 +56,16 @@ class TestSwingMethodInvokedInSwingThread extends AnalysisTest {
 
     it should "report a call to setVisible() on a javax/swing/JButton inside the main()"+
         " method in SwingMethodInvokedInSwingThread/BadSwingImplementation" in {
-            results should contain(MethodBasedReport(
-                project.source(ObjectType(
-                    "SwingMethodInvokedInSwingThread/BadSwingImplementation")),
-                Severity.Error,
-                MethodDescriptor(IndexedSeq.empty, IntegerType),
-                "main",
-                "Calls Swing methods while outside Swing thread"))
+            val declaringClass =
+                ObjectType("SwingMethodInvokedInSwingThread/BadSwingImplementation")
+            results should contain(
+                MethodBasedReport(
+                    project.source(declaringClass),
+                    Severity.Error,
+                    declaringClass,
+                    MethodDescriptor(IndexedSeq.empty, IntegerType),
+                    "main",
+                    "Calls Swing methods while outside Swing thread"))
         }
 
     it should "find exactly 1 issue in SwingMethodInvokedInSwingThread.jar" in {

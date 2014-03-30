@@ -57,10 +57,12 @@ class TestCatchesIllegalMonitorStateException extends AnalysisTest {
     it should "detect that MissingSynchronized.test() has a catch block for "+
         "IllegalMonitorStateException" in {
             results should contain {
+                val declaringClass = ObjectType("CatchesIllegalMonitorStateException/"+
+                    "MissingSynchronized")
                 MethodBasedReport(
-                    project.source(ObjectType("CatchesIllegalMonitorStateException/"+
-                        "MissingSynchronized")),
+                    project.source(declaringClass),
                     Severity.Info,
+                    declaringClass,
                     MethodDescriptor.NoArgsAndReturnVoid,
                     "test",
                     "Handles IllegalMonitorStateException")
@@ -70,10 +72,12 @@ class TestCatchesIllegalMonitorStateException extends AnalysisTest {
     it should "detect that the run() method of the inner anonymous Runnable class "+
         "MissingSynchronized$1 has a catch block for IllegalMonitorStateException" in {
             results should contain {
+                val declaringClass = ObjectType("CatchesIllegalMonitorStateException/"+
+                    "MissingSynchronized$1")
                 MethodBasedReport(
-                    project.source(ObjectType("CatchesIllegalMonitorStateException/"+
-                        "MissingSynchronized$1")),
+                    project.source(declaringClass),
                     Severity.Info,
+                    declaringClass,
                     MethodDescriptor.NoArgsAndReturnVoid,
                     "run",
                     "Handles IllegalMonitorStateException")

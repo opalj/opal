@@ -92,6 +92,9 @@ class LongBitsToDoubleInvokedOnInt[Source]
             LineAndColumnBasedReport(
                 project.source(classFile.thisType),
                 Severity.Error,
+                classFile.thisType,
+                method.descriptor,
+                method.name,
                 body.lineNumber(pc),
                 None,
                 "Passing int to Double.longBitsToDouble(long)")

@@ -56,11 +56,13 @@ class TestDmRunFinalizersOnExit extends AnalysisTest {
     behavior of "DmRunFinalizersOnExit"
 
     it should "detect a method that calls System.runFinalizersOnExit()" in {
+        val declaringClass =
+            ObjectType("DmRunFinalizersOnExit/CallsRunFinalizersOnExit")
         results should contain(
             MethodBasedReport(
-                project.source(ObjectType(
-                    "DmRunFinalizersOnExit/CallsRunFinalizersOnExit")),
+                project.source(declaringClass),
                 Severity.Error,
+                declaringClass,
                 MethodDescriptor.NoArgsAndReturnVoid,
                 "doStuff",
                 "Calls System.runFinalizersOnExit()"))

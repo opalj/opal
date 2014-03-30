@@ -104,6 +104,7 @@ class SyncSetUnsyncGet[Source]
             MethodBasedReport(
                 project.source(classFile.thisType),
                 Severity.Warning,
+                classFile.thisType,
                 unsyncGet,
                 "Is not synchronized like "+syncSet.name)
         }

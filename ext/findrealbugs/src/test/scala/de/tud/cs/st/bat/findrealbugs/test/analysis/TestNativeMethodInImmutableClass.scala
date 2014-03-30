@@ -62,6 +62,7 @@ class TestNativeMethodInImmutableClass extends AnalysisTest {
                 MethodBasedReport(
                     project.source(declaringClass),
                     Severity.Info,
+                    declaringClass,
                     MethodDescriptor.apply(IntegerType, VoidType),
                     "changeFoo",
                     "is a native method in an immutable class."))

@@ -84,6 +84,7 @@ class ManualGarbageCollection[Source]
         } yield MethodBasedReport(
             project.source(classFile.thisType),
             Severity.Info,
+            classFile.thisType,
             method,
             "Contains unnecessary call to gc()")
     }

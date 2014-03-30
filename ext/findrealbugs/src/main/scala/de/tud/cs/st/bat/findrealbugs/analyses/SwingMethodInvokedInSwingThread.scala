@@ -97,6 +97,7 @@ class SwingMethodInvokedInSwingThread[Source]
             MethodBasedReport(
                 project.source(classFile.thisType),
                 Severity.Error,
+                classFile.thisType,
                 method.descriptor,
                 method.name,
                 "Calls Swing methods while outside Swing thread")

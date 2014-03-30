@@ -55,11 +55,13 @@ class TestCloneDoesNotCallSuperClone extends AnalysisTest {
     behavior of "CloneDoesNotCallSuperClone"
 
     it should "detect a clone() method that does not contain a call to super.clone()" in {
+        val declaringClass =
+            ObjectType("CloneDoesNotCallSuperClone/CloneWithoutCallToSuperClone")
         results should contain(
             MethodBasedReport(
-                project.source(ObjectType(
-                    "CloneDoesNotCallSuperClone/CloneWithoutCallToSuperClone")),
+                project.source(declaringClass),
                 Severity.Warning,
+                declaringClass,
                 AnalysesHelpers.NoArgsAndReturnObject,
                 "clone",
                 "Missing call to super.clone()"))
