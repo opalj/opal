@@ -59,19 +59,19 @@ trait BootstrapMethods_attributeReader extends AttributeReader {
     implicit val BootstrapArgumentManifest: ClassTag[BootstrapArgument]
 
     def BootstrapMethods_attribute(
+        constant_pool: Constant_Pool,
         attribute_name_index: Int,
         attribute_length: Int,
-        bootstrap_methods: BootstrapMethods)(
-            implicit constant_pool: Constant_Pool): BootstrapMethods_attribute
+        bootstrap_methods: BootstrapMethods): BootstrapMethods_attribute
 
     def BootstrapMethod(
+        constant_pool: Constant_Pool,
         bootstrap_method_ref: Int,
-        bootstrap_arguments: BootstrapArguments)(
-            implicit constant_pool: Constant_Pool): BootstrapMethod
+        bootstrap_arguments: BootstrapArguments): BootstrapMethod
 
     def BootstrapArgument(
-        constant_pool_ref: Int)(
-            implicit constant_pool: Constant_Pool): BootstrapArgument
+        constant_pool: Constant_Pool,
+        constant_pool_ref: Int): BootstrapArgument
 
     //
     // IMPLEMENTATION
@@ -83,17 +83,18 @@ trait BootstrapMethods_attributeReader extends AttributeReader {
 
     type BootstrapArguments = IndexedSeq[BootstrapArgument]
 
-    def BootstrapArgument(in: DataInputStream, cp: Constant_Pool): BootstrapArgument = {
-        BootstrapArgument(in.readUnsignedShort)(cp)
+    def BootstrapArgument(cp: Constant_Pool, in: DataInputStream): BootstrapArgument = {
+        BootstrapArgument(cp, in.readUnsignedShort)
     }
 
-    def BootstrapMethod(in: DataInputStream, cp: Constant_Pool): BootstrapMethod = {
+    def BootstrapMethod(cp: Constant_Pool, in: DataInputStream): BootstrapMethod = {
         BootstrapMethod(
+            cp,
             in.readUnsignedShort,
             repeat(in.readUnsignedShort) {
-                BootstrapArgument(in, cp)
+                BootstrapArgument(cp, in)
             }
-        )(cp)
+        )
     }
 
     /* Structure
@@ -113,9 +114,11 @@ trait BootstrapMethods_attributeReader extends AttributeReader {
         BootstrapMethods_attributeReader.ATTRIBUTE_NAME -> (
             (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 BootstrapMethods_attribute(
-                    attribute_name_index, in.readInt, // attribute_length
-                    repeat(in.readUnsignedShort) { BootstrapMethod(in, cp) }
-                )(cp)
+                    cp,
+                    attribute_name_index,
+                    in.readInt /* attribute_length */ ,
+                    repeat(in.readUnsignedShort) { BootstrapMethod(cp, in) }
+                )
             }
         )
     )

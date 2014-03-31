@@ -54,26 +54,25 @@ trait BootstrapMethods_attributeBinding
     val BootstrapArgumentManifest: ClassTag[BootstrapArgument] = implicitly
 
     def BootstrapMethods_attribute(
+        cp: Constant_Pool,
         attributeNameIndex: Int,
         attributeLength: Int,
-        bootstrapMethods: BootstrapMethods)(
-            implicit cp: Constant_Pool): BootstrapMethods_attribute = {
+        bootstrapMethods: BootstrapMethods): BootstrapMethods_attribute = {
         new BootstrapMethodTable(bootstrapMethods)
     }
 
     def BootstrapMethod(
+        cp: Constant_Pool,
         bootstrapMethodRef: Int,
-        bootstrapArguments: BootstrapArguments)(
-            implicit cp: Constant_Pool): BootstrapMethod = {
-        new BootstrapMethod(cp(bootstrapMethodRef).asMethodHandle, bootstrapArguments)
+        bootstrapArguments: BootstrapArguments): BootstrapMethod = {
+        new BootstrapMethod(cp(bootstrapMethodRef).asMethodHandle(cp), bootstrapArguments)
     }
 
     def BootstrapArgument(
-        constantPoolIndex: Int)(
-            implicit cp: Constant_Pool): BootstrapArgument = {
-        cp(constantPoolIndex).asBootstrapArgument
+        cp: Constant_Pool,
+        constantPoolIndex: Int): BootstrapArgument = {
+        cp(constantPoolIndex).asBootstrapArgument(cp)
     }
-
 }
 
 
