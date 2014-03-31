@@ -39,7 +39,6 @@ import java.io.DataInputStream
  * reader is intended to be used in conjunction with the
  * Runtime(In)Visible(Parameter)Annotations_attributeReaders.
  *
- *
  * @author Michael Eichberg
  */
 trait AnnotationsReader extends Constant_PoolAbstractions {

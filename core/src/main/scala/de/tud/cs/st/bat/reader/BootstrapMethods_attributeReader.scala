@@ -35,24 +35,12 @@ import java.io.DataInputStream
 import reflect.ClassTag
 
 /**
- * Template method to read the (Java 7) BootstrapMethods attribute.
+ * Template method to read the (Java 7) ''BootstrapMethods'' attribute.
  *
  * '''From the Specification'''
  * The `BootstrapMethods` attribute is a variable-length attribute in the
  * attributes table of a `ClassFile` structure. The `BootstrapMethods` attribute
  * records bootstrap method specifiers referenced by `invokedynamic` instructions.
- *
- * <pre>
- * BootstrapMethods_attribute {
- *  u2 attribute_name_index;
- *  u4 attribute_length;
- *  u2 num_bootstrap_methods;
- *  {   u2 bootstrap_method_ref;
- *      u2 num_bootstrap_arguments;
- *      u2 bootstrap_arguments[num_bootstrap_arguments];
- *  } bootstrap_methods[num_bootstrap_methods];
- * }
- * </pre>
  *
  * @author Michael Eichberg
  */
@@ -108,6 +96,19 @@ trait BootstrapMethods_attributeReader extends AttributeReader {
         )(cp)
     }
 
+    /* Structure
+     * <pre>
+     * BootstrapMethods_attribute {
+     *  u2 attribute_name_index;
+     *  u4 attribute_length;
+     *  u2 num_bootstrap_methods;
+     *  {   u2 bootstrap_method_ref;
+     *      u2 num_bootstrap_arguments;
+     *      u2 bootstrap_arguments[num_bootstrap_arguments];
+     *  } bootstrap_methods[num_bootstrap_methods];
+     * }
+     * </pre>
+     */
     registerAttributeReader(
         BootstrapMethods_attributeReader.ATTRIBUTE_NAME -> (
             (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {

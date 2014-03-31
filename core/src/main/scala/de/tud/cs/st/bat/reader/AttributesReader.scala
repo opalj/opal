@@ -58,7 +58,8 @@ trait AttributesReader
      * In general, such unknown attributes are represented by the
      * <code>Unknown_attribute</code> class.
      * However, if no representation of the unknown attribute is needed this method
-     * can return null - after reading (skipping) all bytes belonging to this attribute.
+     * can return `null` - after reading (skipping) all bytes belonging to this attribute.
+     * If `null` is returned all information regarding this attribute are thrown away.
      */
     def Unknown_attribute(
         ap: AttributeParent,

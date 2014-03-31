@@ -36,6 +36,7 @@ import bat.reader.BootstrapMethods_attributeReader
 import reflect.ClassTag
 
 /**
+ * Final bindings and factory methods for the ''BoostrapMethods'' attribute.
  *
  * @author Michael Eichberg
  */

@@ -39,11 +39,10 @@ import reflect.ClassTag
  */
 trait AttributesAbstractions {
 
-    /**
+    /*
      * Specifying a lower bound is necessary to implement a generic SkipAttributeMethod.
      */
     type Attribute >: Null
-
     implicit val AttributeManifest: ClassTag[Attribute]
 
     type Attributes = Seq[Attribute]

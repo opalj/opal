@@ -31,10 +31,12 @@ package bat
 package resolved
 
 /**
- * Represents constant values; i.e., values pushed onto the stack by the ldc(2)(_w) 
- * instructions.
- * @note A `MethodHandle` or MethodType (i.e., a `MethodDescriptor`) is also  
- * 		a `ConstantValue`.
+ * Represents constant values; i.e., values pushed onto the stack by the ldc(2)(_w)
+ * instructions or type information required by the instructions to create arrays.
+ *
+ * @note A `MethodHandle` or ''MethodType'' (i.e., a `MethodDescriptor`) is also
+ *      a `ConstantValue`.
+ *      
  * @author Michael Eichberg
  */
 trait ConstantValue[T >: Nothing] extends BootstrapArgument {

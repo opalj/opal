@@ -190,7 +190,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      * class file.
      *
      * ==Class File Structure==
-     * Parses a class file that follows the following definition.
+     * Parses a class file according to the specification:
      * <pre>
      * ClassFile {
      *    u4 magic;

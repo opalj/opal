@@ -41,25 +41,6 @@ import reflect.ClassTag
  * The Code attribute is a variable-length attribute in the attributes table
  * of a method_info structure.
  *
- * Format
- * <pre>
- * Code_attribute {
- * 	u2 attribute_name_index; u4 attribute_length;
- * 	u2 max_stack;
- * 	u2 max_locals;
- * 	u4 code_length;
- * 	u1 code[code_length];
- * 	u2 exception_table_length;
- * 	{	u2 start_pc;
- * 		u2 end_pc;
- * 		u2 handler_pc;
- * 		u2 catch_type;
- * 	} exception_table[exception_table_length];
- * 	u2 attributes_count;
- * 	attribute_info attributes[attributes_count];
- * }
- * </pre>
- *
  * @author Michael Eichberg
  */
 trait Code_attributeReader extends AttributeReader {
@@ -103,6 +84,26 @@ trait Code_attributeReader extends AttributeReader {
 
     type ExceptionHandlers = IndexedSeq[ExceptionTableEntry]
 
+    /*
+     * '''From the Specification'''
+     * <pre>
+     * Code_attribute {
+     *  u2 attribute_name_index; u4 attribute_length;
+     *  u2 max_stack;   
+     *  u2 max_locals;
+     *  u4 code_length;
+     *  u1 code[code_length];
+     *  u2 exception_table_length;
+     *  {   u2 start_pc;
+     *      u2 end_pc;
+     *      u2 handler_pc;
+     *      u2 catch_type;
+     *  } exception_table[exception_table_length];
+     *  u2 attributes_count;
+     *  attribute_info attributes[attributes_count];
+     * }
+     * </pre>
+     */
     registerAttributeReader(
         Code_attributeReader.ATTRIBUTE_NAME -> (
             (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
