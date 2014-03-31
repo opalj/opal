@@ -13,23 +13,27 @@ public class TrivialForward {
 		return s;
 	}
 
-	public static Object method1(String s) throws ClassNotFoundException {
+	public static Object method1(String s) {
 		Object c = method2(s);
 		return c;
 	}
 
-	static Object method2(String s) throws ClassNotFoundException {
+	static Object method2(String s) {
 		String st = doSomething(s);
-		return method3(s);
+		return method3(st);
 	}
 
-	static Object method3(String s) throws ClassNotFoundException {
+	static Object method3(String s) {
 		int a = 1;
 		Object temp = method4(s);
 		return temp;
 	}
 
-	static Object method4(String s) throws ClassNotFoundException {
-		return Class.forName(s);
+	static Object method4(String s) {
+		try {
+			return Class.forName(s);
+		} catch (ClassNotFoundException e) {
+			return null;
+		}
 	}
 }

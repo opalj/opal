@@ -45,8 +45,13 @@ public class NewInstanceTest {
 		return null;
 	}
 
-	static Object method5(Class c) throws ClassNotFoundException,
-			InstantiationException, IllegalAccessException {
-		return c.newInstance();
+	static Object method5(Class c) {
+		try {
+			return c.newInstance();
+		} catch (InstantiationException | IllegalAccessException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
 	}
 }
