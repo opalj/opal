@@ -484,7 +484,12 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         }
     }
 }
-private object ClassFileReader {
+/**
+ * Helper methods related to reading class files.
+ * 
+ * @author Michael Eichberg
+ */
+object ClassFileReader {
     final val defaultExceptionHandler: (Exception) ⇒ Unit = (e) ⇒
         e.printStackTrace(Console.err)
 }
