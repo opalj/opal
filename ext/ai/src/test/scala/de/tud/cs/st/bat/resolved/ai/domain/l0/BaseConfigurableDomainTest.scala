@@ -33,7 +33,8 @@ package ai
 package domain
 package l0
 
-import reader.Java8Framework.ClassFile
+import bat.reader.ClassFileReader
+import reader.Java8Framework.ClassFiles
 
 import de.tud.cs.st.bat.TestSupport
 
@@ -159,7 +160,10 @@ class BaseConfigurableDomainTest extends FlatSpec with Matchers {
 
         ignore should ("compute the same results independent of the mixin order of the domains for "+
             file.getName) in {
-                ClassFiles(zipFile, processClassFile)
+                ClassFiles(
+                        zipFile, 
+                        processClassFile _,
+                        ClassFileReader.defaultExceptionHandler)
             }
     }
 }
