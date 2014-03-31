@@ -100,7 +100,7 @@ object CallGraphVisualization {
                     }
                     val classFiles =
                         try {
-                            reader.Java7Framework.ClassFiles(file)
+                            reader.Java8Framework.ClassFiles(file)
                         } catch {
                             case e: Exception ⇒
                                 println(RED+"cannot read file: "+e.getMessage() + RESET)
@@ -221,6 +221,10 @@ object CallGraphVisualization {
         if (exceptions.size > 0) {
             println("Exceptions: "+exceptions.size)
             println(exceptions.mkString("Exceptions that occured while analyzing...:\n\t", "\n\t", "\t"))
+            writeAndOpenDesktopApplication(
+                exceptions.map(_.toFullString).mkString("Exceptions that occured while creating the call graph...:\n", "\n\n", ""),
+                "Logged exceptions", ".txt"
+            )
         }
 
         // Generate and show the graph

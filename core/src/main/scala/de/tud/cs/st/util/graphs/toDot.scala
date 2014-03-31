@@ -35,15 +35,17 @@ package util
 package graphs
 
 /**
- * Defines factory methods for the generation of (multi-) graphs.
+ * Defines factory methods to generate specific representations of (multi-) graphs.
  *
  * @author Michael Eichberg
  */
 object toDot {
 
     /**
-     * Generates a string that describes a (multi-)graph using the ".dot" file format.
-     * The graph is implicitly defined by the given set of nodes.
+     * Generates a string that describes a (multi-)graph using the ".dot" file format
+     * [[http://graphviz.org/pdf/dotguide.pdf]].
+     * The graph is defined by the given set of nodes.
+     * 
      * Requires that `Node` implements a content-based `equals` and `hashCode` method.
      */
     def generateDot(

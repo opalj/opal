@@ -60,10 +60,10 @@ object AssociateUniqueIDs {
             sys.exit(2);
         }
 
-        import reader.Java7Framework.ClassFiles
+        import reader.Java8Framework.ClassFiles
         import java.net.URL
 
-        val classFiles: Seq[(ClassFile, URL)] = ClassFiles(args(0))
+        val classFiles: Seq[(ClassFile, URL)] = ClassFiles(new java.io.File(args(0)))
 
         val loadAllClassFiles = () ⇒ {
             for ((classFile, _) ← classFiles) {

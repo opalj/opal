@@ -57,13 +57,16 @@ class TestUrUninitReadCalledFromSuperConstructor extends AnalysisTest {
     behavior of "UrUninitReadCalledFromSuperConstructor"
 
     val superclass =
-        "UrUninitReadCalledFromSuperConstructor/SuperclassWithAccessToSubclassDuringInit"
+        "UrUninitReadCalledFromSuperConstructor.SuperclassWithAccessToSubclassDuringInit"
+
+    val subclass =
+        "UrUninitReadCalledFromSuperConstructor/SubclassAccessedBySuperclassBeforeInit"
 
     it should "find that the constructor of "+superclass+" performs a read call on "+
         "an uninitialized subclass" in {
             results should contain(
                 MethodBasedReport(
-                    project.source(ObjectType(superclass)),
+                    project.source(ObjectType(subclass)),
                     Severity.Error,
                     MethodDescriptor.NoArgsAndReturnVoid,
                     "f",

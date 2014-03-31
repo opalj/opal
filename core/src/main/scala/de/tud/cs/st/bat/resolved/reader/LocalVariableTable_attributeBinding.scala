@@ -51,9 +51,9 @@ trait LocalVariableTable_attributeBinding
 
     type LocalVariableTable_attribute = de.tud.cs.st.bat.resolved.LocalVariableTable
     type LocalVariableTableEntry = de.tud.cs.st.bat.resolved.LocalVariable
-    val LocalVariableTableEntryManifest: ClassTag[LocalVariable] = implicitly
+    override val LocalVariableTableEntryManifest: ClassTag[LocalVariable] = implicitly
 
-    def LocalVariableTableEntry(
+    override def LocalVariableTableEntry(
         start_pc: Int,
         length: Int,
         name_index: Constant_Pool_Index,
@@ -68,7 +68,7 @@ trait LocalVariableTable_attributeBinding
             index)
     }
 
-    def LocalVariableTable_attribute(
+    override def LocalVariableTable_attribute(
         attribute_name_index: Constant_Pool_Index,
         attribute_length: Int,
         local_variable_table: LocalVariables)(

@@ -51,9 +51,10 @@ object SignatureParser {
      * Parses Java class file signature strings.
      *
      * ==Thread-Safety==
-     * As of Scala 2.10 classes that inherit from `(Regex)Parsers` are not thread-safe. However,
-     * the only class that can create instances of a `SignatureParsers` is its companion object and that
-     * one implements the necessary abstractions for thread-safety use of `SignatureParsers`.
+     * As of Scala 2.10 classes that inherit from `(Regex)Parsers` are not thread-safe.
+     * However, the only class that can create instances of a `SignatureParsers` is
+     * its companion object and that one implements the necessary abstractions for the
+     * thread-safe use of `SignatureParsers`.
      *
      * @author Michael Eichberg
      */
@@ -75,7 +76,7 @@ object SignatureParser {
         //
         // The methods to parse signatures. The methods which create the parsers
         // start with an underscore to make them easily distinguishable from
-        // the DataStructure they parse/create.
+        // the data structure they parse/create.
         //
 
         protected val classSignatureParser: Parser[ClassSignature] =
@@ -86,7 +87,9 @@ object SignatureParser {
                 }
 
         protected val fieldTypeSignatureParser: Parser[FieldTypeSignature] =
-            classTypeSignatureParser | typeVariableSignatureParser | arrayTypeSignatureParser
+            classTypeSignatureParser |
+                typeVariableSignatureParser |
+                arrayTypeSignatureParser
 
         protected val methodTypeSignatureParser: Parser[MethodTypeSignature] =
             opt(formalTypeParametersParser) ~

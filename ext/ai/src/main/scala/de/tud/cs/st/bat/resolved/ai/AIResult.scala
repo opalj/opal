@@ -106,10 +106,6 @@ object AIResultBuilder {
 /**
  * Encapsulates the result of the abstract interpretation of a method.
  */
-/* Design - We use an explicit type parameter to avoid a path dependency on a 
- * concrete AIResult instance. I.e., if we would remove the type parameter 
- * we would introduce a path dependence to a particular AIResult's instance and the actual 
- * type would be "this.domain.type" and "this.domain.DomainValue". */
 sealed abstract class AIResult {
     val code: Code
     val domain: SomeDomain

@@ -52,15 +52,21 @@ trait UShortSet {
      * Executes the given function `f` for each value of this set, starting with
      * the smallest value.
      */
-    def foreach[U](f: /*ushortValue:*/ Int ⇒ U): Unit
+    def foreach(f: /*ushortValue:*/ Int ⇒ Unit): Unit
 
     /**
      * Returns `true` if the predicate `f` returns true for all values of the set.
      */
     def forall(f: /*ushortValue:*/ Int ⇒ Boolean): Boolean
 
+    def map[T](f: Int ⇒ T): scala.collection.mutable.Set[T] = {
+        val set = scala.collection.mutable.Set.empty[T]
+        foreach(v ⇒ set += f(v))
+        set
+    }
+
     /**
-     * Returns a new iterator. The iterator is primarily defined to facilitate
+     * Returns a new `Iterator`. The iterator is primarily defined to facilitate
      * the integration with Scala's standard collections API.
      *
      * @note Whenever possible try to use this set's native methods
@@ -70,7 +76,7 @@ trait UShortSet {
     def iterator: Iterator[Int] = iterable.iterator
 
     /**
-     * Returns a new iterable. The method is primarily defined to facilitate
+     * Returns a new `Iterable`. The method is primarily defined to facilitate
      * the integration with Scala's standard collections API.
      *
      * @note Whenever possible try to use this set's native methods
@@ -87,7 +93,7 @@ trait UShortSet {
     /**
      * The last value in this set which is also the maximum value.
      */
-    def last = max
+    def last: Int = max
 
     /**
      * The number of elements of this set.

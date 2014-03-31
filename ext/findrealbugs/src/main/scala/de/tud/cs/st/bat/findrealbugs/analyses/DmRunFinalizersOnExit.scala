@@ -76,8 +76,8 @@ class DmRunFinalizersOnExit[Source]
 
         for (
             classFile ← project.classFiles;
-            method ← classFile.methods if method.body.isDefined;
-            instruction ← method.body.get.instructions.filter {
+            method @ MethodWithBody(body) ← classFile.methods;
+            instruction ← body.instructions.filter {
                 case INVOKESTATIC(SystemType, "runFinalizersOnExit",
                     `runFinalizersOnExitMethodDescriptor`) ⇒ true
                 case INVOKESTATIC(RuntimeType, "runFinalizersOnExit",

@@ -60,8 +60,8 @@ trait Constant_PoolAbstractions {
     type ClassFile
 
     /**
-     * A DeferredActionsStore store all functions that need to perform post load actions. 
-     * 
+     * A DeferredActionsStore stores all functions that need to perform post load actions.
+     *
      * One example is the resolution of references to attributes.
      * (The constant pool is the only structure that is passed around and hence it is the
      * only place where to store information/functions related to a specific class file).
@@ -72,7 +72,9 @@ trait Constant_PoolAbstractions {
      * This method is called/needs to be called after the class file was completely
      * loaded to perform class file specific transformations.
      */
-    protected[bat] def applyDeferredActions(classFile: ClassFile, cp: Constant_Pool): ClassFile
+    protected[bat] def applyDeferredActions(
+        cp: Constant_Pool,
+        classFile: ClassFile): ClassFile
 
 }
 

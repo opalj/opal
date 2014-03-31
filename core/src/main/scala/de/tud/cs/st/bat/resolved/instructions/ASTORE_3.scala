@@ -44,10 +44,10 @@ case object ASTORE_3
         extends StoreLocalVariableInstruction
         with ImplicitLocalVariableIndex {
 
-    def lvIndex = 3
+    override def lvIndex = 3
 
-    def opcode: Int = 78
+    override def opcode: Int = 78
 
-    def mnemonic: String = "astore_3"
+    override def mnemonic: String = "astore_3"
 
 }

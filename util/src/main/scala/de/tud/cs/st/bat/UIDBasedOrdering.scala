@@ -36,13 +36,14 @@ package bat
 import scala.annotation.tailrec
 import scala.collection.SortedSet
 
-
 /**
  * Ordering for sorted collections of elements of type `UID`.
  *
  * @author Michael Eichberg
  */
 object UIDBasedOrdering extends Ordering[UID] {
+
     def compare(a: UID, b: UID): Int = a.id - b.id
+
 }
 

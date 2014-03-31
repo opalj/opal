@@ -70,15 +70,18 @@ class ManualGarbageCollection[Source]
         import MethodDescriptor.NoArgsAndReturnVoid
 
         // For all methods outside java.lang with "gc" in their name calling gc()...
-        for (
-            classFile ← project.classFiles if !classFile.thisType.fqn.startsWith("java/lang");
-            method ← classFile.methods if method.body.isDefined && !"(^gc)|(gc$)".r.findFirstIn(method.name).isDefined;
-            instruction ← method.body.get.instructions if (instruction match {
+        for {
+            classFile ← project.classFiles
+            if !classFile.thisType.fqn.startsWith("java/lang")
+            method @ MethodWithBody(body) ← classFile.methods
+            if !"(^gc)|(gc$)".r.findFirstIn(method.name).isDefined
+            instruction ← body.instructions
+            if (instruction match {
                 case INVOKESTATIC(SystemType, "gc", NoArgsAndReturnVoid) ⇒ true
                 case INVOKEVIRTUAL(RuntimeType, "gc", NoArgsAndReturnVoid) ⇒ true
                 case _ ⇒ false
             })
-        ) yield MethodBasedReport(
+        } yield MethodBasedReport(
             project.source(classFile.thisType),
             Severity.Info,
             method,

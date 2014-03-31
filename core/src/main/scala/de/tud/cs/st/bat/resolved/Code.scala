@@ -120,6 +120,16 @@ case class Code(
         attributes collectFirst { case lnt: LineNumberTable ⇒ lnt }
 
     /**
+     * Returns the line number associated with the instruction with the given pc if
+     * it is available.
+     *
+     * @param pc Index of the instruction for which we want to get the line number.
+     * @return `Some` line number or `None` if it's unavailable.
+     */
+    def lineNumber(pc: PC): Option[Int] =
+        lineNumberTable.flatMap(_.lookupLineNumber(pc))
+
+    /**
      * Collects all local variable tables.
      *
      * @note Depending on the configuration of the reader for `ClassFile`s this

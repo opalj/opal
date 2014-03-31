@@ -77,13 +77,13 @@ class LoadClassFilesInParallelTest
         if (file.isFile && file.canRead && file.getName.endsWith(".jar"))
     } {
         it should ("be able to completely read all classes in the jar file"+file.getPath+" in parallel") in {
-            resolved.reader.Java7Framework.ClassFiles(file) foreach { cs ⇒
+            resolved.reader.Java8Framework.ClassFiles(file) foreach { cs ⇒
                 val (cf, s) = cs
                 commonValidator(cf, s)
             }
         }
         it should ("be able to read the public interface of all classes in the jar file"+file.getPath+" in parallel") in {
-            resolved.reader.Java7LibraryFramework.ClassFiles(file) foreach { cs ⇒
+            resolved.reader.Java8LibraryFramework.ClassFiles(file) foreach { cs ⇒
                 val (cf, s) = cs
                 interfaceValidator(cf, s)
             }

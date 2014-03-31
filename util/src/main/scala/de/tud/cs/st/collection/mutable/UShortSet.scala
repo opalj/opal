@@ -37,7 +37,8 @@ package mutable
 import UShort.{ MinValue, MaxValue }
 
 /**
- * A mutable, sorted set of unsigned short values that is tailored for small(er) sets.
+ * A memory-efficient, mutable, sorted set of unsigned short values that 
+ * is tailored for small(er) sets.
  *
  * @author Michael Eichberg
  */
@@ -47,14 +48,14 @@ trait UShortSet extends collection.UShortSet {
      * Adds the given value to this set if it is not already contained in this set.
      * If this set has enough space to hold the additional value a reference to this
      * set is returned otherwise a new set is created and a reference to that set
-     * is returned.
+     * is returned. Hence, the return value must not be ignored.
      */
     def +(value: Int): UShortSet
 
 }
 
 /**
- * This set uses a single int value to store one or two unsigned short values.
+ * This set uses a single `Int` value to store one or two unsigned short values.
  */
 private class UShortSet2(private var value: Int) extends UShortSet {
 
@@ -75,7 +76,7 @@ private class UShortSet2(private var value: Int) extends UShortSet {
         value1 == uShortValue || (uShortValue > value1 && value2 == uShortValue)
     }
 
-    def foreach[U](f: /*ushortValue:*/ Int ⇒ U): Unit =
+    def foreach(f: /*ushortValue:*/ Int ⇒ Unit): Unit =
         { f(value1); val value2 = this.value2; if (value2 > 0) f(value2) }
 
     def forall(f: /*ushortValue:*/ Int ⇒ Boolean): Boolean = {
@@ -228,7 +229,7 @@ private class UShortSet4(private var value: Long) extends UShortSet {
             value3 == uShortValue || value4 == uShortValue
     }
 
-    def foreach[U](f: /*ushortValue:*/ Int ⇒ U): Unit = {
+    def foreach(f: /*ushortValue:*/ Int ⇒ Unit): Unit = {
         f(value1.toInt)
         f(value2.toInt)
         f(value3.toInt)
@@ -280,7 +281,7 @@ private class UShortSetNode(set1: UShortSet, set2: UShortSet) extends UShortSet 
         else
             set2.contains(uShortValue)
 
-    def foreach[U](f: /*ushortValue:*/ Int ⇒ U): Unit =
+    def foreach(f: /*ushortValue:*/ Int ⇒ Unit): Unit =
         { set1.foreach(f); set2.foreach(f) }
 
     def forall(f: /*ushortValue:*/ Int ⇒ Boolean): Boolean =
@@ -312,7 +313,7 @@ private class UShortSetNode(set1: UShortSet, set2: UShortSet) extends UShortSet 
 private object EmptyUShortSet extends UShortSet {
     def iterable = Iterable.empty
     def contains(uShortValue: Int): Boolean = false
-    def foreach[U](f: /*ushortValue:*/ Int ⇒ U): Unit = { /*Nothing to do.*/ }
+    def foreach(f: /*ushortValue:*/ Int ⇒ Unit): Unit = { /*Nothing to do.*/ }
     def forall(f: /*ushortValue:*/ Int ⇒ Boolean): Boolean = true
     def +(uShortValue: Int): UShortSet = UShortSet(uShortValue)
     def max = throw new UnsupportedOperationException("the set is empty")

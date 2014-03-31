@@ -42,9 +42,9 @@ package instructions
  */
 case object ARRAYLENGTH extends Instruction {
 
-    def opcode: Int = 190
+    override def opcode: Int = 190
 
-    def mnemonic: String = "arraylength"
+    override def mnemonic: String = "arraylength"
 
     final override val runtimeExceptions: List[ObjectType] =
         List(ObjectType.NullPointerException)

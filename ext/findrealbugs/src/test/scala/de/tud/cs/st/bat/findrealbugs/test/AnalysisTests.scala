@@ -64,15 +64,67 @@ object AnalysisTest {
      *
      * @param filename The file name of the .jar file, containing the path relative to
      * ext/findrealbugs/src/test/resources/.
+     * @param useJDK Whether the JDK classes should be added to the project, if available.
      * @return A `Project` representing the class files from the provided .jar file.
      */
-    def makeProjectFromJar(filename: String): Project[URL] = {
-        var classFiles = Java7Framework.ClassFiles(
-            TestSupport.locateTestResources("classfiles/analyses/"+filename,
-                "ext/findrealbugs"))
-
-        println("Creating IndexBasedProject: "+classFiles.size+
-            " class files from "+filename)
-        IndexBasedProject(classFiles)
+    def makeProjectFromJar(filename: String, useJDK: Boolean = false): Project[URL] = {
+        makeProjectFromJars(Seq(filename), useJDK)
     }
+
+    /**
+     * Builds a project from one or more .jar files in src/test/resources/.
+     *
+     * @param filenames The files names, containing the path relative to
+     * ext/findrealbugs/src/test/resources/.
+     * @param useJDK Whether the JDK classes should be added to the project, if available.
+     * @return A `Project` representing the class files from the provided .jar file.
+     */
+    def makeProjectFromJars(
+        filenames: Seq[String],
+        useJDK: Boolean = false): Project[URL] = {
+
+        val classFiles = filenames.map(filename ⇒
+            Java7Framework.ClassFiles(
+                TestSupport.locateTestResources("classfiles/analyses/"+filename,
+                    "ext/findrealbugs")
+            )
+        ).flatten
+
+        if (useJDK && jreClassFiles.nonEmpty) {
+            println("Creating IndexBasedProject: "+classFiles.size+
+                " class files from "+filenames.mkString(", ")+" and "+jreClassFiles.size+
+                " JRE class files")
+            IndexBasedProject(classFiles, jreClassFiles)
+        } else {
+            println("Creating IndexBasedProject: "+classFiles.size+
+                " class files from "+filenames.mkString(", "))
+            IndexBasedProject(classFiles)
+        }
+    }
+
+    /**
+     * Loads class files from JRE .jars found in the boot classpath.
+     *
+     * @return List of class files ready to be passed to a `IndexBasedProject`.
+     */
+    private def loadJREClassFiles: Seq[(ClassFile, URL)] = {
+        val paths = System.getProperties().getProperty("sun.boot.class.path").split(":")
+
+        val classFiles = (for (path ← paths) yield {
+            val jarfile = new java.io.File(path)
+            if (jarfile.exists()) {
+                println("Loading JRE .jar (found in sun.boot.class.path): "+path)
+                Java7LibraryFramework.ClassFiles(jarfile)
+            } else {
+                Seq.empty
+            }
+        }).toSeq
+
+        classFiles.flatten
+    }
+
+    /**
+     * val holding the list of JRE class files, such that they're only loaded once.
+     */
+    private val jreClassFiles = loadJREClassFiles
 }

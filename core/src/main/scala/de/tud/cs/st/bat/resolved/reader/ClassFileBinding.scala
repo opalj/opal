@@ -1,5 +1,5 @@
 /* License (BSD Style License):
- * Copyright (c) 2009 - 2013
+ * Copyright (c) 2009 - 2014
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -35,50 +35,17 @@ package bat
 package resolved
 package reader
 
+// TODO [Modularization - bring in line with paper] Split up this file.
+
 import reflect.ClassTag
 
-import de.tud.cs.st.bat.reader.ClassFileReader
+import de.tud.cs.st.bat.reader.MethodsReader
 
-/**
-  *
-  * @author Michael Eichberg
-  */
-trait ClassFileBinding
-        extends ClassFileReader
-        with ConstantPoolBinding
-        with AttributeBinding {
-
-    type ClassFile = de.tud.cs.st.bat.resolved.ClassFile
+trait MethodsBinding extends MethodsReader {
+    this: ConstantPoolBinding with AttributeBinding ⇒
 
     type Method_Info = de.tud.cs.st.bat.resolved.Method
-    type Methods <: IndexedSeq[Method_Info]
     val Method_InfoManifest: ClassTag[Method_Info] = implicitly
-
-    type Field_Info = de.tud.cs.st.bat.resolved.Field
-    type Fields <: IndexedSeq[Field_Info]
-    val Field_InfoManifest: ClassTag[Field_Info] = implicitly
-
-    type Interface = ObjectType
-    type Interfaces <: IndexedSeq[ObjectType]
-    val InterfaceManifest: ClassTag[Interface] = implicitly
-
-    def Interface(
-        interface_index: Constant_Pool_Index)(
-            implicit cp: Constant_Pool): Interface =
-        interface_index.asObjectType
-
-    def Field_Info(
-        access_flags: Int,
-        name_index: Constant_Pool_Index,
-        descriptor_index: Constant_Pool_Index,
-        attributes: Attributes)(
-            implicit cp: Constant_Pool): Field_Info = {
-        Field(
-            access_flags,
-            name_index.asString,
-            descriptor_index.asFieldType,
-            attributes)
-    }
 
     def Method_Info(
         accessFlags: Int,
@@ -92,6 +59,59 @@ trait ClassFileBinding
             descriptor_index.asMethodDescriptor,
             attributes)
     }
+}
+
+import de.tud.cs.st.bat.reader.FieldsReader
+
+trait FieldsBinding extends FieldsReader {
+    this: ConstantPoolBinding with AttributeBinding ⇒
+
+    type Field_Info = de.tud.cs.st.bat.resolved.Field
+    val Field_InfoManifest: ClassTag[Field_Info] = implicitly
+
+    def Field_Info(
+        access_flags: Int,
+        name_index: Constant_Pool_Index,
+        descriptor_index: Constant_Pool_Index,
+        attributes: Attributes)(
+            implicit cp: Constant_Pool): Field_Info = {
+        Field(
+            access_flags,
+            name_index.asString,
+            descriptor_index.asFieldType,
+            attributes)
+    }
+}
+
+// TODO [Refactor/Reconsider] Make this a "type reader" or something else... currently this modularization is a bit of a farce as class file, fields and method also parse object types 
+import de.tud.cs.st.bat.reader.InterfacesReader
+
+trait InterfacesBinding extends InterfacesReader {
+    this: ConstantPoolBinding with AttributeBinding ⇒
+
+    type Interface = ObjectType
+    val InterfaceManifest: ClassTag[Interface] = implicitly
+
+    def Interface(
+        interface_index: Constant_Pool_Index)(
+            implicit cp: Constant_Pool): Interface =
+        interface_index.asObjectType
+}
+
+import de.tud.cs.st.bat.reader.ClassFileReader
+
+/**
+ *
+ * @author Michael Eichberg
+ */
+trait ClassFileBinding extends ClassFileReader {
+    this: ConstantPoolBinding with MethodsBinding with FieldsBinding with InterfacesBinding with AttributeBinding ⇒
+
+    type ClassFile = de.tud.cs.st.bat.resolved.ClassFile
+
+    type Interfaces <: IndexedSeq[ObjectType]
+    type Fields <: IndexedSeq[Field_Info]
+    type Methods <: IndexedSeq[Method_Info]
 
     def ClassFile(
         minor_version: Int, major_version: Int,

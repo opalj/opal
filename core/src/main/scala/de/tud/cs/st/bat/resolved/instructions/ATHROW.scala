@@ -42,9 +42,9 @@ package instructions
  */
 case object ATHROW extends Instruction {
 
-    def opcode: Int = 191
+    override def opcode: Int = 191
 
-    def mnemonic: String = "athrow"
+    override def mnemonic: String = "athrow"
 
     final override val runtimeExceptions: List[ObjectType] =
         List(ObjectType.NullPointerException)

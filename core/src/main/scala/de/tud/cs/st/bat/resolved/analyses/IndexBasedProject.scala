@@ -37,8 +37,6 @@ package analyses
 
 import util.graphs.{ Node, toDot }
 
-import reader.Java7Framework
-
 import java.net.URL
 
 /**
@@ -48,7 +46,7 @@ import java.net.URL
  *
  * ==Initialization==
  * To create a representation of a project use the companion object's factory method.
- * 
+ *
  * ==Thread Safety==
  * This class is immutable. After creating a project, it is not possible to dynamically
  * add/remove any class files.
@@ -77,6 +75,10 @@ class IndexBasedProject[Source: reflect.ClassTag] private (
     private[this] val classesMap: Array[ClassFile],
     // Mapping between an ObjectType('s id) and its defining source file 
     private[this] val sourcesMap: Array[Source],
+    /* By default all classes are considered to belong to the library unless the class 
+     * file is available and the class file was not explicitly identified as belonging 
+     * to the library. */
+    private[this] val libraryTypesMap: Array[Boolean],
     val classHierarchy: ClassHierarchy)
         extends ProjectLike[Source] {
 
@@ -98,10 +100,21 @@ class IndexBasedProject[Source: reflect.ClassTag] private (
 
     import de.tud.cs.st.util.ControlAbstractions.foreachNonNullValueOf
 
-    /**
-     * This project's class files.
-     */
     override def classFiles: Iterable[ClassFile] = classesMap.view.filter(_ ne null)
+
+    override def projectClassFiles: Iterable[ClassFile] =
+        classesMap.view.filter(cf ⇒ (cf ne null) && !isLibraryType(cf))
+
+    override def libraryClassFiles: Iterable[ClassFile] =
+        classesMap.view.filter(cf ⇒ (cf ne null) && isLibraryType(cf))
+
+    override def isLibraryType(classFile: ClassFile): Boolean = {
+        libraryTypesMap(classFile.thisType.id)
+    }
+
+    override def isLibraryType(objectType: ObjectType): Boolean = {
+        libraryTypesMap(objectType.id)
+    }
 
     override def source(objectType: ObjectType): Option[Source] = {
         // It may be the case that – after loading all class files – 
@@ -176,7 +189,7 @@ class IndexBasedProject[Source: reflect.ClassTag] private (
         true
     }
 
-    def statistics: String = {
+    override def statistics: String = {
         val classFiles = classesMap.filter(_ != null)
         "Project Statistics:"+
             "\n\tClasses: "+classesMap.count(_ != null)+
@@ -209,35 +222,54 @@ object IndexBasedProject {
     /**
      * Creates a new IndexBasedProject.
      *
-     * @param allClassFiles The list of class files of this project.
+     * @param classFiles The list of class files of this project that are considered
+     *    to belong to the application/library that will be analyzed.
+     *    [Thread Safety] The underlying data structure has to support concurrent access.
+     * @param libraryClassFiles The list of class files of this project that make up
+     *    the libraries used by the project that will be analyzed.
      *    [Thread Safety] The underlying data structure has to support concurrent access.
      */
     def apply[Source: reflect.ClassTag](
-        classFiles: Iterable[(ClassFile, Source)]): IndexBasedProject[Source] = {
+        classFiles: Iterable[(ClassFile, Source)],
+        libraryClassFiles: Iterable[(ClassFile, Source)] = Iterable.empty): IndexBasedProject[Source] = {
 
         import concurrent.{ Future, Await, ExecutionContext, future }
         import concurrent.duration.Duration
         import ExecutionContext.Implicits.global
 
         val classHierarchyFuture: Future[ClassHierarchy] = future {
-            ClassHierarchy(classFiles.view.map(_._1))
+            ClassHierarchy(
+                classFiles.view.map(_._1) ++ libraryClassFiles.view.map(_._1)
+            )
         }
 
         val classes = new Array[ClassFile](ObjectType.objectTypesCount)
+        val libraryTypes = {
+            // by default all types are considered to be library types
+            val libraryTypes = new Array[Boolean](ObjectType.objectTypesCount)
+            java.util.Arrays.fill(libraryTypes, true)
+            libraryTypes
+        }
         val sources = new Array[Source](ObjectType.objectTypesCount)
 
         var classFilesCount = 0
-        for ((classFile, source) ← classFiles) {
-            classFilesCount += 1
-            val id = classFile.thisType.id
-            classes(id) = classFile
-            sources(id) = source
+        def processClassFiles(classFiles: Iterable[(ClassFile, Source)], isLibrary: Boolean): Unit = {
+            for ((classFile, source) ← classFiles) {
+                classFilesCount += 1
+                val id = classFile.thisType.id
+                classes(id) = classFile
+                sources(id) = source
+                libraryTypes(id) = isLibrary
+            }
         }
+        processClassFiles(classFiles, false)
+        processClassFiles(libraryClassFiles, true)
 
         new IndexBasedProject(
             classFilesCount,
             classes,
             sources,
+            libraryTypes,
             Await.result(classHierarchyFuture, Duration.Inf)
         )
     }

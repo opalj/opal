@@ -40,14 +40,14 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case object ALOAD_3 
-extends LoadLocalVariableInstruction 
-with ImplicitLocalVariableIndex {
+case object ALOAD_3
+        extends LoadLocalVariableInstruction
+        with ImplicitLocalVariableIndex {
 
-    def lvIndex : Int = 3
-    
-    def opcode: Int = 45
+    override def lvIndex: Int = 3
 
-    def mnemonic: String = "aload_3"
+    override def opcode: Int = 45
+
+    override def mnemonic: String = "aload_3"
 
 }

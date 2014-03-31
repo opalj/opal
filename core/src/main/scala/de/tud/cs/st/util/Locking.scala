@@ -48,6 +48,10 @@ trait Locking {
     import java.util.concurrent.locks.ReentrantReadWriteLock
     private[this] val rwLock = new ReentrantReadWriteLock()
 
+    /**
+     * Acquires the write lock associated with this instance and then executes
+     * the function `f`. Afterwards, the lock is released.
+     */
     def withWriteLock[B](f: ⇒ B): B = {
         try {
             rwLock.writeLock().lock()
@@ -57,6 +61,10 @@ trait Locking {
         }
     }
 
+    /**
+     * Acquires the read lock associated with this instance and then executes
+     * the function `f`. Afterwards, the lock is released.
+     */
     def withReadLock[B](f: ⇒ B): B = {
         try {
             rwLock.readLock().lock()
@@ -67,12 +75,12 @@ trait Locking {
     }
 }
 /**
- * Factory for Locking.
+ * Factory for `Locking` objects.
  */
 object Locking {
 
     /**
-     * Creates a new Reentrant Read-Write Lock.
+     * Creates a new reentrant read-write lock.
      */
     def apply(): Locking = new Locking {}
 

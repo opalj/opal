@@ -100,17 +100,17 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
     //
 
     protected[bat] def registerDeferredAction(
-        deferredAction: ClassFile ⇒ ClassFile)(
-            implicit cp: Constant_Pool) {
+        cp: Constant_Pool)(
+            deferredAction: ClassFile ⇒ ClassFile): Unit = {
         val store = cp(0).asInstanceOf[DeferredActionsStore]
         store.synchronized {
             store += deferredAction
         }
     }
 
-    protected[bat] def applyDeferredActions(
-        classFile: ClassFile,
-        cp: Constant_Pool): ClassFile = {
+    override protected[bat] def applyDeferredActions(
+        cp: Constant_Pool,
+        classFile: ClassFile): ClassFile = {
         var transformedClassFile = classFile
         val das = cp(0).asInstanceOf[DeferredActionsStore]
         das.foreach { deferredAction ⇒

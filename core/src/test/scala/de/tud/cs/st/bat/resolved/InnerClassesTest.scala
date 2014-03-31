@@ -34,7 +34,7 @@ package de.tud.cs.st
 package bat
 package resolved
 
-import reader.Java7Framework.ClassFiles
+import reader.Java8Framework.ClassFiles
 import analyses.IndexBasedProject
 
 import org.junit.runner.RunWith

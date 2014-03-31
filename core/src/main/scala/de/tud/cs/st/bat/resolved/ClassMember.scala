@@ -43,13 +43,15 @@ trait ClassMember extends SourceElement with CommonAttributes {
 
     protected def accessFlags: Int
 
-    def isPublic: Boolean = ACC_PUBLIC isElementOf accessFlags
-    def isProtected: Boolean = ACC_PROTECTED isElementOf accessFlags
-    def isPrivate: Boolean = ACC_PRIVATE isElementOf accessFlags
+    def isPublic: Boolean = (ACC_PUBLIC.mask & accessFlags) != 0
 
-    def isStatic: Boolean = ACC_STATIC isElementOf accessFlags
+    def isProtected: Boolean = (ACC_PROTECTED.mask & accessFlags) != 0
 
-    def isFinal: Boolean = ACC_FINAL isElementOf accessFlags
+    def isPrivate: Boolean = (ACC_PRIVATE.mask & accessFlags) != 0
+
+    def isStatic: Boolean = (ACC_STATIC.mask & accessFlags) != 0
+
+    def isFinal: Boolean = (ACC_FINAL.mask & accessFlags) != 0
 
     def isNonFinal: Boolean = !isFinal
 }

@@ -91,10 +91,10 @@ object UShortSetDemo {
                                                   //| )
     _10_20_30_40 + 45                             //> res25: de.tud.cs.st.collection.mutable.UShortSet = UShortSet(10,20,30,40,45
                                                   //| )
-                                                  
-    UShortSet(12,23)                              //> res26: de.tud.cs.st.collection.mutable.UShortSet = UShortSet(12,23)
-    UShortSet(12,12)                              //> res27: de.tud.cs.st.collection.mutable.UShortSet = UShortSet(12)
-    UShortSet(23,11)                              //> res28: de.tud.cs.st.collection.mutable.UShortSet = UShortSet(11,23)
+
+    UShortSet(12, 23)                             //> res26: de.tud.cs.st.collection.mutable.UShortSet = UShortSet(12,23)
+    UShortSet(12, 12)                             //> res27: de.tud.cs.st.collection.mutable.UShortSet = UShortSet(12)
+    UShortSet(23, 11)                             //> res28: de.tud.cs.st.collection.mutable.UShortSet = UShortSet(11,23)
 
     try {
         empty + 66666
@@ -107,8 +107,10 @@ object UShortSetDemo {
     } catch {
         case _: IllegalArgumentException ⇒ "OK"
     }                                             //> res30: Object = OK
-    
-    UShortSet.create(0,5,3,10,19,200,65,56,56,3,0).size == 8
+
+    UShortSet.create(0, 5, 3, 10, 19, 200, 65, 56, 56, 3, 0).size == 8
                                                   //> res31: Boolean = true
-    
+
+    _0_1_2_65535.map(_.toString)                  //> res32: scala.collection.mutable.Set[String] = Set(0, 1, 2, 65535)
+
 }

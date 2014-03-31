@@ -60,16 +60,22 @@ import resolved.instructions._
  * - Don't complain if the field is written before being read (or written only and never
  *   read) in such methods. If it's written first, then there's no "uninitialized" access.
  * - Test on real Java projects and check whether/how many false-positives are reported
+ * - Should ignore methods that don't rely on any uninitialized fields.
+ *
+ * We only need to check abstract super classes, but no super interfaces here, because
+ * this analysis checks for a super constructor containing code calling the overridden
+ * method. Interfaces, however, can't have constructors.
  *
  * @author Roberts Kolosovs
  * @author Ralf Mitschke
  * @author Daniel Klauer
  */
 class UrUninitReadCalledFromSuperConstructor[Source]
-        extends MultipleResultsAnalysis[Source, MethodBasedReport[Source]] {
+        extends MultipleResultsAnalysis[Source, SourceLocationBasedReport[Source]] {
 
     def description: String =
-        "Reports classes calling methods of their subclasses in the constructor."
+        "Reports methods that access their class'es static fields and are called by a "+
+            "super class constructor."
 
     /**
      * Runs this analysis on the given project.
@@ -80,7 +86,7 @@ class UrUninitReadCalledFromSuperConstructor[Source]
      */
     def analyze(
         project: Project[Source],
-        parameters: Seq[String] = List.empty): Iterable[MethodBasedReport[Source]] = {
+        parameters: Seq[String] = Seq.empty): Iterable[SourceLocationBasedReport[Source]] = {
 
         import project.classHierarchy
 
@@ -100,23 +106,19 @@ class UrUninitReadCalledFromSuperConstructor[Source]
         }
 
         /**
-         * Check whether a method overrides a method in the super type.
-         *
-         * We only need to check abstract super classes but no super interfaces here,
-         * because this analysis checks for a super constructor containing code calling
-         * the overridden method. Interfaces, however, can't have constructors.
+         * Check whether a method overrides a method in any super class.
          *
          * @param classFile Subclass with the supposed overriding method.
          * @param method Method to be checked for being an overriding method.
          * @return True if method in classFile is overriding a method in some superclass.
          */
-        def isOverridingMethod(classFile: ClassFile, method: Method): Boolean = {
-            // We could also check for an @Override annotation, but that is not reliable
-            // as the use of @Override is not required.
+        def methodOverridesAnything(classFile: ClassFile, method: Method): Boolean = {
             classHierarchy.allSupertypes(classFile.thisType).
                 filter(!classHierarchy.isInterface(_)).
-                map(classHierarchy.lookupMethodDefinition(_, method.name,
-                    method.descriptor, project)).nonEmpty
+                exists(
+                    classHierarchy.lookupMethodDefinition(_, method.name,
+                        method.descriptor, project).isDefined
+                )
         }
 
         /**
@@ -135,40 +137,88 @@ class UrUninitReadCalledFromSuperConstructor[Source]
             }
         }
 
+        var inconsistencyReports: Set[SourceLocationBasedReport[Source]] = Set.empty
+
         /**
-         * Returns the super constructor called in the given constructor or None
+         * Looks up a method reference from an `INVOKESPECIAL` instruction by using
+         * `resolveMethodReference`, unless the given declaring class is an interface.
+         *
+         * @param classFile The class file containing the `INVOKESPECIAL` instruction.
+         * @param constructor The method containing the `INVOKESPECIAL` instruction.
+         * @param pc The `PC` of the `INVOKESPECIAL` instruction.
+         * @param declaringClass The object type referenced by the `INVOKESPECIAL`.
+         * @param name The method name referenced by the `INVOKESPECIAL`.
+         * @param descriptor The method signature referenced by the `INVOKESPECIAL`.
+         * @return The referenced `Method` or `None`.
+         */
+        def maybeResolveMethodReference(
+            classFile: ClassFile,
+            constructor: Method,
+            pc: PC,
+            declaringClass: ObjectType,
+            name: String,
+            descriptor: MethodDescriptor): Option[Method] = {
+
+            // Excluding interfaces here, because resolveMethodReference() can't be called
+            // on interfaces, and normally, constructors are not being called on
+            // interfaces anyways. However, we've found a class file in the Qualitas
+            // Corpus containing an INVOKESPECIAL doing a constructor call on an
+            // interface. In this situation, we report that the project is inconsistent.
+            if (classHierarchy.isInterface(declaringClass)) {
+                inconsistencyReports +=
+                    LineAndColumnBasedReport(
+                        project.source(classFile.thisType),
+                        Severity.Error,
+                        constructor.body.get.lineNumber(pc),
+                        None,
+                        "INVOKESPECIAL on interface type; inconsistent project.")
+                None
+            } else {
+                classHierarchy.
+                    resolveMethodReference(declaringClass, name, descriptor, project)
+            }
+        }
+
+        /**
+         * Returns the super class constructor called by the given constructor, or None.
          *
          * @param constructor Constructor which may or may not call a superconstructor.
          * @return The first superconstructor to be called or None.
          */
-        def findCalledSuperConstructor(constructor: Method): Option[Method] = {
-            constructor.body.get.instructions.collectFirst({
-                case INVOKESPECIAL(targetType, name, desc) ⇒
-                    classHierarchy.resolveMethodReference(targetType, name, desc, project)
+        def findCalledSuperConstructor(
+            classFile: ClassFile,
+            constructor: Method): Option[Method] = {
+            constructor.body.get.associateWithIndex.collectFirst({
+                case (pc, INVOKESPECIAL(typ, name, desc)) ⇒ maybeResolveMethodReference(
+                    classFile, constructor, pc, typ, name, desc)
             }).flatten
         }
 
+        var reports: Set[SourceLocationBasedReport[Source]] = Set.empty
+
         for {
             classFile ← project.classFiles
-            method ← classFile.methods
+            method @ MethodWithBody(body) ← classFile.methods
             if !method.isStatic &&
-                method.body.isDefined &&
-                method.name != "<init>" &&
-                isOverridingMethod(classFile, method)
-            GETFIELD(declaringClass, fieldName, fieldType) ← method.body.get.instructions
+                !method.isConstructor &&
+                methodOverridesAnything(classFile, method)
+            GETFIELD(declaringClass, fieldName, fieldType) ← body.instructions
             constructor ← classFile.constructors
             if declaresField(classFile, fieldName, fieldType)
-            superConstructor ← findCalledSuperConstructor(constructor)
+            superConstructor ← findCalledSuperConstructor(classFile, constructor)
             superClass = project.classFile(superConstructor)
             if superConstructor.body.isDefined &&
                 calls(superConstructor, superClass.thisType, method)
-        } yield {
-            MethodBasedReport(
-                project.source(superClass.thisType),
-                Severity.Error,
-                method,
-                "Called by super constructor ("+superClass.fqn+"), while the class' "+
-                    "fields are still uninitialized")
+        } {
+            reports +=
+                MethodBasedReport(
+                    project.source(classFile.thisType),
+                    Severity.Error,
+                    method,
+                    "Called by super constructor ("+superClass.thisType.toJava+"), "+
+                        "while the class' fields are still uninitialized")
         }
+
+        inconsistencyReports ++ reports
     }
 }

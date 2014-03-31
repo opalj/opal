@@ -42,18 +42,4 @@ package instructions
  */
 abstract class ArrayStoreInstruction extends ArrayAccessInstruction 
 
-/**
- * An instruction that stores a primitive value in an array of primitive values.
- *
- * @author Michael Eichberg
- */
-abstract class PrimitiveArrayStoreInstruction extends ArrayAccessInstruction {
 
-    final override def runtimeExceptions: List[ObjectType] =
-        PrimitiveArrayAccess.runtimeExceptions
-
-    final override def nextInstructions(currentPC: PC, code: Code): PCs =
-        Instruction.nextInstructionOrExceptionHandlers(
-            this, currentPC, code, PrimitiveArrayAccess.runtimeExceptions)
-
-}

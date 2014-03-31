@@ -37,46 +37,55 @@ package reader
 import java.io.DataInputStream
 
 /**
- *  '''From the Specification'''
- * {{{
- * RuntimeInvisibleAnnotations_attribute {
- * 	u2 attribute_name_index;
- * 	u4 attribute_length;
- * 	u2 num_annotations;
- * 	annotation annotations[num_annotations];
- * }
- * }}}
+ * Generic parser for the `RuntimeInvisibleAnnotations` attribute.
+ *
  * @author Michael Eichberg
  */
 trait RuntimeInvisibleAnnotations_attributeReader extends AttributeReader {
 
-    type RuntimeInvisibleAnnotations_attribute <: Attribute
     type Annotations
 
-    protected def Annotations(in: DataInputStream, cp: Constant_Pool): Annotations
+    protected def Annotations(cp: Constant_Pool, in: DataInputStream): Annotations
+
+    type RuntimeInvisibleAnnotations_attribute <: Attribute
 
     protected def RuntimeInvisibleAnnotations_attribute(
+        constant_pool: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
         attribute_length: Int,
-        annotations: Annotations)(
-            implicit constant_pool: Constant_Pool): RuntimeInvisibleAnnotations_attribute
+        annotations: Annotations): RuntimeInvisibleAnnotations_attribute
 
     //
     // IMPLEMENTATION
     //
 
+    /*
+     * '''From the Specification'''
+     * <pre>
+     * RuntimeInvisibleAnnotations_attribute {
+     *  u2 attribute_name_index;
+     *  u4 attribute_length;
+     *  u2 num_annotations;
+     *  annotation annotations[num_annotations];
+     * }
+     * </pre>
+     */
     registerAttributeReader(
         RuntimeInvisibleAnnotations_attributeReader.ATTRIBUTE_NAME ->
             ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 val attribute_length = in.readInt()
                 RuntimeInvisibleAnnotations_attribute(
-                    attribute_name_index, attribute_length, Annotations(in, cp)
-                )(cp)
+                    cp, attribute_name_index, attribute_length, Annotations(cp, in)
+                )
             })
     )
-
 }
 
+/**
+ * Common properties of `RuntimeInvisibleAnnotations`.
+ *
+ * @author Michael Eichberg
+ */
 object RuntimeInvisibleAnnotations_attributeReader {
 
     val ATTRIBUTE_NAME = "RuntimeInvisibleAnnotations"

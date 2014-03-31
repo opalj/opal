@@ -137,12 +137,10 @@ object XHTML {
                 if ((currentTime - lastDump) > minimumDumpInterval) {
                     lastDump = currentTime
                     writeAndOpenDump(
-                        dump(classFile,
-                            method,
-                            code,
-                            result.domain,
-                            operandsArray, localsArray,
-                            Some("Dump generated due to exception: "+e.getMessage()))
+                        dump(classFile.get,
+                            method.get,
+                            result,
+                            "Dump generated due to exception: "+e.getMessage())
                     )
                 } else {
                     Console.err.println("dump suppressed: "+e.getMessage())
@@ -167,6 +165,18 @@ object XHTML {
         { body }
         </body>
         </html>
+    }
+
+    def dump(
+        classFile: ClassFile,
+        method: Method,
+        result: AIResult,
+        header: String): Node = {
+        import result._
+        htmlTemplate(
+            Some(header),
+            dumpTable(
+                Some(classFile), Some(method), code, domain, operandsArray, localsArray))
     }
 
     def dump(
@@ -306,16 +316,16 @@ object XHTML {
 
     def dumpStack(operands: List[_ <: AnyRef]): Node =
         if (operands eq null)
-            <em>Operands are not available.</em>
+            <em>Information about operands is not available.</em>
         else {
             <ul class="Stack">
-            { operands.map(op ⇒ <li>{ op.toString }</li>) }
+            { operands.map(op ⇒ <li>{ op.toString() }</li>) }
             </ul>
         }
 
     def dumpLocals(locals: Array[_ <: AnyRef]): Node =
         if (locals eq null)
-            <em>Local variables assignment is not available.</em>
+            <em>Information about the local variables is not available.</em>
         else {
             <ol start="0" class="registers">
             { locals.map(l ⇒ if (l eq null) "UNUSED" else l.toString()).map(l ⇒ <li>{ l }</li>) }

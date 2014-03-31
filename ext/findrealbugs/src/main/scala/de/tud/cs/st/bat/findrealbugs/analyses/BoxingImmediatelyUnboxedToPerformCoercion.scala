@@ -78,11 +78,11 @@ class BoxingImmediatelyUnboxedToPerformCoercion[S]
         // java.lang class, where the called method's name ends in "Value"...
         for {
             classFile ← project.classFiles if classFile.majorVersion >= 49
-            method ← classFile.methods if method.body.isDefined
+            method @ MethodWithBody(body) ← classFile.methods
             Seq(
                 (_, INVOKESPECIAL(receiver1, _, MethodDescriptor(Seq(paramType), _))),
                 (pc, INVOKEVIRTUAL(receiver2, name, MethodDescriptor(Seq(), returnType)))
-                ) ← method.body.get.associateWithIndex.sliding(2) if (
+                ) ← body.associateWithIndex.sliding(2) if (
                 !paramType.isReferenceType &&
                 receiver1.asObjectType.fqn.startsWith("java/lang") &&
                 receiver1 == receiver2 &&
@@ -93,7 +93,7 @@ class BoxingImmediatelyUnboxedToPerformCoercion[S]
             LineAndColumnBasedReport(
                 project.source(classFile.thisType),
                 Severity.Info,
-                pcToOptionalLineNumber(method.body.get, pc),
+                body.lineNumber(pc),
                 None,
                 "Value boxed and immediately unboxed")
         }

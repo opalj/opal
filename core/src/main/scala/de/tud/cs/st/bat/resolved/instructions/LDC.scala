@@ -58,6 +58,10 @@ final case class LoadFloat(value: Float) extends LDC[Float]
 
 final case class LoadClass(value: ReferenceType) extends LDC[ReferenceType]
 
+final case class LoadMethodHandle(value: MethodHandle) extends LDC[MethodHandle]
+
+final case class LoadMethodType(value: MethodDescriptor) extends LDC[MethodDescriptor]
+
 final case class LoadString(value: String) extends LDC[String] {
 
     override def toString: String = "LoadString(\""+value+"\")"
@@ -76,6 +80,8 @@ object LDC {
             case f: Float         ⇒ LoadFloat(f)
             case r: ReferenceType ⇒ LoadClass(r)
             case s: String        ⇒ LoadString(s)
+			case mh: MethodHandle => LoadMethodHandle(mh)
+			case md: MethodDescriptor => LoadMethodType(md)
             case _ ⇒
                 throw new BATException("unsupported constant value: "+constantValue)
         }

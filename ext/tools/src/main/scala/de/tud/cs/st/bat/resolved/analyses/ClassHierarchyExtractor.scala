@@ -35,6 +35,8 @@ package bat
 package resolved
 package analyses
 
+import java.io.File
+
 /**
  * Writes out (a subset of) the class hierarchy in the format used by the
  * `de.tud.cs.st.bat.resolved.analyses.ClassHierarchy` to create the pre-initialized
@@ -46,7 +48,7 @@ object ClassHierarchyExtractor {
 
     def main(args: Array[String]) {
 
-        import reader.Java7Framework.ClassFiles
+        import reader.Java8Framework.ClassFiles
 
         if (args.length < 3 || !args.drop(2).forall(_.endsWith(".jar"))) {
             println("Usage: java …ClassHierarchy supertype filterprefix <JAR file>+")
@@ -58,7 +60,10 @@ object ClassHierarchyExtractor {
         val filterPrefix = args(1).replace('.', '/')
         val jars = args.drop(2)
 
-        val classFiles = (List.empty[(ClassFile, java.net.URL)] /: jars)(_ ++ ClassFiles(_))
+        val classFiles =
+            (List.empty[(ClassFile, java.net.URL)] /: args) { (cfs, filename) ⇒
+                cfs ++ ClassFiles(new File(filename))
+            }
         val classHierarchy = ClassHierarchy(classFiles.view.map(_._1))
         val supertype = ObjectType(supertypeName)
         if (classHierarchy.isUnknown(supertype)) {

@@ -34,18 +34,18 @@ package de.tud.cs.st
 package bat
 
 /**
- * Enumeration of all class file structures that can have (class file-level) attributes.
+ * Enumeration of all class file structures that can have attributes.
  *
  * @author Michael Eichberg
  */
 object AttributesParent extends Enumeration {
 
     val ClassFile = Value
-    
+
     val Field = Value
-    
+
     val Method = Value
-    
+
     val Code = Value
 
 }

@@ -37,8 +37,6 @@ package analyses
 
 import util.graphs.{ Node, toDot }
 
-import reader.Java7Framework
-
 import java.net.URL
 import java.io.File
 
@@ -56,7 +54,7 @@ import java.io.File
  * Implementations of the `ProjektLike` trait need to be thread-safe.
  *
  * @note
- *    This project abstraction does not support (incremenatl) project updates.
+ *    This project abstraction does not support (incremental) project updates.
  *    Furthermore, it makes use of some global, internal counters. Hence, if you want
  *    to analyze multiple projects in a row, it is highly recommended to analyze the
  *    different projects by associating BAT/each analysis with a different `ClassLoader`.
@@ -88,6 +86,20 @@ abstract class ProjectLike[Source] extends (ObjectType ⇒ Option[ClassFile]) {
      * @param objectType Some object type. (This method is defined for all `ObjectType`s.)
      */
     def source(objectType: ObjectType): Option[Source]
+
+    /**
+     * Returns true if the given class file belongs to the library part of the project.
+     * This is only the case if the class file was explicitly identified as being
+     * part of the library. By default all class files are considered to belong the
+     * code base that will be analyzed.
+     */
+    def isLibraryType(classFile: ClassFile): Boolean
+
+    /**
+     * Returns true if the given type file belongs to the library part of the project.
+     * This is generally the case if no class file was loaded for the given type.
+     */
+    def isLibraryType(objectType: ObjectType): Boolean
 
     /**
      * Returns the class file that defines the given `objectType`; if any.
@@ -195,10 +207,39 @@ abstract class ProjectLike[Source] extends (ObjectType ⇒ Option[ClassFile]) {
     final val fieldCount = Field.fieldsCount
 
     /**
-     * This project's class files.
+     * All class files.
      */
     def classFiles: Iterable[ClassFile]
 
+    /**
+     * The class files that are the target of the analysis.
+     */
+    def projectClassFiles: Iterable[ClassFile]
+
+    /**
+     * The class files belonging to the library part.
+     */
+    def libraryClassFiles: Iterable[ClassFile]
+
+    /**
+     * Converts this project abstraction into a standard Java `HashMap`.
+     *
+     * @note This method should only be used by Java projects that want to interact
+     *      with BAT.
+     */
+    def toJavaMap(): java.util.HashMap[ObjectType, ClassFile] = {
+        val map = new java.util.HashMap[ObjectType, ClassFile]
+        for (classFile ← classFiles) map.put(classFile.thisType, classFile)
+        map
+    }
+
+    /**
+     * Some basic statistics about this project.
+     * 
+     * (Calculated on-demand.)
+     */
+    def statistics: String
+    
     /**
      * This project's class hierarchy.
      */
@@ -235,14 +276,6 @@ private object ProjectLike {
             println("for further details.")
             print(RESET)
         }
-    }
-
-    /**
-     * Given a reference to a class file, jar file or a folder containing jar and class
-     * files, all class files will be loaded and a project will be returned.
-     */
-    def createProject(file: File): ProjectLike[URL] = {
-        IndexBasedProject[URL](Java7Framework.ClassFiles(file))
     }
 }
 

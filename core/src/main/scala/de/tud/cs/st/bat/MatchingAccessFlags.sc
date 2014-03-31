@@ -41,7 +41,7 @@ object MatchingAccessFlags {
     import resolved.{ ClassFile, Field, reader }
 
     val resource = () ⇒ this.getClass.getResourceAsStream("ConstantPoolTags$.class")
-    val classFile = reader.Java7Framework.ClassFile(resource)
+    val classFile = reader.Java8Framework.ClassFile(resource)
     val fields = classFile.fields
 
     val publicFinalStaticFields = fields.collectFirst(

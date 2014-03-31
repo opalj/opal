@@ -35,14 +35,14 @@ package bat
 
 /**
  * Enumeration of the different contexts in which the JVM Spec. uses
- * `access_flags` fields and also an enumeration which `access_flags` are found 
+ * `access_flags` fields and also an enumeration which `access_flags` are found
  * in which context.
  *
  * @author Michael Eichberg
  */
 object AccessFlagsContexts extends Enumeration {
 
-    val INNER_CLASS, CLASS, METHOD, FIELD = Value
+    val INNER_CLASS, CLASS, METHOD, FIELD, METHOD_PARAMETERS = Value
 
     val INNER_CLASS_FLAGS: IndexedSeq[AccessFlag] =
         IndexedSeq(ACC_PUBLIC,
@@ -92,6 +92,9 @@ object AccessFlagsContexts extends Enumeration {
             ACC_STRICT,
             ACC_SYNTHETIC)
 
+    val METHOD_PARAMETER_FLAGS: IndexedSeq[AccessFlag] =
+        IndexedSeq(ACC_FINAL, ACC_SYNTHETIC, ACC_MANDATED)
+
     val CLASS_VISIBILITY_FLAGS: IndexedSeq[AccessFlag] =
         IndexedSeq(ACC_PUBLIC)
 
@@ -106,10 +109,11 @@ object AccessFlagsContexts extends Enumeration {
 
     def potentialAccessFlags(ctx: AccessFlagsContext): IndexedSeq[AccessFlag] = {
         ctx match {
-            case INNER_CLASS ⇒ INNER_CLASS_FLAGS
-            case CLASS       ⇒ CLASS_FLAGS
-            case METHOD      ⇒ METHOD_FLAGS
-            case FIELD       ⇒ FIELD_FLAGS
+            case INNER_CLASS       ⇒ INNER_CLASS_FLAGS
+            case CLASS             ⇒ CLASS_FLAGS
+            case METHOD            ⇒ METHOD_FLAGS
+            case FIELD             ⇒ FIELD_FLAGS
+            case METHOD_PARAMETERS ⇒ METHOD_PARAMETER_FLAGS
         }
     }
 }

@@ -103,8 +103,8 @@ class UnusedPrivateFields[Source]
             }
 
             for {
-                method ← classFile.methods if method.body.isDefined
-                FieldReadAccess(`declaringClass`, name, _) ← method.body.get.instructions
+                method @ MethodWithBody(body) ← classFile.methods
+                FieldReadAccess(`declaringClass`, name, _) ← body.instructions
             } {
                 privateFields -= name
             }

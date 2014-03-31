@@ -111,8 +111,10 @@ object InterpretMethods {
             val theFiles = files.flatMap { file ⇒
                 if (file.isDirectory())
                     file.listFiles()
-                else
+                else if (file.length > 0)
                     List(file)
+                else
+                    Nil
             }
 
             def analyzeClassFile(

@@ -46,7 +46,7 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.ParallelTestExecution
 
-import resolved.reader.Java7Framework.ClassFile
+import resolved.reader.Java8Framework.ClassFile
 import util.ControlAbstractions._
 
 /**
@@ -67,7 +67,10 @@ class LoadClassFilesTest extends FlatSpec with Matchers {
 
     for {
         file ← TestSupport.locateTestResources("classfiles").listFiles
-        if (file.isFile && file.canRead && file.getName.endsWith(".jar"))
+        if file.isFile
+        if file.canRead
+        if file.getName.endsWith(".jar")
+        if file.length() > 0
     } {
         val jarFile = new ZipFile(file)
         val jarEntries = (jarFile).entries

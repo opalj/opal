@@ -122,7 +122,7 @@ trait PreciseIntegerValues[+I]
     // QUESTION'S ABOUT VALUES
     //
 
-    @inline protected final def getIntValue[T](
+    @inline final def getIntValue[T](
         value: DomainValue)(
             f: Int ⇒ T)(
                 orElse: ⇒ T): T =
@@ -362,7 +362,7 @@ trait PreciseIntegerValues[+I]
             IntegerValue(pc)
         }
 
-    override def iinc(pc: PC, value: DomainValue, increment: Int) =
+    override def iinc(pc: PC, value: DomainValue, increment: Int): DomainValue =
         value match {
             case v: IntegerValue ⇒
                 v.update(v.value + increment)

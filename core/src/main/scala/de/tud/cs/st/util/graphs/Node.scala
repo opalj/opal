@@ -35,8 +35,9 @@ package util
 package graphs
 
 /**
- * Represents a node of a graph. Two nodes are considered equal if they have the
- * same unique id.
+ * Represents a node of some graph.
+ *
+ * Two nodes are considered equal if they have the same unique id.
  *
  * @see [[de.tud.cs.st.bat.resolved.analyses.ClassHierarchy]]'s `toGraph` method for
  *      an example usage.
@@ -65,14 +66,14 @@ trait Node {
     def uniqueId: Int
 
     /**
+     * Returns `true` if this node has successor nodes.
+     */
+    def hasSuccessors: Boolean
+
+    /**
      * Applies the given function for each successor node.
      */
     def foreachSuccessor(f: Node ⇒ Unit): Unit
-
-    /**
-     * Returns `true` if this node has successor nodes.
-     */
-    def hasSuccessors(): Boolean
 
     /**
      * The hash code of this node. By default the hash code is the unique id.

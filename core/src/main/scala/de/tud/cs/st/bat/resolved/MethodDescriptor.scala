@@ -42,13 +42,19 @@ import scala.collection.Seq
  *
  * @author Michael Eichberg
  */
-sealed abstract class MethodDescriptor extends BootstrapArgument {
+sealed abstract class MethodDescriptor extends ConstantValue[MethodDescriptor] {
 
     def parameterTypes: IndexedSeq[FieldType]
 
     def parametersCount: Int
 
     def returnType: Type
+	
+    def value : this.type = this 
+
+    def valueType: ObjectType = ObjectType.MethodType
+
+    def valueToString: String = toUMLNotation
 
     //
     //

@@ -776,6 +776,7 @@ class ClassHierarchy private (
         methodDescriptor: MethodDescriptor,
         project: SomeProject): Option[Method] = {
 
+        // TODO [Java8] Support Extension Methods!
         assume(!isInterface(receiverType))
 
         @tailrec def lookupMethodDefinition(receiverType: ObjectType): Option[Method] = {
@@ -1052,11 +1053,12 @@ object ClassHierarchy {
         import scala.collection.mutable.HashSet
         import scala.collection.mutable.HashMap
         import de.tud.cs.st.util.ControlAbstractions.foreachNonNullValueOf
+        import de.tud.cs.st.util.ControlAbstractions.processSource
 
         def processPredefinedClassHierarchy(
             createInputStream: () ⇒ java.io.InputStream): Iterator[TypeDeclaration] = {
             val in = createInputStream()
-            util.ControlAbstractions.process(new scala.io.BufferedSource(in)) { source ⇒
+            processSource(new scala.io.BufferedSource(in)) { source ⇒
                 if (source == null) {
                     import Console._
                     err.println(BOLD+"Loading the predefined class hierarchy failed."+RESET)

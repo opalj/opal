@@ -44,7 +44,7 @@ class AttributesTest extends FunSuite with ParallelTestExecution {
 
     val attributesJARFile = TestSupport.locateTestResources("classfiles/Attributes.jar")
 
-    import reader.Java7Framework.ClassFile
+    import reader.Java8Framework.ClassFile
 
     test("test that the deprecated attribute is present") {
         val cf1 = ClassFile(attributesJARFile, "attributes/DeprecatedByAnnotation.class")

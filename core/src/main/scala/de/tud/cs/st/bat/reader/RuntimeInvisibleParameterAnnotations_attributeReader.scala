@@ -37,52 +37,64 @@ package reader
 import java.io.DataInputStream
 
 /**
- * '''From the Specification'''
- * <pre>
- * RuntimeInvisibleParameterAnnotations_attribute {
- * 	u2 attribute_name_index;
- * 	u4 attribute_length;
- * 	u1 num_parameters;
- * 	{
- * 		u2 num_annotations;
- * 		annotation annotations[num_annotations];
- * 	} parameter_annotations[num_parameters];
- * }
- * </pre>
+ * Generic parser for the `RuntimeInvisibleParameterAnnotations` attribute.
  *
  * @author Michael Eichberg
  */
 trait RuntimeInvisibleParameterAnnotations_attributeReader extends AttributeReader {
 
-    type RuntimeInvisibleParameterAnnotations_attribute <: Attribute
     type ParameterAnnotations
 
     /**
-     * Method that delegates to another reader to read in the annotations of the parameters.
+     * Method that delegates to another reader to parse the annotations of the parameters.
      */
-    protected def ParameterAnnotations(in: DataInputStream, cp: Constant_Pool): ParameterAnnotations
+    protected def ParameterAnnotations(cp: Constant_Pool, in: DataInputStream): ParameterAnnotations
+
+    type RuntimeInvisibleParameterAnnotations_attribute <: Attribute
 
     /**
-     * Factory method to create a representation of a RuntimeInvisibleParameterAnnotations_attribute.
+     * Factory method to create a representation of a
+     * `RuntimeInvisibleParameterAnnotations_attribute`.
      */
     protected def RuntimeInvisibleParameterAnnotations_attribute(
+        constant_pool: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
         attribute_length: Int,
-        parameter_annotations: ParameterAnnotations)(
-            implicit constant_pool: Constant_Pool): RuntimeInvisibleParameterAnnotations_attribute
+        parameter_annotations: ParameterAnnotations): RuntimeInvisibleParameterAnnotations_attribute
 
+    //
+    // IMPLEMENTATION
+    //
+
+    /* 
+     * '''From the Specification'''
+     * <pre>
+     * RuntimeInvisibleParameterAnnotations_attribute {
+     *  u2 attribute_name_index;
+     *  u4 attribute_length;
+     *  u1 num_parameters;
+     *  {
+     *      u2 num_annotations;
+     *      annotation annotations[num_annotations];
+     *  } parameter_annotations[num_parameters];
+     * }
+     * </pre>
+     */
     registerAttributeReader(
         RuntimeInvisibleParameterAnnotations_attributeReader.ATTRIBUTE_NAME ->
             ((ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 val attribute_length = in.readInt()
                 RuntimeInvisibleParameterAnnotations_attribute(
-                    attribute_name_index, attribute_length, ParameterAnnotations(in, cp)
-                )(cp)
+                    cp, attribute_name_index, attribute_length, ParameterAnnotations(cp, in)
+                )
             })
     )
 
 }
 
+/**
+ * Common properties of the `RuntimeInvisibleParameterAnnotations` attribute.
+ */
 object RuntimeInvisibleParameterAnnotations_attributeReader {
 
     val ATTRIBUTE_NAME = "RuntimeInvisibleParameterAnnotations"

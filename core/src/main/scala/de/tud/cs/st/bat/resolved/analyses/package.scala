@@ -54,7 +54,7 @@ package object analyses {
      * Shortens an absolute path to one relative to the current working directory.
      */
     def absoluteToRelative(path: String): String = {
-        path.stripPrefix(System.getProperty("user.dir")+System.getProperty("file.separator"))
+        path.stripPrefix(System.getProperty("user.dir") + System.getProperty("file.separator"))
     }
 
     /**
@@ -68,7 +68,7 @@ package object analyses {
         val jar = absoluteToRelative(split.head)
         val file = split.last
 
-        jar+"!/"+Console.BOLD+file+Console.RESET
+        jar+"!/"+Console.BOLD + file + Console.RESET
     }
 
     /**
@@ -79,9 +79,9 @@ package object analyses {
      */
     def urlToLocationIdentifier(url: URL): String = {
         url.getProtocol() match {
-            case "file" => absoluteToRelative(url.getPath())
-            case "jar" => prettifyJarUrl(url.toExternalForm())
-            case _ => url.toExternalForm()
+            case "file" ⇒ absoluteToRelative(url.getPath())
+            case "jar"  ⇒ prettifyJarUrl(url.toExternalForm())
+            case _      ⇒ url.toExternalForm()
         }
     }
 

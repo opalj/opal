@@ -39,17 +39,20 @@ package graphs
  * adapter class for some arbitrary node.
  *
  * ==Thread Safety==
- * This class is thread-safe. It is possible to add multiple nodes concurrently.
+ * This class is thread-safe. It is possible to add multiple child nodes concurrently.
  *
  * @see The demo project for example usages.
  *
  * @tparam I The type of the object that is associated with this node/the type of
  *      the object for which this node object is created.
- * @param identifier The underlying object. '''The underlying object must guarantee that
- *      the `hashCode` of two object instances that are added to the same graph is different
- *      whenever `equals` is `false`'''.
+ * @param identifier The underlying object.
+ *       '''The underlying object must correctly implement the equals/hashCode contract.
+ *       I.e., the `hashCode` of two object instances that are added to the same graph is
+ *      different whenever `equals` is `false`'''.
  * @param identifierToString A function that converts "an" identifier to a string. By
- *      default the given object' `toString` method is called.
+ *      default the given object's `toString` method is called. It is possible
+ *      that a graph has to nodes with the same textual representation representation
+ *      but a different identity.
  * @author Michael Eichberg
  */
 final class SimpleNode[I](
@@ -64,22 +67,22 @@ final class SimpleNode[I](
     def uniqueId: Int = identifier.hashCode()
 
     def addChild(node: Node) {
-        children.synchronized(children = node :: children)
+        this.synchronized(children = node :: children)
     }
 
-    def removedLastAddedChild() {
-        children.synchronized(children = children.tail)
+    def removeLastAddedChild() {
+        this.synchronized(children = children.tail)
     }
 
-    def removedChild(node: Node) {
-        children.synchronized(children = children.filterNot(_ == node))
+    def removeChild(node: Node) {
+        this.synchronized(children = children.filterNot(_ == node))
     }
 
     def foreachSuccessor(f: Node ⇒ Unit) {
-        children.synchronized(children.foreach(f))
+        this.synchronized(children.foreach(f))
     }
 
-    def hasSuccessors(): Boolean = children.synchronized(children.nonEmpty)
+    def hasSuccessors(): Boolean = this.synchronized(children.nonEmpty)
 
 }
 private object SimpleNode {

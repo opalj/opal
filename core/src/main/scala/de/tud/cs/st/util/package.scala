@@ -44,24 +44,24 @@ package object util {
     /**
      * Writes the given string (`data`) to a temporary file using the given prefix and suffix.
      * Afterwards the system's native application that claims to be able to handle
-     * files with the given suffix is opened. If this fails the string is printed to
+     * files with the given suffix is opened. If this fails, the string is printed to
      * the console.
-     * @param fileNamePrefix A string the identifies the content of the file. (E.g.,
+     * @param filenamePrefix A string the identifies the content of the file. (E.g.,
      *      "ClassHierarchy" or "CHACallGraph")
-     * @param fileNameSuffix The suffix of the file that identifies the used file format.
+     * @param filenameSuffix The suffix of the file that identifies the used file format.
      * @return The name of the file if it was possible to write the file and open
      *   the native application.
      */
     def writeAndOpenDesktopApplication(
         data: String,
-        fileNamePrefix: String,
-        fileNameSuffix: String): Option[File] = {
+        filenamePrefix: String,
+        filenameSuffix: String): Option[File] = {
 
         import ControlAbstractions._
 
         try {
             val desktop = java.awt.Desktop.getDesktop()
-            val file = java.io.File.createTempFile(fileNamePrefix, fileNameSuffix)
+            val file = java.io.File.createTempFile(filenamePrefix, filenameSuffix)
             process { new java.io.FileOutputStream(file) } { fos ⇒
                 fos.write(data.getBytes("UTF-8"))
             }
@@ -70,7 +70,7 @@ package object util {
         } catch {
             case ct: scala.util.control.ControlThrowable ⇒ throw ct
             case t: Throwable ⇒ {
-                println(
+                Console.err.println(
                     "An exception occured while writing/opening the file: "+
                         t.getLocalizedMessage())
                 println(data)

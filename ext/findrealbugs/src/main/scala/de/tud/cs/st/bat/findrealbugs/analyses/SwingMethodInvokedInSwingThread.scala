@@ -79,14 +79,12 @@ class SwingMethodInvokedInSwingThread[Source]
         // their name.
         for {
             classFile ← project.classFiles
-            method ← classFile.methods
-            if (method.body.isDefined &&
-                method.isPublic &&
+            method @ MethodWithBody(body) ← classFile.methods
+            if (method.isPublic &&
                 method.isStatic &&
                 method.name == "main") ||
-                classFile.thisType.fqn.toLowerCase.indexOf("benchmark") >= 0
-            (idx, INVOKEVIRTUAL(
-                targetType, name, desc)) ← method.body.get.associateWithIndex
+                (classFile.thisType.fqn.toLowerCase.indexOf("benchmark") >= 0)
+            (idx, INVOKEVIRTUAL(targetType, name, desc)) ← body.associateWithIndex
             if targetType.isObjectType &&
                 targetType.asObjectType.fqn.startsWith("javax/swing/")
             if ((name, desc) match {

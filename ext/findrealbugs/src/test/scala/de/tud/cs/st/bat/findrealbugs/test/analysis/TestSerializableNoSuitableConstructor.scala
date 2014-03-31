@@ -63,8 +63,10 @@ class TestSerializableNoSuitableConstructor extends AnalysisTest {
                 project.source(classToReport),
                 Severity.Error,
                 classToReport,
-                "Is superclass of a Serializable class but does not define a"+
-                    " zero-arguments constructor."))
+                "Is a superclass of a Serializable class ("+
+                    "SerializableNoSuitableConstructor/"+
+                    "SerializableInheritsFromNoSuitableConstructor"+
+                    ") but does not define a zero-arguments constructor."))
         }
 
     it should "find exactly 1 issue in SerializableNoSuitableConstructor.jar" in {

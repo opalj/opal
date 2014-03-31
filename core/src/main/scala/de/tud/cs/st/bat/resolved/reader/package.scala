@@ -50,25 +50,30 @@ package object reader {
      * class file reader. This enables, e.g., to use this method to only read in
      * the public interface of a class file or to read in complete class files.
      *
-     * @param args An iterable of file and folder names that refer to jar files
+     * @param args An `Iterable` of file and folder names that refer to jar files
      *      or folders in which jar and class files are found.
      */
     def read(
         args: Iterable[String],
-        classFilesReader: (File) ⇒ Iterable[(ClassFile, URL)]): (Iterable[(ClassFile, URL)], List[Throwable]) = {
-        var exceptions: List[Throwable] = Nil
-        val allClassFiles = for (arg ← args) yield {
-            try {
-                classFilesReader(new File(arg))
-            } catch {
-                case ct: scala.util.control.ControlThrowable ⇒
-                    throw ct
-                case t: Throwable ⇒
-                    exceptions ::= t
-                    Iterable.empty[(ClassFile, java.net.URL)]
-            }
+        classFilesReader: (File, (Exception) ⇒ Unit) ⇒ Iterable[(ClassFile, URL)]): (Iterable[(ClassFile, URL)], List[Exception]) = {
+        readClassFiles(args.map(new File(_)), classFilesReader)
+    }
+
+    def readClassFiles(
+        files: Iterable[File],
+        classFilesReader: (File, (Exception) ⇒ Unit) ⇒ Iterable[(ClassFile, URL)],
+        perFile: File ⇒ Unit = (f: File) ⇒ { /*do nothing*/ }): (Iterable[(ClassFile, URL)], List[Exception]) = {
+        val exceptionsMutex = new Object
+        var exceptions: List[Exception] = Nil
+        def addException(e: Exception) {
+            exceptionsMutex.synchronized { exceptions = e :: exceptions }
         }
-        (allClassFiles.flatten, exceptions)
+
+        val allClassFiles = for (file ← files.par) yield {
+            perFile(file)
+            classFilesReader(file, addException)
+        }
+        (allClassFiles.flatten.seq, exceptions)
     }
 }
 

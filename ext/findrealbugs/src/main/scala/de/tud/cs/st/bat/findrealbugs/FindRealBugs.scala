@@ -63,6 +63,10 @@ object FindRealBugs {
     val analyses: Map[String, Analysis] = Map(
         ("AnonymousInnerClassShouldBeStatic" ->
             new AnonymousInnerClassShouldBeStatic[URL]),
+        ("BadlyOverriddenAdapter" ->
+            new BadlyOverriddenAdapter[URL]),
+        ("BitNops" ->
+            new BitNops[URL]),
         ("BoxingImmediatelyUnboxedToPerformCoercion" ->
             new BoxingImmediatelyUnboxedToPerformCoercion[URL]),
         ("CatchesIllegalMonitorStateException" ->
@@ -81,18 +85,24 @@ object FindRealBugs {
             new DoInsideDoPrivileged[URL]),
         ("EqualsHashCodeContract" ->
             new EqualsHashCodeContract[URL]),
+        ("FieldIsntImmutableInImmutableClass" ->
+            new FieldIsntImmutableInImmutableClass[URL]),
         ("FieldShouldBeFinal" ->
             new FieldShouldBeFinal[URL]),
         ("FieldShouldBePackageProtected" ->
             new FieldShouldBePackageProtected[URL]),
         ("FinalizeUseless" ->
             new FinalizeUseless[URL]),
+        ("ImmutableClassInheritsMutableClass" ->
+            new ImmutableClassInheritsMutableClass[URL]),
         ("ImplementsCloneableButNotClone" ->
             new ImplementsCloneableButNotClone[URL]),
         ("InefficientToArray" ->
             new InefficientToArray[URL]),
         ("LongBitsToDoubleInvokedOnInt" ->
             new LongBitsToDoubleInvokedOnInt[URL]),
+        ("NativeMethodInImmutableClass" ->
+            new NativeMethodInImmutableClass[URL]),
         ("NonSerializableClassHasASerializableInnerClass" ->
             new NonSerializableClassHasASerializableInnerClass[URL]),
         ("ManualGarbageCollection" ->
@@ -103,6 +113,8 @@ object FindRealBugs {
             new PublicFinalizeMethodShouldBeProtected[URL]),
         ("SerializableNoSuitableConstructor" ->
             new SerializableNoSuitableConstructor[URL]),
+        ("SuperclassUsesSubclassDuringinitialization" ->
+            new SuperclassUsesSubclassDuringInitialization[URL]),
         ("SwingMethodInvokedInSwingThread" ->
             new SwingMethodInvokedInSwingThread[URL]),
         ("SyncSetUnsyncGet" ->
@@ -110,7 +122,9 @@ object FindRealBugs {
         ("UnusedPrivateFields" ->
             new UnusedPrivateFields[URL]),
         ("UrUninitReadCalledFromSuperConstructor" ->
-            new UrUninitReadCalledFromSuperConstructor[URL])
+            new UrUninitReadCalledFromSuperConstructor[URL]),
+        ("UselessIncrementInReturn" ->
+            new UselessIncrementInReturn[URL])
     )
 
     /**

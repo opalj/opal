@@ -69,7 +69,7 @@ class SignaturesTest extends FunSuite with ParallelTestExecution {
                 ObjectType("de/MyObject")))
     }
 
-    import Java7Framework.ClassFile
+    import Java8Framework.ClassFile
     private val classA = ClassFile(TestSupport.locateTestResources("classfiles/Signatures.jar"), "signatures/A.class")
     assert(classA ne null)
 

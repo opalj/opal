@@ -44,7 +44,7 @@ object ClassHierarchyVisualizer {
 
     def main(args: Array[String]) {
 
-        import reader.Java7Framework.ClassFiles
+        import reader.Java8Framework.ClassFiles
         import util.writeAndOpenDesktopApplication
         import util.graphs.{ Node, toDot }
 
@@ -58,7 +58,10 @@ object ClassHierarchyVisualizer {
             if (args.size == 0)
                 ClassHierarchy.preInitializedClassHierarchy
             else {
-                val classFiles = (List.empty[(ClassFile, java.net.URL)] /: args)(_ ++ ClassFiles(_))
+                val classFiles =
+                    (List.empty[(ClassFile, java.net.URL)] /: args) { (cfs, filename) ⇒
+                        cfs ++ ClassFiles(new java.io.File(filename))
+                    }
                 ClassHierarchy(classFiles.view.map(_._1))
             }
 
