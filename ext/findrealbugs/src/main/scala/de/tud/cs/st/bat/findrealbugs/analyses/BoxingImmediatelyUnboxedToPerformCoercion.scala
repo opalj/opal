@@ -39,7 +39,6 @@ package analyses
 import resolved._
 import resolved.analyses._
 import resolved.instructions._
-import AnalysesHelpers._
 
 /**
  * This analysis reports code such as this:
