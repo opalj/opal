@@ -76,7 +76,7 @@ private class BitNopsDomain[T](override val identifier: T)
          * @return Optional integer value stored in the `DomainValue`.
          */
         def unapply(value: DomainValue): Option[Int] = {
-            getIntValue[Option[Int]](value)(Some(_))(None)
+            intValue[Option[Int]](value)(Some(_))(None)
         }
     }
 
