@@ -101,6 +101,7 @@ class CloneDoesNotCallSuperClone[Source]
         // For each clone() methods that doesn't contain a call to super.clone()...
         for {
             classFile ← project.classFiles
+            if !project.isLibraryType(classFile)
             if !classFile.isInterfaceDeclaration && !classFile.isAnnotationDeclaration
             superClass ← classFile.superclassType.toSeq
             method @ Method(_, "clone", NoArgsAndReturnObject) ← classFile.methods

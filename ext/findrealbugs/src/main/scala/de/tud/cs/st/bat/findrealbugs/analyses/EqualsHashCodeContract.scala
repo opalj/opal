@@ -69,7 +69,7 @@ class EqualsHashCodeContract[Source]
         val mutex = new Object
         var reports = List[ClassBasedReport[Source]]()
 
-        for (classFile ← project.classFiles.par) {
+        for (classFile ← project.classFiles if !project.isLibraryType(classFile)) {
             var definesEqualsMethod = false
             var definesHashCodeMethod = false
             for (method ← classFile.methods) method match {

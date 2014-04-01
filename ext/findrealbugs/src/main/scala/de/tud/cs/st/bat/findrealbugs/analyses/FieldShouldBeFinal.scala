@@ -75,6 +75,7 @@ class FieldShouldBeFinal[Source]
         // and aren't `final`.
         for {
             classFile ← project.classFiles if !classFile.isInterfaceDeclaration
+            if !project.isLibraryType(classFile)
             field ← classFile.fields
             if !field.isFinal &&
                 field.isStatic &&

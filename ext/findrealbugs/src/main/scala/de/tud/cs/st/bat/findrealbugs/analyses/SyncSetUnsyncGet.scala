@@ -76,6 +76,7 @@ class SyncSetUnsyncGet[Source]
         var syncedSetters = Map[String, (ClassFile, Method)]()
         for {
             classFile ← project.classFiles if !classFile.isInterfaceDeclaration
+            if !project.isLibraryType(classFile)
             method ← classFile.methods
             if !method.isAbstract && !method.isStatic && !method.isNative &&
                 !method.isPrivate

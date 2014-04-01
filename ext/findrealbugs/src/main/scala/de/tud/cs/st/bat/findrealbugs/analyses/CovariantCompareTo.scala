@@ -89,6 +89,7 @@ class CovariantCompareTo[Source]
         for {
             comparable ← project.classHierarchy.allSubtypes(Comparable, false)
             classFile ← project.classFile(comparable)
+            if !project.isLibraryType(classFile)
             if !classFile.isInterfaceDeclaration
         } yield {
             classFile

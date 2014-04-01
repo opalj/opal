@@ -103,6 +103,7 @@ class InefficientToArray[Source]
         // on objects derived from the Collection classes.
         for {
             classFile ← project.classFiles
+            if !project.isLibraryType(classFile)
             method @ MethodWithBody(body) ← classFile.methods
             pc ← body.slidingCollect(3)({
                 case (pc, Seq(ICONST_0, ANEWARRAY(_), instr3)) if (instr3 match {

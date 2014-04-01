@@ -72,6 +72,7 @@ class FinalizeUseless[Source]
 
         for {
             classFile ← project.classFiles
+            if !project.isLibraryType(classFile)
             if !classFile.isInterfaceDeclaration // performance optimization
             finalizeMethod @ Method(_, "finalize",
                 NoArgsAndReturnVoid) ← classFile.methods

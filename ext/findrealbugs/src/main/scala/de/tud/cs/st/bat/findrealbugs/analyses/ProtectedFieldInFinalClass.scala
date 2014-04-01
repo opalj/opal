@@ -63,6 +63,7 @@ class ProtectedFieldInFinalClass[Source]
         // For all protected fields from final classes...
         for {
             classFile ← project.classFiles if classFile.isFinal
+            if !project.isLibraryType(classFile)
             field ← classFile.fields if field.isProtected
         } yield {
             FieldBasedReport(

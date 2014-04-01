@@ -68,6 +68,7 @@ class CnImplementsCloneButNotCloneable[Source]
 
         for {
             classFile ← project.classFiles
+            if !project.isLibraryType(classFile)
             if classFile.superclassType.isDefined // classFile != java.lang.Object
             if !classFile.isAnnotationDeclaration
             Method(_, "clone", NoArgsAndReturnObject) ← classFile.methods

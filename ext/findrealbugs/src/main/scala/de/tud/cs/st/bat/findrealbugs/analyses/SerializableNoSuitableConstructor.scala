@@ -75,6 +75,7 @@ class SerializableNoSuitableConstructor[Source]
                 ObjectType.Serializable, false)
             superClass ← project.classHierarchy.allSupertypes(serializableClass)
             superClassFile ← project.classFile(superClass)
+            if !project.isLibraryType(superClassFile)
             if !superClassFile.isInterfaceDeclaration &&
                 !superClassFile.constructors.exists(
                     _.descriptor.parameterTypes.length == 0)
