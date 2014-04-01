@@ -37,16 +37,16 @@ package resolved
  */
 sealed trait MethodHandle extends ConstantValue[MethodHandle] {
 
-	final override def value: this.type = this
+    final override def value: this.type = this
 
     /**
-	 * Returns `ObjectType.MethodHandle`; 
-	 * the type of the value pushed onto the stack by an ldc(_w) instruction.
-	 */
-	override def valueType: ObjectType = ObjectType.MethodHandle
+     * Returns `ObjectType.MethodHandle`;
+     * the type of the value pushed onto the stack by an ldc(_w) instruction.
+     */
+    override def valueType: ObjectType = ObjectType.MethodHandle
 
-	override def valueToString: String = this.toString
-		
+    override def valueToString: String = this.toString
+
     def toJava: String
 }
 
@@ -67,7 +67,7 @@ case class GetFieldMethodHandle(
     declaringType: ObjectType,
     name: String,
     fieldType: FieldType)
-        extends FieldAccessMethodHandle 
+        extends FieldAccessMethodHandle
 
 case class GetStaticMethodHandle(
     declaringType: ObjectType,
