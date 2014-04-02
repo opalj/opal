@@ -1,4 +1,4 @@
-/** License (BSD Style License):
+/** BSD 2-Clause License:
  *  Copyright (c) 2010
  *  Michael Eichberg (Software Engineering)
  *  Department of Computer Science
