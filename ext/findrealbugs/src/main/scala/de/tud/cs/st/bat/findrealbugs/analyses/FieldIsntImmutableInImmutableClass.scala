@@ -51,16 +51,17 @@ import ai.domain.l1._
 private class ImmutabilityAnalysisDomain[+I](val identifier: I)
     extends Domain[I]
     with DefaultDomainValueBinding[I]
-    with DefaultReferenceValuesBinding[I]
-    with DefaultStringValuesBinding[I]
+    with Configuration
+    with DefaultPerInstructionPostProcessing[I]
+    with TypeLevelFieldAccessInstructionsWithNullPointerHandling
+    with TypeLevelInvokeInstructionsWithNullPointerHandling
+    with DefaultClassValuesBinding[I]
+    with DefaultArrayValuesBinding[I]
     with DefaultPreciseIntegerValues[I]
     with l0.DefaultTypeLevelLongValues[I]
     with l0.DefaultTypeLevelFloatValues[I]
     with l0.DefaultTypeLevelDoubleValues[I]
-    with TypeLevelFieldAccessInstructionsWithNullPointerHandling
-    with TypeLevelInvokeInstructionsWithNullPointerHandling
     with PredefinedClassHierarchy
-    with ClassValues[I]
     with IgnoreMethodResults
     with IgnoreSynchronization
 
