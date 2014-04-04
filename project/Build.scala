@@ -27,7 +27,9 @@ object OPALBuild extends Build {
 	lazy val opal = Project(
 		id = "OPAL",
 		base = file(".")
-	) aggregate(
+	).
+  settings(sbtunidoc.Plugin.unidocSettings: _*).
+	aggregate(
 		util, 
 		bt, 
 		ai,
