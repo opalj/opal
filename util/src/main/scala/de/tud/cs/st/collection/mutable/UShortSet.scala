@@ -33,7 +33,7 @@ package mutable
 import UShort.{ MinValue, MaxValue }
 
 /**
- * A memory-efficient, mutable, sorted set of unsigned short values that 
+ * A memory-efficient, mutable, sorted set of unsigned short values that
  * is tailored for small(er) sets.
  *
  * @author Michael Eichberg
@@ -46,8 +46,11 @@ trait UShortSet extends collection.UShortSet {
      * set is returned otherwise a new set is created and a reference to that set
      * is returned. Hence, the return value must not be ignored.
      */
-    def +(value: Int): UShortSet
+    def +≈(value: Int): UShortSet
 
+    override def +(value: Int): UShortSet = {
+        this.mutableCopy +≈ (value)
+    }
 }
 
 /**
@@ -65,6 +68,15 @@ private class UShortSet2(private var value: Int) extends UShortSet {
     @inline protected final def value2 = ((value & Value2Mask) >>> 16)
     @inline protected final def notFull = (value & Value2Mask) == 0
 
+    def mutableCopy: mutable.UShortSet = {
+        if (notFull)
+            new UShortSet2(value)
+        else
+            // When this set is full it is never manipulated again;
+            // there is NO remove method.
+            this
+    }
+
     def max: Int = if (notFull) value1 else value2
 
     def contains(uShortValue: Int): Boolean = {
@@ -80,7 +92,7 @@ private class UShortSet2(private var value: Int) extends UShortSet {
         f(value1) && ((value2 == 0) || f(value2))
     }
 
-    def +(uShortValue: Int): UShortSet = {
+    def +≈(uShortValue: Int): UShortSet = {
         if (uShortValue < MinValue || uShortValue > MaxValue)
             throw new IllegalArgumentException("value out of range: "+uShortValue)
 
@@ -151,7 +163,16 @@ private class UShortSet4(private var value: Long) extends UShortSet {
 
     def max: Int = (if (notFull) value3 else value4).toInt
 
-    def +(uShortValue: Int): UShortSet = {
+    def mutableCopy: mutable.UShortSet = {
+        if (notFull)
+            new UShortSet4(value)
+        else
+            // When this set is full it is never manipulated again;
+            // there is NO remove method.
+            this
+    }
+
+    def +≈(uShortValue: Int): UShortSet = {
         if (uShortValue < MinValue || uShortValue > MaxValue)
             throw new IllegalArgumentException("value out of range: "+uShortValue)
 
@@ -262,10 +283,25 @@ private object UShortSet4 {
     final val Value4Mask: Long = Value3Mask << 16
 }
 
-private class UShortSetNode(set1: UShortSet, set2: UShortSet) extends UShortSet {
+private class UShortSetNode(
+        private val set1: UShortSet,
+        private val set2: UShortSet) extends UShortSet {
 
     private[this] var currentMax = set2.max
     def max = currentMax
+
+    def mutableCopy: mutable.UShortSet = {
+        val set1Copy = set1.mutableCopy
+        if (set1Copy eq set1) {
+            val set2Copy = set2.mutableCopy
+            if (set2Copy eq set2)
+                this
+            else
+                new UShortSetNode(set1Copy, set2Copy)
+        } else {
+            new UShortSetNode(set1Copy, set2.mutableCopy)
+        }
+    }
 
     def iterable = set1.iterable ++ set2.iterable
 
@@ -283,12 +319,12 @@ private class UShortSetNode(set1: UShortSet, set2: UShortSet) extends UShortSet 
     def forall(f: /*ushortValue:*/ Int ⇒ Boolean): Boolean =
         set1.forall(f) && set2.forall(f)
 
-    def +(uShortValue: Int): UShortSet = {
+    def +≈(uShortValue: Int): UShortSet = {
         if (uShortValue < MinValue || uShortValue > MaxValue)
             throw new IllegalArgumentException("value out of range: "+uShortValue)
         val set1Max = set1.max
         if (set1Max > uShortValue) {
-            val newSet1 = set1 + uShortValue
+            val newSet1 = set1 +≈ uShortValue
             if (newSet1 eq set1)
                 this
             else
@@ -296,7 +332,7 @@ private class UShortSetNode(set1: UShortSet, set2: UShortSet) extends UShortSet 
         } else if (set1Max == uShortValue)
             this
         else {
-            val newSet2 = set2 + uShortValue
+            val newSet2 = set2 +≈ uShortValue
             if (newSet2 eq set2) {
                 currentMax = newSet2.max
                 this
@@ -304,14 +340,22 @@ private class UShortSetNode(set1: UShortSet, set2: UShortSet) extends UShortSet 
                 new UShortSetNode(set1, newSet2)
         }
     }
+
+    override def hashCode = (set1.hashCode() * 37 + set2.hashCode()) * 37
+
+    override def equals(other: Any): Boolean = other match {
+        case that: UShortSetNode ⇒ this.set1 == that.set1 && this.set2 == that.set2
+        case _                   ⇒ false
+    }
 }
 
 private object EmptyUShortSet extends UShortSet {
+    def mutableCopy: mutable.UShortSet = this
     def iterable = Iterable.empty
     def contains(uShortValue: Int): Boolean = false
     def foreach(f: /*ushortValue:*/ Int ⇒ Unit): Unit = { /*Nothing to do.*/ }
     def forall(f: /*ushortValue:*/ Int ⇒ Boolean): Boolean = true
-    def +(uShortValue: Int): UShortSet = UShortSet(uShortValue)
+    def +≈(uShortValue: Int): UShortSet = UShortSet(uShortValue)
     def max = throw new UnsupportedOperationException("the set is empty")
 }
 /**
@@ -365,7 +409,7 @@ object UShortSet {
         uShortValues match {
             case Nil              ⇒ EmptyUShortSet
             case Seq(uShortValue) ⇒ apply(uShortValue)
-            case values           ⇒ (apply(values.head) /: values.tail)(_ + _)
+            case values           ⇒ (apply(values.head) /: values.tail)(_ +≈ _)
         }
     }
 }

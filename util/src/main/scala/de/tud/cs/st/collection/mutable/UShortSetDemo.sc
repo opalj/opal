@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -109,4 +109,17 @@ object UShortSetDemo {
 
     _0_1_2_65535.map(_.toString)                  //> res32: scala.collection.mutable.Set[String] = Set(0, 1, 2, 65535)
 
+    (_10_20_30_40 + 10) eq _10_20_30_40           //> res33: Boolean = true
+
+    (_0_1_2.mutableCopy) ne _0_1_2                //> res34: Boolean = true
+    (_10_20_30_40.mutableCopy) eq _10_20_30_40    //> res35: Boolean = true
+
+    var x = _10_20_30_40                          //> x  : de.tud.cs.st.collection.mutable.UShortSet = UShortSet(10,20,30,40)
+    x += 50
+    x += 60
+    x                                             //> res36: de.tud.cs.st.collection.mutable.UShortSet = UShortSet(10,20,30,40,50
+                                                  //| ,60)
+    val y = ((_10_20_30_40 +≈ 50) +≈ 60)          //> y  : de.tud.cs.st.collection.mutable.UShortSet = UShortSet(10,20,30,40,50,6
+                                                  //| 0)
+    x == y                                        //> res37: Boolean = true
 }

@@ -36,6 +36,13 @@ package collection
  */
 trait UShortSet {
 
+    def +(value: UShort): UShortSet
+
+    /**
+     * Creates a (deep) clone of this set that can safely be mutated.
+     */
+    def mutableCopy: mutable.UShortSet
+
     /**
      * Returns `true` if this set contains the given value.
      *
