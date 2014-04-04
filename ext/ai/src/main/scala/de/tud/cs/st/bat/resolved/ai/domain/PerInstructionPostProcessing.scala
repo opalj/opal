@@ -51,7 +51,9 @@ trait PerInstructionPostProcessing { this: SomeDomain ⇒
 /**
  * @author Michael Eichberg
  */
-trait DefaultPerInstructionPostProcessing[+I] extends Domain[I] with PerInstructionPostProcessing {
+trait DefaultPerInstructionPostProcessing[+I]
+        extends Domain[I]
+        with PerInstructionPostProcessing {
 
     private[this] var onExceptionalControlFlow: List[DomainValueUpdater] = Nil
 
