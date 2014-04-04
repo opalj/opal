@@ -33,7 +33,7 @@ package ai
 package domain
 package l0
 
-import reader.Java7Framework.ClassFile
+import reader.Java8Framework.ClassFile
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
@@ -42,14 +42,8 @@ import org.scalatest.Matchers
 
 /**
  * This system test(suite) just loads a very large number of class files and performs
- * an abstract interpretation of all methods.
- *
- * This test has the following goals:
- *  - Test if we can load and process a large number of different classes without exceptions
- *  - Test if seemingly independent (partial-) domain implementations are really
- *    independent by using different mixin-composition orders and comparing the
- *    results.
- *  - Test if several different domain configurations are actually working.
+ * an abstract interpretation of all methods. Basically, we test that we can load and
+ * process a large number of different classes without exceptions.
  *
  * @author Michael Eichberg
  */

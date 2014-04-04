@@ -33,6 +33,9 @@ package ai
 package project
 
 /**
+ * Tests the VTA based `CallGraph` algorithm using a more complex (explicitly
+ * annotated) project.
+ *
  * @author Michael Eichberg
  */
 class ComplexVTACallGraphTest extends AbstractCallGraphTest {
