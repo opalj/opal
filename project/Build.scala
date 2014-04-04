@@ -31,12 +31,12 @@ object OPALBuild extends Build {
 		util, 
 		bt, 
 		ai,
-		dependencies, 		 
-		opalDeveloperTools,
-		OPAL_VALIDATION, 
+		dependenciesExtraction, 		 
+		opalDeveloperTools, 
 		demos,		
-		findrealbugs,
-		incubation)
+		findRealBugs,
+		incubation,
+		VALIDATE)
 
 	/*****************************************************************************
 	 *
@@ -79,7 +79,7 @@ object OPALBuild extends Build {
 
 	// This project validates OPAL's implemented architecture; hence
 	// it is not a "project" in the classical sense!
-	lazy val OPAL_VALIDATION = Project(
+	lazy val VALIDATE = Project(
 		id = "VALIDATE_OPAL",
 		base = file("VALIDATE")
 	) dependsOn(
@@ -92,7 +92,7 @@ object OPALBuild extends Build {
 	 *
  	 */
 
-	lazy val findrealbugs = Project(
+	lazy val findRealBugs = Project(
 		id = "FindRealBugs",
 		base = file("ext/findrealbugs"),
 		settings = buildSettings ++ Seq(
