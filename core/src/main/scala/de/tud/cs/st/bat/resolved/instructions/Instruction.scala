@@ -101,17 +101,6 @@ object Instruction {
 
     import collection.mutable.UShortSet
 
-    // TODO move to the Code class
-    private[instructions] def allExceptionHandlers(
-        currentPC: PC,
-        code: Code): UShortSet /* <= mutable by purpose! */ = {
-        var pcs = UShortSet.empty
-        code.exceptionHandlersFor(currentPC) foreach { handler ⇒
-            pcs += handler.handlerPC
-        }
-        pcs
-    }
-
     private[instructions] def nextInstructionOrExceptionHandlers(
         instruction: Instruction,
         currentPC: PC,
@@ -127,7 +116,7 @@ object Instruction {
                         exception,
                         handler.catchType.get).isYes
             } match {
-                case Some(handler) ⇒ pcs += handler.startPC
+                case Some(handler) ⇒ pcs +≈ handler.startPC
                 case _             ⇒ /* exception is not handled */
             }
         }

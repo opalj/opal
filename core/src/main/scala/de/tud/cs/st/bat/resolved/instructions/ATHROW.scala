@@ -49,6 +49,6 @@ case object ATHROW extends Instruction {
         currentPC + 1
 
     final override def nextInstructions(currentPC: PC, code: Code): PCs =
-        Instruction.allExceptionHandlers(currentPC, code)
+        code.handlerInstructionsFor(currentPC)
 
 }

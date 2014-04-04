@@ -55,33 +55,33 @@ trait RecordReturnFromMethodInstructions[+I] extends Domain[I] {
 
     def allReturnInstructions: PCs = returnInstructions
 
-    override def areturn(pc: PC, value: DomainValue) {
-        returnInstructions += pc
+    override def areturn(pc: PC, value: DomainValue) : Unit = {
+        returnInstructions = returnInstructions +≈ pc
     }
 
-    override def dreturn(pc: PC, value: DomainValue) {
-        returnInstructions += pc
+    override def dreturn(pc: PC, value: DomainValue) : Unit ={
+        returnInstructions = returnInstructions +≈ pc
     }
 
-    override def freturn(pc: PC, value: DomainValue) {
-        returnInstructions += pc
+    override def freturn(pc: PC, value: DomainValue) : Unit ={
+        returnInstructions = returnInstructions +≈ pc
     }
 
-    override def ireturn(pc: PC, value: DomainValue) {
-        returnInstructions += pc
+    override def ireturn(pc: PC, value: DomainValue) : Unit ={
+        returnInstructions = returnInstructions +≈ pc
     }
 
-    override def lreturn(pc: PC, value: DomainValue) {
-        returnInstructions += pc
+    override def lreturn(pc: PC, value: DomainValue): Unit = {
+        returnInstructions = returnInstructions +≈ pc
     }
 
-    override def returnVoid(pc: PC) {
-        returnInstructions += pc
+    override def returnVoid(pc: PC) : Unit = {
+        returnInstructions = returnInstructions +≈ pc
     }
 
     // handles all kinds of abrupt method returns 
-    override def abruptMethodExecution(pc: PC, exception: DomainValue) {
-        returnInstructions += pc
+    override def abruptMethodExecution(pc: PC, exception: DomainValue) : Unit = {
+        returnInstructions = returnInstructions +≈ pc
     }
 }
 

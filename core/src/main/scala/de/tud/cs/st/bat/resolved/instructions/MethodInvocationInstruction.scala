@@ -33,7 +33,7 @@ package instructions
 
 /**
  * An instruction that "invokes" something. This can be, e.g., the invocation of a method
- * or the dynamic invocation (using `invokedynamic`) of a field read.
+ * or – using `invokedynamic` – the read of a field value.
  *
  * @author Michael Eichberg
  */
@@ -43,11 +43,14 @@ abstract class InvocationInstruction extends Instruction {
 
     def methodDescriptor: MethodDescriptor
 
+    /**
+     * Given that we have – without any sophisticated analysis – no idea which
+     * exceptions may be thrown we make the safe assumption that any handler
+     * is a potential successor!
+     */
     final override def nextInstructions(currentPC: PC, code: Code): PCs = {
-        // Here, we basically have no idea which exceptions may be thrown hence,
-        // we make the safe assumption that any handler is a potential successor!
-        val excpetionHandlerPCs = Instruction.allExceptionHandlers(currentPC, code)
-        excpetionHandlerPCs + indexOfNextInstruction(currentPC, code)
+        val exceptionHandlerPCs = code.handlerInstructionsFor(currentPC)
+        exceptionHandlerPCs + indexOfNextInstruction(currentPC, code)
     }
 }
 

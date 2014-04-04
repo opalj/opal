@@ -96,7 +96,7 @@ class CallGraphBuilder[Source](val project: Project[Source]) {
                         HashMap.empty[Method, PCs])
                 callers.get(caller) match {
                     case Some(pcs) ⇒
-                        val newPCs = pcs + pc
+                        val newPCs = pcs +≈ pc
                         if (pcs ne newPCs)
                             callers.update(caller, newPCs)
                     case None ⇒

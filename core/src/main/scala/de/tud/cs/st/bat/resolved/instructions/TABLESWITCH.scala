@@ -54,7 +54,7 @@ case class TABLESWITCH(
     
     final override def nextInstructions(currentPC: PC, code: Code): PCs = {
         var pcs = collection.mutable.UShortSet(currentPC + defaultOffset)
-        jumpOffsets foreach (offset ⇒ { pcs += (currentPC + offset) })
+        jumpOffsets foreach (offset ⇒ { pcs +≈ (currentPC + offset) })
         pcs
     }
 
