@@ -30,35 +30,26 @@ package de.tud.cs.st
 package bat
 package resolved
 package reader
+import reflect.ClassTag
 
-import bat.reader.FieldsReader
-import bat.reader.MethodsReader
-import bat.reader.AttributesReader
-import bat.reader.SkipUnknown_attributeReader
+import de.tud.cs.st.bat.reader.FieldsReader
 
-/**
- * This "framework" can be used to read in Java 7 (version 51) class files if you
- * are only interested in the public interface of a class.
- *
- * @author Michael Eichberg
- */
-class Java7LibraryFramework
-    extends ConstantPoolBinding
-    with FieldsBinding
-    with MethodsBinding
-    with ClassFileBinding
-    with AttributesReader
-    /* If you want unknown attributes to be represented uncomment the following: */
-    // with Unknown_attributeBinding 
-    /* and comment out the following line: */
-    with SkipUnknown_attributeReader
-    with AnnotationsBinding
-    with InnerClasses_attributeBinding
-    with EnclosingMethod_attributeBinding
-    with SourceFile_attributeBinding
-    with Deprecated_attributeBinding
-    with Signature_attributeBinding
-    with Synthetic_attributeBinding
-    with ConstantValue_attributeBinding
+trait FieldsBinding extends FieldsReader {
+    this: ConstantPoolBinding with AttributeBinding ⇒
 
-object Java7LibraryFramework extends Java7LibraryFramework
+    type Field_Info = de.tud.cs.st.bat.resolved.Field
+    val Field_InfoManifest: ClassTag[Field_Info] = implicitly
+
+    def Field_Info(
+        access_flags: Int,
+        name_index: Constant_Pool_Index,
+        descriptor_index: Constant_Pool_Index,
+        attributes: Attributes)(
+            implicit cp: Constant_Pool): Field_Info = {
+        Field(
+            access_flags,
+            name_index.asString,
+            descriptor_index.asFieldType,
+            attributes)
+    }
+}

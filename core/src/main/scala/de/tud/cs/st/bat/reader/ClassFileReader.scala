@@ -79,12 +79,6 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      */
     type Attributes
 
-    /**
-     * The type of the object that represents the interfaces implemented by
-     * a class/interface.
-     */
-    type Interfaces
-
     // METHODS DELEGATING TO OTHER READERS
     //
 
@@ -99,16 +93,6 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      * The stream must not be closed after reading the constant pool.
      */
     protected def Constant_Pool(in: DataInputStream): Constant_Pool
-
-    /**
-     * Reads the information which interfaces are implemented/extended.
-     *
-     * The given stream is positioned directly before a class file's "interfaces_count"
-     * field.
-     * This method is called by the template method that reads in a class file to
-     * delegate the reading of the extended interfaces.
-     */
-    protected def Interfaces(in: DataInputStream, cp: Constant_Pool): Interfaces
 
     /**
      * Reads all field declarations using the given stream and constant pool.
@@ -151,7 +135,8 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         in: DataInputStream): Attributes
 
     /**
-     * Factory method to create the object that represents the class file as a whole.
+     * Factory method to create the `ClassFile` object that represents the class
+     * file as a whole.
      */
     protected def ClassFile(
         minor_version: Int,
@@ -159,7 +144,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         access_flags: Int,
         this_class: Constant_Pool_Index,
         super_class: Constant_Pool_Index,
-        interfaces: Interfaces,
+        interfaces: IndexedSeq[Constant_Pool_Index],
         fields: Fields,
         methods: Methods,
         attributes: Attributes)(
@@ -240,7 +225,12 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         val access_flags = in.readUnsignedShort
         val this_class = in.readUnsignedShort
         val super_class = in.readUnsignedShort
-        val interfaces = Interfaces(in, cp)
+        val interfaces = {
+            val interfaces_count = in.readUnsignedShort
+            util.ControlAbstractions.repeat(interfaces_count) {
+                in.readUnsignedShort
+            }
+        }
         val fields = Fields(in, cp)
         val methods = Methods(in, cp)
         val attributes = Attributes(AttributesParent.ClassFile, cp, in)
@@ -486,7 +476,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
 }
 /**
  * Helper methods related to reading class files.
- * 
+ *
  * @author Michael Eichberg
  */
 object ClassFileReader {

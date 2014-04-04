@@ -31,68 +31,7 @@ package bat
 package resolved
 package reader
 
-// TODO [Modularization - bring in line with paper] Split up this file.
-
 import reflect.ClassTag
-
-import de.tud.cs.st.bat.reader.MethodsReader
-
-trait MethodsBinding extends MethodsReader {
-    this: ConstantPoolBinding with AttributeBinding ⇒
-
-    type Method_Info = de.tud.cs.st.bat.resolved.Method
-    val Method_InfoManifest: ClassTag[Method_Info] = implicitly
-
-    def Method_Info(
-        accessFlags: Int,
-        name_index: Int,
-        descriptor_index: Int,
-        attributes: Attributes)(
-            implicit cp: Constant_Pool): Method_Info = {
-        Method(
-            accessFlags,
-            name_index.asString,
-            descriptor_index.asMethodDescriptor,
-            attributes)
-    }
-}
-
-import de.tud.cs.st.bat.reader.FieldsReader
-
-trait FieldsBinding extends FieldsReader {
-    this: ConstantPoolBinding with AttributeBinding ⇒
-
-    type Field_Info = de.tud.cs.st.bat.resolved.Field
-    val Field_InfoManifest: ClassTag[Field_Info] = implicitly
-
-    def Field_Info(
-        access_flags: Int,
-        name_index: Constant_Pool_Index,
-        descriptor_index: Constant_Pool_Index,
-        attributes: Attributes)(
-            implicit cp: Constant_Pool): Field_Info = {
-        Field(
-            access_flags,
-            name_index.asString,
-            descriptor_index.asFieldType,
-            attributes)
-    }
-}
-
-// TODO [Refactor/Reconsider] Make this a "type reader" or something else... currently this modularization is a bit of a farce as class file, fields and method also parse object types 
-import de.tud.cs.st.bat.reader.InterfacesReader
-
-trait InterfacesBinding extends InterfacesReader {
-    this: ConstantPoolBinding with AttributeBinding ⇒
-
-    type Interface = ObjectType
-    val InterfaceManifest: ClassTag[Interface] = implicitly
-
-    def Interface(
-        interface_index: Constant_Pool_Index)(
-            implicit cp: Constant_Pool): Interface =
-        interface_index.asObjectType
-}
 
 import de.tud.cs.st.bat.reader.ClassFileReader
 
@@ -101,20 +40,19 @@ import de.tud.cs.st.bat.reader.ClassFileReader
  * @author Michael Eichberg
  */
 trait ClassFileBinding extends ClassFileReader {
-    this: ConstantPoolBinding with MethodsBinding with FieldsBinding with InterfacesBinding with AttributeBinding ⇒
+    this: ConstantPoolBinding with MethodsBinding with FieldsBinding with AttributeBinding ⇒
 
     type ClassFile = de.tud.cs.st.bat.resolved.ClassFile
 
-    type Interfaces <: IndexedSeq[ObjectType]
     type Fields <: IndexedSeq[Field_Info]
     type Methods <: IndexedSeq[Method_Info]
 
     def ClassFile(
         minor_version: Int, major_version: Int,
         access_flags: Int,
-        this_class: Int,
-        super_class: Int,
-        interfaces: Interfaces,
+        this_class: Constant_Pool_Index,
+        super_class: Constant_Pool_Index,
+        interfaces: IndexedSeq[Constant_Pool_Index],
         fields: Fields,
         methods: Methods,
         attributes: Attributes)(
@@ -124,7 +62,7 @@ trait ClassFileBinding extends ClassFileReader {
             this_class.asObjectType,
             // to handle the special case that this class file represents java.lang.Object
             { if (super_class == 0) None else Some(super_class.asObjectType) },
-            interfaces,
+            interfaces.map(_.asObjectType),
             fields,
             methods,
             attributes)
