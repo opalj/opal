@@ -63,34 +63,34 @@ sealed abstract class ComputationalType(
 
     def operandSize = computationTypeCategory.operandSize
 
-    def isPrimitiveType: Boolean
+    def isComputationalTypeReturnAddress: Boolean
 
     def category = computationTypeCategory.id
 
 }
 case object ComputationalTypeInt
         extends ComputationalType(Category1ComputationalTypeCategory) {
-    def isPrimitiveType = true
+    def isComputationalTypeReturnAddress = false
 }
 case object ComputationalTypeFloat
         extends ComputationalType(Category1ComputationalTypeCategory) {
-    def isPrimitiveType = true
+    def isComputationalTypeReturnAddress = false
 }
 case object ComputationalTypeReference
         extends ComputationalType(Category1ComputationalTypeCategory) {
-    def isPrimitiveType = true // TODO [Bug?] Why does isPrimitiveType return true for ComputationalTypeReference values?
+    def isComputationalTypeReturnAddress = false
 }
 case object ComputationalTypeReturnAddress
         extends ComputationalType(Category1ComputationalTypeCategory) {
-    def isPrimitiveType = false
+    def isComputationalTypeReturnAddress = true
 }
 case object ComputationalTypeLong
         extends ComputationalType(Category2ComputationalTypeCategory) {
-    def isPrimitiveType = true
+    def isComputationalTypeReturnAddress = false
 }
 case object ComputationalTypeDouble
         extends ComputationalType(Category2ComputationalTypeCategory) {
-    def isPrimitiveType = true
+    def isComputationalTypeReturnAddress = false
 }
 
 /**
