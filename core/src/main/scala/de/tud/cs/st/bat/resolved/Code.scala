@@ -84,6 +84,16 @@ case class Code(
             handler.startPC <= pc && handler.endPC > pc
         }
 
+    def handlerInstructionsFor(
+        pc: PC): de.tud.cs.st.collection.UShortSet = {
+        var pcs = de.tud.cs.st.collection.mutable.UShortSet.empty
+        exceptionHandlers foreach { handler ⇒
+            if (handler.startPC <= pc && handler.endPC > pc)
+                pcs +≈ handler.handlerPC
+        }
+        pcs
+    }
+
     /**
      * Returns the program counter of the next instruction after the instruction with
      * the given counter (`currentPC`).
