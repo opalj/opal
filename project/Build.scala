@@ -30,13 +30,13 @@ object OPALBuild extends Build {
 	) aggregate(
 		util, 
 		bt, 
-		ai/*,
+		ai,
 		dependencies, 		 
 		opalDeveloperTools,
 		OPAL_VALIDATION, 
-		demo,		
+		demos,		
 		findrealbugs,
-		incubation*/)
+		incubation)
 
 	/*****************************************************************************
 	 *
@@ -100,8 +100,8 @@ object OPALBuild extends Build {
 		)
 	) dependsOn(ai % "test->test;compile->compile")
 
-	lazy val demo = Project(
-		id = "Demo",
+	lazy val demos = Project(
+		id = "Demos",
 		base = file("demo")
 	) dependsOn(dependenciesExtraction, architectureValidation)
 
