@@ -40,8 +40,7 @@ import java.net.URL
  */
 object ShowInnerClassesAttribute extends AnalysisExecutor {
     val analysis = new Analysis[URL, BasicReport] {
-        def description: String = "Prints out the inner classes table "+
-            "which contains information about a class' inner and outer classes."
+        def description: String = "Prints out the inner classes tables."
 
         def analyze(
             project: Project[URL],
