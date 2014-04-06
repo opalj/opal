@@ -1,4 +1,6 @@
-version := "1.0.0"
+name := "Util"
+
+version := "0.8.1-SNAPSHOT"
 
 scalacOptions in (Compile, doc) := Seq("-deprecation", "-feature", "-unchecked")
 

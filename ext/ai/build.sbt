@@ -1,4 +1,6 @@
-version := "0.0.1"
+name := "Abstract Interpretation Framework"
+
+version := "0.0.1-SNAPSHOT"
 
 scalacOptions in (Compile, doc) := Seq("-deprecation", "-feature", "-unchecked")
 

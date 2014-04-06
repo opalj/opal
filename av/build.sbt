@@ -1,4 +1,6 @@
-version := "0.1.0"
+name := "Architecture Validation"
+
+version := "0.1.0-SNAPSHOT"
 
 scalacOptions in (Compile, doc) := Seq("-deprecation", "-feature", "-unchecked")
 
