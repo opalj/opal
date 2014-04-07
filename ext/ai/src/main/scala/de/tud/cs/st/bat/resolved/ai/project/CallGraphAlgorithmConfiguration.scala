@@ -43,7 +43,7 @@ import bat.resolved.ai.domain._
  *
  * @author Michael Eichberg
  */
-trait CallGraphAlgorithmConfiguration[Source] {
+trait CallGraphAlgorithmConfiguration {
 
     /**
      * The contour identifies the key of the CallGraphCache.
@@ -69,9 +69,9 @@ trait CallGraphAlgorithmConfiguration[Source] {
      * method.
      */
     def Domain(
-        theProject: Project[Source],
+        theProject: SomeProject,
         cache: this.type#Cache,
         classFile: ClassFile,
-        method: Method): CallGraphDomain[Source, I]
+        method: Method): CallGraphDomain[I]
 
 }

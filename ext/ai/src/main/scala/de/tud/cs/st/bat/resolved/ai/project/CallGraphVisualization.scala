@@ -112,14 +112,14 @@ object CallGraphVisualization {
         //
         import CallGraphFactory.defaultEntryPointsForLibraries
         val callGraphAlgorithm = args(0)
-        val (callGraph, unresolvedMethodCalls, exceptions) =
+        val ComputedCallGraph(callGraph, unresolvedMethodCalls, exceptions) =
             memory {
                 time {
                     val callGraphAlgorithmConfig = args(0) match {
                         case "VTA" ⇒
-                            new VTACallGraphAlgorithmConfiguration[URL]()
+                            new VTACallGraphAlgorithmConfiguration()
                         case _ /*CHA*/ ⇒
-                            new CHACallGraphAlgorithmConfiguration[URL]()
+                            new CHACallGraphAlgorithmConfiguration()
                     }
                     val entryPoints = defaultEntryPointsForLibraries(project)
                     CallGraphFactory.create(project, entryPoints, callGraphAlgorithmConfig)

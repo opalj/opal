@@ -49,7 +49,7 @@ import scala.collection.Map
  *
  * @author Michael Eichberg
  */
-trait VTACallGraphDomain[Source, I] extends CHACallGraphDomain[Source, I] { domain ⇒
+trait VTACallGraphDomain[I] extends CHACallGraphDomain[I] { domain ⇒
 
     @inline override protected[this] def virtualMethodCall(
         pc: PC,
@@ -138,7 +138,7 @@ class DefaultVTACallGraphDomain[Source](
         with l0.TypeLevelFieldAccessInstructions
         with l0.TypeLevelInvokeInstructions
         with ProjectBasedClassHierarchy[Source]
-        with VTACallGraphDomain[Source, Int] {
+        with VTACallGraphDomain[Int] {
 
     def identifier = theMethod.id
 

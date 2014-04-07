@@ -43,8 +43,8 @@ package object analyses {
 
     import language.implicitConversions
 
-    type Project[Source] = ProjectLike[Source]
-    type SomeProject = ProjectLike[_]
+    type Project[S] = ProjectLike { type Source = S }
+    type SomeProject = ProjectLike { type Source <: Any }
 
     /**
      * Shortens an absolute path to one relative to the current working directory.

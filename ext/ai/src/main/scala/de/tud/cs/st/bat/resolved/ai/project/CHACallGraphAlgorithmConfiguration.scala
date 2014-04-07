@@ -32,7 +32,7 @@ package resolved
 package ai
 package project
 
-import analyses.Project
+import analyses.SomeProject
 
 import domain._
 
@@ -47,8 +47,7 @@ import domain._
  *
  * @author Michael Eichberg
  */
-class CHACallGraphAlgorithmConfiguration[Source]
-        extends CallGraphAlgorithmConfiguration[Source] {
+class CHACallGraphAlgorithmConfiguration extends CallGraphAlgorithmConfiguration {
 
     type Contour = MethodSignature
     type Value = Iterable[Method]
@@ -58,10 +57,10 @@ class CHACallGraphAlgorithmConfiguration[Source]
     type I = Int
 
     def Domain(
-        theProject: Project[Source],
+        theProject: SomeProject,
         cache: Cache,
         classFile: ClassFile,
-        method: Method): CHACallGraphDomain[Source, Int] =
+        method: Method): CHACallGraphDomain[Int] =
         new DefaultCHACallGraphDomain(theProject, cache, classFile, method)
 }
 

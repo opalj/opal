@@ -32,8 +32,13 @@ package resolved
 package ai
 package project
 
-import bat.resolved.analyses.{ SomeProject, Project }
+import bat.resolved.analyses.SomeProject
 import bat.resolved.ai.domain._
+
+case class ComputedCallGraph(
+    callGraph: CallGraph,
+    unresolvedMethodCalls: List[UnresolvedMethodCall],
+    constructionExceptions: List[CallGraphConstructionException])
 
 /**
  * Factory object to create call graphs.
@@ -68,10 +73,10 @@ object CallGraphFactory {
      * of a domain. Furthermore, the methods are analyzed in parallel. Hence,
      * the call graph algorithm (and its used cache) have to be thread-safe.
      */
-    def create[Source](
-        theProject: Project[Source],
+    def create(
+        theProject: SomeProject,
         entryPoints: List[Method],
-        configuration: CallGraphAlgorithmConfiguration[Source]): (CallGraph[Source], List[UnresolvedMethodCall], List[CallGraphConstructionException]) = {
+        configuration: CallGraphAlgorithmConfiguration): ComputedCallGraph = {
 
         type MethodAnalysisResult = (( /*Caller*/ Method, List[(PC, /*Callees*/ Iterable[Method])]), List[UnresolvedMethodCall], Option[CallGraphConstructionException])
 
@@ -122,7 +127,7 @@ object CallGraphFactory {
         // Initialization
         entryPoints foreach { method ⇒ submitMethod(method) }
 
-        val builder = new CallGraphBuilder[Source](theProject)
+        val builder = new CallGraphBuilder(theProject)
         var exceptions = List.empty[CallGraphConstructionException]
         var unresolvedMethodCalls = List.empty[UnresolvedMethodCall]
         while (futuresCount > 0) {
@@ -130,7 +135,7 @@ object CallGraphFactory {
             val (callSite @ (method, callEdges), moreUnresolvedMethodCalls, exception) =
                 completionService.take().get()
             futuresCount -= 1
-            
+
             // 2. ENQUE NEXT METHODS
             if (callEdges.nonEmpty) {
                 callEdges.foreach(_._2.foreach { m ⇒ if (!m.isNative) submitMethod(m) })
@@ -145,7 +150,7 @@ object CallGraphFactory {
         }
         executorService.shutdown()
 
-        (builder.buildCallGraph, unresolvedMethodCalls, exceptions)
+        ComputedCallGraph(builder.buildCallGraph, unresolvedMethodCalls, exceptions)
     }
 }
 

@@ -50,8 +50,8 @@ import scala.collection.Map
  *
  * @author Michael Eichberg
  */
-class CallGraph[Source] private[project] (
-        val project: Project[Source],
+class CallGraph private[project] (
+        val project: SomeProject,
         private[this] val calledByMap: Array[_ <: Map[Method, PCs]],
         private[this] val callsMap: Array[_ <: Map[PC, Iterable[Method]]]) {
 

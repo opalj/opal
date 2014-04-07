@@ -44,48 +44,48 @@ import de.tud.cs.st.bat.resolved.ai.debug.XHTML;
  * 
  * @author Michael Eichberg
  */
-@SuppressWarnings("unchecked")
 public class ProjectDemo {
 
-  public static void main(String[] args) {
-    // Load a project
-    ProjectLike<java.net.URL> project = Projects.createProject(new File(args[0]));
+    public static void main(String[] args) {
+        // Load a project
+        ProjectLike project = Projects.createProject(new File(args[0]));
 
-    // Convert the project into a simple Map (NOT RECOMMENDED)
-    // Map<ObjectType, ClassFile> project = projectLike.toJavaMap();
+        // Convert the project into a simple Map (NOT RECOMMENDED)
+        // Map<ObjectType, ClassFile> project = projectLike.toJavaMap();
 
-    // Create an abstract interpreter (the same instance can be reused)
-    BaseAI ai = new BaseAI();
+        // Create an abstract interpreter (the same instance can be reused)
+        BaseAI ai = new BaseAI();
 
-    // Alternatively choose between the available domains using the registry
-    Iterable<String> domainDescriptions =
-        JavaConversions.asJavaIterable(DomainRegistry.domainDescriptions());
-    System.out.println("The available domains are: ");
-    for (String domainDescription : domainDescriptions)
-      System.out.println("\t- " + domainDescription);
-    // let's assume the user has chosen the domain he wanted to use
-    String chosenDomain = domainDescriptions.iterator().next();
+        // Alternatively choose between the available domains using the registry
+        Iterable<String> domainDescriptions = JavaConversions
+                .asJavaIterable(DomainRegistry.domainDescriptions());
+        System.out.println("The available domains are: ");
+        for (String domainDescription : domainDescriptions)
+            System.out.println("\t- " + domainDescription);
+        // let's assume the user has chosen the domain he wanted to use
+        String chosenDomain = domainDescriptions.iterator().next();
 
-    // Do something with it...
-    System.out.println("The project contains:");
-    for (ClassFile classFile : JavaConversions.asJavaIterable(project.classFiles())) {
-      System.out.println(" - " + classFile.thisType().toJava());
+        // Do something with it...
+        System.out.println("The project contains:");
+        for (ClassFile classFile : JavaConversions.asJavaIterable(project.classFiles())) {
+            System.out.println(" - " + classFile.thisType().toJava());
 
-      Iterable<Method> methods = JavaConversions
-          .asJavaIterable((scala.collection.Iterable<Method>) classFile.methods());
-      for (Method method : methods) {
-        if (method.body().isDefined()) {
-          // Use a fixed domain
-          // Domain<?> domain = new BaseDomain();
-          // OR use a user-specified domain
-          Domain<?> domain = DomainRegistry.newDomain(chosenDomain, project, classFile, method);
+            Iterable<Method> methods = JavaConversions
+                    .asJavaIterable(classFile.methods());
+            for (Method method : methods) {
+                if (method.body().isDefined()) {
+                    // Use a fixed domain
+                    // Domain<?> domain = new BaseDomain();
+                    // OR use a user-specified domain
+                    Domain<?> domain = DomainRegistry.newDomain(chosenDomain, project,
+                            classFile, method);
 
-          AIResult result = ai.apply(classFile, method, domain);
-          System.out.println(XHTML.dump(classFile, method, result,
-              "Abstract Interpretation Succeeded"));
+                    AIResult result = ai.apply(classFile, method, domain);
+                    System.out.println(XHTML.dump(classFile, method, result,
+                            "Abstract Interpretation Succeeded"));
 
+                }
+            }
         }
-      }
     }
-  }
 }

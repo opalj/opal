@@ -34,7 +34,7 @@ package project
 
 import de.tud.cs.st.collection.mutable.UShortSet
 
-import analyses.Project
+import analyses.SomeProject
 
 /**
  * Builds a call graph by first collecting all call graph edges before the final
@@ -45,11 +45,11 @@ import analyses.Project
  *
  * ==Usage==
  * This class is used internally by the methods of the `CallGraphFactory` to build
- * the call graph. That method takes care of all thread-safety issues.
+ * the call graph. That class/those methods takes care of all thread-safety issues.
  *
  * @author Michael Eichberg
  */
-class CallGraphBuilder[Source](val project: Project[Source]) {
+class CallGraphBuilder(val project: SomeProject) {
 
     type PCs = collection.mutable.UShortSet
 
@@ -71,7 +71,7 @@ class CallGraphBuilder[Source](val project: Project[Source]) {
     /**
      * Builds the final call graph.
      */
-    def buildCallGraph(): CallGraph[Source] = {
+    def buildCallGraph(): CallGraph = {
         import UID.getOrElseUpdate
 
         import concurrent._

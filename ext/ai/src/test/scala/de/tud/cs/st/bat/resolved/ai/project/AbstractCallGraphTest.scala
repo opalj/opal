@@ -60,7 +60,7 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
 
     def testFilePath: String
 
-    def testCallGraphAlgorithm: CallGraphAlgorithmConfiguration[java.net.URL]
+    def testCallGraphAlgorithm: CallGraphAlgorithmConfiguration
 
     //
     // ANNOTATIONTYPES
@@ -86,7 +86,7 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
     //
     // GRAPH CONSTRUCTION
     //
-    val (callGraph, unresolvedMethodCalls, exceptions) =
+    val ComputedCallGraph(callGraph, unresolvedMethodCalls, exceptions) =
         CallGraphFactory.create(
             project,
             CallGraphFactory.defaultEntryPointsForLibraries(project),

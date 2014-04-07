@@ -57,16 +57,19 @@ import java.io.File
  *    By using different `ClassLoader`s for the different analyses, the necessary
  *    separation is achieved.
  *
- * @tparam Source The type of the source of the class file. E.g., a `URL`, a `File` object,
- *    a `String` or a Pair `(JarFile,JarEntry)`. This information is needed for, e.g.,
- *    presenting users meaningful messages w.r.t. the location of issues.
- *    We abstract over the type of the resource to facilitate the embedding in existing
- *    tools such as IDEs. E.g., in Eclipse "Resources" are used to identify the
- *    location of a resource (e.g., a source or class file.)
- *
  * @author Michael Eichberg
  */
-abstract class ProjectLike[Source] extends (ObjectType ⇒ Option[ClassFile]) {
+abstract class ProjectLike extends (ObjectType ⇒ Option[ClassFile]) {
+
+    /**
+     * The type of the source of the class file. E.g., a `URL`, a `File` object,
+     * a `String` or a Pair `(JarFile,JarEntry)`. This information is needed for, e.g.,
+     * presenting users meaningful messages w.r.t. the location of issues.
+     * We abstract over the type of the resource to facilitate the embedding in existing
+     * tools such as IDEs. E.g., in Eclipse "Resources" are used to identify the
+     * location of a resource (e.g., a source or class file.)
+     */
+    type Source
 
     ProjectLike.checkForMultipleInstances()
 
@@ -231,11 +234,11 @@ abstract class ProjectLike[Source] extends (ObjectType ⇒ Option[ClassFile]) {
 
     /**
      * Some basic statistics about this project.
-     * 
+     *
      * (Calculated on-demand.)
      */
     def statistics: String
-    
+
     /**
      * This project's class hierarchy.
      */
@@ -254,6 +257,59 @@ abstract class ProjectLike[Source] extends (ObjectType ⇒ Option[ClassFile]) {
                 someClassFile.isDefined && filter(someClassFile.get)
             }
         ).map(_.get)
+
+    // ----------------------------------------------------------------------------------
+    //
+    // CODE TO MAKE IT POSSIBLE TO ATTACH SOME INFORMATION TO A PROJECT (ON DEMAND)
+    //
+    // ----------------------------------------------------------------------------------
+
+    import java.util.concurrent.atomic.AtomicReferenceArray
+
+    private[this] var projectInformation = new AtomicReferenceArray[AnyRef](32)
+
+    def get[T <: AnyRef](projectInformation: ProjectInformation[T]): T = {
+        val uniqueId = projectInformation.uniqueId
+
+        def derive(): T = {
+            for (requiredProjectInformation ← projectInformation.require) {
+                get(requiredProjectInformation)
+            }
+            val pi = projectInformation.get(this)
+            this.projectInformation.set(uniqueId, pi)
+            pi
+        }
+
+        if (uniqueId < this.projectInformation.length()) {
+            val pi = this.projectInformation.get(uniqueId)
+            if (pi != null) {
+                pi.asInstanceOf[T]
+            } else {
+                this.synchronized { derive() }
+            }
+        } else {
+            // We have to synchronize w.r.t. "this" object on write accesses
+            // to make sure that we do not loose a concurrent update or
+            // derive an information more than once.
+            this.synchronized {
+                val newProjectInformation = new AtomicReferenceArray[AnyRef](uniqueId * 2)
+                for (i ← 0 until this.projectInformation.length()) {
+                    newProjectInformation.set(i, this.projectInformation.get(i))
+                }
+                this.projectInformation = newProjectInformation
+                derive()
+            }
+        }
+    }
+
+    def has[T <: AnyRef](projectInformation: ProjectInformation[T]): Option[T] = {
+        val uniqueId = projectInformation.uniqueId
+
+        if (uniqueId < this.projectInformation.length())
+            Option(this.projectInformation.get(uniqueId).asInstanceOf[T])
+        else
+            None
+    }
 }
 
 private object ProjectLike {
@@ -268,10 +324,28 @@ private object ProjectLike {
             print(BOLD + MAGENTA)
             print("Creating multiple project instances is not recommended. ")
             println("See the documentation of: ")
-            println("\t"+classOf[ProjectLike[_]].getName())
+            println("\t"+classOf[ProjectLike].getName())
             println("for further details.")
             print(RESET)
         }
+    }
+}
+
+trait ProjectInformation[T <: AnyRef] {
+
+    final val uniqueId: Int = ProjectInformation.nextId
+
+    protected[analyses] def require: Seq[ProjectInformation[_ <: AnyRef]]
+
+    protected[analyses] def get(project: ProjectLike): T
+
+}
+private object ProjectInformation {
+
+    private[this] val idGenerator = new java.util.concurrent.atomic.AtomicInteger(0)
+
+    private[ProjectInformation] def nextId: Int = {
+        idGenerator.getAndIncrement()
     }
 }
 

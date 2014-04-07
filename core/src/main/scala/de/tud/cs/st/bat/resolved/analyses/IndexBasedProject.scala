@@ -62,7 +62,7 @@ import java.net.URL
  *
  * @author Michael Eichberg
  */
-class IndexBasedProject[Source: reflect.ClassTag] private (
+class IndexBasedProject[S: reflect.ClassTag] private (
     val classFilesCount: Int,
     /* The arrays are private to avoid that clients accidentally mutate them! 
        I.e., this class' data structures are indeed mutable, but they are never
@@ -70,13 +70,15 @@ class IndexBasedProject[Source: reflect.ClassTag] private (
     // Mapping between an ObjectType('s id) and the ClassFile object which defines the type
     private[this] val classesMap: Array[ClassFile],
     // Mapping between an ObjectType('s id) and its defining source file 
-    private[this] val sourcesMap: Array[Source],
+    private[this] val sourcesMap: Array[S],
     /* By default all classes are considered to belong to the library unless the class 
      * file is available and the class file was not explicitly identified as belonging 
      * to the library. */
     private[this] val libraryTypesMap: Array[Boolean],
     val classHierarchy: ClassHierarchy)
-        extends ProjectLike[Source] {
+        extends ProjectLike {
+
+    override type Source = S
 
     private[this] val classFileOfMethod = {
         val lookupTable = new Array[ClassFile](Method.methodsCount)

@@ -91,9 +91,9 @@ class CallGraphThreadSafetyTest extends FlatSpec with Matchers {
         callGraphs.seq.sliding(2).foreach(w ⇒ { val Seq(a, b) = w; a should not be (b) })
 
         // the actual comparison
-        callGraphs.seq.reduce[(CallGraph[_], List[UnresolvedMethodCall], List[CallGraphConstructionException])] { (l, r) ⇒
-            val (lcallGraph, lunresolvedMethodCalls, lexceptions) = l
-            val (rcallGraph, runresolvedMethodCalls, rexceptions) = r
+        callGraphs.seq.reduce[ComputedCallGraph] { (l, r) ⇒
+            val ComputedCallGraph(lcallGraph, lunresolvedMethodCalls, lexceptions) = l
+            val ComputedCallGraph(rcallGraph, runresolvedMethodCalls, rexceptions) = r
 
             lcallGraph.calledByCount should be(rcallGraph.calledByCount)
             lcallGraph.callsCount should be(rcallGraph.callsCount)

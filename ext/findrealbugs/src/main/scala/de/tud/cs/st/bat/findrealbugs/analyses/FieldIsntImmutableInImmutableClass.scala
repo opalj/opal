@@ -275,7 +275,7 @@ class FieldIsntImmutableInImmutableClass[Source]
                 var oldTransitiveHull: IndexedSeq[Method] = IndexedSeq.empty
 
                 // TODO: Build call graph only once for the whole project
-                val callGraph = CallGraphFactory.create(
+                val ComputedCallGraph(callGraph,_,_) = CallGraphFactory.create(
                     project,
                     CallGraphFactory.defaultEntryPointsForLibraries(project),
                     new CHACallGraphAlgorithmConfiguration)
@@ -284,7 +284,7 @@ class FieldIsntImmutableInImmutableClass[Source]
                 while (!transitiveHull.equals(oldTransitiveHull)) {
                     oldTransitiveHull = transitiveHull
                     for (method ← oldTransitiveHull) {
-                        val callers = callGraph._1.calledBy(method)
+                        val callers = callGraph.calledBy(method)
                         for {
                             callerMethod ← callers.keys
                             if (!transitiveHull.contains(callerMethod) &&

@@ -58,8 +58,8 @@ import scala.collection.Map
  *
  * @author Michael Eichberg
  */
-trait CHACallGraphDomain[Source, I]
-        extends CallGraphDomain[Source, I]
+trait CHACallGraphDomain[I]
+        extends CallGraphDomain[I]
         with ClassHierarchy {
 
     //
@@ -221,7 +221,7 @@ class DefaultCHACallGraphDomain[Source](
         with l0.TypeLevelFieldAccessInstructions
         with l0.TypeLevelInvokeInstructions
         with ProjectBasedClassHierarchy[Source]
-        with CHACallGraphDomain[Source, Int] {
+        with CHACallGraphDomain[Int] {
 
     def identifier = theMethod.id
 

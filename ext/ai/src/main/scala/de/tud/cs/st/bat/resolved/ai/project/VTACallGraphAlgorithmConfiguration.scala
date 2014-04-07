@@ -48,8 +48,7 @@ import scala.collection.Map
  *
  * @author Michael Eichberg
  */
-class VTACallGraphAlgorithmConfiguration[Source]
-        extends CallGraphAlgorithmConfiguration[Source] {
+class VTACallGraphAlgorithmConfiguration extends CallGraphAlgorithmConfiguration {
 
     type Contour = MethodSignature
     type Value = Iterable[Method]
@@ -57,11 +56,12 @@ class VTACallGraphAlgorithmConfiguration[Source]
     def Cache(): this.type#Cache = new CallGraphCache[MethodSignature, Iterable[Method]]
 
     type I = Int
+    
     def Domain(
-        theProject: Project[Source],
+        theProject: SomeProject,
         cache: Cache,
         classFile: ClassFile,
-        method: Method): VTACallGraphDomain[Source, Int] =
+        method: Method): VTACallGraphDomain[Int] =
         new DefaultVTACallGraphDomain(theProject, cache, classFile, method)
 }
 

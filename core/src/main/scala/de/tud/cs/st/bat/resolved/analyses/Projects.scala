@@ -46,8 +46,8 @@ object Projects {
      * Given a reference to a class file, jar file or a folder containing jar and class
      * files, all class files will be loaded and a project will be returned.
      */
-    def createProject(file: File): ProjectLike[URL] = {
-        IndexBasedProject[URL](reader.Java8Framework.ClassFiles(file))
+    def createProject(file: File): Project[URL] = {
+        IndexBasedProject(reader.Java8Framework.ClassFiles(file))
     }
 }
 
