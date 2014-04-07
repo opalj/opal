@@ -19,9 +19,11 @@ is in particular used to validate parts of OPAL's architecture.
 
 * **Demos**: Contains working code samples that demonstrate how to use OPAL. The code in the Demo project is primarily meant as a teaching resource. To start the examples, start the `sbt` console (Scala Build Tools) and change the current project to "Demo" (`project Demo`).
 
-* **FindREALBugs**: (This project is in its very early stages!) FindBugs reloaded. For further information go to: [FindREALBugs](https://bitbucket.org/delors/bat/wiki/FindREALBugs)
+* **FindREALBugs**: (This project is in its very early stages!) FindBugs reloaded. For further information go to: [FindREALBugs](https://bitbucket.org/delors/opal/wiki/FindREALBugs)
 
 # Further Information #
-[OPAL Project](http://www.opal-project.de)
-[OPAL's Wiki](https://bitbucket.org/delors/bat/wiki/Home)
+
+* [OPAL Project](http://www.opal-project.de)
+
+* [OPAL's Wiki](https://bitbucket.org/delors/opal/wiki/Home)
  
