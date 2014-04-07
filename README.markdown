@@ -22,6 +22,8 @@ is in particular used to validate parts of OPAL's architecture.
 * **FindREALBugs**: (This project is in its very early stages!) FindBugs reloaded. For further information go to: [FindREALBugs](https://bitbucket.org/delors/opal/wiki/FindREALBugs)
 
 # Further Information #
-[OPAL Project](http://www.opal-project.de)
-[OPAL's Wiki](https://bitbucket.org/delors/opal/wiki/Home)
+
+* [OPAL Project](http://www.opal-project.de)
+
+* [OPAL's Wiki](https://bitbucket.org/delors/opal/wiki/Home)
  
