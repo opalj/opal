@@ -1,4 +1,5 @@
 
 scalacOptions in (Compile, doc) := Seq("-deprecation", "-feature", "-unchecked")
 
-scalacOptions in (Compile, doc) ++= Opts.doc.title("OPAL - Demos") 
+scalacOptions in (Compile, doc) ++= Opts.doc.title("VALIDATES OPAL") 
+

@@ -33,10 +33,17 @@ package ai
 package project
 
 /**
+ * Tests the CHA based `CallGraph` algorithm using a more complex (explicitly
+ * annotated) project.
+ *
  * @author Marco Jacobasch
  */
 class ComplexCHACallGraphTest extends AbstractCallGraphTest {
+	
     override def testFileName = "classfiles/callgraph.jar"
-    override def testFilePath = "ext/ai"
-    override def testCallGraphAlgorithm = new CHACallGraphAlgorithmConfiguration()
+  
+	  override def testFilePath = "ext/ai"
+  
+	  override def testCallGraphAlgorithm = new CHACallGraphAlgorithmConfiguration()
+		
 }

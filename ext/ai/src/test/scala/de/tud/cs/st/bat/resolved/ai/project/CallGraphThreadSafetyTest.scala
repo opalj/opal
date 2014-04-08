@@ -38,9 +38,9 @@ import org.scalatest.Matchers
 import reader.Java7Framework
 
 /**
- * Tests if we the same same call graph is created if we run the call graph
+ * Tests if the same same call graph is created when we run the call graph
  * algorithm multiple times. Given that the call graph algorithm is heavily
- * parallelized, this "somehow" tests if the algorithm is thread safe.
+ * parallelized, this tests if there are no trivial concurrency bugs.
  *
  * @author Michael Eichberg
  */
