@@ -36,28 +36,18 @@ import util.graphs.{ Node, toDot }
 import java.net.URL
 
 /**
- * Primary abstraction of a Java project. This class is basically just a container
- * for `ClassFile`s. Additionally, it makes project wide information available such as
- * the class hierarchy and the list of all fields and methods.
- *
+ * Primary abstraction of a Java project.
+ * 
  * ==Initialization==
  * To create a representation of a project use the companion object's factory method.
- *
- * ==Thread Safety==
- * This class is immutable. After creating a project, it is not possible to dynamically
- * add/remove any class files.
  *
  * ==Implementation Details==
  * This class relies on the property that `ObjectType`s are associated with consecutive,
  * unique ids larger than 0 and that a `ClassFile`'s `hashCode` is equivalent to the
  * `id`/`hashCode` of the `ObjectType` it defines.
  *
- * @tparam Source The type of the source of the class file. E.g., a `URL`, a `File` object,
- *    a `String` or a Pair `(JarFile,JarEntry)`. This information is needed for, e.g.,
- *    presenting users meaningful messages w.r.t. the location of issues.
- *    We abstract over the type of the resource to facilitate the embedding in existing
- *    tools such as IDEs. E.g., in Eclipse `IResource`s are used to identify the
- *    location of a resource (e.g., a source or class file.)
+ * @tparam S The type of the source of the class file. See [[ProjectLike.Source]] for 
+ *      details.
  * @param classHierarchy This project's class hierarchy.
  *
  * @author Michael Eichberg

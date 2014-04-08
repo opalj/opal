@@ -57,7 +57,7 @@ class IndexBasedProjectTest
     //
     //
 
-    behavior of "IndexBasedProject"
+    behavior of "An IndexBasedProject"
 
     import project.classFile
     import project.isLibraryType
@@ -94,7 +94,7 @@ class IndexBasedProjectTest
         isLibraryType(classFile(DeprecatedByAnnotation).get) should be(true)
     }
 
-    behavior of "Project's lookupMethodDeclaration method"
+    behavior of "An IndexBasedProject's lookupMethodDeclaration method"
 
     import project.classHierarchy.resolveMethodReference
 
@@ -185,7 +185,85 @@ class IndexBasedProjectTest
         assert(project.classFile(r.get).thisType === ObjectType("methods/b/SuperI"))
     }
 
+    behavior of "An IndexBasedProject's information management methods"
+
+    it should "be able to compute some project wide information on demand" in {
+        val pik = new TestProjectInformationKey
+        project.get(pik) should not be (null)
+    }
+
+    it should "always return the same information when we use the same ProjectInformation object" in {
+        val pik = new TestProjectInformationKey
+        project.get(pik) should be(project.get(pik))
+    }
+
+    it should "return the project information when we ask if some information was previously computed and that was actually done" in {
+        val pik = new TestProjectInformationKey
+        project.get(pik)
+        project.has(pik) should be(Some(project.get(pik)))
+    }
+
+    it should "not compute project information when we just test for its existence" in {
+        val pik = new TestProjectInformationKey
+        // ask...
+        project.has(pik) should be(None)
+        // test...
+        project.has(pik) should be(None)
+    }
+
+    it should "return all project information that was requested" in {
+
+        val pik = new TestProjectInformationKey
+        project.get(pik)
+        // the other tests may also attach information..
+        project.availableProjectInformation.length should be >= 1
+        project.availableProjectInformation should contain(pik.theResult)
+    }
+
+    it should "be able to store a large amount of information" in {
+        val piks = for (i ← (0 until 100)) yield {
+            val pik = new TestProjectInformationKey
+            project.get(pik)
+            pik.uniqueId should be >= i
+            pik
+        }
+        for (pik ← piks) {
+            project.availableProjectInformation should contain(pik.theResult)
+        }
+    }
+
+    it should "be able to compute project information that has requirements" in {
+        val pik = new TestProjectInformationWithDependenciesKey
+        project.get(pik) should be(pik.theResult)
+        // the other tests may also attach information..
+        project.availableProjectInformation.length should be >= 3
+        project.availableProjectInformation should contain(pik.depdencies.head.theResult)
+        project.availableProjectInformation should contain(pik.depdencies.tail.head.theResult)
+    }
 }
+
+private class TestProjectInformationKey extends ProjectInformationKey[Object] {
+
+    val theResult = new Object()
+
+    protected def compute(project: ProjectLike): Object = theResult
+
+    protected def requirements: Seq[ProjectInformationKey[_ <: AnyRef]] = Nil
+
+}
+
+private class TestProjectInformationWithDependenciesKey extends ProjectInformationKey[Object] {
+
+    val theResult = new Object()
+
+    val depdencies = List(new TestProjectInformationKey, new TestProjectInformationKey)
+
+    protected def compute(project: ProjectLike): Object = theResult
+
+    protected def requirements: Seq[ProjectInformationKey[_ <: AnyRef]] = depdencies
+
+}
+
 private object IndexBasedProjectTest {
 
     //

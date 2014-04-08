@@ -33,21 +33,25 @@ package analyses
 
 import util.graphs.{ Node, toDot }
 
-import java.net.URL
 import java.io.File
 
 /**
- * Primary abstraction of a Java project. This class is basically just a container
- * for `ClassFile`s. Additionally, it makes project wide information available such as
- * the class hierarchy.
+ * Primary abstraction of a Java project; i.e., a set of classes that constitute a
+ * library, framework or application as well as the libraries or frameworks used by
+ * the former.
+ * This class has several purposes:
  *
- * ==Creating Projects==
- * Projects are generally created using factory methods. E.g., the companion object of
- * [[de.tud.cs.st.bat.resolved.analyses.IndexBasedProject]] defines the respective
- * factory method.
+ *  1. It is a container for `ClassFile`s.
+ *  1. It directly gives access to the project's class hierarchy.
+ *  1. It serves as a container for project-wide information (e.g., a call graph,
+ *     information about the mutability of classes, constant values,...) that can be queried
+ *     using [[de.tud.cs.st.bat.resolved.analyses.ProjectInformationKey]]s. 
+ *     The list of project wide information that can be made available is equivalent
+ *     to the list of (concrete/singleton) objects implementing the trait
+ *     [[de.tud.cs.st.bat.resolved.analyses.ProjectInformationKey]].
  *
  * ==Thread Safety==
- * Implementations of the `ProjektLike` trait need to be thread-safe.
+ * This class is thread-safe.
  *
  * @note
  *    This project abstraction does not support (incremental) project updates.
@@ -62,19 +66,20 @@ import java.io.File
 abstract class ProjectLike extends (ObjectType ⇒ Option[ClassFile]) {
 
     /**
-     * The type of the source of the class file. E.g., a `URL`, a `File` object,
+     * The type of the source of the class file. E.g., a `URL`, a `File`,
      * a `String` or a Pair `(JarFile,JarEntry)`. This information is needed for, e.g.,
      * presenting users meaningful messages w.r.t. the location of issues.
      * We abstract over the type of the resource to facilitate the embedding in existing
-     * tools such as IDEs. E.g., in Eclipse "Resources" are used to identify the
+     * tools such as IDEs. E.g., in Eclipse `IResource`'s are used to identify the
      * location of a resource (e.g., a source or class file.)
      */
     type Source
 
+    // TODO Generate keys in project dependent method
     ProjectLike.checkForMultipleInstances()
 
     /**
-     * @see `ProjektLike#classFile(ObjectType)`
+     * See `classFile(de.tud.cs.st.bat.resolved.ObjectType)` for details.
      */
     final def apply(objectType: ObjectType): Option[ClassFile] = classFile(objectType)
 
@@ -266,47 +271,103 @@ abstract class ProjectLike extends (ObjectType ⇒ Option[ClassFile]) {
 
     import java.util.concurrent.atomic.AtomicReferenceArray
 
+    // Note that the referenced array will never shrink!
+    @volatile
     private[this] var projectInformation = new AtomicReferenceArray[AnyRef](32)
 
-    def get[T <: AnyRef](projectInformation: ProjectInformation[T]): T = {
-        val uniqueId = projectInformation.uniqueId
-
-        def derive(): T = {
-            for (requiredProjectInformation ← projectInformation.require) {
-                get(requiredProjectInformation)
+    /**
+     * Returns the additional project information that is ''currently'' available.
+     *
+     * If some analyses are still running it may be possible that additional
+     * information will be made available as part of the execution of those
+     * analyses.
+     *
+     * @note This method redetermines the available project information on each call.
+     */
+    def availableProjectInformation: List[AnyRef] = {
+        var pis = List.empty[AnyRef]
+        val thisProjectInformation = this.projectInformation
+        for (i ← (0 until thisProjectInformation.length())) {
+            var pi = thisProjectInformation.get(i)
+            if (pi != null) {
+                pis = pi :: pis
             }
-            val pi = projectInformation.get(this)
-            this.projectInformation.set(uniqueId, pi)
+        }
+        pis
+    }
+
+    /**
+     * Returns the information attached to this project that is identified by the
+     * given `ProjectInformationKey`.
+     *
+     * If the information was not yet required the information is computed and
+     * returned. Subsequent calls will return the information.
+     *
+     * @see [[ProjectInformationKey]] for further information.
+     */
+    def get[T <: AnyRef](pik: ProjectInformationKey[T]): T = {
+        val pikUId = pik.uniqueId
+
+        def derive(projectInformation: AtomicReferenceArray[AnyRef]): T = { // calls are externally synchronized!
+            for (requiredProjectInformationKey ← pik.getRequirements) {
+                get(requiredProjectInformationKey)
+            }
+            val pi = pik.doCompute(this)
+            projectInformation.set(pikUId, pi)
             pi
         }
 
-        if (uniqueId < this.projectInformation.length()) {
-            val pi = this.projectInformation.get(uniqueId)
+        val thisProjectInformation = this.projectInformation
+        if (pikUId < thisProjectInformation.length()) {
+            val pi = thisProjectInformation.get(pikUId)
             if (pi != null) {
                 pi.asInstanceOf[T]
             } else {
-                this.synchronized { derive() }
+                this.synchronized {
+                    // It may be the case that the underlying array was updated!
+                    val thisProjectInformation = this.projectInformation
+                    // double-checked locking (works with Java 6>)
+                    val pi = thisProjectInformation.get(pikUId)
+                    if (pi != null) {
+                        pi.asInstanceOf[T]
+                    } else {
+                        derive(thisProjectInformation)
+                    }
+                }
             }
         } else {
             // We have to synchronize w.r.t. "this" object on write accesses
             // to make sure that we do not loose a concurrent update or
             // derive an information more than once.
             this.synchronized {
-                val newProjectInformation = new AtomicReferenceArray[AnyRef](uniqueId * 2)
-                for (i ← 0 until this.projectInformation.length()) {
-                    newProjectInformation.set(i, this.projectInformation.get(i))
+                val thisProjectInformation = this.projectInformation
+                if (pikUId < thisProjectInformation.length()) {
+                    get(pik)
+                } else {
+                    val newLength = Math.max(thisProjectInformation.length * 2, pikUId * 2)
+                    val newProjectInformation = new AtomicReferenceArray[AnyRef](newLength)
+                    for (i ← 0 until thisProjectInformation.length()) {
+                        newProjectInformation.set(i, thisProjectInformation.get(i))
+                    }
+                    this.projectInformation = newProjectInformation
+                    derive(newProjectInformation)
                 }
-                this.projectInformation = newProjectInformation
-                derive()
             }
         }
     }
 
-    def has[T <: AnyRef](projectInformation: ProjectInformation[T]): Option[T] = {
-        val uniqueId = projectInformation.uniqueId
+    /**
+     * Tests if the information identified by the given [[ProjectInformationKey]]
+     * is available. If the information is not available, the information
+     * will not be computed and `None` will be returned.
+     *
+     * @see [[ProjectInformationKey]] for further information.
+     */
+    def has[T <: AnyRef](pik: ProjectInformationKey[T]): Option[T] = {
+        val pikUId = pik.uniqueId
 
-        if (uniqueId < this.projectInformation.length())
-            Option(this.projectInformation.get(uniqueId).asInstanceOf[T])
+        if (pikUId < this.projectInformation.length())
+            Option(this.projectInformation.get(pikUId).asInstanceOf[T])
         else
             None
     }
@@ -331,21 +392,4 @@ private object ProjectLike {
     }
 }
 
-trait ProjectInformation[T <: AnyRef] {
-
-    final val uniqueId: Int = ProjectInformation.nextId
-
-    protected[analyses] def require: Seq[ProjectInformation[_ <: AnyRef]]
-
-    protected[analyses] def get(project: ProjectLike): T
-
-}
-private object ProjectInformation {
-
-    private[this] val idGenerator = new java.util.concurrent.atomic.AtomicInteger(0)
-
-    private[ProjectInformation] def nextId: Int = {
-        idGenerator.getAndIncrement()
-    }
-}
 

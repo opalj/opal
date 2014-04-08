@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -32,17 +32,44 @@ package resolved
 package ai
 package project
 
+import domain._
+import domain.l0
+import domain.l1
+import analyses._
+
+import scala.collection.Set
+import scala.collection.Map
+
 /**
- * Tests the generation of the call graph for a small project.
+ * The ''key'' object to get a call graph that was calculated using the CHA algorithm.
  *
- * @author Marco Jacobasch
- * @author Michael Eichberg 
+ * @example
+ *      To get the call graph object use the `ProjectLike`'s `get` method and pass in
+ *      `this` object.
+ *
+ * @author Michael Eichberg
  */
-class SimpleCHACallGraphTest extends AbstractCallGraphTest {
+object CHACallGraphKey extends ProjectInformationKey[ComputedCallGraph] {
 
-    override def testFileName = "classfiles/simpleCallgraph.jar"
+    /**
+     * The CHACallGraph has no special prerequisites.
+     *
+     * @return `Nil`.
+     */
+    override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
 
-    override def testFilePath = "ext/ai"
-
-    override def testCallGraph = CHACallGraph
+    /**
+     * Computes the `CallGraph` for the given project.
+     */
+    override protected def compute(project: ProjectLike): ComputedCallGraph = {
+        val entryPoints = CallGraphFactory.defaultEntryPointsForLibraries(project)
+        CallGraphFactory.create(
+            project,
+            entryPoints,
+            new CHACallGraphAlgorithmConfiguration())
+    }
 }
+
+
+
+

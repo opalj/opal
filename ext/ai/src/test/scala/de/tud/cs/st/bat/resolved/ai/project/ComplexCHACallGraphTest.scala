@@ -37,13 +37,14 @@ package project
  * annotated) project.
  *
  * @author Marco Jacobasch
+ * @author Michael Eichberg
  */
 class ComplexCHACallGraphTest extends AbstractCallGraphTest {
-	
+
     override def testFileName = "classfiles/callgraph.jar"
-  
-	  override def testFilePath = "ext/ai"
-  
-	  override def testCallGraphAlgorithm = new CHACallGraphAlgorithmConfiguration()
-		
+
+    override def testFilePath = "ext/ai"
+
+    override def testCallGraph = CHACallGraph
+
 }

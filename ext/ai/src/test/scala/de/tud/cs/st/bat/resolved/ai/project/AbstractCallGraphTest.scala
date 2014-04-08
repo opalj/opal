@@ -60,7 +60,7 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
 
     def testFilePath: String
 
-    def testCallGraphAlgorithm: CallGraphAlgorithmConfiguration
+    def testCallGraph: analyses.ProjectInformationKey[ComputedCallGraph]
 
     //
     // ANNOTATIONTYPES
@@ -80,19 +80,12 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
     def file = TestSupport.locateTestResources(testFileName, testFilePath)
     val classFiles = Java7Framework.ClassFiles(file)
     val project = bat.resolved.analyses.IndexBasedProject(classFiles)
-    //    /*DEBUG*/ println(project.statistics)
-    //    /*DEBUG*/ println(project.classHierarchy.statistics)
 
     //
     // GRAPH CONSTRUCTION
     //
     val ComputedCallGraph(callGraph, unresolvedMethodCalls, exceptions) =
-        CallGraphFactory.create(
-            project,
-            CallGraphFactory.defaultEntryPointsForLibraries(project),
-            testCallGraphAlgorithm)
-    //    /*DEBUG*/ println(callGraph.callsStatistics(30000))
-    //    /*DEBUG*/ println(callGraph.calledByStatistics(30000))
+        project.get(testCallGraph)
 
     //
     // UTILITY FUNCTIONS
