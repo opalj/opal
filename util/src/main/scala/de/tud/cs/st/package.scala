@@ -29,6 +29,8 @@
 package de.tud.cs
 
 /**
+ * Common definitions.
+ * 
  * @author Michael Eichberg
  */
 package object st {

@@ -47,7 +47,7 @@ object UShortSetDemo {
     _0_1_2_65535 + 0                              //> res3: de.tud.cs.st.collection.mutable.UShortSet = UShortSet(0,1,2,65535)
     _0_1_2_65535 + 1                              //> res4: de.tud.cs.st.collection.mutable.UShortSet = UShortSet(0,1,2,65535)
     _0_1_2_65535 + 2                              //> res5: de.tud.cs.st.collection.mutable.UShortSet = UShortSet(0,1,2,65535)
-
+ 
     val _10_20_30_40 = UShortSet(10) + 30 + 40 + 20
                                                   //> _10_20_30_40  : de.tud.cs.st.collection.mutable.UShortSet = UShortSet(10,20
                                                   //| ,30,40)

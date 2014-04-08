@@ -46,7 +46,7 @@ trait UID {
 }
 
 /**
- * Helper methods related to data structures that are unique id based.
+ * Helper methods related to data structures that have unique ids.
  */
 object UID {
 

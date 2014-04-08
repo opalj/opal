@@ -42,9 +42,9 @@ trait UShortSet extends collection.UShortSet {
 
     /**
      * Adds the given value to this set if it is not already contained in this set.
-     * If this set has enough space to hold the additional value a reference to this
-     * set is returned otherwise a new set is created and a reference to that set
-     * is returned. Hence, the return value must not be ignored.
+     * If this set has enough space to hold the additional value, a reference to this
+     * set is returned. Otherwise, a new set is created and a reference to that set
+     * is returned. Hence, the return value ''must not'' be ignored.
      */
     def +≈(value: Int): UShortSet
 

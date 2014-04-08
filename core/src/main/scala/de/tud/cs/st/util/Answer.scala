@@ -30,7 +30,7 @@ package de.tud.cs.st
 package util
 
 /**
- * Models a three state answer (`Yes`, `No`, `Unknown`).
+ * Models a three state answer ([[Yes]], [[No]], [[Unknown]]).
  *
  * @author Michael Eichberg
  */

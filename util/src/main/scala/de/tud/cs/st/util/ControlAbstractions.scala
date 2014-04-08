@@ -37,10 +37,10 @@ import java.io.InputStream
 import java.io.Closeable
 
 /**
- * Defines additional control abstractions.
+ * Defines control abstractions.
  *
  * ==Usage==
- * To use the control abstractions, it is sufficient to import them:
+ * To use the control abstractions, it is sufficient to import them.
  *
  * @example
  * {{{
