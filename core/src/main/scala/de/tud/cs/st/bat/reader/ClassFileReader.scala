@@ -269,7 +269,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      *  `...ClassFileReader.ClassFile(java.io.DataInputStream) : ClassFile` instead.
      *  The (newly created) `InputStream` returned by calling `create` is closed by
      *  this method.
-     *  The created input stream will automatically be wrapped by BAT to enable
+     *  The created input stream will automatically be wrapped by OPAL to enable
      *  efficient reading of the class file.
      */
     def ClassFile(create: () ⇒ InputStream): ClassFile = {

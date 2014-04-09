@@ -46,7 +46,7 @@ import org.scalatest.Matchers
 @RunWith(classOf[JUnitRunner])
 class ArchitectureTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
-    behavior of "\"BAT Dependency\"'s implemented architecture"
+    behavior of "\"OPAL Dependency\"'s implemented architecture"
 
     it should "be well modularized in the sense that a superpackage does not depend on a subpackage" in {
         val expected =

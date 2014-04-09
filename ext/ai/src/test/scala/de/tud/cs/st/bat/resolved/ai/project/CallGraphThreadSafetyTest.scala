@@ -46,7 +46,7 @@ import reader.Java7Framework
  */
 class CallGraphThreadSafetyTest extends FlatSpec with Matchers {
 
-    behavior of "BATAI's Call Graph Algorithm"
+    behavior of "OPAL-AI's Call Graph Algorithm"
 
     //def testFileName = "classfiles/simpleCallgraph.jar"
     def testFileName = "classfiles/callgraph.jar"

@@ -42,7 +42,7 @@ import analyses.SomeProject
  * the user/developer choose between different domains to do an abstract interpretation
  * and to see the resulting output.
  *
- * The compatible domains that are part of BATAI are already registered.
+ * The compatible domains that are part of OPAL-AI are already registered.
  *
  * ==Thread Safety==
  * The registry is thread safe.

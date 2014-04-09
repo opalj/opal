@@ -49,7 +49,7 @@ import de.tud.cs.st.collection.immutable.UIDSet
  *  - Instances of `DomainValue`s are always immutable or are at least considered and
  *    treated as immutable. Every
  *    update of a value's properties creates a new value. This is a general design
- *    decision underlying BATAI and should not be changed.
+ *    decision underlying OPAL-AI and should not be changed.
  *  - A new instance of a `DomainValue` is always exclusively created by one of the
  *    factory methods. (The factory methods generally start with a capital letter
  *    and are correspondingly documented.) This greatly facilitates domain adaptability
@@ -1079,7 +1079,7 @@ trait TypeLevelReferenceValues
      * array (non-null) with the size determined by count that is empty.
      *
      * ==Typical Usage==
-     * This factory method is (implicitly) used, e.g., by BATAI when a new array
+     * This factory method is (implicitly) used, e.g., by OPAL-AI when a new array
      * instruction is found.
      *
      * ==Summary==
@@ -1098,7 +1098,7 @@ trait TypeLevelReferenceValues
      * array (non-null) with the size determined by count that is empty.
      *
      * ==Typical Usage==
-     * This factory method is (implicitly) used, e.g., by BATAI when a new array
+     * This factory method is (implicitly) used, e.g., by OPAL-AI when a new array
      * instruction is found.
      *
      * ==Summary==

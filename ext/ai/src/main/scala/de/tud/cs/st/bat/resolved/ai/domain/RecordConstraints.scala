@@ -33,7 +33,7 @@ package ai
 package domain
 
 /**
- * Mixin this trait if you want to reify the constraints that are stated by BATAI. 
+ * Mixin this trait if you want to reify the constraints that are stated by OPAL-AI. 
  * This is particularly useful for testing and debugging purposes.
  *
  * @author Michael Eichberg

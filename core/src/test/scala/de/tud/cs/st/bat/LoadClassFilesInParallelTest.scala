@@ -66,7 +66,7 @@ class LoadClassFilesInParallelTest
         classFile.methods.forall(m ⇒ m.body.isEmpty)
     }
 
-    behavior of "BAT"
+    behavior of "OPAL"
 
     for {
         file ← TestSupport.locateTestResources("classfiles").listFiles

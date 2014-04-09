@@ -33,17 +33,17 @@ package resolved
 import de.tud.cs.st.collection.immutable.UIDSet
 
 /**
- * Implementation of an abstract interpretation framework – called BATAI in the following.
+ * Implementation of an abstract interpretation framework – called OPAL-AI in the following.
  *
- * Please note, that BATAI just refers to the classes and traits defined in this package
+ * Please note, that OPAL-AI just refers to the classes and traits defined in this package
  * (`ai`). The classes and traits defined in the sub-packages (in particular in `domain`)
- * are not considered to be part of the core of BATAI.
+ * are not considered to be part of the core of OPAL-AI.
  *
  * @note This framework assumes that the analyzed bytecode is valid; i.e., the JVM's
  *      bytecode verifier would be able to verify the code. Furthermore, load-time errors
  *      (e.g., `LinkageErrors`) are – by default – completely ignored to facilitate the
  *      analysis of parts of a project. In general, if the presented bytecode is not valid,
- *      the result is undefined (i.e., BATAI may report meaningless results, crash or run
+ *      the result is undefined (i.e., OPAL-AI may report meaningless results, crash or run
  *      indefinitely).
  *
  * @see [[de.tud.cs.st.bat.resolved.ai.AI]] - Implements the abstract interpreter that

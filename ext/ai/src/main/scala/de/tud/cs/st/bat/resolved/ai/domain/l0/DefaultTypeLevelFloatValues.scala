@@ -38,7 +38,7 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 /**
  * Base implementation of the `TypeLevelFloatValues` trait that requires that
  * the domain`s `Value` trait is not extended. This implementation just satisfies
- * the basic requirements of BATAI w.r.t. the domain's computational type.
+ * the basic requirements of OPAL-AI w.r.t. the domain's computational type.
  *
  * @author Michael Eichberg
  */

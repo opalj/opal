@@ -38,7 +38,7 @@ import java.net.URL
 import java.io.File
 
 /**
- * FindRealBugs is a QA-tool using the BAT(AI) framework to perform static code analysis
+ * FindRealBugs is a QA-tool using the OPAL(AI) framework to perform static code analysis
  * on Java-bytecode and detect bugs.
  *
  * This object keeps a list of all available analyses and provides a way to run them on

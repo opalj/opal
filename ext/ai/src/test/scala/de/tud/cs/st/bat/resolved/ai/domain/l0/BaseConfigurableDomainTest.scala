@@ -119,9 +119,9 @@ class BaseConfigurableDomainTest extends FlatSpec with Matchers {
         type Id = I
     }
 
-    behavior of "BATAI when changing the mixin composition order of \"independent\" domains"
+    behavior of "OPAL-AI when changing the mixin composition order of \"independent\" domains"
 
-    // The jars of the "BAT core" project
+    // The jars of the "OPAL core" project
     val directoryWithJARs = "../../../../../core/src/test/resources/classfiles"
     val folder = TestSupport.locateTestResources(directoryWithJARs, "ext/ai")
 

@@ -60,7 +60,7 @@ class UnusedPrivateFields[Source]
 
         // TODO: Currently doesn't detect cases where Serializable is implemented 
         //indirectly, e.g. through java.io.File which implements Serializable but is 
-        //typically not analyzed by BAT. Thus, in general, if some super types are 
+        //typically not analyzed by OPAL. Thus, in general, if some super types are 
         //unknown, this analysis should generate reports with lower severity, or perhaps 
         //none at all, about serialVersionUID.
         val serializables = project.classHierarchy.allSubtypes(ObjectType.Serializable,

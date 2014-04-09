@@ -129,7 +129,7 @@ trait DefaultTypeLevelReferenceValues
         override def refineUpperTypeBound(
             pc: PC,
             supertype: ReferenceType): DomainReferenceValue = {
-            // BATAI calls this method only if a previous "subtype of" test 
+            // OPAL-AI calls this method only if a previous "subtype of" test 
             // (this.isValueSubtypeOf <: supertype ?) 
             // returned unknown and we are now on the branch where this relation
             // has to hold. Hence, we only need to handle the case where 
@@ -257,7 +257,7 @@ trait DefaultTypeLevelReferenceValues
             if (supertype eq theUpperTypeBound)
                 return this
 
-            // BATAI calls this method only if a previous "subtype of" test 
+            // OPAL-AI calls this method only if a previous "subtype of" test 
             // (this.typeOfvalue <: supertype ?) 
             // returned unknown and we are now on the branch where this relation
             // has to hold. Hence, we only need to handle the case where 
@@ -386,7 +386,7 @@ trait DefaultTypeLevelReferenceValues
         override def refineUpperTypeBound(
             pc: PC,
             supertype: ReferenceType): DomainReferenceValue = {
-            // BATAI calls this method only if a previous "subtype of" test 
+            // OPAL-AI calls this method only if a previous "subtype of" test 
             // (typeOf(this.value) <: additionalUpperBound ?) 
             // returned unknown. Hence, we only handle the case where the new bound
             // is more strict than the previous bound.
