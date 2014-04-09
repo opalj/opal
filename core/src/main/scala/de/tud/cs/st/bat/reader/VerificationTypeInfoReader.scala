@@ -70,41 +70,41 @@ trait VerificationTypeInfoReader extends Constant_PoolAbstractions {
      * referenced by the constant pool entry.
      */
     def ObjectVariableInfo(
-        cpool_index: Constant_Pool_Index)(
-            implicit cp: Constant_Pool): VerificationTypeInfo
+        cp: Constant_Pool,
+        cpool_index: Constant_Pool_Index): VerificationTypeInfo
 
     //
     // IMPLEMENTATION
     //
 
-    def VerificationTypeInfo(in: DataInputStream, cp: Constant_Pool): VerificationTypeInfo = {
+    def VerificationTypeInfo(cp: Constant_Pool, in: DataInputStream): VerificationTypeInfo = {
         val tag = in.readUnsignedByte
-        verification_type_info_reader(tag)(in, cp)
+        verification_type_info_reader(tag)(cp, in)
     }
 
     private val verification_type_info_reader = {
 
         import VerificationTypeInfoItem._
 
-        val r = new Array[(DataInputStream, Constant_Pool) ⇒ VerificationTypeInfo](9)
+        val r = new Array[(Constant_Pool, DataInputStream) ⇒ VerificationTypeInfo](9)
 
-        r(ITEM_Top.id) = (in: DataInputStream, cp: Constant_Pool) ⇒ TopVariableInfo()
+        r(ITEM_Top.id) = (cp: Constant_Pool, in: DataInputStream) ⇒ TopVariableInfo()
 
-        r(ITEM_Integer.id) = (in: DataInputStream, cp: Constant_Pool) ⇒ IntegerVariableInfo()
+        r(ITEM_Integer.id) = (cp: Constant_Pool, in: DataInputStream) ⇒ IntegerVariableInfo()
 
-        r(ITEM_Float.id) = (in: DataInputStream, cp: Constant_Pool) ⇒ FloatVariableInfo()
+        r(ITEM_Float.id) = (cp: Constant_Pool, in: DataInputStream) ⇒ FloatVariableInfo()
 
-        r(ITEM_Long.id) = (in: DataInputStream, cp: Constant_Pool) ⇒ LongVariableInfo()
+        r(ITEM_Long.id) = (cp: Constant_Pool, in: DataInputStream) ⇒ LongVariableInfo()
 
-        r(ITEM_Double.id) = (in: DataInputStream, cp: Constant_Pool) ⇒ DoubleVariableInfo()
+        r(ITEM_Double.id) = (cp: Constant_Pool, in: DataInputStream) ⇒ DoubleVariableInfo()
 
-        r(ITEM_Null.id) = (in: DataInputStream, cp: Constant_Pool) ⇒ NullVariableInfo()
+        r(ITEM_Null.id) = (cp: Constant_Pool, in: DataInputStream) ⇒ NullVariableInfo()
 
-        r(ITEM_UninitializedThis.id) = (in: DataInputStream, cp: Constant_Pool) ⇒ UninitializedThisVariableInfo()
+        r(ITEM_UninitializedThis.id) = (cp: Constant_Pool, in: DataInputStream) ⇒ UninitializedThisVariableInfo()
 
-        r(ITEM_Object.id) = (in: DataInputStream, cp: Constant_Pool) ⇒ ObjectVariableInfo(in.readUnsignedShort)(cp)
+        r(ITEM_Object.id) = (cp: Constant_Pool, in: DataInputStream) ⇒ ObjectVariableInfo(cp, in.readUnsignedShort)
 
-        r(ITEM_Unitialized.id) = (in: DataInputStream, cp: Constant_Pool) ⇒ UninitializedVariableInfo(in.readUnsignedShort)
+        r(ITEM_Unitialized.id) = (cp: Constant_Pool, in: DataInputStream) ⇒ UninitializedVariableInfo(in.readUnsignedShort)
 
         r
     }

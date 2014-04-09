@@ -119,18 +119,13 @@ final class Field private (
  */
 object Field {
 
-    // TODO Move the ID creation functionality to the Project
-    private[this] val nextId = new java.util.concurrent.atomic.AtomicInteger(0)
-
-    def fieldsCount = nextId.get
-
     def apply(
         accessFlags: Int,
         name: String,
         fieldType: FieldType,
-        attributes: Attributes): Field = {
+        attributes: Attributes)(implicit context: ProjectContext): Field = {
         new Field(
-            nextId.getAndIncrement(),
+            context.getNextFieldId(),
             accessFlags,
             name.intern(),
             fieldType,

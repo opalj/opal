@@ -33,7 +33,7 @@ package resolved
 /**
  * The runtime (in)visible annotations of a class, method, or field.
  *
- * @note At the JVM level, repeating annotations 
+ * @note At the JVM level, repeating annotations (as supported by Java 8) 
  *    ([[http://docs.oracle.com/javase/tutorial/java/annotations/repeating.html]])
  *    have no explicit support.
  *    For further information about type-level annotations go to: 

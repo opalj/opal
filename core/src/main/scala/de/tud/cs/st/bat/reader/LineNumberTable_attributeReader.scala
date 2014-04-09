@@ -35,22 +35,11 @@ import reflect.ClassTag
 import java.io.DataInputStream
 
 /**
- * <pre>
- * LineNumberTable_attribute {
- *   u2 attribute_name_index;
- *   u4 attribute_length;
- *   u2 line_number_table_length;
- *   {  u2 start_pc;
- *      u2 line_number;
- *   }  line_number_table[line_number_table_length];
- * }
- * </pre>
+ * Generic parser for the ''LineNumberTable'' attribute.
  *
  * @author Michael Eichberg
  */
 trait LineNumberTable_attributeReader extends AttributeReader {
-
-    // TODO [Optimization] Implement a compact LineNumberTable that keeps the whole table in memory as it is found in the class file and which is unpacked/split up on demand.) 
 
     type LineNumberTable_attribute <: Attribute
 
@@ -58,31 +47,45 @@ trait LineNumberTable_attributeReader extends AttributeReader {
     implicit val LineNumberTableEntryManifest: ClassTag[LineNumberTableEntry]
 
     def LineNumberTable_attribute(
+        constant_pool: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
         attribute_length: Int,
-        line_number_table: LineNumbers)(
-            implicit constant_pool: Constant_Pool): LineNumberTable_attribute
+        line_number_table: LineNumbers): LineNumberTable_attribute
 
     def LineNumberTableEntry(start_pc: Int, line_number: Int): LineNumberTableEntry
 
     //
     // IMPLEMENTATION
     //
-    import util.ControlAbstractions.repeat
 
     type LineNumbers = IndexedSeq[LineNumberTableEntry]
 
+    /*
+     *  <pre>
+     * LineNumberTable_attribute {
+     *   u2 attribute_name_index;
+     *   u4 attribute_length;
+     *   u2 line_number_table_length;
+     *   {  u2 start_pc;
+     *      u2 line_number;
+     *   }  line_number_table[line_number_table_length];
+     * }
+     * </pre>
+     *
+     */
     registerAttributeReader(
         LineNumberTable_attributeReader.ATTRIBUTE_NAME -> (
             (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
+                import util.ControlAbstractions.repeat
                 val attribute_length = in.readInt()
                 LineNumberTable_attribute(
+                    cp,
                     attribute_name_index,
                     attribute_length,
                     repeat(in.readUnsignedShort) {
                         LineNumberTableEntry(in.readUnsignedShort, in.readUnsignedShort)
                     }
-                )(cp)
+                )
             }
         )
     )

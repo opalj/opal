@@ -101,7 +101,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      * This method is called by the template method that reads in a class file to
      * delegate the reading of the declared fields.
      */
-    protected def Fields(in: DataInputStream, cp: Constant_Pool): Fields
+    protected def Fields(cp: Constant_Pool, in: DataInputStream): Fields
 
     /**
      * Reads all method declarations using the given stream and constant pool.
@@ -111,7 +111,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      * template method that reads in a class file to delegate the reading of the
      * declared method.
      */
-    protected def Methods(in: DataInputStream, cp: Constant_Pool): Methods
+    protected def Methods(cp: Constant_Pool, in: DataInputStream): Methods
 
     /**
      * Reads all attributes using the given stream and constant pool.
@@ -139,6 +139,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      * file as a whole.
      */
     protected def ClassFile(
+        cp: Constant_Pool,
         minor_version: Int,
         major_version: Int,
         access_flags: Int,
@@ -147,8 +148,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         interfaces: IndexedSeq[Constant_Pool_Index],
         fields: Fields,
         methods: Methods,
-        attributes: Attributes)(
-            implicit cp: Constant_Pool): ClassFile
+        attributes: Attributes): ClassFile
 
     //
     // IMPLEMENTATION
@@ -231,17 +231,18 @@ trait ClassFileReader extends Constant_PoolAbstractions {
                 in.readUnsignedShort
             }
         }
-        val fields = Fields(in, cp)
-        val methods = Methods(in, cp)
+        val fields = Fields(cp,in)
+        val methods = Methods(cp,in)
         val attributes = Attributes(AttributesParent.ClassFile, cp, in)
 
         var classFile = ClassFile(
+            cp,
             minor_version, major_version,
             access_flags,
             this_class, super_class, interfaces,
             fields, methods,
             attributes
-        )(cp)
+        )
 
         // Perform transformations that are specific to this class file.
         // (Used, e.g., to finally resolve the invokedynamic instructions.) 

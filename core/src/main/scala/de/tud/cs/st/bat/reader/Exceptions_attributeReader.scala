@@ -35,14 +35,8 @@ import reflect.ClassTag
 import java.io.DataInputStream
 
 /**
- * <pre>
- * Exceptions_attribute {
- * 	u2 attribute_name_index;
- * 	u4 attribute_length;
- * 	u2 number_of_exceptions;
- * 	u2 exception_index_table[number_of_exceptions];
- * }
- * </pre>
+ * Generic parser for a code block's ''exceptions'' attribute.
+ *
  * @author Michael Eichberg
  */
 trait Exceptions_attributeReader extends AttributeReader {
@@ -51,29 +45,40 @@ trait Exceptions_attributeReader extends AttributeReader {
     implicit val Exceptions_attributeManifest: ClassTag[Exceptions_attribute]
 
     def Exceptions_attribute(
+        constant_pool: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
         attribute_length: Int,
-        exception_index_table: ExceptionIndexTable)(
-            implicit constant_pool: Constant_Pool): Exceptions_attribute
+        exception_index_table: ExceptionIndexTable): Exceptions_attribute
 
     //
     // IMPLEMENTATION
     //
 
-    import util.ControlAbstractions.repeat
-
     type ExceptionIndexTable = IndexedSeq[Constant_Pool_Index]
 
+    /* From The Specification
+     * 
+     * <pre>
+     * Exceptions_attribute {
+     *  u2 attribute_name_index;
+     *  u4 attribute_length;
+     *  u2 number_of_exceptions;
+     *  u2 exception_index_table[number_of_exceptions];
+     * }
+     * </pre> 
+     */
     registerAttributeReader(
         Exceptions_attributeReader.ATTRIBUTE_NAME -> (
             (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
+                import util.ControlAbstractions.repeat
                 val attribute_length = in.readInt()
                 Exceptions_attribute(
+                    cp,
                     attribute_name_index, attribute_length,
                     repeat(in.readUnsignedShort) {
                         in.readUnsignedShort
                     }
-                )(cp)
+                )
             }
         )
     )

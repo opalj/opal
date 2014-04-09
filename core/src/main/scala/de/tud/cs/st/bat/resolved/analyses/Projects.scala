@@ -42,11 +42,13 @@ import java.io.File
  * @author Michael Eichberg
  */
 object Projects {
+
     /**
      * Given a reference to a class file, jar file or a folder containing jar and class
      * files, all class files will be loaded and a project will be returned.
      */
     def createProject(file: File): Project[URL] = {
+        implicit val idProvider = new IdProvider()
         IndexBasedProject(reader.Java8Framework.ClassFiles(file))
     }
 }

@@ -48,7 +48,7 @@ trait StackMapFrameReader extends Constant_PoolAbstractions {
     type VerificationTypeInfo
     implicit val VerificationTypeInfoManifest: ClassTag[VerificationTypeInfo]
 
-    def VerificationTypeInfo(in: DataInputStream, cp: Constant_Pool): VerificationTypeInfo
+    def VerificationTypeInfo(cp: Constant_Pool, in: DataInputStream): VerificationTypeInfo
 
     def SameFrame(frame_type: Int): StackMapFrame
 
@@ -89,7 +89,7 @@ trait StackMapFrameReader extends Constant_PoolAbstractions {
     type VerificationTypeInfoLocals = IndexedSeq[VerificationTypeInfo]
     type VerificationTypeInfoStack = IndexedSeq[VerificationTypeInfo]
 
-    def StackMapFrame(in: DataInputStream, cp: Constant_Pool): StackMapFrame = {
+    def StackMapFrame(cp: Constant_Pool, in: DataInputStream): StackMapFrame = {
         val frame_type = in.readUnsignedByte
         frame_type match {
             /*Same_Frame*/
@@ -99,7 +99,7 @@ trait StackMapFrameReader extends Constant_PoolAbstractions {
             case t if (t < 128) ⇒
                 SameLocals1StackItemFrame(
                     t,
-                    VerificationTypeInfo(in, cp));
+                    VerificationTypeInfo(cp, in));
 
             /*RESERVED FOR FUTURE USE*/
             case t if (t < 247) ⇒ sys.error("Unknonwn frame type.");
@@ -109,7 +109,7 @@ trait StackMapFrameReader extends Constant_PoolAbstractions {
                 SameLocals1StackItemFrameExtended(
                     247,
                     in.readUnsignedShort,
-                    VerificationTypeInfo(in, cp));
+                    VerificationTypeInfo(cp, in));
 
             /*Chop_Frame*/
             case t if (t < 251) ⇒ ChopFrame(t, in.readUnsignedShort)
@@ -122,7 +122,7 @@ trait StackMapFrameReader extends Constant_PoolAbstractions {
                 t,
                 in.readUnsignedShort,
                 repeat(t - 251 /*number of entries*/ ) {
-                    VerificationTypeInfo(in, cp)
+                    VerificationTypeInfo(cp, in)
                 }
             )
 
@@ -131,10 +131,10 @@ trait StackMapFrameReader extends Constant_PoolAbstractions {
                 255,
                 in.readUnsignedShort,
                 repeat(in.readUnsignedShort /*number of entries*/ ) {
-                    VerificationTypeInfo(in, cp) // ...locals
+                    VerificationTypeInfo(cp, in) // ...locals
                 },
                 repeat(in.readUnsignedShort /*number of entries*/ ) {
-                    VerificationTypeInfo(in, cp) // ...stack items
+                    VerificationTypeInfo(cp, in) // ...stack items
                 }
             )
         }

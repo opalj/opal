@@ -50,7 +50,7 @@ trait StackMapTable_attributeReader extends AttributeReader {
     type StackMapFrame
     implicit val StackMapFrameManifest: ClassTag[StackMapFrame]
 
-    def StackMapFrame(in: DataInputStream, cp: Constant_Pool): StackMapFrame
+    def StackMapFrame(cp: Constant_Pool, in: DataInputStream): StackMapFrame
 
     //
     // IMPLEMENTATION
@@ -60,21 +60,22 @@ trait StackMapTable_attributeReader extends AttributeReader {
     type StackMapFrames = IndexedSeq[StackMapFrame]
 
     def StackMapTable_attribute(
+        constant_pool: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
         attribute_length: Int,
-        stack_map_frames: StackMapFrames)(
-            implicit constant_pool: Constant_Pool): StackMapTable_attribute
+        stack_map_frames: StackMapFrames): StackMapTable_attribute
 
     registerAttributeReader(
         StackMapTable_attributeReader.ATTRIBUTE_NAME -> (
             (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 StackMapTable_attribute(
+                    cp,
                     attribute_name_index,
                     in.readInt, // attribute_length
                     repeat(in.readUnsignedShort) {
-                        StackMapFrame(in, cp)
+                        StackMapFrame(cp, in)
                     }
-                )(cp)
+                )
             }
         )
     )

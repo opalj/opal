@@ -32,16 +32,9 @@ package reader
 import java.io.DataInputStream
 
 /**
- * '''From the Specification'''
- * The Synthetic attribute is a fixed-length attribute in the attributes table
+ * The Synthetic attribute is an attribute in the attributes table
  * of a ClassFile, field_info or method_info structure.
  *
- * <pre>
- * Synthetic_attribute {
- * 	u2 attribute_name_index;
- * 	u4 attribute_length;
- * }
- * </pre>
  * @author Michael Eichberg
  */
 trait Synthetic_attributeReader extends AttributeReader {
@@ -49,18 +42,26 @@ trait Synthetic_attributeReader extends AttributeReader {
     type Synthetic_attribute <: Attribute
 
     def Synthetic_attribute(
-        attributeNameIndex: Constant_Pool_Index)(
-            implicit cp: Constant_Pool): Synthetic_attribute
+        cp: Constant_Pool,
+        attributeNameIndex: Constant_Pool_Index): Synthetic_attribute
 
+    /* From the Specification
+     *
+     * <pre>
+     * Synthetic_attribute {
+     *  u2 attribute_name_index;
+     *  u4 attribute_length;
+     * }
+     * </pre>
+     */
     registerAttributeReader(
         Synthetic_attributeReader.ATTRIBUTE_NAME -> (
             (ap: AttributeParent, cp: Constant_Pool, attributeNameIndex: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 val attribute_length = in.readInt
-                Synthetic_attribute(attributeNameIndex)(cp)
+                Synthetic_attribute(cp, attributeNameIndex)
             }
         )
     )
-
 }
 
 object Synthetic_attributeReader {

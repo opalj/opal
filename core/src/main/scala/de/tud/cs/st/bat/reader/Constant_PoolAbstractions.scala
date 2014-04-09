@@ -73,7 +73,3 @@ trait Constant_PoolAbstractions {
         classFile: ClassFile): ClassFile
 
 }
-
-trait ConstantPoolEntry {
-    def asString: String
-}

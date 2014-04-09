@@ -46,9 +46,9 @@ trait Unknown_attributeReader
     //
 
     def Unknown_attribute(
+        constant_pool: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        info: Array[Byte])(
-            implicit constant_pool: Constant_Pool): Unknown_attribute
+        info: Array[Byte]): Unknown_attribute
 
     //
     // IMPLEMENTATION
@@ -63,6 +63,6 @@ trait Unknown_attributeReader
         val info = new Array[Byte](in.readInt)
         in.readFully(info)
 
-        Unknown_attribute(attribute_name_index, info)(cp)
+        Unknown_attribute(cp, attribute_name_index, info)
     }
 }

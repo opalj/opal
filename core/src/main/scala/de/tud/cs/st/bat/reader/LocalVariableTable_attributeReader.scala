@@ -35,19 +35,7 @@ import scala.reflect.ClassTag
 import java.io.DataInputStream
 
 /**
- * <pre>
- * LocalVariableTable_attribute {
- * 	u2 attribute_name_index;
- * 	u4 attribute_length;
- * 	u2 local_variable_table_length;
- * 	{ 	u2 start_pc;
- * 		u2 length;
- * 		u2 name_index;
- * 		u2 descriptor_index;
- * 		u2 index;
- * 	} local_variable_table[local_variable_table_length];
- * }
- * </pre>
+ * Generic parser for the ''local variable table'' attribute.
  *
  * @author Michael Eichberg
  */
@@ -62,47 +50,66 @@ trait LocalVariableTable_attributeReader extends AttributeReader {
     implicit val LocalVariableTableEntryManifest: ClassTag[LocalVariableTableEntry]
 
     def LocalVariableTableEntry(
+        constant_pool: Constant_Pool,
         start_pc: Int,
         length: Int,
         name_index: Constant_Pool_Index,
         descriptor_index: Constant_Pool_Index,
-        index: Int)(
-            implicit constant_pool: Constant_Pool): LocalVariableTableEntry
+        index: Int): LocalVariableTableEntry
 
     def LocalVariableTable_attribute(
+        constant_pool: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
         attribute_length: Int,
-        local_variable_table: LocalVariables)(
-            implicit constant_pool: Constant_Pool): LocalVariableTable_attribute
+        local_variable_table: LocalVariables): LocalVariableTable_attribute
 
     //
     // IMPLEMENTATION
     //
-    import util.ControlAbstractions.repeat
 
     type LocalVariables = IndexedSeq[LocalVariableTableEntry]
 
+    /* From The Specification:
+     * 
+     * <pre>
+     * LocalVariableTable_attribute {
+     *  u2 attribute_name_index;
+     *  u4 attribute_length;
+     *  u2 local_variable_table_length;
+     *  {   u2 start_pc;
+     *      u2 length;
+     *      u2 name_index;
+     *      u2 descriptor_index;
+     *      u2 index;
+     *  } local_variable_table[local_variable_table_length];
+     * }
+     * </pre>
+     */
     registerAttributeReader(
         LocalVariableTable_attributeReader.ATTRIBUTE_NAME -> (
             (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
+                import util.ControlAbstractions.repeat
+
                 val attribute_length = in.readInt()
                 LocalVariableTable_attribute(
+                    cp,
                     attribute_name_index,
                     attribute_length,
                     {
                         val entriesCount = in.readUnsignedShort
                         repeat(entriesCount) {
                             LocalVariableTableEntry(
+                                cp,
                                 in.readUnsignedShort,
                                 in.readUnsignedShort,
                                 in.readUnsignedShort,
                                 in.readUnsignedShort,
                                 in.readUnsignedShort
-                            )(cp)
+                            )
                         }
 
                     }
-                )(cp)
+                )
             }
         )
     )

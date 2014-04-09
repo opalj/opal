@@ -33,14 +33,7 @@ package reader
 import java.io.DataInputStream
 
 /**
- * '''From the Specification'''
- *
- * <pre>
- * Deprecated_attribute {
- * 	u2 attribute_name_index;
- * 	u4 attribute_length;
- * }
- * </pre>
+ * Generic infrastructure for reading the "@deprecated" attribute.
  *
  * @author Michael Eichberg
  */
@@ -49,18 +42,28 @@ trait Deprecated_attributeReader extends AttributeReader {
     type Deprecated_attribute <: Attribute
 
     def Deprecated_attribute(
-        attribute_name_index: Constant_Pool_Index)(
-            implicit constant_pool: Constant_Pool): Deprecated_attribute
+        cp: Constant_Pool,
+        attribute_name_index: Constant_Pool_Index): Deprecated_attribute
 
     //
     // IMPLEMENTATION
     //
 
+    /*
+     * '''From the Specification'''
+     *
+     * <pre>
+     * Deprecated_attribute {
+     *  u2 attribute_name_index;
+     *  u4 attribute_length;
+     * }
+     * </pre>
+     */
     registerAttributeReader(
         Deprecated_attributeReader.ATTRIBUTE_NAME -> (
             (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 val attribute_length = in.readInt
-                Deprecated_attribute(attribute_name_index)(cp)
+                Deprecated_attribute(cp, attribute_name_index)
             }
         )
     )

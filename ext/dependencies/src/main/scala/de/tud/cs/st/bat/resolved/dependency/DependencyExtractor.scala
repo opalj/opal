@@ -35,30 +35,30 @@ import instructions._
 import DependencyType._
 
 /**
-  * Traverses a source element and identifies all dependencies between the element (class,
-  * field or method declaration) that is traversed and any element the traversed element
-  * depends on.
-  *
-  * By default, self dependencies will be reported (e.g. a method that calls itself). If
-  * necessary or undesired, self dependencies can easily be filtered by a
-  * [[de.tud.cs.st.bat.resolved.dependency.DependencyProcessor]]'s processDependency
-  * method (which is called by the dependency extractor, but whose implementation needs
-  * to be provided.)
-  *
-  * ==Usage==
-  * The demo class `de.tud.cs.st.bat.resolved.dependency.DependencyMatrix` (see the
-  * implementation) provides an example how to use the dependency extractor.
-  *
-  * To assign ids to source elements the dependency extractor relies on source element
-  * ids as provided by implementations of `de.tud.cs.st.bat.resolved.SourceElementIDs`.
-  * After getting the ids of the depending source elements, a
-  * [[de.tud.cs.st.bat.resolved.dependency.DependencyProcessor]]'s
-  * `processDependency` method is called with the ids and the type of the dependency as a
-  * parameter.
-  *
-  * @author Thomas Schlosser
-  * @author Michael Eichberg
-  */
+ * Traverses a source element and identifies all dependencies between the element (class,
+ * field or method declaration) that is traversed and any element the traversed element
+ * depends on.
+ *
+ * By default, self dependencies will be reported (e.g. a method that calls itself). If
+ * necessary or undesired, self dependencies can easily be filtered by a
+ * [[de.tud.cs.st.bat.resolved.dependency.DependencyProcessor]]'s processDependency
+ * method (which is called by the dependency extractor, but whose implementation needs
+ * to be provided.)
+ *
+ * ==Usage==
+ * The demo class `de.tud.cs.st.bat.resolved.dependency.DependencyMatrix` (see the
+ * implementation) provides an example how to use the dependency extractor.
+ *
+ * To assign ids to source elements the dependency extractor relies on source element
+ * ids as provided by implementations of `de.tud.cs.st.bat.resolved.SourceElementIDs`.
+ * After getting the ids of the depending source elements, a
+ * [[de.tud.cs.st.bat.resolved.dependency.DependencyProcessor]]'s
+ * `processDependency` method is called with the ids and the type of the dependency as a
+ * parameter.
+ *
+ * @author Thomas Schlosser
+ * @author Michael Eichberg
+ */
 abstract class DependencyExtractor(
     val sourceElementIDs: SourceElementIDs)
         extends DependencyProcessor
@@ -67,12 +67,12 @@ abstract class DependencyExtractor(
     import sourceElementIDs._
 
     /**
-      * Processes the given class file and all fields and methods that are defined in it.
-      * I.e. it extracts all source code dependencies that start from the given
-      * class file, its fields or methods, respectively.
-      *
-      * @param classFile The class file whose dependencies should be extracted.
-      */
+     * Processes the given class file and all fields and methods that are defined in it.
+     * I.e. it extracts all source code dependencies that start from the given
+     * class file, its fields or methods, respectively.
+     *
+     * @param classFile The class file whose dependencies should be extracted.
+     */
     def process(classFile: ClassFile) {
         visit(classFile)
         val thisClassID = sourceElementID(classFile)
@@ -128,12 +128,12 @@ abstract class DependencyExtractor(
     }
 
     /**
-      * Extracts all source elements on which the given field definition depends.
-      *
-      * @param field The field whose dependencies will be extracted.
-      * @param declaringClass This field's declaring class.
-      * @param declaringTypeID The ID of the field's declaring class.
-      */
+     * Extracts all source elements on which the given field definition depends.
+     *
+     * @param field The field whose dependencies will be extracted.
+     * @param declaringClass This field's declaring class.
+     * @param declaringTypeID The ID of the field's declaring class.
+     */
     protected def process(field: Field, declaringClass: ClassFile, declaringTypeID: Int) {
         visit(declaringClass, field)
         val fieldID = sourceElementID(declaringClass.thisType, field)
@@ -163,13 +163,13 @@ abstract class DependencyExtractor(
     }
 
     /**
-      * Processes the given method, i.e. extracts all dependencies that start
-      * from this method.
-      *
-      * @param method The method whose dependencies should be extracted.
-      * @param declaringType The method's declaring class.
-      * @param declaringTypeID The ID of the method's declaring class.
-      */
+     * Processes the given method, i.e. extracts all dependencies that start
+     * from this method.
+     *
+     * @param method The method whose dependencies should be extracted.
+     * @param declaringType The method's declaring class.
+     * @param declaringTypeID The ID of the method's declaring class.
+     */
     protected def process(method: Method, declaringClass: ClassFile, declaringTypeID: Int) {
         visit(declaringClass, method)
         val methodID = sourceElementID(declaringClass.thisType, method)
@@ -233,37 +233,37 @@ abstract class DependencyExtractor(
     }
 
     /**
-      * Processes the given signature.
-      * Processing a signature means extracting all references to types
-      * that are used in the type parameters that occur in the signature.
-      * After that extraction, dependencies from the given source to the
-      * extracted types are added.
-      *
-      * NOTE: As described above, this method only considers types that
-      * occur in type parameters. All other types are extracted in other
-      * methods.
-      *
-      * @param signature The signature whose type parameters should be analyzed.
-      * @param srcID The ID of the source, i.e. the ID of the element the signature is from.
-      * @param isInTypeParameters Signals whether the current signature (part)
-      *                           is already a part of a type parameter.
-      */
+     * Processes the given signature.
+     * Processing a signature means extracting all references to types
+     * that are used in the type parameters that occur in the signature.
+     * After that extraction, dependencies from the given source to the
+     * extracted types are added.
+     *
+     * NOTE: As described above, this method only considers types that
+     * occur in type parameters. All other types are extracted in other
+     * methods.
+     *
+     * @param signature The signature whose type parameters should be analyzed.
+     * @param srcID The ID of the source, i.e. the ID of the element the signature is from.
+     * @param isInTypeParameters Signals whether the current signature (part)
+     *                           is already a part of a type parameter.
+     */
     protected def processSignature(
         signature: SignatureElement,
         srcID: Int,
         isInTypeParameters: Boolean = false) {
         /**
-          * Processes the given option of a formal type parameter list.
-          * Since they are always part of a type parameter, all types that
-          * are found will be extracted, i.e. dependencies to them will be
-          * added.<br/>
-          *
-          * Calls the outer <code>processSignature</code> method for each
-          * defined class and interface bound. The <code>isInTypeParameters</code>
-          * parameter is set to <code>true</code>.
-          *
-          * @param formalTypeParameters The option of a formal type parameter list that should be processed.
-          */
+         * Processes the given option of a formal type parameter list.
+         * Since they are always part of a type parameter, all types that
+         * are found will be extracted, i.e. dependencies to them will be
+         * added.<br/>
+         *
+         * Calls the outer <code>processSignature</code> method for each
+         * defined class and interface bound. The <code>isInTypeParameters</code>
+         * parameter is set to <code>true</code>.
+         *
+         * @param formalTypeParameters The option of a formal type parameter list that should be processed.
+         */
         def processFormalTypeParameters(
             formalTypeParameters: Option[List[FormalTypeParameter]]) {
             formalTypeParameters match {
@@ -279,12 +279,12 @@ abstract class DependencyExtractor(
         }
 
         /**
-          * Processes the given <code>SimpleClassTypeSignature</code> in the way
-          * that its type arguments will be processed by the <code>processTypeArguments</code>
-          * method.
-          *
-          * @param simpleClassTypeSignatures The simple class type signature that should be processed.
-          */
+         * Processes the given <code>SimpleClassTypeSignature</code> in the way
+         * that its type arguments will be processed by the <code>processTypeArguments</code>
+         * method.
+         *
+         * @param simpleClassTypeSignatures The simple class type signature that should be processed.
+         */
         def processSimpleClassTypeSignature(
             simpleClassTypeSignatures: SimpleClassTypeSignature) {
             val SimpleClassTypeSignature(_, typeArguments) = simpleClassTypeSignatures
@@ -292,17 +292,17 @@ abstract class DependencyExtractor(
         }
 
         /**
-          * Processes the given option of a type argument list.
-          * Since they are always part of a type parameter, all types that
-          * are found will be extracted, i.e. dependencies to them will be
-          * added.<br/>
-          *
-          * Calls the outer <code>processSignature</code> method for each
-          * signature that is part of a proper type argument.The
-          * <code>isInTypeParameters</code> parameter is set to <code>true</code>.
-          *
-          * @param typeArguments The option of a type argument list that should be processed.
-          */
+         * Processes the given option of a type argument list.
+         * Since they are always part of a type parameter, all types that
+         * are found will be extracted, i.e. dependencies to them will be
+         * added.<br/>
+         *
+         * Calls the outer <code>processSignature</code> method for each
+         * signature that is part of a proper type argument.The
+         * <code>isInTypeParameters</code> parameter is set to <code>true</code>.
+         *
+         * @param typeArguments The option of a type argument list that should be processed.
+         */
         def processTypeArguments(typeArguments: Option[List[TypeArgument]]) {
             typeArguments match {
                 case Some(args) ⇒
@@ -353,11 +353,11 @@ abstract class DependencyExtractor(
     }
 
     /**
-      * Extracts dependencies to elements contained by the given element value.
-      *
-      * @param elementValue The element value that should be analyzed regarding dependencies.
-      * @param srcID The ID of the (source) element all discovered dependencies should start from.
-      */
+     * Extracts dependencies to elements contained by the given element value.
+     *
+     * @param elementValue The element value that should be analyzed regarding dependencies.
+     * @param srcID The ID of the (source) element all discovered dependencies should start from.
+     */
     private def processElementValue(elementValue: ElementValue, srcID: Int) {
         elementValue match {
             case ClassValue(returnType) ⇒
@@ -376,13 +376,13 @@ abstract class DependencyExtractor(
     }
 
     /**
-      * Extracts dependencies to elements contained by the given annotation.
-      *
-      * @param annotation The annotation that should be analyzed regarding dependencies.
-      * @param srcID The ID of the (source) element all discovered dependencies should start from.
-      * @param dependencyType The type that should be used to create new dependencies.
-      *                       Default value is: ANNOTATED_WITH
-      */
+     * Extracts dependencies to elements contained by the given annotation.
+     *
+     * @param annotation The annotation that should be analyzed regarding dependencies.
+     * @param srcID The ID of the (source) element all discovered dependencies should start from.
+     * @param dependencyType The type that should be used to create new dependencies.
+     *                       Default value is: ANNOTATED_WITH
+     */
     private def process(
         annotation: Annotation,
         srcID: Int,
@@ -393,11 +393,11 @@ abstract class DependencyExtractor(
     }
 
     /**
-      * Extracts all dependencies found in the given instructions.
-      *
-      * @param methodId The ID of the source of the extracted dependencies.
-      * @param instructions The instructions that should be analyzed for dependencies.
-      */
+     * Extracts all dependencies found in the given instructions.
+     *
+     * @param methodId The ID of the source of the extracted dependencies.
+     * @param instructions The instructions that should be analyzed for dependencies.
+     */
     private def process(methodId: Int, instructions: Instructions) {
 
         for (i ← instructions if i != null) {
@@ -477,14 +477,14 @@ abstract class DependencyExtractor(
                 case 189 ⇒
                     processDependency(methodId, i.asInstanceOf[ANEWARRAY].componentType, CREATES_ARRAY_OF_TYPE)
 
+                case 197 ⇒
+                    processDependency(methodId, i.asInstanceOf[MULTIANEWARRAY].componentType, CREATES_ARRAY_OF_TYPE)
+
                 case 192 ⇒
                     processDependency(methodId, i.asInstanceOf[CHECKCAST].referenceType, CASTS_INTO)
 
                 case 193 ⇒
                     processDependency(methodId, i.asInstanceOf[INSTANCEOF].referenceType, CHECKS_INSTANCEOF)
-
-                case 197 ⇒
-                    processDependency(methodId, i.asInstanceOf[MULTIANEWARRAY].componentType, CREATES_ARRAY_OF_TYPE)
 
                 case _ ⇒
             }
@@ -516,21 +516,21 @@ abstract class DependencyExtractor(
     }
 
     /**
-      * Processes a dependency between a source element identified by the given id to
-      * some type.
-      *
-      * By default dependencies to primitive types (which includes dependencies to
-      * arrays of primitive types) are not reported. If dependencies to primitive types
-      * should be reported you can override this method with the following method:
-      * {{{
-      * override protected def processDependency(
-      *      id: Int,
-      *      aType: Type,
-      *      dType: DependencyType) {
-      *      processDependency(id, sourceElementID(aType), dType)
-      * }
-      * }}}.
-      */
+     * Processes a dependency between a source element identified by the given id to
+     * some type.
+     *
+     * By default dependencies to primitive types (which includes dependencies to
+     * arrays of primitive types) are not reported. If dependencies to primitive types
+     * should be reported you can override this method with the following method:
+     * {{{
+     * override protected def processDependency(
+     *      id: Int,
+     *      aType: Type,
+     *      dType: DependencyType) {
+     *      processDependency(id, sourceElementID(aType), dType)
+     * }
+     * }}}.
+     */
     protected def processDependency(id: Int, aType: Type, dType: DependencyType) {
 
         def process = processDependency(id, sourceElementID(aType), dType)

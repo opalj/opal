@@ -35,20 +35,8 @@ import reflect.ClassTag
 import java.io.DataInputStream
 
 /**
- * '''From the Specification'''
- * <pre>
- * LocalVariableTypeTable_attribute {
- * 	u2 attribute_name_index;
- * 	u4 attribute_length;
- * 	u2 local_variable_type_table_length;
- * 	{ u2 start_pc;
- * 		u2 length;
- * 		u2 name_index;
- * 		u2 signature_index;
- * 		u2 index;
- * 	} local_variable_type_table[local_variable_type_table_length];
- * }
- * </pre>
+ * Generic parser for the local variable type table attribute.
+ *
  * @author Michael Eichberg
  */
 trait LocalVariableTypeTable_attributeReader extends AttributeReader {
@@ -62,46 +50,63 @@ trait LocalVariableTypeTable_attributeReader extends AttributeReader {
     implicit val LocalVariableTypeTableEntryManifest: ClassTag[LocalVariableTypeTableEntry]
 
     def LocalVariableTypeTable_attribute(
+        constant_pool: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
         attribute_length: Int,
-        local_variable_type_table: LocalVariableTypes)(
-            implicit constant_pool: Constant_Pool): LocalVariableTypeTable_attribute
+        local_variable_type_table: LocalVariableTypes): LocalVariableTypeTable_attribute
 
     def LocalVariableTypeTableEntry(
+        constant_pool: Constant_Pool,
         start_pc: Int,
         length: Int,
         name_index: Constant_Pool_Index,
         signature_index: Constant_Pool_Index,
-        index: Int)(
-            implicit constant_pool: Constant_Pool): LocalVariableTypeTableEntry
+        index: Int): LocalVariableTypeTableEntry
 
     //
     // IMPLEMENTATION
     //
-    import de.tud.cs.st.util.ControlAbstractions.repeat
 
     type LocalVariableTypes = IndexedSeq[LocalVariableTypeTableEntry]
 
+    /* '''From the Specification'''
+     * 
+     * <pre>
+     * LocalVariableTypeTable_attribute {
+     *  u2 attribute_name_index;
+     *  u4 attribute_length;
+     *  u2 local_variable_type_table_length;
+     *  { u2 start_pc;
+     *      u2 length;
+     *      u2 name_index;
+     *      u2 signature_index;
+     *      u2 index;
+     *  } local_variable_type_table[local_variable_type_table_length];
+     * }
+     * </pre>
+     */
     registerAttributeReader(
         LocalVariableTypeTable_attributeReader.ATTRIBUTE_NAME -> (
             (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
+                import de.tud.cs.st.util.ControlAbstractions.repeat
                 val attribute_length = in.readInt()
                 LocalVariableTypeTable_attribute(
+                    cp,
                     attribute_name_index, attribute_length,
                     repeat(in.readUnsignedShort) {
                         LocalVariableTypeTableEntry(
+                            cp,
                             in.readUnsignedShort,
                             in.readUnsignedShort,
                             in.readUnsignedShort,
                             in.readUnsignedShort,
                             in.readUnsignedShort
-                        )(cp)
+                        )
                     }
-                )(cp)
+                )
             }
         )
     )
-
 }
 object LocalVariableTypeTable_attributeReader {
 

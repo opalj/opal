@@ -28,30 +28,13 @@
  */
 package de.tud.cs.st
 package bat
-package resolved
 package reader
 
-import reflect.ClassTag
-
-import de.tud.cs.st.bat.reader.MethodsReader
-
-trait MethodsBinding extends MethodsReader {
-    this: ConstantPoolBinding with AttributeBinding ⇒
-
-    type Method_Info = de.tud.cs.st.bat.resolved.Method
-    val Method_InfoManifest: ClassTag[Method_Info] = implicitly
-
-    def Method_Info(
-        cp: Constant_Pool,
-        accessFlags: Int,
-        name_index: Int,
-        descriptor_index: Int,
-        attributes: Attributes)(
-            implicit idProvider: IdProvider): Method_Info = {
-        Method(
-            accessFlags,
-            cp(name_index).asString,
-            cp(descriptor_index).asMethodDescriptor,
-            attributes)
-    }
+/**
+ * Common interface of all entries in the constant pool.
+ *
+ * @author Michael Eichberg
+ */
+trait ConstantPoolEntry {
+    def asString: String
 }

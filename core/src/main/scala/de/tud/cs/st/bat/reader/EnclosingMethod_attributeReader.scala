@@ -33,14 +33,7 @@ package reader
 import java.io.DataInputStream
 
 /**
- * <pre>
- * EnclosingMethod_attribute {
- * 	u2 attribute_name_index;
- * 	u4 attribute_length;
- * 	u2 class_index
- * 	u2 method_index;
- * }
- * </pre>
+ * Generic parser for the ''enclosing method'' attribute.
  *
  * @author Michael Eichberg
  */
@@ -49,24 +42,35 @@ trait EnclosingMethod_attributeReader extends AttributeReader {
     type EnclosingMethod_attribute <: Attribute
 
     def EnclosingMethod_attribute(
+        constant_pool: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
         class_index: Constant_Pool_Index,
-        method_index: Constant_Pool_Index)(
-            implicit constant_pool: Constant_Pool): EnclosingMethod_attribute
+        method_index: Constant_Pool_Index): EnclosingMethod_attribute
 
     //
     // IMPLEMENTATION
     //
 
+    /* From The Specification
+     * <pre>
+     * EnclosingMethod_attribute {
+     *  u2 attribute_name_index;
+     *  u4 attribute_length;
+     *  u2 class_index
+     *  u2 method_index;
+     * }
+     * </pre>
+     */
     registerAttributeReader(
         EnclosingMethod_attributeReader.ATTRIBUTE_NAME -> (
             (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 val attribute_length = in.readInt
                 EnclosingMethod_attribute(
+                    cp,
                     attribute_name_index,
                     in.readUnsignedShort,
                     in.readUnsignedShort
-                )(cp)
+                )
             }
         )
     )

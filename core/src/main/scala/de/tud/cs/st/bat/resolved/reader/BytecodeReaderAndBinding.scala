@@ -50,7 +50,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
      * Transforms an array of bytes into an array of
      * [[de.tud.cs.st.bat.resolved.instructions.Instruction]]s.
      */
-    def Instructions(source: Array[Byte])(implicit cp: Constant_Pool): Instructions = {
+    def Instructions(cp: Constant_Pool,source: Array[Byte]): Instructions = {
         import java.io.DataInputStream
         import java.io.ByteArrayInputStream
         import util.ControlAbstractions.repeat

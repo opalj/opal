@@ -113,6 +113,8 @@ trait AttributesReader
      * <b>Java 8</b>Attributes:<br />
      * <ul>
      * <li>MethodParameters_attribute </li>
+     * <li>RuntimeVisibleTypeAnnotations_attribute </li>
+     * <li>RuntimeInvisibleTypeAnnotations_attribute </li>
      * </ul>
      */
     private[this] var attributeReaders: Map[String, (AttributeParent, Constant_Pool, Constant_Pool_Index, DataInputStream) ⇒ Attribute] = Map()

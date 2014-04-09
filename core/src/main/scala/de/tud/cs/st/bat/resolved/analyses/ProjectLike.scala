@@ -45,7 +45,7 @@ import java.io.File
  *  1. It directly gives access to the project's class hierarchy.
  *  1. It serves as a container for project-wide information (e.g., a call graph,
  *     information about the mutability of classes, constant values,...) that can be queried
- *     using [[de.tud.cs.st.bat.resolved.analyses.ProjectInformationKey]]s. 
+ *     using [[de.tud.cs.st.bat.resolved.analyses.ProjectInformationKey]]s.
  *     The list of project wide information that can be made available is equivalent
  *     to the list of (concrete/singleton) objects implementing the trait
  *     [[de.tud.cs.st.bat.resolved.analyses.ProjectInformationKey]].
@@ -75,8 +75,7 @@ abstract class ProjectLike extends (ObjectType ⇒ Option[ClassFile]) {
      */
     type Source
 
-    // TODO Generate keys in project dependent method
-    ProjectLike.checkForMultipleInstances()
+    def idProvider: IdProvider
 
     /**
      * See `classFile(de.tud.cs.st.bat.resolved.ObjectType)` for details.
@@ -201,14 +200,14 @@ abstract class ProjectLike extends (ObjectType ⇒ Option[ClassFile]) {
      * This is equivalent to the number of methods of this project unless other
      * projects were created simultaneously or before this project.
      */
-    final val methodsCount = Method.methodsCount
+    final def methodCount = idProvider.getMaxMethodId()
 
     /**
      * The number of fields that have been loaded since the start of BAT.
      * This is equivalent to the number of fields of this project unless other
      * projects were created simultaneously or before this project.
      */
-    final val fieldCount = Field.fieldsCount
+    final def fieldCount = idProvider.getMaxFieldId()
 
     /**
      * All class files.

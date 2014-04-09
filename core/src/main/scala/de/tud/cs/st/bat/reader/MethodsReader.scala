@@ -56,11 +56,11 @@ trait MethodsReader extends Constant_PoolAbstractions {
     implicit val Method_InfoManifest: ClassTag[Method_Info]
 
     def Method_Info(
+        constant_pool: Constant_Pool,
         accessFlags: Int,
         name_index: Constant_Pool_Index,
         descriptor_index: Constant_Pool_Index,
-        attributes: Attributes)(
-            implicit constant_pool: Constant_Pool): Method_Info
+        attributes: Attributes): Method_Info
 
     //
     // IMPLEMENTATION
@@ -70,19 +70,20 @@ trait MethodsReader extends Constant_PoolAbstractions {
 
     type Methods = IndexedSeq[Method_Info]
 
-    def Methods(in: DataInputStream, cp: Constant_Pool): Methods = {
+    def Methods(cp: Constant_Pool, in: DataInputStream): Methods = {
         val methods_count = in.readUnsignedShort
         repeat(methods_count) {
-            Method_Info(in, cp)
+            Method_Info(cp, in)
         }
     }
 
-    private def Method_Info(in: DataInputStream, cp: Constant_Pool): Method_Info =
+    private def Method_Info(cp: Constant_Pool, in: DataInputStream): Method_Info =
         Method_Info(
+            cp,
             in.readUnsignedShort,
             in.readUnsignedShort,
             in.readUnsignedShort,
             Attributes(AttributesParent.Method, cp, in)
-        )(cp)
+        )
 
 }

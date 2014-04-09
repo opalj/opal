@@ -33,18 +33,8 @@ package reader
 import java.io.DataInputStream
 
 /**
- * '''From the Specification'''
- *
- * The SourceFile attribute is an optional fixed-length attribute in the
+ * The SourceFile attribute is an optional attribute in the
  * attributes table of a ClassFile structure.
- *
- * <pre>
- * SourceFile_attribute {
- *    u2 attribute_name_index;
- *    u4 attribute_length;
- *    u2 sourcefile_index;
- * }
- * </pre>
  *
  * @author Michael Eichberg
  */
@@ -57,19 +47,32 @@ trait SourceFile_attributeReader extends AttributeReader {
     type SourceFile_attribute <: Attribute
 
     def SourceFile_attribute(
+        constant_pool: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        sourceFile_index: Constant_Pool_Index)(
-            implicit constant_pool: Constant_Pool): SourceFile_attribute
+        sourceFile_index: Constant_Pool_Index): SourceFile_attribute
 
     //
     // IMPLEMENTATION
     //
 
+    /* '''From the Specification'''
+     *
+     * The SourceFile attribute is an optional fixed-length attribute in the
+     * attributes table of a ClassFile structure.
+     *
+     * <pre>
+     * SourceFile_attribute {
+     *    u2 attribute_name_index;
+     *    u4 attribute_length;
+     *    u2 sourcefile_index;
+     * }
+     * </pre>
+     */
     registerAttributeReader(
         SourceFile_attributeReader.ATTRIBUTE_NAME -> (
             (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 val attribute_length = in.readInt
-                SourceFile_attribute(attribute_name_index, in.readUnsignedShort)(cp)
+                SourceFile_attribute(cp, attribute_name_index, in.readUnsignedShort)
             }
         )
     )

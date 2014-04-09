@@ -145,6 +145,7 @@ trait AnalysisExecutor {
     }
 
     def setupProject(cpFiles: Iterable[File], libcpFiles: Iterable[File]): Project[URL] = {
+        implicit val idProvider = new IdProvider
         println("Reading class files (found in):")
         val (classFiles, exceptions1) =
             reader.readClassFiles(
@@ -165,23 +166,22 @@ trait AnalysisExecutor {
         }
         val allExceptions = exceptions1 ++ exceptions2
         if (allExceptions.nonEmpty) {
-               Console.err.println("While reading the class files the following exceptions occured:")
-               val out = new java.io.ByteArrayOutputStream
-               val pout = new java.io.PrintStream(out)
-               for (exception ← exceptions1 ++ exceptions2) {
-                   Console.err.println(exception.getMessage())
-                   pout.println("<<<<<<<<<<< EXCEPTION >>>>>>>>>>>")
-                   exception.printStackTrace(pout)
-               }
-               pout.flush
-               util.writeAndOpenDesktopApplication(
-                   new String(out.toByteArray()),
-                   "Exceptions",
-                   ".txt").map { Console.err.println("Details can be found in: "+(_: File).toString); null }
-           }
+            Console.err.println("While reading the class files the following exceptions occured:")
+            val out = new java.io.ByteArrayOutputStream
+            val pout = new java.io.PrintStream(out)
+            for (exception ← exceptions1 ++ exceptions2) {
+                Console.err.println(exception.getMessage())
+                pout.println("<<<<<<<<<<< EXCEPTION >>>>>>>>>>>")
+                exception.printStackTrace(pout)
+            }
+            pout.flush
+            util.writeAndOpenDesktopApplication(
+                new String(out.toByteArray()),
+                "Exceptions",
+                ".txt").map { Console.err.println("Details can be found in: "+(_: File).toString); null }
+        }
 
-
-        var project = IndexBasedProject(classFiles, libraryClassFiles)
+        var project = IndexBasedProject(idProvider, classFiles, libraryClassFiles)
         println("Class files loaded: "+project.classFilesCount)
         project
     }

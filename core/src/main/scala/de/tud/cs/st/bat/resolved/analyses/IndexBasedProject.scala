@@ -37,7 +37,7 @@ import java.net.URL
 
 /**
  * Primary abstraction of a Java project.
- * 
+ *
  * ==Initialization==
  * To create a representation of a project use the companion object's factory method.
  *
@@ -46,13 +46,14 @@ import java.net.URL
  * unique ids larger than 0 and that a `ClassFile`'s `hashCode` is equivalent to the
  * `id`/`hashCode` of the `ObjectType` it defines.
  *
- * @tparam S The type of the source of the class file. See [[ProjectLike.Source]] for 
+ * @tparam S The type of the source of the class file. See [[ProjectLike.Source]] for
  *      details.
  * @param classHierarchy This project's class hierarchy.
  *
  * @author Michael Eichberg
  */
 class IndexBasedProject[S: reflect.ClassTag] private (
+    val idProvider: IdProvider,
     val classFilesCount: Int,
     /* The arrays are private to avoid that clients accidentally mutate them! 
        I.e., this class' data structures are indeed mutable, but they are never
@@ -71,7 +72,7 @@ class IndexBasedProject[S: reflect.ClassTag] private (
     override type Source = S
 
     private[this] val classFileOfMethod = {
-        val lookupTable = new Array[ClassFile](Method.methodsCount)
+        val lookupTable = new Array[ClassFile](idProvider.getMaxMethodId())
         foreachClassFile { classFile: ClassFile ⇒
             classFile.methods foreach { method ⇒ lookupTable(method.id) = classFile }
         }
@@ -79,7 +80,7 @@ class IndexBasedProject[S: reflect.ClassTag] private (
     }
 
     private[this] val classFileOfField = {
-        val lookupTable = new Array[ClassFile](Field.fieldsCount)
+        val lookupTable = new Array[ClassFile](idProvider.getMaxFieldId())
         foreachClassFile { classFile: ClassFile ⇒
             classFile.fields foreach { field ⇒ lookupTable(field.id) = classFile }
         }
@@ -121,7 +122,7 @@ class IndexBasedProject[S: reflect.ClassTag] private (
     }
 
     private[this] lazy val methodsMap: Array[Method] = {
-        val map = new Array[Method](methodsCount)
+        val map = new Array[Method](idProvider.getMaxMethodId)
         foreachClassFile { classFile ⇒
             classFile.methods foreach { method ⇒ map(method.id) = method }
         }
@@ -133,9 +134,19 @@ class IndexBasedProject[S: reflect.ClassTag] private (
      * if the id is not valid, the result is undetermined.(An exception may be
      * thrown or `null` may be returned.)
      */
-    def method(methodID: Int): Method = methodsMap(methodID)
+    def method(methodId: Int): Method = methodsMap(methodId)
 
-    def classFile(objectTypeID: Int): ClassFile = classesMap(objectTypeID)
+    private[this] lazy val fieldsMap: Array[Field] = {
+        val map = new Array[Field](idProvider.getMaxFieldId)
+        foreachClassFile { classFile ⇒
+            classFile.fields foreach { field ⇒ map(field.id) = field }
+        }
+        map
+    }
+
+    def field(fieldId: Int): Field = fieldsMap(fieldId)
+
+    def classFile(objectTypeId: Int): ClassFile = classesMap(objectTypeId)
 
     /**
      * Looks up the ClassFile that contains the given field.
@@ -210,6 +221,8 @@ object IndexBasedProject {
     /**
      * Creates a new IndexBasedProject.
      *
+     * @param idProvider The `IdProvider` that was used while loading the
+     *     (library) class files.
      * @param classFiles The list of class files of this project that are considered
      *    to belong to the application/library that will be analyzed.
      *    [Thread Safety] The underlying data structure has to support concurrent access.
@@ -218,6 +231,7 @@ object IndexBasedProject {
      *    [Thread Safety] The underlying data structure has to support concurrent access.
      */
     def apply[Source: reflect.ClassTag](
+        idProvider: IdProvider,
         classFiles: Iterable[(ClassFile, Source)],
         libraryClassFiles: Iterable[(ClassFile, Source)] = Iterable.empty): IndexBasedProject[Source] = {
 
@@ -254,6 +268,7 @@ object IndexBasedProject {
         processClassFiles(libraryClassFiles, true)
 
         new IndexBasedProject(
+            idProvider,
             classFilesCount,
             classes,
             sources,

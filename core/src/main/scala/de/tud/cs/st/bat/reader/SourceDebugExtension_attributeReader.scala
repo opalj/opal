@@ -35,18 +35,8 @@ import java.io.DataInputStream
 /**
  * Template method to read in the SourceDebugExtension attribute.
  *
- * '''From the Specification'''
- *
  * The SourceDebugExtension attribute is an optional attribute in the
  * attributes table of a ClassFile structure.
- *
- * <pre>
- * SourceDebugExtension_attribute {
- * 	u2 attribute_name_index;
- * 	u4 attribute_length;
- * 	u1 debug_extension[attribute_length];
- * }
- * </pre>
  *
  * @author Michael Eichberg
  */
@@ -55,18 +45,31 @@ trait SourceDebugExtension_attributeReader extends AttributeReader {
     type SourceDebugExtension_attribute <: Attribute
 
     def SourceDebugExtension_attribute(
+        constant_pool: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
         attribute_length: Int,
-        debug_extension: String)(
-            implicit constant_pool: Constant_Pool): SourceDebugExtension_attribute
+        debug_extension: String): SourceDebugExtension_attribute
 
+    /* From the Specification
+     *
+     * The SourceDebugExtension attribute is an optional attribute in the
+     * attributes table of a ClassFile structure.
+     *
+     * <pre>
+     * SourceDebugExtension_attribute {
+     *  u2 attribute_name_index;
+     *  u4 attribute_length;
+     *  u1 debug_extension[attribute_length];
+     * }
+     * </pre>
+     */
     registerAttributeReader(
         SourceDebugExtension_attributeReader.ATTRIBUTE_NAME -> (
             (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 val attribute_length = in.readInt
                 SourceDebugExtension_attribute(
-                    attribute_name_index, attribute_length, in.readUTF
-                )(cp)
+                    cp, attribute_name_index, attribute_length, in.readUTF
+                )
             }
         )
     )

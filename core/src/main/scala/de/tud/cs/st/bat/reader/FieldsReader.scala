@@ -55,34 +55,34 @@ trait FieldsReader extends Constant_PoolAbstractions {
         in: DataInputStream): Attributes
 
     def Field_Info(
+        constant_pool: Constant_Pool,
         access_flags: Int,
         name_index: Constant_Pool_Index,
         descriptor_index: Constant_Pool_Index,
-        attributes: Attributes)(
-            implicit constant_pool: Constant_Pool): Field_Info
+        attributes: Attributes): Field_Info
 
     //
     // IMPLEMENTATION
     //
 
-    import util.ControlAbstractions.repeat
-
     type Fields = IndexedSeq[Field_Info]
 
     // We need the constant pool to look up the attributes' names and other information.
-    def Fields(in: DataInputStream, cp: Constant_Pool): Fields = {
+    def Fields(cp: Constant_Pool, in: DataInputStream): Fields = {
+        import util.ControlAbstractions.repeat
         val fields_count = in.readUnsignedShort
         repeat(fields_count) {
-            Field_Info(in, cp)
+            Field_Info(cp, in)
         }
     }
 
-    private def Field_Info(in: DataInputStream, cp: Constant_Pool): Field_Info =
+    private def Field_Info(cp: Constant_Pool, in: DataInputStream): Field_Info =
         Field_Info(
+            cp,
             in.readUnsignedShort,
             in.readUnsignedShort,
             in.readUnsignedShort,
             Attributes(AttributesParent.Field, cp, in)
-        )(cp)
+        )
 
 }

@@ -37,17 +37,6 @@ import java.io.DataInputStream
 /**
  * A generic reader for Java 8's `MethodParameters` attribute.
  *
- * <pre>
- * MethodParameters_attribute {
- *      u2 attribute_name_index;
- *      u4 attribute_length;
- *       u1 parameters_count;
- *       {   u2 name_index;
- *           u2 access_flags;
- *       } parameters[parameters_count];
- * }
- * </pre>
- *
  * @author Michael Eichberg
  */
 trait MethodParameters_attributeReader extends AttributeReader {
@@ -58,34 +47,48 @@ trait MethodParameters_attributeReader extends AttributeReader {
     implicit val MethodParameterManifest: ClassTag[MethodParameter]
 
     def MethodParameters_attribute(
+        constant_pool: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
         attribute_length: Int,
-        parameters: MethodParameters)(
-            implicit constant_pool: Constant_Pool): MethodParameters_attribute
+        parameters: MethodParameters): MethodParameters_attribute
 
     def MethodParameter(
+        constant_pool: Constant_Pool,
         name_index: Constant_Pool_Index,
-        access_flags: Int)(
-            implicit constant_pool: Constant_Pool): MethodParameter
+        access_flags: Int): MethodParameter
 
     //
     // IMPLEMENTATION
     //
-    import util.ControlAbstractions.repeat
 
     type MethodParameters = IndexedSeq[MethodParameter]
 
+    /* From The Specification
+     * 
+     * <pre>
+     * MethodParameters_attribute {
+     *      u2 attribute_name_index;
+     *      u4 attribute_length;
+     *       u1 parameters_count;
+     *       {   u2 name_index;
+     *           u2 access_flags;
+     *       } parameters[parameters_count];
+     * }
+     * </pre>
+     */
     registerAttributeReader(
         MethodParameters_attributeReader.ATTRIBUTE_NAME -> (
             (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
+                import util.ControlAbstractions.repeat
                 val attribute_length = in.readInt()
                 MethodParameters_attribute(
+                    cp,
                     attribute_name_index,
                     attribute_length,
                     repeat(in.readUnsignedByte) {
-                        MethodParameter(in.readUnsignedShort, in.readUnsignedShort)(cp)
+                        MethodParameter(cp, in.readUnsignedShort, in.readUnsignedShort)
                     }
-                )(cp)
+                )
             }
         )
     )

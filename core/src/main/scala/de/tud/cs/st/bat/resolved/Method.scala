@@ -39,12 +39,12 @@ package resolved
  *      methods instead of a `HashMap` or `HashTrie`. However, a `Map` is more
  *      efficient if you will not associate information with (nearly) all methods.
  *
- * @param id The unique if of this method.
+ * @param id The unique if of this method. Also used as the "hashCode".
  * @param accessFlags The ''access flags'' of this method. Though it is possible to
  *     directly work with the `accessFlags` field, it may be more convenient to use
  *     the respective methods (`isNative`, `isAbstract`,...) to query the access flags.
  * @param name The name of the method. The name is interned (see `String.intern()`
- *      for details).
+ *      for details) to enable reference comparisons.
  * @param descriptor This method's descriptor.
  * @param body The body of the method if any.
  * @param attributes This method's defined attributes. (Which attributes are available
@@ -55,11 +55,11 @@ package resolved
  * @author Michael Eichberg
  */
 final class Method private (
-    val id: Int, // also used as the "hashCode"
+    val id: Int,
     val accessFlags: Int,
-    val name: String, // the name is interned to enable reference comparisons!
+    val name: String,
     val descriptor: MethodDescriptor,
-    val body: Option[Code], // TODO [SPL] Abstract over code; i.e., make Code a type param!
+    val body: Option[Code],
     val attributes: Attributes)
         extends ClassMember
         with UID {
@@ -69,13 +69,17 @@ final class Method private (
     override final def asMethod = this
 
     def runtimeVisibleParameterAnnotations: ParameterAnnotations =
-        (attributes collectFirst { case RuntimeVisibleParameterAnnotationTable(pas) ⇒ pas }) match {
+        (attributes collectFirst {
+            case RuntimeVisibleParameterAnnotationTable(pas) ⇒ pas
+        }) match {
             case Some(annotations) ⇒ annotations
             case None              ⇒ IndexedSeq.empty
         }
 
     def runtimeInvisibleParameterAnnotations: ParameterAnnotations =
-        (attributes collectFirst { case RuntimeInvisibleParameterAnnotationTable(pas) ⇒ pas }) match {
+        (attributes collectFirst {
+            case RuntimeInvisibleParameterAnnotationTable(pas) ⇒ pas
+        }) match {
             case Some(annotations) ⇒ annotations
             case None              ⇒ IndexedSeq.empty
         }
@@ -154,21 +158,16 @@ final class Method private (
  */
 object Method {
 
-    private final val ACC_NATIVEAndACC_VARARGS = ACC_NATIVE.mask | ACC_VARARGS.mask
+    private final val ACC_NATIVEAndACC_VARARGS: Int = ACC_NATIVE.mask | ACC_VARARGS.mask
 
     private def isNativeAndVarargs(accessFlags: Int) =
         (accessFlags & ACC_NATIVEAndACC_VARARGS) == ACC_NATIVEAndACC_VARARGS
-
-    // TODO Move the ID creation functionality to the Project
-    private[this] val nextId = new java.util.concurrent.atomic.AtomicInteger(0)
-
-    def methodsCount = nextId.get
 
     def apply(
         accessFlags: Int,
         name: String,
         descriptor: MethodDescriptor,
-        attributes: Attributes): Method = {
+        attributes: Attributes)(implicit context: ProjectContext): Method = {
 
         val (bodySeq, remainingAttributes) = attributes partition { _.isInstanceOf[Code] }
         val theBody =
@@ -177,7 +176,7 @@ object Method {
             else
                 None
         new Method(
-            nextId.getAndIncrement(),
+            context.getNextMethodId(),
             accessFlags,
             name.intern(),
             descriptor,
@@ -206,5 +205,7 @@ object Method {
  * @author Michael Eichberg
  */
 object MethodWithBody {
+
     def unapply(method: Method): Option[Code] = method.body
+
 }

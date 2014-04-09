@@ -42,15 +42,15 @@ sealed abstract class ComputationalTypeCategory(
     /**
      * Identifies the computational type category.
      */
-    def id: Byte
+    val id: Byte
 }
 final case object Category1ComputationalTypeCategory
         extends ComputationalTypeCategory(1) {
-    def id = 1
+    final val id: Byte = 1.toByte
 }
 final case object Category2ComputationalTypeCategory
         extends ComputationalTypeCategory(2) {
-    def id = 2
+    final val id: Byte = 2.toByte
 }
 
 /**
@@ -629,36 +629,6 @@ final object ObjectType {
             fqn.substring(0, index)
     }
 
-    final val Object = ObjectType("java/lang/Object")
-    final val String = ObjectType("java/lang/String")
-    final val Class = ObjectType("java/lang/Class")
-    final val Throwable = ObjectType("java/lang/Throwable")
-    final val Error = ObjectType("java/lang/Error")
-    final val Exception = ObjectType("java/lang/Exception")
-    final val RuntimeException = ObjectType("java/lang/RuntimeException")
-    final val IndexOutOfBoundsException = ObjectType("java/lang/IndexOutOfBoundsException")
-	
-	final val MethodHandle = ObjectType("java/lang/invoke/MethodHandle")
-	final val MethodType = ObjectType("java/lang/invoke/MethodType")
-	
-    // Exceptions and errors that may be throw by the JVM (i.e., instances of these 
-    // exceptions may be created at runtime by the JVM)
-    final val ExceptionInInitializerError = ObjectType("java/lang/ExceptionInInitializerError")
-    final val BootstrapMethodError = ObjectType("java/lang/BootstrapMethodError")
-    final val OutOfMemoryError = ObjectType("java/lang/OutOfMemoryError")
-
-    final val NullPointerException = ObjectType("java/lang/NullPointerException")
-    final val ArrayIndexOutOfBoundsException = ObjectType("java/lang/ArrayIndexOutOfBoundsException")
-    final val ArrayStoreException = ObjectType("java/lang/ArrayStoreException")
-    final val NegativeArraySizeException = ObjectType("java/lang/NegativeArraySizeException")
-    final val IllegalMonitorStateException = ObjectType("java/lang/IllegalMonitorStateException")
-    final val ClassCastException = ObjectType("java/lang/ClassCastException")
-    final val ArithmeticException = ObjectType("java/lang/ArithmeticException")
-
-    // the following types are relevant when checking the subtype relation between
-    // two reference types where the subtype is an array type 
-    final val Serializable = ObjectType("java/io/Serializable")
-    final val Cloneable = ObjectType("java/lang/Cloneable")
 }
 
 /**
@@ -743,24 +713,31 @@ final object ArrayType {
      * and to facilitate reference based comparisons. I.e., to `ArrayType`s are equal
      * iff it is the same object.
      */
-    def apply(componentType: FieldType): ArrayType = cache.synchronized {
-        val wrAT = cache.get(componentType)
-        if (wrAT != null) {
-            val AT = wrAT.get()
-            if (AT != null)
-                return AT;
+    def apply(
+        componentType: FieldType)(
+            implicit context: ProjectContext): ArrayType = {
+        cache.synchronized {
+            val wrAT = cache.get(componentType)
+            if (wrAT != null) {
+                val AT = wrAT.get()
+                if (AT != null)
+                    return AT;
+            }
+            val newAT = new ArrayType(nextId.getAndDecrement(), componentType)
+            val wrNewAT = new WeakReference(newAT)
+            cache.put(componentType, wrNewAT)
+            newAT
         }
-        val newAT = new ArrayType(nextId.getAndDecrement(), componentType)
-        val wrNewAT = new WeakReference(newAT)
-        cache.put(componentType, wrNewAT)
-        newAT
     }
 
     /**
      * Factory method to create an Array of the given component type with the given
      * dimension.
      */
-    @annotation.tailrec def apply(dimension: Int, componentType: FieldType): ArrayType = {
+    @annotation.tailrec def apply(
+        dimension: Int,
+        componentType: FieldType)(
+            implicit context: ProjectContext): ArrayType = {
         val at = apply(componentType)
         if (dimension > 1)
             apply(dimension - 1, at)
@@ -770,7 +747,6 @@ final object ArrayType {
 
     def unapply(at: ArrayType): Option[FieldType] = Some(at.componentType)
 
-    final val ArrayOfObjects = ArrayType(ObjectType.Object)
 }
 
 /**

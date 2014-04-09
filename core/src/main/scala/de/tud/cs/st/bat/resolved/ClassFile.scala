@@ -84,13 +84,16 @@ final class ClassFile private (
     val methods: Methods,
     val attributes: Attributes)
         extends CommonAttributes
-        with SourceElement {
+        with SourceElement
+        with UID {
 
     import ClassFile._
 
     override def isClassFile = true
 
     override def asClassFile = this
+
+    def id = thisType.id
 
     /**
      * The fully qualified name of the type defined by this class file.
@@ -279,7 +282,6 @@ final class ClassFile private (
             this.fields, this.methods, newAttributes
         )
     }
-
 }
 /**
  * Defines factory and extractor methods for `ClassFile` objects as well as related

@@ -35,19 +35,10 @@ import java.io.DataInputStream
 /**
  * Implements the template method to read signature attributes.
  *
- * '''From the Specification'''
- *
- * The Signature attribute is an optional fixed-length attribute in the
+ * The Signature attribute is an optional attribute in the
  * attributes table of a ClassFile, field_info or method_info structure.
  *
- * <pre>
- * Signature_attribute {
- *    u2 attribute_name_index;
- *    u4 attribute_length;
- *    u2 signature_index;
- * }
- * </pre>
- * @author Michael Eichberg
+ *  @author Michael Eichberg
  */
 trait Signature_attributeReader extends AttributeReader {
 
@@ -63,18 +54,34 @@ trait Signature_attributeReader extends AttributeReader {
      * or a field type signature otherwise.
      */
     def Signature_attribute(
+        constant_pool: Constant_Pool,
+        ap: AttributeParent,
         attribute_name_index: Constant_Pool_Index,
-        signature_index: Constant_Pool_Index)(
-            implicit constant_pool: Constant_Pool, ap: AttributeParent): Signature_attribute
+        signature_index: Constant_Pool_Index): Signature_attribute
 
+    /* From the Specification
+     *
+     * The Signature attribute is an optional attribute in the
+     * attributes table of a ClassFile, field_info or method_info structure.
+     *
+     * <pre>
+     * Signature_attribute {
+     *    u2 attribute_name_index;
+     *    u4 attribute_length;
+     *    u2 signature_index;
+     * }
+     * </pre>
+     */
     registerAttributeReader(
         Signature_attributeReader.ATTRIBUTE_NAME -> (
             (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 val attribute_length = in.readInt
                 Signature_attribute(
+                    cp,
+                    ap,
                     attribute_name_index,
                     in.readUnsignedShort
-                )(cp, ap)
+                )
             }
         )
     )

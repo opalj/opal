@@ -35,19 +35,8 @@ import reflect.ClassTag
 import java.io.DataInputStream
 
 /**
- * '''From the Specification'''
- * <pre>
- * InnerClasses_attribute {
- * u2 attribute_name_index;
- * u4 attribute_length;
- * u2 number_of_classes; // => Seq[InnerClasses_attribute.Class]
- * {	u2 inner_class_info_index;
- * 	u2 outer_class_info_index;
- * 	u2 inner_name_index;
- * 	u2 inner_class_access_flags;
- * 	} classes[number_of_classes];
- * }
- * </pre>
+ * Generic parser for the ''inner classes'' attribute.
+ *
  * @author Michael Eichberg
  */
 trait InnerClasses_attributeReader extends AttributeReader {
@@ -58,16 +47,16 @@ trait InnerClasses_attributeReader extends AttributeReader {
     type InnerClasses_attribute <: Attribute
 
     def InnerClasses_attribute(
+        constant_pool: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        inner_classes: InnerClasses)(
-            implicit constant_pool: Constant_Pool): InnerClasses_attribute
+        inner_classes: InnerClasses): InnerClasses_attribute
 
     def InnerClassesEntry(
+        constant_pool: Constant_Pool,
         inner_class_info_index: Constant_Pool_Index,
         outer_class_info_index: Constant_Pool_Index,
         inner_name_index: Constant_Pool_Index,
-        inner_class_access_flags: Int)(
-            implicit constant_pool: Constant_Pool): InnerClassesEntry
+        inner_class_access_flags: Int): InnerClassesEntry
 
     //
     // IMPLEMENTATION
@@ -76,19 +65,36 @@ trait InnerClasses_attributeReader extends AttributeReader {
 
     type InnerClasses = IndexedSeq[InnerClassesEntry]
 
+    /*
+     * '''From the Specification'''
+     * <pre>
+     * InnerClasses_attribute {
+     * u2 attribute_name_index;
+     * u4 attribute_length;
+     * u2 number_of_classes; // => Seq[InnerClasses_attribute.Class]
+     * {    u2 inner_class_info_index;
+     *  u2 outer_class_info_index;
+     *  u2 inner_name_index;
+     *  u2 inner_class_access_flags;
+     *  } classes[number_of_classes];
+     * }
+     * </pre>
+     */
     registerAttributeReader(
         InnerClasses_attributeReader.ATTRIBUTE_NAME -> (
             (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 val attribute_length = in.readInt()
                 InnerClasses_attribute(
+                    cp,
                     attribute_name_index,
                     repeat(in.readUnsignedShort) {
                         InnerClassesEntry(
+                            cp,
                             in.readUnsignedShort, in.readUnsignedShort,
                             in.readUnsignedShort, in.readUnsignedShort
-                        )(cp)
+                        )
                     }
-                )(cp)
+                )
             }
         )
     )
