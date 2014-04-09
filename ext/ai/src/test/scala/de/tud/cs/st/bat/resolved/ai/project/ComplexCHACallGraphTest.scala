@@ -45,6 +45,6 @@ class ComplexCHACallGraphTest extends AbstractCallGraphTest {
 
     override def testFilePath = "ext/ai"
 
-    override def testCallGraph = CHACallGraph
+    override def testCallGraph = CHACallGraphKey
 
 }
