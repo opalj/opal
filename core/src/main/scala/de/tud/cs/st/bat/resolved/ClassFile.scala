@@ -84,8 +84,7 @@ final class ClassFile private (
     val methods: Methods,
     val attributes: Attributes)
         extends CommonAttributes
-        with SourceElement
-        with UID {
+        with SourceElement {
 
     import ClassFile._
 

@@ -50,7 +50,7 @@ package analyses
  * @author Michael Eichberg
  */
 trait Analysis[Source, +AnalysisResult] {
- 
+
     /**
      * Analyzes the given project and reports the result(s).
      */

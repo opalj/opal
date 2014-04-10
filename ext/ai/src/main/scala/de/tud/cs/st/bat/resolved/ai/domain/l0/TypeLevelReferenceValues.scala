@@ -34,6 +34,7 @@ package domain
 package l0
 
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
+import de.tud.cs.st.collection.UIDSet
 
 /**
  * Implements the foundations for performing computations related to reference values.
@@ -203,7 +204,7 @@ trait TypeLevelReferenceValues[+I]
      * Calculates the set of all supertypes of the given `types`.
      */
     protected def allSupertypesOf(
-        types: UIDList[ObjectType],
+        types: UIDSet[ObjectType],
         reflexive: Boolean): scala.collection.Set[ObjectType] = {
         val allSupertypesOf = scala.collection.mutable.HashSet.empty[ObjectType]
         types foreach { (t: ObjectType) ⇒
@@ -227,7 +228,7 @@ trait TypeLevelReferenceValues[+I]
      *      which should always be a safe fallback.
      */
     protected def leafTypes(
-        types: scala.collection.Set[ObjectType]): Either[ObjectType, UIDList[ObjectType]] = {
+        types: scala.collection.Set[ObjectType]): Either[ObjectType, UIDSet[ObjectType]] = {
         if (types.isEmpty)
             return Left(ObjectType.Object)
 
@@ -241,7 +242,7 @@ trait TypeLevelReferenceValues[+I]
         if (lts.size == 1)
             Left(lts.head)
         else {
-            Right(UIDList(lts))
+            Right(UIDSet(lts))
         }
     }
 
@@ -254,9 +255,9 @@ trait TypeLevelReferenceValues[+I]
      *      inheritance relation.
      */
     protected def joinUpperTypeBounds(
-        upperTypeBoundsA: UIDList[ObjectType],
-        upperTypeBoundsB: UIDList[ObjectType],
-        reflexive: Boolean): Either[ObjectType, UIDList[ObjectType]] = {
+        upperTypeBoundsA: UIDSet[ObjectType],
+        upperTypeBoundsB: UIDSet[ObjectType],
+        reflexive: Boolean): Either[ObjectType, UIDSet[ObjectType]] = {
 
         if (upperTypeBoundsA == upperTypeBoundsB)
             return Right(upperTypeBoundsA)
@@ -282,8 +283,8 @@ trait TypeLevelReferenceValues[+I]
      */
     protected def joinObjectTypes(
         upperTypeBoundA: ObjectType,
-        upperTypeBoundB: UIDList[ObjectType],
-        reflexive: Boolean): Either[ObjectType, UIDList[ObjectType]] = {
+        upperTypeBoundB: UIDSet[ObjectType],
+        reflexive: Boolean): Either[ObjectType, UIDSet[ObjectType]] = {
 
         if (reflexive) {
             var aIsSubtypeOfAllOfb = true
@@ -301,8 +302,8 @@ trait TypeLevelReferenceValues[+I]
             if (aIsSubtypeOfAllOfb)
                 return Right(upperTypeBoundB)
             if (newUpperTypeBound.nonEmpty) {
-                if (newUpperTypeBound.tail.isEmpty)
-                    Left(newUpperTypeBound.head)
+                if (newUpperTypeBound.containsOneElement)
+                    Left(newUpperTypeBound.first)
                 else
                     return Right(newUpperTypeBound)
             }
@@ -330,7 +331,7 @@ trait TypeLevelReferenceValues[+I]
     protected def joinObjectTypes(
         upperTypeBoundA: ObjectType,
         upperTypeBoundB: ObjectType,
-        reflexive: Boolean): Either[ObjectType, UIDList[ObjectType]] = {
+        reflexive: Boolean): Either[ObjectType, UIDSet[ObjectType]] = {
 
         if (reflexive) {
             if (upperTypeBoundA eq upperTypeBoundB)
@@ -361,7 +362,7 @@ trait TypeLevelReferenceValues[+I]
      * Recall that (Java) arrays implement `Cloneable` and `Serializable`.
      */
     protected def joinAnyArrayTypeWithMultipleTypesBound(
-        thatUpperTypeBound: UIDList[ObjectType]): Either[ObjectType, UIDList[ObjectType]] = {
+        thatUpperTypeBound: UIDSet[ObjectType]): Either[ObjectType, UIDSet[ObjectType]] = {
         import ObjectType._
         import TypeLevelReferenceValues.SerializableAndCloneable
         if (thatUpperTypeBound == SerializableAndCloneable)
@@ -393,22 +394,22 @@ trait TypeLevelReferenceValues[+I]
      * Recall that (Java) arrays implement `Cloneable` and `Serializable`.
      */
     protected def joinAnyArrayTypeWithObjectType(
-        thatUpperTypeBound: ObjectType): Either[ObjectType, UIDList[ObjectType]] = {
+        thatUpperTypeBound: ObjectType): Either[ObjectType, UIDSet[ObjectType]] = {
         import ObjectType._
         if ((thatUpperTypeBound eq Object) ||
             (thatUpperTypeBound eq Serializable) ||
             (thatUpperTypeBound eq Cloneable))
             Left(thatUpperTypeBound)
         else {
-            var newUpperTypeBound: UIDList[ObjectType] = UIDList.empty
+            var newUpperTypeBound: UIDSet[ObjectType] = UIDSet.empty
             if (domain.isSubtypeOf(thatUpperTypeBound, Serializable).isYes)
                 newUpperTypeBound += Serializable
             if (domain.isSubtypeOf(thatUpperTypeBound, Cloneable).isYes)
                 newUpperTypeBound += Cloneable
             if (newUpperTypeBound.isEmpty)
                 Left(Object)
-            else if (newUpperTypeBound.tail.isEmpty)
-                Left(newUpperTypeBound.head)
+            else if (newUpperTypeBound.containsOneElement)
+                Left(newUpperTypeBound.first)
             else
                 Right(newUpperTypeBound)
         }
@@ -423,7 +424,7 @@ trait TypeLevelReferenceValues[+I]
      */
     protected def joinArrayTypes(
         thisUpperTypeBound: ArrayType,
-        thatUpperTypeBound: ArrayType): Either[ArrayType, UIDList[ObjectType]] = {
+        thatUpperTypeBound: ArrayType): Either[ArrayType, UIDSet[ObjectType]] = {
         // We have ALSO to consider the following corner cases:
         // Foo[][] and Bar[][] => Object[][] (Object is the common super class)
         // Object[] and int[][] => Object[] (which may contain arrays of int values...)
@@ -494,7 +495,7 @@ trait TypeLevelReferenceValues[+I]
             case Left(newUpperTypeBound) ⇒
                 newUpperTypeBound
             case Right(newUpperTypeBounds) ⇒
-                newUpperTypeBounds.tail.foldLeft(newUpperTypeBounds.head) { (c, n) ⇒
+                newUpperTypeBounds reduce { (c, n) ⇒
                     joinObjectTypesUntilSingleUpperBound(c, n, false)
                 }
         }
@@ -627,7 +628,7 @@ trait TypeLevelReferenceValues[+I]
         /**
          * Returns an empty upper type bound.
          */
-        final override def upperTypeBound: UpperTypeBound = UIDList.empty
+        final override def upperTypeBound: UpperTypeBound = UIDSet.empty
 
         final override def load(pc: PC, index: DomainValue): ArrayLoadResult =
             justThrows(NullPointerException(pc))
@@ -668,7 +669,7 @@ trait TypeLevelReferenceValues[+I]
 
         final override def referenceValues: Iterator[IsAReferenceValue] = Iterator(this)
 
-        final override def upperTypeBound: UpperTypeBound = UIDList(theUpperTypeBound)
+        final override def upperTypeBound: UpperTypeBound = UIDSet(theUpperTypeBound)
 
         final override def summarize(pc: PC): this.type = this
 
@@ -1071,7 +1072,7 @@ trait TypeLevelReferenceValues[+I]
      *  - Null: '''Unknown'''
      *  - Content: '''Unknown'''
      */
-    protected[domain] def ObjectValue(pc: PC, upperTypeBound: UIDList[ObjectType]): DomainObjectValue
+    protected[domain] def ObjectValue(pc: PC, upperTypeBound: UIDSet[ObjectType]): DomainObjectValue
 
     /**
      * Factory method to create a new domain value that represents a newly created
@@ -1154,7 +1155,7 @@ trait TypeLevelReferenceValues[+I]
                 locals.map(l ⇒ if (l eq oldValue) newValue else l)
             )
     }
-    
+
     override def refEstablishUpperBound(
         pc: PC,
         bound: ReferenceType,
@@ -1223,7 +1224,7 @@ object TypeLevelReferenceValues {
      * Least upper type bound of Java arrays. That is, every Java array
      * is always `Serializable` and `Cloneable`.
      */
-    val SerializableAndCloneable: UIDList[ObjectType] =
-        UIDList(ObjectType.Serializable, ObjectType.Cloneable)
+    val SerializableAndCloneable: UIDSet[ObjectType] =
+        UIDSet(ObjectType.Serializable, ObjectType.Cloneable)
 
 }

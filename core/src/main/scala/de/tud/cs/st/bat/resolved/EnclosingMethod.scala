@@ -33,6 +33,9 @@ package resolved
 /**
  * The optional enclosing method attribute of a class.
  *
+ * @param name The name of the enclosing method. It may be `null`.
+ * @param descriptor The method descriptor of the enclosing method. It may be `null`.
+ *
  * @author Michael Eichberg
  */
 case class EnclosingMethod(
@@ -40,15 +43,5 @@ case class EnclosingMethod(
     name: String,
     descriptor: MethodDescriptor)
         extends Attribute {
-
-    /*
-      * Determines whether the given EnclosingMethod attribute
-      * contains method information.
-      *
-      * @param em The attribute that should be analyzed.
-      * @return <code>true</code> if method name and descriptor is not NULL.
-      *         Otherwise, <code>false</code> is returned.
-      */
-    // TODO [Functionality] Check if it makes sense to add the method: private def isEnclosedByMethod(em: EnclosingMethod): Boolean = name != null && descriptor != null // otherwise the inner class is assigned to a field
 
 }

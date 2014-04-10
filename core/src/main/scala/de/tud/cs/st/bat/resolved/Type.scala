@@ -30,6 +30,8 @@ package de.tud.cs.st
 package bat
 package resolved
 
+import de.tud.cs.st.collection.UID
+
 /**
  * The computational type category of a value on the operand stack.
  *
@@ -125,10 +127,9 @@ case object ComputationalTypeDouble
  * The order is:
  * ''void type &lt; primitive types &lt; array types &lt; class/interface types''
  *
- *
  * @author Michael Eichberg
  */
-sealed abstract class Type {
+sealed abstract class Type extends UID {
 
     /**
      * Returns `true` if this type can be used by fields. Returns `true` unless
@@ -158,6 +159,7 @@ sealed abstract class Type {
      * Returns `true` if this type is a reference type; that is, an array type or an
      * object type (class/interface type).
      * Each type is either:
+     *
      *  - a base type,
      *  - a reference type or
      *  - the type void.
@@ -212,9 +214,10 @@ sealed abstract class Type {
     def toJavaClass: java.lang.Class[_]
 
     /**
-     * The unique id of this type.
+     * The unique id of this type. Types are associated with globally unique ids to
+     * make it easy to define a global order.
      */
-    protected def id: Int
+    def id: Int
 
     /**
      * Compares this type with the other type by comparing their ids.
@@ -251,7 +254,7 @@ sealed abstract class VoidType private () extends Type with ReturnTypeSignature 
 
     override def toString() = "VoidType"
 
-    protected final val id: Int = Int.MinValue
+    final val id: Int = Int.MinValue
 }
 case object VoidType extends VoidType
 
@@ -280,7 +283,7 @@ object FieldType {
     }
 }
 
-sealed abstract class ReferenceType extends FieldType with UID {
+sealed abstract class ReferenceType extends FieldType {
 
     final override def isReferenceType = true
 
@@ -314,7 +317,7 @@ sealed abstract class BaseType extends FieldType with TypeSignature {
 
     def atype: Int
 
-    protected final val id: Int = Int.MinValue + atype
+     final val id: Int = Int.MinValue + atype
 }
 
 sealed abstract class ByteType private () extends BaseType {
@@ -629,6 +632,37 @@ final object ObjectType {
             fqn.substring(0, index)
     }
 
+    final val Object = ObjectType("java/lang/Object")
+    final val String = ObjectType("java/lang/String")
+    final val Class = ObjectType("java/lang/Class")
+    final val Throwable = ObjectType("java/lang/Throwable")
+    final val Error = ObjectType("java/lang/Error")
+    final val Exception = ObjectType("java/lang/Exception")
+    final val RuntimeException = ObjectType("java/lang/RuntimeException")
+    final val IndexOutOfBoundsException = ObjectType("java/lang/IndexOutOfBoundsException")
+
+    final val MethodHandle = ObjectType("java/lang/invoke/MethodHandle")
+    final val MethodType = ObjectType("java/lang/invoke/MethodType")
+
+    // Exceptions and errors that may be throw by the JVM (i.e., instances of these 
+    // exceptions may be created at runtime by the JVM)
+    final val ExceptionInInitializerError = ObjectType("java/lang/ExceptionInInitializerError")
+    final val BootstrapMethodError = ObjectType("java/lang/BootstrapMethodError")
+    final val OutOfMemoryError = ObjectType("java/lang/OutOfMemoryError")
+
+    final val NullPointerException = ObjectType("java/lang/NullPointerException")
+    final val ArrayIndexOutOfBoundsException = ObjectType("java/lang/ArrayIndexOutOfBoundsException")
+    final val ArrayStoreException = ObjectType("java/lang/ArrayStoreException")
+    final val NegativeArraySizeException = ObjectType("java/lang/NegativeArraySizeException")
+    final val IllegalMonitorStateException = ObjectType("java/lang/IllegalMonitorStateException")
+    final val ClassCastException = ObjectType("java/lang/ClassCastException")
+    final val ArithmeticException = ObjectType("java/lang/ArithmeticException")
+
+    // the following types are relevant when checking the subtype relation between
+    // two reference types where the subtype is an array type 
+    final val Serializable = ObjectType("java/io/Serializable")
+    final val Cloneable = ObjectType("java/lang/Cloneable")
+
 }
 
 /**
@@ -714,8 +748,7 @@ final object ArrayType {
      * iff it is the same object.
      */
     def apply(
-        componentType: FieldType)(
-            implicit context: ProjectContext): ArrayType = {
+        componentType: FieldType): ArrayType = {
         cache.synchronized {
             val wrAT = cache.get(componentType)
             if (wrAT != null) {
@@ -736,8 +769,7 @@ final object ArrayType {
      */
     @annotation.tailrec def apply(
         dimension: Int,
-        componentType: FieldType)(
-            implicit context: ProjectContext): ArrayType = {
+        componentType: FieldType): ArrayType = {
         val at = apply(componentType)
         if (dimension > 1)
             apply(dimension - 1, at)
@@ -747,6 +779,7 @@ final object ArrayType {
 
     def unapply(at: ArrayType): Option[FieldType] = Some(at.componentType)
 
+    final val ArrayOfObjects = ArrayType(ObjectType.Object)
 }
 
 /**

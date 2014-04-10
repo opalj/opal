@@ -50,14 +50,14 @@ class IndexBasedProjectTest
         with Matchers
         with ParallelTestExecution {
 
-    import IndexBasedProjectTest._
+    import ProjectTest._
     //
     //
     // Verify
     //
     //
 
-    behavior of "An IndexBasedProject"
+    behavior of "A Project"
 
     import project.classFile
     import project.isLibraryType
@@ -246,7 +246,7 @@ private class TestProjectInformationKey extends ProjectInformationKey[Object] {
 
     val theResult = new Object()
 
-    protected def compute(project: ProjectLike): Object = theResult
+    protected def compute(project: SomeProject): Object = theResult
 
     protected def requirements: Seq[ProjectInformationKey[_ <: AnyRef]] = Nil
 
@@ -258,13 +258,13 @@ private class TestProjectInformationWithDependenciesKey extends ProjectInformati
 
     val depdencies = List(new TestProjectInformationKey, new TestProjectInformationKey)
 
-    protected def compute(project: ProjectLike): Object = theResult
+    protected def compute(project: SomeProject): Object = theResult
 
     protected def requirements: Seq[ProjectInformationKey[_ <: AnyRef]] = depdencies
 
 }
 
-private object IndexBasedProjectTest {
+private object ProjectTest {
 
     //
     //
@@ -273,7 +273,7 @@ private object IndexBasedProjectTest {
     //
     val resources = TestSupport.locateTestResources("classfiles/Methods.jar")
     val libraryResources = TestSupport.locateTestResources("classfiles/Attributes.jar")
-    val project = IndexBasedProject(ClassFiles(resources), ClassFiles(libraryResources))
+    val project = Project(ClassFiles(resources), ClassFiles(libraryResources))
 
     val SuperType = ObjectType("methods/a/Super")
     val DirectSub = ObjectType("methods/a/DirectSub")

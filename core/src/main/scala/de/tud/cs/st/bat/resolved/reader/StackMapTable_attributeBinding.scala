@@ -75,9 +75,10 @@ trait StackMapTable_attributeBinding
     val StackMapFrameManifest: ClassTag[StackMapFrame] = implicitly
 
     def StackMapTable_attribute(
+        cp: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
         attribute_length: Int,
-        stack_map_frames: StackMapFrames)(implicit cp: Constant_Pool) =
+        stack_map_frames: StackMapFrames) =
         new StackMapTable(stack_map_frames)
 
     def SameFrame(frame_type: Int): StackMapFrame =
@@ -131,8 +132,8 @@ trait StackMapTable_attributeBinding
 
     def UninitializedVariableInfo(offset: Int) = new UninitializedVariableInfo(offset)
 
-    def ObjectVariableInfo(cpool_index: Int)(implicit cp: Constant_Pool) = {
-        new ObjectVariableInfo(cpool_index.asReferenceType)
+    def ObjectVariableInfo(cp: Constant_Pool, type_index: Constant_Pool_Index) = {
+        new ObjectVariableInfo(cp(type_index).asReferenceType(cp))
     }
 
 }

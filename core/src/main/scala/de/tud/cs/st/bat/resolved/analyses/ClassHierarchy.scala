@@ -339,7 +339,7 @@ class ClassHierarchy private (
         classes: SomeProject)(
             f: ClassFile ⇒ Unit): Unit =
         foreachSupertype(objectType) { supertype ⇒
-            classes(supertype) match {
+            classes.classFile(supertype) match {
                 case Some(classFile) ⇒ f(classFile)
                 case _               ⇒ /*Do nothing*/
             }
@@ -608,12 +608,12 @@ class ClassHierarchy private (
      *      you can use the `project`.
      */
     def resolveFieldReference(
-        c: ObjectType,
+        declaringClassType: ObjectType,
         fieldName: String,
         fieldType: FieldType,
         project: SomeProject): Option[Field] = {
         // More details: JVM 7 Spec. Section 5.4.3.2 
-        project(c) flatMap { classFile ⇒
+        project.classFile(declaringClassType) flatMap { classFile ⇒
             classFile.fields find { field ⇒
                 (field.fieldType eq fieldType) && (field.name == fieldName)
             } orElse {
@@ -662,7 +662,7 @@ class ClassHierarchy private (
         methodDescriptor: MethodDescriptor,
         project: SomeProject): Option[Method] = {
 
-        project(receiverType) flatMap { classFile ⇒
+        project.classFile(receiverType) flatMap { classFile ⇒
             assume(!classFile.isInterfaceDeclaration)
 
             lookupMethodDefinition(
@@ -686,7 +686,7 @@ class ClassHierarchy private (
         methodDescriptor: MethodDescriptor,
         project: SomeProject): Option[Method] = {
 
-        project(receiverType) flatMap { classFile ⇒
+        project.classFile(receiverType) flatMap { classFile ⇒
             assume(classFile.isInterfaceDeclaration)
 
             {
@@ -725,7 +725,7 @@ class ClassHierarchy private (
         project: SomeProject): Option[Method] = {
 
         classFile.interfaceTypes foreach { superinterface: ObjectType ⇒
-            project(superinterface) map { superclass ⇒
+            project.classFile(superinterface) map { superclass ⇒
                 val result =
                     lookupMethodInInterface(
                         superclass,
@@ -776,7 +776,7 @@ class ClassHierarchy private (
         assume(!isInterface(receiverType))
 
         @tailrec def lookupMethodDefinition(receiverType: ObjectType): Option[Method] = {
-            val classFileOption = project(receiverType)
+            val classFileOption = project.classFile(receiverType)
             var methodOption =
                 if (classFileOption.isDefined) {
                     val classFile = classFileOption.get
@@ -874,7 +874,7 @@ class ClassHierarchy private (
             if (!isInterface(subtype) && !seenSubtypes.contains(subtype)) {
                 seenSubtypes += subtype
                 if (classesFilter(subtype)) {
-                    project(subtype) foreach { classFile ⇒
+                    project.classFile(subtype) foreach { classFile ⇒
                         val methodOption =
                             classFile.findMethod(methodName, methodDescriptor)
                         if (methodOption.isDefined) {

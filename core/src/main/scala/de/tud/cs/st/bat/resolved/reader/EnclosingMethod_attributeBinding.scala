@@ -45,16 +45,20 @@ trait EnclosingMethod_attributeBinding
     type EnclosingMethod_attribute = de.tud.cs.st.bat.resolved.EnclosingMethod
 
     def EnclosingMethod_attribute(
+        cp: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
         class_index: Constant_Pool_Index,
-        method_index: Constant_Pool_Index)(
-            implicit cp: Constant_Pool): EnclosingMethod_attribute = {
+        method_index: Constant_Pool_Index): EnclosingMethod_attribute = {
 
         if (method_index == 0)
-            return new EnclosingMethod_attribute(class_index.asObjectType, null, null)
-
-        val nameAndType = method_index.asNameAndType
-        new EnclosingMethod_attribute(class_index.asObjectType, nameAndType.name, nameAndType.methodDescriptor)
+            new EnclosingMethod_attribute(cp(class_index).asObjectType(cp), null, null)
+        else {
+            val nameAndType = cp(method_index).asNameAndType
+            new EnclosingMethod_attribute(
+                cp(class_index).asObjectType(cp),
+                nameAndType.name(cp),
+                nameAndType.methodDescriptor(cp))
+        }
     }
 }
 

@@ -63,12 +63,12 @@ package analyses
  *    is side-effect free.
  *
  * ===Threading===
- * [[ProjectLike]] takes care of threading related issues. The methods [[requirements]]
+ * [[Project]] takes care of threading related issues. The methods [[requirements]]
  * and [[compute]] will never be called concurrently w.r.t. the same `project` object.
  * However, concurrent calls may happen w.r.t. two different project objects.
  *
  * ===Caching===
- * [[ProjectLike]] takes care of the caching of the result of the computation of the
+ * [[Project]] takes care of the caching of the result of the computation of the
  * information.
  *
  * @author Michael Eichberg
@@ -106,7 +106,7 @@ trait ProjectInformationKey[T <: AnyRef] {
     // We wanted to make sure that the method "compute" is (at least by default)
     // only visible in the subclasses as it is not intended to be called by objects
     // other than instances of `ProjectLike`.
-    final private[analyses] def doCompute(project: ProjectLike): T = {
+    final private[analyses] def doCompute(project: SomeProject): T = {
         compute(project)
     }
 
@@ -117,7 +117,7 @@ trait ProjectInformationKey[T <: AnyRef] {
      *      make this method public. This method is only expected to be called
      *      by an instance of a `ProjectLike`.
      */
-    /*ABSTRACT*/ protected def compute(project: ProjectLike): T
+    /*ABSTRACT*/ protected def compute(project: SomeProject): T
 
 }
 

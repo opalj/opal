@@ -31,7 +31,7 @@ package bat
 package resolved
 
 import reader.Java8Framework.ClassFiles
-import analyses.IndexBasedProject
+import analyses.Project
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
@@ -58,9 +58,9 @@ class InnerClassesTest
     //
 
     val project =
-        IndexBasedProject(
+        Project(
             ClassFiles(TestSupport.locateTestResources("classfiles/Innerclasses.jar"))
-            )
+        )
 
     val myRootClass$Formatter = ObjectType("innerclasses/MyRootClass$Formatter")
     val myRootClass = ObjectType("innerclasses/MyRootClass")

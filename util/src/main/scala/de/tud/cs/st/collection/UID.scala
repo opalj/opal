@@ -27,29 +27,40 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package de.tud.cs.st
-package bat
-package resolved
-package analyses
-
-import util.graphs.{ Node, toDot }
-
-import java.net.URL
-import java.io.File
+package collection
 
 /**
- * Factory for `Project`s.
+ * Supertrait of all data structures that have – by construction - unique ids. I.e., two
+ * data structures that are not ''reference equal'' have to have two different ids.
  *
  * @author Michael Eichberg
  */
-object Projects {
+trait UID {
 
     /**
-     * Given a reference to a class file, jar file or a folder containing jar and class
-     * files, all class files will be loaded and a project will be returned.
+     * This data structure's unique id.
      */
-    def createProject(file: File): Project[URL] = {
-        implicit val idProvider = new IdProvider()
-        IndexBasedProject(reader.Java8Framework.ClassFiles(file))
+    def id: Int
+}
+
+/**
+ * Helper methods related to data structures that have unique ids.
+ */
+object UID {
+
+    @inline final def getOrElseUpdate[T <: AnyRef](
+        array: Array[T],
+        uid: UID,
+        orElse: ⇒ T): T = {
+        val id = uid.id
+        val t = array(id)
+        if (t eq null) {
+            val result = orElse
+            array(id) = result
+            result
+        } else {
+            t
+        }
     }
 }
 

@@ -51,18 +51,18 @@ trait MethodParameters_attributeBinding
     type MethodParameters_attribute = de.tud.cs.st.bat.resolved.MethodParameterTable
 
     override def MethodParameters_attribute(
+        constant_pool: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
         attribute_length: Int,
-        parameters: MethodParameters)(
-            implicit constant_pool: Constant_Pool): MethodParameters_attribute = {
+        parameters: MethodParameters): MethodParameters_attribute = {
         new MethodParameterTable(parameters)
     }
 
     override def MethodParameter(
+        cp: Constant_Pool,
         name_index: Constant_Pool_Index,
-        access_flags: Int)(
-            implicit constant_pool: Constant_Pool): MethodParameter = {
-        new MethodParameter(name_index.asString, access_flags)
+        access_flags: Int): MethodParameter = {
+        new MethodParameter(cp(name_index).asString, access_flags)
     }
 }
 

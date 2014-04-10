@@ -31,7 +31,8 @@ package bat
 package resolved
 
 /**
- * Simple implementation of the SourceElementsVisitor trait where all methods do nothing.
+ * Simple implementation of the [[SourceElementsVisitor]] trait where all methods
+ * do nothing.
  *
  * @author Michael Eichberg
  */

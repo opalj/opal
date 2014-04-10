@@ -33,8 +33,8 @@ package resolved
 /**
  * Represents a single field declaration/definition.
  *
- * @param id The project-wide unique id of this field. The id is an integer in the range
- *      [0..Field.fieldsCount].
+ * @note Identity (w.r.t. `equals`/`hashCode`) is intentionally by reference (default
+ *      behavior).
  * @param accessFlags This field's access flags. To analyze the access flags
  *      bit vector use [[de.tud.cs.st.bat.AccessFlag]] or
  *      [[de.tud.cs.st.bat.AccessFlagsIterator]] or use pattern matching.
@@ -45,25 +45,23 @@ package resolved
  * @param fieldType The (erased) type of this field.
  * @param attributes The defined attributes. The JVM 8 specification defines
  *     the following attributes for fields:
- *     * [[de.tud.cs.st.bat.resolved.ConstantValue]],
- *     * [[de.tud.cs.st.bat.resolved.Synthetic]],
- *     * [[de.tud.cs.st.bat.resolved.Signature]],
- *     * [[de.tud.cs.st.bat.resolved.Deprecated]],
- *     * [[de.tud.cs.st.bat.resolved.RuntimeVisibleAnnotationTable]],
- *     * [[de.tud.cs.st.bat.resolved.RuntimeInvisibleAnnotationTable]],
- *     * [[de.tud.cs.st.bat.resolved.RuntimeVisibleTypeAnnotationTable]] and
- *     * [[de.tud.cs.st.bat.resolved.RuntimeInvisibleTypeAnnotationTable]].
+ *     * [[ConstantValue]],
+ *     * [[Synthetic]],
+ *     * [[Signature]],
+ *     * [[Deprecated]],
+ *     * [[RuntimeVisibleAnnotationTable]],
+ *     * [[RuntimeInvisibleAnnotationTable]],
+ *     * [[RuntimeVisibleTypeAnnotationTable]] and
+ *     * [[RuntimeInvisibleTypeAnnotationTable]].
  *
  * @author Michael Eichberg
  */
 final class Field private (
-    val id: Int,
     val accessFlags: Int,
     val name: String, // the name is interned to enable reference comparisons!
     val fieldType: FieldType,
     val attributes: Attributes)
-        extends ClassMember
-        with UID {
+        extends ClassMember {
 
     override def isField = true
 
@@ -99,14 +97,6 @@ final class Field private (
             (this.name eq other.name) &&
             this.fieldType < other.fieldType)
 
-    override def hashCode: Int = id
-
-    override def equals(other: Any): Boolean =
-        other match {
-            case that: AnyRef ⇒ this eq that
-            case _            ⇒ false
-        }
-
     override def toString(): String = {
         AccessFlags.toStrings(accessFlags, AccessFlagsContexts.FIELD).mkString("", " ", " ") +
             fieldType.toJava+" "+name +
@@ -123,9 +113,8 @@ object Field {
         accessFlags: Int,
         name: String,
         fieldType: FieldType,
-        attributes: Attributes)(implicit context: ProjectContext): Field = {
+        attributes: Attributes): Field = {
         new Field(
-            context.getNextFieldId(),
             accessFlags,
             name.intern(),
             fieldType,

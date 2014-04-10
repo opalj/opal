@@ -37,9 +37,9 @@ package collection
 trait UShortSet {
 
     /**
-     * Returns a new set that contains this set's values and the given value. 
-     * If the given value is already in this a fresh copy is returned unless
-     * this set is already full. 
+     * Returns a new set that contains this set's values and the given value.
+     * If the given value is already in this set a fresh copy is returned unless
+     * this set is already "full". In the latter case `this` set is returned.
      */
     def +(value: UShort): UShortSet
 

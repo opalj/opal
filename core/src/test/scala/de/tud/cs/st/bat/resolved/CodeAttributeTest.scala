@@ -30,7 +30,7 @@ package de.tud.cs.st.bat
 package resolved
 
 import reader.Java8Framework.ClassFiles
-import analyses.IndexBasedProject
+import analyses.Project
 import instructions._
 
 import org.junit.runner.RunWith
@@ -170,7 +170,7 @@ private object CodeAttributeTest {
     //
 
     val project =
-        IndexBasedProject(
+        Project(
             ClassFiles(TestSupport.locateTestResources("classfiles/Code.jar"))
         )
 

@@ -34,6 +34,7 @@ package domain
 package l0
 
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
+import de.tud.cs.st.collection.UIDSet
 
 /**
  * Default implementation for handling reference values.
@@ -63,10 +64,10 @@ trait DefaultReferenceValuesBinding[+I] extends DefaultTypeLevelReferenceValues[
     override protected[domain] def ObjectValue(pc: PC, objectType: ObjectType): DomainObjectValue =
         new SObjectValue(objectType)
 
-    override protected[domain] def ObjectValue(pc: PC, upperTypeBound: UIDList[ObjectType]): DomainObjectValue = {
+    override protected[domain] def ObjectValue(pc: PC, upperTypeBound: UIDSet[ObjectType]): DomainObjectValue = {
         assume(upperTypeBound.nonEmpty)
-        if (upperTypeBound.tail.isEmpty)
-            ObjectValue(pc, upperTypeBound.head)
+        if (upperTypeBound.containsOneElement)
+            ObjectValue(pc, upperTypeBound.first)
         else
             new MObjectValue(upperTypeBound)
     }

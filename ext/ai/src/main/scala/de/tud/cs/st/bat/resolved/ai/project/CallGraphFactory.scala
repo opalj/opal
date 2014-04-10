@@ -58,12 +58,14 @@ object CallGraphFactory {
      * - every non-private method.
      */
     def defaultEntryPointsForLibraries(project: SomeProject): List[Method] = {
-        var entryPoints = List.empty[Method]
-        project.foreachMethod { method: Method ⇒
-            if (!method.isPrivate && method.body.isDefined)
-                entryPoints = method :: entryPoints
+        for {
+            classFile ← project.projectClassFiles
+            method ← classFile.methods
+            if method.body.isDefined
+            if !method.isPrivate
+        } yield {
+            method
         }
-        entryPoints
     }
 
     /**
@@ -77,6 +79,10 @@ object CallGraphFactory {
         theProject: SomeProject,
         entryPoints: List[Method],
         configuration: CallGraphAlgorithmConfiguration): ComputedCallGraph = {
+
+        if (entryPoints.isEmpty) {
+            Console.err.println("The call graph has no entry points!")
+        }
 
         type MethodAnalysisResult = (( /*Caller*/ Method, List[(PC, /*Callees*/ Iterable[Method])]), List[UnresolvedMethodCall], Option[CallGraphConstructionException])
 
@@ -109,17 +115,20 @@ object CallGraphFactory {
         /* END - EXECUTED CONCURRENTLY */
 
         var futuresCount = 0
-        val methodSubmitted: Array[Boolean] = new Array(Method.methodsCount)
+        val methodSubmitted: scala.collection.mutable.HashSet[Method] =
+            new scala.collection.mutable.HashSet[Method]() {
+                override def initialSize: Int = theProject.methodsCount
+            }
         val executorService =
             Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() /*+ 1*/ )
         val completionService =
             new ExecutorCompletionService[MethodAnalysisResult](executorService)
 
         @inline def submitMethod(method: Method): Unit = {
-            if (methodSubmitted(method.id))
+            if (methodSubmitted.contains(method))
                 return
 
-            methodSubmitted(method.id) = true
+            methodSubmitted += (method)
             futuresCount += 1
             completionService.submit(doAnalyzeMethod(method))
         }

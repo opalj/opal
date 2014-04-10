@@ -99,11 +99,11 @@ class DefaultPreciseReferenceValuesTest
         val theFile = ObjectValue(-1, No, false, File)
 
         val update1 = theObject.refineUpperTypeBound(-1, File)
-        update1.upperTypeBound.head should be(File)
+        update1.upperTypeBound.first should be(File)
         val update2 = theFile.refineUpperTypeBound(-1, File)
-        update2.upperTypeBound.head should be(File)
+        update2.upperTypeBound.first should be(File)
         val update3 = theFile.refineUpperTypeBound(-1, ObjectType.Object)
-        update3.upperTypeBound.head should be(File)
+        update3.upperTypeBound.first should be(File)
     }
 
     it should ("be able to create an ObjectValue with the expected values") in {

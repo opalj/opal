@@ -245,7 +245,7 @@ class ClassHierarchyTest
     // -----------------------------------------------------------------------------------
 
     val clusteringProject =
-        IndexBasedProject[java.net.URL](
+        Project(
             ClassFiles(TestSupport.locateTestResources("classfiles/ClusteringTestProject.jar"))
         )
 
@@ -268,7 +268,7 @@ class ClassHierarchyTest
         classHierarchy.foreachSubtype(window) { subtypes += _ }
         subtypes.contains(simpleWindow) should be(true)
 
-        clusteringProject(simpleWindow).get.methods.find(method ⇒
+        clusteringProject.classFile(simpleWindow).get.methods.find(method ⇒
             method.name == "draw" &&
                 method.descriptor == MethodDescriptor.NoArgsAndReturnVoid
         ) should be('defined)
@@ -287,7 +287,7 @@ class ClassHierarchyTest
     // -----------------------------------------------------------------------------------
 
     val fieldsProject =
-        IndexBasedProject[java.net.URL](
+        Project(
             ClassFiles(TestSupport.locateTestResources("classfiles/Fields.jar"))
         )
     import fieldsProject.classFile
@@ -368,18 +368,18 @@ class ClassHierarchyTest
     // -----------------------------------------------------------------------------------
 
     val methodsProject =
-        IndexBasedProject(
+        Project(
             ClassFiles(TestSupport.locateTestResources("classfiles/Methods.jar"))
         )
 
     val superI = ObjectType("methods/b/SuperI")
     val directSub = ObjectType("methods/b/DirectSub")
-    val directSubClassFile = methodsProject(directSub).get
+    val directSubClassFile = methodsProject.classFile(directSub).get
 
     behavior of "the ClassHierarchy's methods to resolve method references"
 
     it should "handle the case if an interface has no implementing class" in {
-        val classFile = methodsProject(superI).get
+        val classFile = methodsProject.classFile(superI).get
         val result = methodsProject.classHierarchy.lookupImplementingMethods(
             superI,
             "someMethod",
@@ -391,7 +391,7 @@ class ClassHierarchyTest
 
     it should "find a method in a super class" in {
         val classType = ObjectType("methods/b/B")
-        val classFile = methodsProject(classType).get
+        val classFile = methodsProject.classFile(classType).get
         val result = methodsProject.classHierarchy.lookupImplementingMethods(
             classType,
             "publicMethod",

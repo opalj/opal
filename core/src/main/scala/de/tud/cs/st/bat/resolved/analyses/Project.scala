@@ -31,9 +31,7 @@ package bat
 package resolved
 package analyses
 
-import util.graphs.{ Node, toDot }
-
-import java.io.File
+import scala.collection.{ Set, Map }
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a
@@ -53,6 +51,13 @@ import java.io.File
  * ==Thread Safety==
  * This class is thread-safe.
  *
+ * @tparam Source The type of the source of the class file. E.g., a `URL`, a `File`,
+ *      a `String` or a Pair `(JarFile,JarEntry)`. This information is needed for, e.g.,
+ *      presenting users meaningful messages w.r.t. the location of issues.
+ *      We abstract over the type of the resource to facilitate the embedding in existing
+ *      tools such as IDEs. E.g., in Eclipse `IResource`'s are used to identify the
+ *      location of a resource (e.g., a source or class file.)
+ *
  * @note
  *    This project abstraction does not support (incremental) project updates.
  *    Furthermore, it makes use of some global, internal counters. Hence, if you want
@@ -63,24 +68,53 @@ import java.io.File
  *
  * @author Michael Eichberg
  */
-abstract class ProjectLike extends (ObjectType ⇒ Option[ClassFile]) {
+class Project[Source] private (
+        val projectClassFiles: List[ClassFile],
+        val libraryClassFiles: List[ClassFile],
+        private val projectTypes: Set[ObjectType],
+        private val fieldToClassFile: Map[Field, ClassFile],
+        private val methodToClassFile: Map[Method, ClassFile],
+        private val objectTypeToClassFile: Map[ObjectType, ClassFile],
+        private val sources: Map[ObjectType, Source],
+        val projectClassFilesCount: Int,
+        val projectMethodsCount: Int,
+        val projectFieldsCount: Int,
+        val libraryClassFilesCount: Int,
+        val libraryMethodsCount: Int,
+        val libraryFieldsCount: Int,
+        val classHierarchy: ClassHierarchy) {
+
+    val classFilesCount: Int =
+        projectClassFilesCount + libraryClassFilesCount
+
+    val methodsCount: Int =
+        projectMethodsCount + libraryMethodsCount
+
+    val fieldsCount: Int =
+        projectFieldsCount + libraryFieldsCount
+
+    val classFiles: Iterable[ClassFile] =
+        projectClassFiles.toIterable ++ libraryClassFiles.toIterable
+
+    def methods: Iterable[Method] = methodToClassFile.keys
+
+    def fields: Iterable[Field] = fieldToClassFile.keys
 
     /**
-     * The type of the source of the class file. E.g., a `URL`, a `File`,
-     * a `String` or a Pair `(JarFile,JarEntry)`. This information is needed for, e.g.,
-     * presenting users meaningful messages w.r.t. the location of issues.
-     * We abstract over the type of the resource to facilitate the embedding in existing
-     * tools such as IDEs. E.g., in Eclipse `IResource`'s are used to identify the
-     * location of a resource (e.g., a source or class file.)
+     * Returns true if the given class file belongs to the library part of the project.
+     * This is only the case if the class file was explicitly identified as being
+     * part of the library. By default all class files are considered to belong to the
+     * code base that will be analyzed.
      */
-    type Source
-
-    def idProvider: IdProvider
+    def isLibraryType(classFile: ClassFile): Boolean =
+        !projectTypes.contains(classFile.thisType)
 
     /**
-     * See `classFile(de.tud.cs.st.bat.resolved.ObjectType)` for details.
+     * Returns true if the given type file belongs to the library part of the project.
+     * This is generally the case if no class file was loaded for the given type.
      */
-    final def apply(objectType: ObjectType): Option[ClassFile] = classFile(objectType)
+    def isLibraryType(objectType: ObjectType): Boolean =
+        !projectTypes.contains(objectType)
 
     /**
      * Returns the source (for example, a `File` object or `URL` object) from which
@@ -88,141 +122,32 @@ abstract class ProjectLike extends (ObjectType ⇒ Option[ClassFile]) {
      *
      * @param objectType Some object type. (This method is defined for all `ObjectType`s.)
      */
-    def source(objectType: ObjectType): Option[Source]
-
-    /**
-     * Returns true if the given class file belongs to the library part of the project.
-     * This is only the case if the class file was explicitly identified as being
-     * part of the library. By default all class files are considered to belong the
-     * code base that will be analyzed.
-     */
-    def isLibraryType(classFile: ClassFile): Boolean
-
-    /**
-     * Returns true if the given type file belongs to the library part of the project.
-     * This is generally the case if no class file was loaded for the given type.
-     */
-    def isLibraryType(objectType: ObjectType): Boolean
+    def source(objectType: ObjectType): Option[Source] =
+        sources.get(objectType)
 
     /**
      * Returns the class file that defines the given `objectType`; if any.
      *
      * @param objectType Some object type. (This method is defined for all `ObjectType`s.)
      */
-    def classFile(objectType: ObjectType): Option[ClassFile]
+    def classFile(objectType: ObjectType): Option[ClassFile] =
+        objectTypeToClassFile.get(objectType)
 
     /**
      * Returns the given method's class file. This method is only defined if
      * the method was previously added to this project. (I.e., the class file which
      * defines the method was added.)
      */
-    def classFile(method: Method): ClassFile
+    def classFile(method: Method): ClassFile =
+        methodToClassFile(method)
 
     /**
      * Returns the given field's class file. This method is only defined if
      * the field was previously added to this project. (I.e., the class file which
      * defines the field was added.)
      */
-    def classFile(field: Field): ClassFile
-
-    /**
-     * Calls the given method for class file of this project.
-     *
-     * The class files are traversed in no defined order.
-     */
-    def foreachClassFile[U](f: ClassFile ⇒ U): Unit
-
-    /**
-     * Returns `true` if all class files satisfy the specified predicate.
-     *
-     * The class files are traversed in no defined order.
-     *
-     * The evaluation is immediately aborted when a class file does not satisfy the predicate
-     * (short-cut evaluation).
-     */
-    def forallClassFiles[U](f: ClassFile ⇒ Boolean): Boolean
-
-    /**
-     * Calls the given method for each method of this project.
-     *
-     * The methods are traversed in no defined order.
-     */
-    def foreachMethod[U](f: Method ⇒ U): Unit
-
-    /**
-     * Returns `true` if all methods satisfy the specified predicate.
-     *
-     * The methods are traversed in no defined order.
-     *
-     * The evaluation is aborted when a method does not satisfy the predicate
-     * (short-cut evaluation).
-     */
-    def forallMethods[U](f: Method ⇒ Boolean): Boolean
-
-    /**
-     * Returns the method with the given id.
-     *
-     * @note In general, this method should only be used internally by an analysis'
-     *    implementation.
-     *    No analysis should ever expose (`Int`) ids in their interface.
-     *
-     * @param methodID The unique id of a method that was (explicitly) added to this
-     *    project.
-     */
-    def method(methodID: Int): Method
-
-    /**
-     * Returns the class file that defines the object type with the given id.
-     *
-     * @note In general, this method should only be used internally by an analysis'
-     *    implementation.
-     *    No analysis should ever expose (`Int`) ids in their interface.
-     *
-     * @param objectTypeID The unique id of an object type.
-     *    This method is only defined if the class file that defines the given
-     *    object type was added to this project.
-     */
-    def classFile(objectTypeID: Int): ClassFile
-
-    /**
-     * The number of different object types that were seen up to the point when the
-     * project was created.
-     *
-     * @note This number does not change, if an analysis later on creates `ObjectType`
-     *    instances for object types that are not defined as part of the project. To
-     *    get the ''current number'' of different `ObjectType`s use the corresponding
-     *    method of the class [[de.tud.cs.st.bat.resolved.ObjectType]].
-     */
-    final val objectTypesCount = ObjectType.objectTypesCount
-
-    /**
-     * The number of methods that have been loaded since the start of BAT.
-     * This is equivalent to the number of methods of this project unless other
-     * projects were created simultaneously or before this project.
-     */
-    final def methodCount = idProvider.getMaxMethodId()
-
-    /**
-     * The number of fields that have been loaded since the start of BAT.
-     * This is equivalent to the number of fields of this project unless other
-     * projects were created simultaneously or before this project.
-     */
-    final def fieldCount = idProvider.getMaxFieldId()
-
-    /**
-     * All class files.
-     */
-    def classFiles: Iterable[ClassFile]
-
-    /**
-     * The class files that are the target of the analysis.
-     */
-    def projectClassFiles: Iterable[ClassFile]
-
-    /**
-     * The class files belonging to the library part.
-     */
-    def libraryClassFiles: Iterable[ClassFile]
+    def classFile(field: Field): ClassFile =
+        fieldToClassFile(field)
 
     /**
      * Converts this project abstraction into a standard Java `HashMap`.
@@ -241,12 +166,16 @@ abstract class ProjectLike extends (ObjectType ⇒ Option[ClassFile]) {
      *
      * (Calculated on-demand.)
      */
-    def statistics: String
-
-    /**
-     * This project's class hierarchy.
-     */
-    val classHierarchy: ClassHierarchy
+    def statistics: Map[String, Int] =
+        Map(
+            ("ProjectClassFiles" -> projectClassFilesCount),
+            ("LibraryClassFiles" -> libraryClassFilesCount),
+            ("ProjectMethods" -> projectMethodsCount),
+            ("ProjectFields" -> projectFieldsCount),
+            ("LibraryMethods" -> libraryMethodsCount),
+            ("LibraryFields" -> libraryFieldsCount),
+            ("ProjectInstructions" -> classFiles.foldLeft(0)(_ + _.methods.filter(_.body.isDefined).foldLeft(0)(_ + _.body.get.instructions.count(_ != null))))
+        )
 
     /**
      * Returns all available `ClassFile` objects for the given `objectTypes` that
@@ -255,12 +184,20 @@ abstract class ProjectLike extends (ObjectType ⇒ Option[ClassFile]) {
      */
     def lookupClassFiles(
         objectTypes: Traversable[ObjectType])(
-            filter: ClassFile ⇒ Boolean): Traversable[ClassFile] =
-        (
-            objectTypes.view.map(apply(_)) filter { someClassFile: Option[ClassFile] ⇒
-                someClassFile.isDefined && filter(someClassFile.get)
+            filter: ClassFile ⇒ Boolean): Traversable[ClassFile] = {
+        objectTypes.view.flatMap(classFile(_)) filter { someClassFile: ClassFile ⇒
+            filter(someClassFile)
+        }
+    }
+
+    override def toString: String = {
+        val classDescriptions =
+            sources map { (entry) ⇒
+                val (ot, source) = entry
+                ot.toJava+" « "+source.toString
             }
-        ).map(_.get)
+        "Project( "+classDescriptions.mkString("\n\t", "\n\t", "\n")+")"
+    }
 
     // ----------------------------------------------------------------------------------
     //
@@ -372,23 +309,115 @@ abstract class ProjectLike extends (ObjectType ⇒ Option[ClassFile]) {
     }
 }
 
-private object ProjectLike {
+import java.net.URL
+import java.io.File
 
-    val projectCount = new java.util.concurrent.atomic.AtomicInteger(0)
+/**
+ * Factory for `Project`s.
+ *
+ * @author Michael Eichberg
+ */
+object Project {
 
-    def checkForMultipleInstances(): Unit = {
-        if (projectCount.incrementAndGet() > 1) {
-            val err = Console.err
-            import err.{ println, print }
-            import Console._
-            print(BOLD + MAGENTA)
-            print("Creating multiple project instances is not recommended. ")
-            println("See the documentation of: ")
-            println("\t"+classOf[ProjectLike].getName())
-            println("for further details.")
-            print(RESET)
+    /**
+     * Given a reference to a class file, jar file or a folder containing jar and class
+     * files, all class files will be loaded and a project will be returned.
+     */
+    def apply(file: File): Project[URL] = {
+        Project.apply[URL](reader.Java8Framework.ClassFiles(file))
+    }
+
+    /**
+     * Creates a new IndexBasedProject.
+     *
+     * @param classFiles The list of class files of this project that are considered
+     *    to belong to the application/library that will be analyzed.
+     *    [Thread Safety] The underlying data structure has to support concurrent access.
+     * @param libraryClassFiles The list of class files of this project that make up
+     *    the libraries used by the project that will be analyzed.
+     *    [Thread Safety] The underlying data structure has to support concurrent access.
+     */
+    def apply[Source: reflect.ClassTag](
+        projectClassFilesWithSources: Iterable[(ClassFile, Source)],
+        libraryClassFilesWithSources: Iterable[(ClassFile, Source)] = Iterable.empty): Project[Source] = {
+
+        import scala.collection.mutable.{ Set, Map }
+
+        import concurrent.{ Future, Await, ExecutionContext, future }
+        import concurrent.duration.Duration
+        import ExecutionContext.Implicits.global
+
+        val classHierarchyFuture: Future[ClassHierarchy] = future {
+            ClassHierarchy(
+                projectClassFilesWithSources.view.map(_._1) ++
+                    libraryClassFilesWithSources.view.map(_._1)
+            )
         }
+
+        var projectClassFiles = List.empty[ClassFile]
+        val projectTypes = Set.empty[ObjectType]
+        var projectClassFilesCount: Int = 0
+        var projectMethodsCount: Int = 0
+        var projectFieldsCount: Int = 0
+
+        var libraryClassFiles = List.empty[ClassFile]
+        var libraryClassFilesCount: Int = 0
+        var libraryMethodsCount: Int = 0
+        var libraryFieldsCount: Int = 0
+
+        val methodToClassFile = Map.empty[Method, ClassFile]
+        val fieldToClassFile = Map.empty[Field, ClassFile]
+        val objectTypeToClassFile = Map.empty[ObjectType, ClassFile]
+        val sources = Map.empty[ObjectType, Source]
+
+        for ((classFile, source) ← projectClassFilesWithSources) {
+            projectClassFiles = classFile :: projectClassFiles
+            projectClassFilesCount += 1
+            val objectType = classFile.thisType
+            projectTypes += objectType
+            for (method ← classFile.methods) {
+                projectMethodsCount += 1
+                methodToClassFile.put(method, classFile)
+            }
+            for (field ← classFile.fields) {
+                projectFieldsCount += 1
+                fieldToClassFile.put(field, classFile)
+            }
+            objectTypeToClassFile.put(objectType, classFile)
+            sources.put(objectType, source)
+        }
+
+        for ((classFile, source) ← libraryClassFilesWithSources) {
+            libraryClassFiles = classFile :: libraryClassFiles
+            libraryClassFilesCount += 1
+            val objectType = classFile.thisType
+            for (method ← classFile.methods) {
+                libraryMethodsCount += 1
+                methodToClassFile.put(method, classFile)
+            }
+            for (field ← classFile.fields) {
+                libraryFieldsCount += 1
+                fieldToClassFile.put(field, classFile)
+            }
+            objectTypeToClassFile.put(objectType, classFile)
+            sources.put(objectType, source)
+        }
+
+        new Project(
+            projectClassFiles,
+            libraryClassFiles,
+            projectTypes,
+            fieldToClassFile,
+            methodToClassFile,
+            objectTypeToClassFile,
+            sources,
+            projectClassFilesCount,
+            projectMethodsCount,
+            projectFieldsCount,
+            libraryClassFilesCount,
+            libraryMethodsCount,
+            libraryFieldsCount,
+            Await.result(classHierarchyFuture, Duration.Inf)
+        )
     }
 }
-
-

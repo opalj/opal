@@ -57,8 +57,8 @@ trait Code_attributeReader extends AttributeReader {
     def Instructions(cp: Constant_Pool, in: DataInputStream): Instructions
 
     protected def Attributes(
-        cp: Constant_Pool,
         ap: AttributeParent,
+        cp: Constant_Pool,
         in: DataInputStream): Attributes
 
     def Code_attribute(
@@ -123,7 +123,7 @@ trait Code_attributeReader extends AttributeReader {
                             in.readUnsignedShort, in.readUnsignedShort
                         )
                     },
-                    Attributes(cp, AttributesParent.Code, in)
+                    Attributes(AttributesParent.Code, cp, in)
                 )
             }
         )

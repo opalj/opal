@@ -206,24 +206,24 @@ class DefaultCHACallGraphDomain[Source](
     val cache: CallGraphCache[MethodSignature, Iterable[Method]],
     val theClassFile: ClassFile,
     val theMethod: Method)
-        extends Domain[Int]
-        with DefaultDomainValueBinding[Int]
+        extends Domain[Method]
+        with DefaultDomainValueBinding[Method]
         with GeneralizedArrayHandling
         with Configuration
         with IgnoreMethodResults
         with IgnoreSynchronization
-        with l0.DefaultTypeLevelIntegerValues[Int]
+        with l0.DefaultTypeLevelIntegerValues[Method]
         with l0.DefaultIntegerValuesComparison
-        with l0.DefaultTypeLevelLongValues[Int]
-        with l0.DefaultTypeLevelFloatValues[Int]
-        with l0.DefaultTypeLevelDoubleValues[Int]
-        with l0.DefaultReferenceValuesBinding[Int]
+        with l0.DefaultTypeLevelLongValues[Method]
+        with l0.DefaultTypeLevelFloatValues[Method]
+        with l0.DefaultTypeLevelDoubleValues[Method]
+        with l0.DefaultReferenceValuesBinding[Method]
         with l0.TypeLevelFieldAccessInstructions
         with l0.TypeLevelInvokeInstructions
         with ProjectBasedClassHierarchy[Source]
-        with CHACallGraphDomain[Int] {
+        with CHACallGraphDomain[Method] {
 
-    def identifier = theMethod.id
+    def identifier = theMethod
 
 }
 

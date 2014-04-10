@@ -33,13 +33,8 @@ package resolved
 /**
  * Represents a single method.
  *
- * @note Equality of methods is – by purpose – reference based. Furthermore, each method
- *      has a unique id/hash value in the range [0,Method.methodsCount].
- *      This makes it, e.g., possible to use an array to associate information with
- *      methods instead of a `HashMap` or `HashTrie`. However, a `Map` is more
- *      efficient if you will not associate information with (nearly) all methods.
+ * @note Equality of methods is – by purpose – reference based.
  *
- * @param id The unique if of this method. Also used as the "hashCode".
  * @param accessFlags The ''access flags'' of this method. Though it is possible to
  *     directly work with the `accessFlags` field, it may be more convenient to use
  *     the respective methods (`isNative`, `isAbstract`,...) to query the access flags.
@@ -55,14 +50,12 @@ package resolved
  * @author Michael Eichberg
  */
 final class Method private (
-    val id: Int,
     val accessFlags: Int,
     val name: String,
     val descriptor: MethodDescriptor,
     val body: Option[Code],
     val attributes: Attributes)
-        extends ClassMember
-        with UID {
+        extends ClassMember {
 
     override final def isMethod = true
 
@@ -134,14 +127,6 @@ final class Method private (
             this.descriptor < other.descriptor)
     }
 
-    override def hashCode: Int = id
-
-    override def equals(other: Any): Boolean =
-        other match {
-            case that: AnyRef ⇒ this eq that
-            case _            ⇒ false
-        }
-
     def toJava(): String = descriptor.toJava(name)
 
     override def toString(): String = {
@@ -167,7 +152,7 @@ object Method {
         accessFlags: Int,
         name: String,
         descriptor: MethodDescriptor,
-        attributes: Attributes)(implicit context: ProjectContext): Method = {
+        attributes: Attributes): Method = {
 
         val (bodySeq, remainingAttributes) = attributes partition { _.isInstanceOf[Code] }
         val theBody =
@@ -176,7 +161,6 @@ object Method {
             else
                 None
         new Method(
-            context.getNextMethodId(),
             accessFlags,
             name.intern(),
             descriptor,

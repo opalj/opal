@@ -27,42 +27,16 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package de.tud.cs.st
-package bat
-
-import scala.annotation.tailrec
-import scala.collection.SortedSet
+package collection
 
 /**
- * Mixed in by data structures that have – by construction - unique ids. I.e., two
- * data structures that are not reference equal, have to have two different ids.
+ * Ordering for sorted collections of elements of type `UID`.
  *
  * @author Michael Eichberg
  */
-trait UID {
-    /**
-     * This data structure's unique id.
-     */
-    def id: Int
-}
+object UIDBasedOrdering extends Ordering[UID] {
 
-/**
- * Helper methods related to data structures that have unique ids.
- */
-object UID {
+    def compare(a: UID, b: UID): Int = a.id - b.id
 
-    @inline final def getOrElseUpdate[T <: AnyRef](
-        array: Array[T],
-        uid: UID,
-        orElse: ⇒ T): T = {
-        val id = uid.id
-        val t = array(id)
-        if (t eq null) {
-            val result = orElse
-            array(id) = result
-            result
-        } else {
-            t
-        }
-    }
 }
 

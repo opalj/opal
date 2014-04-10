@@ -79,7 +79,7 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
     //
     def file = TestSupport.locateTestResources(testFileName, testFilePath)
     val classFiles = Java7Framework.ClassFiles(file)
-    val project = bat.resolved.analyses.IndexBasedProject(classFiles)
+    val project = bat.resolved.analyses.Project(classFiles)
 
     //
     // GRAPH CONSTRUCTION
@@ -232,8 +232,8 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
         classFile ← project.classFiles
         method ← classFile.methods
     } {
-        it should "correctly identify all call targets for the method ("+
-            method.id+") "+method+" in class "+classFile.fqn in {
+        it should ("correctly identify all call targets for the method "+
+            method.toJava+" in class "+classFile.fqn) in {
 
                 // single invocation per method
                 method.runtimeVisibleAnnotations filter { annotation ⇒

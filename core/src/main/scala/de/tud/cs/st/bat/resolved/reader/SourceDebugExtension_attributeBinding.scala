@@ -46,10 +46,10 @@ trait SourceDebugExtension_attributeBinding
     type SourceDebugExtension_attribute = de.tud.cs.st.bat.resolved.SourceDebugExtension
 
     def SourceDebugExtension_attribute(
-            attribute_name_index: Constant_Pool_Index,
-                                       attribute_length: Int,
-                                       debug_extension: String)(
-                                           implicit constant_pool: Constant_Pool): SourceDebugExtension_attribute =
+        constant_pool: Constant_Pool,
+        attribute_name_index: Constant_Pool_Index,
+        attribute_length: Int,
+        debug_extension: String): SourceDebugExtension_attribute =
         new SourceDebugExtension(debug_extension)
 
 }

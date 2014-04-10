@@ -34,6 +34,7 @@ package domain
 package l0
 
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
+import de.tud.cs.st.collection.UIDSet
 
 /**
  * Default implementation for handling reference values.
@@ -201,7 +202,7 @@ trait DefaultTypeLevelReferenceValues[+I]
 
         protected def asStructuralUpdate(
             joinPC: PC,
-            newUpperTypeBound: Either[ObjectType, UIDList[ObjectType]]): Update[DomainValue] = {
+            newUpperTypeBound: Either[ObjectType, UIDSet[ObjectType]]): Update[DomainValue] = {
             newUpperTypeBound match {
                 case Left(newUpperTypeBound) ⇒
                     StructuralUpdate(ObjectValue(joinPC, newUpperTypeBound))
@@ -273,7 +274,7 @@ trait DefaultTypeLevelReferenceValues[+I]
 
                 // probably some (abstract) class and an interface or two
                 // unrelated interfaces
-                ObjectValue(pc, UIDList(theUpperTypeBound, supertype.asObjectType))
+                ObjectValue(pc, UIDSet(theUpperTypeBound, supertype.asObjectType))
             }
         }
 
@@ -332,7 +333,7 @@ trait DefaultTypeLevelReferenceValues[+I]
      *      the same time.
      */
     protected class MObjectValue(
-        override val upperTypeBound: UIDList[ObjectType])
+        override val upperTypeBound: UIDSet[ObjectType])
             extends ObjectValue {
         value: DomainObjectValue ⇒
 
@@ -390,7 +391,7 @@ trait DefaultTypeLevelReferenceValues[+I]
             // returned unknown. Hence, we only handle the case where the new bound
             // is more strict than the previous bound.
 
-            var newUpperTypeBound: UIDList[ObjectType] = UIDList.empty
+            var newUpperTypeBound: UIDSet[ObjectType] = UIDSet.empty[ObjectType]
             upperTypeBound foreach { (anUpperTypeBound: ObjectType) ⇒
                 // ATTENTION: "!..yes" is not the same as "no" (there is also unknown)
                 if (!domain.isSubtypeOf(supertype, anUpperTypeBound).isYes)
@@ -457,7 +458,7 @@ trait DefaultTypeLevelReferenceValues[+I]
     }
 
     object MObjectValue {
-        def unapply(that: MObjectValue): Option[UIDList[ObjectType]] =
+        def unapply(that: MObjectValue): Option[UIDSet[ObjectType]] =
             Some(that.upperTypeBound)
     }
 }

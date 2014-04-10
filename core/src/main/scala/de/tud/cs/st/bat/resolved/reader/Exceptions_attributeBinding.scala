@@ -49,13 +49,14 @@ trait Exceptions_attributeBinding
     val Exceptions_attributeManifest: ClassTag[Exceptions_attribute] = implicitly
 
     def Exceptions_attribute(
+        cp: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
         attribute_length: Int,
-        exception_index_table: ExceptionIndexTable)(
-            implicit cp: Constant_Pool): Exceptions_attribute = {
-        new Exceptions_attribute(exception_index_table.map(e_idx ⇒ e_idx.asObjectType))
+        exception_index_table: ExceptionIndexTable): Exceptions_attribute = {
+        new Exceptions_attribute(
+            exception_index_table.map(e_idx ⇒ cp(e_idx).asObjectType(cp))
+        )
     }
-
 }
 
 

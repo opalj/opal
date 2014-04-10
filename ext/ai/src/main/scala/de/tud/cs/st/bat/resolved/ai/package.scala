@@ -30,6 +30,8 @@ package de.tud.cs.st
 package bat
 package resolved
 
+import de.tud.cs.st.collection.UIDSet
+
 /**
  * Implementation of an abstract interpretation framework – called BATAI in the following.
  *
@@ -100,5 +102,5 @@ package object ai {
      *      makes it possible to distinguish between precise types and type bounds is at
      *      the sole discretion of the domain.
      */
-    type UpperTypeBound = UIDList[ReferenceType]
+    type UpperTypeBound = UIDSet[ReferenceType]
 }

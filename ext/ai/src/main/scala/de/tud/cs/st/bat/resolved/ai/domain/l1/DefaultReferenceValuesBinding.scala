@@ -34,6 +34,7 @@ package domain
 package l1
 
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
+import de.tud.cs.st.collection.UIDSet
 
 import scala.collection.SortedSet
 
@@ -71,10 +72,10 @@ trait DefaultReferenceValuesBinding[+I] extends l1.ReferenceValues[I] {
     override protected[domain] def ObjectValue(
         pc: PC,
         isNull: Answer,
-        upperTypeBound: UIDList[ObjectType]): DomainObjectValue = {
+        upperTypeBound: UIDSet[ObjectType]): DomainObjectValue = {
         assume(upperTypeBound.nonEmpty)
-        if (upperTypeBound.tail.isEmpty)
-            ObjectValue(pc, isNull, false, upperTypeBound.head)
+        if (upperTypeBound.containsOneElement)
+            ObjectValue(pc, isNull, false, upperTypeBound.first)
         else
             new MObjectValue(pc, isNull, upperTypeBound)
     }

@@ -84,8 +84,8 @@ trait VTACallGraphDomain[I] extends CHACallGraphDomain[I] { domain ⇒
         if (isNull.isNoOrUnknown) {
             val isPrecise = value.isPrecise
             val upperTypeBound = value.upperTypeBound
-            if (isPrecise && upperTypeBound.tail.isEmpty) {
-                val theType = upperTypeBound.head
+            if (isPrecise && upperTypeBound.containsOneElement) {
+                val theType = upperTypeBound.first
                 if (theType.isArrayType)
                     staticMethodCall(pc, ObjectType.Object, name, descriptor, operands)
                 else
@@ -123,24 +123,24 @@ class DefaultVTACallGraphDomain[Source](
     val cache: CallGraphCache[MethodSignature, Iterable[Method]],
     val theClassFile: ClassFile,
     val theMethod: Method)
-        extends Domain[Int]
-        with DefaultDomainValueBinding[Int]
+        extends Domain[Method]
+        with DefaultDomainValueBinding[Method]
         with GeneralizedArrayHandling
         with Configuration
         with IgnoreMethodResults
         with IgnoreSynchronization
-        with l0.DefaultTypeLevelIntegerValues[Int]
+        with l0.DefaultTypeLevelIntegerValues[Method]
         with l0.DefaultIntegerValuesComparison
-        with l0.DefaultTypeLevelLongValues[Int]
-        with l0.DefaultTypeLevelFloatValues[Int]
-        with l0.DefaultTypeLevelDoubleValues[Int]
-        with l1.DefaultReferenceValuesBinding[Int]
+        with l0.DefaultTypeLevelLongValues[Method]
+        with l0.DefaultTypeLevelFloatValues[Method]
+        with l0.DefaultTypeLevelDoubleValues[Method]
+        with l1.DefaultReferenceValuesBinding[Method]
         with l0.TypeLevelFieldAccessInstructions
         with l0.TypeLevelInvokeInstructions
         with ProjectBasedClassHierarchy[Source]
-        with VTACallGraphDomain[Int] {
+        with VTACallGraphDomain[Method] {
 
-    def identifier = theMethod.id
+    def identifier = theMethod
 
 }
 

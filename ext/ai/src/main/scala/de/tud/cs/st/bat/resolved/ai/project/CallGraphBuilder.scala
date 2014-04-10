@@ -33,6 +33,7 @@ package ai
 package project
 
 import de.tud.cs.st.collection.mutable.UShortSet
+import de.tud.cs.st.collection.UID
 
 import analyses.SomeProject
 
@@ -72,28 +73,26 @@ class CallGraphBuilder(val project: SomeProject) {
      * Builds the final call graph.
      */
     def buildCallGraph(): CallGraph = {
-        import UID.getOrElseUpdate
 
         import concurrent._
         import concurrent.duration._
         import ExecutionContext.Implicits.global
 
-        import scala.collection.immutable.Map
         import scala.collection.mutable.HashMap
 
-        // the index is the id of the method that is "called by" other methods
-        val calledByMapFuture: Future[Array[HashMap[Method, PCs]]] = future {
-            val calledByMap: Array[HashMap[Method, PCs]] = new Array(project.methodsCount)
+        val calledByMapFuture: Future[HashMap[Method, HashMap[Method, PCs]]] = future {
+            val calledByMap: HashMap[Method, HashMap[Method, PCs]] =
+                new HashMap[Method, HashMap[Method, PCs]]() { override def initialSize = project.methodsCount }
             for {
                 (caller, edges) ← allCallEdges
                 (pc, callees) ← edges
                 callee ← callees
             } {
                 val callers =
-                    getOrElseUpdate(
-                        calledByMap,
+                    calledByMap.getOrElseUpdate(
                         callee,
-                        HashMap.empty[Method, PCs])
+                        new HashMap[Method, PCs] { override def initialSize = 8 }
+                    )
                 callers.get(caller) match {
                     case Some(pcs) ⇒
                         val newPCs = pcs +≈ pc
@@ -101,7 +100,7 @@ class CallGraphBuilder(val project: SomeProject) {
                             callers.update(caller, newPCs)
                     case None ⇒
                         val newPCs = UShortSet(pc)
-                        callers.update(caller, newPCs)
+                        callers.put(caller, newPCs)
                 }
                 // USING AN IMMUTABLE MAP - ROUGHLY 5% SLOWER AND 10% MEMORY OVERHEAD
                 // val callers = calledByMap(callee.id)
@@ -122,24 +121,24 @@ class CallGraphBuilder(val project: SomeProject) {
             calledByMap
         }
 
-        // the index in the array is the id of the method that calls other methods
-        val callsMap: Array[Map[PC, Iterable[Method]]] = new Array(project.methodsCount)
+        val callsMap: HashMap[Method, HashMap[PC, Iterable[Method]]] =
+            new HashMap[Method, HashMap[PC, Iterable[Method]]] {
+                override def initialSize = project.methodsCount
+            }
         for {
             (caller, edges) ← allCallEdges
             (pc, callees) ← edges
             if callees.nonEmpty
         } {
-            var callSite = callsMap(caller.id)
-            callsMap(caller.id) = {
-                if (callSite eq null) {
-                    new Map.Map1(pc, callees)
-                } else {
-                    if (callSite.contains(pc)) {
-                        callSite.updated(pc, callSite(pc) ++ callees)
-                    } else
-                        callSite.updated(pc, callees)
-                }
-            }
+            val callSite =
+                callsMap.getOrElseUpdate(
+                    caller,
+                    new HashMap[PC, Iterable[Method]] { override def initialSize = 8 }
+                )
+            if (callSite.contains(pc)) {
+                callSite.update(pc, callSite(pc) ++ callees)
+            } else
+                callSite.put(pc, callees)
         }
 
         new CallGraph(
