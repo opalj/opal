@@ -32,8 +32,9 @@ package collection
 import scala.annotation.tailrec
 
 /**
- * A sorted set of elements of type `UID`. The decision whether the element is already
- * contained in this set is solely based on the element's unique id.
+ * An immutable sorted set of elements of type `UID`.
+ * The decision whether the element is already contained in this set is solely based on
+ * the element's unique id.
  *
  * [[UIDSet$]]s are constructed using the factory methods of the companion object.
  *
@@ -160,6 +161,11 @@ sealed trait UIDSet[+T <: UID] { thisSet ⇒
         result
     }
 
+    /**
+     * Reduces the elements of this set using the given operator. This
+     * operation is undefined if this set is empty. If it only contains one
+     * element that element is returned.
+     */
     def reduce[X >: T](op: (X, X) ⇒ X): X
 
     /**
