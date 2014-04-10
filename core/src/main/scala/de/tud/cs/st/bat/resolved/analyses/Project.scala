@@ -326,9 +326,9 @@ object Project {
     def apply(file: File): Project[URL] = {
         Project.apply[URL](reader.Java8Framework.ClassFiles(file))
     }
-    
+
     /**
-     * Creates a new IndexBasedProject.
+     * Creates a new Project.
      *
      * @param classFiles The list of class files of this project that are considered
      *    to belong to the application/library that will be analyzed.
@@ -342,7 +342,6 @@ object Project {
         libraryClassFilesWithSources: Iterable[(ClassFile, Source)] = Iterable.empty): Project[Source] = {
 
         import scala.collection.mutable.{ Set, Map }
-
         import concurrent.{ Future, Await, ExecutionContext, future }
         import concurrent.duration.Duration
         import ExecutionContext.Implicits.global
