@@ -50,24 +50,30 @@ trait InnerClasses_attributeBinding
     val InnerClassesEntryManifest: ClassTag[InnerClassesEntry] = implicitly
 
     def InnerClasses_attribute(
+        cp: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
-        inner_classes: InnerClasses)(
-            implicit constant_pool: Constant_Pool): InnerClasses_attribute =
+        inner_classes: InnerClasses): InnerClasses_attribute =
         new InnerClasses_attribute(inner_classes)
 
     def InnerClassesEntry(
+        cp: Constant_Pool,
         inner_class_info_index: Constant_Pool_Index,
         outer_class_info_index: Constant_Pool_Index,
         inner_name_index: Constant_Pool_Index,
-        inner_class_access_flags: Int)(implicit cp: Constant_Pool) = {
+        inner_class_access_flags: Int) = {
         new InnerClassesEntry(
-            inner_class_info_index.asObjectType,
-            if (outer_class_info_index == 0) None else Some(outer_class_info_index.asObjectType),
-            if (inner_name_index == 0) None else Some(inner_name_index.asString),
+            cp(inner_class_info_index).asObjectType(cp),
+            if (outer_class_info_index == 0)
+                None
+            else
+                Some(cp(outer_class_info_index).asObjectType(cp)),
+            if (inner_name_index == 0)
+                None
+            else
+                Some(cp(inner_name_index).asString),
             inner_class_access_flags
         )
     }
-
 }
 
 

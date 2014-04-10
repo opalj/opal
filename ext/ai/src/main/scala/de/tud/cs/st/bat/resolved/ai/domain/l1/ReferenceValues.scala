@@ -34,6 +34,7 @@ package domain
 package l1
 
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
+import de.tud.cs.st.collection.{ UIDSet, UIDSet0, UIDSet1 }
 
 import scala.collection.SortedSet
 
@@ -380,7 +381,7 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
                 ObjectValue(
                     this.pc,
                     this.isNull,
-                    UIDList(supertype.asObjectType, theUpperTypeBound))
+                    UIDSet(supertype.asObjectType, theUpperTypeBound))
             }
         }
 
@@ -517,7 +518,7 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
     protected class MObjectValue(
         val pc: PC,
         override val isNull: Answer,
-        upperTypeBound: UIDList[ObjectType])
+        upperTypeBound: UIDSet[ObjectType])
             extends super.MObjectValue(upperTypeBound)
             with ObjectValue {
         this: DomainObjectValue ⇒
@@ -537,7 +538,7 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
             // returned unknown. Hence, we only handle the case where the new bound
             // is more strict than the previous bound.
 
-            var newUpperTypeBound: UIDList[ObjectType] = UIDList.empty
+            var newUpperTypeBound: UIDSet[ObjectType] = UIDSet.empty
             upperTypeBound foreach { (anUpperTypeBound: ObjectType) ⇒
                 // ATTENTION: "!..yes" is not the same as "no" (there is also unknown)
                 if (!domain.isSubtypeOf(supertype, anUpperTypeBound).isYes)
@@ -682,23 +683,23 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
             val values = this.values.dropWhile(_.isNull.isYes)
             if (values.isEmpty)
                 // <=> all values are null values!
-                UIDList.empty
+                UIDSet.empty[ObjectType]
             else {
                 var overallUTB = values.head.upperTypeBound
 
                 def currentUTBisUTBForArrays: Boolean = {
-                    overallUTB.tail.isEmpty &&
-                        overallUTB.head.isArrayType
+                    overallUTB.containsOneElement &&
+                        overallUTB.first.isArrayType
                 }
 
                 def asUTBForArrays: ArrayType =
-                    overallUTB.head.asArrayType
+                    overallUTB.first.asArrayType
 
-                def asUTBForObjects: UIDList[ObjectType] =
-                    overallUTB.asInstanceOf[UIDList[ObjectType]]
+                def asUTBForObjects: UIDSet[ObjectType] =
+                    overallUTB.asInstanceOf[UIDSet[ObjectType]]
 
                 values.tail foreach { value ⇒
-                    val newUpperTypeBound: Either[ReferenceType, UIDList[ReferenceType]] = value match {
+                    val newUpperTypeBound: Either[ReferenceType, UIDSet[ReferenceType]] = value match {
                         case _: NullValue ⇒ /*"Do Nothing"*/ Right(overallUTB)
                         case SObjectValue(upperTypeBound) ⇒
                             if (currentUTBisUTBForArrays)
@@ -719,7 +720,7 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
 
                     }
                     newUpperTypeBound match {
-                        case Left(referenceType)   ⇒ overallUTB = UIDList(referenceType)
+                        case Left(referenceType)   ⇒ overallUTB = UIDSet(referenceType)
                         case Right(referenceTypes) ⇒ overallUTB = referenceTypes
                     }
                 }
@@ -777,11 +778,11 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
          */
         override def summarize(pc: PC): DomainReferenceValue = {
             upperTypeBound match {
-                case UIDList.empty ⇒ NullValue(pc)
-                case SingleElementUIDList(referenceType) ⇒
+                case UIDSet0 ⇒ NullValue(pc)
+                case UIDSet1(referenceType) ⇒
                     ReferenceValue(pc, isNull, isPrecise, referenceType)
                 case utb ⇒
-                    ObjectValue(pc, isNull, utb.asInstanceOf[UIDList[ObjectType]])
+                    ObjectValue(pc, isNull, utb.asInstanceOf[UIDSet[ObjectType]])
             }
         }
 
@@ -991,7 +992,7 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
     override protected[domain] def ObjectValue(pc: PC, objectType: ObjectType): DomainObjectValue =
         ObjectValue(pc, Unknown, false, objectType)
 
-    override protected[domain] def ObjectValue(pc: PC, upperTypeBound: UIDList[ObjectType]): DomainObjectValue =
+    override protected[domain] def ObjectValue(pc: PC, upperTypeBound: UIDSet[ObjectType]): DomainObjectValue =
         ObjectValue(pc, Unknown, upperTypeBound)
 
     override def NewArray(pc: PC, count: DomainValue, arrayType: ArrayType): DomainArrayValue =
@@ -1028,7 +1029,7 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
     protected[domain] def ObjectValue( // for MObjectValue
         pc: PC,
         isNull: Answer,
-        upperTypeBound: UIDList[ObjectType]): DomainObjectValue
+        upperTypeBound: UIDSet[ObjectType]): DomainObjectValue
 
     protected[domain] def ArrayValue( // for ArrayValue
         pc: PC,

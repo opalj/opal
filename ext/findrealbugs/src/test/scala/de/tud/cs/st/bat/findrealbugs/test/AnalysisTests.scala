@@ -80,21 +80,21 @@ object AnalysisTest {
         useJDK: Boolean = false): Project[URL] = {
 
         val classFiles = filenames.map(filename ⇒
-            Java7Framework.ClassFiles(
+            Java8Framework.ClassFiles(
                 TestSupport.locateTestResources("classfiles/analyses/"+filename,
                     "ext/findrealbugs")
             )
         ).flatten
 
         if (useJDK && jreClassFiles.nonEmpty) {
-            println("Creating IndexBasedProject: "+classFiles.size+
+            println("Creating Project: "+classFiles.size+
                 " class files from "+filenames.mkString(", ")+" and "+jreClassFiles.size+
                 " JRE class files")
-            IndexBasedProject(classFiles, jreClassFiles)
+            Project(classFiles, jreClassFiles)
         } else {
-            println("Creating IndexBasedProject: "+classFiles.size+
+            println("Creating Project: "+classFiles.size+
                 " class files from "+filenames.mkString(", "))
-            IndexBasedProject(classFiles)
+            Project(classFiles)
         }
     }
 
@@ -110,7 +110,7 @@ object AnalysisTest {
             val jarfile = new java.io.File(path)
             if (jarfile.exists()) {
                 println("Loading JRE .jar (found in sun.boot.class.path): "+path)
-                Java7LibraryFramework.ClassFiles(jarfile)
+                Java8LibraryFramework.ClassFiles(jarfile)
             } else {
                 Seq.empty
             }

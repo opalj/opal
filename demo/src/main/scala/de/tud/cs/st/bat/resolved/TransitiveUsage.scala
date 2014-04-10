@@ -112,7 +112,7 @@ object TransitiveUsage extends AnalysisExecutor {
             while (extractedTypes.nonEmpty) {
                 val nextType = extractedTypes.head
                 visitedTypes += nextType
-                val nextClassFile = project(nextType)
+                val nextClassFile = project.classFile(nextType)
                 extractedTypes = extractedTypes.tail
                 nextClassFile.foreach(dependencyCollector.process)
             }

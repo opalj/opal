@@ -46,8 +46,7 @@ trait MethodsBinding extends MethodsReader {
         accessFlags: Int,
         name_index: Int,
         descriptor_index: Int,
-        attributes: Attributes)(
-            implicit idProvider: IdProvider): Method_Info = {
+        attributes: Attributes): Method_Info = {
         Method(
             accessFlags,
             cp(name_index).asString,

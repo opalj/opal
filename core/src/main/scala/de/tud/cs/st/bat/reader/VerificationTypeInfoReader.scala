@@ -71,7 +71,7 @@ trait VerificationTypeInfoReader extends Constant_PoolAbstractions {
      */
     def ObjectVariableInfo(
         cp: Constant_Pool,
-        cpool_index: Constant_Pool_Index): VerificationTypeInfo
+        type_index: Constant_Pool_Index): VerificationTypeInfo
 
     //
     // IMPLEMENTATION

@@ -33,7 +33,6 @@ package ai
 package debug
 
 import analyses.SomeProject
-import analyses.ProjectLike
 
 /**
  * The domain registry is a registry for all domains that can be instantiated given

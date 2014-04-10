@@ -220,7 +220,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                 case 116 ⇒ INEG
                 case 193 ⇒ INSTANCEOF(cp(in.readUnsignedShort).asConstantValue(cp).toReferenceType)
                 case 186 ⇒
-                    val cpe = cp(in.readUnsignedShort).asInvokeDynamic
+                    val cpEntry = cp(in.readUnsignedShort).asInvokeDynamic
                     in.readByte // ignored; fixed value
                     in.readByte // ignored; fixed value
                     registerDeferredAction(cp) { classFile ⇒
@@ -228,9 +228,9 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                             case BootstrapMethodTable(bms) ⇒ bms
                         }
                         val invokeDynamic = INVOKEDYNAMIC(
-                            bootstrapMethods.get(cpe.bootstrapMethodAttributeIndex),
-                            cpe.methodName,
-                            cpe.methodDescriptor
+                            bootstrapMethods.get(cpEntry.bootstrapMethodAttributeIndex),
+                            cpEntry.methodName(cp),
+                            cpEntry.methodDescriptor(cp)
                         )
                         instructions(index) = invokeDynamic
                         classFile

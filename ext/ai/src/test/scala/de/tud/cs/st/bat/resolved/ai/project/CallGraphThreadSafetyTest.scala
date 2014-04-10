@@ -60,7 +60,7 @@ class CallGraphThreadSafetyTest extends FlatSpec with Matchers {
     //
     def file = TestSupport.locateTestResources(testFileName, testFilePath)
     val classFiles = Java7Framework.ClassFiles(file)
-    val project = bat.resolved.analyses.IndexBasedProject(classFiles)
+    val project = bat.resolved.analyses.Project(classFiles)
 
     //
     // GRAPH CONSTRUCTION

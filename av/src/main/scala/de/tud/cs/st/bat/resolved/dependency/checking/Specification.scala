@@ -33,7 +33,7 @@ package dependency
 package checking
 
 import reader.Java7Framework
-import analyses.{ ClassHierarchy, IndexBasedProject }
+import analyses.{ ClassHierarchy, Project }
 
 import java.net.URL
 import scala.collection.immutable.SortedSet
@@ -320,7 +320,7 @@ class Specification
         import de.tud.cs.st.util.debug.PerformanceEvaluation.{ ns2sec, time }
 
         // 1. create and update the support data structures
-        var project: IndexBasedProject[URL] = null
+        var project: Project[URL] = null
         time {
             val dependencyExtractor =
                 new DependencyExtractor(Specification.this) with NoSourceElementsVisitor {
@@ -350,13 +350,12 @@ class Specification
                 classFiles = cs :: classFiles
                 dependencyExtractor.process(classFile)
             }
-            project = IndexBasedProject(classFiles)
+            project = Project(classFiles)
         } { executionTime ⇒
             Console.println(
                 Console.GREEN+
                     "1. Reading "+
-                    project.classFilesCount+" class files (defined types: "+
-                    project.objectTypesCount+") and extracting dependencies took "+
+                    project.classFilesCount+" class files and extracting dependencies took "+
                     ns2sec(executionTime).toString+" seconds."+
                     Console.BLACK)
         }

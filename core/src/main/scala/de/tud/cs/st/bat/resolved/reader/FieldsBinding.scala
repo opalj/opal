@@ -45,8 +45,7 @@ trait FieldsBinding extends FieldsReader {
         access_flags: Int,
         name_index: Constant_Pool_Index,
         descriptor_index: Constant_Pool_Index,
-        attributes: Attributes)(
-            implicit idProvider: IdProvider): Field_Info = {
+        attributes: Attributes): Field_Info = {
         Field(
             access_flags,
             cp(name_index).asString,

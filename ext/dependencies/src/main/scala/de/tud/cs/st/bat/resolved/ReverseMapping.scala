@@ -35,7 +35,6 @@ package resolved
  *
  * @author Michael Eichberg
  */
-@deprecated(message="All source elements now always have an idea and the project provides a reverse mapping",since="2014")
 trait ReverseMapping extends CategorizedSourceElementIDs {
 
     import scala.collection.mutable.ArrayBuffer

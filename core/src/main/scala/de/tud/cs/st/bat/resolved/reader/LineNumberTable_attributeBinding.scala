@@ -51,10 +51,10 @@ trait LineNumberTable_attributeBinding
     type LineNumberTable_attribute = de.tud.cs.st.bat.resolved.LineNumberTable
 
     def LineNumberTable_attribute(
+        constant_pool: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
         attribute_length: Int,
-        line_number_table: LineNumbers)(
-            implicit constant_pool: Constant_Pool): LineNumberTable =
+        line_number_table: LineNumbers): LineNumberTable =
         new LineNumberTable(line_number_table)
 
     def LineNumberTableEntry(start_pc: Int, line_number: Int) =

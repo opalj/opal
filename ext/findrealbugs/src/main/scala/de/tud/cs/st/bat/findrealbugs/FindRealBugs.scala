@@ -223,7 +223,7 @@ object FindRealBugsCLI {
                 Java7Framework.ClassFiles(file)
             }
         ).flatten
-        val project = IndexBasedProject(classFiles)
+        val project = Project(classFiles)
         println("\tClass files loaded: "+project.classFilesCount)
 
         //

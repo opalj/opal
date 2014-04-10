@@ -144,8 +144,9 @@ trait AnalysisExecutor {
         println(result.consoleReport)
     }
 
-    def setupProject(cpFiles: Iterable[File], libcpFiles: Iterable[File]): Project[URL] = {
-        implicit val idProvider = new IdProvider
+    def setupProject(
+        cpFiles: Iterable[File],
+        libcpFiles: Iterable[File]): Project[URL] = {
         println("Reading class files (found in):")
         val (classFiles, exceptions1) =
             reader.readClassFiles(
@@ -181,8 +182,8 @@ trait AnalysisExecutor {
                 ".txt").map { Console.err.println("Details can be found in: "+(_: File).toString); null }
         }
 
-        var project = IndexBasedProject(idProvider, classFiles, libraryClassFiles)
-        println("Class files loaded: "+project.classFilesCount)
+        var project = Project(classFiles, libraryClassFiles)
+        println("Project {"+project.statistics+"}")
         project
     }
 }

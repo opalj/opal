@@ -48,7 +48,7 @@ public class ProjectDemo {
 
     public static void main(String[] args) {
         // Load a project
-        ProjectLike project = Projects.createProject(new File(args[0]));
+        Project<java.net.URL> project = Project.apply(new File(args[0]));
 
         // Convert the project into a simple Map (NOT RECOMMENDED)
         // Map<ObjectType, ClassFile> project = projectLike.toJavaMap();

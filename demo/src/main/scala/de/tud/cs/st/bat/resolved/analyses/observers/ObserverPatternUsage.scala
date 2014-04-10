@@ -113,8 +113,8 @@ object ObserverPatternUsage extends AnalysisExecutor {
                 // we also want to include classes such as WindowAdapater which are 
                 // pure implementations of an observer interface
                 (allObservers filter { observerType ⇒
-                    if (project(observerType).isDefined) { // check that the project is complete
-                        val observerClassFile = project(observerType).get
+                    if (project.classFile(observerType).isDefined) { // check that the project is complete
+                        val observerClassFile = project.classFile(observerType).get
                         if (!observerClassFile.isInterfaceDeclaration) {
                             val implObsIntfs = observerClassFile.interfaceTypes.filter(allObserverInterfaces.contains(_))
 
@@ -123,9 +123,9 @@ object ObserverPatternUsage extends AnalysisExecutor {
                                     method.isInitialzer || method.isSynthetic ||
                                         // one of the implemented observer interfaces defines the method
                                         implObsIntfs.exists(observerInterface ⇒
-                                            project(observerInterface).isDefined &&
+                                            project.classFile(observerInterface).isDefined &&
                                                 classHierarchy.lookupMethodInInterface(
-                                                    project(observerInterface).get,
+                                                    project.classFile(observerInterface).get,
                                                     method.name,
                                                     method.descriptor,
                                                     project).isDefined
@@ -143,7 +143,7 @@ object ObserverPatternUsage extends AnalysisExecutor {
                 var observerFields = Set.empty[(ClassFile, Field)]
                 for {
                     appType ← appTypes
-                    classFile ← project(appType) //.toSeq
+                    classFile ← project.classFile(appType) //.toSeq
                     field ← classFile.fields
                     if field.fieldType.isReferenceType
                 } {

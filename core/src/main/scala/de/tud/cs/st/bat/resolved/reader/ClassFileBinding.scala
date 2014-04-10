@@ -48,21 +48,26 @@ trait ClassFileBinding extends ClassFileReader {
     type Methods <: IndexedSeq[Method_Info]
 
     def ClassFile(
+        cp: Constant_Pool,
         minor_version: Int, major_version: Int,
         access_flags: Int,
-        this_class: Constant_Pool_Index,
-        super_class: Constant_Pool_Index,
+        this_class_index: Constant_Pool_Index,
+        super_class_index: Constant_Pool_Index,
         interfaces: IndexedSeq[Constant_Pool_Index],
         fields: Fields,
         methods: Methods,
-        attributes: Attributes)(
-            implicit cp: Constant_Pool): ClassFile = {
+        attributes: Attributes): ClassFile = {
         de.tud.cs.st.bat.resolved.ClassFile(
             minor_version, major_version, access_flags,
-            this_class.asObjectType,
+            cp(this_class_index).asObjectType(cp),
             // to handle the special case that this class file represents java.lang.Object
-            { if (super_class == 0) None else Some(super_class.asObjectType) },
-            interfaces.map(_.asObjectType),
+            {
+                if (super_class_index == 0)
+                    None
+                else
+                    Some(cp(super_class_index).asObjectType(cp))
+            },
+            interfaces.map(cp(_).asObjectType(cp)),
             fields,
             methods,
             attributes)
@@ -81,6 +86,7 @@ trait ClassFileBinding extends ClassFileReader {
             classFile.updateAttributes(newAttributes)
         }
     }
+
     registerClassFilePostProcessor(removeBootstrapMethodAttribute)
 }
 

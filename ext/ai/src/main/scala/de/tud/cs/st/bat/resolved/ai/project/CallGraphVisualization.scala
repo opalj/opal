@@ -102,11 +102,13 @@ object CallGraphVisualization {
                                 println(RED+"cannot read file: "+e.getMessage() + RESET)
                                 sys.exit(-3)
                         }
-                    bat.resolved.analyses.IndexBasedProject(classFiles)
+                    bat.resolved.analyses.Project(classFiles)
                 } { t ⇒ println("Setting up the project took: "+ns2sec(t)) }
             } { m ⇒ println("Required memory for base representation: "+asMB(m)) }
         val fqnFilter = args(2)
 
+        println(project.statistics.map(e => "\t"+e._1+": "+e._2).mkString("Project statistics:\n\t","\n\t",""))
+        
         //
         // GRAPH CONSTRUCTION
         //
@@ -128,7 +130,6 @@ object CallGraphVisualization {
 
         // Some statistics 
         import callGraph.{ calls, callsCount, calledByCount, foreachCallingMethod }
-        println("Classes: "+project.classFiles.size+"; Methods: "+Method.methodsCount)
         println("Methods with at least one resolved call: "+callsCount)
         println("Methods which are called by at least one method: "+calledByCount)
 

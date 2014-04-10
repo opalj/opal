@@ -33,6 +33,7 @@ package analyses
 
 /**
  * @see [[de.tud.cs.st.bat.resolved.analyses]] for several predefined converter functions.
+ * @tparam S The type of the underlying source file.
  */
 case class ReportableAnalysisAdapter[Source, AnalysisResult](
     analysis: Analysis[Source, AnalysisResult],

@@ -61,7 +61,7 @@ object VTACallGraphKey extends ProjectInformationKey[ComputedCallGraph] {
     /**
      * Computes the `CallGraph` for the given project.
      */
-    override protected def compute(project: ProjectLike): ComputedCallGraph = {
+    override protected def compute(project: SomeProject): ComputedCallGraph = {
         val entryPoints = CallGraphFactory.defaultEntryPointsForLibraries(project)
         CallGraphFactory.create(
             project,

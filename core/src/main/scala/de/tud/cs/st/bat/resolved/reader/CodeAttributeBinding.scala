@@ -52,26 +52,29 @@ trait CodeAttributeBinding
     type Code_attribute = de.tud.cs.st.bat.resolved.Code
 
     def Code_attribute(
+        cp: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
         attribute_length: Int,
         max_stack: Int,
         max_locals: Int,
         instructions: Instructions,
         exception_handlers: ExceptionHandlers,
-        attributes: Attributes)(
-            implicit cp: Constant_Pool) = {
+        attributes: Attributes) = {
         new Code(max_stack, max_locals, instructions, exception_handlers, attributes)
     }
 
     def ExceptionTableEntry(
+        cp: Constant_Pool,
         start_pc: Int,
         end_pc: Int,
         handler_pc: Int,
-        catch_type_index: Constant_Pool_Index)(
-            implicit cp: Constant_Pool): ExceptionTableEntry = {
+        catch_type_index: Constant_Pool_Index): ExceptionTableEntry = {
         new ExceptionTableEntry(
             start_pc, end_pc, handler_pc,
-            if (catch_type_index == 0) None else Some(catch_type_index.asObjectType)
+            if (catch_type_index == 0)
+                None
+            else
+                Some(cp(catch_type_index).asObjectType(cp))
         )
     }
 }

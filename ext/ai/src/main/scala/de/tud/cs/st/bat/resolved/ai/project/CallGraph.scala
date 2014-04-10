@@ -42,20 +42,26 @@ import scala.collection.Map
  * Basic representation of a (calculated) call graph.
  *
  * ==Thread Safety==
- * The call graph is immutable and can be accessed by multiple threads concurrently.
+ * The call graph is effectively immutable and can be accessed by multiple
+ * threads concurrently.
  * Calls will never block.
- * 
+ *
  * ==Call Graph Construction==
  * The call graph is constructed by the [[de.tud.cs.st.bat.resolved.ai.project.CallGraphFactory]].
  *
+ * @param calledByMap The map of all methods that are called by at least one method.
+ *      I.e., the value is not expected to be the empty map.
+ * @param callsMap The map of all methods that call at least one method.
+ *      I.e., the value is not expected to be the empty map.
  * @author Michael Eichberg
  */
 class CallGraph private[project] (
         val project: SomeProject,
-        private[this] val calledByMap: Array[_ <: Map[Method, PCs]],
-        private[this] val callsMap: Array[_ <: Map[PC, Iterable[Method]]]) {
+        private[this] val calledByMap: Map[Method, Map[Method, PCs]],
+        private[this] val callsMap: Map[Method, Map[PC, Iterable[Method]]]) {
 
-    import de.tud.cs.st.util.ControlAbstractions.foreachNonNullValueOf
+    assert(calledByMap.values.forall(_.size > 0))
+    assert(callsMap.values.forall(_.size > 0))
 
     /**
      * Returns the invoke instructions (by means of (`Method`,`PC`) pairs) that
@@ -63,17 +69,18 @@ class CallGraph private[project] (
      * empty map is returned.
      */
     def calledBy(method: Method): Map[Method, PCs] = {
-        val callers = calledByMap(method.id)
-        if (callers ne null) callers else Map.empty
+        calledByMap.getOrElse(method, Map.empty)
     }
 
     /**
      * Returns the methods that are potentially invoked by the invoke instruction
-     * identified by the (`method`,`pc`) pair. 
+     * identified by the (`method`,`pc`) pair.
      */
     def calls(method: Method, pc: PC): Iterable[Method] = {
-        val callees = callsMap(method.id)
-        if (callees ne null) callees.get(pc).get else Iterable.empty
+        callsMap.get(method) match {
+            case Some(callees) ⇒ callees.get(pc).get
+            case None          ⇒ Iterable.empty
+        }
     }
 
     /**
@@ -86,16 +93,16 @@ class CallGraph private[project] (
     // However, we collect/store that information for the time being to make the 
     // implementation more uniform.
     def calls(method: Method): Map[PC, Iterable[Method]] = {
-        val callees = callsMap(method.id)
-        if (callees ne null) callees else Map.empty
+        callsMap.getOrElse(method, Map.empty)
     }
 
     /**
      * Calls the function `f` for each method that calls some other method.
      */
     def foreachCallingMethod[U](f: (Method, Map[PC, Iterable[Method]]) ⇒ U): Unit = {
-        foreachNonNullValueOf(callsMap) { (i, callees) ⇒
-            f(project.method(i), callees)
+        callsMap foreach { entry ⇒
+            val (method, callees) = entry
+            f(method, callees)
         }
     }
 
@@ -103,24 +110,17 @@ class CallGraph private[project] (
      * Calls the function `f` for each method that is called by some other method.
      */
     def foreachCalledByMethod[U](f: (Method, Map[Method, PCs]) ⇒ U): Unit = {
-        foreachNonNullValueOf(calledByMap) { (i, callers) ⇒
-            f(project.method(i), callers)
+        calledByMap foreach { entry ⇒
+            val (method, callees) = entry
+            f(method, callees)
         }
     }
 
     /** Number of methods that call at least one other method. */
-    def callsCount: Int = {
-        var callsCount = 0
-        foreachNonNullValueOf(callsMap) { (e, i) ⇒ callsCount += 1 }
-        callsCount
-    }
+    def callsCount: Int = callsMap.size
 
     /** Number of methods that are called by at least one other method. */
-    def calledByCount: Int = {
-        var calledByCount = 0
-        foreachNonNullValueOf(calledByMap) { (e, i) ⇒ calledByCount += 1 }
-        calledByCount
-    }
+    def calledByCount: Int = calledByMap.size
 
     /**
      * Statistics about the number of potential targets per call site.
@@ -130,7 +130,7 @@ class CallGraph private[project] (
     def callsStatistics(maxNumberOfResults: Int = 65536): String = {
         var result: List[List[String]] = List.empty
         var resultCount = 0
-        project forallMethods { (method: Method) ⇒
+        project.methods forall { (method: Method) ⇒
             val callSites = calls(method)
             callSites forall { callSite ⇒
                 val (pc, targets) = callSite
@@ -164,7 +164,7 @@ class CallGraph private[project] (
 
         var result: List[List[String]] = List.empty
         var resultCount = 0
-        project forallMethods { (method: Method) ⇒
+        project.methods forall { (method: Method) ⇒
             val callingSites = calledBy(method)
             callingSites forall { callingSite ⇒
                 val (callerMethod, callingInstructions) = callingSite

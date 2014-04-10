@@ -46,10 +46,11 @@ trait Signature_attributeBinding
     type Signature_attribute = Signature
 
     def Signature_attribute(
+        cp: Constant_Pool,
+        ap: AttributeParent,
         attribute_name_index: Constant_Pool_Index,
-        signature_index: Constant_Pool_Index)(
-            implicit cp: Constant_Pool, ap: AttributeParent): Signature_attribute =
-        signature_index.asSignature(ap)
+        signature_index: Constant_Pool_Index): Signature_attribute =
+        cp(signature_index).asSignature(ap)
 
 }
 
