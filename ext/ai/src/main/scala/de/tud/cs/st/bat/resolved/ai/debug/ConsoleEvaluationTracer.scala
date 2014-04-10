@@ -39,9 +39,13 @@ import instructions.Instruction
  * console. This tracer is particularly useful to understand the handling of JSR/RET
  * instructions.
  *
+ * If you wan to reuse this tracer to trace evaluations of different methods
+ * you should call the `reset` method between two calls.
+ *
  * ==Thread Safety==
- * This tracer defines some internal state that is dependent on the evaluation state.
- * Hence, '''this class is not thread safe and every AI should use its own instance'''.
+ * This tracer has internal state that is dependent on the state of the evaluation.
+ * Hence, '''this class is not thread safe and every `AI` instance should use its
+ * own instance'''.
  *
  * @author Michael Eichberg
  */
@@ -49,6 +53,8 @@ trait ConsoleEvaluationTracer extends AITracer {
 
     private[this] var indent = 0
     private[this] def printIndent = (0 until indent) foreach (i ⇒ print("\t"))
+
+    def reset() { indent = 0 }
 
     override def instructionEvalution(
         domain: SomeDomain)(
