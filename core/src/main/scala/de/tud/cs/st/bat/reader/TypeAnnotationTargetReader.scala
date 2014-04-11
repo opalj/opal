@@ -101,7 +101,26 @@ trait TypeAnnotationTargetReader extends Constant_PoolAbstractions {
 
     //______________________________
     // localvar_target
-    ???
+    type LocalVarTableEntry
+
+    type LocalVarTable = IndexedSeq[LocalVarTableEntry]
+
+    def LocalVarTableEntry(
+        start_pc: Int,
+        length: Int,
+        local_variable_table_index: Int): LocalVarTableEntry
+    /**
+     * Format
+     * {{{
+     * u2 table_length;
+     * {    u2 start_pc;
+     *      u2 length;
+     *      u2 index; // index into the local variable table(!)
+     * } table[table_length];
+     * }}}
+     */
+    def LocalVarDecl(localVarTable: LocalVarTable): TypeAnnotationTarget
+    def ResourceVarDecl(localVarTable: LocalVarTable): TypeAnnotationTarget
 
     //______________________________
     // offset_target
@@ -133,6 +152,17 @@ trait TypeAnnotationTargetReader extends Constant_PoolAbstractions {
     //
     // IMPLEMENTATION
     //
+
+    def LocalVarTable(in: DataInputStream): LocalVarTable = {
+        import util.ControlAbstractions.repeat
+
+        repeat(in.readUnsignedShort) {
+            LocalVarTableEntry(
+                in.readUnsignedShort(),
+                in.readUnsignedShort(),
+                in.readUnsignedShort())
+        }
+    }
 
     /* From the Specification
      * 
@@ -171,8 +201,8 @@ trait TypeAnnotationTargetReader extends Constant_PoolAbstractions {
             case 0x15 ⇒ ReceiverType
             case 0x16 ⇒ FormalParameter(in.readUnsignedByte())
             case 0x17 ⇒ Throws(in.readUnsignedShort())
-            case 0x40 ⇒ ??? //LocalVarTarget(cp, in.readUnsignedShort)
-            case 0x41 ⇒ ??? //LocalVarTarget(cp, in.readUnsignedShort)
+            case 0x40 ⇒ LocalVarDecl(LocalVarTable(in))
+            case 0x41 ⇒ ResourceVarDecl(LocalVarTable(in))
             case 0x42 ⇒ Catch(in.readUnsignedShort())
             case 0x43 ⇒ InstanceOf(in.readUnsignedShort())
             case 0x44 ⇒ New(in.readUnsignedShort())
