@@ -30,7 +30,7 @@ package de.tud.cs.st
 package bat
 package resolved
 
-import de.tud.cs.st.collection.UIDSet
+import de.tud.cs.st.collection.immutable.UIDSet
 
 /**
  * Implementation of an abstract interpretation framework – called BATAI in the following.

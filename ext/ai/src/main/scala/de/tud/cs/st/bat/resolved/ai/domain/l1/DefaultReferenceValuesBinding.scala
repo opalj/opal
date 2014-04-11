@@ -34,7 +34,7 @@ package domain
 package l1
 
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
-import de.tud.cs.st.collection.UIDSet
+import de.tud.cs.st.collection.immutable.UIDSet
 
 import scala.collection.SortedSet
 

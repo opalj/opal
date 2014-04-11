@@ -34,7 +34,7 @@ package domain
 package l0
 
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
-import de.tud.cs.st.collection.UIDSet
+import de.tud.cs.st.collection.immutable.UIDSet
 
 /**
  * Implements the foundations for performing computations related to reference values.

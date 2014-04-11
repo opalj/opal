@@ -28,6 +28,7 @@
  */
 package de.tud.cs.st
 package collection
+package immutable
 
 import scala.annotation.tailrec
 
