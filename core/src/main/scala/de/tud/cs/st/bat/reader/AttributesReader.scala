@@ -129,19 +129,23 @@ trait AttributesReader
     /**
      * Registers a new processor for the list of all attributes of a given class file
      * element (class, field, method, code). This can be used to post-process attributes.
-     * E.g., to merge multiple line number tables if they exist.
+     * E.g., to merge multiple line number tables if they exist or to link
+     * attributes that have strong dependencies. E.g., (in Java 8) the
+     * `localvar_target` structure of the `Runtime(In)VisibleTypeAnnotations` attribute
+     * has a reference in the local variable table attribute.
      */
     def registerAttributesPostProcessor(p: (Attributes) ⇒ Attributes): Unit = {
         attributesPostProcessors = p :: attributesPostProcessors
     }
 
     def Attributes(ap: AttributeParent, cp: Constant_Pool, in: DataInputStream): Attributes = {
-        var attributes: Attributes = repeat(in.readUnsignedShort) {
+        val attributes: Attributes = repeat(in.readUnsignedShort) {
             Attribute(ap, cp, in)
         } filter (_ != null) // lets remove the attributes we don't need or understand
 
-        attributesPostProcessors.foreach(p ⇒ attributes = p(attributes))
-        attributes
+        attributesPostProcessors.foldLeft(attributes)((a, p) ⇒ p(a))
+        //attributesPostProcessors.foreach(p ⇒ attributes = p(attributes))
+        //attributes
     }
 
     def Attribute(ap: AttributeParent, cp: Constant_Pool, in: DataInputStream): Attribute = {
