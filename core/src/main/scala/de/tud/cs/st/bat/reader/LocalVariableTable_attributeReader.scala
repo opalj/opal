@@ -107,7 +107,6 @@ trait LocalVariableTable_attributeReader extends AttributeReader {
                                 in.readUnsignedShort
                             )
                         }
-
                     }
                 )
             }
