@@ -45,7 +45,7 @@ import reader.Java8Framework.ClassFiles
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class IndexBasedProjectTest
+class ProjectTest
         extends FlatSpec
         with Matchers
         with ParallelTestExecution {
@@ -94,7 +94,21 @@ class IndexBasedProjectTest
         isLibraryType(classFile(DeprecatedByAnnotation).get) should be(true)
     }
 
-    behavior of "An IndexBasedProject's lookupMethodDeclaration method"
+    behavior of "Project's extend method"
+
+    it should "create a new Project that contains all class files" in {
+        overallProject.source(SuperType) should be('defined)
+        overallProject.source(DeprecatedByAnnotation) should be('defined)
+        overallProject.source(ObjectType("code/Quicksort")) should be('defined)
+    }
+
+    it should "create a Project with the correct classification for the class files" in {
+        overallProject.isLibraryType(SuperType) should be(false)
+        overallProject.isLibraryType(DeprecatedByAnnotation) should be(true)
+        overallProject.isLibraryType(ObjectType("code/Quicksort")) should be(false)
+    }
+
+    behavior of "A Project's lookupMethodDeclaration method"
 
     import project.classHierarchy.resolveMethodReference
 
@@ -185,7 +199,7 @@ class IndexBasedProjectTest
         assert(project.classFile(r.get).thisType === ObjectType("methods/b/SuperI"))
     }
 
-    behavior of "An IndexBasedProject's information management methods"
+    behavior of "A Project's information management methods"
 
     it should "be able to compute some project wide information on demand" in {
         val pik = new TestProjectInformationKey
@@ -274,6 +288,9 @@ private object ProjectTest {
     val resources = TestSupport.locateTestResources("classfiles/Methods.jar")
     val libraryResources = TestSupport.locateTestResources("classfiles/Attributes.jar")
     val project = Project(ClassFiles(resources), ClassFiles(libraryResources))
+
+    val codeJAR = TestSupport.locateTestResources("classfiles/Code.jar")
+    val overallProject = Project.extend(project, ClassFiles(codeJAR))
 
     val SuperType = ObjectType("methods/a/Super")
     val DirectSub = ObjectType("methods/a/DirectSub")

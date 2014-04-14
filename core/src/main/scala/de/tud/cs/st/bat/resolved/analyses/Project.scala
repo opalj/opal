@@ -100,6 +100,18 @@ class Project[Source] private (
 
     def fields: Iterable[Field] = fieldToClassFile.keys
 
+    private[analyses] def projectClassFilesWithSources: Iterable[(ClassFile, Source)] = {
+        projectClassFiles.view.map { classFile ⇒
+            (classFile, sources(classFile.thisType))
+        }
+    }
+
+    private[analyses] def libraryClassFilesWithSources: Iterable[(ClassFile, Source)] = {
+        libraryClassFiles.view.map { classFile ⇒
+            (classFile, sources(classFile.thisType))
+        }
+    }
+
     /**
      * Returns true if the given class file belongs to the library part of the project.
      * This is only the case if the class file was explicitly identified as being
@@ -328,6 +340,21 @@ object Project {
     }
 
     /**
+     * Creates a new `Project` that consists of the source files of the previous
+     * project and the newly given source files.
+     */
+    def extend[Source: reflect.ClassTag](
+        project: Project[Source],
+        projectClassFilesWithSources: Iterable[(ClassFile, Source)],
+        libraryClassFilesWithSources: Iterable[(ClassFile, Source)] = Iterable.empty): Project[Source] = {
+
+        apply(
+            project.projectClassFilesWithSources ++ projectClassFilesWithSources,
+            project.libraryClassFilesWithSources ++ libraryClassFilesWithSources
+        )
+    }
+
+    /**
      * Creates a new Project.
      *
      * @param classFiles The list of class files of this project that are considered
@@ -337,6 +364,7 @@ object Project {
      *    the libraries used by the project that will be analyzed.
      *    [Thread Safety] The underlying data structure has to support concurrent access.
      */
+    @throws[InconsistentProjectException]("If the set of class files contains duplicates.")
     def apply[Source: reflect.ClassTag](
         projectClassFilesWithSources: Iterable[(ClassFile, Source)],
         libraryClassFilesWithSources: Iterable[(ClassFile, Source)] = Iterable.empty): Project[Source] = {
@@ -382,6 +410,13 @@ object Project {
                 projectFieldsCount += 1
                 fieldToClassFile.put(field, classFile)
             }
+            if (objectTypeToClassFile.contains(objectType)) {
+                throw InconsistentProjectException(
+                    "the type "+
+                        objectType.toJava+
+                        " is defined by multiple class files."
+                )
+            }
             objectTypeToClassFile.put(objectType, classFile)
             sources.put(objectType, source)
         }
@@ -419,4 +454,8 @@ object Project {
             Await.result(classHierarchyFuture, Duration.Inf)
         )
     }
+}
+
+case class InconsistentProjectException(message: String) extends Exception(message) {
+
 }
