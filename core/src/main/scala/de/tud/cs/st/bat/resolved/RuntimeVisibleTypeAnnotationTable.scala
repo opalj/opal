@@ -28,52 +28,17 @@
  */
 package de.tud.cs.st
 package bat
-package reader
-
-import reflect.ClassTag
-
-import java.io.DataInputStream
+package resolved
 
 /**
- * Generic parser to parse a list of annotations. This
- * reader is intended to be used in conjunction with the
- * Runtime(In)Visible(Parameter)Annotations_attributeReaders.
+ * A runtime visible type annotation.
  *
  * @author Michael Eichberg
  */
-trait AnnotationsReader extends AnnotationAbstractions {
+case class RuntimeVisibleTypeAnnotationTable(
+    typeAnnotations: TypeAnnotations)
+        extends TypeAnnotationTable {
 
-    //
-    // ABSTRACT DEFINITIONS
-    //
-
-    implicit val AnnotationManifest: ClassTag[Annotation]
-
-    //
-    // IMPLEMENTATION
-    //
-
-    type Annotations = IndexedSeq[Annotation]
-    /**
-     * Reads the annotations of a annotations attributes.
-     *
-     * ''' From the Specification'''
-     * <pre>
-     * annotation {
-     *      u2 type_index;
-     *      u2 num_element_value_pairs;
-     *      {   u2 element_name_index;
-     *          element_value value;
-     *      }   element_value_pairs[num_element_value_pairs]
-     * }
-     * </pre>
-     */
-    def Annotations(cp: Constant_Pool, in: DataInputStream): Annotations = {
-        import util.ControlAbstractions.repeat
-
-        repeat(in.readUnsignedShort) {
-            Annotation(cp, in)
-        }
-    }
+    final def isRuntimeVisible: Boolean = true
 
 }

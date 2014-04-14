@@ -28,37 +28,51 @@
  */
 package de.tud.cs.st
 package bat
+package resolved
 package reader
 
 import reflect.ClassTag
 
-import java.io.DataInputStream
+import de.tud.cs.st.bat.reader.TypeAnnotationsReader
+import de.tud.cs.st.bat.reader.TypeAnnotationTargetReader
+import de.tud.cs.st.bat.reader.TypeAnnotationPathReader
 
 /**
- * Generic parser for the `target_type` and `target_info` fields of type annotations. This
- * reader is intended to be used in conjunction with the
- * [[TypeAnnotationsReader]].
+ * Factory methods to create representations of Java annotations.
  *
  * @author Michael Eichberg
  */
-trait TypeAnnotationTargetReader extends Constant_PoolAbstractions {
+trait TypeAnnotationsBinding
+        extends TypeAnnotationsReader
+        with TypeAnnotationTargetReader
+        with TypeAnnotationPathReader
+        with ConstantPoolBinding
+        with AttributeBinding {
 
-    //    object TypeAnnotationLocation extends Enumeration {
-    //        // the names are used as defined in the JVM 8 Spec.
-    //        val ClassFile = Value("ClassFile")
-    //        val MethodInfo = Value("method_info")
-    //        val FieldInfo = Value("field_info")
-    //        val Code = Value("Code")
-    //    }
-    //
-    //    type TypeAnnotationLocation = TypeAnnotationLocation.Value
-    //    import TypeAnnotationLocation._
+    type TypeAnnotation = resolved.TypeAnnotation
 
-    //
-    // ABSTRACT DEFINITIONS
-    //
+    val TypeAnnotationManifest: ClassTag[TypeAnnotation] = implicitly
 
     type TypeAnnotationTarget
+
+    type TypeAnnotationPath
+
+    type TypeAnnotationPathElement
+
+    //
+    // TypeAnnotation
+    // 
+
+    def TypeAnnotation(
+        constant_pool: Constant_Pool,
+        target: TypeAnnotationTarget,
+        path: TypeAnnotationPath,
+        type_index: Constant_Pool_Index,
+        element_value_pairs: ElementValuePairs): TypeAnnotation
+
+    //
+    // TypeAnnotationTarget
+    //
 
     //______________________________
     // type_parameter_target
@@ -101,25 +115,7 @@ trait TypeAnnotationTargetReader extends Constant_PoolAbstractions {
 
     //______________________________
     // localvar_target
-    /*
-     * Format
-     * {{{
-     * u2 table_length;
-     * {    u2 start_pc;
-     *      u2 length;
-     *      u2 index; // index into the local variable table(!)
-     * } table[table_length];
-     * }}}
-     */
     type LocalvarTableEntry
-    type LocalvarTable = IndexedSeq[LocalvarTableEntry]
-    /**
-     * Factory method to create a `LocalvarTableEntry`. To completely resolve
-     * such entries; i.e., to resolve the local_variable_table_index it may
-     * be necessary to do some post-processing after all attributes belonging
-     * to a code block are loaded. This can be done using the [[AttributesReader]]
-     * `registerAttributesPostProcessor` method.
-     */
     def LocalvarTableEntry(
         start_pc: Int,
         length: Int,
@@ -155,79 +151,22 @@ trait TypeAnnotationTargetReader extends Constant_PoolAbstractions {
         type_argument_index: Int): TypeAnnotationTarget
 
     //
-    // IMPLEMENTATION
+    // TypeAnnotationPath
     //
 
-    def LocalvarTable(in: DataInputStream): LocalvarTable = {
-        import util.ControlAbstractions.repeat
+    def TypeAnnotationDirectlyOnType: TypeAnnotationPath
 
-        repeat(in.readUnsignedShort) {
-            LocalvarTableEntry(
-                in.readUnsignedShort(),
-                in.readUnsignedShort(),
-                in.readUnsignedShort())
-        }
-    }
+    def TypeAnnotationPath(path: IndexedSeq[TypeAnnotationPathElement]): TypeAnnotationPath
 
-    /* From the Specification
-     * 
-     * <pre>
-     * u1 target_type;
-     * union {
-     *  type_parameter_target;
-     *  supertype_target;
-     *  type_parameter_bound_target;
-     *  empty_target;
-     *  method_formal_parameter_target;
-     *  throws_target;
-     *  localvar_target;
-     *  catch_target;
-     *  offset_target;
-     *  type_argument_target;
-     *  } target_info;
-     * </pre>
-     */
-    def TypeAnnotationTarget(cp: Constant_Pool, in: DataInputStream): TypeAnnotationTarget = {
-        val target_type = in.readUnsignedByte()
-        (target_type: @scala.annotation.switch) match {
-            case 0x00 ⇒ ParameterDeclarationOfClassOrInterface(in.readUnsignedByte())
-            case 0x01 ⇒ ParameterDeclarationOfMethodOrConstructor(in.readUnsignedByte())
-            case 0x10 ⇒ SupertypeTarget(in.readUnsignedShort())
-            case 0x11 ⇒
-                TypeBoundOfParameterDeclarationOfClassOrInterface(
-                    in.readUnsignedByte(),
-                    in.readUnsignedByte())
-            case 0x12 ⇒
-                TypeBoundOfParameterDeclarationOfMethodOrConstructor(
-                    in.readUnsignedByte(),
-                    in.readUnsignedByte())
-            case 0x13 ⇒ FieldDeclaration
-            case 0x14 ⇒ ReturnType
-            case 0x15 ⇒ ReceiverType
-            case 0x16 ⇒ FormalParameter(in.readUnsignedByte())
-            case 0x17 ⇒ Throws(in.readUnsignedShort())
-            case 0x40 ⇒ LocalvarDecl(LocalvarTable(in))
-            case 0x41 ⇒ ResourcevarDecl(LocalvarTable(in))
-            case 0x42 ⇒ Catch(in.readUnsignedShort())
-            case 0x43 ⇒ InstanceOf(in.readUnsignedShort())
-            case 0x44 ⇒ New(in.readUnsignedShort())
-            case 0x45 ⇒ MethodReferenceExpressionNew(in.readUnsignedShort())
-            case 0x46 ⇒ MethodReferenceExpressionIdentifier(in.readUnsignedShort())
-            case 0x47 ⇒ CastExpression(in.readUnsignedShort(), in.readUnsignedByte())
-            case 0x48 ⇒
-                ConstructorInvocation(in.readUnsignedShort(), in.readUnsignedByte())
-            case 0x49 ⇒
-                MethodInvocation(in.readUnsignedShort(), in.readUnsignedByte())
-            case 0x4A ⇒
-                ConstructorInMethodReferenceExpression(
-                    in.readUnsignedShort(),
-                    in.readUnsignedByte())
-            case 0x4B ⇒
-                MethodInMethodReferenceExpression(
-                    in.readUnsignedShort(),
-                    in.readUnsignedByte())
-        }
-    }
+    def TypeAnnotationDeeperInArrayType: TypeAnnotationPathElement
+
+    def TypeAnnotationDeeperInNestedType: TypeAnnotationPathElement
+
+    def TypeAnnotationOnBoundOfWildcardType: TypeAnnotationPathElement
+
+    def TypeAnnotationOnTypeArgument(type_argument_index: Int): TypeAnnotationPathElement
+
 }
+
 
 

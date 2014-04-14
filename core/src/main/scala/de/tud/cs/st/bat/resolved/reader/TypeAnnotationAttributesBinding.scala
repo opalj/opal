@@ -28,52 +28,42 @@
  */
 package de.tud.cs.st
 package bat
+package resolved
 package reader
 
 import reflect.ClassTag
 
-import java.io.DataInputStream
+import de.tud.cs.st.bat.reader.AnnotationsReader
+import de.tud.cs.st.bat.reader.RuntimeInvisibleTypeAnnotations_attributeReader
+import de.tud.cs.st.bat.reader.RuntimeVisibleTypeAnnotations_attributeReader
 
 /**
- * Generic parser to parse a list of annotations. This
- * reader is intended to be used in conjunction with the
- * Runtime(In)Visible(Parameter)Annotations_attributeReaders.
+ * Factory methods to create representations of the attributes related to
+ * Java type annotations.
  *
  * @author Michael Eichberg
  */
-trait AnnotationsReader extends AnnotationAbstractions {
+trait TypeAnnotationAttributesBinding
+        extends TypeAnnotationsBinding
+        with RuntimeInvisibleTypeAnnotations_attributeReader
+        with RuntimeVisibleTypeAnnotations_attributeReader
+        with AttributeBinding {
 
-    //
-    // ABSTRACT DEFINITIONS
-    //
+    type RuntimeInvisibleTypeAnnotations_attribute <: Attribute
+    type RuntimeVisibleTypeAnnotations_attribute <: Attribute
 
-    implicit val AnnotationManifest: ClassTag[Annotation]
+    protected def RuntimeInvisibleTypeAnnotations_attribute(
+        constant_pool: Constant_Pool,
+        attribute_name_index: Constant_Pool_Index,
+        attribute_length: Int,
+        annotations: TypeAnnotations): RuntimeInvisibleTypeAnnotations_attribute
 
-    //
-    // IMPLEMENTATION
-    //
-
-    type Annotations = IndexedSeq[Annotation]
-    /**
-     * Reads the annotations of a annotations attributes.
-     *
-     * ''' From the Specification'''
-     * <pre>
-     * annotation {
-     *      u2 type_index;
-     *      u2 num_element_value_pairs;
-     *      {   u2 element_name_index;
-     *          element_value value;
-     *      }   element_value_pairs[num_element_value_pairs]
-     * }
-     * </pre>
-     */
-    def Annotations(cp: Constant_Pool, in: DataInputStream): Annotations = {
-        import util.ControlAbstractions.repeat
-
-        repeat(in.readUnsignedShort) {
-            Annotation(cp, in)
-        }
-    }
+    def RuntimeVisibleTypeAnnotations_attribute(
+        constant_pool: Constant_Pool,
+        attribute_name_index: Constant_Pool_Index,
+        attribute_length: Int,
+        annotations: TypeAnnotations): RuntimeVisibleTypeAnnotations_attribute
 
 }
+
+

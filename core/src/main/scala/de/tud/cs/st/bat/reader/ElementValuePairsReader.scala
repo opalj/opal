@@ -39,7 +39,7 @@ import java.io.DataInputStream
  *
  * @author Michael Eichberg
  */
-trait ElementValuePairsReader extends Constant_PoolAbstractions {
+trait ElementValuePairsReader extends AnnotationAbstractions {
 
     //
     // ABSTRACT DEFINITIONS
@@ -50,10 +50,6 @@ trait ElementValuePairsReader extends Constant_PoolAbstractions {
 
     type ElementValuePair
     implicit val ElementValuePairManifest: ClassTag[ElementValuePair]
-
-    type Annotation
-
-    def Annotation(cp: Constant_Pool, in: DataInputStream): Annotation
 
     def ElementValuePair(
         constant_pool: Constant_Pool,

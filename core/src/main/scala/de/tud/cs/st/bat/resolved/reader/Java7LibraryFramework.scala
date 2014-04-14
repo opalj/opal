@@ -52,7 +52,7 @@ class Java7LibraryFramework
     // with Unknown_attributeBinding 
     /* and comment out the following line: */
     with SkipUnknown_attributeReader
-    with AnnotationsBinding
+    with AnnotationAttributesBinding
     with InnerClasses_attributeBinding
     with EnclosingMethod_attributeBinding
     with SourceFile_attributeBinding

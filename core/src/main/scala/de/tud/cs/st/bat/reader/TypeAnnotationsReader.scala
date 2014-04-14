@@ -41,14 +41,11 @@ import java.io.DataInputStream
  *
  * @author Michael Eichberg
  */
-trait TypeAnnotationsReader extends Constant_PoolAbstractions {
+trait TypeAnnotationsReader extends AnnotationAbstractions {
 
     //
     // ABSTRACT DEFINITIONS
     //
-
-    type ElementValuePairs
-    def ElementValuePairs(cp: Constant_Pool, in: DataInputStream): ElementValuePairs
 
     type TypeAnnotationTarget
     def TypeAnnotationTarget(cp: Constant_Pool, in: DataInputStream): TypeAnnotationTarget
@@ -118,11 +115,4 @@ trait TypeAnnotationsReader extends Constant_PoolAbstractions {
     }
 }
 
-trait TargetType
-
-trait TypeParameterTarget extends TargetType
-
-object TypeParameterTargetClassFile extends TypeParameterTarget
-
-object TypeParameterTargetMethod extends TypeParameterTarget
 

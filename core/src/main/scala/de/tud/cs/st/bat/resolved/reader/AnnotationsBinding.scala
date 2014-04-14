@@ -33,12 +33,7 @@ package reader
 
 import reflect.ClassTag
 
-import de.tud.cs.st.bat.reader.AnnotationsReader
-import de.tud.cs.st.bat.reader.RuntimeInvisibleAnnotations_attributeReader
-import de.tud.cs.st.bat.reader.RuntimeVisibleAnnotations_attributeReader
-import de.tud.cs.st.bat.reader.RuntimeInvisibleParameterAnnotations_attributeReader
-import de.tud.cs.st.bat.reader.RuntimeVisibleParameterAnnotations_attributeReader
-import de.tud.cs.st.bat.reader.ParameterAnnotationsReader
+import de.tud.cs.st.bat.reader.AnnotationAbstractions
 import de.tud.cs.st.bat.reader.AnnotationDefault_attributeReader
 import de.tud.cs.st.bat.reader.ElementValuePairsReader
 
@@ -48,20 +43,13 @@ import de.tud.cs.st.bat.reader.ElementValuePairsReader
  * @author Michael Eichberg
  */
 trait AnnotationsBinding
-        extends AnnotationsReader
-        with RuntimeInvisibleAnnotations_attributeReader
-        with RuntimeVisibleAnnotations_attributeReader
-        with RuntimeInvisibleParameterAnnotations_attributeReader
-        with RuntimeVisibleParameterAnnotations_attributeReader
-        with ParameterAnnotationsReader
-        with AnnotationDefault_attributeReader
+        extends AnnotationAbstractions
         with ElementValuePairsReader
-        with ConstantPoolBinding
-        with AttributeBinding {
+        with ConstantPoolBinding {
 
     type Annotation = resolved.Annotation
 
-    type AnnotationDefault_attribute = resolved.ElementValue
+    val AnnotationManifest: ClassTag[Annotation] = implicitly
 
     type ElementValue = resolved.ElementValue
     val ElementValueManifest: ClassTag[ElementValue] = implicitly
@@ -92,16 +80,6 @@ trait AnnotationsBinding
 
     type ElementValuePair = resolved.ElementValuePair
     val ElementValuePairManifest: ClassTag[ElementValuePair] = implicitly
-
-    type RuntimeVisibleAnnotations_attribute = resolved.RuntimeVisibleAnnotationTable
-
-    type RuntimeInvisibleAnnotations_attribute = resolved.RuntimeInvisibleAnnotationTable
-
-    type RuntimeVisibleParameterAnnotations_attribute = resolved.RuntimeVisibleParameterAnnotationTable
-
-    type RuntimeInvisibleParameterAnnotations_attribute = resolved.RuntimeInvisibleParameterAnnotationTable
-
-    val AnnotationManifest: ClassTag[Annotation] = implicitly
 
     def ElementValuePair(
         cp: Constant_Pool,
@@ -204,42 +182,6 @@ trait AnnotationsBinding
         type_index: Constant_Pool_Index,
         element_value_pairs: ElementValuePairs) =
         new Annotation(cp(type_index).asFieldType, element_value_pairs)
-
-    def AnnotationDefault_attribute(
-        cp: Constant_Pool,
-        attribute_name_index: Constant_Pool_Index,
-        attribute_length: Int,
-        element_value: ElementValue) = {
-        element_value
-    }
-
-    def RuntimeVisibleAnnotations_attribute(
-        cp: Constant_Pool,
-        attribute_name_index: Constant_Pool_Index,
-        attribute_length: Int,
-        annotations: Annotations) =
-        new RuntimeVisibleAnnotations_attribute(annotations)
-
-    def RuntimeInvisibleAnnotations_attribute(
-        cp: Constant_Pool,
-        attribute_name_index: Constant_Pool_Index,
-        attribute_length: Int,
-        annotations: Annotations) =
-        new RuntimeInvisibleAnnotations_attribute(annotations)
-
-    def RuntimeVisibleParameterAnnotations_attribute(
-        cp: Constant_Pool,
-        attribute_name_index: Constant_Pool_Index,
-        attribute_length: Int,
-        parameter_annotations: ParameterAnnotations) =
-        new RuntimeVisibleParameterAnnotations_attribute(parameter_annotations)
-
-    def RuntimeInvisibleParameterAnnotations_attribute(
-        cp: Constant_Pool,
-        attribute_name_index: Constant_Pool_Index,
-        attribute_length: Int,
-        parameter_annotations: ParameterAnnotations) =
-        new RuntimeInvisibleParameterAnnotations_attribute(parameter_annotations)
 
 }
 

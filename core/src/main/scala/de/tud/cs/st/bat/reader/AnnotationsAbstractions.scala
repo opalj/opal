@@ -35,45 +35,33 @@ import reflect.ClassTag
 import java.io.DataInputStream
 
 /**
- * Generic parser to parse a list of annotations. This
- * reader is intended to be used in conjunction with the
- * Runtime(In)Visible(Parameter)Annotations_attributeReaders.
+ * Annotation related definitions.
  *
  * @author Michael Eichberg
  */
-trait AnnotationsReader extends AnnotationAbstractions {
+trait AnnotationAbstractions extends Constant_PoolAbstractions {
 
     //
     // ABSTRACT DEFINITIONS
     //
 
-    implicit val AnnotationManifest: ClassTag[Annotation]
+    type ElementValuePairs
+
+    def ElementValuePairs(cp: Constant_Pool, in: DataInputStream): ElementValuePairs
+
+    // A TypeAnnotation's/an Annotation's element value can be an annotation.
+    type Annotation
+
+    def Annotation(
+        constant_pool: Constant_Pool,
+        type_index: Constant_Pool_Index,
+        element_value_pairs: ElementValuePairs): Annotation
 
     //
     // IMPLEMENTATION
     //
 
-    type Annotations = IndexedSeq[Annotation]
-    /**
-     * Reads the annotations of a annotations attributes.
-     *
-     * ''' From the Specification'''
-     * <pre>
-     * annotation {
-     *      u2 type_index;
-     *      u2 num_element_value_pairs;
-     *      {   u2 element_name_index;
-     *          element_value value;
-     *      }   element_value_pairs[num_element_value_pairs]
-     * }
-     * </pre>
-     */
-    def Annotations(cp: Constant_Pool, in: DataInputStream): Annotations = {
-        import util.ControlAbstractions.repeat
-
-        repeat(in.readUnsignedShort) {
-            Annotation(cp, in)
-        }
+    def Annotation(cp: Constant_Pool, in: DataInputStream): Annotation = {
+        Annotation(cp, in.readUnsignedShort, ElementValuePairs(cp, in))
     }
-
 }

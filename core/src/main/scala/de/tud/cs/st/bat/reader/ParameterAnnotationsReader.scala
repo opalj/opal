@@ -39,16 +39,13 @@ import java.io.DataInputStream
  *
  * @author Michael Eichberg
  */
-trait ParameterAnnotationsReader extends Constant_PoolAbstractions {
+trait ParameterAnnotationsReader extends AnnotationAbstractions {
 
     //
     // ABSTRACT DEFINITIONS
     //
 
-    type Annotation
     implicit val AnnotationManifest: ClassTag[Annotation]
-
-    def Annotation(cp: Constant_Pool, in: DataInputStream): Annotation
 
     //
     // IMPLEMENTATION

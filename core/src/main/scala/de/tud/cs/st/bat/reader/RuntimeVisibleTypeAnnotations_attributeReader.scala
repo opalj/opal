@@ -39,11 +39,10 @@ import java.io.DataInputStream
  */
 trait RuntimeVisibleTypeAnnotations_attributeReader extends AttributeReader {
 
-    type RuntimeVisibleTypeAnnotations_attribute <: Attribute
     type TypeAnnotations
-
     def TypeAnnotations(cp: Constant_Pool, in: DataInputStream): TypeAnnotations
 
+    type RuntimeVisibleTypeAnnotations_attribute <: Attribute
     def RuntimeVisibleTypeAnnotations_attribute(
         constant_pool: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,

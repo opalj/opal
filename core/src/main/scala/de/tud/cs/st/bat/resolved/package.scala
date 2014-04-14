@@ -48,8 +48,9 @@ package object resolved {
 
     type Attributes = Seq[Attribute]
 
-    type Annotations = IndexedSeq[Annotation]
     type ElementValuePairs = IndexedSeq[ElementValuePair]
+    type Annotations = IndexedSeq[Annotation]
+    type TypeAnnotations = IndexedSeq[TypeAnnotation]
 
     type InnerClasses = IndexedSeq[InnerClass]
 
