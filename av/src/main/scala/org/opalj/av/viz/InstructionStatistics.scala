@@ -104,7 +104,8 @@ object InstructionStatistics extends AnalysisExecutor {
                 for {
                     fqpn ← instructionsPerFQPN.keys
                     if fqpn.length > rootFQPN.length()
-                    if fqpn.startsWith(rootFQPN)
+                    if fqpn.startsWith(rootFQPN)  
+                    if fqpn.charAt(rootFQPN.length()) == '/' // javax is not a subpackage of java..
                 } {
                     var pnsToRemove = HashSet.empty[String]
                     var pnNeedToBeAdded = true
