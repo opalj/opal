@@ -414,7 +414,9 @@ object Project {
                 throw InconsistentProjectException(
                     "the type "+
                         objectType.toJava+
-                        " is defined by multiple class files."
+                        " is defined by multiple class files: "+
+                        sources(objectType)+" and "+
+                        source+"."
                 )
             }
             objectTypeToClassFile.put(objectType, classFile)
