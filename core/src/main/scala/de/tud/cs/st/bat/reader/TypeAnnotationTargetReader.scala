@@ -35,24 +35,13 @@ import reflect.ClassTag
 import java.io.DataInputStream
 
 /**
- * Generic parser for the `target_type` and `target_info` fields of type annotations. This
- * reader is intended to be used in conjunction with the
+ * Generic parser for the `target_type` and `target_info` fields of type annotations. 
+ * This reader is intended to be used in conjunction with the
  * [[TypeAnnotationsReader]].
  *
  * @author Michael Eichberg
  */
 trait TypeAnnotationTargetReader extends Constant_PoolAbstractions {
-
-    //    object TypeAnnotationLocation extends Enumeration {
-    //        // the names are used as defined in the JVM 8 Spec.
-    //        val ClassFile = Value("ClassFile")
-    //        val MethodInfo = Value("method_info")
-    //        val FieldInfo = Value("field_info")
-    //        val Code = Value("Code")
-    //    }
-    //
-    //    type TypeAnnotationLocation = TypeAnnotationLocation.Value
-    //    import TypeAnnotationLocation._
 
     //
     // ABSTRACT DEFINITIONS
@@ -117,8 +106,8 @@ trait TypeAnnotationTargetReader extends Constant_PoolAbstractions {
      * Factory method to create a `LocalvarTableEntry`. To completely resolve
      * such entries; i.e., to resolve the local_variable_table_index it may
      * be necessary to do some post-processing after all attributes belonging
-     * to a code block are loaded. This can be done using the [[AttributesReader]]
-     * `registerAttributesPostProcessor` method.
+     * to a code block are loaded. This can be done using the method 
+     * [[de.tud.cs.st.bat.reader.AttributeReader.registerAttributesPostProcessor]].
      */
     def LocalvarTableEntry(
         start_pc: Int,

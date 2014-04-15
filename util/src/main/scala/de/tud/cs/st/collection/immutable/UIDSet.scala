@@ -206,7 +206,7 @@ sealed trait UIDSet[+T <: UID] { thisSet ⇒
 
 /**
  * Representation of the empty set of `UID` elements. To get a "correctly typed
- * [[UIDset]]" use the factory method of [[UIDSet$]].
+ * [[UIDSet]]" use the factory method of [[UIDSet$]].
  *
  * @author Michael Eichberg
  */
