@@ -85,7 +85,7 @@ trait CHACallGraphDomain[Source, I]
 
     def allUnresolvedMethodCalls: List[UnresolvedMethodCall] = unresolvedMethodCalls
 
-    private[this] val callEdgesMap = HashMap.empty[PC, ListBuffer[Method]]
+    private[this] val callEdgesMap = HashMap.empty[PC, Iterable[Method]]
 
     @inline final private[this] def addCallEdge(
         pc: PC,
@@ -94,11 +94,11 @@ trait CHACallGraphDomain[Source, I]
         if (callEdgesMap.contains(pc)) {
             callEdgesMap(pc) ++= callees
         } else {
-            callEdgesMap += (pc -> (ListBuffer() ++ callees))
+            callEdgesMap.put(pc, callees)
         }
     }
 
-    def allCallEdges: (Method, List[(PC, Iterable[Method])]) = (theMethod, callEdgesMap.toList)
+    def allCallEdges: (Method, List[(PC, Iterable[Method])]) = (theMethod, callEdgesMap.view.toList)
 
     // handles method calls where target method is statically resolved
     @inline protected[this] def staticMethodCall(
