@@ -1,3 +1,5 @@
-This subproject contains classes that define common functionality that is generally useful.
+#Overview
+The Util project contains classes and traits that define common functionality that is generally useful and that is not directly related to the processing of bytecode.
 
-In particular it defines macros which are used by BAT-Core and which need to be compiled before we compile the core.
+#Compilation Order
+This project contains macros which are used by OPAL and which need to be compiled/need to be available before we can compile the other projects.

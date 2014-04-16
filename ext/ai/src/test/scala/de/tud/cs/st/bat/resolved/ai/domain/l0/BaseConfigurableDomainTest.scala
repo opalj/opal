@@ -1,5 +1,5 @@
-/* License (BSD Style License):
- * Copyright (c) 2009 - 2013
+/* BSD 2-Clause License:
+ * Copyright (c) 2009 - 2014
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -13,11 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- *  - Neither the name of the Software Technology Group or Technische
- *    Universität Darmstadt nor the names of its contributors may be used to
- *    endorse or promote products derived from this software without specific
- *    prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -37,7 +33,7 @@ package ai
 package domain
 package l0
 
-import reader.Java7Framework.ClassFile
+import reader.Java8Framework.ClassFile
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
@@ -46,14 +42,8 @@ import org.scalatest.Matchers
 
 /**
  * This system test(suite) just loads a very large number of class files and performs
- * an abstract interpretation of all methods.
- *
- * This test has the following goals:
- *  - Test if we can load and process a large number of different classes without exceptions
- *  - Test if seemingly independent (partial-) domain implementations are really
- *    independent by using different mixin-composition orders and comparing the
- *    results.
- *  - Test if several different domain configurations are actually working.
+ * an abstract interpretation of all methods. Basically, we test that we can load and
+ * process a large number of different classes without exceptions.
  *
  * @author Michael Eichberg
  */

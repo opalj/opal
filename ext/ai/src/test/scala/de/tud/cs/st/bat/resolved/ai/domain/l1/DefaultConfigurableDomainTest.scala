@@ -1,5 +1,5 @@
-/* License (BSD Style License):
- * Copyright (c) 2009 - 2013
+/* BSD 2-Clause License:
+ * Copyright (c) 2009 - 2014
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -13,11 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- *  - Neither the name of the Software Technology Group or Technische
- *    Universität Darmstadt nor the names of its contributors may be used to
- *    endorse or promote products derived from this software without specific
- *    prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -34,11 +30,10 @@ package de.tud.cs.st
 package bat
 package resolved
 package ai
-package comprehensive
+package domain
+package l1
 
-import domain.l0
-import domain.l1
-import reader.Java7Framework.ClassFile
+import reader.Java8Framework.ClassFile
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
@@ -46,38 +41,30 @@ import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 
 /**
- * This test(suite) just loads a very large number of class files and performs
- * an abstract interpretation of the methods.
+ * This system test(suite) just loads a very large number of class files and performs
+ * an abstract interpretation of all methods. Basically, we test that we can load and
+ * process a large number of different classes without exceptions.
  *
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class InterpretManyMethodsTest extends FlatSpec with Matchers {
+class BaseConfigurableDomainTest extends FlatSpec with Matchers {
 
-    import de.tud.cs.st.util.ControlAbstractions._
     import debug.InterpretMethods.interpret
 
-    behavior of "BATAI"
+    behavior of "BATAI's l1.DefaultConfigurableDomain"
 
     // The jars of the "BAT core" project
     val directoryWithJARs = "../../../../../core/src/test/resources/classfiles"
     val files =
         TestSupport.locateTestResources(directoryWithJARs, "ext/ai").listFiles.
             filter(file ⇒ file.isFile && file.canRead() && file.getName.endsWith(".jar"))
+    val jarNames = files.map(_.getName).mkString("[", ", ", "]")
 
-    it should (
-        "be able to interpret all methods using the BaseConfigurableDomain in "+
-        files.map(_.getName).mkString("\n\t\t", "\n\t\t", "\n")) in {
-            interpret(classOf[l0.BaseConfigurableDomain[_]], files) map { errors ⇒
-                fail(errors._1+" (details: "+errors._2.getOrElse("not available")+")")
-            }
+    it should ("be able to interpret all methods found in "+jarNames) in {
+        interpret(classOf[DefaultConfigurableDomain[_]], files) map { error ⇒
+            val (message, source) = error
+            fail(message+" (details: "+source.getOrElse("not available")+")")
         }
-
-    it should (
-        "be able to interpret all methods using the DefaultConfigurableDomain in "+
-        files.map(_.getName).mkString("\n\t\t", "\n\t\t", "\n")) in {
-            interpret(classOf[l1.DefaultConfigurableDomain[_]], files) map { errors ⇒
-                fail(errors._1+" (details: "+errors._2.getOrElse("not available")+")")
-            }
-        }
+    }
 }
