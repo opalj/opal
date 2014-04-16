@@ -35,11 +35,11 @@ package project
 import domain._
 import domain.l0
 import domain.l1
-
 import analyses.Project
-
 import scala.collection.Set
 import scala.collection.Map
+import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.HashMap
 
 /**
  * Domain object that can be used to calculate a call graph using CHA. This domain
@@ -85,15 +85,20 @@ trait CHACallGraphDomain[Source, I]
 
     def allUnresolvedMethodCalls: List[UnresolvedMethodCall] = unresolvedMethodCalls
 
-    private[this] var callEdges = List.empty[(PC, Iterable[Method])]
+    private[this] val callEdgesMap = HashMap.empty[PC, ListBuffer[Method]]
 
     @inline final private[this] def addCallEdge(
         pc: PC,
         callees: Iterable[Method]): Unit = {
-        callEdges = (pc, callees) :: callEdges
+
+        if (callEdgesMap.contains(pc)) {
+            callEdgesMap(pc) ++= callees
+        } else {
+            callEdgesMap += (pc -> (ListBuffer() ++ callees))
+        }
     }
 
-    def allCallEdges: (Method, List[(PC, Iterable[Method])]) = (theMethod, callEdges)
+    def allCallEdges: (Method, List[(PC, Iterable[Method])]) = (theMethod, callEdgesMap.toList)
 
     // handles method calls where target method is statically resolved
     @inline protected[this] def staticMethodCall(
