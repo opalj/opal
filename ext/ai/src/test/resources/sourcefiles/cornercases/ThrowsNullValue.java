@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,66 +22,35 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package callgraph.base;
-
-import de.tud.cs.st.bat.test.invokedynamic.annotations.InvokedMethod;
+package cornercases;
 
 /**
- * This class was used to create a class file with some well defined attributes. The
- * created class is subsequently used by several tests.
+ * This class was used to create a class file with some well defined issues. The created
+ * class is subsequently used by several tests.
  * 
  * NOTE<br />
  * This class is not meant to be (automatically) recompiled; it just serves documentation
  * purposes.
  * 
- * <!--
- * 
- * 
- * 
- * 
- * INTENTIONALLY LEFT EMPTY (THIS AREA CAN BE EXTENDED/REDUCED TO MAKE SURE THAT THE
- * SPECIFIED LINE NUMBERS ARE STABLE.
- * 
- * 
- * 
- * 
- * -->
- * 
- * @author Marco Jacobasch
+ * @author Michael Eichberg
  */
-public class AlternateBase extends AbstractBase {
+public class ThrowsNullValue {
 
-    @SuppressWarnings("hiding")
-    public String string;
-    public double number;
+    @SuppressWarnings("null")
+    public static void main(String[] args) {
+        try {
+            Exception e = null;
+            if ("".isEmpty())
+                e = new RuntimeException();
 
-    public AlternateBase() {
-        this("alternate");
-    }
-
-    public AlternateBase(String s) {
-        this(s, 0);
-    }
-
-    public AlternateBase(String s, double d) {
-        this.string = s;
-        this.number = d;
-    }
-
-    @Override
-    @InvokedMethod(receiverType = AbstractBase.class, name = "abstractImplementedMethod", lineNumber = 78)
-    public void abstractMethod() {
-        super.abstractImplementedMethod();
-    }
-
-    @Override
-    @InvokedMethod(receiverType = AbstractBase.class, name = "implementedMethod", lineNumber = 84)
-    public void implementedMethod() {
-        super.implementedMethod();
+            throw e;
+        } catch (Exception e) {
+            // empty
+        }
     }
 
 }

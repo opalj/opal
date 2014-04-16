@@ -46,8 +46,12 @@ import de.tud.cs.st.bat.test.invokedynamic.annotations.InvokedConstructor;
  * <!--
  * 
  * 
+ * 
+ * 
  * INTENTIONALLY LEFT EMPTY (THIS AREA CAN BE EXTENDED/REDUCED TO MAKE SURE THAT THE
  * SPECIFIED LINE NUMBERS ARE STABLE.
+ * 
+ * 
  * 
  * 
  * -->
