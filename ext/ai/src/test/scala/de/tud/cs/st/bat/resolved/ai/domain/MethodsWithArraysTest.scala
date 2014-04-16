@@ -31,7 +31,7 @@ package resolved
 package ai
 package domain
 
-import reader.Java7Framework
+import reader.Java8Framework
 import l0.BaseRecordingDomain
 
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
@@ -114,7 +114,7 @@ class MethodsWithArraysTest
 }
 private object MethodsWithArraysTest {
 
-    val classFiles = Java7Framework.ClassFiles(
+    val classFiles = Java8Framework.ClassFiles(
         TestSupport.locateTestResources("classfiles/ai.jar", "ext/ai"))
 
     val classFile = classFiles.map(_._1).find(_.thisType.fqn == "ai/MethodsWithArrays").get

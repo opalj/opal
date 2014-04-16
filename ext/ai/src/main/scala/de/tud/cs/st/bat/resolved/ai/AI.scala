@@ -1027,8 +1027,8 @@ trait AI[D <: SomeDomain] {
                                     }
                                     abruptMethodExecution(pc, exceptionValue)
 
-                                case IsReferenceValue(upperBounds) ⇒
-                                    val isHandled = upperBounds.forall(upperBound ⇒
+                                case IsReferenceValue(referenceValues) ⇒
+                                    val isHandled = referenceValues.forall(referenceValue ⇒
                                         // find the exception handler that matches the given 
                                         // exception
                                         code.exceptionHandlersFor(pc).exists { eh ⇒
@@ -1041,7 +1041,15 @@ trait AI[D <: SomeDomain] {
                                                 // this is a finally handler
                                                 true
                                             } else {
-                                                upperBound.isValueSubtypeOf(catchType.get) match {
+                                                // a "null value" is automatically converted
+                                                // into a NullPointerException
+                                                val subtypeOfAnswer = {
+                                                    if (referenceValue.isNull.isYes)
+                                                        theDomain.isSubtypeOf(ObjectType.NullPointerException, catchType.get)
+                                                    else
+                                                        referenceValue.isValueSubtypeOf(catchType.get)
+                                                }
+                                                subtypeOfAnswer match {
                                                     case No ⇒
                                                         false
                                                     case Yes ⇒

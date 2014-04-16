@@ -150,4 +150,17 @@ class DefaultPreciseReferenceValuesTest
         summarize(-1, List(ref1, nullRef, ref2)) should be(ObjectValue(-1, Unknown, false, ObjectType.Object))
     }
 
+    it should ("be able to handle the case where we throw a \"null\" value or some other value") in {
+        val classFiles = reader.Java8Framework.ClassFiles(
+            TestSupport.locateTestResources("classfiles/cornercases.jar", "ext/ai"))
+        val classFile = classFiles.find(_._1.thisType.fqn == "cornercases/ThrowsNullValue").get._1
+        val method = classFile.methods.find(_.name == "main").get
+
+       println(debug.XHTML.dump(
+        classFile,
+        method,
+        BaseAI(classFile, method, domain),"").toString)
+
+    }
+
 }
