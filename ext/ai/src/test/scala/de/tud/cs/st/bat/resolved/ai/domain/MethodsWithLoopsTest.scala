@@ -31,7 +31,7 @@ package resolved
 package ai
 package domain
 
-import reader.Java7Framework
+import reader.Java8Framework
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
@@ -82,7 +82,7 @@ class MethodsWithLoopsTest
 }
 object MethodsWithLoopsTest {
 
-    val classFiles = Java7Framework.ClassFiles(
+    val classFiles = Java8Framework.ClassFiles(
         TestSupport.locateTestResources("classfiles/ai.jar", "ext/ai"))
 
     val classFile = classFiles.map(_._1).
