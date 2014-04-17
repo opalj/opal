@@ -9,12 +9,6 @@ object OPALBuild extends Build {
 		Defaults.defaultSettings ++
 		sbtassembly.Plugin.assemblySettings ++
 		Seq(
-			// Override the default version string  ("0.1-SNAPSHOT"),
-			// this will be used in the .jar file names
-			version := "snapshot",
-
-			organization := "org.opalj",
-
 			// Enable this to avoid including the Scala runtime into fat .jars,
 			// which would reduce the .jar's file size greatly. However, then the
 			// user will need the Scala runtime installed in order to run the .jar.
