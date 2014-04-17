@@ -82,7 +82,7 @@ object AnalysisTest {
         val classFiles = filenames.map(filename ⇒
             Java8Framework.ClassFiles(
                 TestSupport.locateTestResources("classfiles/analyses/"+filename,
-                    "ext/findrealbugs")
+                    "frb/analyses")
             )
         ).flatten
 

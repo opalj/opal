@@ -59,14 +59,14 @@ class TestConfigurationFile extends AnalysisTest {
     it should "throw an IOException when trying to read a non-properties file." in {
         an[IOException] should be thrownBy {
             val path = TestSupport.locateTestResources("not-a-property-file.gif",
-                "ext/findrealbugs")
+                "frb/analyses")
             getDisabledAnalysesNamesFromFile(path.toString())
         }
     }
 
     it should "be able to write settings to a file and read it afterwards" in {
         val path = TestSupport.locateTestResources(
-            "not-a-property-file.gif", "ext/findrealbugs").getParent()
+            "not-a-property-file.gif", "frb/analyses").getParent()
         val filename = path+"/test.properties"
 
         val disabledAnalyses = Iterable("foo", "bar", "xxxxxxx")

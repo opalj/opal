@@ -30,7 +30,7 @@ object OPALBuild extends Build {
 		dependenciesExtraction, 		 
 		opalDeveloperTools, 
 		demos,		
-		findRealBugs,
+		findRealBugsAnalyses,
 		incubation,
 		VALIDATE)
 
@@ -88,9 +88,9 @@ object OPALBuild extends Build {
 	 *
  	 */
 
-	lazy val findRealBugs = Project(
-		id = "FindRealBugs",
-		base = file("ext/findrealbugs"),
+	lazy val findRealBugsAnalyses = Project(
+		id = "FindRealBugsAnalyses",
+		base = file("frb/analyses"),
 		settings = buildSettings ++ Seq(
 			mainClass in assembly := Some("de.tud.cs.st.bat.findrealbugs.FindRealBugsCLI")
 		)
