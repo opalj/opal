@@ -38,8 +38,6 @@ import domain.l1
 import analyses.Project
 import scala.collection.Set
 import scala.collection.Map
-import scala.collection.mutable.ListBuffer
-import scala.collection.mutable.HashMap
 
 /**
  * Domain object that can be used to calculate a call graph using CHA. This domain
@@ -70,6 +68,8 @@ trait CHACallGraphDomain[I]
     //
     // IMPLEMENTATION
     //
+
+    import scala.collection.mutable.HashMap
 
     private[this] var unresolvedMethodCalls = List.empty[UnresolvedMethodCall]
 
