@@ -556,7 +556,7 @@ object FindRealBugsPluginInterface extends FindRealBugs {
         val libraryClassFiles = loadClassFilesForPlugin(inputLibraryFileNames, true)
 
         // Create project
-        val project = IndexBasedProject(classFiles, libraryClassFiles)
+        val project = Project(classFiles, libraryClassFiles)
 
         // Determine analyses that should be run
         val allAnalyses = builtInAnalyses ++ additionalAnalyses
