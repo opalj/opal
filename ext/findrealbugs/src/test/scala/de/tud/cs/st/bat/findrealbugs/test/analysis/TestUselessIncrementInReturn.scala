@@ -58,6 +58,9 @@ class TestUselessIncrementInReturn extends AnalysisTest {
                 LineAndColumnBasedReport(
                     project.source(declaringClass),
                     Severity.Info,
+                    declaringClass,
+                    MethodDescriptor(IndexedSeq(IntegerType), IntegerType),
+                    "intToIreturn",
                     Some(50),
                     None,
                     "Increment during return statement is dead code"))
@@ -71,6 +74,9 @@ class TestUselessIncrementInReturn extends AnalysisTest {
                 LineAndColumnBasedReport(
                     project.source(declaringClass),
                     Severity.Info,
+                    ObjectType("UselessIncrementInReturn/IntParameterIncrementInReturn"),
+                    MethodDescriptor(IndexedSeq(IntegerType), LongType),
+                    "intToLreturn",
                     Some(54),
                     None,
                     "Increment during return statement is dead code"))
@@ -84,6 +90,9 @@ class TestUselessIncrementInReturn extends AnalysisTest {
                 LineAndColumnBasedReport(
                     project.source(declaringClass),
                     Severity.Info,
+                    declaringClass,
+                    MethodDescriptor(IndexedSeq(IntegerType), FloatType),
+                    "intToFreturn",
                     Some(58),
                     None,
                     "Increment during return statement is dead code"))
@@ -97,6 +106,9 @@ class TestUselessIncrementInReturn extends AnalysisTest {
                 LineAndColumnBasedReport(
                     project.source(declaringClass),
                     Severity.Info,
+                    declaringClass,
+                    MethodDescriptor(IndexedSeq(IntegerType), DoubleType),
+                    "intToDreturn",
                     Some(62),
                     None,
                     "Increment during return statement is dead code"))

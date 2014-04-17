@@ -452,6 +452,9 @@ class UselessIncrementInReturn[S]
                     LineAndColumnBasedReport(
                         project.source(classFile.thisType),
                         Severity.Info,
+                        classFile.thisType,
+                        method.descriptor,
+                        method.name,
                         body.lineNumber(iincPc),
                         None,
                         "Increment during return statement is dead code"

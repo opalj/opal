@@ -1,0 +1,16 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Ext-FindRealBugs
+Bundle-SymbolicName: de.tud.cs.st.bat.findrealbugs
+Bundle-Vendor: Technische Universität Darmstadt
+Bundle-Version: 0.1
+Require-Bundle: de.tud.cs.st.bat.core.util;bundle-version="0.1.0",
+ de.tud.cs.st.bat.core;bundle-version="0.1.0",
+ de.tud.cs.st.bat.ai;bundle-version="0.1.0",
+ de.tud.cs.st.bat.dependencies;bundle-version="0.1.0"
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-ClassPath: Ext-FindRealBugs.jar,.
+Export-Package: de.tud.cs.st.bat.findrealbugs,
+ de.tud.cs.st.bat.findrealbugs.analyses,
+ de.tud.cs.st.bat.findrealbugs.test,
+ de.tud.cs.st.bat.findrealbugs.test.analysis

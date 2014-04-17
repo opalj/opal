@@ -110,6 +110,7 @@ class CloneDoesNotCallSuperClone[Source]
             MethodBasedReport(
                 project.source(classFile.thisType),
                 Severity.Warning,
+                classFile.thisType,
                 method,
                 "Missing call to super.clone()")
         }

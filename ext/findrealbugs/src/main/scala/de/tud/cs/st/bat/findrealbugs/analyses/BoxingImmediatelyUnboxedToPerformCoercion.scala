@@ -89,6 +89,9 @@ class BoxingImmediatelyUnboxedToPerformCoercion[S]
             LineAndColumnBasedReport(
                 project.source(classFile.thisType),
                 Severity.Info,
+                classFile.thisType,
+                method.descriptor,
+                method.name,
                 body.lineNumber(pc),
                 None,
                 "Value boxed and immediately unboxed")

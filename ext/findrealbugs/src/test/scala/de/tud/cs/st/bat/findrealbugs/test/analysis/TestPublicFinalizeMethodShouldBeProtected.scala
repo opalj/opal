@@ -51,10 +51,12 @@ class TestPublicFinalizeMethodShouldBeProtected extends AnalysisTest {
     behavior of "PublicFinalizeMethodShouldBeProtected"
 
     it should "detect a public finalize() method" in {
+        val declaringClass =
+            ObjectType("PublicFinalizeMethodShouldBeProtected/PublicFinalizeMethod")
         results should contain(MethodBasedReport(
-            project.source(ObjectType(
-                "PublicFinalizeMethodShouldBeProtected/PublicFinalizeMethod")),
+            project.source(declaringClass),
             Severity.Info,
+            declaringClass,
             MethodDescriptor.NoArgsAndReturnVoid,
             "finalize",
             "Should be protected"))

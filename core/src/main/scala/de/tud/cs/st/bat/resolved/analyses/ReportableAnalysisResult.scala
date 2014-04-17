@@ -108,12 +108,12 @@ abstract class Severity {
     /**
      * Returns a string using text and ANSI color codes suitable for console output to
      * allow humans to quickly identify the corresponding severity.
-     * 
+     *
      * @param suffix An additional suffix string that will be appended to the severity
      * text and will be colored in the same way. This is useful, for example, to append
      * ": " to achieve a formatting such as "<severity>: " where this whole string uses
      * the severity's color. This matches the colored formatting done by clang.
-     * 
+     *
      * @return Human-readable string identifying this severity level, ready to be printed
      * to the console.
      */
@@ -197,6 +197,7 @@ case class ClassBasedReport[+S](
 case class MethodBasedReport[+S](
     source: Option[S],
     severity: Severity,
+    declaringClass: ObjectType,
     methodDescriptor: MethodDescriptor,
     methodName: String,
     message: String)
@@ -217,9 +218,11 @@ object MethodBasedReport {
     def apply[S](
         source: Option[S],
         severity: Severity,
+        declaringClass: ObjectType,
         method: Method,
         message: String): MethodBasedReport[S] = {
-        new MethodBasedReport(source, severity, method.descriptor, method.name, message)
+        new MethodBasedReport(source, severity, declaringClass, method.descriptor,
+            method.name, message)
     }
 }
 
@@ -264,6 +267,9 @@ object FieldBasedReport {
 case class LineAndColumnBasedReport[+S](
     source: Option[S],
     severity: Severity,
+    declaringClass: ObjectType,
+    methodDescriptor: MethodDescriptor,
+    methodName: String,
     line: Option[Int],
     column: Option[Int],
     message: String)

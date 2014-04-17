@@ -88,6 +88,7 @@ class CatchesIllegalMonitorStateException[Source]
             MethodBasedReport(
                 project.source(classFile.thisType),
                 Severity.Info,
+                classFile.thisType,
                 method,
                 "Handles IllegalMonitorStateException")
         }

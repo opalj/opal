@@ -86,6 +86,7 @@ class DmRunFinalizersOnExit[Source]
             MethodBasedReport(
                 project.source(classFile.thisType),
                 Severity.Error,
+                classFile.thisType,
                 method,
                 "Calls System.runFinalizersOnExit()")
         }
