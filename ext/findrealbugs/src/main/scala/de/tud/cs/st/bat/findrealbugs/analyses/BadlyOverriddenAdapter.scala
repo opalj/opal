@@ -143,6 +143,7 @@ class BadlyOverriddenAdapter[Source]
                     MethodBasedReport(
                         project.source(classFile.thisType),
                         Severity.Warning,
+                        classFile.thisType,
                         method,
                         "Does not override "+supermethodname+
                             " (incompatible signatures)."

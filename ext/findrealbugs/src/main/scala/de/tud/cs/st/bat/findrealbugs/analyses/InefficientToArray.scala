@@ -26,7 +26,6 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
 package de.tud.cs.st
 package bat
 package findrealbugs
@@ -117,6 +116,9 @@ class InefficientToArray[Source]
             LineAndColumnBasedReport(
                 project.source(classFile.thisType),
                 Severity.Info,
+                classFile.thisType,
+                method.descriptor,
+                method.name,
                 body.lineNumber(pc),
                 None,
                 "Calling x.toArray(new T[0]) is inefficient, should be "+

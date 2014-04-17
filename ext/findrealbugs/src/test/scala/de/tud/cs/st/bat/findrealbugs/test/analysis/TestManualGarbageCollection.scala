@@ -53,20 +53,26 @@ class TestManualGarbageCollection extends AnalysisTest {
     it should "report class RuntimeGc which invokes "+
         "java.lang.Runtime.getRuntime().gc()" in {
             val declaringClass = ObjectType("ManualGarbageCollection/RuntimeGc")
-            results should contain(MethodBasedReport(project.source(declaringClass),
-                Severity.Info,
-                MethodDescriptor.NoArgsAndReturnVoid,
-                "main",
-                "Contains unnecessary call to gc()"))
+            results should contain(
+                MethodBasedReport(
+                    project.source(declaringClass),
+                    Severity.Info,
+                    declaringClass,
+                    MethodDescriptor.NoArgsAndReturnVoid,
+                    "main",
+                    "Contains unnecessary call to gc()"))
         }
 
     it should "report class SystemGc which invokes java.lang.System.gc()" in {
         val declaringClass = ObjectType("ManualGarbageCollection/SystemGc")
-        results should contain(MethodBasedReport(project.source(declaringClass),
-            Severity.Info,
-            MethodDescriptor.NoArgsAndReturnVoid,
-            "main",
-            "Contains unnecessary call to gc()"))
+        results should contain(
+            MethodBasedReport(
+                project.source(declaringClass),
+                Severity.Info,
+                declaringClass,
+                MethodDescriptor.NoArgsAndReturnVoid,
+                "main",
+                "Contains unnecessary call to gc()"))
     }
 
     it should "find 2 issues in total" in {

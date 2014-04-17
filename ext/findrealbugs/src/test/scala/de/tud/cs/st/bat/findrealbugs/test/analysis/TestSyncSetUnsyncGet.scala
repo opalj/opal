@@ -51,19 +51,24 @@ class TestSyncSetUnsyncGet extends AnalysisTest {
     behavior of "SyncSetUnsyncGet"
 
     it should "detect that getter is not synchronized like setter for field 'String a'" in {
-        results should contain(MethodBasedReport(
-            project.source(ObjectType("SyncSetUnsyncGet/VariousSettersAndGetters")),
-            Severity.Warning,
-            MethodDescriptor(IndexedSeq.empty, ObjectType.String),
-            "getA",
-            "Is not synchronized like setA"))
+        val declaringClass = ObjectType("SyncSetUnsyncGet/VariousSettersAndGetters")
+        results should contain(
+            MethodBasedReport(
+                project.source(declaringClass),
+                Severity.Warning,
+                declaringClass,
+                MethodDescriptor(IndexedSeq.empty, ObjectType.String),
+                "getA",
+                "Is not synchronized like setA"))
     }
 
     it should "detect that getter is not synchronized like setter for field 'int b'" in {
+        val declaringClass = ObjectType("SyncSetUnsyncGet/VariousSettersAndGetters")
         results should contain(
             MethodBasedReport(
-                project.source(ObjectType("SyncSetUnsyncGet/VariousSettersAndGetters")),
+                project.source(declaringClass),
                 Severity.Warning,
+                declaringClass,
                 MethodDescriptor(IndexedSeq.empty, IntegerType),
                 "getB",
                 "Is not synchronized like setB"))

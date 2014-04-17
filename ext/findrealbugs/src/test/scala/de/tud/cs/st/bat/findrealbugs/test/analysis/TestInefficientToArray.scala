@@ -52,10 +52,15 @@ class TestInefficientToArray extends AnalysisTest {
 
     it should "detect that a toArray(new Integer[0]) call on an ArrayList<Integer> "+
         "object at InefficientToArray/InefficientToArray:50" in {
+            val declaringClass = ObjectType("InefficientToArray/InefficientToArray")
             results should contain(
                 LineAndColumnBasedReport(
-                    project.source(ObjectType("InefficientToArray/InefficientToArray")),
-                    Severity.Info, Some(50), None,
+                    project.source(declaringClass),
+                    Severity.Info,
+                    declaringClass,
+                    MethodDescriptor.NoArgsAndReturnVoid,
+                    "test",
+                    Some(50), None,
                     "Calling x.toArray(new T[0]) is inefficient, "+
                         "should be x.toArray(new T[x.size()])"))
         }

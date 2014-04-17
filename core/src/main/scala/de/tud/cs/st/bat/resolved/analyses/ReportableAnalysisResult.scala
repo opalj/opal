@@ -95,4 +95,3 @@ object BasicReport {
         BasicReport(messages.mkString("\n"))
     }
 }
-
