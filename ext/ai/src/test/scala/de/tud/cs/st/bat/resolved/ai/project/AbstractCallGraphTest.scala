@@ -148,6 +148,9 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
 
     // Single Constructor Test
     def singleConstructorTest(method: Method, annotation: Annotation): Unit = {
+        
+        // RETHINK
+        
         val evps = annotation.elementValuePairs
         val Some(receiver) =
             evps collectFirst (
