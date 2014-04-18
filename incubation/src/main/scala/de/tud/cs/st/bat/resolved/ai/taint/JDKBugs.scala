@@ -26,6 +26,38 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+/* License (BSD Style License):
+ * Copyright (c) 2009 - 2013
+ * Software Technology Group
+ * Department of Computer Science
+ * Technische Universität Darmstadt
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *  - Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *  - Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *  - Neither the name of the Software Technology Group or Technische
+ *    Universität Darmstadt nor the names of its contributors may be used to
+ *    endorse or promote products derived from this software without specific
+ *    prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
 package de.tud.cs.st
 package bat
 package resolved
@@ -118,7 +150,7 @@ package taint {
         method ← classFile.methods
         if method.isPublic || (method.isProtected && !classFile.isFinal)
         descriptor = method.descriptor
-        if (descriptor.returnType == Object) || (descriptor.returnType == Class)
+        //if (descriptor.returnType == Object) || (descriptor.returnType == Class)
         if (descriptor.parameterTypes.contains(String))
         if method.body.isDefined
       } yield (classFile, method)
@@ -132,7 +164,7 @@ package taint {
       project: analyses.Project[URL],
       classFile: ClassFile,
       method: Method): Domain[CallStackEntry] with Report = {
-      new RootTaintAnalysisDomain[URL](project, List.empty, (classFile, method))
+      new RootTaintAnalysisDomain[URL](project, List.empty, (classFile, method), false)
     }
   }
 
@@ -204,6 +236,11 @@ package taint {
      * Stores a list of all global fields that contain a tainted value
      */
     var taintedFields: List[String] = List.empty
+
+    /**
+     * checks if this analysis looks for uses of a tainted global field
+     */
+    var checkGlobalFields: Boolean = false;
 
     /**
      * Stores if a call to Class.forName has occurred. No report is created if this is not true
@@ -496,46 +533,50 @@ package taint {
     }
 
     // TODO
-    //    override def putfield(
-    //      pc: PC,
-    //      objectref: DomainValue,
-    //      value: DomainValue,
-    //      declaringClass: ObjectType,
-    //      name: String,
-    //      fieldType: FieldType) = {
-    //
-    //      taintedFields = name :: taintedFields
-    //
-    //      val thisField: Field = classHierarchy.resolveFieldReference(
-    //        declaringClass,
-    //        name,
-    //        fieldType,
-    //        project).get
-    //
-    //      val classFile: ClassFile = project.classFile(thisField)
-    //
-    //      findAndInspectNewEntryPoint(classFile)
-    //
-    //      super.putfield(pc, objectref, value, declaringClass, name, fieldType)
-    //    }
+    override def putfield(
+      pc: PC,
+      objectref: DomainValue,
+      value: DomainValue,
+      declaringClass: ObjectType,
+      name: String,
+      fieldType: FieldType) = {
+
+      if (!checkGlobalFields) {
+        if (contextNode.identifier._1.union(additionalRelevantPCs).intersect(origin(value).toSeq).nonEmpty) {
+
+          taintedFields = name :: taintedFields
+
+          val thisField: Field = classHierarchy.resolveFieldReference(
+            declaringClass,
+            name,
+            fieldType,
+            project).get
+
+          val classFile: ClassFile = project.classFile(thisField)
+
+          findAndInspectNewEntryPoint(classFile)
+        }
+      }
+
+      super.putfield(pc, objectref, value, declaringClass, name, fieldType)
+    }
 
     // TODO
-    //    override def getfield(
-    //      pc: PC,
-    //      objectref: DomainValue,
-    //      declaringClass: ObjectType,
-    //      name: String,
-    //      fieldType: FieldType) = {
-    //
-    //      println("found")
-    //      // checkk if a tainted field is read
-    //      if (taintedFields.contains(name)) {
-    //        // set the value at this pc as tainted
-    //        additionalRelevantParameters = pc :: additionalRelevantParameters
-    //      }
-    //
-    //      super.getfield(pc, objectref, declaringClass, name, fieldType)
-    //    }
+    override def getfield(
+      pc: PC,
+      objectref: DomainValue,
+      declaringClass: ObjectType,
+      name: String,
+      fieldType: FieldType) = {
+
+      // checkk if a tainted field is read
+      if (taintedFields.contains(name)) {
+        // set the value at this pc as tainted
+        additionalRelevantPCs = pc :: additionalRelevantPCs
+      }
+
+      super.getfield(pc, objectref, declaringClass, name, fieldType)
+    }
 
     override def putstatic(
       pc: PC,
@@ -676,30 +717,38 @@ package taint {
     }
 
     // TODO
-    //    def findAndInspectNewEntryPoint(classFile: ClassFile) {
-    //      for (method <- classFile.methods) {
-    //
-    //        // val callerNode = new SimpleNode(":Some user of the API after global field set " + method.id)
-    //        if (!isRecursiveCall(classFile, method, null)) {
-    //          val domain = new RootTaintAnalysisDomain(project, taintedFields, (classFile, method))
-    //          val aiResult = BaseAI.perform(classFile, method, domain)()
-    //          aiResult.domain.postAnalysis()
-    //          println(aiResult.domain.report)
-    //        }
-    //
-    //      }
-    //    }
+    def findAndInspectNewEntryPoint(classFile: ClassFile) {
+      for (method <- classFile.methods) {
+
+        // val callerNode = new SimpleNode(":Some user of the API after global field set " + method.id)
+        if (!isRecursiveCall(classFile, method, null)) {
+          if (!method.body.isEmpty) {
+
+            val domain = new RootTaintAnalysisDomain(project, taintedFields, (classFile, method), true)
+            //            println(method)
+            //            println(classFile)
+            val aiResult = BaseAI.perform(classFile, method, domain)()
+            aiResult.domain.postAnalysis()
+            val log: String = aiResult.domain.report.getOrElse(null)
+            if (log != null)
+              println(log)
+          }
+        }
+      }
+    }
   }
 
   class RootTaintAnalysisDomain[Source](
     val project: Project[Source],
     val taintedGloableFields: List[String],
-    val identifier: (ClassFile, Method))
+    val identifier: (ClassFile, Method),
+    val checkGlobalField: Boolean)
     extends TaintAnalysisDomain[Source] {
     val callerNode = new SimpleNode("Some user of the API")
 
     val contextNode: SimpleNode[(RelevantParameters, String)] = {
 
+      checkGlobalFields = checkGlobalField
       objectTypesWithCreatedInstance = List.empty;
       taintedFields = taintedGloableFields
 
