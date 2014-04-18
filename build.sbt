@@ -18,13 +18,13 @@ javacOptions in ThisBuild ++= Seq("-encoding", "utf8")
 
 libraryDependencies in ThisBuild += "junit" % "junit" % "4.11" % "test"
 
-libraryDependencies in ThisBuild += "org.scalatest" % "scalatest_2.10" % "2.1.0" % "test"
+libraryDependencies in ThisBuild += "org.scalatest" %% "scalatest" % "2.1.0" % "test"
 
 EclipseKeys.createSrc := EclipseCreateSrc.Default + EclipseCreateSrc.Resource
 
 //
 //
-// SETTINGS RELATED TO THE PUBLISHING OF OPAL ON MAVEN CENTRAL
+// SETTINGS REQUIRED TO PUBLISH OPAL ON MAVEN CENTRAL
 //
 //
 
