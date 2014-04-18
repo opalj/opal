@@ -44,7 +44,7 @@ object FindRealBugsPluginInterface {
 
     /**
      * Analyzes a project consisting of the given files. Throws a
-     * `FindRealBugsPluginInterface.FindRealBugsException` if an error occurs.
+     * `FindRealBugsException` if an error occurs.
      *
      * @param inputFileNames The .class/.jar files that should be analyzed together.
      * @param inputLibraryFileNames The .class/.jar files that should be included in the
@@ -101,3 +101,10 @@ object FindRealBugsPluginInterface {
             allAnalyses).toArray
     }
 }
+
+/**
+ * Exception that will be thrown if the `FindRealBugsPluginInterface` encounters an error.
+ *
+ * @param message message that will be passed by the exception.
+ */
+class FindRealBugsException(message: String) extends Exception(message)

@@ -215,10 +215,3 @@ object FindRealBugs {
         }).flatten
     }
 }
-
-/**
- * Exception that will be thrown if analyze() encounters an error.
- *
- * @param message message that will be passed by the exception.
- */
-class FindRealBugsException(message: String) extends Exception(message)
