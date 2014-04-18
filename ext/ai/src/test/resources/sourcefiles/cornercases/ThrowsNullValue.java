@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -26,48 +26,31 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package findrealbugs
-package test
-package analysis
-
-import AnalysisTest._
-import analyses._
-import resolved._
-import resolved.analyses._
-import java.net.URL
+package cornercases;
 
 /**
- * Unit Test for PublicFinalizeMethodShouldBeProtected.
- *
- * @author Daniel Klauer
- * @author Peter Spieler
+ * This class was used to create a class file with some well defined issues. The created
+ * class is subsequently used by several tests.
+ * 
+ * NOTE<br />
+ * This class is not meant to be (automatically) recompiled; it just serves documentation
+ * purposes.
+ * 
+ * @author Michael Eichberg
  */
-@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
-class TestPublicFinalizeMethodShouldBeProtected extends AnalysisTest {
-    import TestPublicFinalizeMethodShouldBeProtected._
+public class ThrowsNullValue {
 
-    behavior of "PublicFinalizeMethodShouldBeProtected"
+    @SuppressWarnings("null")
+    public static void main(String[] args) {
+        try {
+            Exception e = null;
+            if ("".isEmpty())
+                e = new RuntimeException();
 
-    it should "detect a public finalize() method" in {
-        val declaringClass =
-            ObjectType("PublicFinalizeMethodShouldBeProtected/PublicFinalizeMethod")
-        results should contain(MethodBasedReport(
-            project.source(declaringClass),
-            Severity.Info,
-            declaringClass,
-            MethodDescriptor.NoArgsAndReturnVoid,
-            "finalize",
-            "Should be protected"))
+            throw e;
+        } catch (Exception e) {
+            // empty
+        }
     }
 
-    it should "find exactly 1 issue in PublicFinalizeMethodShouldBeProtected.jar" in {
-        results.size should be(1)
-    }
-}
-
-object TestPublicFinalizeMethodShouldBeProtected {
-    val project = makeProjectFromJar("PublicFinalizeMethodShouldBeProtected.jar")
-    val results = new PublicFinalizeMethodShouldBeProtected[URL].analyze(project).toSet
 }

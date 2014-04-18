@@ -64,6 +64,7 @@ class TestUrUninitReadCalledFromSuperConstructor extends AnalysisTest {
                 MethodBasedReport(
                     project.source(ObjectType(subclass)),
                     Severity.Error,
+                    ObjectType(subclass),
                     MethodDescriptor.NoArgsAndReturnVoid,
                     "f",
                     "Called by super constructor ("+superclass+"), while the class' "+

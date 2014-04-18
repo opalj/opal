@@ -26,7 +26,6 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
 package de.tud.cs.st
 package bat
 package findrealbugs
@@ -110,6 +109,7 @@ class CloneDoesNotCallSuperClone[Source]
             MethodBasedReport(
                 project.source(classFile.thisType),
                 Severity.Warning,
+                classFile.thisType,
                 method,
                 "Missing call to super.clone()")
         }

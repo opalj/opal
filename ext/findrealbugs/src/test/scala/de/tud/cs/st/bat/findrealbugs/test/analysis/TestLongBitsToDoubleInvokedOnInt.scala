@@ -51,11 +51,17 @@ class TestLongBitsToDoubleInvokedOnInt extends AnalysisTest {
 
     it should "detect a call to Double.longBitsToDouble() with int argument "+
         "at LongBitsToDoubleInvokedOnInt/IntBitsToDouble:45" in {
+            val declaringClass =
+                ObjectType("LongBitsToDoubleInvokedOnInt/IntBitsToDouble")
             results should contain(
                 LineAndColumnBasedReport(
-                    project.source(ObjectType(
-                        "LongBitsToDoubleInvokedOnInt/IntBitsToDouble")),
-                    Severity.Error, Some(45), None,
+                    project.source(declaringClass),
+                    Severity.Error,
+                    declaringClass,
+                    MethodDescriptor.NoArgsAndReturnVoid,
+                    "test",
+                    Some(45),
+                    None,
                     "Passing int to Double.longBitsToDouble(long)"))
         }
 

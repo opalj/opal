@@ -1,4 +1,4 @@
-/* BSD 2-Clause License:
+/* License (BSD Style License):
  * Copyright (c) 2009 - 2014
  * Software Technology Group
  * Department of Computer Science
@@ -13,7 +13,11 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *  - Neither the name of the Software Technology Group or Technische
+ *    Universität Darmstadt nor the names of its contributors may be used to
+ *    endorse or promote products derived from this software without specific
+ *    prior written permission.
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -32,42 +36,45 @@ package findrealbugs
 package test
 package analysis
 
-import AnalysisTest._
-import analyses._
-import resolved._
-import resolved.analyses._
-import java.net.URL
+import java.io.IOException
+import java.io.File
 
 /**
- * Unit Test for PublicFinalizeMethodShouldBeProtected.
+ * Unit test for class `ConfigurationFile`.
  *
- * @author Daniel Klauer
- * @author Peter Spieler
+ * @author Florian Brandherm
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
-class TestPublicFinalizeMethodShouldBeProtected extends AnalysisTest {
-    import TestPublicFinalizeMethodShouldBeProtected._
+class TestConfigurationFile extends AnalysisTest {
+    import ConfigurationFile._
 
-    behavior of "PublicFinalizeMethodShouldBeProtected"
+    behavior of "ConfigurationFile"
 
-    it should "detect a public finalize() method" in {
-        val declaringClass =
-            ObjectType("PublicFinalizeMethodShouldBeProtected/PublicFinalizeMethod")
-        results should contain(MethodBasedReport(
-            project.source(declaringClass),
-            Severity.Info,
-            declaringClass,
-            MethodDescriptor.NoArgsAndReturnVoid,
-            "finalize",
-            "Should be protected"))
+    it should "throw an IOException when trying to read a non-existent file." in {
+        an[IOException] should be thrownBy {
+            getDisabledAnalysesNamesFromFile("nonexistent/foo.properties")
+        }
     }
 
-    it should "find exactly 1 issue in PublicFinalizeMethodShouldBeProtected.jar" in {
-        results.size should be(1)
+    it should "throw an IOException when trying to read a non-properties file." in {
+        an[IOException] should be thrownBy {
+            val path = TestSupport.locateTestResources("not-a-property-file.gif",
+                "ext/findrealbugs")
+            getDisabledAnalysesNamesFromFile(path.toString())
+        }
     }
-}
 
-object TestPublicFinalizeMethodShouldBeProtected {
-    val project = makeProjectFromJar("PublicFinalizeMethodShouldBeProtected.jar")
-    val results = new PublicFinalizeMethodShouldBeProtected[URL].analyze(project).toSet
+    it should "be able to write settings to a file and read it afterwards" in {
+        val path = TestSupport.locateTestResources(
+            "not-a-property-file.gif", "ext/findrealbugs").getParent()
+        val filename = path+"/test.properties"
+
+        val disabledAnalyses = Iterable("foo", "bar", "xxxxxxx")
+        saveDisabledAnalysesToFile(filename, disabledAnalyses)
+        val result = getDisabledAnalysesNamesFromFile(filename)
+        result should be(disabledAnalyses)
+
+        // Clean up by deleting this file
+        new File(filename).delete()
+    }
 }
