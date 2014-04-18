@@ -182,7 +182,7 @@ object FindRealBugs {
      * Load the given file names as `ClassFile`s.
      *
      * @param inputFileNames The class files to load.
-     * @param loadAsLibrary Whether to use `Java7LibraryFramework` or `Java7Framework`.
+     * @param loadAsLibrary Whether to use `Java8LibraryFramework` or `Java8Framework`.
      * @return The loaded `ClassFile`s, ready to be passed to a `Project`.
      */
     def loadClassFiles(
@@ -208,9 +208,9 @@ object FindRealBugs {
         (for (file ← existingFiles) yield {
             inputFileHandler(file)
             if (loadAsLibrary) {
-                Java7LibraryFramework.ClassFiles(file)
+                Java8LibraryFramework.ClassFiles(file)
             } else {
-                Java7Framework.ClassFiles(file)
+                Java8Framework.ClassFiles(file)
             }
         }).flatten
     }
