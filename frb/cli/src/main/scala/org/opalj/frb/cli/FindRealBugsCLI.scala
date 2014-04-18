@@ -30,7 +30,6 @@ package de.tud.cs.st
 package bat
 package findrealbugs
 
-import analyses._
 import resolved._
 import resolved.analyses._
 import resolved.reader._
