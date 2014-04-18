@@ -55,7 +55,7 @@ object JDKTaintAnalysis
 
   def description: String = "Finds unsafe< Class.forName(...) calls."
 
-  System.out.println(System.getProperty("java.version"));
+  println(System.getProperty("java.version"));
 
   val analysis = this
 
@@ -98,11 +98,11 @@ object JDKTaintAnalysis
       classFile ← project.classFiles
       if !definedInRestrictedPackage(classFile.thisType.packageName)
       method ← classFile.methods
+      if method.body.isDefined
       if method.isPublic || (method.isProtected && !classFile.isFinal)
       descriptor = method.descriptor
       //if (descriptor.returnType == Object) || (descriptor.returnType == Class)
       if (descriptor.parameterTypes.contains(String))
-      if method.body.isDefined
     } yield (classFile, method)
   }
 
@@ -114,7 +114,7 @@ object JDKTaintAnalysis
     project: analyses.Project[URL],
     classFile: ClassFile,
     method: Method): Domain[CallStackEntry] with Report = {
-    new RootTaintAnalysisDomain[URL](project, List.empty, (classFile, method), false)
+    new RootTaintAnalysisDomain[URL](project, List.empty, new CallStackEntry(classFile, method), false)
   }
 }
 
@@ -137,9 +137,10 @@ trait TaintAnalysisDomain[Source]
   import de.tud.cs.st.util.Unknown
   import ObjectType._
 
-  protected def declaringClass = identifier._1.thisType
-  protected def methodName = identifier._2.name
-  protected def methodDescriptor = identifier._2.descriptor
+  //protected def declaringClass = identifier._1.thisType
+  protected def declaringClass = identifier.getClassFile.thisType
+  protected def methodName = identifier.getMethod.name
+  protected def methodDescriptor = identifier.getMethod.descriptor
 
   protected def contextIdentifier =
     declaringClass.fqn + "{ " + methodDescriptor.toJava(methodName) + " }"
@@ -233,7 +234,7 @@ trait TaintAnalysisDomain[Source]
    * This method must be called at most once otherwise the constructed analysis graph
    * may contain duplicate information.
    */
-  protected def postAnalysis(): Boolean = {
+  private[this] def postAnalysis(): Boolean = {
     relevantValuesOrigins.foreach { relevantValueOrigin =>
       returnedValues.foreach { returnedValue =>
         if (origin(returnedValue._2).exists { returnedValueOrigin =>
@@ -290,6 +291,7 @@ trait TaintAnalysisDomain[Source]
     returnedValues = (pc, value) :: returnedValues
   }
 
+  //TODO check compatibility with Java8 Extension Methods
   override def invokeinterface(pc: Int,
     declaringClass: ObjectType,
     methodName: String,
@@ -628,7 +630,7 @@ trait TaintAnalysisDomain[Source]
       val callerNode = new SimpleNode(pc + ": method invocation; method id: " + method.id)
       val calleeDomain = new CalledTaintAnalysisDomain(
         this,
-        (classFile, method),
+        new CallStackEntry(classFile, method),
         callerNode,
         List(-1, -2))
 
@@ -649,7 +651,7 @@ trait TaintAnalysisDomain[Source]
         val v = method.body.get
         // Analyze the method
         val aiResult = BaseAI.perform(classFile, method, calleeDomain)(Some(calleeParameters))
-        aiResult.domain.postAnalysis()
+        //aiResult.domain.postAnalysis()
         if (!aiResult.domain.isRelevantValueReturned) {
           // No relevant Value returned!
           // return doTypeLevelInvoke;
@@ -680,10 +682,10 @@ trait TaintAnalysisDomain[Source]
       if (!isRecursiveCall(classFile, method, null)) {
         if (!method.body.isEmpty) {
 
-          val domain = new RootTaintAnalysisDomain(project, taintedFields, (classFile, method), true)
+          val domain = new RootTaintAnalysisDomain(project, taintedFields, new CallStackEntry(classFile, method), true)
 
           val aiResult = BaseAI.perform(classFile, method, domain)()
-          aiResult.domain.postAnalysis()
+          //aiResult.domain.postAnalysis()
           val log: String = aiResult.domain.report.getOrElse(null)
           if (log != null)
             println(log)
@@ -696,7 +698,7 @@ trait TaintAnalysisDomain[Source]
 class RootTaintAnalysisDomain[Source](
   val project: Project[Source],
   val taintedGloableFields: List[String],
-  val identifier: (ClassFile, Method),
+  val identifier: CallStackEntry,
   val checkGlobalField: Boolean)
   extends TaintAnalysisDomain[Source] {
   val callerNode = new SimpleNode("Some user of the API")
@@ -707,7 +709,7 @@ class RootTaintAnalysisDomain[Source](
     objectTypesWithCreatedInstance = List.empty;
     taintedFields = taintedGloableFields
 
-    val firstIndex = if (identifier._2.isStatic) 1 else 2
+    val firstIndex = if (identifier.getMethod.isStatic) 1 else 2
     val relevantParameters = {
       methodDescriptor.parameterTypes.zipWithIndex.filter { param_idx =>
         val (parameterType, _) = param_idx;
