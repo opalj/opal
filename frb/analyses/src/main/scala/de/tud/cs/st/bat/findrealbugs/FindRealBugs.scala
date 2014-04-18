@@ -123,10 +123,6 @@ object FindRealBugs {
         ("UselessIncrementInReturn" ->
             new UselessIncrementInReturn[URL])
     )
-}
-
-trait FindRealBugs {
-    import FindRealBugs._
 
     /**
      * Analyzes a project using the currently enabled analyses.

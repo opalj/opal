@@ -39,7 +39,7 @@ import java.net.URL
  *
  * @author Florian Brandherm
  */
-object FindRealBugsPluginInterface extends FindRealBugs {
+object FindRealBugsPluginInterface {
     import FindRealBugs._
 
     /**

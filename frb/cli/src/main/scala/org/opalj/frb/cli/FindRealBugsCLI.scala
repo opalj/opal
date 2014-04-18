@@ -46,7 +46,7 @@ import java.text.DecimalFormat
  * @author Peter Spieler
  * @author Daniel Klauer
  */
-object FindRealBugsCLI extends FindRealBugs with ProgressListener {
+object FindRealBugsCLI extends ProgressListener {
     import FindRealBugs._
 
     // TODO(future): Read the Wiki URL from a config file
