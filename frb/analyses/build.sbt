@@ -1,4 +1,4 @@
-name := "FindREALBugs"
+name := "FindREALBugs Analyses"
 
 version := "0.0.1-SNAPSHOT"
 
