@@ -6,23 +6,13 @@ import sbtassembly.Plugin.AssemblyKeys._
 object OPALBuild extends Build {
 	 
 	lazy val buildSettings =
-		Defaults.defaultSettings ++
-		sbtassembly.Plugin.assemblySettings ++
-		Seq(
-			// Enable this to avoid including the Scala runtime into fat .jars,
-			// which would reduce the .jar's file size greatly. However, then the
-			// user will need the Scala runtime installed in order to run the .jar.
-			//assemblyOption in assembly ~= { _.copy(includeScala = false) },
-
-			// Don't run tests as part of the "assembly" command, it's too inconvenient
-			test in assembly := {}
-		)
-
+		Defaults.defaultSettings 
+	 
 	lazy val opal = Project(
 		id = "OPAL",
-		base = file(".")
+		base = file("."),
+		settings = buildSettings ++ sbtunidoc.Plugin.unidocSettings
 	).
-  settings(sbtunidoc.Plugin.unidocSettings: _*).
 	aggregate(
 		util, 
 		bt, 
@@ -82,6 +72,11 @@ object OPALBuild extends Build {
 		opalDeveloperTools % "test->test;compile->compile",
 		architectureValidation % "test->test;compile->compile")
 
+	lazy val demos = Project(
+		id = "Demos",
+		base = file("demo")
+	) dependsOn(dependenciesExtraction, architectureValidation)
+
 	/*****************************************************************************
 	 *
 	 * PROJECTS BELONGING TO THE OPAL ECOSYSTEM 
@@ -91,15 +86,15 @@ object OPALBuild extends Build {
 	lazy val findRealBugsAnalyses = Project(
 		id = "FindRealBugsAnalyses",
 		base = file("frb/analyses"),
-		settings = buildSettings ++ Seq(
-			mainClass in assembly := Some("de.tud.cs.st.bat.findrealbugs.FindRealBugsCLI")
-		)
+		settings = 
+			buildSettings ++
+			sbtassembly.Plugin.assemblySettings ++ 
+			Seq (
+				test in assembly := {},
+				jarName in assembly := "FindREALBugs-" + version.value+".jar",
+				mainClass in assembly := Some("de.tud.cs.st.bat.findrealbugs.FindRealBugsCLI")
+			)
 	) dependsOn(ai % "test->test;compile->compile")
-
-	lazy val demos = Project(
-		id = "Demos",
-		base = file("demo")
-	) dependsOn(dependenciesExtraction, architectureValidation)
 
 	lazy val incubation = Project(
 		id = "Incubation",
