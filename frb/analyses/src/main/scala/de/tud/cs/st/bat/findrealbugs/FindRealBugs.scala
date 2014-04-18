@@ -34,11 +34,8 @@ import analyses._
 import resolved._
 import resolved.analyses._
 import resolved.reader._
-import java.io.File
-import java.io.IOException
 import java.net.URL
-import java.lang.management.ManagementFactory
-import java.text.DecimalFormat
+import java.io.File
 
 /**
  * FindRealBugs is a QA-tool using the BAT(AI) framework to perform static code analysis
@@ -126,52 +123,6 @@ object FindRealBugs {
         ("UselessIncrementInReturn" ->
             new UselessIncrementInReturn[URL])
     )
-}
-
-/**
- * This can be used to obtain information about the progress about an analysis.
- * @author Florian Brandherm
- */
-trait ProgressListener {
-    import FindRealBugs._
-
-    /**
-     * Override this callback to be notified when a certain analysis is started.
-     *
-     * Note: Since the analyses are executed in parallel, begin/end events may not
-     * necessarily be in order. Calls to this method may come from multiple threads.
-     * However, all calls to this method are synchronized.
-     *
-     * @param name The analysis' name.
-     * @param position The analysis' start number. 1st analysis = 1, 2nd analysis = 2,
-     * etc.
-     */
-    def beginAnalysis(name: String, position: Integer)
-
-    /**
-     * Override this callback to be notified when a certain analysis ends.
-     *
-     * Note: see also beginAnalysis()
-     *
-     * @param name The analysis' name.
-     * @param reports The reports produced by the analysis, if any.
-     * @param position The analysis' start number.
-     */
-    def endAnalysis(name: String, reports: AnalysisReports, position: Integer)
-
-    /**
-     * Override this callback to be able to prevent the beginning of any more analyses.
-     * Important: Once this returns true, it must always return true afterwards!
-     *
-     * @return Returns `true`, if the analysis should be cancelled, `false` otherwise.
-     * Returning `true` prevents further analyses from being started, while allowing
-     * currently running ones to finish.
-     */
-    def isCancelled: Boolean = false
-}
-
-trait FindRealBugs {
-    import FindRealBugs._
 
     /**
      * Analyzes a project using the currently enabled analyses.
@@ -228,17 +179,10 @@ trait FindRealBugs {
     }
 
     /**
-     * Exception that will be thrown if analyze() encounters an error.
-     *
-     * @param message message that will be passed by the exception.
-     */
-    class FindRealBugsException(message: String) extends Exception(message)
-
-    /**
      * Load the given file names as `ClassFile`s.
      *
      * @param inputFileNames The class files to load.
-     * @param loadAsLibrary Whether to use `Java7LibraryFramework` or `Java7Framework`.
+     * @param loadAsLibrary Whether to use `Java8LibraryFramework` or `Java8Framework`.
      * @return The loaded `ClassFile`s, ready to be passed to a `Project`.
      */
     def loadClassFiles(
@@ -264,78 +208,10 @@ trait FindRealBugs {
         (for (file ← existingFiles) yield {
             inputFileHandler(file)
             if (loadAsLibrary) {
-                Java7LibraryFramework.ClassFiles(file)
+                Java8LibraryFramework.ClassFiles(file)
             } else {
-                Java7Framework.ClassFiles(file)
+                Java8Framework.ClassFiles(file)
             }
         }).flatten
-    }
-}
-
-/**
- * This object provides an interface for the Eclipse plugin.
- *
- * @author Florian Brandherm
- */
-object FindRealBugsPluginInterface extends FindRealBugs {
-    import FindRealBugs._
-
-    /**
-     * Analyzes a project consisting of the given files. Throws a
-     * `FindRealBugsPluginInterface.FindRealBugsException` if an error occurs.
-     *
-     * @param inputFileNames The .class/.jar files that should be analyzed together.
-     * @param inputLibraryFileNames The .class/.jar files that should be included in the
-     * analysis as library class files.
-     * @param disabledAnalyses Names of analyses that should not be run (default: empty).
-     * @param progressListener A `ProgressListener` object that will be notified about the
-     * analysis progress.
-     * @param additionalAnalyses External analyses that should be added to the list of
-     * analyses to run.
-     * @return The analyses' reports.
-     */
-    def runAnalysis(
-        inputFileNames: Iterable[String],
-        inputLibraryFileNames: Iterable[String],
-        disabledAnalyses: Iterable[String] = Nil,
-        progressListener: ProgressListener,
-        additionalAnalyses: Map[String, Analysis]): Array[(String, AnalysisReports)] = {
-
-        if (inputFileNames.size == 0) {
-            throw new FindRealBugsException("No input files!")
-        }
-
-        def loadClassFilesForPlugin(
-            fileNames: Iterable[String],
-            loadAsLibrary: Boolean): Iterable[(ClassFile, URL)] = {
-            loadClassFiles(
-                fileNames,
-                loadAsLibrary,
-                error ⇒ throw new FindRealBugsException(error),
-                file ⇒ {}
-            )
-        }
-
-        val classFiles = loadClassFilesForPlugin(inputFileNames, false)
-        val libraryClassFiles = loadClassFilesForPlugin(inputLibraryFileNames, true)
-
-        // Create project
-        val project = Project(classFiles, libraryClassFiles)
-
-        // Determine analyses that should be run
-        val allAnalyses = builtInAnalyses ++ additionalAnalyses
-        val analysesToRun =
-            for {
-                analysisName ← allAnalyses.keys
-                if (!disabledAnalyses.exists(_ == analysisName))
-            } yield {
-                analysisName
-            }
-
-        // Analyze
-        analyze(project,
-            analysesToRun,
-            progressListener,
-            allAnalyses).toArray
     }
 }
