@@ -114,7 +114,7 @@ object JDKTaintAnalysis
     project: analyses.Project[URL],
     classFile: ClassFile,
     method: Method): Domain[CallStackEntry] with Report = {
-    new RootTaintAnalysisDomain[URL](project, List.empty, new CallStackEntry(classFile, method), false)
+    new RootTaintAnalysisDomain[URL](project, List.empty, CallStackEntry(classFile, method), false)
   }
 }
 
@@ -138,9 +138,9 @@ trait TaintAnalysisDomain[Source]
   import ObjectType._
 
   //protected def declaringClass = identifier._1.thisType
-  protected def declaringClass = identifier.getClassFile.thisType
-  protected def methodName = identifier.getMethod.name
-  protected def methodDescriptor = identifier.getMethod.descriptor
+  protected def declaringClass = identifier.classFile.thisType
+  protected def methodName = identifier.method.name
+  protected def methodDescriptor = identifier.method.descriptor
 
   protected def contextIdentifier =
     declaringClass.fqn + "{ " + methodDescriptor.toJava(methodName) + " }"
@@ -630,7 +630,7 @@ trait TaintAnalysisDomain[Source]
       val callerNode = new SimpleNode(pc + ": method invocation; method id: " + method.id)
       val calleeDomain = new CalledTaintAnalysisDomain(
         this,
-        new CallStackEntry(classFile, method),
+        CallStackEntry(classFile, method),
         callerNode,
         List(-1, -2))
 
@@ -682,7 +682,7 @@ trait TaintAnalysisDomain[Source]
       if (!isRecursiveCall(classFile, method, null)) {
         if (!method.body.isEmpty) {
 
-          val domain = new RootTaintAnalysisDomain(project, taintedFields, new CallStackEntry(classFile, method), true)
+          val domain = new RootTaintAnalysisDomain(project, taintedFields, CallStackEntry(classFile, method), true)
 
           val aiResult = BaseAI.perform(classFile, method, domain)()
           //aiResult.domain.postAnalysis()
@@ -709,7 +709,7 @@ class RootTaintAnalysisDomain[Source](
     objectTypesWithCreatedInstance = List.empty;
     taintedFields = taintedGloableFields
 
-    val firstIndex = if (identifier.getMethod.isStatic) 1 else 2
+    val firstIndex = if (identifier.method.isStatic) 1 else 2
     val relevantParameters = {
       methodDescriptor.parameterTypes.zipWithIndex.filter { param_idx =>
         val (parameterType, _) = param_idx;

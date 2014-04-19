@@ -5,10 +5,7 @@ import de.tud.cs.st.bat.resolved.ClassFile
 package object taint {
 
   //type CallStackEntry = (ClassFile, Method)
-  case class CallStackEntry(classFile: ClassFile, method: Method) {
-    def getClassFile: ClassFile = classFile
-    def getMethod: Method = method
-  }
+  case class CallStackEntry(classFile: ClassFile, method: Method)
 
   /**
    * Set of ids (integer values) associated with the relevant parameters passed
