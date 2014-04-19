@@ -128,11 +128,11 @@ object FindRealBugs {
      * Analyzes a project using the currently enabled analyses.
      *
      * @param project The project to analyze.
-     * @param analysesToRun Iterable of names of the analyses that should be run
+     * @param analysesToRun Iterable of names of the analyses that should be run.
      * @param progressListener ProgressListener object that will get notified about the
-     * analysis progress
+     *      analysis progress.
      * @param analyses Map of names and analyses; this contains all possible analyses
-     * (filtering is done with the analysesToRun parameter)
+     *      (filtering is done with the `analysesToRun` parameter).
      * @return List of analyses' reports: each analysis' name associated with its reports.
      */
     final def analyze(

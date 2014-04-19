@@ -48,11 +48,17 @@ package object reader {
      *
      * @param args An `Iterable` of file and folder names that refer to jar files
      *      or folders in which jar and class files are found.
+     * @param classFilesReader A function that – given a file (jar, folder, class file) – 
+     *      loads the respective class files and returns an `Iterable`. The second
+     *      parameter of the function is a function that should be called back by the
+     *      reader whenever the processing of given file fails with an exception.
+     *      This design was chosen to enable a reader of jar file to continue processing
+     *      class files even if the processing of a class file failed.
      */
     def read(
         args: Iterable[String],
         classFilesReader: (File, (Exception) ⇒ Unit) ⇒ Iterable[(ClassFile, URL)]): (Iterable[(ClassFile, URL)], List[Exception]) = {
-        readClassFiles(args.map(new File(_)), classFilesReader)
+        readClassFiles(args.view.map(new File(_)), classFilesReader)
     }
 
     def readClassFiles(
