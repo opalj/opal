@@ -583,8 +583,8 @@ class ClassHierarchy private (
      * for the resolution of unresolved symbolic references.)
      *
      * Resolving a symbolic reference is particularly required to, e.g., get a field's
-     * annotations or to get a field's value (if it is `static`, `final` and has a constant
-     * value).
+     * annotations or to get a field's value (if it is `static`, `final` and has a 
+     * constant value).
      *
      * @note This implementation does not check for `IllegalAccessError`. This check
      *      needs to be done by the caller. The same applies for the check that the
@@ -596,11 +596,11 @@ class ClassHierarchy private (
      *
      * @note Resolution is final. I.e., either this algorithm has found the defining field
      *      or the field is not defined by one of the loaded classes. Searching for the
-     *      field in subclasses is not meaningful as Java does not do dynamic field
-     *      reference resolution.
+     *      field in subclasses is not meaningful as it is not possible to override
+     *      fields.
      *
-     * @param c The class (or a superclass thereof) that is expected to define the
-     *      reference field.
+     * @param declaringClassType The class (or a superclass thereof) that is expected 
+     *      to define the reference field.
      * @param fieldName The name of the accessed field.
      * @param fieldType The type of the accessed field (the field descriptor).
      * @param project The project associated with this class hierarchy.
@@ -633,16 +633,16 @@ class ClassHierarchy private (
     /**
      * Tries to resolve a method reference as specified by the JVM specification.
      * I.e., the algorithm tries to find the class that actually declares the referenced
-     * method. Resolution of '''signature polymorphic''' method calls is also supported; for
-     * details see `lookupMethodDefinition`).
+     * method. Resolution of '''signature polymorphic''' method calls is also 
+     * supported; for details see `lookupMethodDefinition`).
      *
      * This method is the basis for the implementation of the semantics
      * of the `invokeXXX` instructions. However, it does not check whether the resolved
      * method can be accessed by the caller or if it is abstract. Additionally, it is still
-     * necessary that the caller makes a distinction between the statically (at compile time)
-     * identified declaring class and the dynamic type of the receiver in case of
-     * `invokevirtual` and `invokeinterface` instructions. I.e., additional processing
-     * is necessary on the client side.
+     * necessary that the caller makes a distinction between the statically 
+     * (at compile time) identified declaring class and the dynamic type of the receiver 
+     * in case of `invokevirtual` and `invokeinterface` instructions. I.e., 
+     * additional processing is necessary on the client side.
      *
      * @note Generally, if the type of the receiver is not precise the receiver object's
      *    subtypes should also be searched for method implementations (at least those
@@ -790,7 +790,7 @@ class ClassHierarchy private (
                          * [...]
                          * 
                          * A method is signature polymorphic if:
-                         * - It is declared in the java.lang.invoke.MethodHandleclass.
+                         * - It is declared in the java.lang.invoke.MethodHandle class.
                          * - It has a single formal parameter of type Object[].
                          * - It has a return type of Object.
                          * - It has the ACC_VARARGS and ACC_NATIVE flags set.

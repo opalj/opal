@@ -180,8 +180,7 @@ trait CHACallGraphDomain[I]
         descriptor: MethodDescriptor,
         operands: List[DomainValue]): MethodCallResult = {
         val result = super.invokespecial(pc, declaringClass, name, descriptor, operands)
-        // for invokespecial the dynamic type is not "relevant" and the
-        // first method that we find is the one that needs to be concrete 
+        // for invokespecial the dynamic type is not "relevant" (even for Java 8) 
         staticMethodCall(pc, declaringClass, name, descriptor, operands)
         result
     }

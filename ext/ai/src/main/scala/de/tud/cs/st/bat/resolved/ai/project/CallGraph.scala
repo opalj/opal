@@ -47,7 +47,7 @@ import scala.collection.Map
  * Calls will never block.
  *
  * ==Call Graph Construction==
- * The call graph is constructed by the [[de.tud.cs.st.bat.resolved.ai.project.CallGraphFactory]].
+ * The call graph is constructed by the [[CallGraphFactory]].
  *
  * @param calledByMap The map of all methods that are called by at least one method.
  *      I.e., the value is not expected to be the empty map.
