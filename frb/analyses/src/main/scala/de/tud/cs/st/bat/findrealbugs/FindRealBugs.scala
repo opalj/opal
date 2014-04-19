@@ -127,6 +127,9 @@ object FindRealBugs {
     /**
      * Analyzes a project using the currently enabled analyses.
      *
+     * Thread safety: This method runs all analyses in parallel, but ensures that calls
+     * it makes to the given `progressListener` are synchronized.
+     *
      * @param project The project to analyze.
      * @param analysesToRun Iterable of names of the analyses that should be run
      * @param progressListener ProgressListener object that will get notified about the
@@ -141,30 +144,41 @@ object FindRealBugs {
         progressListener: ProgressListener = null,
         analyses: AnalysesMap = builtInAnalyses): Iterable[AnalysisResult] = {
 
-        var startedCount: Int = 0
+        val lock = new Object
         var allResults: Set[AnalysisResult] = Set.empty
+        var startedCount: Int = 0
+        var cancelled: Boolean = false
 
         for (name ← analysesToRun.par) {
-            // If the analysis was cancelled, don't begin new analyses
-            if (progressListener == null ||
-                !this.synchronized(progressListener.isCancelled)) {
 
-                var position: Int = 0
-
-                this.synchronized {
-                    startedCount += 1
-                    position = startedCount
+            // Check whether this analysis should be run at all, and if so, determine it's
+            // start position
+            var position: Int = 0
+            lock.synchronized {
+                // Only start new analysis if the process wasn't cancelled yet
+                if (!cancelled) {
+                    // Check whether we should cancel now
                     if (progressListener != null) {
-                        progressListener.beginAnalysis(name, position)
+                        cancelled = progressListener.isCancelled
+                    }
+                    if (!cancelled) {
+                        startedCount += 1
+                        position = startedCount
+                        if (progressListener != null) {
+                            progressListener.beginAnalysis(name, position)
+                        }
                     }
                 }
+            }
 
+            // Should we run this analysis?
+            if (position > 0) {
                 // Invoke the analysis and immediately turn the `Iterable` result into a
                 // `Set`, to enforce immediate execution instead of delayed (on-demand)
                 // execution.
                 val results = analyses(name).analyze(project, Seq.empty).toSet
 
-                this.synchronized {
+                lock.synchronized {
                     if (results.nonEmpty) {
                         allResults += ((name, results))
                     }
@@ -173,6 +187,7 @@ object FindRealBugs {
                     }
                 }
             }
+
         }
 
         allResults
