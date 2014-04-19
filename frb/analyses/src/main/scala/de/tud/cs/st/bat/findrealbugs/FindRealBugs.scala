@@ -178,6 +178,7 @@ object FindRealBugs {
         allResults
     }
 
+    // TODO [Refactor] (Re)use the same code as AnalysisExcecutor (after the refactoring of that code). 
     /**
      * Load the given file names as `ClassFile`s.
      *

@@ -86,6 +86,7 @@ trait AnalysisExecutor {
 
     def main(args: Array[String]) {
 
+        // TODO [Refactor] Move to revoled.analyses to make the code reusable
         //
         // 1. check arguments
         //
