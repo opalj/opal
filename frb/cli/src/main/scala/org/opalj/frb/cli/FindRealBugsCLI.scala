@@ -195,7 +195,7 @@ object FindRealBugsCLI extends ProgressListener {
         //
         val startTime = System.nanoTime()
 
-        val allResults = analyze(project, analysesToRun, this)
+        val allResults = analyze(project, analysesToRun, Some(this))
 
         val realTime = System.nanoTime() - startTime
         println("sum: "+timeToString(analysesTotalTime)+", "+
@@ -267,7 +267,7 @@ object FindRealBugsCLI extends ProgressListener {
     /**
      * Called at the end of each analysis.
      */
-    override def endAnalysis(name: String, reports: AnalysisReports, position: Int) {
+    override def endAnalysis(name: String, position: Int, reports: AnalysisReports) {
         val time = getTime() - analysesStartTimes(position)
         analysesTotalTime += time
         printProgress(Console.RED, position, "finished",

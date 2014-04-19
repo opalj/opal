@@ -141,7 +141,8 @@ object FindRealBugs {
     final def analyze(
         project: Project[URL],
         analysesToRun: Iterable[String],
-        progressListener: ProgressListener = null,
+        progressListener: Option[ProgressListener] = None,
+        progressController: Option[ProgressController] = None,
         analyses: AnalysesMap = builtInAnalyses): Iterable[AnalysisResult] = {
 
         val lock = new Object
@@ -158,14 +159,14 @@ object FindRealBugs {
                 // Only start new analysis if the process wasn't cancelled yet
                 if (!cancelled) {
                     // Check whether we should cancel now
-                    if (progressListener != null) {
-                        cancelled = progressListener.isCancelled
+                    if (progressController.isDefined) {
+                        cancelled = progressController.get.isCancelled
                     }
                     if (!cancelled) {
                         startedCount += 1
                         position = startedCount
-                        if (progressListener != null) {
-                            progressListener.beginAnalysis(name, position)
+                        if (progressListener.isDefined) {
+                            progressListener.get.beginAnalysis(name, position)
                         }
                     }
                 }
@@ -182,8 +183,8 @@ object FindRealBugs {
                     if (results.nonEmpty) {
                         allResults += ((name, results))
                     }
-                    if (progressListener != null) {
-                        progressListener.endAnalysis(name, results, position)
+                    if (progressListener.isDefined) {
+                        progressListener.get.endAnalysis(name, position, results)
                     }
                 }
             }
