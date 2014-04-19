@@ -50,8 +50,8 @@ object InvokeDynamicPrinter extends AnalysisExecutor {
             val invokedynamics =
                 for {
                     classFile ← project.classFiles
-                    method ← classFile.methods if method.body.isDefined
-                    INVOKEDYNAMIC(bootstrap, name, descriptor) ← method.body.get.instructions
+                    MethodWithBody(code) ← classFile.methods 
+                    INVOKEDYNAMIC(bootstrap, name, descriptor) ← code.instructions
                 } yield {
                     bootstrap.toJava + "\nArguments:\t" +
                     bootstrap.bootstrapArguments.mkString("{",",","}") + "\nCalling:\t" +
