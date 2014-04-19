@@ -60,9 +60,14 @@ trait ProgressListener {
      *
      * @param name The analysis' name.
      * @param position The analysis' start number.
+     * @param seconds The time it took for this analysis to run, in seconds.
      * @param reports The reports produced by the analysis, if any.
      */
-    def endAnalysis(name: String, position: Int, reports: AnalysisReports)
+    def endAnalysis(
+        name: String,
+        position: Int,
+        seconds: Double,
+        reports: AnalysisReports)
 }
 
 /**

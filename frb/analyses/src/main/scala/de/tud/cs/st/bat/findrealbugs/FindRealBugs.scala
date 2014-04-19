@@ -36,6 +36,7 @@ import resolved.analyses._
 import resolved.reader._
 import java.net.URL
 import java.io.File
+import util.debug.PerformanceEvaluation
 
 /**
  * FindRealBugs is a QA-tool using the BAT(AI) framework to perform static code analysis
@@ -177,14 +178,18 @@ object FindRealBugs {
                 // Invoke the analysis and immediately turn the `Iterable` result into a
                 // `Set`, to enforce immediate execution instead of delayed (on-demand)
                 // execution.
-                val results = analyses(name).analyze(project, Seq.empty).toSet
+                val timer = new PerformanceEvaluation
+                val results = timer.time('analysis) {
+                    analyses(name).analyze(project, Seq.empty).toSet
+                }
 
                 lock.synchronized {
                     if (results.nonEmpty) {
                         allResults += ((name, results))
                     }
                     if (progressListener.isDefined) {
-                        progressListener.get.endAnalysis(name, position, results)
+                        val seconds = PerformanceEvaluation.ns2sec(timer.getTime('analysis))
+                        progressListener.get.endAnalysis(name, position, seconds, results)
                     }
                 }
             }
