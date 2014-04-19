@@ -29,46 +29,43 @@
 package de.tud.cs.st
 package bat
 package resolved
-package reader
-
-import reflect.ClassTag
-
-import de.tud.cs.st.bat.reader.AnnotationsReader
-import de.tud.cs.st.bat.reader.RuntimeInvisibleTypeAnnotations_attributeReader
-import de.tud.cs.st.bat.reader.RuntimeVisibleTypeAnnotations_attributeReader
 
 /**
- * Factory methods to create representations of the attributes related to
- * Java type annotations.
+ * Defines methods to return common attributes from the attributes table of
+ * [[ClassFile]], [[Field]] and [[Method]] declarations.
  *
  * @author Michael Eichberg
  */
-trait TypeAnnotationAttributesBinding
-        extends TypeAnnotationsBinding
-        with RuntimeInvisibleTypeAnnotations_attributeReader
-        with RuntimeVisibleTypeAnnotations_attributeReader
-        with AttributeBinding {
+trait CommonSourceElementAttributes extends CommonAttributes {
 
-    type RuntimeInvisibleTypeAnnotations_attribute = RuntimeInvisibleTypeAnnotationTable
+    def runtimeVisibleAnnotations: Annotations =
+        attributes collectFirst { case RuntimeVisibleAnnotationTable(vas) ⇒ vas } match {
+            case Some(annotations) ⇒ annotations
+            case None              ⇒ IndexedSeq.empty
+        }
 
-    type RuntimeVisibleTypeAnnotations_attribute = RuntimeVisibleTypeAnnotationTable
+    def runtimeInvisibleAnnotations: Annotations =
+        attributes collectFirst { case RuntimeInvisibleAnnotationTable(ias) ⇒ ias } match {
+            case Some(annotations) ⇒ annotations
+            case None              ⇒ IndexedSeq.empty
+        }
 
-    protected def RuntimeInvisibleTypeAnnotations_attribute(
-        constant_pool: Constant_Pool,
-        attribute_name_index: Constant_Pool_Index,
-        attribute_length: Int,
-        annotations: TypeAnnotations): RuntimeInvisibleTypeAnnotations_attribute = {
-        new RuntimeInvisibleTypeAnnotationTable(annotations)
-    }
+    def annotations: Annotations =
+        runtimeVisibleAnnotations ++ runtimeInvisibleAnnotations
 
-    def RuntimeVisibleTypeAnnotations_attribute(
-        constant_pool: Constant_Pool,
-        attribute_name_index: Constant_Pool_Index,
-        attribute_length: Int,
-        annotations: TypeAnnotations): RuntimeVisibleTypeAnnotations_attribute = {
-        new RuntimeVisibleTypeAnnotationTable(annotations)
-    }
+    /**
+     * True if this element was created by the compiler.
+     */
+    def isSynthetic: Boolean = attributes contains Synthetic
+
+    /**
+     * Returns true if this (field, method, class) declaration is declared
+     * as deprecated.
+     *
+     * ==Note==
+     * The deprecated attribute is always set by the Java compiler when either the
+     * deprecated annotation or the JavaDoc tag is used.
+     */
+    def isDeprecated: Boolean = attributes contains Deprecated
 
 }
-
-

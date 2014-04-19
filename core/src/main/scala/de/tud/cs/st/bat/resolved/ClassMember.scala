@@ -35,7 +35,7 @@ package resolved
  *
  * @author Michael Eichberg
  */
-trait ClassMember extends SourceElement with CommonAttributes {
+trait ClassMember extends SourceElement with CommonSourceElementAttributes {
 
     protected def accessFlags: Int
 

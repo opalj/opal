@@ -37,11 +37,11 @@ import instructions._
  * implementation.
  *
  * @param maxStack The maximum size of the stack during the execution of the method.
- *      This value is determined by the compile and is not necessarily the equivalent
- *      to the minimun. However, in vast majority of cases it is the minimum.
+ *      This value is determined by the compiler and is not necessarily the minimum.
+ *      However, in the vast majority of cases it is the minimum.
  * @param maxLocals The number of registers/local variables needed to execute the method.
  * @param instructions The instructions of this `Code` array/`Code` block. Since the code
- *      array is not completely filled (it contains null values) the preferred way
+ *      array is not completely filled (it contains `null` values) the preferred way
  *      to iterate over all instructions is to use for-comprehensions and pattern
  *      matching or to use one of the predefined methods. The `Code` array must not
  *      be mutated!
@@ -72,6 +72,15 @@ case class Code(
 
             def hasNext = pc < instructions.size
         }
+
+    /**
+     * Iterates over all instructions and calls the given function `f`
+     * for every instruction.
+     */
+    def foreach(f: (PC, Instruction) ⇒ Unit): Unit = {
+        import de.tud.cs.st.util.ControlAbstractions.foreachNonNullValueOf
+        foreachNonNullValueOf(instructions)(f)
+    }
 
     /**
      * Returns a view of all potential exception handlers (if any) for the
