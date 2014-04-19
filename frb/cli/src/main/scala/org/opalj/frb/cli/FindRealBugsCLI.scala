@@ -218,7 +218,7 @@ object FindRealBugsCLI extends ProgressListener {
         allResults.foreach(results ⇒ println(results._1+" "+results._2.size))
     }
 
-    var analysesStartTimes: Map[Integer, Long] = Map.empty
+    var analysesStartTimes: Map[Int, Long] = Map.empty
     var analysesTotalTime: Long = 0
     val threadmxbean = ManagementFactory.getThreadMXBean()
     val currentThreadCpuTimeSupported = threadmxbean.isCurrentThreadCpuTimeSupported()
@@ -249,7 +249,7 @@ object FindRealBugsCLI extends ProgressListener {
      */
     private def printProgress(
         color: String,
-        position: Integer,
+        position: Int,
         status: String,
         message: String) {
         println(color+"["+position+"/"+analysesToRun.size+"]"+Console.RESET+
@@ -259,7 +259,7 @@ object FindRealBugsCLI extends ProgressListener {
     /**
      * Called at the beginning of each analysis.
      */
-    override def beginAnalysis(name: String, position: Integer) {
+    override def beginAnalysis(name: String, position: Int) {
         analysesStartTimes += (position -> getTime())
         printProgress(Console.GREEN, position, "running", "               \t"+name)
     }
@@ -267,7 +267,7 @@ object FindRealBugsCLI extends ProgressListener {
     /**
      * Called at the end of each analysis.
      */
-    override def endAnalysis(name: String, reports: AnalysisReports, position: Integer) {
+    override def endAnalysis(name: String, reports: AnalysisReports, position: Int) {
         val time = getTime() - analysesStartTimes(position)
         analysesTotalTime += time
         printProgress(Console.RED, position, "finished",

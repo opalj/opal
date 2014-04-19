@@ -49,7 +49,7 @@ trait ProgressListener {
      * @param position The analysis' start number. 1st analysis = 1, 2nd analysis = 2,
      * etc.
      */
-    def beginAnalysis(name: String, position: Integer)
+    def beginAnalysis(name: String, position: Int)
 
     /**
      * Override this callback to be notified when a certain analysis ends.
@@ -60,7 +60,7 @@ trait ProgressListener {
      * @param reports The reports produced by the analysis, if any.
      * @param position The analysis' start number.
      */
-    def endAnalysis(name: String, reports: AnalysisReports, position: Integer)
+    def endAnalysis(name: String, reports: AnalysisReports, position: Int)
 
     /**
      * Override this callback to be able to prevent the beginning of any more analyses.

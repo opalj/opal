@@ -141,7 +141,7 @@ object FindRealBugs {
         progressListener: ProgressListener = null,
         analyses: AnalysesMap = builtInAnalyses): Iterable[AnalysisResult] = {
 
-        var startedCount: Integer = 0
+        var startedCount: Int = 0
         var allResults: Set[AnalysisResult] = Set.empty
 
         for (name ← analysesToRun.par) {
@@ -149,7 +149,7 @@ object FindRealBugs {
             if (progressListener == null ||
                 !this.synchronized(progressListener.isCancelled)) {
 
-                var position: Integer = 0
+                var position: Int = 0
 
                 this.synchronized {
                     startedCount += 1
