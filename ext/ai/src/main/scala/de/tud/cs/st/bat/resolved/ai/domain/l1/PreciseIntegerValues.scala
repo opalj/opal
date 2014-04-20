@@ -210,7 +210,7 @@ trait PreciseIntegerValues[+I]
             Answer(v1 <= v2)
         } { Unknown }
 
-    protected def updateValue(
+    protected[this] def updateValue(
         oldValue: DomainValue,
         newValue: DomainValue,
         operands: Operands,
