@@ -52,6 +52,8 @@ object FindRealBugsPluginInterface {
      * @param disabledAnalyses Names of analyses that should not be run (default: empty).
      * @param progressListener A `ProgressListener` object that will be notified about the
      * analysis progress.
+     * @param progressController A `ProgressController` object that may be used to control
+     * the analysis process.
      * @param additionalAnalyses External analyses that should be added to the list of
      * analyses to run.
      * @return The analyses' reports.
@@ -61,6 +63,7 @@ object FindRealBugsPluginInterface {
         inputLibraryFileNames: Iterable[String],
         disabledAnalyses: Iterable[String] = Nil,
         progressListener: ProgressListener,
+        progressController: ProgressController,
         additionalAnalyses: Map[String, Analysis]): Array[(String, AnalysisReports)] = {
 
         if (inputFileNames.size == 0) {
@@ -97,7 +100,8 @@ object FindRealBugsPluginInterface {
         // Analyze
         analyze(project,
             analysesToRun,
-            progressListener,
+            Some(progressListener),
+            Some(progressController),
             allAnalyses).toArray
     }
 }

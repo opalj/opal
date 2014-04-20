@@ -36,6 +36,7 @@ import resolved.analyses._
 import resolved.reader._
 import java.net.URL
 import java.io.File
+import util.debug.PerformanceEvaluation
 
 /**
  * FindRealBugs is a QA-tool using the BAT(AI) framework to perform static code analysis
@@ -127,6 +128,9 @@ object FindRealBugs {
     /**
      * Analyzes a project using the currently enabled analyses.
      *
+     * Thread safety: This method runs all analyses in parallel, but ensures that calls
+     * it makes to the given `progressListener` are synchronized.
+     *
      * @param project The project to analyze.
      * @param analysesToRun Iterable of names of the analyses that should be run.
      * @param progressListener ProgressListener object that will get notified about the
@@ -138,41 +142,58 @@ object FindRealBugs {
     final def analyze(
         project: Project[URL],
         analysesToRun: Iterable[String],
-        progressListener: ProgressListener = null,
+        progressListener: Option[ProgressListener] = None,
+        progressController: Option[ProgressController] = None,
         analyses: AnalysesMap = builtInAnalyses): Iterable[AnalysisResult] = {
 
-        var startedCount: Integer = 0
+        val lock = new Object
         var allResults: Set[AnalysisResult] = Set.empty
+        var startedCount: Int = 0
+        var cancelled: Boolean = false
 
         for (name ← analysesToRun.par) {
-            // If the analysis was cancelled, don't begin new analyses
-            if (progressListener == null ||
-                !this.synchronized(progressListener.isCancelled)) {
 
-                var position: Integer = 0
-
-                this.synchronized {
-                    startedCount += 1
-                    position = startedCount
-                    if (progressListener != null) {
-                        progressListener.beginAnalysis(name, position)
+            // Check whether this analysis should be run at all, and if so, determine it's
+            // start position
+            var position: Int = 0
+            lock.synchronized {
+                // Only start new analysis if the process wasn't cancelled yet
+                if (!cancelled) {
+                    // Check whether we should cancel now
+                    if (progressController.isDefined) {
+                        cancelled = progressController.get.isCancelled
                     }
-                }
-
-                // Invoke the analysis and immediately turn the `Iterable` result into a
-                // `Set`, to enforce immediate execution instead of delayed (on-demand)
-                // execution.
-                val results = analyses(name).analyze(project, Seq.empty).toSet
-
-                this.synchronized {
-                    if (results.nonEmpty) {
-                        allResults += ((name, results))
-                    }
-                    if (progressListener != null) {
-                        progressListener.endAnalysis(name, results, position)
+                    if (!cancelled) {
+                        startedCount += 1
+                        position = startedCount
+                        if (progressListener.isDefined) {
+                            progressListener.get.beginAnalysis(name, position)
+                        }
                     }
                 }
             }
+
+            // Should we run this analysis?
+            if (position > 0) {
+                // Invoke the analysis and immediately turn the `Iterable` result into a
+                // `Set`, to enforce immediate execution instead of delayed (on-demand)
+                // execution.
+                val timer = new PerformanceEvaluation
+                val results = timer.time('analysis) {
+                    analyses(name).analyze(project, Seq.empty).toSet
+                }
+
+                lock.synchronized {
+                    if (results.nonEmpty) {
+                        allResults += ((name, results))
+                    }
+                    if (progressListener.isDefined) {
+                        val seconds = PerformanceEvaluation.ns2sec(timer.getTime('analysis))
+                        progressListener.get.endAnalysis(name, position, seconds, results)
+                    }
+                }
+            }
+
         }
 
         allResults

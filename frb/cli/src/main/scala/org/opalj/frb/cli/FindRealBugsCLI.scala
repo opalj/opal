@@ -36,8 +36,8 @@ import resolved.reader._
 import java.io.File
 import java.io.IOException
 import java.net.URL
-import java.lang.management.ManagementFactory
 import java.text.DecimalFormat
+import util.debug.PerformanceEvaluation
 
 /**
  * The FindRealBugs command line interface.
@@ -193,14 +193,14 @@ object FindRealBugsCLI extends ProgressListener {
         //
         // Execute enabled analyses on the `Project`
         //
-        val startTime = System.nanoTime()
+        val timer = new PerformanceEvaluation
+        val allResults = timer.time('analysis) {
+            analyze(project, analysesToRun, Some(this))
+        }
+        val realSeconds = PerformanceEvaluation.ns2sec(timer.getTime('analysis))
 
-        val allResults = analyze(project, analysesToRun, this)
-
-        val realTime = System.nanoTime() - startTime
-        println("sum: "+timeToString(analysesTotalTime)+", "+
-            "real time (including synchronization overhead etc.): "+
-            timeToString(realTime))
+        println("sum: "+secondsToString(analysesTotalSeconds)+", "+
+            "real time: "+secondsToString(realSeconds))
 
         allResults.foreach(
             results ⇒
@@ -218,30 +218,14 @@ object FindRealBugsCLI extends ProgressListener {
         allResults.foreach(results ⇒ println(results._1+" "+results._2.size))
     }
 
-    var analysesStartTimes: Map[Integer, Long] = Map.empty
-    var analysesTotalTime: Long = 0
-    val threadmxbean = ManagementFactory.getThreadMXBean()
-    val currentThreadCpuTimeSupported = threadmxbean.isCurrentThreadCpuTimeSupported()
-
-    /**
-     * Returns a time in ns.
-     */
-    private def getTime(): Long = {
-        if (currentThreadCpuTimeSupported) {
-            threadmxbean.getCurrentThreadCpuTime()
-        } else {
-            0
-        }
-    }
+    var analysesTotalSeconds: Double = 0
 
     /**
      * Builds a nice string to display time in the console.
      */
-    private def timeToString(nanosecs: Long): String = {
+    private def secondsToString(seconds: Double): String = {
         val formatter = new DecimalFormat("#.###")
-        Console.YELLOW +
-            formatter.format(nanosecs.toFloat / 1e9f)+" seconds"+
-            Console.RESET
+        Console.YELLOW + formatter.format(seconds)+" seconds"+Console.RESET
     }
 
     /**
@@ -249,7 +233,7 @@ object FindRealBugsCLI extends ProgressListener {
      */
     private def printProgress(
         color: String,
-        position: Integer,
+        position: Int,
         status: String,
         message: String) {
         println(color+"["+position+"/"+analysesToRun.size+"]"+Console.RESET+
@@ -259,18 +243,20 @@ object FindRealBugsCLI extends ProgressListener {
     /**
      * Called at the beginning of each analysis.
      */
-    override def beginAnalysis(name: String, position: Integer) {
-        analysesStartTimes += (position -> getTime())
+    override def beginAnalysis(name: String, position: Int) {
         printProgress(Console.GREEN, position, "running", "               \t"+name)
     }
 
     /**
      * Called at the end of each analysis.
      */
-    override def endAnalysis(name: String, reports: AnalysisReports, position: Integer) {
-        val time = getTime() - analysesStartTimes(position)
-        analysesTotalTime += time
+    override def endAnalysis(
+        name: String,
+        position: Int,
+        seconds: Double,
+        reports: AnalysisReports) {
+        analysesTotalSeconds += seconds
         printProgress(Console.RED, position, "finished",
-            timeToString(time)+"\t"+name+", "+reports.size+" reports.")
+            secondsToString(seconds)+"\t"+name+", "+reports.size+" reports.")
     }
 }
