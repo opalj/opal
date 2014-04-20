@@ -49,7 +49,7 @@ object InvokeDynamicPrinter extends AnalysisExecutor {
         def analyze(project: Project[URL], parameters: Seq[String]) = {
             val invokedynamics =
                 for {
-                    classFile ← project.classFiles
+                    classFile ← project.classFiles.par
                     MethodWithBody(code) ← classFile.methods 
                     INVOKEDYNAMIC(bootstrap, name, descriptor) ← code.instructions
                 } yield {
