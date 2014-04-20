@@ -64,8 +64,10 @@ object FindRealBugsPluginInterface {
         disabledAnalyses: Iterable[String] = Nil,
         progressListener: ProgressListener,
         progressController: ProgressController,
+        // TODO [Improve] Why do you create an Array? There seems to be no apparent reason! If integration with Java is neede consider using: scala.collection.JavaConversions.
         additionalAnalyses: Map[String, Analysis]): Array[(String, AnalysisReports)] = {
 
+        // TODO [Refactor] Responsibility of the caller!
         if (inputFileNames.size == 0) {
             throw new FindRealBugsException("No input files!")
         }
@@ -106,9 +108,3 @@ object FindRealBugsPluginInterface {
     }
 }
 
-/**
- * Exception that will be thrown if the `FindRealBugsPluginInterface` encounters an error.
- *
- * @param message message that will be passed by the exception.
- */
-class FindRealBugsException(message: String) extends Exception(message)
