@@ -181,7 +181,7 @@ object PerformanceEvaluation {
      * Times the execution of a given function `f`.
      *
      * @param r A function that is passed the time (in nano seconds) that it
-     *      took to evaluate `f`. `r` is called even if `f` fails.
+     *      took to evaluate `f`. `r` is called even if `f` fails with an exception.
      */
     def time[T](f: ⇒ T)(r: Long ⇒ Unit): T = {
         val startTime: Long = System.nanoTime
@@ -191,5 +191,19 @@ object PerformanceEvaluation {
             val endTime: Long = System.nanoTime
             r(endTime - startTime)
         }
+    }
+
+    /**
+     * Times the execution of a given function `f`.
+     *
+     * @param r A function that is passed the time (in nano seconds) that it
+     *      took to evaluate `f` and the result produced by `f`. 
+     *      `r` is only called if `f` suceeds.
+     */
+    def run[T, X](f: ⇒ T)(r: (Long, T) ⇒ X): X = {
+        val startTime: Long = System.nanoTime
+        val result = f
+        val endTime: Long = System.nanoTime
+        r(endTime - startTime, f)
     }
 }

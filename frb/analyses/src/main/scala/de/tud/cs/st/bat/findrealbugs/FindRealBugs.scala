@@ -36,7 +36,6 @@ import resolved.analyses._
 import resolved.reader._
 import java.net.URL
 import java.io.File
-import util.debug.PerformanceEvaluation
 
 /**
  * FindRealBugs is a QA-tool using the BAT(AI) framework to perform static code analysis
@@ -132,6 +131,7 @@ object FindRealBugs {
      * it makes to the given `progressListener` are synchronized.
      *
      * @param project The project to analyze.
+     * TODO [Refactor] This is counter-intuitive - I can't see a good reason why we need both parameters: analysesToRun and analyses. The latter should you contain that analyses that are required.
      * @param analysesToRun Iterable of names of the analyses that should be run.
      * @param progressListener ProgressListener object that will get notified about the
      *      analysis progress.
@@ -178,22 +178,21 @@ object FindRealBugs {
                 // Invoke the analysis and immediately turn the `Iterable` result into a
                 // `Set`, to enforce immediate execution instead of delayed (on-demand)
                 // execution.
-                val timer = new PerformanceEvaluation
-                val results = timer.time('analysis) {
-                    analyses(name).analyze(project, Seq.empty).toSet
-                }
+                import util.debug.PerformanceEvaluation.{ run, ns2sec }
 
-                lock.synchronized {
-                    if (results.nonEmpty) {
-                        allResults += ((name, results))
-                    }
-                    if (progressListener.isDefined) {
-                        val seconds = PerformanceEvaluation.ns2sec(timer.getTime('analysis))
-                        progressListener.get.endAnalysis(name, position, seconds, results)
+                run {
+                    analyses(name).analyze(project, Seq.empty).toSet
+                } { (time, reports) ⇒
+                    // TODO [Refactor] Move lock.synchronized into the if statement as soon as the progress listener is thread safe
+                    lock.synchronized {
+                        if (reports.nonEmpty) {
+                            allResults += ((name, reports))
+                        }
+                        progressListener.map(
+                            _.endAnalysis(name, position, ns2sec(time), reports))
                     }
                 }
             }
-
         }
 
         allResults
