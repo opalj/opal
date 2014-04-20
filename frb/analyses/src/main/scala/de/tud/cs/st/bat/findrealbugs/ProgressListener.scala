@@ -31,8 +31,10 @@ package bat
 package findrealbugs
 
 /**
- * This can be used to obtain information about the progress about an analysis.
+ * `FindRealBugs.analyze()` users can implement this interface in order to obtain
+ * information about the progress of the analysis process.
  *
+ * @author Daniel Klauer
  * @author Florian Brandherm
  */
 trait ProgressListener {
@@ -49,7 +51,7 @@ trait ProgressListener {
      * @param position The analysis' start number. 1st analysis = 1, 2nd analysis = 2,
      * etc.
      */
-    def beginAnalysis(name: String, position: Integer)
+    def beginAnalysis(name: String, position: Int)
 
     /**
      * Override this callback to be notified when a certain analysis ends.
@@ -57,18 +59,28 @@ trait ProgressListener {
      * Note: see also beginAnalysis()
      *
      * @param name The analysis' name.
-     * @param reports The reports produced by the analysis, if any.
      * @param position The analysis' start number.
+     * @param seconds The time it took for this analysis to run, in seconds.
+     * @param reports The reports produced by the analysis, if any.
      */
-    def endAnalysis(name: String, reports: AnalysisReports, position: Integer)
+    def endAnalysis(
+        name: String,
+        position: Int,
+        seconds: Double,
+        reports: AnalysisReports)
+}
 
+/**
+ * `FindRealBugs.analyze()` users can implement this interface in order to control the
+ * analysis process.
+ *
+ * @author Daniel Klauer
+ * @author Florian Brandherm
+ */
+trait ProgressController {
     /**
-     * Override this callback to be able to prevent the beginning of any more analyses.
-     * Important: Once this returns true, it must always return true afterwards!
-     *
-     * @return Returns `true`, if the analysis should be cancelled, `false` otherwise.
-     * Returning `true` prevents further analyses from being started, while allowing
-     * currently running ones to finish.
+     * Override this callback and return `true` in order to abort the analysis process.
+     * Once this returns `true`, no more analysis will be started.
      */
     def isCancelled: Boolean = false
 }
