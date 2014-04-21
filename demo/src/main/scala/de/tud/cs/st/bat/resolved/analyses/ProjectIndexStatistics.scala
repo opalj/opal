@@ -42,14 +42,14 @@ object ProjectIndexStatistics extends AnalysisExecutor {
 
     val analysis = new Analysis[URL, BasicReport] {
 
-        def description: String = "Statistics about the usage of field/method names in a project."
+        def description: String = "Statistics about the usage of field/method identifiers in a project."
 
         def analyze(project: Project[URL], parameters: Seq[String]) = {
 
             BasicReport(
                 project.get(ProjectIndexKey).
                     statistics.map(kv ⇒ "- "+kv._1+": "+kv._2).
-                    mkString("Name usage:\n\t", "\n\t", "\n")
+                    mkString("Identifier usage statistics:\n\t", "\n\t", "\n")
             )
         }
     }
