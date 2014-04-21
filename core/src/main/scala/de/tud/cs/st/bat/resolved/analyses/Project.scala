@@ -354,6 +354,11 @@ object Project {
         )
     }
 
+    def defaultHandlerForInconsistentProject(ex: InconsistentProjectException): Unit = {
+        import Console._
+        println(RED+"Warning: "+ex.message+"."+RESET)
+    }
+
     /**
      * Creates a new Project.
      *
@@ -363,11 +368,17 @@ object Project {
      * @param libraryClassFiles The list of class files of this project that make up
      *    the libraries used by the project that will be analyzed.
      *    [Thread Safety] The underlying data structure has to support concurrent access.
+     * @param handleInconsistentProject A function that is called back if the project
+     *      is not consistent. The default behavior 
+     *      ([[defaultHandlerForInconsistentProject]]) is to write a warning
+     *      message to the console. Alternatively it is possible to throw the given
+     *      exception to cancel the loading of the project (which is the only
+     *      meaningful option for several advanced analyses.)
      */
-    @throws[InconsistentProjectException]("If the set of class files contains duplicates.")
     def apply[Source: reflect.ClassTag](
         projectClassFilesWithSources: Iterable[(ClassFile, Source)],
-        libraryClassFilesWithSources: Iterable[(ClassFile, Source)] = Iterable.empty): Project[Source] = {
+        libraryClassFilesWithSources: Iterable[(ClassFile, Source)] = Iterable.empty,
+        handleInconsistentProject: (InconsistentProjectException) ⇒ Unit = defaultHandlerForInconsistentProject): Project[Source] = {
 
         import scala.collection.mutable.{ Set, Map }
         import concurrent.{ Future, Await, ExecutionContext, future }
@@ -411,12 +422,14 @@ object Project {
                 fieldToClassFile.put(field, classFile)
             }
             if (objectTypeToClassFile.contains(objectType)) {
-                throw InconsistentProjectException(
-                    "the type "+
-                        objectType.toJava+
-                        " is defined by multiple class files: "+
-                        sources(objectType)+" and "+
-                        source+"."
+                handleInconsistentProject(
+                    InconsistentProjectException(
+                        "the type "+
+                            objectType.toJava+
+                            " is defined by multiple class files: "+
+                            sources(objectType)+" and "+
+                            source
+                    )
                 )
             }
             objectTypeToClassFile.put(objectType, classFile)
@@ -458,6 +471,7 @@ object Project {
     }
 }
 
-case class InconsistentProjectException(message: String) extends Exception(message) {
+case class InconsistentProjectException(
+        message: String) extends Exception(message) {
 
 }
