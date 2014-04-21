@@ -59,6 +59,60 @@ class ProjectIndex private (
 
     def findMethods(name: String): Iterable[Method] =
         methods.get(name).map(_.values.flatten).getOrElse(Iterable.empty)
+
+    def statistics(): Map[String, Any] = {
+
+        def getMostOftenUsed(elementsWithSharedName: Iterable[(String, Map[_, Iterable[ClassMember]])]) = {
+            elementsWithSharedName.foldLeft((0, Set.empty[String])) { (c, n) ⇒
+                val nName = n._1
+                val nSize = n._2.size
+                if (c._1 < nSize)
+                    (nSize, Set(nName))
+                else if (c._1 == nSize)
+                    (nSize, c._2 + n._1)
+                else
+                    c
+            }
+        }
+
+        val fieldsWithSharedName = fields.view.filter(_._2.size > 1)
+        val mostOftenUsedFieldName = getMostOftenUsed(fieldsWithSharedName)
+
+        val methodsWithSharedName =
+            methods.view.filter { kv ⇒
+                kv._1 != "<init>" && kv._1 != "<clinit>" && kv._2.size > 1
+            }
+        val mostOftenUsedMethodName =
+            methodsWithSharedName.foldLeft((0, Set.empty[String])) { (c, n) ⇒
+                val nName = n._1
+                val nSize = n._2.size
+                if (c._1 < nSize)
+                    (nSize, Set(nName))
+                else if (c._1 == nSize)
+                    (nSize, c._2 + n._1)
+                else
+                    c
+            }
+
+        Map(
+            "number of field names that are used more than once" ->
+                fieldsWithSharedName.size,
+            "number of fields that share the same name and type" ->
+                fieldsWithSharedName.filter(_._2.size > 2).size,
+            "number of usages of the most often used field name" ->
+                mostOftenUsedFieldName._1,
+            "the most often used field name" ->
+                mostOftenUsedFieldName._2.mkString(", "),
+            "number of method names that are used more than once (constructors are filtered)" ->
+                methodsWithSharedName.size,
+            "number of methods that share the same signature (constructors are filtered)" ->
+                methodsWithSharedName.filter(_._2.size > 2).size,
+            "number of usages of the most often used method name (constructors are filtered)" ->
+                mostOftenUsedMethodName._1,
+            "the most often used method name (constructors are filtered)" ->
+                mostOftenUsedMethodName._2.mkString(", ")
+        )
+    }
 }
 
 /**
