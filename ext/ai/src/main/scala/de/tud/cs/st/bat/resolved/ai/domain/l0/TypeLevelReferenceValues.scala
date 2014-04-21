@@ -46,7 +46,8 @@ import de.tud.cs.st.collection.immutable.UIDSet
  *    reference based. I.e., two instances of `DomainValue`s that represent
  *    reference values are never equal. However, subclasses may implement their
  *    own strategy.
- *  - Instances of `DomainValue`s are always treated as immutable. Every
+ *  - Instances of `DomainValue`s are always immutable or are at least considered and
+ *    treated as immutable. Every
  *    update of a value's properties creates a new value. This is a general design
  *    decision underlying BATAI and should not be changed.
  *  - A new instance of a `DomainValue` is always exclusively created by one of the
@@ -98,7 +99,7 @@ trait TypeLevelReferenceValues[+I]
         v ++ remainingv2s
     }
 
-    def mergeDEsComputations(
+    protected[this] def mergeDEsComputations(
         pc: PC,
         c1: Computation[DomainValue, ExceptionValues],
         c2: Computation[DomainValue, ExceptionValues]): Computation[DomainValue, ExceptionValues] = {
@@ -136,7 +137,7 @@ trait TypeLevelReferenceValues[+I]
         }
     }
 
-    def mergeEsComputations(
+    protected[this] def mergeEsComputations(
         pc: PC,
         c1: Computation[Nothing, ExceptionValues],
         c2: Computation[Nothing, ExceptionValues]): Computation[Nothing, ExceptionValues] = {
@@ -153,7 +154,7 @@ trait TypeLevelReferenceValues[+I]
         }
     }
 
-    def mergeDEComputations(
+    protected[this] def mergeDEComputations(
         pc: PC,
         c1: Computation[DomainValue, ExceptionValue],
         c2: Computation[DomainValue, ExceptionValue]): Computation[DomainValue, ExceptionValue] = {
