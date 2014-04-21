@@ -29,38 +29,16 @@
 package de.tud.cs.st
 package bat
 package resolved
+package ai
+package invokedynamic
 
-import instructions._
-import analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
-
-import java.net.URL
+import instructions.INVOKEDYNAMIC
 
 /**
- * Prints out the immediately available information about invokedynamic instructions.
+ * Basic interface for the resolution of invokedynamic instructions.
  *
  * @author Arne Lottmann
  */
-object InvokeDynamicPrinter extends AnalysisExecutor {
-
-    val analysis = new Analysis[URL, BasicReport] {
-
-        def description: String = "Prints information about invokedynamic instructions."
-
-        def analyze(project: Project[URL], parameters: Seq[String]) = {
-            val invokedynamics =
-                for {
-                    classFile ← project.classFiles.par
-                    MethodWithBody(code) ← classFile.methods 
-                    INVOKEDYNAMIC(bootstrap, name, descriptor) ← code.instructions
-                } yield {
-                    bootstrap.toJava + "\nArguments:\t" +
-                    bootstrap.bootstrapArguments.mkString("{",",","}") + "\nCalling:\t" +
-                    descriptor.toJava(name)
-                }
-
-            BasicReport(
-                invokedynamics.size+" invokedynamic instructions found.\n"+
-                    invokedynamics.mkString("\n", "\n\n", "\n"))
-        }
-    }
+trait InvokedynamicResolver {
+    def resolveInvokedynamic(instruction: INVOKEDYNAMIC): ResolutionResult
 }
