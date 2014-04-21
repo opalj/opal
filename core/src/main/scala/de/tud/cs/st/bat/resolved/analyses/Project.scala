@@ -249,7 +249,7 @@ class Project[Source] private (
      * given `ProjectInformationKey`.
      *
      * If the information was not yet required the information is computed and
-     * returned. Subsequent calls will return the information.
+     * returned. Subsequent calls will directly return the information.
      *
      * @see [[ProjectInformationKey]] for further information.
      */

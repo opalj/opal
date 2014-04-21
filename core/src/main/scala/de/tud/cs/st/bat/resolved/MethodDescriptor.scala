@@ -36,6 +36,10 @@ import scala.collection.Seq
  * A method descriptor represents the parameters that the method takes and
  * the value that it returns.
  *
+ * @note The `equals(Any):Boolean` method takes the number of parameters and types
+ *      into account. I.e., two method descriptor objects are equal if they have
+ *      the same number of parameters and each parameter has the same [[Type]].
+ *
  * @author Michael Eichberg
  */
 sealed abstract class MethodDescriptor extends ConstantValue[MethodDescriptor] {
@@ -45,8 +49,8 @@ sealed abstract class MethodDescriptor extends ConstantValue[MethodDescriptor] {
     def parametersCount: Int
 
     def returnType: Type
-	
-    def value : this.type = this 
+
+    def value: this.type = this
 
     def valueType: ObjectType = ObjectType.MethodType
 

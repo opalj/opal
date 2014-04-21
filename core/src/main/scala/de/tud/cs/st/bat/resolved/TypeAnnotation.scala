@@ -33,15 +33,16 @@ package resolved
 /**
  * A type annotation.
  *
- * [[TypeAnnotations]] are associated with a class, field, method or Code using a
+ * [[TypeAnnotations]] are associated with a [[ClassFile]],
+ * [[Field]], [[Method]] or [[Code]] using a
  * [[de.tud.cs.st.bat.resolved.RuntimeInvisibleTypeAnnotationTable]] or a
  * [[de.tud.cs.st.bat.resolved.RuntimeVisibleTypeAnnotationTable]] attribute.
  *
  * @author Michael Eichberg
  */
 case class TypeAnnotation(
-//        target: TypeAnnotationTarget,
-//        path: TypeAnnotationPath,
+        //        target: TypeAnnotationTarget,
+        //        path: TypeAnnotationPath,
         annotationType: FieldType,
         elementValuePairs: ElementValuePairs) {
 
