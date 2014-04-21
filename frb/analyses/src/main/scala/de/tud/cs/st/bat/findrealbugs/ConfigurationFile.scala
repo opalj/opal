@@ -32,6 +32,7 @@ package findrealbugs
 
 import java.io._
 import java.util.Properties
+import de.tud.cs.st.util.ControlAbstractions
 
 /**
  * Provides methods for loading and saving a list of all disabled analysis names to/from
@@ -40,6 +41,9 @@ import java.util.Properties
  * @author Florian Brandherm
  */
 object ConfigurationFile {
+
+    import ControlAbstractions.process
+
     /**
      * Name of the property that holds the list of disabled analyses.
      */
@@ -55,54 +59,44 @@ object ConfigurationFile {
      */
     def getDisabledAnalysesNamesFromFile(filename: String): Iterable[String] = {
         if (!filename.endsWith(".properties")) {
-            throw new IOException("file "+filename+" is not a property file.")
+            throw new IOException("file "+filename+" is not a property file")
         }
 
         var stream: InputStream = null
-        var disabledAnalyses = ""
-
         try {
             val properties = new Properties()
             stream = new BufferedInputStream(new FileInputStream(filename))
             properties.load(stream)
             // Default value is the empty string: no analyses are disabled
-            disabledAnalyses = properties.getProperty(disabledAnalysesPropertyName, "")
+            properties.getProperty(disabledAnalysesPropertyName, "").split(",")
         } catch {
             case ex: IllegalArgumentException ⇒
-                throw new IOException("file "+filename+" is not a property file.", ex)
+                throw new IOException("file "+filename+" is not a property file", ex)
         } finally {
             // If necessary try to close the file input stream
             if (stream != null) {
                 stream.close()
             }
         }
-
-        disabledAnalyses.split(",")
     }
 
     /**
-     * Saves a list of analyses that should be disabled to a properties file.
-     * Throws `IOException`s if the file could not be written correctly.
+     * Saves the given list of analyses that are disabled to a properties file.
      *
      * @param filename Path of the new properties file that should be created.
-     * @param disabledAnalyses `Iterable` containing the names of all analyses that should
-     * be disabled.
+     * @param disabledAnalyses `Iterable` containing the names of all analyses
+     *      that should are disabled.
      */
-    def saveDisabledAnalysesToFile(filename: String, disabledAnalyses: Iterable[String]) {
-        var stream: OutputStream = null
-
-        try {
+    @throws[java.io.IOException]("if the file could not be written")
+    def saveDisabledAnalysesToFile(
+        filename: String,
+        disabledAnalyses: Iterable[String]): Unit = {
+        process(new FileOutputStream(filename)) { fout ⇒
+            val out = new BufferedOutputStream(fout)
             val properties = new Properties()
-            stream = new BufferedOutputStream(new FileOutputStream(filename))
-
             properties.setProperty(disabledAnalysesPropertyName,
                 disabledAnalyses.mkString(","))
-            properties.store(stream, null)
-        } finally {
-            // If necessary try to close the file input stream
-            if (stream != null) {
-                stream.close()
-            }
+            properties.store(out, null)
         }
     }
 }
