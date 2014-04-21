@@ -82,17 +82,7 @@ class ProjectIndex private (
             methods.view.filter { kv ⇒
                 kv._1 != "<init>" && kv._1 != "<clinit>" && kv._2.size > 1
             }
-        val mostOftenUsedMethodName =
-            methodsWithSharedName.foldLeft((0, Set.empty[String])) { (c, n) ⇒
-                val nName = n._1
-                val nSize = n._2.size
-                if (c._1 < nSize)
-                    (nSize, Set(nName))
-                else if (c._1 == nSize)
-                    (nSize, c._2 + n._1)
-                else
-                    c
-            }
+        val mostOftenUsedMethodName = getMostOftenUsed(methodsWithSharedName)
 
         Map(
             "number of field names that are used more than once" ->
