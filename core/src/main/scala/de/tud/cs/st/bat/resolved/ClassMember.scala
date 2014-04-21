@@ -50,6 +50,8 @@ trait ClassMember extends SourceElement with CommonSourceElementAttributes {
     def isFinal: Boolean = (ACC_FINAL.mask & accessFlags) != 0
 
     def isNonFinal: Boolean = !isFinal
+
+    def name: String
 }
 /**
  * Defines an extractor method for class members.
