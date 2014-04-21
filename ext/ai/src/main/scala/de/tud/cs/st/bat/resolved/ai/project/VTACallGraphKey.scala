@@ -44,7 +44,7 @@ import scala.collection.Map
  * The ''key'' object to get a call graph that was calculated using the VTA algorithm.
  *
  * @example
- *      To get the call graph object use the `ProjectLike`'s `get` method and pass in
+ *      To get the call graph object use the `Project`'s `get` method and pass in
  *      `this` object.
  *
  * @author Michael Eichberg
