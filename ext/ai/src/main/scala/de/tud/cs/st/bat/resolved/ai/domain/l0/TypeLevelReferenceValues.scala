@@ -353,7 +353,6 @@ trait TypeLevelReferenceValues[+I]
         val allSupertypesOfB = classHierarchy.allSupertypes(upperTypeBoundB, false)
         val commonSupertypes = allSupertypesOfA intersect allSupertypesOfB
         leafTypes(commonSupertypes)
-
     }
 
     /**
@@ -488,7 +487,7 @@ trait TypeLevelReferenceValues[+I]
         }
     }
 
-    protected def joinObjectTypesUntilSingleUpperBound(
+    protected[this] def joinObjectTypesUntilSingleUpperBound(
         upperTypeBoundA: ObjectType,
         upperTypeBoundB: ObjectType,
         reflexive: Boolean): ObjectType = {
