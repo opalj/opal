@@ -63,6 +63,10 @@ trait AttributeReader
      * structure (class, field_info, method_info, code_attribute). This can be used to
      * post-process attributes. E.g., to merge multiple line number tables if they exist
      * or to remove attributes if they are completely resolved.
+     *
+     * @see The implementation of
+     *      [[de.tud.cs.st.bat.resolved.reader.LineNumberTable_attributeBinding]]
+     *      for a concrete example.
      */
     def registerAttributesPostProcessor(p: (Attributes) ⇒ Attributes): Unit
 }
