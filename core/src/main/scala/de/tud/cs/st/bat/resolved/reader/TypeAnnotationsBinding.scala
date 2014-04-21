@@ -38,7 +38,7 @@ import de.tud.cs.st.bat.reader.TypeAnnotationTargetReader
 import de.tud.cs.st.bat.reader.TypeAnnotationPathReader
 
 /**
- * Factory methods to create representations of Java annotations.
+ * Factory methods to create representations of Java type annotations.
  *
  * @author Michael Eichberg
  */
@@ -46,29 +46,33 @@ trait TypeAnnotationsBinding
         extends TypeAnnotationsReader
         with TypeAnnotationTargetReader
         with TypeAnnotationPathReader
-        with ConstantPoolBinding
+        with AnnotationsBinding
         with AttributeBinding {
 
     type TypeAnnotation = resolved.TypeAnnotation
 
     val TypeAnnotationManifest: ClassTag[TypeAnnotation] = implicitly
 
-    type TypeAnnotationTarget
+    type TypeAnnotationTarget = resolved.TypeAnnotationTarget
 
-    type TypeAnnotationPath
+    type TypeAnnotationPath = resolved.TypeAnnotationPath
 
-    type TypeAnnotationPathElement
+    type TypeAnnotationPathElement = resolved.TypeAnnotationPathElement
+
+    type LocalvarTableEntry = resolved.LocalvarTableEntry
 
     //
     // TypeAnnotation
     // 
 
-    def TypeAnnotation(
-        constant_pool: Constant_Pool,
+    override def TypeAnnotation(
+        cp: Constant_Pool,
         target: TypeAnnotationTarget,
         path: TypeAnnotationPath,
         type_index: Constant_Pool_Index,
-        element_value_pairs: ElementValuePairs): TypeAnnotation
+        element_value_pairs: ElementValuePairs): TypeAnnotation = {
+        new TypeAnnotation(target, path, cp(type_index).asFieldType, element_value_pairs)
+    }
 
     //
     // TypeAnnotationTarget
@@ -76,97 +80,144 @@ trait TypeAnnotationsBinding
 
     //______________________________
     // type_parameter_target
-    def ParameterDeclarationOfClassOrInterface(
-        type_parameter_index: Int): TypeAnnotationTarget
-    def ParameterDeclarationOfMethodOrConstructor(
-        type_parameter_index: Int): TypeAnnotationTarget
+    override def ParameterDeclarationOfClassOrInterface(
+        type_parameter_index: Int): TAOfParameterDeclarationOfClassOrInterface =
+        TAOfParameterDeclarationOfClassOrInterface(type_parameter_index)
+
+    override def ParameterDeclarationOfMethodOrConstructor(
+        type_parameter_index: Int): TAOfParameterDeclarationOfMethodOrConstructor =
+        TAOfParameterDeclarationOfMethodOrConstructor(type_parameter_index)
 
     //______________________________
     // supertype_target
-    def SupertypeTarget(
-        supertype_index: Int): TypeAnnotationTarget
+    override def SupertypeTarget(
+        supertype_index: Int): TAOfSupertype =
+        TAOfSupertype(supertype_index)
 
     //______________________________
     // type_parameter_bound_target
-    def TypeBoundOfParameterDeclarationOfClassOrInterface(
+    override def TypeBoundOfParameterDeclarationOfClassOrInterface(
         type_parameter_index: Int,
-        bound_index: Int): TypeAnnotationTarget
-    def TypeBoundOfParameterDeclarationOfMethodOrConstructor(
+        bound_index: Int): TAOfTypeBoundOfParameterDeclarationOfClassOrInterface =
+        TAOfTypeBoundOfParameterDeclarationOfClassOrInterface(
+            type_parameter_index,
+            bound_index)
+
+    override def TypeBoundOfParameterDeclarationOfMethodOrConstructor(
         type_parameter_index: Int,
-        bound_index: Int): TypeAnnotationTarget
+        bound_index: Int): TAOfTypeBoundOfParameterDeclarationOfMethodOrConstructor =
+        TAOfTypeBoundOfParameterDeclarationOfMethodOrConstructor(
+            type_parameter_index,
+            bound_index)
 
     //______________________________
     // empty_target
-    def FieldDeclaration: TypeAnnotationTarget
-    def ReturnType: TypeAnnotationTarget
-    def ReceiverType: TypeAnnotationTarget
+    override def FieldDeclaration: TAOfFieldDeclaration.type = TAOfFieldDeclaration
+
+    override def ReturnType: TAOfReturnType.type = TAOfReturnType
+
+    override def ReceiverType: TAOfReceiverType.type = TAOfReceiverType
 
     //______________________________
     // formal_parameter_target
-    def FormalParameter(formal_parameter_index: Int): TypeAnnotationTarget
+    override def FormalParameter(formal_parameter_index: Int): TAOfFormalParameter =
+        TAOfFormalParameter(formal_parameter_index)
 
     //______________________________
     // throws_target
-    def Throws(throws_type_index: Int): TypeAnnotationTarget
+    override def Throws(throws_type_index: Int): TAOfThrows =
+        TAOfThrows(throws_type_index)
 
     //______________________________
     // catch_target
-    def Catch(exception_table_index: Int): TypeAnnotationTarget
+    override def Catch(exception_table_index: Int): TAOfCatch =
+        TAOfCatch(exception_table_index)
 
     //______________________________
     // localvar_target
-    type LocalvarTableEntry
-    def LocalvarTableEntry(
+
+    override def LocalvarTableEntry(
         start_pc: Int,
         length: Int,
-        local_variable_table_index: Int): LocalvarTableEntry
-    def LocalvarDecl(localVarTable: LocalvarTable): TypeAnnotationTarget
-    def ResourcevarDecl(localVarTable: LocalvarTable): TypeAnnotationTarget
+        local_variable_table_index: Int): LocalvarTableEntry = {
+        new LocalvarTableEntry(start_pc, length, local_variable_table_index)
+    }
+
+    override def LocalvarDecl(localVarTable: LocalvarTable): TAOfLocalvarDecl =
+        TAOfLocalvarDecl(localVarTable)
+
+    override def ResourcevarDecl(localVarTable: LocalvarTable): TAOfResourcevarDecl =
+        TAOfResourcevarDecl(localVarTable)
 
     //______________________________
     // offset_target
-    def InstanceOf(offset: Int): TypeAnnotationTarget
-    def New(offset: Int): TypeAnnotationTarget
-    def MethodReferenceExpressionNew /*::New*/ (
-        offset: Int): TypeAnnotationTarget
-    def MethodReferenceExpressionIdentifier /*::Identifier*/ (
-        offset: Int): TypeAnnotationTarget
+    override def InstanceOf(offset: Int): TAOfInstanceOf = TAOfInstanceOf(offset)
+
+    override def New(offset: Int): TAOfNew = TAOfNew(offset)
+
+    override def MethodReferenceExpressionNew /*::New*/ (
+        offset: Int): TAOfMethodReferenceExpressionNew =
+        TAOfMethodReferenceExpressionNew(offset)
+
+    override def MethodReferenceExpressionIdentifier /*::Identifier*/ (
+        offset: Int): TAOfMethodReferenceExpressionIdentifier =
+        TAOfMethodReferenceExpressionIdentifier(offset)
 
     //______________________________
     // type_arguement_target
-    def CastExpression(
+    override def CastExpression(
         offset: Int,
-        type_argument_index: Int): TypeAnnotationTarget
-    def ConstructorInvocation(
+        type_argument_index: Int): TAOfCastExpression =
+        TAOfCastExpression(offset, type_argument_index)
+
+    override def ConstructorInvocation(
         offset: Int,
-        type_argument_index: Int): TypeAnnotationTarget
-    def MethodInvocation(
+        type_argument_index: Int): TAOfConstructorInvocation =
+        TAOfConstructorInvocation(offset, type_argument_index)
+
+    override def MethodInvocation(
         offset: Int,
-        type_argument_index: Int): TypeAnnotationTarget
-    def ConstructorInMethodReferenceExpression(
+        type_argument_index: Int): TAOfMethodInvocation =
+        TAOfMethodInvocation(offset, type_argument_index)
+
+    override def ConstructorInMethodReferenceExpression(
         offset: Int,
-        type_argument_index: Int): TypeAnnotationTarget
-    def MethodInMethodReferenceExpression(
+        type_argument_index: Int): TAOfConstructorInMethodReferenceExpression =
+        TAOfConstructorInMethodReferenceExpression(
+            offset,
+            type_argument_index)
+
+    override def MethodInMethodReferenceExpression(
         offset: Int,
-        type_argument_index: Int): TypeAnnotationTarget
+        type_argument_index: Int): TAOfMethodInMethodReferenceExpression =
+        TAOfMethodInMethodReferenceExpression(offset, type_argument_index)
 
     //
     // TypeAnnotationPath
     //
 
-    def TypeAnnotationDirectlyOnType: TypeAnnotationPath
+    override def TypeAnnotationDirectlyOnType: TADirectlyOnType.type =
+        TADirectlyOnType
 
-    def TypeAnnotationPath(path: IndexedSeq[TypeAnnotationPathElement]): TypeAnnotationPath
+    override def TypeAnnotationPath(
+        path: IndexedSeq[TypeAnnotationPathElement]): TAOnNestedType =
+        TAOnNestedType(path)
 
-    def TypeAnnotationDeeperInArrayType: TypeAnnotationPathElement
+    override def TypeAnnotationDeeperInArrayType: TADeeperInArrayType.type =
+        TADeeperInArrayType
 
-    def TypeAnnotationDeeperInNestedType: TypeAnnotationPathElement
+    override def TypeAnnotationDeeperInNestedType: TADeeperInNestedType.type =
+        TADeeperInNestedType
 
-    def TypeAnnotationOnBoundOfWildcardType: TypeAnnotationPathElement
+    override def TypeAnnotationOnBoundOfWildcardType: TAOnBoundOfWildcardType.type =
+        TAOnBoundOfWildcardType
 
-    def TypeAnnotationOnTypeArgument(type_argument_index: Int): TypeAnnotationPathElement
+    override def TypeAnnotationOnTypeArgument(
+        type_argument_index: Int): TAOnTypeArgument =
+        TAOnTypeArgument(type_argument_index)
 
 }
+
 
 
 

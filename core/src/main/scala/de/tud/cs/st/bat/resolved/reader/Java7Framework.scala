@@ -40,7 +40,8 @@ import bat.reader.CodeReader
  *
  * @author Michael Eichberg
  */
-class Java7Framework extends Java7LibraryFramework
+trait Java7Framework
+    extends Java7LibraryFramework
     with CodeAttributeBinding
     with SourceDebugExtension_attributeBinding
     with BootstrapMethods_attributeBinding

@@ -40,9 +40,10 @@ import bat.reader.CodeReader
  *
  * @author Michael Eichberg
  */
-class Java8LibraryFramework
+trait Java8LibraryFramework
     extends Java7LibraryFramework
     with MethodParameters_attributeBinding
+    with TypeAnnotationsBinding
 
 object Java8LibraryFramework extends Java8LibraryFramework
 

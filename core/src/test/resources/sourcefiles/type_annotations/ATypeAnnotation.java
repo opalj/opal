@@ -22,43 +22,29 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
-package reader
+package type_annotations;
 
-import bat.reader.FieldsReader
-import bat.reader.MethodsReader
-import bat.reader.AttributesReader
-import bat.reader.SkipUnknown_attributeReader
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * This "framework" can be used to read in Java 7 (version 51) class files if you
- * are only interested in the public interface of a class.
+ * This class was used to create a class file with some well defined signatures. The
+ * created class is subsequently used by several tests.
+ *
+ * NOTE<br />
+ * This class is not meant to be (automatically) recompiled; it just serves documentation
+ * purposes.
  *
  * @author Michael Eichberg
  */
-trait Java7LibraryFramework
-    extends ConstantPoolBinding
-    with FieldsBinding
-    with MethodsBinding
-    with ClassFileBinding
-    with AttributesReader
-    /* If you want unknown attributes to be represented uncomment the following: */
-    // with Unknown_attributeBinding 
-    /* and comment out the following line: */
-    with SkipUnknown_attributeReader
-    with AnnotationAttributesBinding
-    with InnerClasses_attributeBinding
-    with EnclosingMethod_attributeBinding
-    with SourceFile_attributeBinding
-    with Deprecated_attributeBinding
-    with Signature_attributeBinding
-    with Synthetic_attributeBinding
-    with ConstantValue_attributeBinding
+@Target({ ElementType.TYPE_USE })
+@Retention(RetentionPolicy.CLASS)
+public @interface ATypeAnnotation {
 
-object Java7LibraryFramework extends Java7LibraryFramework
+}
