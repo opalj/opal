@@ -184,7 +184,10 @@ trait AnalysisExecutor {
         }
 
         var project = Project(classFiles, libraryClassFiles)
-        println("Project {"+project.statistics+"}")
+        println(
+            project.statistics.map(kv ⇒ "- "+kv._1+": "+kv._2).
+                mkString("Project statistics:\n\t", "\n\t", "\n")
+        )
         project
     }
 }
