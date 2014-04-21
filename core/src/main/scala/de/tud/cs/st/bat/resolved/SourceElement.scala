@@ -36,7 +36,7 @@ package resolved
  *
  * @author Michael Eichberg
  */
-trait SourceElement {
+trait SourceElement extends CommonSourceElementAttributes {
     def isClassFile = false
     def isMethod = false;
     def isField = false;
