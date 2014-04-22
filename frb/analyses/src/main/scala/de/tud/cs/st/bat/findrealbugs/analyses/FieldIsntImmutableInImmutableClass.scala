@@ -273,11 +273,7 @@ class FieldIsntImmutableInImmutableClass[Source]
                 var transitiveHull = directSetters
                 var oldTransitiveHull: IndexedSeq[Method] = IndexedSeq.empty
 
-                // TODO: Build call graph only once for the whole project
-                val ComputedCallGraph(callGraph,_,_) = CallGraphFactory.create(
-                    project,
-                    CallGraphFactory.defaultEntryPointsForLibraries(project),
-                    new CHACallGraphAlgorithmConfiguration)
+                val ComputedCallGraph(callGraph, _, _) = project.get(CHACallGraphKey)
 
                 // Build the transitive hull of the called by-relation
                 while (!transitiveHull.equals(oldTransitiveHull)) {
