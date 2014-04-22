@@ -380,7 +380,7 @@ trait AI[D <: SomeDomain] {
         //
         // -------------------------------------------------------------------------------
 
-        /**
+        /*
          * Updates the state of the abstract interpreter to make it possible to
          * continue the abstract interpretation with the instruction
          * at the given target (`targetPC`). Basically, the operand stack
@@ -575,7 +575,7 @@ trait AI[D <: SomeDomain] {
 
                 def pcOfNextInstruction = code.pcOfNextInstruction(pc)
 
-                /**
+                /*
                  * Handles all '''if''' instructions that perform a comparison with a fixed
                  * value.
                  */
@@ -607,7 +607,7 @@ trait AI[D <: SomeDomain] {
                     }
                 }
 
-                /**
+                /*
                  * Handles all '''if''' instructions that perform a comparison of two
                  * stack based values.
                  */
@@ -641,7 +641,7 @@ trait AI[D <: SomeDomain] {
                     }
                 }
 
-                /**
+                /*
                  * Handles the control-flow when an exception was raised.
                  *
                  * Called when an exception was (potentially) raised as a side effect of
@@ -768,7 +768,7 @@ trait AI[D <: SomeDomain] {
                         handleExceptions(computation.exceptions)
                 }
 
-                /**
+                /*
                  * Copies the current locals variable array and updates the local variable
                  * stored at the given `index` in the new locals variable array with
                  * the given `domainValue`.
