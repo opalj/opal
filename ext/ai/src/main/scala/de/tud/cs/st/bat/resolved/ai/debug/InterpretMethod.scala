@@ -32,7 +32,7 @@ package resolved
 package ai
 package debug
 
-import scala.language.existentials
+import analyses.SomeProject
 import domain.l0.BaseConfigurableDomain
 
 /**
@@ -51,9 +51,9 @@ object InterpretMethod {
             //Some(new ConsoleTracer {})
             Some(
                 new MultiTracer(
-                        new ConsoleTracer {},
-                        //new ConsoleEvaluationTracer {},
-                        new XHTMLTracer {})
+                    new ConsoleTracer {},
+                    //new ConsoleEvaluationTracer {},
+                    new XHTMLTracer {})
             )
     }
 
@@ -67,6 +67,9 @@ object InterpretMethod {
      * 		is returned.
      */
     def main(args: Array[String]) {
+        import Console.{ RED, RESET }
+        import language.existentials
+
         if (args.size < 3 || args.size > 4) {
             println("You have to specify the method that should be analyzed.")
             println("\t1: a jar/class file or a directory containing jar/class files.")
@@ -81,54 +84,55 @@ object InterpretMethod {
         val domainClass = {
             if (args.length > 3)
                 Class.forName(args(3).substring(8)).asInstanceOf[Class[_ <: SomeDomain]]
-            else
+            else // default domain
                 classOf[BaseConfigurableDomain[_]]
         }
-        
-        
-        def getConstructor[Source: reflect.ClassTag](domainClass: Class[_ <: SomeDomain], classFiles: Seq[(ClassFile, Source)])(classFile: ClassFile, method: Method): SomeDomain = {
+
+        def createDomain[Source: reflect.ClassTag](
+            project: SomeProject,
+            classFile: ClassFile,
+            method: Method): SomeDomain = {
+
             scala.util.control.Exception.ignoring(classOf[NoSuchMethodException]) {
                 val constructor = domainClass.getConstructor(classOf[Object])
                 return constructor.newInstance(classFile)
             }
-            
-            val constructor = domainClass.getConstructor(classOf[analyses.ProjectLike[Source]], classOf[ClassFile], classOf[Method])
-            val project = analyses.IndexBasedProject(classFiles)
-            return constructor.newInstance(project, classFile, method)   
+
+            val constructor =
+                domainClass.getConstructor(
+                    classOf[analyses.Project[java.net.URL]],
+                    classOf[ClassFile],
+                    classOf[Method])
+            return constructor.newInstance(project, classFile, method)
         }
-          
 
         val file = new java.io.File(fileName)
         if (!file.exists()) {
-            println(Console.RED+"file does not exist: "+fileName + Console.RESET)
+            println(RED+"[error] The file does not exist: "+fileName+"."+RESET)
             return ;
         }
 
-        val classFiles =
+        val project =
             try {
-                reader.Java7Framework.ClassFiles(file)
+                analyses.Project(file)
             } catch {
                 case e: Exception ⇒
-                    println(Console.RED+"cannot read file: "+e.getMessage() + Console.RESET)
+                    println(RED+"[error] Cannot process file: "+e.getMessage()+"."+RESET)
                     return ;
             }
-            
-        def newInstance = getConstructor(domainClass, classFiles) _
-            
+
         val classFile = {
-            def lookupClass(fqn: String): Option[ClassFile] =
-                classFiles.map(_._1).find(_.fqn == fqn) match {
-                    case someClassFile @ Some(_)   ⇒ someClassFile
-                    case None if fqn.contains('.') ⇒ lookupClass(fqn.replace('.', '/'))
-                    case None                      ⇒ None
-                }
-            lookupClass(className) match {
-                case None ⇒
-                    println(Console.RED+"cannot find the class: "+className + Console.RESET)
-                    return ;
-                case Some(classFile) ⇒ classFile
+            val fqn =
+                if (className.contains('.'))
+                    className.replace('.', '/')
+                else
+                    className
+            project.classFiles.find(_.fqn == fqn).getOrElse {
+                println(RED+"[error] Cannot find the class: "+className+"."+RESET)
+                return ;
             }
         }
+
         val method =
             (
                 if (methodName.contains("("))
@@ -138,10 +142,9 @@ object InterpretMethod {
             ) match {
                     case Some(method) ⇒ method
                     case None ⇒
-                        println(Console.RED+
-                            "cannot find the method: "+methodName + Console.RESET+
-                            " - candidates: "+
-                            classFile.methods.map(_.toJava).mkString(", "))
+                        println(RED+
+                            "[error] Cannot find the method: "+methodName+"."+RESET +
+                            classFile.methods.map(_.name).toSet.toSeq.sorted.mkString(" Candidates: ", ", ", "."))
                         return ;
                 }
 
@@ -149,7 +152,7 @@ object InterpretMethod {
 
         try {
             val result =
-                AI(classFile, method, newInstance(classFile, method))
+                AI(classFile, method, createDomain(project, classFile, method))
             writeAndOpenDump(dump(
                 Some(classFile),
                 Some(method),
