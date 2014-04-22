@@ -58,14 +58,6 @@ import scala.collection.{ Set, Map }
  *      tools such as IDEs. E.g., in Eclipse `IResource`'s are used to identify the
  *      location of a resource (e.g., a source or class file.)
  *
- * @note
- *    This project abstraction does not support (incremental) project updates.
- *    Furthermore, it makes use of some global, internal counters. Hence, if you want
- *    to analyze multiple projects in a row, it is highly recommended to analyze the
- *    different projects by associating BAT/each analysis with a different `ClassLoader`.
- *    By using different `ClassLoader`s for the different analyses, the necessary
- *    separation is achieved.
- *
  * @author Michael Eichberg
  */
 class Project[Source] private (
