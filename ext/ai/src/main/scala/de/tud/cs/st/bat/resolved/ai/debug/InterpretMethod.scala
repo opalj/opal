@@ -80,12 +80,23 @@ object InterpretMethod {
         val methodName = args(2)
         val domainClass = {
             if (args.length > 3)
-                Class.forName(args(3).substring(8)).
-                    asInstanceOf[Class[_ <: BaseConfigurableDomain[_]]]
+                Class.forName(args(3).substring(8)).asInstanceOf[Class[_ <: SomeDomain]]
             else
                 classOf[BaseConfigurableDomain[_]]
         }
-        val domainConstructor = domainClass.getConstructor(classOf[Object])
+        
+        
+        def getConstructor[Source: reflect.ClassTag](domainClass: Class[_ <: SomeDomain], classFiles: Seq[(ClassFile, Source)])(classFile: ClassFile, method: Method): SomeDomain = {
+            scala.util.control.Exception.ignoring(classOf[NoSuchMethodException]) {
+                val constructor = domainClass.getConstructor(classOf[Object])
+                return constructor.newInstance(classFile)
+            }
+            
+            val constructor = domainClass.getConstructor(classOf[analyses.ProjectLike[Source]], classOf[ClassFile], classOf[Method])
+            val project = analyses.IndexBasedProject(classFiles)
+            return constructor.newInstance(project, classFile, method)   
+        }
+          
 
         val file = new java.io.File(fileName)
         if (!file.exists()) {
@@ -101,6 +112,9 @@ object InterpretMethod {
                     println(Console.RED+"cannot read file: "+e.getMessage() + Console.RESET)
                     return ;
             }
+            
+        def newInstance = getConstructor(domainClass, classFiles) _
+            
         val classFile = {
             def lookupClass(fqn: String): Option[ClassFile] =
                 classFiles.map(_._1).find(_.fqn == fqn) match {
@@ -135,7 +149,7 @@ object InterpretMethod {
 
         try {
             val result =
-                AI(classFile, method, domainConstructor.newInstance((classFile, method)))
+                AI(classFile, method, newInstance(classFile, method))
             writeAndOpenDump(dump(
                 Some(classFile),
                 Some(method),
