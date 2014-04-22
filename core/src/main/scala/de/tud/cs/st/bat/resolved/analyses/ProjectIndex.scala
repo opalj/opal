@@ -116,7 +116,7 @@ object ProjectIndex {
 
         import scala.collection.mutable.HashMap
 
-        import scala.concurrent.{ future, Future, Await, ExecutionContext }
+        import scala.concurrent.{ Future, Await, ExecutionContext }
         import scala.concurrent.duration.Duration
         import ExecutionContext.Implicits.global
 
@@ -126,7 +126,7 @@ object ProjectIndex {
             }
         }
 
-        val fieldsFuture: Future[HashMap[String, HashMap[FieldType, List[Field]]]] = future {
+        val fieldsFuture: Future[HashMap[String, HashMap[FieldType, List[Field]]]] = Future {
             val fields = InitialHashMap[String, HashMap[FieldType, List[Field]]](project.fields.size * 2 / 3)
             for (field ← project.fields) {
                 val fieldName = field.name

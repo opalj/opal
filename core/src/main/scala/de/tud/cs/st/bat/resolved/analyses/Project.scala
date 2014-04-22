@@ -373,11 +373,11 @@ object Project {
         handleInconsistentProject: (InconsistentProjectException) ⇒ Unit = defaultHandlerForInconsistentProject): Project[Source] = {
 
         import scala.collection.mutable.{ Set, Map }
-        import concurrent.{ Future, Await, ExecutionContext, future }
+        import concurrent.{ Future, Await, ExecutionContext }
         import concurrent.duration.Duration
         import ExecutionContext.Implicits.global
 
-        val classHierarchyFuture: Future[ClassHierarchy] = future {
+        val classHierarchyFuture: Future[ClassHierarchy] = Future {
             ClassHierarchy(
                 projectClassFilesWithSources.view.map(_._1) ++
                     libraryClassFilesWithSources.view.map(_._1)
