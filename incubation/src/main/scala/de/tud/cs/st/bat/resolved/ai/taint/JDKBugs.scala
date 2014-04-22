@@ -621,7 +621,7 @@ trait TaintAnalysisDomain[Source]
   def inspectMethod(
     pc: PC,
     method: Method,
-    operands: List[DomainValue]) = {
+    operands: List[DomainValue]) : Unit = {
 
     val classFile = project.classFile(method)
 
