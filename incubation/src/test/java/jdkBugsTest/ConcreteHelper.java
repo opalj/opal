@@ -28,6 +28,11 @@
  */
 package jdkBugsTest;
 
+/**
+ * This is a helper class for InterfaceTest
+ * 
+ * @author Lars Schulte
+ */
 public class ConcreteHelper implements InterfaceHelper {
 
 	@Override
@@ -36,7 +41,6 @@ public class ConcreteHelper implements InterfaceHelper {
 		try {
 			c = Class.forName(s);
 		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return c;

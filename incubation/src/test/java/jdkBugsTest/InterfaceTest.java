@@ -28,6 +28,13 @@
  */
 package jdkBugsTest;
 
+/**
+ * This is a test for the JDKBugs Class.forName() analysis. It has a call to
+ * Class.forName() via an interface method. InterfaceHelper is the interface
+ * that gets implemented by ConcreteHelper and ConcreteHelper2. 
+ * 
+ * @author Lars Schulte
+ */
 public class InterfaceTest {
 
 	public static Object method1(String s) throws ClassNotFoundException {

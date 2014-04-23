@@ -28,6 +28,11 @@
  */
 package jdkBugsTest;
 
+/**
+ * This is a helper class for InterfaceTest
+ * 
+ * @author Lars Schulte
+ */
 public interface InterfaceHelper {
 	public Object getClass(String s);
 }
