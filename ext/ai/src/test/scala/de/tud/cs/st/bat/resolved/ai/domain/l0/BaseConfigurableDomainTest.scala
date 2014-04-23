@@ -122,6 +122,7 @@ class BaseConfigurableDomainTest extends FlatSpec with Matchers {
     for {
         file ← folder.listFiles()
         if file.getName().endsWith(".jar")
+        if file.length() > 0l
         zipFile = new java.util.zip.ZipFile(file)
     } {
         def processClassFile(classFile: ClassFile, source: java.net.URL): Unit = this.synchronized {
