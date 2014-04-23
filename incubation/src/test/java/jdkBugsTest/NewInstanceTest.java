@@ -32,8 +32,7 @@ package jdkBugsTest;
  * This is a test for the JDKBugs Class.forName() analysis. It has a call to
  * Clas.forName(), creates a new Instance of that class and returns it.
  * 
- * @author Lars
- * 
+ * @author Lars Schulte
  */
 public class NewInstanceTest {
 
@@ -77,7 +76,6 @@ public class NewInstanceTest {
 		try {
 			return c.newInstance();
 		} catch (InstantiationException | IllegalAccessException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return null;
