@@ -531,13 +531,13 @@ abstract class DependencyExtractor(
      * }
      * }}}.
      */
-    protected def processDependency(id: Int, aType: Type, dType: DependencyType) {
+    protected def processDependency(id: Int, aType: Type, dType: DependencyType): Unit = {
 
-        def process = processDependency(id, sourceElementID(aType), dType)
+        def process() { processDependency(id, sourceElementID(aType), dType) }
 
         aType match {
-            case t: ObjectType                   ⇒ process
-            case ArrayElementType(t: ObjectType) ⇒ process
+            case t: ObjectType                   ⇒ process()
+            case ArrayElementType(t: ObjectType) ⇒ process()
             case _                               ⇒ /*Nothing to do.*/
         }
     }

@@ -38,7 +38,7 @@ package instructions
  */
 abstract class ShiftInstruction extends ArithmeticInstruction {
 
-    final override def runtimeExceptions(): List[ObjectType] = Nil
+    final override def runtimeExceptions: List[ObjectType] = Nil
 
     final override def indexOfNextInstruction(currentPC: Int, code: Code): Int =
         currentPC + 1

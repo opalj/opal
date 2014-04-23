@@ -200,7 +200,7 @@ object InterpretMethods {
                     scala.xml.NodeSeq.fromSeq(body.toSeq))
             val file = XHTML.writeAndOpenDump(node)
 
-            Some(
+            Some((
                 (
                     "During the interpretation of "+
                     methodsCount+" methods in "+
@@ -211,7 +211,7 @@ object InterpretMethods {
                     "secs.)) "+collectedExceptions.size+" exceptions occured."
                 ),
                 file
-            )
+            ))
         } else {
             None
         }

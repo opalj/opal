@@ -44,7 +44,7 @@ object DependencyMatrix {
 
     import util.debug.PerformanceEvaluation.{ time, ns2ms }
 
-    private def printUsage: Unit = {
+    private def printUsage(): Unit = {
         println("Loads all classes stored in the jar files and creates a dependency matrix.")
         println("Usage: java …DependencyMatrix <JAR file containing class files>+")
     }
@@ -62,7 +62,7 @@ object DependencyMatrix {
             val file = new java.io.File(arg)
             if (!file.canRead() || file.isDirectory()) {
                 println(arg+" is not a valid ZIP/Jar file.");
-                printUsage
+                printUsage()
                 sys.exit(1)
             }
         }

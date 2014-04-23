@@ -348,7 +348,7 @@ object Project {
 
     def defaultHandlerForInconsistentProject(ex: InconsistentProjectException): Unit = {
         import Console._
-        println(RED+"Warning: "+ex.message+"."+RESET)
+        println(RED+"[warning] "+ex.message + RESET)
     }
 
     /**
@@ -361,7 +361,7 @@ object Project {
      *    the libraries used by the project that will be analyzed.
      *    [Thread Safety] The underlying data structure has to support concurrent access.
      * @param handleInconsistentProject A function that is called back if the project
-     *      is not consistent. The default behavior 
+     *      is not consistent. The default behavior
      *      ([[defaultHandlerForInconsistentProject]]) is to write a warning
      *      message to the console. Alternatively it is possible to throw the given
      *      exception to cancel the loading of the project (which is the only
@@ -416,11 +416,11 @@ object Project {
             if (objectTypeToClassFile.contains(objectType)) {
                 handleInconsistentProject(
                     InconsistentProjectException(
-                        "the type "+
+                        "The type "+
                             objectType.toJava+
                             " is defined by multiple class files: "+
                             sources(objectType)+" and "+
-                            source
+                            source+"."
                     )
                 )
             }

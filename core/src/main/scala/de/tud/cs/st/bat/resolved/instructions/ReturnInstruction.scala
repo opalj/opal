@@ -38,7 +38,7 @@ package instructions
  */
 abstract class ReturnInstruction extends Instruction {
 
-    final override def runtimeExceptions(): List[ObjectType] = 
+    final override def runtimeExceptions: List[ObjectType] = 
         ReturnInstruction.runtimeExceptions
 
     final override def indexOfNextInstruction(currentPC: Int, code: Code): Int =

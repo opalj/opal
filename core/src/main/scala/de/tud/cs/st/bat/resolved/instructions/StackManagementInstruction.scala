@@ -39,7 +39,7 @@ package instructions
  */
 abstract class StackManagementInstruction extends Instruction {
 
-    def runtimeExceptions(): List[ObjectType] = Nil
+    def runtimeExceptions: List[ObjectType] = Nil
 
     def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 1
     

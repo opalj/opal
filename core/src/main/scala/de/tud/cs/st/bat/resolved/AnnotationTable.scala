@@ -62,5 +62,5 @@ trait AnnotationTable extends Attribute {
 object AnnotationTable {
 
     def unapply(aa: AnnotationTable): Option[(Boolean, Annotations)] =
-        Some(aa.isRuntimeVisible, aa.annotations)
+        Some((aa.isRuntimeVisible, aa.annotations))
 }

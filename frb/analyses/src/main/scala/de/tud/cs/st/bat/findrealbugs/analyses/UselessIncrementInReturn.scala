@@ -227,15 +227,15 @@ class IincTracingDomain[+I](override val identifier: I)
 
     override def intAreEqual(value1: DomainValue, value2: DomainValue): Answer = Unknown
     override def intIsSomeValueInRange(value: DomainValue, lowerBound: Int,
-                                    upperBound: Int): Answer = Unknown
-    override def intIsSomeValueNotInRange(value: DomainValue, lowerBound: Int,
                                        upperBound: Int): Answer = Unknown
+    override def intIsSomeValueNotInRange(value: DomainValue, lowerBound: Int,
+                                          upperBound: Int): Answer = Unknown
     override def intIsSomeValueInRange(value: DomainValue, lowerBound: DomainValue,
-                                    upperBound: DomainValue): Answer = Unknown
+                                       upperBound: DomainValue): Answer = Unknown
     override def intIsLessThan(smallerValue: DomainValue,
-                            largerValue: DomainValue): Answer = Unknown
+                               largerValue: DomainValue): Answer = Unknown
     override def intIsLessThanOrEqualTo(smallerOrEqualValue: DomainValue,
-                                     equalOrLargerValue: DomainValue): Answer = Unknown
+                                        equalOrLargerValue: DomainValue): Answer = Unknown
 
     override def ineg(pc: PC, value: DomainValue) = MakeIntegerResult(pc, value)
     override def iadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
@@ -425,7 +425,7 @@ class UselessIncrementInReturn[S]
             if !project.isLibraryType(classFile)
             method @ MethodWithBody(body) ← classFile.methods
         } {
-            val domain = new IincTracingDomain
+            val domain = new IincTracingDomain((classFile, method))
             val result = BaseAI(classFile, method, domain)
             val code = body.associateWithIndex
 

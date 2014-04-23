@@ -57,5 +57,5 @@ trait TypeAnnotationTable extends Attribute {
 object TypeAnnotationTable {
 
     def unapply(tat: TypeAnnotationTable): Option[(Boolean, TypeAnnotations)] =
-        Some(tat.isRuntimeVisible, tat.typeAnnotations)
+        Some((tat.isRuntimeVisible, tat.typeAnnotations))
 }

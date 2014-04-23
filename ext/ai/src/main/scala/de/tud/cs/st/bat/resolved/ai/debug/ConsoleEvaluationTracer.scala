@@ -52,7 +52,7 @@ import instructions.Instruction
 trait ConsoleEvaluationTracer extends AITracer {
 
     private[this] var indent = 0
-    private[this] def printIndent = (0 until indent) foreach (i ⇒ print("\t"))
+    private[this] def printIndent() { (0 until indent) foreach (i ⇒ print("\t")) }
 
     def reset() { indent = 0 }
 

@@ -161,7 +161,8 @@ class AnonymousInnerClassShouldBeStatic[Source]
     def analyze(
         project: Project[Source],
         parameters: Seq[String] = List.empty): Iterable[ClassBasedReport[Source]] = {
-        val readFields = AnalysesHelpers.getReadFields(project.classFiles).map(_._2)
+        val readFields: Traversable[(ObjectType, String, Type)] =
+            AnalysesHelpers.getReadFields(project.classFiles).map(_._2)
         for {
             classFile ← project.classFiles
             if !project.isLibraryType(classFile)
@@ -169,7 +170,7 @@ class AnonymousInnerClassShouldBeStatic[Source]
                 canConvertToStaticInnerClass(classFile)
             field @ Field(_, name, fieldType) ← classFile.fields
             if isOuterThisField(field) &&
-                !readFields.exists(_ == (classFile.thisType, name, fieldType)) &&
+                !readFields.exists(_ == ((classFile.thisType, name, fieldType))) &&
                 !constructorReadsOuterThisField(classFile)
         } yield {
             ClassBasedReport(

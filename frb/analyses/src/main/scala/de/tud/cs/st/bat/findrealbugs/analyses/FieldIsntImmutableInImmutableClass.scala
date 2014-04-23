@@ -315,7 +315,7 @@ class FieldIsntImmutableInImmutableClass[Source]
                 PUTFIELD(`thisType`, `fieldName`, `fieldType`) ← body.instructions
             } yield {
                 // Run AI
-                val domain = new ImmutabilityAnalysisDomain
+                val domain = new ImmutabilityAnalysisDomain((declaringClass, field))
                 val results = BaseAI(declaringClass, method, domain)
 
                 // For each PUTFIELD of this field, check whether
@@ -360,7 +360,7 @@ class FieldIsntImmutableInImmutableClass[Source]
                     method @ MethodWithBody(body) ← declaringClass.methods
                     GETFIELD(`thisType`, `fieldName`, `fieldType`) ← body.instructions
                 } yield {
-                    val domain = new ImmutabilityAnalysisDomain
+                    val domain = new ImmutabilityAnalysisDomain(declaringClass, field)
                     val results = BaseAI(declaringClass, method, domain)
                     val codeWithIndex = results.code.associateWithIndex
                     for {

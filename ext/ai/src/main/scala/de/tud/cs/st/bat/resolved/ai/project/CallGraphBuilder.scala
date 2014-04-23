@@ -80,7 +80,7 @@ class CallGraphBuilder(val project: SomeProject) {
 
         import scala.collection.mutable.HashMap
 
-        val calledByMapFuture: Future[HashMap[Method, HashMap[Method, PCs]]] = future {
+        val calledByMapFuture: Future[HashMap[Method, HashMap[Method, PCs]]] = Future {
             val calledByMap: HashMap[Method, HashMap[Method, PCs]] =
                 new HashMap[Method, HashMap[Method, PCs]]() { override def initialSize = project.methodsCount }
             for {

@@ -977,7 +977,7 @@ class ClassHierarchy private (
                                 f(nodes(subtype))
                             }
                         }
-                        def hasSuccessors(): Boolean = directSubtypes.nonEmpty
+                        def hasSuccessors: Boolean = directSubtypes.nonEmpty
                     }
                 )
                 nodes += entry
@@ -998,7 +998,7 @@ class ClassHierarchy private (
             val rootTypes = nodes filter { case (t, _) ⇒ superclassTypeMap(t.id) eq null }
             rootTypes.values.foreach(f)
         }
-        def hasSuccessors(): Boolean = nodes.nonEmpty
+        def hasSuccessors: Boolean = nodes.nonEmpty
     }
 }
 

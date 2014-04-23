@@ -38,7 +38,7 @@ package instructions
  */
 abstract class IntegerRemainderInstruction extends RemainderInstruction {
 
-    final override def runtimeExceptions(): List[ObjectType] = 
+    final override def runtimeExceptions: List[ObjectType] = 
         ArithmeticInstruction.runtimeExceptions
     
     final override def nextInstructions(currentPC: PC, code: Code): PCs = 

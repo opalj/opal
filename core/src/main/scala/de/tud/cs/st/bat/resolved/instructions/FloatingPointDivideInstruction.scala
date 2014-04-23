@@ -38,7 +38,7 @@ package instructions
  */
 abstract class FloatingPointDivideInstruction extends DivideInstruction {
 
-    final override def runtimeExceptions(): List[ObjectType] = Nil
+    final override def runtimeExceptions: List[ObjectType] = Nil
 
     final override def nextInstructions(currentPC: PC, code: Code): PCs =
         collection.mutable.UShortSet(indexOfNextInstruction(currentPC, code))

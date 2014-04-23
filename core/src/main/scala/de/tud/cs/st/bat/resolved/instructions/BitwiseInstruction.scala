@@ -38,7 +38,7 @@ package instructions
  */
 abstract class BitwiseInstruction extends ArithmeticInstruction {
 
-    def runtimeExceptions(): List[ObjectType] = Nil
+    def runtimeExceptions: List[ObjectType] = Nil
 
     def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 1
 

@@ -84,18 +84,18 @@ class UnusedPrivateFields[Source]
         }
 
         val unusedFields = for (
-            classFile ← project.classFiles if !classFile.isInterfaceDeclaration
-            if !project.isLibraryType(classFile)
+            classFile ← project.classFiles if !classFile.isInterfaceDeclaration if !project.isLibraryType(classFile)
         ) yield {
             val declaringClass = classFile.thisType
 
             var privateFields: Map[String, (ClassFile, Field)] = Map.empty
 
-            for (
-                field ← classFile.fields if field.isPrivate &&
-                    !isSerialVersionUID(declaringClass, field)
-            ) {
-                privateFields += field.name -> (classFile, field)
+            for {
+                field ← classFile.fields
+                if field.isPrivate
+                if !isSerialVersionUID(declaringClass, field)
+            } {
+                privateFields += field.name -> ((classFile, field))
             }
 
             for {

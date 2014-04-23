@@ -263,7 +263,7 @@ case class Code(
         while (pc < max_pc) {
             val instruction = instructions(pc)
             if ((instruction ne null) && f.isDefinedAt((pc, instruction))) {
-                return Some(f(pc, instruction))
+                return Some(f((pc, instruction)))
             }
             pc += 1
         }

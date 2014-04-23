@@ -84,7 +84,7 @@ object ReportableAnalysisResult {
  * Result of some analysis that just consists of some text.
  */
 case class BasicReport(message: String) extends ReportableAnalysisResult {
-    def consoleReport() = message
+    def consoleReport = message
 }
 
 /**

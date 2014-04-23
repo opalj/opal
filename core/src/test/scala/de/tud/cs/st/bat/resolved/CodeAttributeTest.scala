@@ -56,11 +56,10 @@ class CodeAttributeTest
     behavior of "the \"Code\" attribute's collect method"
 
     it should "be able to correctly collect all matching instructions" in {
-        codeOfPut collect { case dup @ DUP ⇒ dup } should equal(Seq((31, DUP)))
-        codeOfPut collect { case dup @ DUP ⇒ dup } should not equal (Seq())
+        codeOfPut collect { case DUP ⇒ DUP } should equal(Seq((31, DUP)))
 
         codeOfPut collect {
-            case iconst_1 @ ICONST_1 ⇒ iconst_1
+            case ICONST_1 ⇒ ICONST_1
         } should equal(Seq((20, ICONST_1), (35, ICONST_1)))
 
         codeOfPut collect {
@@ -74,7 +73,7 @@ class CodeAttributeTest
     }
 
     it should "be able to correctly handle the case if no instruction is matched" in {
-        codeOfPut.collect({ case dup2_x2 @ DUP2_X2 ⇒ dup2_x2 }) should equal(Seq())
+        codeOfPut collect { case DUP2_X2 ⇒ DUP2_X2 } should equal(Seq())
     }
 
     behavior of "the \"Code\" attribute's collectWithIndex method"
@@ -95,9 +94,9 @@ class CodeAttributeTest
     behavior of "the \"Code\" attribute's collectFirstWithIndex method"
 
     it should "be able to correctly identify the first matching instruction" in {
-        codeOfPut.collectFirstWithIndex({
-            case (pc, iconst_1 @ ICONST_1) ⇒ (pc, iconst_1)
-        }) should equal(Some((20, ICONST_1)))
+        codeOfPut collectFirstWithIndex {
+            case (pc, ICONST_1) ⇒ (pc, ICONST_1)
+        } should equal(Some((20, ICONST_1)))
     }
 
     it should "be able to handle the case where no instruction is found" in {

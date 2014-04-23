@@ -64,7 +64,7 @@ object MoreCheckers {
 
     import PerformanceEvaluation.{ time, memory }
 
-    private def printUsage: Unit = {
+    private def printUsage(): Unit = {
         println("Usage: java …Main <JAR file containing class files>+")
     }
 

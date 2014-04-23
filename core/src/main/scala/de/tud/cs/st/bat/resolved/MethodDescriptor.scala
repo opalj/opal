@@ -230,7 +230,8 @@ object HasNoArgsAndReturnsVoid {
  */
 object MethodDescriptor {
 
-    def unapply(md: MethodDescriptor) = Some(md.parameterTypes, md.returnType)
+    def unapply(md: MethodDescriptor): Option[(IndexedSeq[FieldType], Type)] =
+        Some((md.parameterTypes, md.returnType))
 
     val NoArgsAndReturnVoid: MethodDescriptor = NoArgumentAndNoReturnValueMethodDescriptor
 

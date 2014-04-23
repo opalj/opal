@@ -86,7 +86,7 @@ class FieldShouldBePackageProtected[Source]
                 (field.isPublic || field.isProtected) &&
                 (field.fieldType.isArrayType || field.fieldType == HashtableType) &&
                 !readFieldsFromPackage.exists(entry ⇒
-                    entry._2 == (classFile.thisType, field.name, field.fieldType)
+                    entry._2 == ((classFile.thisType, field.name, field.fieldType))
                         && entry._1 != classFile.thisType.packageName)
             )
         } yield {

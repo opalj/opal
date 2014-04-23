@@ -39,7 +39,7 @@ package instructions
  */
 abstract class NumericConversionInstruction extends Instruction {
 
-    final override def runtimeExceptions(): List[ObjectType] =
+    final override def runtimeExceptions: List[ObjectType] =
         Nil
 
     final override def indexOfNextInstruction(currentPC: Int, code: Code): Int =

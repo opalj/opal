@@ -128,9 +128,9 @@ class BaseConfigurableDomainTest extends FlatSpec with Matchers {
             for (method ← classFile.methods.par)
                 if (method.body.isDefined) {
                     // We want a comparison at the conceptual level that is why we use stateToString
-                    val r1 = BaseAI(classFile, method, new BasicDomain1).stateToString
-                    val r2 = BaseAI(classFile, method, new BasicDomain2).stateToString
-                    val r3 = BaseAI(classFile, method, new BasicDomain3).stateToString
+                    val r1 = BaseAI(classFile, method, new BasicDomain1((classFile,method))).stateToString
+                    val r2 = BaseAI(classFile, method, new BasicDomain2((classFile,method))).stateToString
+                    val r3 = BaseAI(classFile, method, new BasicDomain3((classFile,method))).stateToString
 
                     def doFail(r1: String, r2: String): Unit = {
                         val l1l2s = r1.split('\n') zip r2.split('\n')

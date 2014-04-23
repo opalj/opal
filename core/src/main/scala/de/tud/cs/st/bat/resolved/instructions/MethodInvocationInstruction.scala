@@ -88,7 +88,7 @@ abstract class StaticMethodInvocationInstruction extends MethodInvocationInstruc
 object MethodInvocationInstruction {
 
     def unapply(instruction: MethodInvocationInstruction): Option[(ReferenceType, String, MethodDescriptor)] = {
-        Some(instruction.declaringClass, instruction.name, instruction.methodDescriptor)
+        Some((instruction.declaringClass, instruction.name, instruction.methodDescriptor))
     }
 
     val runtimeExceptions = List(ObjectType.NullPointerException)

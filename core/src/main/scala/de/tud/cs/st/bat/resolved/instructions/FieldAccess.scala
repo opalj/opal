@@ -57,7 +57,7 @@ object FieldAccess {
     val runtimeExceptions = List(ObjectType.NullPointerException)
 
     def unapply(fa: FieldAccess): Option[(ObjectType, String, FieldType)] =
-        Some(fa.declaringClass, fa.name, fa.fieldType)
+        Some((fa.declaringClass, fa.name, fa.fieldType))
 }
 
 abstract class FieldReadAccess extends FieldAccess

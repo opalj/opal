@@ -54,13 +54,13 @@ package graphs
 final class SimpleNode[I](
     val identifier: I,
     val identifierToString: I ⇒ String = SimpleNode.any2String,
-    val backgroundColor: Option[String] = None,
+    override val backgroundColor: Option[String] = None,
     private[this] var children: List[Node] = List.empty)
         extends Node {
 
-    def toHRR = Some(identifierToString(identifier))
+    override def toHRR = Some(identifierToString(identifier))
 
-    def uniqueId: Int = identifier.hashCode()
+    override def uniqueId: Int = identifier.hashCode()
 
     def addChild(node: Node) {
         this.synchronized(children = node :: children)
@@ -74,11 +74,11 @@ final class SimpleNode[I](
         this.synchronized(children = children.filterNot(_ == node))
     }
 
-    def foreachSuccessor(f: Node ⇒ Unit) {
+    override def foreachSuccessor(f: Node ⇒ Unit) {
         this.synchronized(children.foreach(f))
     }
 
-    def hasSuccessors(): Boolean = this.synchronized(children.nonEmpty)
+    override def hasSuccessors: Boolean = this.synchronized(children.nonEmpty)
 
 }
 private object SimpleNode {
