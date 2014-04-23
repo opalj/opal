@@ -30,7 +30,7 @@ package jdkBugsTest;
 
 /**
  * This is a test for the JDKBugs Class.forName() analysis. It has a call to
- * Clas.forName(), creates a new Instance of that class and returns it.
+ * Class.forName(), creates a new Instance of that class and returns it.
  * 
  * @author Lars Schulte
  */
