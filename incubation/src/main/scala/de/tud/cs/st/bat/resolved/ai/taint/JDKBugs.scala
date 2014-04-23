@@ -46,6 +46,9 @@ import de.tud.cs.st.bat.resolved.ai.domain._
 import de.tud.cs.st.util.graphs._
 import de.tud.cs.st.util.ControlAbstractions.process
 
+/**
+ * @author Lars Schulte
+ */
 object JDKTaintAnalysis
   extends AIProject[URL, SomeDomain with Report]
   with Analysis[URL, ReportableAnalysisResult]
@@ -80,7 +83,7 @@ object JDKTaintAnalysis
       properties.load(in)
       properties.getProperty("package.access", "").
         split(",").
-        map(_.trim.replace('.', '/'))
+        map(_.trim.replace('.', '/')).toSet
     }
     println(restrictedPackages.mkString("Restricted packages:\n\t", "\n\t", "\n"))
 
