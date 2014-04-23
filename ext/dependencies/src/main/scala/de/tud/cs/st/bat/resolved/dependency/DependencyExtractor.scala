@@ -464,12 +464,7 @@ abstract class DependencyExtractor(
                     processDependency(methodId, methodDescriptor.returnType, USES_RETURN_TYPE)
 
                 case 186 ⇒
-                    val INVOKEDYNAMIC(bootstrapMethod, name, methodDescriptor) = i.asInstanceOf[INVOKEDYNAMIC]
-                    methodDescriptor.parameterTypes foreach { parameterType ⇒
-                        processDependency(methodId, parameterType, USES_PARAMETER_TYPE)
-                    }
-                // TODO complete the implementation of Invokedynamic w.r.t. the static dependencies defined in the "bootstrapmethod" 
-                //    throw new UnsupportedOperationException("Java 7 Invokedynamic is not supported.")
+                    processInvokedynamic(methodId, i.asInstanceOf[INVOKEDYNAMIC])
 
                 case 187 ⇒
                     processDependency(methodId, i.asInstanceOf[NEW].objectType, CREATES)
@@ -539,6 +534,68 @@ abstract class DependencyExtractor(
             case t: ObjectType                   ⇒ process()
             case ArrayElementType(t: ObjectType) ⇒ process()
             case _                               ⇒ /*Nothing to do.*/
+        }
+    }
+
+    protected def processInvokedynamic(
+            methodId: Int, instruction: INVOKEDYNAMIC): Unit = {
+        DependencyExtractor.showInvokedynamicMessageOnce()
+        processInvokedynamicRuntimeDependencies(methodId, instruction)
+    }
+
+    /**
+     * Default implementation for handling invokedynamic instructions that only finds dependencies
+     * on the runtime infrastructure (e.g. the bootstrap method and its surrounding class, the 
+     * types of its arguments and its return type).
+     * 
+     * To gain more information about invokedynamic instructions, a special subclass of 
+     * DependencyExtractor must be created which overrides this method and performs deeper-going
+     * analysis on invokedynamic instructions.
+     */
+    protected def processInvokedynamicRuntimeDependencies(
+            methodId: Int, instruction: INVOKEDYNAMIC): Unit = {
+        val INVOKEDYNAMIC(bootstrapMethod, name, methodDescriptor) = instruction
+        // dependencies noted in the method descriptor that is passed to the invokedynamic instruction
+        // these are most likely simply java/lang/Object for both the parameter and return types
+        methodDescriptor.parameterTypes foreach { parameterType ⇒
+            processDependency(methodId, parameterType, USES_PARAMETER_TYPE)
+        }
+        processDependency(methodId, methodDescriptor.returnType, USES_RETURN_TYPE)
+        bootstrapMethod.methodHandle match {
+            case handle: MethodCallMethodHandle ⇒ {
+                // the class containing the bootstrap method
+                processDependency(methodId, handle.receiverType, USES_METHOD_DECLARING_TYPE)
+                // the type of method call
+                val callType = handle match {
+                    case InvokeInterfaceMethodHandle(_, _, _) ⇒ CALLS_INTERFACE_METHOD
+                    case _                                    ⇒ CALLS_METHOD
+                }
+                processDependency(methodId, handle.receiverType, handle.name, handle.methodDescriptor, callType)
+            }
+            case handle: FieldAccessMethodHandle ⇒ {
+                val (operation, operationDependency) = handle match {
+                    case GetFieldMethodHandle(_, _, _) | GetStaticMethodHandle(_, _, _) ⇒ (READS_FIELD, USES_FIELD_READ_TYPE)
+                    case PutFieldMethodHandle(_, _, _) | PutStaticMethodHandle(_, _, _) ⇒ (WRITES_FIELD, USES_FIELD_WRITE_TYPE)
+                }
+                processDependency(methodId, handle.declaringType, USES_FIELD_DECLARING_TYPE)
+                processDependency(methodId, handle.declaringType, handle.name, operation)
+                processDependency(methodId, handle.fieldType, operationDependency)
+            }
+        }
+    }
+}
+
+object DependencyExtractor {
+    private var hasShownInvokedynamicMessage = false
+    private val message: String = "This project contains invokedynamic instructions. "+
+        "Currently, only dependencies to the runtime are resolved."
+
+    def showInvokedynamicMessageOnce(): Unit = {
+        if (!hasShownInvokedynamicMessage) this.synchronized {
+            if (!hasShownInvokedynamicMessage) {
+                println(message)
+                hasShownInvokedynamicMessage = true
+            }
         }
     }
 }

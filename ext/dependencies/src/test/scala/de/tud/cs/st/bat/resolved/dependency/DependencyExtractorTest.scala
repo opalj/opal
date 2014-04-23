@@ -577,8 +577,6 @@ class DependencyExtractorTest extends FunSuite {
             assertDependency("dependencies.InstructionsTestClass.method()", "java.lang.Object", USES_METHOD_DECLARING_TYPE)
             assertDependency("dependencies.InstructionsTestClass.method()", "java.lang.Object.equals(java.lang.Object)", CALLS_METHOD)
             assertDependency("dependencies.InstructionsTestClass.method()", "java.lang.Object", USES_PARAMETER_TYPE)
-            //
-            //    	// TODO [Java 7]: add test for INVOKEDYNAMIC
             //        }
             //    }
         }
