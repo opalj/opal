@@ -31,7 +31,7 @@ package util
 
 import language.experimental.macros
 import reflect.ClassTag
-import reflect.macros.Context
+import reflect.macros.blackbox.Context
 import reflect.api.Trees
 import java.io.InputStream
 import java.io.Closeable
