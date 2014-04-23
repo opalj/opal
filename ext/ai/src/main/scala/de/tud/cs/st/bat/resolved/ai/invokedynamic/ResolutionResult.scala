@@ -34,6 +34,8 @@ package invokedynamic
 
 import instructions.INVOKEDYNAMIC
 
+import language.existentials 
+
 /**
  * Base trait that represents the result of an [[InvokedynamicResolver]]'s resolution run.
  * 
