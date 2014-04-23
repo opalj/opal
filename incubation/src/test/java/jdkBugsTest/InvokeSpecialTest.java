@@ -30,10 +30,9 @@ package jdkBugsTest;
 
 /**
  * This is a test for the JDKBugs Class.forName() analysis. It has a call to
- * Clas.forName() via a private method and returns it back
+ * Class.forName() via a private method and returns it back
  * 
- * @author Lars
- * 
+ * @author Lars Schulte
  */
 public class InvokeSpecialTest {
 
