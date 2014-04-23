@@ -28,6 +28,12 @@
  */
 package jdkBugsTest;
 
+/**
+ * Test the use of a global private field. setterMethod can be used 
+ * to get a tainted string into the system that is then used by the getterMethod
+ * 
+ * @author Lars Schulte
+ */
 public class GlobalPrivateFieldTest {
 
 	private String taintField;
@@ -36,6 +42,10 @@ public class GlobalPrivateFieldTest {
 		taintField = s;
 	}
 
+	// this tests if the analysis run into an endless loop; see example:
+	// setterMethod is analyzed -> analysis starts a new analysis for every method within the class
+	// analysis analyzes loopTest -> starts a new analysis for every methid within the clas 
+	// etc. etc.
 	public void loopTest(String s) {
 		taintField = s;
 	}
@@ -44,10 +54,8 @@ public class GlobalPrivateFieldTest {
 		try {
 			return Class.forName(taintField);
 		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return null;
 	}
-
 }
