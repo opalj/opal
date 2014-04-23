@@ -28,6 +28,12 @@
  */
 package jdkBugsTest;
 
+/**
+ * This is a test for the JDKBugs Class.forName() analysis. It has a call to
+ * Class.forName() via a virtual method.
+ * 
+ * @author Lars Schulte
+ */
 class InvokeVirtualTest extends InvokeVirtualHelper {
 
 	public Object method1(String s) {
@@ -39,7 +45,6 @@ class InvokeVirtualTest extends InvokeVirtualHelper {
 		try {
 			c = Class.forName(s);
 		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return method3(c);
@@ -49,10 +54,8 @@ class InvokeVirtualTest extends InvokeVirtualHelper {
 		try {
 			return c.newInstance();
 		} catch (InstantiationException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IllegalAccessException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return null;

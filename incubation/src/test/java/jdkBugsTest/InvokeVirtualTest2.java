@@ -28,6 +28,12 @@
  */
 package jdkBugsTest;
 
+/**
+ * This is a test for the JDKBugs Class.forName() analysis. It has a call to
+ * Class.forName() by using an instance of InvokeVirtualHelper2
+ * 
+ * @author Lars Schulte
+ */
 public class InvokeVirtualTest2 {
 
 	public Class method1(String s) {

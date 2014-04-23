@@ -28,6 +28,12 @@
  */
 package jdkBugsTest;
 
+/**
+ * This is a helperMethod for InvokeVirtualTest 
+ * its purpose is to server as abstract class
+ * 
+ * @author Lars Schulte
+ */
 public abstract class InvokeVirtualHelper {
 
 	public abstract Object method3(Class c);

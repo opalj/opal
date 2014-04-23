@@ -28,6 +28,13 @@
  */
 package jdkBugsTest;
 
+/**
+ * This is a helper class for InvokeVirtualTest2
+ * An instance of this class is created and then the
+ * method getClass is called
+ * 
+ * @author Lars Schulte
+ */
 public class InvokeVirtualHelper2 {
 
 	public Class getClass(String s) {
@@ -35,7 +42,6 @@ public class InvokeVirtualHelper2 {
 		try {
 			c = Class.forName(s);
 		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
