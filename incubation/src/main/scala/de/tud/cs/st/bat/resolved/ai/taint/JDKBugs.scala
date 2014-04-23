@@ -47,6 +47,8 @@ import de.tud.cs.st.util.graphs._
 import de.tud.cs.st.util.ControlAbstractions.process
 
 /**
+ * Searches for occurrences of the Class.forName bug in the JDK
+ * 
  * @author Lars Schulte
  */
 object JDKTaintAnalysis
@@ -104,7 +106,6 @@ object JDKTaintAnalysis
       if method.body.isDefined
       if method.isPublic || (method.isProtected && !classFile.isFinal)
       descriptor = method.descriptor
-      //if (descriptor.returnType == Object) || (descriptor.returnType == Class)
       if (descriptor.parameterTypes.contains(String))
     } yield (classFile, method)
   }
@@ -140,7 +141,6 @@ trait TaintAnalysisDomain[Source]
   import de.tud.cs.st.util.Unknown
   import ObjectType._
 
-  //protected def declaringClass = identifier._1.thisType
   protected def declaringClass = identifier.classFile.thisType
   protected def methodName = identifier.method.name
   protected def methodDescriptor = identifier.method.descriptor
@@ -489,7 +489,6 @@ trait TaintAnalysisDomain[Source]
       parameters)
   }
 
-  // TODO
   override def putfield(
     pc: PC,
     objectref: DomainValue,
@@ -520,7 +519,6 @@ trait TaintAnalysisDomain[Source]
     super.putfield(pc, objectref, value, declaringClass, name, fieldType)
   }
 
-  // TODO
   override def getfield(
     pc: PC,
     objectref: DomainValue,
