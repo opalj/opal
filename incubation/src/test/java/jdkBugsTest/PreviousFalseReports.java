@@ -32,12 +32,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * This is a test for the JDKBugs Class.forName() analysis. It contains
- * previously false positives that were found while analyzing the jdk
+ * previously issues that were reported without containing a relevant
+ * call to Class.forName
  * 
- * @author Lars
- * 
+ * @author Lars Schulte
  */
-public class JdkBugsFalsePositives {
+public class PreviousFalseReports {
 
 	// ================================================================================================
 	// com/sun/org/apache/xml/internal/utils/UnImplNode
