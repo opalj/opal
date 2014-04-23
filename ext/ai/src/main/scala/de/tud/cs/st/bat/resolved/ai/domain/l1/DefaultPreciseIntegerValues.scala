@@ -80,10 +80,10 @@ trait DefaultPreciseIntegerValues[+I]
                     def result(newInitial: Int, newValue: Int): Update[DomainValue] = {
                         if (this.initial == newInitial && this.value == newValue)
                             NoUpdate
-                        else if (otherInitial == newInitial && otherValue == newValue)
-                            StructuralUpdate(other)
                         else if (spread(newValue, newInitial) > maxSpreadInteger)
                             StructuralUpdate(AnIntegerValue())
+                        else if (otherInitial == newInitial && otherValue == newValue)
+                            StructuralUpdate(other)
                         else if (newValue != this.value)
                             StructuralUpdate(IntegerRange(newInitial, newValue))
                         else // if (newInitial != this.initial)
