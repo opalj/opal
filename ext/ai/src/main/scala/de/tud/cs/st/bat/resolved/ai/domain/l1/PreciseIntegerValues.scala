@@ -68,6 +68,10 @@ trait PreciseIntegerValues[+I]
      */
     def maxSpreadInteger: Int = 25
 
+    /**
+     * Calculates the distance between the two given values. The value is always equal or
+     * larger than zero.
+     */
     protected def spread(a: Int, b: Int): Int = Math.abs(a - b)
 
     /**
@@ -93,19 +97,23 @@ trait PreciseIntegerValues[+I]
      */
     trait IntegerValue extends IntegerLikeValue { this: DomainValue ⇒
 
+        /**
+         * The value that was originally assigned to this integer value(variable).
+         */
         val initial: Int
 
         val value: Int
 
         /**
-         * Creates a new IntegerValue with the given value as the current value,
-         * but the same initial value. Please note that it is ok if the new value
-         * is between the current value and the initial value. It is only required
-         * that the join operation is monotonic.
+         * Creates a new `IntegerValue` with the given value as the current value,
+         * and the same [[initial]] value.
          *
-         * @note
-         * This method must not check whether the initial value and the new value
-         * exceed the spread. This is done by the join method.
+         * @note It is ok if the new value is between the current value and the
+         *      initial value or if the new value actually exceeds the maximum
+         *      allowed spread.
+         *
+         * @note This method must not check whether the initial value and the new value
+         *      exceed the spread. This is done by the join method.
          */
         def update(newValue: Int): DomainValue
 
@@ -114,6 +122,16 @@ trait PreciseIntegerValues[+I]
     object IntegerValue {
         def unapply(v: IntegerValue): Option[Int] = Some(v.value)
     }
+
+    protected[this] def updateValue(
+        oldValue: DomainValue,
+        newValue: DomainValue,
+        operands: Operands,
+        locals: Locals): (Operands, Locals) =
+        (
+            operands.map { operand ⇒ if (operand eq oldValue) newValue else operand },
+            locals.map { local ⇒ if (local eq oldValue) newValue else local }
+        )
 
     //
     // QUESTION'S ABOUT VALUES
@@ -209,16 +227,6 @@ trait PreciseIntegerValues[+I]
         intValues(smallerOrEqualValue, equalOrLargerValue) { (v1, v2) ⇒
             Answer(v1 <= v2)
         } { Unknown }
-
-    protected[this] def updateValue(
-        oldValue: DomainValue,
-        newValue: DomainValue,
-        operands: Operands,
-        locals: Locals): (Operands, Locals) =
-        (
-            operands.map { operand ⇒ if (operand eq oldValue) newValue else operand },
-            locals.map { local ⇒ if (local eq oldValue) newValue else local }
-        )
 
     override def intEstablishValue(
         pc: PC,

@@ -46,11 +46,13 @@ trait DefaultPreciseIntegerValues[+I]
         with PreciseIntegerValues[I] {
     this: Configuration ⇒
 
-    // ATTENTION: The functionality to propagate a constraint crucially depends on
-    // the fact two integer values created at two different places are represented
-    // by two different instances of "AnIntegerValue"; otherwise, propagating the
-    // constraint that some value (after some kind of check) has to have a special
-    // value may affect unrelated values!
+    /**
+     * @note The functionality to propagate a constraint crucially depends on
+     *      the fact two integer values created at two different places are represented
+     *      by two different instances of "AnIntegerValue"; otherwise, propagating the
+     *      constraint that some value (after some kind of check) has to have a special
+     *      value may affect unrelated values!
+     */
     case class AnIntegerValue() extends super.AnIntegerValue {
 
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = NoUpdate
