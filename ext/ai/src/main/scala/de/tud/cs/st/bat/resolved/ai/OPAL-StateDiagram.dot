@@ -1,6 +1,6 @@
-# STATE DIAGRAM FOR BATAI
+# STATE DIAGRAM FOR OPAL AI
 
-digraph BATAI {
+digraph OPAL {
 	compound=true;
 	fontname=Helvetica;
 	node [shape=circle];
@@ -39,5 +39,5 @@ digraph BATAI {
      init [style=filled,fillcolor=antiquewhite];	 
 	 start [shape=doublecircle];
 	 end [shape=doublecircle];
-	 label = "BATAI Flow Chart";
+	 label = "OPAL Flow Chart";
  }
