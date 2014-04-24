@@ -32,6 +32,7 @@ package da
 import reflect.ClassTag
 
 /**
+ * Represents a .class file as is.
  *
  * @author Michael Eichberg
  */
@@ -43,10 +44,6 @@ object ClassFileReader
         with de.tud.cs.st.bat.reader.AttributesReader
         with de.tud.cs.st.bat.reader.SkipUnknown_attributeReader {
 
-    // 
-    // IMPLEMENTATION OF THE CLASSES REPRESENTING A CLASS FILE
-    //
-
     type ClassFile = org.opalj.da.ClassFile
 
     type Attribute = org.opalj.da.Attribute
@@ -57,6 +54,7 @@ object ClassFileReader
 
     type Method_Info = org.opalj.da.Method_Info
     val Method_InfoManifest: ClassTag[Method_Info] = implicitly
+		
     /*
 	type ElementValue = org.opalj.bat.native.ElementValue
 
