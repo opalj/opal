@@ -26,35 +26,29 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
-package reader
-
-import reflect.ClassTag
-
-import de.tud.cs.st.bat.reader.MethodsReader
+package org.opalj
+package da
 
 /**
+ * The attribute class defines the common elements of all attributes; i.e., basically
+ * the first two attribute_info elements.
+ * <pre>
+ * attribute_info {
+ * 	u2 attribute_name_index;
+ * 	u4 attribute_length;
+ * 	u1 info[attribute_length];
+ * }
+ * </pre>
  *
  * @author Michael Eichberg
  */
-trait MethodsBinding extends MethodsReader {
-    this: ConstantPoolBinding with AttributeBinding ⇒
+trait Attribute {
 
-    type Method_Info = de.tud.cs.st.bat.resolved.Method
-    val Method_InfoManifest: ClassTag[Method_Info] = implicitly
+    //
+    // ABSTRACT DEFINITIONS
+    //
 
-    def Method_Info(
-        cp: Constant_Pool,
-        accessFlags: Int,
-        name_index: Int,
-        descriptor_index: Int,
-        attributes: Attributes): Method_Info = {
-        Method(
-            accessFlags,
-            cp(name_index).asString,
-            cp(descriptor_index).asMethodDescriptor,
-            attributes)
-    }
+    def attribute_name_index: Constant_Pool_Index
+
+    def attribute_length: Int
 }

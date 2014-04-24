@@ -86,10 +86,10 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
      * Creates a storage area for functions that will be called after the class file was
      * completely loaded. This makes it possible to register functions that are newly
      * created for a special class file object to perform actions related to that specific
-     * class file object. For further information study the resolving process for
-     * `invokedynamic`.
+     * class file object. For further information study the resolving process of
+     * `invokedynamic` instructions.
      */
-    protected[bat] def createDeferredActionsStore(): DeferredActionsStore
+    protected[this] def createDeferredActionsStore(): DeferredActionsStore
 
     //
     // IMPLEMENTATION

@@ -26,35 +26,17 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
-package reader
-
-import reflect.ClassTag
-
-import de.tud.cs.st.bat.reader.MethodsReader
+package org.opalj
+package da
 
 /**
  *
  * @author Michael Eichberg
  */
-trait MethodsBinding extends MethodsReader {
-    this: ConstantPoolBinding with AttributeBinding ⇒
+case class CONSTANT_InterfaceMethodref_info(
+        class_index: Constant_Pool_Index,
+        name_and_type_index: Constant_Pool_Index) extends CONSTANT_Ref {
 
-    type Method_Info = de.tud.cs.st.bat.resolved.Method
-    val Method_InfoManifest: ClassTag[Method_Info] = implicitly
+    def Constant_Type_Value = de.tud.cs.st.bat.ConstantPoolTags.CONSTANT_InterfaceMethodref
 
-    def Method_Info(
-        cp: Constant_Pool,
-        accessFlags: Int,
-        name_index: Int,
-        descriptor_index: Int,
-        attributes: Attributes): Method_Info = {
-        Method(
-            accessFlags,
-            cp(name_index).asString,
-            cp(descriptor_index).asMethodDescriptor,
-            attributes)
-    }
 }

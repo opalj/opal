@@ -1,9 +1,7 @@
-name := "Bytecode Toolkit"
+name := "Bytecode Disassembler"
 
-version := "0.8.0-SNAPSHOT"
+version := "0.1.0-SNAPSHOT"
 
-scalacOptions in (Compile, doc) := Seq("-deprecation", "-feature", "-unchecked")
+scalacOptions in (Compile, doc) ++= Opts.doc.title("OPAL - Bytecode Disassembler") 
 
-scalacOptions in (Compile, doc) ++= Opts.doc.title("OPAL - Bytecode Analysis Toolkit") 
-
-libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.1"
+libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.1"

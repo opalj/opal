@@ -26,35 +26,23 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
-package reader
-
-import reflect.ClassTag
-
-import de.tud.cs.st.bat.reader.MethodsReader
+package org.opalj
 
 /**
+ * Defines convenience methods related to reading in class files.
  *
  * @author Michael Eichberg
  */
-trait MethodsBinding extends MethodsReader {
-    this: ConstantPoolBinding with AttributeBinding ⇒
+package object da {
 
-    type Method_Info = de.tud.cs.st.bat.resolved.Method
-    val Method_InfoManifest: ClassTag[Method_Info] = implicitly
+    type Constant_Pool_Index = ClassFileReader.Constant_Pool_Index
+    type Constant_Pool = ClassFileReader.Constant_Pool
 
-    def Method_Info(
-        cp: Constant_Pool,
-        accessFlags: Int,
-        name_index: Int,
-        descriptor_index: Int,
-        attributes: Attributes): Method_Info = {
-        Method(
-            accessFlags,
-            cp(name_index).asString,
-            cp(descriptor_index).asMethodDescriptor,
-            attributes)
-    }
+    type Interfaces = IndexedSeq[Constant_Pool_Index]
+    type Methods = IndexedSeq[Method_Info]
+    type Fields = IndexedSeq[Field_Info]
+
+    type Attributes = Seq[Attribute]
+
 }
+

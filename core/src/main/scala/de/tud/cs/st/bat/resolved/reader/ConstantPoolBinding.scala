@@ -460,7 +460,7 @@ trait ConstantPoolBinding extends Constant_PoolReader {
         name_and_type_index: Constant_Pool_Index): CONSTANT_InvokeDynamic_info =
         new CONSTANT_InvokeDynamic_info(bootstrap_method_attr_index, name_and_type_index)
 
-    protected[bat] def createDeferredActionsStore(): DeferredActionsStore = {
+    protected[this] def createDeferredActionsStore(): DeferredActionsStore = {
         new scala.collection.mutable.ArrayBuffer[ClassFile ⇒ ClassFile] with Constant_Pool_Entry {}
     }
 

@@ -34,6 +34,10 @@ import reflect.ClassTag
 
 import de.tud.cs.st.bat.reader.FieldsReader
 
+/**
+ *
+ * @author Michael Eichberg
+ */
 trait FieldsBinding extends FieldsReader {
     this: ConstantPoolBinding with AttributeBinding ⇒
 

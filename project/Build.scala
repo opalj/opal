@@ -15,8 +15,9 @@ object OPALBuild extends Build {
 	).
 	aggregate(
 		util, 
-		bt, 
-		ai,
+		bt,
+		da,
+		aif,
 		dependenciesExtraction, 		 
 		opalDeveloperTools, 
 		demos,		
@@ -41,9 +42,14 @@ object OPALBuild extends Build {
 		base = file("core")
 	) dependsOn(util)
 
-	lazy val ai = Project(
+	lazy val aif = Project(
 		id = "AbstractInterpretationFramework",
 		base = file("ext/ai")
+	) dependsOn(bt % "test->test;compile->compile")
+	
+	lazy val da = Project(
+		id = "BytecodeDisassembler",
+		base = file("da")
 	) dependsOn(bt % "test->test;compile->compile")
 
 	// The project "DependenciesExtractionLibrary" depends on
@@ -52,7 +58,7 @@ object OPALBuild extends Build {
 	lazy val dependenciesExtraction = Project(
 		id = "DependenciesExtractionLibrary",
 		base = file("ext/dependencies")
-	) dependsOn(ai % "test->test;compile->compile")
+	) dependsOn(aif % "test->test;compile->compile")
 
 	lazy val architectureValidation = Project(
 		id = "ArchitectureValidation",
@@ -87,7 +93,7 @@ object OPALBuild extends Build {
 	lazy val findRealBugsAnalyses = Project(
 		id = "FindRealBugsAnalyses",
 		base = file("frb/analyses")
-	) dependsOn(ai % "test->test;compile->compile")
+	) dependsOn(aif % "test->test;compile->compile")
 
 	lazy val findRealBugsCLI = Project(
 		id = "FindRealBugsCLI",

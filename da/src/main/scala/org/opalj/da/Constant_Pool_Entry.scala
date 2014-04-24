@@ -26,35 +26,25 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
-package reader
-
-import reflect.ClassTag
-
-import de.tud.cs.st.bat.reader.MethodsReader
+package org.opalj
+package da
 
 /**
  *
  * @author Michael Eichberg
  */
-trait MethodsBinding extends MethodsReader {
-    this: ConstantPoolBinding with AttributeBinding ⇒
+trait Constant_Pool_Entry extends de.tud.cs.st.bat.reader.ConstantPoolEntry {
 
-    type Method_Info = de.tud.cs.st.bat.resolved.Method
-    val Method_InfoManifest: ClassTag[Method_Info] = implicitly
+    //
+    // ABSTRACT DEFINITIONS
+    //
 
-    def Method_Info(
-        cp: Constant_Pool,
-        accessFlags: Int,
-        name_index: Int,
-        descriptor_index: Int,
-        attributes: Attributes): Method_Info = {
-        Method(
-            accessFlags,
-            cp(name_index).asString,
-            cp(descriptor_index).asMethodDescriptor,
-            attributes)
-    }
+    def Constant_Type_Value: de.tud.cs.st.bat.ConstantPoolTags.Value
+
+    //
+    // IMPLEMENTATION
+    //
+
+    def asString: String = throw new UnsupportedOperationException()
+
 }
