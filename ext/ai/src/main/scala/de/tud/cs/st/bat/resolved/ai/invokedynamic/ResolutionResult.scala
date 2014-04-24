@@ -62,11 +62,11 @@ case class SingleResult(
  * possible matches that is a super type of all others.
  * 
  * @param conservativeMatch the best guarantee for a match that can be made under the
- *  circumstances; i.e. this [[ClassMember]] belongs to the type at the top of the 
+ *  circumstances; i.e. this `ClassMember` belongs to the type at the top of the 
  *  hierarchy.
  *  
  * @param alternativeMatches the remaining candidates within the hierarchy
- *  (`conservativeMatch` should not be a part of this [[Set]]`)
+ *  (`conservativeMatch` should not be a part of this `Set`.)
  * 
  * @author Arne Lottmann
  */
@@ -91,7 +91,7 @@ case class MultipleResults(
 
 /**
  * The result to be returned when the resolution process was completed without finding 
- * any [[ClassMember]] that could match the given instruction.
+ * any `ClassMember` that could match the given instruction.
  * 
  * @author Arne Lottmann
  */

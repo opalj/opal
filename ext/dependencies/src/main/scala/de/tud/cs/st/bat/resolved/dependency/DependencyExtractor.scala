@@ -252,7 +252,8 @@ abstract class DependencyExtractor(
         signature: SignatureElement,
         srcID: Int,
         isInTypeParameters: Boolean = false) {
-        /**
+        
+        /*
          * Processes the given option of a formal type parameter list.
          * Since they are always part of a type parameter, all types that
          * are found will be extracted, i.e. dependencies to them will be
@@ -278,7 +279,7 @@ abstract class DependencyExtractor(
             }
         }
 
-        /**
+        /*
          * Processes the given <code>SimpleClassTypeSignature</code> in the way
          * that its type arguments will be processed by the <code>processTypeArguments</code>
          * method.
@@ -291,7 +292,7 @@ abstract class DependencyExtractor(
             processTypeArguments(typeArguments)
         }
 
-        /**
+        /*
          * Processes the given option of a type argument list.
          * Since they are always part of a type parameter, all types that
          * are found will be extracted, i.e. dependencies to them will be
