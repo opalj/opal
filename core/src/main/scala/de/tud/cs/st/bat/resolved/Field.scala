@@ -63,9 +63,12 @@ final class Field private (
     val attributes: Attributes)
         extends ClassMember {
 
-    override def isField = true
+    final override def isField = true
 
-    override def asField = this
+    final override def asField = this
+
+    def asVirtualField(declaringClassType: ObjectType): VirtualField =
+        VirtualField(declaringClassType, name, fieldType)
 
     def isTransient: Boolean = (ACC_TRANSIENT.mask & accessFlags) != 0
 

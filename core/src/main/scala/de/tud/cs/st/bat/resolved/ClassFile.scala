@@ -88,9 +88,15 @@ final class ClassFile private (
 
     import ClassFile._
 
-    override def isClassFile = true
+    final override def isClass = true
 
-    override def asClassFile = this
+    final override def asClassFile = this
+
+    def asVirtualClass: VirtualClass =
+        VirtualClass(
+            thisType,
+            fields.map(_.asVirtualField(thisType)).toSet,
+            methods.map(_.asVirtualMethod(thisType)).toSet)
 
     def id = thisType.id
 

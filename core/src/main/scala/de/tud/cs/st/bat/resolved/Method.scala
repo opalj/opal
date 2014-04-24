@@ -57,9 +57,12 @@ final class Method private (
     val attributes: Attributes)
         extends ClassMember {
 
-    override final def isMethod = true
+    final override def isMethod = true
 
-    override final def asMethod = this
+    final override def asMethod = this
+
+    def asVirtualMethod(declaringClassType: ObjectType): VirtualMethod =
+        VirtualMethod(declaringClassType, name, descriptor)
 
     def runtimeVisibleParameterAnnotations: ParameterAnnotations =
         (attributes collectFirst {

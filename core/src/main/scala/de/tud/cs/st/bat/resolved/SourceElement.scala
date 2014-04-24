@@ -31,19 +31,19 @@ package bat
 package resolved
 
 /**
- * We treat as a source element every element of a class file that can be referenced
- * from other class files.
+ * We treat as a source element every entity that can be referred to
+ * by other class files.
  *
  * @author Michael Eichberg
  */
 trait SourceElement extends CommonSourceElementAttributes {
-    def isClassFile = false
+    def isClass = false
     def isMethod = false;
     def isField = false;
+    
+    def isVirtual = false
 
     def asClassFile: ClassFile = throw new UnsupportedOperationException
     def asMethod: Method = throw new UnsupportedOperationException
     def asField: Field = throw new UnsupportedOperationException
 }
-
-
