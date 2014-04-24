@@ -41,8 +41,6 @@ import java.io.File
  * Provides the necessary infrastructure to easily execute a given analysis that
  * generates some analysis result that can be printed on the command line.
  *
- * This trait is particularly useful to execute an analysis using the command line.
- *
  * To facilitate the usage of this trait several implicit conversions are defined that
  * wrap standard analyses ([[de.tud.cs.st.bat.resolved.analyses]]) such that they report
  * results that are reportable.
@@ -54,11 +52,25 @@ import java.io.File
  * The parameter to specify library classes is `-libcp=`, the parameter to specify
  * the "normal" classpath is `-cp=`.
  *
+ * ==Control Flow==
+ *  1. The standard parameters are checked.
+ *  1. The analysis is called to verify the analysis specific parameters.
+ *  1. The [[Project]] is created.
+ *  1. The [[Analysis]]' `analyze` method is called with the project and the parameters.
+ *  1. The results are printed.
+ *
  * @author Michael Eichberg
  * @author Arne Lottmann
  */
 trait AnalysisExecutor {
 
+    /**
+     * The analysis that will be executed.
+     *
+     * The `analyze` method implemented by the analysis will be called after loading
+     * all class files and creating a [[Project]]. Additionally,
+     * all specified (additional) parameters are passed to the analyze method.
+     */
     val analysis: Analysis[URL, ReportableAnalysisResult]
 
     /**
@@ -71,10 +83,23 @@ trait AnalysisExecutor {
      */
     def analysisParametersDescription: String = ""
 
+    /**
+     * Checks if the (additional) parameters are understood by
+     * the analysis.
+     *
+     * This method **must be** overridden if the analysis defines additional
+     * parameters. A method that overrides this method should return false if it can't
+     * validate all arguements.
+     * The default behavior is to check that there are no additional parameters.
+     */
     def checkAnalysisSpecificParameters(parameters: Seq[String]): Boolean =
         parameters.isEmpty
 
-    def printUsage() {
+    /**
+     * Prints out general information how to use this analysis. Printed whenever
+     * the set of specified parameters is not valid.
+     */
+    protected def printUsage() {
         println("Usage: java "+
             this.getClass().getName()+"\n"+
             " -cp=<Directories or JAR files containing class files> (If no class path is specified the current folder is used.)\n"+
@@ -84,9 +109,9 @@ trait AnalysisExecutor {
         println(analysis.copyright)
     }
 
-    def main(args: Array[String]) {
+    def main(args: Array[String]): Unit = {
 
-        // TODO [Refactor] Move to revoled.analyses to make the code reusable
+        // TODO [Refactor] Move to resolved.analyses to make the code reusable
         //
         // 1. check arguments
         //
@@ -100,7 +125,9 @@ trait AnalysisExecutor {
                 !(filename.endsWith(".jar") ||
                     filename.endsWith(".class") ||
                     file.isDirectory())) {
-                println("The file: "+file+" cannot be read or is not valid.")
+                println(Console.RED+
+                    "[error] The file: "+file+" cannot be read or is not valid."+
+                    Console.RESET)
                 printUsage()
                 sys.exit(-2)
             }
@@ -140,7 +167,7 @@ trait AnalysisExecutor {
         // 
         // 3. execute analysis
         //
-        println("Executing analyses.")
+        println("Executing analysis.")
         val result = analysis.analyze(project, parameters)
         println(result.consoleReport)
     }
@@ -168,7 +195,7 @@ trait AnalysisExecutor {
         }
         val allExceptions = exceptions1 ++ exceptions2
         if (allExceptions.nonEmpty) {
-            Console.err.println("While reading the class files the following exceptions occured:")
+            Console.err.println("[error] While reading the class files the following exceptions occured:")
             val out = new java.io.ByteArrayOutputStream
             val pout = new java.io.PrintStream(out)
             for (exception ← exceptions1 ++ exceptions2) {

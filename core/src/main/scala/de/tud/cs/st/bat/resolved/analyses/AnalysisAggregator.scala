@@ -41,7 +41,7 @@ import java.net.URL
  *
  * ==Implementation Note==
  * If you extend this class, make sure that all access to this classes (mutable) fields/
- * mutable data structures is synchronized on `analyses`.
+ * mutable data structures is synchronized on the value `analyses`.
  *
  * @author Michael Eichberg
  */

@@ -47,21 +47,27 @@ object VirtualAndStaticMethodCalls extends AnalysisExecutor {
         def description: String = "Counts the number of static and virtual method calls."
 
         def analyze(project: Project[URL], parameters: Seq[String] = List.empty) = {
+
+            import util.debug.PerformanceEvaluation.{ time, ns2sec }
             var staticCalls = 0
             var virtualCalls = 0
-            for {
-                classFile ← project.classFiles
-                MethodWithBody(code) ← classFile.methods
-                invokeInstruction @ MethodInvocationInstruction(_, _, _) ← code.instructions
-            } {
-                if (invokeInstruction.isVirtualMethodCall)
-                    virtualCalls += 1
-                else
-                    staticCalls += 1
-            }
+            var executionTimeInSecs = 0d
+            time {
+                for {
+                    classFile ← project.classFiles
+                    MethodWithBody(code) ← classFile.methods
+                    invokeInstruction @ MethodInvocationInstruction(_, _, _) ← code.instructions
+                } {
+                    if (invokeInstruction.isVirtualMethodCall)
+                        virtualCalls += 1
+                    else
+                        staticCalls += 1
+                }
+            } { executionTime ⇒ executionTimeInSecs = ns2sec(executionTime) }
 
             BasicReport(
-                "Number of invokestatic/invokespecial instructions: "+staticCalls+"\n"+
+                "Total time: "+executionTimeInSecs+"\n"+
+                    "Number of invokestatic/invokespecial instructions: "+staticCalls+"\n"+
                     "Number of invokeinterface/invokevirtual instructions: "+virtualCalls
             )
         }

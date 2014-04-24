@@ -33,7 +33,7 @@ package analyses
 
 /**
  * Common trait that analyses should inherit from that want to use the general
- * analysis framework [[de.tud.cs.st.bat.resolved.analyses.AnalysisExecutor]].
+ * analysis framework [[AnalysisExecutor]].
  *
  * ==Conceptual Idea==
  * An analysis is basically a mapping of a `Project`'s resources to some result.
@@ -45,8 +45,6 @@ package analyses
  * However, an analysis should never rely on the location of a resource. If an analysis
  * needs access to further resources, it should use the `Project` class.
  *
- * @see [[de.tud.cs.st.bat.resolved.analyses.SingleOptionalResultAnalysis]]
- * @see [[de.tud.cs.st.bat.resolved.analyses.MultipleResultsAnalysis]]
  * @author Michael Eichberg
  */
 trait Analysis[Source, +AnalysisResult] {
@@ -69,8 +67,8 @@ trait Analysis[Source, +AnalysisResult] {
      *  - if applicable, it should discuss what the developer could/should do in general
      *    to remedy the situation
      *  - if applicable it should discuss the severeness of the found results. I.e.,
-     *    if immediate action is typically required, because a bug was found that will
-     *    show up at runtime or whether it is a security bug.
+     *    whether immediate action is required because a bug was found that will
+     *    show up at runtime or if it is a security bug.
      *  - if applicable it should give an example. I.e., what the expected result is given
      *    a project with certain resources.
      */
@@ -84,6 +82,8 @@ trait Analysis[Source, +AnalysisResult] {
     /**
      * A short descriptive title which should contain less than 64 characters and no
      * line-breaks.
+     * 
+     * The default is the simple name of the class implementing the analysis.
      */
     def title: String = this.getClass().getSimpleName()
 }

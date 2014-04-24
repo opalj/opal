@@ -34,7 +34,7 @@ package analyses
 import instructions._
 
 import util.debug.{ Counting, PerformanceEvaluation }
-import reader.Java7Framework.ClassFiles
+import reader.Java8Framework.ClassFiles
 
 /**
  * Implementation of some simple static analyses to demonstrate the flexibility

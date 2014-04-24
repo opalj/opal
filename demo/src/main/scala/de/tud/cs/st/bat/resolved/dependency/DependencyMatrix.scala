@@ -93,7 +93,6 @@ object DependencyMatrix {
                 jarFile ← jarFiles
                 (classFile, _ /*drop urls*/ ) ← ClassFiles(new java.io.File(jarFile))
             } {
-                require(classFile.thisType ne null)
                 count += 1
                 dependencyExtractor.process(classFile)
             }

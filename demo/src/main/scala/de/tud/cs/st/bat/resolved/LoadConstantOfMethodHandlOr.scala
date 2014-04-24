@@ -64,7 +64,11 @@ object LoadConstantOfMethodHandlOrMethodType extends AnalysisExecutor {
                         case LoadMethodType_W(md)   ⇒ md
                     })
                 } yield {
-                    classFile.fqn+" { "+method.toJava+"{ pc="+pc+";load constant="+instruction.valueToString+" } } <"+project.source(classFile.thisType)+">"
+                    classFile.fqn+" { "+
+                        method.toJava+
+                        "{ pc="+pc+
+                        ";load constant="+instruction.valueToString+" } }"+
+                        "<"+project.source(classFile.thisType)+">"
                 }
 
             BasicReport(

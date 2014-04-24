@@ -53,7 +53,7 @@ object ShowInnerClassesAttribute extends AnalysisExecutor {
                     innerClass ← classFile.innerClasses.get
                 } yield classFile.fqn+": "+innerClass.innerName.getOrElse("(none)")
 
-            BasicReport(messages)
+            BasicReport(messages.mkString("\n"))
         }
     }
 }
