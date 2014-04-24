@@ -34,9 +34,10 @@ package da
  * @author Michael Eichberg
  */
 case class CONSTANT_Fieldref_info(
-        val class_index: Int,
-        val name_and_type_index: Int) extends CONSTANT_Ref {
+        class_index: Constant_Pool_Index,
+        name_and_type_index: Constant_Pool_Index) extends CONSTANT_Ref {
 
-    def Constant_Type_Value = de.tud.cs.st.bat.ConstantPoolTags.CONSTANT_Fieldref
+    override def Constant_Type_Value =
+        de.tud.cs.st.bat.ConstantPoolTags.CONSTANT_Fieldref
 
 }

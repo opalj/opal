@@ -37,6 +37,7 @@ case class CONSTANT_InterfaceMethodref_info(
         class_index: Constant_Pool_Index,
         name_and_type_index: Constant_Pool_Index) extends CONSTANT_Ref {
 
-    def Constant_Type_Value = de.tud.cs.st.bat.ConstantPoolTags.CONSTANT_InterfaceMethodref
+    override def Constant_Type_Value =
+        de.tud.cs.st.bat.ConstantPoolTags.CONSTANT_InterfaceMethodref
 
 }

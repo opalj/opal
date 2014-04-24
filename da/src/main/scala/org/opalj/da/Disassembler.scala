@@ -30,12 +30,34 @@ package org.opalj
 package da
 
 /**
+ * Disassembles the specified class file(s).
  *
  * @author Michael Eichberg
  */
-case class CONSTANT_Float_info(val value: Float) extends Constant_Pool_Entry {
+object Disassembler {
 
-    override def Constant_Type_Value =
-        de.tud.cs.st.bat.ConstantPoolTags.CONSTANT_Float
+    def main(args: Array[String]) {
 
+        if (args.length < 2) {
+            println("Usage: java …Disassembler "+
+                "<JAR file containing class files> "+
+                "<Name of classfile (incl. path) contained in the JAR file>+")
+            println("Example:\n\tjava …Disassembler /Library/Java/JavaVirtualMachines/jdk1.7.0_51.jdk/Contents/Home/jre/lib/rt.jar java/util/ArrayList.class")
+            sys.exit(-1)
+        }
+
+        for (classFileName ← args.drop(1) /* drop the name of the jar file */ ) {
+
+            // Load class file (the class file name has to correspond to the name of 
+            // the file inside the archive.)
+            // The Java7Framework defines multiple other methods that make it convenient
+            // to load class files stored in folders or in jars within jars.
+            val classFile = ClassFileReader.ClassFile(args(0), classFileName)
+
+            de.tud.cs.st.util.writeAndOpenDesktopApplication(
+                classFile.toXHTML.toString,
+                classFile.fqn,
+                ".html")
+        }
+    }
 }

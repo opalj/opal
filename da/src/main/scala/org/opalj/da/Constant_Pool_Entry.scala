@@ -47,4 +47,6 @@ trait Constant_Pool_Entry extends de.tud.cs.st.bat.reader.ConstantPoolEntry {
 
     def asString: String = throw new UnsupportedOperationException()
 
+    def toString(implicit cp: Constant_Pool): String = throw new UnsupportedOperationException()
+
 }

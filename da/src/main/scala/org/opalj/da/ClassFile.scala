@@ -29,23 +29,47 @@
 package org.opalj
 package da
 
+import de.tud.cs.st.bat.{ AccessFlags, AccessFlagsContexts }
+
+import scala.xml.Node
+
 /**
  * @author Michael Eichberg
  */
 case class ClassFile(
-    val constant_pool: Constant_Pool,
-    val minor_version: Int,
-    val major_version: Int,
-    val access_flags: Int,
-    val this_class: Constant_Pool_Index,
-    val super_class: Constant_Pool_Index,
-    val interfaces: IndexedSeq[Constant_Pool_Index],
-    val fields: Fields,
-    val methods: Methods,
-    val attributes: Attributes)
+        constant_pool: Constant_Pool,
+        minor_version: Int,
+        major_version: Int,
+        access_flags: Int,
+        this_class: Constant_Pool_Index,
+        super_class: Constant_Pool_Index,
+        interfaces: IndexedSeq[Constant_Pool_Index],
+        fields: Fields,
+        methods: Methods,
+        attributes: Attributes) {
 
-object ClassFile {
+    private[this] implicit val cp = constant_pool
 
-    val magic = 0xCAFEBABE
+    def fqn = cp(this_class).toString.replace('/', '.')
 
+    def cpToXHTML = {
+        for { cpIndex ← (0 until constant_pool.length) if cp(cpIndex) != null } yield {
+            <li value={ cpIndex.toString }>{ cp(cpIndex).toString() }</li>
+        }
+    }
+
+    def toXHTML: Node =
+        <html><body>
+        <h1>{ fqn }</h1>
+        <details>
+            <summary>Constant Pool</summary>
+            <ol>
+            { cpToXHTML }
+            </ol>
+        </details>
+        <dl>
+        <dt>Version</dt><dd>{ minor_version + "." + major_version }</dd>
+        <dt>Access Flags</dt><dd>{ AccessFlags.toString(access_flags, AccessFlagsContexts.CLASS) }</dd>
+        </dl>
+        </body></html>
 }

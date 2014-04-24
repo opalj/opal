@@ -39,7 +39,7 @@ object ClassFileInformation {
 
     def main(args: Array[String]) {
 
-        import reader.Java7Framework
+        import reader.Java8Framework
 
         if (args.length < 2) {
             println("Usage: java …ClassFileInformation "+
@@ -55,7 +55,7 @@ object ClassFileInformation {
             // the file inside the archive.)
             // The Java7Framework defines multiple other methods that make it convenient
             // to load class files stored in folders or in jars within jars.
-            val classFile = Java7Framework.ClassFile(args(0), classFileName)
+            val classFile = Java8Framework.ClassFile(args(0), classFileName)
             import classFile._
 
             // print the name of the type defined by this class file

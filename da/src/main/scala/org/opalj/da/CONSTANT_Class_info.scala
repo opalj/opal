@@ -33,8 +33,12 @@ package da
  *
  * @author Michael Eichberg
  */
-case class CONSTANT_Class_info(val name_index: Int) extends Constant_Pool_Entry {
+case class CONSTANT_Class_info(
+        name_index: Constant_Pool_Index) extends Constant_Pool_Entry {
 
-    def Constant_Type_Value = de.tud.cs.st.bat.ConstantPoolTags.CONSTANT_Class
+    override def Constant_Type_Value =
+        de.tud.cs.st.bat.ConstantPoolTags.CONSTANT_Class
 
+    override def toString(implicit cp: Constant_Pool): String =
+        cp(name_index).toString
 }
