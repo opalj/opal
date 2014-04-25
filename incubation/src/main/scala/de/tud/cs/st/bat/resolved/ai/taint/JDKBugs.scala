@@ -26,7 +26,6 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
 package de.tud.cs.st
 package bat
 package resolved
@@ -34,17 +33,18 @@ package ai
 package taint
 
 import instructions._
+import domain._
 import domain.l0._
 import domain.l1._
 import domain.tracing._
 import debug.XHTML._
 
-import java.net.URL
 import analyses.{ Project, Analysis, AnalysisExecutor, ReportableAnalysisResult }
-import de.tud.cs.st.bat.resolved.ai.project.{ AIProject, Report }
-import de.tud.cs.st.bat.resolved.ai.domain._
+import project.{ AIProject, Report }
 import de.tud.cs.st.util.graphs._
 import de.tud.cs.st.util.ControlAbstractions.process
+
+import java.net.URL
 
 /**
  * Searches for occurrences of the Class.forName bug in the JDK
@@ -58,7 +58,7 @@ object JDKTaintAnalysis
 
   def ai = new AI[SomeDomain with Report] {}
 
-  def description: String = "Finds unsafe< Class.forName(...) calls."
+  def description: String = "Finds unsafe Class.forName(...) calls."
 
   println(System.getProperty("java.version"));
 
@@ -196,7 +196,7 @@ trait TaintAnalysisDomain[Source]
    * it is needed to prevent a loop if there are two methods within a
    * class that both set a global field
    */
-  var checksForGlobalFields: Boolean = false;
+  val checkForGlobalFields: Boolean
 
   /**
    * Stores if a call to Class.forName has occurred. No report is created if this is not true
@@ -204,7 +204,7 @@ trait TaintAnalysisDomain[Source]
   protected var callToClassForNameFound: Boolean = false;
 
   /**
-   * Stores all objects that are know to be instanced.
+   * Stores all objects that are know to be instantiated.
    * This helps to reduce the number of classes that have
    * to be checked in case of invokeinterface
    */
@@ -498,7 +498,7 @@ trait TaintAnalysisDomain[Source]
     fieldType: FieldType) = {
 
     // skip if we already check for global fields so we don't run into a loop
-    if (!checksForGlobalFields) {
+    if (!checkForGlobalFields) {
       // check if the global field is set with a relevant value
       if (contextNode.identifier._1.union(taintedPCs).intersect(origin(value).toSeq).nonEmpty) {
 
@@ -633,7 +633,8 @@ trait TaintAnalysisDomain[Source]
         this,
         CallStackEntry(classFile, method),
         callerNode,
-        List(-1, -2))
+        List(-1, -2),
+        checkForGlobalFields)
 
       val calleeParameters = operands.reverse.zipWithIndex.map { operand_index ⇒
         val (operand, index) = operand_index
@@ -700,13 +701,12 @@ class RootTaintAnalysisDomain[Source](
   val project: Project[Source],
   val taintedGloableFields: List[String],
   val identifier: CallStackEntry,
-  val checkGlobalField: Boolean)
+  val checkForGlobalFields: Boolean)
   extends TaintAnalysisDomain[Source] {
   val callerNode = new SimpleNode("Some user of the API")
 
   val contextNode: SimpleNode[(RelevantParameters, String)] = {
 
-    checksForGlobalFields = checkGlobalField
     objectTypesWithCreatedInstance = List.empty;
     taintedFields = taintedGloableFields
 
@@ -737,10 +737,11 @@ class CalledTaintAnalysisDomain[Source](
   val previousTaintAnalysisDomain: TaintAnalysisDomain[Source],
   val identifier: CallStackEntry,
   val callerNode: SimpleNode[_],
-  val relevantParameters: RelevantParameters)
+  val relevantParameters: RelevantParameters,
+  val checkForGlobalFields: Boolean)
 
   extends TaintAnalysisDomain[Source] {
-
+  
   objectTypesWithCreatedInstance = previousTaintAnalysisDomain.objectTypesWithCreatedInstance
   taintedFields = previousTaintAnalysisDomain.taintedFields
 

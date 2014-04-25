@@ -50,5 +50,6 @@ package object taint {
   protected[taint] var restrictedPackages: Set[String] = null
 
   def definedInRestrictedPackage(packageName: String): Boolean =
-    restrictedPackages.exists(packageName.startsWith(_))
+    restrictedPackages.contains(packageName)
+    //restrictedPackages.exists(packageName.startsWith(_))
 }
