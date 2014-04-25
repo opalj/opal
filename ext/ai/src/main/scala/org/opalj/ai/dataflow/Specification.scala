@@ -37,10 +37,10 @@ import de.tud.cs.st.bat.resolved.ai._
 trait DataFlowConstraint {
 
     /**
-     * The value that we want to track is identified by the program counter of the 
+     * The ''value'' that we want to track is identified by the program counter of the 
      * instruction that created the value. 
      * 
-     * In case of a parameter that was passed to a method, the `PC` is 
+     * In case of a parameter that is passed to a method, the `PC` is 
      * `-(index of the parameter)`. 
      */
     def sources: Traversable[(Method, PC)]

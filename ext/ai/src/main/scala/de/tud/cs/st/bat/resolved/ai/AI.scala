@@ -155,9 +155,9 @@ trait AI[D <: SomeDomain] {
      *
      * Initially, only the registers that contain the method's parameters (including
      * the self reference (`this`)) are used.  If no initial assignment is provided
-     * (`someLocals == None`) BATAI will automatically create a valid assignment using
-     * the domain. See `perform(...)` for further details regarding the initial
-     * register assignment.
+     * (`someLocals == None`) OPAL will automatically create a valid assignment using
+     * the domain. In that case the values stored in the registers will have negative
+     * program counters to indicate that these values were passed to the method.
      *
      * This method is called by the `perform` method with the same signature. It
      * may be overridden by subclasses to perform some additional processing. In

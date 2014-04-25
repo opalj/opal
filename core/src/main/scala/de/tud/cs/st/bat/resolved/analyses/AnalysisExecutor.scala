@@ -68,7 +68,7 @@ trait AnalysisExecutor {
      * The analysis that will be executed.
      *
      * The `analyze` method implemented by the analysis will be called after loading
-     * all class files and creating a [[Project]]. Additionally,
+     * all class files and creating a `Project`. Additionally,
      * all specified (additional) parameters are passed to the analyze method.
      */
     val analysis: Analysis[URL, ReportableAnalysisResult]

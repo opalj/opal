@@ -43,9 +43,16 @@ import scala.collection.Map
 /**
  * The ''key'' object to get a call graph that was calculated using the VTA algorithm.
  *
+ * You can assume that – in general – the call graph calculated using the VTA algorithm
+ * is more precise than the call graph calculated using the CHA algorithm. However,
+ * it also take more time (2x-5x) to perform the calculation.
+ *
  * @example
  *      To get the call graph object use the `Project`'s `get` method and pass in
  *      `this` object.
+ *      {{{
+ *      val ComputedCallGraph = project.get(VTACallGraphKey)
+ *      }}}
  *
  * @author Michael Eichberg
  */

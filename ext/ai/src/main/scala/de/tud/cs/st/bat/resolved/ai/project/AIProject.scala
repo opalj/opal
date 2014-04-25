@@ -39,7 +39,7 @@ import bat.resolved.analyses.{ Project, ReportableAnalysisResult }
  *
  * This trait is intended to be used in combination with the `Analysis` and the
  * `AnalysisExecutor` traits to easily create a readily executable analysis (see
- * the Demo project for examples).
+ * the ''Demos'' project for examples).
  *
  * @author Michael Eichberg
  */
@@ -52,7 +52,10 @@ trait AIProject[Source, D <: SomeDomain with Report] {
     def ai: AI[D]
 
     /**
-     * If `true` all entry points will be analyzed in parallel.
+     * If `true` (default) all entry points will be analyzed in parallel.
+     *
+     * Needs to be overridden by subclasses if the entry points should be
+     * analyzed sequentially.
      */
     protected def analyzeInParallel: Boolean = true
 
@@ -60,7 +63,7 @@ trait AIProject[Source, D <: SomeDomain with Report] {
      * Returns the (initial) domain object that will be used to analyze an entry point.
      *
      * The analysis of all entry points may happen concurrently unless
-     * `analyzeInParallel` is `false.
+     * [[analyzeInParallel]] is `false.
      */
     def domain(
         project: Project[Source],
