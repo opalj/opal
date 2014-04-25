@@ -64,7 +64,7 @@ trait AITracer {
      */
     def continuingInterpretation(
         code: Code,
-        domain: SomeDomain)(
+        domain: Domain)(
             initialWorkList: List[PC],
             alreadyEvaluated: List[PC],
             operandsArray: Array[List[domain.DomainValue]],
@@ -81,7 +81,7 @@ trait AITracer {
      * @param locals The registers before the execution of the instruction.
      */
     def instructionEvalution(
-        domain: SomeDomain)(
+        domain: Domain)(
             pc: PC,
             instruction: Instruction,
             operands: List[domain.DomainValue],
@@ -103,7 +103,7 @@ trait AITracer {
      * Recall that BATAI performs a depth-first exploration.
      */
     def flow(
-        domain: SomeDomain)(
+        domain: Domain)(
             currentPC: PC,
             targetPC: PC,
             isExceptionalControlFlow: Boolean): Unit
@@ -119,7 +119,7 @@ trait AITracer {
      * Recall that BATAI performs a depth-first exploration.
      */
     def rescheduled(
-        domain: SomeDomain)(
+        domain: Domain)(
             sourcePC: PC,
             targetPC: PC,
             isExceptionalControlFlow: Boolean): Unit
@@ -138,7 +138,7 @@ trait AITracer {
      * 		assignment.
      */
     def join(
-        domain: SomeDomain)(
+        domain: Domain)(
             pc: PC,
             thisOperands: domain.Operands,
             thisLocals: domain.Locals,
@@ -149,7 +149,7 @@ trait AITracer {
     /**
      * Called before a jump to a subroutine.
      */
-    def jumpToSubroutine(domain: SomeDomain)(pc: PC): Unit
+    def jumpToSubroutine(domain: Domain)(pc: PC): Unit
 
     /**
      * Called when a `RET` instruction is encountered. (That does not necessary imply
@@ -157,7 +157,7 @@ trait AITracer {
      * that other paths still need to be pursued.)
      */
     def ret(
-        domain: SomeDomain)(
+        domain: Domain)(
             pc: PC,
             returnAddress: PC,
             oldWorklist: List[PC],
@@ -168,7 +168,7 @@ trait AITracer {
      * I.e., all possible paths are analyzed and the fixpoint is reached.
      */
     def returnFromSubroutine(
-        domain: SomeDomain)(
+        domain: Domain)(
             pc: PC,
             returnAddress: PC,
             subroutineInstructions: List[PC]): Unit
@@ -179,7 +179,7 @@ trait AITracer {
      * the method.
      */
     def abruptMethodExecution(
-        domain: SomeDomain)(
+        domain: Domain)(
             pc: PC,
             exception: domain.DomainValue)
 

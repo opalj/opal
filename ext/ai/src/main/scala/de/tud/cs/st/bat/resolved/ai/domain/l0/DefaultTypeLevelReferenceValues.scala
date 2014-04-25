@@ -41,9 +41,9 @@ import de.tud.cs.st.collection.immutable.UIDSet
  *
  * @author Michael Eichberg
  */
-trait DefaultTypeLevelReferenceValues[+I]
-        extends DefaultDomainValueBinding[I]
-        with TypeLevelReferenceValues[I] {
+trait DefaultTypeLevelReferenceValues
+        extends DefaultDomainValueBinding
+        with TypeLevelReferenceValues {
     domain: Configuration with IntegerValuesComparison with ClassHierarchy ⇒
 
     // ---------------------------------1-------------------------------------------------
@@ -317,7 +317,7 @@ trait DefaultTypeLevelReferenceValues[+I]
             }
         }
 
-        override def adapt[ThatI >: I](target: Domain[ThatI], pc: PC): target.DomainValue =
+        override def adapt(target: Domain, pc: PC): target.DomainValue =
             target.ReferenceValue(pc, theUpperTypeBound)
 
     }
@@ -441,14 +441,12 @@ trait DefaultTypeLevelReferenceValues[+I]
             }
         }
 
-        override def adapt[ThatI >: I](
-            targetDomain: Domain[ThatI],
-            pc: PC): targetDomain.DomainValue =
-            targetDomain match {
-                case td: DefaultTypeLevelReferenceValues[_] ⇒
+        override def adapt(target: Domain, pc: PC): target.DomainValue =
+            target match {
+                case td: DefaultTypeLevelReferenceValues ⇒
                     td.ObjectValue(pc, this.upperTypeBound).
-                        asInstanceOf[targetDomain.DomainValue]
-                case _ ⇒ super.adapt(targetDomain, pc)
+                        asInstanceOf[target.DomainValue]
+                case _ ⇒ super.adapt(target, pc)
             }
 
         override def summarize(pc: PC): DomainValue = this

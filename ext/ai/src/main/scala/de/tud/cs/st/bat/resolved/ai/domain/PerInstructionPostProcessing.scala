@@ -39,7 +39,7 @@ package domain
 /**
  * @author Michael Eichberg
  */
-trait PerInstructionPostProcessing { this: SomeDomain ⇒
+trait PerInstructionPostProcessing { this: Domain ⇒
 
     type DomainValueUpdater = (DomainValue) ⇒ DomainValue
 
@@ -51,8 +51,8 @@ trait PerInstructionPostProcessing { this: SomeDomain ⇒
 /**
  * @author Michael Eichberg
  */
-trait DefaultPerInstructionPostProcessing[+I]
-        extends Domain[I]
+trait DefaultPerInstructionPostProcessing
+        extends Domain
         with PerInstructionPostProcessing {
 
     private[this] var onExceptionalControlFlow: List[DomainValueUpdater] = Nil

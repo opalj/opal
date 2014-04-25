@@ -38,7 +38,7 @@ package domain
  *
  * @author Michael Eichberg
  */
-trait RecordConstraints[I] extends ReifiedConstraints[I] {
+trait RecordConstraints extends ReifiedConstraints {
 
     @volatile private[this] var constraints: Set[ReifiedConstraint] = Set.empty
     

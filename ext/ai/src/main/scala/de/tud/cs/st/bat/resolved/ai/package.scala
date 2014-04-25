@@ -58,22 +58,13 @@ import de.tud.cs.st.collection.immutable.UIDSet
 package object ai {
 
     import language.existentials
-
-    /**
-     * Type alias that abstracts over all domains. `Domain` object are parameterized
-     * over the source for which the domain object was created. For many analyses the
-     * source information associated with a domain is not relevant.
-     *
-     * @note This type alias serves comprehension purposes only.
-     */
-    type SomeDomain = Domain[_]
-
+    
     /**
      * Type alias that can be used if the AI can process all kinds of domains.
      *
      * @note This type alias serves comprehension purposes only.
      */
-    type SomeAI[D <: SomeDomain] = AI[_ >: D]
+    type SomeAI[D <: Domain] = AI[_ >: D]
 
     /**
      * Type alias that is used to identify a set of program counters.

@@ -44,7 +44,7 @@ import scala.collection.SortedSet
 /**
  * @author Michael Eichberg
  */
-trait ArrayValues[+I] extends l1.ReferenceValues[I] with Origin {
+trait ArrayValues extends l1.ReferenceValues with Origin {
     domain: Configuration with IntegerValuesProvider with IntegerValuesComparison with ClassHierarchy with PerInstructionPostProcessing ⇒
 
     // We do not refine the type DomainArrayValue any further since we also want
@@ -157,10 +157,10 @@ trait ArrayValues[+I] extends l1.ReferenceValues[I] with Origin {
             }
         }
 
-        override def adapt[TDI >: I](target: Domain[TDI], pc: PC): target.DomainValue =
+        override def adapt(target: Domain, pc: PC): target.DomainValue =
             target match {
 
-                case thatDomain: l1.ArrayValues[TDI] ⇒
+                case thatDomain: l1.ArrayValues ⇒
                     val adaptedValues =
                         values.map(_.adapt(target, pc).asInstanceOf[thatDomain.DomainValue])
                     thatDomain.ArrayValue(

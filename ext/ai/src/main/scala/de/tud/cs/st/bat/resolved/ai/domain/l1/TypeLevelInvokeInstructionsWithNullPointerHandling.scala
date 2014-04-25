@@ -41,7 +41,7 @@ import analyses.{ Project, ClassHierarchy }
  *
  * @author Michael Eichberg
  */
-trait TypeLevelInvokeInstructionsWithNullPointerHandling { this: SomeDomain ⇒
+trait TypeLevelInvokeInstructionsWithNullPointerHandling { this: Domain ⇒
 
     protected[this] def ReturnValue(pc: PC, someType: Type): Option[DomainValue] = {
         if (someType.isVoidType)

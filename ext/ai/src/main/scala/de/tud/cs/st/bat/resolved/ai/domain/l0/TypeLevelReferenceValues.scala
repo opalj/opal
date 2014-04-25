@@ -57,8 +57,8 @@ import de.tud.cs.st.collection.immutable.UIDSet
  *
  * @author Michael Eichberg
  */
-trait TypeLevelReferenceValues[+I]
-        extends Domain[I]
+trait TypeLevelReferenceValues
+        extends Domain
         with GeneralizedArrayHandling {
     domain: Configuration with IntegerValuesComparison with ClassHierarchy ⇒
 
@@ -651,7 +651,7 @@ trait TypeLevelReferenceValues[+I]
 
         override def summarize(pc: PC): this.type = this
 
-        override def adapt[TDI >: I](target: Domain[TDI], pc: PC): target.DomainValue =
+        override def adapt(target: Domain, pc: PC): target.DomainValue =
             target.NullValue(pc)
 
         override def toString: String = "ReferenceValue(null)"

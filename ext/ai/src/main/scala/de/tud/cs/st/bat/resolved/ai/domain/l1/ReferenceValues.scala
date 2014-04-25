@@ -41,7 +41,7 @@ import scala.collection.SortedSet
 /**
  * @author Michael Eichberg
  */
-trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Origin {
+trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     domain: Configuration with IntegerValuesComparison with ClassHierarchy ⇒
 
     type DomainSingleOriginReferenceValue <: SingleOriginReferenceValue with DomainReferenceValue
@@ -282,14 +282,14 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
             }
         }
 
-        override def adapt[TDI >: I](target: Domain[TDI], pc: PC): target.DomainValue =
+        override def adapt(target: Domain, pc: PC): target.DomainValue =
             target match {
 
-                case thatDomain: l1.ReferenceValues[TDI] ⇒
+                case thatDomain: l1.ReferenceValues ⇒
                     thatDomain.ArrayValue(pc, isNull, isPrecise, theUpperTypeBound).
                         asInstanceOf[target.DomainValue]
 
-                case thatDomain: l0.DefaultTypeLevelReferenceValues[TDI] ⇒
+                case thatDomain: l0.DefaultTypeLevelReferenceValues ⇒
                     thatDomain.ReferenceValue(pc, theUpperTypeBound).
                         asInstanceOf[target.DomainValue]
 
@@ -464,16 +464,16 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
             }
         }
 
-        override def adapt[ThatI >: I](
-            targetDomain: Domain[ThatI],
+        override def adapt(
+            targetDomain: Domain,
             pc: PC): targetDomain.DomainValue = {
             targetDomain match {
 
-                case thatDomain: l1.ReferenceValues[ThatI] ⇒
+                case thatDomain: l1.ReferenceValues ⇒
                     thatDomain.ObjectValue(pc, isNull, isPrecise, theUpperTypeBound).
                         asInstanceOf[targetDomain.DomainValue]
 
-                case thatDomain: l0.DefaultTypeLevelReferenceValues[ThatI] ⇒
+                case thatDomain: l0.DefaultTypeLevelReferenceValues ⇒
                     thatDomain.ReferenceValue(pc, theUpperTypeBound).
                         asInstanceOf[targetDomain.DomainValue]
 
@@ -620,13 +620,13 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
             }
         }
 
-        override def adapt[TDI >: I](target: Domain[TDI], pc: PC): target.DomainValue =
+        override def adapt(target: Domain, pc: PC): target.DomainValue =
             target match {
-                case td: ReferenceValues[_] ⇒
+                case td: ReferenceValues ⇒
                     td.ObjectValue(pc, isNull, this.upperTypeBound).
                         asInstanceOf[target.DomainValue]
 
-                case td: l0.DefaultTypeLevelReferenceValues[_] ⇒
+                case td: l0.DefaultTypeLevelReferenceValues ⇒
                     td.ObjectValue(pc, this.upperTypeBound).
                         asInstanceOf[target.DomainValue]
 
@@ -786,9 +786,9 @@ trait ReferenceValues[+I] extends l0.DefaultTypeLevelReferenceValues[I] with Ori
             }
         }
 
-        override def adapt[TDI >: I](target: Domain[TDI], pc: PC): target.DomainValue =
-            if (target.isInstanceOf[l1.ReferenceValues[TDI]]) {
-                val thatDomain = target.asInstanceOf[l1.ReferenceValues[TDI]]
+        override def adapt(target: Domain, pc: PC): target.DomainValue =
+            if (target.isInstanceOf[l1.ReferenceValues]) {
+                val thatDomain = target.asInstanceOf[l1.ReferenceValues]
                 val newValues =
                     (this.values.map { value ⇒ value.adapt(thatDomain, pc) }).
                         asInstanceOf[Set[thatDomain.DomainSingleOriginReferenceValue]]

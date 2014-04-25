@@ -38,7 +38,7 @@ import analyses.{ Project, ClassHierarchy }
 
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
-trait MethodReturnInformation { theDomain: Domain[_] ⇒
+trait MethodReturnInformation { theDomain: Domain ⇒
 
     def returnedValues(result: AIResult { val domain: theDomain.type }): Seq[DomainValue]
 
@@ -46,7 +46,7 @@ trait MethodReturnInformation { theDomain: Domain[_] ⇒
 
 }
 
-trait DefaultMethodReturnInformation extends MethodReturnInformation { theDomain: Domain[_] ⇒
+trait DefaultMethodReturnInformation extends MethodReturnInformation { theDomain: Domain ⇒
 
     def returnVoid(pc: PC): Unit = { /* Do nothing. */ }
 
@@ -90,8 +90,8 @@ trait DefaultMethodReturnInformation extends MethodReturnInformation { theDomain
 
 }
 
-trait PerformInvocations[+I, Source]
-        extends Domain[I]
+trait PerformInvocations[Source]
+        extends Domain
         with l0.TypeLevelInvokeInstructions { theDomain ⇒
 
     def project: Project[Source]
@@ -107,10 +107,10 @@ trait PerformInvocations[+I, Source]
         method: Method,
         operands: DomainValues): Boolean
 
-    trait InvokeExecutionHandler[TDI >: I] {
+    trait InvokeExecutionHandler {
 
         // the domain to use
-        val domain: Domain[TDI] with MethodReturnInformation
+        val domain: Domain with MethodReturnInformation
 
         // the abstract interpreter
         val ai: AI[_ >: domain.type]
@@ -140,15 +140,14 @@ trait PerformInvocations[+I, Source]
             ComputedValueAndException(
                 computedValue,
                 thrownExceptions.map(_.adapt(theDomain, callerPC)).toSet)
-
         }
     }
 
-    def invokeExecutionHandler[TDI >: I](
+    def invokeExecutionHandler(
         pc: PC,
         definingClass: ClassFile,
         method: Method,
-        operands: List[DomainValue]): InvokeExecutionHandler[TDI]
+        operands: List[DomainValue]): InvokeExecutionHandler
 
     override def invokevirtual(
         pc: PC,

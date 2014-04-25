@@ -60,11 +60,12 @@ class PropertyTracingTest
     import PropertyTracingTest._
 
     class AnalysisDomain(val method: Method)
-            extends l1.DefaultDomain[String]
+            extends l1.DefaultDomain
             with IgnoreSynchronization
-            with SimpleBooleanPropertyTracing[String] {
+            with SimpleBooleanPropertyTracing {
 
-        override def identifier = method.toJava
+        type Id = String
+        override def id = method.toJava
 
         override def code: Code = method.body.get
 

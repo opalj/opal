@@ -52,7 +52,7 @@ import language.implicitConversions
  *
  * @author Michael Eichberg
  */
-trait RecordReturnedValues[+I] extends Domain[I] {
+trait RecordReturnedValues extends Domain {
 
     /**
      * This type determines in which way the returned values are recorded.

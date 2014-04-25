@@ -76,7 +76,7 @@ import scala.util.control.ControlThrowable
  *
  * @author Michael Eichberg
  */
-trait AI[D <: SomeDomain] {
+trait AI[D <: Domain] {
 
     import AI._
 
@@ -1915,7 +1915,7 @@ private object AI {
  * @author Michael Eichberg
  */
 private object CTC1 {
-    def unapply[D <: Domain[Any]](value: D#DomainValue): Boolean =
+    def unapply[D <: Domain](value: D#DomainValue): Boolean =
         value.computationalType.category == 1
 }
 
@@ -1930,7 +1930,7 @@ private object CTC1 {
  * @author Michael Eichberg
  */
 private object CTC2 {
-    def unapply[D <: Domain[Any]](value: D#DomainValue): Boolean =
+    def unapply[D <: Domain](value: D#DomainValue): Boolean =
         value.computationalType.category == 2
 }
 

@@ -46,7 +46,7 @@ package domain
  *
  * @author Michael Eichberg
  */
-trait IgnoreThrownExceptions { this: SomeDomain ⇒
+trait IgnoreThrownExceptions { this: Domain ⇒
 
     override def abruptMethodExecution(pc: PC, exception: DomainValue): Unit = {
         /* Nothing to do. */

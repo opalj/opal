@@ -73,7 +73,7 @@ object InterpretMethods {
         }
         if (args.size > 0 && args(0).startsWith("domain=")) {
             interpret(
-                Class.forName(args.head.substring(8)).asInstanceOf[Class[_ <: Domain[_]]],
+                Class.forName(args.head.substring(8)).asInstanceOf[Class[_ <: Domain]],
                 args.tail.map(new java.io.File(_)),
                 true).
                 map(errors ⇒ System.err.println(errors._1+"(for details:"+errors._2+")"))
@@ -89,7 +89,7 @@ object InterpretMethods {
     val interruptAfter: Long = 250l //milliseconds
 
     def interpret(
-        domainClass: Class[_ <: SomeDomain],
+        domainClass: Class[_ <: Domain],
         files: Seq[File],
         beVerbose: Boolean = false): Option[(String, Option[File])] = {
 

@@ -41,9 +41,9 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  *
  * @author Riadh Chtara
  */
-trait DefaultPreciseLongValues[+I]
-        extends DefaultDomainValueBinding[I]
-        with PreciseLongValues[I] {
+trait DefaultPreciseLongValues
+        extends DefaultDomainValueBinding
+        with PreciseLongValues {
 
     // ATTENTION: The functionality to propagate a constraint crucially depends on
     // the fact two long values created at two different places are represented
@@ -56,9 +56,8 @@ trait DefaultPreciseLongValues[+I]
 
         override def summarize(pc: PC): DomainValue = this
 
-        override def adapt[ThatI >: I](
-            targetDomain: Domain[ThatI],
-            pc: PC): targetDomain.DomainValue = targetDomain.LongValue(pc)
+        override def adapt(targetDomain: Domain, pc: PC): targetDomain.DomainValue =
+            targetDomain.LongValue(pc)
     }
 
     case class LongRange(
@@ -98,16 +97,14 @@ trait DefaultPreciseLongValues[+I]
             }
 
         override def summarize(pc: PC): DomainValue = this
-  
-        override def adapt[ThatI >: I](
-            targetDomain: Domain[ThatI],
-            pc: PC): targetDomain.DomainValue =
-            if (targetDomain.isInstanceOf[DefaultPreciseLongValues[ThatI]]) {
-                val thatDomain = targetDomain.asInstanceOf[DefaultPreciseLongValues[ThatI]]
+
+        override def adapt(target: Domain, pc: PC): target.DomainValue =
+            if (target.isInstanceOf[DefaultPreciseLongValues]) {
+                val thatDomain = target.asInstanceOf[DefaultPreciseLongValues]
                 thatDomain.LongRange(this.initial, this.value).
-                    asInstanceOf[targetDomain.DomainValue]
+                    asInstanceOf[target.DomainValue]
             } else {
-                super.adapt(targetDomain, pc)
+                super.adapt(target, pc)
             }
 
         override def toString: String = "LongRange(initial="+initial+", value="+value+")"

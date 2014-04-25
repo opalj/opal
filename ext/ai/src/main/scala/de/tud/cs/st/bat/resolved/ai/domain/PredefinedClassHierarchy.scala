@@ -40,7 +40,7 @@ package domain
  *
  * @author Michael Eichberg
  */
-trait PredefinedClassHierarchy extends ClassHierarchy { this: SomeDomain ⇒
+trait PredefinedClassHierarchy extends ClassHierarchy { this: Domain ⇒
 
     /**
      * Returns the predefined class hierarchy unless explicitly overridden. BAT's

@@ -43,9 +43,9 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  *
  * @author Michael Eichberg
  */
-trait DefaultTypeLevelIntegerValues[+I]
-        extends DefaultDomainValueBinding[I]
-        with TypeLevelIntegerValues[I] { Domain ⇒
+trait DefaultTypeLevelIntegerValues
+        extends DefaultDomainValueBinding
+        with TypeLevelIntegerValues { Domain ⇒
 
     case object ABooleanValue extends super.BooleanValue {
 
@@ -55,13 +55,13 @@ trait DefaultTypeLevelIntegerValues[+I]
                 case _             ⇒ StructuralUpdate(AnIntegerValue)
             }
 
-        override def adapt[ThatI >: I](
-            targetDomain: Domain[ThatI],
-            pc: PC): targetDomain.DomainValue =
-            targetDomain match {
-                case thatDomain: DefaultTypeLevelIntegerValues[ThatI] ⇒
-                    thatDomain.ABooleanValue.asInstanceOf[targetDomain.DomainValue]
-                case _ ⇒ super.adapt(targetDomain, pc)
+        override def adapt(
+            target: Domain,
+            pc: PC): target.DomainValue =
+            target match {
+                case thatDomain: DefaultTypeLevelIntegerValues ⇒
+                    thatDomain.ABooleanValue.asInstanceOf[target.DomainValue]
+                case _ ⇒ super.adapt(target, pc)
             }
     }
 
@@ -73,13 +73,13 @@ trait DefaultTypeLevelIntegerValues[+I]
                 case _          ⇒ StructuralUpdate(AnIntegerValue)
             }
 
-        override def adapt[ThatI >: I](
-            targetDomain: Domain[ThatI],
-            pc: PC): targetDomain.DomainValue =
-            targetDomain match {
-                case thatDomain: DefaultTypeLevelIntegerValues[ThatI] ⇒
-                    thatDomain.AByteValue.asInstanceOf[targetDomain.DomainValue]
-                case _ ⇒ super.adapt(targetDomain, pc)
+        override def adapt(
+            target: Domain,
+            pc: PC): target.DomainValue =
+            target match {
+                case thatDomain: DefaultTypeLevelIntegerValues ⇒
+                    thatDomain.AByteValue.asInstanceOf[target.DomainValue]
+                case _ ⇒ super.adapt(target, pc)
             }
     }
 
@@ -92,13 +92,13 @@ trait DefaultTypeLevelIntegerValues[+I]
 
             }
 
-        override def adapt[ThatI >: I](
-            targetDomain: Domain[ThatI],
-            pc: PC): targetDomain.DomainValue =
-            targetDomain match {
-                case thatDomain: DefaultTypeLevelIntegerValues[ThatI] ⇒
-                    thatDomain.AShortValue.asInstanceOf[targetDomain.DomainValue]
-                case _ ⇒ super.adapt(targetDomain, pc)
+        override def adapt(
+            target: Domain,
+            pc: PC): target.DomainValue =
+            target match {
+                case thatDomain: DefaultTypeLevelIntegerValues⇒
+                    thatDomain.AShortValue.asInstanceOf[target.DomainValue]
+                case _ ⇒ super.adapt(target, pc)
             }
     }
 
@@ -110,13 +110,13 @@ trait DefaultTypeLevelIntegerValues[+I]
                 case _          ⇒ StructuralUpdate(AnIntegerValue)
             }
 
-        override def adapt[ThatI >: I](
-            targetDomain: Domain[ThatI],
-            pc: PC): targetDomain.DomainValue =
-            targetDomain match {
-                case thatDomain: DefaultTypeLevelIntegerValues[ThatI] ⇒
-                    thatDomain.ACharValue.asInstanceOf[targetDomain.DomainValue]
-                case _ ⇒ super.adapt(targetDomain, pc)
+        override def adapt(
+            target: Domain,
+            pc: PC): target.DomainValue =
+            target match {
+                case thatDomain: DefaultTypeLevelIntegerValues ⇒
+                    thatDomain.ACharValue.asInstanceOf[target.DomainValue]
+                case _ ⇒ super.adapt(target, pc)
             }
     }
 
@@ -125,13 +125,13 @@ trait DefaultTypeLevelIntegerValues[+I]
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] =
             NoUpdate
 
-        override def adapt[ThatI >: I](
-            targetDomain: Domain[ThatI],
-            pc: PC): targetDomain.DomainValue =
-            targetDomain match {
-                case thatDomain: DefaultTypeLevelIntegerValues[ThatI] ⇒
-                    thatDomain.AnIntegerValue.asInstanceOf[targetDomain.DomainValue]
-                case _ ⇒ super.adapt(targetDomain, pc)
+        override def adapt(
+            target: Domain,
+            pc: PC): target.DomainValue =
+            target match {
+                case thatDomain: DefaultTypeLevelIntegerValues ⇒
+                    thatDomain.AnIntegerValue.asInstanceOf[target.DomainValue]
+                case _ ⇒ super.adapt(target, pc)
             }
     }
 

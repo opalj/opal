@@ -40,7 +40,7 @@ package domain
  *
  * @author Michael Eichberg
  */
-trait IgnoreReturnedValues { this: SomeDomain ⇒
+trait IgnoreReturnedValues { this: Domain ⇒
 
     override def areturn(pc: PC, value: DomainValue): Unit = {
         /* Nothing to do. */

@@ -44,15 +44,15 @@ package l0
  *
  * @author Michael Eichberg
  */
-trait TypeLevelDomain[+I]
-    extends Domain[I]
-    with DefaultDomainValueBinding[I]
+trait TypeLevelDomain
+    extends Domain
+    with DefaultDomainValueBinding
     with Configuration
-    with DefaultReferenceValuesBinding[I]
-    with DefaultTypeLevelIntegerValues[I]
-    with DefaultTypeLevelLongValues[I]
-    with DefaultTypeLevelFloatValues[I]
-    with DefaultTypeLevelDoubleValues[I]
+    with DefaultReferenceValuesBinding
+    with DefaultTypeLevelIntegerValues
+    with DefaultTypeLevelLongValues
+    with DefaultTypeLevelFloatValues
+    with DefaultTypeLevelDoubleValues
     with DefaultIntegerValuesComparison
     with TypeLevelFieldAccessInstructions
     with TypeLevelInvokeInstructions
@@ -66,11 +66,13 @@ trait TypeLevelDomain[+I]
  * @author Michael Eichberg
  */
 class BaseDomain
-        extends TypeLevelDomain[String]
+        extends TypeLevelDomain
         with IgnoreMethodResults
         with IgnoreSynchronization {
 
-    def identifier = "BaseTypeLevelDomain"
+    type Id = String
+
+    def id = "BaseTypeLevelDomain"
 
 }
 
@@ -79,17 +81,23 @@ class BaseDomain
  *
  * @author Michael Eichberg
  */
-class BaseConfigurableDomain[+I](
-    val identifier: I)
-        extends TypeLevelDomain[I]
+class BaseConfigurableDomain[I](
+    val id: I)
+        extends TypeLevelDomain
         with IgnoreMethodResults
-        with IgnoreSynchronization
+        with IgnoreSynchronization {
+
+    type Id = I
+}
 
 class BaseRecordingDomain[I](
-    val identifier: I)
-        extends TypeLevelDomain[I]
+    val id: I)
+        extends TypeLevelDomain
         with IgnoreMethodResults
         with IgnoreSynchronization
-        with RecordLastReturnedValues[I]
-        with RecordAllThrownExceptions[I]
-        with RecordReturnInstructions[I]
+        with RecordLastReturnedValues
+        with RecordAllThrownExceptions
+        with RecordReturnInstructions {
+    
+    type Id = I
+}

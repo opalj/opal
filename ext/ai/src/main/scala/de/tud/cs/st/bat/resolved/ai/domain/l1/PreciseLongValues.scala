@@ -43,7 +43,7 @@ import ObjectType.ArithmeticException
  * @author Riadh Chtara
  * @author Michael Eichberg
  */
-trait PreciseLongValues[+I] extends Domain[I] with Configuration {
+trait PreciseLongValues extends Domain with Configuration {
 
     // -----------------------------------------------------------------------------------
     //
@@ -160,7 +160,7 @@ trait PreciseLongValues[+I] extends Domain[I] with Configuration {
             Unknown
         }
 
-        // TODO Does this make sense?
+    // TODO Does this make sense?
     def longUpdateValue(
         oldValue: DomainValue,
         newValue: DomainValue,

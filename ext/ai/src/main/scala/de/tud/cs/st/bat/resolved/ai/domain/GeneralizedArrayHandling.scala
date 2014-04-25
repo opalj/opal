@@ -40,7 +40,7 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  *
  * @author Michael Eichberg
  */
-trait GeneralizedArrayHandling { this: SomeDomain ⇒
+trait GeneralizedArrayHandling { this: Domain ⇒
 
     //      typeOfValue(arrayref) match {
     //            case IsNullValue()    ⇒ justThrowsNullPointerException(pc)

@@ -52,6 +52,9 @@ import scala.util.control.ControlThrowable
  * new domains for the abstract interpreter, by creating various kinds of dumps of
  * the state of the interpreter.
  *
+ * ==Thread Safety==
+ * This object is thread-safe.
+ *
  * @author Michael Eichberg
  */
 object XHTML {
@@ -59,6 +62,7 @@ object XHTML {
     import de.tud.cs.st.util.ControlAbstractions._
 
     private[this] val dumpMutex = new Object
+
     /**
      * Stores the time when the last dump was created.
      *
@@ -68,13 +72,15 @@ object XHTML {
      * If you want to generate more dumps set this value to a small(er) value or to -1l if
      * do never want to miss a dump. The default is 2500 (milliseconds).
      */
-    private[this] var _lastDump: Long = 0l
-    private[this] def lastDump_=(currentTimeMillis: Long) {
-        dumpMutex.synchronized { _lastDump = currentTimeMillis }
-    }
-    private[this] def lastDump = dumpMutex.synchronized { _lastDump }
+    private[this] var _lastDump = new java.util.concurrent.atomic.AtomicLong(0l)
 
-    def dumpOnFailure[T, D <: SomeDomain](
+    private[this] def lastDump_=(currentTimeMillis: Long) {
+        _lastDump.set(currentTimeMillis)
+    }
+
+    private[this] def lastDump =  _lastDump.get()
+
+    def dumpOnFailure[T, D <: Domain](
         classFile: ClassFile,
         method: Method,
         ai: AI[_ >: D],
@@ -101,7 +107,7 @@ object XHTML {
                         title)
                     XHTML.writeAndOpenDump(dump) //.map(_.deleteOnExit)
                 } else {
-                    Console.err.println("Dump suppressed: "+e.getMessage())
+                    Console.err.println("[info] dump suppressed: "+e.getMessage())
                 }
                 throw e
         }
@@ -179,7 +185,7 @@ object XHTML {
         classFile: Option[ClassFile],
         method: Option[Method],
         code: Code,
-        domain: SomeDomain,
+        domain: Domain,
         operandsArray: Array[_ <: List[_ <: AnyRef]],
         localsArray: Array[_ <: Array[_ <: AnyRef]],
         header: Option[String] = None): Node = {
@@ -221,7 +227,7 @@ object XHTML {
         classFile: Option[ClassFile],
         method: Option[Method],
         code: Code,
-        domain: SomeDomain,
+        domain: Domain,
         operandsArray: Array[_ <: List[_ <: AnyRef]],
         localsArray: Array[_ <: Array[_ <: AnyRef]]): Node = {
 
@@ -282,7 +288,7 @@ object XHTML {
 
     private def dumpInstructions(
         code: Code,
-        domain: SomeDomain,
+        domain: Domain,
         operandsArray: Array[_ <: List[_ <: AnyRef]],
         localsArray: Array[_ <: Array[_ <: AnyRef]]): Array[Node] = {
         val indexedExceptionHandlers = indexExceptionHandlers(code)
@@ -297,7 +303,7 @@ object XHTML {
     def dumpInstruction(
         pc: Int,
         instruction: Instruction,
-        domain: SomeDomain,
+        domain: Domain,
         operands: List[_ <: AnyRef],
         locals: Array[_ <: AnyRef],
         exceptionHandlers: Option[String]): Node = {

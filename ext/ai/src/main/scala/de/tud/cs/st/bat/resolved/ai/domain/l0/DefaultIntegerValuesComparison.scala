@@ -47,7 +47,7 @@ import de.tud.cs.st.bat.resolved.ai.Domain
  * @author Michael Eichberg
  */
 trait DefaultIntegerValuesComparison extends IntegerValuesComparison {
-    this: SomeDomain ⇒
+    this: Domain ⇒
 
     override def intIsSomeValueInRange(
         value: DomainValue,

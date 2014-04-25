@@ -85,14 +85,20 @@ import reflect.ClassTag
  *
  * @note BATAI assumes that conceptually every method/code block is associated
  *      with its own instance of a domain object.
- * @tparam I The type which is used to identify this domain's context. E.g., if a new
- *      domain is created it may be associated with the instruction that created it and
- *      this domain's identifier.
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  * @author Dennis Siebert
  */
-trait Domain[+I] {
+trait Domain {
+
+    /**
+     * The type which is used to identify the domain's context.
+     * E.g., if a new domain is created to analyze a called method it may be
+     * associated with the instruction caused its creation. It can, however,
+     * also just identify the method (by means of, e.g., the pair `(classFile,method)`
+     * that it is used for.
+     */
+    type Id
 
     /**
      * Returns the value that identifies this domain (usually it is loosely
@@ -102,7 +108,7 @@ trait Domain[+I] {
      * so – this happens at the sole responsibility of the domain. BATAI does
      * not require any kind of tracking.
      */
-    def identifier: I
+    def id: Id
 
     // -----------------------------------------------------------------------------------
     //
@@ -309,7 +315,7 @@ trait Domain[+I] {
          *      as BATAI does not use/call this method.__
          */
         @throws[DomainException]("Adaptation of this value is not supported.")
-        def adapt[TDI >: I](target: Domain[TDI], pc: PC): target.DomainValue =
+        def adapt(target: Domain, pc: PC): target.DomainValue =
             throw new DomainException("This value "+this+" cannot be adapted for "+target)
     }
 
@@ -388,7 +394,7 @@ trait Domain[+I] {
         override def summarize(pc: PC): DomainValue =
             throw DomainException("creating a summary of an illegal value is meaningless")
 
-        override def adapt[TDI >: I](target: Domain[TDI], pc: PC): target.DomainValue =
+        override def adapt(target: Domain, pc: PC): target.DomainValue =
             target.TheIllegalValue
 
         override def toString: String = "IllegalValue"
@@ -459,7 +465,7 @@ trait Domain[+I] {
         override def summarize(pc: PC): DomainValue =
             throw DomainException("summarizing return address values is meaningless")
 
-        override def adapt[TDI >: I](target: Domain[TDI], pc: PC): target.DomainValue =
+        override def adapt(target: Domain, pc: PC): target.DomainValue =
             target.ReturnAddressValue(address)
 
         override def toString = "ReturnAddress("+address+")"

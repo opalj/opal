@@ -40,7 +40,7 @@ package domain
  *
  * @author Michael Eichberg
  */
-trait RecordAllThrownExceptions[+I] extends RecordThrownExceptions[I] {
+trait RecordAllThrownExceptions extends RecordThrownExceptions {
 
     type ThrownException = Set[DomainValue]
 

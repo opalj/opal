@@ -42,7 +42,7 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
 
     override def continuingInterpretation(
         code: Code,
-        domain: SomeDomain)(
+        domain: Domain)(
             initialWorkList: List[PC],
             alreadyEvaluated: List[PC],
             operandsArray: Array[List[domain.DomainValue]],
@@ -55,7 +55,7 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
     }
 
     override def instructionEvalution(
-        domain: SomeDomain)(
+        domain: Domain)(
             pc: PC,
             instruction: Instruction,
             operands: List[domain.DomainValue],
@@ -66,7 +66,7 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
     }
 
     override def flow(
-        domain: SomeDomain)(
+        domain: Domain)(
             currentPC: PC,
             targetPC: PC,
             isExceptionalControlFlow: Boolean): Unit = {
@@ -74,7 +74,7 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
     }
 
     override def rescheduled(
-        domain: SomeDomain)(
+        domain: Domain)(
             sourcePC: PC,
             targetPC: PC,
             isExceptionalControlFlow: Boolean): Unit = {
@@ -83,7 +83,7 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
     }
 
     override def join(
-        domain: SomeDomain)(
+        domain: Domain)(
             pc: PC,
             thisOperands: domain.Operands,
             thisLocals: domain.Locals,
@@ -98,14 +98,14 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
     }
 
     override def abruptMethodExecution(
-        domain: SomeDomain)(
+        domain: Domain)(
             pc: Int,
             exception: domain.DomainValue): Unit = {
         tracers foreach { _.abruptMethodExecution(domain)(pc, exception) }
     }
 
     override def ret(
-        domain: SomeDomain)(
+        domain: Domain)(
             pc: PC,
             returnAddress: PC,
             oldWorklist: List[PC],
@@ -115,7 +115,7 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
         }
     }
 
-    override def jumpToSubroutine(domain: SomeDomain)(pc: PC): Unit = {
+    override def jumpToSubroutine(domain: Domain)(pc: PC): Unit = {
         tracers foreach { tracer ⇒
             tracer.jumpToSubroutine(domain)(pc)
         }
@@ -125,7 +125,7 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
      * Called when the evaluation of a subroutine (JSR/RET) is completed.
      */
     override def returnFromSubroutine(
-        domain: SomeDomain)(
+        domain: Domain)(
             pc: Int,
             returnAddress: Int,
             subroutineInstructions: List[Int]): Unit = {

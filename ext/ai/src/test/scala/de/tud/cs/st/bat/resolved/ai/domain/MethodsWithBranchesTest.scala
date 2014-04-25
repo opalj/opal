@@ -58,10 +58,10 @@ class MethodsWithBranchesTest
     import domain.RecordConstraints
     import domain.l0.BaseRecordingDomain
 
-    type TestDomain = BaseRecordingDomain[String] with RecordConstraints[String]
+    type TestDomain = BaseRecordingDomain[String] with RecordConstraints
 
     private def evaluateMethod(name: String)(f: TestDomain ⇒ Unit) {
-        val domain = new BaseRecordingDomain(name) with RecordConstraints[String]
+        val domain = new BaseRecordingDomain(name) with RecordConstraints
         val method = classFile.methods.find(_.name == name).get
         val result = BaseAI(classFile, method, domain)
 

@@ -40,9 +40,9 @@ import scala.collection.SortedSet
 /**
  * @author Arne Lottmann
  */
-trait DefaultClassValuesBinding[+I]
-        extends l1.DefaultStringValuesBinding[I]
-        with ClassValues[I] {
+trait DefaultClassValuesBinding
+        extends l1.DefaultStringValuesBinding
+        with ClassValues {
     domain: Configuration with IntegerValuesComparison with ClassHierarchy ⇒
 
     // Let's fix the type hierarchy

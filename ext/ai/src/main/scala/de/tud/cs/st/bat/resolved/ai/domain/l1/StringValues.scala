@@ -41,7 +41,7 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  *
  * @author Michael Eichberg
  */
-trait StringValues[+I] extends ReferenceValues[I] {
+trait StringValues extends ReferenceValues {
     domain: Configuration with IntegerValuesComparison with ClassHierarchy ⇒
 
     type DomainStringValue <: StringValue with DomainObjectValue
@@ -72,7 +72,7 @@ trait StringValues[+I] extends ReferenceValues[I] {
             }
         }
 
-        override def adapt[TDI >: I](target: Domain[TDI], pc: Int): target.DomainValue =
+        override def adapt(target: Domain, pc: Int): target.DomainValue =
             target.StringValue(pc, this.value)
 
         override def equals(other: Any): Boolean = {

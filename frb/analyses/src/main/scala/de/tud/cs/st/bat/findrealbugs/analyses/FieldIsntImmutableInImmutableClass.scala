@@ -47,22 +47,25 @@ import ai.domain.l1._
  * @author Roberts Kolosovs
  * @author Peter Spieler
  */
-private class ImmutabilityAnalysisDomain[+I](val identifier: I)
-    extends Domain[I]
-    with DefaultDomainValueBinding[I]
-    with Configuration
-    with DefaultPerInstructionPostProcessing[I]
-    with TypeLevelFieldAccessInstructionsWithNullPointerHandling
-    with TypeLevelInvokeInstructionsWithNullPointerHandling
-    with DefaultClassValuesBinding[I]
-    with DefaultArrayValuesBinding[I]
-    with DefaultPreciseIntegerValues[I]
-    with l0.DefaultTypeLevelLongValues[I]
-    with l0.DefaultTypeLevelFloatValues[I]
-    with l0.DefaultTypeLevelDoubleValues[I]
-    with PredefinedClassHierarchy
-    with IgnoreMethodResults
-    with IgnoreSynchronization
+private class ImmutabilityAnalysisDomain[I](val id: I)
+        extends Domain
+        with DefaultDomainValueBinding
+        with Configuration
+        with DefaultPerInstructionPostProcessing
+        with TypeLevelFieldAccessInstructionsWithNullPointerHandling
+        with TypeLevelInvokeInstructionsWithNullPointerHandling
+        with DefaultClassValuesBinding
+        with DefaultArrayValuesBinding
+        with DefaultPreciseIntegerValues
+        with l0.DefaultTypeLevelLongValues
+        with l0.DefaultTypeLevelFloatValues
+        with l0.DefaultTypeLevelDoubleValues
+        with PredefinedClassHierarchy
+        with IgnoreMethodResults
+        with IgnoreSynchronization {
+
+    type Id = I
+}
 
 /**
  * Classes annotated with `@Immutable` should be unchanging once constructed in order to

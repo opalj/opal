@@ -35,7 +35,7 @@ package domain
 /**
  * @author Michael Eichberg
  */
-trait Origin { this: SomeDomain ⇒
+trait Origin { this: Domain ⇒
 
     trait SingleOriginValue {
         def pc: PC

@@ -43,7 +43,7 @@ import bat.resolved.analyses.{ Project, ReportableAnalysisResult }
  *
  * @author Michael Eichberg
  */
-trait AIProject[Source, D <: SomeDomain with Report] {
+trait AIProject[Source, D <: Domain with Report] {
 
     /**
      * Returns the abstract interpreter that should be used for performing the abstract
@@ -57,7 +57,7 @@ trait AIProject[Source, D <: SomeDomain with Report] {
      * Needs to be overridden by subclasses if the entry points should be
      * analyzed sequentially.
      */
-    protected def analyzeInParallel: Boolean = true
+    protected val analyzeInParallel: Boolean = true
 
     /**
      * Returns the (initial) domain object that will be used to analyze an entry point.
@@ -96,25 +96,28 @@ trait AIProject[Source, D <: SomeDomain with Report] {
      * domain.
      *
      * @note This method is intended to be overridden by subtraits that need to get
-     * hold on the specified analysis parameters. In this case (in the subtrait)
-     * it is recommended to first analyze the parameters and afterwards to call
-     * `super.analyze(...)`.
+     *      hold on the specified analysis parameters. In this case (in the subtrait)
+     *      it is recommended to first analyze the parameters and afterwards to call
+     *      this method using `super.analyze(...)`.
      */
     def analyze(
         project: Project[Source],
         parameters: Seq[String]): ReportableAnalysisResult = {
-        val entryPointsIterator =
-            if (analyzeInParallel)
-                entryPoints(project).par.iterator
-            else
-                entryPoints(project).iterator
+
+        def analyze(cf_m: (ClassFile, Method)) = {
+            val (classFile: ClassFile, method: Method) = cf_m
+            val theDomain = domain(project, classFile, method)
+            ai(classFile, method, theDomain)
+            theDomain.report
+        }
+
         val reports =
-            (for ((classFile, method) ← entryPointsIterator) yield {
-                val theDomain = domain(project, classFile, method)
-                ai(classFile, method, theDomain)
-                theDomain.report
-            }).toIterable
-        val theReports: Iterable[String] = reports.filter(_.isDefined).map(_.get)
+            if (analyzeInParallel)
+                entryPoints(project).par map { analyze(_) }
+            else
+                entryPoints(project) map { analyze(_) }
+
+        val theReports = reports.filter(_.isDefined).map(_.get)
         bat.resolved.analyses.BasicReport(
             "Number of reports: "+theReports.size+"\n"+theReports.mkString("\n"))
     }

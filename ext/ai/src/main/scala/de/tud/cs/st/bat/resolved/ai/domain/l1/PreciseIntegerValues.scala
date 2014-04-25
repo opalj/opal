@@ -40,8 +40,8 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  *
  * @author Michael Eichberg
  */
-trait PreciseIntegerValues[+I]
-        extends Domain[I]
+trait PreciseIntegerValues
+        extends Domain
         with IntegerValuesProvider
         with IntegerValuesComparison {
     this: Configuration ⇒

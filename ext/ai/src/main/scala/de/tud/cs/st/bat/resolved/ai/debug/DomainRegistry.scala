@@ -51,8 +51,8 @@ import analyses.SomeProject
  */
 object DomainRegistry {
 
-    private[this] var descriptions: Map[String, Class[_ <: SomeDomain]] = Map.empty
-    private[this] var theRegistry: Map[Class[_ <: SomeDomain], (SomeProject, ClassFile, Method) ⇒ SomeDomain] = Map.empty
+    private[this] var descriptions: Map[String, Class[_ <: Domain]] = Map.empty
+    private[this] var theRegistry: Map[Class[_ <: Domain], (SomeProject, ClassFile, Method) ⇒ Domain] = Map.empty
 
     /**
      * Register a new domain that can be used to perform an abstract interpretation
@@ -66,8 +66,8 @@ object DomainRegistry {
      */
     def register(
         domainDescription: String,
-        domainClass: Class[_ <: SomeDomain],
-        factory: (SomeProject, ClassFile, Method) ⇒ SomeDomain): Unit = {
+        domainClass: Class[_ <: Domain],
+        factory: (SomeProject, ClassFile, Method) ⇒ Domain): Unit = {
         this.synchronized {
             descriptions += ((domainDescription, domainClass))
             theRegistry += ((domainClass, factory))
@@ -99,9 +99,9 @@ object DomainRegistry {
         domainDescription: String,
         project: SomeProject,
         classFile: ClassFile,
-        method: Method): SomeDomain = {
+        method: Method): Domain = {
         this.synchronized {
-            val domainClass: Class[_ <: SomeDomain] = descriptions(domainDescription)
+            val domainClass: Class[_ <: Domain] = descriptions(domainDescription)
             newDomain(domainClass, project, classFile, method)
         }
     }
@@ -117,10 +117,10 @@ object DomainRegistry {
      * 		file.
      */
     def newDomain(
-        domainClass: Class[_ <: SomeDomain],
+        domainClass: Class[_ <: Domain],
         project: SomeProject,
         classFile: ClassFile,
-        method: Method): SomeDomain = {
+        method: Method): Domain = {
         this.synchronized {
             theRegistry(domainClass)(project, classFile, method)
         }

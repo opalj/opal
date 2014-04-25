@@ -41,9 +41,9 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  *
  * @author Michael Eichberg
  */
-trait DefaultPreciseIntegerValues[+I]
-        extends DefaultDomainValueBinding[I]
-        with PreciseIntegerValues[I] {
+trait DefaultPreciseIntegerValues
+        extends DefaultDomainValueBinding
+        with PreciseIntegerValues {
     this: Configuration ⇒
 
     /**
@@ -59,7 +59,7 @@ trait DefaultPreciseIntegerValues[+I]
 
         override def summarize(pc: PC): DomainValue = this
 
-        override def adapt[TDI >: I](target: Domain[TDI], pc: PC): target.DomainValue =
+        override def adapt(target: Domain, pc: PC): target.DomainValue =
             target.IntegerValue(pc)
     }
 
@@ -104,11 +104,11 @@ trait DefaultPreciseIntegerValues[+I]
 
         override def summarize(pc: PC): DomainValue = this
 
-        override def adapt[ThatI >: I](
-            targetDomain: Domain[ThatI],
+        override def adapt(
+            targetDomain: Domain,
             pc: PC): targetDomain.DomainValue =
-            if (targetDomain.isInstanceOf[DefaultPreciseIntegerValues[ThatI]]) {
-                val thatDomain = targetDomain.asInstanceOf[DefaultPreciseIntegerValues[ThatI]]
+            if (targetDomain.isInstanceOf[DefaultPreciseIntegerValues]) {
+                val thatDomain = targetDomain.asInstanceOf[DefaultPreciseIntegerValues]
                 thatDomain.IntegerRange(this.initial, this.value).
                     asInstanceOf[targetDomain.DomainValue]
             } else {

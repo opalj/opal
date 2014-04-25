@@ -53,17 +53,19 @@ import de.tud.cs.st.util._
  *
  * @author Daniel Klauer
  */
-class IincTracingDomain[+I](override val identifier: I)
-        extends Domain[I]
-        with DefaultDomainValueBinding[I]
+class IincTracingDomain[I](override val id: I)
+        extends Domain
+        with DefaultDomainValueBinding
         with Configuration
         with IntegerValuesComparison
-        with DefaultReferenceValuesBinding[I]
+        with DefaultReferenceValuesBinding
         with TypeLevelFieldAccessInstructions
         with TypeLevelInvokeInstructions
         with PredefinedClassHierarchy
         with IgnoreMethodResults
         with IgnoreSynchronization { thisDomain ⇒
+
+    type Id = I
 
     /**
      * The DomainValue implementation used to represent IINC result values. It tracks

@@ -56,8 +56,8 @@ import scala.collection.Map
  *
  * @author Michael Eichberg
  */
-trait CHACallGraphDomain[I]
-        extends CallGraphDomain[I]
+trait CHACallGraphDomain
+        extends CallGraphDomain
         with ClassHierarchy {
 
     //
@@ -210,24 +210,26 @@ class DefaultCHACallGraphDomain[Source](
     val cache: CallGraphCache[MethodSignature, Iterable[Method]],
     val theClassFile: ClassFile,
     val theMethod: Method)
-        extends Domain[Method]
-        with DefaultDomainValueBinding[Method]
+        extends Domain
+        with DefaultDomainValueBinding
         with GeneralizedArrayHandling
         with Configuration
         with IgnoreMethodResults
         with IgnoreSynchronization
-        with l0.DefaultTypeLevelIntegerValues[Method]
+        with l0.DefaultTypeLevelIntegerValues
         with l0.DefaultIntegerValuesComparison
-        with l0.DefaultTypeLevelLongValues[Method]
-        with l0.DefaultTypeLevelFloatValues[Method]
-        with l0.DefaultTypeLevelDoubleValues[Method]
-        with l0.DefaultReferenceValuesBinding[Method]
+        with l0.DefaultTypeLevelLongValues
+        with l0.DefaultTypeLevelFloatValues
+        with l0.DefaultTypeLevelDoubleValues
+        with l0.DefaultReferenceValuesBinding
         with l0.TypeLevelFieldAccessInstructions
         with l0.TypeLevelInvokeInstructions
         with ProjectBasedClassHierarchy[Source]
-        with CHACallGraphDomain[Method] {
+        with CHACallGraphDomain {
 
-    def identifier = theMethod
+    type Id = Method
+
+    def id = theMethod
 
 }
 

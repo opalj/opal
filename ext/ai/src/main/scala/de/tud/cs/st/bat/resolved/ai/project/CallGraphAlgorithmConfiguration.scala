@@ -72,6 +72,6 @@ trait CallGraphAlgorithmConfiguration {
         theProject: SomeProject,
         cache: this.type#Cache,
         classFile: ClassFile,
-        method: Method): CallGraphDomain[I]
+        method: Method): CallGraphDomain
 
 }

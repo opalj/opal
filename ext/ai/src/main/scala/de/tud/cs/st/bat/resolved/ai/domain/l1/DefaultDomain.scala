@@ -37,35 +37,39 @@ package l1
  * ClassValues must come after TypeLevelInvokeInstructionsWithNullPointerHandling.
  * @see ClassValues type documentation comment
  */
-trait DefaultDomain[+I]
-    extends Domain[I]
-    with DefaultDomainValueBinding[I]
+trait DefaultDomain
+    extends Domain
+    with DefaultDomainValueBinding
     with TypeLevelFieldAccessInstructionsWithNullPointerHandling
     with TypeLevelInvokeInstructionsWithNullPointerHandling
-    //    with DefaultReferenceValuesBinding[I]
-    //    with DefaultStringValuesBinding[I] 
-    with DefaultClassValuesBinding[I]
-    with DefaultArrayValuesBinding[I]
-    with DefaultPreciseIntegerValues[I]
-    with DefaultPreciseLongValues[I]
-    with l0.DefaultTypeLevelFloatValues[I]
-    with l0.DefaultTypeLevelDoubleValues[I]
-    with DefaultPerInstructionPostProcessing[I]
+    //    with DefaultReferenceValuesBinding
+    //    with DefaultStringValuesBinding
+    with DefaultClassValuesBinding
+    with DefaultArrayValuesBinding
+    with DefaultPreciseIntegerValues
+    with DefaultPreciseLongValues
+    with l0.DefaultTypeLevelFloatValues
+    with l0.DefaultTypeLevelDoubleValues
+    with DefaultPerInstructionPostProcessing
     with PredefinedClassHierarchy
 
-class DefaultConfigurableDomain[+I](
-    val identifier: I)
-        extends DefaultDomain[I]
+class DefaultConfigurableDomain[I](
+    val id: I)
+        extends DefaultDomain
         with IgnoreMethodResults
-        with IgnoreSynchronization
+        with IgnoreSynchronization {
+        type Id = I
+    }
 
 class DefaultRecordingDomain[I](
-    val identifier: I)
-        extends DefaultDomain[I]
+    val id: I)
+        extends DefaultDomain
         with IgnoreMethodResults
-        with RecordLastReturnedValues[I]
-        with RecordAllThrownExceptions[I]
-        with RecordReturnInstructions[I]
-        with IgnoreSynchronization
+        with RecordLastReturnedValues
+        with RecordAllThrownExceptions
+        with RecordReturnInstructions
+        with IgnoreSynchronization{
+        type Id = I
+    }
         
 

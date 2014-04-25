@@ -43,21 +43,23 @@ import ai.domain._
  *
  * @author Daniel Klauer
  */
-private class BitNopsDomain[T](override val identifier: T)
-        extends Domain[T]
-        with DefaultDomainValueBinding[T]
+private class BitNopsDomain[I](override val id: I)
+        extends Domain
+        with DefaultDomainValueBinding
         with Configuration
         with PredefinedClassHierarchy
-        with l1.DefaultPreciseIntegerValues[T]
-        with l0.DefaultTypeLevelFloatValues[T]
-        with l0.DefaultTypeLevelDoubleValues[T]
+        with l1.DefaultPreciseIntegerValues
+        with l0.DefaultTypeLevelFloatValues
+        with l0.DefaultTypeLevelDoubleValues
         with l0.TypeLevelFieldAccessInstructions
         with l0.TypeLevelInvokeInstructions
-        with l0.DefaultTypeLevelLongValues[T]
-        with l0.DefaultReferenceValuesBinding[T]
+        with l0.DefaultTypeLevelLongValues
+        with l0.DefaultReferenceValuesBinding
         with IgnoreMethodResults
         with IgnoreSynchronization {
 
+    type Id = I
+    
     /**
      * We're only interested in certain specific values (0 and -1). Thus, we don't need
      * to track values that are known to be within some range a..b at all.

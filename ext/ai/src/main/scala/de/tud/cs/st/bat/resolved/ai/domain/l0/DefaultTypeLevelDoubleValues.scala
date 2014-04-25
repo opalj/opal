@@ -42,9 +42,9 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  *
  * @author Michael Eichberg
  */
-trait DefaultTypeLevelDoubleValues[+I]
-        extends DefaultDomainValueBinding[I]
-        with TypeLevelDoubleValues[I] {
+trait DefaultTypeLevelDoubleValues
+        extends DefaultDomainValueBinding
+        with TypeLevelDoubleValues {
 
     /**
      * Represents a specific, but unknown double value.
@@ -60,7 +60,7 @@ trait DefaultTypeLevelDoubleValues[+I]
 
         override def summarize(pc: PC): DomainValue = this
 
-        override def adapt[ThatI >: I](target: Domain[ThatI], pc: PC): target.DomainValue =
+        override def adapt(target: Domain, pc: PC): target.DomainValue =
             target.DoubleValue(pc)
 
     }

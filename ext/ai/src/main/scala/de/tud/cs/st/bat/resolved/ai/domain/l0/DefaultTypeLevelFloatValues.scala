@@ -42,9 +42,9 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  *
  * @author Michael Eichberg
  */
-trait DefaultTypeLevelFloatValues[+I]
-        extends DefaultDomainValueBinding[I]
-        with TypeLevelFloatValues[I] {
+trait DefaultTypeLevelFloatValues
+        extends DefaultDomainValueBinding
+        with TypeLevelFloatValues {
 
     class AFloatValue() extends super.FloatValue {
 
@@ -52,7 +52,7 @@ trait DefaultTypeLevelFloatValues[+I]
 
         override def summarize(pc: PC): DomainValue = this
 
-        override def adapt[ThatI >: I](target: Domain[ThatI], pc: PC): target.DomainValue =
+        override def adapt(target: Domain, pc: PC): target.DomainValue =
             target.FloatValue(pc)
     }
 

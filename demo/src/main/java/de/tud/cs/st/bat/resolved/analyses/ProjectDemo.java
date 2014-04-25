@@ -77,7 +77,7 @@ public class ProjectDemo {
                     // Use a fixed domain
                     // Domain<?> domain = new BaseDomain();
                     // OR use a user-specified domain
-                    Domain<?> domain = DomainRegistry.newDomain(chosenDomain, project,
+                    Domain domain = DomainRegistry.newDomain(chosenDomain, project,
                             classFile, method);
 
                     AIResult result = ai.apply(classFile, method, domain);

@@ -37,7 +37,7 @@ package ai
  *
  * @author Michael Eichberg
  */
-case class InterpretationFailedException[D <: SomeDomain with Singleton](
+case class InterpretationFailedException[D <: Domain with Singleton](
     cause: Throwable,
     domain: D, // TODO Can we replace this with SomeDomain and a constructor with multiple arguements lists
     pc : PC,

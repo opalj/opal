@@ -40,7 +40,7 @@ package domain
  *
  * @author Michael Eichberg
  */
-trait ReifiedConstraints[+I] extends Domain[I] {
+trait ReifiedConstraints extends Domain {
 
     /**
      * (Indirectly) called by BATAI for a new value-based constraint.

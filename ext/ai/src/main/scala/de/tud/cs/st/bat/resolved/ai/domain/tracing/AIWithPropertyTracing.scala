@@ -43,7 +43,7 @@ package tracing
  *
  * @author Michael Eichberg
  */
-trait AIWithPropertyTracing[D <: PropertyTracing[_]] extends AI[D] {
+trait AIWithPropertyTracing[D <: PropertyTracing] extends AI[D] {
 
     /**
      * Performs an abstract interpretation of the given code snippet.

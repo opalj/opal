@@ -66,52 +66,58 @@ class BaseConfigurableDomainTest extends FlatSpec with Matchers {
     // The following three domains are very basic domains that – given that the
     // same domains are used – should compute the same results.
 
-    class BasicDomain1[+I](val identifier: I)
-        extends Domain[I]
-        with IgnoreMethodResults
-        with IgnoreSynchronization
-        with DefaultDomainValueBinding[I]
-        with Configuration
-        with l0.DefaultReferenceValuesBinding[I]
-        with l0.DefaultTypeLevelIntegerValues[I]
-        with l0.DefaultTypeLevelLongValues[I]
-        with l0.DefaultTypeLevelFloatValues[I]
-        with l0.DefaultTypeLevelDoubleValues[I]
-        with l0.DefaultIntegerValuesComparison
-        with l0.TypeLevelFieldAccessInstructions
-        with l0.TypeLevelInvokeInstructions
-        with PredefinedClassHierarchy
+    class BasicDomain1[I](val id: I)
+            extends Domain
+            with IgnoreMethodResults
+            with IgnoreSynchronization
+            with DefaultDomainValueBinding
+            with Configuration
+            with l0.DefaultReferenceValuesBinding
+            with l0.DefaultTypeLevelIntegerValues
+            with l0.DefaultTypeLevelLongValues
+            with l0.DefaultTypeLevelFloatValues
+            with l0.DefaultTypeLevelDoubleValues
+            with l0.DefaultIntegerValuesComparison
+            with l0.TypeLevelFieldAccessInstructions
+            with l0.TypeLevelInvokeInstructions
+            with PredefinedClassHierarchy {
+        type Id = I
+    }
 
-    class BasicDomain2[+I](val identifier: I)
-        extends Domain[I]
-        with Configuration
-        with IgnoreMethodResults
-        with IgnoreSynchronization
-        with l0.TypeLevelInvokeInstructions
-        with l0.TypeLevelFieldAccessInstructions
-        with l0.DefaultIntegerValuesComparison
-        with PredefinedClassHierarchy
-        with DefaultDomainValueBinding[I]
-        with l0.DefaultTypeLevelDoubleValues[I]
-        with l0.DefaultTypeLevelIntegerValues[I]
-        with l0.DefaultReferenceValuesBinding[I]
-        with l0.DefaultTypeLevelFloatValues[I]
-        with l0.DefaultTypeLevelLongValues[I]
+    class BasicDomain2[I](val id: I)
+            extends Domain
+            with Configuration
+            with IgnoreMethodResults
+            with IgnoreSynchronization
+            with l0.TypeLevelInvokeInstructions
+            with l0.TypeLevelFieldAccessInstructions
+            with l0.DefaultIntegerValuesComparison
+            with PredefinedClassHierarchy
+            with DefaultDomainValueBinding
+            with l0.DefaultTypeLevelDoubleValues
+            with l0.DefaultTypeLevelIntegerValues
+            with l0.DefaultReferenceValuesBinding
+            with l0.DefaultTypeLevelFloatValues
+            with l0.DefaultTypeLevelLongValues {
+        type Id = I
+    }
 
-    class BasicDomain3[+I](val identifier: I)
-        extends Domain[I]
-        with l0.DefaultReferenceValuesBinding[I]
-        with l0.DefaultTypeLevelIntegerValues[I]
-        with l0.DefaultIntegerValuesComparison
-        with l0.DefaultTypeLevelFloatValues[I]
-        with l0.DefaultTypeLevelLongValues[I]
-        with l0.DefaultTypeLevelDoubleValues[I]
-        with l0.TypeLevelInvokeInstructions
-        with l0.TypeLevelFieldAccessInstructions
-        with PredefinedClassHierarchy
-        with IgnoreSynchronization
-        with IgnoreMethodResults
-        with Configuration
+    class BasicDomain3[I](val id: I)
+            extends Domain
+            with l0.DefaultReferenceValuesBinding
+            with l0.DefaultTypeLevelIntegerValues
+            with l0.DefaultIntegerValuesComparison
+            with l0.DefaultTypeLevelFloatValues
+            with l0.DefaultTypeLevelLongValues
+            with l0.DefaultTypeLevelDoubleValues
+            with l0.TypeLevelInvokeInstructions
+            with l0.TypeLevelFieldAccessInstructions
+            with PredefinedClassHierarchy
+            with IgnoreSynchronization
+            with IgnoreMethodResults
+            with Configuration {
+        type Id = I
+    }
 
     behavior of "BATAI when changing the mixin composition order of \"independent\" domains"
 
@@ -129,9 +135,9 @@ class BaseConfigurableDomainTest extends FlatSpec with Matchers {
             for (method ← classFile.methods.par)
                 if (method.body.isDefined) {
                     // We want a comparison at the conceptual level that is why we use stateToString
-                    val r1 = BaseAI(classFile, method, new BasicDomain1((classFile,method))).stateToString
-                    val r2 = BaseAI(classFile, method, new BasicDomain2((classFile,method))).stateToString
-                    val r3 = BaseAI(classFile, method, new BasicDomain3((classFile,method))).stateToString
+                    val r1 = BaseAI(classFile, method, new BasicDomain1((classFile, method))).stateToString
+                    val r2 = BaseAI(classFile, method, new BasicDomain2((classFile, method))).stateToString
+                    val r3 = BaseAI(classFile, method, new BasicDomain3((classFile, method))).stateToString
 
                     def doFail(r1: String, r2: String): Unit = {
                         val l1l2s = r1.split('\n') zip r2.split('\n')
@@ -162,9 +168,9 @@ class BaseConfigurableDomainTest extends FlatSpec with Matchers {
         ignore should ("compute the same results independent of the mixin order of the domains for "+
             file.getName) in {
                 ClassFiles(
-                        zipFile, 
-                        processClassFile _,
-                        ClassFileReader.defaultExceptionHandler)
+                    zipFile,
+                    processClassFile _,
+                    ClassFileReader.defaultExceptionHandler)
             }
     }
 }

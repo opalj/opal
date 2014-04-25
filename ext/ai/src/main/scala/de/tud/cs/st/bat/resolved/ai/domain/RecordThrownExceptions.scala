@@ -47,7 +47,7 @@ import language.implicitConversions
  *
  * @author Michael Eichberg
  */
-trait RecordThrownExceptions[+I] extends Domain[I] {
+trait RecordThrownExceptions extends Domain {
 
     /**
      * This type determines in which way thrown exceptions are recorded.

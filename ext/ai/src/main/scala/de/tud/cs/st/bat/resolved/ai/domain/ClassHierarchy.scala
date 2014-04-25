@@ -41,7 +41,7 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  *
  * @author Michael Eichberg
  */
-trait ClassHierarchy { this: SomeDomain ⇒
+trait ClassHierarchy { this: Domain ⇒
 
     /**
      * This project's class hierarchy. Usually, just a redirect to the `Project`'s

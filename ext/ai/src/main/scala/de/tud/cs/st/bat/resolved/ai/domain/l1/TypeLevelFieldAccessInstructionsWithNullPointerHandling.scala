@@ -47,7 +47,7 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
-trait TypeLevelFieldAccessInstructionsWithNullPointerHandling { this: SomeDomain ⇒
+trait TypeLevelFieldAccessInstructionsWithNullPointerHandling { this: Domain ⇒
 
     def getfield(
         pc: PC,

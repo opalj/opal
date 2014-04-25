@@ -40,7 +40,7 @@ import de.tud.cs.st.util.Answer
  *
  * @author Michael Eichberg
  */
-trait IntegerValuesComparison { this: SomeDomain ⇒
+trait IntegerValuesComparison { this: Domain ⇒
 
     /**
      * Tests if the given value, which has to have computational type integer,

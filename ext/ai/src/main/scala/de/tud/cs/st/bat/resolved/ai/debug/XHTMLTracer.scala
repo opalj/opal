@@ -41,8 +41,8 @@ import debug.XHTML._
 case class FlowEntity(
         val pc: PC,
         val instruction: Instruction,
-        val operands: List[(_ <: Domain[Any])#Value],
-        val locals: Array[_ <: Domain[Any]#Value],
+        val operands: List[_ <: Domain#Value],
+        val locals: Array[_ <: Domain#Value],
         val properties: Option[String]) {
     val flowId = FlowEntity.nextFlowId
 }
@@ -243,7 +243,7 @@ trait XHTMLTracer extends AITracer {
 
     def continuingInterpretation(
         code: Code,
-        domain: SomeDomain)(
+        domain: Domain)(
             initialWorkList: List[PC],
             alreadyEvaluated: List[PC],
             operandsArray: Array[List[domain.DomainValue]],
@@ -254,7 +254,7 @@ trait XHTMLTracer extends AITracer {
     private[this] var continuingWithBranch = true
 
     def flow(
-        domain: SomeDomain)(
+        domain: Domain)(
             currentPC: PC,
             successorPC: PC,
             isExceptionalControlFlow: Boolean) = {
@@ -262,7 +262,7 @@ trait XHTMLTracer extends AITracer {
     }
 
     def rescheduled(
-        domain: SomeDomain)(
+        domain: Domain)(
             sourcePC: PC,
             targetPC: PC,
             isExceptionalControlFlow: Boolean): Unit = {
@@ -270,7 +270,7 @@ trait XHTMLTracer extends AITracer {
     }
 
     def instructionEvalution(
-        domain: SomeDomain)(
+        domain: Domain)(
             pc: PC,
             instruction: Instruction,
             operands: List[domain.DomainValue],
@@ -291,7 +291,7 @@ trait XHTMLTracer extends AITracer {
     }
 
     override def join(
-        domain: SomeDomain)(
+        domain: Domain)(
             pc: PC,
             thisOperands: domain.Operands,
             thisLocals: domain.Locals,
@@ -302,16 +302,16 @@ trait XHTMLTracer extends AITracer {
     }
 
     override def abruptMethodExecution(
-        domain: SomeDomain)(
+        domain: Domain)(
             pc: Int,
             exception: domain.DomainValue): Unit = {
         /*ignored*/
     }
 
-    override def jumpToSubroutine(domain: SomeDomain)(pc: PC): Unit = { /* ignored */ }
+    override def jumpToSubroutine(domain: Domain)(pc: PC): Unit = { /* ignored */ }
 
     override def returnFromSubroutine(
-        domain: SomeDomain)(
+        domain: Domain)(
             pc: PC,
             returnAddress: PC,
             subroutineInstructions: List[PC]): Unit = { /*ignored*/ }
@@ -320,7 +320,7 @@ trait XHTMLTracer extends AITracer {
      * Called when a ret instruction is encountered.
      */
     override def ret(
-        domain: SomeDomain)(
+        domain: Domain)(
             pc: PC,
             returnAddress: PC,
             oldWorklist: List[PC],

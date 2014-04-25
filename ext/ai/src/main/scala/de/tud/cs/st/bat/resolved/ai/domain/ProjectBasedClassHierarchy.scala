@@ -37,7 +37,7 @@ package domain
  *
  * @author Michael Eichberg
  */
-trait ProjectBasedClassHierarchy[Source] extends ClassHierarchy { this: SomeDomain ⇒
+trait ProjectBasedClassHierarchy[Source] extends ClassHierarchy { this: Domain ⇒
 
     import analyses.{ ClassHierarchy, Project }
 

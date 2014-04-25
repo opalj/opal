@@ -39,7 +39,7 @@ import de.tud.cs.st.util.{ Yes, No, Unknown }
  *
  * @author Michael Eichberg
  */
-trait IgnoreSynchronization { this: SomeDomain ⇒
+trait IgnoreSynchronization { this: Domain ⇒
 
     protected[this] def sideEffectOnlyOrNullPointerException(
         pc: PC,

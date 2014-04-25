@@ -39,7 +39,7 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  *
  * @author Michael Eichberg
  */
-trait TypeLevelFloatValues[+I] extends Domain[I] {
+trait TypeLevelFloatValues extends Domain {
 
     // -----------------------------------------------------------------------------------
     //

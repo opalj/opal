@@ -44,7 +44,7 @@ package domain
 trait IgnoreMethodResults
         extends IgnoreVoidReturns
         with IgnoreThrownExceptions
-        with IgnoreReturnedValues { this: SomeDomain ⇒
+        with IgnoreReturnedValues { this: Domain ⇒
 
 }
 

@@ -40,7 +40,7 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  *
  * @author Michael Eichberg
  */
-trait TypeLevelDoubleValues[+I] extends Domain[I] {
+trait TypeLevelDoubleValues extends Domain {
 
     // -----------------------------------------------------------------------------------
     //

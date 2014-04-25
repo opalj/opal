@@ -46,7 +46,7 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  *
  * @author Michael Eichberg
  */
-trait PropertyTracing[+I] extends Domain[I] { domain ⇒
+trait PropertyTracing extends Domain { domain ⇒
 
     trait Property {
         def merge(otherProperty: DomainProperty): Update[DomainProperty]

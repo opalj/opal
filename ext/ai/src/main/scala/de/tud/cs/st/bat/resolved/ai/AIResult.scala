@@ -48,7 +48,7 @@ object AIResultBuilder {
      */
     def aborted(
         theCode: Code,
-        theDomain: SomeDomain)(
+        theDomain: Domain)(
             theWorklist: List[Int],
             theEvaluated: List[Int],
             theOperandsArray: Array[List[theDomain.DomainValue]],
@@ -77,7 +77,7 @@ object AIResultBuilder {
      */
     def completed(
         theCode: Code,
-        theDomain: SomeDomain)(
+        theDomain: Domain)(
             theEvaluated: List[Int],
             theOperandsArray: Array[List[theDomain.DomainValue]],
             theLocalsArray: Array[Array[theDomain.DomainValue]]): AICompleted { val domain: theDomain.type } = {
@@ -104,7 +104,7 @@ object AIResultBuilder {
  */
 sealed abstract class AIResult {
     val code: Code
-    val domain: SomeDomain
+    val domain: Domain
     val worklist: List[Int]
     val evaluated: List[Int]
     val operandsArray: Array[List[domain.DomainValue]]

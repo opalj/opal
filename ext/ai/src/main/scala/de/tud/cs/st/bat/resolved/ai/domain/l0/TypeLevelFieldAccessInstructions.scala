@@ -49,7 +49,7 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
-trait TypeLevelFieldAccessInstructions { this: SomeDomain ⇒
+trait TypeLevelFieldAccessInstructions { this: Domain ⇒
 
     override def getfield(
         pc: PC,

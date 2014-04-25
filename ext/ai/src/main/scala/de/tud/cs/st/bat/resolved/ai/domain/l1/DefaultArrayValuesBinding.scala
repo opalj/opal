@@ -44,9 +44,9 @@ import scala.collection.SortedSet
 /**
  * @author Michael Eichberg
  */
-trait DefaultArrayValuesBinding[+I]
-        extends l1.DefaultReferenceValuesBinding[I]
-        with ArrayValues[I] {
+trait DefaultArrayValuesBinding
+        extends l1.DefaultReferenceValuesBinding
+        with ArrayValues {
     domain: Configuration with IntegerValuesComparison with IntegerValuesProvider with ClassHierarchy with PerInstructionPostProcessing ⇒
 
     //

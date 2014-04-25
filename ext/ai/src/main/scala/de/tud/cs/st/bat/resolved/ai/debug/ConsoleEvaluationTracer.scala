@@ -57,7 +57,7 @@ trait ConsoleEvaluationTracer extends AITracer {
     def reset() { indent = 0 }
 
     override def instructionEvalution(
-        domain: SomeDomain)(
+        domain: Domain)(
             pc: PC,
             instruction: Instruction,
             operands: List[domain.DomainValue],
@@ -67,26 +67,26 @@ trait ConsoleEvaluationTracer extends AITracer {
 
     override def continuingInterpretation(
         code: Code,
-        domain: SomeDomain)(
+        domain: Domain)(
             initialWorkList: List[PC],
             alreadyEvaluated: List[PC],
             operandsArray: Array[List[domain.DomainValue]],
             localsArray: Array[Array[domain.DomainValue]]) { /*EMPTY*/ }
 
     override def rescheduled(
-        domain: SomeDomain)(
+        domain: Domain)(
             sourcePC: PC,
             targetPC: PC,
             isExceptionalControlFlow: Boolean): Unit = { /*EMPTY*/ }
 
     override def flow(
-        domain: SomeDomain)(
+        domain: Domain)(
             currentPC: PC,
             targetPC: PC,
             isExceptionalControlFlow: Boolean): Unit = { /*EMPTY*/ }
 
     override def join(
-        domain: SomeDomain)(
+        domain: Domain)(
             pc: PC,
             thisOperands: domain.Operands,
             thisLocals: domain.Locals,
@@ -95,11 +95,11 @@ trait ConsoleEvaluationTracer extends AITracer {
             result: Update[(domain.Operands, domain.Locals)]): Unit = { /*EMPTY*/ }
 
     override def abruptMethodExecution(
-        domain: SomeDomain)(
+        domain: Domain)(
             pc: Int,
             exception: domain.DomainValue): Unit = { /*EMPTY*/ }
 
-    override def jumpToSubroutine(domain: SomeDomain)(pc: PC): Unit = {
+    override def jumpToSubroutine(domain: Domain)(pc: PC): Unit = {
         println
         printIndent
         print(Console.BOLD+"↳\t︎"+Console.RESET)
@@ -107,7 +107,7 @@ trait ConsoleEvaluationTracer extends AITracer {
     }
 
     override def returnFromSubroutine(
-        domain: SomeDomain)(
+        domain: Domain)(
             pc: PC,
             returnAddress: PC,
             subroutineInstructions: List[PC]): Unit = {
@@ -120,7 +120,7 @@ trait ConsoleEvaluationTracer extends AITracer {
      * Called when a ret instruction is encountered.
      */
     override def ret(
-        domain: SomeDomain)(
+        domain: Domain)(
             pc: PC,
             returnAddress: PC,
             oldWorklist: List[PC],

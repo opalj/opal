@@ -984,9 +984,9 @@ class MethodsPlainTest
         val method = classFile.methods.find(_.name == "create").get
         val result = BaseAI(classFile, method, domain)
 
-         domain.isValueSubtypeOf(
-                domain.returnedValue.get,
-                ObjectType.Object) should be(Yes)
+        domain.isValueSubtypeOf(
+            domain.returnedValue.get,
+            ObjectType.Object) should be(Yes)
     }
 
     it should "be able to analyze a method that creates an object and which calls multiple methods of the new object" in {
@@ -1000,10 +1000,14 @@ class MethodsPlainTest
 
 private object MethodsPlainTest {
 
-    class RecordingDomain extends domain.l0.TypeLevelDomain[String]
+    class RecordingDomain
+            extends domain.l0.TypeLevelDomain
             with IgnoreSynchronization
             with IgnoreThrownExceptions {
-        def identifier = "SimpleRecordingDomain"
+
+        type Id = String
+        def id = "SimpleRecordingDomain"
+
         var returnedValue: Option[DomainValue] = _
         override def areturn(pc: Int, value: DomainValue) { returnedValue = Some(value) }
         override def dreturn(pc: Int, value: DomainValue) { returnedValue = Some(value) }

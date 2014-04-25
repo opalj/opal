@@ -41,7 +41,7 @@ package domain
  *
  * @author Michael Eichberg
  */
-trait RecordLastReturnedValues[+I] extends RecordReturnedValues[I] {
+trait RecordLastReturnedValues extends RecordReturnedValues {
 
     type ReturnedValue = DomainValue
 

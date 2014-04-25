@@ -47,7 +47,7 @@ import scala.collection.Map
  *
  * @author Michael Eichberg
  */
-trait CallGraphDomain[I] extends Domain[I] {
+trait CallGraphDomain extends Domain {
 
     // THE CONTEXT - SET DURING THE CREATION OF THE DOMAIN
 

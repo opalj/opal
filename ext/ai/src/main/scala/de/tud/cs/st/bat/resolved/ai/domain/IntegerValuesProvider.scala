@@ -44,7 +44,7 @@ import de.tud.cs.st.util.Answer
  *
  * @author Michael Eichberg
  */
-trait IntegerValuesProvider { this: SomeDomain ⇒
+trait IntegerValuesProvider { this: Domain ⇒
 
     /**
      * If the given value encapsulates a precise integer value then the function

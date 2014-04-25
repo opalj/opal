@@ -41,7 +41,7 @@ import de.tud.cs.st.collection.immutable.UIDSet
  *
  * @author Michael Eichberg
  */
-trait DefaultReferenceValuesBinding[+I] extends DefaultTypeLevelReferenceValues[I] {
+trait DefaultReferenceValuesBinding extends DefaultTypeLevelReferenceValues {
     domain: Configuration with IntegerValuesComparison with ClassHierarchy ⇒
 
     type DomainReferenceValue = ReferenceValue

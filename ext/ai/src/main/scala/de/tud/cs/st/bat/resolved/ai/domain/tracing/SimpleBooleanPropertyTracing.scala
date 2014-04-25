@@ -42,9 +42,9 @@ import de.tud.cs.st.bat.resolved.instructions.ReturnInstruction
  *
  * @author Michael Eichberg
  */
-trait SimpleBooleanPropertyTracing[+I]
-        extends PropertyTracing[I]
-        with RecordReturnFromMethodInstructions[I] { domain ⇒
+trait SimpleBooleanPropertyTracing
+        extends PropertyTracing
+        with RecordReturnFromMethodInstructions { domain ⇒
 
     def code: Code
 

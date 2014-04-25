@@ -53,7 +53,7 @@ import de.tud.cs.st.util.No
  * @author Michael Eichberg (fixes for multi-parameter Class.forName(...) calls)
  * @author Arne Lottmann
  */
-trait ClassValues[+I] extends StringValues[I] {
+trait ClassValues extends StringValues {
     domain: Configuration with IntegerValuesComparison with ClassHierarchy ⇒
 
     type DomainClassValue <: ClassValue with DomainObjectValue
@@ -84,7 +84,7 @@ trait ClassValues[+I] extends StringValues[I] {
             }
         }
 
-        override def adapt[TDI >: I](target: Domain[TDI], pc: Int): target.DomainValue =
+        override def adapt(target: Domain, pc: Int): target.DomainValue =
             target.ClassValue(pc, this.value)
 
         override def equals(other: Any): Boolean =

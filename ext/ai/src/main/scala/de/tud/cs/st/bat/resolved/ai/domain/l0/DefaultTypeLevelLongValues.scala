@@ -42,9 +42,9 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
  *
  * @author Michael Eichberg
  */
-trait DefaultTypeLevelLongValues[+I]
-        extends DefaultDomainValueBinding[I]
-        with TypeLevelLongValues[I] {
+trait DefaultTypeLevelLongValues
+        extends DefaultDomainValueBinding
+        with TypeLevelLongValues {
 
     case object ALongValue extends super.LongValue {
 
@@ -52,13 +52,13 @@ trait DefaultTypeLevelLongValues[+I]
 
         override def summarize(pc: PC): DomainValue = this
 
-        override def adapt[ThatI >: I](
-            targetDomain: Domain[ThatI],
-            pc: PC): targetDomain.DomainValue =
-            targetDomain match {
-                case thatDomain: DefaultTypeLevelLongValues[ThatI] ⇒
-                    thatDomain.ALongValue.asInstanceOf[targetDomain.DomainValue]
-                case _ ⇒ super.adapt(targetDomain, pc)
+        override def adapt(
+            target: Domain,
+            pc: PC): target.DomainValue =
+            target match {
+                case thatDomain: DefaultTypeLevelLongValues ⇒
+                    thatDomain.ALongValue.asInstanceOf[target.DomainValue]
+                case _ ⇒ super.adapt(target, pc)
             }
     }
 

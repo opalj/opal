@@ -39,7 +39,7 @@ package ai
  * @author Michael Eichberg
  */
 
-class BaseAI extends AI[SomeDomain] {
+class BaseAI extends AI[Domain] {
 
     override def isInterrupted = Thread.interrupted()
 

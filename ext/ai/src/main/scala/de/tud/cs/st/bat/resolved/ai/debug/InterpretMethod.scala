@@ -43,7 +43,7 @@ import domain.l0.BaseConfigurableDomain
  */
 object InterpretMethod {
 
-    private object AI extends AI[SomeDomain] {
+    private object AI extends AI[Domain] {
 
         override def isInterrupted = Thread.interrupted()
 
@@ -83,7 +83,7 @@ object InterpretMethod {
         val methodName = args(2)
         val domainClass = {
             if (args.length > 3)
-                Class.forName(args(3).substring(8)).asInstanceOf[Class[_ <: SomeDomain]]
+                Class.forName(args(3).substring(8)).asInstanceOf[Class[_ <: Domain]]
             else // default domain
                 classOf[BaseConfigurableDomain[_]]
         }
@@ -91,7 +91,7 @@ object InterpretMethod {
         def createDomain[Source: reflect.ClassTag](
             project: SomeProject,
             classFile: ClassFile,
-            method: Method): SomeDomain = {
+            method: Method): Domain = {
 
             scala.util.control.Exception.ignoring(classOf[NoSuchMethodException]) {
                 val constructor = domainClass.getConstructor(classOf[Object])
