@@ -114,26 +114,20 @@ object ProjectIndex {
 
     def apply(project: SomeProject): ProjectIndex = {
 
-        import scala.collection.mutable.HashMap
+        import scala.collection.mutable.AnyRefMap
 
         import scala.concurrent.{ Future, Await, ExecutionContext }
         import scala.concurrent.duration.Duration
         import ExecutionContext.Implicits.global
 
-        def InitialHashMap[K, V](estimatedSize: Int): HashMap[K, V] = {
-            new HashMap[K, V] {
-                override protected def initialSize: Int = estimatedSize
-            }
-        }
-
-        val fieldsFuture: Future[HashMap[String, HashMap[FieldType, List[Field]]]] = Future {
-            val fields = InitialHashMap[String, HashMap[FieldType, List[Field]]](project.fields.size * 2 / 3)
+        val fieldsFuture: Future[AnyRefMap[String, AnyRefMap[FieldType, List[Field]]]] = Future {
+            val fields = new AnyRefMap[String, AnyRefMap[FieldType, List[Field]]](project.fields.size * 2 / 3)
             for (field ← project.fields) {
                 val fieldName = field.name
                 val fieldType = field.fieldType
                 fields.get(fieldName) match {
                     case None ⇒
-                        val fieldTypeToField = InitialHashMap[FieldType, List[Field]](4)
+                        val fieldTypeToField = new AnyRefMap[FieldType, List[Field]](4)
                         fieldTypeToField.update(fieldType, List(field))
                         fields.update(fieldName, fieldTypeToField)
                     case Some(fieldTypeToField) ⇒
@@ -148,14 +142,14 @@ object ProjectIndex {
             fields
         }
 
-        val methods: HashMap[String, HashMap[MethodDescriptor, List[Method]]] = {
-            val methods = InitialHashMap[String, HashMap[MethodDescriptor, List[Method]]](project.methods.size * 2 / 3)
+        val methods: AnyRefMap[String, AnyRefMap[MethodDescriptor, List[Method]]] = {
+            val methods = new AnyRefMap[String, AnyRefMap[MethodDescriptor, List[Method]]](project.methods.size * 2 / 3)
             for (method ← project.methods) {
                 val methodName = method.name
                 val methodDescriptor = method.descriptor
                 methods.get(methodName) match {
                     case None ⇒
-                        val descriptorToField = InitialHashMap[MethodDescriptor, List[Method]](4)
+                        val descriptorToField = new AnyRefMap[MethodDescriptor, List[Method]](4)
                         descriptorToField.update(methodDescriptor, List(method))
                         methods.update(methodName, descriptorToField)
                     case Some(descriptorToField) ⇒

@@ -78,11 +78,11 @@ class CallGraphBuilder(val project: SomeProject) {
         import concurrent.duration._
         import ExecutionContext.Implicits.global
 
-        import scala.collection.mutable.HashMap
+        import scala.collection.mutable.{OpenHashMap, AnyRefMap}
 
-        val calledByMapFuture: Future[HashMap[Method, HashMap[Method, PCs]]] = Future {
-            val calledByMap: HashMap[Method, HashMap[Method, PCs]] =
-                new HashMap[Method, HashMap[Method, PCs]]() { override def initialSize = project.methodsCount }
+        val calledByMapFuture: Future[AnyRefMap[Method, AnyRefMap[Method, PCs]]] = Future {
+            val calledByMap: AnyRefMap[Method, AnyRefMap[Method, PCs]] =
+                new AnyRefMap[Method, AnyRefMap[Method, PCs]](project.methodsCount)
             for {
                 (caller, edges) ← allCallEdges
                 (pc, callees) ← edges
@@ -91,7 +91,7 @@ class CallGraphBuilder(val project: SomeProject) {
                 val callers =
                     calledByMap.getOrElseUpdate(
                         callee,
-                        new HashMap[Method, PCs] { override def initialSize = 8 }
+                        new AnyRefMap[Method, PCs](8)
                     )
                 callers.get(caller) match {
                     case Some(pcs) ⇒
@@ -121,10 +121,9 @@ class CallGraphBuilder(val project: SomeProject) {
             calledByMap
         }
 
-        val callsMap: HashMap[Method, HashMap[PC, Iterable[Method]]] =
-            new HashMap[Method, HashMap[PC, Iterable[Method]]] {
-                override def initialSize = project.methodsCount
-            }
+        val callsMap: AnyRefMap[Method, OpenHashMap[PC, Iterable[Method]]] =
+            new AnyRefMap[Method, OpenHashMap[PC, Iterable[Method]]](project.methodsCount)
+
         for {
             (caller, edges) ← allCallEdges
             (pc, callees) ← edges
@@ -133,7 +132,7 @@ class CallGraphBuilder(val project: SomeProject) {
             val callSite =
                 callsMap.getOrElseUpdate(
                     caller,
-                    new HashMap[PC, Iterable[Method]] { override def initialSize = 8 }
+                    new OpenHashMap[PC, Iterable[Method]](8)
                 )
             if (callSite.contains(pc)) {
                 callSite.update(pc, callSite(pc) ++ callees)

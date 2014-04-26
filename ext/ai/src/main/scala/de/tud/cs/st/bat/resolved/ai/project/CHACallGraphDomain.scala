@@ -69,7 +69,7 @@ trait CHACallGraphDomain
     // IMPLEMENTATION
     //
 
-    import scala.collection.mutable.HashMap
+    import scala.collection.mutable.OpenHashMap
 
     private[this] var unresolvedMethodCalls = List.empty[UnresolvedMethodCall]
 
@@ -85,7 +85,7 @@ trait CHACallGraphDomain
 
     def allUnresolvedMethodCalls: List[UnresolvedMethodCall] = unresolvedMethodCalls
 
-    private[this] val callEdgesMap = HashMap.empty[PC, Iterable[Method]]
+    private[this] val callEdgesMap = OpenHashMap.empty[PC, Iterable[Method]]
 
     @inline final private[this] def addCallEdge(
         pc: PC,
