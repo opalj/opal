@@ -93,7 +93,7 @@ class CallGraphCache[Contour, Value] {
     //        if (cachedValue != null)
     //            cachedValue
     //        else {
-    //            // This is expected provide a better trade-off then to always synchronize
+    //            // This is expected provide a better trade-off than to always synchronize
     //            // the evaluation of `f` w.r.t. to ObjectType based cache.
     //            val value = f
     //            cachedResults.put(contour, value)
