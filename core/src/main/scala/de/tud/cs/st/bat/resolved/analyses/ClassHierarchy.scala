@@ -38,7 +38,6 @@ import util.{ Answer, Yes, No, Unknown }
 import annotation.tailrec
 import scala.collection.{ Map, Set, SeqView }
 import scala.collection.mutable.HashSet
-import scala.collection.mutable.HashMap
 
 import ObjectType.Object
 
@@ -956,6 +955,8 @@ class ClassHierarchy private (
      * graph can be a multi-graph if the class hierarchy contains holes.
      */
     def toGraph(): Node = new Node {
+		
+		import scala.collection.mutable.HashMap
 
         private val nodes: Map[ObjectType, Node] = {
             val nodes = HashMap.empty[ObjectType, Node]
