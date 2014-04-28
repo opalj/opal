@@ -59,7 +59,8 @@ class DependencyExtractorTest extends FunSuite {
         var dependencies: Map[(String, String, DependencyType), Int] =
             DependencyExtractorFixture.extractDependencies(
                 "ext/dependencies",
-                "classfiles/Dependencies.jar")
+                "classfiles/Dependencies.jar",
+                (dp: DependencyProcessor) ⇒ new DependencyExtractor(dp))
 
         def assertDependency(src: String, trgt: String, dType: DependencyType): Unit = {
             val key = (src, trgt, dType)

@@ -78,11 +78,14 @@ object DependencyExtractorFixture extends FunSuite {
         }
     }
 
-    def extractDependencies(folder: String, jarFile: String): Map[(String, String, DependencyType), Int] = {
+    def extractDependencies(
+            folder: String, 
+            jarFile: String,
+            createDependencyExtractor: (DependencyProcessor) => DependencyExtractor): Map[(String, String, DependencyType), Int] = {
         var dependencies: Map[(String, String, DependencyType), Int] = Map.empty
 
         val dependencyExtractor =
-            new DependencyExtractor(
+            createDependencyExtractor(
                 new DefaultDependencyProcessor() {
 
                     override def processDependency(
