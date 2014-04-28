@@ -32,7 +32,7 @@ package resolved
 package dependency
 package checking
 
-import reader.Java7Framework
+import reader.Java8Framework.ClassFiles
 import analyses.{ ClassHierarchy, Project }
 
 import java.net.URL
@@ -422,7 +422,7 @@ class Specification
         if (!file.isDirectory)
             throw new SpecificationError("The specified directory is not a directory: "+directoryName+".")
 
-        Java7Framework.ClassFiles(file)
+        ClassFiles(file)
     }
 
 }
