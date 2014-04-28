@@ -50,15 +50,15 @@ case class ClassFile(
 
     private[this] implicit val cp = constant_pool
 
-		/**
-		 * The fully qualified name of the class in Java notation (i.e., using dots
-		 * to seperate packages.)
-		 */
+    /**
+     * The fully qualified name of the class in Java notation (i.e., using dots
+     * to seperate packages.)
+     */
     def fqn = cp(this_class).toString.replace('/', '.')
 
     /**
-		 * Converts the constant pool to (x)HTML5.
-		 */
+     * Converts the constant pool to (x)HTML5.
+     */
     def cpToXHTML = {
         for { cpIndex ← (0 until constant_pool.length) if cp(cpIndex) != null } yield {
             <li value={ cpIndex.toString }>{ cp(cpIndex).toString() }</li>

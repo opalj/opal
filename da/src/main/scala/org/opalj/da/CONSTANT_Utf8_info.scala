@@ -37,8 +37,8 @@ package da
  *
  * @author Michael Eichberg
  */
-
-case class CONSTANT_Utf8_info(val value: String) extends Constant_Pool_Entry {
+case class CONSTANT_Utf8_info(
+        value: String) extends Constant_Pool_Entry {
 
     override def Constant_Type_Value = de.tud.cs.st.bat.ConstantPoolTags.CONSTANT_Utf8
 

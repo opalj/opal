@@ -46,8 +46,8 @@ trait Attribute {
 
     def attribute_name_index: Constant_Pool_Index
 
-		/**
-		 * The number of bytes to store the attribute.
-		 */
+    /**
+     * The number of bytes to store the attribute.
+     */
     def attribute_length: Int
 }

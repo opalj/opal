@@ -37,7 +37,6 @@ package da
  *
  * @author Michael Eichberg
  */
-
 case class CONSTANT_String_info(
         string_index: Constant_Pool_Index) extends Constant_Pool_Entry {
 

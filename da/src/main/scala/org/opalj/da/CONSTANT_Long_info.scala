@@ -33,7 +33,8 @@ package da
  *
  * @author Michael Eichberg
  */
-case class CONSTANT_Long_info(val value: Long) extends Constant_Pool_Entry {
+case class CONSTANT_Long_info(
+        value: Long) extends Constant_Pool_Entry {
 
     override def Constant_Type_Value =
         de.tud.cs.st.bat.ConstantPoolTags.CONSTANT_Long

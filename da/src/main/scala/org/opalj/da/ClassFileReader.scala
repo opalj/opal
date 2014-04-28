@@ -54,22 +54,6 @@ object ClassFileReader
 
     type Method_Info = org.opalj.da.Method_Info
     val Method_InfoManifest: ClassTag[Method_Info] = implicitly
-		
-    /*
-	type ElementValue = org.opalj.bat.native.ElementValue
-
-	val VerificationTypeInfoManifest : ClassTag[org.opalj.bat.native.reader.BasicJava6Framework.VerificationTypeInfo] = implicitly
-	val StackMapFrameManifest : ClassTag[org.opalj.bat.native.reader.BasicJava6Framework.StackMapFrame]= implicitly
-	val ElementValuePairManifest : ClassTag[org.opalj.bat.native.reader.BasicJava6Framework.ElementValuePair]= implicitly
-	val ElementValueManifest : ClassTag[org.opalj.bat.native.reader.BasicJava6Framework.ElementValue]= implicitly
-	val AnnotationManifest : ClassTag[org.opalj.bat.native.reader.BasicJava6Framework.Annotation]= implicitly
-	val ExceptionTableEntryManifest : ClassTag[org.opalj.bat.native.reader.BasicJava6Framework.ExceptionTableEntry]= implicitly
-	val LocalVariableTypeTableEntryManifest : ClassTag[org.opalj.bat.native.reader.BasicJava6Framework.LocalVariableTypeTableEntry]= implicitly
-	val LocalVariableTableEntryManifest : ClassTag[org.opalj.bat.native.reader.BasicJava6Framework.LocalVariableTableEntry]= implicitly
-	val LineNumberTableEntryManifest : ClassTag[org.opalj.bat.native.reader.BasicJava6Framework.LineNumberTableEntry]= implicitly
-	val InnerClassesEntryManifest : ClassTag[org.opalj.bat.native.reader.BasicJava6Framework.InnerClassesEntry]= implicitly
-	val Exceptions_attributeManifest : ClassTag[org.opalj.bat.native.reader.BasicJava6Framework.Exceptions_attribute]= implicitly
-	*/
 
     def ClassFile(
         cp: Constant_Pool,
@@ -94,6 +78,22 @@ object ClassFileReader
         new Method_Info(
             accessFlags, name_index, descriptor_index, attributes
         )
+
+    /*
+    type ElementValue = org.opalj.bat.native.ElementValue
+
+    val VerificationTypeInfoManifest : ClassTag[org.opalj.bat.native.reader.BasicJava6Framework.VerificationTypeInfo] = implicitly
+    val StackMapFrameManifest : ClassTag[org.opalj.bat.native.reader.BasicJava6Framework.StackMapFrame]= implicitly
+    val ElementValuePairManifest : ClassTag[org.opalj.bat.native.reader.BasicJava6Framework.ElementValuePair]= implicitly
+    val ElementValueManifest : ClassTag[org.opalj.bat.native.reader.BasicJava6Framework.ElementValue]= implicitly
+    val AnnotationManifest : ClassTag[org.opalj.bat.native.reader.BasicJava6Framework.Annotation]= implicitly
+    val ExceptionTableEntryManifest : ClassTag[org.opalj.bat.native.reader.BasicJava6Framework.ExceptionTableEntry]= implicitly
+    val LocalVariableTypeTableEntryManifest : ClassTag[org.opalj.bat.native.reader.BasicJava6Framework.LocalVariableTypeTableEntry]= implicitly
+    val LocalVariableTableEntryManifest : ClassTag[org.opalj.bat.native.reader.BasicJava6Framework.LocalVariableTableEntry]= implicitly
+    val LineNumberTableEntryManifest : ClassTag[org.opalj.bat.native.reader.BasicJava6Framework.LineNumberTableEntry]= implicitly
+    val InnerClassesEntryManifest : ClassTag[org.opalj.bat.native.reader.BasicJava6Framework.InnerClassesEntry]= implicitly
+    val Exceptions_attributeManifest : ClassTag[org.opalj.bat.native.reader.BasicJava6Framework.Exceptions_attribute]= implicitly
+    */
 
     /*	
 	case class Unknown_attribute(

@@ -33,7 +33,6 @@ package da
  *
  * @author Michael Eichberg
  */
-
 case class CONSTANT_Methodref_info(
         class_index: Constant_Pool_Index,
         name_and_type_index: Constant_Pool_Index) extends CONSTANT_Ref {

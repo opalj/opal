@@ -33,7 +33,8 @@ package da
  *
  * @author Michael Eichberg
  */
-case class CONSTANT_Integer_info(val value: Int) extends Constant_Pool_Entry {
+case class CONSTANT_Integer_info(
+        value: Int) extends Constant_Pool_Entry {
 
     override def Constant_Type_Value =
         de.tud.cs.st.bat.ConstantPoolTags.CONSTANT_Integer
