@@ -42,14 +42,15 @@ object DependencyType extends Enumeration {
 
     val EXTENDS = Value("type declaration EXTENDS class type")
     val IMPLEMENTS = Value("type declaration IMPLEMENTS interface type")
-    
+
     val IS_INSTANCE_MEMBER = Value("field or method IS INSTANCE MEMBER of class type")
-    
+
     val IS_CLASS_MEMBER = Value("field/method IS CLASS MEMBER of class/interface/annotation/enum")
-        
+
     val IS_ENCLOSED = Value("class type declaration IS ENCLOSED by method or type")
-    
+
     val IS_OUTER_CLASS = Value("class type declaration IS OUTER CLASS of method or type")
+    val IS_INNER_CLASS = Value("class type declaration IS INNER CLASS of method or type")
 
     // field definition related dependency types
     val IS_OF_TYPE = Value("is of type")

@@ -56,6 +56,11 @@ trait DependencyProcessor {
 
     def processDependency(
         source: VirtualSourceElement,
+        baseType: ArrayType,
+        dType: DependencyType): Unit
+
+    def processDependency(
+        source: VirtualSourceElement,
         baseType: BaseType,
         dType: DependencyType): Unit
 
@@ -66,6 +71,11 @@ class DefaultDependencyProcessor extends DependencyProcessor {
     override def processDependency(
         source: VirtualSourceElement,
         target: VirtualSourceElement,
+        dType: DependencyType): Unit = {}
+
+    override def processDependency(
+        source: VirtualSourceElement,
+        baseType: ArrayType,
         dType: DependencyType): Unit = {}
 
     override def processDependency(

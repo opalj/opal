@@ -32,12 +32,13 @@ package resolved
 package dependency
 
 /**
- * Extracts and stores dependencies.
+ * Stores extracted dependencies.
  *
  * @author Michael Eichberg
  */
 class DependencyStore(
         val dependencies: Map[VirtualSourceElement, Map[VirtualSourceElement, Set[DependencyType]]],
+        val dependenciesOnArrayTypes: Map[VirtualSourceElement, Map[ArrayType, Set[DependencyType]]],
         val dependenciesOnBaseTypes: Map[VirtualSourceElement, Map[BaseType, Set[DependencyType]]]) {
 
 }
@@ -54,6 +55,9 @@ class DependencyCollectingDependencyProcessor extends DependencyProcessor {
 
     private[this] val deps =
         CMap.empty[VirtualSourceElement, CMap[VirtualSourceElement, Set[DependencyType]]]
+
+    private[this] val depsOnArrayTypes =
+        CMap.empty[VirtualSourceElement, CMap[ArrayType, Set[DependencyType]]]
 
     private[this] val depsOnBaseTypes =
         CMap.empty[VirtualSourceElement, CMap[BaseType, Set[DependencyType]]]
@@ -75,6 +79,16 @@ class DependencyCollectingDependencyProcessor extends DependencyProcessor {
                 (source, newTargets)
             }).toMap
 
+        val theDepsOnArrayTypes =
+            (depsOnArrayTypes map { dep ⇒
+                val (source, targets) = dep
+                val newTargets = (targets map { targetKind ⇒
+                    val (target, dTypes) = targetKind
+                    (target, dependencyTypes.getOrElseUpdate(dTypes, dTypes.toSet))
+                }).toMap
+                (source, newTargets)
+            }).toMap
+
         val theDepsOnBaseTypes =
             (depsOnBaseTypes map { dep ⇒
                 val (source, targets) = dep
@@ -85,7 +99,7 @@ class DependencyCollectingDependencyProcessor extends DependencyProcessor {
                 (source, newTargets)
             }).toMap
 
-        new DependencyStore(theDeps, theDepsOnBaseTypes)
+        new DependencyStore(theDeps, theDepsOnArrayTypes, theDepsOnBaseTypes)
     }
 
     def processDependency(
@@ -95,6 +109,18 @@ class DependencyCollectingDependencyProcessor extends DependencyProcessor {
 
         val targetElements = deps.getOrElseUpdate(source, CMap.empty[VirtualSourceElement, Set[DependencyType]])
         val dependencyTypes = targetElements.getOrElseUpdate(target, Set.empty[DependencyType])
+        dependencyTypes.synchronized {
+            dependencyTypes += dType
+        }
+    }
+
+    def processDependency(
+        source: VirtualSourceElement,
+        arrayType: ArrayType,
+        dType: DependencyType): Unit = {
+
+        val arrayTypes = depsOnArrayTypes.getOrElseUpdate(source, CMap.empty[ArrayType, Set[DependencyType]])
+        val dependencyTypes = arrayTypes.getOrElseUpdate(arrayType, Set.empty[DependencyType])
         dependencyTypes.synchronized {
             dependencyTypes += dType
         }
@@ -142,6 +168,13 @@ class ForwardingDependencyProcessor(
         target: VirtualSourceElement,
         dType: DependencyType): Unit = {
         baseDependencyProcessor.processDependency(source, target, dType)
+    }
+
+    def processDependency(
+        source: VirtualSourceElement,
+        arrayType: ArrayType,
+        dType: DependencyType): Unit = {
+        baseDependencyProcessor.processDependency(source, arrayType, dType)
     }
 
     def processDependency(

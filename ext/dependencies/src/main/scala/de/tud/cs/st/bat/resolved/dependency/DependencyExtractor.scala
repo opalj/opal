@@ -113,6 +113,10 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                         vc,
                         innerClassesEntry.innerClassType,
                         IS_OUTER_CLASS)
+                    processDependency(
+                        innerClassesEntry.innerClassType,
+                        vc,
+                        IS_INNER_CLASS)
                 }
 
             case signature: Signature ⇒ processSignature(vc, signature)
@@ -275,7 +279,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
         isInTypeParameters: Boolean = false): Unit = {
 
         /*
-         * Processes the given option of a formal type parameter list.
+         * Processes the given formal type parameter list.
          * Since they are always part of a type parameter, all types that
          * are found will be extracted, i.e. dependencies to them will be
          * added.
@@ -283,8 +287,6 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
          * Calls the outer `processSignature` method for each
          * defined class and interface bound. The `isInTypeParameters`
          * parameter is set to `true`.
-         *
-         * @param formalTypeParameters The formal type parameter list.
          */
         def processFormalTypeParameters(
             formalTypeParameters: Option[List[FormalTypeParameter]]) {
@@ -304,8 +306,6 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
          * Processes the given `SimpleClassTypeSignature in the way
          * that its type arguments will be processed by the `processTypeArguments`
          * method.
-         *
-         * @param simpleClassTypeSignatures The simple class type signature.
          */
         def processSimpleClassTypeSignature(simpleClassTypeSignatures: SimpleClassTypeSignature) {
             processTypeArguments(simpleClassTypeSignatures.typeArguments)
@@ -315,11 +315,11 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
          * Processes the given option of a type argument list.
          * Since they are always part of a type parameter, all types that
          * are found will be extracted, i.e. dependencies to them will be
-         * added.<br/>
+         * added.
          *
-         * Calls the outer <code>processSignature</code> method for each
+         * Calls the outer `processSignature` method for each
          * signature that is part of a proper type argument.The
-         * <code>isInTypeParameters</code> parameter is set to <code>true</code>.
+         * `isInTypeParameters` parameter is set to `true`.
          *
          * @param typeArguments The option of a type argument list that should be processed.
          */
@@ -400,6 +400,9 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
 
             case AnnotationValue(annotation) ⇒
                 process(declaringElement, annotation, USES_DEFAULT_ANNOTATION_VALUE_TYPE)
+
+            case _: StringValue ⇒
+                processDependency(declaringElement, ObjectType.String, USES_DEFAULT_ANNOTATION_VALUE_TYPE)
 
             case btev: BaseTypeElementValue ⇒
                 processDependency(declaringElement, btev.baseType, USES_DEFAULT_BASE_TYPE)
@@ -652,15 +655,27 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
         source: VirtualSourceElement,
         target: Type,
         dType: DependencyType): Unit = {
+
         target match {
             case bt: BaseType ⇒
-                processDependency(source, bt, dType)
+                dependencyProcessor.processDependency(source, bt, dType)
             case at: ArrayType ⇒
-                // Recursive call:
+                dependencyProcessor.processDependency(source, at, dType)
+                // Recursive call for the dependency on the element type, 
+                // which is either an ObjectType or a BaseType.
                 processDependency(source, at.elementType, dType)
             case rt: ObjectType ⇒
-                dependencyProcessor.processDependency(source, VirtualClass(rt), dType)
+                processDependency(source, rt, dType)
+            case vt: VoidType ⇒
+            // nothing to do
         }
+    }
+
+    protected[this] def processDependency(
+        source: VirtualSourceElement,
+        target: ObjectType,
+        dType: DependencyType): Unit = {
+        dependencyProcessor.processDependency(source, VirtualClass(target), dType)
     }
 }
 /**

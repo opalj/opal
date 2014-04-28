@@ -93,10 +93,7 @@ final class ClassFile private (
     final override def asClassFile = this
 
     def asVirtualClass: VirtualClass =
-        VirtualClass(
-            thisType,
-            fields.map(_.asVirtualField(thisType)).toSet,
-            methods.map(_.asVirtualMethod(thisType)).toSet)
+        VirtualClass(thisType)
 
     def id = thisType.id
 

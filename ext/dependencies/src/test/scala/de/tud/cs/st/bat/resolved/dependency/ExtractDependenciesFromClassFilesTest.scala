@@ -40,7 +40,7 @@ import java.util.zip.ZipFile
 
 /**
  * Tests whether all class files contained in the "test/classfiles" directory
- * can be processed by the <code>DependencyExtractor</code> without failure.
+ * can be processed by the `DependencyExtractor` without failure.
  * The results themselves will not be verified in these test cases.
  *
  * @author Thomas Schlosser
@@ -49,6 +49,8 @@ import java.util.zip.ZipFile
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class ExtractDependenciesFromClassFilesTest extends FlatSpec with Matchers {
+
+    val dependencyExtractor = new DependencyExtractor(DefaultDependencyProcessor)
 
     for {
         file ← TestSupport.locateTestResources("classfiles", "ext/dependencies").listFiles()
@@ -59,8 +61,6 @@ class ExtractDependenciesFromClassFilesTest extends FlatSpec with Matchers {
         while (zipentries.hasMoreElements) {
             val zipentry = zipentries.nextElement
             if (!zipentry.isDirectory && zipentry.getName.endsWith(".class")) {
-
-                val dependencyExtractor = new DependencyExtractor(DefaultDependencyProcessor)
 
                 it should ("be able to extract dependencies of class file "+zipentry.getName+" in "+zipfile.getName) in {
                     var classFile = ClassFile(() ⇒ zipfile.getInputStream(zipentry))

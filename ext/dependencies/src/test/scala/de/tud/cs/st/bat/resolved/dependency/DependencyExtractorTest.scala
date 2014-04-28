@@ -31,7 +31,7 @@ package bat
 package resolved
 package dependency
 
-import reader.Java7Framework.ClassFiles
+import reader.Java8Framework.ClassFiles
 import DependencyType._
 
 import org.scalatest.FunSuite
@@ -48,64 +48,87 @@ import java.net.URL
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class DependencyExtractorTest extends FunSuite {
 
+    import DependencyType._
+
+    //
+    // HELPER DEFINITIONS
+    //
+
+    val FIELD_AND_METHOD_SEPARATOR = "."
+
+    def sourceElementName(t: Type): String =
+        if (t.isArrayType) t.asArrayType.elementType.toJava else t.toJava
+
+    def sourceElementName(vClass: VirtualClass): String =
+        sourceElementName(vClass.thisType)
+
+    def sourceElementName(vField: VirtualField): String =
+        sourceElementName(vField.declaringClassType) +
+            FIELD_AND_METHOD_SEPARATOR +
+            vField.name
+
+    def sourceElementName(vMethod: VirtualMethod): String =
+        sourceElementName(vMethod.declaringClassType) +
+            FIELD_AND_METHOD_SEPARATOR +
+            methodDescriptorToString(vMethod.name, vMethod.descriptor)
+
+    def methodDescriptorToString(
+        name: String,
+        descriptor: MethodDescriptor): String = {
+        name+"("+descriptor.parameterTypes.map { sourceElementName(_) }.mkString(", ")+")"
+    }
+
+    def vseToString(vse: VirtualSourceElement): String = {
+        vse match {
+            case vc: VirtualClass  ⇒ sourceElementName(vc)
+            case vm: VirtualMethod ⇒ sourceElementName(vm)
+            case vf: VirtualField  ⇒ sourceElementName(vf)
+        }
+    }
+
+    //
+    // THE TEST CODE
+    //
+
     test("Dependency extraction") {
 
-        var dependencies: List[(String, String, DependencyType)] = Nil
+        var dependencies: Map[(String, String, DependencyType), Int] = Map.empty
 
-        var nodes = new scala.collection.mutable.ArrayBuffer[String](1000)
+        val dependencyExtractor =
+            new DependencyExtractor(
+                new DefaultDependencyProcessor() {
 
-        object SourceElementIDsProvider extends SourceElementIDs {
-
-            val FIELD_AND_METHOD_SEPARATOR = "."
-
-            def sourceElementID(identifier: String): Int = {
-                var index = nodes.indexOf(identifier)
-                if (index == -1) {
-                    nodes += identifier
-                    index = nodes.length - 1
+                    override def processDependency(
+                        source: VirtualSourceElement,
+                        target: VirtualSourceElement,
+                        dType: DependencyType): Unit = {
+                        val key = ((vseToString(source), vseToString(target), dType))
+                        dependencies = dependencies.updated(key,
+                            dependencies.getOrElse(key, 0) + 1
+                        )
+                    }
                 }
-                index
-            }
+            )
 
-            def sourceElementID(t: Type): Int =
-                sourceElementID(getNameOfUnderlyingType(t))
+        def assertDependency(src: String, trgt: String, dType: DependencyType): Unit = {
+            val key = (src, trgt, dType)
 
-            def sourceElementID(definingObjectType: ObjectType, fieldName: String): Int =
-                sourceElementID(getNameOfUnderlyingType(definingObjectType) + FIELD_AND_METHOD_SEPARATOR + fieldName)
-
-            def sourceElementID(definingReferenceType: ReferenceType, methodName: String, methodDescriptor: MethodDescriptor): Int =
-                sourceElementID(getNameOfUnderlyingType(definingReferenceType) + FIELD_AND_METHOD_SEPARATOR + getMethodAsName(methodName, methodDescriptor))
-
-            private def getMethodAsName(methodName: String, methodDescriptor: MethodDescriptor): String = {
-                methodName+"("+methodDescriptor.parameterTypes.map(pT ⇒ getNameOfUnderlyingType(pT)).mkString(", ")+")"
-            }
-
-            private def getNameOfUnderlyingType(obj: Type): String =
-                if (obj.isArrayType)
-                    obj.asInstanceOf[ArrayType].elementType.toJava
-                else
-                    obj.toJava
-        }
-
-        val dependencyExtractor = new DependencyExtractor(SourceElementIDsProvider) with NoSourceElementsVisitor {
-            def processDependency(src: Int, trgt: Int, dType: DependencyType) {
-                val srcNode = nodes(src)
-                val trgtNode = nodes(trgt)
-                dependencies = (srcNode, trgtNode, dType) :: dependencies
-            }
-        }
-
-        def assertDependency(src: String, trgt: String, dType: DependencyType) {
-            val dependency = (src, trgt, dType)
-            if (dependencies.contains(dependency)) {
-                dependencies = dependencies diff List(dependency)
-            } else {
-                throw new AssertionError("Dependency "+dependency+" was not extracted successfully!\nRemaining dependencies:\n"+dependencies.mkString("\n"))
+            dependencies.get(key) match {
+                case Some(0) ⇒
+                    fail("The dependency "+key+" was not extracted the expected number of times.")
+                case Some(x) ⇒
+                    dependencies = dependencies.updated(key, x - 1)
+                case None ⇒
+                    val remainigDependencies =
+                        dependencies.toList.sorted.
+                            mkString("Remaining dependencies:\n\t", "\n\t", "\n")
+                    fail("The dependency "+key+" was not extracted.\n"+remainigDependencies)
             }
         }
 
         // extract dependencies
-        for (cs @ (classFile, _) ← ClassFiles(TestSupport.locateTestResources("classfiles/Dependencies.jar", "ext/dependencies"))) {
+        def resources() = TestSupport.locateTestResources("classfiles/Dependencies.jar", "ext/dependencies")
+        for ((classFile, _) ← ClassFiles(resources())) {
             dependencyExtractor.process(classFile)
         }
 
@@ -272,7 +295,8 @@ class DependencyExtractorTest extends FunSuite {
             assertImplicitDefaultConstructor("dependencies.OuterClass")
             //        class InnerClass {
             assertDependency("dependencies.OuterClass$InnerClass", "java.lang.Object", EXTENDS)
-            assertDependency("dependencies.OuterClass$InnerClass", "dependencies.OuterClass", IS_ENCLOSED)
+            assertDependency("dependencies.OuterClass", "dependencies.OuterClass$InnerClass", IS_OUTER_CLASS)
+            assertDependency("dependencies.OuterClass$InnerClass", "dependencies.OuterClass", IS_INNER_CLASS)
             //            //implicit field:
             assertDependency("dependencies.OuterClass$InnerClass.this$0", "dependencies.OuterClass$InnerClass", IS_INSTANCE_MEMBER)
             assertDependency("dependencies.OuterClass$InnerClass.this$0", "dependencies.OuterClass", IS_OF_TYPE)
@@ -454,6 +478,7 @@ class DependencyExtractorTest extends FunSuite {
             //        public abstract String stringValue() default "default";
             assertDependency("dependencies.TestAnnotation.stringValue()", "dependencies.TestAnnotation", IS_INSTANCE_MEMBER)
             assertDependency("dependencies.TestAnnotation.stringValue()", "java.lang.String", RETURNS)
+            assertDependency("dependencies.TestAnnotation.stringValue()", "java.lang.String", USES_DEFAULT_ANNOTATION_VALUE_TYPE)
             //
             //        public abstract Class<?> classValue() default String.class;
             assertDependency("dependencies.TestAnnotation.classValue()", "dependencies.TestAnnotation", IS_INSTANCE_MEMBER)
@@ -470,6 +495,7 @@ class DependencyExtractorTest extends FunSuite {
             assertDependency("dependencies.TestAnnotation.annotationValue()", "dependencies.TestAnnotation", IS_INSTANCE_MEMBER)
             assertDependency("dependencies.TestAnnotation.annotationValue()", "java.lang.SuppressWarnings", RETURNS)
             assertDependency("dependencies.TestAnnotation.annotationValue()", "java.lang.SuppressWarnings", USES_DEFAULT_ANNOTATION_VALUE_TYPE)
+            assertDependency("dependencies.TestAnnotation.annotationValue()", "java.lang.String", USES_DEFAULT_ANNOTATION_VALUE_TYPE)
             //
             //        public abstract Class<?>[] arrayClassValue() default { String.class,
             //    	    Integer.class };
@@ -502,6 +528,8 @@ class DependencyExtractorTest extends FunSuite {
             assertDependency("dependencies.AnnotationDefaultAttributeTestClass.testMethod()", "java.lang.SuppressWarnings", USES_DEFAULT_ANNOTATION_VALUE_TYPE)
             assertDependency("dependencies.AnnotationDefaultAttributeTestClass.testMethod()", "java.lang.Long", USES_DEFAULT_CLASS_VALUE_TYPE)
             assertDependency("dependencies.AnnotationDefaultAttributeTestClass.testMethod()", "java.lang.Boolean", USES_DEFAULT_CLASS_VALUE_TYPE)
+            assertDependency("dependencies.AnnotationDefaultAttributeTestClass.testMethod()", "java.lang.String", USES_DEFAULT_ANNOTATION_VALUE_TYPE)
+            assertDependency("dependencies.AnnotationDefaultAttributeTestClass.testMethod()", "java.lang.String", USES_DEFAULT_ANNOTATION_VALUE_TYPE)
             assertImplicitThisLocalVariable("dependencies.AnnotationDefaultAttributeTestClass.testMethod()")
             //        }
             //    }
@@ -793,7 +821,7 @@ class DependencyExtractorTest extends FunSuite {
         }
 
         def assertImplicitDefaultConstructor(className: String, superClassName: String = "java.lang.Object") {
-            //	//implicit constructor:
+            // //implicit constructor:
             val constructorName = className+".<init>()"
             assertDependency(constructorName, className, IS_INSTANCE_MEMBER)
             assertDependency(constructorName, superClassName, USES_METHOD_DECLARING_TYPE)
@@ -803,7 +831,10 @@ class DependencyExtractorTest extends FunSuite {
 
         def assertImplicitThisLocalVariable(methodName: String) {
             // //implicit local variable 'this'
-            assertDependency(methodName, methodName.substring(0, methodName.substring(0, methodName.lastIndexOf('(')).lastIndexOf('.')), HAS_LOCAL_VARIABLE_OF_TYPE)
+            assertDependency(
+                methodName,
+                methodName.substring(0, methodName.substring(0, methodName.lastIndexOf('(')).lastIndexOf('.')),
+                HAS_LOCAL_VARIABLE_OF_TYPE)
         }
 
         // test that the extracted dependencies are as expected
@@ -822,9 +853,10 @@ class DependencyExtractorTest extends FunSuite {
         assertSignatureTestClass()
         assertSignatureTestSubClass()
 
-        assert(dependencies.isEmpty,
-            "Too many ["+dependencies.size+"] dependencies have been extracted:\n"+
-                dependencies.mkString("\n"))
+        val remainingDependencies = dependencies.view.filter(_._2 > 0)
+        assert(remainingDependencies.isEmpty,
+            "Too many dependencies have been extracted for:\n"+
+                remainingDependencies.mkString("\n"))
     }
 }
 

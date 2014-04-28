@@ -49,10 +49,7 @@ sealed trait VirtualSourceElement extends SourceElement {
  *
  * @author Michael Eichberg
  */
-final case class VirtualClass(
-        thisType: ObjectType,
-        fields: Set[VirtualField] = Set.empty,
-        methods: Set[VirtualMethod] = Set.empty) extends VirtualSourceElement {
+final case class VirtualClass(thisType: ObjectType) extends VirtualSourceElement {
 
     override def isClass = true
 
