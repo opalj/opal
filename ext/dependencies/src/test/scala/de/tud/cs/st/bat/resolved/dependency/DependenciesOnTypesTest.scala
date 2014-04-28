@@ -60,7 +60,7 @@ class DependenciesOnTypesTest extends FlatSpec with Matchers {
 
     def dependencyExtractor =
         new DependencyExtractor(
-            new DefaultDependencyProcessor {
+            new DependencyProcessorAdapter {
 
                 override def processDependency(
                     source: VirtualSourceElement,

@@ -86,7 +86,7 @@ object DependencyExtractorFixture extends FunSuite {
 
         val dependencyExtractor =
             createDependencyExtractor(
-                new DefaultDependencyProcessor() {
+                new DependencyProcessorAdapter() {
 
                     override def processDependency(
                         source: VirtualSourceElement,

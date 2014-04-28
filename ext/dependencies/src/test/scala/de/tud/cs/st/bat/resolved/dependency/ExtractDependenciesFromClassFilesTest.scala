@@ -50,7 +50,7 @@ import java.util.zip.ZipFile
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class ExtractDependenciesFromClassFilesTest extends FlatSpec with Matchers {
 
-    val dependencyExtractor = new DependencyExtractor(DefaultDependencyProcessor)
+    val dependencyExtractor = new DependencyExtractor(DependencyProcessorAdapter)
 
     for {
         file ← TestSupport.locateTestResources("classfiles", "ext/dependencies").listFiles()

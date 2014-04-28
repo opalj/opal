@@ -32,10 +32,11 @@ package resolved
 package dependency
 
 /**
- * A dependency processor processes dependencies between two source elements. This
- * trait's `processDependency` method will be called, e.g., by the
- * [[DependencyExtractor]],
- * for every encountered dependency.
+ * A dependency processor processes dependencies between two source elements.
+ *
+ * Typically, a `DependencyProcessor` is passed to a
+ * [[DependencyExtractor]]. The latter calls back the `processDependency` methods
+ * for each identified dependency.
  *
  * @author Thomas Schlosser
  * @author Michael Eichberg
@@ -43,7 +44,7 @@ package dependency
 trait DependencyProcessor {
 
     /**
-     * Processes a dependency of the given type between the source and target.
+     * Called for each dependency between two source elements.
      *
      * @param source The source element that has a dependency on the `target` element.
      * @param target The source element that the `source` element depends on.
@@ -54,11 +55,29 @@ trait DependencyProcessor {
         target: VirtualSourceElement,
         dType: DependencyType): Unit
 
+    /**
+     * Called for each dependency of a source element on an array type.
+     *
+     * @note A dependency on an array type also introduces another dependency on the
+     *      element type of the array type and the dependency extractor will
+     *      notify the dependency processor about such calls.
+     *
+     * @param source The source element that has a dependency on the array type.
+     * @param arrayType The array type that the `source` element depends on.
+     * @param dependencyType The type of the dependency.
+     */
     def processDependency(
         source: VirtualSourceElement,
-        baseType: ArrayType,
+        arrayType: ArrayType,
         dType: DependencyType): Unit
 
+    /**
+     * Called for each dependency of a source element on a base type (aka primitive type).
+     *
+     * @param source The source element that has a dependency on the base type.
+     * @param baseType The base type on which the `source` element depends on.
+     * @param dependencyType The type of the dependency.
+     */
     def processDependency(
         source: VirtualSourceElement,
         baseType: BaseType,
@@ -66,7 +85,13 @@ trait DependencyProcessor {
 
 }
 
-class DefaultDependencyProcessor extends DependencyProcessor {
+/**
+ * Implementation of the `DependencyProcessor` trait that does nothing when a
+ * dependency is reported.
+ *
+ * @author Michael Eichberg
+ */
+class DependencyProcessorAdapter extends DependencyProcessor {
 
     override def processDependency(
         source: VirtualSourceElement,
@@ -85,5 +110,5 @@ class DefaultDependencyProcessor extends DependencyProcessor {
 
 }
 
-object DefaultDependencyProcessor extends DefaultDependencyProcessor
+object DependencyProcessorAdapter extends DependencyProcessorAdapter
 
