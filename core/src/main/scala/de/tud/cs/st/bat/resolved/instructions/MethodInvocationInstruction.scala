@@ -64,6 +64,9 @@ abstract class MethodInvocationInstruction extends InvocationInstruction {
 
     def declaringClass: ReferenceType
 
+    def asVirtualMethod: VirtualMethod =
+        VirtualMethod(declaringClass, name, methodDescriptor)
+
     def isVirtualMethodCall: Boolean
 
     override def toString: String =

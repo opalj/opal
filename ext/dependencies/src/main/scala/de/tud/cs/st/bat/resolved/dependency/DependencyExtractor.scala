@@ -32,264 +32,283 @@ package resolved
 package dependency
 
 import instructions._
-import DependencyType._
+
+import analyses.SomeProject
 
 /**
- * Traverses a source element and identifies all dependencies between the element (class,
- * field or method declaration) that is traversed and any element the traversed element
+ * Traverses a [[SourceElement]] and identifies all dependencies between the element
+ * ([[ClassFile]], [[Field]] or [[Method]] declaration) and any element it element
  * depends on.
  *
- * By default, self dependencies will be reported (e.g. a method that calls itself). If
- * necessary or undesired, self dependencies can easily be filtered by a
- * [[de.tud.cs.st.bat.resolved.dependency.DependencyProcessor]]'s processDependency
- * method (which is called by the dependency extractor, but whose implementation needs
- * to be provided.)
- *
- * ==Usage==
- * The demo class `de.tud.cs.st.bat.resolved.dependency.DependencyMatrix` (see the
- * implementation) provides an example how to use the dependency extractor.
- *
- * To assign ids to source elements the dependency extractor relies on source element
- * ids as provided by implementations of `de.tud.cs.st.bat.resolved.SourceElementIDs`.
- * After getting the ids of the depending source elements, a
- * [[de.tud.cs.st.bat.resolved.dependency.DependencyProcessor]]'s
- * `processDependency` method is called with the ids and the type of the dependency as a
- * parameter.
+ * ==Thread Safety==
+ * This trait does not define any relevant state and, hence, this class is thread
+ * compatible.
+ * However, if multiple dependency extractors are executed concurrently and
+ * share the same [[DependencyProcessor]], the latter has to be thread safe.
+ * @note By default, self dependencies will be reported (e.g. a method that calls
+ *      itself). If necessary or undesired, self dependencies can easily be filtered by a
+ *      [[DependencyProcessor]]'s `processDependency` method.
  *
  * @author Thomas Schlosser
  * @author Michael Eichberg
  */
-abstract class DependencyExtractor(
-    val sourceElementIDs: SourceElementIDs)
-        extends DependencyProcessor
-        with SourceElementsVisitor[Unit] {
+class DependencyExtractor(protected[this] val dependencyProcessor: DependencyProcessor) {
 
-    import sourceElementIDs._
+    import DependencyType._
 
     /**
-     * Processes the given class file and all fields and methods that are defined in it.
+     * Processes the entire given class file (including all fields, methods,
+     * annotations,...).
      * I.e. it extracts all source code dependencies that start from the given
      * class file, its fields or methods, respectively.
      *
      * @param classFile The class file whose dependencies should be extracted.
      */
-    def process(classFile: ClassFile) {
-        visit(classFile)
-        val thisClassID = sourceElementID(classFile)
+    def process(classFile: ClassFile): Unit = {
+        val vc = classFile.asVirtualClass
 
-        val thisType = classFile.thisType
-        val superclass = classFile.superclassType
-        val interfaces = classFile.interfaceTypes
-        val fields = classFile.fields
-        val methods = classFile.methods
-        val attributes = classFile.attributes
+        classFile.superclassType foreach { processDependency(vc, _, EXTENDS) }
 
-        superclass foreach { processDependency(thisClassID, _, EXTENDS) }
-        interfaces foreach { processDependency(thisClassID, _, IMPLEMENTS) }
-        fields foreach { process(_, classFile, thisClassID) }
-        methods foreach { process(_, classFile, thisClassID) }
+        classFile.interfaceTypes foreach { processDependency(vc, _, IMPLEMENTS) }
 
-        // As defined by the Java 5 specification, a class declaration can contain the 
-        // following attributes:
-        // InnerClasses, EnclosingMethod, Synthetic, SourceFile, Signature, Deprecated,
-        // SourceDebugExtension, RuntimeVisibleAnnotations and 
-        // RuntimeInvisibleAnnotations
-        attributes foreach {
-            case AnnotationTable(_, annotations) ⇒
-                // handles RuntimeVisibleAnnotations and RuntimeInvisibleAnnotations
-                annotations foreach { process(_, thisClassID) }
+        classFile.fields foreach { process(vc, _) }
+
+        classFile.methods foreach { process(vc, _) }
+
+        classFile.attributes foreach {
+            case at: AnnotationTable ⇒
+                // Handles runtime visible and invisible annotations.
+                at.annotations foreach { process(vc, _) }
+
+            case tat: TypeAnnotationTable ⇒
+                // TODO [Java8] Add support for TypeAnnotationTable attributes
+                ???
+
             case EnclosingMethod(enclosingClass, name, descriptor) ⇒ {
                 // Check whether the enclosing method attribute refers to an enclosing 
                 // method or an enclosing class.
                 if (name != null && descriptor != null)
-                    processDependency(
-                        thisClassID,
-                        enclosingClass,
-                        name,
-                        descriptor,
-                        IS_INNER_CLASS_OF)
+                    dependencyProcessor.processDependency(
+                        vc,
+                        VirtualMethod(enclosingClass, name, descriptor),
+                        IS_ENCLOSED)
                 else
-                    processDependency(thisClassID, enclosingClass, IS_INNER_CLASS_OF)
+                    processDependency(
+                        vc,
+                        enclosingClass,
+                        IS_ENCLOSED)
             }
+
             case InnerClassTable(innerClasses) ⇒
+                val thisType = classFile.thisType
                 for {
                     // Check whether the outer class of the inner class attribute
                     // is equal to the currently processed class. If this is the case,
                     // a dependency from inner class to this class will be added.
-                    InnerClass(innerClass, outerClass, _, _) ← innerClasses
-                    if outerClass.exists(_ == thisType)
+                    innerClassesEntry ← innerClasses
+                    outerClassType ← innerClassesEntry.outerClassType
+                    if outerClassType == thisType
                 } {
-                    processDependency(innerClass, thisClassID, IS_INNER_CLASS_OF)
+                    processDependency(
+                        vc,
+                        innerClassesEntry.innerClassType,
+                        IS_OUTER_CLASS)
                 }
-            case signature: Signature ⇒ processSignature(signature, thisClassID)
+
+            case signature: Signature ⇒ processSignature(vc, signature)
+
             case _                    ⇒
-            // Synthetic, SourceFile, Deprecated, and SourceDebugExtension do not create dependencies
+            // The Synthetic, SourceFile, Deprecated, and 
+            // SourceDebugExtension attributes do not create dependencies.
+
+            // The Java 7 BootstrapMethodTable Attribute is resolved and related
+            // dependencies will be extracted when the respective invokedynamic 
+            // instructions are processed.
         }
     }
 
     /**
-     * Extracts all source elements on which the given field definition depends.
+     * Extracts all dependencies related to the given field.
      *
-     * @param field The field whose dependencies will be extracted.
      * @param declaringClass This field's declaring class.
-     * @param declaringTypeID The ID of the field's declaring class.
+     * @param field The field whose dependencies will be extracted.
      */
-    protected def process(field: Field, declaringClass: ClassFile, declaringTypeID: Int) {
-        visit(declaringClass, field)
-        val fieldID = sourceElementID(declaringClass.thisType, field)
-        val Field(_ /*accessFlags*/ , _, fieldType) = field
+    protected def process(declaringClass: VirtualClass, field: Field): Unit = {
+        val vf = field.asVirtualField(declaringClass.thisType)
 
-        processDependency(
-            fieldID,
-            declaringTypeID,
-            if (field.isStatic) IS_CLASS_MEMBER_OF else IS_INSTANCE_MEMBER_OF)
-        processDependency(fieldID, fieldType, IS_OF_TYPE)
+        dependencyProcessor.processDependency(
+            vf,
+            declaringClass,
+            if (field.isStatic) IS_CLASS_MEMBER else IS_INSTANCE_MEMBER)
 
-        // The JVM 5 specification defines the following attributes:
-        // ConstantValue, Synthetic, Signature, Deprecated, RuntimeVisibleAnnotations, 
-        // and RuntimeInvisibleAnnotations
+        processDependency(vf, field.fieldType, IS_OF_TYPE)
+
         field.attributes foreach {
-            case AnnotationTable(_, annotations) ⇒
-                // handles RuntimeVisibleAnnotations and RuntimeInvisibleAnnotations
-                annotations foreach { process(_, fieldID) }
-            case ConstantValue(_, ot: ObjectType) ⇒
-                processDependency(fieldID, ot, USES_CONSTANT_VALUE_OF_TYPE)
-            case ConstantValue(_, at: ArrayType) ⇒
-                processDependency(fieldID, at, USES_CONSTANT_VALUE_OF_TYPE)
+
+            case at: AnnotationTable ⇒
+                // Handles runtime visible and invisible annotations.
+                at.annotations foreach { process(vf, _) }
+
+            case tat: TypeAnnotationTable ⇒
+                // TODO [Java8] Add support for TypeAnnotationTable attributes
+                ???
+
+            case cv: ConstantValue[_] ⇒
+                processDependency(vf, cv.valueType, USES_CONSTANT_VALUE_OF_TYPE)
+
             case signature: Signature ⇒
-                processSignature(signature, fieldID)
+                processSignature(vf, signature)
+
             case _ ⇒ // Synthetic and Deprecated do not introduce new dependencies
         }
     }
 
     /**
-     * Processes the given method, i.e. extracts all dependencies that start
-     * from this method.
+     * Extracts all dependencies related to the given method.
      *
+     * @param declaringClass The method's declaring class.
      * @param method The method whose dependencies should be extracted.
-     * @param declaringType The method's declaring class.
-     * @param declaringTypeID The ID of the method's declaring class.
      */
-    protected def process(method: Method, declaringClass: ClassFile, declaringTypeID: Int) {
-        visit(declaringClass, method)
-        val methodID = sourceElementID(declaringClass.thisType, method)
-        val MethodDescriptor(parameterTypes, returnType) = method.descriptor
+    protected def process(declaringClass: VirtualClass, method: Method): Unit = {
 
-        processDependency(
-            methodID,
-            declaringTypeID,
-            if (method.isStatic) IS_CLASS_MEMBER_OF else IS_INSTANCE_MEMBER_OF)
-        processDependency(methodID, returnType, RETURNS)
-        parameterTypes foreach { processDependency(methodID, _, HAS_PARAMETER_OF_TYPE) }
+        val vm = method.asVirtualMethod(declaringClass.thisType)
+
+        val parameterTypes = method.parameterTypes
+        val returnType = method.returnType
+
+        dependencyProcessor.processDependency(
+            vm,
+            declaringClass,
+            if (method.isStatic) IS_CLASS_MEMBER else IS_INSTANCE_MEMBER)
+
+        processDependency(vm, returnType, RETURNS)
+        parameterTypes foreach { processDependency(vm, _, HAS_PARAMETER_OF_TYPE) }
 
         // The Java 5 specification defines the following attributes:
         // Code, Exceptions, Synthetic, Signature, Deprecated, RuntimeVisibleAnnotations,
         // RuntimeInvisibleAnnotations, RuntimeVisibleParameterAnnotations,
         // RuntimeInvisibleParameterAnnotations, and AnnotationDefault
         method.body foreach { code ⇒
-            val Code(_, _, instructions, exceptionTable, codeAttributes) = code
+
             // Process code instructions by calling the process method which is defined in
             // the generated InstructionDependencyExtractor super class.
-            process(methodID, instructions)
+            process(vm, code.instructions)
+
             // add dependencies from the method to all throwables that are used in catch statements
             for {
-                exceptionHandler ← exceptionTable
+                exceptionHandler ← code.exceptionHandlers
                 if exceptionHandler.catchType.isDefined
             } {
-                processDependency(methodID, exceptionHandler.catchType.get, CATCHES)
+                processDependency(vm, exceptionHandler.catchType.get, CATCHES)
             }
+
             // The Java 5 specification defines the following attributes:
             // LineNumberTable, LocalVariableTable, and LocalVariableTypeTable)
-            codeAttributes foreach {
+            code.attributes foreach {
+
                 case LocalVariableTable(localVariableTable) ⇒
                     localVariableTable foreach { entry ⇒
-                        processDependency(methodID, entry.fieldType, HAS_LOCAL_VARIABLE_OF_TYPE)
+                        processDependency(vm, entry.fieldType, HAS_LOCAL_VARIABLE_OF_TYPE)
                     }
+
                 case LocalVariableTypeTable(localVariableTypeTable) ⇒
                     localVariableTypeTable foreach { entry ⇒
-                        processSignature(entry.signature, methodID)
+                        processSignature(vm, entry.signature)
                     }
-                case _ ⇒ // The LineNumberTable does not define relevant dependencies
+
+                case tat: TypeAnnotationTable ⇒
+                    // TODO [Java8] Add support for TypeAnnotationTable attributes
+                    ???
+
+                case _ ⇒
+                // The LineNumberTable and StackMapTable attributes do not define 
+                // relevant dependencies.
             }
         }
+
         method.attributes foreach {
-            case AnnotationTable(_, annotations) ⇒
-                // handles RuntimeVisibleAnnotations and RuntimeInvisibleAnnotations
-                annotations foreach { process(_, methodID) }
+
+            case at: AnnotationTable ⇒
+                // Handles runtime visible and invisible annotations.
+                at.annotations foreach { process(vm, _) }
+
+            case tat: TypeAnnotationTable ⇒
+                // TODO [Java8] Add support for TypeAnnotationTable attributes
+                ???
+
             case ParameterAnnotationTable(_, parameterAnnotations) ⇒
                 // handles RuntimeVisibleParameterAnnotations and 
                 //RuntimeInvisibleParameterAnnotations
                 parameterAnnotations foreach { pa ⇒
-                    pa foreach { process(_, methodID, PARAMETER_ANNOTATED_WITH) }
+                    pa foreach { process(vm, _, PARAMETER_ANNOTATED_WITH) }
                 }
+
             case ExceptionTable(exceptionTable) ⇒
-                exceptionTable foreach { processDependency(methodID, _, THROWS) }
-            case elementValue: ElementValue ⇒ // ElementValues encode annotation default attributes
-                processElementValue(elementValue, methodID)
-            case sa: Signature ⇒
-                processSignature(sa, methodID)
-            case _ ⇒ // The attributes Synthetic and Deprecated do not introduce further dependencies
+                exceptionTable foreach { processDependency(vm, _, THROWS) }
+
+            case elementValue: ElementValue ⇒
+                // ElementValues encode annotation default attributes
+                processElementValue(vm, elementValue)
+
+            case signature: Signature ⇒
+                processSignature(vm, signature)
+
+            case _ ⇒
+            // The attributes Synthetic and Deprecated do not introduce further dependencies
         }
     }
 
     /**
      * Processes the given signature.
+     *
      * Processing a signature means extracting all references to types
      * that are used in the type parameters that occur in the signature.
-     * After that extraction, dependencies from the given source to the
-     * extracted types are added.
      *
-     * NOTE: As described above, this method only considers types that
-     * occur in type parameters. All other types are extracted in other
-     * methods.
-     *
+     * @param declaringElement The signature's element.
      * @param signature The signature whose type parameters should be analyzed.
-     * @param srcID The ID of the source, i.e. the ID of the element the signature is from.
-     * @param isInTypeParameters Signals whether the current signature (part)
-     *                           is already a part of a type parameter.
+     * @param isInTypeParameters `true` if the current signature (part)
+     *      is already a part of a type parameter.
      */
     protected def processSignature(
+        declaringElement: VirtualSourceElement,
         signature: SignatureElement,
-        srcID: Int,
-        isInTypeParameters: Boolean = false) {
-        
+        isInTypeParameters: Boolean = false): Unit = {
+
         /*
          * Processes the given option of a formal type parameter list.
          * Since they are always part of a type parameter, all types that
          * are found will be extracted, i.e. dependencies to them will be
-         * added.<br/>
+         * added.
          *
-         * Calls the outer <code>processSignature</code> method for each
-         * defined class and interface bound. The <code>isInTypeParameters</code>
-         * parameter is set to <code>true</code>.
+         * Calls the outer `processSignature` method for each
+         * defined class and interface bound. The `isInTypeParameters`
+         * parameter is set to `true`.
          *
-         * @param formalTypeParameters The option of a formal type parameter list that should be processed.
+         * @param formalTypeParameters The formal type parameter list.
          */
         def processFormalTypeParameters(
             formalTypeParameters: Option[List[FormalTypeParameter]]) {
-            formalTypeParameters match {
-                case Some(list) ⇒
-                    for (FormalTypeParameter(_, classBound, interfaceBound) ← list) {
-                        if (classBound.isDefined)
-                            processSignature(classBound.get, srcID, true)
-                        if (interfaceBound.isDefined)
-                            processSignature(interfaceBound.get, srcID, true)
-                    }
-                case None ⇒ // Nothing to do if there is no class or interface bound.
+            formalTypeParameters map { list ⇒
+                for (ftp ← list) {
+                    val classBound = ftp.classBound
+                    if (classBound.isDefined)
+                        processSignature(declaringElement, classBound.get, true)
+                    val interfaceBound = ftp.interfaceBound
+                    if (interfaceBound.isDefined)
+                        processSignature(declaringElement, interfaceBound.get, true)
+                }
             }
         }
 
         /*
-         * Processes the given <code>SimpleClassTypeSignature</code> in the way
-         * that its type arguments will be processed by the <code>processTypeArguments</code>
+         * Processes the given `SimpleClassTypeSignature in the way
+         * that its type arguments will be processed by the `processTypeArguments`
          * method.
          *
-         * @param simpleClassTypeSignatures The simple class type signature that should be processed.
+         * @param simpleClassTypeSignatures The simple class type signature.
          */
-        def processSimpleClassTypeSignature(
-            simpleClassTypeSignatures: SimpleClassTypeSignature) {
-            val SimpleClassTypeSignature(_, typeArguments) = simpleClassTypeSignatures
-            processTypeArguments(typeArguments)
+        def processSimpleClassTypeSignature(simpleClassTypeSignatures: SimpleClassTypeSignature) {
+            processTypeArguments(simpleClassTypeSignatures.typeArguments)
         }
 
         /*
@@ -305,298 +324,364 @@ abstract class DependencyExtractor(
          * @param typeArguments The option of a type argument list that should be processed.
          */
         def processTypeArguments(typeArguments: Option[List[TypeArgument]]) {
-            typeArguments match {
-                case Some(args) ⇒
-                    args foreach {
-                        case ProperTypeArgument(_, fieldTypeSignature) ⇒
-                            processSignature(fieldTypeSignature, srcID, true)
-                        case Wildcard ⇒
-                        // Wildcards refer to no type, hence there is nothing to do in this case.
-                    }
-                case None ⇒
+            typeArguments map { args ⇒
+                args foreach {
+
+                    case pta: ProperTypeArgument ⇒
+                        processSignature(declaringElement, pta.fieldTypeSignature, true)
+
+                    case _ ⇒
+                    // Wildcards refer to no type, hence there is nothing to do in this case.
+                }
             }
         }
 
         // process different signature types in a different way
         signature match {
+
             case ClassSignature(formalTypeParameters, superClassSignature, superInterfacesSignature) ⇒
-                // process each part of the class's signature by calling the adequate utility method
                 processFormalTypeParameters(formalTypeParameters)
-                processSignature(superClassSignature, srcID)
-                superInterfacesSignature foreach { cts ⇒ processSignature(cts, srcID) }
+                processSignature(declaringElement, superClassSignature)
+                superInterfacesSignature foreach { processSignature(declaringElement, _) }
+
             case MethodTypeSignature(formalTypeParameters, parametersTypeSignatures, returnTypeSignature, throwsSignature) ⇒
-                // process each part of the method's signature by calling the adequate utility method
                 processFormalTypeParameters(formalTypeParameters)
-                parametersTypeSignatures foreach { pts ⇒ processSignature(pts, srcID) }
-                processSignature(returnTypeSignature, srcID)
-                throwsSignature foreach { ts ⇒ processSignature(ts, srcID) }
-            case ArrayTypeSignature(typeSignature) ⇒
-                // process array's type signature by calling this method again and passing
-                // the array's type signature as parameter
-                processSignature(typeSignature, srcID)
+                parametersTypeSignatures foreach { processSignature(declaringElement, _) }
+                processSignature(declaringElement, returnTypeSignature)
+                throwsSignature foreach { processSignature(declaringElement, _) }
+
             case cts: ClassTypeSignature ⇒
-                // process the class type's signature by calling the adequate utility method
                 // If the class is used in a type parameter, a dependency between the given
                 // source and the class is added.
                 if (isInTypeParameters)
-                    processDependency(srcID, cts.objectType, USES_TYPE_IN_TYPE_PARAMETERS)
+                    processDependency(declaringElement, cts.objectType, USES_TYPE_IN_TYPE_PARAMETERS)
                 processSimpleClassTypeSignature(cts.simpleClassTypeSignature)
-            case ProperTypeArgument(_, fieldTypeSignature) ⇒
-                // process proper type argument by calling this method again and passing
-                // the proper type's field type signature as parameter
-                processSignature(fieldTypeSignature, srcID)
-            case BooleanType | ByteType | IntegerType | LongType | CharType | ShortType | FloatType | DoubleType | VoidType ⇒
-                // add a dependency to base or void type if the type is used in a type parameter
+
+            case pta: ProperTypeArgument ⇒
+                processSignature(declaringElement, pta.fieldTypeSignature)
+
+            case bt: BaseType ⇒
                 if (isInTypeParameters)
-                    processDependency(srcID, signature.asInstanceOf[Type], USES_TYPE_IN_TYPE_PARAMETERS)
-            case _ ⇒ // TypeVariableSignature and Wildcard refer to no concrete type, hence there is nothing to do in this case.
+                    processDependency(declaringElement, bt, USES_TYPE_IN_TYPE_PARAMETERS)
+
+            case ArrayTypeSignature(typeSignature) ⇒
+                processSignature(declaringElement, typeSignature)
+
+            case _ ⇒
+            // VoidType, TypeVariableSignature and Wildcard refer to no concrete 
+            // type, hence there is nothing to do in this case.
         }
     }
 
     /**
-     * Extracts dependencies to elements contained by the given element value.
+     * Extracts dependencies related to the given [[ElementValue]].
      *
-     * @param elementValue The element value that should be analyzed regarding dependencies.
-     * @param srcID The ID of the (source) element all discovered dependencies should start from.
+     * @param declaringElement The element that declares the given element value.
+     * @param elementValue The element value that will be analyzed.
      */
-    private def processElementValue(elementValue: ElementValue, srcID: Int) {
+    private def processElementValue(
+        declaringElement: VirtualSourceElement,
+        elementValue: ElementValue): Unit = {
+
         elementValue match {
-            case ClassValue(returnType) ⇒
-                processDependency(srcID, returnType, USES_DEFAULT_CLASS_VALUE_TYPE)
+
             case EnumValue(enumType, constName) ⇒
-                processDependency(srcID, enumType, USES_DEFAULT_ENUM_VALUE_TYPE)
-                processDependency(srcID, enumType, constName, USES_ENUM_VALUE)
+                processDependency(declaringElement, enumType, USES_DEFAULT_ENUM_VALUE_TYPE)
+                dependencyProcessor.processDependency(
+                    declaringElement,
+                    VirtualField(enumType, constName, enumType),
+                    USES_ENUM_VALUE)
+
+            case ClassValue(returnType) ⇒
+                processDependency(declaringElement, returnType, USES_DEFAULT_CLASS_VALUE_TYPE)
+
             case ArrayValue(values) ⇒
-                values foreach { processElementValue(_, srcID) }
+                values foreach { processElementValue(declaringElement, _) }
+
             case AnnotationValue(annotation) ⇒
-                process(annotation, srcID, USES_DEFAULT_ANNOTATION_VALUE_TYPE)
-            case _ ⇒ // Remaining ElementValue types (ByteValue, CharValue, DoubleValue,
-            // FloatValue, IntValue, LongValue, ShortValue, BooleanValue, StringValue)
-            // do not refer to a object type, hence there is nothing to do in this case.
+                process(declaringElement, annotation, USES_DEFAULT_ANNOTATION_VALUE_TYPE)
+
+            case btev: BaseTypeElementValue ⇒
+                processDependency(declaringElement, btev.baseType, USES_DEFAULT_BASE_TYPE)
         }
     }
 
     /**
-     * Extracts dependencies to elements contained by the given annotation.
+     * Extracts dependencies related to the given annotation.
      *
-     * @param annotation The annotation that should be analyzed regarding dependencies.
-     * @param srcID The ID of the (source) element all discovered dependencies should start from.
-     * @param dependencyType The type that should be used to create new dependencies.
-     *                       Default value is: ANNOTATED_WITH
+     * @param declaringElement The (source) element with the annotation.
+     * @param annotation The annotation that will be analyzed.
+     * @param dependencyType The type of the dependency; default: `ANNOTATED_WITH`.
      */
     private def process(
+        declaringElement: VirtualSourceElement,
         annotation: Annotation,
-        srcID: Int,
-        dependencyType: DependencyType = ANNOTATED_WITH) {
-        val Annotation(annotationType, elementValuePairs) = annotation
-        processDependency(srcID, annotationType, dependencyType)
-        elementValuePairs foreach { evp ⇒ processElementValue(evp.value, srcID) }
+        dependencyType: DependencyType = ANNOTATED_WITH): Unit = {
+
+        processDependency(declaringElement, annotation.annotationType, dependencyType)
+
+        annotation.elementValuePairs foreach { evp ⇒
+            processElementValue(declaringElement, evp.value)
+        }
     }
 
     /**
-     * Extracts all dependencies found in the given instructions.
+     * Extracts dependencies related to the method's implementation.
      *
-     * @param methodId The ID of the source of the extracted dependencies.
+     * @param declaringMethod The method.
      * @param instructions The instructions that should be analyzed for dependencies.
      */
-    private def process(methodId: Int, instructions: Instructions) {
+    private def process(declaringMethod: VirtualMethod, instructions: Instructions) {
+
+        def as[TargetType <: Instruction](instruction: Instruction) =
+            instruction.asInstanceOf[TargetType]
 
         for (i ← instructions if i != null) {
             (i.opcode: @annotation.switch) match {
-
                 case 178 ⇒
-                    val GETSTATIC(declaringClass, name, fieldType) = i.asInstanceOf[GETSTATIC]
-                    processDependency(methodId, declaringClass, USES_FIELD_DECLARING_TYPE)
-                    processDependency(methodId, declaringClass, name, READS_FIELD)
-                    processDependency(methodId, fieldType, USES_FIELD_READ_TYPE)
+                    val field @ GETSTATIC(declaringClass, name, fieldType) =
+                        as[GETSTATIC](i)
+                    processDependency(declaringMethod, declaringClass, USES_FIELD_DECLARING_TYPE)
+                    processDependency(declaringMethod, fieldType, USES_FIELD_READ_TYPE)
+                    dependencyProcessor.processDependency(
+                        declaringMethod, field.asVirtualField, READS_FIELD)
 
                 case 179 ⇒
-                    val PUTSTATIC(declaringClass, fieldName, fieldType) = i.asInstanceOf[PUTSTATIC]
-                    processDependency(methodId, declaringClass, USES_FIELD_DECLARING_TYPE)
-                    processDependency(methodId, declaringClass, fieldName, WRITES_FIELD)
-                    processDependency(methodId, fieldType, USES_FIELD_WRITE_TYPE)
+                    val field @ PUTSTATIC(declaringClass, fieldName, fieldType) =
+                        as[PUTSTATIC](i)
+                    processDependency(declaringMethod, declaringClass, USES_FIELD_DECLARING_TYPE)
+                    processDependency(declaringMethod, fieldType, USES_FIELD_WRITE_TYPE)
+                    dependencyProcessor.processDependency(
+                        declaringMethod, field.asVirtualField, WRITES_FIELD)
 
                 case 180 ⇒
-                    val GETFIELD(declaringClass, name, fieldType) = i.asInstanceOf[GETFIELD]
-                    processDependency(methodId, declaringClass, USES_FIELD_DECLARING_TYPE)
-                    processDependency(methodId, declaringClass, name, READS_FIELD)
-                    processDependency(methodId, fieldType, USES_FIELD_READ_TYPE)
+                    val field @ GETFIELD(declaringClass, name, fieldType) =
+                        as[GETFIELD](i)
+                    processDependency(declaringMethod, declaringClass, USES_FIELD_DECLARING_TYPE)
+                    processDependency(declaringMethod, fieldType, USES_FIELD_READ_TYPE)
+                    dependencyProcessor.processDependency(
+                        declaringMethod, field.asVirtualField, READS_FIELD)
 
                 case 181 ⇒
-                    val PUTFIELD(declaringClass, fieldName, fieldType) = i.asInstanceOf[PUTFIELD]
-                    processDependency(methodId, declaringClass, USES_FIELD_DECLARING_TYPE)
-                    processDependency(methodId, declaringClass, fieldName, WRITES_FIELD)
-                    processDependency(methodId, fieldType, USES_FIELD_WRITE_TYPE)
+                    val field @ PUTFIELD(declaringClass, fieldName, fieldType) =
+                        as[PUTFIELD](i)
+                    processDependency(declaringMethod, declaringClass, USES_FIELD_DECLARING_TYPE)
+                    processDependency(declaringMethod, fieldType, USES_FIELD_WRITE_TYPE)
+                    dependencyProcessor.processDependency(declaringMethod, field.asVirtualField, WRITES_FIELD)
 
                 case 182 ⇒
-                    val INVOKEVIRTUAL(declaringClass, name, methodDescriptor) = i.asInstanceOf[INVOKEVIRTUAL]
-                    processDependency(methodId, declaringClass, USES_METHOD_DECLARING_TYPE)
-                    processDependency(methodId, declaringClass, name, methodDescriptor, CALLS_METHOD)
+                    val method @ INVOKEVIRTUAL(declaringClass, name, methodDescriptor) =
+                        as[INVOKEVIRTUAL](i)
+                    processDependency(declaringMethod, declaringClass, USES_METHOD_DECLARING_TYPE)
                     methodDescriptor.parameterTypes foreach { parameterType ⇒
-                        processDependency(methodId, parameterType, USES_PARAMETER_TYPE)
+                        processDependency(declaringMethod, parameterType, USES_PARAMETER_TYPE)
                     }
-                    processDependency(methodId, methodDescriptor.returnType, USES_RETURN_TYPE)
+                    processDependency(declaringMethod, methodDescriptor.returnType, USES_RETURN_TYPE)
+                    dependencyProcessor.processDependency(
+                        declaringMethod, method.asVirtualMethod, CALLS_METHOD)
 
                 case 183 ⇒
-                    val INVOKESPECIAL(declaringClass, name, methodDescriptor) = i.asInstanceOf[INVOKESPECIAL]
-                    processDependency(methodId, declaringClass, USES_METHOD_DECLARING_TYPE)
-                    processDependency(methodId, declaringClass, name, methodDescriptor, CALLS_METHOD)
+                    val method @ INVOKESPECIAL(declaringClass, name, methodDescriptor) =
+                        as[INVOKESPECIAL](i)
+                    processDependency(declaringMethod, declaringClass, USES_METHOD_DECLARING_TYPE)
                     methodDescriptor.parameterTypes foreach {
-                        parameterType ⇒ processDependency(methodId, parameterType, USES_PARAMETER_TYPE)
+                        parameterType ⇒ processDependency(declaringMethod, parameterType, USES_PARAMETER_TYPE)
                     }
-                    processDependency(methodId, methodDescriptor.returnType, USES_RETURN_TYPE)
+                    processDependency(declaringMethod, methodDescriptor.returnType, USES_RETURN_TYPE)
+                    dependencyProcessor.processDependency(
+                        declaringMethod, method.asVirtualMethod, CALLS_METHOD)
 
                 case 184 ⇒
-                    val INVOKESTATIC(declaringClass, name, methodDescriptor) = i.asInstanceOf[INVOKESTATIC]
-                    processDependency(methodId, declaringClass, USES_METHOD_DECLARING_TYPE)
-                    processDependency(methodId, declaringClass, name, methodDescriptor, CALLS_METHOD)
+                    val method @ INVOKESTATIC(declaringClass, name, methodDescriptor) =
+                        as[INVOKESTATIC](i)
+                    processDependency(declaringMethod, declaringClass, USES_METHOD_DECLARING_TYPE)
                     methodDescriptor.parameterTypes foreach {
-                        parameterType ⇒ processDependency(methodId, parameterType, USES_PARAMETER_TYPE)
+                        parameterType ⇒ processDependency(declaringMethod, parameterType, USES_PARAMETER_TYPE)
                     }
-                    processDependency(methodId, methodDescriptor.returnType, USES_RETURN_TYPE)
+                    processDependency(declaringMethod, methodDescriptor.returnType, USES_RETURN_TYPE)
+                    dependencyProcessor.processDependency(
+                        declaringMethod, method.asVirtualMethod, CALLS_METHOD)
 
                 case 185 ⇒
-                    val INVOKEINTERFACE(declaringClass, name, methodDescriptor) = i.asInstanceOf[INVOKEINTERFACE]
-                    processDependency(methodId, declaringClass, USES_METHOD_DECLARING_TYPE)
-                    processDependency(methodId, declaringClass, name, methodDescriptor, CALLS_INTERFACE_METHOD)
+                    val method @ INVOKEINTERFACE(declaringClass, name, methodDescriptor) =
+                        as[INVOKEINTERFACE](i)
+                    processDependency(declaringMethod, declaringClass, USES_METHOD_DECLARING_TYPE)
                     methodDescriptor.parameterTypes foreach {
-                        parameterType ⇒ processDependency(methodId, parameterType, USES_PARAMETER_TYPE)
+                        parameterType ⇒ processDependency(declaringMethod, parameterType, USES_PARAMETER_TYPE)
                     }
-                    processDependency(methodId, methodDescriptor.returnType, USES_RETURN_TYPE)
+                    processDependency(declaringMethod, methodDescriptor.returnType, USES_RETURN_TYPE)
+                    dependencyProcessor.processDependency(
+                        declaringMethod, method.asVirtualMethod, CALLS_INTERFACE_METHOD)
 
                 case 186 ⇒
-                    processInvokedynamic(methodId, i.asInstanceOf[INVOKEDYNAMIC])
+                    processInvokedynamic(declaringMethod, as[INVOKEDYNAMIC](i))
 
                 case 187 ⇒
-                    processDependency(methodId, i.asInstanceOf[NEW].objectType, CREATES)
+                    processDependency(declaringMethod, as[NEW](i).objectType, CREATES)
 
                 case 189 ⇒
-                    processDependency(methodId, i.asInstanceOf[ANEWARRAY].componentType, CREATES_ARRAY_OF_TYPE)
+                    processDependency(
+                        declaringMethod,
+                        as[ANEWARRAY](i).componentType,
+                        CREATES_ARRAY_OF_TYPE)
 
                 case 197 ⇒
-                    processDependency(methodId, i.asInstanceOf[MULTIANEWARRAY].componentType, CREATES_ARRAY_OF_TYPE)
+                    processDependency(
+                        declaringMethod,
+                        as[MULTIANEWARRAY](i).componentType,
+                        CREATES_ARRAY_OF_TYPE)
 
                 case 192 ⇒
-                    processDependency(methodId, i.asInstanceOf[CHECKCAST].referenceType, CASTS_INTO)
+                    processDependency(
+                        declaringMethod,
+                        as[CHECKCAST](i).referenceType,
+                        CASTS_INTO)
 
                 case 193 ⇒
-                    processDependency(methodId, i.asInstanceOf[INSTANCEOF].referenceType, CHECKS_INSTANCEOF)
+                    processDependency(
+                        declaringMethod,
+                        as[INSTANCEOF](i).referenceType,
+                        CHECKS_INSTANCEOF)
 
                 case _ ⇒
             }
         }
     }
 
-    protected def processDependency(
-        id: Int,
-        declaringClass: ReferenceType,
-        methodName: String,
-        methodDescriptor: MethodDescriptor,
-        dType: DependencyType) {
-        processDependency(id, sourceElementID(declaringClass, methodName, methodDescriptor), dType)
+    /**
+     * Prints a warning that the handling of [[Invokedynamic]] instructions is incomplete
+     * (from the point of view of the dependencies to the "real" methods) and then
+     * calls [[processInvokedynamicRuntimeDependencies]] to handle the instruction.
+     *
+     * The warning is only shown once.
+     *
+     * ==Overriding==
+     * This method should be overridden by subclasses that resolve dependencies
+     * related to an [[Invokedynamic]] instruction. However, in that case the
+     * method [[processInvokedynamicRuntimeDependencies]] should be called explicitly.
+     */
+    protected def processInvokedynamic(
+        declaringMethod: VirtualMethod,
+        instruction: INVOKEDYNAMIC): Unit = {
+
+        DependencyExtractor.warnAboutIncompleteHandlingOfInvokedynamic()
+
+        processInvokedynamicRuntimeDependencies(declaringMethod, instruction)
     }
 
-    protected def processDependency(
-        id: Int,
-        declaringClass: ObjectType,
-        fieldName: String,
-        dType: DependencyType) {
-        processDependency(id, sourceElementID(declaringClass, fieldName), dType)
+    /**
+     * Default implementation for handling [[Invokedynamic]] instructions that only
+     * extracts dependencies on the runtime infrastructure (e.g. the bootstrap method
+     * and its surrounding class, the types of its arguments and its return type).
+     *
+     * To gain more information about invokedynamic instructions, a special subclass of
+     * DependencyExtractor must be created which overrides this method and performs
+     * deeper-going analysis on invokedynamic instructions.
+     */
+    protected def processInvokedynamicRuntimeDependencies(
+        declaringMethod: VirtualMethod,
+        instruction: INVOKEDYNAMIC): Unit = {
+
+        val INVOKEDYNAMIC(bootstrapMethod, name, methodDescriptor) = instruction
+
+        // Dependencies related to the invokedynamic instruction's method descriptor.
+        // (Most likely simply java/lang/Object for both the parameter and return types.)
+        methodDescriptor.parameterTypes foreach { parameterType ⇒
+            processDependency(declaringMethod, parameterType, USES_PARAMETER_TYPE)
+        }
+        processDependency(declaringMethod, methodDescriptor.returnType, USES_RETURN_TYPE)
+
+        bootstrapMethod.methodHandle match {
+
+            case handle: MethodCallMethodHandle ⇒ {
+                // the class containing the bootstrap method
+                processDependency(
+                    declaringMethod,
+                    handle.receiverType,
+                    USES_METHOD_DECLARING_TYPE)
+                // the type of method call
+                val callType = handle match {
+                    case _: InvokeInterfaceMethodHandle ⇒ CALLS_INTERFACE_METHOD
+                    case _                              ⇒ CALLS_METHOD
+                }
+                dependencyProcessor.processDependency(
+                    declaringMethod,
+                    VirtualMethod(handle.receiverType, handle.name, handle.methodDescriptor),
+                    callType)
+            }
+
+            case handle: FieldAccessMethodHandle ⇒ {
+                processDependency(declaringMethod, handle.declaringClassType, USES_FIELD_DECLARING_TYPE)
+                handle match {
+                    case _: GetFieldMethodHandle | _: GetStaticMethodHandle ⇒
+                        dependencyProcessor.processDependency(
+                            declaringMethod, handle.asVirtualField, READS_FIELD)
+                        processDependency(declaringMethod, handle.fieldType, USES_FIELD_READ_TYPE)
+                    case _: PutFieldMethodHandle | _: PutStaticMethodHandle ⇒
+                        dependencyProcessor.processDependency(
+                            declaringMethod, handle.asVirtualField, WRITES_FIELD)
+                        processDependency(declaringMethod, handle.fieldType, USES_FIELD_WRITE_TYPE)
+                }
+
+            }
+        }
     }
 
     protected def processDependency(
         objectType: ObjectType,
-        id: Int,
+        target: VirtualSourceElement,
         dType: DependencyType) {
-        processDependency(sourceElementID(objectType), id, dType)
+        dependencyProcessor.processDependency(VirtualClass(objectType), target, dType)
     }
 
-    /**
-     * Processes a dependency between a source element identified by the given id to
-     * some type.
-     *
-     * By default dependencies to primitive types (which includes dependencies to
-     * arrays of primitive types) are not reported. If dependencies to primitive types
-     * should be reported you can override this method with the following method:
-     * {{{
-     * override protected def processDependency(
-     *      id: Int,
-     *      aType: Type,
-     *      dType: DependencyType) {
-     *      processDependency(id, sourceElementID(aType), dType)
-     * }
-     * }}}.
-     */
-    protected def processDependency(id: Int, aType: Type, dType: DependencyType): Unit = {
-
-        def process() { processDependency(id, sourceElementID(aType), dType) }
-
-        aType match {
-            case t: ObjectType                   ⇒ process()
-            case ArrayElementType(t: ObjectType) ⇒ process()
-            case _                               ⇒ /*Nothing to do.*/
-        }
+    protected[this] def processDependency(
+        source: ClassFile,
+        target: VirtualSourceElement,
+        dType: DependencyType): Unit = {
+        dependencyProcessor.processDependency(source.asVirtualClass, target, dType)
     }
 
-    protected def processInvokedynamic(
-            methodId: Int, instruction: INVOKEDYNAMIC): Unit = {
-        DependencyExtractor.showInvokedynamicMessageOnce()
-        processInvokedynamicRuntimeDependencies(methodId, instruction)
+    protected[this] def processDependency(
+        source: ClassFile,
+        target: ObjectType,
+        dType: DependencyType): Unit = {
+        dependencyProcessor.processDependency(source.asVirtualClass, VirtualClass(target), dType)
     }
 
-    /**
-     * Default implementation for handling invokedynamic instructions that only finds dependencies
-     * on the runtime infrastructure (e.g. the bootstrap method and its surrounding class, the 
-     * types of its arguments and its return type).
-     * 
-     * To gain more information about invokedynamic instructions, a special subclass of 
-     * DependencyExtractor must be created which overrides this method and performs deeper-going
-     * analysis on invokedynamic instructions.
-     */
-    protected def processInvokedynamicRuntimeDependencies(
-            methodId: Int, instruction: INVOKEDYNAMIC): Unit = {
-        val INVOKEDYNAMIC(bootstrapMethod, name, methodDescriptor) = instruction
-        // dependencies noted in the method descriptor that is passed to the invokedynamic instruction
-        // these are most likely simply java/lang/Object for both the parameter and return types
-        methodDescriptor.parameterTypes foreach { parameterType ⇒
-            processDependency(methodId, parameterType, USES_PARAMETER_TYPE)
-        }
-        processDependency(methodId, methodDescriptor.returnType, USES_RETURN_TYPE)
-        bootstrapMethod.methodHandle match {
-            case handle: MethodCallMethodHandle ⇒ {
-                // the class containing the bootstrap method
-                processDependency(methodId, handle.receiverType, USES_METHOD_DECLARING_TYPE)
-                // the type of method call
-                val callType = handle match {
-                    case InvokeInterfaceMethodHandle(_, _, _) ⇒ CALLS_INTERFACE_METHOD
-                    case _                                    ⇒ CALLS_METHOD
-                }
-                processDependency(methodId, handle.receiverType, handle.name, handle.methodDescriptor, callType)
-            }
-            case handle: FieldAccessMethodHandle ⇒ {
-                val (operation, operationDependency) = handle match {
-                    case GetFieldMethodHandle(_, _, _) | GetStaticMethodHandle(_, _, _) ⇒ (READS_FIELD, USES_FIELD_READ_TYPE)
-                    case PutFieldMethodHandle(_, _, _) | PutStaticMethodHandle(_, _, _) ⇒ (WRITES_FIELD, USES_FIELD_WRITE_TYPE)
-                }
-                processDependency(methodId, handle.declaringType, USES_FIELD_DECLARING_TYPE)
-                processDependency(methodId, handle.declaringType, handle.name, operation)
-                processDependency(methodId, handle.fieldType, operationDependency)
-            }
+    protected[this] def processDependency(
+        source: VirtualSourceElement,
+        target: Type,
+        dType: DependencyType): Unit = {
+        target match {
+            case bt: BaseType ⇒
+                processDependency(source, bt, dType)
+            case at: ArrayType ⇒
+                // Recursive call:
+                processDependency(source, at.elementType, dType)
+            case rt: ObjectType ⇒
+                dependencyProcessor.processDependency(source, VirtualClass(rt), dType)
         }
     }
 }
+/**
+ * @author Arne Lottmann
+ * @author Michael Eichberg
+ */
+private object DependencyExtractor {
 
-object DependencyExtractor {
-    private var hasShownInvokedynamicMessage = false
-    private val message: String = "This project contains invokedynamic instructions. "+
-        "Currently, only dependencies to the runtime are resolved."
+    private[this] var wasWarningShown = false
 
-    def showInvokedynamicMessageOnce(): Unit = {
-        if (!hasShownInvokedynamicMessage) this.synchronized {
-            if (!hasShownInvokedynamicMessage) {
-                println(message)
-                hasShownInvokedynamicMessage = true
+    private val incompleteHandlingOfInvokedynamicMessage: String =
+        "[info] This project contains invokedynamic instructions. "+
+            "Using the currently configured strategy only dependencies to the runtime are resolved."
+
+    def warnAboutIncompleteHandlingOfInvokedynamic(): Unit = {
+        if (!wasWarningShown)
+            this.synchronized {
+                if (!wasWarningShown) {
+                    wasWarningShown = true
+                    println(incompleteHandlingOfInvokedynamicMessage)
+                }
             }
-        }
     }
 }

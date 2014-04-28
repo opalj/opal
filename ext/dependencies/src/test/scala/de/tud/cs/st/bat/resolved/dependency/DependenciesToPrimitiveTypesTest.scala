@@ -31,7 +31,7 @@ package bat
 package resolved
 package dependency
 
-import reader.Java7Framework
+import reader.Java8Framework.ClassFile
 import DependencyType._
 
 import org.junit.runner.RunWith
@@ -57,27 +57,9 @@ class DependenciesToPrimitiveTypesTest extends FlatSpec with Matchers {
     //
     val extractedTypes = scala.collection.mutable.Set[Type]()
 
-    object TypesCollector extends SourceElementIDs {
-        def sourceElementID(t: Type): Int = {
-            extractedTypes += t
-            -1
-        }
-
-        def sourceElementID(definingObjectType: ObjectType, fieldName: String): Int = {
-            extractedTypes += definingObjectType
-            -1
-        }
-
-        def sourceElementID(definingReferenceType: ReferenceType,
-                            methodName: String,
-                            methodDescriptor: MethodDescriptor): Int = {
-            extractedTypes += definingReferenceType
-            -1
-        }
-    }
 
     val DependencyCollector =
-        new DependencyExtractor(TypesCollector) with NoSourceElementsVisitor {
+        new DependencyExtractor(TypesCollector) {
 
             def processDependency(sourceID: Int, targetID: Int, dependencyType: DependencyType) {}
         }
@@ -89,7 +71,7 @@ class DependenciesToPrimitiveTypesTest extends FlatSpec with Matchers {
     //
     DependencyCollector process {
         val resource = TestSupport.locateTestResources("classfiles/Types.jar", "ext/dependencies")
-        Java7Framework.ClassFile(resource, "types/TypeDeclarations.class")
+        ClassFile(resource, "types/TypeDeclarations.class")
     };
 
     //

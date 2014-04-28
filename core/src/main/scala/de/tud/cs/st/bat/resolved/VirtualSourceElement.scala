@@ -31,6 +31,9 @@ package bat
 package resolved
 
 /**
+ * A `VirtualSourceElement` is the representation of some source element that is
+ * always detached from the concrete source element that represents the implementation.
+ *
  * @author Michael Eichberg
  */
 sealed trait VirtualSourceElement extends SourceElement {
@@ -42,36 +45,23 @@ sealed trait VirtualSourceElement extends SourceElement {
 
 /**
  * Represents a class for which we have found some references but have not analyzed
- * any class file.
+ * any class file or do not want to keep the reference to the underlying class file.
  *
  * @author Michael Eichberg
  */
-case class VirtualClass(
+final case class VirtualClass(
         thisType: ObjectType,
-        fields: Set[VirtualField],
-        methods: Set[VirtualMethod]) extends VirtualSourceElement {
+        fields: Set[VirtualField] = Set.empty,
+        methods: Set[VirtualMethod] = Set.empty) extends VirtualSourceElement {
 
     override def isClass = true
 
-    def update(
-        thisType: ObjectType = this.thisType,
-        fields: Set[VirtualField] = this.fields,
-        methods: Set[VirtualMethod] = this.methods): VirtualClass = {
-        VirtualClass(thisType, fields, methods)
-    }
-
-    def +(method: VirtualMethod): VirtualClass = {
-        require(method.declaringClassType == thisType)
-        update(methods = this.methods + method)
-    }
-
-    def +(field: VirtualField): VirtualClass = {
-        require(field.declaringClassType == thisType)
-        update(fields = this.fields + field)
-    }
-
     override def hashCode = thisType.id
 
+    /**
+     * Two objects of type `VirtualClass` are considered equal if they represent
+     * the same type.
+     */
     override def equals(other: Any): Boolean = {
         other match {
             case that: VirtualClass ⇒ this.thisType eq that.thisType
@@ -81,14 +71,19 @@ case class VirtualClass(
 }
 
 /**
+ * @author Michael Eichberg
+ */
+sealed trait VirtualClassMember extends VirtualSourceElement
+
+/**
  * Represents a field of a virtual class.
  *
  * @author Michael Eichberg
  */
-case class VirtualField(
+final case class VirtualField(
         declaringClassType: ReferenceType,
         name: String,
-        fieldType: FieldType) extends VirtualSourceElement {
+        fieldType: FieldType) extends VirtualClassMember {
 
     override def isField = true
 
@@ -111,21 +106,21 @@ case class VirtualField(
  *
  * @author Michael Eichberg
  */
-case class VirtualMethod(
+final case class VirtualMethod(
         declaringClassType: ReferenceType,
         name: String,
-        methodDescriptor: MethodDescriptor) extends VirtualSourceElement {
+        descriptor: MethodDescriptor) extends VirtualClassMember {
 
     override def isMethod = true
 
     override def hashCode =
-        (((declaringClassType.id * 41) + name.hashCode()) * 41) + methodDescriptor.hashCode()
+        (((declaringClassType.id * 41) + name.hashCode()) * 41) + descriptor.hashCode()
 
     override def equals(other: Any): Boolean = {
         other match {
             case that: VirtualMethod ⇒
                 (this.declaringClassType eq this.declaringClassType) &&
-                    (this.methodDescriptor eq that.methodDescriptor) &&
+                    (this.descriptor eq that.descriptor) &&
                     this.name == that.name
             case _ ⇒ false
         }

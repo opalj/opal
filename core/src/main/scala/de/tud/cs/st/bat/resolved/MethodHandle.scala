@@ -51,38 +51,40 @@ sealed trait MethodHandle extends ConstantValue[MethodHandle] {
 }
 
 sealed trait FieldAccessMethodHandle extends MethodHandle {
-    def declaringType: ObjectType
+    def declaringClassType: ObjectType
     def name: String
     def fieldType: FieldType
+    
+    def asVirtualField = VirtualField(declaringClassType,name,fieldType)
 
     override def toJava: String = {
         val handleType = getClass.getSimpleName.toString
-        val fieldName = declaringType.toJava+"."+name
+        val fieldName = declaringClassType.toJava+"."+name
         val returnType = ": "+fieldType.toJava
         handleType+": "+fieldName + returnType
     }
 }
 
 case class GetFieldMethodHandle(
-    declaringType: ObjectType,
+    declaringClassType: ObjectType,
     name: String,
     fieldType: FieldType)
         extends FieldAccessMethodHandle
 
 case class GetStaticMethodHandle(
-    declaringType: ObjectType,
+    declaringClassType: ObjectType,
     name: String,
     fieldType: FieldType)
         extends FieldAccessMethodHandle
 
 case class PutFieldMethodHandle(
-    declaringType: ObjectType,
+    declaringClassType: ObjectType,
     name: String,
     fieldType: FieldType)
         extends FieldAccessMethodHandle
 
 case class PutStaticMethodHandle(
-    declaringType: ObjectType,
+    declaringClassType: ObjectType,
     name: String,
     fieldType: FieldType)
         extends FieldAccessMethodHandle

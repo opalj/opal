@@ -29,19 +29,28 @@
 package de.tud.cs.st
 package bat
 package resolved
+package dependency
 
 /**
- * Use this trait to assign a dependency to an array's element type instead of the array
- * itself.
+ * Filters self-dependencies.
  *
  * @author Michael Eichberg
  */
-trait UseIDOfBaseTypeForArrayTypes extends SourceElementIDs {
+trait FilterSelfDependencies extends DependencyProcessor {
 
-    abstract override def sourceElementID(t: Type): Int =
-        t match {
-            case at: ArrayType ⇒ super.sourceElementID(at.elementType)
-            case t             ⇒ super.sourceElementID(t)
-        }
+    /**
+     * Processes a dependency of the given type between the source and target.
+     *
+     * @param source The source element that has a dependency on the `target` element.
+     * @param target The source element that the `source` element depends on.
+     * @param dependencyType The type of the dependency.
+     */
+    abstract override def processDependency(
+        source: VirtualSourceElement,
+        target: VirtualSourceElement,
+        dType: DependencyType): Unit = {
+        if (source != target)
+            super.processDependency(source, target, dType)
+    }
 
 }

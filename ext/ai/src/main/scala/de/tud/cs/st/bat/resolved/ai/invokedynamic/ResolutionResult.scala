@@ -34,65 +34,45 @@ package invokedynamic
 
 import instructions.INVOKEDYNAMIC
 
-import language.existentials 
+import language.existentials
 
 /**
- * Base trait that represents the result of an [[InvokedynamicResolver]]'s resolution run.
- * 
+ * Represents the result of the resolution of an `invokedynamic` instruction.
+ *
  * @author Arne Lottmann
+ * @author Michael Eichberg
  */
 sealed trait ResolutionResult {
+
+    /**
+     * The original instruction.
+     */
     val instruction: INVOKEDYNAMIC
+
+    /**
+     * Targets identified within the project.
+     */
+    def concreteTargets: Traversable[ClassMember]
+
+    /**
+     * All identified targets. (It may be possible that we identify a method
+     * that will be called/a field that may be accessed, but that field/method
+     * is currently not available – not part of the analyzed code base – and, hence,
+     * we can in general only return virtual class members.)
+     */
+    def allTargets: Traversable[VirtualClassMember]
 }
 
 /**
- * The result to be returned when there is a single, definitive match for the given 
- * instruction.
- * 
+ * The result to be returned when the resolution process was completed and it was
+ * not possible to identify a single target.
+ *
  * @author Arne Lottmann
  */
-case class SingleResult(
-    val matched: ClassMember,
-    override val instruction: INVOKEDYNAMIC)
-        extends ResolutionResult
+case class ResolutionFailed(
+        override val instruction: INVOKEDYNAMIC) extends ResolutionResult {
 
-/**
- * The result to be returned when there are multiple possible matches '''if''' they share
- * an inheritance hierarchy '''and''' if it is possible to determine one type among the
- * possible matches that is a super type of all others.
- * 
- * @param conservativeMatch the best guarantee for a match that can be made under the
- *  circumstances; i.e. this `ClassMember` belongs to the type at the top of the 
- *  hierarchy.
- *  
- * @param alternativeMatches the remaining candidates within the hierarchy
- *  (`conservativeMatch` should not be a part of this `Set`.)
- * 
- * @author Arne Lottmann
- */
-case class InheritanceResult(
-    val conservativeMatch: ClassMember,
-    val alternativeMatches: Set[_ <: ClassMember],
-    override val instruction: INVOKEDYNAMIC)
-        extends ResolutionResult
+    def concreteTargets: Traversable[ClassMember] = Traversable.empty
 
-/**
- * The result to be returned when there are multiple possible matches for which it is
- * impossible to determine one common super type.
- * 
- * @see [[InheritanceResult]]
- * 
- * @author Arne Lottmann
- */
-case class MultipleResults(
-    val possibleMatches: Set[_ <: ClassMember],
-    override val instruction: INVOKEDYNAMIC)
-        extends ResolutionResult
-
-/**
- * The result to be returned when the resolution process was completed without finding 
- * any `ClassMember` that could match the given instruction.
- * 
- * @author Arne Lottmann
- */
-case class ResolutionFailed(override val instruction: INVOKEDYNAMIC) extends ResolutionResult
+    def allTargets: Traversable[VirtualClassMember] = Traversable.empty
+}

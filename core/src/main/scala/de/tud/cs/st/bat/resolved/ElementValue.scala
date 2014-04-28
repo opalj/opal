@@ -39,77 +39,116 @@ package resolved
 sealed trait ElementValue
         extends Attribute {
 
+    def valueType: FieldType
+
+    /**
+     * The representation of this element value as a Java literal/expression.
+     */
     def toJava: String
+
+}
+
+/**
+ * Common super trait of all element values with a primitive base type.
+ *
+ * @author Michael Eichberg
+ */
+sealed trait BaseTypeElementValue extends ElementValue {
+
+    final override def valueType = baseType
+
+    def baseType: BaseType
 }
 
 case class ByteValue(
     value: Byte)
-        extends ElementValue {
+        extends BaseTypeElementValue {
 
-    def toJava = value.toString
+    override def baseType: BaseType = ByteType
+
+    override def toJava = value.toString
+
 }
 
 case class CharValue(
     value: Char)
-        extends ElementValue {
+        extends BaseTypeElementValue {
 
-    def toJava = value.toString
+    override def baseType: BaseType = CharType
+
+    override def toJava = value.toString
 }
 
 case class DoubleValue(
     value: Double)
-        extends ElementValue {
+        extends BaseTypeElementValue {
 
-    def toJava = value.toString
+    override def baseType: BaseType = DoubleType
+
+    override def toJava = value.toString
 }
 
 case class FloatValue(
     value: Float)
-        extends ElementValue {
+        extends BaseTypeElementValue {
 
-    def toJava = value.toString
+    override def baseType: BaseType = FloatType
+
+    override def toJava = value.toString
 }
 
 case class IntValue(
     value: Int)
-        extends ElementValue {
+        extends BaseTypeElementValue {
 
-    def toJava = value.toString
+    override def baseType: BaseType = IntegerType
+
+    override def toJava = value.toString
 }
 
 case class LongValue(
     value: Long)
-        extends ElementValue {
+        extends BaseTypeElementValue {
 
-    def toJava = value.toString
+    override def baseType: BaseType = LongType
+
+    override def toJava = value.toString
 }
 
 case class ShortValue(
     value: Short)
-        extends ElementValue {
+        extends BaseTypeElementValue {
 
-    def toJava = value.toString
+    override def baseType: BaseType = ShortType
+
+    override def toJava = value.toString
 }
 
 case class BooleanValue(
     value: Boolean)
-        extends ElementValue {
+        extends BaseTypeElementValue {
 
-    def toJava = value.toString
+    override def baseType: BaseType = BooleanType
+
+    override def toJava = value.toString
 }
 
 case class StringValue(
     value: String)
         extends ElementValue {
 
-    def toJava = "\""+value.toString+"\""
+    final override def valueType = ObjectType.String
+
+    override def toJava = "\""+value.toString+"\""
 }
 
 case class ClassValue(
     value: Type)
         extends ElementValue {
 
-    def toJava = value.toJava+".class"
+    final override def valueType = ObjectType.Class
+
+    override def toJava = value.toJava+".class"
 }
 
 case class EnumValue(
@@ -117,21 +156,28 @@ case class EnumValue(
     constName: String)
         extends ElementValue {
 
-    def toJava = enumType.toJava+"."+constName
+    final override def valueType = enumType
+
+    override def toJava = enumType.toJava+"."+constName
 }
 
 case class ArrayValue(
     values: IndexedSeq[ElementValue])
         extends ElementValue {
 
-    def toJava = values.map(_.toJava).mkString("{", ",", "}")
+    // by design/specification the first value determines the type of the Array
+    final override def valueType = ArrayType(values(0).valueType)
+
+    override def toJava = values.map(_.toJava).mkString("{", ",", "}")
 }
 
 case class AnnotationValue(
     annotation: Annotation)
         extends ElementValue {
 
-    def toJava = annotation.toJava
+    final override def valueType = annotation.annotationType
+
+    override def toJava = annotation.toJava
 }
 
 

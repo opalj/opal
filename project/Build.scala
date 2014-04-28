@@ -20,11 +20,11 @@ object OPALBuild extends Build {
 		aif,
 		dependenciesExtraction, 		 
 		opalDeveloperTools, 
+		VALIDATE,
 		demos,		
 		findRealBugsAnalyses,
 		findRealBugsCLI,
-		incubation,
-		VALIDATE)
+		incubation)
 
 	/*****************************************************************************
 	 *
@@ -41,20 +41,20 @@ object OPALBuild extends Build {
 		id = "BytecodeToolkit",
 		base = file("core")
 	) dependsOn(util)
-
-	lazy val aif = Project(
-		id = "AbstractInterpretationFramework",
-		base = file("ext/ai")
-	) dependsOn(bt % "test->test;compile->compile")
 	
 	lazy val da = Project(
 		id = "BytecodeDisassembler",
 		base = file("da")
 	) dependsOn(bt % "test->test;compile->compile")
 
+	lazy val aif = Project(
+		id = "AbstractInterpretationFramework",
+		base = file("ext/ai")
+	) dependsOn(bt % "test->test;compile->compile")
+
 	// The project "DependenciesExtractionLibrary" depends on
-	// AI to be able to resolve calls using 
-	// MethodHandle/MethodType/"invokedynamic"/...
+	// the abstract interpretation framework to be able to 
+	// resolve calls using MethodHandle/MethodType/"invokedynamic"/...
 	lazy val dependenciesExtraction = Project(
 		id = "DependenciesExtractionLibrary",
 		base = file("ext/dependencies")

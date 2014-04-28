@@ -258,6 +258,11 @@ sealed abstract class VoidType private () extends Type with ReturnTypeSignature 
 }
 case object VoidType extends VoidType
 
+/**
+ * Supertype of all types except [[VoidType]].
+ *
+ * @author Michael Eichberg
+ */
 sealed abstract class FieldType extends Type {
 
     final override def isFieldType = true
@@ -317,7 +322,7 @@ sealed abstract class BaseType extends FieldType with TypeSignature {
 
     def atype: Int
 
-     final val id: Int = Int.MinValue + atype
+    final val id: Int = Int.MinValue + atype
 }
 
 sealed abstract class ByteType private () extends BaseType {

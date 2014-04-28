@@ -18,6 +18,7 @@ scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.title("OPAL - OPen Analysis 
 
 scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.version(version.value) 
 
+// Required to get relative links in the generated source code documentation.
 scalacOptions in (ScalaUnidoc, unidoc) <<= 
   baseDirectory map {
     bd => Seq ("-sourcepath", bd.getAbsolutePath)

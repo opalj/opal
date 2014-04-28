@@ -40,5 +40,7 @@ import instructions.INVOKEDYNAMIC
  * @author Arne Lottmann
  */
 trait InvokedynamicResolver {
+
     def resolveInvokedynamic(instruction: INVOKEDYNAMIC): ResolutionResult
+
 }

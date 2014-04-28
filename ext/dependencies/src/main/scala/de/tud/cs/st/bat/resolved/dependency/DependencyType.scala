@@ -33,19 +33,23 @@ package dependency
 
 /**
  * Enumeration of all kinds of dependencies that are extracted by the
- * [[de.tud.cs.st.bat.resolved.dependency.DependencyExtractor]].
+ * [[DependencyExtractor]].
  *
  * @author Thomas Schlosser
  * @author Michael Eichberg
  */
 object DependencyType extends Enumeration {
 
-    // class/method/field definition related dependency types
-    val EXTENDS = Value("extends")
-    val IMPLEMENTS = Value("implements")
-    val IS_INSTANCE_MEMBER_OF = Value("is instance member of")
-    val IS_CLASS_MEMBER_OF = Value("is class member of")
-    val IS_INNER_CLASS_OF = Value("is inner class of")
+    val EXTENDS = Value("type declaration EXTENDS class type")
+    val IMPLEMENTS = Value("type declaration IMPLEMENTS interface type")
+    
+    val IS_INSTANCE_MEMBER = Value("field or method IS INSTANCE MEMBER of class type")
+    
+    val IS_CLASS_MEMBER = Value("field/method IS CLASS MEMBER of class/interface/annotation/enum")
+        
+    val IS_ENCLOSED = Value("class type declaration IS ENCLOSED by method or type")
+    
+    val IS_OUTER_CLASS = Value("class type declaration IS OUTER CLASS of method or type")
 
     // field definition related dependency types
     val IS_OF_TYPE = Value("is of type")
@@ -79,6 +83,7 @@ object DependencyType extends Enumeration {
     val PARAMETER_ANNOTATED_WITH = Value("parameter annotated with")
 
     // element value related dependency type
+    val USES_DEFAULT_BASE_TYPE = Value("uses default base type")
     val USES_DEFAULT_CLASS_VALUE_TYPE = Value("uses default class value type")
     val USES_DEFAULT_ENUM_VALUE_TYPE = Value("uses default enum value type")
     val USES_ENUM_VALUE = Value("uses enum value")

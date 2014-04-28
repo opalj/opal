@@ -32,9 +32,9 @@ package resolved
 package dependency
 
 /**
- * A dependency processor processes dependencies between to source elements. This
+ * A dependency processor processes dependencies between two source elements. This
  * trait's `processDependency` method will be called, e.g., by the
- * [[de.tud.cs.st.bat.resolved.dependency.DependencyExtractor]],
+ * [[DependencyExtractor]],
  * for every encountered dependency.
  *
  * @author Thomas Schlosser
@@ -45,10 +45,35 @@ trait DependencyProcessor {
     /**
      * Processes a dependency of the given type between the source and target.
      *
-     * @param sourceID The ID of the origin source element.
-     * @param targetID The ID of the target source element.
+     * @param source The source element that has a dependency on the `target` element.
+     * @param target The source element that the `source` element depends on.
      * @param dependencyType The type of the dependency.
      */
-    def processDependency(sourceID: Int, targetID: Int, dependencyType: DependencyType)
+    def processDependency(
+        source: VirtualSourceElement,
+        target: VirtualSourceElement,
+        dType: DependencyType): Unit
+
+    def processDependency(
+        source: VirtualSourceElement,
+        baseType: BaseType,
+        dType: DependencyType): Unit
 
 }
+
+class DefaultDependencyProcessor extends DependencyProcessor {
+
+    override def processDependency(
+        source: VirtualSourceElement,
+        target: VirtualSourceElement,
+        dType: DependencyType): Unit = {}
+
+    override def processDependency(
+        source: VirtualSourceElement,
+        baseType: BaseType,
+        dType: DependencyType): Unit = {}
+
+}
+
+object DefaultDependencyProcessor extends DefaultDependencyProcessor
+

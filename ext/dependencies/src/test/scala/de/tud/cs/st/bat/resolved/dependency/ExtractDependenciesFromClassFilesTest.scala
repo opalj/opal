@@ -31,9 +31,11 @@ package bat
 package resolved
 package dependency
 
-import org.scalatest.FlatSpec
+import reader.Java8Framework.ClassFile
+
 import org.scalatest.Matchers
-import de.tud.cs.st.bat.resolved.reader.Java7Framework
+import org.scalatest.FlatSpec
+
 import java.util.zip.ZipFile
 
 /**
@@ -48,29 +50,23 @@ import java.util.zip.ZipFile
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class ExtractDependenciesFromClassFilesTest extends FlatSpec with Matchers {
 
-  for {
-    file ← TestSupport.locateTestResources("classfiles", "ext/dependencies").listFiles()
-    if (file.isFile && file.canRead && file.getName.endsWith(".jar"))
-  } {
-    val zipfile = new ZipFile(file)
-    val zipentries = (zipfile).entries
-    while (zipentries.hasMoreElements) {
-      val zipentry = zipentries.nextElement
-      if (!zipentry.isDirectory && zipentry.getName.endsWith(".class")) {
+    for {
+        file ← TestSupport.locateTestResources("classfiles", "ext/dependencies").listFiles()
+        if (file.isFile && file.canRead && file.getName.endsWith(".jar"))
+    } {
+        val zipfile = new ZipFile(file)
+        val zipentries = (zipfile).entries
+        while (zipentries.hasMoreElements) {
+            val zipentry = zipentries.nextElement
+            if (!zipentry.isDirectory && zipentry.getName.endsWith(".class")) {
 
-        val dependencyExtractor = new DependencyExtractor(new SourceElementIDsMap {}) with NoSourceElementsVisitor {
-          def processDependency(src: Int, trgt: Int, dType: DependencyType) {
-            /* DO NOTHING */
-          }
+                val dependencyExtractor = new DependencyExtractor(DefaultDependencyProcessor)
+
+                it should ("be able to extract dependencies of class file "+zipentry.getName+" in "+zipfile.getName) in {
+                    var classFile = ClassFile(() ⇒ zipfile.getInputStream(zipentry))
+                    dependencyExtractor.process(classFile)
+                }
+            }
         }
-
-        it should ("be able to extract dependencies of class file " + zipentry.getName + " in " + zipfile.getName) in {
-          var classFile = Java7Framework.ClassFile(() ⇒ zipfile.getInputStream(zipentry))
-          dependencyExtractor.process(classFile)
-        }
-
-      }
     }
-  }
-
 }

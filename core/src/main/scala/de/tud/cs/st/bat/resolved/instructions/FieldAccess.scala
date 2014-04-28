@@ -44,6 +44,8 @@ sealed abstract class FieldAccess extends Instruction {
 
     def fieldType: FieldType
 
+    def asVirtualField: VirtualField = VirtualField(declaringClass, name, fieldType)
+
     final override def indexOfNextInstruction(currentPC: Int, code: Code): Int =
         currentPC + 3
 

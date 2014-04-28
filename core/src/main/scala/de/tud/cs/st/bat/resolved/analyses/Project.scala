@@ -32,6 +32,7 @@ package resolved
 package analyses
 
 import scala.collection.{ Set, Map }
+import scala.collection.mutable.{ AnyRefMap, OpenHashMap }
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a
@@ -63,11 +64,11 @@ import scala.collection.{ Set, Map }
 class Project[Source] private (
         val projectClassFiles: List[ClassFile],
         val libraryClassFiles: List[ClassFile],
-        private val projectTypes: Set[ObjectType],
-        private val fieldToClassFile: Map[Field, ClassFile],
-        private val methodToClassFile: Map[Method, ClassFile],
-        private val objectTypeToClassFile: Map[ObjectType, ClassFile],
-        private val sources: Map[ObjectType, Source],
+        private[this] val projectTypes: Set[ObjectType],
+        private[this] val fieldToClassFile: AnyRefMap[Field, ClassFile],
+        private[this] val methodToClassFile: AnyRefMap[Method, ClassFile],
+        private[this] val objectTypeToClassFile: OpenHashMap[ObjectType, ClassFile],
+        private[this] val sources: OpenHashMap[ObjectType, Source],
         val projectClassFilesCount: Int,
         val projectMethodsCount: Int,
         val projectFieldsCount: Int,
@@ -395,10 +396,10 @@ object Project {
         var libraryMethodsCount: Int = 0
         var libraryFieldsCount: Int = 0
 
-        val methodToClassFile = Map.empty[Method, ClassFile]
-        val fieldToClassFile = Map.empty[Field, ClassFile]
-        val objectTypeToClassFile = Map.empty[ObjectType, ClassFile]
-        val sources = Map.empty[ObjectType, Source]
+        val methodToClassFile = AnyRefMap.empty[Method, ClassFile]
+        val fieldToClassFile = AnyRefMap.empty[Field, ClassFile]
+        val objectTypeToClassFile = OpenHashMap.empty[ObjectType, ClassFile]
+        val sources = OpenHashMap.empty[ObjectType, Source]
 
         for ((classFile, source) ← projectClassFilesWithSources) {
             projectClassFiles = classFile :: projectClassFiles
@@ -443,6 +444,9 @@ object Project {
             objectTypeToClassFile.put(objectType, classFile)
             sources.put(objectType, source)
         }
+
+        fieldToClassFile.repack()
+        methodToClassFile.repack()
 
         new Project(
             projectClassFiles,
