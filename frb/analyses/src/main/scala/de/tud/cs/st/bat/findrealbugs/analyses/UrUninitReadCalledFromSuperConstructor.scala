@@ -85,7 +85,7 @@ class UrUninitReadCalledFromSuperConstructor[Source]
 
         import project.classHierarchy
 
-        /**
+        /*
          * Returns true if classFile declares the given Field
          *
          * @param classFile The ClassFile that is supposed to declare a given field
@@ -100,7 +100,7 @@ class UrUninitReadCalledFromSuperConstructor[Source]
             }
         }
 
-        /**
+        /*
          * Check whether a method overrides a method in any super class.
          *
          * @param classFile Subclass with the supposed overriding method.
@@ -116,7 +116,7 @@ class UrUninitReadCalledFromSuperConstructor[Source]
                 )
         }
 
-        /**
+        /*
          * Checks whether the source method contains calls to the given target method.
          *
          * @param source The method which may contain calls to other methods.
@@ -134,7 +134,7 @@ class UrUninitReadCalledFromSuperConstructor[Source]
 
         var inconsistencyReports: Set[SourceLocationBasedReport[Source]] = Set.empty
 
-        /**
+        /*
          * Looks up a method reference from an `INVOKESPECIAL` instruction by using
          * `resolveMethodReference`, unless the given declaring class is an interface.
          *
@@ -177,7 +177,7 @@ class UrUninitReadCalledFromSuperConstructor[Source]
             }
         }
 
-        /**
+        /*
          * Returns the super class constructor called by the given constructor, or None.
          *
          * @param constructor Constructor which may or may not call a superconstructor.

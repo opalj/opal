@@ -62,7 +62,7 @@ class BadlyOverriddenAdapter[Source]
         project: Project[Source],
         parameters: Seq[String] = List.empty): Iterable[SourceLocationBasedReport[Source]] = {
 
-        /**
+        /*
          * Heuristic to check whether a type is an Adapter.
          *
          * @param classType The type to check.
@@ -74,7 +74,7 @@ class BadlyOverriddenAdapter[Source]
                 classType.fqn.endsWith("Adapter")
         }
 
-        /**
+        /*
          * Determines whether a method overrides a method in a super class.
          *
          * @param method The method to check.
