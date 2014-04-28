@@ -160,7 +160,7 @@ object DependencyStore {
     }
 }
 
-class ForwardingDependencyProcessor(
+class DependencyProcessorDecorator(
         baseDependencyProcessor: DependencyProcessor) extends DependencyProcessor {
 
     def processDependency(
