@@ -34,56 +34,45 @@ package checking
 
 import analyses._
 
-import scala.collection.{ Set, IterableView }
-
-import java.net.URL
+import scala.collection.{ Set }
 
 /**
- * A source element matcher determines a set of source elements that matches a given query.
+ * Matches all classes, fields and methods that are declared in the specified package.
+ *
+ * @param packageName The name of a package in binary notation.
+ *      (I.e., "/" are used to separate a package name's segments; e.g.,
+ *      "java/lang/Object").
+ * @param matchSubpackages If true, all packages that start with the given package
+ *      name are matched otherwise only classes declared in the given package are matched.
  *
  * @author Michael Eichberg
  */
-trait SourceElementsMatcher { left ⇒
+case class PackageNameBasedMatcher(
+    packageName: String,
+    matchSubpackages: Boolean = false)
+        extends SourceElementsMatcher {
 
-    def extension(project: SomeProject): Set[VirtualSourceElement]
+    require(packageName.length >= 1)
+    require(packageName.indexOf('*') == -1)
+    require(packageName.indexOf('.') == -1)
 
-    def and(right: SourceElementsMatcher): SourceElementsMatcher = {
-        new SourceElementsMatcher {
-            def extension(project: SomeProject) = {
-                left.extension(project) ++ right.extension(project)
+    def extension(project: SomeProject): Set[VirtualSourceElement] = {
+        val matchedClassFiles =
+            project.classFiles.view filter { classFile ⇒
+                val thisClassPackageName = classFile.thisType.packageName
+                thisClassPackageName.startsWith(packageName) && (
+                    matchSubpackages || thisClassPackageName.length() == packageName.length()
+                )
             }
-
-            override def toString() = { //
-                "("+left+" and "+right+")"
-            }
-        }
+        matchCompleteClasses(matchedClassFiles)
     }
 
-    def except(right: SourceElementsMatcher): SourceElementsMatcher = {
-        new SourceElementsMatcher {
-            def extension(project: SomeProject) = {
-                left.extension(project) -- right.extension(project)
-            }
-
-            override def toString() = { //
-                "("+left+" except "+right+")"
-            }
-        }
-    }
-
-    protected[this] def matchCompleteClasses(
-        matchedClassFiles: Traversable[ClassFile]): Set[VirtualSourceElement] = {
-
-        import scala.collection.mutable.HashSet
-        var sourceElements: HashSet[VirtualSourceElement] = HashSet.empty
-
-        matchedClassFiles foreach { classFile ⇒
-            val declaringClassType = classFile.thisType
-            sourceElements += classFile.asVirtualClass
-            sourceElements ++= classFile.methods.view.map(_.asVirtualMethod(declaringClassType))
-            sourceElements ++= classFile.fields.view.map(_.asVirtualField(declaringClassType))
-        }
-        sourceElements
+    override def toString = {
+        var s = "\""+packageName.replace('/', '.')+".*"
+        if (matchSubpackages)
+            s += "*"
+        s += "\""
+        s
     }
 }
 

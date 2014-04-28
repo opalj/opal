@@ -34,57 +34,26 @@ package checking
 
 import analyses._
 
-import scala.collection.{ Set, IterableView }
-
-import java.net.URL
+import scala.collection.{ Set }
 
 /**
  * A source element matcher determines a set of source elements that matches a given query.
  *
  * @author Michael Eichberg
  */
-trait SourceElementsMatcher { left ⇒
+case class RegexClassMatcher(
+    matcher: scala.util.matching.Regex)
+        extends SourceElementsMatcher {
 
-    def extension(project: SomeProject): Set[VirtualSourceElement]
+    def extension(project: SomeProject): Set[VirtualSourceElement] = {
 
-    def and(right: SourceElementsMatcher): SourceElementsMatcher = {
-        new SourceElementsMatcher {
-            def extension(project: SomeProject) = {
-                left.extension(project) ++ right.extension(project)
+        val matchedClassFiles =
+            project.classFiles.view filter { classFile ⇒
+                val className = classFile.thisType.fqn.replace('/', '.')
+                matcher.findFirstIn(className).isDefined
             }
 
-            override def toString() = { //
-                "("+left+" and "+right+")"
-            }
-        }
-    }
-
-    def except(right: SourceElementsMatcher): SourceElementsMatcher = {
-        new SourceElementsMatcher {
-            def extension(project: SomeProject) = {
-                left.extension(project) -- right.extension(project)
-            }
-
-            override def toString() = { //
-                "("+left+" except "+right+")"
-            }
-        }
-    }
-
-    protected[this] def matchCompleteClasses(
-        matchedClassFiles: Traversable[ClassFile]): Set[VirtualSourceElement] = {
-
-        import scala.collection.mutable.HashSet
-        var sourceElements: HashSet[VirtualSourceElement] = HashSet.empty
-
-        matchedClassFiles foreach { classFile ⇒
-            val declaringClassType = classFile.thisType
-            sourceElements += classFile.asVirtualClass
-            sourceElements ++= classFile.methods.view.map(_.asVirtualMethod(declaringClassType))
-            sourceElements ++= classFile.fields.view.map(_.asVirtualField(declaringClassType))
-        }
-        sourceElements
+        matchCompleteClasses(matchedClassFiles)
     }
 }
-
 
