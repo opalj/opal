@@ -81,8 +81,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                 at.annotations foreach { process(vc, _) }
 
             case tat: TypeAnnotationTable ⇒
-                // TODO [Java8] Add support for TypeAnnotationTable attributes
-                ???
+                tat.typeAnnotations foreach { process(vc, _, ANNOTATED_WITH) }
 
             case EnclosingMethod(enclosingClass, name, descriptor) ⇒ {
                 // Check whether the enclosing method attribute refers to an enclosing 
@@ -154,8 +153,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                 at.annotations foreach { process(vf, _) }
 
             case tat: TypeAnnotationTable ⇒
-                // TODO [Java8] Add support for TypeAnnotationTable attributes
-                ???
+                tat.typeAnnotations foreach { process(vf, _, ANNOTATED_WITH) }
 
             case cv: ConstantValue[_] ⇒
                 processDependency(vf, cv.valueType, USES_CONSTANT_VALUE_OF_TYPE)
@@ -221,8 +219,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                     }
 
                 case tat: TypeAnnotationTable ⇒
-                    // TODO [Java8] Add support for TypeAnnotationTable attributes
-                    ???
+                    tat.typeAnnotations foreach { process(vm, _, ANNOTATED_WITH) }
 
                 case _ ⇒
                 // The LineNumberTable and StackMapTable attributes do not define 
@@ -424,6 +421,18 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
         processDependency(declaringElement, annotation.annotationType, dependencyType)
 
         annotation.elementValuePairs foreach { evp ⇒
+            processElementValue(declaringElement, evp.value)
+        }
+    }
+
+    private def process(
+        declaringElement: VirtualSourceElement,
+        typeAnnotation: TypeAnnotation,
+        dependencyType: DependencyType): Unit = {
+
+        processDependency(declaringElement, typeAnnotation.annotationType, dependencyType)
+
+        typeAnnotation.elementValuePairs foreach { evp ⇒
             processElementValue(declaringElement, evp.value)
         }
     }
