@@ -41,6 +41,8 @@ sealed trait VirtualSourceElement extends SourceElement {
     override def attributes = Nil
 
     final override def isVirtual = true
+
+    def toJava: String
 }
 
 /**
@@ -52,6 +54,8 @@ sealed trait VirtualSourceElement extends SourceElement {
 final case class VirtualClass(thisType: ObjectType) extends VirtualSourceElement {
 
     override def isClass = true
+
+    override def toJava: String = thisType.toJava
 
     override def hashCode = thisType.id
 
@@ -84,6 +88,9 @@ final case class VirtualField(
 
     override def isField = true
 
+    override def toJava: String =
+        declaringClassType.toJava+"{ "+fieldType.toJava+" "+name+"; }"
+
     override def hashCode =
         (((declaringClassType.id * 41) + name.hashCode()) * 41) + fieldType.id
 
@@ -109,6 +116,9 @@ final case class VirtualMethod(
         descriptor: MethodDescriptor) extends VirtualClassMember {
 
     override def isMethod = true
+
+    override def toJava: String =
+        declaringClassType.toJava+"{ "+descriptor.toJava(name)+"; }"
 
     override def hashCode =
         (((declaringClassType.id * 41) + name.hashCode()) * 41) + descriptor.hashCode()
