@@ -46,52 +46,45 @@ object TransitiveUsage extends AnalysisExecutor {
 
     private[this] var visitedTypes = Set.empty[ObjectType]
 
+    // Types which are extracted but which are not yet analyzed.
     private[this] var extractedTypes = Set.empty[ObjectType]
 
     // To extract all usages we reuse the infrastructure that enables us to extract
     // dependencies. In this case we just record referred to types and do not actually
     // record the concrete dependencies.
 
-    object TypesCollector extends SourceElementIDs {
+    object TypesCollector extends DependencyProcessorAdapter {
 
-        def processType(t: Type): Unit =
+        private def processType(t: Type): Unit =
             if (t.isObjectType) {
                 val objectType = t.asObjectType
                 if (!visitedTypes.contains(objectType))
                     extractedTypes += objectType
             }
 
-        def sourceElementID(t: Type): Int = {
-            processType(t)
-            -1
-        }
-
-        def sourceElementID(definingObjectType: ObjectType, fieldName: String): Int = {
-            processType(definingObjectType)
-            -1
-        }
-
-        def sourceElementID(
-            definingReferenceType: ReferenceType,
-            methodName: String,
-            methodDescriptor: MethodDescriptor): Int = {
-
-            processType(definingReferenceType)
-            -1
+        override def processDependency(
+            source: VirtualSourceElement,
+            target: VirtualSourceElement,
+            dType: DependencyType): Unit = {
+            def process(vse: VirtualSourceElement) {
+                vse match {
+                    case VirtualClass(declaringClassType) ⇒
+                        processType(declaringClassType)
+                    case VirtualField(declaringClassType, _, fieldType) ⇒
+                        processType(declaringClassType)
+                        processType(fieldType)
+                    case VirtualMethod(declaringClassType, _, descriptor) ⇒
+                        processType(declaringClassType)
+                        processType(descriptor.returnType)
+                        descriptor.parameterTypes.view foreach { processType(_) }
+                }
+            }
+            process(source)
+            process(target)
         }
     }
 
-    val dependencyCollector =
-        // we don't want to do anything special while extracting the dependencies.
-        new DependencyExtractor(TypesCollector) with NoSourceElementsVisitor {
-
-            def processDependency(
-                sourceID: Int,
-                targetID: Int,
-                dependencyType: DependencyType) {
-                /* Nothing to do... */
-            }
-        }
+    val dependencyCollector = new DependencyExtractor(TypesCollector)
 
     override def analysisParametersDescription: String =
         "-class=<The class for which the transitive closure of used classes is determined>"
