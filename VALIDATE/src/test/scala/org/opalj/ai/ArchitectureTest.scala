@@ -47,7 +47,7 @@ import org.scalatest.Matchers
 @RunWith(classOf[JUnitRunner])
 class ArchitectureTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
-    behavior of "BATAI's implemented architecture"
+    behavior of "the Abstract Interpretation Framework's implemented architecture"
 
     it should "be consistent with the specified architecture" in {
         val expected =
@@ -95,7 +95,7 @@ class ArchitectureTest extends FlatSpec with Matchers with BeforeAndAfterAll {
             }
         import expected._
 
-        val result = analyze(Directory("."))
+        val result = analyze(Directory("ext/ai/target/scala-2.11/classes"))
         if (result.nonEmpty) {
             println("Violations:\n\t"+result.mkString("\n\t"))
             fail("The implemented and the specified architecture are not consistent (see the console for details).")
