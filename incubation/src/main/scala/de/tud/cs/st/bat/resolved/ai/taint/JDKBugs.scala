@@ -237,7 +237,7 @@ trait TaintAnalysisDomain[Source]
    * This method must be called at most once otherwise the constructed analysis graph
    * may contain duplicate information.
    */
-  private[this] def postAnalysis(): Boolean = {
+  private def postAnalysis(): Boolean = {
     relevantValuesOrigins.foreach { relevantValueOrigin =>
       returnedValues.foreach { returnedValue =>
         if (origin(returnedValue._2).exists { returnedValueOrigin =>
@@ -658,7 +658,7 @@ trait TaintAnalysisDomain[Source]
           // No relevant Value returned!
           // return doTypeLevelInvoke;
         } else {
-
+        	aiResult.domain.postAnalysis
           if (aiResult.domain.callToClassForNameFound) {
             callToClassForNameFound = true;
           }
