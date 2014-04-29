@@ -31,6 +31,9 @@ package bat
 package resolved
 package dependency
 
+import analyses.SomeProject
+import analyses.ProjectInformationKey
+
 /**
  * Stores extracted dependencies.
  *
@@ -43,113 +46,24 @@ class DependencyStore(
 
 }
 
-/**
- * ==Thread Safety==
- * This class is thread-safe. However, it does not make sense to call the method
- * toStore unless the dependency extractor that uses this processor has completed.
- */
-class DependencyCollectingDependencyProcessor extends DependencyProcessor {
-
-    import scala.collection.concurrent.{ TrieMap ⇒ CMap }
-    import scala.collection.mutable.{ Set }
-
-    private[this] val deps =
-        CMap.empty[VirtualSourceElement, CMap[VirtualSourceElement, Set[DependencyType]]]
-
-    private[this] val depsOnArrayTypes =
-        CMap.empty[VirtualSourceElement, CMap[ArrayType, Set[DependencyType]]]
-
-    private[this] val depsOnBaseTypes =
-        CMap.empty[VirtualSourceElement, CMap[BaseType, Set[DependencyType]]]
-
-    def toStore: DependencyStore = {
-
-        import scala.collection.mutable.{ Map ⇒ MutableMap }
-        import scala.collection.immutable.{ Set ⇒ ImmutableSet }
-
-        val dependencyTypes: MutableMap[Set[DependencyType], ImmutableSet[DependencyType]] = MutableMap.empty
-
-        val theDeps =
-            (deps map { dep ⇒
-                val (source, targets) = dep
-                val newTargets = (targets map { targetKind ⇒
-                    val (target, dTypes) = targetKind
-                    (target, dependencyTypes.getOrElseUpdate(dTypes, dTypes.toSet))
-                }).toMap
-                (source, newTargets)
-            }).toMap
-
-        val theDepsOnArrayTypes =
-            (depsOnArrayTypes map { dep ⇒
-                val (source, targets) = dep
-                val newTargets = (targets map { targetKind ⇒
-                    val (target, dTypes) = targetKind
-                    (target, dependencyTypes.getOrElseUpdate(dTypes, dTypes.toSet))
-                }).toMap
-                (source, newTargets)
-            }).toMap
-
-        val theDepsOnBaseTypes =
-            (depsOnBaseTypes map { dep ⇒
-                val (source, targets) = dep
-                val newTargets = (targets map { targetKind ⇒
-                    val (target, dTypes) = targetKind
-                    (target, dependencyTypes.getOrElseUpdate(dTypes, dTypes.toSet))
-                }).toMap
-                (source, newTargets)
-            }).toMap
-
-        new DependencyStore(theDeps, theDepsOnArrayTypes, theDepsOnBaseTypes)
-    }
-
-    def processDependency(
-        source: VirtualSourceElement,
-        target: VirtualSourceElement,
-        dType: DependencyType): Unit = {
-
-        val targetElements = deps.getOrElseUpdate(source, CMap.empty[VirtualSourceElement, Set[DependencyType]])
-        val dependencyTypes = targetElements.getOrElseUpdate(target, Set.empty[DependencyType])
-        dependencyTypes.synchronized {
-            dependencyTypes += dType
-        }
-    }
-
-    def processDependency(
-        source: VirtualSourceElement,
-        arrayType: ArrayType,
-        dType: DependencyType): Unit = {
-
-        val arrayTypes = depsOnArrayTypes.getOrElseUpdate(source, CMap.empty[ArrayType, Set[DependencyType]])
-        val dependencyTypes = arrayTypes.getOrElseUpdate(arrayType, Set.empty[DependencyType])
-        dependencyTypes.synchronized {
-            dependencyTypes += dType
-        }
-    }
-
-    def processDependency(
-        source: VirtualSourceElement,
-        baseType: BaseType,
-        dType: DependencyType): Unit = {
-
-        val baseTypes = depsOnBaseTypes.getOrElseUpdate(source, CMap.empty[BaseType, Set[DependencyType]])
-        val dependencyTypes = baseTypes.getOrElseUpdate(baseType, Set.empty[DependencyType])
-        dependencyTypes.synchronized {
-            dependencyTypes += dType
-        }
-    }
-}
-
 object DependencyStore {
 
     def initialize[Source](
         classFiles: Traversable[ClassFile],
         createDependencyExtractor: (DependencyProcessor) ⇒ DependencyExtractor): DependencyStore = {
-        val dc = new DependencyCollectingDependencyProcessor()
-        val de = createDependencyExtractor(dc)
-        for (classFile ← classFiles.par) {
-            de.process(classFile)
-        }
-        dc.toStore
+
+        import util.debug.PerformanceEvaluation.{ time, ns2sec }
+        val dc = time {
+            val dc = new DependencyCollectingDependencyProcessor()
+            val de = createDependencyExtractor(dc)
+            for (classFile ← classFiles.par) {
+                de.process(classFile)
+            }
+            dc
+        } { t ⇒ println("Collecting dependencies:"+ns2sec(t)) }
+        time {
+            dc.toStore
+        } { t ⇒ println("Creating dependencies store: "+ns2sec(t)) }
     }
 
     def initialize[Source](
@@ -160,29 +74,28 @@ object DependencyStore {
     }
 }
 
-class DependencyProcessorDecorator(
-        baseDependencyProcessor: DependencyProcessor) extends DependencyProcessor {
+object DependencyStoreKey extends ProjectInformationKey[DependencyStore] {
 
-    def processDependency(
-        source: VirtualSourceElement,
-        target: VirtualSourceElement,
-        dType: DependencyType): Unit = {
-        baseDependencyProcessor.processDependency(source, target, dType)
+    override protected def requirements: Seq[ProjectInformationKey[_ <: AnyRef]] = Nil
+
+    override protected def compute(project: SomeProject): DependencyStore = {
+        DependencyStore.initialize(project.classFiles)
     }
-
-    def processDependency(
-        source: VirtualSourceElement,
-        arrayType: ArrayType,
-        dType: DependencyType): Unit = {
-        baseDependencyProcessor.processDependency(source, arrayType, dType)
-    }
-
-    def processDependency(
-        source: VirtualSourceElement,
-        baseType: BaseType,
-        dType: DependencyType): Unit = {
-        baseDependencyProcessor.processDependency(source, baseType, dType)
-    }
-
 }
+
+object DependencyStoreWithoutSelfDependenciesKey extends ProjectInformationKey[DependencyStore] {
+
+    override protected def requirements: Seq[ProjectInformationKey[_ <: AnyRef]] = Nil
+
+    override protected def compute(project: SomeProject): DependencyStore = {
+        DependencyStore.initialize(
+            project.classFiles,
+            (dp: DependencyProcessor) ⇒
+                new DependencyExtractor(
+                    new DependencyProcessorDecorator(dp) with FilterSelfDependencies
+                )
+        )
+    }
+}
+
 

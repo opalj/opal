@@ -118,9 +118,10 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                         IS_INNER_CLASS)
                 }
 
-            case signature: Signature ⇒ processSignature(vc, signature)
+            case signature: Signature ⇒
+                processSignature(vc, signature)
 
-            case _                    ⇒
+            case _ ⇒
             // The Synthetic, SourceFile, Deprecated, and 
             // SourceDebugExtension attributes do not create dependencies.
 
@@ -229,13 +230,18 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
 
         method.attributes foreach {
 
+            case ExceptionTable(exceptionTable) ⇒
+                exceptionTable foreach { processDependency(vm, _, THROWS) }
+
+            case signature: Signature ⇒
+                processSignature(vm, signature)
+
             case at: AnnotationTable ⇒
                 // Handles runtime visible and invisible annotations.
                 at.annotations foreach { process(vm, _) }
 
             case tat: TypeAnnotationTable ⇒
-                // TODO [Java8] Add support for TypeAnnotationTable attributes
-                ???
+                tat.typeAnnotations foreach { process(vm, _, ANNOTATED_WITH) }
 
             case ParameterAnnotationTable(_, parameterAnnotations) ⇒
                 // handles RuntimeVisibleParameterAnnotations and 
@@ -244,15 +250,9 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                     pa foreach { process(vm, _, PARAMETER_ANNOTATED_WITH) }
                 }
 
-            case ExceptionTable(exceptionTable) ⇒
-                exceptionTable foreach { processDependency(vm, _, THROWS) }
-
             case elementValue: ElementValue ⇒
                 // ElementValues encode annotation default attributes
                 processElementValue(vm, elementValue)
-
-            case signature: Signature ⇒
-                processSignature(vm, signature)
 
             case _ ⇒
             // The attributes Synthetic and Deprecated do not introduce further dependencies
@@ -287,7 +287,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
          */
         def processFormalTypeParameters(
             formalTypeParameters: Option[List[FormalTypeParameter]]) {
-            formalTypeParameters map { list ⇒
+            formalTypeParameters foreach { list ⇒
                 for (ftp ← list) {
                     val classBound = ftp.classBound
                     if (classBound.isDefined)
@@ -321,7 +321,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
          * @param typeArguments The option of a type argument list that should be processed.
          */
         def processTypeArguments(typeArguments: Option[List[TypeArgument]]) {
-            typeArguments map { args ⇒
+            typeArguments foreach { args ⇒
                 args foreach {
 
                     case pta: ProperTypeArgument ⇒
@@ -443,7 +443,9 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
      * @param declaringMethod The method.
      * @param instructions The instructions that should be analyzed for dependencies.
      */
-    private def process(declaringMethod: VirtualMethod, instructions: Instructions) {
+    private def process(
+        declaringMethod: VirtualMethod,
+        instructions: Instructions) {
 
         def as[TargetType <: Instruction](instruction: Instruction) =
             instruction.asInstanceOf[TargetType]
@@ -572,7 +574,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
      * related to an [[Invokedynamic]] instruction. However, in that case the
      * method [[processInvokedynamicRuntimeDependencies]] should be called explicitly.
      */
-    protected def processInvokedynamic(
+    protected[this] def processInvokedynamic(
         declaringMethod: VirtualMethod,
         instruction: INVOKEDYNAMIC): Unit = {
 
@@ -590,7 +592,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
      * DependencyExtractor must be created which overrides this method and performs
      * deeper-going analysis on invokedynamic instructions.
      */
-    protected def processInvokedynamicRuntimeDependencies(
+    protected[this] def processInvokedynamicRuntimeDependencies(
         declaringMethod: VirtualMethod,
         instruction: INVOKEDYNAMIC): Unit = {
 
@@ -625,21 +627,35 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
             case handle: FieldAccessMethodHandle ⇒ {
                 processDependency(declaringMethod, handle.declaringClassType, USES_FIELD_DECLARING_TYPE)
                 handle match {
-                    case _: GetFieldMethodHandle | _: GetStaticMethodHandle ⇒
+
+                    case _: FieldReadAccessMethodHandle ⇒
                         dependencyProcessor.processDependency(
-                            declaringMethod, handle.asVirtualField, READS_FIELD)
-                        processDependency(declaringMethod, handle.fieldType, USES_FIELD_READ_TYPE)
-                    case _: PutFieldMethodHandle | _: PutStaticMethodHandle ⇒
+                            declaringMethod,
+                            handle.asVirtualField,
+                            READS_FIELD)
+                        processDependency(
+                            declaringMethod,
+                            handle.fieldType,
+                            USES_FIELD_READ_TYPE)
+                    // TODO Dependency on the declaring type
+
+                    case _: FieldWriteAccessMethodHandle ⇒
                         dependencyProcessor.processDependency(
-                            declaringMethod, handle.asVirtualField, WRITES_FIELD)
-                        processDependency(declaringMethod, handle.fieldType, USES_FIELD_WRITE_TYPE)
+                            declaringMethod,
+                            handle.asVirtualField,
+                            WRITES_FIELD)
+                        processDependency(
+                            declaringMethod,
+                            handle.fieldType,
+                            USES_FIELD_WRITE_TYPE)
+                    // TODO Dependency on the declaring type
                 }
 
             }
         }
     }
 
-    protected def processDependency(
+    protected[this] def processDependency(
         objectType: ObjectType,
         target: VirtualSourceElement,
         dType: DependencyType) {

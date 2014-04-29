@@ -31,59 +31,36 @@ package bat
 package resolved
 package dependency
 
-/**
- * A dependency processor processes dependencies between two source elements.
- *
- * Typically, a `DependencyProcessor` is passed to a
- * [[DependencyExtractor]]. The latter calls back the `processDependency` methods
- * for each identified dependency.
- *
- * @author Thomas Schlosser
- * @author Michael Eichberg
- */
-trait DependencyProcessor {
+import analyses.SomeProject
+import analyses.ProjectInformationKey
 
-    /**
-     * Called for each dependency between two source elements.
-     *
-     * @param source The source element that has a dependency on the `target` element.
-     * @param target The source element that the `source` element depends on.
-     * @param dependencyType The type of the dependency.
-     */
+/**
+ * ==Thread Safety==
+ * This class is thread-safe if the specified dependency processor is also thread-safe.
+ */
+class DependencyProcessorDecorator(
+        baseDependencyProcessor: DependencyProcessor) extends DependencyProcessor {
+
     def processDependency(
         source: VirtualSourceElement,
         target: VirtualSourceElement,
-        dType: DependencyType): Unit
+        dType: DependencyType): Unit = {
+        baseDependencyProcessor.processDependency(source, target, dType)
+    }
 
-    /**
-     * Called for each dependency of a source element on an array type.
-     *
-     * @note A dependency on an array type also introduces another dependency on the
-     *      element type of the array type and the dependency extractor will
-     *      notify the dependency processor about such calls.
-     *
-     * @param source The source element that has a dependency on the array type.
-     * @param arrayType The array type that the `source` element depends on.
-     * @param dependencyType The type of the dependency.
-     */
     def processDependency(
         source: VirtualSourceElement,
         arrayType: ArrayType,
-        dType: DependencyType): Unit
+        dType: DependencyType): Unit = {
+        baseDependencyProcessor.processDependency(source, arrayType, dType)
+    }
 
-    /**
-     * Called for each dependency of a source element on a base type (aka primitive type).
-     *
-     * @param source The source element that has a dependency on the base type.
-     * @param baseType The base type on which the `source` element depends on.
-     * @param dependencyType The type of the dependency.
-     */
     def processDependency(
         source: VirtualSourceElement,
         baseType: BaseType,
-        dType: DependencyType): Unit
+        dType: DependencyType): Unit = {
+        baseDependencyProcessor.processDependency(source, baseType, dType)
+    }
 
 }
-
-
 
