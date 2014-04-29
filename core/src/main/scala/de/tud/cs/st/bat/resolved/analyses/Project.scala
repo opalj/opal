@@ -369,8 +369,8 @@ object Project {
      *      meaningful option for several advanced analyses.)
      */
     def apply[Source: reflect.ClassTag](
-        projectClassFilesWithSources: Iterable[(ClassFile, Source)],
-        libraryClassFilesWithSources: Iterable[(ClassFile, Source)] = Iterable.empty,
+        projectClassFilesWithSources: Traversable[(ClassFile, Source)],
+        libraryClassFilesWithSources: Traversable[(ClassFile, Source)] = Iterable.empty,
         handleInconsistentProject: (InconsistentProjectException) ⇒ Unit = defaultHandlerForInconsistentProject): Project[Source] = {
 
         import scala.collection.mutable.{ Set, Map }
