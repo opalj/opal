@@ -65,7 +65,7 @@ sealed abstract class MethodDescriptor extends ConstantValue[MethodDescriptor] {
     def toJava(methodName: String): String =
         returnType.toJava+" "+
             methodName+
-            "("+parameterTypes.map(_.toJava).mkString(",")+")"
+            "("+parameterTypes.view.map(_.toJava).mkString(",")+")"
 
     def toUMLNotation: String =
         "("+{
