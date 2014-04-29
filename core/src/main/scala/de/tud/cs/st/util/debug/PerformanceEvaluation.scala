@@ -185,19 +185,21 @@ object PerformanceEvaluation {
      */
     def time[T](f: ⇒ T)(r: Long ⇒ Unit): T = {
         val startTime: Long = System.nanoTime
-        try {
-            f
-        } finally {
-            val endTime: Long = System.nanoTime
-            r(endTime - startTime)
-        }
+        val result =
+            try {
+                f
+            } finally {
+                val endTime: Long = System.nanoTime
+                r(endTime - startTime)
+            }
+        result
     }
 
     /**
      * Times the execution of a given function `f`.
      *
      * @param r A function that is passed the time (in nano seconds) that it
-     *      took to evaluate `f` and the result produced by `f`. 
+     *      took to evaluate `f` and the result produced by `f`.
      *      `r` is only called if `f` suceeds.
      */
     def run[T, X](f: ⇒ T)(r: (Long, T) ⇒ X): X = {
