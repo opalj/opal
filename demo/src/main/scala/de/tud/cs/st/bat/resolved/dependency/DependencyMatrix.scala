@@ -74,17 +74,23 @@ object DependencyMatrix {
     def analyze(jarFiles: Array[String]) {
         import scala.collection.mutable.Map
         import scala.collection.mutable.Set
-        val dependencyMatrix = Map[Int, Set[(Int, DependencyType.Value)]]()
-        val dependencyExtractor = new DependencyExtractor(new SourceElementIDsMap {}) with NoSourceElementsVisitor {
-            def processDependency(sourceID: Int, targetID: Int, dType: DependencyType.Value) {
-                val emptySet: Set[(Int, DependencyType)] = Set.empty
-                dependencyMatrix.get(sourceID) match {
-                    case Some(s) ⇒ s += ((targetID, dType))
-                    case None    ⇒ dependencyMatrix += (sourceID -> Set((targetID, dType)))
+        val dependencyMatrix = Map[VirtualSourceElement, Set[(VirtualSourceElement, DependencyType)]]()
+        val dependencyExtractor =
+            new DependencyExtractor(
+                new DependencyProcessorAdapter {
+                    override def processDependency(
+                        source: VirtualSourceElement,
+                        target: VirtualSourceElement,
+                        dType: DependencyType) {
+                        val emptySet: Set[(VirtualSourceElement, DependencyType)] = Set.empty
+                        dependencyMatrix.get(source) match {
+                            case Some(s) ⇒ s += ((target, dType))
+                            case None    ⇒ dependencyMatrix += (source -> Set((target, dType)))
+                        }
+                        // [Scala 2.9.X Compiler crashes on:] dependencyMatrix.getOrElseUpdate(sourceID, emptySet)  + ((targetID, dType))
+                    }
                 }
-                // [Scala 2.9.X Compiler crashes on:] dependencyMatrix.getOrElseUpdate(sourceID, emptySet)  + ((targetID, dType))
-            }
-        }
+            )
 
         println("Reading all class files - "+jarFiles.mkString(", ")+".")
         var count = 0
