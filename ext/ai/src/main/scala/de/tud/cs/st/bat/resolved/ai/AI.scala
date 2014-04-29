@@ -37,13 +37,13 @@ import scala.util.control.ControlThrowable
 
 /**
  * A highly-configurable framework for the (abstract) interpretation of Java bytecode
- * that relies on BAT's resolved representation of Java bytecode.
+ * that relies on OPAL's resolved representation of Java bytecode.
  *
  * This framework basically traverses all instructions of a method in depth-first order
  * and evaluates each instruction using an exchangeable
  * [[de.tud.cs.st.bat.resolved.ai.Domain]].
  *
- * ==Interacting with BATAI==
+ * ==Interacting with OPAL-AI==
  * The primary means how to make use of this framework is to perform
  * an abstract interpretation of a method using a customized `Domain`. That
  * customized domain can be used, e.g., to build a call graph or to
@@ -67,7 +67,7 @@ import scala.util.control.ControlThrowable
  * override the relevant methods (in particular: `isInterrupted` and `tracer`).
  *
  * @note
- *     BATAI does not make assumptions about the number of domain objects that
+ *     OPAL-AI does not make assumptions about the number of domain objects that
  *     are used. However, if a single domain object is used by multiple instances
  *     of this class and the abstract interpretation are executed concurrently, then
  *     the domain has to be thread-safe.
@@ -89,7 +89,7 @@ trait AI[D <: Domain] {
      * is not sufficiently precise enough/if additional information is needed to
      * continue with the analysis.
      *
-     * Called by BATAI during the abstract interpretation of a method to determine whether
+     * Called by OPAL-AI during the abstract interpretation of a method to determine whether
      * the computation should be aborted. This method is ''always called directly before
      * the evaluation of the first/next instruction''. I.e., after the evaluation of an
      * instruction and the update of the memory as well as stating all constraints.
@@ -105,16 +105,16 @@ trait AI[D <: Domain] {
     def isInterrupted: Boolean = false
 
     /**
-     * The tracer (default: `None`) that is called by BATAI while performing the abstract
+     * The tracer (default: `None`) that is called by OPAL-AI while performing the abstract
      * interpretation of a method.
      *
-     * This method is called by BATAI at various different points (see
+     * This method is called by OPAL-AI at various different points (see
      * [[de.tud.cs.st.bat.resolved.ai.AITracer]]) to report the analysis progress.
      *
      * '''To attach a tracer to the abstract interpreter override this
      * method in subclasses''' and return some tracer object.
      *
-     * BATAI enables the attachment/detachment of tracers at any time.
+     * OPAL-AI enables the attachment/detachment of tracers at any time.
      */
     def tracer: Option[AITracer] = None
 
@@ -155,9 +155,9 @@ trait AI[D <: Domain] {
      *
      * Initially, only the registers that contain the method's parameters (including
      * the self reference (`this`)) are used.  If no initial assignment is provided
-     * (`someLocals == None`) OPAL will automatically create a valid assignment using
-     * the domain. In that case the values stored in the registers will have negative
-     * program counters to indicate that these values were passed to the method.
+     * (`someLocals == None`) OPAL-AI will automatically create a valid assignment using
+     * the domain. See `perform(...)` for further details regarding the initial
+     * register assignment.
      *
      * This method is called by the `perform` method with the same signature. It
      * may be overridden by subclasses to perform some additional processing. In
@@ -318,14 +318,14 @@ trait AI[D <: Domain] {
      *      in the array contains the operand stack before the instruction with the
      *      corresponding index is executed. This array can be empty except of the
      *      indexes that are referred to by the `initialWorklist`.
-     *      '''The `operandsArray` data structure is mutated by BATAI and it is
+     *      '''The `operandsArray` data structure is mutated by OPAL-AI and it is
      *      __recommended that a `Domain` does not directly mutate the state of
      *      this array__.'''
      *
      * @param localsArray The array that contains the local variable assignments.
      *      Each value in the array contains the local variable assignments before
      *      the instruction with the corresponding program counter is executed.
-     *      '''The `localsArray` data structure is mutated by BATAI and it is
+     *      '''The `localsArray` data structure is mutated by OPAL-AI and it is
      *      __recommended that a `Domain` does not directly mutate the state of
      *      this array__.'''
      */

@@ -41,7 +41,7 @@ import org.scalatest.Matchers
 import org.scalatest.ParallelTestExecution
 
 /**
- * Tests BAT's support w.r.t. inner classes.
+ * Tests OPAL's support w.r.t. inner classes.
  *
  * @author Michael Eichberg
  */

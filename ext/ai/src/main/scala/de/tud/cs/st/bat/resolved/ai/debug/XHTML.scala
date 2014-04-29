@@ -201,7 +201,7 @@ object XHTML {
         try {
             if (Desktop.isDesktopSupported) {
                 val desktop = Desktop.getDesktop()
-                val file = File.createTempFile("BATAI-Dump", ".html")
+                val file = File.createTempFile("OPAL-AI-Dump", ".html")
                 val fos = new FileOutputStream(file)
                 fos.write(node.toString.getBytes("UTF-8"))
                 fos.close()

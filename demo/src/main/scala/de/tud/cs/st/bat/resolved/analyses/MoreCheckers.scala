@@ -38,7 +38,7 @@ import reader.Java8Framework.ClassFiles
 
 /**
  * Implementation of some simple static analyses to demonstrate the flexibility
- * and power offered by Scala and BAT when analyzing class files.
+ * and power offered by Scala and OPAL when analyzing class files.
  *
  * The implemented static analyses are inspired by Findbugs
  * (http://findbugs.sourceforge.net/bugDescriptions.html).

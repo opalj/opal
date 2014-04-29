@@ -43,7 +43,7 @@ package domain
 trait ReifiedConstraints extends Domain {
 
     /**
-     * (Indirectly) called by BATAI for a new value-based constraint.
+     * (Indirectly) called by OPAL-AI for a new value-based constraint.
      */
     /*abstract*/ def nextConstraint(constraint: ReifiedConstraint)
 

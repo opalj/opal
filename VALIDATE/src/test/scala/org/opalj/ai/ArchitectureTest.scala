@@ -40,14 +40,14 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Matchers
 
 /**
- * Tests that BATAI's implemented design is as expected.
+ * Tests that OPAL-AI's implemented design is as expected.
  *
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
 class ArchitectureTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
-    behavior of "BATAI's implemented architecture"
+    behavior of "OPAL-AI's implemented architecture"
 
     it should "be consistent with the specified architecture" in {
         val expected =

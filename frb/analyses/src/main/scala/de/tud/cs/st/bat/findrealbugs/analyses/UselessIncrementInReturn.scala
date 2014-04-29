@@ -49,7 +49,7 @@ import de.tud.cs.st.util._
  *
  * TODO (ideas for future improvement):
  * - Improve to handle array/reference values and field accesses and method invocations.
- *   For now the code to handle these things is imported from BATAI's type-level domain.
+ *   For now the code to handle these things is imported from OPAL-AI's type-level domain.
  *
  * @author Daniel Klauer
  */

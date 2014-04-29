@@ -103,7 +103,7 @@ class InefficientToArray[Source]
             pc ← body.slidingCollect(3)({
                 case (pc, Seq(ICONST_0, ANEWARRAY(_), instr3)) if (instr3 match {
                     // TODO: Perhaps we should add a new VirtualMethodCall(...) pattern 
-                    // matcher to BAT, which would allow INVOKEINTERFACE and INVOKEVIRTUAL
+                    // matcher to OPAL, which would allow INVOKEINTERFACE and INVOKEVIRTUAL
                     // checks to be combined into one.
                     case INVOKEINTERFACE(targetType, "toArray", `toArrayDescriptor`) ⇒
                         isCollectionType(targetType)

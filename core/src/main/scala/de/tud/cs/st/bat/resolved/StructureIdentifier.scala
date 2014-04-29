@@ -32,7 +32,7 @@ package resolved
 
 /**
  * Uniquely identifies a specific element that can (by definition) only exist
- * once in a project. For example, in the context of BAT a type declaration
+ * once in a project. For example, in the context of OPAL a type declaration
  * is unique or the combination of a type declaration and a field name or
  * the combination of a type declaration, method name and method descriptor.
  *

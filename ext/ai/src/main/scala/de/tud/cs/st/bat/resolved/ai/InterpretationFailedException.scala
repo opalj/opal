@@ -32,7 +32,7 @@ package resolved
 package ai
 
 /**
- * Exception that is thrown by BATAI's main loop when the abstract interpretation of a
+ * Exception that is thrown by OPAL-AI's main loop when the abstract interpretation of a
  * method's implementation was not possible.
  *
  * @author Michael Eichberg

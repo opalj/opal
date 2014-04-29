@@ -43,15 +43,15 @@ object TestSupport {
      * This function tries to locate resources (at runtime) that are used by tests and
      * which are stored in the `SUBPROJECT-ROOT-FOLDER/src/test/resources` folder.
      * I.e., when the test suite is executed, the current folder may be either Eclipse's
-     * `bin` bolder or BAT's root folder when we use sbt to build the project.
+     * `bin` bolder or OPAL's root folder when we use sbt to build the project.
      *
      * @param resourceName The name of the resource relative to the test/resources
      *      folder. The name must not begin with a "/".
-     * @param subProjectFoler The root folder of the BAT subproject; e.g., "ext/ai".
+     * @param subProjectFoler The root folder of the OPAL subproject; e.g., "ext/ai".
      *      (Default: "core").
      */
     def locateTestResources(resourceName: String, subProjectFolder: String = "core"): File = {
-        { // if the current path is set to BAT's root folder
+        { // if the current path is set to OPAL's root folder
             var file = new File(subProjectFolder+"/src/test/resources/"+resourceName)
             if (file.exists()) return file
         }

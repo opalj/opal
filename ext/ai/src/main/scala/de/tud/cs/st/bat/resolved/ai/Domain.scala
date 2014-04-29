@@ -36,28 +36,28 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 import reflect.ClassTag
 
 /**
- * A domain is the fundamental abstraction mechanism in BATAI that enables the customization
- * of BATAI towards the needs of a specific analysis. A domain encodes the semantics of
+ * A domain is the fundamental abstraction mechanism in OPAL-AI that enables the customization
+ * of OPAL-AI towards the needs of a specific analysis. A domain encodes the semantics of
  * computations (e.g., the addition of two values) with respect to a domain's values
  * (e.g., the representation of integer values). Customizing a domain is the
- * fundamental mechanism of adapting BATAI to one's needs.
+ * fundamental mechanism of adapting OPAL-AI to one's needs.
  *
- * This trait defines the interface between the abstract interpretation framework (BATAI)
+ * This trait defines the interface between the abstract interpretation framework (OPAL-AI)
  * and some (user defined) domain. I.e., this interface defines all methods that
- * are needed by BATAI to perform an abstract interpretation.
+ * are needed by OPAL-AI to perform an abstract interpretation.
  *
  * ==Control Flow==
- * BATAI controls the process of evaluating the code of a method, but requires a
+ * OPAL-AI controls the process of evaluating the code of a method, but requires a
  * domain to perform the actual computations of an instruction's result. E.g., to
  * calculate the result of adding two integer values, or to perform the comparison
  * of two object instances, or to get the result of converting a `long` value to an
- * `int` value BATAI consults the domain.
+ * `int` value OPAL-AI consults the domain.
  *
  * Handling of instructions that manipulate the stack (e.g. `dup`), that move values
  * between the stack and the locals (e.g., `Xload_Y`) or that determine the control
- * flow is, however, completely embedded into BATAI.
+ * flow is, however, completely embedded into OPAL-AI.
  *
- * BATAI uses the following three methods to inform a domain about the progress:
+ * OPAL-AI uses the following three methods to inform a domain about the progress:
  *  - [[de.tud.cs.st.bat.resolved.ai.Domain.flow]]
  *  - [[de.tud.cs.st.bat.resolved.ai.Domain.evaluationCompleted]]
  *  - [[de.tud.cs.st.bat.resolved.ai.Domain.abstractInterpretationEnded]]
@@ -69,7 +69,7 @@ import reflect.ClassTag
  * While it is perfectly possible to implement a new domain by inheriting from this
  * trait, it is recommended  to first study the already implemented domains and to
  * use them as a foundation.
- * To facilitate the usage of BATAI several classes/traits that implement parts of
+ * To facilitate the usage of OPAL-AI several classes/traits that implement parts of
  * this `Domain` trait are pre-defined and can be flexibly combined (mixed together)
  * when needed.
  *
@@ -78,12 +78,12 @@ import reflect.ClassTag
  *
  * ==Thread Safety==
  * When every analyzed method is associated with a unique `Domain` instance and – given
- * that BATAI only uses one thread to analyze a given method at a time – no special care
+ * that OPAL-AI only uses one thread to analyze a given method at a time – no special care
  * has to be taken. However, if a domain needs to consult another domain which is, e.g,
  * associated with a project as a whole, it is then the responsibility of the domain to
  * make sure that coordination with the world is thread safe.
  *
- * @note BATAI assumes that conceptually every method/code block is associated
+ * @note OPAL-AI assumes that conceptually every method/code block is associated
  *      with its own instance of a domain object.
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
@@ -105,7 +105,7 @@ trait Domain {
      * connected to the analyzed method).
      *
      * This value may subsequently be used to identify/track object instances but – if
-     * so – this happens at the sole responsibility of the domain. BATAI does
+     * so – this happens at the sole responsibility of the domain. OPAL-AI does
      * not require any kind of tracking.
      */
     def id: Id
@@ -132,7 +132,7 @@ trait Domain {
      * you also extend all classes/traits that inherit from this type
      * (this may require a deep mixin composition and that you refine the type
      * `DomainType` accordingly).
-     * However, BATAI was designed such that extending this class should – in general
+     * However, OPAL-AI was designed such that extending this class should – in general
      * – not be necessary. It may also be easier to encode the desired semantics – as
      * far as possible – as part of the domain.
      *
@@ -142,10 +142,10 @@ trait Domain {
      * w.r.t. some special type of value. In general, the implementation should try
      * to avoid creating new instances unless strictly required to model the
      * domain's semantics. This will greatly improve
-     * the overall performance as BATAI heavily uses reference-based equality checks
+     * the overall performance as OPAL-AI heavily uses reference-based equality checks
      * to speed up the evaluation.
      *
-     * @note BATAI does not rely on any special equality semantics w.r.t. values and
+     * @note OPAL-AI does not rely on any special equality semantics w.r.t. values and
      *      never directly or indirectly calls a `Value`'s `equals` or `eq` method. Hence,
      *      a domain can encode equality such that it best fits its need.
      *      However, the provided domains rely on the following semantics for equals:
@@ -176,7 +176,7 @@ trait Domain {
         /**
          * The computational type of the value.
          *
-         * The precise computational type is needed by BATAI to calculate the effect
+         * The precise computational type is needed by OPAL-AI to calculate the effect
          * of generic stack manipulation instructions (e.g., `dup_...` and swap)
          * on the stack as well as to calculate the jump targets of `RET`
          * instructions and to determine which values are actually copied by, e.g., the
@@ -186,7 +186,7 @@ trait Domain {
          */
         def computationalType: ComputationalType
 
-        // used only by BATAI and implemented only by ReturnAddressValue
+        // used only by OPAL-AI and implemented only by ReturnAddressValue
         @throws[DomainException]("This method is not supported.")
         private[ai] def asReturnAddressValue: PC =
             throw new DomainException("this value ("+this+") is not a return address")
@@ -197,7 +197,7 @@ trait Domain {
          * This basically implements the join operator of complete lattices.
          *
          * Join is called whenever two control-flow paths join and, hence, the values
-         * found on the paths need to be joined. This method is called by BATAI whenever
+         * found on the paths need to be joined. This method is called by OPAL-AI whenever
          * two '''intra-procedural''' control-flow paths join and the two values are
          * are two different objects (`(this ne value) == true`). However, it is guaranteed
          * that both values have the same computational type.
@@ -209,7 +209,7 @@ trait Domain {
          * '''all positive''' integer values or just '''some integer value'''.
          *
          * ==Contract==
-         * '''`this` value''' is always the value that was previously used by BATAI to
+         * '''`this` value''' is always the value that was previously used by OPAL-AI to
          * perform subsequent computations/analyses. Hence, if `this` value subsumes
          * the given value, the result has to be either `NoUpdate` or a `MetaInformationUpdate`.
          * In case that the given value subsumes `this` value, the result has to be
@@ -217,7 +217,7 @@ trait Domain {
          * '''this `join` operation is not commutative'''. If a new (more abstract)
          * abstract value is created that represents both values the result always has to
          * be a `StructuralUpdate`.
-         * If the result is a `StructuralUpdate` BATAI will continue with the
+         * If the result is a `StructuralUpdate` OPAL-AI will continue with the
          * interpretation.
          *
          * The termination of the abstract interpretation directly depends on the fact
@@ -233,7 +233,7 @@ trait Domain {
          *
          * Conceptually, the join of an object with itself has to return the object
          * itself. Note, that this is a conceptual requirement as such a call
-         * (`this.doJoin(..,this)`) will not be done by BATAI.
+         * (`this.doJoin(..,this)`) will not be done by OPAL-AI.
          *
          * ==Performance==
          * In general, the domain should try to minimize the number of objects that it
@@ -272,7 +272,7 @@ trait Domain {
 
         //
         // METHODS THAT ARE PREDEFINED BECAUSE THEY ARE GENERALLY USEFUL WHEN
-        // ANALYZING PROJECTS, BUT WHICH ARE NOT REQUIRED BY BATAI! 
+        // ANALYZING PROJECTS, BUT WHICH ARE NOT REQUIRED BY OPAL-AI! 
         // I.E. THESE METHODS ARE USED - IF AT ALL - BY THE DOMAIN.
         //
 
@@ -291,7 +291,7 @@ trait Domain {
          * a summary may be sufficient.
          *
          * @note __The precise semantics and usage of `summarize(...)` is determined
-         *      by the domain as BATAI does not use/call this method.__ This method
+         *      by the domain as OPAL-AI does not use/call this method.__ This method
          *      is solely predefined to facilitate the development of project-wide
          *      analyses.
          */
@@ -307,12 +307,12 @@ trait Domain {
          * and you need to adapt this domain's values (the actual parameters of the method)
          * to the domain used for analyzing the called method.
          *
-         * Additionally, the `adapt` method is BATAI's main mechanism to enable dynamic
+         * Additionally, the `adapt` method is OPAL-AI's main mechanism to enable dynamic
          * domain-adaptation. I.e., to make it possible to change the abstract domain at
          * runtime if the analysis time takes too long using a (more) precise domain.
          *
          * @note __The precise semantics of `adapt` can be determined by the domain
-         *      as BATAI does not use/call this method.__
+         *      as OPAL-AI does not use/call this method.__
          */
         @throws[DomainException]("Adaptation of this value is not supported.")
         def adapt(target: Domain, pc: PC): target.DomainValue =
@@ -353,7 +353,7 @@ trait Domain {
     /**
      * The class tag for the type `DomainValue`.
      *
-     * Required by BATAI to generate instances of arrays in which values of type
+     * Required by OPAL-AI to generate instances of arrays in which values of type
      * `DomainValue` can be stored in a type-safe manner.
      *
      * ==Initialization==
@@ -440,8 +440,8 @@ trait Domain {
      *      values, it is nevertheless necessary that this class inherits from `Value`
      *      as return addresses are stored on the stack/in the registers. However,
      *      if the `Value` trait should be refined, all additional methods may – from
-     *      the point-of-view of BATAI - just throw an `OperationNotSupportedException`
-     *      as these additional methods will never be called by BATAI.
+     *      the point-of-view of OPAL-AI - just throw an `OperationNotSupportedException`
+     *      as these additional methods will never be called by OPAL-AI.
      */
     class ReturnAddressValue(
         val address: PC)
@@ -457,7 +457,7 @@ trait Domain {
             // Note that "Value" already handles the case where this 
             // value is joined with itself. Furthermore, a join of this value with a 
             // different return address value either indicates a serious bug
-            // in BATAI/the analysis or that the byte code is invalid!
+            // in OPAL-AI/the analysis or that the byte code is invalid!
             throw DomainException("return address values cannot be joined")
         }
 
@@ -524,11 +524,11 @@ trait Domain {
      * For example, if `valueType` is a reference type it may be possible
      * that the actual value is `null`, but such knowledge is not available.
      *
-     * BATAI uses this method when a method is to be analyzed, but no parameter
+     * OPAL-AI uses this method when a method is to be analyzed, but no parameter
      * values are given and initial values need to be generated. This method is not
-     * used elsewhere by BATAI.
+     * used elsewhere by OPAL-AI.
      *
-     * BATAI assigns the `pc` "-1" to the first parameter and -2 for the second... This
+     * OPAL-AI assigns the `pc` "-1" to the first parameter and -2 for the second... This
      * property is, however, not ensured by this method.
      */
     def TypedValue(pc: PC, valueType: Type): DomainValue = valueType match {
@@ -614,7 +614,7 @@ trait Domain {
      * (The program counter  (`pc`) that should be assigned with the value (if any)
      * should be Int.MinValue to signify that this value was not created by the program.)
      *
-     * BATAI in particular uses this special value for performing subsequent
+     * OPAL-AI in particular uses this special value for performing subsequent
      * computations against the fixed value 0 (e.g., for if_XX instructions).
      *
      * The domain may ignore the information about the value.
@@ -743,7 +743,7 @@ trait Domain {
      * uninitialized instance of an object of the given type''. The object was
      * created by the (`NEW`) instruction with the specified program counter.
      *
-     * BATAI calls this method when it evaluates `newobject` instructions.
+     * OPAL-AI calls this method when it evaluates `newobject` instructions.
      * If the bytecode is valid a call of one of the object's constructors will
      * subsequently initialize the object.
      *
@@ -772,7 +772,7 @@ trait Domain {
      * class precisely represents the runtime type – even
      * so the class is abstract. However, such decisions need to be made by the domain.
      *
-     * This method is used by BATAI to create reference values that are normally
+     * This method is used by OPAL-AI to create reference values that are normally
      * internally created by the JVM (in particular exceptions such as
      * `NullPointExeception` and `ClassCastException`). However, it can generally
      * be used to create initialized objects/arrays.
@@ -790,7 +790,7 @@ trait Domain {
      * Factory method to create a `DomainValue` that represents the given string value
      * and that was created by the instruction with the specified program counter.
      *
-     * This function is called by BATAI when a string constant (`LDC(_W)` instruction) is
+     * This function is called by OPAL-AI when a string constant (`LDC(_W)` instruction) is
      * put on the stack.
      *
      * The domain may ignore the information about the value and the origin (pc).
@@ -811,7 +811,7 @@ trait Domain {
      * type "`Class&lt;T&gt;`" and that was created by the instruction with the
      * specified program counter.
      *
-     * This function is called by BATAI when a class constant (`LDC(_W)` instruction) is
+     * This function is called by OPAL-AI when a class constant (`LDC(_W)` instruction) is
      * put on the stack.
      *
      * The domain may ignore the information about the value and the origin (pc).
@@ -1081,8 +1081,8 @@ trait Domain {
     //
     // W.r.t Reference Values
     /**
-     * Called by BATAI when the value is known to be `null`/has to be `null`.
-     * E.g., after a comparison with `null` (IFNULL/IFNONNULL) BATAI knows that the
+     * Called by OPAL-AI when the value is known to be `null`/has to be `null`.
+     * E.g., after a comparison with `null` (IFNULL/IFNONNULL) OPAL-AI knows that the
      * value has to be `null` on one branch and that the value is not `null` on the
      * other branch.
      */
@@ -1095,8 +1095,8 @@ trait Domain {
     private[ai] final def RefIsNull = refEstablishIsNull _
 
     /**
-     * Called by BATAI when it establishes that the value is guaranteed not to be `null`.
-     * E.g., after a comparison with `null` BATAI can establish that the
+     * Called by OPAL-AI when it establishes that the value is guaranteed not to be `null`.
+     * E.g., after a comparison with `null` OPAL-AI can establish that the
      * value has to be `null` on one branch and that the value is not `null` on the
      * other branch.
      */
@@ -1109,7 +1109,7 @@ trait Domain {
     private[ai] final def RefIsNonNull = refEstablishIsNonNull _
 
     /**
-     * Called by BATAI when two values were compared for reference equality and
+     * Called by OPAL-AI when two values were compared for reference equality and
      * we are currently analyzing the branch where the comparison succeeded.
      */
     def refEstablishAreEqual(
@@ -1131,7 +1131,7 @@ trait Domain {
     private[ai] final def RefAreNotEqual = refEstablishAreNotEqual _
 
     /**
-     * Called by BATAI to inform the domain that the given type is a new additional upper
+     * Called by OPAL-AI to inform the domain that the given type is a new additional upper
      * bound of the given value that the value is guaranteed to satisfy from here on.
      *
      * This method is called iff a subtype query (typeOf(value) <: bound) returned
@@ -1424,18 +1424,18 @@ trait Domain {
     def lreturn(pc: PC, value: DomainValue): Unit
 
     /**
-     * Called by BATAI when a return instruction with the given `pc` is reached.
+     * Called by OPAL-AI when a return instruction with the given `pc` is reached.
      * In other words, when the method returns normally.
      */
     def returnVoid(pc: PC): Unit
 
     /**
-     * Called by BATAI when an exception is thrown that is not (guaranteed to be) handled
+     * Called by OPAL-AI when an exception is thrown that is not (guaranteed to be) handled
      * within the same method.
      *
      * @note If the original exception value is `null` (`/*E.g.*/throw null;`), then
      *      the exception that is actually thrown is a new `NullPointerException`. This
-     *      situation is, however, completely handled by BATAI and the exception
+     *      situation is, however, completely handled by OPAL-AI and the exception
      *      is hence never `null`.
      */
     def abruptMethodExecution(pc: PC, exception: DomainValue): Unit
@@ -1641,10 +1641,10 @@ trait Domain {
      *      layout.
      * @note The size of the operands stacks that are to be joined and the number of
      *      registers/locals that are to be joined can be expected to be identical
-     *      under the assumption that the bytecode is valid and BATAI contains no
+     *      under the assumption that the bytecode is valid and OPAL-AI contains no
      *      bugs.
      * @note The operand stacks are guaranteed to contain compatible values w.r.t. the
-     *      computational type (unless the bytecode is not valid or BATAI contains
+     *      computational type (unless the bytecode is not valid or OPAL-AI contains
      *      an error). I.e., if the result of joining two operand stack values is an
      *      `IllegalValue` we assume that the domain implementation is incorrect.
      *      However, the joining of two register values can result in an illegal value.
@@ -1751,7 +1751,7 @@ trait Domain {
     }
 
     /**
-     * '''Called by (BAT)AI after performing a computation'''; that is, after
+     * '''Called by (OPAL)AI after performing a computation'''; that is, after
      * evaluating the effect of the instruction with `currentPC` on the current stack and
      * register and joining the updated stack and registers with the stack and registers
      * associated with the instruction `successorPC`.
@@ -1841,7 +1841,7 @@ trait Domain {
         tracer: Option[AITracer]): List[PC] = worklist
 
     /**
-     * '''Called by (BAT)AI after evaluating the instruction with the given pc.''' I.e.,
+     * '''Called by (OPAL)AI after evaluating the instruction with the given pc.''' I.e.,
      * the state of all potential successor instructions was updated and the
      * flow method was called accordingly.
      *
@@ -1856,7 +1856,7 @@ trait Domain {
         tracer: Option[AITracer]): Unit = { /*Nothing*/ }
 
     /**
-     * '''Called by (BAT)AI when the abstract interpretation of a method has ended.''' The
+     * '''Called by (OPAL)AI when the abstract interpretation of a method has ended.''' The
      * abstract interpretation of a method ends if either the fixpoint is reached or
      * the interpretation was aborted.
      */
@@ -1896,7 +1896,7 @@ trait Domain {
      * is, however, at the sole responsibility of the `Domain`.
      *
      * This method is predefined to facilitate the development of support tools
-     * and is not used by BATAI.
+     * and is not used by OPAL-AI.
      *
      * Domain values that define (additional) properties should (abstract) override
      * this method and should return a textual representation of the property.

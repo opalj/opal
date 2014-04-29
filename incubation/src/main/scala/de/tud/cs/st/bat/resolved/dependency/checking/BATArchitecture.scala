@@ -33,13 +33,13 @@ package dependency
 package checking
 
 /**
- * Specification of BAT's architecture.
+ * Specification of OPAL's architecture.
  *
  * @author Michael Eichberg
  */
 object BATArchitecture extends Specification with App {
 
-    println("Checking BAT's architecture")
+    println("Checking OPAL's architecture")
 
     //
     // Architectural entities
@@ -147,6 +147,6 @@ object BATArchitecture extends Specification with App {
 
     //println(ensembleToString('Integration_Tests))
 
-    println("Finished checking BAT's architecture.")
+    println("Finished checking OPAL's architecture.")
 
 }

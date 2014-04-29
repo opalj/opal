@@ -31,7 +31,7 @@ package bat
 package resolved
 
 /**
- * Represents (as a byte array) attributes that are not directly supported by BAT.
+ * Represents (as a byte array) attributes that are not directly supported by OPAL.
  *
  * @author Michael Eichberg
  */

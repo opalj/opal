@@ -36,7 +36,7 @@ import de.tud.cs.st.util.Answer
 
 /**
  * Optional functionality related to extracting a concrete integer value from some
- * domain value with computational type integer that is not required by the BATAI core.
+ * domain value with computational type integer that is not required by the OPAL-AI core.
  *
  * @author Michael Eichberg
  */

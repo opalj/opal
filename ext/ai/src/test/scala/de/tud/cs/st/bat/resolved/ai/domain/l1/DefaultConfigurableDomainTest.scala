@@ -52,9 +52,9 @@ class DefaultConfigurableDomainTest extends FlatSpec with Matchers {
 
     import debug.InterpretMethods.interpret
 
-    behavior of "BATAI's l1.DefaultConfigurableDomain"
+    behavior of "OPAL-AI's l1.DefaultConfigurableDomain"
 
-    // The jars of the "BAT core" project
+    // The jars of the "OPAL core" project
     val directoryWithJARs = "../../../../../core/src/test/resources/classfiles"
     val files =
         TestSupport.locateTestResources(directoryWithJARs, "ext/ai").listFiles.

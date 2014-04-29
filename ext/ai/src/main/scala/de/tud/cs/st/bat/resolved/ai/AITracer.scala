@@ -36,7 +36,7 @@ import instructions._
 /**
  * Defines the interface between the abstract interpreter and a module for
  * tracing the interpreter's behavior. In general, a tracer is first registered with an
- * abstract interpreter. After that, when a method is analyzed, BATAI calls the
+ * abstract interpreter. After that, when a method is analyzed, OPAL-AI calls the
  * tracer's methods at the respective points in time.
  *
  * A tracer is registered with an abstract interpreter by creating a new subclass of
@@ -46,7 +46,7 @@ import instructions._
  *      operand stack) passed to the tracer should not be mutated as '''these data
  *      structures are the original data structures on which the abstract interpreter
  *      works and they are not copies'''.
- *      However, using the `AITracer` it is possible to develop a debugger for BATAI and
+ *      However, using the `AITracer` it is possible to develop a debugger for OPAL-AI and
  *      to enable the user to perform certain mutations.
  *
  * @author Michael Eichberg
@@ -54,13 +54,13 @@ import instructions._
 trait AITracer {
 
     /**
-     * Called by BATAI immediately before the (abstract) interpretation of the
+     * Called by OPAL-AI immediately before the (abstract) interpretation of the
      * specified code is performed.
      *
      * The tracer is not expected to make any changes to the data structures
      * (`operandsArray` and `localsArray`). If the tracer makes such changes, it is
      * the responsibility of the tracer to ensure that the updates are meaningful.
-     * BATAI will not perform any checks.
+     * OPAL-AI will not perform any checks.
      */
     def continuingInterpretation(
         code: Code,
@@ -71,7 +71,7 @@ trait AITracer {
             localsArray: Array[Array[domain.DomainValue]])
 
     /**
-     * Called by BATAI always before an instruction is evaluated.
+     * Called by OPAL-AI always before an instruction is evaluated.
      *
      * This enables the tracer to precisely log the behavior of the abstract
      * interpreter, but also enables the tracer to interrupt the evaluation
@@ -88,7 +88,7 @@ trait AITracer {
             locals: Array[domain.DomainValue]): Unit
 
     /**
-     * Called by BATAI after an instruction (`currentPC`) was evaluated and before the
+     * Called by OPAL-AI after an instruction (`currentPC`) was evaluated and before the
      * `targetPC` may be evaluated.
      *
      * This method is only called if the instruction with the program counter
@@ -100,7 +100,7 @@ trait AITracer {
      * In case of `if` or `switch` instructions `flow` may be
      * called multiple times before the method `instructionEvaluation` is called again.
      *
-     * Recall that BATAI performs a depth-first exploration.
+     * Recall that OPAL-AI performs a depth-first exploration.
      */
     def flow(
         domain: Domain)(
@@ -116,7 +116,7 @@ trait AITracer {
      * However, further instructions may be appended to the list before the
      * next `instructionEvaluation` takes place.
      *
-     * Recall that BATAI performs a depth-first exploration.
+     * Recall that OPAL-AI performs a depth-first exploration.
      */
     def rescheduled(
         domain: Domain)(
@@ -125,7 +125,7 @@ trait AITracer {
             isExceptionalControlFlow: Boolean): Unit
 
     /**
-     * Called by BATAI whenever two paths converge and the values on the operand stack
+     * Called by OPAL-AI whenever two paths converge and the values on the operand stack
      * and the registers are joined.
      *
      * @param thisOperands The operand stack as it was used the last time when the
@@ -184,7 +184,7 @@ trait AITracer {
             exception: domain.DomainValue)
 
     /**
-     * Called by BATAI when the abstract interpretation of a method has completed/was
+     * Called by OPAL-AI when the abstract interpretation of a method has completed/was
      * interrupted.
      */
     def result(result: AIResult): Unit
