@@ -65,29 +65,33 @@ sealed trait FieldAccessMethodHandle extends MethodHandle {
     }
 }
 
+sealed trait FieldReadAccessMethodHandle extends FieldAccessMethodHandle
+
+sealed trait FieldWriteAccessMethodHandle extends FieldAccessMethodHandle
+
 case class GetFieldMethodHandle(
     declaringClassType: ObjectType,
     name: String,
     fieldType: FieldType)
-        extends FieldAccessMethodHandle
+        extends FieldReadAccessMethodHandle
 
 case class GetStaticMethodHandle(
     declaringClassType: ObjectType,
     name: String,
     fieldType: FieldType)
-        extends FieldAccessMethodHandle
+        extends FieldReadAccessMethodHandle
 
 case class PutFieldMethodHandle(
     declaringClassType: ObjectType,
     name: String,
     fieldType: FieldType)
-        extends FieldAccessMethodHandle
+        extends FieldWriteAccessMethodHandle
 
 case class PutStaticMethodHandle(
     declaringClassType: ObjectType,
     name: String,
     fieldType: FieldType)
-        extends FieldAccessMethodHandle
+        extends FieldWriteAccessMethodHandle
 
 trait MethodCallMethodHandle extends MethodHandle {
     def receiverType: ReferenceType
