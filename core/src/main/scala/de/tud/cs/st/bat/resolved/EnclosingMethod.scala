@@ -44,4 +44,11 @@ case class EnclosingMethod(
     descriptor: MethodDescriptor)
         extends Attribute {
 
+    override def kindId: Int = EnclosingMethod.KindId
+
+}
+object EnclosingMethod {
+
+    final val KindId = 10
+
 }

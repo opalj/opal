@@ -37,4 +37,15 @@ package resolved
  */
 case class MethodParameterTable(
     parameters: MethodParameters)
-        extends Attribute
+        extends Attribute {
+
+    override def kindId: Int = MethodParameterTable.KindId
+
+}
+object MethodParameterTable {
+
+    final val KindId = 43
+
+}
+    
+

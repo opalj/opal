@@ -71,6 +71,13 @@ case class LineNumberTable(
             return Some(lastLineNumber.lineNumber)
     }
 
+    override def kindId: Int = LineNumberTable.KindId
+
+}
+object LineNumberTable {
+
+    final val KindId = 19
+
 }
 
 /**

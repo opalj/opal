@@ -39,4 +39,13 @@ package resolved
  */
 case class SourceDebugExtension(
     debug_extension: String)
-        extends Attribute 
+        extends Attribute {
+
+    override def kindId: Int = SourceDebugExtension.KindId
+
+}
+object SourceDebugExtension {
+
+    final val KindId = 18
+
+}

@@ -35,7 +35,16 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case class BootstrapMethodTable(methods: BootstrapMethods) extends Attribute
+case class BootstrapMethodTable(methods: BootstrapMethods) extends Attribute {
+
+    override def kindId: Int = BootstrapMethodTable.KindId
+
+}
+object BootstrapMethodTable {
+
+    final val KindId = 42
+
+}
 
 /**
  * Java 7's 'BootstrapMethod'.

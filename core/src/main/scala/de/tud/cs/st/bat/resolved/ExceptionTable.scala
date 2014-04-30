@@ -38,4 +38,13 @@ package resolved
  */
 case class ExceptionTable(
     exceptions: Exceptions)
-        extends Attribute
+        extends Attribute {
+
+    override def kindId: Int = ExceptionTable.KindId
+
+}
+object ExceptionTable {
+
+    final val KindId = 8
+
+}

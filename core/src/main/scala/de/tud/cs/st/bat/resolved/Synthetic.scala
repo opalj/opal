@@ -35,4 +35,10 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case object Synthetic extends Attribute 
+case object Synthetic extends Attribute {
+
+    final val KindId = 11
+
+    override def kindId = KindId
+
+}

@@ -37,4 +37,13 @@ package resolved
  */
 case class LocalVariableTable(
     localVariables: LocalVariables)
-        extends Attribute
+        extends Attribute {
+    
+       override def kindId: Int = LocalVariableTable.KindId
+
+}
+object LocalVariableTable {
+
+    final val KindId = 20
+
+}

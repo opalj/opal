@@ -37,7 +37,16 @@ package resolved
  */
 case class InnerClassTable(
     innerClasses: InnerClasses)
-        extends Attribute
+        extends Attribute {
+
+    override def kindId: Int = InnerClassTable.KindId
+
+}
+object InnerClassTable {
+
+    final val KindId = 9
+
+}
 
 case class InnerClass(
     innerClassType: ObjectType,

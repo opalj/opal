@@ -37,4 +37,13 @@ package resolved
  */
 case class StackMapTable(
     stackMapFrames: StackMapFrames)
-        extends Attribute 
+        extends Attribute {
+
+    override def kindId: Int = StackMapTable.KindId
+
+}
+object StackMapTable {
+
+    final val KindId = 7
+
+}

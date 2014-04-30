@@ -31,7 +31,9 @@ package bat
 package resolved
 
 /**
- * An annotation's value.
+ * An element value represents an annotation's value or an
+ * annonation's default value; depending on the context in
+ * which it is used.
  *
  * @author Michael Eichberg
  * @author Arne Lottmann
@@ -68,6 +70,13 @@ case class ByteValue(
 
     override def toJava = value.toString
 
+    override def kindId: Int = ByteValue.KindId
+
+}
+object ByteValue {
+
+    final val KindId = 29
+
 }
 
 case class CharValue(
@@ -77,6 +86,14 @@ case class CharValue(
     override def baseType: BaseType = CharType
 
     override def toJava = value.toString
+
+    override def kindId: Int = CharValue.KindId
+
+}
+object CharValue {
+
+    final val KindId = 30
+
 }
 
 case class DoubleValue(
@@ -86,6 +103,14 @@ case class DoubleValue(
     override def baseType: BaseType = DoubleType
 
     override def toJava = value.toString
+
+    override def kindId: Int = DoubleValue.KindId
+
+}
+object DoubleValue {
+
+    final val KindId = 31
+
 }
 
 case class FloatValue(
@@ -95,6 +120,14 @@ case class FloatValue(
     override def baseType: BaseType = FloatType
 
     override def toJava = value.toString
+
+    override def kindId: Int = FloatValue.KindId
+
+}
+object FloatValue {
+
+    final val KindId = 32
+
 }
 
 case class IntValue(
@@ -104,6 +137,14 @@ case class IntValue(
     override def baseType: BaseType = IntegerType
 
     override def toJava = value.toString
+
+    override def kindId: Int = IntValue.KindId
+
+}
+object IntValue {
+
+    final val KindId = 33
+
 }
 
 case class LongValue(
@@ -113,6 +154,14 @@ case class LongValue(
     override def baseType: BaseType = LongType
 
     override def toJava = value.toString
+
+    override def kindId: Int = LongValue.KindId
+
+}
+object LongValue {
+
+    final val KindId = 34
+
 }
 
 case class ShortValue(
@@ -122,6 +171,14 @@ case class ShortValue(
     override def baseType: BaseType = ShortType
 
     override def toJava = value.toString
+
+    override def kindId: Int = ShortValue.KindId
+
+}
+object ShortValue {
+
+    final val KindId = 35
+
 }
 
 case class BooleanValue(
@@ -131,6 +188,14 @@ case class BooleanValue(
     override def baseType: BaseType = BooleanType
 
     override def toJava = value.toString
+
+    override def kindId: Int = BooleanValue.KindId
+
+}
+object BooleanValue {
+
+    final val KindId = 36
+
 }
 
 case class StringValue(
@@ -140,6 +205,14 @@ case class StringValue(
     final override def valueType = ObjectType.String
 
     override def toJava = "\""+value.toString+"\""
+
+    override def kindId: Int = StringValue.KindId
+
+}
+object StringValue {
+
+    final val KindId = 37
+
 }
 
 case class ClassValue(
@@ -149,6 +222,14 @@ case class ClassValue(
     final override def valueType = ObjectType.Class
 
     override def toJava = value.toJava+".class"
+
+    override def kindId: Int = ClassValue.KindId
+
+}
+object ClassValue {
+
+    final val KindId = 38
+
 }
 
 case class EnumValue(
@@ -159,6 +240,14 @@ case class EnumValue(
     final override def valueType = enumType
 
     override def toJava = enumType.toJava+"."+constName
+
+    override def kindId: Int = EnumValue.KindId
+
+}
+object EnumValue {
+
+    final val KindId = 39
+
 }
 
 case class ArrayValue(
@@ -169,6 +258,14 @@ case class ArrayValue(
     final override def valueType = ArrayType(values(0).valueType)
 
     override def toJava = values.map(_.toJava).mkString("{", ",", "}")
+
+    override def kindId: Int = ArrayValue.KindId
+
+}
+object ArrayValue {
+
+    final val KindId = 40
+
 }
 
 case class AnnotationValue(
@@ -178,6 +275,15 @@ case class AnnotationValue(
     final override def valueType = annotation.annotationType
 
     override def toJava = annotation.toJava
+
+    override def kindId: Int = AnnotationValue.KindId
+
 }
+object AnnotationValue {
+
+    final val KindId = 41
+
+}
+
 
 

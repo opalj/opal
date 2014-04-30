@@ -38,4 +38,13 @@ package resolved
 case class UnknownAttribute(
     attributeName: String,
     info: Array[Byte])
-        extends Attribute 
+        extends Attribute {
+
+    override def kindId: Int = UnknownAttribute.KindId
+
+}
+object UnknownAttribute {
+
+    final val KindId = -1
+
+}

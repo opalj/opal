@@ -41,4 +41,13 @@ package resolved
  */
 case class SourceFile(
     sourceFile: String)
-        extends Attribute 
+        extends Attribute {
+
+    override def kindId: Int = SourceFile.KindId
+
+}
+object SourceFile {
+
+    final val KindId = 17
+
+}

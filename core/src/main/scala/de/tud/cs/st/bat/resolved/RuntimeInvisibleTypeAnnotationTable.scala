@@ -41,4 +41,11 @@ case class RuntimeInvisibleTypeAnnotationTable(
 
     final def isRuntimeVisible: Boolean = false
 
+    override def kindId: Int = RuntimeInvisibleTypeAnnotationTable.KindId
+
+}
+object RuntimeInvisibleTypeAnnotationTable {
+
+    final val KindId = 28
+
 }

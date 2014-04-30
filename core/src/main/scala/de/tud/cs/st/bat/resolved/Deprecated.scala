@@ -35,4 +35,10 @@ package resolved
  *
  * @author Michael Eichberg
  */
-case object Deprecated extends Attribute
+case object Deprecated extends Attribute {
+
+    override def kindId = KindId
+
+    final val KindId = 22
+
+}

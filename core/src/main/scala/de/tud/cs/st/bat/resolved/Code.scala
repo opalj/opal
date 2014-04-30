@@ -369,6 +369,8 @@ case class Code(
             ")"
     }
 
+    override def kindId: Int = Code.KindId
+
 }
 
 /**
@@ -377,6 +379,8 @@ case class Code(
  * @author Michael Eichberg
  */
 object Code {
+
+    final val KindId = 6
 
     /**
      * Used to determine the potential handlers in case that an exception is

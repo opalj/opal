@@ -49,6 +49,13 @@ final case class ConstantLong(value: Long) extends ConstantFieldValue[Long] {
 
     override def valueType = LongType
 
+    override def kindId: Int = ConstantLong.KindId
+
+}
+object ConstantLong {
+
+    final val KindId = 1
+
 }
 
 final case class ConstantInteger(value: Int) extends ConstantFieldValue[Int] {
@@ -67,6 +74,13 @@ final case class ConstantInteger(value: Int) extends ConstantFieldValue[Int] {
 
     override def valueType = IntegerType
 
+    override def kindId: Int = ConstantInteger.KindId
+
+}
+object ConstantInteger {
+
+    final val KindId = 2
+
 }
 
 final case class ConstantDouble(value: Double) extends ConstantFieldValue[Double] {
@@ -76,6 +90,13 @@ final case class ConstantDouble(value: Double) extends ConstantFieldValue[Double
     override def valueToString = value.toString
 
     override def valueType = DoubleType
+
+    override def kindId: Int = ConstantDouble.KindId
+
+}
+object ConstantDouble {
+
+    final val KindId = 3
 
 }
 
@@ -87,6 +108,13 @@ final case class ConstantFloat(value: Float) extends ConstantFieldValue[Float] {
 
     override def valueType = FloatType
 
+    override def kindId: Int = ConstantFloat.KindId
+
+}
+object ConstantFloat {
+
+    final val KindId = 4
+
 }
 
 final case class ConstantString(value: String) extends ConstantFieldValue[String] {
@@ -97,7 +125,16 @@ final case class ConstantString(value: String) extends ConstantFieldValue[String
 
     override def valueType = ObjectType.String
 
+    override def kindId: Int = ConstantString.KindId
+
 }
+object ConstantString {
+
+    final val KindId = 5
+
+}
+    
+
 
 
 

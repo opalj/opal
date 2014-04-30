@@ -61,6 +61,14 @@ case class ClassSignature(
         extends Signature {
 
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
+
+    override def kindId: Int = ClassSignature.KindId
+
+}
+object ClassSignature {
+
+    final val KindId = 12
+
 }
 
 case class MethodTypeSignature(
@@ -71,6 +79,14 @@ case class MethodTypeSignature(
         extends Signature {
 
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
+
+    override def kindId: Int = MethodTypeSignature.KindId
+
+}
+object MethodTypeSignature {
+
+    final val KindId = 13
+
 }
 
 trait FieldTypeSignature extends Signature with TypeSignature
@@ -80,6 +96,14 @@ case class ArrayTypeSignature(
         extends FieldTypeSignature {
 
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
+
+    override def kindId: Int = ArrayTypeSignature.KindId
+
+}
+object ArrayTypeSignature {
+
+    final val KindId = 14
+
 }
 
 case class ClassTypeSignature(
@@ -101,6 +125,14 @@ case class ClassTypeSignature(
     }
 
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
+
+    override def kindId: Int = ClassTypeSignature.KindId
+
+}
+object ClassTypeSignature {
+
+    final val KindId = 15
+
 }
 
 case class TypeVariableSignature(
@@ -109,6 +141,14 @@ case class TypeVariableSignature(
         with ThrowsSignature {
 
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
+
+    override def kindId: Int = TypeVariableSignature.KindId
+
+}
+object TypeVariableSignature {
+
+    final val KindId = 16
+
 }
 
 case class SimpleClassTypeSignature(
