@@ -42,7 +42,9 @@ import scala.collection.Seq
  *
  * @author Michael Eichberg
  */
-sealed abstract class MethodDescriptor extends ConstantValue[MethodDescriptor] {
+sealed abstract class MethodDescriptor
+        extends ConstantValue[MethodDescriptor]
+        with scala.math.Ordered[MethodDescriptor] {
 
     def parameterTypes: IndexedSeq[FieldType]
 
@@ -75,7 +77,27 @@ sealed abstract class MethodDescriptor extends ConstantValue[MethodDescriptor] {
                 (parameterTypes.head.toJava /: parameterTypes.tail)(_+", "+_.toJava)
         }+"): "+returnType.toJava
 
-    def <(other: MethodDescriptor): Boolean = {
+    override def compare(other: MethodDescriptor): Int = {
+        if (this.parametersCount < other.parametersCount)
+            -1
+        else if (this.parametersCount > other.parametersCount)
+            1
+        else {
+            var i = 0
+            val iMax = this.parametersCount
+            while (i < iMax) {
+                val parameterComparisonResult =
+                    this.parameterTypes(i).compare(other.parameterTypes(i))
+                if (parameterComparisonResult != 0)
+                    return parameterComparisonResult
+                else // the types are identical
+                    i += 1
+            }
+            this.returnType.compare(other.returnType)
+        }
+    }
+
+    override def <(other: MethodDescriptor): Boolean = {
         (this.parametersCount < other.parametersCount) || (
             this.parametersCount == other.parametersCount &&
             {
