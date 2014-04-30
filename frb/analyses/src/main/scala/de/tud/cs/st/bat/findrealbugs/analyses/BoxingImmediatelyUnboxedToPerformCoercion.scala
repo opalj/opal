@@ -74,16 +74,17 @@ class BoxingImmediatelyUnboxedToPerformCoercion[S]
             classFile ← project.classFiles if classFile.majorVersion >= 49
             if !project.isLibraryType(classFile)
             method @ MethodWithBody(body) ← classFile.methods
-            Seq(
-                (_, INVOKESPECIAL(receiver1, _, MethodDescriptor(Seq(paramType), _))),
-                (pc, INVOKEVIRTUAL(receiver2, name, MethodDescriptor(Seq(), returnType)))
-                ) ← body.associateWithIndex.sliding(2) if (
-                !paramType.isReferenceType &&
-                receiver1.asObjectType.fqn.startsWith("java/lang") &&
-                receiver1 == receiver2 &&
-                name.endsWith("Value") &&
-                returnType != paramType // coercion to another type performed
-            )
+            pc ← body.slidingCollect(2)({
+                case (pc,
+                    Seq(INVOKESPECIAL(receiver1, _, MethodDescriptor(Seq(paramType), _)),
+                        INVOKEVIRTUAL(receiver2, name, MethodDescriptor(Seq(), returnType)))) if (
+                    !paramType.isReferenceType &&
+                    receiver1.asObjectType.fqn.startsWith("java/lang") &&
+                    receiver1 == receiver2 &&
+                    name.endsWith("Value") &&
+                    returnType != paramType // coercion to another type performed
+                ) ⇒ pc
+            })
         } yield {
             LineAndColumnBasedReport(
                 project.source(classFile.thisType),
