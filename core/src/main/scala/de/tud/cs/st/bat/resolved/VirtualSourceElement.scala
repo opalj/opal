@@ -36,13 +36,21 @@ package resolved
  *
  * @author Michael Eichberg
  */
-sealed trait VirtualSourceElement extends SourceElement {
+sealed trait VirtualSourceElement
+        extends SourceElement
+        with scala.math.Ordered[VirtualSourceElement] {
 
     override def attributes = Nil
 
     final override def isVirtual = true
 
+    /**
+     * The "natural order" is VirtualClasses < VirtualFields < VirtualMethods.
+     */
+    override def compare(that: VirtualSourceElement): Int
+
     def toJava: String
+
 }
 
 /**
@@ -56,6 +64,14 @@ final case class VirtualClass(thisType: ObjectType) extends VirtualSourceElement
     override def isClass = true
 
     override def toJava: String = thisType.toJava
+
+    override def compare(that: VirtualSourceElement): Int = {
+        //x < 0 when this < that; x == 0 when this == that; x > 0 when this > that
+        that match {
+            case VirtualClass(thatType) ⇒ thisType.compare(thatType)
+            case _                      ⇒ -1
+        }
+    }
 
     override def hashCode = thisType.id
 
@@ -91,6 +107,28 @@ final case class VirtualField(
     override def toJava: String =
         declaringClassType.toJava+"{ "+fieldType.toJava+" "+name+"; }"
 
+    override def compare(that: VirtualSourceElement): Int = {
+        // x < 0 when this < that; x == 0 when this == that; x > 0 when this > that
+        that match {
+            case _: VirtualClass ⇒
+                1
+            case that: VirtualField ⇒
+                if (this.declaringClassType eq that.declaringClassType) {
+                    this.name.compareTo(that.name) match {
+                        case 0 ⇒ this.fieldType.compare(that.fieldType)
+                        case x ⇒ x
+                    }
+                } else {
+                    if (this.declaringClassType.id < that.declaringClassType.id)
+                        -1
+                    else
+                        1
+                }
+            case _ /*VirtualMethod*/ ⇒
+                -1
+        }
+    }
+
     override def hashCode =
         (((declaringClassType.id * 41) + name.hashCode()) * 41) + fieldType.id
 
@@ -119,6 +157,26 @@ final case class VirtualMethod(
 
     override def toJava: String =
         declaringClassType.toJava+"{ "+descriptor.toJava(name)+"; }"
+
+    override def compare(that: VirtualSourceElement): Int = {
+        // x < 0 when this < that; x == 0 when this == that; x > 0 when this > that
+        that match {
+            case that: VirtualMethod ⇒
+                if (this.declaringClassType eq that.declaringClassType) {
+                    this.name.compareTo(that.name) match {
+                        case 0 ⇒ this.descriptor.compare(that.descriptor)
+                        case x ⇒ x
+                    }
+                } else {
+                    if (this.declaringClassType.id < that.declaringClassType.id)
+                        -1
+                    else
+                        1
+                }
+            case _ ⇒
+                1
+        }
+    }
 
     override def hashCode =
         (((declaringClassType.id * 41) + name.hashCode()) * 41) + descriptor.hashCode()
