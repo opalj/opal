@@ -33,6 +33,9 @@ package resolved
 /**
  * The runtime (in)visible type annotations of a class, method, field or code block.
  *
+ * @note For further information about type-level annotations go to:
+ *    [[http://cr.openjdk.java.net/~abuckley/8misc.pdf]].
+ *
  * @author Michael Eichberg
  */
 trait TypeAnnotationTable extends Attribute {
