@@ -120,7 +120,7 @@ case object ComputationalTypeDouble
  * is usually done over and over again great care was taken to enable an efficient
  * comparison of types. It is - '''without exception''' - always possible to compare
  * types using reference equality (i.e., the `eq`/`ne` operators). For each type there
- * will always be exactly one object that represents that specific type.
+ * will always be at most one object that represents that specific type.
  *
  * Additionally, a stable order is defined between types that is based on a type's
  * kind and the unique id of the types in case of reference types.
@@ -129,7 +129,7 @@ case object ComputationalTypeDouble
  *
  * @author Michael Eichberg
  */
-sealed abstract class Type extends UID {
+sealed abstract class Type extends UID with scala.math.Ordered[Type] {
 
     /**
      * Returns `true` if this type can be used by fields. Returns `true` unless
@@ -219,10 +219,22 @@ sealed abstract class Type extends UID {
      */
     def id: Int
 
+    override def compare(that: Type): Int = {
+        if (this eq that)
+            0
+        else if (this.id < that.id)
+            -1
+        else
+            1
+    }
+
     /**
      * Compares this type with the other type by comparing their ids.
      */
-    def <(other: Type) = this.id < other.id
+    override def <(other: Type) = this.id < other.id
+    override def >(other: Type) = this.id > other.id
+    override def >=(other: Type) = this.id >= other.id
+    override def <=(other: Type) = this.id <= other.id
 }
 
 object ReturnType {
