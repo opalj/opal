@@ -90,12 +90,13 @@ class ArchitectureTest extends FlatSpec with Matchers with BeforeAndAfterAll {
                 'Project is_only_allowed_to_use ('Util, 'Core, 'Domains)
 
                 'Domain_Tracing is_only_allowed_to_use ('Util, 'Core, 'Domains)
-                
+
                 // 'Debug is allowed to use everything  
             }
-        import expected._
 
-        val result = analyze(Directory("ext/ai/target/scala-2.11/classes"))
+        val result = expected.analyze(
+            Specification.SourceDirectory("ext/ai/target/scala-2.11/classes")
+        )
         if (result.nonEmpty) {
             println("Violations:\n\t"+result.mkString("\n\t"))
             fail("The implemented and the specified architecture are not consistent (see the console for details).")

@@ -71,9 +71,10 @@ class BytecodeToolkitArchitectureTest extends FlatSpec with Matchers with Before
                 'Core is_only_allowed_to_use ('Util)
 
             }
-        import expected._
 
-        val result = analyze(Directory("."/*"core/target/scala-2.11/classes"*/))
+        val result = expected.analyze(
+            Specification.SourceDirectory("." /*"core/target/scala-2.11/classes"*/ )
+        )
         if (result.nonEmpty) {
             println("Violations:\n\t"+result.mkString("\n\t"))
             fail("The implemented and the specified architecture are not consistent (see the console for details).")

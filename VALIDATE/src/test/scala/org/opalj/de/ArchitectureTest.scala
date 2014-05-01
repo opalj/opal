@@ -62,9 +62,10 @@ class ArchitectureTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
                 'Dependency is_only_allowed_to_use empty
             }
-        import expected._
 
-        val result = analyze(Directory("ext/dependencies/target/scala-2.11/classes"))
+        val result = expected.analyze(
+            Specification.SourceDirectory("ext/dependencies/target/scala-2.11/classes")
+        )
         result should be(Set.empty)
     }
 
