@@ -49,6 +49,10 @@ sealed trait ElementValue
     def toJava: String
 
 }
+object ElementValue {
+    final val minKindId = ByteValue.KindId
+    final val maxKindId = AnnotationValue.KindId
+}
 
 /**
  * Common super trait of all element values with a primitive base type.
