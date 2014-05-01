@@ -100,8 +100,10 @@ class DependencyCollectingDependencyProcessor extends DependencyProcessor {
 
         val targetElements = deps.getOrElseUpdate(source, CMap.empty[VirtualSourceElement, Set[DependencyType]])
         val dependencyTypes = targetElements.getOrElseUpdate(target, Set.empty[DependencyType])
-        dependencyTypes.synchronized {
-            dependencyTypes += dType
+        if (!dependencyTypes.contains(dType)) {
+            dependencyTypes.synchronized {
+                dependencyTypes += dType
+            }
         }
     }
 
@@ -112,8 +114,10 @@ class DependencyCollectingDependencyProcessor extends DependencyProcessor {
 
         val arrayTypes = depsOnArrayTypes.getOrElseUpdate(source, CMap.empty[ArrayType, Set[DependencyType]])
         val dependencyTypes = arrayTypes.getOrElseUpdate(arrayType, Set.empty[DependencyType])
-        dependencyTypes.synchronized {
-            dependencyTypes += dType
+        if (!dependencyTypes.contains(dType)) {
+            dependencyTypes.synchronized {
+                dependencyTypes += dType
+            }
         }
     }
 
@@ -124,8 +128,10 @@ class DependencyCollectingDependencyProcessor extends DependencyProcessor {
 
         val baseTypes = depsOnBaseTypes.getOrElseUpdate(source, CMap.empty[BaseType, Set[DependencyType]])
         val dependencyTypes = baseTypes.getOrElseUpdate(baseType, Set.empty[DependencyType])
-        dependencyTypes.synchronized {
-            dependencyTypes += dType
+        if (!dependencyTypes.contains(dType)) {
+            dependencyTypes.synchronized {
+                dependencyTypes += dType
+            }
         }
     }
 }
