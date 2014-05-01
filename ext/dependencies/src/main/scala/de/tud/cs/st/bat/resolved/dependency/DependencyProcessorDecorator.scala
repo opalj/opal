@@ -35,6 +35,12 @@ import analyses.SomeProject
 import analyses.ProjectInformationKey
 
 /**
+ * Decorator for a given [[DependencyProcessor]].
+ *
+ * ==Usage Scenario==
+ * If some special processing of some `VirtualSourceElement`s needs to be done, but
+ * in other cases processing should just be delegated to another dependency processor.
+ *
  * ==Thread Safety==
  * This class is thread-safe if the specified dependency processor is also thread-safe.
  */
