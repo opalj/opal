@@ -38,7 +38,7 @@ package dependency
  * @author Thomas Schlosser
  * @author Michael Eichberg
  */
-object DependencyType extends Enumeration {
+object DependencyType extends Enumeration(0 /* <= value of first enumeration value*/ ) {
 
     val EXTENDS = Value("type declaration EXTENDS class type")
     val IMPLEMENTS = Value("type declaration IMPLEMENTS interface type")
@@ -93,4 +93,7 @@ object DependencyType extends Enumeration {
     // signature/type parameter related dependency types
     val USES_TYPE_IN_TYPE_PARAMETERS = Value("uses type in type parameters")
 
+    def bitMask(v: Value): Long = 1l << v.id
+    
+    
 }
