@@ -45,9 +45,9 @@ case class GETSTATIC(
     fieldType: FieldType)
         extends FieldReadAccess {
 
-    def opcode: Int = 178
+    def opcode: Int = GETSTATIC.OPCODE
 
-    def mnemonic: String = "getstatic"
+    def mnemonic: String = GETSTATIC.MNEMONIC
 
     final override def runtimeExceptions: List[ObjectType] = Nil
 
@@ -55,5 +55,12 @@ case class GETSTATIC(
         collection.mutable.UShortSet(indexOfNextInstruction(currentPC, code))
 
     override def toString = "get static "+declaringClass.toJava+"."+name+" : "+fieldType.toJava
+
+}
+object GETSTATIC {
+
+    final val OPCODE = 178
+
+    final val MNEMONIC = "getstatic"
 
 }
