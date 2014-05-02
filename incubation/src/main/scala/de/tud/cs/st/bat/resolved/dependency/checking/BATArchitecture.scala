@@ -143,7 +143,7 @@ object BATArchitecture extends Specification with App {
     //
     // Code basis that is to be analyzed
 
-    analyze(Directory(".."))
+    analyze(Specification.SourceDirectory(".."))
 
     //println(ensembleToString('Integration_Tests))
 
