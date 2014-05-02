@@ -120,7 +120,7 @@ trait VTACallGraphDomain extends CHACallGraphDomain { domain ⇒
  */
 class DefaultVTACallGraphDomain[Source](
     val project: Project[Source],
-    val cache: CallGraphCache[MethodSignature, Iterable[Method]],
+    val cache: CallGraphCache[MethodSignature, Set[Method]],
     val theClassFile: ClassFile,
     val theMethod: Method)
         extends Domain

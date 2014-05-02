@@ -533,7 +533,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         override def refineUpperTypeBound(
             pc: PC,
             supertype: ReferenceType): DomainReferenceValue = {
-            // BATAI calls this method only if a previous "subtype of" test 
+            // OPAL-AI calls this method only if a previous "subtype of" test 
             // (typeOf(this.value) <: additionalUpperBound ?) 
             // returned unknown. Hence, we only handle the case where the new bound
             // is more strict than the previous bound.

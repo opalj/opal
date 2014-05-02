@@ -34,10 +34,10 @@ package ai
 /**
  * Encapsulates an updated value and qualifies the type of the update.
  *
- * In general BATAI distinguishes between updates to a value that are relevant w.r.t.
+ * In general OPAL-AI distinguishes between updates to a value that are relevant w.r.t.
  * the abstract interpretation and those updates that just update some meta-information
  * and which do not affect the abstract interpretation and – in particular – do not
- * force BATAI to continue the abstract interpretation.
+ * force OPAL-AI to continue the abstract interpretation.
  *
  * @author Michael Eichberg
  */
@@ -125,7 +125,7 @@ final case class MetaInformationUpdate[V](
 
 /**
  * Indicates that the (given) structure was not updated. W.r.t. the interpretation
- * BATAI does not distinguish between a `NoUpdate` and a `MetaInformationUpdate`.
+ * OPAL-AI does not distinguish between a `NoUpdate` and a `MetaInformationUpdate`.
  */
 case object NoUpdate extends Update[Nothing] {
 

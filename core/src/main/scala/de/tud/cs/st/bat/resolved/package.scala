@@ -38,7 +38,7 @@ package bat
  * reference to constant pool entries are resolved and replaced by direct reference this
  * representation is called the resolved representation.
  *
- * This representation of Java bytecode is considered as BAT's standard representation
+ * This representation of Java bytecode is considered as OPAL's standard representation
  * for writing Scala based analyses. This representation is engineered such
  * that it facilitates writing analyses that use pattern matching.
  *

@@ -40,7 +40,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Matchers
 
 /**
- * Tests that BATAI's implemented design is as expected.
+ * Tests that OPAL-AI's implemented design is as expected.
  *
  * @author Michael Eichberg
  */

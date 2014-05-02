@@ -126,7 +126,7 @@ case class Code(
      *
      * ==Note==
      * A code attribute is allowed to have multiple line number tables. However, all
-     * tables are merged into one by BAT at class loading time.
+     * tables are merged into one by OPAL at class loading time.
      *
      * Depending on the configuration of the reader for `ClassFile`s this
      * attribute may not be reified.

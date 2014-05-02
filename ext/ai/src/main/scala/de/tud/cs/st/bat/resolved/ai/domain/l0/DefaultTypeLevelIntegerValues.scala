@@ -38,7 +38,7 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 /**
  * Base implementation of the `TypeLevelIntegerValues` trait that requires that
  * the domain`s `Value` trait is not extended. This implementation satisfies
- * the requirements of BATAI w.r.t. the domain's computational type but provides
+ * the requirements of OPAL-AI w.r.t. the domain's computational type but provides
  * some additional information about a value's range if possible.
  *
  * @author Michael Eichberg

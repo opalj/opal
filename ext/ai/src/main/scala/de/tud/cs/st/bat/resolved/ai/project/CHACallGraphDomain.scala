@@ -63,13 +63,14 @@ trait CHACallGraphDomain
     //
     // Helper data structures  
     //
-    /* abstract */ val cache: CallGraphCache[MethodSignature, Iterable[Method]]
+    /* abstract */ val cache: CallGraphCache[MethodSignature, Set[Method]]
 
     //
     // IMPLEMENTATION
     //
 
     import scala.collection.mutable.OpenHashMap
+    import scala.collection.mutable.HashSet
 
     private[this] var unresolvedMethodCalls = List.empty[UnresolvedMethodCall]
 
@@ -85,11 +86,11 @@ trait CHACallGraphDomain
 
     def allUnresolvedMethodCalls: List[UnresolvedMethodCall] = unresolvedMethodCalls
 
-    private[this] val callEdgesMap = OpenHashMap.empty[PC, Iterable[Method]]
+    private[this] val callEdgesMap = OpenHashMap.empty[PC, Set[Method]]
 
     @inline final private[this] def addCallEdge(
         pc: PC,
-        callees: Iterable[Method]): Unit = {
+        callees: Set[Method]): Unit = {
 
         if (callEdgesMap.contains(pc)) {
             callEdgesMap(pc) ++= callees
@@ -98,7 +99,8 @@ trait CHACallGraphDomain
         }
     }
 
-    def allCallEdges: (Method, List[(PC, Iterable[Method])]) = (theMethod, callEdgesMap.view.toList)
+    def allCallEdges: (Method, List[(PC, Iterable[Method])]) =
+        (theMethod, callEdgesMap.view.toList)
 
     // handles method calls where the target method can statically be resolved
     @inline protected[this] def staticMethodCall(
@@ -111,7 +113,7 @@ trait CHACallGraphDomain
             declaringClass, name, descriptor, project
         ) match {
                 case Some(callee) ⇒
-                    addCallEdge(pc, Iterable(callee))
+                    addCallEdge(pc, HashSet(callee))
                 case None ⇒
                     addUnresolvedMethodCall(
                         theClassFile.thisType, theMethod, pc,
@@ -207,7 +209,7 @@ trait CHACallGraphDomain
  */
 class DefaultCHACallGraphDomain[Source](
     val project: Project[Source],
-    val cache: CallGraphCache[MethodSignature, Iterable[Method]],
+    val cache: CallGraphCache[MethodSignature, Set[Method]],
     val theClassFile: ClassFile,
     val theMethod: Method)
         extends Domain

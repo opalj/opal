@@ -47,7 +47,7 @@ package project
  * data-structures try to minimize potential contention. Hence, this is not a general
  * purpose cache. Using this cache is only appropriate if you need/will cache a lot
  * of information that is associated with different object types.
- * 
+ *
  * '''It is required that the cache object is created before the threads are created
  * that use the cache!
  *
@@ -112,6 +112,7 @@ class CallGraphCache[Contour, Value] {
         declaringClass: ObjectType,
         contour: Contour)(
             f: ⇒ Value): Value = {
+        val cache = this.cache
         val contoursMap = cache(declaringClass.id)
         contoursMap.getOrElseUpdate(contour, f)
     }

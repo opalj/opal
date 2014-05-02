@@ -59,7 +59,7 @@ class LoadClassFilesTest extends FlatSpec with Matchers {
         assert(!(classFile.thisType.fqn eq null))
     }
 
-    behavior of "BAT"
+    behavior of "OPAL"
 
     for {
         file ← TestSupport.locateTestResources("classfiles").listFiles

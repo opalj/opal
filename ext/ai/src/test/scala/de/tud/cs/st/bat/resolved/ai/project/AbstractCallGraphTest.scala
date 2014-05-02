@@ -46,7 +46,7 @@ import reader.Java7Framework
 @RunWith(classOf[JUnitRunner])
 abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
 
-    behavior of "The BATAI Call Graph"
+    behavior of "The OPAL-AI Call Graph"
 
     // should be overridden by subclasses if the CallGraph also contains reflective calls
     def ignoreReflectiveCalls: Boolean = true

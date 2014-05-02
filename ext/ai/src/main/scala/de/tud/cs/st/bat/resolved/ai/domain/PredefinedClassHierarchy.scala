@@ -33,7 +33,7 @@ package ai
 package domain
 
 /**
- * This class uses BAT's `preInitializedClassHierarchy` (see `ClassHierarchy` for details)
+ * This class uses OPAL's `preInitializedClassHierarchy` (see `ClassHierarchy` for details)
  * for class hierarchy related queries.
  *
  * '''Hence, you should only ever use this trait if you just want to do some testing.'''
@@ -43,7 +43,7 @@ package domain
 trait PredefinedClassHierarchy extends ClassHierarchy { this: Domain ⇒
 
     /**
-     * Returns the predefined class hierarchy unless explicitly overridden. BAT's
+     * Returns the predefined class hierarchy unless explicitly overridden. OPAL's
      * built-in default class hierarchy only reflects the type-hierarchy between the
      * most basic types – in particular between the exceptions potentially thrown
      * by JVM instructions.

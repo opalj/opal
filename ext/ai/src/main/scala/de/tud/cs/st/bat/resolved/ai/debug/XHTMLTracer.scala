@@ -331,3 +331,9 @@ trait XHTMLTracer extends AITracer {
     }
 
 }
+
+object AnXHTMLTracer extends XHTMLTracer {
+
+    def instance(): AITracer = this
+    
+}

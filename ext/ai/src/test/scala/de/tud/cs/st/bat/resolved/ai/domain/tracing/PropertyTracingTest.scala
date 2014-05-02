@@ -46,7 +46,7 @@ import org.scalatest.ParallelTestExecution
 import com.sun.org.apache.bcel.internal.generic.INVOKEVIRTUAL
 
 /**
- * This test(suite) basically tests BATAIs support for tracing a property.
+ * This test(suite) basically tests OPAL-AIs support for tracing a property.
  *
  * @author Michael Eichberg
  */

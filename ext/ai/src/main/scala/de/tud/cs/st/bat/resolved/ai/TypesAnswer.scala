@@ -48,7 +48,7 @@ sealed trait TypesAnswer
  *
  * @note Recall that the computational type of a value always has to be available, but
  *      that a `Domain.typeOfValue(...)` query does not need to take the computational type
- *      into account (Whenever BATAI requires the computational type of a value it uses
+ *      into account (Whenever OPAL-AI requires the computational type of a value it uses
  *      the respective method.)
  *
  * @author Michael Eichberg

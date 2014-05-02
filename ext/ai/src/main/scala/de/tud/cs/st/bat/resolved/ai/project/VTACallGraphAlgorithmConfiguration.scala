@@ -51,9 +51,9 @@ import scala.collection.Map
 class VTACallGraphAlgorithmConfiguration extends CallGraphAlgorithmConfiguration {
 
     type Contour = MethodSignature
-    type Value = Iterable[Method]
+    type Value = Set[Method]
     type Cache = CallGraphCache[Contour, Value]
-    def Cache(): this.type#Cache = new CallGraphCache[MethodSignature, Iterable[Method]]
+    def Cache(): this.type#Cache = new CallGraphCache[MethodSignature, Value]
 
     type I = Method
 

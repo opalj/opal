@@ -29,25 +29,25 @@
 package de.tud.cs.st
 
 /**
- * BAT is a generic Java bytecode library written in Scala that is designed with 
+ * OPAL is a generic Java bytecode library written in Scala that is designed with 
  * performance, scalability and adaptability in mind. 
- * BAT's primary representation of Java byte code
+ * OPAL's primary representation of Java byte code
  * is the [[de.tud.cs.st.bat.resolved]] representation which is defined in the
  * respective package.
  *
  * == This Package ==
- * Common constants and type definitions used across BAT.
+ * Common constants and type definitions used across OPAL.
  *
  * == General Design Rules ==
  * ===No `null` Values===
- * BAT does not make use of `null` values in its public interface. I.e., fields that
+ * OPAL does not make use of `null` values in its public interface. I.e., fields that
  * are accessible  will never contain `null` values and method methods will never
  * return `null`. If a method accepts `null` as a value for a parameter or returns 
  * a `null` value it is always explicitly documented. 
  * In general, the behavior of methods that are passed `null` values is undefined.
  *
  * ===Thread Safety===
- * Unless explicitly noted, '''BAT is thread safe'''. I.e., it is possible to read
+ * Unless explicitly noted, '''OPAL is thread safe'''. I.e., it is possible to read
  * and process class files concurrently without explicit synchronization on the
  * client side.
  *

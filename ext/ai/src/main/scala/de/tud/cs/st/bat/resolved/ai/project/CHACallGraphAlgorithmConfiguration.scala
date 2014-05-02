@@ -36,6 +36,8 @@ import analyses.SomeProject
 
 import domain._
 
+import scala.collection.Set
+
 /**
  * Configuration of a call graph algorithm that uses CHA.
  *
@@ -50,9 +52,9 @@ import domain._
 class CHACallGraphAlgorithmConfiguration extends CallGraphAlgorithmConfiguration {
 
     type Contour = MethodSignature
-    type Value = Iterable[Method]
+    type Value = Set[Method]
     type Cache = CallGraphCache[Contour, Value]
-    def Cache(): this.type#Cache = new CallGraphCache[MethodSignature, Iterable[Method]]
+    def Cache(): this.type#Cache = new CallGraphCache[MethodSignature, Value]
 
     type I = Method
 
