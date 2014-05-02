@@ -83,8 +83,8 @@ object CallGraphFactory {
         if (entryPoints.isEmpty) {
             Console.err.println("The call graph has no entry points!")
         }
-
-        type MethodAnalysisResult = (( /*Caller*/ Method, List[(PC, /*Callees*/ Iterable[Method])]), List[UnresolvedMethodCall], Option[CallGraphConstructionException])
+        import scala.collection.{ Map, Set }
+        type MethodAnalysisResult = (( /*Caller*/ Method, Map[PC, /*Callees*/ Set[Method]]), List[UnresolvedMethodCall], Option[CallGraphConstructionException])
 
         import java.util.concurrent.Callable
         import java.util.concurrent.Future

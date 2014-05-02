@@ -99,8 +99,8 @@ trait CHACallGraphDomain
         }
     }
 
-    def allCallEdges: (Method, List[(PC, Iterable[Method])]) =
-        (theMethod, callEdgesMap.view.toList)
+    def allCallEdges: (Method, Map[PC, Set[Method]]) =
+        (theMethod, callEdgesMap)
 
     // handles method calls where the target method can statically be resolved
     @inline protected[this] def staticMethodCall(
