@@ -167,7 +167,7 @@ trait AnalysisExecutor {
         // 
         // 3. execute analysis
         //
-        println("Executing analysis.")
+        println("[info] Executing analysis: "+analysis.title+".")
         val result = analysis.analyze(project, parameters)
         println(result.consoleReport)
     }
@@ -175,20 +175,20 @@ trait AnalysisExecutor {
     def setupProject(
         cpFiles: Iterable[File],
         libcpFiles: Iterable[File]): Project[URL] = {
-        println("Reading class files (found in):")
+        println("[info] Reading class files (found in):")
         val (classFiles, exceptions1) =
             reader.readClassFiles(
                 cpFiles,
                 Java8Framework.ClassFiles,
-                (file) ⇒ println("\t"+file))
+                (file) ⇒ println("[info]\t"+file))
 
         val (libraryClassFiles, exceptions2) = {
             if (libcpFiles.nonEmpty) {
-                println("Reading library class files (found in):")
+                println("[info]Reading library class files (found in):")
                 reader.readClassFiles(
                     libcpFiles,
                     Java8LibraryFramework.ClassFiles,
-                    (file) ⇒ println("\t"+file))
+                    (file) ⇒ println("[info]\t"+file))
             } else {
                 (Iterable.empty[(ClassFile, URL)], List.empty[Throwable])
             }
@@ -211,9 +211,9 @@ trait AnalysisExecutor {
         }
 
         var project = Project(classFiles, libraryClassFiles)
-        println(
-            project.statistics.map(kv ⇒ "- "+kv._1+": "+kv._2).
-                mkString("Project statistics:\n\t", "\n\t", "\n")
+        print(
+            project.statistics.map(kv ⇒ "- "+kv._1+": "+kv._2).toList.sorted.
+                mkString("[info] Project statistics:\n[info]\t", "\n[info]\t", "\n")
         )
         project
     }

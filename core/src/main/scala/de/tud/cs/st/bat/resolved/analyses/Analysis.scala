@@ -82,9 +82,15 @@ trait Analysis[Source, +AnalysisResult] {
     /**
      * A short descriptive title which should contain less than 64 characters and no
      * line-breaks.
-     * 
+     *
      * The default is the simple name of the class implementing the analysis.
      */
-    def title: String = this.getClass().getSimpleName()
+    def title: String = {
+        val simpleName = this.getClass().getSimpleName()
+        if (simpleName.endsWith("$")) {
+            simpleName.init
+        } else
+            simpleName
+    }
 }
 
