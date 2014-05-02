@@ -62,8 +62,12 @@ trait CallGraphDomain extends Domain {
     /**
      * Returns the list of all methods that are called by `theMethod`.
      *
+     * ==Requirement==
+     * The list of methods that are called by a specific instruction must not
+     * contain any duplicates.
+     *
      * @note This method should only be called after the abstract interpretation
-     *      of `theMethod`.
+     *      of `theMethod` has completed.
      */
     def allCallEdges: (Method, List[(PC, Iterable[Method])])
 

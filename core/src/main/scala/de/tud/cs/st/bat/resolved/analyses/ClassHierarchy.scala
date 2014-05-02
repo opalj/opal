@@ -846,9 +846,10 @@ class ClassHierarchy private (
         methodName: String,
         methodDescriptor: MethodDescriptor,
         project: SomeProject,
-        classesFilter: ObjectType ⇒ Boolean = { _ ⇒ true }): Iterable[Method] = {
+        classesFilter: ObjectType ⇒ Boolean = { _ ⇒ true }): Set[Method] = {
 
-        var implementingMethods: List[Method] =
+        // TODO [Improvement] Implement an "UnsafeListSet" that does not check for the set property if (by construction) it has to be clear that all elements are unique
+        var implementingMethods: Set[Method] =
             {
                 if (isInterface(receiverType))
                     lookupMethodDefinition(
@@ -863,8 +864,8 @@ class ClassHierarchy private (
                         methodDescriptor,
                         project)
             } match {
-                case Some(method) if !method.isAbstract ⇒ List(method)
-                case _                                  ⇒ List.empty
+                case Some(method) if !method.isAbstract ⇒ Set(method)
+                case _                                  ⇒ Set.empty
             }
 
         // Search all subclasses
@@ -879,7 +880,7 @@ class ClassHierarchy private (
                         if (methodOption.isDefined) {
                             val method = methodOption.get
                             if (!method.isAbstract)
-                                implementingMethods = method :: implementingMethods
+                                implementingMethods += method 
                         }
                     }
                 }
