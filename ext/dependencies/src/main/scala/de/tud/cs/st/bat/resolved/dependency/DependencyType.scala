@@ -94,6 +94,16 @@ object DependencyType extends Enumeration(0 /* <= value of first enumeration val
     val USES_TYPE_IN_TYPE_PARAMETERS = Value("uses type in type parameters")
 
     def bitMask(v: Value): Long = 1l << v.id
-    
-    
+
+    def toSet(set: DependencyTypesSet): scala.collection.Set[DependencyType] = {
+        val max = maxId
+        var i = 0
+        val dependencies = new scala.collection.mutable.HashSet[DependencyType]
+        while (i <= max) {
+            if (((set >> i) & 1) == 1)
+                dependencies += DependencyType(i)
+            i += 1
+        }
+        dependencies
+    }
 }

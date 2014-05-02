@@ -39,4 +39,5 @@ package object dependency {
 
     type DependencyType = DependencyType.Value
 
+    type DependencyTypesSet = Long
 }

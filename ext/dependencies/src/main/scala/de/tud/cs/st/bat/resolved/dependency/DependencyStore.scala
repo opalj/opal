@@ -34,13 +34,19 @@ package dependency
 import analyses.SomeProject
 import analyses.ProjectInformationKey
 
+import scala.collection.Map
+import scala.collection.Set
+
 /**
  * Stores extracted dependencies.
+ *
+ * ==Thread Safety==
+ * This class is thread safe, as this class does not have any mutable state.
  *
  * @author Michael Eichberg
  */
 class DependencyStore(
-        val dependencies: Map[VirtualSourceElement, Map[VirtualSourceElement, Set[DependencyType]]],
+        val dependencies: Map[VirtualSourceElement, Map[VirtualSourceElement, Long]],
         val dependenciesOnArrayTypes: Map[VirtualSourceElement, Map[ArrayType, Set[DependencyType]]],
         val dependenciesOnBaseTypes: Map[VirtualSourceElement, Map[BaseType, Set[DependencyType]]]) {
 
@@ -54,16 +60,17 @@ object DependencyStore {
 
         import util.debug.PerformanceEvaluation.{ time, ns2sec }
         val dc = time {
-            val dc = new DependencyCollectingDependencyProcessor()
+            val dc = new DependencyCollectingDependencyProcessor(Some(classFiles.size * 10))
             val de = createDependencyExtractor(dc)
             for (classFile ← classFiles.par) {
                 de.process(classFile)
             }
             dc
-        } { t ⇒ println("Collecting dependencies:"+ns2sec(t)) }
+        } { t ⇒ println("[info] Collecting dependencies:"+ns2sec(t)) }
+
         time {
             dc.toStore
-        } { t ⇒ println("Creating dependencies store: "+ns2sec(t)) }
+        } { t ⇒ println("[info] Creating dependencies store: "+ns2sec(t)) }
     }
 
     def initialize[Source](

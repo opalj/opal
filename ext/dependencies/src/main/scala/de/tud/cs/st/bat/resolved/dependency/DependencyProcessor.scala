@@ -83,7 +83,78 @@ trait DependencyProcessor {
         baseType: BaseType,
         dType: DependencyType): Unit
 
+    def asVirtualClass(objectType: ObjectType): VirtualClass =
+        VirtualClass(objectType)
+
+    def asVirtualField(
+        declaringClassType: ReferenceType, // Recall...new Int[]{1,2,3,...}.length
+        name: String,
+        fieldType: FieldType): VirtualField =
+        VirtualField(declaringClassType, name, fieldType)
+
+    def asVirtualMethod(
+        declaringClassType: ReferenceType, // Recall...new Int[]{1,2,3,...}.clone()
+        name: String,
+        descriptor: MethodDescriptor): VirtualMethod =
+        VirtualMethod(declaringClassType, name, descriptor)
 }
 
+class DependencyCountingDependencyProcessor extends DependencyProcessor {
 
+    protected[this] val dendencyCount = new java.util.concurrent.atomic.AtomicInteger(0)
+
+    override def processDependency(
+        source: VirtualSourceElement,
+        target: VirtualSourceElement,
+        dType: DependencyType): Unit = {
+        dendencyCount.incrementAndGet()
+    }
+
+    protected[this] val dendencyOnArraysCount = new java.util.concurrent.atomic.AtomicInteger(0)
+
+    override def processDependency(
+        source: VirtualSourceElement,
+        arrayType: ArrayType,
+        dType: DependencyType): Unit = {
+        dendencyOnArraysCount.incrementAndGet()
+    }
+
+    protected[this] val dendencyOnPrimitivesCount = new java.util.concurrent.atomic.AtomicInteger(0)
+    override def processDependency(
+        source: VirtualSourceElement,
+        baseType: BaseType,
+        dType: DependencyType): Unit = {
+        dendencyOnPrimitivesCount.incrementAndGet()
+    }
+
+    protected val DummyClassType = ObjectType("<-DUMMY_CLASSTYPE->")
+
+    protected val DummyVirtualClass =
+        VirtualClass(DummyClassType)
+
+    override def asVirtualClass(objectType: ObjectType): VirtualClass = {
+        DummyVirtualClass
+    }
+
+    protected val DummyVirtualField =
+        VirtualField(DummyClassType, "<-DUMMY_FIELD->", DummyClassType)
+
+    override def asVirtualField(
+        declaringClassType: ReferenceType, // Recall...new Int[]{1,2,3,...}.length
+        name: String,
+        fieldType: FieldType): VirtualField = {
+        DummyVirtualField
+    }
+
+    protected val DummyVirtualMethod =
+        VirtualMethod(DummyClassType, "<-DUMMY_FIELD->", MethodDescriptor.NoArgsAndReturnVoid)
+
+    override def asVirtualMethod(
+        declaringClassType: ReferenceType, // Recall...new Int[]{1,2,3,...}.clone()
+        name: String,
+        descriptor: MethodDescriptor): VirtualMethod = {
+        DummyVirtualMethod
+    }
+
+}
 

@@ -33,19 +33,35 @@ package dependency
 
 import analyses.SomeProject
 import analyses.ProjectInformationKey
+import scala.collection.JavaConversions
 
 /**
  * ==Thread Safety==
  * This class is thread-safe. However, it does not make sense to call the method
  * toStore unless the dependency extractor that uses this processor has completed.
+ *
+ * @param virtualSourceElementsCount An estimation of the number of
+ *      "VirtualSourceElements" that will be analyzed. In case that a program and all
+ *      its libraries are analyzed this number should be equivalent to the number of all
+ *      declared classes/interfaces/enums/annotations plus the number of all fields and
+ *      methods.
  */
-class DependencyCollectingDependencyProcessor extends DependencyProcessor {
+class DependencyCollectingDependencyProcessor(
+        val virtualSourceElementsCountHint: Option[Int]) extends DependencyProcessor {
 
     import scala.collection.concurrent.{ TrieMap ⇒ CMap }
     import scala.collection.mutable.{ Set }
 
-    private[this] val deps =
-        CMap.empty[VirtualSourceElement, CMap[VirtualSourceElement, Set[DependencyType]]]
+    import java.util.concurrent.ConcurrentHashMap
+    import java.util.concurrent.atomic.AtomicLong
+
+    private[this] val deps = new ConcurrentHashMap[( /*source*/ VirtualSourceElement, /*target*/ VirtualSourceElement), /*BitVector which encodes the kind of dependencies*/ AtomicLong](
+        // we assume that every source element has roughly ten dependencies on other source elements
+        virtualSourceElementsCountHint.getOrElse(16000) * 10
+    )
+
+    //    private[this] val deps =
+    //        CMap.empty[VirtualSourceElement, CMap[VirtualSourceElement, Set[DependencyType]]]0
 
     private[this] val depsOnArrayTypes =
         CMap.empty[VirtualSourceElement, CMap[ArrayType, Set[DependencyType]]]
@@ -53,58 +69,42 @@ class DependencyCollectingDependencyProcessor extends DependencyProcessor {
     private[this] val depsOnBaseTypes =
         CMap.empty[VirtualSourceElement, CMap[BaseType, Set[DependencyType]]]
 
-    def toStore: DependencyStore = {
-
-        import scala.collection.mutable.{ Map ⇒ MutableMap }
-        import scala.collection.immutable.{ Set ⇒ ImmutableSet }
-
-        val dependencyTypes: MutableMap[Set[DependencyType], ImmutableSet[DependencyType]] = MutableMap.empty
-
-        val theDeps =
-            (deps map { dep ⇒
-                val (source, targets) = dep
-                val newTargets = (targets map { targetKind ⇒
-                    val (target, dTypes) = targetKind
-                    (target, dependencyTypes.getOrElseUpdate(dTypes, dTypes.toSet))
-                }).toMap
-                (source, newTargets)
-            }).toMap
-
-        val theDepsOnArrayTypes =
-            (depsOnArrayTypes map { dep ⇒
-                val (source, targets) = dep
-                val newTargets = (targets map { targetKind ⇒
-                    val (target, dTypes) = targetKind
-                    (target, dependencyTypes.getOrElseUpdate(dTypes, dTypes.toSet))
-                }).toMap
-                (source, newTargets)
-            }).toMap
-
-        val theDepsOnBaseTypes =
-            (depsOnBaseTypes map { dep ⇒
-                val (source, targets) = dep
-                val newTargets = (targets map { targetKind ⇒
-                    val (target, dTypes) = targetKind
-                    (target, dependencyTypes.getOrElseUpdate(dTypes, dTypes.toSet))
-                }).toMap
-                (source, newTargets)
-            }).toMap
-
-        new DependencyStore(theDeps, theDepsOnArrayTypes, theDepsOnBaseTypes)
-    }
-
     def processDependency(
         source: VirtualSourceElement,
         target: VirtualSourceElement,
         dType: DependencyType): Unit = {
 
-        val targetElements = deps.getOrElseUpdate(source, CMap.empty[VirtualSourceElement, Set[DependencyType]])
-        val dependencyTypes = targetElements.getOrElseUpdate(target, Set.empty[DependencyType])
-        if (!dependencyTypes.contains(dType)) {
-            dependencyTypes.synchronized {
-                dependencyTypes += dType
+        val key = ((source, target))
+        val dependenciesSet: AtomicLong = {
+            val value = deps.get(key)
+            if (value == null) {
+                val newValue = new AtomicLong()
+                val theNewValue = deps.putIfAbsent(key, newValue)
+                if (theNewValue != null)
+                    theNewValue
+                else
+                    newValue
+            } else {
+                value
             }
         }
+        val newDependencyMask = DependencyType.bitMask(dType)
+        while ({
+            val currentDependenciesMask = dependenciesSet.get()
+            if ((currentDependenciesMask & newDependencyMask) == newDependencyMask)
+                return ;
+            val newCurrentDependenciesMask = currentDependenciesMask | newDependencyMask
+
+            !dependenciesSet.compareAndSet(currentDependenciesMask, newCurrentDependenciesMask)
+        }) { /* repeat */ }
+
+        //        val targetElements = deps.getOrElseUpdate(source, CMap.empty[VirtualSourceElement, Set[DependencyType]])
+        //        val dependencyTypes = targetElements.getOrElseUpdate(target, Set.empty[DependencyType])
+        //        if (!dependencyTypes.contains(dType)) {
+        //            dependencyTypes.synchronized {
+        //                dependencyTypes += dType
+        //            }
+        //        }
     }
 
     def processDependency(
@@ -133,6 +133,59 @@ class DependencyCollectingDependencyProcessor extends DependencyProcessor {
                 dependencyTypes += dType
             }
         }
+    }
+
+    def toStore: DependencyStore = {
+
+        import scala.collection.mutable.{ Map ⇒ MutableMap }
+        import scala.collection.immutable.{ Set ⇒ ImmutableSet }
+
+        val dependencyTypes: MutableMap[Set[DependencyType], ImmutableSet[DependencyType]] = MutableMap.empty
+
+        //        val theDeps =
+        //            (deps map { dep ⇒
+        //                val (source, targets) = dep
+        //                val newTargets = (targets map { targetKind ⇒
+        //                    val (target, dTypes) = targetKind
+        //                    (target, dependencyTypes.getOrElseUpdate(dTypes, dTypes.toSet))
+        //                }).toMap
+        //                (source, newTargets)
+        //            }).toMap
+        import scala.collection.mutable.AnyRefMap
+
+        val theDeps = new AnyRefMap[VirtualSourceElement, AnyRefMap[VirtualSourceElement, Long]](deps.size() / 10)
+        for {
+            aDep ← JavaConversions.iterableAsScalaIterable(deps.entrySet)
+            (source, target) = aDep.getKey()
+            deps = aDep.getValue().get()
+        } {
+            val newTargets = theDeps.getOrElseUpdate(source, new AnyRefMap[VirtualSourceElement, Long])
+            newTargets.put(target, deps)
+        }
+        theDeps.foreachValue(_.repack())
+        theDeps.repack()
+
+        val theDepsOnArrayTypes =
+            (depsOnArrayTypes map { dep ⇒
+                val (source, targets) = dep
+                val newTargets = (targets map { targetKind ⇒
+                    val (target, dTypes) = targetKind
+                    (target, dependencyTypes.getOrElseUpdate(dTypes, dTypes.toSet))
+                }).toMap
+                (source, newTargets)
+            }).toMap
+
+        val theDepsOnBaseTypes =
+            (depsOnBaseTypes map { dep ⇒
+                val (source, targets) = dep
+                val newTargets = (targets map { targetKind ⇒
+                    val (target, dTypes) = targetKind
+                    (target, dependencyTypes.getOrElseUpdate(dTypes, dTypes.toSet))
+                }).toMap
+                (source, newTargets)
+            }).toMap
+
+        new DependencyStore(theDeps, theDepsOnArrayTypes, theDepsOnBaseTypes)
     }
 }
 

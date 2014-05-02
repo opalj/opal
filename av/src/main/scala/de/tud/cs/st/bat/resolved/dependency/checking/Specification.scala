@@ -59,6 +59,7 @@ import language.implicitConversions
  * @author Michael Eichberg
  */
 class Specification {
+ 
 
     private[this] var theEnsembles: MutableMap[Symbol, (SourceElementsMatcher, ASet[VirtualSourceElement])] =
         AnyRefMap.empty
@@ -71,14 +72,14 @@ class Specification {
         theEnsembles
 
     // calculated after all class files have been loaded
-    private[this] var theOutgoingDependencies: MutableMap[VirtualSourceElement, AMap[VirtualSourceElement, ASet[DependencyType]]] =
+    private[this] var theOutgoingDependencies: MutableMap[VirtualSourceElement, AMap[VirtualSourceElement, DependencyTypesSet]] =
         AnyRefMap.empty
     /**
      * Mapping between a source element and those source elements it depends on/uses.
      *
      * This mapping is automatically created when analyze is called.
      */
-    def outgoingDependencies: AMap[VirtualSourceElement, AMap[VirtualSourceElement, ASet[DependencyType]]] =
+    def outgoingDependencies: AMap[VirtualSourceElement, AMap[VirtualSourceElement, DependencyTypesSet]] =
         theOutgoingDependencies
 
     // calculated after all class files have been loaded
@@ -213,7 +214,7 @@ class Specification {
                 // references to unmatched source elements are ignored
                 if !(unmatchedSourceElements contains targetElement)
                 // from here on, we have found a violation
-                dependencyType ← dependencyTypes
+                dependencyType ← DependencyType.toSet(dependencyTypes)
             } yield {
                 SpecificationViolation(
                     this,
@@ -318,27 +319,26 @@ class Specification {
                     Console.BLACK)
         }
         println("Dependencies between source elements: "+dependencyStore.dependencies.size)
-        println(
-                "Dependencies between source elements by dependency type: "+
-                dependencyStore.dependencies.map(_._2.map(_._2.size).sum).sum)
-        println("Dependencies to primitive types: "+dependencyStore.dependenciesOnBaseTypes.size)
+        println("Dependencies on primitive types: "+dependencyStore.dependenciesOnBaseTypes.size)
+        println("Dependencies on array types: "+dependencyStore.dependenciesOnArrayTypes.size)
 
         time {
             for {
                 (source, targets) ← dependencyStore.dependencies
                 (target, dTypes) ← targets
-                dType ← dTypes
             } {
                 allSourceElements += source
                 allSourceElements += target
 
                 theOutgoingDependencies.update(source, targets)
 
-                theIncomingDependencies.update(
-                    target,
-                    theIncomingDependencies.getOrElse(target, Set.empty) +
-                        ((source, dType))
-                )
+                for { dType ← DependencyType.toSet(dTypes) } {
+                    theIncomingDependencies.update(
+                        target,
+                        theIncomingDependencies.getOrElse(target, Set.empty) +
+                            ((source, dType))
+                    )
+                }
             }
         } { executionTime ⇒
             Console.println(
@@ -401,8 +401,10 @@ class Specification {
         }
     }
 
-    @throws(classOf[SpecificationError])
-    def Directory(directoryName: String): Seq[(ClassFile, URL)] = {
+}
+object Specification {
+
+    def SourceDirectory(directoryName: String): Seq[(ClassFile, URL)] = {
         val file = new java.io.File(directoryName)
         if (!file.exists)
             throw new SpecificationError("The specified directory does not exist: "+directoryName+".")
@@ -413,9 +415,11 @@ class Specification {
 
         ClassFiles(file)
     }
-
 }
 
+/**
+ * Used to report errors in the specification.
+ */
 case class SpecificationError(val description: String) extends Exception(description)
 
 trait DependencyChecker {
@@ -427,6 +431,9 @@ trait DependencyChecker {
     def sourceEnsembles: Seq[Symbol]
 }
 
+/**
+ * Used to report deviations between the specified and the implemented architecture.
+ */
 case class SpecificationViolation(
         dependencyChecker: DependencyChecker,
         source: VirtualSourceElement,
