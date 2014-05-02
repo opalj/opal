@@ -32,7 +32,7 @@ package resolved
 package dependency
 
 /**
- * A dependency processor processes dependencies between two source elements.
+ * A dependency processor that counts the number of dependencies.
  *
  * Typically, a `DependencyProcessor` is passed to a
  * [[DependencyExtractor]]. The latter calls back the `processDependency` methods
@@ -41,62 +41,59 @@ package dependency
  * @author Thomas Schlosser
  * @author Michael Eichberg
  */
-trait DependencyProcessor {
+class DependencyCountingDependencyProcessor extends DependencyProcessor {
 
-    /**
-     * Called for each dependency between two source elements.
-     *
-     * @param source The source element that has a dependency on the `target` element.
-     * @param target The source element that the `source` element depends on.
-     * @param dependencyType The type of the dependency.
-     */
-    def processDependency(
+    protected[this] val dependencyCount = new java.util.concurrent.atomic.AtomicInteger(0)
+    override def processDependency(
         source: VirtualSourceElement,
         target: VirtualSourceElement,
-        dType: DependencyType): Unit
+        dType: DependencyType): Unit = {
+        dependencyCount.incrementAndGet()
+    }
+    def currentDependencyCount = dependencyCount.get
 
-    /**
-     * Called for each dependency of a source element on an array type.
-     *
-     * @note A dependency on an array type also introduces another dependency on the
-     *      element type of the array type and the dependency extractor will
-     *      notify the dependency processor about such calls.
-     *
-     * @param source The source element that has a dependency on the array type.
-     * @param arrayType The array type that the `source` element depends on.
-     * @param dependencyType The type of the dependency.
-     */
-    def processDependency(
+    protected[this] val dependencyOnArraysCount = new java.util.concurrent.atomic.AtomicInteger(0)
+    override def processDependency(
         source: VirtualSourceElement,
         arrayType: ArrayType,
-        dType: DependencyType): Unit
+        dType: DependencyType): Unit = {
+        dependencyOnArraysCount.incrementAndGet()
+    }
+    def currentDependencyOnArraysCount = dependencyOnArraysCount.get
 
-    /**
-     * Called for each dependency of a source element on a base type (aka primitive type).
-     *
-     * @param source The source element that has a dependency on the base type.
-     * @param baseType The base type on which the `source` element depends on.
-     * @param dependencyType The type of the dependency.
-     */
-    def processDependency(
+    protected[this] val dependencyOnPrimitivesCount = new java.util.concurrent.atomic.AtomicInteger(0)
+    override def processDependency(
         source: VirtualSourceElement,
         baseType: BaseType,
-        dType: DependencyType): Unit
+        dType: DependencyType): Unit = {
+        dependencyOnPrimitivesCount.incrementAndGet()
+    }
+    def currentDependencyOnPrimitivesCount = dependencyOnPrimitivesCount.get
 
-    def asVirtualClass(objectType: ObjectType): VirtualClass =
-        VirtualClass(objectType)
+    protected val DummyClassType = ObjectType("<-DUMMY_CLASSTYPE->")
 
-    def asVirtualField(
+    final val DummyVirtualClass = VirtualClass(DummyClassType)
+    override def asVirtualClass(objectType: ObjectType): VirtualClass = {
+        DummyVirtualClass
+    }
+
+    final val DummyVirtualField =
+        VirtualField(DummyClassType, "<-DUMMY_FIELD->", DummyClassType)
+    override def asVirtualField(
         declaringClassType: ReferenceType, // Recall...new Int[]{1,2,3,...}.length
         name: String,
-        fieldType: FieldType): VirtualField =
-        VirtualField(declaringClassType, name, fieldType)
+        fieldType: FieldType): VirtualField = {
+        DummyVirtualField
+    }
 
-    def asVirtualMethod(
+    final val DummyVirtualMethod =
+        VirtualMethod(DummyClassType, "<-DUMMY_METHOD->", MethodDescriptor.NoArgsAndReturnVoid)
+    override def asVirtualMethod(
         declaringClassType: ReferenceType, // Recall...new Int[]{1,2,3,...}.clone()
         name: String,
-        descriptor: MethodDescriptor): VirtualMethod =
-        VirtualMethod(declaringClassType, name, descriptor)
-}
+        descriptor: MethodDescriptor): VirtualMethod = {
+        DummyVirtualMethod
+    }
 
+}
 
