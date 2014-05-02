@@ -96,7 +96,7 @@ class DependencyExtractor(
                 case RuntimeInvisibleAnnotationTable.KindId
                     | RuntimeVisibleAnnotationTable.KindId ⇒
                     attribute.asInstanceOf[AnnotationTable].annotations foreach {
-                        process(vc, _)
+                        process(vc, _, ANNOTATED_WITH)
                     }
 
                 case RuntimeInvisibleTypeAnnotationTable.KindId
@@ -150,18 +150,18 @@ class DependencyExtractor(
                     | TypeVariableSignature.KindId ⇒
                     processSignature(vc, attribute.asInstanceOf[Signature])
 
-                // The Synthetic, SourceFile, Deprecated, and 
-                // SourceDebugExtension attributes do not create dependencies.
+                // The following attributes do not create dependencies.
                 case Synthetic.KindId            ⇒ /*do nothing*/
                 case SourceFile.KindId           ⇒ /*do nothing*/
                 case Deprecated.KindId           ⇒ /*do nothing*/
                 case SourceDebugExtension.KindId ⇒ /*do nothing*/
 
-                case UnknownAttribute.KindId     ⇒ /*do nothing*/
-
                 // The Java 7 BootstrapMethodTable Attribute is resolved and related
                 // dependencies will be extracted when the respective invokedynamic 
                 // instructions are processed.
+
+                // We know nothing about:
+                case UnknownAttribute.KindId     ⇒ /*do nothing*/
 
                 case _ ⇒
                     throw new BATException(
@@ -271,7 +271,7 @@ class DependencyExtractor(
 
             // Process code instructions by calling the process method which is defined in
             // the generated InstructionDependencyExtractor super class.
-            process(vm, code.instructions)
+            process(vm, code)
 
             // add dependencies from the method to all throwables that are used in catch statements
             for {
@@ -593,16 +593,21 @@ class DependencyExtractor(
      */
     private def process(
         declaringMethod: VirtualMethod,
-        instructions: Instructions) {
+        code: Code) {
 
         def as[TargetType <: Instruction](instruction: Instruction) =
             instruction.asInstanceOf[TargetType]
-
-        for (i ← instructions if i != null) {
-            (i.opcode: @scala.annotation.switch) match {
+        val instructions = code.instructions
+        val instructionCount = instructions.length
+        var i = 0
+        while (i < instructionCount) {
+            val instruction = instructions(i)
+            (instruction.opcode: @scala.annotation.switch) match {
                 case 178 ⇒
-                    val field @ GETSTATIC(declaringClass, fieldName, fieldType) =
-                        as[GETSTATIC](i)
+                    val getstatic = as[GETSTATIC](instruction)
+                    val declaringClass = getstatic.declaringClass
+                    val fieldName = getstatic.name
+                    val fieldType = getstatic.fieldType
                     processDependency(declaringMethod, declaringClass, USES_FIELD_DECLARING_TYPE)
                     processDependency(declaringMethod, fieldType, USES_FIELD_READ_TYPE)
                     dependencyProcessor.processDependency(
@@ -611,8 +616,10 @@ class DependencyExtractor(
                         READS_FIELD)
 
                 case 179 ⇒
-                    val field @ PUTSTATIC(declaringClass, fieldName, fieldType) =
-                        as[PUTSTATIC](i)
+                    val putstatic = as[PUTSTATIC](instruction)
+                    val declaringClass = putstatic.declaringClass
+                    val fieldName = putstatic.name
+                    val fieldType = putstatic.fieldType
                     processDependency(declaringMethod, declaringClass, USES_FIELD_DECLARING_TYPE)
                     processDependency(declaringMethod, fieldType, USES_FIELD_WRITE_TYPE)
                     dependencyProcessor.processDependency(
@@ -621,8 +628,10 @@ class DependencyExtractor(
                         WRITES_FIELD)
 
                 case 180 ⇒
-                    val field @ GETFIELD(declaringClass, fieldName, fieldType) =
-                        as[GETFIELD](i)
+                    val getfield = as[GETFIELD](instruction)
+                    val declaringClass = getfield.declaringClass
+                    val fieldName = getfield.name
+                    val fieldType = getfield.fieldType
                     processDependency(declaringMethod, declaringClass, USES_FIELD_DECLARING_TYPE)
                     processDependency(declaringMethod, fieldType, USES_FIELD_READ_TYPE)
                     dependencyProcessor.processDependency(
@@ -631,8 +640,10 @@ class DependencyExtractor(
                         READS_FIELD)
 
                 case 181 ⇒
-                    val field @ PUTFIELD(declaringClass, fieldName, fieldType) =
-                        as[PUTFIELD](i)
+                    val putfield = as[PUTFIELD](instruction)
+                    val declaringClass = putfield.declaringClass
+                    val fieldName = putfield.name
+                    val fieldType = putfield.fieldType
                     processDependency(declaringMethod, declaringClass, USES_FIELD_DECLARING_TYPE)
                     processDependency(declaringMethod, fieldType, USES_FIELD_WRITE_TYPE)
                     dependencyProcessor.processDependency(
@@ -641,8 +652,10 @@ class DependencyExtractor(
                         WRITES_FIELD)
 
                 case 182 ⇒
-                    val method @ INVOKEVIRTUAL(declaringClass, name, descriptor) =
-                        as[INVOKEVIRTUAL](i)
+                    val invokeInstruction = as[INVOKEVIRTUAL](instruction)
+                    val declaringClass = invokeInstruction.declaringClass
+                    val name = invokeInstruction.name
+                    val descriptor = invokeInstruction.methodDescriptor
                     processDependency(declaringMethod, declaringClass, USES_METHOD_DECLARING_TYPE)
                     descriptor.parameterTypes foreach { parameterType ⇒
                         processDependency(declaringMethod, parameterType, USES_PARAMETER_TYPE)
@@ -654,8 +667,10 @@ class DependencyExtractor(
                         CALLS_METHOD)
 
                 case 183 ⇒
-                    val method @ INVOKESPECIAL(declaringClass, name, descriptor) =
-                        as[INVOKESPECIAL](i)
+                    val invokeInstruction = as[INVOKESPECIAL](instruction)
+                    val declaringClass = invokeInstruction.declaringClass
+                    val name = invokeInstruction.name
+                    val descriptor = invokeInstruction.methodDescriptor
                     processDependency(declaringMethod, declaringClass, USES_METHOD_DECLARING_TYPE)
                     descriptor.parameterTypes foreach { parameterType ⇒
                         processDependency(declaringMethod, parameterType, USES_PARAMETER_TYPE)
@@ -667,8 +682,10 @@ class DependencyExtractor(
                         CALLS_METHOD)
 
                 case 184 ⇒
-                    val method @ INVOKESTATIC(declaringClass, name, descriptor) =
-                        as[INVOKESTATIC](i)
+                    val invokeInstruction = as[INVOKESTATIC](instruction)
+                    val declaringClass = invokeInstruction.declaringClass
+                    val name = invokeInstruction.name
+                    val descriptor = invokeInstruction.methodDescriptor
                     processDependency(declaringMethod, declaringClass, USES_METHOD_DECLARING_TYPE)
                     descriptor.parameterTypes foreach { parameterType ⇒
                         processDependency(declaringMethod, parameterType, USES_PARAMETER_TYPE)
@@ -680,8 +697,10 @@ class DependencyExtractor(
                         CALLS_METHOD)
 
                 case 185 ⇒
-                    val method @ INVOKEINTERFACE(declaringClass, name, descriptor) =
-                        as[INVOKEINTERFACE](i)
+                    val invokeInstruction = as[INVOKEINTERFACE](instruction)
+                    val declaringClass = invokeInstruction.declaringClass
+                    val name = invokeInstruction.name
+                    val descriptor = invokeInstruction.methodDescriptor
                     processDependency(declaringMethod, declaringClass, USES_METHOD_DECLARING_TYPE)
                     descriptor.parameterTypes foreach { parameterType ⇒
                         processDependency(declaringMethod, parameterType, USES_PARAMETER_TYPE)
@@ -693,37 +712,38 @@ class DependencyExtractor(
                         CALLS_METHOD)
 
                 case 186 ⇒
-                    processInvokedynamic(declaringMethod, as[INVOKEDYNAMIC](i))
+                    processInvokedynamic(declaringMethod, as[INVOKEDYNAMIC](instruction))
 
                 case 187 ⇒
-                    processDependency(declaringMethod, as[NEW](i).objectType, CREATES)
+                    processDependency(declaringMethod, as[NEW](instruction).objectType, CREATES)
 
                 case 189 ⇒
                     processDependency(
                         declaringMethod,
-                        as[ANEWARRAY](i).componentType,
+                        as[ANEWARRAY](instruction).componentType,
                         CREATES_ARRAY_OF_TYPE)
 
                 case 197 ⇒
                     processDependency(
                         declaringMethod,
-                        as[MULTIANEWARRAY](i).componentType,
+                        as[MULTIANEWARRAY](instruction).componentType,
                         CREATES_ARRAY_OF_TYPE)
 
                 case 192 ⇒
                     processDependency(
                         declaringMethod,
-                        as[CHECKCAST](i).referenceType,
+                        as[CHECKCAST](instruction).referenceType,
                         CASTS_INTO)
 
                 case 193 ⇒
                     processDependency(
                         declaringMethod,
-                        as[INSTANCEOF](i).referenceType,
+                        as[INSTANCEOF](instruction).referenceType,
                         CHECKS_INSTANCEOF)
 
                 case _ ⇒
             }
+            i = instruction.indexOfNextInstruction(i, code)
         }
     }
 
