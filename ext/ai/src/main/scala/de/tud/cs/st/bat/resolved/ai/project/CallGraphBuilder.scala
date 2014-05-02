@@ -32,10 +32,12 @@ package resolved
 package ai
 package project
 
+import analyses.SomeProject
+
 import de.tud.cs.st.collection.mutable.UShortSet
 import de.tud.cs.st.collection.UID
 
-import analyses.SomeProject
+import scala.collection.{ Set, Map }
 
 /**
  * Builds a call graph by first collecting all call graph edges before the final
@@ -54,7 +56,7 @@ class CallGraphBuilder(val project: SomeProject) {
 
     type PCs = collection.mutable.UShortSet
 
-    private[this] var allCallEdges = List.empty[(Method, List[(PC, Iterable[Method])])]
+    private[this] var allCallEdges = List.empty[(Method, Map[PC, Set[Method]])]
 
     /**
      * Adds the given `callEdges` to the call graph.
@@ -63,7 +65,7 @@ class CallGraphBuilder(val project: SomeProject) {
      * then this edge will be added to the potential targets for the respective
      * invoke instruction (referred to by the `(Method,PC)` pair).
      */
-    def addCallEdges(callEdges: (Method, List[(PC, Iterable[Method])])): Unit = {
+    def addCallEdges(callEdges: (Method, Map[PC, Set[Method]])): Unit = {
         if (callEdges._2.nonEmpty) {
             allCallEdges = callEdges :: allCallEdges
         }
@@ -78,7 +80,7 @@ class CallGraphBuilder(val project: SomeProject) {
         import concurrent.duration._
         import ExecutionContext.Implicits.global
 
-        import scala.collection.mutable.{OpenHashMap, AnyRefMap}
+        import scala.collection.mutable.{ OpenHashMap, AnyRefMap }
 
         val calledByMapFuture: Future[AnyRefMap[Method, AnyRefMap[Method, PCs]]] = Future {
             val calledByMap: AnyRefMap[Method, AnyRefMap[Method, PCs]] =
@@ -135,9 +137,13 @@ class CallGraphBuilder(val project: SomeProject) {
                     new OpenHashMap[PC, Iterable[Method]](8)
                 )
             if (callSite.contains(pc)) {
-                callSite.update(pc, callSite(pc) ++ callees)
+                callSite.update(
+                    pc,
+                    new scala.collection.mutable.WrappedArray.ofRef((callees ++ callSite(pc)).toArray))
             } else
-                callSite.put(pc, callees)
+                callSite.put(
+                    pc,
+                    new scala.collection.mutable.WrappedArray.ofRef(callees.toArray))
         }
 
         new CallGraph(
