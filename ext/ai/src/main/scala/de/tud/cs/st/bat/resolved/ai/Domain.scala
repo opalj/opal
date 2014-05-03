@@ -726,6 +726,31 @@ trait Domain {
     def ReferenceValue(pc: PC, referenceType: ReferenceType): DomainValue
 
     /**
+     * Factory method to create a `DomainValue` that represents ''an array''
+     * that was successfully created and which has the given type.
+     *
+     * The domain may ignore the information about the origin (`pc`) and
+     * the precise size of each dimension.
+     *
+     * ==Summary==
+     * The properties of the domain value are:
+     *  - Initialized: '''Yes'''
+     *  - Type: '''Precise'''
+     *  - Null: '''No'''
+     *  - Content: '''Unknown'''
+     *
+     * @param pc The program counter of the instruction which initially created the
+     * 		array.
+     * @param counts The size of each dimension if available. `counts` may be empty (`Nil`)
+     * 		if no corresponding information is available; however, if available the
+     *   	following condition always has to hold: `counts.length <= arrayType.dimensions`.
+     */
+    def InitializedArrayValue(
+        pc: PC,
+        counts: List[Int],
+        arrayType: ArrayType): DomainValue
+
+    /**
      * Represents ''a non-null reference value with the given type as an upper type bound''.
      *
      * The domain may ignore the information about the value and the origin (pc).

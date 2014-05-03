@@ -1036,6 +1036,12 @@ trait TypeLevelReferenceValues
     override def ClassValue(pc: PC, t: Type): DomainObjectValue =
         ObjectValue(pc, ObjectType.Class)
 
+    override def InitializedArrayValue(
+        pc: PC, counts: 
+        List[Int], 
+        arrayType: ArrayType): DomainValue =
+        ArrayValue(pc, arrayType)
+
     //
     // DECLARATION OF ADDITIONAL DOMAIN VALUE FACTORY METHODS
     //
