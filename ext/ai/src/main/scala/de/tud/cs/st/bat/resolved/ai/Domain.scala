@@ -132,7 +132,7 @@ trait Domain {
      * you also extend all classes/traits that inherit from this type
      * (this may require a deep mixin composition and that you refine the type
      * `DomainType` accordingly).
-     * However, OPAL-AI was designed such that extending this class should – in general
+     * However, OPAL was designed such that extending this class should – in general
      * – not be necessary. It may also be easier to encode the desired semantics – as
      * far as possible – as part of the domain.
      *
@@ -142,10 +142,10 @@ trait Domain {
      * w.r.t. some special type of value. In general, the implementation should try
      * to avoid creating new instances unless strictly required to model the
      * domain's semantics. This will greatly improve
-     * the overall performance as OPAL-AI heavily uses reference-based equality checks
+     * the overall performance as this framework heavily uses reference-based equality checks
      * to speed up the evaluation.
      *
-     * @note OPAL-AI does not rely on any special equality semantics w.r.t. values and
+     * @note OPAL does not rely on any special equality semantics w.r.t. values and
      *      never directly or indirectly calls a `Value`'s `equals` or `eq` method. Hence,
      *      a domain can encode equality such that it best fits its need.
      *      However, the provided domains rely on the following semantics for equals:
@@ -176,7 +176,7 @@ trait Domain {
         /**
          * The computational type of the value.
          *
-         * The precise computational type is needed by OPAL-AI to calculate the effect
+         * The precise computational type is needed by OPAL to calculate the effect
          * of generic stack manipulation instructions (e.g., `dup_...` and swap)
          * on the stack as well as to calculate the jump targets of `RET`
          * instructions and to determine which values are actually copied by, e.g., the
@@ -186,7 +186,8 @@ trait Domain {
          */
         def computationalType: ComputationalType
 
-        // used only by OPAL-AI and implemented only by ReturnAddressValue
+        // only used only by the abstract interpretation framework 
+        // and implemented only by ReturnAddressValue
         @throws[DomainException]("This method is not supported.")
         private[ai] def asReturnAddressValue: PC =
             throw new DomainException("this value ("+this+") is not a return address")
@@ -197,9 +198,10 @@ trait Domain {
          * This basically implements the join operator of complete lattices.
          *
          * Join is called whenever two control-flow paths join and, hence, the values
-         * found on the paths need to be joined. This method is called by OPAL-AI whenever
+         * found on the paths need to be joined. This method is called the
+         * Abstract interpretation framework whenever
          * two '''intra-procedural''' control-flow paths join and the two values are
-         * are two different objects (`(this ne value) == true`). However, it is guaranteed
+         * two different objects (`(this ne value) == true`). However, it is guaranteed
          * that both values have the same computational type.
          *
          * ==Example==
@@ -209,7 +211,7 @@ trait Domain {
          * '''all positive''' integer values or just '''some integer value'''.
          *
          * ==Contract==
-         * '''`this` value''' is always the value that was previously used by OPAL-AI to
+         * '''`this` value''' is always the value that was previously used to
          * perform subsequent computations/analyses. Hence, if `this` value subsumes
          * the given value, the result has to be either `NoUpdate` or a `MetaInformationUpdate`.
          * In case that the given value subsumes `this` value, the result has to be
@@ -217,7 +219,7 @@ trait Domain {
          * '''this `join` operation is not commutative'''. If a new (more abstract)
          * abstract value is created that represents both values the result always has to
          * be a `StructuralUpdate`.
-         * If the result is a `StructuralUpdate` OPAL-AI will continue with the
+         * If the result is a `StructuralUpdate` the framework will continue with the
          * interpretation.
          *
          * The termination of the abstract interpretation directly depends on the fact
@@ -233,12 +235,12 @@ trait Domain {
          *
          * Conceptually, the join of an object with itself has to return the object
          * itself. Note, that this is a conceptual requirement as such a call
-         * (`this.doJoin(..,this)`) will not be done by OPAL-AI.
+         * (`this.doJoin(..,this)`) will not be done by the abstract interpreter.
          *
          * ==Performance==
          * In general, the domain should try to minimize the number of objects that it
-         * uses to represent values. That is, two values that are conceptually equal
-         * should – whenever possible – use only one object. This has a significant
+         * uses to represent values. That is, ***two values that are conceptually equal
+         * should – whenever possible – use only one object***. This has a significant
          * impact on functions such as `join`.
          *
          * @param pc The program counter of the instruction where the paths converge.
@@ -272,7 +274,7 @@ trait Domain {
 
         //
         // METHODS THAT ARE PREDEFINED BECAUSE THEY ARE GENERALLY USEFUL WHEN
-        // ANALYZING PROJECTS, BUT WHICH ARE NOT REQUIRED BY OPAL-AI! 
+        // ANALYZING PROJECTS, BUT WHICH ARE NOT REQUIRED BY THIS FRAMEWORK. 
         // I.E. THESE METHODS ARE USED - IF AT ALL - BY THE DOMAIN.
         //
 
@@ -524,12 +526,12 @@ trait Domain {
      * For example, if `valueType` is a reference type it may be possible
      * that the actual value is `null`, but such knowledge is not available.
      *
-     * OPAL-AI uses this method when a method is to be analyzed, but no parameter
+     * The framework uses this method when a method is to be analyzed, but no parameter
      * values are given and initial values need to be generated. This method is not
-     * used elsewhere by OPAL-AI.
+     * used elsewhere by the framework.
      *
-     * OPAL-AI assigns the `pc` "-1" to the first parameter and -2 for the second... This
-     * property is, however, not ensured by this method.
+     * The framework assigns the `pc` "-1" to the first parameter and -2 for the second...
+     * This property is, however, not ensured by this method.
      */
     def TypedValue(pc: PC, valueType: Type): DomainValue = valueType match {
         case BooleanType       ⇒ BooleanValue(pc)
@@ -724,6 +726,31 @@ trait Domain {
      *  - Content: '''Unknown'''
      */
     def ReferenceValue(pc: PC, referenceType: ReferenceType): DomainValue
+
+    /**
+     * Factory method to create a `DomainValue` that represents ''an array''
+     * that was successfully created and which has the given type.
+     *
+     * The domain may ignore the information about the origin (`pc`) and
+     * the precise size of each dimension.
+     *
+     * ==Summary==
+     * The properties of the domain value are:
+     *  - Initialized: '''Yes'''
+     *  - Type: '''Precise'''
+     *  - Null: '''No'''
+     *  - Content: '''Unknown'''
+     *
+     * @param pc The program counter of the instruction which initially created the
+     * 		array.
+     * @param counts The size of each dimension if available. `counts` may be empty (`Nil`)
+     * 		if no corresponding information is available; however, if available the
+     *   	following condition always has to hold: `counts.length <= arrayType.dimensions`.
+     */
+    def InitializedArrayValue(
+        pc: PC,
+        counts: List[Int],
+        arrayType: ArrayType): DomainValue
 
     /**
      * Represents ''a non-null reference value with the given type as an upper type bound''.
@@ -1492,14 +1519,8 @@ trait Domain {
     //
     // METHOD INVOCATIONS
     //
-    protected type MethodCallResult = Computation[Option[DomainValue], ExceptionValues]
 
-    def invokedynamic(
-        pc: PC,
-        bootstrapMethod: BootstrapMethod,
-        name: String,
-        methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): Computation[DomainValue, ExceptionValues]
+    protected type MethodCallResult = Computation[Option[DomainValue], ExceptionValues]
 
     def invokevirtual(
         pc: PC,
@@ -1528,6 +1549,17 @@ trait Domain {
         name: String,
         methodDescriptor: MethodDescriptor,
         operands: List[DomainValue]): MethodCallResult
+
+    //
+    // INVOKEDYNAMIC
+    //
+
+    def invokedynamic(
+        pc: PC,
+        bootstrapMethod: BootstrapMethod,
+        name: String,
+        methodDescriptor: MethodDescriptor,
+        operands: List[DomainValue]): Computation[DomainValue, ExceptionValues]
 
     //
     // RELATIONAL OPERATORS

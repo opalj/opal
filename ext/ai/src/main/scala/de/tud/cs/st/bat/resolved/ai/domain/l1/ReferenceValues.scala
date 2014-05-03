@@ -995,6 +995,9 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     override protected[domain] def ObjectValue(pc: PC, upperTypeBound: UIDSet[ObjectType]): DomainObjectValue =
         ObjectValue(pc, Unknown, upperTypeBound)
 
+    override def InitializedArrayValue(pc: PC, counts: List[Int], arrayType: ArrayType): DomainValue =
+        ArrayValue(pc, No, true, arrayType)
+
     override def NewArray(pc: PC, count: DomainValue, arrayType: ArrayType): DomainArrayValue =
         ArrayValue(pc, No, true, arrayType)
 
