@@ -29,27 +29,15 @@
 package de.tud.cs.st
 
 /**
- * OPAL is a generic Java bytecode library written in Scala that is designed with 
- * performance, scalability and adaptability in mind. 
+ * Implementation of a library for parsing Java bytecode and creating arbitrary 
+ * representations.
+ * 
  * OPAL's primary representation of Java byte code
  * is the [[de.tud.cs.st.bat.resolved]] representation which is defined in the
  * respective package.
  *
  * == This Package ==
  * Common constants and type definitions used across OPAL.
- *
- * == General Design Rules ==
- * ===No `null` Values===
- * OPAL does not make use of `null` values in its public interface. I.e., fields that
- * are accessible  will never contain `null` values and method methods will never
- * return `null`. If a method accepts `null` as a value for a parameter or returns 
- * a `null` value it is always explicitly documented. 
- * In general, the behavior of methods that are passed `null` values is undefined.
- *
- * ===Thread Safety===
- * Unless explicitly noted, '''OPAL is thread safe'''. I.e., it is possible to read
- * and process class files concurrently without explicit synchronization on the
- * client side.
  *
  * @author Michael Eichberg
  */
