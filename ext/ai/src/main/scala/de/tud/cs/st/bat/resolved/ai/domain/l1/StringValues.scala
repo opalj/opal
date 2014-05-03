@@ -47,7 +47,7 @@ trait StringValues extends ReferenceValues with JavaObjectConversion {
 
     type DomainStringValue <: StringValue with DomainObjectValue
 
-    protected class StringValue (
+    protected class StringValue(
         pc: PC, // sets the pc value of the superclass
         val value: String)
             extends SObjectValue(pc, No, true, ObjectType.String) {
@@ -96,27 +96,22 @@ trait StringValues extends ReferenceValues with JavaObjectConversion {
         def unapply(value: StringValue): Option[String] = Some(value.value)
     }
 
+    abstract override def toJavaObject(value: DomainValue): Option[Object] = {
+        value match {
+            case StringValue(value) ⇒ Some(value)
+            case _                  ⇒ super.toJavaObject(value)
+        }
+    }
+
+    abstract override def toDomainValue(pc: PC, value: Object): DomainValue = {
+        value match {
+            case s: String ⇒ StringValue(pc, s)
+            case _         ⇒ super.toDomainValue(pc, value)
+        }
+    }
+
     // Needs to be implemented (the default implementation is now longer sufficient!)
     override def StringValue(pc: PC, value: String): DomainObjectValue
-
-    abstract override def toJavaObject(value: DomainValue): Option[Object] = {
-        if (value.isInstanceOf[StringValue]) {
-            return Some(new java.lang.String(value.asInstanceOf[StringValue].value))
-        } else {
-            super.toJavaObject(value)
-        }
-    }
-
-    abstract override def toDomainValue(
-	pc: PC, 
-	value: Object, 
-	targetType: Type): DomainValue = {
-        if (value.isInstanceOf[String]) {
-            StringValue(pc, value.asInstanceOf[String])
-        } else {
-            super.toDomainValue(pc, value, targetType)
-        }
-    }
 
 }
 

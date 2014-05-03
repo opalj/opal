@@ -40,21 +40,49 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 
 /**
- * This test(suite) tests the ReflectiveInvoker trait
+ * Tests the ReflectiveInvoker trait.
  *
  * @author Frederik Buss-Joraschek
+ * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
 class ReflectiveInvokerTest
         extends FlatSpec
-        with Matchers
-        with ParallelTestExecution {
+        with Matchers //with ParallelTestExecution 
+        {
 
     behavior of "the RefleciveInvoker trait"
 
     private[this] val IrrelevantPC = Int.MinValue
 
-    def createDomain() = new RecordingDomain("test")
+    class RecordingDomain
+            extends DefaultRecordingDomain[String]("ReflectiveInvokerTest")
+            with ReflectiveInvoker {
+
+        override def warnOnFailedReflectiveCalls : Boolean = false
+
+        var lastObject: Object = _
+
+        def lastValue(): Object = lastObject
+
+        override def toJavaObject(value: DomainValue): Option[Object] = {
+            value match {
+                case i: IntegerRange ⇒
+                    Some(new java.lang.Integer(i.value))
+                case r: ReferenceValue if (r.upperTypeBound.contains(ObjectType("java/lang/StringBuilder"))) ⇒
+                    Some(new java.lang.StringBuilder())
+                case _ ⇒
+                    super.toJavaObject(value)
+            }
+        }
+
+        override def toDomainValue(pc: PC, value: Object): DomainValue = {
+            lastObject = value
+            super.toDomainValue(pc, value)
+        }
+    }
+
+    def createDomain() = new RecordingDomain
 
     it should ("be able to call a static method") in {
         val domain = createDomain()
@@ -92,31 +120,47 @@ class ReflectiveInvokerTest
 
         val stringValue = StringValue(IrrelevantPC, "Test")
         val declaringClass = ObjectType.String
-        val descriptor = MethodDescriptor(IndexedSeq(), ObjectType.String)
+        val descriptor = MethodDescriptor(IndexedSeq(), IntegerType)
         val operands = List(stringValue)
 
         //int String.length()
         val result = domain.invokeReflective(IrrelevantPC, declaringClass, "length", descriptor, operands)
-        val javaResult = domain.lastObject.asInstanceOf[java.lang.Integer]
-        javaResult should equal(4)
+        domain.lastObject /* IT IS A PRIMITIVE VALUE*/ should equal(null)
+    }
+
+    it should ("be able to call a method that returns a primitive value") in {
+        val domain = createDomain()
+        import domain._
+
+        val stringValue = StringValue(IrrelevantPC, "Test")
+        val declaringClass = ObjectType.String
+        val descriptor = MethodDescriptor(IndexedSeq(), IntegerType)
+        val operands = List(stringValue)
+
+        //int String.length()
+        val result = domain.invokeReflective(IrrelevantPC, declaringClass, "length", descriptor, operands)
+        result should be(Some(ComputedValue(Some(IntegerRange(4, 4)))))
     }
 
     it should ("be able to call a virtual method with multiple parameters") in {
         val domain = createDomain()
         import domain._
 
-        val stringValue = StringValue(IrrelevantPC, "Test")
+        val receiver = StringValue(IrrelevantPC, "Test")
         val declaringClass = ObjectType.String
         val descriptor = MethodDescriptor(IndexedSeq(IntegerType, IntegerType), ObjectType.String)
-        val operands = List(IntegerValue(IrrelevantPC, 1), IntegerValue(IrrelevantPC, 3), stringValue)
+        val operands = List(
+            /*p2=*/ IntegerValue(IrrelevantPC, 3),
+            /*p1=*/ IntegerValue(IrrelevantPC, 1),
+            receiver)
 
-        //String String.substring(int int)
+        //String <String>.substring(int int)
         val result = domain.invokeReflective(IrrelevantPC, declaringClass, "substring", descriptor, operands)
         val javaResult = domain.lastObject.asInstanceOf[java.lang.String]
         javaResult should equal("es")
     }
 
-    it should ("be able to handle calls with void return value") in {
+    it should ("be able to handle methods that return void") in {
         val domain = createDomain()
         import domain._
 
@@ -126,10 +170,10 @@ class ReflectiveInvokerTest
 
         //void StringBuilder.ensureCapacity(int)
         val result = domain.invokeReflective(IrrelevantPC, declaringClass, "ensureCapacity", descriptor, operands)
-        result should be(Some(ComputedValue(None)))
+        result should be(Some(ComputationWithSideEffectOnly))
     }
 
-    it should ("return None when the instance can't be transformed to a java object ") in {
+    it should ("return None when the receiver can't be transformed to a Java object ") in {
         val domain = createDomain()
         import domain._
 
@@ -143,7 +187,7 @@ class ReflectiveInvokerTest
         result should be(None)
     }
 
-    it should ("return None when a parameter can't be transformed to a java object ") in {
+    it should ("return None when a parameter can't be transformed to a Java object ") in {
         val domain = createDomain()
         import domain._
 
@@ -156,7 +200,7 @@ class ReflectiveInvokerTest
         result should be(None)
     }
 
-    it should ("throw a DomainException when the class is not in the classpath") in {
+    it should ("return None when the class is not in the classpath") in {
         val domain = createDomain()
         import domain._
 
@@ -164,55 +208,64 @@ class ReflectiveInvokerTest
         val descriptor = MethodDescriptor(IndexedSeq(IntegerType), ObjectType.String)
         val operands = List(StringValue(IrrelevantPC, "A"))
 
-        a[DomainException] should be thrownBy {
-            domain.invokeReflective(IrrelevantPC, declaringClass, "someMethod", descriptor, operands)
-        }
+        val result = domain.invokeReflective(IrrelevantPC, declaringClass, "someMethod", descriptor, operands)
+        result should be(None)
     }
 
-    it should ("throw a DomainException when the method is not declared") in {
+    it should ("return None when the method is not declared") in {
         val domain = createDomain()
         import domain._
 
-        val stringValue = StringValue(IrrelevantPC, "A")
+        val receiver = StringValue(IrrelevantPC, "A")
         val declaringClass = ObjectType.String
         val descriptor = MethodDescriptor(IndexedSeq(ObjectType.Object), ObjectType.String)
-        val operands = List(stringValue)
-
-        a[DomainException] should be thrownBy {
-            domain.invokeReflective(IrrelevantPC, declaringClass, "someMethod", descriptor, operands)
-        }
+        val operands = List(receiver)
+        val result = domain.invokeReflective(IrrelevantPC, declaringClass, "someMethod", descriptor, operands)
+        result should be(None)
     }
-    
+
+    it should ("return Some(NullPointerException) when the receiver is null and we want to invoke an instance method") in {
+        val domain = createDomain()
+        import domain._
+
+        val receiver = NullValue(IrrelevantPC)
+        val declaringClass = ObjectType.String
+        val descriptor = MethodDescriptor(IndexedSeq.empty, IntegerType)
+        val operands = List(receiver)
+        val result = domain.invokeReflective(IrrelevantPC, declaringClass, "length", descriptor, operands)
+        result should be(Some(ThrowsException(Seq(
+            InitializedObjectValue(IrrelevantPC, ObjectType.NullPointerException)
+        ))))
+    }
+
+    it should ("return the exception that is thrown by the invoked method") in {
+        val domain = createDomain()
+        import domain._
+
+        val receiver = StringValue(IrrelevantPC, "Test")
+        val declaringClass = ObjectType.String
+        val descriptor = MethodDescriptor(IndexedSeq(IntegerType, IntegerType), ObjectType.String)
+        val operands = List(
+            /*p2=*/ IntegerValue(IrrelevantPC, 1),
+            /*p1=*/ IntegerValue(IrrelevantPC, 3),
+            receiver)
+
+        //String <String>.substring(int /*lower*/, int/*upper*/)
+        val result = domain.invokeReflective(IrrelevantPC, declaringClass, "substring", descriptor, operands)
+        result should be(Some(ThrowsException(List(
+            InitializedObjectValue(IrrelevantPC, ObjectType("java/lang/StringIndexOutOfBoundsException"))
+        ))))
+    }
+
+    // TODO [Refactoring] Move to extra class. 
     behavior of "the JavaObjectConversions trait"
 
     it should ("convert to the correct target type") in {
         val domain = createDomain()
         import domain._
-        
-        val result = domain.toDomainValue(1, new Integer(42), IntegerType)        
-        result.computationalType should be(IntegerType.computationalType)
+
+        val result = domain.toDomainValue(1, new Integer(42))
+        result.computationalType should be(ComputationalTypeReference)
     }
 
-    class RecordingDomain[I](
-        identifier: I)
-            extends DefaultRecordingDomain[I](identifier)
-            with ReflectiveInvoker {
-
-        var lastObject: Object = new Object()
-
-        def lastValue(): Object = lastObject
-
-        override def toJavaObject(value: DomainValue): Option[Object] = {
-            value match {
-                case i: IntegerRange ⇒ Some(new java.lang.Integer(i.value))
-                case r: ReferenceValue if (r.upperTypeBound.contains(ObjectType("java/lang/StringBuilder"))) ⇒ Some(new java.lang.StringBuilder())
-                case _ ⇒ super.toJavaObject(value)
-            }
-        }
-
-        override def toDomainValue(pc: PC, value: Object, targetType: Type): DomainValue = {
-            lastObject = value
-            super.toDomainValue(pc, value, targetType)
-        }
-    }
 }

@@ -34,49 +34,140 @@ package domain
 package l1
 
 /**
- * Offers support for performing reflective method calls. Use this trait when you need full method support 
- * for a Java type. The class which defined the method to be called needs to be in the classpath of the 
- * executing analysis environment.
+ * Support the invocation of methods (using Java reflection) of Java objects that
+ * represent concrete domain values.
+ *
+ * This greatly facilitates the implementation of methods that need to simulate
+ * the logic of specific object.
+ *
  *
  * @author Frederik Buss-Joraschek
+ * @author Michael Eichberg
  */
-trait ReflectiveInvoker extends JavaObjectConversion { this: SomeDomain ⇒
+trait ReflectiveInvoker extends JavaObjectConversion { this: Domain ⇒
+
+    def warnOnFailedReflectiveCalls: Boolean = true
 
     /**
-     * Performs a reflective call to the specified method. The declaring class needs to be in the classpath 
-     * of the analyzing JavaVM
+     * Performs a reflective call to the specified method. The declaring class needs
+     * to be in the classpath of the analyzing JavaVM.
      *
-     * Returns None when one or more parameters couldn't be transformed to a java object
+     * @see [[JavaObjectConversion]] for details.
+     *
+     * @return `None` when the reflective invocation has failed.
      */
-    def invokeReflective(pc: PC,
-                         declaringClass: ReferenceType,
-                         name: String,
-                         descriptor: MethodDescriptor,
-                         operands: List[DomainValue]): Option[MethodCallResult] = {
+    def invokeReflective(
+        pc: PC,
+        declaringClass: ReferenceType,
+        name: String,
+        descriptor: MethodDescriptor,
+        operands: List[DomainValue]): Option[MethodCallResult] = {
 
-        val staticMethod = operands.length == descriptor.parametersCount
-        val javaInstance = if (staticMethod) {
-            null
-        } else {
-            toJavaObject(operands.last).getOrElse(return None)
-        }
+        val (method, jReceiver, jOperands) =
+            try {
+                val declaredParametersCount = descriptor.parametersCount
+                var operandCount = 0
+                var jReceiver: Object = null
+                var jOperands: List[Object] = Nil
+                // Recall: the last method parameter is the top-most stack value ... 
+                // the receiver (if existing) is the last operand.
+                operands foreach { op ⇒
+                    operandCount += 1
+                    val jObject =
+                        toJavaObject(op) match {
+                            case Some(jObject) ⇒ jObject
+                            case _             ⇒ return None /* <------- EARLY RETURN FROM METHOD */
+                        }
+                    if (operandCount > declaredParametersCount) {
+                        // this is also the last operand
+                        jReceiver = jObject
+                    } else {
+                        jOperands = jObject :: jOperands
+                    }
+                }
+                val jParameterClassTypes = descriptor.parameterTypes map (_.toJavaClass)
+                val method = declaringClass.toJavaClass.getDeclaredMethod(
+                    name, jParameterClassTypes: _*
+                )
+                (method, jReceiver, jOperands)
+            } catch {
+                case e: ClassNotFoundException ⇒
+                    if (warnOnFailedReflectiveCalls)
+                        Console.println(
+                            Console.RED+
+                                "[warn] Delegating calls to the concrete Java object is not possible: \""+
+                                e.getMessage()+
+                                "\" class is not found on the JVM's classpath."+
+                                Console.RESET
+                        )
+                    return None /* <------- EARLY RETURN FROM METHOD */
+                case e: NoSuchMethodException ⇒
+                    if (warnOnFailedReflectiveCalls)
+                        Console.println(
+                            Console.RED+
+                                "[warn] The method \""+descriptor.toJava(name)+
+                                "\" is not defined by the class on the JVM's class path: "+
+                                declaringClass.toJava+"."+
+                                Console.RESET
+                        )
+                    return None /* <------- EARLY RETURN FROM METHOD */
+            }
 
         try {
-            val parameters = operands.take(descriptor.parametersCount)
-            val javaParameters = for (value ← parameters) yield toJavaObject(value).getOrElse(return None)
-            val parameterClassTypes = for (parameter ← descriptor.parameterTypes) yield parameter.toJavaClass
-
-            val method = declaringClass.toJavaClass.getDeclaredMethod(name, parameterClassTypes: _*)
-            val result = method.invoke(javaInstance, javaParameters: _*)
-
-            if (result != null) {                
-                Some(ComputedValue(Some(toDomainValue(pc, result, descriptor.returnType))))
-            } else {
-                Some(ComputedValue(None))
+            val result = method.invoke(jReceiver, jOperands: _*)
+            (descriptor.returnType.id: @scala.annotation.switch) match {
+                case VoidType.id ⇒
+                    Some(ComputationWithSideEffectOnly)
+                case BooleanType.id ⇒
+                    Some(ComputedValue(Some(BooleanValue(
+                        pc,
+                        result.asInstanceOf[java.lang.Boolean].booleanValue()
+                    ))))
+                case ByteType.id ⇒
+                    Some(ComputedValue(Some(ByteValue(
+                        pc,
+                        result.asInstanceOf[java.lang.Byte].byteValue()
+                    ))))
+                case ShortType.id ⇒
+                    Some(ComputedValue(Some(ShortValue(
+                        pc,
+                        result.asInstanceOf[java.lang.Short].shortValue()
+                    ))))
+                case CharType.id ⇒
+                    Some(ComputedValue(Some(CharValue(
+                        pc,
+                        result.asInstanceOf[java.lang.Character].charValue()
+                    ))))
+                case IntegerType.id ⇒
+                    Some(ComputedValue(Some(IntegerValue(
+                        pc,
+                        result.asInstanceOf[java.lang.Integer].intValue()
+                    ))))
+                case LongType.id ⇒
+                    Some(ComputedValue(Some(LongValue(
+                        pc,
+                        result.asInstanceOf[java.lang.Long].longValue()
+                    ))))
+                case FloatType.id ⇒
+                    Some(ComputedValue(Some(FloatValue(
+                        pc,
+                        result.asInstanceOf[java.lang.Float].floatValue()
+                    ))))
+                case DoubleType.id ⇒
+                    Some(ComputedValue(Some(DoubleValue(
+                        pc,
+                        result.asInstanceOf[java.lang.Double].doubleValue()
+                    ))))
+                case _ ⇒
+                    Some(ComputedValue(Some(toDomainValue(pc, result))))
             }
         } catch {
-            case e: ClassNotFoundException ⇒ throw DomainException("Tried to resolve a class which is not present in the classpath")
-            case e: NoSuchMethodException => throw DomainException("Tried to call a method which is not declared in the class. Contains the analysis classpath the correct class?")
+            // The exception happens as part of the execution of the underlying method;
+            // hence, we want to capture it and use it in the following!
+            case npe: NullPointerException ⇒
+                Some(justThrows(NullPointerException(pc)))
+            case ite: java.lang.reflect.InvocationTargetException ⇒
+                Some(justThrows(toDomainValue(pc, ite.getCause())))
         }
     }
 }

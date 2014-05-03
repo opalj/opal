@@ -37,31 +37,90 @@ package ai
 package domain
 package l1
 
+import analyses.SomeProject
+import scala.reflect.ClassTag
+
 /**
- * Adds support for transforming a DomainValue to its Java representation and backwards.
- * 
+ * Mixed in by domain's that support the conversation of a `DomainValue` into
+ * a respective Java object. This Java object can then be used to perform method
+ * invocations.
+ *
+ * ==Limitation==
+ * This will generally only work reasonably iff the respective class is either in the classpath
+ * of the JVM or a class loader (initialized with the project's classpath) is used.
+ * The latter, however, does not work for classes on the bootclasspath (e.g.,
+ * `java.lang.String`). In that case it is necessary to check that the code of the
+ * analyzed application is compatible with the one on the class path. To avoid
+ * imprecision in the analysis you should use this features only for stable classes
+ * belonging to the core JDK (`java.lang...`.)
+ *
  * @author Frederik Buss-Joraschek
+ * @author Michael Eichberg
  */
-trait JavaObjectConversion { this: SomeDomain =>
+trait JavaObjectConversion { this: Domain ⇒
 
     /**
-     * Converts a given DomainValue to a java object representing the content and informations
-     * of the DomainValue
+     * Converts – if possible – a given `DomainValue` to a Java object that is
+     * appropriately initialized.
+     *
+     * ==Implementation==
+     * Every domain that supports the creation of a Java object based on a domain
+     * value is expected to implement this method and to test if it can create
+     * a representation of the given value. If not, the implementation has to delegate
+     * the responsibility to the super method.
+     * {{{
+     * abstract override def toJavaObject(value : DomainValue): Option[Object] = {
+     * 	if(value...)
+     *  	// create and return Java object
+     *  else
+     *  	super.toJavaObject(value)
+     * }
+     * }}}
+     *
+     * @note This operation is generally only possible if the domain value maintains
+     * 		"enough" state information to completely initialize the Java object.
+     *
+     * @return Some(Object) is returned if it was possible to create a compatible
+     * 		corresponding Java object; otherwise `None` is returned.
+     *   	Default: `None` unless the `value` is null. In the latter case `Some(null)`
+     *    	is returned.
      */
     def toJavaObject(value: DomainValue): Option[Object] = {
-        None
+        if (refIsNull(value).isYes)
+            Some(null)
+        else
+            None
     }
 
     /**
-     * Converts a instance of a java class to the corresponding DomainValue.
+     * Converts the given Java object (not a primitive value) to a corresponding
+     * `DomainValue`. The conversion may be lossy.
      *
-     * The targetType describes the desired type of the DomainValue. When this type conflicts with 
-     * the actual type of the Java object, you have to choose the specified targetType.
-     * 
-     * I.e we could have a situation where value is of type java.lang.Integer, but the targetType is
-     * the primitve type int. 
+     * @note To convert primitive values to `DomainValue`s use the domain's
+     * 		respective factory methods. I.e., this method deliberately does not perform any 
+     *   	(Un-)Boxing as it does not have the necessary information. For more
+     *    	information study the implementation of the [[ReflectiveInvoker]].
+     *
+     * @param pc The program counter of the instruction that was responsible for
+     * 		creating the respective value. (This is in – in general – not the
+     * 		instruction where the transformation is performed.)
+     * @param value The object.
+     * @return A `DomainValue`.
      */
-    def toDomainValue(pc : PC, value: Object, targetType: Type): DomainValue = {
-        TypedValue(pc, targetType)
+    def toDomainValue(pc: PC, value: Object): DomainValue = {
+        if (value == null)
+            return NullValue(pc)
+
+        val clazz = value.getClass()
+        val fqnInBinaryNotation = clazz.getName().replace('.', '/')
+        if (clazz.isArray()) {
+            val array: Array[_] = value.asInstanceOf[Array[_]]
+            InitializedArrayValue(
+                pc,
+                List(array.length),
+                FieldType(fqnInBinaryNotation).asArrayType)
+        } else /*if (!clazz.isPrimitive()) */ {
+            InitializedObjectValue(pc, ObjectType(fqnInBinaryNotation))
+        } // else ... the case is Primitive is not possible
     }
 }
