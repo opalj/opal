@@ -64,7 +64,7 @@ class SuperclassUsesSubclassDuringInitialization[Source]
         project: Project[Source],
         parameters: Seq[String] = List.empty): Iterable[ClassBasedReport[Source]] = {
 
-        /**
+        /*
          * Checks whether a given class is derived from another class.
          *
          * @param subclass class for which is checked if it's a true subclass of thisClass
@@ -76,7 +76,7 @@ class SuperclassUsesSubclassDuringInitialization[Source]
                 project.classHierarchy.isSubtypeOf(subclass, thisClass).isYes
         }
 
-        /**
+        /*
          * For a given method body, collects a list of all subclass methods that are
          * called through INVOKESTATIC instructions.
          *
@@ -101,7 +101,7 @@ class SuperclassUsesSubclassDuringInitialization[Source]
                 map(call ⇒ (call._1, call._2.get))
         }
 
-        /**
+        /*
          * For a given method body, recursively collects a list of the names of accessed
          * static fields, including accesses from the given method body, and accesses from
          * methods called in the given method body.
