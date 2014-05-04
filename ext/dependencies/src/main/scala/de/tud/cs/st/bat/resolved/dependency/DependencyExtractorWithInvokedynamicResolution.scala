@@ -35,12 +35,9 @@ import instructions._
 import ai.invokedynamic._
 import DependencyType._
 import analyses.SomeProject
-import scala.util.Try
-import scala.util.Success
-import scala.util.Failure
 
 /**
- * A [[DependencyExtractor]] that delegates the extraction of [[Invokedynamic]] related
+ * A [[DependencyExtractor]] that delegates the extraction of `Invokedynamic` related
  * dependencies to some `InvokedynamicResolver`. The latter is responsible for
  * extracting the dependency to the source element that will called/accessed at
  * runtime.
