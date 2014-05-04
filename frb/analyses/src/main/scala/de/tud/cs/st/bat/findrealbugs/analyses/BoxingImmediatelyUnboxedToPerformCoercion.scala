@@ -43,7 +43,7 @@ import resolved.instructions._
  * where a literal value is boxed into an object and then immediately unboxed. This means
  * that the object creation was useless.
  *
- * TODO: Improve to also detect code like this:
+ * TODO [Improvement] Improve to also detect code like this:
  * {{{
  * Integer.valueOf(1).doubleValue()
  * }}}
