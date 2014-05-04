@@ -196,6 +196,106 @@ object PerformanceEvaluation {
     }
 
     /**
+     * Times the execution of a given function `f` until the execution time has
+     * stabilized and the average is not changing anymore.
+     *
+     * @note ***If this method causes side effects this method cannot be used!***
+     *
+     * @note The initial runs (determined by `initialEpsilon`) of the given function
+     *      are not considered.
+     *
+     * @note If the percentage is too small we can get an endless loop as the termination
+     *      condition is never met.
+     *
+     * @note This method can generally only be used to measure the time of some process
+     *      that does not require user interaction or disk/network access.
+     *
+     * @param initialEpsilon The maximum percentage that two initial runs are allowed
+     *      to deviate before the initialization is considered successful. A value
+     *      such as 10 or 15 has proven to be reasonable.
+     * @param epsilon The maximum percentage that a run is allowed to affect the average
+     *      before the performance management is aborted.
+     * @return A triple where the first value is the average, the second is the list
+     *      of times of those runs that are considered and the third one are the runs
+     *      that are not considered.
+     */
+    def timeAverage[T >: Null <: AnyRef](
+        initialEpsilon: Int = 10,
+        epsilon: Int = 2,
+        consideredRunsEpsilon: Int = 4,
+        minimalNumberOfRuns: Int = 5)(
+            f: ⇒ T)(
+                r: (Double, Seq[Long], Seq[Long]) ⇒ Unit): T = {
+
+        require(minimalNumberOfRuns >= 3)
+        require(consideredRunsEpsilon > epsilon + 1)
+
+        var unconsideredTimes = List.empty[Long]
+        timeUntilStabilized(initialEpsilon, f) { ts ⇒
+            unconsideredTimes = unconsideredTimes ++ ts
+        }
+
+        val e = epsilon.toDouble / 100.0d
+        val filterE = (consideredRunsEpsilon + 100).toDouble / 100.0d
+        var result: T = null
+        var times = List.empty[Long]
+        time { f } { t ⇒ times = t :: times }
+        var avg: Double = times.head
+        do {
+            time {
+                result = f
+            } { t ⇒
+                if (t <= avg * filterE) {
+                    // let's throw away all runs that are significantly slower than the last run
+                    val (c, uc) = times.partition(_ <= t * filterE)
+                    times = t :: c
+                    unconsideredTimes = unconsideredTimes ++ uc
+                    avg = times.sum.toDouble / times.size.toDouble
+                } else {
+                    unconsideredTimes = unconsideredTimes :+ t
+                }
+            }
+        } while (times.size < minimalNumberOfRuns || Math.abs(avg - times.head) > avg * e)
+        r(avg, times.reverse, unconsideredTimes)
+        result
+    }
+
+    /**
+     * Times the execution of a given function `f` until the execution time has
+     * stabilized. I.e., between two executions of the function `f` the execution
+     * time did not deviate more than `X` percent.
+     *
+     * @note ***If this method causes side effects this method cannot be used!***
+     *
+     * @note If the percentage is too small we can get an endless loop as the termination
+     *      condition is never met.
+     *
+     * @note This method can generally only be used to measure the time of some process
+     *      that does not require user interaction or disk/network access.
+     *
+     * @param epsilon The maximum percentage that two runs are allowed to deviate.
+     *      A value such as 5(%) has proven to be meaningful.
+     */
+    def timeUntilStabilized[T >: Null <: AnyRef](epsilon: Int = 5, f: ⇒ T)(r: Seq[Long] ⇒ Unit): T = {
+        val e = epsilon.toDouble / 100.0d
+        var lastDuration = 0l
+        var thisDuration = 0l
+        var result: T = null
+        var times = List.empty[Long]
+        do {
+            lastDuration = thisDuration // <= reset lastDuration
+            time {
+                result = f
+            } { t ⇒
+                thisDuration = t
+                times = thisDuration :: times
+            }
+        } while (Math.abs(lastDuration - thisDuration).toDouble > thisDuration * e)
+        r(times.reverse)
+        result
+    }
+
+    /**
      * Times the execution of a given function `f`.
      *
      * @param r A function that is passed the time (in nano seconds) that it
