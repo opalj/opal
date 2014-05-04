@@ -48,6 +48,8 @@ sealed abstract class MethodDescriptor
 
     def parameterTypes: IndexedSeq[FieldType]
 
+    def parameterType(index: Int): FieldType
+
     def parametersCount: Int
 
     def returnType: Type
@@ -132,6 +134,8 @@ private final object NoArgumentAndNoReturnValueMethodDescriptor
 
     def parameterTypes = IndexedSeq.empty
 
+    def parameterType(index: Int): FieldType = throw new IndexOutOfBoundsException()
+
     def parametersCount: Int = 0
 
     // the default equals and hashCode implementations are a perfect fit
@@ -142,6 +146,8 @@ private final class NoArgumentMethodDescriptor(
         extends MethodDescriptor {
 
     def parameterTypes = IndexedSeq.empty
+
+    def parameterType(index: Int): FieldType = throw new IndexOutOfBoundsException()
 
     def parametersCount: Int = 0
 
@@ -163,6 +169,13 @@ private final class SingleArgumentMethodDescriptor(
         extends MethodDescriptor {
 
     def parameterTypes = IndexedSeq(parameterType)
+
+    def parameterType(index: Int): FieldType = {
+        if (index == 0)
+            parameterType
+        else
+            throw new IndexOutOfBoundsException()
+    }
 
     def parametersCount: Int = 1
 
@@ -187,6 +200,17 @@ private final class TwoArgumentsMethodDescriptor(
 
     def parameterTypes = IndexedSeq(firstParameterType, secondParameterType)
 
+    def parameterType(index: Int): FieldType = {
+        index match {
+            case 0 ⇒
+                firstParameterType
+            case 1 ⇒
+                secondParameterType
+            case _ ⇒
+                throw new IndexOutOfBoundsException()
+        }
+    }
+
     def parametersCount: Int = 2
 
     override val hashCode: Int =
@@ -210,6 +234,8 @@ private final class MultiArgumentsMethodDescriptor(
     val parameterTypes: IndexedSeq[FieldType],
     val returnType: Type)
         extends MethodDescriptor {
+
+    def parameterType(index: Int): FieldType = parameterTypes(index)
 
     def parametersCount: Int = parameterTypes.size
 
@@ -242,6 +268,37 @@ object HasNoArgsAndReturnsVoid {
         md match {
             case NoArgumentAndNoReturnValueMethodDescriptor ⇒ true
             case _ ⇒ false
+        }
+}
+
+object NoArgumentMethodDescriptor {
+
+    def unapply(md: MethodDescriptor): Option[Type] =
+        md match {
+            case md: NoArgumentMethodDescriptor ⇒ Some(md.returnType)
+            case _                              ⇒ None
+        }
+}
+
+object SingleArgumentMethodDescriptor {
+
+    def unapply(md: MethodDescriptor): Option[(FieldType, Type)] =
+        md match {
+            case md: SingleArgumentMethodDescriptor ⇒
+                Some((md.parameterType, md.returnType))
+            case _ ⇒
+                None
+        }
+}
+
+object TwoArgumentsMethodDescriptor {
+
+    def unapply(md: MethodDescriptor): Option[(FieldType, FieldType, Type)] =
+        md match {
+            case md: TwoArgumentsMethodDescriptor ⇒
+                Some((md.firstParameterType, md.secondParameterType, md.returnType))
+            case _ ⇒
+                None
         }
 }
 
