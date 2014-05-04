@@ -749,7 +749,7 @@ class DependencyExtractor(
 
     /**
      * Prints a warning that the handling of 
-     * [[de.tud.cs.st.bat.resolved.instruction.Invokedynamic]] instructions is incomplete
+     * [[de.tud.cs.st.bat.resolved.instructions.INVOKEDYNAMIC]] instructions is incomplete
      * (from the point of view of the dependencies to the "real" methods) and then
      * calls [[processInvokedynamicRuntimeDependencies]] to handle the instruction.
      *
@@ -770,7 +770,7 @@ class DependencyExtractor(
     }
 
     /**
-     * Default implementation for handling [[Invokedynamic]] instructions that only
+     * Default implementation for handling `Invokedynamic` instructions that only
      * extracts dependencies on the runtime infrastructure (e.g. the bootstrap method
      * and its surrounding class, the types of its arguments and its return type).
      *
