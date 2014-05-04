@@ -210,13 +210,13 @@ object PerformanceEvaluation {
      *
      * time[String](2,4,3,{
      *      Thread.sleep(300).toString
-     * }){ (avg, t, ts) ⇒
-     *      val sTs = ts.map(t ⇒ f"${ns2sec(t)}%1.4f").mkString(", ")
-     *      println(f"Avg: ${ns2sec(avg.toLong)}%1.4f; T: ${ns2sec(t)}%1.4f; Ts: $sTs")
+     * }){ (avg, t, ts) =>
+     *      val sTs = ts.map(t => f"\${ns2sec(t)}%1.4f").mkString(", ")
+     *      println(f"Avg: \${ns2sec(avg.toLong)}%1.4f; T: \${ns2sec(t)}%1.4f; Ts: \$sTs")
      * }
      * }}}
      *
-     * @note ***If `f` has side effects this method cannot be used!***
+     * @note **If `f` has side effects this method cannot be used!**
      *
      * @note If epsilon is too small we can get an endless loop as the termination
      *      condition is never met. However, in practice often a value such as "1 or 2"
@@ -232,13 +232,16 @@ object PerformanceEvaluation {
      *      evaluation halts and the result of the last run is returned.
      * @param consideredRunsEpsilon Controls which runs are taken into consideration
      *      when calculating the average. Only those runs are used that are at most
-     *      `consideredRunsEpsilon` percent slower than the last run. Additionally,
+     *      `consideredRunsEpsilon%` slower than the last run. Additionally,
      *      the last run is only considered if it is at most `consideredRunsEpsilon%`
      *      slower than the average. Hence, it is possible that average may rise
      *      during the evaluation of `f`.
      * @param f The function that will be measured.
      * @param r A function that is called back whenever `f` was successfully evaluated.
-     *      The signature is: `r(averageInNs:Double, lastExecutionTimeInNs : Long, consideredExecutionTimesInNs : Seq[Long])`.
+     *      The signature is: 
+     *      {{{
+     *      def r(averageInNs:Double, lastExecutionTimeInNs : Long, consideredExecutionTimesInNs : Seq[Long]) : Unit
+     *      }}}
      *      Hence, the first parameter is the current average.
      *      The second parameter is the last execution time of `f`.
      *      The last parameter are the times of the evaluation of `f` that are taken
