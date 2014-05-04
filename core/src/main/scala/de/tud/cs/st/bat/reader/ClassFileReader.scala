@@ -289,8 +289,8 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     /**
      * Reads in a single class file from a Jar file.
      *
-     * @param jarFile an existing ZIP/JAR file that contains class files.
-     * @param jarFileEntryName the name of a class file stored in the specified ZIP/JAR file.
+     * @param jarFile An existing ZIP/JAR file that contains class files.
+     * @param jarFileEntryName The name of a class file stored in the specified ZIP/JAR file.
      */
     @throws[java.io.IOException]("if the file is empty or the entry cannot be found")
     def ClassFile(jarFile: File, jarFileEntryName: String): ClassFile = {
