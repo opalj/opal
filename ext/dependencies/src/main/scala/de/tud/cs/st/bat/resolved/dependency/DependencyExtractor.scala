@@ -748,7 +748,8 @@ class DependencyExtractor(
     }
 
     /**
-     * Prints a warning that the handling of [[Invokedynamic]] instructions is incomplete
+     * Prints a warning that the handling of 
+     * [[de.tud.cs.st.bat.resolved.instruction.Invokedynamic]] instructions is incomplete
      * (from the point of view of the dependencies to the "real" methods) and then
      * calls [[processInvokedynamicRuntimeDependencies]] to handle the instruction.
      *
@@ -756,7 +757,7 @@ class DependencyExtractor(
      *
      * ==Overriding==
      * This method should be overridden by subclasses that resolve dependencies
-     * related to an [[Invokedynamic]] instruction. However, in that case the
+     * related to an `Invokedynamic` instruction. However, in that case the
      * method [[processInvokedynamicRuntimeDependencies]] should be called explicitly.
      */
     protected[this] def processInvokedynamic(
