@@ -127,7 +127,7 @@ class FieldIsntImmutableInImmutableClass[Source]
          */
         val immutableClassesInACycle = scala.collection.mutable.Set.empty[ClassFile]
 
-        /**
+        /*
          * Evaluates whether a class is immutable.
          *
          * @param classFile The `ClassFile` of the class to be evaluated as mutable or
@@ -149,7 +149,7 @@ class FieldIsntImmutableInImmutableClass[Source]
             }
         }
 
-        /**
+        /*
          * Checks whether the class given in form of an `ObjectType` is immutable.
          *
          * @param objectType The `ObjectType` to check.
@@ -165,7 +165,7 @@ class FieldIsntImmutableInImmutableClass[Source]
             }
         }
 
-        /**
+        /*
          * Checks whether a class only has immutable fields.
          *
          * @param objectType The `ObjectType` to check.
@@ -181,7 +181,7 @@ class FieldIsntImmutableInImmutableClass[Source]
             true
         }
 
-        /**
+        /*
          * Checks whether a class only has fields with immutable types.
          *
          * @param project `Project` containing the class.
@@ -205,7 +205,7 @@ class FieldIsntImmutableInImmutableClass[Source]
             true
         }
 
-        /**
+        /*
          * Checks whether a class lacking annotations is mutable or immutable and adds it
          * to the respective container in the companion object for accelerated future
          * lookup.
@@ -230,7 +230,7 @@ class FieldIsntImmutableInImmutableClass[Source]
             isImmutable
         }
 
-        /**
+        /*
          * Checks whether a `FieldType` is immutable.
          *
          * @param fieldType The `FieldType` to check.
@@ -247,7 +247,7 @@ class FieldIsntImmutableInImmutableClass[Source]
                 )
         }
 
-        /**
+        /*
          * Checks whether a class contains a public method that sets a given field, even
          * indirectly.
          *
@@ -299,7 +299,7 @@ class FieldIsntImmutableInImmutableClass[Source]
             }
         }
 
-        /**
+        /*
          * Checks whether a field is defensively copied every time before being passed
          * in or out of the class, and whether the copy is deep enough.
          *
@@ -380,7 +380,7 @@ class FieldIsntImmutableInImmutableClass[Source]
             }
         }
 
-        /**
+        /*
          * Recursively checks whether a field introduces mutable behavior to a class.
          *
          * @param classFile The class containing the field.
