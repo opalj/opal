@@ -197,47 +197,53 @@ object PerformanceEvaluation {
 
     /**
      * Times the execution of a given function `f` until the execution time has
-     * stabilized and the average is not changing anymore.
+     * stabilized and the average is only changing in a well-defined manner.
      *
-     * @note ***If this method causes side effects this method cannot be used!***
+     * ==Example Usage==
+     * {{{
+     * time[String](2,4,3,{ 
+     *      // the function to evaluate
+     *      ""+System.nanoTime 
+     * }) { (avg, t, ts) ⇒
+     *      // the function that reports the intermediate results
+     *      val sTs = ts.map(t ⇒ f"${ns2sec(t)}%1.4f").mkString(", ")
+     *      println(f"Avg: ${ns2sec(avg.toLong)}%1.4f; T: ${ns2sec(t)}%1.4f; Ts: $sTs")
+     * }
+     * }}}
      *
-     * @note The initial runs (determined by `initialEpsilon`) of the given function
-     *      are not considered.
+     * @note ***If `f` has side effects this method cannot be used!***
      *
-     * @note If the percentage is too small we can get an endless loop as the termination
-     *      condition is never met.
+     *
+     * @note If epsilon is too small we can get an endless loop as the termination
+     *      condition is never met. However, in practice often a value such as "1 or 2"
+     *      is still useable.
      *
      * @note This method can generally only be used to measure the time of some process
      *      that does not require user interaction or disk/network access.
      *
-     * @param initialEpsilon The maximum percentage that two initial runs are allowed
-     *      to deviate before the initialization is considered successful. A value
-     *      such as 10 or 15 has proven to be reasonable.
      * @param epsilon The maximum percentage that a run is allowed to affect the average
      *      before the performance management is aborted.
-     * @return A triple where the first value is the average, the second is the list
-     *      of times of those runs that are considered and the third one are the runs
-     *      that are not considered.
+     * @param r A function that is called back whenever `f` was successfully evaluated.
+     *        The first parameter is the current average.
+     *        The second parameter was the the last execution time of `f`.
+     *        The last parameter are the times of the evaluation of `f` that are taken
+     *        into consideration when calculating the average.
      */
-    def timeAverage[T >: Null <: AnyRef](
-        initialEpsilon: Int = 10,
-        epsilon: Int = 2,
-        consideredRunsEpsilon: Int = 4,
-        minimalNumberOfRuns: Int = 5)(
-            f: ⇒ T)(
-                r: (Double, Seq[Long], Seq[Long]) ⇒ Unit): T = {
+    def time[T >: Null <: AnyRef](
+        epsilon: Int,
+        consideredRunsEpsilon: Int,
+        minimalNumberOfRelevantRuns: Int,
+        f: ⇒ T)(
+            r: (Double, Long, Seq[Long]) ⇒ Unit): T = {
 
-        require(minimalNumberOfRuns >= 3)
-        require(consideredRunsEpsilon > epsilon + 1)
+        require(minimalNumberOfRelevantRuns >= 3)
+        require(consideredRunsEpsilon > epsilon)
 
-        var unconsideredTimes = List.empty[Long]
-        timeUntilStabilized(initialEpsilon, f) { ts ⇒
-            unconsideredTimes = unconsideredTimes ++ ts
-        }
+        var result: T = null
 
         val e = epsilon.toDouble / 100.0d
         val filterE = (consideredRunsEpsilon + 100).toDouble / 100.0d
-        var result: T = null
+
         var times = List.empty[Long]
         time { f } { t ⇒ times = t :: times }
         var avg: Double = times.head
@@ -247,51 +253,14 @@ object PerformanceEvaluation {
             } { t ⇒
                 if (t <= avg * filterE) {
                     // let's throw away all runs that are significantly slower than the last run
-                    val (c, uc) = times.partition(_ <= t * filterE)
-                    times = t :: c
-                    unconsideredTimes = unconsideredTimes ++ uc
+                    times = t :: times.filter(_ <= t * filterE)
                     avg = times.sum.toDouble / times.size.toDouble
-                } else {
-                    unconsideredTimes = unconsideredTimes :+ t
                 }
+                r(avg, t, times)
             }
-        } while (times.size < minimalNumberOfRuns || Math.abs(avg - times.head) > avg * e)
-        r(avg, times.reverse, unconsideredTimes)
-        result
-    }
+        } while (times.size < minimalNumberOfRelevantRuns ||
+            Math.abs(avg - times.head) > avg * e)
 
-    /**
-     * Times the execution of a given function `f` until the execution time has
-     * stabilized. I.e., between two executions of the function `f` the execution
-     * time did not deviate more than `X` percent.
-     *
-     * @note ***If this method causes side effects this method cannot be used!***
-     *
-     * @note If the percentage is too small we can get an endless loop as the termination
-     *      condition is never met.
-     *
-     * @note This method can generally only be used to measure the time of some process
-     *      that does not require user interaction or disk/network access.
-     *
-     * @param epsilon The maximum percentage that two runs are allowed to deviate.
-     *      A value such as 5(%) has proven to be meaningful.
-     */
-    def timeUntilStabilized[T >: Null <: AnyRef](epsilon: Int = 5, f: ⇒ T)(r: Seq[Long] ⇒ Unit): T = {
-        val e = epsilon.toDouble / 100.0d
-        var lastDuration = 0l
-        var thisDuration = 0l
-        var result: T = null
-        var times = List.empty[Long]
-        do {
-            lastDuration = thisDuration // <= reset lastDuration
-            time {
-                result = f
-            } { t ⇒
-                thisDuration = t
-                times = thisDuration :: times
-            }
-        } while (Math.abs(lastDuration - thisDuration).toDouble > thisDuration * e)
-        r(times.reverse)
         result
     }
 
