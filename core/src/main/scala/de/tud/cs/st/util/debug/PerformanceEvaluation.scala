@@ -199,13 +199,18 @@ object PerformanceEvaluation {
      * Times the execution of a given function `f` until the execution time has
      * stabilized and the average is only changing in a well-defined manner.
      *
+     * In general `time` repeats the execution of `f` as long as the average changes
+     * significantly. Furthermore, `f` is executed at least `minimalNumberOfRelevantRuns`
+     * times and only those runs are taken into consideration for the calculation of the
+     * average that are `consideredRunsEpsilon`% worse than the best run.
+     *
      * ==Example Usage==
      * {{{
-     * time[String](2,4,3,{ 
-     *      // the function to evaluate
-     *      ""+System.nanoTime 
-     * }) { (avg, t, ts) ⇒
-     *      // the function that reports the intermediate results
+     * import de.tud.cs.st.util.debug.PerformanceEvaluation._
+     *
+     * time[String](2,4,3,{
+     *      Thread.sleep(300).toString
+     * }){ (avg, t, ts) ⇒
      *      val sTs = ts.map(t ⇒ f"${ns2sec(t)}%1.4f").mkString(", ")
      *      println(f"Avg: ${ns2sec(avg.toLong)}%1.4f; T: ${ns2sec(t)}%1.4f; Ts: $sTs")
      * }
@@ -213,21 +218,31 @@ object PerformanceEvaluation {
      *
      * @note ***If `f` has side effects this method cannot be used!***
      *
-     *
      * @note If epsilon is too small we can get an endless loop as the termination
      *      condition is never met. However, in practice often a value such as "1 or 2"
      *      is still useable.
      *
      * @note This method can generally only be used to measure the time of some process
-     *      that does not require user interaction or disk/network access.
+     *      that does not require user interaction or disk/network access. In the latter
+     *      case the variation between two runs will be too coarse grained to get
+     *      meaningful results.
      *
-     * @param epsilon The maximum percentage that a run is allowed to affect the average
-     *      before the performance management is aborted.
+     * @param epsilon The maximum percentage that a run is allowed to affect the average.
+     *      If the effect of the last execution is less than `epsilon` percent. The
+     *      evaluation halts and the result of the last run is returned.
+     * @param consideredRunsEpsilon Controls which runs are taken into consideration
+     *      when calculating the average. Only those runs are used that are at most
+     *      `consideredRunsEpsilon` percent slower than the last run. Additionally,
+     *      the last run is only considered if it is at most `consideredRunsEpsilon%`
+     *      slower than the average. Hence, it is possible that average may rise
+     *      during the evaluation of `f`.
+     * @param f The function that will be measured.
      * @param r A function that is called back whenever `f` was successfully evaluated.
-     *        The first parameter is the current average.
-     *        The second parameter was the the last execution time of `f`.
-     *        The last parameter are the times of the evaluation of `f` that are taken
-     *        into consideration when calculating the average.
+     *      The signature is: `r(averageInNs:Double, lastExecutionTimeInNs : Long, consideredExecutionTimesInNs : Seq[Long])`.
+     *      Hence, the first parameter is the current average.
+     *      The second parameter is the last execution time of `f`.
+     *      The last parameter are the times of the evaluation of `f` that are taken
+     *      into consideration when calculating the average.
      */
     def time[T >: Null <: AnyRef](
         epsilon: Int,
