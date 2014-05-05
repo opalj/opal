@@ -46,7 +46,7 @@ import scala.collection.Set
  * @author Michael Eichberg
  */
 class DependencyStore(
-        val dependencies: Map[VirtualSourceElement, Map[VirtualSourceElement, Long]],
+        val dependencies: Map[VirtualSourceElement, Map[VirtualSourceElement, Set[DependencyType]]],
         val dependenciesOnArrayTypes: Map[VirtualSourceElement, Map[ArrayType, Set[DependencyType]]],
         val dependenciesOnBaseTypes: Map[VirtualSourceElement, Map[BaseType, Set[DependencyType]]]) {
 
