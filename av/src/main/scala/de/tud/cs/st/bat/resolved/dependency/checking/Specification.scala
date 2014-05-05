@@ -37,7 +37,7 @@ import analyses.{ ClassHierarchy, Project }
 
 import java.net.URL
 import scala.collection.immutable.SortedSet
-import scala.collection.mutable.{ AnyRefMap, Map ⇒ MutableMap, HashSet }
+import scala.collection.mutable.{ Map ⇒ MutableMap, HashSet }
 import scala.util.matching.Regex
 import scala.collection.{ Map ⇒ AMap, Set ⇒ ASet }
 
@@ -59,21 +59,23 @@ import language.implicitConversions
  * @author Michael Eichberg
  */
 class Specification {
- 
 
+    @volatile
     private[this] var theEnsembles: MutableMap[Symbol, (SourceElementsMatcher, ASet[VirtualSourceElement])] =
-        AnyRefMap.empty
+        scala.collection.mutable.OpenHashMap.empty
+
     /**
      * The set of defined ensembles. An ensemble is identified by a symbol, a query
      * which matches source elements and the project's source elements that are matched.
-     * The latter is available only after analyze was called.
+     * The latter is available only after [[analyze]] was called.
      */
     def ensembles: AMap[Symbol, (SourceElementsMatcher, ASet[VirtualSourceElement])] =
         theEnsembles
 
     // calculated after all class files have been loaded
     private[this] var theOutgoingDependencies: MutableMap[VirtualSourceElement, AMap[VirtualSourceElement, DependencyTypesSet]] =
-        AnyRefMap.empty
+        scala.collection.mutable.OpenHashMap.empty
+
     /**
      * Mapping between a source element and those source elements it depends on/uses.
      *
@@ -83,8 +85,9 @@ class Specification {
         theOutgoingDependencies
 
     // calculated after all class files have been loaded
-    private[this] var theIncomingDependencies =
-        AnyRefMap.empty[VirtualSourceElement, ASet[(VirtualSourceElement, DependencyType)]]
+    private[this] var theIncomingDependencies: MutableMap[VirtualSourceElement, ASet[(VirtualSourceElement, DependencyType)]] =
+        scala.collection.mutable.OpenHashMap.empty
+
     /**
      * Mapping between a source element and those source elements that depend on it.
      *
@@ -214,7 +217,7 @@ class Specification {
                 // references to unmatched source elements are ignored
                 if !(unmatchedSourceElements contains targetElement)
                 // from here on, we have found a violation
-                dependencyType ← DependencyType.toSet(dependencyTypes)
+                dependencyType ← dependencyTypes
             } yield {
                 SpecificationViolation(
                     this,
@@ -332,7 +335,7 @@ class Specification {
 
                 theOutgoingDependencies.update(source, targets)
 
-                for { dType ← DependencyType.toSet(dTypes) } {
+                for { dType ← dTypes } {
                     theIncomingDependencies.update(
                         target,
                         theIncomingDependencies.getOrElse(target, Set.empty) +
@@ -347,6 +350,9 @@ class Specification {
                     ns2sec(executionTime).toString+" seconds."+
                     Console.BLACK)
         }
+        println("Number of source elements: "+allSourceElements.size)
+        println("Outgoing dependencies: "+theOutgoingDependencies.size)
+        println("Incoming dependencies: "+theIncomingDependencies.size)
 
         // Calculate the extension of the ensembles
         //
@@ -354,16 +360,19 @@ class Specification {
             val instantiatedEnsembles =
                 theEnsembles.par map { ensemble ⇒
                     val (ensembleSymbol, (sourceElementMatcher, _)) = ensemble
-                    val extension = sourceElementMatcher.extension(project)
-                    if (extension.isEmpty && sourceElementMatcher != NoSourceElementsMatcher)
-                        Console.println(Console.RED+"   "+ensembleSymbol+" ("+extension.size+")"+Console.BLACK)
-                    else
-                        Console.println("   "+ensembleSymbol+" ("+extension.size+")")
+                    // if a sourceElementMatcher is reused!
+                    sourceElementMatcher.synchronized {
+                        val extension = sourceElementMatcher.extension(project)
+                        if (extension.isEmpty && sourceElementMatcher != NoSourceElementsMatcher)
+                            Console.println(Console.RED+"   "+ensembleSymbol+" ("+extension.size+")"+Console.BLACK)
+                        else
+                            Console.println("   "+ensembleSymbol+" ("+extension.size+")")
 
-                    Specification.this.synchronized {
-                        matchedSourceElements ++= extension
+                        Specification.this.synchronized {
+                            matchedSourceElements ++= extension
+                        }
+                        (ensembleSymbol, (sourceElementMatcher, extension))
                     }
-                    (ensembleSymbol, (sourceElementMatcher, extension))
                 }
             theEnsembles = instantiatedEnsembles.seq
 

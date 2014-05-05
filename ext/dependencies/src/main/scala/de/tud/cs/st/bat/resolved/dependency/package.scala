@@ -39,5 +39,7 @@ package object dependency {
 
     type DependencyType = DependencyType.Value
 
-    type DependencyTypesSet = Long
+    type DependencyTypesSet = scala.collection.Set[DependencyType]
+
+    type DependencyTypesBitSet = Long
 }

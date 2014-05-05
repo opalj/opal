@@ -95,7 +95,7 @@ object DependencyType extends Enumeration(0 /* <= value of first enumeration val
 
     def bitMask(v: Value): Long = 1l << v.id
 
-    def toSet(set: DependencyTypesSet): scala.collection.Set[DependencyType] = {
+    def toSet(set: DependencyTypesBitSet): scala.collection.Set[DependencyType] = {
         val max = maxId
         var i = 0
         val dependencies = new scala.collection.mutable.HashSet[DependencyType]
