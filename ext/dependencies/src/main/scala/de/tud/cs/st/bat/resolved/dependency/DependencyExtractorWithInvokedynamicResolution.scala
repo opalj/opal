@@ -72,13 +72,20 @@ class DependencyExtractorWithInvokedynamicResolution(
 
                 case m: VirtualMethod ⇒
                     processDependency(
-                        declaringMethod, m.declaringClassType, USES_METHOD_DECLARING_TYPE
+                        declaringMethod,
+                        m.declaringClassType,
+                        DECLARING_CLASS_OF_CALLED_METHOD
                     )
                     processDependency(
-                        declaringMethod, m.descriptor.returnType, USES_RETURN_TYPE
+                        declaringMethod,
+                        m.descriptor.returnType,
+                        RETURN_TYPE_OF_CALLED_METHOD
                     )
-                    m.descriptor.parameterTypes foreach { t ⇒
-                        processDependency(declaringMethod, t, USES_PARAMETER_TYPE)
+                    m.descriptor.parameterTypes foreach { parameterType ⇒
+                        processDependency(
+                            declaringMethod,
+                            parameterType,
+                            PARAMETER_TYPE_OF_CALLED_METHOD)
                     }
                     dependencyProcessor.processDependency(
                         declaringMethod,
@@ -90,10 +97,10 @@ class DependencyExtractorWithInvokedynamicResolution(
 
                 case f: VirtualField ⇒
                     processDependency(
-                        declaringMethod, f.declaringClassType, USES_FIELD_DECLARING_TYPE
+                        declaringMethod, f.declaringClassType, DECLARING_CLASS_OF_ACCESSED_FIELD
                     )
                     processDependency(
-                        declaringMethod, f.fieldType, USES_FIELD_READ_TYPE
+                        declaringMethod, f.fieldType, TYPE_OF_ACCESSED_FIELD
                     )
                     dependencyProcessor.processDependency(
                         declaringMethod,

@@ -32,7 +32,9 @@ package resolved
 package dependency
 
 /**
- * Filters self-dependencies.
+ * A `DependencyProcessor` that filters self-dependencies.
+ *
+ * @see [[DependencyStoreWithoutSelfDependenciesKey]] for a usage.
  *
  * @author Michael Eichberg
  */
