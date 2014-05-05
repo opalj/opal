@@ -107,8 +107,8 @@ object CallGraphVisualization {
             } { m ⇒ println("Required memory for base representation: "+asMB(m)) }
         val fqnFilter = args(2)
 
-        println(project.statistics.map(e => "\t"+e._1+": "+e._2).mkString("Project statistics:\n\t","\n\t",""))
-        
+        println(project.statistics.map(e ⇒ "\t"+e._1+": "+e._2).mkString("Project statistics:\n\t", "\n\t", ""))
+
         //
         // GRAPH CONSTRUCTION
         //
@@ -124,7 +124,11 @@ object CallGraphVisualization {
                             new CHACallGraphAlgorithmConfiguration()
                     }
                     val entryPoints = defaultEntryPointsForLibraries(project)
-                    CallGraphFactory.create(project, entryPoints, callGraphAlgorithmConfig)
+                    val computedCallGraph = CallGraphFactory.create(
+                        project,
+                        entryPoints,
+                        callGraphAlgorithmConfig)
+                    computedCallGraph
                 } { t ⇒ println("Creating the call graph took: "+ns2sec(t)) }
             } { m ⇒ println("Required memory for call graph: "+asMB(m)) }
 
