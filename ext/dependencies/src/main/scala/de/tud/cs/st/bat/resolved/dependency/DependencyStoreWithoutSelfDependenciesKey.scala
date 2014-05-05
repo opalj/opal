@@ -38,48 +38,27 @@ import scala.collection.Map
 import scala.collection.Set
 
 /**
- * Stores extracted dependencies.
- *
- * ==Thread Safety==
- * This class is thread safe, as this class does not have any mutable state.
+ * Key that can be used to get a `DependencyStore` that contains all dependencies
+ * except self dependencies.
+ * 
+ * ==Usage==
+ * Just pass this object to a `Project` to get the [[DependencyStore]].
  *
  * @author Michael Eichberg
  */
-class DependencyStore(
-        val dependencies: Map[VirtualSourceElement, Map[VirtualSourceElement, Set[DependencyType]]],
-        val dependenciesOnArrayTypes: Map[VirtualSourceElement, Map[ArrayType, Set[DependencyType]]],
-        val dependenciesOnBaseTypes: Map[VirtualSourceElement, Map[BaseType, Set[DependencyType]]]) {
+object DependencyStoreWithoutSelfDependenciesKey extends ProjectInformationKey[DependencyStore] {
 
-}
+    override protected def requirements: Seq[ProjectInformationKey[_ <: AnyRef]] = Nil
 
-object DependencyStore {
-
-    def initialize[Source](
-        classFiles: Traversable[ClassFile],
-        createDependencyExtractor: (DependencyProcessor) ⇒ DependencyExtractor): DependencyStore = {
-
-        import util.debug.PerformanceEvaluation.{ time, ns2sec }
-        val dc = time {
-            val dc = new DependencyCollectingDependencyProcessor(Some(classFiles.size * 10))
-            val de = createDependencyExtractor(dc)
-            for (classFile ← classFiles.par) {
-                de.process(classFile)
-            }
-            dc
-        } { t ⇒ println("[info] Collecting dependencies:"+ns2sec(t)) }
-
-        time {
-            dc.toStore
-        } { t ⇒ println("[info] Creating dependencies store: "+ns2sec(t)) }
-    }
-
-    def initialize[Source](
-        classFiles: Traversable[ClassFile]): DependencyStore = {
-        val createDependencyExtractor =
-            (dp: DependencyProcessor) ⇒ new DependencyExtractor(dp)
-        initialize(classFiles, createDependencyExtractor)
+    override protected def compute(project: SomeProject): DependencyStore = {
+        DependencyStore.initialize(
+            project.classFiles,
+            (dp: DependencyProcessor) ⇒
+                new DependencyExtractor(
+                    new DependencyProcessorDecorator(dp) with FilterSelfDependencies
+                )
+        )
     }
 }
-
 
 
