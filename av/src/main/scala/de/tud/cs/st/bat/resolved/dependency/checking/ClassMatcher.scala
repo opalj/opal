@@ -50,7 +50,7 @@ case class ClassMatcher(
     def extension(project: SomeProject): Set[VirtualSourceElement] = {
 
         val matchedClassFiles =
-            project.classFiles.view filter { classFile ⇒
+            project.classFiles filter { classFile ⇒
                 {
                     val otherClassName = classFile.thisType.fqn
                     otherClassName.startsWith(className) && (

@@ -58,7 +58,7 @@ case class PackageNameBasedMatcher(
 
     def extension(project: SomeProject): Set[VirtualSourceElement] = {
         val matchedClassFiles =
-            project.classFiles.view filter { classFile ⇒
+            project.classFiles filter { classFile ⇒
                 val thisClassPackageName = classFile.thisType.packageName
                 thisClassPackageName.startsWith(packageName) && (
                     matchSubpackages || thisClassPackageName.length() == packageName.length()
