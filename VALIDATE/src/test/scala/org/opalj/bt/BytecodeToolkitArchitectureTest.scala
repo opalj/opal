@@ -73,7 +73,8 @@ class BytecodeToolkitArchitectureTest extends FlatSpec with Matchers with Before
             }
 
         val result = expected.analyze(
-            Specification.SourceDirectory("." /*"core/target/scala-2.11/classes"*/ )
+            // Specification.SourceDirectory("." )
+            Specification.SourceDirectory("core/target/scala-2.11/classes")
         )
         if (result.nonEmpty) {
             println("Violations:\n\t"+result.mkString("\n\t"))
