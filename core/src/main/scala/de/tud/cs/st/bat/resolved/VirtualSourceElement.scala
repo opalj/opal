@@ -135,7 +135,7 @@ final case class VirtualField(
     override def equals(other: Any): Boolean = {
         other match {
             case that: VirtualField ⇒
-                (this.declaringClassType eq this.declaringClassType) &&
+                (this.declaringClassType eq that.declaringClassType) &&
                     (this.fieldType eq that.fieldType) &&
                     this.name == that.name
             case _ ⇒ false
@@ -184,8 +184,8 @@ final case class VirtualMethod(
     override def equals(other: Any): Boolean = {
         other match {
             case that: VirtualMethod ⇒
-                (this.declaringClassType eq this.declaringClassType) &&
-                    (this.descriptor eq that.descriptor) &&
+                (this.declaringClassType eq that.declaringClassType) &&
+                    (this.descriptor == that.descriptor) &&
                     this.name == that.name
             case _ ⇒ false
         }
