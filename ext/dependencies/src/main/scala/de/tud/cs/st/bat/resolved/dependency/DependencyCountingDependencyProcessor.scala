@@ -32,18 +32,19 @@ package resolved
 package dependency
 
 /**
- * A dependency processor that counts the number of dependencies.
+ * A dependency processor that just counts the number of dependencies.
  *
  * Typically, a `DependencyProcessor` is passed to a
  * [[DependencyExtractor]]. The latter calls back the `processDependency` methods
  * for each identified dependency.
  *
- * @author Thomas Schlosser
  * @author Michael Eichberg
  */
 class DependencyCountingDependencyProcessor extends DependencyProcessor {
 
-    protected[this] val dependencyCount = new java.util.concurrent.atomic.AtomicInteger(0)
+    import java.util.concurrent.atomic.AtomicInteger
+
+    protected[this] val dependencyCount = new AtomicInteger(0)
     override def processDependency(
         source: VirtualSourceElement,
         target: VirtualSourceElement,
@@ -52,7 +53,7 @@ class DependencyCountingDependencyProcessor extends DependencyProcessor {
     }
     def currentDependencyCount = dependencyCount.get
 
-    protected[this] val dependencyOnArraysCount = new java.util.concurrent.atomic.AtomicInteger(0)
+    protected[this] val dependencyOnArraysCount = new AtomicInteger(0)
     override def processDependency(
         source: VirtualSourceElement,
         arrayType: ArrayType,
@@ -61,7 +62,7 @@ class DependencyCountingDependencyProcessor extends DependencyProcessor {
     }
     def currentDependencyOnArraysCount = dependencyOnArraysCount.get
 
-    protected[this] val dependencyOnPrimitivesCount = new java.util.concurrent.atomic.AtomicInteger(0)
+    protected[this] val dependencyOnPrimitivesCount = new AtomicInteger(0)
     override def processDependency(
         source: VirtualSourceElement,
         baseType: BaseType,
@@ -70,24 +71,30 @@ class DependencyCountingDependencyProcessor extends DependencyProcessor {
     }
     def currentDependencyOnPrimitivesCount = dependencyOnPrimitivesCount.get
 
-    protected val DummyClassType = ObjectType("<-DUMMY_CLASSTYPE->")
+    final val DummyClassType = ObjectType("<-DUMMY_CLASSTYPE->")
 
     final val DummyVirtualClass = VirtualClass(DummyClassType)
+
     override def asVirtualClass(objectType: ObjectType): VirtualClass = {
         DummyVirtualClass
     }
 
     final val DummyVirtualField =
         VirtualField(DummyClassType, "<-DUMMY_FIELD->", DummyClassType)
+
     override def asVirtualField(
-        declaringClassType: ReferenceType, // Recall...new Int[]{1,2,3,...}.length
+        declaringClassType: ObjectType, // Recall...new Int[]{1,2,3,...}.length => arraylength
         name: String,
         fieldType: FieldType): VirtualField = {
         DummyVirtualField
     }
 
     final val DummyVirtualMethod =
-        VirtualMethod(DummyClassType, "<-DUMMY_METHOD->", MethodDescriptor.NoArgsAndReturnVoid)
+        VirtualMethod(
+            DummyClassType,
+            "<-DUMMY_METHOD->",
+            MethodDescriptor.NoArgsAndReturnVoid)
+
     override def asVirtualMethod(
         declaringClassType: ReferenceType, // Recall...new Int[]{1,2,3,...}.clone()
         name: String,
