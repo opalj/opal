@@ -1,6 +1,6 @@
 name := "Dependencies Extraction Library"
 
-version := "0.7.0-SNAPSHOT"
+version := "0.8.0-SNAPSHOT"
 
 scalacOptions in (Compile, doc) := Seq("-deprecation", "-feature", "-unchecked")
 
