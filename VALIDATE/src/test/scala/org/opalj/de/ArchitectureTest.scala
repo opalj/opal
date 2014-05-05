@@ -52,21 +52,32 @@ class ArchitectureTest extends FlatSpec with Matchers with BeforeAndAfterAll {
         val expected =
             new Specification {
 
-                ensemble('Dependency) {
-                    "de.tud.cs.st.bat.resolved.dependency.*"
+                val DependencyExtractorElements: SourceElementsMatcher =
+                    "de.tud.cs.st.bat.resolved.dependency.DependencyExtractor*"
+
+                val DependencyTypeElements: SourceElementsMatcher =
+                    "de.tud.cs.st.bat.resolved.dependency.DependencyType*"
+
+                val DependencyProcessorElements: SourceElementsMatcher =
+                    "de.tud.cs.st.bat.resolved.dependency.DependencyProcessor*"
+
+                ensemble('DependencyExtractorCore) {
+                    DependencyExtractorElements and
+                        DependencyTypeElements and
+                        DependencyProcessorElements
                 }
 
-                ensemble('Dependency_Checking) {
-                    "de.tud.cs.st.bat.resolved.dependency.checking.*"
+                ensemble('DependencyExtractionSupport) {
+                    "de.tud.cs.st.bat.resolved.dependency.*" except DependencyExtractorElements
                 }
 
-                'Dependency is_only_allowed_to_use empty
+                'DependencyExtractorCore is_only_allowed_to_use empty
             }
 
         val result = expected.analyze(
             Specification.SourceDirectory("ext/dependencies/target/scala-2.11/classes")
         )
-        result should be(Set.empty)
+        result.mkString("\n") should be("")
     }
 
 }
