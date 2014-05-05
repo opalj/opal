@@ -49,7 +49,7 @@ package project
  * of information that is associated with different object types.
  *
  * '''It is required that the cache object is created before the threads are created
- * that use the cache!
+ * that use the cache!'''
  *
  * ==Example Usage==
  * To store the result of the computation of all target methods for a
@@ -59,63 +59,71 @@ package project
  * val cache = new CallGraphCache[MethodSignature,Iterable[Method]]
  * }}}
  *
- * @note Creating a new cache is comparatively expensive and scales
- *      with the number of `ObjectType`s in a project.
+ * @note Creating a new cache is comparatively expensive and depends
+ *      on the number of `ObjectType`s in a project.
  *
  * @author Michael Eichberg
  */
 class CallGraphCache[Contour, Value] {
 
-    //    import java.util.concurrent.{ ConcurrentHashMap ⇒ CHMap }
-    //
-    //    private[this] val cache: Array[CHMap[Contour, Value]] = {
-    //        val size = ObjectType.objectTypesCount
-    //        val concurrencyLevel = Runtime.getRuntime().availableProcessors()
-    //        Array.fill(size)(new CHMap(16, concurrencyLevel))
-    //    }
-    //
-    //    /**
-    //     * If a value is already stored in the cache that value is returned, otherwise
-    //     * `f` is evaluated and the cache is updated accordingly before the value is returned.
-    //     * In some rare cases it may be the case that two or more functions that are associated
-    //     * with the same `declaringClass` and `contour` are evaluated concurrently. In such
-    //     * a case the result of only one function is stored in the cache and will later be
-    //     * returned.
-    //     */
-    //    def getOrElseUpdate(
-    //        declaringClass: ObjectType,
-    //        contour: Contour)(
-    //            f: ⇒ Value): Value = {
-    //
-    //        val id = declaringClass.id
-    //        val cachedResults = cache(declaringClass.id)
-    //        val cachedValue = cachedResults.get(contour)
-    //        if (cachedValue != null)
-    //            cachedValue
-    //        else {
-    //            // This is expected provide a better trade-off than to always synchronize
-    //            // the evaluation of `f` w.r.t. to ObjectType based cache.
-    //            val value = f
-    //            cachedResults.put(contour, value)
-    //            value
-    //        }
-    //    }
+    // RECALL: scala.collection.concurrent.Map's getOrElseUpdate 
+    // 			is – as of Scala 2.11.0 – NOT THREAD SAFE
 
-    import scala.collection.concurrent.{ Map, TrieMap }
+    import java.util.concurrent.{ ConcurrentHashMap ⇒ CHMap }
 
-    private[this] val cache: Array[Map[Contour, Value]] = {
-        val size = ObjectType.objectTypesCount
-        Array.fill(size)(TrieMap.empty)
+    private[this] val cache: Array[CHMap[Contour, Value]] = {
+        val size = ObjectType.objectTypesCount * 110 / 100
+        // additional room for "new ObjectType"s discovered, e.g., by a 
+        // reflection analysis
+        val concurrencyLevel = Runtime.getRuntime().availableProcessors()
+        Array.fill(size)(new CHMap(concurrencyLevel))
     }
 
+    //    private[this] val cacheHits = new java.util.concurrent.atomic.AtomicInteger(0)
+    //    private[this] val cacheUpdates = new java.util.concurrent.atomic.AtomicInteger(0)
+
+    /**
+     * If a value is already stored in the cache that value is returned, otherwise
+     * `f` is evaluated and the cache is updated accordingly before the value is returned.
+     * In some rare cases it may be the case that two or more functions that are associated
+     * with the same `declaringClass` and `contour` are evaluated concurrently. In such
+     * a case the result of only one function is stored in the cache and will later be
+     * returned.
+     */
     def getOrElseUpdate(
         declaringClass: ObjectType,
         contour: Contour)(
-            f: ⇒ Value): Value = {
-        val cache = this.cache
-        val contoursMap = cache(declaringClass.id)
-        contoursMap.getOrElseUpdate(contour, f)
+            f: ⇒ Value, syncOnEvaluation: Boolean = false): Value = {
+
+        val cachedResults = cache(declaringClass.id)
+        val cachedValue = cachedResults.get(contour)
+        if (cachedValue != null) {
+            //            cacheHits.incrementAndGet()
+            cachedValue
+        } else {
+            // we assume that `f` is expensive to compute
+            if (syncOnEvaluation) {
+                cachedResults.synchronized {
+                    //                    cacheUpdates.incrementAndGet()
+                    val value = f
+                    cachedResults.put(contour, value)
+                    value
+                }
+            } else {
+                //                cacheUpdates.incrementAndGet()
+                val value = f
+                cachedResults.put(contour, value)
+                value
+            }
+        }
     }
+
+    //    lazy val statistics: Map[String, Int] =
+    //        Map(
+    //            "Cache Hits" -> cacheHits.get,
+    //            "Cache Updates" -> cacheUpdates.get,
+    //            "Cache Entries" -> (cache.foldLeft(0)(_ + _.size))
+    //        )
 }
 
 
