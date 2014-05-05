@@ -72,12 +72,17 @@ class CallGraphCache[Contour, Value] {
     import java.util.concurrent.{ ConcurrentHashMap ⇒ CHMap }
 
     private[this] val cache: Array[CHMap[Contour, Value]] = {
-        val size = ObjectType.objectTypesCount * 110 / 100
-        // additional room for "new ObjectType"s discovered, e.g., by a 
-        // reflection analysis
-        val concurrencyLevel = Runtime.getRuntime().availableProcessors()
-        Array.fill(size)(new CHMap(concurrencyLevel))
+        // The cache is 5% larger than the number of "seen" ObjectType's to have
+        // room for "new ObjectType"s discovered, e.g., by a reflection analysis
+        val size = ObjectType.objectTypesCount * 105 / 100
+        Array.fill(size)(new CHMap(16))
     }
+
+    // We use the overflow cache to cache values associated with ObjectTypes
+    // that are discovered after the project was loaded and for which we have
+    // not reserved regular space.
+    private[this] val overflowCache: CHMap[ObjectType, CHMap[Contour, Value]] =
+        new CHMap(cache.length / 20 /* ~ 5%*/)
 
     //    private[this] val cacheHits = new java.util.concurrent.atomic.AtomicInteger(0)
     //    private[this] val cacheUpdates = new java.util.concurrent.atomic.AtomicInteger(0)
@@ -91,28 +96,44 @@ class CallGraphCache[Contour, Value] {
      * returned.
      */
     def getOrElseUpdate(
-        declaringClass: ObjectType,
+        declaringClassType: ObjectType,
         contour: Contour)(
-            f: ⇒ Value, syncOnEvaluation: Boolean = false): Value = {
+            f: ⇒ Value, syncOnEvaluation: Boolean = true): Value = {
 
-        val cachedResults = cache(declaringClass.id)
-        val cachedValue = cachedResults.get(contour)
+        val typeBasedCache = {
+            val id = declaringClassType.id
+            if (id < cache.length) cache(id)
+            else {
+                val typeBasedCache = overflowCache.get(declaringClassType)
+                if (typeBasedCache == null) {
+                    val newCache = new CHMap[Contour, Value](16)
+                    val existingCache = overflowCache.putIfAbsent(declaringClassType, newCache)
+                    if (existingCache != null)
+                        existingCache
+                    else
+                        newCache
+                } else {
+                    typeBasedCache
+                }
+            }
+        }
+        val cachedValue = typeBasedCache.get(contour)
         if (cachedValue != null) {
             //            cacheHits.incrementAndGet()
             cachedValue
         } else {
-            // we assume that `f` is expensive to compute
             if (syncOnEvaluation) {
-                cachedResults.synchronized {
+                // we assume that `f` is expensive to compute
+                typeBasedCache.synchronized {
                     //                    cacheUpdates.incrementAndGet()
                     val value = f
-                    cachedResults.put(contour, value)
+                    typeBasedCache.put(contour, value)
                     value
                 }
             } else {
                 //                cacheUpdates.incrementAndGet()
                 val value = f
-                cachedResults.put(contour, value)
+                typeBasedCache.put(contour, value)
                 value
             }
         }
