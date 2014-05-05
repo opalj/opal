@@ -801,7 +801,7 @@ class DependencyExtractor(
                     USES_METHOD_DECLARING_TYPE)
                 // the type of method call
                 val callType = handle match {
-                    case _: InvokeInterfaceMethodHandle ⇒ CALLS_INTERFACE_METHOD
+                    case _: InvokeInterfaceMethodHandle ⇒ CALLS_METHOD
                     case _                              ⇒ CALLS_METHOD
                 }
                 dependencyProcessor.processDependency(

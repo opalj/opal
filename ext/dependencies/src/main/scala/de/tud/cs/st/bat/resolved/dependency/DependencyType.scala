@@ -77,7 +77,6 @@ object DependencyType extends Enumeration(0 /* <= value of first enumeration val
     val USES_RETURN_TYPE = Value("uses return type")
     val USES_METHOD_DECLARING_TYPE = Value("uses method declaring type")
     val CALLS_METHOD = Value("calls method")
-    val CALLS_INTERFACE_METHOD = Value("calls interface method")
 
     // annotation related dependency types
     val ANNOTATED_WITH = Value("annotated with")

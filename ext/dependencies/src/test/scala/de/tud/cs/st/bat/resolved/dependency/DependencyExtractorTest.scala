@@ -118,7 +118,7 @@ class DependencyExtractorTest extends FunSuite {
         assertDependency("dependencies.TestClass.testMethod()", "java.util.ArrayList.<init>()", CALLS_METHOD)
         //    	list.add(null);
         assertDependency("dependencies.TestClass.testMethod()", "java.util.List", USES_METHOD_DECLARING_TYPE)
-        assertDependency("dependencies.TestClass.testMethod()", "java.util.List.add(java.lang.Object)", CALLS_INTERFACE_METHOD)
+        assertDependency("dependencies.TestClass.testMethod()", "java.util.List.add(java.lang.Object)", CALLS_METHOD)
         assertDependency("dependencies.TestClass.testMethod()", "java.lang.Object", USES_PARAMETER_TYPE)
         //        }
         //
@@ -556,7 +556,7 @@ class DependencyExtractorTest extends FunSuite {
         //    	// INVOKEINTERFACE
         //    	ti.testMethod();
         assertDependency("dependencies.InstructionsTestClass.method()", "dependencies.TestInterface", USES_METHOD_DECLARING_TYPE)
-        assertDependency("dependencies.InstructionsTestClass.method()", "dependencies.TestInterface.testMethod()", CALLS_INTERFACE_METHOD)
+        assertDependency("dependencies.InstructionsTestClass.method()", "dependencies.TestInterface.testMethod()", CALLS_METHOD)
         //
         //    	// INVOKEVIRTUAL
         //    	obj.equals(stream);
