@@ -43,54 +43,54 @@ object DependencyType extends Enumeration(0 /* <= value of first enumeration val
     val EXTENDS = Value("type declaration EXTENDS class type")
     val IMPLEMENTS = Value("type declaration IMPLEMENTS interface type")
 
-    val IS_INSTANCE_MEMBER = Value("field or method IS INSTANCE MEMBER of class type")
+    val OUTER_CLASS = Value("class type declaration IS OUTER CLASS of method or type")
+    val INNER_CLASS = Value("class type declaration IS INNER CLASS of method or type")
 
-    val IS_CLASS_MEMBER = Value("field/method IS CLASS MEMBER of class/interface/annotation/enum")
-
-    val IS_ENCLOSED = Value("class type declaration IS ENCLOSED by method or type")
-
-    val IS_OUTER_CLASS = Value("class type declaration IS OUTER CLASS of method or type")
-    val IS_INNER_CLASS = Value("class type declaration IS INNER CLASS of method or type")
+    val INSTANCE_MEMBER = Value("field or method IS INSTANCE MEMBER of class type")
+    val CLASS_MEMBER = Value("field/method IS CLASS MEMBER of class/interface/annotation/enum")
+    val ENCLOSED = Value("class type declaration IS ENCLOSED by method or type")
 
     // field definition related dependency types
-    val IS_OF_TYPE = Value("is of type")
-    val USES_CONSTANT_VALUE_OF_TYPE = Value("uses constant value of type")
+    val FIELD_TYPE = Value("the FIELD has TYPE")
+    val CONSTANT_VALUE = Value("the field is initialized with a CONSTANT VALUE with TYPE")
 
     // method definition related dependency types
-    val RETURNS = Value("returns")
-    val HAS_PARAMETER_OF_TYPE = Value("has parameter of type")
-    val THROWS = Value("throws")
-    val CATCHES = Value("catches")
+    val PARAMETER_TYPE = Value("the method defines a PARAMETER with TYPE")
+    val RETURN_TYPE = Value("the method's RETURN TYPE")
+    val THROWN_EXCEPTION = Value("the method may THROW an exception of type")
 
     // code related dependency types
-    val HAS_LOCAL_VARIABLE_OF_TYPE = Value("has local variable of type")
-    val CREATES_ARRAY_OF_TYPE = Value("creates array of type")
-    val CASTS_INTO = Value("casts into")
-    val CHECKS_INSTANCEOF = Value("checks instanceOf")
-    val CREATES = Value("creates") // TODO CREATES == newObject?
-    val USES_FIELD_DECLARING_TYPE = Value("uses field declaring type")
-    val READS_FIELD = Value("reads field")
-    val WRITES_FIELD = Value("writes field")
-    val USES_FIELD_READ_TYPE = Value("uses field read type")
-    val USES_FIELD_WRITE_TYPE = Value("uses field write type")
-    val USES_PARAMETER_TYPE = Value("uses parameter type")
-    val USES_RETURN_TYPE = Value("uses return type")
-    val USES_METHOD_DECLARING_TYPE = Value("uses method declaring type")
-    val CALLS_METHOD = Value("calls method")
+    val CATCHES = Value("catches")
+
+    val LOCAL_VARIABLE_TYPE = Value("the method has a LOCAL VARIABLE with TYPE")
+
+    val TYPECAST = Value("performs a refrence based TYPE CAST")
+    val TYPECHECK = Value("performs a TYPE CHECK using \"instanceOf\"")
+
+    val CREATES_ARRAY = Value("CREATES a new ARRAY of type")
+    val CREATES = Value("CREATES a new instance of class")
+
+    val READS_FIELD = Value("the method READS the value stored in the FIELD")
+    val WRITES_FIELD = Value("the method WRITES the value stored in the FIELD")
+    val DECLARING_CLASS_OF_ACCESSED_FIELD = Value("the method ACCESSES a FIELD that is DECLARED by CLASS")
+    val TYPE_OF_ACCESSED_FIELD = Value("the method ACCESSES a FIELD with TYPE")
+
+    val CALLS_METHOD = Value("the method CALLS the METHOD")
+    val DECLARING_CLASS_OF_CALLED_METHOD = Value("the CALLED METHOD is DECLARED by TYPE")
+    val PARAMETER_TYPE_OF_CALLED_METHOD = Value("the method CALLS a METHOD that has a PARAMETER with TYPE")
+    val RETURN_TYPE_OF_CALLED_METHOD = Value("the method CALLS a METHOD that RETURNS a value with TYPE")
 
     // annotation related dependency types
-    val ANNOTATED_WITH = Value("annotated with")
-    val PARAMETER_ANNOTATED_WITH = Value("parameter annotated with")
+    val ANNOTATED_WITH = Value("the class, field, method, type parameter, local variable, ... is ANNOTATED WITH")
+    val PARAMETER_ANNOTATED_WITH = Value("the method's parameter is ANNOTATED WITH")
 
     // element value related dependency type
-    val USES_DEFAULT_BASE_TYPE = Value("uses default base type")
-    val USES_DEFAULT_CLASS_VALUE_TYPE = Value("uses default class value type")
-    val USES_DEFAULT_ENUM_VALUE_TYPE = Value("uses default enum value type")
-    val USES_ENUM_VALUE = Value("uses enum value")
-    val USES_DEFAULT_ANNOTATION_VALUE_TYPE = Value("uses default annotation value type")
+    val ANNOTATION_DEFAULT_VALUE_TYPE = Value("the TYPE of the ANNOTATIONS DEFAULT VALUE")
+    val ANNOTATION_ELEMENT_TYPE = Value("the TYPE of the ANNOTATION's ELEMENT value")
+    val USES_ENUM_VALUE = Value("the annotation element's value is the ENUM VALUE")
 
     // signature/type parameter related dependency types
-    val USES_TYPE_IN_TYPE_PARAMETERS = Value("uses type in type parameters")
+    val TYPE_IN_TYPE_PARAMETERS = Value("the TYPE is used in the declaration of a TYPE PARAMETER (signature)")
 
     def bitMask(v: Value): Long = 1l << v.id
 

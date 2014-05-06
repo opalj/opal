@@ -32,9 +32,9 @@ package resolved
 package dependency
 package checking
 
-import analyses._
+import analyses.SomeProject
 
-import scala.collection.{ Set }
+import scala.collection.Set
 
 /**
  * @author Michael Eichberg

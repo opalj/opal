@@ -83,15 +83,36 @@ trait DependencyProcessor {
         baseType: BaseType,
         dType: DependencyType): Unit
 
+    /**
+     * Used, e.g., by the [[DependencyExtractor]] to create representations of
+     * `VirtualClass`es.
+     *
+     * @note The [[DependencyExtractor]] creates all representations of `VirtualClass`es
+     *      using this Method.
+     */
     def asVirtualClass(objectType: ObjectType): VirtualClass =
         VirtualClass(objectType)
 
+    /**
+     * Used, e.g., by the [[DependencyExtractor]] to create representations of
+     * `VirtualField`s.
+     *
+     * @note The [[DependencyExtractor]] creates all representations of `VirtualField`s
+     *      using this Method.
+     */
     def asVirtualField(
-        declaringClassType: ReferenceType, // Recall...new Int[]{1,2,3,...}.length
+        declaringClassType: ObjectType, // Recall...new Int[]{1,2,3,...}.length
         name: String,
         fieldType: FieldType): VirtualField =
         VirtualField(declaringClassType, name, fieldType)
 
+    /**
+     * Used, e.g., by the [[DependencyExtractor]] to create representations of
+     * `VirtualMethod`s.
+     *
+     * @note The [[DependencyExtractor]] creates all representations of `VirtualMethod`s
+     *      using this Method.
+     */
     def asVirtualMethod(
         declaringClassType: ReferenceType, // Recall...new Int[]{1,2,3,...}.clone()
         name: String,

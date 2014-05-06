@@ -98,7 +98,7 @@ sealed trait VirtualClassMember extends VirtualSourceElement
  * @author Michael Eichberg
  */
 final case class VirtualField(
-        declaringClassType: ReferenceType,
+        declaringClassType: ObjectType,
         name: String,
         fieldType: FieldType) extends VirtualClassMember {
 

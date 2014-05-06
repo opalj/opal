@@ -84,24 +84,24 @@ class DependencyExtractorWithInvokedynamicResolutionTest extends FunSuite {
         assertDependency(
             "dependencies.SameClassDependencies.noArgumentsMethod()",
             "dependencies.SameClassDependencies",
-            HAS_LOCAL_VARIABLE_OF_TYPE)
+            LOCAL_VARIABLE_TYPE)
         assertDependency(
             "dependencies.SameClassDependencies.noArgumentsMethod()",
             "dependencies.SameClassDependencies",
-            IS_INSTANCE_MEMBER)
+            INSTANCE_MEMBER)
         assertDependency(
             "dependencies.SameClassDependencies.dependencies()",
             "dependencies.SameClassDependencies",
-            HAS_LOCAL_VARIABLE_OF_TYPE)
+            LOCAL_VARIABLE_TYPE)
         assertDependency(
             "dependencies.SameClassDependencies.dependencies()",
             "dependencies.SameClassDependencies",
-            IS_INSTANCE_MEMBER)
+            INSTANCE_MEMBER)
 
         assertDependency(
             "dependencies.SameClassDependencies.dependencies()",
             "org.codehaus.groovy.vmplugin.v7.IndyInterface",
-            USES_METHOD_DECLARING_TYPE)
+            DECLARING_CLASS_OF_CALLED_METHOD)
         assertDependency(
             "dependencies.SameClassDependencies.dependencies()",
             "org.codehaus.groovy.vmplugin.v7.IndyInterface.bootstrap(java.lang.invoke.MethodHandles$Lookup, java.lang.String, java.lang.invoke.MethodType, java.lang.String, int)",
@@ -109,11 +109,11 @@ class DependencyExtractorWithInvokedynamicResolutionTest extends FunSuite {
         assertDependency(
             "dependencies.SameClassDependencies.dependencies()",
             "dependencies.SameClassDependencies",
-            USES_PARAMETER_TYPE)
+            PARAMETER_TYPE_OF_CALLED_METHOD)
         assertDependency(
             "dependencies.SameClassDependencies.dependencies()",
             "java.lang.Object",
-            USES_RETURN_TYPE)
+            RETURN_TYPE_OF_CALLED_METHOD)
 
         /* THE DEFAULT STRATEGY CANNOT EXTRACT THE UNDERLYING CALL!
          * assertDependency(
