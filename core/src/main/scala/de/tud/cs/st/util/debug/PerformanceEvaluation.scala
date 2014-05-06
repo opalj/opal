@@ -262,6 +262,7 @@ object PerformanceEvaluation {
         val e = epsilon.toDouble / 100.0d
         val filterE = (consideredRunsEpsilon + 100).toDouble / 100.0d
 
+        var runsSinceLastUpdate = 0
         var times = List.empty[Long]
         time { f } { t ⇒ times = t :: times }
         var avg: Double = times.head
@@ -273,6 +274,16 @@ object PerformanceEvaluation {
                     // let's throw away all runs that are significantly slower than the last run
                     times = t :: times.filter(_ <= t * filterE)
                     avg = times.sum.toDouble / times.size.toDouble
+                    runsSinceLastUpdate  = 0
+                } else {
+                    runsSinceLastUpdate += 1
+                    if (runsSinceLastUpdate > 100) {
+                        // for whatever reason the current average seems to be "too" slow
+                        // let's add the last run to rise the average 
+                        times = t :: times
+                        avg = times.sum.toDouble / times.size.toDouble
+                        runsSinceLastUpdate = 0
+                    }
                 }
                 r(avg, t, times)
             }
