@@ -36,7 +36,8 @@ import scala.collection.parallel.ParSeq
 object SlidingCollect {
 
     val project = Java8Framework.ClassFiles(new java.io.File("/Library/Java/JavaVirtualMachines/jdk1.8.0.jdk/Contents/Home/jre/lib"))
-
+    project.size
+    /*
     def pcsBeforePullRequest =
         time(1, 3, 5, {
             for {
@@ -102,9 +103,10 @@ object SlidingCollect {
             println(f"Avg: ${ns2sec(avg.toLong)}%1.4f; T: ${ns2sec(t)}%1.4f; Ts: $sTs")
         }
     pcsWithNewMethodeDescriptorMatcher
+    */
 
     def pcsWithNewMethodeDescriptorMatcherAndSet =
-        time(1, 3, 5, {
+        time(2, 4, 5, {
             val theTypes = scala.collection.mutable.HashSet(
                 "java/lang/Boolean",
                 "java/lang/Byte",
@@ -119,7 +121,7 @@ object SlidingCollect {
                 "byteValue",
                 "charValue",
                 "shortValue",
-                "integerValue",
+                "intValue",
                 "longValue",
                 "floatValue",
                 "doubleValue")
@@ -144,4 +146,86 @@ object SlidingCollect {
             println(f"Avg: ${ns2sec(avg.toLong)}%1.4f; T: ${ns2sec(t)}%1.4f; Ts: $sTs")
         }
     pcsWithNewMethodeDescriptorMatcherAndSet
+
+    def pcsWithNewMethodeDescriptorMatcherAndSetAndFindSequence =
+        time(2, 4, 5, {
+            val theTypes = scala.collection.mutable.HashSet(
+                "java/lang/Boolean",
+                "java/lang/Byte",
+                "java/lang/Character",
+                "java/lang/Short",
+                "java/lang/Integer",
+                "java/lang/Long",
+                "java/lang/Float",
+                "java/lang/Double")
+            val theMethods = scala.collection.mutable.HashSet(
+                "booleanValue",
+                "byteValue",
+                "charValue",
+                "shortValue",
+                "intValue",
+                "longValue",
+                "floatValue",
+                "doubleValue")
+            for {
+                classFile ← project.view.map(_._1).par
+                method @ MethodWithBody(body) ← classFile.methods
+                (pc, _) ← body.findSequence(2) {
+                    case (
+                        Seq(
+                            INVOKESPECIAL(receiver1, _, SingleArgumentMethodDescriptor((paramType: BaseType, _))),
+                            INVOKEVIRTUAL(receiver2, name, NoArgumentMethodDescriptor(returnType: BaseType)))
+                        ) if (
+                        (receiver1 eq receiver2) &&
+                        (returnType ne paramType) && // coercion to another type performed
+                        theTypes.contains(receiver1.fqn) &&
+                        theMethods.contains(name)
+                    ) ⇒ ()
+                }
+            } yield (classFile.fqn, method.toJava, pc)
+        }) { (avg, t, ts) ⇒
+            val sTs = ts.map(t ⇒ f"${ns2sec(t)}%1.4f").mkString(", ")
+            println(f"Avg: ${ns2sec(avg.toLong)}%1.4f; T: ${ns2sec(t)}%1.4f; Ts: $sTs")
+        }
+    pcsWithNewMethodeDescriptorMatcherAndSetAndFindSequence
+
+    def pcsWithNewMethodeDescriptorMatcherAndSetAndFindPair =
+        time(2, 4, 5, {
+            val theTypes = scala.collection.mutable.HashSet(
+                "java/lang/Boolean",
+                "java/lang/Byte",
+                "java/lang/Character",
+                "java/lang/Short",
+                "java/lang/Integer",
+                "java/lang/Long",
+                "java/lang/Float",
+                "java/lang/Double")
+            val theMethods = scala.collection.mutable.HashSet(
+                "booleanValue",
+                "byteValue",
+                "charValue",
+                "shortValue",
+                "intValue",
+                "longValue",
+                "floatValue",
+                "doubleValue")
+            for {
+                classFile ← project.view.map(_._1).par
+                method @ MethodWithBody(body) ← classFile.methods
+                (pc, _) ← body.findPair {
+                    case (
+                        INVOKESPECIAL(receiver1, _, SingleArgumentMethodDescriptor((paramType: BaseType, _))),
+                        INVOKEVIRTUAL(receiver2, name, NoArgumentMethodDescriptor(returnType: BaseType))
+                        ) if (
+                        (receiver1 eq receiver2) &&
+                        (returnType ne paramType) && // coercion to another type performed
+                        theTypes.contains(receiver1.fqn) &&
+                        theMethods.contains(name)) ⇒ ()
+                }
+            } yield (classFile.fqn, method.toJava, pc)
+        }) { (avg, t, ts) ⇒
+            val sTs = ts.map(t ⇒ f"${ns2sec(t)}%1.4f").mkString(", ")
+            println(f"Avg: ${ns2sec(avg.toLong)}%1.4f; T: ${ns2sec(t)}%1.4f; Ts: $sTs")
+        }
+    pcsWithNewMethodeDescriptorMatcherAndSetAndFindPair
 }
