@@ -359,6 +359,82 @@ case class Code(
         result.reverse
     }
 
+    def findSequence[B](
+        windowSize: Int)(
+            f: PartialFunction[Seq[Instruction], B]): List[(PC, B)] = {
+        require(windowSize > 0)
+
+        import scala.collection.immutable.Queue
+
+        val max_pc = instructions.size
+        var instrs: Queue[Instruction] = Queue.empty
+        var firstPC, lastPC = 0
+        var elementsInQueue = 0
+
+        //
+        // INITIALIZATION
+        //
+        while (elementsInQueue < windowSize - 1 && lastPC < max_pc) {
+            instrs = instrs.enqueue(instructions(lastPC))
+            lastPC = pcOfNextInstruction(lastPC)
+            elementsInQueue += 1
+        }
+
+        // 
+        // SLIDING OVER THE CODE
+        //
+        var result: List[(PC, B)] = List.empty
+        while (lastPC < max_pc) {
+            instrs = instrs.enqueue(instructions(lastPC))
+
+            if (f.isDefinedAt(instrs)) {
+                result = (firstPC, f(instrs)) :: result
+            }
+
+            firstPC = pcOfNextInstruction(firstPC)
+            lastPC = pcOfNextInstruction(lastPC)
+            instrs = instrs.tail
+        }
+
+        result.reverse
+    }
+
+    /**
+     * Finds a pair of consecutive instructions that match the given matchers.
+     * 
+     * ==Example Usage==
+     * {{{
+     * (pc, _) ← body.findPair {
+     *      case (
+     *          INVOKESPECIAL(receiver1, _, SingleArgumentMethodDescriptor((paramType: BaseType, _))),
+     *          INVOKEVIRTUAL(receiver2, name, NoArgumentMethodDescriptor(returnType: BaseType))
+     *      ) if (...) ⇒ (...)
+     *      } yield ...
+     * }}}
+     */
+    def findPair[B](
+        f: PartialFunction[(Instruction, Instruction), B]): List[(PC, B)] = {
+
+        val max_pc = instructions.size
+        var first_pc = 0
+        var second_pc = pcOfNextInstruction(first_pc)
+
+        var result: List[(PC, B)] = List.empty
+        while (second_pc < max_pc) {
+
+            val firstInstruction = instructions(first_pc)
+            val secondInstruction = instructions(second_pc)
+            val instrs = (firstInstruction, secondInstruction)
+            if (f.isDefinedAt(instrs)) {
+                result = (first_pc, f(instrs)) :: result
+            }
+
+            first_pc = second_pc
+            second_pc = pcOfNextInstruction(second_pc)
+        }
+        result
+    }
+
     override def toString = {
         "Code_attribute("+
             "maxStack="+maxStack+
