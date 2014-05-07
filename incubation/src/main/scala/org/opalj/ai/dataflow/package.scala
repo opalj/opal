@@ -48,25 +48,22 @@ package ai
  *      1. Sources are parameters passed to methods (e.g., doPost(session : Session)
  *      (This covers the main method as well as typical callback methods.)
  *      1. Values returned by methods (e.g., System.in.read) (here, we identify the call site)
+ *  1. Select sinks
+ *      1. A sink is either a field (in which the value is stored)
+ *      1. a method (parameter) which is passed the value
+ *  1. Filtering (Terminating) data-flows
+ *      1. If a specific operation was performed, e.g.,
+ *      1. If a comparison (e.g., against null, > 0 , ...)
+ *      1. An instanceOf/a checkcast
+ *      1. A mathematical operation (e.g. +.-,...)
+ *      1. [OPTIMIZATION] If the value was passed to a specific method (e.g., check(x : X) - throws Exception if the check fails)
+ *      1. [OPTIMIZATION] If the value was returned by a well-identified method (e.g., String sanitized = s.replace(...,...))
  *
- * 2. Select sinks
- * 2.1. A sink is either a field (in which the value is stored)
- * 2.2. a method (parameter) which is passed the value
- *
- *
- * 3. Filtering (Terminating) data-flows
- * 3.1. If a specific operation was performed, e.g.,
- * 3.2. If a comparison (e.g., against null, > 0 , ...)
- * 3.3. An instanceOf/a checkcast
- * 3.4  A mathematical operation (e.g. +.-,...)
- * 3.X. [OPTIMIZATION] If the value was passed to a specific method (e.g., check(x : X) - throws Exception if the check fails)
- * 3.Y. [OPTIMIZATION] If the value was returned by a well-identified method (e.g., String sanitized = s.replace(...,...))
- *
- * 4. Extending data-flows (Side Channels)
- * OPEN:   What would be the general strategy if a value influences another value?
- * [SIDE CHANNELS?] What happens if the value is stored in a field of an object and that object is used?
- * [SIDE CHANNELS?] What happens if the value is used during the computation, but does not (directly) influence the output.
- * (e.g., if(x == 0) 1; else 2;
+ *  4. Extending data-flows (Side Channels)
+ *      - OPEN:   What would be the general strategy if a value influences another value?
+ *      - [SIDE CHANNELS?] What happens if the value is stored in a field of an object and that object is used?
+ *      - [SIDE CHANNELS?] What happens if the value is used during the computation, but does not (directly) influence the output.
+ *          (e.g., if(x == 0) 1; else 2;
  *
  * @author Michael Eichberg and Ben Hermann
  */
