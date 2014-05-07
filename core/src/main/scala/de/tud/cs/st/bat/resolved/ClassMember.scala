@@ -45,6 +45,8 @@ trait ClassMember extends SourceElement {
 
     def isPrivate: Boolean = (ACC_PRIVATE.mask & accessFlags) != 0
 
+    def hasDefaultVisibility: Boolean = (VisibilityModifier.mask & accessFlags) == 0
+
     def isStatic: Boolean = (ACC_STATIC.mask & accessFlags) != 0
 
     def isFinal: Boolean = (ACC_FINAL.mask & accessFlags) != 0
