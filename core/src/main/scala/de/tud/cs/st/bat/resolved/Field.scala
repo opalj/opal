@@ -61,7 +61,8 @@ final class Field private (
     val name: String, // the name is interned to enable reference comparisons!
     val fieldType: FieldType,
     val attributes: Attributes)
-        extends ClassMember {
+        extends ClassMember
+        with scala.math.Ordered[Field] {
 
     final override def isField = true
 
@@ -95,10 +96,15 @@ final class Field private (
      *
      * Hence, for two fields that have the same name and type flags the result will be `false`.
      */
-    def <(other: Field): Boolean =
-        this.name < other.name || (
-            (this.name eq other.name) &&
-            this.fieldType < other.fieldType)
+    def compare(other: Field): Int = {
+        if (this.name eq other.name) {
+            this.fieldType.compare(other.fieldType)
+        } else if (this.name < other.name) {
+            -1
+        } else {
+            1
+        }
+    }
 
     override def toString(): String = {
         AccessFlags.toStrings(accessFlags, AccessFlagsContexts.FIELD).mkString("", " ", " ") +

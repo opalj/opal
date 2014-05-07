@@ -55,7 +55,7 @@ final class Method private (
     val descriptor: MethodDescriptor,
     val body: Option[Code],
     val attributes: Attributes)
-        extends ClassMember {
+        extends ClassMember with scala.math.Ordered[Method] {
 
     /**
      * Returns true if this method and the given method have the same signature.
@@ -133,15 +133,20 @@ final class Method private (
         attributes collectFirst { case et: ExceptionTable ⇒ et }
 
     /**
-     * Defines an absolute order on `Method` instances w.r.t. their method signatures.
+     * Defines an absolute order on `Method` instances based on their method signatures.
+     * 
      * The order is defined by lexicographically comparing the names of the methods
      * and – in case that the names of both methods are identical – by comparing
      * their method descriptors.
      */
-    def <(other: Method): Boolean = {
-        this.name < other.name || (
-            (this.name eq other.name) &&
-            this.descriptor < other.descriptor)
+    def compare(other: Method): Int = {
+        if (this.name eq other.name) {
+            this.descriptor.compare(other.descriptor)
+        } else if (this.name < other.name)
+            -1
+        else {
+            1
+        }
     }
 
     def toJava(): String = descriptor.toJava(name)
