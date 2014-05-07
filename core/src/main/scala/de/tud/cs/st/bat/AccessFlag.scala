@@ -80,7 +80,7 @@ sealed trait VisibilityModifier extends AccessFlag
  */
 object VisibilityModifier {
 
-    private val mask = ACC_PRIVATE.mask | ACC_PUBLIC.mask | ACC_PROTECTED.mask
+    final val mask = ACC_PRIVATE.mask | ACC_PUBLIC.mask | ACC_PROTECTED.mask
 
     private val SOME_PUBLIC = Some(ACC_PUBLIC)
     private val SOME_PRIVATE = Some(ACC_PRIVATE)
