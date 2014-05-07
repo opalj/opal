@@ -214,7 +214,7 @@ object SlidingCollect {
                 method @ MethodWithBody(body) ← classFile.methods
                 (pc, _) ← body.findPair {
                     case (
-                        INVOKESPECIAL(receiver1, _, SingleArgumentMethodDescriptor((paramType: BaseType, _))),
+                        INVOKESPECIAL(receiver1, _, TheArgument(paramType: BaseType)),
                         INVOKEVIRTUAL(receiver2, name, NoArgumentMethodDescriptor(returnType: BaseType))
                         ) if (
                         (receiver1 eq receiver2) &&
