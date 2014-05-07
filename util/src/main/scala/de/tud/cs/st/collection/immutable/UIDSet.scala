@@ -74,7 +74,7 @@ sealed trait UIDSet[+T <: UID] { thisSet ⇒
     /* ABSTRACT */ def +[X >: T <: UID](e: X): UIDSet[X]
 
     /**
-     * Returns the first element of this set. I.e., the element with the smalles
+     * Returns the first element of this set. I.e., the element with the smallest
      * unique id.
      */
     @throws[NoSuchElementException]("If the set is empty.") /* ABSTRACT */

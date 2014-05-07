@@ -37,7 +37,7 @@ import java.io.InputStream
 import java.io.Closeable
 
 /**
- * Defines control abstractions.
+ * Defines additional control abstractions.
  *
  * ==Usage==
  * To use the control abstractions, it is sufficient to import them.
@@ -55,11 +55,15 @@ object ControlAbstractions {
 
     /**
      * This function takes a `Closeable` resource and a function `r` that will
-     * process the closable resource.
-     * This function takes care of the correct handling of closable resources.
+     * process the `Closeable` resource.
+     * This function takes care of the correct handling of `Closeable` resources.
      * When `r` has finished processing the resource or throws an exception, the
      * resource is closed.
+     * 
      * @note If `closable` is `null`, `null` is passed to `r`.
+     * 
+     * @param closable The `Closeable` resource. 
+     * @param r The function that processes the `resource`.
      */
     def process[C <: Closeable, T](closable: C)(r: C ⇒ T): T = {
         // Implementation Note
@@ -78,6 +82,7 @@ object ControlAbstractions {
      * This function takes care of the correct handling of resources.
      * When `r` has finished processing the source or throws an exception,
      * the source is closed.
+     * 
      * @note If `source` is `null`, `null` is passed to `r`.
      */
     def processSource[C <: scala.io.Source, T](source: C)(r: C ⇒ T): T = {

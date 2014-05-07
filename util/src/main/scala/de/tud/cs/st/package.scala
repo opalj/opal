@@ -30,11 +30,15 @@ package de.tud.cs
 
 /**
  * Common definitions.
- * 
+ *
  * @author Michael Eichberg
  */
 package object st {
 
+    /**
+     * A simple type alias that can be used to communicate that the respective
+     * value will only take values in the range of unsigned short values.
+     */
     type UShort = Int
 
 }

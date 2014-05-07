@@ -29,7 +29,7 @@
 package de.tud.cs.st
 
 /**
- * Various helper methods.
+ * Various helper methods related to Scala and Opal collections.
  *
  * @author Michael Eichberg
  */

@@ -50,7 +50,7 @@ object UID {
 
     /**
      * Returns the element stored in the given array at the position identified
-     * by the UID' unique id or – if no value is stored at the respective
+     * by the UID' unique id (`uid`) or – if no value is stored at the respective
      * position – initializes the value with the value returned by `orElse` and
      * returns that value.
      */
