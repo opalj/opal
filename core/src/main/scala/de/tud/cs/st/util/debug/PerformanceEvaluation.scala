@@ -197,12 +197,18 @@ object PerformanceEvaluation {
 
     /**
      * Times the execution of a given function `f` until the execution time has
-     * stabilized and the average is only changing in a well-defined manner.
+     * stabilized and the average time for evaluating `f` is only changing in a 
+     * well-defined manner.
      *
      * In general `time` repeats the execution of `f` as long as the average changes
      * significantly. Furthermore, `f` is executed at least `minimalNumberOfRelevantRuns`
      * times and only those runs are taken into consideration for the calculation of the
-     * average that are `consideredRunsEpsilon`% worse than the best run.
+     * average that are `consideredRunsEpsilon`% worse than the best run. However, if we
+     * have more than `10*minimalNumberOfRelevantRuns` runs that did not contribute
+     * to the calculation of the average, the last run is added anyway. This way, we
+     * ensure that the evaluation will more likely terminate in reasonable time without
+     * affecting the average too much. Nevertheless, if the behavior of `f` is 
+     * extremely eratic, the evaluation may not terminate. 
      *
      * ==Example Usage==
      * {{{
@@ -216,7 +222,7 @@ object PerformanceEvaluation {
      * }
      * }}}
      *
-     * @note **If `f` has side effects this method cannot be used!**
+     * @note **If `f` has side effects it may not be possible to use this method.**
      *
      * @note If epsilon is too small we can get an endless loop as the termination
      *      condition is never met. However, in practice often a value such as "1 or 2"
@@ -227,14 +233,15 @@ object PerformanceEvaluation {
      *      case the variation between two runs will be too coarse grained to get
      *      meaningful results.
      *
-     * @param epsilon The maximum percentage that a run is allowed to affect the average.
-     *      If the effect of the last execution is less than `epsilon` percent. The
-     *      evaluation halts and the result of the last run is returned.
+     * @param epsilon The maximum percentage that *the final run* is allowed to affect 
+     *      the average. In other words,
+     *      if the effect of the last execution on the average is less than `epsilon` 
+     *      percent. The evaluation halts and the result of the last run is returned.
      * @param consideredRunsEpsilon Controls which runs are taken into consideration
      *      when calculating the average. Only those runs are used that are at most
      *      `consideredRunsEpsilon%` slower than the last run. Additionally,
      *      the last run is only considered if it is at most `consideredRunsEpsilon%`
-     *      slower than the average. Hence, it is possible that average may rise
+     *      slower than the average. Hence, it is even possible that the average may rise
      *      during the evaluation of `f`.
      * @param f The function that will be measured.
      * @param r A function that is called back whenever `f` was successfully evaluated.
@@ -242,9 +249,9 @@ object PerformanceEvaluation {
      *      {{{
      *      def r(averageInNs:Double, lastExecutionTimeInNs : Long, consideredExecutionTimesInNs : Seq[Long]) : Unit
      *      }}}
-     *      Hence, the first parameter is the current average.
-     *      The second parameter is the last execution time of `f`.
-     *      The last parameter are the times of the evaluation of `f` that are taken
+     *       1. The first parameter is the current average.
+     *       1. The second parameter is the last execution time of `f`.
+     *       1. The last parameter are the times of the evaluation of `f` that are taken
      *      into consideration when calculating the average.
      */
     def time[T >: Null <: AnyRef](
@@ -277,7 +284,7 @@ object PerformanceEvaluation {
                     runsSinceLastUpdate  = 0
                 } else {
                     runsSinceLastUpdate += 1
-                    if (runsSinceLastUpdate > 100) {
+                    if (runsSinceLastUpdate > minimalNumberOfRelevantRuns*10) {
                         // for whatever reason the current average seems to be "too" slow
                         // let's add the last run to rise the average 
                         times = t :: times
