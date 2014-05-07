@@ -38,8 +38,10 @@ trait UShortSet {
 
     /**
      * Returns a new set that contains this set's values and the given value.
-     * If the given value is already in this set a fresh copy is returned unless
+     *
+     * Even if the given value is already in this set a fresh copy is returned unless
      * this set is already "full". In the latter case `this` set is returned.
+     * This porperty ensures that the set appears to be immutable.
      */
     def +(value: UShort): UShortSet
 
@@ -51,23 +53,23 @@ trait UShortSet {
     /**
      * Returns `true` if this set contains the given value.
      *
-     * If the given value is not an unsigned short value [0..65535] the
+     * If the given value is not an unsigned short value ([0..65535]) the
      * result is undefined.
      */
-    def contains(ushortValue: Int): Boolean
+    def contains(ushortValue: UShort): Boolean
 
     /**
      * Executes the given function `f` for each value of this set, starting with
      * the smallest value.
      */
-    def foreach(f: /*ushortValue:*/ Int ⇒ Unit): Unit
+    def foreach(f: UShort ⇒ Unit): Unit
 
     /**
      * Returns `true` if the predicate `f` returns true for all values of the set.
      */
-    def forall(f: /*ushortValue:*/ Int ⇒ Boolean): Boolean
+    def forall(f: UShort ⇒ Boolean): Boolean
 
-    def map[T](f: Int ⇒ T): scala.collection.mutable.Set[T] = {
+    def map[T](f: UShort ⇒ T): scala.collection.mutable.Set[T] = {
         val set = scala.collection.mutable.Set.empty[T]
         foreach(v ⇒ set += f(v))
         set
@@ -81,7 +83,7 @@ trait UShortSet {
      *      (e.g., foreach and contains) as they are guaranteed to be optimized for
      *      performance.
      */
-    def iterator: Iterator[Int] = iterable.iterator
+    def iterator: Iterator[UShort] = iterable.iterator
 
     /**
      * Returns a new `Iterable`. The method is primarily defined to facilitate
@@ -96,12 +98,12 @@ trait UShortSet {
     /**
      * The maximum value in this set.
      */
-    def max: Int
+    def max: UShort
 
     /**
      * The last value in this set which is also the maximum value.
      */
-    def last: Int = max
+    def last: UShort = max
 
     /**
      * The number of elements of this set.
