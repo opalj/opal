@@ -68,7 +68,12 @@ final class Method private (
      *      (The Java compiler generate the appropriate methods.)
      */
     def hasSameSignature(other: Method, ignoreReturnType: Boolean = false): Boolean = {
-        this.name == other.name && this.descriptor.isEqual(other.descriptor, ignoreReturnType)
+        this.name == other.name && {
+            if (ignoreReturnType)
+                this.descriptor.equalParameters(other.descriptor)
+            else
+                this.descriptor == other.descriptor
+        }
     }
 
     final override def isMethod = true
@@ -134,7 +139,7 @@ final class Method private (
 
     /**
      * Defines an absolute order on `Method` instances based on their method signatures.
-     * 
+     *
      * The order is defined by lexicographically comparing the names of the methods
      * and – in case that the names of both methods are identical – by comparing
      * their method descriptors.

@@ -60,6 +60,7 @@ sealed abstract class MethodDescriptor
 
     def valueToString: String = toUMLNotation
 
+    def equalParameters(other: MethodDescriptor): Boolean
 
     /**
      * Selects the indexes of the parameters that pass the filter function.
@@ -147,13 +148,16 @@ sealed abstract class MethodDescriptor
 private final object NoArgumentAndNoReturnValueMethodDescriptor
         extends MethodDescriptor {
 
-    def returnType = VoidType
+    override def returnType = VoidType
 
-    def parameterTypes = IndexedSeq.empty
+    override def parameterTypes = IndexedSeq.empty
 
-    def parameterType(index: Int): FieldType = throw new IndexOutOfBoundsException()
+    override def parameterType(index: Int): FieldType = throw new IndexOutOfBoundsException()
 
-    def parametersCount: Int = 0
+    override def parametersCount: Int = 0
+
+    override def equalParameters(other: MethodDescriptor): Boolean =
+        other == NoArgumentAndNoReturnValueMethodDescriptor
 
     // the default equals and hashCode implementations are a perfect fit
 }
@@ -162,11 +166,14 @@ private final class NoArgumentMethodDescriptor(
     val returnType: Type)
         extends MethodDescriptor {
 
-    def parameterTypes = IndexedSeq.empty
+    override def parameterTypes = IndexedSeq.empty
 
-    def parameterType(index: Int): FieldType = throw new IndexOutOfBoundsException()
+    override def parameterType(index: Int): FieldType = throw new IndexOutOfBoundsException()
 
-    def parametersCount: Int = 0
+    override def parametersCount: Int = 0
+
+    override def equalParameters(other: MethodDescriptor): Boolean =
+        other.parametersCount == 0
 
     override def hashCode: Int = returnType.hashCode()
 
@@ -185,16 +192,20 @@ private final class SingleArgumentMethodDescriptor(
     val returnType: Type)
         extends MethodDescriptor {
 
-    def parameterTypes = IndexedSeq(parameterType)
+    override def parameterTypes = IndexedSeq(parameterType)
 
-    def parameterType(index: Int): FieldType = {
+    override def parameterType(index: Int): FieldType = {
         if (index == 0)
             parameterType
         else
             throw new IndexOutOfBoundsException()
     }
 
-    def parametersCount: Int = 1
+    override def parametersCount: Int = 1
+
+    override def equalParameters(other: MethodDescriptor): Boolean =
+        (other.parametersCount == 1) &&
+            (other.parameterType(0) == parameterType)
 
     override val hashCode: Int = (returnType.hashCode() * 61) + parameterType.hashCode
 
@@ -215,9 +226,9 @@ private final class TwoArgumentsMethodDescriptor(
     val returnType: Type)
         extends MethodDescriptor {
 
-    def parameterTypes = IndexedSeq(firstParameterType, secondParameterType)
+    override def parameterTypes = IndexedSeq(firstParameterType, secondParameterType)
 
-    def parameterType(index: Int): FieldType = {
+    override def parameterType(index: Int): FieldType = {
         index match {
             case 0 ⇒
                 firstParameterType
@@ -228,7 +239,12 @@ private final class TwoArgumentsMethodDescriptor(
         }
     }
 
-    def parametersCount: Int = 2
+    override def parametersCount: Int = 2
+
+    override def equalParameters(other: MethodDescriptor): Boolean =
+        (other.parametersCount == 2) &&
+            (other.parameterType(0) == firstParameterType) &&
+            (other.parameterType(1) == secondParameterType)
 
     override val hashCode: Int =
         ((returnType.hashCode() * 61) +
@@ -252,9 +268,12 @@ private final class MultiArgumentsMethodDescriptor(
     val returnType: Type)
         extends MethodDescriptor {
 
-    def parameterType(index: Int): FieldType = parameterTypes(index)
+    override def parameterType(index: Int): FieldType = parameterTypes(index)
 
-    def parametersCount: Int = parameterTypes.size
+    override def parametersCount: Int = parameterTypes.size
+
+    override def equalParameters(other: MethodDescriptor): Boolean =
+        (other.parameterTypes == this.parameterTypes)
 
     final override val hashCode: Int =
         (returnType.hashCode() * 13) + parameterTypes.hashCode
