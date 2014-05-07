@@ -42,11 +42,13 @@ package object util {
      * Afterwards the system's native application that claims to be able to handle
      * files with the given suffix is opened. If this fails, the string is printed to
      * the console.
+     * 
      * @param filenamePrefix A string the identifies the content of the file. (E.g.,
      *      "ClassHierarchy" or "CHACallGraph")
      * @param filenameSuffix The suffix of the file that identifies the used file format.
+     *      (E.g., ".txt")
      * @return The name of the file if it was possible to write the file and open
-     *   the native application.
+     *      the native application.
      */
     def writeAndOpenDesktopApplication(
         data: String,

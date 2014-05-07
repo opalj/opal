@@ -33,8 +33,9 @@ package org
  * that is designed with performance, scalability and adaptability in mind.
  *
  * Its main components are:
- *  - a library for reading in Java Bytecode and creating arbitrary representations
+ *  - a library for reading in Java bytecode and creating arbitrary representations
  *  - an easily customizable framework for the abstract interpretation of Java bytecode.
+ *  - a library to extract dependencies between code elements. 
  *
  * ==General Design Decisions==
  *
