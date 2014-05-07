@@ -308,6 +308,16 @@ object SingleArgumentMethodDescriptor {
         }
 }
 
+object TheArgument {
+
+    def unapply(md: MethodDescriptor): Option[FieldType] =
+        if (md.parametersCount == 1)
+            Some(md.parameterType(0))
+        else
+            None
+
+}
+
 object TwoArgumentsMethodDescriptor {
 
     def unapply(md: MethodDescriptor): Option[(FieldType, FieldType, Type)] =
