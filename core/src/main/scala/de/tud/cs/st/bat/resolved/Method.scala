@@ -57,6 +57,20 @@ final class Method private (
     val attributes: Attributes)
         extends ClassMember {
 
+    /**
+     * Returns true if this method and the given method have the same signature.
+     *
+     * @param ignoreReturnType If `false` (default), then the return type is taken
+     *      into consideration. This models the behavior of the JVM w.r.t. method
+     *      dispatch.
+     *      However, if you want to determine whether this method potentially overrides
+     *      the given one, you may want to specify that you want to ignore the return type.
+     *      (The Java compiler generate the appropriate methods.)
+     */
+    def hasSameSignature(other: Method, ignoreReturnType: Boolean = false): Boolean = {
+        this.name == other.name && this.descriptor.isEqual(other.descriptor, ignoreReturnType)
+    }
+
     final override def isMethod = true
 
     final override def asMethod = this
