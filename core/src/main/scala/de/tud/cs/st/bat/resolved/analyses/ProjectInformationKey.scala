@@ -36,8 +36,8 @@ package analyses
  * (immutable) information with a project that should be computed on demand.
  * For example, imagine that you write an analysis that requires – as a foundation –
  * the project's call graph. In this case, to get the call graph it is sufficient
- * to pass the respective key to the project object. If the call graph was already computed
- * that one will be returned, otherwise the computation will be performed and
+ * to pass the respective key to the project object. If the call graph was already
+ * computed that one will be returned, otherwise the computation will be performed and
  * the result will be cached for future usage before it is returned.
  *
  * ==Using Project Information==
@@ -58,7 +58,7 @@ package analyses
  * Making project wide information available on demand is done as follows.
  *
  *  1. Implement the base analysis that computes the information given some project.
- *  1. Implement the `ProjectInformationKey` class that inherits from this trait and
+ *  1. Implement your `ProjectInformationKey` class that inherits from this trait and
  *    which calls the base analysis. It is recommended that the factory method ([[compute]])
  *    is side-effect free.
  *
