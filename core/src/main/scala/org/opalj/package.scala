@@ -26,18 +26,15 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
 package org
 
 /**
  * OPAL is a Scala-based framework for the static analysis of Java bytecode
  * that is designed with performance, scalability and adaptability in mind.
  *
- * Its main components
- * are:
- *
- * - a library for reading in Java Bytecode and creating arbitrary representations
- * - an easily customizable framework for the abstract interpretation of Java bytecode.
+ * Its main components are:
+ *  - a library for reading in Java Bytecode and creating arbitrary representations
+ *  - an easily customizable framework for the abstract interpretation of Java bytecode.
  *
  * ==General Design Decisions==
  *
@@ -65,4 +62,6 @@ package org
  */
 package object opalj {
 
+    final val WEBPAGE = "http://www.opal-project.de" 
+    
 }

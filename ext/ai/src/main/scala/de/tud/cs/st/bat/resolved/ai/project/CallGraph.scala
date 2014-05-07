@@ -50,9 +50,9 @@ import scala.collection.Map
  * The call graph is constructed by the [[CallGraphFactory]].
  *
  * @param calledByMap The map of all methods that are called by at least one method.
- *      I.e., the value is not expected to be the empty map.
+ *      I.e., the value is never the empty map.
  * @param callsMap The map of all methods that call at least one method.
- *      I.e., the value is not expected to be the empty map.
+ *      I.e., the value is never an empty map.
  * @author Michael Eichberg
  */
 class CallGraph private[project] (
@@ -128,6 +128,8 @@ class CallGraph private[project] (
      * applications).
      */
     def callsStatistics(maxNumberOfResults: Int = 65536): String = {
+        assume(maxNumberOfResults > 0)
+
         var result: List[List[String]] = List.empty
         var resultCount = 0
         project.methods forall { (method: Method) ⇒
