@@ -38,7 +38,7 @@ import bat.resolved.ai.domain._
 /**
  * Configuration of a specific call graph algorithm. Basically, the configuration
  * consist of a method to create a `Cache` object that will be used during the
- * computation of the call graph and a factory method to create new domain instances
+ * computation of the call graph and a factory method to create new domain instance
  * for each method that is analyzed during the construction of the graph.
  *
  * @author Michael Eichberg
@@ -50,6 +50,9 @@ trait CallGraphAlgorithmConfiguration {
      */
     type Contour
 
+    /**
+     * The type of the cached values. 
+     */
     type Value
 
     type Cache <: CallGraphCache[Contour, Value]
@@ -61,8 +64,7 @@ trait CallGraphAlgorithmConfiguration {
      * Usually created only once per run.
      */
     def Cache(): this.type#Cache
-
-    type I /*Domain Identifier*/
+    
 
     /**
      * Returns the new domain object that will be used to analyze the given
