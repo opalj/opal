@@ -35,16 +35,16 @@ package resolved
  *
  * @author Michael Eichberg
  */
-final class MethodSignature(
-        val name: String,
-        val descriptor: MethodDescriptor) {
+case class MethodSignature(
+        name: String,
+        descriptor: MethodDescriptor) {
 
     override def equals(other: Any): Boolean = {
         other match {
             case that: MethodSignature ⇒
-                name == that.name && descriptor == that.descriptor
+                 descriptor == that.descriptor && name == that.name
             case _ ⇒ false
         }
     }
-    override def hashCode: Int = name.hashCode * 13 + descriptor.hashCode
+    override val hashCode: Int = name.hashCode * 13 + descriptor.hashCode
 }
