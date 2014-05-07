@@ -169,7 +169,7 @@ class Project[Source] private (
     /**
      * Some basic statistics about this project.
      *
-     * (Calculated on-demand.)
+     * ((Re)Calculated on-demand.)
      */
     def statistics: Map[String, Int] =
         Map(
@@ -267,7 +267,7 @@ class Project[Source] private (
                 this.synchronized {
                     // It may be the case that the underlying array was updated!
                     val thisProjectInformation = this.projectInformation
-                    // double-checked locking (works with Java 6>)
+                    // double-checked locking (works with Java >=6)
                     val pi = thisProjectInformation.get(pikUId)
                     if (pi != null) {
                         pi.asInstanceOf[T]
@@ -465,9 +465,4 @@ object Project {
             Await.result(classHierarchyFuture, Duration.Inf)
         )
     }
-}
-
-case class InconsistentProjectException(
-        message: String) extends Exception(message) {
-
 }
