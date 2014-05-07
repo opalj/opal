@@ -47,13 +47,13 @@ package graphs
  *      different whenever `equals` is `false`'''.
  * @param identifierToString A function that converts "an" identifier to a string. By
  *      default the given object's `toString` method is called. It is possible
- *      that a graph has to nodes with the same textual representation representation
+ *      that a graph has two nodes with the same textual representation representation
  *      but a different identity.
  * @author Michael Eichberg
  */
 final class SimpleNode[I](
     val identifier: I,
-    val identifierToString: I ⇒ String = SimpleNode.any2String,
+    val identifierToString: I ⇒ String = (_: Any).toString,
     override val backgroundColor: Option[String] = None,
     private[this] var children: List[Node] = List.empty)
         extends Node {
@@ -62,26 +62,23 @@ final class SimpleNode[I](
 
     override def uniqueId: Int = identifier.hashCode()
 
-    def addChild(node: Node) {
+    def addChild(node: Node): Unit = {
         this.synchronized(children = node :: children)
     }
 
-    def removeLastAddedChild() {
+    def removeLastAddedChild(): Unit = {
         this.synchronized(children = children.tail)
     }
 
-    def removeChild(node: Node) {
+    def removeChild(node: Node): Unit = {
         this.synchronized(children = children.filterNot(_ == node))
     }
 
-    override def foreachSuccessor(f: Node ⇒ Unit) {
+    override def foreachSuccessor(f: Node ⇒ Unit): Unit = {
         this.synchronized(children.foreach(f))
     }
 
     override def hasSuccessors: Boolean = this.synchronized(children.nonEmpty)
 
-}
-private object SimpleNode {
-    val any2String: (Any) ⇒ String = a ⇒ { a.toString }
 }
 
