@@ -30,13 +30,25 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import de.tud.cs.st.bat.AccessFlags
+import de.tud.cs.st.bat.AccessFlagsContext
+import de.tud.cs.st.bat.AccessFlagsContexts
 
 /**
- *
  * @author Michael Eichberg
  */
 case class Field_Info(
-    val access_flags: Int,
-    val name_index: Constant_Pool_Index,
-    val descriptor_index: Constant_Pool_Index,
-    val attributes: Attributes)
+        val access_flags: Int,
+        val name_index: Constant_Pool_Index,
+        val descriptor_index: Constant_Pool_Index,
+        val attributes: Attributes) {
+
+    def toXHTML(implicit cp: Constant_Pool): Node = {
+        <div>
+            { AccessFlags.toString(access_flags, AccessFlagsContexts.FIELD) }
+            <span> { cp(name_index).asString } </span> 
+            <span class="cp_index"> { name_index } </span> 
+        </div>
+    }
+
+}

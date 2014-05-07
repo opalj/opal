@@ -65,18 +65,29 @@ case class ClassFile(
         }
     }
 
+    def fieldsToXHTML = {
+        for (field ← fields) yield field.toXHTML(cp)
+    }
+
     def toXHTML: Node =
-        <html><body>
-        <h1>{ fqn }</h1>
-        <details>
-            <summary>Constant Pool</summary>
-            <ol>
-            { cpToXHTML }
-            </ol>
-        </details>
-        <dl>
-        <dt>Version</dt><dd>{ minor_version + "." + major_version }</dd>
-        <dt>Access Flags</dt><dd>{ AccessFlags.toString(access_flags, AccessFlagsContexts.CLASS) }</dd>
-        </dl>
-        </body></html>
+        <html>
+            <head></head>
+            <body>
+                <h1>{ fqn }</h1>
+                <details>
+                    <summary>Constant Pool</summary>
+                    <ol>
+                    { cpToXHTML }
+                    </ol>
+                </details>
+                <dl>
+                    <dt>Version</dt><dd>{ minor_version + "." + major_version }</dd>
+                    <dt>Access Flags</dt><dd>{ AccessFlags.toString(access_flags, AccessFlagsContexts.CLASS) }</dd>
+                </dl>
+                <details>
+                    <summary>Fields</summary>
+                    { fieldsToXHTML }
+                </details>
+           </body>
+        </html>
 }

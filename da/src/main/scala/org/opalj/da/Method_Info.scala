@@ -30,7 +30,6 @@ package org.opalj
 package da
 
 /**
- *
  * @author Michael Eichberg
  */
 case class Method_Info(
