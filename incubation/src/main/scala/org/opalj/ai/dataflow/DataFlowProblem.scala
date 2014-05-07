@@ -70,7 +70,7 @@ trait DataFlowProblem {
      *
      * @note The methods have to belong to the [[project]].
      *
-     * @see [[DataFlowConstraintSpecificationSupprt]] for the easy creation
+     * @see [[DataFlowProblemSpecification]] for the easy creation
      *      of the `sourcesValues` map.
      */
     def sourceValues: Map[Method, Set[PC]]
@@ -83,7 +83,7 @@ trait DataFlowProblem {
      *
      * @note The methods have to belong to the [[project]].
      *
-     * @see [[DataFlowConstraintSpecificationSupprt]] for the easy creation
+     * @see [[DataFlowProblemSpecification]] for the easy creation
      *      of the `sinkInstructions` map.
      */
     def sinkInstructions: Map[Method, Set[PC]]
