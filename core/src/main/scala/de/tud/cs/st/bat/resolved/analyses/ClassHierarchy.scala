@@ -35,11 +35,11 @@ import util.ControlAbstractions.foreachNonNullValueOf
 import util.graphs.{ Node, toDot }
 import util.{ Answer, Yes, No, Unknown }
 
+import ObjectType.Object
+
 import annotation.tailrec
 import scala.collection.{ Map, Set, SeqView }
 import scala.collection.mutable.HashSet
-
-import ObjectType.Object
 
 /**
  * Represents '''a project's class hierarchy'''. The class hierarchy only contains
