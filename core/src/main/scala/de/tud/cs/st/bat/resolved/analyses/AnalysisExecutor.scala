@@ -54,9 +54,9 @@ import java.io.File
  *
  * ==Control Flow==
  *  1. The standard parameters are checked.
- *  1. The analysis is called to verify the analysis specific parameters.
+ *  1. The analysis is called to let it verify the analysis specific parameters.
  *  1. The [[Project]] is created.
- *  1. The [[Analysis]]' `analyze` method is called with the project and the parameters.
+ *  1. The `analyze` method of the [[Analysis]] is called with the project and the parameters.
  *  1. The results are printed.
  *
  * @author Michael Eichberg
@@ -75,10 +75,9 @@ trait AnalysisExecutor {
 
     /**
      * Describes the analysis specific parameters. An analysis specific parameter
-     * has to start with a dash ("-") and has to contain an equals sign ("=") and
-     * has to come after the list of jar files, class files or directories that
-     * specify the classes that will be loaded.
+     * has to start with a dash ("-") and has to contain an equals sign ("=").
      *
+     * @note The parameter `-cp=` is already predefined (see general documentation).
      * @note The parameter `-library=` is already predefined (see general documentation).
      */
     def analysisParametersDescription: String = ""
@@ -89,7 +88,7 @@ trait AnalysisExecutor {
      *
      * This method **must be** overridden if the analysis defines additional
      * parameters. A method that overrides this method should return false if it can't
-     * validate all arguements.
+     * validate all arguments.
      * The default behavior is to check that there are no additional parameters.
      */
     def checkAnalysisSpecificParameters(parameters: Seq[String]): Boolean =
@@ -111,7 +110,6 @@ trait AnalysisExecutor {
 
     def main(args: Array[String]): Unit = {
 
-        // TODO [Refactor] Move to resolved.analyses to make the code reusable
         //
         // 1. check arguments
         //

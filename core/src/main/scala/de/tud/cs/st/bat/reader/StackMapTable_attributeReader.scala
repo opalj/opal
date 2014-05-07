@@ -79,7 +79,6 @@ trait StackMapTable_attributeReader extends AttributeReader {
             }
         )
     )
-
 }
 
 object StackMapTable_attributeReader {

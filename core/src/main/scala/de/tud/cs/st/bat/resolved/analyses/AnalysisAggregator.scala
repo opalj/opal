@@ -41,7 +41,7 @@ import java.net.URL
  *
  * ==Implementation Note==
  * If you extend this class, make sure that all access to this classes (mutable) fields/
- * mutable data structures is synchronized on the value `analyses`.
+ * mutable data structures is synchronized on `this`.
  *
  * @author Michael Eichberg
  */
@@ -52,7 +52,7 @@ class AnalysisAggregator[Source, AnalysisResult]
 
     protected[this] var analyses = List.empty[Analysis[Source, AnalysisResult]]
 
-    protected[this] var analyzeInParallel = false
+    protected[this] var analyzeInParallel = true
 
     def register(analysis: Analysis[Source, AnalysisResult]) {
         this.synchronized(analyses = analysis :: analyses)

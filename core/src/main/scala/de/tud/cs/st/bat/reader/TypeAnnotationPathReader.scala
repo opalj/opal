@@ -65,13 +65,13 @@ trait TypeAnnotationPathReader extends Constant_PoolAbstractions {
 
     /**
      * The `type_path_kind` was `1` (and the type_argument_index was (as defined by the
-     * specification also `0`).
+     * specification) also `0`).
      */
     def TypeAnnotationDeeperInNestedType: TypeAnnotationPathElement
 
     /**
      * The `type_path_kind` was `2` (and the type_argument_index was (as defined by the
-     * specification also `0`).
+     * specification) also `0`).
      */
     def TypeAnnotationOnBoundOfWildcardType: TypeAnnotationPathElement
 
