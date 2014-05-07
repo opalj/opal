@@ -46,19 +46,6 @@ sealed abstract class MethodDescriptor
         extends ConstantValue[MethodDescriptor]
         with scala.math.Ordered[MethodDescriptor] {
 
-    def selectParameter(f: FieldType ⇒ Boolean): Seq[Int] = {
-        var i = 0
-        var max = parametersCount
-        var indexes: Seq[Int] = Nil
-        while (i < max) {
-            if (f(parameterType(i))) {
-                indexes = indexes :+ i
-            }
-            i += 1
-        }
-        indexes
-    }
-
     def parameterTypes: IndexedSeq[FieldType]
 
     def parameterType(index: Int): FieldType
@@ -72,6 +59,23 @@ sealed abstract class MethodDescriptor
     def valueType: ObjectType = ObjectType.MethodType
 
     def valueToString: String = toUMLNotation
+
+
+    /**
+     * Selects the indexes of the parameters that pass the filter function.
+     */
+    def selectParameter(f: FieldType ⇒ Boolean): Seq[Int] = {
+        var i = 0
+        var max = parametersCount
+        var indexes: Seq[Int] = Nil
+        while (i < max) {
+            if (f(parameterType(i))) {
+                indexes = indexes :+ i
+            }
+            i += 1
+        }
+        indexes
+    }
 
     //
     //
