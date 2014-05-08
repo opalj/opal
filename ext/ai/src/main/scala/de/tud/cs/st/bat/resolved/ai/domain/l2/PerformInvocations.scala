@@ -220,10 +220,13 @@ trait PerformInvocations[Source]
         operands: List[DomainValue]): MethodCallResult = {
 
         val executionHandler = invokeExecutionHandler(pc, definingClass, method, operands)
-        val parameters = operands.view.reverse.zipWithIndex.map { operand_index ⇒
-            val (operand, index) = operand_index
-            operand.adapt(executionHandler.domain, -(index + 1))
-        }.toArray(executionHandler.domain.DomainValueTag)
+        val parameters = executionHandler.domain.DomainValueTag.newArray(method.body.get.maxLocals)
+        var localVariableIndex = 0
+        for ((operand, index) ← operands.view.reverse.zipWithIndex) {
+            parameters(localVariableIndex) =
+                operand.adapt(executionHandler.domain, -(index + 1))
+            localVariableIndex += operand.computationalType.operandSize
+        }
         executionHandler.perform(pc, definingClass, method, parameters)
     }
 }
