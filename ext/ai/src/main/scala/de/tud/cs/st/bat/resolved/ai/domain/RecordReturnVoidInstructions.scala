@@ -55,7 +55,7 @@ trait RecordReturnVoidInstructions extends Domain {
     def allReturnVoidInstructions: PCs = returnVoidInstructions
 
     abstract override def returnVoid(pc: PC): Unit = {
-        returnVoidInstructions +≈ pc
+        returnVoidInstructions = returnVoidInstructions +≈ pc
         super.returnVoid(pc)
     }
 
