@@ -1,8 +1,8 @@
 language: scala
 scala:
    - 2.11.0
-   
 jdk:
   - oraclejdk8
-  
-sbt ++$SHIPPABLE_SCALA_VERSION test     
+notifications:
+  email:
+    - eichber@informatik.tu-darmstadt.de
