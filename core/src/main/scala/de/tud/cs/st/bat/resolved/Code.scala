@@ -400,8 +400,9 @@ case class Code(
     }
 
     /**
-     * Finds a pair of consecutive instructions that match the given matchers.
-     * 
+     * Finds a pair of consecutive instructions that are matched by the given partial
+     * function.
+     *
      * ==Example Usage==
      * {{{
      * (pc, _) ← body.findPair {
@@ -412,23 +413,24 @@ case class Code(
      *      } yield ...
      * }}}
      */
-    def findPair[B](
+    def collectPair[B](
         f: PartialFunction[(Instruction, Instruction), B]): List[(PC, B)] = {
-
         val max_pc = instructions.size
+
         var first_pc = 0
-        var second_pc = pcOfNextInstruction(first_pc)
+        var firstInstruction = instructions(first_pc)
+        var second_pc = pcOfNextInstruction(0)
+        var secondInstruction: Instruction = null
 
         var result: List[(PC, B)] = List.empty
         while (second_pc < max_pc) {
-
-            val firstInstruction = instructions(first_pc)
-            val secondInstruction = instructions(second_pc)
+            secondInstruction = instructions(second_pc)
             val instrs = (firstInstruction, secondInstruction)
             if (f.isDefinedAt(instrs)) {
                 result = (first_pc, f(instrs)) :: result
             }
 
+            firstInstruction = secondInstruction
             first_pc = second_pc
             second_pc = pcOfNextInstruction(second_pc)
         }

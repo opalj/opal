@@ -81,7 +81,7 @@ object SlidingCollect {
         }
     pcsAfterPullRequest
 
-    def pcsWithNewMethodeDescriptorMatcher =
+    def pcsWithNewMethodDescriptorMatcher =
         time(1, 3, 5, {
             for {
                 classFile ← project.view.map(_._1).par
@@ -102,10 +102,10 @@ object SlidingCollect {
             val sTs = ts.map(t ⇒ f"${ns2sec(t)}%1.4f").mkString(", ")
             println(f"Avg: ${ns2sec(avg.toLong)}%1.4f; T: ${ns2sec(t)}%1.4f; Ts: $sTs")
         }
-    pcsWithNewMethodeDescriptorMatcher
+    pcsWithNewMethodDescriptorMatcher
     */
 
-    def pcsWithNewMethodeDescriptorMatcherAndSet =
+    def pcsWithNewMethodDescriptorMatcherAndSet =
         time(2, 4, 5, {
             val theTypes = scala.collection.mutable.HashSet(
                 "java/lang/Boolean",
@@ -145,9 +145,9 @@ object SlidingCollect {
             val sTs = ts.map(t ⇒ f"${ns2sec(t)}%1.4f").mkString(", ")
             println(f"Avg: ${ns2sec(avg.toLong)}%1.4f; T: ${ns2sec(t)}%1.4f; Ts: $sTs")
         }
-    pcsWithNewMethodeDescriptorMatcherAndSet
+    pcsWithNewMethodDescriptorMatcherAndSet
 
-    def pcsWithNewMethodeDescriptorMatcherAndSetAndFindSequence =
+    def pcsWithNewMethodDescriptorMatcherAndSetAndFindSequence =
         time(2, 4, 5, {
             val theTypes = scala.collection.mutable.HashSet(
                 "java/lang/Boolean",
@@ -187,9 +187,9 @@ object SlidingCollect {
             val sTs = ts.map(t ⇒ f"${ns2sec(t)}%1.4f").mkString(", ")
             println(f"Avg: ${ns2sec(avg.toLong)}%1.4f; T: ${ns2sec(t)}%1.4f; Ts: $sTs")
         }
-    pcsWithNewMethodeDescriptorMatcherAndSetAndFindSequence
+    pcsWithNewMethodDescriptorMatcherAndSetAndFindSequence
 
-    def pcsWithNewMethodeDescriptorMatcherAndSetAndFindPair =
+    def pcsWithNewMethodDescriptorMatcherAndSetAndFindPair =
         time(2, 4, 5, {
             val theTypes = scala.collection.mutable.HashSet(
                 "java/lang/Boolean",
@@ -212,7 +212,7 @@ object SlidingCollect {
             for {
                 classFile ← project.view.map(_._1).par
                 method @ MethodWithBody(body) ← classFile.methods
-                (pc, _) ← body.findPair {
+                (pc, _) ← body.collectPair {
                     case (
                         INVOKESPECIAL(receiver1, _, TheArgument(paramType: BaseType)),
                         INVOKEVIRTUAL(receiver2, name, NoArgumentMethodDescriptor(returnType: BaseType))
@@ -227,5 +227,5 @@ object SlidingCollect {
             val sTs = ts.map(t ⇒ f"${ns2sec(t)}%1.4f").mkString(", ")
             println(f"Avg: ${ns2sec(avg.toLong)}%1.4f; T: ${ns2sec(t)}%1.4f; Ts: $sTs")
         }
-    pcsWithNewMethodeDescriptorMatcherAndSetAndFindPair
+    pcsWithNewMethodDescriptorMatcherAndSetAndFindPair
 }
