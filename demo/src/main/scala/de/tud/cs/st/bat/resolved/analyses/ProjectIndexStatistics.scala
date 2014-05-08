@@ -42,9 +42,11 @@ object ProjectIndexStatistics extends AnalysisExecutor {
 
     val analysis = new Analysis[URL, BasicReport] {
 
-        def description: String = "Statistics about the usage of field/method identifiers in a project."
+        override def title: String = "Project Statistics"
 
-        def analyze(project: Project[URL], parameters: Seq[String]) = {
+        override def description: String = "Statistics about the usage of field/method identifiers in a project."
+
+        override def analyze(project: Project[URL], parameters: Seq[String]) = {
 
             BasicReport(
                 project.get(ProjectIndexKey).
