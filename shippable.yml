@@ -6,3 +6,4 @@ jdk:
 notifications:
   email:
     - eichber@informatik.tu-darmstadt.de
+sbt ++$SHIPPABLE_SCALA_VERSION test    
