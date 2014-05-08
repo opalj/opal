@@ -130,6 +130,8 @@ private class UShortSet2(private var value: Int) extends UShortSet {
         }
     }
 
+    def isEmpty = false
+
     def iterable: Iterable[UShort] = if (notFull) Iterable(value1) else Iterable(value1, value2)
 
     override def hashCode = value
@@ -262,6 +264,8 @@ private class UShortSet4(private var value: Long) extends UShortSet {
             ((value4 == 0) || f(value4))
     }
 
+    def isEmpty = false
+
     def iterable: Iterable[UShort] =
         if (notFull)
             Iterable(value1.toInt, value2.toInt, value3.toInt)
@@ -341,6 +345,8 @@ private class UShortSetNode(
         }
     }
 
+    def isEmpty = false
+
     override def hashCode = (set1.hashCode() * 37 + set2.hashCode()) * 37
 
     override def equals(other: Any): Boolean = other match {
@@ -350,6 +356,7 @@ private class UShortSetNode(
 }
 
 private object EmptyUShortSet extends UShortSet {
+    def isEmpty = true
     def mutableCopy: mutable.UShortSet = this
     def iterable = Iterable.empty
     def contains(uShortValue: UShort): Boolean = false
