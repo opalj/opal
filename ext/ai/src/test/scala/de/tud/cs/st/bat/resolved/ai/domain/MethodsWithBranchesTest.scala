@@ -31,6 +31,7 @@ package resolved
 package ai
 package domain
 
+import l0._
 import reader.Java7Framework
 
 import org.junit.runner.RunWith
@@ -58,10 +59,19 @@ class MethodsWithBranchesTest
     import domain.RecordConstraints
     import domain.l0.BaseRecordingDomain
 
-    type TestDomain = BaseRecordingDomain[String] with RecordConstraints
+    class TestDomain(val name: String)
+            extends TypeLevelDomain
+            with IgnoreSynchronization
+            with IgnoreMethodResults
+            with RecordLastReturnedValues
+            with RecordConstraints {
+
+        type Id = String
+        def id = "MethodsWithBranchesTestDomain: "+name
+    }
 
     private def evaluateMethod(name: String)(f: TestDomain ⇒ Unit) {
-        val domain = new BaseRecordingDomain(name) with RecordConstraints
+        val domain = new TestDomain(name)
         val method = classFile.methods.find(_.name == name).get
         val result = BaseAI(classFile, method, domain)
 

@@ -32,34 +32,40 @@ package resolved
 package ai
 package domain
 
+import language.implicitConversions
+
 /**
- * Encapsulates a `domain` and some values created by the respective domain.
+ * Records the exceptions thrown by a method. This trait can be used to record
+ * the thrown exceptions independently of the precision of the domain.
  *
- * Using the class `DomainValues` enables type-safety when we need to store and
- * pass on a `Domain` object and some of its values.
+ * ==Usage==
+ * A domain that mixes in this trait should only be used to analyze a single method.
+ *
+ * ==Thread Safety==
+ * This class is not thread safe. I.e., this domain can only be used if
+ * an instance of this domain is not used by multiple threads.
  *
  * @author Michael Eichberg
  */
-sealed abstract class DomainValues {
-    val domain: Domain
-    val values: Iterable[domain.DomainValue]
-}
+trait DefaultRecordThrownExceptions extends RecordThrownExceptions {
 
-/**
- * Factory for creating `DomainValues` objects.
- *
- * @author Michael Eichberg
- */
-object DomainValues {
+    type ThrownException = ExceptionValue
 
-    def apply(
-        valuesDomain: Domain)(
-            domainValues: Iterable[valuesDomain.DomainValue]) = {
-        
-        new DomainValues {
-            val domain: valuesDomain.type = valuesDomain
-            val values: Iterable[domain.DomainValue] = domainValues
+    override protected[this] def thrownException(pc: PC, value: ExceptionValue): ThrownException =
+        value
+
+    override protected[this] def joinThrownExceptions(
+        pc: PC,
+        previouslyThrownException: ThrownException,
+        thrownException: ExceptionValue): ThrownException = {
+
+        previouslyThrownException.join(pc, thrownException) match {
+            case NoUpdate                              ⇒ previouslyThrownException
+            case StructuralUpdate(exceptionValue)      ⇒ exceptionValue
+            case MetaInformationUpdate(exceptionValue) ⇒ exceptionValue
         }
     }
-
 }
+
+
+

@@ -48,14 +48,14 @@ import collection.mutable.UShortSet
  *
  * @author Michael Eichberg
  */
-trait RecordReturnInstructions extends Domain {
+trait RecordReturnVoidInstructions extends Domain {
 
-    @volatile private[this] var returnInstructions: UShortSet = UShortSet.empty
+    @volatile private[this] var returnVoidInstructions: UShortSet = UShortSet.empty
 
-    def allReturnInstructions: PCs = returnInstructions
+    def allReturnVoidInstructions: PCs = returnVoidInstructions
 
     abstract override def returnVoid(pc: PC): Unit = {
-        returnInstructions +≈ pc
+        returnVoidInstructions +≈ pc
         super.returnVoid(pc)
     }
 

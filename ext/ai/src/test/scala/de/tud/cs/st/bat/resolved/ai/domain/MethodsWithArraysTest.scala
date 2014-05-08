@@ -32,7 +32,7 @@ package ai
 package domain
 
 import reader.Java8Framework
-import l0.BaseRecordingDomain
+import l0._
 
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
@@ -56,8 +56,18 @@ class MethodsWithArraysTest
 
     import MethodsWithArraysTest._
 
-    private def evaluateMethod(name: String, f: BaseRecordingDomain[String] ⇒ Unit) {
-        val domain = new BaseRecordingDomain(name)
+    class TestDomain
+            extends TypeLevelDomain
+            with IgnoreSynchronization
+            with IgnoreMethodResults
+            with RecordLastReturnedValues {
+
+        type Id = String
+        def id = "MethodsWithArraysTestDomain"
+    }
+
+    private def evaluateMethod(name: String, f: TestDomain ⇒ Unit) {
+        val domain = new TestDomain
 
         val method = classFile.methods.find(_.name == name).get
         val result = BaseAI(classFile, method, domain)
@@ -90,7 +100,7 @@ class MethodsWithArraysTest
             )
         })
     }
-    
+
     it should "be able to analyze a method that uses the Java feature that arrays are covariant" in {
         evaluateMethod("covariantArrays", domain ⇒ {
             import domain._
@@ -99,7 +109,6 @@ class MethodsWithArraysTest
                 domain.allReturnedValues(24), ObjectType.Object) should be(Yes)
         })
     }
-    
 
     it should "be able to analyze a method that does various (complex) type casts related to arrays" in {
         evaluateMethod("integerArraysFrenzy", domain ⇒ {

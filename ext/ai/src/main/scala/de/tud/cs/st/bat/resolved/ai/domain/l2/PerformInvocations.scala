@@ -38,65 +38,13 @@ import analyses.{ Project, ClassHierarchy }
 
 import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
-trait MethodReturnInformation { theDomain: Domain ⇒
-
-    def returnedValues(result: AIResult { val domain: theDomain.type }): Seq[DomainValue]
-
-    def thrownExceptions(result: AIResult { val domain: theDomain.type }): Seq[DomainValue]
-
-}
-
-trait DefaultMethodReturnInformation extends MethodReturnInformation { theDomain: Domain ⇒
-
-    def returnVoid(pc: PC): Unit = { /* Do nothing. */ }
-
-    //
-    // HANDLING NORMAL RETURNS
-    //
-
-    private[this] var _returnValueInstructions: Set[PC] = Set.empty
-
-    def returnValueInstructions = _returnValueInstructions
-
-    def areturn(pc: PC, value: DomainValue): Unit = { _returnValueInstructions += pc }
-
-    def dreturn(pc: PC, value: DomainValue): Unit = { _returnValueInstructions += pc }
-
-    def freturn(pc: PC, value: DomainValue): Unit = { _returnValueInstructions += pc }
-
-    def ireturn(pc: PC, value: DomainValue): Unit = { _returnValueInstructions += pc }
-
-    def lreturn(pc: PC, value: DomainValue): Unit = { _returnValueInstructions += pc }
-
-    def returnedValues(result: AIResult { val domain: theDomain.type }): Seq[DomainValue] = {
-        _returnValueInstructions.toSeq.map(result.operandsArray(_).head)
-    }
-
-    //
-    // HANDLING ABNORMAL RETURNS (EXCEPTIONS)
-    //
-
-    private[this] var _throwInstructions: Set[PC] = Set.empty
-
-    def throwInstructions = _throwInstructions
-
-    def abruptMethodExecution(pc: PC, exception: DomainValue): Unit = {
-        _throwInstructions += pc
-    }
-
-    def thrownExceptions(result: AIResult { val domain: theDomain.type }): Seq[DomainValue] = {
-        _throwInstructions.toSeq.map(result.operandsArray(_).head)
-    }
-
-}
-
+/**
+ * @author Michael Eichberg
+ */
 trait PerformInvocations[Source]
         extends Domain
-        with l0.TypeLevelInvokeInstructions { theDomain ⇒
-
-    def project: Project[Source]
-
-    private[this] def classHierarchy: ClassHierarchy = project.classHierarchy
+        with l0.TypeLevelInvokeInstructions
+        with ProjectBasedClassHierarchy[Source] { theDomain ⇒
 
     def Operands(operands: Iterable[DomainValue]): DomainValues =
         DomainValues(theDomain)(operands)
@@ -110,7 +58,7 @@ trait PerformInvocations[Source]
     trait InvokeExecutionHandler {
 
         // the domain to use
-        val domain: Domain with MethodReturnInformation
+        val domain: Domain with RecordReturnFromMethodInstructions with RecordReturnVoidInstructions with DefaultRecordThrownExceptions
 
         // the abstract interpreter
         val ai: AI[_ >: domain.type]
@@ -120,26 +68,50 @@ trait PerformInvocations[Source]
             definingClass: ClassFile,
             method: Method,
             parameters: Array[domain.DomainValue]): MethodCallResult = {
+
             val aiResult = ai.perform(definingClass, method, domain)(Some(parameters))
-            transformResult(pc, aiResult)
+            transformResult(pc, method, aiResult)
         }
 
         // the function to transform the result
-        def transformResult(
+        protected[this] def transformResult(
             callerPC: PC,
+            calledMethod: Method,
             result: AIResult { val domain: InvokeExecutionHandler.this.domain.type }): MethodCallResult = {
-            val returnedValues = result.domain.returnedValues(result)
-            val computedValue =
-                if (returnedValues.isEmpty)
-                    None
-                else {
-                    val summarizedValue = result.domain.summarize(callerPC, returnedValues)
-                    Some(summarizedValue.adapt(theDomain, callerPC))
+            val domain = result.domain
+            val operandsArray = result.operandsArray
+            val thrownExceptions = domain.allThrownExceptions.values map { _.adapt(theDomain, callerPC) }
+
+            if (calledMethod.descriptor.returnType eq VoidType) {
+                if (domain.allReturnVoidInstructions.isEmpty) {
+                    // The method must have returned with an exception.
+                    ThrowsException(thrownExceptions)
+                } else if (thrownExceptions.nonEmpty) {
+                    ComputationWithSideEffectOrException(thrownExceptions)
+                } else {
+                    ComputationWithSideEffectOnly
                 }
-            val thrownExceptions = result.domain.thrownExceptions(result)
-            ComputedValueAndException(
-                computedValue,
-                thrownExceptions.map(_.adapt(theDomain, callerPC)).toSet)
+            } else {
+                // The method potentially returns some value...
+                val returnInstructions = domain.allReturnInstructions
+                if (returnInstructions.nonEmpty) {
+                    val returnedValue =
+                        Some(
+                            result.domain.summarize(
+                                callerPC,
+                                domain.allReturnInstructions mapToList { pc ⇒ operandsArray(pc).head }
+                            ).adapt(theDomain, callerPC)
+                        )
+                    if (thrownExceptions.nonEmpty) {
+                        ComputedValueAndException(returnedValue, thrownExceptions)
+                    } else {
+                        ComputedValue(returnedValue)
+                    }
+                } else {
+                    // The method must have returned with an exception.
+                    ThrowsException(thrownExceptions)
+                }
+            }
         }
     }
 

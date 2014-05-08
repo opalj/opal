@@ -69,7 +69,7 @@ trait RecordThrownExceptions extends Domain {
      * @see For details study the documentation of the abstract type `ThrownException`
      *      and study the subclass(es) of `RecordThrownExceptions`.
      */
-    def thrownException(value: ExceptionValue): ThrownException
+    protected[this] def thrownException(pc: PC, value: ExceptionValue): ThrownException
 
     /**
      * Joins the previously thrown exception and the newly thrown exception. Both
@@ -81,7 +81,8 @@ trait RecordThrownExceptions extends Domain {
      * @see For details study the documentation of the abstract type `ThrownException`
      *      and study the subclass(es) of `RecordThrownExceptions`.
      */
-    def joinThrownExceptions(
+    protected[this] def joinThrownExceptions(
+        pc: PC,
         previouslyThrownException: ThrownException,
         value: ExceptionValue): ThrownException
 
@@ -95,9 +96,9 @@ trait RecordThrownExceptions extends Domain {
                 pc,
                 thrownExceptions.get(pc) match {
                     case Some(previouslyThrownException) ⇒
-                        joinThrownExceptions(previouslyThrownException, exception)
+                        joinThrownExceptions(pc, previouslyThrownException, exception)
                     case None ⇒
-                        thrownException(exception)
+                        thrownException(pc, exception)
                 }
             )
         super.abruptMethodExecution(pc, exception)

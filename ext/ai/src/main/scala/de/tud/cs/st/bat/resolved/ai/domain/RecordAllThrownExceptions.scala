@@ -44,10 +44,11 @@ trait RecordAllThrownExceptions extends RecordThrownExceptions {
 
     type ThrownException = Set[DomainValue]
 
-    def thrownException(value: ExceptionValue): ThrownException =
+    override protected[this] def thrownException(pc: PC, value: ExceptionValue): ThrownException =
         Set.empty + value
 
-    def joinThrownExceptions(
+    override protected[this] def joinThrownExceptions(
+        pc: PC,
         previouslyThrownException: ThrownException,
         value: ExceptionValue): ThrownException =
         previouslyThrownException + value

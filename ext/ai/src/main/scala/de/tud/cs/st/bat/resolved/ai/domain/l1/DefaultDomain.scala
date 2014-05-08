@@ -67,7 +67,7 @@ class DefaultRecordingDomain[I](
         with IgnoreMethodResults
         with RecordLastReturnedValues
         with RecordAllThrownExceptions
-        with RecordReturnInstructions
+        with RecordReturnVoidInstructions
         with IgnoreSynchronization{
         type Id = I
     }
