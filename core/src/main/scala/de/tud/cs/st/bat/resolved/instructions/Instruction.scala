@@ -50,10 +50,10 @@ trait Instruction {
     def mnemonic: String
 
     /**
-     * The exceptions that may be thrown by the JVM at runtime if the execution of 
+     * The exceptions that may be thrown by the JVM at runtime if the execution of
      * this instruction fails.
-     * I.e., these are neither exceptions that are explicitly created and then thrown 
-     * by user code nor errors that my arise due to an invalid code base (e.g. 
+     * I.e., these are neither exceptions that are explicitly created and then thrown
+     * by user code nor errors that my arise due to an invalid code base (e.g.
      * `LinkageError`s).
      */
     def runtimeExceptions: List[ObjectType]
@@ -80,8 +80,8 @@ trait Instruction {
      * (conditional) jump instruction then the PCs of the target instructions should
      * be given using absolute PCs. The string representation should be compact
      * and suitable for output on the console and should represent the instruction
-     * in its entirety. 
-     * 
+     * in its entirety.
+     *
      * @param currentPC The program counter of this instruction. Used to resolve relative
      *      jump targets.
      */
@@ -116,7 +116,7 @@ object Instruction {
                         exception,
                         handler.catchType.get).isYes
             } match {
-                case Some(handler) ⇒ pcs +≈ handler.startPC
+                case Some(handler) ⇒ handler.startPC +≈: pcs
                 case _             ⇒ /* exception is not handled */
             }
         }

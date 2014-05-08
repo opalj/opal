@@ -46,10 +46,10 @@ trait UShortSet extends collection.UShortSet {
      * set is returned. Otherwise, a new set is created and a reference to that set
      * is returned. Hence, the return value ''must not'' be ignored.
      */
-    def +≈(value: UShort): UShortSet
+    def +≈:(value: UShort): UShortSet
 
     override def +(value: UShort): UShortSet = {
-        this.mutableCopy +≈ (value)
+        value +≈: this.mutableCopy
     }
 }
 
@@ -92,7 +92,7 @@ private class UShortSet2(private var value: Int) extends UShortSet {
         f(value1) && ((value2 == 0) || f(value2))
     }
 
-    def +≈(uShortValue: UShort): UShortSet = {
+    def +≈:(uShortValue: UShort): UShortSet = {
         if (uShortValue < MinValue || uShortValue > MaxValue)
             throw new IllegalArgumentException("value out of range: "+uShortValue)
 
@@ -174,7 +174,7 @@ private class UShortSet4(private var value: Long) extends UShortSet {
             this
     }
 
-    def +≈(uShortValue: UShort): UShortSet = {
+    def +≈:(uShortValue: UShort): UShortSet = {
         if (uShortValue < MinValue || uShortValue > MaxValue)
             throw new IllegalArgumentException("value out of range: "+uShortValue)
 
@@ -323,12 +323,12 @@ private class UShortSetNode(
     def forall(f: /*ushortValue:*/ UShort ⇒ Boolean): Boolean =
         set1.forall(f) && set2.forall(f)
 
-    def +≈(uShortValue: UShort): UShortSet = {
+    def +≈:(uShortValue: UShort): UShortSet = {
         if (uShortValue < MinValue || uShortValue > MaxValue)
             throw new IllegalArgumentException("value out of range: "+uShortValue)
         val set1Max = set1.max
         if (set1Max > uShortValue) {
-            val newSet1 = set1 +≈ uShortValue
+            val newSet1 = uShortValue +≈: set1
             if (newSet1 eq set1)
                 this
             else
@@ -336,7 +336,7 @@ private class UShortSetNode(
         } else if (set1Max == uShortValue)
             this
         else {
-            val newSet2 = set2 +≈ uShortValue
+            val newSet2 = uShortValue +≈: set2
             if (newSet2 eq set2) {
                 currentMax = newSet2.max
                 this
@@ -362,7 +362,7 @@ private object EmptyUShortSet extends UShortSet {
     def contains(uShortValue: UShort): Boolean = false
     def foreach(f: /*ushortValue:*/ UShort ⇒ Unit): Unit = { /*Nothing to do.*/ }
     def forall(f: /*ushortValue:*/ UShort ⇒ Boolean): Boolean = true
-    def +≈(uShortValue: UShort): UShortSet = UShortSet(uShortValue)
+    def +≈:(uShortValue: UShort): UShortSet = UShortSet(uShortValue)
     def max = throw new UnsupportedOperationException("the set is empty")
 }
 /**
@@ -414,9 +414,12 @@ object UShortSet {
      */
     def create(uShortValues: UShort*): UShortSet = {
         uShortValues match {
-            case Nil              ⇒ EmptyUShortSet
-            case Seq(uShortValue) ⇒ apply(uShortValue)
-            case values           ⇒ (apply(values.head) /: values.tail)(_ +≈ _)
+            case Nil ⇒
+                EmptyUShortSet
+            case Seq(uShortValue) ⇒
+                apply(uShortValue)
+            case values ⇒
+                (apply(values.head) /: values.tail)((s, v) ⇒ v +≈: s)
         }
     }
 }

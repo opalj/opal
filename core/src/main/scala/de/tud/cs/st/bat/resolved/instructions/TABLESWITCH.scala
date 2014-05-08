@@ -31,7 +31,6 @@ package bat
 package resolved
 package instructions
 
-
 /**
  * Access jump table by index and jump.
  *
@@ -51,10 +50,10 @@ case class TABLESWITCH(
     final override def indexOfNextInstruction(currentPC: Int, code: Code): Int = {
         currentPC + 1 + (3 - (currentPC % 4)) + 12 + jumpOffsets.size * 4
     }
-    
+
     final override def nextInstructions(currentPC: PC, code: Code): PCs = {
         var pcs = collection.mutable.UShortSet(currentPC + defaultOffset)
-        jumpOffsets foreach (offset ⇒ { pcs +≈ (currentPC + offset) })
+        jumpOffsets foreach (offset ⇒ { (currentPC + offset) +≈: pcs })
         pcs
     }
 
