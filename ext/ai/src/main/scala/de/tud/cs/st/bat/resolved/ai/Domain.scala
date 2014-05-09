@@ -1457,7 +1457,7 @@ trait Domain {
     def returnVoid(pc: PC): Unit
 
     /**
-     * Called by OPAL-AI when an exception is thrown that is not (guaranteed to be) handled
+     * Called by the abstract interpreter when an exception is thrown that is not (guaranteed to be) handled
      * within the same method.
      *
      * @note If the original exception value is `null` (`/*E.g.*/throw null;`), then
