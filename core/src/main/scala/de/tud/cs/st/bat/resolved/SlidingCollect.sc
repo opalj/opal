@@ -228,4 +228,112 @@ object SlidingCollect {
             println(f"Avg: ${ns2sec(avg.toLong)}%1.4f; T: ${ns2sec(t)}%1.4f; Ts: $sTs")
         }
     pcsWithNewMethodDescriptorMatcherAndSetAndFindPair
+
+    def pcsWithNewMethodDescriptorMatcherAndSetAndMatchPair =
+        time(2, 4, 5, {
+            val theTypes = scala.collection.mutable.HashSet(
+                ObjectType("java/lang/Boolean"),
+                ObjectType("java/lang/Byte"),
+                ObjectType("java/lang/Character"),
+                ObjectType("java/lang/Short"),
+                ObjectType("java/lang/Integer"),
+                ObjectType("java/lang/Long"),
+                ObjectType("java/lang/Float"),
+                ObjectType("java/lang/Double"))
+            val theMethods = scala.collection.mutable.HashSet(
+                "booleanValue",
+                "byteValue",
+                "charValue",
+                "shortValue",
+                "intValue",
+                "longValue",
+                "floatValue",
+                "doubleValue")
+
+            for {
+                classFile ← project.view.map(_._1).par
+                method @ MethodWithBody(body) ← classFile.methods
+                pc ← body.matchPair({
+                    case (
+                        INVOKESPECIAL(receiver1, _, TheArgument(parameterType: BaseType)),
+                        INVOKEVIRTUAL(receiver2, name, NoArgumentMethodDescriptor(returnType: BaseType))
+                        ) ⇒ {
+                        (receiver1 eq receiver2) &&
+                            (returnType ne parameterType) && // coercion to another type performed
+                            theTypes.contains(receiver1) &&
+                            theMethods.contains(name)
+                    }
+                    case _ ⇒ false
+                })
+            } yield (classFile.fqn, method.toJava, pc)
+        }) { (avg, t, ts) ⇒
+            val sTs = ts.map(t ⇒ f"${ns2sec(t)}%1.4f").mkString(", ")
+            println(f"Avg: ${ns2sec(avg.toLong)}%1.4f; T: ${ns2sec(t)}%1.4f; Ts: $sTs")
+        }
+    pcsWithNewMethodDescriptorMatcherAndSetAndMatchPair
+
+    def pcsWithNewMethodDescriptorMatcherAndSetAndMatchPairManual =
+        time(2, 4, 5, {
+            val theTypes = scala.collection.mutable.HashSet(
+                ObjectType("java/lang/Boolean"),
+                ObjectType("java/lang/Byte"),
+                ObjectType("java/lang/Character"),
+                ObjectType("java/lang/Short"),
+                ObjectType("java/lang/Integer"),
+                ObjectType("java/lang/Long"),
+                ObjectType("java/lang/Float"),
+                ObjectType("java/lang/Double"))
+            val theMethods = scala.collection.mutable.HashSet(
+                "booleanValue",
+                "byteValue",
+                "charValue",
+                "shortValue",
+                "intValue",
+                "longValue",
+                "floatValue",
+                "doubleValue")
+
+            for {
+                classFile ← project.view.map(_._1).par
+                method @ MethodWithBody(body) ← classFile.methods
+                pc ← body.matchPair { (i1, i2) ⇒
+                    if (i1.opcode == INVOKESPECIAL.opcode && i2.opcode == INVOKEVIRTUAL.opcode) {
+                        val ispecial = i1.asInstanceOf[INVOKESPECIAL]
+                        val ivirtual = i2.asInstanceOf[INVOKEVIRTUAL]
+                        val receiver1 = ispecial.declaringClass
+                        val receiver2 = ivirtual.declaringClass
+
+                        receiver1 == receiver2 &&
+                            ispecial.methodDescriptor.returnType == VoidType &&
+                            ispecial.methodDescriptor.parametersCount == 1 &&
+                            ispecial.methodDescriptor.parameterType(0).isBaseType &&
+                            ivirtual.methodDescriptor.returnType.isBaseType &&
+                            ispecial.methodDescriptor.parameterType(0) != ivirtual.methodDescriptor.returnType &&
+                            ivirtual.methodDescriptor.parametersCount == 0 &&
+                            theTypes.contains(receiver1) &&
+                            theMethods.contains(ivirtual.name)
+
+                    } else {
+                        false
+                    }
+
+                    /*
+                    case (
+                        INVOKESPECIAL(receiver1, _, TheArgument(parameterType: BaseType)),
+                        INVOKEVIRTUAL(receiver2, name, NoArgumentMethodDescriptor(returnType: BaseType))
+                        ) ⇒ {
+                        (receiver1 eq receiver2) &&
+                            (returnType ne parameterType) && // coercion to another type performed
+                            theTypes.contains(receiver1) &&
+                            theMethods.contains(name)
+                    }
+                    case _ ⇒ false
+                    */
+                }
+            } yield (classFile.fqn, method.toJava, pc)
+        }) { (avg, t, ts) ⇒
+            val sTs = ts.map(t ⇒ f"${ns2sec(t)}%1.4f").mkString(", ")
+            println(f"Avg: ${ns2sec(avg.toLong)}%1.4f; T: ${ns2sec(t)}%1.4f; Ts: $sTs")
+        }
+    pcsWithNewMethodDescriptorMatcherAndSetAndMatchPairManual
 }
