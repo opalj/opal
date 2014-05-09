@@ -59,9 +59,8 @@ abstract class Severity {
 }
 
 /**
- * Object used as wrapper namespace for the individual severity objects, to avoid polluting the
- * global namespace.
- *
+ * Basically an enumeration of different severity objects. 
+ * 
  * @author Daniel Klauer
  */
 object Severity {

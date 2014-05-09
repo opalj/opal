@@ -40,7 +40,7 @@ case object ACONST_NULL extends LoadConstantInstruction[Null] with ImplicitValue
 
     override def value: Null = null
 
-    override def opcode: Int = 1
+    override final val opcode = 1
 
     override def mnemonic: String = "aconst_null"
 }

@@ -43,6 +43,9 @@ package object analyses {
  
     import language.implicitConversions
 
+    /**
+     * Type alias for Project's with an arbitrary sources.  
+     */
     type SomeProject = Project[_]
 
     /**

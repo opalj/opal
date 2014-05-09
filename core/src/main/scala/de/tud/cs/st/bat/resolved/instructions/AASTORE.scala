@@ -38,7 +38,7 @@ package instructions
  */
 case object AASTORE extends ArrayStoreInstruction {
 
-    override def opcode: Int = 83
+    override final val opcode = 83
 
     override def mnemonic: String = "aastore"
 

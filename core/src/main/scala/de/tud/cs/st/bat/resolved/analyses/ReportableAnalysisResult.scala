@@ -45,7 +45,7 @@ trait ReportableAnalysisResult {
      * The results of the analysis in a form suitable for printing it to the
      * command line.
      *
-     * If you are generating output related to (a line in) a class file use
+     * If you are generating output related to (a line in) a class file, use
      * a format as used by other compilers, e.g., CLANG and GCC:
      * <pre>
      * FILENAME:[LINE:[COLUMN:]] TYPE: MESSAGE
@@ -58,7 +58,7 @@ trait ReportableAnalysisResult {
      * Line and column information is optional.
      *
      * If the real filename is not available use the fully qualified name of the class
-     * in binary notation (i.e., using "/" to seperate the package qualifiers)
+     * in binary notation (i.e., using "/" to separate the package qualifiers)
      * with the suffice ".class" appended.
      *
      * Note that the space after the location information is required.
@@ -78,20 +78,4 @@ object ReportableAnalysisResult {
             def consoleReport: String = reports.view.map(_.consoleReport).mkString("\n")
         }
 
-}
-
-/**
- * Result of some analysis that just consists of some text.
- */
-case class BasicReport(message: String) extends ReportableAnalysisResult {
-    def consoleReport = message
-}
-
-/**
- * Defines factory methods for BasicReports.
- */
-object BasicReport {
-    def apply(messages: Iterable[String]): BasicReport = {
-        BasicReport(messages.mkString("\n"))
-    }
 }

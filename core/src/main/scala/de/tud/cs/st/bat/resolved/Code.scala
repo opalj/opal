@@ -43,8 +43,9 @@ import instructions._
  * @param instructions The instructions of this `Code` array/`Code` block. Since the code
  *      array is not completely filled (it contains `null` values) the preferred way
  *      to iterate over all instructions is to use for-comprehensions and pattern
- *      matching or to use one of the predefined methods. The `Code` array must not
- *      be mutated!
+ *      matching or to use one of the predefined methods [[foreach]], [[collect]],
+ *      [[collectPair]], [[collectWithIndex]].
+ *      The `Code` array must not be mutated!
  *
  * @author Michael Eichberg
  */
@@ -243,8 +244,9 @@ case class Code(
         while (pc < max_pc) {
             val instruction = instructions(pc)
             if (instruction ne null) {
-                if (f.isDefinedAt((pc, instruction))) {
-                    result = f((pc, instruction)) :: result
+                val params = (pc, instruction)
+                if (f.isDefinedAt(params)) {
+                    result = f(params) :: result
                 }
             }
             pc += 1
@@ -261,8 +263,10 @@ case class Code(
         var pc = 0
         while (pc < max_pc) {
             val instruction = instructions(pc)
-            if ((instruction ne null) && f.isDefinedAt((pc, instruction))) {
-                return Some(f((pc, instruction)))
+            if ((instruction ne null)) {
+                val params = (pc, instruction)
+                if (f.isDefinedAt(params))
+                    return Some(f(params))
             }
             pc += 1
         }
@@ -311,11 +315,16 @@ case class Code(
      * }) should be(Seq(...))
      * }}}
      *
+     * @note If possible, use one of the more specialized methods, such as, [[collectPair]].
+     *      The pure iteration overhead caused by this method is roughly 10-20 times higher
+     *      than this one.
+     *
      * @param windowSize The size of the sequence of instructions that is passed to the
      *      partial function.
      *      It must be larger than 0. **Do not use this method with windowSize "1"**;
      *      it is more efficient to use the `collect` or `collectWithIndex` methods
      *      instead.
+     *
      * @return The list of results of applying the function f for each matching sequence.
      */
     def slidingCollect[B](
@@ -358,6 +367,17 @@ case class Code(
         result.reverse
     }
 
+    /**
+     * Finds a sequence of instructions that are matched by the given partial function.
+     *
+     * @note If possible, use one of the more specialized methods, such as, [[collectPair]].
+     *      The pure iteration overhead caused by this method is roughly 10-20 times higher
+     *      than this one.
+     *
+     * @return List of pairs where the first element is the pc of the first instruction
+     *      of a matched sequence and the second value is the result of the evaluation
+     *      of the partial function.
+     */
     def findSequence[B](
         windowSize: Int)(
             f: PartialFunction[Seq[Instruction], B]): List[(PC, B)] = {
@@ -436,6 +456,10 @@ case class Code(
         result
     }
 
+    /**
+     * A complete representation of this code attribute (including instructions,
+     * attributes, etc.).
+     */
     override def toString = {
         "Code_attribute("+
             "maxStack="+maxStack+
@@ -446,6 +470,9 @@ case class Code(
             ")"
     }
 
+    /**
+     * This attribute's kind id.
+     */
     override def kindId: Int = Code.KindId
 
 }
@@ -457,6 +484,11 @@ case class Code(
  */
 object Code {
 
+    /**
+     * The unique id associated with attributes of kind: [[Code]].
+     *
+     * `KindId`s can be used for efficient branching on attributes.
+     */
     final val KindId = 6
 
     /**

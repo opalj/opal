@@ -38,7 +38,7 @@ package instructions
  */
 case object AALOAD extends ArrayLoadInstruction {
 
-    override def opcode: Int = 50
+    override final val opcode = 50
 
     override def mnemonic: String = "aaload"
 

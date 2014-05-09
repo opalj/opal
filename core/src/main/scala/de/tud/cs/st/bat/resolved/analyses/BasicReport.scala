@@ -29,21 +29,25 @@
 package de.tud.cs.st
 package bat
 package resolved
-package instructions
+package analyses
+
+import java.net.URL
+import java.io.File
 
 /**
- * Load reference from local variable with index 3.
+ * Result of some analysis that just consists of some text.
  *
  * @author Michael Eichberg
  */
-case object ALOAD_3
-        extends LoadLocalVariableInstruction
-        with ImplicitLocalVariableIndex {
+case class BasicReport(message: String) extends ReportableAnalysisResult {
+    def consoleReport = message
+}
 
-    override def lvIndex: Int = 3
-
-    override final val opcode = 45
-
-    override def mnemonic: String = "aload_3"
-
+/**
+ * Defines factory methods for BasicReports.
+ */
+object BasicReport {
+    def apply(messages: Iterable[String]): BasicReport = {
+        BasicReport(messages.mkString("\n"))
+    }
 }
