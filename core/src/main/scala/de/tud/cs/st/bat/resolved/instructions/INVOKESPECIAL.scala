@@ -43,7 +43,7 @@ case class INVOKESPECIAL(
     methodDescriptor: MethodDescriptor)
         extends StaticMethodInvocationInstruction {
 
-    def opcode: Int = 183
+    def opcode: Opcode = INVOKESPECIAL.opcode 
 
     def mnemonic: String = "invokespecial"
 
@@ -53,5 +53,10 @@ case class INVOKESPECIAL(
 
     // Required to avoid that Scala generates a default toString method!
     override def toString = super.toString
+
+}
+object INVOKESPECIAL {
+
+    final val opcode = 183
 
 }

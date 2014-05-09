@@ -42,16 +42,21 @@ case class INVOKEINTERFACE(
     methodDescriptor: MethodDescriptor)
         extends VirtualMethodInvocationInstruction {
 
-    def opcode: Int = 185
+    def opcode: Opcode = INVOKEINTERFACE.opcode
 
     def mnemonic: String = "invokeinterface"
 
-    final override def runtimeExceptions: List[ObjectType] = 
+    final override def runtimeExceptions: List[ObjectType] =
         MethodInvocationInstruction.runtimeExceptions
 
-    final override def indexOfNextInstruction(currentPC: Int, code: Code): Int = 
+    final override def indexOfNextInstruction(currentPC: Int, code: Code): Int =
         currentPC + 5
 
     // Required to avoid that Scala generates a default toString method!
     override def toString = super.toString
+}
+object INVOKEINTERFACE {
+
+    final val opcode = 185
+
 }

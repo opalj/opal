@@ -38,11 +38,11 @@ package instructions
  */
 case class INVOKEVIRTUAL(
     declaringClass: ReferenceType, // an interface, class or array type to be precise
-    name: String, 
+    name: String,
     methodDescriptor: MethodDescriptor)
         extends VirtualMethodInvocationInstruction {
 
-    def opcode: Int = 182
+    def opcode: Opcode = INVOKEVIRTUAL.opcode
 
     def mnemonic: String = "invokevirtual"
 
@@ -51,5 +51,10 @@ case class INVOKEVIRTUAL(
     def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 3
 
     // Required to avoid that Scala generates a default toString method!
-    override def toString = super.toString 
+    override def toString = super.toString
+}
+object INVOKEVIRTUAL {
+
+    final val opcode = 182
+
 }

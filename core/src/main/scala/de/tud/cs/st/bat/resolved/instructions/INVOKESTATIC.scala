@@ -42,7 +42,7 @@ case class INVOKESTATIC(
     methodDescriptor: MethodDescriptor)
         extends StaticMethodInvocationInstruction {
 
-    def opcode: Int = 184
+    def opcode: Opcode = INVOKESTATIC.opcode 
 
     def mnemonic: String = "invokestatic"
 
@@ -52,4 +52,9 @@ case class INVOKESTATIC(
 
     // Required to avoid that Scala generates a default toString method!
     override def toString = super.toString
+}
+object INVOKESTATIC {
+    
+    final val opcode = 184
+    
 }
