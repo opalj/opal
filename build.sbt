@@ -35,9 +35,12 @@ libraryDependencies in ThisBuild += "junit" % "junit" % "4.11" % "test"
 
 libraryDependencies in ThisBuild += "org.scalatest" %% "scalatest" % "2.1.3" % "test"
 
-testOptions in ThisBuild += Tests.Argument("-o")
+testOptions in ThisBuild <<= 
+  baseDirectory map { 
+	bd => Seq(Tests.Argument("-u",  bd.getAbsolutePath + "/target/test-reports"))
+  }
 
-testOptions in ThisBuild += Tests.Argument("-u", "target/test-reports")
+testOptions in ThisBuild += Tests.Argument("-o")
 
 EclipseKeys.createSrc := EclipseCreateSrc.Default + EclipseCreateSrc.Resource
 

@@ -10,4 +10,4 @@ notifications:
 before_script:
   - mkdir -p shippable/testresults 
 after_script:
-  - mv target/test-reports/* shippable/testresults   
+  - mv -v target/test-reports/* shippable/testresults   
