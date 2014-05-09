@@ -35,47 +35,19 @@ import java.net.URL
 import java.io.File
 
 /**
- * Result of analyses that can be meaningfully represented using text.
+ * Result of some analysis that just consists of some text.
  *
  * @author Michael Eichberg
  */
-trait ReportableAnalysisResult {
-
-    /**
-     * The results of the analysis in a form suitable for printing it to the
-     * command line.
-     *
-     * If you are generating output related to (a line in) a class file, use
-     * a format as used by other compilers, e.g., CLANG and GCC:
-     * <pre>
-     * FILENAME:[LINE:[COLUMN:]] TYPE: MESSAGE
-     * </pre>
-     * where FILENAME denotes the name of the file, LINE is the line number if available,
-     * COLUMN is the column – which is usually not available when you analyze class files
-     * and TYPE identifies the type of the message (e.g., "note", "warning", "error",
-     * "fatal error").
-     *
-     * Line and column information is optional.
-     *
-     * If the real filename is not available use the fully qualified name of the class
-     * in binary notation (i.e., using "/" to separate the package qualifiers)
-     * with the suffice ".class" appended.
-     *
-     * Note that the space after the location information is required.
-     *
-     * ==Example==
-     * <pre>
-     * demo/Buggy.class:100: warning: protected field in final class
-     * </pre>
-     */
-    def consoleReport: String
+case class BasicReport(message: String) extends ReportableAnalysisResult {
+    def consoleReport = message
 }
 
-object ReportableAnalysisResult {
-
-    def asReport(reports: Iterable[ReportableAnalysisResult]) =
-        new ReportableAnalysisResult {
-            def consoleReport: String = reports.view.map(_.consoleReport).mkString("\n")
-        }
-
+/**
+ * Defines factory methods for BasicReports.
+ */
+object BasicReport {
+    def apply(messages: Iterable[String]): BasicReport = {
+        BasicReport(messages.mkString("\n"))
+    }
 }
