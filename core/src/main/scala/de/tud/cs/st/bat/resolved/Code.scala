@@ -456,6 +456,75 @@ case class Code(
         result
     }
 
+    def collectPairWithPreFilter[B](
+        preFilter: (Opcode, Opcode))(
+            f: PartialFunction[(Instruction, Instruction), B]): List[(PC, B)] = {
+        val max_pc = instructions.size
+
+        val firstInstructionFilter = preFilter._1
+        val secondInstructionFilter = preFilter._2
+
+        var first_pc = 0
+        var firstInstruction = instructions(first_pc)
+        var second_pc = pcOfNextInstruction(0)
+        var secondInstruction: Instruction = null
+
+        var result: List[(PC, B)] = List.empty
+        while (second_pc < max_pc) {
+            secondInstruction = instructions(second_pc)
+            if (firstInstruction.opcode == firstInstructionFilter) {
+                if (secondInstruction.opcode == secondInstructionFilter) {
+
+                    val instrs = (firstInstruction, secondInstruction)
+                    if (f.isDefinedAt(instrs)) {
+                        result = (first_pc, f(instrs)) :: result
+                    }
+                }
+            }
+
+            firstInstruction = secondInstruction
+            first_pc = second_pc
+            second_pc = pcOfNextInstruction(second_pc)
+        }
+        result
+    }
+
+    /**
+     * Matches pairs of two consecutive instructions. For each matched pair,
+     * the program counter of the first instruction is returned.
+     * 
+     * ==Example Usage==
+     * {{{
+     * for {
+     *  classFile ← project.view.map(_._1).par
+     *  method @ MethodWithBody(body) ← classFile.methods
+     *  pc ← body.matchPair({
+     *      case (
+     *          INVOKESPECIAL(receiver1, _, TheArgument(parameterType: BaseType)),
+     *          INVOKEVIRTUAL(receiver2, name, NoArgumentMethodDescriptor(returnType: BaseType))
+     *      ) ⇒ { (receiver1 eq receiver2) && (returnType ne parameterType) }
+     *      case _ ⇒ false
+     *      })
+     *  } yield (classFile, method, pc)
+     * }}}
+     */
+    def matchPair(f: (Instruction, Instruction) ⇒ Boolean): List[PC] = {
+        val max_pc = instructions.size
+        var pc1 = 0
+        var pc2 = pcOfNextInstruction(pc1)
+
+        var result: List[PC] = List.empty
+        while (pc2 < max_pc) {
+            if (f(instructions(pc1), instructions(pc2))) {
+                result = pc1 :: result
+            }
+
+            pc1 = pc2
+            pc2 = pcOfNextInstruction(pc2)
+        }
+        result
+    }
+
     /**
      * A complete representation of this code attribute (including instructions,
      * attributes, etc.).
