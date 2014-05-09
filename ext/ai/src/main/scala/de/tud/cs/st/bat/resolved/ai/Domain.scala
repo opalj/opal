@@ -36,22 +36,24 @@ import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 import reflect.ClassTag
 
 /**
- * A domain is the fundamental abstraction mechanism in OPAL-AI that enables the customization
- * of OPAL-AI towards the needs of a specific analysis. A domain encodes the semantics of
- * computations (e.g., the addition of two values) with respect to a domain's values
- * (e.g., the representation of integer values). Customizing a domain is the
- * fundamental mechanism of adapting OPAL-AI to one's needs.
+ * A domain is the fundamental abstraction mechanism in OPAL that enables the customization
+ * of the abstract interpretation framework towards the needs of a specific analysis. 
+ * 
+ * A domain encodes the semantics of computations (e.g., the addition of two values) 
+ * with respect to a domain's values (e.g., the representation of integer values). 
+ * Customizing a domain is the fundamental mechanism of adapting the AI framework 
+ * to one's needs.
  *
- * This trait defines the interface between the abstract interpretation framework (OPAL-AI)
+ * This trait defines the interface between the abstract interpretation framework 
  * and some (user defined) domain. I.e., this interface defines all methods that
- * are needed by OPAL-AI to perform an abstract interpretation.
+ * are needed by OPAL to perform an abstract interpretation.
  *
  * ==Control Flow==
- * OPAL-AI controls the process of evaluating the code of a method, but requires a
+ * OPAL controls the process of evaluating the code of a method, but requires a
  * domain to perform the actual computations of an instruction's result. E.g., to
  * calculate the result of adding two integer values, or to perform the comparison
  * of two object instances, or to get the result of converting a `long` value to an
- * `int` value OPAL-AI consults the domain.
+ * `int` value the framework always consults the domain.
  *
  * Handling of instructions that manipulate the stack (e.g. `dup`), that move values
  * between the stack and the locals (e.g., `Xload_Y`) or that determine the control
@@ -61,7 +63,7 @@ import reflect.ClassTag
  *  - [[de.tud.cs.st.bat.resolved.ai.Domain.flow]]
  *  - [[de.tud.cs.st.bat.resolved.ai.Domain.evaluationCompleted]]
  *  - [[de.tud.cs.st.bat.resolved.ai.Domain.abstractInterpretationEnded]]
- * A domain that implements (overrides) one of these domain should always also delegate
+ * A domain that implements (`overrides`) one of these methods should always also delegate
  * the call to its superclass to make sure that every domain interested in these
  * events is informed.
  *
@@ -69,7 +71,7 @@ import reflect.ClassTag
  * While it is perfectly possible to implement a new domain by inheriting from this
  * trait, it is recommended  to first study the already implemented domains and to
  * use them as a foundation.
- * To facilitate the usage of OPAL-AI several classes/traits that implement parts of
+ * To facilitate the usage of OPAL several classes/traits that implement parts of
  * this `Domain` trait are pre-defined and can be flexibly combined (mixed together)
  * when needed.
  *
@@ -78,12 +80,12 @@ import reflect.ClassTag
  *
  * ==Thread Safety==
  * When every analyzed method is associated with a unique `Domain` instance and – given
- * that OPAL-AI only uses one thread to analyze a given method at a time – no special care
+ * that OPAL only uses one thread to analyze a given method at a time – no special care
  * has to be taken. However, if a domain needs to consult another domain which is, e.g,
  * associated with a project as a whole, it is then the responsibility of the domain to
  * make sure that coordination with the world is thread safe.
  *
- * @note OPAL-AI assumes that conceptually every method/code block is associated
+ * @note OPAL assumes that – at least conceptually – every method/code block is associated
  *      with its own instance of a domain object.
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
@@ -140,7 +142,7 @@ trait Domain {
      * Standard inheritance from this trait is always
      * supported and is the primary mechanism to model an abstract domain's lattice
      * w.r.t. some special type of value. In general, the implementation should try
-     * to avoid creating new instances unless strictly required to model the
+     * to avoid creating new instances of values unless strictly required to model the
      * domain's semantics. This will greatly improve
      * the overall performance as this framework heavily uses reference-based equality checks
      * to speed up the evaluation.
@@ -149,7 +151,7 @@ trait Domain {
      *      never directly or indirectly calls a `Value`'s `equals` or `eq` method. Hence,
      *      a domain can encode equality such that it best fits its need.
      *      However, the provided domains rely on the following semantics for equals:
-     *      '''Two domain values are equal (`==`) iff they represent the same abstract value.'''
+     *      '''Two domain values have to be equal (`==`) iff they represent the same abstract value.'''
      *      E.g., a value (`AnIntegerValue`) that represents an arbitrary `Integer` value
      *      has to return `true` if the domain value with which it is compared also
      *      represents an arbitrary `Integer` value (`AnIntegerValue`). However,
@@ -159,7 +161,8 @@ trait Domain {
      *      value (e.g., `AnIntegerValue < 4`) it is possible to constrain the respective
      *      value on the subsequent paths (< 4 on one path and >= 4 on the other path).
      *      To make that possible, it is however necessary to distinguish the
-     *      `AnIntegervalue` from some other `AnIntegerValue`.
+     *      `AnIntegervalue` from some other `AnIntegerValue` to avoid constraining 
+     *      unrelated values.
      *      {{{
      *      public void foo(int a,int b) {
      *          if(a < 4) {
@@ -186,7 +189,7 @@ trait Domain {
          */
         def computationalType: ComputationalType
 
-        // only used only by the abstract interpretation framework 
+        // only used by the abstract interpretation framework 
         // and implemented only by ReturnAddressValue
         @throws[DomainException]("This method is not supported.")
         private[ai] def asReturnAddressValue: PC =
@@ -197,12 +200,10 @@ trait Domain {
          *
          * This basically implements the join operator of complete lattices.
          *
-         * Join is called whenever two control-flow paths join and, hence, the values
-         * found on the paths need to be joined. This method is called the
-         * Abstract interpretation framework whenever
-         * two '''intra-procedural''' control-flow paths join and the two values are
-         * two different objects (`(this ne value) == true`). However, it is guaranteed
-         * that both values have the same computational type.
+         * Join is called whenever an instruction is evaluated more than once and, hence, 
+         * the values found on the paths need to be joined. This method is, however,
+         * only called if the two values are two different objects (`(this ne value) 
+         * == true`), but both values have the same computational type.
          *
          * ==Example==
          * For example, joining a `DomainValue` that represents the integer value 0
@@ -215,7 +216,7 @@ trait Domain {
          * perform subsequent computations/analyses. Hence, if `this` value subsumes
          * the given value, the result has to be either `NoUpdate` or a `MetaInformationUpdate`.
          * In case that the given value subsumes `this` value, the result has to be
-         * a `StructuralUpdate` with the given values as the new value. Hence,
+         * a `StructuralUpdate` with the given value as the new value. Hence,
          * '''this `join` operation is not commutative'''. If a new (more abstract)
          * abstract value is created that represents both values the result always has to
          * be a `StructuralUpdate`.
@@ -239,8 +240,8 @@ trait Domain {
          *
          * ==Performance==
          * In general, the domain should try to minimize the number of objects that it
-         * uses to represent values. That is, ***two values that are conceptually equal
-         * should – whenever possible – use only one object***. This has a significant
+         * uses to represent values. That is, '''two values that are conceptually equal
+         * should – whenever possible – use only one object'''. This has a significant
          * impact on functions such as `join`.
          *
          * @param pc The program counter of the instruction where the paths converge.
@@ -293,7 +294,8 @@ trait Domain {
          * a summary may be sufficient.
          *
          * @note __The precise semantics and usage of `summarize(...)` is determined
-         *      by the domain as OPAL-AI does not use/call this method.__ This method
+         *      by the domain__. 
+         *      The framework does not use/call this method.This method
          *      is solely predefined to facilitate the development of project-wide
          *      analyses.
          */
@@ -313,8 +315,10 @@ trait Domain {
          * domain-adaptation. I.e., to make it possible to change the abstract domain at
          * runtime if the analysis time takes too long using a (more) precise domain.
          *
-         * @note __The precise semantics of `adapt` can be determined by the domain
-         *      as OPAL-AI does not use/call this method.__
+         * @note __The precise semantics of `adapt` can be determined by the domain__.
+         *      The framework does not use/call this method.This method
+         *      is solely predefined to facilitate the development of project-wide
+         *      analyses.
          */
         @throws[DomainException]("Adaptation of this value is not supported.")
         def adapt(target: Domain, pc: PC): target.DomainValue =
@@ -1457,12 +1461,12 @@ trait Domain {
     def returnVoid(pc: PC): Unit
 
     /**
-     * Called by the abstract interpreter when an exception is thrown that is not (guaranteed to be) handled
-     * within the same method.
+     * Called by the abstract interpreter when an exception is thrown that is not
+     * (guaranteed to be) handled within the same method.
      *
      * @note If the original exception value is `null` (`/*E.g.*/throw null;`), then
      *      the exception that is actually thrown is a new `NullPointerException`. This
-     *      situation is, however, completely handled by OPAL-AI and the exception
+     *      situation is, however, completely handled by OPAL and the exception value
      *      is hence never `null`.
      */
     def abruptMethodExecution(pc: PC, exception: DomainValue): Unit
@@ -1486,8 +1490,6 @@ trait Domain {
 
     /**
      * Returns the field's value.
-     *
-     * @return The field's value or a new `LinkageException`.
      */
     def getstatic(
         pc: PC,
@@ -1496,7 +1498,8 @@ trait Domain {
         fieldType: FieldType): Computation[DomainValue, Nothing]
 
     /**
-     * Sets the fields values if the given `objectref` is not `null`.
+     * Sets the field's value if the given `objectref` is not `null`(in the [[Domain]]). 
+     * In the latter case a `NullPointerException` is thrown. 
      */
     def putfield(
         pc: PC,
@@ -1507,7 +1510,7 @@ trait Domain {
         fieldType: FieldType): Computation[Nothing, ExceptionValue]
 
     /**
-     * Sets the fields values if the given class can be found.
+     * Sets the field's value.
      */
     def putstatic(
         pc: PC,
@@ -1645,9 +1648,10 @@ trait Domain {
     //
 
     /**
-     * Merges the given value v1 with the value v2 and returns the merged value
-     * which is v1 if v1 is an abstraction of v2, v2 if v2 is an abstraction of v1
-     * or some other value if a new value is computed that abstracts over both values.
+     * Merges the given value `v1` with the value `v2` and returns the merged value
+     * which is `v1` if `v1` is an abstraction of `v2`, `v2` if `v2` is an abstraction 
+     * of `v1` or some other value if a new value is computed that abstracts over 
+     * both values.
      *
      * This operation is commutative.
      */
@@ -1669,14 +1673,14 @@ trait Domain {
      * ''In general there should be no need to override this method.''
      *
      * @return The joined operand stack and registers.
-     *      Returns `NoUpdate` if this memory layout already subsumes the given memory
+     *      Returns `NoUpdate` if ''this'' memory layout already subsumes the ''other'' memory
      *      layout.
      * @note The size of the operands stacks that are to be joined and the number of
      *      registers/locals that are to be joined can be expected to be identical
-     *      under the assumption that the bytecode is valid and OPAL-AI contains no
+     *      under the assumption that the bytecode is valid and framework contains no
      *      bugs.
      * @note The operand stacks are guaranteed to contain compatible values w.r.t. the
-     *      computational type (unless the bytecode is not valid or OPAL-AI contains
+     *      computational type (unless the bytecode is not valid or OPAL contains
      *      an error). I.e., if the result of joining two operand stack values is an
      *      `IllegalValue` we assume that the domain implementation is incorrect.
      *      However, the joining of two register values can result in an illegal value.
@@ -1783,16 +1787,16 @@ trait Domain {
     }
 
     /**
-     * '''Called by (OPAL)AI after performing a computation'''; that is, after
+     * '''Called by the framework after performing a computation'''; that is, after
      * evaluating the effect of the instruction with `currentPC` on the current stack and
      * register and joining the updated stack and registers with the stack and registers
      * associated with the instruction `successorPC`.
      * This function basically informs the domain about the instruction that
      * may be evaluated next. The flow function is called for ''every possible
-     * successor'' of the instruction with the `currentPC`. This includes all branch
+     * successor'' of the instruction with `currentPC`. This includes all branch
      * targets as well as those instructions that handle exceptions.
      *
-     * In some cases it may even be the case that `flow` is called multiple times with
+     * In some cases it will even be the case that `flow` is called multiple times with
      * the same pair of program counters: (`currentPC`, `successorPC`). This may happen,
      * e.g., in case of a switch instruction where multiple values have the same
      * body/target instruction.
@@ -1820,33 +1824,36 @@ trait Domain {
      *      not (again) schedule the evaluation of the instruction with `successorPC`.
      *      This means that the instruction was evaluated in the past and that
      *      the abstract state did not change in a way that a reevaluation is –
-     *      from the point of view of the AI – not necessary.
+     *      from the point of view of the AI framework – necessary.
      *
      * @param isExceptionalControlFlow `True` if an and only if the evaluation of
      *      the instruction with the program counter `currentPC` threw an exception;
-     *      `false` otherwise.
+     *      `false` otherwise. Hence, the instruction with `successorPC` is the
+     *      first instruction of the handler.
      *
      * @param operandsArray The array that associates '''every instruction''' with its
      *      operand stack that is in effect.  Note, that only those elements of the
-     *      array contain values that are related to instructions. The other elements
-     *      are `null`.
+     *      array contain values that are related to instructions that were 
+     *      evaluated in the past. The other elements are `null`.
      *
      * @param localsArray The array that associates every instruction with its current
      *      register values. Note, that only those elements of the
-     *      array contain values that are related to instructions. The other elements
-     *      are `null`.
+     *      array contain values that are related to instructions that were evaluated in
+     *      the past. The other elements are `null`.
      *
      * @param worklist The current list of instructions that will be evaluated next.
      *      If you want to force the evaluation of the instruction
      *      with the program counter `successorPC` it is sufficient to test whether
      *      the list already contains `successorPC` and – if not – to prepend it.
-     *      If the worklist already contains `successorPC`, the domain is always allowed to move
+     *      If the worklist already contains `successorPC`, the domain is allowed to move
      *      the PC to the beginning of the worklist. However, if the PC does not belong
      *      to the same (sub)routine, it is not allowed to be moved to the beginning
-     *      of the worklist.
+     *      of the worklist. (Subroutines can only be found in code generated by old 
+     *      Java compilers; before Java 6. Subroutines are identified by jsr/ret 
+     *      instructions.) 
      *      Note that the worklist may contain negative values or positive values between
      *      two negative values. These values are used for handling subroutine calls
-     *      (jsr/ret) and should be be changed. Furthermore, no value should be moved
+     *      (jsr/ret) and should not be changed. Furthermore, no value (PC) should be moved
      *      between two (sub-)routines.
      *      If the domain updates the worklist, it is the responsibility of the domain
      *      to call the tracer and to inform it about the changes.
@@ -1873,9 +1880,9 @@ trait Domain {
         tracer: Option[AITracer]): List[PC] = worklist
 
     /**
-     * '''Called by (OPAL)AI after evaluating the instruction with the given pc.''' I.e.,
+     * Called by the framework after evaluating the instruction with the given pc. I.e.,
      * the state of all potential successor instructions was updated and the
-     * flow method was called accordingly.
+     * flow method was called – potentially multiple times – accordingly.
      *
      * By default this method does nothing.
      */
@@ -1888,9 +1895,11 @@ trait Domain {
         tracer: Option[AITracer]): Unit = { /*Nothing*/ }
 
     /**
-     * '''Called by (OPAL)AI when the abstract interpretation of a method has ended.''' The
+     * Called by (OPAL)AI when the abstract interpretation of a method has ended. The
      * abstract interpretation of a method ends if either the fixpoint is reached or
      * the interpretation was aborted.
+     * 
+     * By default this method does nothing.
      */
     def abstractInterpretationEnded(
         aiResult: AIResult { val domain: Domain.this.type }): Unit = { /* Nothing */ }
@@ -1928,9 +1937,9 @@ trait Domain {
      * is, however, at the sole responsibility of the `Domain`.
      *
      * This method is predefined to facilitate the development of support tools
-     * and is not used by OPAL-AI.
+     * and is not used by the abstract interpretation framework.
      *
-     * Domain values that define (additional) properties should (abstract) override
+     * `DomainValue`s that define (additional) properties should (`abstract`) `override`
      * this method and should return a textual representation of the property.
      */
     def properties(pc: PC): Option[String] = None
