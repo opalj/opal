@@ -42,7 +42,7 @@ case object ALOAD_2
 
     override def lvIndex: Int = 2
 
-    override def opcode: Int = 44
+    override final val opcode = 44
 
     override def mnemonic: String = "aload_2"
 
