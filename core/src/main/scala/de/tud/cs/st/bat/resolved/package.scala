@@ -76,6 +76,8 @@ package object resolved {
 
     type PC = Int
     type PCs = collection.UShortSet
+    
+    type Opcode = Int
 
     /**
      * Converts a given list of annotations into a Java-like representation.
