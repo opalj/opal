@@ -5,7 +5,7 @@ jdk:
   - oraclejdk8
 notifications:
   email:
-    - eichber@informatik.tu-darmstadt.de
+    - eichberg@informatik.tu-darmstadt.de
 # ensure the test output dir is created
 before_script:
   - mkdir -p shippable/testresults 
