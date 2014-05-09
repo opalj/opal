@@ -33,17 +33,21 @@ package analyses
 
 /**
  * @see [[de.tud.cs.st.bat.resolved.analyses]] for several predefined converter functions.
- * @tparam S The type of the underlying source file.
+ *
+ * @tparam Source The type of the underlying source file.
+ *
+ * @author Michael Eichberg
  */
 case class ReportableAnalysisAdapter[Source, AnalysisResult](
     analysis: Analysis[Source, AnalysisResult],
     converter: AnalysisResult ⇒ String)
         extends Analysis[Source, ReportableAnalysisResult] {
 
-    def description = analysis.description
+    override def description = analysis.description
     override def title = analysis.title
     override def copyright = analysis.copyright
-    def analyze(
+
+    override def analyze(
         project: Project[Source],
         parameters: Seq[String]): ReportableAnalysisResult = {
         new BasicReport(converter(analysis.analyze(project, parameters)))
