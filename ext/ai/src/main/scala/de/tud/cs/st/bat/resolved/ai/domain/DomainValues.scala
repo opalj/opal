@@ -55,6 +55,7 @@ object DomainValues {
     def apply(
         valuesDomain: Domain)(
             domainValues: Iterable[valuesDomain.DomainValue]) = {
+        
         new DomainValues {
             val domain: valuesDomain.type = valuesDomain
             val values: Iterable[domain.DomainValue] = domainValues

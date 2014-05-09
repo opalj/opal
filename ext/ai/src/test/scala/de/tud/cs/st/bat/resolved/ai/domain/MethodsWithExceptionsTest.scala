@@ -84,7 +84,7 @@ class MethodsWithExceptionsTest
     it should "be able to analyze a method that catches everything" in {
         evaluateMethod("alwaysCatch") { domain ⇒
             import domain._
-            allReturnInstructions should be(UShortSet(7)) // <= void return
+            allReturnVoidInstructions should be(UShortSet(7)) // <= void return
         }
     }
 
@@ -102,14 +102,14 @@ class MethodsWithExceptionsTest
         evaluateMethod("throwsNoException") { domain ⇒
             import domain._
             allThrownExceptions should be(Map.empty)
-            allReturnInstructions should be(UShortSet(39)) // <= void return
+            allReturnVoidInstructions should be(UShortSet(39)) // <= void return
         }
     }
 
     it should "be able to handle the pattern where some (checked) exceptions are caught and then rethrown as an unchecked exception" in {
         evaluateMethod("leverageException") { domain ⇒
             import domain._
-            allReturnInstructions should be(UShortSet(38)) // <= void return
+            allReturnVoidInstructions should be(UShortSet(38)) // <= void return
             allThrownExceptions should be(Map.empty)
             // Due to the simplicity of the domain (the exceptions of called methods are 
             // not yet analyze) we cannot determine that the following exception 

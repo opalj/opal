@@ -29,40 +29,37 @@
 package de.tud.cs.st
 package bat
 package resolved
-package instructions
+package ai
+package domain
+
+import language.implicitConversions
+
+import collection.mutable.UShortSet
 
 /**
- * Access jump table by index and jump.
+ * Records the program counters of all return instructions that are reached.
+ *
+ * ==Usage==
+ * A domain that mixes in this trait should only be used to analyze a single method.
+ *
+ * ==Thread Safety==
+ * This class is not thread safe. I.e., this domain can only be used if
+ * an instance of this domain is not used by multiple threads.
  *
  * @author Michael Eichberg
  */
-case class TABLESWITCH(
-    defaultOffset: Int,
-    low: Int,
-    high: Int,
-    jumpOffsets: IndexedSeq[Int])
-        extends CompoundConditionalBranchInstruction {
+trait RecordReturnVoidInstructions extends Domain {
 
-    def opcode: Int = 170
+    @volatile private[this] var returnVoidInstructions: UShortSet = UShortSet.empty
 
-    def mnemonic: String = "tableswitch"
+    def allReturnVoidInstructions: PCs = returnVoidInstructions
 
-    final override def indexOfNextInstruction(currentPC: Int, code: Code): Int = {
-        currentPC + 1 + (3 - (currentPC % 4)) + 12 + jumpOffsets.size * 4
+    abstract override def returnVoid(pc: PC): Unit = {
+        returnVoidInstructions =  pc +≈: returnVoidInstructions 
+        super.returnVoid(pc)
     }
-
-    final override def nextInstructions(currentPC: PC, code: Code): PCs = {
-        var pcs = collection.mutable.UShortSet(currentPC + defaultOffset)
-        jumpOffsets foreach (offset ⇒ { (currentPC + offset) +≈: pcs })
-        pcs
-    }
-
-    override def toString(pc: Int): String =
-        "TABLESWITCH("+
-            (low to high).zip(jumpOffsets).map { keyOffset ⇒
-                val (key, offset) = keyOffset
-                key+"="+(pc + offset) + (if (offset >= 0) "↓" else "↑")
-            }.mkString(", ")+
-            "; ifNoMatch="+(defaultOffset + pc) + (if (defaultOffset >= 0) "↓" else "↑")+")"
 
 }
+
+
+

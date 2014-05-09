@@ -95,9 +95,9 @@ class BaseRecordingDomain[I](
         extends TypeLevelDomain
         with IgnoreMethodResults
         with IgnoreSynchronization
-        with RecordLastReturnedValues
+        with RecordReturnFromMethodInstructions
         with RecordAllThrownExceptions
-        with RecordReturnInstructions {
+        with RecordReturnVoidInstructions {
     
     type Id = I
 }

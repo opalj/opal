@@ -75,6 +75,12 @@ trait UShortSet {
         set
     }
 
+    def mapToList[T](f: UShort ⇒ T): List[T] = {
+        var result = List.empty[T]
+        foreach(v ⇒ result = f(v) :: result)
+        result
+    }
+
     /**
      * Returns a new `Iterator`. The iterator is primarily defined to facilitate
      * the integration with Scala's standard collections API.
@@ -111,6 +117,10 @@ trait UShortSet {
      * @note The size is calculated using the iterator, hence its complexity is O(n).
      */
     def size: Int = iterator.size
+
+    def isEmpty: Boolean
+
+    def nonEmpty: Boolean = !isEmpty
 
     override def toString: String = iterator.mkString("UShortSet(", ",", ")")
 }

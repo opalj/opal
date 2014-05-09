@@ -33,7 +33,8 @@ package ai
 package domain
 
 /**
- * Mixin this trait if you want to reify the constraints that are stated by OPAL-AI. 
+ * Mixin this trait if you want to reify the constraints that are stated by the
+ * abstract interpretation framework.
  * This is particularly useful for testing and debugging purposes.
  *
  * @author Michael Eichberg
@@ -41,10 +42,10 @@ package domain
 trait RecordConstraints extends ReifiedConstraints {
 
     @volatile private[this] var constraints: Set[ReifiedConstraint] = Set.empty
-    
-    def allConstraints : Set[ReifiedConstraint]  = constraints
-    
-    override def nextConstraint(constraint: ReifiedConstraint) : Unit = {
+
+    def allConstraints: Set[ReifiedConstraint] = constraints
+
+    override def nextConstraint(constraint: ReifiedConstraint): Unit = {
         constraints += constraint
     }
 }

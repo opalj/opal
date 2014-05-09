@@ -49,16 +49,16 @@ object AIResultBuilder {
     def aborted(
         theCode: Code,
         theDomain: Domain)(
-            theWorklist: List[Int],
-            theEvaluated: List[Int],
+            theWorklist: List[PC],
+            theEvaluated: List[PC],
             theOperandsArray: Array[List[theDomain.DomainValue]],
             theLocalsArray: Array[Array[theDomain.DomainValue]]): AIAborted { val domain: theDomain.type } = {
 
         new AIAborted {
             val code: Code = theCode
             val domain: theDomain.type = theDomain
-            val worklist: List[Int] = theWorklist
-            val evaluated: List[Int] = theEvaluated
+            val worklist: List[PC] = theWorklist
+            val evaluated: List[PC] = theEvaluated
             val operandsArray: Array[List[theDomain.DomainValue]] = theOperandsArray
             val localsArray: Array[Array[theDomain.DomainValue]] = theLocalsArray
 
@@ -78,14 +78,14 @@ object AIResultBuilder {
     def completed(
         theCode: Code,
         theDomain: Domain)(
-            theEvaluated: List[Int],
+            theEvaluated: List[PC],
             theOperandsArray: Array[List[theDomain.DomainValue]],
             theLocalsArray: Array[Array[theDomain.DomainValue]]): AICompleted { val domain: theDomain.type } = {
 
         new AICompleted {
             val code: Code = theCode
             val domain: theDomain.type = theDomain
-            val evaluated: List[Int] = theEvaluated
+            val evaluated: List[PC] = theEvaluated
             val operandsArray: Array[List[theDomain.DomainValue]] = theOperandsArray
             val localsArray: Array[Array[theDomain.DomainValue]] = theLocalsArray
 
@@ -105,8 +105,8 @@ object AIResultBuilder {
 sealed abstract class AIResult {
     val code: Code
     val domain: Domain
-    val worklist: List[Int]
-    val evaluated: List[Int]
+    val worklist: List[PC]
+    val evaluated: List[PC]
     val operandsArray: Array[List[domain.DomainValue]]
     val localsArray: Array[Array[domain.DomainValue]]
 
@@ -148,11 +148,12 @@ sealed abstract class AIResult {
  */
 sealed abstract class AIAborted extends AIResult {
 
-    def wasAborted: Boolean = true
+    override def wasAborted: Boolean = true
 
     def continueInterpretation(ai: AI[_ >: domain.type]): AIResult
 
-    override def stateToString: String = "Abstract Interpretation was aborted; "+super.stateToString
+    override def stateToString: String = 
+        "The abstract interpretation was aborted; "+super.stateToString
 }
 
 /**
@@ -160,11 +161,12 @@ sealed abstract class AIAborted extends AIResult {
  */
 sealed abstract class AICompleted extends AIResult {
 
-    val worklist: List[Int] = List.empty
+    override val worklist: List[PC] = List.empty
 
-    def wasAborted: Boolean = false
+    override def wasAborted: Boolean = false
 
     def restartInterpretation(ai: AI[_ >: domain.type]): AIResult
 
-    override def stateToString: String = "Abstract Interpretation succeeded; "+super.stateToString
+    override def stateToString: String = 
+        "The abstract interpretation succeeded; "+super.stateToString
 }

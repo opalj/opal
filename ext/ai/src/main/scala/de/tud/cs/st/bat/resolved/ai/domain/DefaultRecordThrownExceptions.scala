@@ -34,10 +34,9 @@ package domain
 
 import language.implicitConversions
 
-import collection.mutable.UShortSet
-
 /**
- * Records the program counters of all return instructions that are reached.
+ * Records the exceptions thrown by a method. This trait can be used to record
+ * the thrown exceptions independently of the precision of the domain.
  *
  * ==Usage==
  * A domain that mixes in this trait should only be used to analyze a single method.
@@ -48,17 +47,24 @@ import collection.mutable.UShortSet
  *
  * @author Michael Eichberg
  */
-trait RecordReturnInstructions extends Domain {
+trait DefaultRecordThrownExceptions extends RecordThrownExceptions {
 
-    @volatile private[this] var returnInstructions: UShortSet = UShortSet.empty
+    type ThrownException = ExceptionValue
 
-    def allReturnInstructions: PCs = returnInstructions
+    override protected[this] def thrownException(pc: PC, value: ExceptionValue): ThrownException =
+        value
 
-    abstract override def returnVoid(pc: PC): Unit = {
-        returnInstructions +≈ pc
-        super.returnVoid(pc)
+    override protected[this] def joinThrownExceptions(
+        pc: PC,
+        previouslyThrownException: ThrownException,
+        thrownException: ExceptionValue): ThrownException = {
+
+        previouslyThrownException.join(pc, thrownException) match {
+            case NoUpdate                              ⇒ previouslyThrownException
+            case StructuralUpdate(exceptionValue)      ⇒ exceptionValue
+            case MetaInformationUpdate(exceptionValue) ⇒ exceptionValue
+        }
     }
-
 }
 
 
