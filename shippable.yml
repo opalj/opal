@@ -5,5 +5,5 @@ jdk:
   - oraclejdk8
 notifications:
   email:
-    - eichber@informatik.tu-darmstadt.de
+    - eichberg@informatik.tu-darmstadt.de
    
