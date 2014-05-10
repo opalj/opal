@@ -14,7 +14,7 @@ object OPALBuild extends Build {
 		settings = buildSettings ++ sbtunidoc.Plugin.unidocSettings
 	).
 	aggregate(
-		util, 
+		common, 
 		bt,
 		da,
 		ai,
@@ -33,15 +33,15 @@ object OPALBuild extends Build {
 	 *
  	 */
 	
-	lazy val util = Project(
-		id = "Util",
-		base = file("util")
+	lazy val common = Project(
+		id = "Common",
+		base = file("OPAL/common")
 	)	
 	
 	lazy val bt = Project(
 		id = "BytecodeToolkit",
 		base = file("core")
-	) dependsOn(util)
+	) dependsOn(common)
 	
 	lazy val da = Project(
 		id = "BytecodeDisassembler",

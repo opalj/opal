@@ -4,15 +4,17 @@ advanced language features to provide a new and previously unseen level of custo
 OPAL was designed from the ground up with *extensibility*, *adaptability* and *scalability* in mind. 
 
 # Project Structure
-OPAL consists of several projects:
+OPAL consists of several projects which are found in the folder OPAL:
 
-* **Util**: Contains common helper classes.
+* **Common**: Contains common helper classes.
 
-* **Bytecode Toolkit**: The core project provides functionality necessary for reading and traversing Java class files.  
+* **Bytecode Infrastructure**(OPAL/bi): The necessary infrastructure for parsing Java bytecode.  
 
-* **Abstract Interpretation Framework**: Implementation of an abstract interpretation framework that can be used to easily implement analyses at very different levels of precision. 
+* **Bytecode Representation**(OPAL/br): OPAL's primary representation of Java bytecode. Implements all functionality for reading and traversing Java class files.  
 
-* **Dependencies Extraction**: Provides support for extracting and analyzing a project's source code dependencies. This project is also used to check architectures and
+* **Abstract Interpretation Framework**(OPAL/ai): Implementation of an abstract interpretation framework that can be used to easily implement analyses at very different levels of precision. 
+
+* **Dependencies Extraction**(OPAL/de): Provides support for extracting and analyzing a project's source code dependencies. This project is also used to check architectures and
 is in particular used to validate parts of OPAL's architecture.
 
 * **OPAL Developer Tools**: Programs that can directly be executed and which are useful when analyzing Java bytecode.
