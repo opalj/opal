@@ -62,7 +62,7 @@ import scala.collection.mutable.HashSet
  *
  * @note Unless explicitly documented, it is an error to pass an instance of `ObjectType`
  *      to any method if the `ObjectType` was not previously added. If in doubt, first
- *      check if the type is known (`isKnown`/`ifKnown`).
+ *      check if the type is known ([[isKnown]]/[[ifKnown]]).
  *
  * @author Michael Eichberg
  */
@@ -71,9 +71,9 @@ class ClassHierarchy private (
         private[this] val knownTypesMap: Array[ObjectType],
         private[this] val interfaceTypesMap: Array[Boolean],
         private[this] val superclassTypeMap: Array[ObjectType],
-        private[this] val superinterfaceTypesMap: Array[HashSet[ObjectType]],
-        private[this] val subclassTypesMap: Array[HashSet[ObjectType]],
-        private[this] val subinterfaceTypesMap: Array[HashSet[ObjectType]]) {
+        private[this] val superinterfaceTypesMap: Array[Set[ObjectType]],
+        private[this] val subclassTypesMap: Array[Set[ObjectType]],
+        private[this] val subinterfaceTypesMap: Array[Set[ObjectType]]) {
 
     require(knownTypesMap.length == superclassTypeMap.length)
     require(knownTypesMap.length == interfaceTypesMap.length)
@@ -112,17 +112,20 @@ class ClassHierarchy private (
      * Returns the `ObjectType` with the given Id. The id has to be the id of a valid
      * ObjectType.
      */
-    final def getObjectType(objectTypeId: Int): Option[ObjectType] = {
-        require(0 <= objectTypeId && objectTypeId < objectTypesMap.length)
+    final def getObjectType(objectTypeId: Int): ObjectType = {
+        require(0 <= objectTypeId)
+        try {
+            objectTypesMapRWLock.readLock().lock()
 
-        Option(
-            try {
-                objectTypesMapRWLock.readLock().lock()
-                objectTypesMap(objectTypeId)
-            } finally {
-                objectTypesMapRWLock.readLock().unlock()
-            }
-        )
+            require(objectTypeId < objectTypesMap.length)
+            val ot = objectTypesMap(objectTypeId)
+            if (ot == null)
+                throw new IllegalArgumentException("ObjectType invalid: "+objectTypeId)
+            ot
+
+        } finally {
+            objectTypesMapRWLock.readLock().unlock()
+        }
     }
 
     /**
@@ -133,6 +136,13 @@ class ClassHierarchy private (
         val id = objectType.id
         (id < knownTypesMap.length) && (knownTypesMap(id) ne null)
     }
+
+    /**
+     * Returns `true` if the type is unknown. This is `true` for all types that are
+     * referred to in the body of a method, but which are not referred to in the
+     * declarations of the class files that were analyzed.
+     */
+    def isUnknown(objectType: ObjectType): Boolean = !isKnown(objectType)
 
     /**
      * Tests if the given objectType is known and if so executes the given function.
@@ -150,24 +160,17 @@ class ClassHierarchy private (
     }
 
     /**
-     * Returns `true` if the type is unknown. This is true for all types that are
-     * referred to in the body of a method, but which are not referred to in the
-     * declarations of the class files that were analyzed.
-     */
-    def isUnknown(objectType: ObjectType): Boolean = !isKnown(objectType)
-
-    /**
-     * Tests if the given `objectType` defines an interface type.
+     * Returns `true` if the given `objectType` defines an interface type.
      *
-     * @param objectType A known `ObjectType`. (See `ClassHierarchy.isKnown`,
-     *      `ClassHierarchy.ifKnown` for further details).
+     * @param objectType A known `ObjectType`. (See [[isKnown]],
+     *      [[ifKnown]] for further details).
      */
     @inline def isInterface(objectType: ObjectType): Boolean =
         interfaceTypesMap(objectType.id)
 
     /**
-     * Returns `true` if the type hierarchy information w.r.t. the given type's supertypes
-     * is complete.
+     * Returns `true` if the type hierarchy information related to the given type's 
+     * supertypes is complete.
      */
     @inline def isDirectSupertypeInformationComplete(objectType: ObjectType): Boolean =
         (objectType eq Object) ||
@@ -191,7 +194,7 @@ class ClassHierarchy private (
 
     /**
      * Retuns `Yes` if the class hierarchy contains subtypes of the given type and `No` if
-     * it contains no subtypes. `Unknown` is returnec if the given
+     * it contains no subtypes. `Unknown` is returned if the given
      * type is not known.
      *
      * Please note, that the answer maybe `No` even though the (running) project will
@@ -244,7 +247,7 @@ class ClassHierarchy private (
         // The naive implementation using foreach and (mutual) recursion
         // didn't perform well.
         @inline def processAllSubtypes() {
-            var allSubtypes: List[HashSet[ObjectType]] = Nil
+            var allSubtypes: List[Set[ObjectType]] = Nil
             val id = objectType.id
             val subclassTypes = subclassTypesMap(id)
             if (subclassTypes ne null) {
@@ -374,7 +377,7 @@ class ClassHierarchy private (
      * Returns `Some(<SUPERTYPES>)` if this type is known and information about the
      * supertypes is available. I.e., if this type is not known `None` is returned;
      * if the given type's superinterfaces are known (even if this class does not
-     * implement (directly or indirectly) any interface) `Some(Set(<ObJECTTYPES>))` is
+     * implement (directly or indirectly) any interface) `Some(Set(<OBJECTTYPES>))` is
      * returned.
      */
     def superinterfaceTypes(objectType: ObjectType): Option[Set[ObjectType]] = {
@@ -405,12 +408,16 @@ class ClassHierarchy private (
         }
     }
 
+    def supertypes(objectType: ObjectType): Set[ObjectType] = {
+        superinterfaceTypes(objectType).getOrElse(HashSet.empty) ++ superclassType(objectType)
+    }
+
     /**
      * Determines if the given class or interface type `subtype` is actually a subtype
      * of the class or interface type `supertype`.
      *
      * This method can be used as a foundation for implementing the logic of the JVM's
-     * `instanceof` and `classcast` instructions. But, in that case additional logic
+     * `instanceof` and `checkcast` instructions. But, in that case additional logic
      * for handling `null` values and for considering the runtime type needs to be
      * implemented by the caller of this method.
      *
@@ -880,7 +887,7 @@ class ClassHierarchy private (
                         if (methodOption.isDefined) {
                             val method = methodOption.get
                             if (!method.isAbstract)
-                                implementingMethods += method 
+                                implementingMethods += method
                         }
                     }
                 }
@@ -890,8 +897,59 @@ class ClassHierarchy private (
         implementingMethods
     }
 
+//    /**
+//     * Returns all methods declared by this class. I.e., all methods declared by
+//     * this class as well as all methods declared by its superclasses.
+//     */
+//    def allMethods(
+//        project: SomeProject,
+//        objectType: ObjectType,
+//        filter: (Method) ⇒ Boolean = m ⇒ !m.isPrivate): Set[Method] = {
+//
+//        val allMethods = scala.collection.mutable.HashSet.empty[Method]
+//
+//        foreachSuperclass(objectType, project) { superclass ⇒
+//            for (method ← superclass.methods if filter(method)) {
+//                allMethods += method
+//            }
+//        }
+//
+//        allMethods
+//    }
+//
+//    /**
+//     * Returns the set of the most specific methods declared by the superclasses.
+//     * A method is more specific than another method if it is
+//     *
+//     * @param filter Filters irrelevant methods. By default, `private` methods
+//     *      are filtered.
+//     */
+//    def superMethods(
+//        project: SomeProject,
+//        objectType: ObjectType,
+//        filter: (Method) ⇒ Boolean = m ⇒ !m.isPrivate): Set[Method] = {
+//
+//        // TODO split up...
+//        supertypes(objectType).map(allMethods(project, _)).flatten
+//    }
+//
+//    def overriddenMethods(
+//        project: SomeProject,
+//        objectType: ObjectType): Set[Method] = {
+//
+//        val ownMethods = project.classFile(objectType).get.methods
+//        superMethods(
+//            project,
+//            objectType,
+//            (m) ⇒ {
+//                !m.isPrivate &&
+//                    (!m.hasDefaultVisibility || objectType.packageName == project.classFile(m).thisType.packageName)
+//            }
+//        ).filter(sm ⇒ ownMethods.exists(_.hasSameSignature(sm)))
+//    }
+
     /**
-     * The direct subtypes of the given types.
+     * The direct subtypes of the given type.
      */
     def directSubtypesOf(objectType: ObjectType): Set[ObjectType] = {
         val id = objectType.id
@@ -906,9 +964,9 @@ class ClassHierarchy private (
 
         val subinterfaceTypes = this.subinterfaceTypesMap(id)
         if (subinterfaceTypes ne null)
-            directSubtypes ++= subinterfaceTypes
-
-        directSubtypes
+            directSubtypes ++ subinterfaceTypes
+        else
+            directSubtypes
     }
 
     /**
@@ -956,8 +1014,8 @@ class ClassHierarchy private (
      * graph can be a multi-graph if the class hierarchy contains holes.
      */
     def toGraph(): Node = new Node {
-		
-		import scala.collection.mutable.HashMap
+
+        import scala.collection.mutable.HashMap
 
         private val nodes: Map[ObjectType, Node] = {
             val nodes = HashMap.empty[ObjectType, Node]
@@ -1096,21 +1154,21 @@ object ClassHierarchy {
                 yield processPredefinedClassHierarchy(predefinedClassHierarchy)
         ).flatten
 
-        def addToSet(data: Array[HashSet[ObjectType]], index: Int, elem: ObjectType) = {
-            val set: HashSet[ObjectType] = data(index)
+        def addToSet(data: Array[Set[ObjectType]], index: Int, elem: ObjectType) = {
+            val set: Set[ObjectType] = data(index)
             if (set eq null) {
                 data(index) = HashSet(elem)
             } else
-                set += elem
+                set.asInstanceOf[HashSet[ObjectType]] += elem
         }
 
         val objectTypesCount = ObjectType.objectTypesCount
         val knownTypesMap = new Array[ObjectType](objectTypesCount)
         val interfaceTypesMap = new Array[Boolean](objectTypesCount)
         val superclassTypeMap = new Array[ObjectType](objectTypesCount)
-        val superinterfaceTypesMap = new Array[HashSet[ObjectType]](objectTypesCount)
-        val subclassTypesMap = new Array[HashSet[ObjectType]](objectTypesCount)
-        val subinterfaceTypesMap = new Array[HashSet[ObjectType]](objectTypesCount)
+        val superinterfaceTypesMap = new Array[Set[ObjectType]](objectTypesCount)
+        val subclassTypesMap = new Array[Set[ObjectType]](objectTypesCount)
+        val subinterfaceTypesMap = new Array[Set[ObjectType]](objectTypesCount)
 
         val ObjectId = ObjectType.Object.id
 
@@ -1132,7 +1190,7 @@ object ClassHierarchy {
             objectType: ObjectType,
             isInterfaceType: Boolean,
             theSuperclassType: Option[ObjectType],
-            theSuperinterfaceTypes: HashSet[ObjectType]) {
+            theSuperinterfaceTypes: Set[ObjectType]) {
 
             //
             // Update the class hierarchy from the point of view of the newly added type 
@@ -1198,4 +1256,4 @@ case class TypeDeclaration(
     objectType: ObjectType,
     isInterfaceType: Boolean,
     theSuperclassType: Option[ObjectType],
-    theSuperinterfaceTypes: HashSet[ObjectType])
+    theSuperinterfaceTypes: Set[ObjectType])
