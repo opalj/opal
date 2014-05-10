@@ -40,7 +40,7 @@ object OPALBuild extends Build {
 	
 	lazy val bt = Project(
 		id = "BytecodeToolkit",
-		base = file("core")
+		base = file("OPAL/bi")
 	) dependsOn(common)
 	
 	lazy val da = Project(
@@ -50,7 +50,7 @@ object OPALBuild extends Build {
 
 	lazy val ai = Project(
 		id = "AbstractInterpretationFramework",
-		base = file("ext/ai")
+		base = file("OPAL/ai")
 	) dependsOn(bt % "test->test;compile->compile")
 
 	// The project "DependenciesExtractionLibrary" depends on
@@ -58,31 +58,31 @@ object OPALBuild extends Build {
 	// resolve calls using MethodHandle/MethodType/"invokedynamic"/...
 	lazy val de = Project(
 		id = "DependenciesExtractionLibrary",
-		base = file("ext/dependencies")
+		base = file("OPAL/de")
 	) dependsOn(ai % "test->test;compile->compile")
 
 	lazy val av = Project(
 		id = "ArchitectureValidation",
-		base = file("av")
+		base = file("OPAL/av")
 	) dependsOn(de % "test->test;compile->compile")
 
 	lazy val opalDeveloperTools = Project(
 		id = "OpalDeveloperTools",
-		base = file("ext/tools")
+		base = file("DEVELOPING_OPAL/tools")
 	) dependsOn(de % "test->test;compile->compile")
 
 	// This project validates OPAL's implemented architecture; hence
 	// it is not a "project" in the classical sense!
 	lazy val VALIDATE = Project(
 		id = "VALIDATE_OPAL",
-		base = file("VALIDATE")
+		base = file("DEVELOPING_OPAL/validate")
 	) dependsOn(
 		opalDeveloperTools % "test->test;compile->compile",
 		av % "test->test;compile->compile")
 
 	lazy val demos = Project(
 		id = "Demos",
-		base = file("demo")
+		base = file("OPAL/demo")
 	) dependsOn(av)
 
 	/*****************************************************************************
@@ -93,12 +93,12 @@ object OPALBuild extends Build {
 
 	lazy val findRealBugsAnalyses = Project(
 		id = "FindRealBugsAnalyses",
-		base = file("frb/analyses")
+		base = file("OPAL/frb/analyses")
 	) dependsOn(ai % "test->test;compile->compile")
 
 	lazy val findRealBugsCLI = Project(
 		id = "FindRealBugsCLI",
-		base = file("frb/cli"),
+		base = file("OPAL/frb/cli"),
 		settings = 
 			buildSettings ++
 			sbtassembly.Plugin.assemblySettings ++ 
@@ -111,7 +111,7 @@ object OPALBuild extends Build {
 
 	lazy val incubation = Project(
 		id = "Incubation",
-		base = file("incubation")
+		base = file("OPAL/incubation")
 	) dependsOn(av)
 
 }
