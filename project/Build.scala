@@ -17,8 +17,9 @@ object OPALBuild extends Build {
 		util, 
 		bt,
 		da,
-		aif,
-		dependenciesExtraction, 		 
+		ai,
+		de, 
+		av,		 
 		opalDeveloperTools, 
 		VALIDATE,
 		demos,		
@@ -47,7 +48,7 @@ object OPALBuild extends Build {
 		base = file("da")
 	) dependsOn(bt % "test->test;compile->compile")
 
-	lazy val aif = Project(
+	lazy val ai = Project(
 		id = "AbstractInterpretationFramework",
 		base = file("ext/ai")
 	) dependsOn(bt % "test->test;compile->compile")
@@ -55,20 +56,20 @@ object OPALBuild extends Build {
 	// The project "DependenciesExtractionLibrary" depends on
 	// the abstract interpretation framework to be able to 
 	// resolve calls using MethodHandle/MethodType/"invokedynamic"/...
-	lazy val dependenciesExtraction = Project(
+	lazy val de = Project(
 		id = "DependenciesExtractionLibrary",
 		base = file("ext/dependencies")
-	) dependsOn(aif % "test->test;compile->compile")
+	) dependsOn(ai % "test->test;compile->compile")
 
-	lazy val architectureValidation = Project(
+	lazy val av = Project(
 		id = "ArchitectureValidation",
 		base = file("av")
-	) dependsOn(dependenciesExtraction % "test->test;compile->compile")
+	) dependsOn(de % "test->test;compile->compile")
 
 	lazy val opalDeveloperTools = Project(
 		id = "OpalDeveloperTools",
 		base = file("ext/tools")
-	) dependsOn(dependenciesExtraction % "test->test;compile->compile")
+	) dependsOn(de % "test->test;compile->compile")
 
 	// This project validates OPAL's implemented architecture; hence
 	// it is not a "project" in the classical sense!
@@ -77,12 +78,12 @@ object OPALBuild extends Build {
 		base = file("VALIDATE")
 	) dependsOn(
 		opalDeveloperTools % "test->test;compile->compile",
-		architectureValidation % "test->test;compile->compile")
+		av % "test->test;compile->compile")
 
 	lazy val demos = Project(
 		id = "Demos",
 		base = file("demo")
-	) dependsOn(dependenciesExtraction, architectureValidation)
+	) dependsOn(av)
 
 	/*****************************************************************************
 	 *
@@ -93,7 +94,7 @@ object OPALBuild extends Build {
 	lazy val findRealBugsAnalyses = Project(
 		id = "FindRealBugsAnalyses",
 		base = file("frb/analyses")
-	) dependsOn(aif % "test->test;compile->compile")
+	) dependsOn(ai % "test->test;compile->compile")
 
 	lazy val findRealBugsCLI = Project(
 		id = "FindRealBugsCLI",
@@ -111,6 +112,6 @@ object OPALBuild extends Build {
 	lazy val incubation = Project(
 		id = "Incubation",
 		base = file("incubation")
-	) dependsOn(dependenciesExtraction, architectureValidation)
+	) dependsOn(av)
 
 }
