@@ -579,7 +579,6 @@ final object ObjectType {
      * about all known object types. It is guaranteed that the listener will not miss any
      * object type creation. However, invocation may occur concurrently.
      */
-    @throws[IllegalStateException]("if a corresponding listener is already registered")
     def setObjectTypeCreationListener(f: ObjectType ⇒ Unit): Unit = {
         objectTypeCreationListener = f
         cacheRWLock.readLock().lock()
