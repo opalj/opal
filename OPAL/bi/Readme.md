@@ -1,3 +1,2 @@
 #Overview
-The Bytecode Toolkit (BT) is a scalable, adaptable library for processing Java bytecode.
-
+The Bytecode Infrastructure (BI) is a library for processing Java bytecode. It does not create a representation of it.

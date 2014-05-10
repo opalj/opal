@@ -15,9 +15,10 @@ object OPALBuild extends Build {
 	).
 	aggregate(
 		common, 
-		bt,
-		da,
+		bi,
+		br,
 		ai,
+		da,
 		de, 
 		av,		 
 		opalDeveloperTools, 
@@ -38,20 +39,25 @@ object OPALBuild extends Build {
 		base = file("OPAL/common")
 	)	
 	
-	lazy val bt = Project(
-		id = "BytecodeToolkit",
+	lazy val bi = Project(
+		id = "BytecodeInfrastructure",
 		base = file("OPAL/bi")
 	) dependsOn(common)
+
+	lazy val br = Project(
+		id = "BytecodeRepresentation",
+		base = file("OPAL/br")
+	) dependsOn(bi)
 	
 	lazy val da = Project(
 		id = "BytecodeDisassembler",
 		base = file("OPAL/da")
-	) dependsOn(bt % "test->test;compile->compile")
+	) dependsOn(bi % "test->test;compile->compile")
 
 	lazy val ai = Project(
 		id = "AbstractInterpretationFramework",
 		base = file("OPAL/ai")
-	) dependsOn(bt % "test->test;compile->compile")
+	) dependsOn(br % "test->test;compile->compile")
 
 	// The project "DependenciesExtractionLibrary" depends on
 	// the abstract interpretation framework to be able to 
