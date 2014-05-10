@@ -45,7 +45,7 @@ object OPALBuild extends Build {
 	
 	lazy val da = Project(
 		id = "BytecodeDisassembler",
-		base = file("da")
+		base = file("OPAL/da")
 	) dependsOn(bt % "test->test;compile->compile")
 
 	lazy val ai = Project(
