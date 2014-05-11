@@ -1,6 +1,6 @@
 name := "Common"
 
-version := "0.8.1-SNAPSHOT"
+version := "0.8.0-SNAPSHOT"
 
 scalacOptions in (Compile, doc) := Seq("-deprecation", "-feature", "-unchecked")
 
