@@ -97,5 +97,13 @@ trait Configuration {
      * @return `false`
      */
     def throwClassCastException: Boolean = false
+    
+    /**
+     * Throw a `ClassNotFoundException` if the a specific reference type is not 
+     * known in the current context. The context is typically a specific `Project`.
+     * 
+     * @return `true`
+     */
+    def throwClassNotFoundException : Boolean = true
 
 }

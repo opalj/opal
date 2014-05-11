@@ -42,7 +42,7 @@ import org.scalatest.junit.JUnitRunner
 import org.opalj.util._
 
 import br._
-import reader.Java7Framework.ClassFiles
+import reader.Java8Framework.ClassFiles
 
 /**
  * Simple test case for ClassValues.
@@ -74,22 +74,22 @@ class ClassValuesTest
     }
 
     it should ("be able to trace literal strings in Class.forName(String) calls") in {
-        val domain = new RecordingDomain("Test literal strings in Class.forName class"); import domain._
+        val domain = new RecordingDomain("Test literal strings in Class.forName class")
         val method = classFile.methods.find(m ⇒ m.name == "literalStringInClassForName").get
         BaseAI(classFile, method, domain)
-        domain.returnedValue should be(Some(ClassValue(2, ObjectType("java/lang/Integer"))))
+        domain.returnedValue should be(Some(domain.ClassValue(2, ObjectType("java/lang/Integer"))))
     }
 
     it should ("be able to trace literal strings in Class.forName(String,boolean,ClassLoader) calls") in {
         val method = classFile.methods.find(m ⇒ m.name == "literalStringInLongClassForName").get
-        val domain = new RecordingDomain(method.toJava);
+        val domain = new RecordingDomain(method.toJava)
         BaseAI(classFile, method, domain)
         val classType = domain.returnedValue
         classType should be(Some(domain.ClassValue(10, ObjectType("java/lang/Integer"))))
     }
 
     it should ("be able to trace known string variables in Class.forName calls") in {
-        val domain = new RecordingDomain("Test literal strings in Class.forName class");
+        val domain = new RecordingDomain("Test literal strings in Class.forName class")
         val method = classFile.methods.find(m ⇒ m.name == "stringVariableInClassForName").get
         BaseAI(classFile, method, domain)
         val classType = domain.returnedValue
@@ -97,7 +97,7 @@ class ClassValuesTest
     }
 
     it should ("be able to correctly join multiple class values") in {
-        val domain = new DefaultConfigurableDomain("test");
+        val domain = new DefaultConfigurableDomain("test")
         val c1 = domain.ClassValue(1, ObjectType.Serializable)
         val c2 = domain.ClassValue(1, ObjectType.Cloneable)
         c1.join(-1, c2) should be(StructuralUpdate(domain.InitializedObjectValue(1, ObjectType.Class)))
@@ -108,14 +108,24 @@ class ClassValuesTest
     // the functionality to trace string values across method calls exists in principle,
     // but not in the domain set up for these tests.
     ignore should ("be able to trace literal strings in method parameters in Class.forName calls") in {
-        val domain = new RecordingDomain("Test literal strings in Class.forName class");
+        val domain = new RecordingDomain("Test literal strings in Class.forName class") 
+        import domain.ClassValue 
         val method = classFile.methods.find(m ⇒ m.name == "literalStringAsParameterInClassForName").get
         BaseAI(classFile, method, domain)
         domain.returnedValue.map(_.asInstanceOf[ClassValue].value) should be(Some(ObjectType("java/lang/Integer")))
     }
 
+    it should ("be able to trace static class values of primitves") in {
+        val domain = new RecordingDomain("Test static class values")
+        import domain.ClassValue
+        val method = classFile.methods.find(m ⇒ m.name == "staticPrimitveClassValue").get
+        BaseAI(classFile, method, domain)
+        domain.returnedValue.map(_.asInstanceOf[ClassValue].value) should be(Some(IntegerType))
+    }
+
     ignore should ("be able to trace known string variables in method parameters in Class.forName calls") in {
-        val domain = new RecordingDomain("Test literal strings in Class.forName class");
+        val domain = new RecordingDomain("Test literal strings in Class.forName class")
+        import domain.ClassValue
         val method = classFile.methods.find(m ⇒ m.name == "stringVariableAsParameterInClassForName").get
         BaseAI(classFile, method, domain)
         domain.returnedValue.map(_.asInstanceOf[ClassValue].value) should be(Some(ObjectType("java/lang/Integer")))
@@ -128,7 +138,7 @@ object PlainClassesTest {
             with DefaultClassValuesBinding
             with IgnoreSynchronization
             with IgnoreThrownExceptions {
-        
+
         var returnedValue: Option[DomainValue] = _
         override def areturn(pc: Int, value: DomainValue) { returnedValue = Some(value) }
         override def dreturn(pc: Int, value: DomainValue) { returnedValue = Some(value) }

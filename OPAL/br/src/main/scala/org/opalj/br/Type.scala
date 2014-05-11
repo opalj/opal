@@ -333,6 +333,8 @@ sealed abstract class BaseType extends FieldType with TypeSignature {
 
     def atype: Int
 
+    val WrapperType: ObjectType
+
 }
 
 sealed abstract class ByteType private () extends BaseType {
@@ -350,6 +352,8 @@ sealed abstract class ByteType private () extends BaseType {
     def toJava: String = "byte"
 
     override def toBinaryJavaName: String = "B"
+
+    final val WrapperType = ObjectType.Byte
 
     override def toJavaClass: java.lang.Class[_] = java.lang.Byte.TYPE
 
@@ -372,6 +376,8 @@ sealed abstract class CharType private () extends BaseType {
     def toJava: String = "char"
 
     override def toBinaryJavaName: String = "C"
+
+    final val WrapperType = ObjectType.Char
 
     override def toJavaClass: java.lang.Class[_] =
         java.lang.Character.TYPE
@@ -397,6 +403,8 @@ sealed abstract class DoubleType private () extends BaseType {
 
     override def toBinaryJavaName: String = "D"
 
+    final val WrapperType = ObjectType.Double
+
     override def toJavaClass: java.lang.Class[_] =
         java.lang.Double.TYPE
 
@@ -420,6 +428,8 @@ sealed abstract class FloatType private () extends BaseType {
     def toJava: String = "float"
 
     override def toBinaryJavaName: String = "F"
+
+    final val WrapperType = ObjectType.Float
 
     override def toJavaClass: java.lang.Class[_] =
         java.lang.Float.TYPE
@@ -445,6 +455,8 @@ sealed abstract class ShortType private () extends BaseType {
 
     override def toBinaryJavaName: String = "S"
 
+    final val WrapperType = ObjectType.Short
+
     override def toJavaClass: java.lang.Class[_] =
         java.lang.Short.TYPE
 
@@ -468,6 +480,8 @@ sealed abstract class IntegerType private () extends BaseType {
     def toJava: String = "int"
 
     override def toBinaryJavaName: String = "I"
+
+    final val WrapperType = ObjectType.Integer
 
     override def toJavaClass: java.lang.Class[_] =
         java.lang.Integer.TYPE
@@ -493,6 +507,8 @@ sealed abstract class LongType private () extends BaseType {
 
     override def toBinaryJavaName: String = "J"
 
+    final val WrapperType = ObjectType.Long
+
     override def toJavaClass: java.lang.Class[_] =
         java.lang.Long.TYPE
 
@@ -516,6 +532,8 @@ sealed abstract class BooleanType private () extends BaseType {
     def toJava: String = "boolean"
 
     override def toBinaryJavaName: String = "Z"
+
+    final val WrapperType = ObjectType.Boolean
 
     override def toJavaClass: java.lang.Class[_] =
         java.lang.Boolean.TYPE
@@ -662,19 +680,31 @@ final object ObjectType {
     }
 
     final val Object = ObjectType("java/lang/Object")
-    final val String = ObjectType("java/lang/String")
+
+    final val MethodHandle = ObjectType("java/lang/invoke/MethodHandle")
+    final val MethodType = ObjectType("java/lang/invoke/MethodType")
+
     final val Class = ObjectType("java/lang/Class")
     final val Throwable = ObjectType("java/lang/Throwable")
     final val Error = ObjectType("java/lang/Error")
     final val Exception = ObjectType("java/lang/Exception")
     final val RuntimeException = ObjectType("java/lang/RuntimeException")
-    final val IndexOutOfBoundsException = ObjectType("java/lang/IndexOutOfBoundsException")
 
-    final val MethodHandle = ObjectType("java/lang/invoke/MethodHandle")
-    final val MethodType = ObjectType("java/lang/invoke/MethodType")
+    final val Boolean = ObjectType("java/lang/Boolean")
+    final val Byte = ObjectType("java/lang/Byte")
+    final val Char = ObjectType("java/lang/Char")
+    final val Short = ObjectType("java/lang/Short")
+    final val Integer = ObjectType("java/lang/Integer")
+    final val Long = ObjectType("java/lang/Long")
+    final val Float = ObjectType("java/lang/Float")
+    final val Double = ObjectType("java/lang/Double")
+    assume(Double.id - Boolean.id == 7)
 
-    // Exceptions and errors that may be throw by the JVM (i.e., instances of these 
+    final val String = ObjectType("java/lang/String")
+
+    // Exceptions and errors that may be thrown by the JVM (i.e., instances of these 
     // exceptions may be created at runtime by the JVM)
+    final val IndexOutOfBoundsException = ObjectType("java/lang/IndexOutOfBoundsException")
     final val ExceptionInInitializerError = ObjectType("java/lang/ExceptionInInitializerError")
     final val BootstrapMethodError = ObjectType("java/lang/BootstrapMethodError")
     final val OutOfMemoryError = ObjectType("java/lang/OutOfMemoryError")
@@ -686,11 +716,46 @@ final object ObjectType {
     final val IllegalMonitorStateException = ObjectType("java/lang/IllegalMonitorStateException")
     final val ClassCastException = ObjectType("java/lang/ClassCastException")
     final val ArithmeticException = ObjectType("java/lang/ArithmeticException")
+    final val ClassNotFoundException = ObjectType("java/lang/ClassNotFoundException")
 
     // the following types are relevant when checking the subtype relation between
     // two reference types where the subtype is an array type 
     final val Serializable = ObjectType("java/io/Serializable")
     final val Cloneable = ObjectType("java/lang/Cloneable")
+
+    def primitiveWrapperMatcher[Args, T](
+        booleanMatch: (Args) ⇒ T,
+        byteMatch: (Args) ⇒ T,
+        charMatch: (Args) ⇒ T,
+        shortMatch: (Args) ⇒ T,
+        integerMatch: (Args) ⇒ T,
+        longMatch: (Args) ⇒ T,
+        floatMatch: (Args) ⇒ T,
+        doubleMatch: (Args) ⇒ T,
+        orElse: (Args) ⇒ T): (ObjectType, Args) ⇒ T = {
+        val fs = new Array[(Args) ⇒ T](8)
+        fs(0) = booleanMatch
+        fs(1) = byteMatch
+        fs(2) = charMatch
+        fs(3) = shortMatch
+        fs(4) = integerMatch
+        fs(5) = longMatch
+        fs(6) = floatMatch
+        fs(7) = doubleMatch
+
+        val booleanId = Boolean.id
+        val doubleId = Double.id
+
+        (objectType: ObjectType, args: Args) ⇒ {
+            val oid = objectType.id
+            if (oid < booleanId || oid > doubleId) {
+                orElse(args)
+            } else {
+                val index = oid - booleanId
+                fs(index)(args)
+            }
+        }
+    }
 
 }
 

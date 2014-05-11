@@ -115,7 +115,26 @@ trait ClassValues extends StringValues {
 
         def classForName(className: String): MethodCallResult = {
             val classValue = ReferenceType(className.replace('.', '/'))
-            ComputedValue(Some(ClassValue(pc, classValue)))
+            if (classValue.isObjectType) {
+                val objectType = classValue.asObjectType
+                if (classHierarchy.isKnown(objectType) ||
+                    !throwClassNotFoundException) {
+                    ComputedValue(Some(ClassValue(pc, classValue)))
+                } else {
+                    ComputedValueAndException(Some(ClassValue(pc, classValue)),
+                        Iterable(InitializedObjectValue(pc, ObjectType.ClassNotFoundException)))
+                }
+            } else {
+                val elementType = classValue.asArrayType
+                if (elementType.isBaseType ||
+                    classHierarchy.isKnown(elementType.asObjectType) ||
+                    !throwClassNotFoundException) {
+                    ComputedValue(Some(ClassValue(pc, classValue)))
+                } else {
+                    ComputedValueAndException(Some(ClassValue(pc, classValue)),
+                        Iterable(InitializedObjectValue(pc, ObjectType.ClassNotFoundException)))
+                }
+            }
         }
 
         if ((declaringClass eq ObjectType.Class) &&
@@ -142,6 +161,30 @@ trait ClassValues extends StringValues {
         } else {
             // call default handler
             super.invokestatic(pc, declaringClass, name, methodDescriptor, operands)
+        }
+    }
+
+    abstract override def getstatic(
+        pc: PC,
+        declaringClass: ObjectType,
+        name: String,
+        fieldType: FieldType) = {
+
+        if (name == "TYPE") {
+            declaringClass match {
+                case ObjectType.Boolean ⇒ ComputedValue(ClassValue(pc, BooleanType))
+                case ObjectType.Byte    ⇒ ComputedValue(ClassValue(pc, ByteType))
+                case ObjectType.Char    ⇒ ComputedValue(ClassValue(pc, CharType))
+                case ObjectType.Short   ⇒ ComputedValue(ClassValue(pc, ShortType))
+                case ObjectType.Integer ⇒ ComputedValue(ClassValue(pc, IntegerType))
+                case ObjectType.Long    ⇒ ComputedValue(ClassValue(pc, LongType))
+                case ObjectType.Float   ⇒ ComputedValue(ClassValue(pc, FloatType))
+                case ObjectType.Double  ⇒ ComputedValue(ClassValue(pc, DoubleType))
+
+                case _                  ⇒ super.getstatic(pc, declaringClass, name, fieldType)
+            }
+        } else {
+            super.getstatic(pc, declaringClass, name, fieldType)
         }
     }
 }

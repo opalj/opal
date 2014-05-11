@@ -77,4 +77,38 @@ class ObjectTypeTest extends FunSuite with ParallelTestExecution {
         ot1 match { case ObjectType(c) ⇒ assert(c === "java/lang/Object") }
     }
 
+    test("onPrimitiveWrapperMatch") {
+
+        val matcher = ObjectType.primitiveWrapperMatcher[Int, (Int, Int)](
+            (id) ⇒ (id, BooleanType.WrapperType.id),
+            (id) ⇒ (id, ByteType.WrapperType.id),
+            (id) ⇒ (id, CharType.WrapperType.id),
+            (id) ⇒ (id, ShortType.WrapperType.id),
+            (id) ⇒ (id, IntegerType.WrapperType.id),
+            (id) ⇒ (id, LongType.WrapperType.id),
+            (id) ⇒ (id, FloatType.WrapperType.id),
+            (id) ⇒ (id, DoubleType.WrapperType.id),
+            (id) ⇒ (-1, id)
+        )
+        assert(matcher(BooleanType.WrapperType, 1) == (1, BooleanType.WrapperType.id))
+        assert(matcher(ByteType.WrapperType, 2) == (2, ByteType.WrapperType.id))
+        assert(matcher(CharType.WrapperType, 3) == (3, CharType.WrapperType.id))
+        assert(matcher(ShortType.WrapperType, 4) == (4, ShortType.WrapperType.id))
+        assert(matcher(IntegerType.WrapperType, 5) == (5, IntegerType.WrapperType.id))
+        assert(matcher(LongType.WrapperType, 6) == (6, LongType.WrapperType.id))
+        assert(matcher(FloatType.WrapperType, 7) == (7, FloatType.WrapperType.id))
+        assert(matcher(DoubleType.WrapperType, 8) == (8, DoubleType.WrapperType.id))
+        assert(matcher(ObjectType.String, ObjectType.String.id) == (-1, ObjectType.String.id))
+
+        assert(matcher(BooleanType.WrapperType, 10) == (10, BooleanType.WrapperType.id))
+        assert(matcher(ByteType.WrapperType, 20) == (20, ByteType.WrapperType.id))
+        assert(matcher(CharType.WrapperType, 30) == (30, CharType.WrapperType.id))
+        assert(matcher(ShortType.WrapperType, 40) == (40, ShortType.WrapperType.id))
+        assert(matcher(IntegerType.WrapperType, 50) == (50, IntegerType.WrapperType.id))
+        assert(matcher(LongType.WrapperType, 60) == (60, LongType.WrapperType.id))
+        assert(matcher(FloatType.WrapperType, 70) == (70, FloatType.WrapperType.id))
+        assert(matcher(DoubleType.WrapperType, 80) == (80, DoubleType.WrapperType.id))
+        assert(matcher(ObjectType.String, ObjectType.String.id) == (-1, ObjectType.String.id))
+    }
+
 }
